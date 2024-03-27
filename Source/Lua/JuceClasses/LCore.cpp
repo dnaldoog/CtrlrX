@@ -470,6 +470,7 @@ void LMouseEvent::wrapForLua (lua_State *L)
 			.def("getScreenY", &MouseEvent::getScreenY)
 			.def("getMouseDownScreenX", &MouseEvent::getMouseDownScreenX)
 			.def("getMouseDownScreenY", &MouseEvent::getMouseDownScreenY)
+            .def_readonly("source", &MouseEvent::source)
 			.def_readonly("x", &MouseEvent::x)
 			.def_readonly("y", &MouseEvent::y)
 			.def_readonly("mods", &MouseEvent::mods)
@@ -484,6 +485,25 @@ void LMouseEvent::wrapForLua (lua_State *L)
 			.def("getMouseDownScreenPosition", &MouseEvent::getMouseDownScreenPosition)
 	];
 }
+
+void LMouseInputSource::wrapForLua(lua_State* L)
+{
+    using namespace luabind;
+    
+    module(L)
+    [
+        class_<MouseInputSource>("MouseInputSource")
+                .def(constructor<const MouseInputSource &>())
+                 .enum_("MouseInputSource")
+                 [
+                  value("mouse", MouseInputSource::mouse),
+                  value("touch", MouseInputSource::touch),
+                  value("pen", MouseInputSource::pen)
+                 ]
+                .def("setScreenPosition", &MouseInputSource::setScreenPosition)
+     ];
+}
+
 void LRandom::wrapForLua (lua_State *L)
 {
 	using namespace luabind;
