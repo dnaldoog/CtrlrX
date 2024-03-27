@@ -459,6 +459,8 @@
           <FILE id="Eom0Rf" name="LModifierKeys.h" compile="0" resource="0" file="Source/Lua/JuceClasses/LModifierKeys.h"/>
           <FILE id="kK1oc3" name="LMouseCursor.h" compile="0" resource="0" file="Source/Lua/JuceClasses/LMouseCursor.h"/>
           <FILE id="U2dUjC" name="LMouseEvent.h" compile="0" resource="0" file="Source/Lua/JuceClasses/LMouseEvent.h"/>
+          <FILE id="tMdmgQ" name="LMouseInputSource.h" compile="0" resource="0"
+                file="Source/Lua/JuceClasses/LMouseInputSource.h"/>
           <FILE id="TcCoRB" name="LPath.h" compile="0" resource="0" file="Source/Lua/JuceClasses/LPath.h"/>
           <FILE id="Uj0e4s" name="LPoint.h" compile="0" resource="0" file="Source/Lua/JuceClasses/LPoint.h"/>
           <FILE id="P4G1qS" name="LPopupMenu.h" compile="0" resource="0" file="Source/Lua/JuceClasses/LPopupMenu.h"/>
@@ -1080,6 +1082,7 @@
         <MODULEPATH id="juce_audio_formats" path="JUCE/modules"/>
         <MODULEPATH id="juce_audio_devices" path="JUCE/modules"/>
         <MODULEPATH id="juce_audio_basics" path="JUCE/modules"/>
+        <MODULEPATH id="juce_cryptography" path="JUCE/modules"/>
       </MODULEPATHS>
     </XCODE_MAC>
     <LINUX_MAKE targetFolder="Builds/LinuxMakefile" extraDefs="JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1"
@@ -1105,6 +1108,7 @@
         <MODULEPATH id="juce_audio_formats" path="JUCE/modules"/>
         <MODULEPATH id="juce_audio_devices" path="JUCE/modules"/>
         <MODULEPATH id="juce_audio_basics" path="JUCE/modules"/>
+        <MODULEPATH id="juce_cryptography" path="JUCE/modules"/>
       </MODULEPATHS>
     </LINUX_MAKE>
     <VS2019 targetFolder="Builds/VisualStudio2019" extraDefs="JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1"
@@ -1131,6 +1135,7 @@
         <MODULEPATH id="juce_audio_formats"/>
         <MODULEPATH id="juce_audio_devices"/>
         <MODULEPATH id="juce_audio_basics"/>
+        <MODULEPATH id="juce_cryptography" path="JUCE/modules"/>
       </MODULEPATHS>
     </VS2019>
     <CODEBLOCKS_LINUX targetFolder="Builds/CodeBlocksLinux" extraDefs="JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1"
@@ -1153,6 +1158,7 @@
         <MODULEPATH id="juce_audio_formats" path="../../juce"/>
         <MODULEPATH id="juce_audio_devices" path="../../juce"/>
         <MODULEPATH id="juce_audio_basics" path="../../juce"/>
+        <MODULEPATH id="juce_cryptography" path="JUCE/modules"/>
       </MODULEPATHS>
     </CODEBLOCKS_LINUX>
   </EXPORTFORMATS>
@@ -1165,6 +1171,7 @@
     <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_cryptography" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
