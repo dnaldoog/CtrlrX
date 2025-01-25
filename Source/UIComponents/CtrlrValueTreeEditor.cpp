@@ -21,7 +21,10 @@ bool CtrlrValueTreeEditorTree::keyPressed (const KeyPress &key)
 	return (TreeView::keyPressed(key));
 }
 
+
+
 //=========================================================================================================
+
 CtrlrValueTreeEditorItem::CtrlrValueTreeEditorItem(CtrlrValueTreeEditorLookProvider &_provider, ValueTree _treeToEdit, const Identifier &_nameIdentifier)
 	: treeToEdit(_treeToEdit), provider(_provider), nameIdentifier(_nameIdentifier)
 {
@@ -49,7 +52,7 @@ void CtrlrValueTreeEditorItem::itemSelectionChanged (bool isNowSelected)
 
 int	CtrlrValueTreeEditorItem::getItemWidth () const
 {
-	return (jmax<int>(128, 48 + provider.getItemFont(treeToEdit).getStringWidth (provider.getUniqueName(treeToEdit))));
+	return (jmax<int>(152, 48 + provider.getItemFont(treeToEdit).getStringWidth (provider.getUniqueName(treeToEdit)))); // Updated v5.6.31
 }
 
 int	CtrlrValueTreeEditorItem::getItemHeight () const
@@ -116,16 +119,21 @@ bool CtrlrValueTreeEditorItem::isInterestedInDragSource (const DragAndDropTarget
 	return (provider.isInterestedInDragSource (treeToEdit, dragSourceDetails));
 }
 
+// GUI For TreeView Items. Updated v5.6.31
 void CtrlrValueTreeEditorItem::paintItem (Graphics &g, int width, int height)
 {
-	std::unique_ptr<Drawable> icon(provider.getIconForItem (treeToEdit));
-	if (isSelected())
+    std::unique_ptr<Drawable> icon(provider.getIconForItem (treeToEdit));
+	auto &currentLnF = getDefaultLookAndFeel(); // Added v5.6.31
+    
+    if (isSelected())
 	{
-        gui::drawSelectionRectangle (g,width,height);
+        g.setColour(currentLnF.findColour(TextEditor::highlightedTextColourId));
+        gui::drawSelectionRectangle (g, width, height, currentLnF.findColour(CodeEditorComponent::lineNumberBackgroundId), 1.0f, 1.0f, 0.0f, 0.0f); // Updated v5.6.31
+        // gui::drawSelectionRectangle (g, width, height)); // Removed v5.6.31
 	}
-
-	g.setColour (Colours::black);
-
+	// g.setColour (Colours::black); // Removed v5.6.31
+    g.setColour(currentLnF.findColour(TextEditor::textColourId)); // Added v5.6.31
+       
 	AttributedString as = provider.getDisplayString(treeToEdit);
 	as.setJustification (Justification (Justification::centredLeft));
 	as.draw (g, Rectangle <float> (24.0, 0.0, width - 24.0, height));

@@ -255,9 +255,15 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
     }
     else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin)
     {
-        double max       = getProperty (Ids::uiSliderMax);
-        const double min = getProperty (Ids::uiSliderMin);
-        double interval  = getProperty (Ids::uiSliderInterval);
+        // This was the script in v5.2.198
+        //ctrlrSlider.setRange ( (float) getProperty (Ids::uiSliderMin), (float) getProperty (Ids::uiSliderMax), (float) getProperty (Ids::uiSliderInterval) ); // Added back from v5.2.198 to v5.6.31 with float instead of double. Note: Float (32bit) is less precise than double (64bit).
+        //owner.setProperty (Ids::modulatorMax, ctrlrSlider.getMaximum());
+        //owner.setProperty (Ids::modulatorMin, ctrlrSlider.getMinimum());
+        
+        // The following script is different since v5.6.26+
+        float max = getProperty (Ids::uiSliderMax); // v5.6.31 (float) instead of (double). (double) was giving false values when negative
+        float min = getProperty (Ids::uiSliderMin); // v5.6.31 (float) instead of (const double). (const double) was giving false values when negative
+        float interval = getProperty (Ids::uiSliderInterval); // v5.6.31 (float) instead of (double). (double) was giving false values when negative
         if (interval == 0)
             interval = std::abs(max-min) + 1;
         // For JUCE MAX must be >= min
@@ -266,7 +272,7 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
             // to avoid rounding errors
             max = min + interval * 0.66;
         }
-        ctrlrSlider.setRange ( min, max, interval  );
+        ctrlrSlider.setRange ( min, max, interval );
         owner.setProperty (Ids::modulatorMax, ctrlrSlider.getMaximum());
         owner.setProperty (Ids::modulatorMin, ctrlrSlider.getMinimum());
     }

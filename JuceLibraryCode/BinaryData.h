@@ -59,6 +59,27 @@ namespace BinaryData
     extern const char*   FONT_ZX81_ttf;
     const int            FONT_ZX81_ttfSize = 17176;
 
+    extern const char*   github_line_svg;
+    const int            github_line_svgSize = 1633;
+
+    extern const char*   paypal_colour_svg;
+    const int            paypal_colour_svgSize = 2052;
+
+    extern const char*   paypal_bw_svg;
+    const int            paypal_bw_svgSize = 1518;
+
+    extern const char*   github_colour_svg;
+    const int            github_colour_svgSize = 1926;
+
+    extern const char*   github_bw_svg;
+    const int            github_bw_svgSize = 1926;
+
+    extern const char*   vst3_au_juce_mini_logo_bg_rnd_svg;
+    const int            vst3_au_juce_mini_logo_bg_rnd_svgSize = 8208;
+
+    extern const char*   ctrlrx_logo_svg;
+    const int            ctrlrx_logo_svgSize = 1751;
+
     extern const char*   add_svg;
     const int            add_svgSize = 255;
 
@@ -246,13 +267,13 @@ namespace BinaryData
     const int            RSRC_zipSize = 49800;
 
     extern const char*   CtrlrIDs_xml;
-    const int            CtrlrIDs_xmlSize = 84889;
+    const int            CtrlrIDs_xmlSize = 89688;
 
     extern const char*   CtrlrLuaClassTemplates_xml;
-    const int            CtrlrLuaClassTemplates_xmlSize = 109;
+    const int            CtrlrLuaClassTemplates_xmlSize = 110;
 
     extern const char*   CtrlrLuaMethodTemplates_xml;
-    const int            CtrlrLuaMethodTemplates_xmlSize = 21578;
+    const int            CtrlrLuaMethodTemplates_xmlSize = 22471;
 
     extern const char*   CtrlrMidiMultiTemplate_xml;
     const int            CtrlrMidiMultiTemplate_xmlSize = 662;
@@ -264,7 +285,7 @@ namespace BinaryData
     const int            CtrlrMIDIVendors_xmlSize = 15061;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 85;
+    const int namedResourceListSize = 92;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

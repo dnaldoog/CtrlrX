@@ -18,6 +18,60 @@
 #include "CtrlrMIDI/CtrlrMIDISettingsDialog.h"
 #include "CtrlrComponents/CtrlrComponent.h"
 
+
+CtrlrPanelNotifier::CtrlrPanelNotifier(CtrlrPanelEditor &_owner) // Added back v5.6.31 for file management bottom notification bar
+    : owner(_owner), background(Colours::lightgrey)
+{
+    addAndMakeVisible (text = new Label());
+    text->addMouseListener (this, true);
+    text->setColour (Label::backgroundColourId, Colours::transparentBlack);
+    text->setColour (Label::textColourId, Colours::white.withAlpha (0.85f));
+    text->setColour (Label::outlineColourId, Colours::transparentBlack);
+    text->setFont (Font (12.0f, Font::bold));
+    text->setText ("", dontSendNotification); // Default text required
+}
+
+void CtrlrPanelNotifier::paint (Graphics &g) // Added back v5.6.31 for file management bottom notification bar
+{
+    gui::drawSelectionRectangle (g, getWidth(), getHeight(), background); // Updated v5.6.31 (link to GUI class)
+}
+
+void CtrlrPanelNotifier::resized() // Added back v5.6.31 for file management bottom notification bar
+{
+    text->setBounds (0, 0, getWidth(), getHeight());
+}
+
+void CtrlrPanelNotifier::setNotification (const String &notification, const CtrlrNotificationType ctrlrNotificationType) // Added back v5.6.31 for file management bottom notification bar
+{
+    background = getBackgroundColourForNotification(ctrlrNotificationType);
+    text->setText (notification, dontSendNotification);
+    
+}
+
+void CtrlrPanelNotifier::mouseDown (const MouseEvent &e)
+{
+    owner.notificationClicked(e);
+}
+
+Colour CtrlrPanelNotifier::getBackgroundColourForNotification(const CtrlrNotificationType ctrlrNotificationType)  // Added back v5.6.31 for file management bottom notification bar
+{
+    switch (ctrlrNotificationType)
+    {
+        case NotifySuccess:
+            return (Colours::green.brighter(0.2f));
+        case NotifyFailure:
+            return (Colours::red.brighter(0.2f));
+        case NotifyWarning:
+            return (Colours::yellow.darker(0.5f));
+        case NotifyInformation:
+            return (Colours::grey);
+    }
+
+    return (Colours::lightgrey);
+}
+
+
+
 CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManager, const String &panelName)
         : Component(L"Ctrlr Panel Editor"),
           lastEditMode(true),
@@ -34,6 +88,11 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
     addAndMakeVisible(ctrlrPanelViewport = new CtrlrPanelViewport(*this));
     addAndMakeVisible(ctrlrPanelProperties = new CtrlrPanelProperties(*this));
     addAndMakeVisible(spacerComponent = new StretchableLayoutResizerBar(&layoutManager, 1, true));
+    addAndMakeVisible (ctrlrPanelNotifier = new CtrlrPanelNotifier(*this));  // Added back v5.6.31 for file management bottom notification bar
+    
+    ctrlrPanelNotifier->setAlwaysOnTop (true);  // Added back v5.6.31 for file management bottom notification bar
+    ctrlrPanelNotifier->setVisible (false);  // Added back v5.6.31 for file management bottom notification bar
+    //componentAnimator.addChangeListener (this); // Added back v5.6.31 not working
     
     spacerComponent->setName(L"spacerComponent");
     
@@ -105,8 +164,83 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
     setProperty(Ids::uiPanelTooltipOutlineColour, (String) Component::findColour (BubbleComponent::outlineColourId).toString()); // 0xff000000
     setProperty(Ids::uiPanelTooltipCornerRound, 1.0);
 
-    setProperty(Ids::uiPanelLegacyMode, false);
-    setProperty(Ids::uiPanelLookAndFeel, "V4 Light");
+    
+    ValueTree ed = owner.getCtrlrManagerOwner().getManagerTree();
+    
+    if (ed.getProperty(Ids::ctrlrLegacyMode) == "1"
+        || ed.getProperty(Ids::ctrlrLookAndFeel) == "V3"
+        || ed.getProperty(Ids::ctrlrLookAndFeel) == "V2"
+        || ed.getProperty(Ids::ctrlrLookAndFeel) == "V1")
+    {
+        setProperty(Ids::uiPanelLegacyMode, "1");
+        setProperty(Ids::uiPanelLookAndFeel, "V3");
+    }
+    else
+    {
+        setProperty(Ids::uiPanelLegacyMode, false);
+        setProperty(Ids::uiPanelLookAndFeel, "V4");
+        
+        // Requires passing the colourScheme to the property uiPanelLookAndFeel from ctrlrColourScheme
+        if (ed.getProperty(Ids::ctrlrColourScheme) == "Light")
+        {
+            setProperty(Ids::uiPanelLookAndFeel, "V4 Light");
+        }
+        else if (ed.getProperty(Ids::ctrlrColourScheme) == "Grey")
+        {
+            setProperty(Ids::uiPanelLookAndFeel, "V4 Grey");
+        }
+        else if (ed.getProperty(Ids::ctrlrColourScheme) == "Dark")
+        {
+            setProperty(Ids::uiPanelLookAndFeel, "V4 Dark");
+        }
+        else if (ed.getProperty(Ids::ctrlrColourScheme) == "Midnight")
+        {
+            setProperty(Ids::uiPanelLookAndFeel, "V4 Midnight");
+        }
+        else if (ed.getProperty(Ids::ctrlrColourScheme) == "V4 JetBlack")
+        {
+            setProperty(Ids::uiPanelLookAndFeel, "V4 JetBlack");
+        }
+        else if (ed.getProperty(Ids::ctrlrColourScheme) == "YamDX")
+        {
+            setProperty(Ids::uiPanelLookAndFeel, "V4 YamDX");
+        }
+        else if (ed.getProperty(Ids::ctrlrColourScheme) == "AkAPC")
+        {
+            setProperty(Ids::uiPanelLookAndFeel, "V4 AkAPC");
+        }
+        else if (ed.getProperty(Ids::ctrlrColourScheme) == "AkMPC")
+        {
+            setProperty(Ids::uiPanelLookAndFeel, "V4 AkMPC");
+        }
+        else if (ed.getProperty(Ids::ctrlrColourScheme) == "LexiBlue")
+        {
+            setProperty(Ids::uiPanelLookAndFeel, "V4 LexiBlue");
+        }
+        else if (ed.getProperty(Ids::ctrlrColourScheme) == "KurzGreen")
+        {
+            setProperty(Ids::uiPanelLookAndFeel, "V4 KurzGreen");
+        }
+        else if (ed.getProperty(Ids::ctrlrColourScheme) == "KorGrey")
+        {
+            setProperty(Ids::uiPanelLookAndFeel, "V4 KorGrey");
+        }
+        else if (ed.getProperty(Ids::ctrlrColourScheme) == "KorGold")
+        {
+            setProperty(Ids::uiPanelLookAndFeel, "V4 KorGold");
+        }
+        else if (ed.getProperty(Ids::ctrlrColourScheme) == "ArturOrange")
+        {
+            setProperty(Ids::uiPanelLookAndFeel, "V4 ArturOrange");
+        }
+        else if (ed.getProperty(Ids::ctrlrColourScheme) == "AiraGreen")
+        {
+            setProperty(Ids::uiPanelLookAndFeel, "V4 AiraGreen");
+        }
+    }
+    
+    //setProperty(Ids::uiPanelLegacyMode, false);
+    //setProperty(Ids::uiPanelLookAndFeel, "V4 Light");
     
 //    /** displays the current LookAndFeel colourScheme UIColours */
 //    LookAndFeel_V4::setColourScheme(getLightColourScheme());
@@ -130,6 +264,8 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 
 CtrlrPanelEditor::~CtrlrPanelEditor()
 {
+    //componentAnimator.removeChangeListener (this); // NOT WORKING Added back v5.6.31 for file management bottom notification bar
+    // setLookAndFeel(nullptr); // Updated v5.6.30. reset LnF to global LnF from Preferences when closing panel
     getPanelEditorTree().removeListener(this);
     owner.getPanelTree().removeListener(this);
     owner.getPanelTree().removeChild(getPanelEditorTree(), 0);
@@ -138,7 +274,6 @@ CtrlrPanelEditor::~CtrlrPanelEditor()
     deleteAndZero(ctrlrPanelProperties);
     deleteAndZero(spacerComponent);
     deleteAndZero(ctrlrPanelViewport);
-    //setLookAndFeel(nullptr); // reset LnF when closing panel
 }
 
 void CtrlrPanelEditor::visibilityChanged()
@@ -154,6 +289,11 @@ void CtrlrPanelEditor::resized()
     setProperty(Ids::uiViewPortWidth, getWidth());
     setProperty(Ids::uiViewPortHeight, getHeight());
 
+    if (ctrlrPanelNotifier) // Added back v5.6.31
+    {
+        ctrlrPanelNotifier->setBounds (0, getHeight() - 28, getWidth() - 32, 20);
+    }
+     
     layoutItems();
 
     if (!getRestoreState())
@@ -354,9 +494,9 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
         else if (property == Ids::uiPanelCanvasRectangle)
         {
             getCanvas()->setBounds(VAR2RECT(getProperty(property))); // update canvas size if values in the property field are changed
-            double canvasHeight = getCanvas()->getHeight();
-            double canvasWidth = getCanvas()->getWidth();
-            double canvasAspectRatio = double(canvasWidth) / double(canvasHeight);
+            canvasHeight = getCanvas()->getHeight(); // Updated v5.6.31 by GoodWeather. Removed type double(canvasHeight)
+            canvasWidth = getCanvas()->getWidth(); // Updated v5.6.31 by GoodWeather. Removed type double(canvasWidth)
+            canvasAspectRatio = canvasWidth / canvasHeight; // Updated v5.6.31 by GoodWeather. Removed type double(canvasAspectRatio) = double(canvasWidth) / double(canvasHeight)
             setProperty(Ids::uiViewPortFixedAspectRatio, canvasAspectRatio); // update canvas aspect ratio if canvas is resized
             resized();
         }
@@ -501,6 +641,7 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
     }
 }
 
+
 LookAndFeel *CtrlrPanelEditor::getLookAndFeelFromDescription(const String &lookAndFeelDesc)
 {
     if (lookAndFeelDesc == "V4" || lookAndFeelDesc == "V4 Light")
@@ -583,6 +724,59 @@ void CtrlrPanelEditor::initSingleInstance()
 {
     owner.setProperty(Ids::uiPanelEditMode, false);
 }
+
+
+void CtrlrPanelEditor::notify(const String &notification, CtrlrNotificationCallback *callback, const CtrlrNotificationType ctrlrNotificationType)  // Added back v5.6.31 for file management bottom notification bar
+{
+    if (ctrlrPanelNotifier)
+    {
+        if ((int)owner.getProperty(Ids::panelMessageTime) <= 0)
+            return;
+
+        notificationCallback = callback;
+
+        componentAnimator.cancelAllAnimations (true);
+        ctrlrPanelNotifier->setVisible (true);
+        
+        if (notificationCallback != nullptr)
+        {
+            ctrlrPanelNotifier->setMouseCursor (MouseCursor::PointingHandCursor);
+        }
+        else
+        {
+            ctrlrPanelNotifier->setMouseCursor (MouseCursor::NormalCursor);
+        }
+        ctrlrPanelNotifier->setBounds (0, getHeight() - 28, getWidth(), 20);
+        ctrlrPanelNotifier->setAlpha (1.0f);
+
+        ctrlrPanelNotifier->setNotification (notification, ctrlrNotificationType);
+
+        componentAnimator.animateComponent (ctrlrPanelNotifier, ctrlrPanelNotifier->getBounds(), 0.0f, owner.getProperty(Ids::panelMessageTime), false, 1.0, 1.0);
+    }
+}
+
+void CtrlrPanelEditor::notificationClicked(const MouseEvent e)  // Added back v5.6.31 for file management bottom notification bar
+{
+    componentAnimator.cancelAllAnimations (true);
+
+    if (!notificationCallback.wasObjectDeleted() && notificationCallback)
+    {
+        notificationCallback->notificationClicked(e);
+    }
+}
+
+void CtrlrPanelEditor::changeListenerCallback (ChangeBroadcaster *source)  // Added back v5.6.31 for file management bottom notification bar
+{
+    if (source == &componentAnimator)
+    {
+        if (!componentAnimator.isAnimating())
+        {
+            ctrlrPanelNotifier->setVisible (false);
+        }
+    }
+}
+
+
 
 void CtrlrPanelEditor::reloadResources(Array<CtrlrPanelResource *> resourcesThatChanged)
 {

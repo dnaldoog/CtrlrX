@@ -16,7 +16,7 @@
   <id name="modulatorLinkedToModulator" 		text="Link to MODULATOR" type="VarText"/>
   <id name="modulatorLinkedToComponent" 		text="Link to what type of MODULATOR property" type="VarNumeric" defaults="Modulator=0,Component=1,MIDI Message=2" />
   <id name="modulatorMax" 						text="Maximum value the modulator can have, should be set from the UI component" type="ReadOnly" min="-65536" max="65536" int="0.0001" />
-  <id name="modulatorMin" 						text="Minimum value the modulator can have, should be set from the UI component" type="ReadOnly" min="-65536" max="65536" int="0.0001" />
+  <id name="s" 						text="Minimum value the modulator can have, should be set from the UI component" type="ReadOnly" min="-65536" max="65536" int="0.0001" />
   <id name="modulatorExcludeFromSnapshot" 		text="Don't send this modulator during snapshots" type="Bool" defaults="Don't send/Send"/>
   <id name="modulatorBaseValue" 				text="Base/fallback value" type="Numeric" min="-65536" max="65536"/>
   <id name="modulatorCustomIndex" 				text="Custom modulator index" type="Text"/>
@@ -723,9 +723,9 @@
 
   <!-- Global Ctrlr settings -->
   <id name="ctrlrMaxExportedVstParameters"    text="Max exported VST params" type="Numeric" min="0" max="999999" int="1" />
-  <id name="ctrlrLogToFile"                   text="Log everything to file (for debugging)" type="Bool" />
+  <id name="ctrlrLogToFile"                   text="Log everything to file" type="Bool" />
   <id name="ctrlrLuaDebug"                    text="Enable some LUA debugging" type="Bool" />
-  <id name="ctrlrShutdownDelay"               text="How to long to wait when deleting plugin" type="Numeric" min="0" max="10000" int="1" />
+  <id name="ctrlrShutdownDelay"               text="Plugin shutdown delay" type="Numeric" min="0" max="10000" int="1" />
   <id name="ctrlrUseEditorWrapper"            text="Use the Editor Wrapper for VST plugins" type="Bool"/>
   <id name="ctrlrVersionSeparator"            text="Version field separator" type="Text"/>
   <id name="ctrlrVersionCompressed"           text="Save versioned panels compressed" type="Bool"/>
@@ -749,15 +749,16 @@
   <id name="number"                           text="Number" type="Numeric" min="-65535" max="65535" />
   <id name="uuid"                             text="Unique identifier" type="ReadOnly" />
   <id name="ctrlrScrollbarThickness"          text="Thickness for all scrollbars" type="Numeric" min="8" max="128"/>
-  <id name="ctrlrColourScheme"                text="Colour scheme" type="VarText" defaults="@ctrlrColourSchemes"/>
-  <id name="ctrlrLookAndFeel"                 text="Look and feel" type="VarText" defaults="@lookandfeel"/>
+  <id name="ctrlrLegacyMode"                  text="LookAndFeel V3 for older panels" type="Bool" defaults="Legacy Mode/Disabled" />
+  <id name="ctrlrColourScheme"                text="Default lookAndFeel V4 colourScheme" type="VarText" defaults="@ctrlrColourSchemes"/>
+  <id name="ctrlrLookAndFeel"                 text="Default lookAndFeel Version" type="VarText" defaults="@lookandfeel"/>
 
 
   <!-- Logging settings  -->
   <id name="ctrlrMidiMonInputBufferSize"    text="MIDI Mon input buffer size"       type="Numeric" min="512" max="65535"/>
   <id name="ctrlrMidiMonOutputBufferSize"   text="MIDI Mon output buffer size"      type="Numeric" min="512" max="65535"/>
   <id name="ctrlrLogMidiInput"              text="Toggle MIDI Input logging"        type="Bool" />
-  <id name="ctrlrLogMidiOutput"             text="Toggle MIDI output logging size"  type="Bool" />
+  <id name="ctrlrLogMidiOutput"             text="Toggle MIDI output logging"       type="Bool" />
   <id name="ctrlrLogOptions"                text="MIDI Log options" type="Numeric" />
   <id name="ctrlrLogToFile"                 text="Log debug messages to a file" type="Bool"/>
 
@@ -771,7 +772,7 @@
   <id name="ctrlrAutoSaveInterval"          text="Autosave interval in seconds" type="Numeric" min="1" max="999999" int="1"/>
   <id name="ctrlrOpenWindowState"           text="Open panel dialog state" type="Text"/>
   <id name="ctrlrPropertiesAreURLs"         text="When editing a panel the property names can be clickable URLs to relevant WIKI pages" type="Bool" />
-  <id name="ctrlrRecenetOpenedPanelFiles"   text="Recent opened Panel file" type="Text" />
+  <id name="ctrlrRecenetOpenedPanelFiles"   text="Recent opened Panel files" type="Text" />
   <id name="ctrlrLastBrowsedFileDirectory"  text="Last browsed file directory" type="Text" />
 
   <id name="ctrlrMenuItemBackgroundColour"  	text="Menu item background colour" type="Colour" />
@@ -792,7 +793,7 @@
   <id name="ctrlrNativeAlerts"					text="Use OS native dialog windows" type="Bool" />
   <id name="ctrlrNativeFileDialogs"             text="Use OS native file open/save dialogs (disable for Linux)" type="Bool" />
   <id name="ctrlrPrivateKey"                    text="RSA private key used to sign exported panels" type="FileProperty" />
-  <id name="ctrlrFontSizeBaseValue"             text="Base value for all font sizes in the Ctrlr UI (won't affect panel UI)" type="Numeric" min="6.0" max="128.0" int="0.1"/>
+  <id name="ctrlrFontSizeBaseValue"             text="Base value for all font sizes (won't affect panel UI)" type="Numeric" min="6.0" max="128.0" int="0.1"/>
   <id name="ctrlrTabBarDepth"                   text="Depth of all tab bars" type="Numeric" min="6" max="128" int="1"/>
 
   <!-- LUA callbacks -->

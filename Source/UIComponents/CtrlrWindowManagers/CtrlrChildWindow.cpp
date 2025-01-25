@@ -17,7 +17,7 @@ CtrlrChildWindow::CtrlrChildWindow (CtrlrWindowManager &_owner)
 		setAlwaysOnTop(true);
 	}
 	addKeyListener (this);
-    setSize (800, 500);
+    setSize (800, 500); // 800x500
 }
 
 CtrlrChildWindow::~CtrlrChildWindow()

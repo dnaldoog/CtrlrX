@@ -247,7 +247,8 @@ void CtrlrPanelLayerList::menuItemSelected(int menuItemID, int topLevelMenuIndex
 	}
 	if (topLevelMenuIndex == 0 && menuItemID==1)
 	{
-		owner.getWindowManager().toggle (CtrlrPanelWindowManager::LayerEditor, false);
+        // close handle
+        owner.getWindowManager().toggle (CtrlrPanelWindowManager::LayerEditor, false);
 	}
 	
 }

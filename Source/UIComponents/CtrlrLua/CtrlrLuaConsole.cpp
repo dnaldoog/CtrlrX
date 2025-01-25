@@ -283,8 +283,8 @@ PopupMenu CtrlrLuaConsole::getMenuForIndex(int topLevelMenuIndex, const String &
 		menu.addItem (2, "Add input to snips");
 		menu.addSubMenu ("Run snip", getSnipsMenu(1024));
 		menu.addSubMenu ("Remove snip", getSnipsMenu(4096));
-		menu.addSeparator();
-		menu.addItem (1, "Close");
+		// menu.addSeparator(); Updated v5.6.31
+		// menu.addItem (1, "Close", false); // Updated v5.6.31
 	}
 	else if(topLevelMenuIndex == 1)
 	{
@@ -298,7 +298,8 @@ void CtrlrLuaConsole::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 {
 	if (topLevelMenuIndex == 0 && menuItemID==1)
 	{
-		owner.getWindowManager().toggle (CtrlrPanelWindowManager::LuaConsole, false);
+        // close handle
+        // owner.getWindowManager().toggle (CtrlrPanelWindowManager::LuaConsole, false); // Crashes
 	}
 	if (menuItemID == 2)
 	{

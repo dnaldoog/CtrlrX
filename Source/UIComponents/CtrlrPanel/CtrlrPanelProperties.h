@@ -17,6 +17,7 @@ public:
 	void layoutChanged();
     void paint (Graphics& g);
     void resized();
+    void lookAndFeelChanged(); // Added v5.6.31
     JUCE_LEAK_DETECTOR(CtrlrPanelProperties)
 
 private:

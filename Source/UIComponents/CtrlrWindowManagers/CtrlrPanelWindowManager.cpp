@@ -64,7 +64,7 @@ void CtrlrPanelWindowManager::toggle(const CtrlrPanelWindowManager::WindowType w
 		else
 		{
 			w->setVisible (true);
-			w->toFront(true);
+			w->toFront (true);
 		}
 	}
 }

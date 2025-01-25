@@ -11,6 +11,7 @@ class CtrlrSettings  : public Component
 		~CtrlrSettings();
 		void paint (Graphics& g);
 		void resized();
+        void restart();
 		JUCE_LEAK_DETECTOR(CtrlrSettings)
 
 	private:

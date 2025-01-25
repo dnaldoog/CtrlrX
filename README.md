@@ -9,6 +9,8 @@ Let's keep the Ctrlr github alive and keep up with what we were all doing there.
 ToDo
 ----
 
+* Update to the latest version of JUCE 7
+* Upgrade LUABIND to another LUA/C++ library
 * VST Host must get the panel name while exported as VST3 plugin (currently always named as Ctrlr | Instigator)
 * APP/Plugin identifiers properly updated from panel infos in exported instances package. (info.plist, .exe, vst3, etc)
 * Implementation of the entire JUCE ValueTree Class with LUA
@@ -17,14 +19,48 @@ ToDo
 * Modulators located within a tabs must have their properties updated while the tab properties are changed 
 * Allow earlier "Undo" after a modulator has been deleted
 * Export instance process must be improved (dialog alerts, overwriting existing file...)
-* Upgrade LUABIND to another LUA/C++ library
-* Update to the latest version of JUCE 7
-
 
 Changelog
 ---------
 
-#### Version 5.6.30
+
+#### Version 5.6.31 | 2025.01
+* Security update : Encryption of the panel file in the macOS bundle for restricted instances. CtrlrMac.cpp, CtrlrEditorApplicationCommandsMenu.cpp, CtrlrManager.cpp
+
+* NEW JUCE Class MouseInputSource added to LUA. LCore.cpp,LCore.h, LJuce.cpp, LJuce.h, LMouseInputSource.h
+* NEW algorithm for Roland checksums. CtrlrSysexProcessor.cpp & CtrlrUtilities.cpp
+* NEW settings for LUA Method Editor. CtrlrValueTreeEditor.h CtrlrLuaMethodCodeEditorSettings.cpp & .h CtrlrLuaMethodCodeEditor.cpp CtrlrLuaMethodEditor.cpp CtrlrIDs.h & CtrlrIDs.xml
+
+* FIXED MSB 14 bit numbers sending 0xFF instead of 0x7F. CtrlrSysexProcessor.cpp & CtrlrUtilities.cpp
+* FIXED missing File Management bottom notification bar. CtrlrPanelFileOperations.cpp, CtrlrPanelEditor.cpp, CtrlrPanelEditor.h, CtrlrPanel.cpp, CtrlrPanel.h
+* FIXED missing menuBar on export for log and MIDI monitor windows. CtrlrChildWindowContainer.cpp
+* FIXED uiSlider value not reaching maxValue when using negative values for minValue. CtrlrSlider.cpp
+* FIXED uiImageSlider value not reaching maxValue when using negative values for minValue. CtrlrImageSlider.cpp
+* FIXED black text on black background for Modulator List window. CtrlrPanelModulatorList.cpp
+* FIXED typo in alert when closing dirty panel. CtrlrPanelFileOperations.cpp
+* FIXED parameters count passed to VST host is set from the highest vstindex when a panel is an exported VST/VST3 instance, not (64). CtrlrProcessor.cpp 
+* FIXED LnF panel close button colour on mouseover follows the panel colourScheme. CtrlrDocumentPanel.cpp 
+* FIXED CtrlrModulator Value statement precised to help avoid feedback loops between LUA and (delayed) UI. Commit 6e5a0b2 by midibox. CtrlrLuaManager.cpp
+* FIXED exported VST crashing DAW if panelIsDirty = 0 on export. CtrlPanelFileOperations.cpp
+* FIXED Ctrlr not showing up in Ableton Live. CtrlrX.jucer, CtrlrProcessor.cpp & CtrlrProcessor.h, CtrlrProcessorEditorForLive.cpp & CtrlrProcessorEditorForLive.h
+* FIXED MIDI Monitor IN/OUT turned ON by default. CtrlrManager.cpp
+* FIXED Console window & Midi Monitor crashing Cubase if closed from the Menu File>Close. CtrlrLuaConsole.cpp & CtrlrMIDIMonitor.cpp
+* FIXED LUA mod:getMidiMessage():getProperty("propertyName") CtrlrMidiMessage.cpp & CtrlrMidiMessage.h
+* FIXED exported instances not getting the proper LnF version or colourScheme (popup, child windows etc). CtrlrManagerInstance.cpp, CtrlrEditor.cpp
+* FIXED property pane tabs not showing up on exported instances. CtrlrManagerInstance.cpp
+* FIXED Property Pane tabs not following panel LnF. CtrlrPanelProperties.cpp & CtrlrPanelProperties.h
+* FIXED Child Windows (LUA Editor, console etc) not getting the proper menuBar background. CtrlrChildWindowContainer.cpp
+* FIXED LUA Editor Method Tree selected item not getting the proper colour. CtrlrLuaMethodEditor.cpp
+* FIXED AU AudioUnit version of CtrlX was failing the Apple/Logic Validation Test. CtrlrX.jucer, CtrlrProcessor.cpp & CtrlrProcessor.h
+* FIXED Panel Tabs showing up on exported instances. CtrlrDocumentPanel.cpp
+* FIXED messy preferences window and settings. CtrlrSettings.cpp & CtrlrSettings.cpp ctrlrIDs.h & CtrlrIDs.xml
+* FIXED default New Panel LnF not following global LnF from Global Preferences. ctrlrPanel.cpp ctrlrIDs.h & CtrlrIDs.xml
+* FIXED CtrlrX.ico too dark to be legible on dark backgrounds. ctrlr_logo_circle_v3.svg
+* FIXED FileChooser hanging when exporting instance on OSX Catalina & macOS BigSur. CtrlrManager.cpp
+* FIXED About popup design refurbished with new CtrlrX logo. CtrlrAbout.cpp & CtrlrAbout.h
+* FIXED About popup not getting current build date, fixed with C++ Macro timestamp. CtrlrRevision.h
+
+#### Version 5.6.30 | 2024.03.13
 * Missing JUCE File Class definitions bound to LUA
 * New LookAndFeel_V4 colourScheme added (V4 JetBlack, V4 YamDX, V4 AkAPC, V4 AkMPC, V4 LexiBlue, V4 KurzGreen, V4 KorGrey, V4 KorGold, V4 ArturOrange, V4 AiraGreen).
 * Colours fixed in the LUA Method Editor and LUA Console
@@ -36,6 +72,7 @@ Changelog
 * Close button added to Panel Editor Tabs (as in 5.1.198, 5.2 & 5.3 versions)
 * Panel Editor Tabs won't shrink and will show a + sign if the TabBar exceeds the window W
 
+
 #### Version 5.6.29
 
 * Implementation of the entire JUCE LookAndFeel_V4 design with all color schemes
@@ -44,21 +81,27 @@ Changelog
 * Description/ID in the property pane switches without selecting other tabs to update
 * Overall improvement of Ctrlr GUI, component settings and functionalities
 
+
 #### Version 5.6.28
 *  Added support for scalable UI for responsive design via callback on APP/Plugin viewport resize and viewport resize parameters.
 *  Fixed menuBar not showing up issue for non-restricted exported instance.
 
+
 #### Version 5.6.27
 *  uiPanelViewPortBackgroundColour property added in the global properties to change the background color of the ViewPort, parent of the Panel canvas.
+
 
 #### Version 5.6.26
 *  setChangeNotificationOnlyOnRelease added in the component section for all types of sliders. When enabled, it sends the Value only when the mouse button is released.
 
+
 #### Version 5.6.25
 * mouseUp, mouseEnter, mouseExit callbacks added in for Generic Components (buttons, sliders etc)
 
+
 #### Version 5.6.24
 * ctrlrEditor window showing scrollbars over canvas in Cubase has been fixed
+
 
 #### Version 0.0.0
 * Current version is forked from Ctrlr 5.6.23

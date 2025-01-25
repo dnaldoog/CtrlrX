@@ -79,7 +79,9 @@ void CtrlrMIDIMon::messageLogged (CtrlrLog::CtrlrLogMessage _message)
 
 StringArray CtrlrMIDIMon::getMenuBarNames()
 {
-	const char* const names[] = { "File", "View", "Filter", nullptr };
+	// const char* const names[] = { "File", "View", "Filter", nullptr };
+    // const char* const names[] = { "View", "Filter", nullptr };
+    const char* const names[] = { "View", nullptr }; // Added v5.6.31
 	return StringArray (names);
 }
 
@@ -87,28 +89,28 @@ PopupMenu CtrlrMIDIMon::getMenuForIndex(int topLevelMenuIndex, const String &men
 {
 	PopupMenu menu;
 
-	int opts = (int)owner.getProperty (Ids::ctrlrLogOptions);
-
-	if (topLevelMenuIndex == 0)
+    int opts = (int)owner.getProperty (Ids::ctrlrLogOptions);
+    
+//    if (topLevelMenuIndex == 0)
+//    {
+//        menu.addItem (1, "Close", false); // Updated v5.6.31
+//    }
+	if (topLevelMenuIndex == 0) // Updated v5.6.31. From 1 to 0
 	{
-		menu.addItem (1, "Close");
-	}
-	else if (topLevelMenuIndex == 1)
-	{
-		menu.addItem (12, "Show name", true, getBitOption(opts,midiLogName));
-		menu.addItem (14, "Show channel", true, getBitOption(opts,midiLogChannel));
-		menu.addItem (18, "Show number", true, getBitOption(opts,midiLogNumber));
-		menu.addItem (26, "Show value", true, getBitOption(opts,midiLogValue));
-		menu.addItem (42, "Show RAW data", true, getBitOption(opts,midiLogRawData));
-		menu.addItem (74, "Show timestamp", true, getBitOption(opts,midiLogTimestamp));
-		menu.addItem (138, "RAW data in decimal", true, getBitOption(opts,midiLogRawDecimal));
-		menu.addItem (1034, "Show device name", true, getBitOption(opts,midiLogDevice));
-		menu.addItem  (4096+10, "Show RAW data size", true, getBitOption(opts,midiLogDataSize));
+		menu.addItem (10+2, "Show name", true, getBitOption(opts,midiLogName));
+		menu.addItem (10+4, "Show channel", true, getBitOption(opts,midiLogChannel));
+		menu.addItem (10+8, "Show number", true, getBitOption(opts,midiLogNumber));
+		menu.addItem (10+16, "Show value", true, getBitOption(opts,midiLogValue));
+		menu.addItem (10+32, "Show RAW data", true, getBitOption(opts,midiLogRawData));
+		menu.addItem (10+64, "Show timestamp", true, getBitOption(opts,midiLogTimestamp));
+		menu.addItem (10+128, "RAW data in decimal", true, getBitOption(opts,midiLogRawDecimal));
+		menu.addItem (10+1024, "Show device name", true, getBitOption(opts,midiLogDevice));
+		menu.addItem (10+4096, "Show RAW data size", true, getBitOption(opts,midiLogDataSize));
 		menu.addSeparator();
-		menu.addColouredItem (266, "Monitor input", Colour(0xff21c630), true, getBitOption(opts,midiLogInput));
-		menu.addColouredItem (522, "Monitor output", Colour(0xffc62121), true, getBitOption(opts,midiLogOutput));
+		menu.addColouredItem (10+256, "Monitor input", Colour(0xff21c630), true, getBitOption(opts,midiLogInput));
+		menu.addColouredItem (10+512, "Monitor output", Colour(0xffc62121), true, getBitOption(opts,midiLogOutput));
 	}
-	else if (topLevelMenuIndex == 2)
+	else if (topLevelMenuIndex == 1) // Updated v5.6.31. From 2 to 1
 	{
 		menu.addItem (8192, "Create new");
 		menu.addSectionHeader ("Active filters");
@@ -119,11 +121,12 @@ PopupMenu CtrlrMIDIMon::getMenuForIndex(int topLevelMenuIndex, const String &men
 
 void CtrlrMIDIMon::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 {
-	if (topLevelMenuIndex == 1)
+	if (topLevelMenuIndex == 0) // Updated v5.6.31. From 1 to 0
 	{
 		int opts = (int)owner.getProperty (Ids::ctrlrLogOptions);
 
 		setBitOption (opts, menuItemID-10, !getBitOption(opts, menuItemID-10));
+
 		owner.setProperty (Ids::ctrlrLogOptions, opts);
 	}
 	if (topLevelMenuIndex == 0 && menuItemID==1)

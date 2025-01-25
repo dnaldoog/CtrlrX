@@ -89,7 +89,8 @@ CtrlrEditor::CtrlrEditor (CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
             {
                 setResizable(vpResizable, true);
                 
-                if (auto* constrainer = getConstrainer())
+                //if (auto* constrainer = getConstrainer()) // According to GoodWeather, auto* returns type warning in VS.
+                if (auto constrainer = getConstrainer()) // Updated v.5.6.31. Though auto* stresses better the intent that var is a pointer.
                 {
                     if (vpEnableFixedAspectRatio == true)
                     {
@@ -128,10 +129,21 @@ CtrlrEditor::CtrlrEditor (CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
             setSize(800, 600);
     }
     
-    setColourScheme(gui::colourSchemeFromProperty(owner.getProperty(Ids::ctrlrColourScheme))); // Sets the LookAndFeel_V4 colourScheme from the Ctrlr General Preferences, not from the loaded Panel
+    if (owner.getProperty(Ids::uiPanelLegacyMode) == "1") // Added v5.6.31. Force exported instances to get LnF v3 for legacy mode if panel has LnF in legacyMode
+    {
+        LookAndFeel::setDefaultLookAndFeel(new LookAndFeel_V3()); // Added v5.6.31
+        setLookAndFeel(new LookAndFeel_V3()); // Added v5.6.31
+    }
+    else
+    {
+        setColourScheme(gui::colourSchemeFromProperty(owner.getProperty(Ids::ctrlrColourScheme))); // Added v5.6.31. Sets the LookAndFeel_V4 colourScheme from the Ctrlr General Preferences, not from the loaded Panel
+    }
+    
+    lookAndFeelChanged(); // Added v5.6.31. Update LnF for all components
+
     getLookAndFeel().setUsingNativeAlertWindows((bool)owner.getProperty(Ids::ctrlrNativeAlerts)); // Sets OS Native alert windows or JUCE
     
-    activeCtrlrChanged(); // Refresh CtrlrEditor Template, wether panel mode or Editor with or WO menuBar from properties
+    activeCtrlrChanged(); // Refresh CtrlrEditor Template and menuBar LnF, wether panel mode or Editor with or WO menuBar from properties
     
     if (isRestricted() && owner.getActivePanel())
     {

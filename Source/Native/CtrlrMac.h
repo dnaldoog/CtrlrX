@@ -18,5 +18,8 @@ class CtrlrMac : public CtrlrNative
 
     private:
         CtrlrManager &owner;
+        std::unique_ptr<FileChooser> fc; // Added v5.6.31
+        std::unique_ptr<FileChooser> fileChooser; // Added v5.6.31
+        std::unique_ptr<FileChooser> chosenFolder; // Added v5.6.31
 };
 #endif

@@ -27,19 +27,19 @@ CtrlrLuaMethodEditor::CtrlrLuaMethodEditor (CtrlrPanel &_owner)
 	addAndMakeVisible (resizer			= new StretchableLayoutResizerBar (&layoutManager, 1, true));
 	addAndMakeVisible (methodTree		= new CtrlrValueTreeEditorTree ("LUA METHOD TREE", owner));
     addAndMakeVisible (methodEditArea	= new CtrlrLuaMethodEditArea(*this));
-
+    
 	methodTree->setRootItem (new CtrlrValueTreeEditorItem(*this, getMethodManager().getManagerTree(), Ids::luaMethodName));
+    methodTree->setMultiSelectEnabled (true);
+    
 	getMethodManager().setMethodEditor (this);
-	methodTree->setMultiSelectEnabled (true);
-
+       
 	layoutManager.setItemLayout (0, -0.001, -1.0, -0.29);
  	layoutManager.setItemLayout (1, 8, 8, 8);
  	layoutManager.setItemLayout (2, -0.001, -1.0, -0.69);
 
-	addKeyListener (this);
-	getMethodManager().setMethodEditor (this);
+    addKeyListener (this);
 	componentTree.addListener (this);
-    setSize (700, 600);
+    setSize (900, 600); // Update v5.6.31. Note : follows container size 800x500
 }
 
 CtrlrLuaMethodEditor::~CtrlrLuaMethodEditor()
@@ -69,7 +69,10 @@ TabbedComponent *CtrlrLuaMethodEditor::getTabs()
 
 void CtrlrLuaMethodEditor::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
 {
-	if (property == Ids::luaMethodEditorFont || property == Ids::luaMethodEditorBgColour)
+	if (property == Ids::luaMethodEditorFont
+        || property == Ids::luaMethodEditorBgColour
+        || property == Ids::luaMethodEditorLineNumbersBgColour
+        || property == Ids::luaMethodEditorLineNumbersColour)
 	{
 		for (int i=0; i<methodEditArea->getTabs()->getNumTabs(); i++)
 		{
@@ -77,6 +80,8 @@ void CtrlrLuaMethodEditor::valueTreePropertyChanged (ValueTree &treeWhosePropert
 			if (ed != nullptr)
 			{
 				ed->setFontAndColour (owner.getCtrlrManagerOwner().getFontManager().getFontFromString (componentTree.getProperty(Ids::luaMethodEditorFont)), VAR2COLOUR(componentTree.getProperty(Ids::luaMethodEditorBgColour)));
+                
+                ed->setFontAndColour (owner.getCtrlrManagerOwner().getFontManager().getFontFromString (componentTree.getProperty(Ids::luaMethodEditorLineNumbersColour)), VAR2COLOUR(componentTree.getProperty(Ids::luaMethodEditorLineNumbersBgColour))); // Added v5.6.31.
 			}
 		}
 	}
@@ -702,11 +707,20 @@ const String CtrlrLuaMethodEditor::getUniqueName (const ValueTree &item) const
 const AttributedString CtrlrLuaMethodEditor::getDisplayString(const ValueTree &item)	const
 {
 	AttributedString str;
-	Font fNormal = owner.getOwner().getFontManager().getDefaultNormalFont();
-	Font fSmall = owner.getOwner().getFontManager().getDefaultSmallFont();
-	if (item.getType () == Ids::luaMethod)
+	
+    // v5.6.30
+    //Font fNormal = owner.getOwner().getFontManager().getDefaultNormalFont();
+	//Font fSmall = owner.getOwner().getFontManager().getDefaultSmallFont();
+
+    // Back to v5.3.198 & 5.3.201
+    Font fNormal = Font(12.0f, Font::plain); // Added v5.6.31
+    Font fMedium = Font(14.0f, Font::plain); // Added v5.6.31
+    Font fSmall = Font(10.0f, Font::plain); // Added v5.6.31
+    Font fSmallItalic = Font(10.0f, Font::italic);
+    
+    if (item.getType () == Ids::luaMethod)
 	{
-		Colour text;
+        Colour text;
 
 		if ((bool)item.getProperty(Ids::luaMethodValid) == false)
 			text = Colours::red;
@@ -717,7 +731,8 @@ const AttributedString CtrlrLuaMethodEditor::getDisplayString(const ValueTree &i
 
 		if ((int)item.getProperty(Ids::luaMethodSource) == CtrlrLuaMethod::codeInFile)
 		{
-			str.append (File::descriptionOfSizeInBytes (owner.getLuaMethodSourceFile(&item).getSize()), fSmall, text.brighter(0.2f));
+			// str.append (File::descriptionOfSizeInBytes (owner.getLuaMethodSourceFile(&item).getSize()), fSmall, text.brighter(0.2f)); // Removed v5.6.31
+            str.append(File::descriptionOfSizeInBytes(owner.getLuaMethodSourceFile(&item).getSize()), fSmallItalic, text.brighter(0.2f)); // Added v5.6.31
 		}
 		else
 		{
@@ -729,8 +744,9 @@ const AttributedString CtrlrLuaMethodEditor::getDisplayString(const ValueTree &i
 
 	if (item.getType() == Ids::luaMethodGroup)
 	{
-		str.append (item.getProperty(Ids::name), fNormal, Colours::black);
-		str.append (" ["+String(item.getNumChildren())+"]", fSmall, Colours::darkgrey);
+        // str.append(item.getProperty(Ids::name), fNormal, Colours::black); //Removed v5.6.31
+        str.append(item.getProperty(Ids::name), fMedium, Colours::black); // Added v5.6.31
+        str.append (" ["+String(item.getNumChildren())+"]", fSmall, Colours::darkgrey); // Added v5.6.31
 
 		str.setJustification (Justification::left);
 	}
@@ -1060,7 +1076,8 @@ PopupMenu CtrlrLuaMethodEditor::getMenuForIndex(int topLevelMenuIndex, const Str
 
 		menu.addItem (5, "Clear Output");
 		menu.addSeparator();
-		menu.addItem (6, "Settings");
+        // menu.addItem (6, "Settings"); // Removed v5.6.31
+		menu.addItem (6, "Preferences"); // Added v5.6.31
 	}
 	return (menu);
 }
@@ -1069,7 +1086,8 @@ void CtrlrLuaMethodEditor::menuItemSelected(int menuItemID, int topLevelMenuInde
 {
 	if (menuItemID == 1 && topLevelMenuIndex == 0)
 	{
-		if (isCurrentlyModal())
+		// close handle
+        if (isCurrentlyModal())
 			exitModalState(-1);
 
 		if (canCloseWindow())
@@ -1118,11 +1136,30 @@ void CtrlrLuaMethodEditor::menuItemSelected(int menuItemID, int topLevelMenuInde
 	else if (menuItemID == 6 && topLevelMenuIndex == 1)
 	{
 		CtrlrLuaMethodCodeEditorSettings s(*this);
-		CtrlrDialogWindow::showModalDialog ("Code editor settings", &s, false, this);
+		CtrlrDialogWindow::showModalDialog ("Code editor preferences", &s, false, this); // Updated v5.6.31. settings to preferences
 
 		componentTree.setProperty (Ids::luaMethodEditorFont, owner.getCtrlrManagerOwner().getFontManager().getStringFromFont (s.getFont()), nullptr);
-		componentTree.setProperty (Ids::luaMethodEditorBgColour, COLOUR2STR (s.getColour()), nullptr);
-	}
+		componentTree.setProperty (Ids::luaMethodEditorBgColour, COLOUR2STR (s.getBgColour()), nullptr); // Added v5.6.31
+        componentTree.setProperty (Ids::luaMethodEditorLineNumbersBgColour, COLOUR2STR(s.getLineNumbersBgColour()), nullptr); // Added v5.6.31
+        componentTree.setProperty (Ids::luaMethodEditorLineNumbersColour, COLOUR2STR(s.getLineNumbersColour()), nullptr); // Added v5.6.31
+        
+        // Added v5.6.31
+        for (int i = 0; i < getTabs()->getNumTabs(); i++)
+        {
+            CtrlrLuaMethodCodeEditor* ed = dynamic_cast<CtrlrLuaMethodCodeEditor*> (getTabs()->getTabContentComponent(i));
+            
+            // Updated v5.6.31
+            if (ed)
+            {
+                ed->setFontAndColour(owner.getCtrlrManagerOwner().getFontManager().getFontFromString(componentTree.getProperty(Ids::luaMethodEditorFont)), VAR2COLOUR(componentTree.getProperty(Ids::luaMethodEditorBgColour)));
+                
+                ed->getCodeComponent()->setColour(CodeEditorComponent::lineNumberTextId, VAR2COLOUR(componentTree.getProperty(Ids::luaMethodEditorLineNumbersColour))); // Added v5.6.31
+                
+                ed->getCodeComponent()->setColour(CodeEditorComponent::lineNumberBackgroundId,VAR2COLOUR(componentTree.getProperty(Ids::luaMethodEditorLineNumbersBgColour))); // Added v5.6.31
+
+            }
+        }
+    }
 	else if (menuItemID == 7 && topLevelMenuIndex == 1)
 	{
 		methodEditArea->showDebuggerTab();

@@ -42,6 +42,8 @@ const Result CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const 
 	MemoryBlock panelResourcesData;
 	String error;
 
+    auto type = juce::SystemStats::getOperatingSystemType ();
+
 	FileChooser fc(CTRLR_NEW_INSTANCE_DIALOG_TITLE,
 					me.getParentDirectory().getChildFile(File::createLegalFileName(panelToWrite->getProperty(Ids::name))).withFileExtension(me.getFileExtension()),
 					me.getFileExtension(),

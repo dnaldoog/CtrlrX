@@ -13,6 +13,8 @@ class CtrlrEditor  : public AudioProcessorEditor,
 					 public MenuBarModel,
 					 public Slider::Listener,
 					 public LookAndFeel_V4
+//,
+//                     public LookAndFeel_V3 // Added v5.6.31
 {
 	public:
 		CtrlrEditor (CtrlrProcessor *ownerFilter, CtrlrManager &_owner);

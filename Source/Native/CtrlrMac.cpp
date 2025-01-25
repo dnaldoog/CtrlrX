@@ -8,6 +8,9 @@ static const int zero=0;
 #include "CtrlrMacros.h"
 #include "CtrlrLog.h"
 
+#include <random>
+#include <fstream>
+
 
 CtrlrMac::CtrlrMac(CtrlrManager &_owner) : owner(_owner)
 {
@@ -17,91 +20,157 @@ CtrlrMac::~CtrlrMac()
 {
 }
 
-const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel*  panelToWrite, const bool isRestricted, const bool signPanel)
-{
-	if (panelToWrite == nullptr)
-	{
-		return (Result::fail("MAC native, panel pointer is invalid"));
-	}
-
-	File	me = File::getSpecialLocation(File::currentApplicationFile);
-	File	newMe;
-	MemoryBlock panelExportData,panelResourcesData;
-	String error;
-
-	FileChooser fc(CTRLR_NEW_INSTANCE_DIALOG_TITLE,
-		me.getParentDirectory().getChildFile(File::createLegalFileName(panelToWrite->getProperty(Ids::name))).withFileExtension(me.getFileExtension()),
-		me.getFileExtension(),
-		panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs));
-
-	if (fc.browseForDirectory())
-	{
-		newMe = fc.getResult().getChildFile (File::createLegalFileName (panelToWrite->getProperty(Ids::name).toString()+me.getFileExtension()));
-		if (!me.copyDirectoryTo (newMe))
-		{
-			return (Result::fail("MAC native, copyDirectoryTo from \""+me.getFullPathName()+"\" to \""+newMe.getFullPathName()+"\" failed"));
-		}
-	}
-	else
-	{
-		return (Result::fail("MAC native, browse for directory dialog failed"));
-	}
-
+const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bool isRestricted, const bool signPanel) {
+    if (panelToWrite == nullptr) {
+        return (Result::fail("MAC native, panel pointer is invalid"));
+    }
+    
+    File me = File::getSpecialLocation(File::currentApplicationFile);
+    File newMe;
+    MemoryBlock panelExportData, panelResourcesData;
+    String error;
+    
+    // Define FileChooser and source file name to clone and mod as output file
+    fc = std::make_unique<FileChooser> (CTRLR_NEW_INSTANCE_DIALOG_TITLE,
+                                        me.getParentDirectory().getChildFile(File::createLegalFileName(panelToWrite->getProperty(Ids::name))).withFileExtension(me.getFileExtension()),
+                                        me.getFileExtension(),
+                                        panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs));
+    
+    // Launch FileChooser to export file and define the new output file name and extension
+    if (fc->browseForDirectory()) {
+        newMe = fc->getResult().getChildFile(File::createLegalFileName(panelToWrite->getProperty(Ids::name).toString() + me.getFileExtension()));
+        if (!me.copyDirectoryTo(newMe)) {
+            return (Result::fail("MAC native, copyDirectoryTo from \"" + me.getFullPathName() + "\" to \"" + newMe.getFullPathName() + "\" failed"));
+        }
+    } else {
+        return (Result::fail("MAC native, browse for directory dialog failed"));
+    }
+    
+    
     Result res = setBundleInfo(panelToWrite, newMe);
-	if (!res.wasOk())
-	{
-		return (res);
-	}
-
-    res = setBundleInfoCarbon(panelToWrite, newMe);
-    if (!res.wasOk())
-    {
+    if (!res.wasOk()) {
         return (res);
     }
-
-	if ( (error = CtrlrPanel::exportPanel (panelToWrite, File(), newMe, &panelExportData, &panelResourcesData, isRestricted)) == "")
-	{
-		File panelFile		= newMe.getChildFile("Contents/Resources/"+String(CTRLR_MAC_PANEL_FILE));
-		File resourcesFile	= newMe.getChildFile("Contents/Resources/"+String(CTRLR_MAC_RESOURCES_FILE));
-
-		if (panelFile.create() && panelFile.hasWriteAccess())
-		{
-			if (!panelFile.replaceWithData(panelExportData.getData(), panelExportData.getSize()))
-			{
-				return (Result::fail("MAC native, failed to write panel file at: " + panelFile.getFullPathName()));
-			}
-		}
-
-		if (resourcesFile.create() && resourcesFile.hasWriteAccess())
-		{
-			if (!resourcesFile.replaceWithData(panelResourcesData.getData(), panelResourcesData.getSize()))
-			{
-				return (Result::fail("MAC native, failed to write resources file at: " + resourcesFile.getFullPathName()));
-			}
-		}
-	}
-
-	return (Result::ok());
+    
+    res = setBundleInfoCarbon(panelToWrite, newMe);
+    if (!res.wasOk()) {
+        return (res);
+    }
+    
+    if ((error = CtrlrPanel::exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData, isRestricted)) == "") {
+        File panelFile = newMe.getChildFile("Contents/Resources/" + String(CTRLR_MAC_PANEL_FILE));
+        File resourcesFile = newMe.getChildFile("Contents/Resources/" + String(CTRLR_MAC_RESOURCES_FILE));
+        File fileEncrypted = newMe.getChildFile("Contents/Resources/"+String(CTRLR_MAC_PANEL_FILE)+String("BF")); // Added v5.6.31
+        
+        if (panelFile.create() && panelFile.hasWriteAccess()){
+            if (!panelFile.replaceWithData(panelExportData.getData(), panelExportData.getSize()))
+            {
+                return (Result::fail("MAC native, failed to write panel file at: " + panelFile.getFullPathName()));
+            }
+        }
+        
+        if (resourcesFile.create() && resourcesFile.hasWriteAccess())
+        {
+            if (!resourcesFile.replaceWithData(panelResourcesData.getData(), panelResourcesData.getSize()))
+            {
+                return (Result::fail("MAC native, failed to write resources file at: " + resourcesFile.getFullPathName()));
+            }
+        }
+        
+        // Encrypt the Gzipped panel file as a new Blowfish encrypyted derived file. Added v5.6.31
+        if (panelFile.existsAsFile()) {
+            // Read file contents into a MemoryBlock
+            MemoryBlock dataToEncrypt;
+            if (!panelFile.loadFileAsData(dataToEncrypt)) {
+                // Handle error: Failed to read source file
+                return Result::fail("Error: Failed to read source file");
+            }
+            
+            // Define the BlowFish encryption key as string
+            String keyString = "yourkey"; // Replace with your actual key (security!) Added v5.6.31
+            
+            // Key is provided, proceed with encryption
+            BlowFish blowfish(keyString.toUTF8(), keyString.getNumBytesAsUTF8());
+            
+            // Encrypt the data in-place (modifies the original file)
+            blowfish.encrypt(dataToEncrypt);
+            
+            // Create the encrypted file
+            fileEncrypted.create();
+            if (!fileEncrypted.existsAsFile()) {
+                // Handle error: Failed to create encrypted file
+                return Result::fail("Error: Failed to create encrypted file");
+            }
+            
+            // Open encrypted file for writing
+            FileOutputStream fos(fileEncrypted);
+            if (!fos.openedOk()) {
+                // Handle error: Failed to open encrypted file for writing
+                return Result::fail("Error: Failed to open encrypted file");
+            }
+            
+            // Write encrypted data to the file
+            fos.write(dataToEncrypt.getData(), dataToEncrypt.getSize());
+            fos.flush();
+            
+            // Encryption successful, delete the source file
+            if (!panelFile.deleteFile()) {
+                return Result::fail("Failed to delete source file " + panelFile.getFullPathName());
+            }
+        }
+    }
+    
+    return Result::ok();
 }
 
-const Result CtrlrMac::getDefaultPanel(MemoryBlock &dataToWrite)
-{
-#ifdef DEBUG_INSTANCE
-	File me("/Users/atom/devel/debug.bpanelz");
-#else
-	File me = File::getSpecialLocation(File::currentApplicationFile).getChildFile("Contents/Resources/"+String(CTRLR_MAC_PANEL_FILE));
-#endif
+const Result CtrlrMac::getDefaultPanel(MemoryBlock &dataToWrite) {
 
-	_DBG("MAC native, loading panel from file: \""+me.getFullPathName()+"\"");
-
-	if (me.existsAsFile())
-	{
-		me.loadFileAsData (dataToWrite);
-		return (Result::ok());
-	}
-
-	return (Result::fail("MAC native, \""+me.getFullPathName()+"\" does not exist"));
+    File me = File::getSpecialLocation(File::currentApplicationFile).getChildFile("Contents/Resources/"+String(CTRLR_MAC_PANEL_FILE));
+    File meBF = File::getSpecialLocation(File::currentApplicationFile).getChildFile("Contents/Resources/"+String(CTRLR_MAC_PANEL_FILE)+String("BF"));
+    
+    _DBG("MAC native, loading panel BF from file: \""+me.getFullPathName()+"\"");
+    
+    // Try loading the encrypted file first
+    if (meBF.existsAsFile()) {
+        // Decrypt file "meBF" (panelZBF)
+        MemoryBlock encryptedData;
+        if (!meBF.loadFileAsData(encryptedData)) {
+            return Result::fail("Error reading encrypted file \"" + meBF.getFullPathName() + "\"");
+        }
+        
+        // Define the BlowFish encryption key as string
+        String keyString = "yourkey"; // Replace with your actual key (security!). Added v5.6.31
+        
+        // Check if a blowfish key is provided
+        if (keyString.isEmpty()) {
+            return Result::fail("Blowfish key not provided for decryption");
+        } else {
+            // Key is provided, proceed with encryption
+            BlowFish blowfish(keyString.toUTF8(), keyString.getNumBytesAsUTF8());
+            blowfish.decrypt(encryptedData.getData(), encryptedData.getSize());
+        }
+        
+        // Decrypted data is already in 'data', append to output. Added v5.6.31
+        dataToWrite.append(encryptedData.getData(), encryptedData.getSize());
+        
+        return Result::ok();
+        
+    } else {
+        // Fallback to panelZ if panelZBF doesn't exist
+        _DBG("MAC native, \"" + meBF.getFullPathName() + "\" does not exist, falling back to \"" + me.getFullPathName() + "\"");
+        
+        // Read "me" (panelZ) file contents directly
+        if (me.existsAsFile()){
+            // File "me" (panelZ) loaded successfully, treat it as plain data
+            me.loadFileAsData (dataToWrite);
+            return (Result::ok());
+        } else {
+            // Error loading "me" (panelZ) file
+            return Result::fail("MAC native, failed to load panel from \"" + me.getFullPathName() + "\"");
+        }
+    }
 }
+
 
 const Result CtrlrMac::getDefaultResources(MemoryBlock& dataToWrite)
 {
@@ -121,7 +190,7 @@ const Result CtrlrMac::getDefaultResources(MemoryBlock& dataToWrite)
 	return (Result::fail("MAC native, \""+meRes.getFullPathName()+"\" does not exist"));
 }
 
-const Result CtrlrMac::setBundleInfo (CtrlrPanel *sourceInfo, const File &bundle)
+const Result CtrlrMac::setBundleInfo(CtrlrPanel *sourceInfo, const File &bundle)
 {
 	File plist = bundle.getChildFile("Contents/Info.plist");
 
@@ -134,6 +203,11 @@ const Result CtrlrMac::setBundleInfo (CtrlrPanel *sourceInfo, const File &bundle
 		}
 
 		XmlElement *dict = plistXml->getChildByName("dict");
+        XmlElement *cfInsertKeyManufacturerID = dict->createNewChildElement("key");
+        cfInsertKeyManufacturerID->addTextElement("ManufacturerID");
+        XmlElement *cfInsertStringManufacturerID = dict->createNewChildElement("string");
+        cfInsertStringManufacturerID->addTextElement("ManufacturerID");
+        
 		if (dict != nullptr)
 		{
 			forEachXmlChildElement (*dict, e1)
@@ -156,6 +230,15 @@ const Result CtrlrMac::setBundleInfo (CtrlrPanel *sourceInfo, const File &bundle
 						cfVersionElement->addTextElement(sourceInfo->getVersionString(false,false,"."));
 					}
 				}
+                if (e1->hasTagName("key") && (e1->getAllSubText() == "CFBundleSignature"))
+                {
+                    XmlElement *cfVersionElement = e1->getNextElementWithTagName("string");
+                    if (cfVersionElement != nullptr)
+                    {
+                        cfVersionElement->deleteAllTextElements();
+                        cfVersionElement->addTextElement(sourceInfo->getProperty(Ids::panelInstanceUID).toString());
+                    }
+                }
                 if (e1->hasTagName("key") && (e1->getAllSubText() == "NSHumanReadableCopyright"))
 				{
 					XmlElement *nsCopyright = e1->getNextElementWithTagName("string");
@@ -165,7 +248,15 @@ const Result CtrlrMac::setBundleInfo (CtrlrPanel *sourceInfo, const File &bundle
 						nsCopyright->addTextElement(sourceInfo->getProperty(Ids::panelAuthorName).toString());
 					}
                 }
-
+                if (e1->hasTagName("key") && (e1->getAllSubText() == "ManufacturerID"))
+                {
+                    XmlElement *cfManufacturerID = e1->getNextElementWithTagName("string");
+                    if (cfManufacturerID != nullptr)
+                    {
+                        cfManufacturerID->deleteAllTextElements();
+                        cfManufacturerID->addTextElement(sourceInfo->getProperty(Ids::panelInstanceManufacturerID).toString());
+                    }
+                }
                 if (e1->hasTagName ("key") && (e1->getAllSubText() == "AudioComponents"))
                 {
                     _DBG("INSTANCE: AudioComponents found");
@@ -247,15 +338,15 @@ const Result CtrlrMac::setBundleInfo (CtrlrPanel *sourceInfo, const File &bundle
 		}
 		else
 		{
-			return (Result::fail("MAC native, Infp.plist does not contain <dict /> element"));
+			return (Result::fail("MAC native, Info.plist does not contain <dict /> element"));
 		}
-
-		plist.replaceWithText(plistXml->createDocument("<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd\">"));
+		plist.replaceWithText(plistXml->createDocument("<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">"));
+        
 		return (Result::ok());
 	}
 	else
 	{
-		 return (Result::fail("MAC native, Infp.plist does not exist or is not writable: \""+plist.getFullPathName()+"\""));
+		 return (Result::fail("MAC native, Info.plist does not exist or is not writable: \""+plist.getFullPathName()+"\""));
     }
 
     return (Result::ok());
@@ -293,7 +384,7 @@ const Result CtrlrMac::setBundleInfoCarbon (CtrlrPanel *sourceInfo, const File &
 	if (zipFileEntry)
 	{
 		_DBG("\tgot it");
-		ScopedPointer <InputStream> is (zipFile.createStreamForEntry(*zipFileEntry));
+		ScopedPointer<InputStream> is (zipFile.createStreamForEntry(*zipFileEntry));
 
 		if (is)
 		{

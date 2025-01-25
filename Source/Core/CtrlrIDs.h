@@ -227,6 +227,7 @@ namespace Ids
     DECLARE_ID (panelCtrlrRevision);
     DECLARE_ID (panelVendor);
     DECLARE_ID (panelDevice);
+    
     DECLARE_ID (panelModulatorListColumns);
     DECLARE_ID (panelModulatorListCsvDelimiter);
     DECLARE_ID (panelModulatorListXmlRoot);
@@ -764,7 +765,7 @@ namespace Ids
     DECLARE_ID (resourceExportList);
     DECLARE_ID (resourcePanelSnapshot);
     DECLARE_ID (resourceFont);
-    
+        
     DECLARE_ID (ctrlrEditorBounds);
     DECLARE_ID (ctrlrMaxExportedVstParameters);
     DECLARE_ID (ctrlrShutdownDelay);
@@ -810,6 +811,7 @@ namespace Ids
     DECLARE_ID (ctrlrPrivateKey);
     DECLARE_ID (ctrlrFontSizeBaseValue);
     DECLARE_ID (ctrlrScrollbarThickness);
+    DECLARE_ID (ctrlrLegacyMode);
     DECLARE_ID (ctrlrColourScheme);
     DECLARE_ID (ctrlrLookAndFeel);
     DECLARE_ID (ctrlrTabBarDepth);
@@ -819,6 +821,8 @@ namespace Ids
     DECLARE_ID (luaMethodEditor);
     DECLARE_ID (luaMethodEditorFont);
     DECLARE_ID (luaMethodEditorBgColour);
+    DECLARE_ID (luaMethodEditorLineNumbersBgColour); // Added v5.6.31
+    DECLARE_ID (luaMethodEditorLineNumbersColour); // Added v5.6.31
     DECLARE_ID (luaMethodGroup);
     DECLARE_ID (luaMethodCode);
     DECLARE_ID (luaMethodSource);

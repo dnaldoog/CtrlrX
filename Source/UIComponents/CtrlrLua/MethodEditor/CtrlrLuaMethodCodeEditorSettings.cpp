@@ -40,9 +40,16 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings (CtrlrLuaMeth
       fontUnderline (0),
       fontItalic (0),
       fontSize (0),
-      bgColour (0),
+      bgColour (0), // Added v5.6.31
+      lineNumbersBgColour(0), // Added v5.6.31
+      lineNumbersColour(0), // Added v5.6.31
       fontTest (0)
 {
+    addAndMakeVisible(label0 = new Label("new label", TRANS("Font:"))); // Added v.5.6.31
+    label0->setFont(Font(14.00f)); // Added v.5.6.31
+    label0->setJustificationType(Justification::centredLeft); // Added v.5.6.31
+    label0->setEditable(false, false, false); // Added v.5.6.31
+    
     addAndMakeVisible (fontTypeface = new ComboBox (""));
     fontTypeface->setEditableText (false);
     fontTypeface->setJustificationType (Justification::centredLeft);
@@ -67,26 +74,53 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings (CtrlrLuaMeth
     fontSize->setSliderStyle (Slider::IncDecButtons);
     fontSize->setTextBoxStyle (Slider::TextBoxLeft, false, 32, 24);
     fontSize->addListener (this);
+    
+    addAndMakeVisible(label1 = new Label("new label", TRANS("Editor background:"))); // Added v.5.6.31
+    label1->setFont(Font(14.00f)); // Added v.5.6.31
+    label1->setJustificationType(Justification::centredLeft); // Added v.5.6.31
+    label1->setEditable(false, false, false); // Added v.5.6.31
 
     addAndMakeVisible (bgColour = new CtrlrColourEditorComponent (this));
+
+    addAndMakeVisible(label2 = new Label("new label", TRANS("Line numbers background:"))); // Added v.5.6.31
+    label2->setFont(Font(14.00f)); // Added v.5.6.31
+    label2->setJustificationType(Justification::centredLeft); // Added v.5.6.31
+    label2->setEditable(false, false, false); // Added v.5.6.31
+
+    addAndMakeVisible(lineNumbersBgColour = new CtrlrColourEditorComponent(this)); // Added v.5.6.31
+ 
+    addAndMakeVisible(label3 = new Label("new label", TRANS("Line numbers:"))); // Added v.5.6.31
+    label3->setFont(Font(14.00f)); // Added v.5.6.31
+    label3->setJustificationType(Justification::centredLeft); // Added v.5.6.31
+    label3->setEditable(false, false, false); // Added v.5.6.31
+    
+    addAndMakeVisible(lineNumbersColour = new CtrlrColourEditorComponent(this)); // Added v.5.6.31
 
     addAndMakeVisible (fontTest = new CodeEditorComponent (codeDocument, &luaTokeniser));
 
 
     //[UserPreSize]
-	codeFont = owner.getOwner().getCtrlrManagerOwner().getFontManager().getFontFromString(owner.getComponentTree().getProperty(Ids::luaMethodEditorFont, owner.getOwner().getCtrlrManagerOwner().getFontManager().getStringFromFont (Font(owner.getOwner().getCtrlrManagerOwner().getFontManager().getDefaultMonoFontName(), 14.0f, Font::plain))));
-	bgColour->setColour (VAR2COLOUR(owner.getComponentTree().getProperty(Ids::luaMethodEditorBgColour, Colours::white.toString())));
+    codeFont = owner.getOwner().getCtrlrManagerOwner().getFontManager().getFontFromString(owner.getComponentTree().getProperty(Ids::luaMethodEditorFont, owner.getOwner().getCtrlrManagerOwner().getFontManager().getStringFromFont (Font(owner.getOwner().getCtrlrManagerOwner().getFontManager().getDefaultMonoFontName(), 14.0f, Font::plain))));
+    label1->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
+    label1->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
+    bgColour->setColour(VAR2COLOUR(owner.getComponentTree().getProperty(Ids::luaMethodEditorBgColour, Colours::white.toString())));
+    label2->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
+    label2->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
+    lineNumbersBgColour->setColour(VAR2COLOUR(owner.getComponentTree().getProperty(Ids::luaMethodEditorLineNumbersBgColour, Colour(0xffc5ddf1).toString())));
+    label3->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
+    label3->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
+    lineNumbersColour->setColour(VAR2COLOUR(owner.getComponentTree().getProperty(Ids::luaMethodEditorLineNumbersColour, Colours::black.toString())));
 
-	fontSize->setValue (codeFont.getHeight(), dontSendNotification);
-	fontUnderline->setToggleState (codeFont.isUnderlined(), dontSendNotification);
-	fontBold->setToggleState (codeFont.isBold(), dontSendNotification);
-	fontItalic->setToggleState (codeFont.isItalic(), dontSendNotification);
-	owner.getOwner().getCtrlrManagerOwner().getFontManager().fillCombo (*fontTypeface);
-	fontTypeface->setText (codeFont.getTypefaceName(), sendNotification);
-	codeDocument.replaceAllContent ("-- This is a comment\nfunction myFunction(argument)\n\tcall(\"string\")\nend");
+    fontSize->setValue (codeFont.getHeight(), dontSendNotification);
+    fontUnderline->setToggleState (codeFont.isUnderlined(), dontSendNotification);
+    fontBold->setToggleState (codeFont.isBold(), dontSendNotification);
+    fontItalic->setToggleState (codeFont.isItalic(), dontSendNotification);
+    owner.getOwner().getCtrlrManagerOwner().getFontManager().fillCombo (*fontTypeface);
+    fontTypeface->setText (codeFont.getTypefaceName(), sendNotification);
+    codeDocument.replaceAllContent ("-- This is a comment\nfunction myFunction(argument)\n\tcall(\"string\")\nend");
     //[/UserPreSize]
 
-    setSize (320, 200);
+    setSize (334, 360);
 
 
     //[Constructor] You can add your own custom stuff here..
@@ -98,12 +132,18 @@ CtrlrLuaMethodCodeEditorSettings::~CtrlrLuaMethodCodeEditorSettings()
     //[Destructor_pre]. You can add your own custom destruction code here..
     //[/Destructor_pre]
 
+    deleteAndZero (label0);
     deleteAndZero (fontTypeface);
     deleteAndZero (fontBold);
     deleteAndZero (fontUnderline);
     deleteAndZero (fontItalic);
     deleteAndZero (fontSize);
+    deleteAndZero (label1);
     deleteAndZero (bgColour);
+    deleteAndZero (label2);
+    deleteAndZero (lineNumbersBgColour);
+    deleteAndZero (label3);
+    deleteAndZero (lineNumbersColour);
     deleteAndZero (fontTest);
 
 
@@ -123,14 +163,25 @@ void CtrlrLuaMethodCodeEditorSettings::paint (Graphics& g)
 
 void CtrlrLuaMethodCodeEditorSettings::resized()
 {
-    fontTypeface->setBounds (8, 8, 304, 24);
-    fontBold->setBounds (8, 40, 56, 24);
-    fontUnderline->setBounds (136, 40, 88, 24);
-    fontItalic->setBounds (72, 40, 64, 24);
-    fontSize->setBounds (232, 40, 78, 24);
-    bgColour->setBounds (8, 72, 304, 24);
-    fontTest->setBounds (8, 104, 304, 88);
+    marginLeft = 12;
+    marginTop = 12;
+    sampleWidth = 310;
+    sampleHeight = 78;
+
+    fontTest->setBounds(marginLeft, marginTop, sampleWidth, sampleHeight);
+    label0->setBounds(marginLeft - 4, marginTop+ sampleHeight +8, sampleWidth, 24);
+    fontTypeface->setBounds(marginLeft, marginTop + sampleHeight + 24 + 8, sampleWidth, 24);
+    fontBold->setBounds(marginLeft, marginTop + sampleHeight + 24 + 40, 56, 24);
+    fontUnderline->setBounds(marginLeft + 128, marginTop + sampleHeight + 24 + 40, 88, 24);
+    fontItalic->setBounds(marginLeft + 64, marginTop + sampleHeight + 24 + 40, 64, 24);
+    fontSize->setBounds(marginLeft + 224, marginTop + sampleHeight + 24 + 40, 78, 24);
     //[UserResized] Add your own custom resize handling here..
+    label1->setBounds(marginLeft - 4, marginTop + sampleHeight + 24 + 72, sampleWidth, 24);
+    bgColour->setBounds(marginLeft, marginTop + sampleHeight + 24 + 72 + 24, sampleWidth, 24);
+    label2->setBounds(marginLeft - 4, marginTop + sampleHeight + 24 + 72 + 24 + 32, sampleWidth, 24);
+    lineNumbersBgColour->setBounds(marginLeft, marginTop + sampleHeight + 24 + 72 + 2 * 24 + 32, sampleWidth, 24);
+    label3->setBounds(marginLeft - 4, marginTop + sampleHeight + 24 + 72 + 2 * 24 + 2 * 32, sampleWidth, 24);
+    lineNumbersColour->setBounds(marginLeft, marginTop + sampleHeight + 24 + 72 + 3 * 24 + 2 * 32, sampleWidth, 24);
     //[/UserResized]
 }
 
@@ -146,7 +197,7 @@ void CtrlrLuaMethodCodeEditorSettings::comboBoxChanged (ComboBox* comboBoxThatHa
     }
 
     //[UsercomboBoxChanged_Post]
-	changeListenerCallback(nullptr);
+    changeListenerCallback(nullptr);
     //[/UsercomboBoxChanged_Post]
 }
 
@@ -172,7 +223,7 @@ void CtrlrLuaMethodCodeEditorSettings::buttonClicked (Button* buttonThatWasClick
     }
 
     //[UserbuttonClicked_Post]
-	changeListenerCallback(nullptr);
+    changeListenerCallback(nullptr);
     //[/UserbuttonClicked_Post]
 }
 
@@ -188,7 +239,7 @@ void CtrlrLuaMethodCodeEditorSettings::sliderValueChanged (Slider* sliderThatWas
     }
 
     //[UsersliderValueChanged_Post]
-	changeListenerCallback(nullptr);
+    changeListenerCallback(nullptr);
     //[/UsersliderValueChanged_Post]
 }
 
@@ -197,30 +248,42 @@ void CtrlrLuaMethodCodeEditorSettings::sliderValueChanged (Slider* sliderThatWas
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 void CtrlrLuaMethodCodeEditorSettings::changeListenerCallback (ChangeBroadcaster* source)
 {
-	fontTest->setColour (CodeEditorComponent::backgroundColourId, bgColour->getColour());
-	fontTest->setFont (getFont());
-	repaint();
+    fontTest->setColour(CodeEditorComponent::backgroundColourId, bgColour->getColour());
+    fontTest->setColour(CodeEditorComponent::lineNumberBackgroundId, lineNumbersBgColour->getColour());
+    fontTest->setColour(CodeEditorComponent::lineNumberTextId, lineNumbersColour->getColour());
+    fontTest->setFont (getFont());
+    repaint();
 }
 
 const Font CtrlrLuaMethodCodeEditorSettings::getFont()
 {
-	Font font = owner.getOwner().getCtrlrManagerOwner().getFontManager().getFont (fontTypeface->getSelectedItemIndex());
+    Font font = owner.getOwner().getCtrlrManagerOwner().getFontManager().getFont (fontTypeface->getSelectedItemIndex());
 
-	if (fontTypeface)
-		font.setTypefaceName (fontTypeface->getText());
-	else
-		return (font);
+    if (fontTypeface)
+        font.setTypefaceName (fontTypeface->getText());
+    else
+        return (font);
 
-	font.setHeight (fontSize->getValue());
-	font.setBold (fontBold->getToggleState());
-	font.setItalic (fontItalic->getToggleState());
-	font.setUnderline (fontUnderline->getToggleState());
-	return (font);
+    font.setHeight (fontSize->getValue());
+    font.setBold (fontBold->getToggleState());
+    font.setItalic (fontItalic->getToggleState());
+    font.setUnderline (fontUnderline->getToggleState());
+    return (font);
 }
 
-const Colour CtrlrLuaMethodCodeEditorSettings::getColour()
+const Colour CtrlrLuaMethodCodeEditorSettings::getBgColour()
 {
-	return (bgColour->getColour());
+    return (bgColour->getColour());
+}
+
+const Colour CtrlrLuaMethodCodeEditorSettings::getLineNumbersBgColour()
+{
+    return (lineNumbersBgColour->getColour());
+}
+
+const Colour CtrlrLuaMethodCodeEditorSettings::getLineNumbersColour()
+{
+    return (lineNumbersColour->getColour());
 }
 //[/MiscUserCode]
 

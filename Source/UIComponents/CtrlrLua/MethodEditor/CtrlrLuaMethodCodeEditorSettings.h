@@ -57,7 +57,9 @@ public:
     //[UserMethods]     -- You can add your own custom methods in this section.
 	void changeListenerCallback (ChangeBroadcaster* source);
 	const Font getFont();
-	const Colour getColour();
+    const Colour getBgColour(); // Added v5.6.31
+    const Colour getLineNumbersBgColour(); // Added v5.6.31
+    const Colour getLineNumbersColour(); // Added v5.6.31
     //[/UserMethods]
 
     void paint (Graphics& g);
@@ -74,17 +76,26 @@ private:
 	CodeDocument codeDocument;
 	CtrlrLuaMethodEditor &owner;
 	Font codeFont;
+    int marginLeft; // Added v5.6.31
+    int marginTop;
+    int sampleWidth;
+    int sampleHeight;
     //[/UserVariables]
 
     //==============================================================================
+    Label* label0; // Added v5.6.31
     ComboBox* fontTypeface;
     ToggleButton* fontBold;
     ToggleButton* fontUnderline;
     ToggleButton* fontItalic;
     Slider* fontSize;
+    Label* label1; // Added v5.6.31
     CtrlrColourEditorComponent* bgColour;
+    Label* label2; // Added v5.6.31
+    CtrlrColourEditorComponent* lineNumbersBgColour; // Added v5.6.31
+    Label* label3; // Added v5.6.31
+    CtrlrColourEditorComponent* lineNumbersColour; // Added v5.6.31
     CodeEditorComponent* fontTest;
-
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrLuaMethodCodeEditorSettings);

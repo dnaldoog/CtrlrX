@@ -26,17 +26,23 @@ CtrlrLuaMethodCodeEditor::CtrlrLuaMethodCodeEditor(CtrlrLuaMethodEditor &_owner,
     
     editorComponent->setColour(CodeEditorComponent::backgroundColourId, Colours::white); // findColour(CodeEditorComponent::backgroundColourId));
     editorComponent->setColour(CodeEditorComponent::defaultTextColourId, Colours::black); // findColour(CodeEditorComponent::defaultTextColourId));
-	editorComponent->setColour(CodeEditorComponent::lineNumberBackgroundId, findColour(CodeEditorComponent::lineNumberBackgroundId));
-    editorComponent->setColour(CodeEditorComponent::lineNumberTextId, findColour(CodeEditorComponent::lineNumberTextId));
     editorComponent->setColour(CodeEditorComponent::highlightColourId, findColour(CodeEditorComponent::highlightColourId));
+    editorComponent->setColour(CodeEditorComponent::lineNumberTextId, findColour(CodeEditorComponent::lineNumberTextId));
+    editorComponent->setColour(CodeEditorComponent::lineNumberBackgroundId, findColour(CodeEditorComponent::lineNumberBackgroundId));
     
 	if (method != nullptr)
 		method->setCodeEditor (this);
 
 	if (owner.getComponentTree().hasProperty (Ids::luaMethodEditorFont))
 	{
-		setFontAndColour (owner.getOwner().getCtrlrManagerOwner().getFontManager().getFontFromString (owner.getComponentTree().getProperty (Ids::luaMethodEditorFont))
-                          ,VAR2COLOUR(owner.getComponentTree().getProperty (Ids::luaMethodEditorBgColour, Colours::white.toString())));// (String) findColour(CodeEditorComponent::backgroundColourId).toString())));
+		setFontAndColour (owner.getOwner().getCtrlrManagerOwner().getFontManager().getFontFromString (owner.getComponentTree().getProperty (Ids::luaMethodEditorFont)),
+        VAR2COLOUR(owner.getComponentTree().getProperty (Ids::luaMethodEditorBgColour, Colours::white.toString()))); // (String) findColour(CodeEditorComponent::backgroundColourId).toString())));
+
+        editorComponent->setColour(CodeEditorComponent::lineNumberTextId,
+        VAR2COLOUR(owner.getComponentTree().getProperty (Ids::luaMethodEditorLineNumbersColour, Colours::grey.toString()))); // Added v5.6.31
+        
+        editorComponent->setColour(CodeEditorComponent::lineNumberBackgroundId,
+        VAR2COLOUR(owner.getComponentTree().getProperty (Ids::luaMethodEditorLineNumbersBgColour, Colours::cyan.toString()))); // Added v5.6.31
 	}
 	else
 	{

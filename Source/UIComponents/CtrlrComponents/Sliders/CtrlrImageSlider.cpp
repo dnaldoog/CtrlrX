@@ -172,7 +172,7 @@ void CtrlrImageSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
     }
     else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin)
     {
-        ctrlrSlider->setRange ( getProperty (Ids::uiSliderMin), getProperty (Ids::uiSliderMax), getProperty (Ids::uiSliderInterval) );
+        ctrlrSlider->setRange ( (float) getProperty (Ids::uiSliderMin), (float) getProperty (Ids::uiSliderMax), (float) getProperty (Ids::uiSliderInterval) );  // v5.6.31 (float) instead of plain values. Plain values and (double) were giving false values when negative.
         owner.setProperty (Ids::modulatorMax, ctrlrSlider->getMaximum());
         owner.setProperty (Ids::modulatorMin, ctrlrSlider->getMinimum());
     }
