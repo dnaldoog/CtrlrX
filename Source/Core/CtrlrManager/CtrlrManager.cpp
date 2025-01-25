@@ -73,16 +73,28 @@ void CtrlrManager::setDefaults()
     setProperty (Ids::ctrlrOverwriteResources, true);
     setProperty (Ids::ctrlrAutoSave, true);
     setProperty (Ids::ctrlrAutoSaveInterval, 300);
-    setProperty (Ids::ctrlrLogOptions, 32);
+    // setProperty (Ids::ctrlrLogOptions, 32); // Updated v5.6.31. Value sets default properties as enabled
+    setProperty (Ids::ctrlrLogOptions, 6014); // 6014 shows everything by default with MIDI messages in Hex
     setProperty (Ids::ctrlrUseEditorWrapper, true);
     setProperty (Ids::ctrlrPropertiesAreURLs, true);
     setProperty (Ids::ctrlrNativeAlerts, false);
-    setProperty (Ids::ctrlrNativeFileDialogs, true);
-    setProperty (Ids::ctrlrPrivateKey, "");
+    
+    // Added v5.6.31. Prevents the native FileChooser hanging when calling for an instance export by requesting the fallback ugly embedded JUCE FileChooser
+    auto type = juce::SystemStats::getOperatingSystemType ();
+    if ( type == juce::SystemStats::OperatingSystemType::MacOSX_10_15 || type == juce::SystemStats::OperatingSystemType::MacOS_11) // For OSX 10.15 Catalina and macOS 11 BigSur
+    {
+        setProperty (Ids::ctrlrNativeFileDialogs, false);
+    }
+    else
+    {
+        setProperty (Ids::ctrlrNativeFileDialogs, true);
+    }
+    
+    // setProperty (Ids::ctrlrPrivateKey, ""); // Removed v5.6.31. Encryption key is implemented at core level in Native CtrlrMac & CtrlrWindows
     setProperty (Ids::ctrlrFontSizeBaseValue, 14.0f);
     setProperty (Ids::ctrlrScrollbarThickness, 16.0f); // Was 18.0f
-    setProperty (Ids::ctrlrLookAndFeel, "V4");
-    setProperty (Ids::ctrlrColourScheme, "Light");
+    // setProperty (Ids::ctrlrLookAndFeel, "V4"); // Removed v5.6.30
+    // setProperty (Ids::ctrlrColourScheme, "Light"); // Removed v5.6.30
     setProperty (Ids::ctrlrMenuBarHeight, 24);
     setProperty (Ids::ctrlrTabBarDepth, 24);
     setProperty (Ids::uiLuaConsoleInputRemoveAfterRun, true);

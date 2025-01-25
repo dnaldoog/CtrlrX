@@ -19,6 +19,29 @@ class CtrlrLuaMethod;
 
 class CtrlrPanelEditor;
 
+
+class CtrlrPanelNotifier : public Component,
+                           public LookAndFeel_V4
+                             // Added back v5.6.31 for file management bottom notification bar
+{
+    public:
+        CtrlrPanelNotifier(CtrlrPanelEditor &_owner);
+        ~CtrlrPanelNotifier() {}
+        void paint (Graphics &g);
+        void resized();
+        void setNotification (const String &notification, const CtrlrNotificationType ctrlrNotificationType);
+        Colour getBackgroundColourForNotification(const CtrlrNotificationType ctrlrNotificationType);
+        void mouseDown (const MouseEvent &e);
+
+        JUCE_LEAK_DETECTOR(CtrlrPanelNotifier)
+
+    private:
+        Colour background;
+        ScopedPointer <Label> text;
+        CtrlrPanelEditor &owner;
+};
+
+
 class CtrlrPanelEditor  :	public Component,
 							public ValueTree::Listener,
 							public CtrlrLuaObject,
@@ -63,6 +86,11 @@ class CtrlrPanelEditor  :	public Component,
 		void initSingleInstance();
 		void resized();
 		void visibilityChanged();
+    
+        void notify(const String &notification, CtrlrNotificationCallback *callback, const CtrlrNotificationType ctrlrNotificationType = NotifyInformation);  // Added back v5.6.31 for file management bottom notification bar
+        void notificationClicked(const MouseEvent e); // Added back v5.6.31 for file management bottom notification bar
+        void changeListenerCallback (ChangeBroadcaster *source); // Added back v5.6.31 for file management bottom notification bar
+    
 		void setAllCombosDisabled();
 		void setAllCombosEnabled();
 		void saveLayout();
@@ -77,6 +105,7 @@ class CtrlrPanelEditor  :	public Component,
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrPanelEditor)
 
 	private:
+        ScopedPointer <CtrlrPanelNotifier> ctrlrPanelNotifier;  // Added back v5.6.31 for file management bottom notification bar
 		ComponentAnimator componentAnimator;
 		CtrlrPanel &owner;
         double canvasHeight;

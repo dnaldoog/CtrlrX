@@ -53,7 +53,6 @@ public:
     void buttonClicked (Button* buttonThatWasClicked);
 
 
-
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 	CtrlrManager &owner;
@@ -62,22 +61,34 @@ private:
 
     //==============================================================================
     ScopedPointer<Label> ctrlrName;
-    ScopedPointer<DrawableButton> ctrlrLogo;
-    ScopedPointer<TextEditor> versionInfoLabel;
+    ScopedPointer<Label> ctrlrxVersionLabel;
+    ScopedPointer<Label> ctrlrxReleaseDateLabel;
     ScopedPointer<Label> label;
     ScopedPointer<Label> label2;
-	ScopedPointer<Label> labelDonate;
-	ScopedPointer<Label> labelAuthorEmail;
-	ScopedPointer<Label> label3;
+    ScopedPointer<Label> labelDonate;
+    ScopedPointer<Label> labelAuthorEmail;
+    ScopedPointer<Label> label3;
     ScopedPointer<Label> label4;
-    ScopedPointer<HyperlinkButton> instanceUrl;
-	ScopedPointer<HyperlinkButton> instanceAuthorDonateUrl;
-	ScopedPointer<HyperlinkButton> instanceAuthorEmail;
-	ScopedPointer<Label> instanceVersion;
+    ScopedPointer<Label> instanceVersion;
     ScopedPointer<Label> instanceAuthor;
     ScopedPointer<Label> instanceName;
+    
+    ScopedPointer<DrawableButton> ctrlrLogo;
+    ScopedPointer<DrawableButton> vst3AuJuceLogo;
+    ScopedPointer<DrawableButton> githubLogo;
+    ScopedPointer<DrawableButton> paypalLogo;
+        
+    ScopedPointer<HyperlinkButton> ctrlrxUrl;
+    ScopedPointer<HyperlinkButton> ctrlrxDonateUrl;
+    ScopedPointer<HyperlinkButton> instanceUrl;
+    ScopedPointer<HyperlinkButton> instanceAuthorDonateUrl;
+    ScopedPointer<HyperlinkButton> instanceAuthorEmail;
+    
+    ScopedPointer<TextEditor> versionInfoLabel;
+    ScopedPointer<TextEditor> creditsLabel;
+    ScopedPointer<TextEditor> descriptionLabel;
+    ScopedPointer<TextEditor> copyrightLabel;
     ScopedPointer<TextEditor> instanceDescription;
-
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrAbout)

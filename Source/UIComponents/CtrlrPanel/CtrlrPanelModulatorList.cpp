@@ -207,6 +207,7 @@ void CtrlrPanelModulatorList::paintRowBackground (Graphics& g, int rowNumber, in
 	if (rowIsSelected)
 	{
 		gui::drawSelectionRectangle (g, width, height);
+        g.fillAll(Colours::red);
 	}
 }
 
@@ -229,10 +230,20 @@ Component* CtrlrPanelModulatorList::refreshComponentForCell (int rowNumber, int 
 		label->setEditable (false, true, false);
 		label->setJustificationType (Justification::centred);
 		label->addMouseListener (this, false);
-		label->setColour (TextEditor::highlightColourId, findColour(TextEditor::highlightColourId));
+        
+        label->setColour (TextEditor::highlightColourId, findColour(TextEditor::highlightColourId));
+        label->setColour (TextEditor::textColourId, findColour(TextEditor::textColourId)); // Added v5.6.31
+        label->setColour (TextEditor::backgroundColourId, findColour(TextEditor::backgroundColourId)); // Added v5.6.31
+        label->setColour (TextEditor::highlightedTextColourId, findColour(TextEditor::highlightedTextColourId)); // Added v5.6.31
+        label->setColour (TextEditor::outlineColourId, findColour(TextEditor::outlineColourId)); // Added v5.6.31
+        label->setColour (TextEditor::focusedOutlineColourId, findColour(TextEditor::focusedOutlineColourId)); // Added v5.6.31
+        label->setColour (TextEditor::shadowColourId, findColour(TextEditor::shadowColourId)); // Added v5.6.31
 	}
 
-	label->setColour (Label::textColourId, isRowSelected ? Colours::white : Colours::black);
+	//label->setColour (Label::textColourId, isRowSelected ? Colours::white : Colours::black);
+    label->setColour (Label::textColourId, isRowSelected ? findColour(TextButton::textColourOnId) : findColour(Label::textColourId)); // Added v5.6.31
+    label->setColour (Label::backgroundColourId, isRowSelected ? findColour(TextButton::buttonOnColourId) : findColour(Label::backgroundColourId)); // Added v5.6.31
+    
 	label->getTextValue().referTo(Value());
 	label->setText (getValueStringForColumn (m, getColumnCtrlrId (columnId-1)), dontSendNotification);
 	label->getProperties().set ("rowNumber", rowNumber);
@@ -548,7 +559,8 @@ void CtrlrPanelModulatorList::menuItemSelected(int menuItemID, int topLevelMenuI
 {
 	if (menuItemID == 1)
 	{
-		owner.getWindowManager().toggle (CtrlrPanelWindowManager::ModulatorList, false);
+        // close handle
+        owner.getWindowManager().toggle (CtrlrPanelWindowManager::ModulatorList, false);
 	}
 	if (menuItemID == 2)
 	{

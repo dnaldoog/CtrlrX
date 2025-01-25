@@ -436,6 +436,7 @@ void CtrlrMidiMessage::restoreState (const ValueTree &savedState)
 	}
 
 	if (getProperty(Ids::midiMessageSysExFormula).toString().length() > 0 && (int)getProperty(Ids::midiMessageType) != SysEx)
+        
 	{
 		setProperty (Ids::midiMessageSysExFormula, "");
 	}
@@ -916,5 +917,6 @@ void CtrlrMidiMessage::wrapForLua(lua_State *L)
 			.def("getMidiMessageType", &CtrlrMidiMessage::getMidiMessageType)
 			.def("toString", &CtrlrMidiMessage::toString)
 			.def("getInitializationResult", &CtrlrMidiMessage::getInitializationResult)
+            .def("getProperty", (const var &(CtrlrMidiMessage::*)(const Identifier &) const) &CtrlrMidiMessage::getProperty) // Added v5.6.31
 	];
 }

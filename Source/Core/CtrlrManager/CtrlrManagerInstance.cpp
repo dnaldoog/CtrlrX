@@ -29,9 +29,92 @@ void CtrlrManager::setEmbeddedDefaults()
 	setProperty (Ids::ctrlrOverwriteResources, true);
 	setProperty (Ids::ctrlrAutoSave, true);
 	setProperty (Ids::ctrlrAutoSaveInterval, 300);
-	setProperty (Ids::ctrlrLogOptions, 32);
-	setProperty (Ids::ctrlrUseEditorWrapper, (bool)ctrlrPlayerInstanceTree.hasProperty(Ids::ctrlrUseEditorWrapper) ? (bool)ctrlrPlayerInstanceTree.getProperty(Ids::ctrlrUseEditorWrapper) : true);
-	setProperty (Ids::uiLuaConsoleInputRemoveAfterRun, true);
+    // setProperty (Ids::ctrlrLogOptions, 32); // Updated v5.6.31
+    setProperty (Ids::ctrlrLogOptions, 6014); // Added v5.6.31. 6014 shows everything by default with MIDI messages in Hex
+    setProperty (Ids::ctrlrScrollbarThickness, 16.0f); // Added v5.6.31
+    setProperty (Ids::ctrlrMenuBarHeight, 24); // Added v5.6.31
+    setProperty (Ids::ctrlrTabBarDepth, 24); // Added v5.6.31
+    setProperty (Ids::ctrlrUseEditorWrapper, (bool)ctrlrPlayerInstanceTree.hasProperty(Ids::ctrlrUseEditorWrapper) ? (bool)ctrlrPlayerInstanceTree.getProperty(Ids::ctrlrUseEditorWrapper) : true);
+    setProperty (Ids::uiLuaConsoleInputRemoveAfterRun, true);
+     
+    // Added v5.6.31
+    if (getInstanceMode() == InstanceSingle || getInstanceMode() == InstanceSingleRestriced) // Added v5.6.31. Force LnF V3 for Main & Child Windows if panel is Legacy
+    {
+        ValueTree ed = getInstanceTree().getChildWithName(Ids::uiPanelEditor);
+        
+        // Requires passing the lookAndFeel Version to the property ctrlrColourScheme from ctrlrLookAndFeel
+        if (ed.getProperty(Ids::uiPanelLegacyMode) == "1"
+            || ed.getProperty(Ids::uiPanelLookAndFeel) == "V3"
+            || ed.getProperty(Ids::uiPanelLookAndFeel) == "V2"
+            || ed.getProperty(Ids::uiPanelLookAndFeel) == "V1")
+        {
+            setProperty(Ids::ctrlrLegacyMode, "1");
+            setProperty(Ids::ctrlrLookAndFeel, "V3");
+        }
+        else
+        {
+            setProperty(Ids::ctrlrLegacyMode, "0");
+            setProperty(Ids::ctrlrLookAndFeel, "V4");
+            
+            // Requires passing the colourScheme to the property ctrlrColourScheme from uiPanelLookAndFeel
+            if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 Light")
+            {
+                setProperty(Ids::ctrlrColourScheme, "Light");
+            }
+            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 Grey")
+            {
+                setProperty(Ids::ctrlrColourScheme, "Grey");
+            }
+            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 Dark")
+            {
+                setProperty(Ids::ctrlrColourScheme, "Dark");
+            }
+            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 Midnight")
+            {
+                setProperty(Ids::ctrlrColourScheme, "Midnight");
+            }
+            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 JetBlack")
+            {
+                setProperty(Ids::ctrlrColourScheme, "JetBlack");
+            }
+            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 YamDX")
+            {
+                setProperty(Ids::ctrlrColourScheme, "YamDX");
+            }
+            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 AkAPC")
+            {
+                setProperty(Ids::ctrlrColourScheme, "AkAPC");
+            }
+            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 AkMPC")
+            {
+                setProperty(Ids::ctrlrColourScheme, "AkMPC");
+            }
+            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 LexiBlue")
+            {
+                setProperty(Ids::ctrlrColourScheme, "LexiBlue");
+            }
+            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 KurzGreen")
+            {
+                setProperty(Ids::ctrlrColourScheme, "KurzGreen");
+            }
+            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 KorGrey")
+            {
+                setProperty(Ids::ctrlrColourScheme, "KorGrey");
+            }
+            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 KorGold")
+            {
+                setProperty(Ids::ctrlrColourScheme, "KorGold");
+            }
+            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 ArturOrange")
+            {
+                setProperty(Ids::ctrlrColourScheme, "ArturOrange");
+            }
+            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 AiraGreen")
+            {
+                setProperty(Ids::ctrlrColourScheme, "AiraGreen");
+            }
+        }
+    }
 }
 
 Result CtrlrManager::initEmbeddedInstance()

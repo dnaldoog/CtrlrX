@@ -46,7 +46,8 @@ void CtrlrModulatorProcessor::handleAsyncUpdate()
 		owner.setProperty (Ids::modulatorValue, currentValue.value);
 	}
 
-	if (valueChangedCbk.get() && !owner.getRestoreState())
+	// if (valueChangedCbk.get() && !owner.getRestoreState()) //
+    if (valueChangedCbk.get() && !owner.getRestoreState() && currentValue.lastChangeSource != CtrlrModulatorValue::changedByProgram) // Added v5.6.31 to help avoid feedback loops between LUA and (delayed) UI commit 6e5a0b2 by midibox
 	{
 		CtrlrPanel &ownerPanel = owner.getOwnerPanel();
 		if (!ownerPanel.getRestoreState() && !ownerPanel.getBootstrapState() && valueChangedCbk->isValid())

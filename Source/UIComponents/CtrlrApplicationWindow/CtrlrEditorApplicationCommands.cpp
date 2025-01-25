@@ -47,7 +47,7 @@ void CtrlrEditor::getAllCommands (Array< CommandID > &commands)
 								doExportFileInstance,
 								doExportFileInstanceRestricted,
 								doExportGenerateUID,
-                                 doSearchForProperty,
+                                doSearchForProperty,
 								doShowMidiSettingsDialog,
 								optMidiInputFromHost,
 								optMidiInputFromHostCompare,

@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="hrcYoO" name="CtrlrX" reportAppUsage="1" projectType="audioplug"
-              version="5.6.30" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
+              version="5.6.31" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
               buildVST="1" buildVST3="1" buildAU="1" buildAUv3="0" buildRTAS="0"
               buildAAX="0" buildStandalone="1" enableIAA="0" pluginName="CtrlrX"
               pluginDesc="CtrlrX" pluginManufacturer="CtrlrX" pluginManufacturerCode="cTrX"
               pluginCode="cTrl" pluginChannelConfigs="" pluginIsSynth="1" pluginWantsMidiIn="1"
-              pluginProducesMidiOut="1" pluginIsMidiEffectPlugin="1" pluginEditorRequiresKeys="1"
+              pluginProducesMidiOut="1" pluginIsMidiEffectPlugin="0" pluginEditorRequiresKeys="1"
               pluginAUExportPrefix="CtrlrXAU" pluginRTASCategory="" aaxIdentifier="com.CtrlrX.CtrlrX"
               companyName="CtrlrX" pluginFormats="buildAU,buildStandalone,buildVST,buildVST3"
-              pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn,pluginProducesMidiOut,pluginIsMidiEffectPlugin,pluginEditorRequiresKeys"
+              pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn,pluginProducesMidiOut,pluginEditorRequiresKeys"
               jucerFormatVersion="1" pluginAUMainType="'aumu'" displaySplashScreen="1"
               pluginRTASDisableBypass="0" pluginRTASDisableMultiMono="0" pluginAAXDisableBypass="0"
               pluginAAXDisableMultiMono="0" pluginVST3Category="Tools" pluginAAXCategory="0">
@@ -619,6 +619,16 @@
           <FILE id="OOpHQ2" name="FONT_ZX81.ttf" compile="0" resource="1" file="Source/Resources/Fonts/FONT_ZX81.ttf"/>
         </GROUP>
         <GROUP id="{57CA4634-99B0-23FB-F19C-154181EAAE85}" name="Icons">
+          <FILE id="hvQjEJ" name="github_line.svg" compile="0" resource="1" file="Source/Resources/Icons/github_line.svg"/>
+          <FILE id="tsirkk" name="paypal_colour.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/paypal_colour.svg"/>
+          <FILE id="Vbxly0" name="paypal_bw.svg" compile="0" resource="1" file="Source/Resources/Icons/paypal_bw.svg"/>
+          <FILE id="WhfE0F" name="github_colour.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/github_colour.svg"/>
+          <FILE id="XgCGO3" name="github_bw.svg" compile="0" resource="1" file="Source/Resources/Icons/github_bw.svg"/>
+          <FILE id="KXvQkp" name="vst3_au_juce_mini_logo_bg_rnd.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/vst3_au_juce_mini_logo_bg_rnd.svg"/>
+          <FILE id="eqFQC1" name="ctrlrx_logo.svg" compile="0" resource="1" file="Source/Resources/Icons/ctrlrx_logo.svg"/>
           <FILE id="CzArw5" name="add.svg" compile="0" resource="1" file="Source/Resources/Icons/add.svg"/>
           <FILE id="aAwGwI" name="appbar.debug.restart.png" compile="0" resource="1"
                 file="Source/Resources/Icons/appbar.debug.restart.png"/>

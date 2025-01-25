@@ -16,7 +16,7 @@ CtrlrDocumentPanel::CtrlrDocumentPanel (CtrlrManager &_owner)
 	*/
 	// useFullscreenWhenOneDocument (true);
     setSize (600, 400);
-    setBackgroundColour((Colours::lightgrey).darker(0.2)); // Sets background colour behind main window by default on grey to please everyone :)
+    setBackgroundColour((Colours::lightgrey).darker(0.2f)); // Added v.6.30. Updated v5.6.31 for (0.2f). Sets background colour behind main window by default on grey to please everyone :)
 }
 
 CtrlrDocumentPanel::~CtrlrDocumentPanel()
@@ -47,17 +47,25 @@ bool CtrlrDocumentPanel::tryToCloseDocument (Component* component)
 
 void CtrlrDocumentPanel::activeDocumentChanged()
 {
-	CtrlrEditor *ed = dynamic_cast <CtrlrEditor*> (getParentComponent());
-	if (ed)
+    CtrlrEditor *ed = dynamic_cast <CtrlrEditor*> (getParentComponent());
+    if (ed)
     {
-		ed->activeCtrlrChanged();
+        ed->activeCtrlrChanged();
     }
     
     if (getCurrentTabbedComponent()) {
         
-        getCurrentTabbedComponent()->setTabBarDepth(owner.getProperty(Ids::ctrlrTabBarDepth)); // Tab height for horizontal bar
-        getCurrentTabbedComponent()->getTabbedButtonBar().setMinimumTabScaleFactor(1.0); // Min tab width ratio
-
+        if (owner.getInstanceMode() == InstanceSingleRestriced) // Added v5.6.31. Hides tabs on exported restricted instances
+        {
+            getCurrentTabbedComponent()->setTabBarDepth(0); // Tab height for horizontal bar
+            getCurrentTabbedComponent()->getTabbedButtonBar().setMinimumTabScaleFactor(0); // Min tab width ratio
+        }
+        else
+        {
+            getCurrentTabbedComponent()->setTabBarDepth(owner.getProperty(Ids::ctrlrTabBarDepth)); // Tab height for horizontal bar
+            getCurrentTabbedComponent()->getTabbedButtonBar().setMinimumTabScaleFactor(1.0); // Min tab width ratio
+        }
+        
         TabbedButtonBar &bar = getCurrentTabbedComponent()->getTabbedButtonBar();
         
         for (int i=0; i<bar.getNumTabs(); i++)
@@ -74,7 +82,7 @@ void CtrlrDocumentPanel::activeDocumentChanged()
                 button->setExtraComponent (closeTabButton, TabBarButton::afterText);
             }
         }
-
+        
     }
 }
 
@@ -111,7 +119,7 @@ void CtrlrDocumentPanel::setEditor (CtrlrEditor *_editorToSet)
 //{
 //    setBackgroundColour(Component::findColour(DocumentWindow::backgroundColourId));
 //    //setBackgroundColour((Colours::lightgrey).darker(0.2)); // Sets background colour behind main window by default on grey to please everyone :)
-//    
+//
 //    if (getCurrentTabbedComponent()) {
 //        getCurrentTabbedComponent()->setTabBarDepth(owner.getProperty(Ids::ctrlrTabBarDepth));
 //        getCurrentTabbedComponent()->getTabbedButtonBar().setTabBackgroundColour(getCurrentTabbedComponent()->getTabbedButtonBar().getCurrentTabIndex(), findColour(TextButton::buttonColourId)); // Tab colour background
@@ -194,8 +202,10 @@ void CtrlrDocumentPanelCloseButton::paintButton (Graphics& g, bool isMouseOverBu
     
     else if (isMouseOverButton)
     {
-        //g.setColour (Colour(findColour(TextButton::buttonOnColourId)).brighter(0.4));
-        g.setColour (Colour (0xdfe7e7e8));
+        //g.setColour (Colour(findColour(TextButton::buttonOnColourId)).brighter(0.4)); // v.5.2.198
+        //g.setColour (Colour (0xdfe7e7e8)); // Added v5.6.30
+        //g.setColour (Colours::red); // Added v5.6.31 by GoodWeather
+        g.setColour (findColour(TextButton::buttonOnColourId));; // Added v5.6.31
         
         g.fillRoundedRectangle((float) (proportionOfWidth (0.0500f)),
                                (float) (proportionOfHeight (0.0500f)),
@@ -203,10 +213,12 @@ void CtrlrDocumentPanelCloseButton::paintButton (Graphics& g, bool isMouseOverBu
                                (float) (proportionOfHeight (0.9000f)),
                                (float) (proportionOfWidth(0.1f)));
 
-        g.setColour (Colour (0xdf3f3e45));
+        //g.setColour (Colour (0xdf3f3e45)); // Added v5.6.30
+        g.setColour (Colours::white); // Added v5.6.31
         g.fillPath (internalPath3);
 
-        g.setColour (Colour (0xdf3f3e45));
+        //g.setColour (Colour (0xdf3f3e45)); // Added v5.6.30
+        g.setColour (Colours::white); // Added v5.6.31
         g.fillPath (internalPath4);
     }
     

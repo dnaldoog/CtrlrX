@@ -83,7 +83,7 @@ CtrlrComponent::CtrlrComponent(CtrlrModulator &_owner)
     setProperty (Ids::componentGroupped, false);
     
     setProperty (Ids::componentRadioGroupId, 0);
-    setProperty (Ids::componentRadioGroupNotifyMidi, true);
+    // setProperty (Ids::componentRadioGroupNotifyMidi, true); // Removed v5.6.31. Not assigned yet
 
     setProperty (Ids::componentVisibleName, owner.getProperty(Ids::name));
     setProperty (Ids::componentLabelVisible, true);

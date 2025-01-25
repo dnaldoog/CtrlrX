@@ -102,18 +102,20 @@ void CtrlrLogViewer::messageLogged (CtrlrLog::CtrlrLogMessage message)
 
 StringArray CtrlrLogViewer::getMenuBarNames()
 {
-	const char* const names[] = { "File", "View", nullptr };
+	// const char* const names[] = { "File", "View", nullptr }; // Updated v5.6.31
+    const char* const names[] = { "View", nullptr }; // Updated v5.6.31
 	return StringArray (names);
 }
 
 PopupMenu CtrlrLogViewer::getMenuForIndex(int topLevelMenuIndex, const String &menuName)
 {
 	PopupMenu menu;
-	if (topLevelMenuIndex == 0)
-	{
-		menu.addItem (1, "Close");
-	}
-	else if (topLevelMenuIndex == 1)
+//	if (topLevelMenuIndex == 0)
+//	{
+//		menu.addItem (1, "Close", false); // Updated v5.6.31
+//	}
+//	else
+    if (topLevelMenuIndex == 0)  // Updated v5.6.31. From 1 to 0
 	{
 		menu.addItem (2, "Clear window");
 	}
@@ -128,7 +130,8 @@ void CtrlrLogViewer::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 	}
 	if (menuItemID == 1)
 	{
-		owner.getWindowManager().toggle (CtrlrManagerWindowManager::LogViewer, false);
+		// close handle
+        owner.getWindowManager().toggle (CtrlrManagerWindowManager::LogViewer, false); // Doesn't work
 	}
 
 }

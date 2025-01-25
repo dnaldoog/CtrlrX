@@ -18,7 +18,9 @@ ValueTree CtrlrPanel::getCleanPanelTree()
 		exportTree.removeProperty (Ids::panelMidiOutputDevice, 0);
 		exportTree.removeProperty (Ids::panelMidiInputDevice, 0);
 		exportTree.removeProperty (Ids::panelMidiControllerDevice, 0);
+        exportTree.removeProperty (Ids::panelIsDirty, 0); // Added v5.6.31. Removes the panelIsDirty property to prevent crash on load.
 	}
+    
 
 	// Remove custom data
 	if (exportTree.getChildWithName(Ids::panelCustomData).isValid())
@@ -216,8 +218,8 @@ const File CtrlrPanel::savePanelAs(const CommandID saveOption)
 		setProperty (Ids::panelFilePath, fileToSave.getFullPathName());
 		setProperty (Ids::panelLastSaveDir, fileToSave.getParentDirectory().getFullPathName());
         
-        bool panelWasDirty = isPanelDirty();  // Added v5.6.30 (removes asterisk suffix from name in panel tab
-        setPanelDirty(false);
+        bool panelWasDirty = isPanelDirty();  // Added v5.6.30 (removes asterisk suffix from name in panel tab)
+        setPanelDirty(false); // Check for v5.6.31 if set to false vst instances crash on load
         
         if (panelWasDirty)
         {
@@ -417,14 +419,15 @@ const String CtrlrPanel::exportPanel(CtrlrPanel *panel, const File &lastBrowsedD
 
 		return ("");
 	}
+
 	else if (outputPanelData != nullptr && outputResourcesData != nullptr)
 	{
-		MemoryOutputStream compressedPanelData(*outputPanelData, false);
+        MemoryOutputStream compressedPanelData(*outputPanelData, false);
 		MemoryOutputStream compressedResourcesData(*outputResourcesData, false);
-
+        
 		{
 			GZIPCompressorOutputStream gzipOutputStream (&compressedPanelData);
-			exportTree.writeToStream(gzipOutputStream);
+			exportTree.writeToStream(gzipOutputStream); // exportTree
 			gzipOutputStream.flush();
 		}
 
@@ -433,8 +436,9 @@ const String CtrlrPanel::exportPanel(CtrlrPanel *panel, const File &lastBrowsedD
 			resources.writeToStream(gzipOutputStream);
 			gzipOutputStream.flush();
 		}
+                
+        return ("");
 
-		return ("");
 	}
 	else
 	{
@@ -1030,9 +1034,11 @@ bool CtrlrPanel::canClose(const bool closePanel)
 		}
 	}
 	// Check for panel modifications
-	if(closePanel && (hasChangedSinceSavePoint() || isPanelDirty()))
+    if(closePanel && (hasChangedSinceSavePoint() || isPanelDirty()))
 	{
-		int ret = AlertWindow::showYesNoCancelBox(AlertWindow::QuestionIcon, "Save panel (" + getName() + ")", "There are unsaved changes in this panel. Do you want to save them berfore closing ?", "Save", "Discard", "Cancel");
+        //int ret = AlertWindow::showYesNoCancelBox(AlertWindow::QuestionIcon, "Save panel (" + getName() + ")", "There are unsaved changes in this panel. Do you want to save them berfore closing ?", "Save", "Discard", "Cancel");
+        int ret = AlertWindow::showYesNoCancelBox(AlertWindow::QuestionIcon, "Save panel (" + getName() + ")", "There are unsaved changes in this panel.\nDo you want to save them before closing ?", "Save", "Discard", "Cancel"); // Added v5.6.31 by GoodWeather
+        
 		if (ret == 0)
 		{	// Cancel
 			result = false;

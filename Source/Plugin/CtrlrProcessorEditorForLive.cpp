@@ -10,10 +10,10 @@ CtrlrEditorWrapper::CtrlrEditorWrapper(CtrlrProcessorEditorForLive &_liveEditorO
 	: DocumentWindow("Ctrlr", Colours::lightgrey, 0, true), liveEditorOwner(_liveEditorOwner)
 {
 	setTitleBarHeight(1);
-
-	editor = new CtrlrEditor(ownerFilter, ctrlrManager);
-	setContentOwned (editor, true);
-	setAlwaysOnTop(true);
+    editor = new CtrlrEditor(ownerFilter, ctrlrManager);
+    addAndMakeVisible(editor); // Added v5.6.31. Force wrapper visibility
+    setContentOwned (editor, true);
+    setAlwaysOnTop(true);
 	centreWithSize (getWidth(),getHeight());
 }
 
@@ -32,6 +32,7 @@ CtrlrProcessorEditorForLive::CtrlrProcessorEditorForLive(CtrlrProcessor *_filter
 		wrapper(*this, filterOwner, owner)
 {
 	wrapper.setVisible (true);
+    addAndMakeVisible(wrapper); // Added v5.6.31. Force wrapper visibility
 	setSize (wrapper.getWidth(), 16);
 	startTimer (50);
 }

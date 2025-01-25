@@ -24,7 +24,7 @@ class CtrlrValueTreeEditorLookProvider : public AsyncUpdater
 		virtual var						getDragSourceDescription(Array <ValueTree> &selectedTreeItems)	{ return (""); }
 };
 
-class CtrlrValueTreeEditorTree : public TreeView
+class CtrlrValueTreeEditorTree : public TreeView, public LookAndFeel_V4 // Updated v5.6.31
 {
 	public:
 		CtrlrValueTreeEditorTree(const String &name, CtrlrPanel &_owner) : TreeView(name), owner(_owner) {}
@@ -34,7 +34,7 @@ class CtrlrValueTreeEditorTree : public TreeView
 		CtrlrPanel &owner;
 };
 
-class CtrlrValueTreeEditorItem : public TreeViewItem, public ValueTree::Listener
+class CtrlrValueTreeEditorItem : public TreeViewItem, public ValueTree::Listener, public LookAndFeel_V4 // Updated v5.6.31
 {
 	public:
 		CtrlrValueTreeEditorItem(CtrlrValueTreeEditorLookProvider &_provider, ValueTree _treeToEdit, const Identifier &_nameIdentifier=Ids::name);
@@ -68,4 +68,3 @@ class CtrlrValueTreeEditorItem : public TreeViewItem, public ValueTree::Listener
 		CtrlrValueTreeEditorLookProvider &provider;
 		Identifier nameIdentifier;
 };
-

@@ -35,7 +35,7 @@ class CtrlrLuaMethodEditor  : public CtrlrChildWindowContent,
 							  public CtrlrValueTreeEditorLookProvider,
 							  public KeyListener,
 							  public DragAndDropContainer,
-							  public ValueTree::Listener
+                              public ValueTree::Listener
 {
 	public:
 	    CtrlrLuaMethodEditor (CtrlrPanel &_owner);

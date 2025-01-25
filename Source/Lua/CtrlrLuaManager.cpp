@@ -1067,7 +1067,8 @@ void CtrlrModulator::setValueNonMapped (const int newValue, const bool force, co
 
 void CtrlrModulator::setModulatorValue(const int newValue, bool vst, bool midi, bool ui)
 {
-	processor.setValueGeneric (CtrlrModulatorValue (newValue, CtrlrModulatorValue::changedByLua), true, !midi);
+    //processor.setValueGeneric (CtrlrModulatorValue (newValue, CtrlrModulatorValue::changedByLua), true, !midi);
+    processor.setValueGeneric (CtrlrModulatorValue (newValue, ui ? CtrlrModulatorValue::changedByProgram : CtrlrModulatorValue::changedByLua), true, !midi); // Added v5.6.31 to help avoid feedback loops between LUA and (delayed) UI commit 6e5a0b2 by midibox
 }
 
 int CtrlrModulator::getValueMapped() const
@@ -1112,7 +1113,7 @@ void CtrlrModulator::wrapForLua (lua_State *L)
 	module(L)
 		[
 			class_<CtrlrModulator, CtrlrLuaObject>("CtrlrModulator")
-			.def("getValue", &CtrlrModulator::getModulatorValue)
+        .def("getValue", &CtrlrModulator::getModulatorValue)
 		.def("setValue", (void (CtrlrModulator::*)(const int, const bool))&CtrlrModulator::setValue)
 		.def("setValue", (void (CtrlrModulator::*)(const int, const bool, const bool))&CtrlrModulator::setValue)
 		.def("setValueMapped", &CtrlrModulator::setValueMapped)
@@ -1129,7 +1130,8 @@ void CtrlrModulator::wrapForLua (lua_State *L)
 		.def("getRestoreState", &CtrlrModulator::getRestoreState)
 		.def("isRestoring", &CtrlrModulator::getRestoreState)
 		.def("setRestoreState", &CtrlrModulator::setRestoreState)
-		.def("getMidiMessage", (CtrlrMidiMessage &(CtrlrModulator::*)(void))&CtrlrModulator::getMidiMessagePtr)
+
+         .def("getMidiMessage", (CtrlrMidiMessage &(CtrlrModulator::*)(void))&CtrlrModulator::getMidiMessagePtr)
 		.def("getMidiMessage", (CtrlrMidiMessage &(CtrlrModulator::*)(const CtrlrMIDIDeviceType))&CtrlrModulator::getMidiMessagePtr)
 		.def("getName", &CtrlrModulator::getName)
 		.def("getValueMapped", &CtrlrModulator::getValueMapped)
@@ -1138,7 +1140,7 @@ void CtrlrModulator::wrapForLua (lua_State *L)
 		.def("setModulatorValue", &CtrlrModulator::setModulatorValue)
 		.def("getLuaName", &CtrlrModulator::getName)
 		.def("getModulatorName", &CtrlrModulator::getName)
-		//.def("getProperty", (const var &(CtrlrModulator::*)(const Identifier&) const)&CtrlrModulator::getProperty)
+
 		.enum_("CtrlrModulatorValue")
 		[
 			value("initialValue", 0),
@@ -1187,5 +1189,6 @@ void CtrlrPanelEditor::wrapForLua (lua_State *L)
 			.def("getWidth", &CtrlrPanelEditor::getWidth)
 		.def("getHeight", &CtrlrPanelEditor::getHeight)
 		.def("getCanvas", &CtrlrPanelEditor::getCanvas)
+		.def("getOwner", &CtrlrPanelEditor::getOwner)
 		];
 }

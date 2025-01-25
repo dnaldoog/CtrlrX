@@ -115,7 +115,7 @@ class CtrlrMidiMessage : public ValueTree::Listener
 
 		void setProperty (const Identifier& name, const var &newValue, const bool isUndoable=false)		{ midiTree.setProperty (name, newValue, nullptr); }
 		const var &getProperty (const Identifier& name) const											{ return midiTree.getProperty (name); }
-		const var getProperty (const Identifier& name, const var &defaultReturnValue) const				{ return midiTree.getProperty (name, defaultReturnValue); }
+		//const var getProperty (const Identifier& name, const var &defaultReturnValue) const				{ return midiTree.getProperty (name, defaultReturnValue); } // Updated v5.6.31. Useless
 		virtual void valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
 		void valueTreeChildrenChanged (ValueTree &/*treeWhoseChildHasChanged*/){}
 		void valueTreeParentChanged (ValueTree &/*treeWhoseParentHasChanged*/){}
