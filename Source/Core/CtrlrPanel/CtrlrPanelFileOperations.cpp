@@ -11,7 +11,7 @@
 
 ValueTree CtrlrPanel::getCleanPanelTree()
 {
-	ValueTree exportTree = panelTree.createCopy();
+    ValueTree exportTree = panelTree.createCopy();
     
     for (int i=0; i<exportTree.getNumProperties(); i++)
     {
@@ -20,25 +20,25 @@ ValueTree CtrlrPanel::getCleanPanelTree()
         exportTree.removeProperty (Ids::panelMidiControllerDevice, 0);
         exportTree.removeProperty (Ids::panelIsDirty, 0); // Added v5.6.31. Removes the panelIsDirty property to prevent crash on load. Problem solved with v5.6.31b getPanelWindowTitle() fixed.
     }
-
-	// Remove custom data
-	if (exportTree.getChildWithName(Ids::panelCustomData).isValid())
-	{
-		exportTree.removeChild(exportTree.getChildWithName(Ids::panelCustomData), nullptr);
-	}
-
-	ValueTree ed = exportTree.getChildWithName(Ids::uiPanelEditor);
-
-	if (ed.isValid())
-	{
-		bool hideMenuBar = (bool)ed.getProperty(Ids::uiPanelMenuBarHideOnExport);
-		ed.setProperty(Ids::uiPanelMenuBarVisible, !hideMenuBar, nullptr);
-	}
-
-	// Embed external lua code in properties
-	convertLuaMethodsToPropeties(getPanelLuaDir(),exportTree);
-
-	return (exportTree);
+    
+    // Remove custom data
+    if (exportTree.getChildWithName(Ids::panelCustomData).isValid())
+    {
+        exportTree.removeChild(exportTree.getChildWithName(Ids::panelCustomData), nullptr);
+    }
+    
+    ValueTree ed = exportTree.getChildWithName(Ids::uiPanelEditor);
+    
+    if (ed.isValid())
+    {
+        bool hideMenuBar = (bool)ed.getProperty(Ids::uiPanelMenuBarHideOnExport);
+        ed.setProperty(Ids::uiPanelMenuBarVisible, !hideMenuBar, nullptr);
+    }
+    
+    // Embed external lua code in properties
+    convertLuaMethodsToPropeties(getPanelLuaDir(),exportTree);
+    
+    return (exportTree);
 }
 
 String CtrlrPanel::getPanelContentDirPath()
@@ -132,100 +132,98 @@ void CtrlrPanel::convertLuaMethodsToPropeties(const File &panelLuaDir, ValueTree
 
 Result CtrlrPanel::savePanel()
 {
-	_DBG("CtrlrPanel::savePanel");
+    _DBG("CtrlrPanel::savePanel");
     
     // Store current state panelWasDirty before changing the property panelIsDirty to false/0
-	bool panelWasDirty = isPanelDirty(); // return getProperty(Ids::panelIsDirty,false); with false (0) being the defaultReturnValue
-    setPanelDirty(false); // v5.6.31. is crashing VST hosts on load when panelIsDirty = "0". setProperty(Ids::panelIsDirty, dirty);
+    bool panelWasDirty = isPanelDirty(); // return getProperty(Ids::panelIsDirty,false); with false (0) being the defaultReturnValue
+    setPanelDirty(false);
     
-	Result res = Result::ok();
-	const String filePath = getProperty(Ids::panelFilePath);
-	File panelFile(filePath);
-
-	if (panelFile.existsAsFile() && panelFile.hasWriteAccess())
-	{
-		if (panelFile.hasFileExtension("panel"))
-			res = savePanelXml(panelFile, this, false);
-		if (panelFile.hasFileExtension("panelz"))
-			res = savePanelXml (panelFile, this, true);
-		if (panelFile.hasFileExtension("bpanel"))
-			res = savePanelBin (panelFile, this, false);
-		if (panelFile.hasFileExtension("bpanelz"))
-			res = savePanelBin(panelFile, this, true);
-
-		if (getEditor())
-		{
-			if (res.failed())
-			{
-				notify ("Panel save: ["+res.getErrorMessage()+"]", nullptr, NotifyFailure);
-			}
-			else
-			{
-				notify ("Panel saved: ["+panelFile.getFullPathName()+"]", nullptr, NotifySuccess);
-			}
-		}
-	}
-	else
-	{
-		File ret = askForPanelFileToSave (this, File(owner.getProperty(Ids::panelLastSaveDir)).getChildFile(getVersionString()));
-		if (ret != File())
-		{
-			res = savePanelXml(ret, this);
-			setProperty (Ids::panelFilePath, ret.getFullPathName());
-			setProperty (Ids::panelLastSaveDir, ret.getParentDirectory().getFullPathName());
-		}
-		else
-		{
-			res = Result::fail ("Selected file is invalid");
-		}
-
-		if (getEditor())
-		{
-			if (res.failed())
-			{
-				notify ("Panel save: ["+res.getErrorMessage()+"]", nullptr, NotifyFailure);
-			}
-			else
-			{
-				notify ("Panel saved: ["+panelFile.getFullPathName()+"]", nullptr, NotifySuccess);
-			}
-		}
-	}
-	if (res.wasOk())
-	{
-		getUndoManager()->clearUndoHistory();
-		updatePanelWindowTitle();
-	}
+    Result res = Result::ok();
+    const String filePath = getProperty(Ids::panelFilePath);
+    File panelFile(filePath);
     
-    // v5.6.31 Please check that statement because Cubase crashes if panelIsDirty ="0" when loading project
-	else if (panelWasDirty)
-	{
+    if (panelFile.existsAsFile() && panelFile.hasWriteAccess())
+    {
+        if (panelFile.hasFileExtension("panel"))
+            res = savePanelXml(panelFile, this, false);
+        if (panelFile.hasFileExtension("panelz"))
+            res = savePanelXml (panelFile, this, true);
+        if (panelFile.hasFileExtension("bpanel"))
+            res = savePanelBin (panelFile, this, false);
+        if (panelFile.hasFileExtension("bpanelz"))
+            res = savePanelBin(panelFile, this, true);
+        
+        if (getEditor())
+        {
+            if (res.failed())
+            {
+                notify ("Panel save: ["+res.getErrorMessage()+"]", nullptr, NotifyFailure);
+            }
+            else
+            {
+                notify ("Panel saved: ["+panelFile.getFullPathName()+"]", nullptr, NotifySuccess);
+            }
+        }
+    }
+    else
+    {
+        File ret = askForPanelFileToSave (this, File(owner.getProperty(Ids::panelLastSaveDir)).getChildFile(getVersionString()));
+        if (ret != File())
+        {
+            res = savePanelXml(ret, this);
+            setProperty (Ids::panelFilePath, ret.getFullPathName());
+            setProperty (Ids::panelLastSaveDir, ret.getParentDirectory().getFullPathName());
+        }
+        else
+        {
+            res = Result::fail ("Selected file is invalid");
+        }
+        
+        if (getEditor())
+        {
+            if (res.failed())
+            {
+                notify ("Panel save: ["+res.getErrorMessage()+"]", nullptr, NotifyFailure);
+            }
+            else
+            {
+                notify ("Panel saved: ["+panelFile.getFullPathName()+"]", nullptr, NotifySuccess);
+            }
+        }
+    }
+    if (res.wasOk())
+    {
+        getUndoManager()->clearUndoHistory();
+        updatePanelWindowTitle();
+    }
+    
+    else if (panelWasDirty)
+    {
         setPanelDirty(panelWasDirty); // setProperty(Ids::panelIsDirty, dirty);
-	}
-	return res;
+    }
+    return res;
 }
 
 const File CtrlrPanel::savePanelAs(const CommandID saveOption)
 {
-	File fileToSave;
-	File f(getProperty(Ids::panelLastSaveDir));
+    File fileToSave;
+    File f(getProperty(Ids::panelLastSaveDir));
     
-	if (saveOption == CtrlrEditor::doExportFileText)
-	{
-		fileToSave = CtrlrPanel::askForPanelFileToSave (this, f, true, false);
-
-		if (fileToSave == File())
-			return (fileToSave);
-
-		savePanelXml (fileToSave, this);
-		setProperty (Ids::panelFilePath, fileToSave.getFullPathName());
-		setProperty (Ids::panelLastSaveDir, fileToSave.getParentDirectory().getFullPathName());
+    if (saveOption == CtrlrEditor::doExportFileText)
+    {
+        fileToSave = CtrlrPanel::askForPanelFileToSave (this, f, true, false);
+        
+        if (fileToSave == File())
+            return (fileToSave);
+        
+        savePanelXml (fileToSave, this);
+        setProperty (Ids::panelFilePath, fileToSave.getFullPathName());
+        setProperty (Ids::panelLastSaveDir, fileToSave.getParentDirectory().getFullPathName());
         
         // Store current state panelWasDirty before changing the property panelIsDirty to false/0
-        bool panelWasDirty = isPanelDirty(); // Added v5.6.30 (removes asterisk suffix from name in panel tab)      > return getProperty(Ids::panelIsDirty,false); where false is default value if not available
-    
-        // v5.6.31 Please check that statement because Cubase crashes if panelIsDirty ="0" when loading project or conditionate for !standalone
-        setPanelDirty(false); // Updated v5.6.31. false = 0 = notDirty.  Crashing VST hosts on load when panelIsDirty = "0" = false = notDirty
+        bool panelWasDirty = isPanelDirty(); // Added v5.6.30 (removes asterisk suffix from name in panel tab). Returns getProperty(Ids::panelIsDirty,false); where false is default value if not available
+        
+        setPanelDirty(false); // Updated v5.6.31. false = 0 = notDirty.
         
         if (panelWasDirty) // Added v5.6.30. if panelPanelWasDirty = true/1
         {
@@ -234,7 +232,7 @@ const File CtrlrPanel::savePanelAs(const CommandID saveOption)
         
         getUndoManager()->clearUndoHistory(); // Added v5.6.30
         updatePanelWindowTitle(); // Added v5.6.30
-	}
+    }
     
     
 	if (saveOption == CtrlrEditor::doExportFileZText)
@@ -961,7 +959,7 @@ bool CtrlrPanel::hasChangedSinceSavePoint()
 
 bool CtrlrPanel::isPanelDirty()
 {
-	return getProperty(Ids::panelIsDirty, false); // Updated v5.6.31. From default False to True. Back to false
+	return getProperty(Ids::panelIsDirty, false);
 }
 
 void CtrlrPanel::setPanelDirty(const bool dirty)
@@ -983,23 +981,23 @@ void CtrlrPanel::actionUndone()
 
 const String CtrlrPanel::getPanelWindowTitle()
 {
-	String name = getProperty(Ids::name);
-     if (JUCEApplication::isStandaloneApp()) // For Standalone APP/EXE Only
-     {
-         if (isPanelDirty() || hasChangedSinceSavePoint()) // Updated v5.6.31b. Was (isPanelDirty() || hasChangedSinceSavePoint()). Was crashing VST Hosts on load
-         {
-             name = name + "*";
-         }
-    
-    else if(!JUCEApplication::isStandaloneApp()) // For VST & AU Plugins
-    
-        if (isPanelDirty()) // Updated v5.6.31b. Was (isPanelDirty() || hasChangedSinceSavePoint()). Was crashing VST Hosts on load
+    String name = getProperty(Ids::name);
+    if (JUCEApplication::isStandaloneApp()) // Updated v5.6.31b. For Standalone APP/EXE Only. Was crashing VST Hosts on load in v5.6.30 & v5.6.31
+    {
+        if (isPanelDirty() || hasChangedSinceSavePoint())
         {
             name = name + "*";
         }
+        
+        else if(!JUCEApplication::isStandaloneApp()) // Updated v5.6.31b. For VST & AU Plugins
+            
+            if (isPanelDirty()) // Updated v5.6.31b. Was (isPanelDirty() || hasChangedSinceSavePoint()). Was crashing VST Hosts on load in v5.6.30 & v5.6.31
+            {
+                name = name + "*";
+            }
     }
     
-	return name;
+    return name;
 }
 
 void CtrlrPanel::updatePanelWindowTitle()
@@ -1056,8 +1054,7 @@ bool CtrlrPanel::canClose(const bool closePanel)
 	// Check for panel modifications
     if(closePanel && (hasChangedSinceSavePoint() || isPanelDirty()))
 	{
-        //int ret = AlertWindow::showYesNoCancelBox(AlertWindow::QuestionIcon, "Save panel (" + getName() + ")", "There are unsaved changes in this panel. Do you want to save them berfore closing ?", "Save", "Discard", "Cancel");
-        int ret = AlertWindow::showYesNoCancelBox(AlertWindow::QuestionIcon, "Save panel (" + getName() + ")", "There are unsaved changes in this panel.\nDo you want to save them before closing ?", "Save", "Discard", "Cancel"); // Added v5.6.31 by GoodWeather
+        int ret = AlertWindow::showYesNoCancelBox(AlertWindow::QuestionIcon, "Save panel (" + getName() + ")", "There are unsaved changes in this panel.\nDo you want to save them before closing ?", "Save", "Discard", "Cancel"); // Updated v5.6.31 by GoodWeather
         
 		if (ret == 0)
 		{	// Cancel
