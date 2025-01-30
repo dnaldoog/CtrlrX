@@ -12,15 +12,14 @@
 ValueTree CtrlrPanel::getCleanPanelTree()
 {
 	ValueTree exportTree = panelTree.createCopy();
-
-	for (int i=0; i<exportTree.getNumProperties(); i++)
-	{
-		exportTree.removeProperty (Ids::panelMidiOutputDevice, 0);
-		exportTree.removeProperty (Ids::panelMidiInputDevice, 0);
-		exportTree.removeProperty (Ids::panelMidiControllerDevice, 0);
-        exportTree.removeProperty (Ids::panelIsDirty, 0); // Added v5.6.31. Removes the panelIsDirty property to prevent crash on load.
-	}
     
+    for (int i=0; i<exportTree.getNumProperties(); i++)
+    {
+        exportTree.removeProperty (Ids::panelMidiOutputDevice, 0);
+        exportTree.removeProperty (Ids::panelMidiInputDevice, 0);
+        exportTree.removeProperty (Ids::panelMidiControllerDevice, 0);
+        exportTree.removeProperty (Ids::panelIsDirty, 0); // Added v5.6.31. Removes the panelIsDirty property to prevent crash on load. Problem solved with v5.6.31b getPanelWindowTitle() fixed.
+    }
 
 	// Remove custom data
 	if (exportTree.getChildWithName(Ids::panelCustomData).isValid())
@@ -134,9 +133,11 @@ void CtrlrPanel::convertLuaMethodsToPropeties(const File &panelLuaDir, ValueTree
 Result CtrlrPanel::savePanel()
 {
 	_DBG("CtrlrPanel::savePanel");
-
-	bool panelWasDirty = isPanelDirty();
-	setPanelDirty(false);
+    
+    // Store current state panelWasDirty before changing the property panelIsDirty to false/0
+	bool panelWasDirty = isPanelDirty(); // return getProperty(Ids::panelIsDirty,false); with false (0) being the defaultReturnValue
+    setPanelDirty(false); // v5.6.31. is crashing VST hosts on load when panelIsDirty = "0". setProperty(Ids::panelIsDirty, dirty);
+    
 	Result res = Result::ok();
 	const String filePath = getProperty(Ids::panelFilePath);
 	File panelFile(filePath);
@@ -195,9 +196,11 @@ Result CtrlrPanel::savePanel()
 		getUndoManager()->clearUndoHistory();
 		updatePanelWindowTitle();
 	}
+    
+    // v5.6.31 Please check that statement because Cubase crashes if panelIsDirty ="0" when loading project
 	else if (panelWasDirty)
 	{
-		setPanelDirty(panelWasDirty);
+        setPanelDirty(panelWasDirty); // setProperty(Ids::panelIsDirty, dirty);
 	}
 	return res;
 }
@@ -218,16 +221,22 @@ const File CtrlrPanel::savePanelAs(const CommandID saveOption)
 		setProperty (Ids::panelFilePath, fileToSave.getFullPathName());
 		setProperty (Ids::panelLastSaveDir, fileToSave.getParentDirectory().getFullPathName());
         
-        bool panelWasDirty = isPanelDirty();  // Added v5.6.30 (removes asterisk suffix from name in panel tab)
-        setPanelDirty(false); // Check for v5.6.31 if set to false vst instances crash on load
+        // Store current state panelWasDirty before changing the property panelIsDirty to false/0
+        bool panelWasDirty = isPanelDirty(); // Added v5.6.30 (removes asterisk suffix from name in panel tab)      > return getProperty(Ids::panelIsDirty,false); where false is default value if not available
+    
+        // v5.6.31 Please check that statement because Cubase crashes if panelIsDirty ="0" when loading project or conditionate for !standalone
+        setPanelDirty(false); // Updated v5.6.31. false = 0 = notDirty.  Crashing VST hosts on load when panelIsDirty = "0" = false = notDirty
         
-        if (panelWasDirty)
+        if (panelWasDirty) // Added v5.6.30. if panelPanelWasDirty = true/1
         {
-            setPanelDirty(panelWasDirty);
+            setPanelDirty(panelWasDirty); // Added v5.6.30. setProperty(Ids::panelIsDirty, dirty);
         }
-        getUndoManager()->clearUndoHistory();
-        updatePanelWindowTitle();
+        
+        getUndoManager()->clearUndoHistory(); // Added v5.6.30
+        updatePanelWindowTitle(); // Added v5.6.30
 	}
+    
+    
 	if (saveOption == CtrlrEditor::doExportFileZText)
 	{
 		fileToSave = CtrlrPanel::askForPanelFileToSave (this, f, true, true);
@@ -952,7 +961,7 @@ bool CtrlrPanel::hasChangedSinceSavePoint()
 
 bool CtrlrPanel::isPanelDirty()
 {
-	return getProperty(Ids::panelIsDirty,false);
+	return getProperty(Ids::panelIsDirty, false); // Updated v5.6.31. From default False to True. Back to false
 }
 
 void CtrlrPanel::setPanelDirty(const bool dirty)
@@ -975,10 +984,10 @@ void CtrlrPanel::actionUndone()
 const String CtrlrPanel::getPanelWindowTitle()
 {
 	String name = getProperty(Ids::name);
-	if (isPanelDirty() || hasChangedSinceSavePoint())
-	{
-		name = name + "*";
-	}
+    if (isPanelDirty()) // Updated v5.6.31b. Was (isPanelDirty() || hasChangedSinceSavePoint()). Was crashing VST Hosts on load
+    {
+        name = name + "*";
+    }
 	return name;
 }
 

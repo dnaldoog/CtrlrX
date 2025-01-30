@@ -83,7 +83,7 @@ CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
     paypalLogo->setMouseCursor(MouseCursor::PointingHandCursor);
     
     // ctrlrx link
-    addAndMakeVisible (ctrlrxDonateUrl = new HyperlinkButton ("Donate to the CtrlrX project", URL ("https://www.paypal.com/donate/?hosted_button_id=JJWA3KN5SEPCC")));
+    addAndMakeVisible (ctrlrxDonateUrl = new HyperlinkButton ("Donate to the CtrlrX project", URL ("https://paypal.me/damiensellier"))); // Updated v5.6.31b
     ctrlrxDonateUrl->setTooltip (TRANS("Donate to the CtrlrX project"));
     ctrlrxDonateUrl->setFont(14.00f, Font::plain);
     ctrlrxDonateUrl->setJustificationType(Justification::topLeft);
