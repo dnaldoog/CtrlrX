@@ -984,10 +984,21 @@ void CtrlrPanel::actionUndone()
 const String CtrlrPanel::getPanelWindowTitle()
 {
 	String name = getProperty(Ids::name);
-    if (isPanelDirty()) // Updated v5.6.31b. Was (isPanelDirty() || hasChangedSinceSavePoint()). Was crashing VST Hosts on load
-    {
-        name = name + "*";
+     if (JUCEApplication::isStandaloneApp()) // For Standalone APP/EXE Only
+     {
+         if (isPanelDirty() || hasChangedSinceSavePoint()) // Updated v5.6.31b. Was (isPanelDirty() || hasChangedSinceSavePoint()). Was crashing VST Hosts on load
+         {
+             name = name + "*";
+         }
+    
+    else if(!JUCEApplication::isStandaloneApp()) // For VST & AU Plugins
+    
+        if (isPanelDirty()) // Updated v5.6.31b. Was (isPanelDirty() || hasChangedSinceSavePoint()). Was crashing VST Hosts on load
+        {
+            name = name + "*";
+        }
     }
+    
 	return name;
 }
 
