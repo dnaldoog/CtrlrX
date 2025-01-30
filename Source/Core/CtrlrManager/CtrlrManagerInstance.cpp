@@ -285,9 +285,9 @@ XmlElement *CtrlrManager::saveState()
 			if (panel != nullptr)
 			{
 				panel->generateCustomData();
-				if (panel->hasChangedSinceSavePoint())
+				if (panel->hasChangedSinceSavePoint()) // Added v5.6.0
 				{
-					panel->setPanelDirty(true);
+					panel->setPanelDirty(true); // Updated v5.6.0
 				}
 			}
 		}

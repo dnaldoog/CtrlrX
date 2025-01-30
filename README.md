@@ -59,6 +59,7 @@ Changelog
 * FIXED FileChooser hanging when exporting instance on OSX Catalina & macOS BigSur. CtrlrManager.cpp
 * FIXED About popup design refurbished with new CtrlrX logo. CtrlrAbout.cpp & CtrlrAbout.h
 * FIXED About popup not getting current build date, fixed with C++ Macro timestamp. CtrlrRevision.h
+* FIXED VST crashing DAW when loading a project with panelIsDirty = 0. CtrlPanelFileOperations.cpp
 
 #### Version 5.6.30 | 2024.03.13
 * Missing JUCE File Class definitions bound to LUA

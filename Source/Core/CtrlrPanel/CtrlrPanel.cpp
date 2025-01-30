@@ -146,6 +146,7 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 
     setProperty (Ids::panelFilePath, "");
     setProperty (Ids::panelLastSaveDir, "");
+        
     setProperty (Ids::panelUID, generateRandomUnique());
     setProperty (Ids::panelInstanceUID, generateRandomUniquePluginId());
     setProperty (Ids::panelInstanceManufacturerID, generateRandomUniquePluginId());
@@ -175,7 +176,7 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 //    setProperty (Ids::ctrlrMenuBarFont, owner.getFontManager().getStringFromFont (Font (18.0f)));
 
     setProperty (Ids::ctrlrUseEditorWrapper, false);
-
+    
     owner.addChangeListener (this);
     midiMessageCollector.reset (SAMPLERATE);
 
@@ -378,7 +379,7 @@ CtrlrPanelEditor *CtrlrPanel::getEditor(const bool createNewEditorIfNeeded)
 		if (createNewEditorIfNeeded)
 		{
 			ctrlrPanelEditor = new CtrlrPanelEditor(*this, owner, getPanelWindowTitle());
-			getPanelTree().addChild (ctrlrPanelEditor->getPanelEditorTree(), -1, nullptr);
+            getPanelTree().addChild (ctrlrPanelEditor->getPanelEditorTree(), -1, nullptr);
 		}
 	}
 	return (ctrlrPanelEditor);
