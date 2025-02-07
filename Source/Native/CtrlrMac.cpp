@@ -30,11 +30,23 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
     MemoryBlock panelExportData, panelResourcesData;
     String error;
     
-    // Define FileChooser and source file name to clone and mod as output file
-    fc = std::make_unique<FileChooser> (CTRLR_NEW_INSTANCE_DIALOG_TITLE,
-                                        me.getParentDirectory().getChildFile(File::createLegalFileName(panelToWrite->getProperty(Ids::name))).withFileExtension(me.getFileExtension()),
-                                        me.getFileExtension(),
-                                        panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs));
+    // Defines FileChooser and source file name to clone and mod as output file
+    auto typeOS = juce::SystemStats::getOperatingSystemType ();
+    if ( typeOS == juce::SystemStats::OperatingSystemType::MacOSX_10_15 || typeOS == juce::SystemStats::OperatingSystemType::MacOS_11) // For OSX Catalina and macOS BigSur
+    {
+        fc = std::make_unique<FileChooser> (CTRLR_NEW_INSTANCE_DIALOG_TITLE,
+                                            me.getParentDirectory().getChildFile(File::createLegalFileName(panelToWrite->getProperty(Ids::name))).withFileExtension(me.getFileExtension()),
+                                            me.getFileExtension(),
+                                            false);
+    }
+    else
+    {
+        fc = std::make_unique<FileChooser> (CTRLR_NEW_INSTANCE_DIALOG_TITLE,
+                                            me.getParentDirectory().getChildFile(File::createLegalFileName(panelToWrite->getProperty(Ids::name))).withFileExtension(me.getFileExtension()),
+                                            me.getFileExtension(),
+                                            panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs));
+    }
+    
     
     // Launch FileChooser to export file and define the new output file name and extension
     if (fc->browseForDirectory()) {
