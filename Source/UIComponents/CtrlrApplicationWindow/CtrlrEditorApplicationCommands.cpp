@@ -83,22 +83,34 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 	{
 		case doSaveState:
 			result.setInfo ("Save CTRLR state", "Saves the CTRLR state to disk", globalCategory, 0);
-			result.addDefaultKeypress ('s', ModifierKeys::commandModifier | ModifierKeys::altModifier);
+            if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
+            {
+                result.addDefaultKeypress ('s', ModifierKeys::commandModifier | ModifierKeys::altModifier);
+            }
 			break;
 
 		case doOpenPanel:
 			result.setInfo ("Open Panel", "Open a panel from a file", globalCategory, 0);
-			result.addDefaultKeypress ('o', ModifierKeys::commandModifier);
+            if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
+            {
+                result.addDefaultKeypress ('o', ModifierKeys::commandModifier);
+            }
 			break;
 
 		case doNewPanel:
 			result.setInfo ("New Panel", "Create a new empty panel", globalCategory, 0);
-			result.addDefaultKeypress ('n', ModifierKeys::commandModifier);
+            if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
+            {
+                result.addDefaultKeypress ('n', ModifierKeys::commandModifier);
+            }
 			break;
 
 		case showGlobalSettingsDialog:
 			result.setInfo ("Preferences", "Show global CTRLR preferences", globalCategory, 0);
-			result.addDefaultKeypress ('p', ModifierKeys::commandModifier);
+            if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
+            {
+                result.addDefaultKeypress ('p', ModifierKeys::commandModifier);
+            }
 			break;
 
 		case showMidiMonitor:
@@ -123,7 +135,10 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 
 		case showKeyboardMappingDialog:
 			result.setInfo ("Keyboard mapping", "Change default keyboard mappings", globalCategory, 0);
-			result.addDefaultKeypress ('k', ModifierKeys::commandModifier);
+            if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
+            {
+                result.addDefaultKeypress ('k', ModifierKeys::commandModifier);
+            }
 			break;
 
 		case doViewPropertyDisplayIDs:
@@ -175,13 +190,19 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 			break;
 	    case doSearchForProperty:
             result.setInfo ("Search for property", "Search for any property in the current panel or selected component", panelCategory, 0);
-            result.addDefaultKeypress ('f', ModifierKeys::commandModifier);
+            if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
+            {
+                result.addDefaultKeypress ('f', ModifierKeys::commandModifier);
+            }
             result.setActive (isPanelActive(true));
             break;
 
 		case doSave:
 			result.setInfo ("Save", "Save panel to a file", panelCategory, 0);
-			result.addDefaultKeypress ('s', ModifierKeys::commandModifier);
+            if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
+            {
+                 result.addDefaultKeypress ('s', ModifierKeys::commandModifier);
+            }
 			result.setActive (isPanelActive(true));
 			break;
 
@@ -192,25 +213,37 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 
 		case doSaveAs:
 			result.setInfo ("Save As", "Save panel as a new file", panelCategory, 0);
-			result.addDefaultKeypress ('s', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+            if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
+            {
+                result.addDefaultKeypress ('s', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+            }
 			result.setActive (isPanelActive(true));
 			break;
 
 		case doSaveVersioned:
 			result.setInfo ("Save versioned", "Save panel to a new versioned file", panelCategory, 0);
-			result.addDefaultKeypress ('s', ModifierKeys::altModifier | ModifierKeys::shiftModifier);
+            if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
+            {
+                result.addDefaultKeypress ('s', ModifierKeys::altModifier | ModifierKeys::shiftModifier);
+            }
 			result.setActive (isPanelActive(true));
 			break;
 
 		case doPanelMode:
 			result.setInfo ("Panel mode", "Switches panel from and to EDIT mode", panelCategory, 0);
-			result.addDefaultKeypress ('e', ModifierKeys::commandModifier);
+            if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
+            {
+                result.addDefaultKeypress ('e', ModifierKeys::commandModifier);
+            }
 			result.setActive (isPanelActive(true));
 			break;
 
 		case doPanelLock:
 			result.setInfo ("Panel lock", "Locks components in edit mode", panelCategory, 0);
-			result.addDefaultKeypress ('l', ModifierKeys::commandModifier);
+            if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
+            {
+                result.addDefaultKeypress ('l', ModifierKeys::commandModifier);
+            }
 			result.setActive (isPanelActive(true));
 			if (isPanelActive(true))
 			{
@@ -250,7 +283,10 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 		case showMidiLibrary:
 			result.setInfo ("MIDI Library", "Show/hide the MIDI LIbrary window", panelCategory, 0);
 			result.setActive (isPanelActive());
-			result.addDefaultKeypress ('l', ModifierKeys::altModifier | ModifierKeys::shiftModifier);
+            if (!isRestricted())
+            {
+                result.addDefaultKeypress ('l', ModifierKeys::altModifier | ModifierKeys::shiftModifier);
+            }
 			break;
 
 		case showLayers:
@@ -265,7 +301,10 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 
 		case showBufferEditor:
 			result.setInfo ("Buffer Editor", "Show/hide the buffer editor", panelCategory, 0);
-			result.addDefaultKeypress ('b', ModifierKeys::commandModifier);
+            if (!isRestricted())
+            {
+                result.addDefaultKeypress ('b', ModifierKeys::commandModifier);
+            }
 			result.setActive (isPanelActive(true));
 			break;
 
@@ -444,6 +483,7 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 		case doQuit:
 			result.setInfo ("Quit", "Quit Ctrlr", globalCategory, 0);
 			result.setActive (JUCEApplication::isStandaloneApp());
+            result.addDefaultKeypress ('q', ModifierKeys::commandModifier); // Added v5.6.32
 			break;
 	}
 }

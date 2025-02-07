@@ -23,6 +23,10 @@ ToDo
 Changelog
 ---------
 
+#### Version 5.6.32 | 2025.02
+* UPDATED Exported instances won't show the preferences and shortcut menu items. CtrlrEditorApplicationCommandsMenus.cpp
+* FIXED Useless shortcuts such as "New Panel", "Export" enabled on restricted instances. CtrlrEditorApplicationCommands.cpp
+* FIXED FileChooser still hanging when exporting instance on OSX Catalina & macOS BigSur. CtrlrManager.cpp
 
 #### Version 5.6.31 | 2025.01
 * Security update : Encryption of the panel file in the macOS bundle for restricted instances. CtrlrMac.cpp, CtrlrEditorApplicationCommandsMenu.cpp, CtrlrManager.cpp
