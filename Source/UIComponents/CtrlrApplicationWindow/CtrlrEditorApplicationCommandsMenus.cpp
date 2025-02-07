@@ -139,19 +139,23 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 	}
 	
     else if (topLevelMenuIndex == MenuEdit) // Edit
-	{
-		menu.addCommandItem (commandManager, doCopy);
-		menu.addCommandItem (commandManager, doCut);
-		menu.addCommandItem (commandManager, doPaste);
-		menu.addSeparator();
-		menu.addCommandItem (commandManager, doUndo);
-		menu.addCommandItem (commandManager, doRedo);
-		menu.addSeparator();
-		menu.addCommandItem (commandManager, showKeyboardMappingDialog);
-		menu.addCommandItem (commandManager, showGlobalSettingsDialog);
-		// menu.addSeparator(); // Removed v5.6.31
-		// menu.addCommandItem(commandManager, doSearchForProperty); // Removed v5.6.31
-	}
+    {
+        menu.addCommandItem (commandManager, doCopy);
+        menu.addCommandItem (commandManager, doCut);
+        menu.addCommandItem (commandManager, doPaste);
+        menu.addSeparator();
+        menu.addCommandItem (commandManager, doUndo);
+        menu.addCommandItem (commandManager, doRedo);
+            
+        if (!isRestricted()) // Added v5.6.32 to hide menuItems on resticted instance
+        {
+            menu.addSeparator();
+            menu.addCommandItem (commandManager, showKeyboardMappingDialog);
+            menu.addCommandItem (commandManager, showGlobalSettingsDialog);
+            // menu.addSeparator(); // Removed v5.6.31
+            // menu.addCommandItem(commandManager, doSearchForProperty); // Removed v5.6.31
+        }
+    }
 	
     else if (topLevelMenuIndex == MenuView) // View
 	{
