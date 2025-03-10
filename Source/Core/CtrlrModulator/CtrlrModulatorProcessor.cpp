@@ -39,11 +39,25 @@ void CtrlrModulatorProcessor::handleAsyncUpdate()
 
 		/* If we already have the same value, calling setProperty on the ValueTree won't cause a
 			propertyChanged callback, we need to remove the property and re-set it */
-		if ((double)owner.getProperty(Ids::modulatorValue) == currentValue.value)
+		if ( (double) owner.getProperty(Ids::modulatorValue) == currentValue.value ) // v5.6.32. double to float
 		{
 			owner.removeProperty(Ids::modulatorValue);
 		}
-		owner.setProperty (Ids::modulatorValue, currentValue.value);
+        
+        // owner.setProperty (Ids::modulatorValue, (double) currentValue.value); // v5.6.32. NOTE : mod value prop field is updated here
+        
+        // Rounding process for currentValue.value NOTE useless with all internal values as double type
+        // const double sliderDecPlace = (double) owner.getProperty(Ids::uiSliderDecimalPlaces); // Added v5.6.32. Cannot reach the actual property value, I don't know why.
+        const double sliderDecPlace = 4.0; // Added v5.6.32
+        const double multiplier = std::pow(10, sliderDecPlace); // Added v5.6.32
+        const double roundedValue = std::round(currentValue.value * multiplier) / multiplier;
+        
+        // value debug
+        // std::cout << "sliderDecPlace: " << sliderDecPlace << std::endl;
+        // std::cout << "multiplier: " << multiplier << std::endl;
+        // std::cout << "roundedValue: " << roundedValue << std::endl;
+
+        owner.setProperty (Ids::modulatorValue, roundedValue); // v5.6.32. NOTE : mod value prop field is updated here
 	}
 
 	// if (valueChangedCbk.get() && !owner.getRestoreState()) //
@@ -54,7 +68,7 @@ void CtrlrModulatorProcessor::handleAsyncUpdate()
 		{
 			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (valueChangedCbk,
 																				&owner,
-																				currentValue.value,
+																				currentValue.value, // v5.6.32. call() int to double
 																				(uint8)currentValue.lastChangeSource);
 		}
 	}
@@ -65,17 +79,17 @@ void CtrlrModulatorProcessor::handleAsyncUpdate()
 	}
 }
 
-void CtrlrModulatorProcessor::setValue(const int value)
+void CtrlrModulatorProcessor::setValue(const double value)  // Updated v5.6.32. int to double
 {
 }
 
-void CtrlrModulatorProcessor::setModulatorMaxValue (const int newMaxValue)
+void CtrlrModulatorProcessor::setModulatorMaxValue (const double newMaxValue) // Updated v5.6.32. int to double
 {
 	const ScopedWriteLock sl (processorLock);
 	maxValue = newMaxValue;
 }
 
-void CtrlrModulatorProcessor::setModulatorMinValue (const int newMinValue)
+void CtrlrModulatorProcessor::setModulatorMinValue (const double newMinValue) // Updated v5.6.32. int to double
 {
 	const ScopedWriteLock sl (processorLock);
 	minValue = newMinValue;
@@ -242,7 +256,7 @@ void CtrlrModulatorProcessor::setValueFromHost(const float inValue)
 
 		const int possibleNewValue	= denormalizeValue (inValue, minValue, maxValue);
 
-		if (possibleNewValue == currentValue.value)
+		if ( possibleNewValue == roundDoubleToInt(currentValue.value) ) // v5.6.32. Added roundDoubleToInt to force comparison from both integers, not float vs integers
 		{
 			/* the host told us the same exact value we already have, we won't do anything about it */
 			// We don't event trigger an update since it would erroneously generate a call to Lua callbacks
@@ -372,28 +386,28 @@ CtrlrProcessor *CtrlrModulatorProcessor::getProcessor()
 	return (owner.getOwnerPanel().getCtrlrManagerOwner().getProcessorOwner());
 }
 
-int CtrlrModulatorProcessor::getValue() const
+double CtrlrModulatorProcessor::getValue() const // Updated v5.6.32. int to double
 {
 	const ScopedReadLock sl (processorLock);
 
 	return (currentValue.value);
 }
 
-int CtrlrModulatorProcessor::getValueMapped() const
+double CtrlrModulatorProcessor::getValueMapped() const // Updated v5.6.32. int to double
 {
 	const ScopedReadLock sl (processorLock);
 
 	return (valueMap.getMappedValue(currentValue.value));
 }
 
-int CtrlrModulatorProcessor::getMax() const
+double CtrlrModulatorProcessor::getMax() const // Updated v5.6.32. int to double
 {
 	const ScopedReadLock sl (processorLock);
 
 	return (maxValue);
 }
 
-int CtrlrModulatorProcessor::getMin() const
+double CtrlrModulatorProcessor::getMin() const // Updated v5.6.32. int to double
 {
 	const ScopedReadLock sl (processorLock);
 
@@ -535,7 +549,7 @@ CtrlrValueMap &CtrlrModulatorProcessor::getValueMap()
 	return (valueMap);
 }
 
-int CtrlrModulatorProcessor::evaluateForward(const int inValue)
+double CtrlrModulatorProcessor::evaluateForward(const double inValue) // Updated v5.6.32. int to double
 {
 	if (usingForwardProcess)
 	{
@@ -555,7 +569,7 @@ int CtrlrModulatorProcessor::evaluateForward(const int inValue)
 	return (inValue);
 }
 
-int CtrlrModulatorProcessor::evaluateReverse(const int inValue)
+double CtrlrModulatorProcessor::evaluateReverse(const double inValue) // Updated v5.6.32. int to double
 {
 	if (usingReverseProcess)
 	{

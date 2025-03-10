@@ -251,7 +251,7 @@ SystemStats::OperatingSystemType SystemStats::getOperatingSystemType()
 
     jassert (major <= 10); // need to add support for new version!
 
-    if (major == 10)                 return Windows10;
+    if (major == 10 && build >= 22000) return Windows11;
     if (major == 6 && minor == 3)    return Windows8_1;
     if (major == 6 && minor == 2)    return Windows8_0;
     if (major == 6 && minor == 1)    return Windows7;
@@ -269,6 +269,7 @@ String SystemStats::getOperatingSystemName()
 
     switch (getOperatingSystemType())
     {
+        case Windows11:         name = "Windows 11";        break;
         case Windows10:         name = "Windows 10";        break;
         case Windows8_1:        name = "Windows 8.1";       break;
         case Windows8_0:        name = "Windows 8.0";       break;
@@ -291,8 +292,16 @@ String SystemStats::getOperatingSystemName()
         case MacOSX_10_12:      JUCE_FALLTHROUGH
         case MacOSX_10_13:      JUCE_FALLTHROUGH
         case MacOSX_10_14:      JUCE_FALLTHROUGH
+        case MacOSX_10_15:      JUCE_FALLTHROUGH
+        case MacOS_11:          JUCE_FALLTHROUGH
+        case MacOS_12:          JUCE_FALLTHROUGH
+        case MacOS_13:          JUCE_FALLTHROUGH
+        case MacOS_14:          JUCE_FALLTHROUGH
+        case MacOS_15:          JUCE_FALLTHROUGH
+        case MacOS_16:          JUCE_FALLTHROUGH
 
         case UnknownOS:         JUCE_FALLTHROUGH
+        case WASM:              JUCE_FALLTHROUGH
         default:                jassertfalse; break; // !! new type of OS?
     }
 

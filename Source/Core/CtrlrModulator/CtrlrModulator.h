@@ -27,46 +27,88 @@ class CtrlrModulator : public ChangeBroadcaster, public ValueTree::Listener, pub
 		CtrlrModulator(CtrlrPanel &_owner, const int suggestedVstIndex);
 		~CtrlrModulator();
 
+
 		/** @brief Get the VST/AU index this modulator uses
 
 			@return the index of the modulator on the parameter list
 		*/
 		int getVstIndex() const;
-
+    
 		/** @brief Get the current modulator value
 
 			@return the value of the modulator
 		*/
-		int getModulatorValue() const;
+		double getModulatorValue() const; // Updated v5.6.32. int to double
 
+    
 		/** @brief Get the current mapped modulator value
 
-			@return the mapped value of the modulator
+			@return the mapped value of the modulator as integer
 		*/
-		int getValueMapped() const;
+        int getModulatorValueInt() const;
 
-		/** @brief Get the current non-mapped modulator value
+    
+        /** @brief Get the current mapped modulator value
 
-			@return the current non-mapped value of the modulator
+            @return the mapped value of the modulator
+        */
+		double getValueMapped() const; // Updated v5.6.32. int to double
+
+    
+		/** @brief Get the current mapped modulator value
+
+			@return the current mapped value of the modulator as integer
 		*/
-		int getValueNonMapped() const;
+        int getValueMappedInt() const; // Added v5.6.32
+    
 
-		/** @brief Get the maximum value the modulator can have
+        /** @brief Get the current non-mapped modulator value
+     
+            @return the current non-mapped value of the modulator
+        */
+		double getValueNonMapped() const; // Updated v5.6.32. int to double
 
-			@return the max numeric value of the modulator
+
+        /** @brief Get the current non-mapped modulator value
+ 
+            @return the current non-mapped value of the modulator as integer
+        */
+        int getValueNonMappedInt() const; // Added v5.6.32
+        
+
+        /** @brief Get the maximum value the modulator can have
+
+            @return the max numeric value of the modulator
+        */
+		double getMaxModulatorValue() const; // Updated v5.6.32. int to double
+
+
+		/** @brief Get the max value the modulator can have
+
+            @return the max numeric value of the modulator as integer
 		*/
-		int getMaxModulatorValue() const;
+        int getMaxModulatorValueInt() const; // Added v5.6.32
 
-		/** @brief Get the minimum value the modulator can have
+    
+        /** @brief Get the minimum value the modulator can have
 
-			@return the minimum numeric value of the modulator
-		*/
-		int getMinModulatorValue() const;
+            @return the minimum numeric value of the modulator
+        */
+		double getMinModulatorValue() const; // Updated v5.6.32. int to double
 
-		/** @brief Get the object that represents this modulator in the UI
 
-			@return the CtrlrComponent object that is attached to this modulator, if there isn't one nil will be returned
-		*/
+        /** @brief Get the minimum value the modulator can have
+
+            @return the minimum numeric value of the modulator as integer
+        */
+        int getMinModulatorValueInt() const; // Added v5.6.32
+
+    
+        /** @brief Get the object that represents this modulator in the UI as integer
+
+            @return the CtrlrComponent object that is attached to this modulator, if there isn't one nil will be returned
+        */
+    
 		CtrlrComponent *getComponent();
 
 		/** @brief Get the restore state of the modulator
@@ -114,25 +156,50 @@ class CtrlrModulator : public ChangeBroadcaster, public ValueTree::Listener, pub
 
 			@param return	the max mapped value used
 		*/
-		int getMaxMapped();
+		double getMaxMapped(); // Updated v5.6.32. int to double
 
-		/** @brief Get the max non-mapped value, for a fixed component this will be the count of values on the list
+		/** @brief Get the max mapped value, for a fixed component this will be the count of values on the list
 
-			@param return	the max non-mapped value used
+			@param return	the max mapped value used as integer
 		*/
-		int getMaxNonMapped();
+        int getMaxMappedInt(); // Added v5.6.32
 
-		/** @brief Get the min mapped possible value (this will be the first mapped value on the list, not the numeric MIN value)
+        /** @brief Get the max non-mapped value, for a fixed component this will be the count of values on the list
 
-			@param return	the min mapped value used
+            @param return    the max non-mapped value used
+        */
+    
+		double getMaxNonMapped(); // Updated v5.6.32. int to double
+
+		/** @brief Get the min non-mapped possible value (this will be the first mapped value on the list, not the numeric MIN value) as integer
+
+			@param return	the min non-mapped value used as integer
 		*/
-		int getMinMapped();
+        int getMaxNonMappedInt(); // Added v5.6.32
 
-		/** @brief Get the min non-mapped value, for a fixed component this will be always 0
+        /** @brief Get the min mapped possible value (this will be the first mapped value on the list, not the numeric MIN value)
 
-			@param return	the min non-mapped value used
+            @param return    the min mapped value used as integer
+        */
+		double getMinMapped(); // Updated v5.6.32. int to double
+
+		/** @brief Get the min mapped value, for a fixed component this will be always 0
+
+			@param return	the min non-mapped value used as integer
 		*/
-		int getMinNonMapped();
+        int getMinMappedInt(); // Added v5.6.32
+        
+        /** @brief Get the min non-mapped value, for a fixed component this will be always 0
+
+            @param return    the min non-mapped value used
+        */
+		double getMinNonMapped(); // Updated v5.6.32. int to double
+    
+        /** @brief Get the min non-mapped value, for a fixed component this will be always 0
+
+            @param return    the min non-mapped value used as integer
+        */
+        int getMinNonMappedInt(); // Added v5.6.32
 
 		class ModulatorListener
 		{

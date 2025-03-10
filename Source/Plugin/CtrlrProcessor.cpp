@@ -15,9 +15,9 @@ CtrlrProcessor::CtrlrProcessor() :
                                     #ifndef JucePlugin_PreferredChannelConfigurations
                                     AudioProcessor (BusesProperties()
                                         #if ! JucePlugin_IsMidiEffect
-                                        #if ! JucePlugin_IsSynth
+                                        //#if ! JucePlugin_IsSynth // Removed v5.6.32. Was disabling all Inputs
                                                     .withInput  ("Input",  AudioChannelSet::stereo(), true)
-                                        #endif
+                                        //#endif
                                                     .withOutput ("Output", AudioChannelSet::stereo(), true)
                                         #endif
                                                     ),
@@ -119,6 +119,27 @@ void CtrlrProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuffer& midiMe
     MidiBuffer::Iterator i(midiMessages);
     while (i.getNextEvent(logResult, logSamplePos))
     _MOUT("VST OUTPUT", logResult, logSamplePos);
+    
+    
+    // Added v5.6.32. Useless
+    // Loop the audio from the inputs to the corroesponding outputs
+//    juce::ScopedNoDenormals noDenormals;
+//    auto totalNumInputChannels  = getTotalNumInputChannels();
+//    auto totalNumOutputChannels = getTotalNumOutputChannels();
+//
+//    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+//    buffer.clear (i, 0, buffer.getNumSamples());
+//
+//    double rawVolume = 1.0; // vol gain in = vol gain out 1/1
+//    for (int channel = 0; channel < totalNumInputChannels; ++channel)
+//    {
+//        auto* channelData = buffer.getWritePointer (channel);
+//
+//        for (int sample = 0; sample < buffer.getNumSamples(); sample++)
+//        {
+//            channelData[sample] = buffer.getSample(channel, sample) * rawVolume;
+//        }
+//    }
 }
 
 //==============================================================================
