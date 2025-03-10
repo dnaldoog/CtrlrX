@@ -15,8 +15,8 @@
   <id name="modulatorLinkedToModulatorSource" 	text="Link to MODULATOR modulation type" type="Bool" defaults="Numeric/Text"/>
   <id name="modulatorLinkedToModulator" 		text="Link to MODULATOR" type="VarText"/>
   <id name="modulatorLinkedToComponent" 		text="Link to what type of MODULATOR property" type="VarNumeric" defaults="Modulator=0,Component=1,MIDI Message=2" />
-  <id name="modulatorMax" 						text="Maximum value the modulator can have, should be set from the UI component" type="ReadOnly" min="-65536" max="65536" int="0.0001" />
-  <id name="s" 						text="Minimum value the modulator can have, should be set from the UI component" type="ReadOnly" min="-65536" max="65536" int="0.0001" />
+  <id name="modulatorMin" 						text="Minimum value the modulator can have, should be set from the UI component" type="ReadOnly" min="-65536" max="65536" int="0.0001" />
+  <id name="modulatorMax"                       text="Maximum value the modulator can have, should be set from the UI component" type="ReadOnly" min="-65536" max="65536" int="0.0001" />
   <id name="modulatorExcludeFromSnapshot" 		text="Don't send this modulator during snapshots" type="Bool" defaults="Don't send/Send"/>
   <id name="modulatorBaseValue" 				text="Base/fallback value" type="Numeric" min="-65536" max="65536"/>
   <id name="modulatorCustomIndex" 				text="Custom modulator index" type="Text"/>
@@ -159,6 +159,12 @@
   <id name="panelCtrlrRevision"             text="Ctrlr revision that this panel was saved with" type="Text"/>
   <id name="panelVendor"                    text="Vendor that made the device that this panel controls" type="Text"/>
   <id name="panelDevice"                    text="Device which this panel controls" type="Text"/>
+  <id name="panelPlugType"                  text="VST3 exported instance plugin type" type="VarText" defaults="@plugType"/>
+  <id name="panelCertificateMacSelectId"    text="Apple certificate ID" buttonText="Click to select ID" type="ActionButtonText" />
+  <id name="panelCertificateMacId"          text="Apple certificate ID selected" type="ReadOnly" />
+  <id name="panelCertificateWinSelectPath"  text="Windows PFX certificate" type="FileProperty" />
+  <id name="panelCertificateWinPath"        text="Windows PFX certificate path" type="ReadOnly" />
+  <id name="panelCertificateWinPassCode"    text="Windows PFX certificate password" type="Text" />
   <id name="panelModulatorListColumns"      text="Modulator list column state" type="ReadOnly"/>
   <id name="panelModulatorListCsvDelimiter" text="Modulator list CSV delimiter" type="Text"/>
   <id name="panelModulatorListXmlRoot"      text="Modulator list XML root element name" type="Text"/>
@@ -236,9 +242,14 @@
   <id name="uiSliderLookAndFeel"            text="LookAndFeel type" type="VarText" defaults="@componentlookandfeel" />
   <id name="uiSliderLookAndFeelIsCustom"    text="LookAndFeel is customized" type="Bool" defaults="Custom Colours/Default Colours" />
   <id name="uiSliderStyle" 					text="Slider style"     type="VarNumeric" defaults="LinearHorizontal,LinearVertical,LinearBar,Rotary,RotaryHorizontalDrag,RotaryVerticalDrag,IncDecButtons"/>
-  <id name="uiSliderMin" 					text="Minimum value"    type="Numeric" min="-2147483648" max="2147483647" int="0.000000001" />
-  <id name="uiSliderMax" 					text="Maximum value"    type="Numeric" min="-2147483648" max="2147483647" int="0.000000001" />
-  <id name="uiSliderInterval" 				text="Interval"         type="Numeric" min="-2147483648" max="2147483647" int="0.000000001" />
+  
+  <!-- Updated v5.6.32 -->
+  <id name="uiSliderMin" 					text="Minimum value"    type="Numeric" min="-65536" max="65536"  int="0.0001" />
+  <id name="uiSliderMax" 					text="Maximum value"    type="Numeric" min="-65536" max="65536"  int="0.0001" />
+  <id name="uiSliderInterval" 				text="Interval"         type="Numeric" min="0" max="65536"  int="0.0001" />
+  <id name="uiSliderDecimalPlaces"          text="Decimal place"    type="Numeric" min="0" max="4" />
+  <id name="uiSliderValueSuffix"            text="Value suffix"     type="Text" />
+  
   <id name="uiSliderDoubleClickValue" 		text="The value to set when double clicked" type="Numeric" min="-2147483648" max="2147483647" int="0.000000001" />
   <id name="uiSliderDoubleClickEnabled" 	text="Double clicked setting" type="Bool" defaults="Enabled/Disabled"/>
   <id name="uiSliderValuePosition" 			text="Value position" type="VarNumeric" defaults="NoTextBox=0,TextBoxLeft=1,TextBoxRight=2,TextBoxAbove=3,TextBoxBelow=4"/>
@@ -274,7 +285,6 @@
   <id name="uiSliderSpringValue" 			text="Slider spring to value" type="Numeric" min="-65536" max="65536"  int="0.0001" />
   <id name="uiSliderMouseWheelInterval" 	text="Interval for mouse wheel" type="Numeric" min="0" max="65536" int="0.0001" />
   <id name="uiSliderPopupBubble" 			text="Display popup bubble when dragging" type="Bool"/>
-  <id name="uiSliderDecimalPlaces" 			text="Modifies the best number of decimal places to use when displaying this slider's value" type="Numeric" min="0" max="16" />
   <id name="uiSliderSetNotificationOnlyOnRelease" text="Send Value only on release" type="Bool" defaults="enabled/Disabled"/>
 
   <!-- Fixed slider -->
@@ -673,9 +683,9 @@
   <id name="uiXYSurface" text="A XY modulator surface" type="Text"/>
 
   <!-- MIDI message properties -->
-  <id name="midiMessageCtrlrNumber" text="MIDI Controller number" type="Numeric" max="65536"/>
+  <id name="midiMessageCtrlrNumber" text="MIDI Controller number" type="Numeric" min="0" max="127" />
   <id name="midiMessageChannel" text="MIDI Channel" type="Numeric" min="1" max="16"/>
-  <id name="midiMessageCtrlrValue" text="MIDI Controller value" type="Numeric" min="-65536" max="65536"/>
+  <id name="midiMessageCtrlrValue" text="MIDI Controller value" type="Numeric" min="0" max="127" />
   <id name="midiMessageType" text="MIDI message type" type="VarNumeric"  defaults="CC=0,Aftertouch=1,ChannelPressure=2,NoteOn=3,NoteOff=4,SysEx=5,Multi=6,ProgramChange=7,PitchWheel=8,None=9"/>
   <id name="midiMessageSysExFormula" text="SysEx Formula" type="SysEx"/>
   <id name="midiMessageChannelOverride" text="Override panel MIDI channel" type="Bool" defaults="Yes/No"/>
@@ -902,6 +912,7 @@
     <const name="lookandfeel"          value="V4,V3,V2,V1" />
     <const name="colourSchemes"        value="Default,Light,Grey,Dark,Midnight" />
     <const name="ctrlrColourSchemes"   value="Light,Grey,Dark,Midnight,JetBlack,YamDX,AkAPC,AkMPC,LexiBlue,KurzGreen,KorGrey,KorGold,ArturOrange,AiraGreen" />
+    <const name="plugType"        value="Instrument|Drum,Instrument|Piano,Instrument|Synth,Instrument|Tools,Fx|Delay,Fx|Distortion,Fx|Dynamics,Fx|EQ,Fx|Filter,Fx|Instrument,Fx|Mastering,Fx|Modulation,Fx|Pitch Shift,Fx|Restoration,Fx|Reverb,Fx|Spatial,Fx|Synth,Fx|Tools" />
   </constants>
 
 </ctrlrIds>

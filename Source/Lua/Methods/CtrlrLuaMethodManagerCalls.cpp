@@ -107,7 +107,7 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1, const int param2, const uint8 param3)
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1, const double param2, const uint8 param3) // Updated v5.6.32. int to double
 {
 	const ScopedLock sl(methodManagerCriticalSection);
 

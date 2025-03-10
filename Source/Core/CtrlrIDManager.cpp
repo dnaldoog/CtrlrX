@@ -178,6 +178,8 @@ const String CtrlrIDManager::typeToString (const PropertyType t)
 			return ("LuaMethod");
 		case ActionButton:
 			return ("ActionButton");
+        case ActionButtonText: // Added v5.6.32
+            return ("ActionButtonText");
 		case Expression:
 			return ("Expression");
 		case UnknownProperty:
@@ -248,6 +250,10 @@ CtrlrIDManager::PropertyType CtrlrIDManager::stringToType (const String t)
 	{
 		return (ActionButton);
 	}
+    else if (t == "ActionButtonText") // Added v5.6.32
+    {
+        return (ActionButtonText);
+    }
 	else if (t == "Expression")
 	{
 		return (Expression);

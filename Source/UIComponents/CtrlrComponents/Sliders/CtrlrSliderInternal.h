@@ -12,7 +12,8 @@ class CtrlrSliderInternal : public Slider
 	public:
 		CtrlrSliderInternal (CtrlrComponent &_owner);
 		~CtrlrSliderInternal();
-		String getTextFromValue(double value);
+		String getTextFromValue(double value); // Updated v5.6.32
+        double getValueFromText (const String& text); // Added v5.6.32
 		void mouseWheelMove (const MouseEvent &e, const MouseWheelDetails& wheel);
 		JUCE_LEAK_DETECTOR(CtrlrSliderInternal)
 

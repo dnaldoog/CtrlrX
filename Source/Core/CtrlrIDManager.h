@@ -30,6 +30,7 @@ class CtrlrIDManager
 			SysEx,
 			LuaMethod,
 			ActionButton,
+            ActionButtonText, // Added v5.6.32
 			Expression,
 			UnknownProperty,
 			ReadOnly,
