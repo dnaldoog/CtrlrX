@@ -51,6 +51,8 @@ class CtrlrProcessor : public AudioProcessor, public ChangeBroadcaster
             bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
         #endif
     
+        double rawVolume;
+
 		void processBlock (AudioSampleBuffer& buffer, MidiBuffer& midiMessages) override;
     
 		AudioProcessorEditor* createEditor();

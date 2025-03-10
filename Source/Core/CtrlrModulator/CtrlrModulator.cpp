@@ -34,7 +34,6 @@ CtrlrModulator::CtrlrModulator(CtrlrPanel &_owner, const int suggestedVstIndex)
 	modulatorTree.addChild (processor.getMidiMessage().getMidiTree(), -1, 0);
 	modulatorTree.addListener (this);
 	setProperty (Ids::modulatorVstExported, true, false);
-	setProperty (Ids::modulatorMax, MAX_CONTROLLER_VALUE);
 	setProperty (Ids::vstIndex, suggestedVstIndex);
 	setProperty (Ids::modulatorIsStatic, false);
 	setProperty (Ids::modulatorGlobalVariable, -1);
@@ -60,6 +59,11 @@ CtrlrModulator::CtrlrModulator(CtrlrPanel &_owner, const int suggestedVstIndex)
 
 	setProperty (Ids::modulatorVstNameFormat, "%n");
 	setProperty (Ids::luaModulatorValueChange, COMBO_NONE_ITEM);
+    
+    setProperty (Ids::name, ""); // Added v5.6.32
+    setProperty (Ids::modulatorMin, MIN_CONTROLLER_VALUE); // Added v5.6.32
+    setProperty (Ids::modulatorMax, MAX_CONTROLLER_VALUE); // Added v5.6.32
+    setProperty (Ids::modulatorValue, ""); // Added v5.6.32
 }
 
 CtrlrModulator::~CtrlrModulator()
@@ -285,20 +289,39 @@ float CtrlrModulator::getVstValue(const int intValueToUse) const
 	}
 }
 
-int CtrlrModulator::getMaxModulatorValue() const
+double CtrlrModulator::getMaxModulatorValue() const // Updated v5.6.32. int to double
 {
 	return (processor.getMax());
 }
 
-int CtrlrModulator::getMinModulatorValue() const
+double CtrlrModulator::getMinModulatorValue() const // Updated v5.6.32. int to double
 {
 	return (processor.getMin());
 }
 
-int CtrlrModulator::getModulatorValue() const
+double CtrlrModulator::getModulatorValue() const // Updated v5.6.32. int to double
 {
 	return (processor.getValue());
 }
+
+int CtrlrModulator::getMaxModulatorValueInt() const // Added v5.6.32.
+{
+    return (std::ceil(processor.getMax()));
+}
+
+int CtrlrModulator::getMinModulatorValueInt() const // Added v5.6.32.
+{
+    
+    return (std::floor(processor.getMin()));
+}
+
+int CtrlrModulator::getModulatorValueInt() const // Added v5.6.32.
+{
+    
+    return (std::round(processor.getValue()));
+}
+
+
 
 bool CtrlrModulator::removeComponent()
 {

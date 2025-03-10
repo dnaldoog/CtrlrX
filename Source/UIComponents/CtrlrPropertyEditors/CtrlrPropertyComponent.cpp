@@ -154,6 +154,11 @@ Component *CtrlrPropertyComponent::getPropertyComponent()
 		case CtrlrIDManager::ActionButton:
             preferredHeight = 36;
 			return (new CtrlrButtonPropertyComponent(valueToControl, visibleText));
+        
+        case CtrlrIDManager::ActionButtonText: // Added v5.6.32
+            preferredHeight = 36;
+            buttonText = identifierDefinition.getProperty ("buttonText").toString();
+            return (new CtrlrButtonTextPropertyComponent(valueToControl, visibleText, buttonText));
             
 		case CtrlrIDManager::Numeric:
             preferredHeight = 36;
@@ -309,6 +314,32 @@ void CtrlrButtonPropertyComponent::refresh()
 void CtrlrButtonPropertyComponent::buttonClicked (Button *_button)
 {
 	valueToControl = true;
+}
+
+CtrlrButtonTextPropertyComponent::CtrlrButtonTextPropertyComponent(const Value &_valueToControl, const String &_propertyName, const String &_buttonText)
+    : valueToControl(_valueToControl), propertyName(_propertyName), buttonText(_buttonText) // Added v5.6.32
+{
+    button.setButtonText (buttonText);
+    button.addListener (this);
+    addAndMakeVisible (&button);
+}
+
+CtrlrButtonTextPropertyComponent::~CtrlrButtonTextPropertyComponent() // Added v5.6.32
+{
+}
+
+void CtrlrButtonTextPropertyComponent::resized() // Added v5.6.32
+{
+    button.setBounds (0, 0, getWidth(), getHeight());
+}
+
+void CtrlrButtonTextPropertyComponent::refresh() // Added v5.6.32
+{
+}
+
+void CtrlrButtonTextPropertyComponent::buttonClicked (Button *_button) // Added v5.6.32
+{
+    valueToControl = true;
 }
 
 CtrlrChoicePropertyComponent::CtrlrChoicePropertyComponent (const Value &_valueToControl,
@@ -633,7 +664,10 @@ CtrlrFileProperty::CtrlrFileProperty (const Value &_valeToControl) : valueToCont
 
     addAndMakeVisible (browse = new TextButton ("Browse", "Browse"));
     browse->addListener (this);
-	browse->setConnectedEdges (TextButton::ConnectedOnRight);
+	// browse->setConnectedEdges (TextButton::ConnectedOnLeft);
+    browse->setColour (TextButton::buttonColourId, findColour(TextButton::buttonColourId)); // Added v5.6.32
+    browse->setColour (TextButton::textColourOffId, findColour(TextButton::textColourOffId)); // Added v5.6.32
+    browse->setSize(64, 48);
     setSize (256, 48);
 }
 
@@ -645,8 +679,8 @@ CtrlrFileProperty::~CtrlrFileProperty()
 
 void CtrlrFileProperty::resized()
 {
-	browse->setBounds (0, 0, 48, getHeight());
-    path->setBounds (48, 0, getWidth() - 48, getHeight());
+	browse->setBounds (0, 0, 54, getHeight()); // Updated v5.6.32
+    path->setBounds (54, 0, getWidth() - 54, getHeight()); // Updated v5.6.32
 }
 
 void CtrlrFileProperty::buttonClicked (Button* buttonThatWasClicked)

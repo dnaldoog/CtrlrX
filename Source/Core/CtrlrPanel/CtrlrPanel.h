@@ -383,4 +383,5 @@ class CtrlrPanel:	public ValueTree::Listener,
 		Array<CtrlrMidiMessage,CriticalSection,4> multiMidiQueue;
 		Array<MemoryBlock,CriticalSection> partialMidiQueue;
 		int currentActionIndex, indexOfSavedState;
+        String getCodeSigningIdentityFromPopup(); // Added v5.6.32
 };

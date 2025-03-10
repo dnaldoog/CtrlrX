@@ -27,7 +27,7 @@ CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
     
     addAndMakeVisible (&ctrlrSlider);
     
-    ctrlrSlider.setRange (1, 127, 1);
+    ctrlrSlider.setRange (0, 127, 1);
     ctrlrSlider.setSliderStyle (Slider::RotaryVerticalDrag);
     ctrlrSlider.setTextBoxStyle (Slider::TextBoxBelow, false, 64, 12);
     
@@ -39,6 +39,8 @@ CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
     setProperty (Ids::uiSliderMin, 0);
     setProperty (Ids::uiSliderMax, 127);
     setProperty (Ids::uiSliderInterval, 1);
+    setProperty (Ids::uiSliderDecimalPlaces, 0);
+    setProperty (Ids::uiSliderValueSuffix, "");
     setProperty (Ids::uiSliderSetNotificationOnlyOnRelease, false);
     setProperty (Ids::uiSliderDoubleClickEnabled, true);
     setProperty (Ids::uiSliderDoubleClickValue, 0);
@@ -256,14 +258,15 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
     else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin)
     {
         // This was the script in v5.2.198
-        //ctrlrSlider.setRange ( (float) getProperty (Ids::uiSliderMin), (float) getProperty (Ids::uiSliderMax), (float) getProperty (Ids::uiSliderInterval) ); // Added back from v5.2.198 to v5.6.31 with float instead of double. Note: Float (32bit) is less precise than double (64bit).
+        // ctrlrSlider.setRange ( (double) getProperty (Ids::uiSliderMin), (double) getProperty (Ids::uiSliderMax), (double) getProperty (Ids::uiSliderInterval) );
         //owner.setProperty (Ids::modulatorMax, ctrlrSlider.getMaximum());
         //owner.setProperty (Ids::modulatorMin, ctrlrSlider.getMinimum());
         
         // The following script is different since v5.6.26+
-        float max = getProperty (Ids::uiSliderMax); // v5.6.31 (float) instead of (double). (double) was giving false values when negative
-        float min = getProperty (Ids::uiSliderMin); // v5.6.31 (float) instead of (const double). (const double) was giving false values when negative
-        float interval = getProperty (Ids::uiSliderInterval); // v5.6.31 (float) instead of (double). (double) was giving false values when negative
+        // v5.6.32 since all values are set as double it needs to be dble too, not float, or we'll get strange equivalent values with dble->float
+        double max = getProperty (Ids::uiSliderMax);  // Updated v5.6.32. double instead of float
+        double min = getProperty (Ids::uiSliderMin);  // Updated v5.6.32. double instead of float
+        double interval = getProperty (Ids::uiSliderInterval); // Updated v5.6.32. double instead of float
         if (interval == 0)
             interval = std::abs(max-min) + 1;
         // For JUCE MAX must be >= min
@@ -273,8 +276,20 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
             max = min + interval * 0.66;
         }
         ctrlrSlider.setRange ( min, max, interval );
-        owner.setProperty (Ids::modulatorMax, ctrlrSlider.getMaximum());
         owner.setProperty (Ids::modulatorMin, ctrlrSlider.getMinimum());
+        owner.setProperty (Ids::modulatorMax, ctrlrSlider.getMaximum());
+        lookAndFeelChanged();
+    }
+    else if (property == Ids::uiSliderDecimalPlaces) // Added v5.6.32
+    {
+        ctrlrSlider.setNumDecimalPlacesToDisplay((int)getProperty(Ids::uiSliderDecimalPlaces));
+        ctrlrSlider.lookAndFeelChanged();
+        
+    }
+    else if (property == Ids::uiSliderValueSuffix) // Added v5.6.32
+    {
+        ctrlrSlider.setTextValueSuffix(getProperty(Ids::uiSliderValueSuffix).toString());
+        ctrlrSlider.lookAndFeelChanged();
     }
     else if (property == Ids::uiSliderValuePosition || property == Ids::uiSliderValueHeight || property == Ids::uiSliderValueWidth)
     {
@@ -283,10 +298,12 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
             false,
             getProperty (Ids::uiSliderValueWidth, 64),
             getProperty (Ids::uiSliderValueHeight, 12));
+        
+        ctrlrSlider.lookAndFeelChanged();
     }
     else if (property == Ids::uiSliderSetNotificationOnlyOnRelease)
     {
-    ctrlrSlider.setChangeNotificationOnlyOnRelease((bool)getProperty(Ids::uiSliderSetNotificationOnlyOnRelease));
+        ctrlrSlider.setChangeNotificationOnlyOnRelease((bool)getProperty(Ids::uiSliderSetNotificationOnlyOnRelease));
     }
     else if (property == Ids::uiSliderIncDecButtonColour
              || property == Ids::uiSliderIncDecTextColour
@@ -303,10 +320,11 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
         }
         else
         {
-            //ctrlrSlider.setLookAndFeel (nullptr); // Warning, it resets the LnF on loading
-            //ctrlrSlider.setLookAndFeel (&lfV4); // V5.6.28+
+            ctrlrSlider.setLookAndFeel (nullptr); // Warning, it resets the LnF on loading. Uncommented v5.6.32
+            ctrlrSlider.setLookAndFeel (&lfV4); // V5.6.28+. Uncommented v5.6.32
         }
         setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        ctrlrSlider.lookAndFeelChanged(); // Added v5.6.32
     }
     else if (property == Ids::uiSliderVelocityMode
         || property == Ids::uiSliderVelocityModeKeyTrigger

@@ -26,7 +26,7 @@ struct CtrlrModulatorValue
 	CtrlrModulatorValue()
 		: value(-1), lastChangeSource(initialValue) {}
 
-	CtrlrModulatorValue(int _value, LastChangeSource _lastChangedSource)
+	CtrlrModulatorValue(double _value, LastChangeSource _lastChangedSource) // Updated v5.6.32. int to double. THIS shows decimals in the modulatorValue Property field
 		: value(_value), lastChangeSource(_lastChangedSource) {}
 
 	bool operator==(const CtrlrModulatorValue &other)
@@ -34,7 +34,7 @@ struct CtrlrModulatorValue
 		return (other.value == value);
 	}
 
-	int value;
+	double value; // Updated v5.6.32. int to double. THIS shows decimals in the modulatorValue Property field
 	LastChangeSource lastChangeSource;
 };
 //==============================================================================
@@ -55,15 +55,15 @@ class CtrlrModulatorProcessor : public AsyncUpdater, public Expression::Scope, p
 		void visit (const Scope &scope);
 		void setForwardExpression (const String &forwardExpressionString);
 		void setReverseExpression (const String &reverseExpressionString);
-		void setModulatorMaxValue (const int newMaxValue);
-		void setModulatorMinValue (const int newMinValue);
+		void setModulatorMaxValue (const double newMaxValue); // Updated v5.6.32. int to double
+		void setModulatorMinValue (const double newMinValue); // Updated v5.6.32. int to double
 		void setValueChangedCallback (const String &methodName);
 		void setGetValueFromMidiCallback (const String &methodName);
 		void setGetValueForMidiCallback (const String &methodName);
-		int getValue() const;
-		int getValueMapped() const;
-		int getMax() const;
-		int getMin() const;
+		double getValue() const; // Updated v5.6.32. int to double
+		double getValueMapped() const; // Updated v5.6.32. int to double
+		double getMax() const; // Updated v5.6.32. int to double
+		double getMin() const; // Updated v5.6.32. int to double
 
 		/** Used for evaluating expressions when getting the midi value from the modulator (forward evaluation)
 
@@ -76,7 +76,7 @@ class CtrlrModulatorProcessor : public AsyncUpdater, public Expression::Scope, p
 			- midiValue : the current value stored in the MIDI MESSAGE assosiated with the modulator
 			- midiNumber : the number of the MIDI MESSAGE controller if applicable
 		*/
-		int evaluateForward(const int inValue);
+		double evaluateForward(const double inValue); // Updated v5.6.32. int to double
 
 		/** Used for evaluating expressions when getting the modulator value from the incomming midi message
 
@@ -91,7 +91,7 @@ class CtrlrModulatorProcessor : public AsyncUpdater, public Expression::Scope, p
 			- midiValue : the value of the incomming midi message
 			- midiNumber : the number of the MIDI MESSAGE controller if applicable
 		*/
-		int evaluateReverse(const int inValue);
+		double evaluateReverse(const double inValue); // Updated v5.6.32. int to double
 
 		/** When evaluating expression in either direction a couple of utility functions can be used, the notation is the same as in C
 			for example to get the absolute value of the modulator you'd type: "abs(modulatorValue)" as the expression
@@ -153,7 +153,7 @@ class CtrlrModulatorProcessor : public AsyncUpdater, public Expression::Scope, p
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrModulatorProcessor)
 
 	private:
-		void setValue(const int value);
+		void setValue(const double value); // Updated v5.6.32. int to double
 		bool usingForwardProcess, usingReverseProcess, usingValueMap, linkedToGlobal, isMute;
 		ReadWriteLock processorLock;
 		CtrlrModulator &owner;
@@ -162,7 +162,8 @@ class CtrlrModulatorProcessor : public AsyncUpdater, public Expression::Scope, p
 		String forwardEvaluationErrors, reverseEvaluationErrors;
 		ScopedPointer <CtrlrOwnedMidiMessage> ctrlrMidiMessage, ctrlrMidiControllerMessage;
 		CtrlrModulatorValue currentValue;
-		int currentMidiValue, maxValue, minValue, globalIndex;
+		int currentMidiValue, globalIndex; // Updated v5.6.32.
+        double maxValue, minValue; // Updated v5.6.32. int to double
 		WeakReference <CtrlrLuaMethod> valueChangedCbk, getValueForMidiCbk, getValueFromMidiCbk;
 		CtrlrValueMap valueMap;
 };

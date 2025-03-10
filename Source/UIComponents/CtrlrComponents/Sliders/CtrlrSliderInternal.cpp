@@ -13,12 +13,64 @@ CtrlrSliderInternal::~CtrlrSliderInternal()
 {
 }
 
-String CtrlrSliderInternal::getTextFromValue(double value)
+String CtrlrSliderInternal::getTextFromValue(double value) // Updated v5.6.32. Required to add suffix to value like Hz, ms etc
 {
-	// Causes crash on MAC
-    // setColour (TooltipWindow::textColourId, VAR2COLOUR(owner.getOwner().getOwnerPanel().getEditor()->getProperty(Ids::uiPanelTooltipColour)));
-	return (owner.getTextForValue(value));
+    auto getText = [this](double val)
+    {
+        if (textFromValueFunction != nullptr)
+            return textFromValueFunction(val);
+
+        if (getNumDecimalPlacesToDisplay() > 0)
+            return String(val, getNumDecimalPlacesToDisplay());
+
+        return String(roundToInt(val));
+    };
+
+    String uiType = owner.getProperty(Ids::uiType);
+    if (uiType == "uiFixedSlider" || uiType == "uiFixedImageSlider")
+    {
+        return owner.getTextForValue(value) + getTextValueSuffix();
+    }
+    else
+    {
+        return getText(value) + getTextValueSuffix();
+    }
 }
+
+double CtrlrSliderInternal::getValueFromText (const String& text) // Added v5.6.32
+{
+    auto t = text.trimStart();
+
+    if (t.endsWith (getTextValueSuffix()))
+        t = t.substring (0, t.length() - getTextValueSuffix().length());
+
+    if (valueFromTextFunction != nullptr)
+        return valueFromTextFunction (t);
+
+    while (t.startsWithChar ('+'))
+        t = t.substring (1).trimStart();
+
+    String uiType = owner.getProperty(Ids::uiType);
+    if (uiType == "uiFixedSlider" || uiType == "uiFixedImageSlider")
+    {
+        String contentValues = owner.getProperty (Ids::uiFixedSliderContent);
+        // ScopedPointer<CtrlrValueMap> valueMapRef;
+        // valueMapRef->copyFrom (owner.getOwner().getProcessor().setValueMap (contentValues));
+
+        // This is where the magic should happen to return the closest value from the uiFixedSliderContent as valueMap
+        // But for now we still use the previous method
+        // return (3); // test
+        
+        return t.initialSectionContainingOnly ("0123456789.,-")
+                .getDoubleValue();
+    }
+    else
+    {
+        return t.initialSectionContainingOnly ("0123456789.,-")
+                .getDoubleValue();
+    }
+}
+
 
 void CtrlrSliderInternal::mouseWheelMove (const MouseEvent &e, const MouseWheelDetails& wheel)
 {

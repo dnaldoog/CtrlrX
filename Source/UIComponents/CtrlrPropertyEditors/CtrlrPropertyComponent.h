@@ -37,6 +37,7 @@ class CtrlrPropertyComponent  : public PropertyComponent
 	private:
 	    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrPropertyComponent);
 		String visibleText;
+        String buttonText;
 		ValueTree propertyElement;
 		Identifier propertyName;
 		ValueTree identifierDefinition;
@@ -81,6 +82,23 @@ class CtrlrButtonPropertyComponent : public Component, public Button::Listener, 
 		Value valueToControl;
 		String propertyName;
 		TextButton button;
+};
+
+// Added v5.6.32
+class CtrlrButtonTextPropertyComponent : public Component, public Button::Listener, public CtrlrPropertyChild
+{
+    public:
+    CtrlrButtonTextPropertyComponent (const Value &_valueToControl, const String &_propertyName, const String &_buttonText);
+        ~CtrlrButtonTextPropertyComponent();
+        void refresh();
+        void resized();
+        void buttonClicked (Button *button);
+
+    private:
+        Value valueToControl;
+        String propertyName;
+        TextButton button;
+        String buttonText;
 };
 
 class CtrlrChoicePropertyComponent  : public Component,

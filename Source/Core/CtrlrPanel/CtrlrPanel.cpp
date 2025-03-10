@@ -86,6 +86,13 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
     setProperty (Ids::panelVendor, "");
     setProperty (Ids::panelDevice, "");
     
+    // add if os is mac vs win to display only current system related props
+    setProperty (Ids::panelCertificateMacSelectId, 0); // Added v5.6.32
+    setProperty (Ids::panelCertificateMacId, ""); // Added v5.6.32
+    setProperty (Ids::panelCertificateWinSelectPath, ""); // Added v5.6.32
+    setProperty (Ids::panelCertificateWinPassCode, ""); // Added v5.6.32
+    setProperty (Ids::panelPlugType, "Instrument|Synth"); // Added v5.6.32
+
     setProperty (Ids::panelMidiSnapshotAfterLoad, false);
     setProperty (Ids::panelMidiSnapshotAfterProgramChange, false);
     setProperty (Ids::panelMidiSnapshotDelay, 10);
@@ -397,6 +404,97 @@ void CtrlrPanel::setProperty (const Identifier& name, const var &newValue, const
 	}
 }
 
+
+juce::String CtrlrPanel::getCodeSigningIdentityFromPopup()
+{
+    juce::StringArray commandParts;
+    commandParts.add("security");
+    commandParts.add("find-identity");
+    commandParts.add("-v");
+    commandParts.add("-p");
+    commandParts.add("codesigning");
+
+    juce::ChildProcess childProcess;
+    if (childProcess.start(commandParts))
+    {
+        childProcess.waitForProcessToFinish(-1);
+
+        if (!childProcess.isRunning())
+        {
+            if (childProcess.getExitCode() == 0)
+            {
+                juce::String output = childProcess.readAllProcessOutput();
+                juce::StringArray identities;
+                juce::StringArray lines;
+                lines.addLines(output);
+
+                for (auto& line : lines)
+                {
+                    if (line.contains("identity: "))
+                    {
+                        int startIndex = line.indexOf("\"") + 1;
+                        int endIndex = line.lastIndexOf("\"");
+
+                        if (startIndex != -1 && endIndex != -1 && startIndex < endIndex)
+                        {
+                            juce::String identity = line.substring(startIndex, endIndex);
+                            identities.add(identity);
+                        }
+                    }
+                }
+
+                std::cout << "Code signing identities:" << std::endl;
+                for (const auto& identity : identities)
+                {
+                    std::cout << identity << std::endl;
+                }
+
+                juce::PopupMenu menu;
+                menu.addItem(1, "Developer ID Application: Ad-Hoc Signing (No Certificate)"); // Add Ad-Hoc as the first item
+
+                for (int i = 0; i < identities.size(); ++i)
+                {
+                    menu.addItem(i + 2, identities[i]); // Add real identities, offset by 1
+                }
+
+                int result = menu.show();
+
+                if (result == 1) // Ad-Hoc selected
+                {
+                    return "-";
+                }
+                else if (result > 1) // Real identity selected
+                {
+                    return identities[result - 2]; // Correct index offset
+                }
+                else
+                {
+                    juce::Result::fail("Error: No identity selected.");
+                    return "";
+                }
+            }
+            else
+            {
+                juce::Result::fail("Error: Failed to retrieve code signing identities. Error code: " + juce::String(childProcess.getExitCode()));
+                return "";
+            }
+        }
+        else
+        {
+            juce::Result::fail("Error: Code signing identity retrieval process did not finish properly.");
+            return "";
+        }
+    }
+    else
+    {
+        juce::Result::fail("Error: Failed to start the code signing identity retrieval process.");
+        return "";
+    }
+
+    juce::Result::fail("Error: Unknown Error");
+    return "";
+}
+
 void CtrlrPanel::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
 {
 	if (treeWhosePropertyHasChanged.hasType(Ids::modulator))
@@ -478,6 +576,24 @@ void CtrlrPanel::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChange
 			ctrlrPanelEditor->setProperty (Ids::name, getProperty(Ids::name));
 		}
 	}
+    else if (property == Ids::panelCertificateMacSelectId) // Added v5.6.32. Returns the MAC certificate ID from the popupMenu
+    {
+        if (getRestoreState()) // Prevent showing up the popupMenu on load
+            return;
+        
+            if ((bool)getProperty(property) == true) // on button click
+            {
+                // Launch the popup to select the certificate identity
+                String selectedIdentity = getCodeSigningIdentityFromPopup();
+                
+                if (selectedIdentity.isNotEmpty())
+                {
+                    // Set the property with the selected certificate identity
+                    setProperty(Ids::panelCertificateMacId, selectedIdentity);
+                }
+            }
+            setProperty(property, false);
+    }
 	else if (property == Ids::luaPanelMidiReceived)
 	{
 		if (getProperty(property) == "")

@@ -28,7 +28,8 @@ CtrlrFixedImageSlider::CtrlrFixedImageSlider (CtrlrModulator &owner)
         
     setProperty (Ids::uiSliderMin, 0);
     setProperty (Ids::uiSliderMax, 1);
-    setProperty (Ids::uiSliderInterval, 1);
+    // setProperty (Ids::uiSliderInterval, 1); // Removed v5.6.32. Useless since indexes are stepped 1 by 1
+    setProperty (Ids::uiSliderValueSuffix, ""); // Added v5.6.32
     setProperty (Ids::uiSliderSetNotificationOnlyOnRelease, false);
     setProperty (Ids::uiSliderDoubleClickEnabled, true);
     setProperty (Ids::uiSliderDoubleClickValue, 0);
@@ -207,6 +208,11 @@ void CtrlrFixedImageSlider::valueTreePropertyChanged (ValueTree &treeWhoseProper
     else if (property == Ids::uiFixedSliderContent)
     {
         sliderContentChanged();
+    }
+    else if (property == Ids::uiSliderValueSuffix) // Added v5.6.32
+    {
+        ctrlrSlider->setTextValueSuffix(getProperty(Ids::uiSliderValueSuffix).toString());
+        ctrlrSlider->lookAndFeelChanged();
     }
     else if (property == Ids::uiSliderValuePosition || property == Ids::uiSliderValueHeight || property == Ids::uiSliderValueWidth)
     {

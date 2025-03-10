@@ -1071,34 +1071,70 @@ void CtrlrModulator::setModulatorValue(const int newValue, bool vst, bool midi, 
     processor.setValueGeneric (CtrlrModulatorValue (newValue, ui ? CtrlrModulatorValue::changedByProgram : CtrlrModulatorValue::changedByLua), true, !midi); // Added v5.6.31 to help avoid feedback loops between LUA and (delayed) UI commit 6e5a0b2 by midibox
 }
 
-int CtrlrModulator::getValueMapped() const
+double CtrlrModulator::getValueMapped() const // Updated v5.6.32. int to double
 {
 	return (processor.getValueMapped());
 }
 
-int CtrlrModulator::getValueNonMapped() const
+int CtrlrModulator::getValueMappedInt() const // Added v5.6.32
+{
+    int valueMapped = std::floor(processor.getValueMapped());
+    return valueMapped;
+}
+
+double CtrlrModulator::getValueNonMapped() const // Updated v5.6.32. int to double
 {
 	return (getModulatorValue());
 }
 
-int CtrlrModulator::getMaxMapped()
+int CtrlrModulator::getValueNonMappedInt() const // Added v5.6.32
+{
+    int valueNonMappedInt = std::floor(getModulatorValue());
+    return valueNonMappedInt;
+}
+
+double CtrlrModulator::getMaxMapped() // Updated v5.6.32. int to double
 {
 	return (processor.getValueMap().getMappedMax());
 }
 
-int CtrlrModulator::getMaxNonMapped()
+int CtrlrModulator::getMaxMappedInt() // Added v5.6.32
+{
+    int getMaxMappedInt = std::floor(processor.getValueMap().getMappedMax());
+    return getMaxMappedInt;
+}
+
+double CtrlrModulator::getMaxNonMapped() // Updated v5.6.32. int to double
 {
 	return (getMaxModulatorValue());
 }
 
-int CtrlrModulator::getMinMapped()
+int CtrlrModulator::getMaxNonMappedInt() // Added v5.6.32
+{
+    int valueMaxNonMappedInt = std::floor(getMaxModulatorValue());
+    return valueMaxNonMappedInt;
+}
+
+double CtrlrModulator::getMinMapped() // Updated v5.6.32. int to double
 {
 	return (processor.getValueMap().getMappedMin());
 }
 
-int CtrlrModulator::getMinNonMapped()
+int CtrlrModulator::getMinMappedInt() // Added v5.6.32
+{
+    int getMinMappedInt = std::floor(processor.getValueMap().getMappedMin());
+    return getMinMappedInt;
+}
+
+double CtrlrModulator::getMinNonMapped() // Updated v5.6.32. int to double
 {
 	return (getMinModulatorValue());
+}
+
+int CtrlrModulator::getMinNonMappedInt() // Added v5.6.32
+{
+    int valueMinNonMappedInt = std::floor(getMinModulatorValue());
+    return valueMinNonMappedInt;
 }
 
 void CtrlrModulator::setValueMappedCompat (const int newValue, const bool force)
@@ -1113,32 +1149,59 @@ void CtrlrModulator::wrapForLua (lua_State *L)
 	module(L)
 		[
 			class_<CtrlrModulator, CtrlrLuaObject>("CtrlrModulator")
+        
         .def("getValue", &CtrlrModulator::getModulatorValue)
-		.def("setValue", (void (CtrlrModulator::*)(const int, const bool))&CtrlrModulator::setValue)
+       
+        .def("getValueInt", &CtrlrModulator::getModulatorValueInt) // Added v5.6.32.
+        
+        .def("setValue", (void (CtrlrModulator::*)(const int, const bool))&CtrlrModulator::setValue)
 		.def("setValue", (void (CtrlrModulator::*)(const int, const bool, const bool))&CtrlrModulator::setValue)
-		.def("setValueMapped", &CtrlrModulator::setValueMapped)
+		
+        .def("setValueMapped", &CtrlrModulator::setValueMapped)
 		.def("setValueMapped", &CtrlrModulator::setValueMappedCompat)
 		.def("setValueNonMapped", &CtrlrModulator::setValueNonMapped)
-		.def("getVstIndex", &CtrlrModulator::getVstIndex)
-		.def("getMaxModulatorValue", &CtrlrModulator::getMaxModulatorValue)
-		.def("getMaxMapped", &CtrlrModulator::getMaxMapped)
-		.def("getMaxNonMapped", &CtrlrModulator::getMaxNonMapped)
-		.def("getMinMapped", &CtrlrModulator::getMinMapped)
-		.def("getMinNonMapped", &CtrlrModulator::getMinNonMapped)
-		.def("getMinModulatorValue", &CtrlrModulator::getMinModulatorValue)
+		
+        .def("getVstIndex", &CtrlrModulator::getVstIndex)
+
+        .def("getValueMapped", &CtrlrModulator::getValueMapped)
+        .def("getValueNonMapped", &CtrlrModulator::getValueNonMapped)
+
+        .def("getModulatorValue", &CtrlrModulator::getModulatorValue)
+            
+        .def("getMaxModulatorValue", &CtrlrModulator::getMaxModulatorValue)
+        .def("getMinModulatorValue", &CtrlrModulator::getMinModulatorValue)
+            
+        .def("getMaxMapped", &CtrlrModulator::getMaxMapped)
+        .def("getMaxNonMapped", &CtrlrModulator::getMaxNonMapped)
+        .def("getMinMapped", &CtrlrModulator::getMinMapped)
+        .def("getMinNonMapped", &CtrlrModulator::getMinNonMapped)
+            
+        .def("getValueMappedInt", &CtrlrModulator::getValueMappedInt) // Added v5.6.32.
+        .def("getValueNonMappedInt", &CtrlrModulator::getValueNonMappedInt) // Added v5.6.32.
+            
+        .def("getModulatorValueInt", &CtrlrModulator::getModulatorValueInt) // Added v5.6.32.
+            
+        .def("getMaxModulatorValueInt", &CtrlrModulator::getMaxModulatorValueInt) // Added v5.6.32.
+        .def("getMinModulatorValueInt", &CtrlrModulator::getMinModulatorValueInt) // Added v5.6.32.
+            
+        .def("getMaxMappedInt", &CtrlrModulator::getMaxMappedInt) // Added v5.6.32.
+        .def("getMaxNonMappedInt", &CtrlrModulator::getMaxNonMappedInt) // Added v5.6.32.
+        .def("getMinMappedInt", &CtrlrModulator::getMinMappedInt) // Added v5.6.32.
+        .def("getMinNonMappedInt", &CtrlrModulator::getMinNonMappedInt) // Added v5.6.32.
+
 		.def("getComponent", &CtrlrModulator::getComponent)
 		.def("getRestoreState", &CtrlrModulator::getRestoreState)
 		.def("isRestoring", &CtrlrModulator::getRestoreState)
 		.def("setRestoreState", &CtrlrModulator::setRestoreState)
 
-         .def("getMidiMessage", (CtrlrMidiMessage &(CtrlrModulator::*)(void))&CtrlrModulator::getMidiMessagePtr)
+        .def("getMidiMessage", (CtrlrMidiMessage &(CtrlrModulator::*)(void))&CtrlrModulator::getMidiMessagePtr)
 		.def("getMidiMessage", (CtrlrMidiMessage &(CtrlrModulator::*)(const CtrlrMIDIDeviceType))&CtrlrModulator::getMidiMessagePtr)
-		.def("getName", &CtrlrModulator::getName)
-		.def("getValueMapped", &CtrlrModulator::getValueMapped)
-		.def("getValueNonMapped", &CtrlrModulator::getValueNonMapped)
-		.def("getModulatorValue", &CtrlrModulator::getModulatorValue)
+		
+        .def("getName", &CtrlrModulator::getName)
+        
 		.def("setModulatorValue", &CtrlrModulator::setModulatorValue)
-		.def("getLuaName", &CtrlrModulator::getName)
+		
+        .def("getLuaName", &CtrlrModulator::getName)
 		.def("getModulatorName", &CtrlrModulator::getName)
 
 		.enum_("CtrlrModulatorValue")

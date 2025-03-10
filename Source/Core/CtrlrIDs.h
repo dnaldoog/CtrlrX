@@ -227,6 +227,12 @@ namespace Ids
     DECLARE_ID (panelCtrlrRevision);
     DECLARE_ID (panelVendor);
     DECLARE_ID (panelDevice);
+    DECLARE_ID (panelPlugType); // Added v5.6.32
+    DECLARE_ID (panelCertificateMacSelectId); // Added v5.6.32
+    DECLARE_ID (panelCertificateMacId); // Added v5.6.32
+    DECLARE_ID (panelCertificateWinSelectPath); // Added v5.6.32
+    DECLARE_ID (panelCertificateWinPath); // Added v5.6.32
+    DECLARE_ID (panelCertificateWinPassCode); // Added v5.6.32
     
     DECLARE_ID (panelModulatorListColumns);
     DECLARE_ID (panelModulatorListCsvDelimiter);
@@ -290,6 +296,7 @@ namespace Ids
     DECLARE_ID (uiSliderMin);
     DECLARE_ID (uiSliderMax);
     DECLARE_ID (uiSliderInterval);
+    DECLARE_ID (uiSliderValueSuffix);
     DECLARE_ID (uiSliderValuePosition);
     DECLARE_ID (uiSliderValueHeight);
     DECLARE_ID (uiSliderValueWidth);

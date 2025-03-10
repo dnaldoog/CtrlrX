@@ -23,10 +23,20 @@ ToDo
 Changelog
 ---------
 
-#### Version 5.6.32 | 2025.02
-* UPDATED Exported instances won't show the preferences and shortcut menu items. CtrlrEditorApplicationCommandsMenus.cpp
+#### Version 5.6.32 | 2025.03
+
+* NEW From now on, uisliders will return double float type values to manage decimals. If required values are integers,  new LUA function has been added : getValueInt()
+getModulatorInt(), getModulatorValueInt(), getMinModulatorValueInt(), getMaxModulatorValueInt(), getValueMappedInt(), getValueNonMappedInt(), getMinMappedInt(), getMaxMappedInt()
+
+* NEW VST3 can now export instances without the need to compile intermediate plugins from the Projucer. VST3 identifiers will be taken from the panel plugin name, plugin ID, Panel Author and manufacturer ID as well as the VST3 plugin type. Exported VST3 plugins are codesigned on export directly with JUCE childProcess() automatically, either with local ad-hoc signature or, if selected, with a developer certificate.
+
+* UPDATED Exported instances will now hide the preferences and shortcut menu items. CtrlrEditorApplicationCommandsMenus.cpp
+* UPDATED Decimal value are now supported for Sliders (ie. 3.1416). CtrlrModulator.cpp & h, CtrlrModulatorProcessor.cpp & h, CtrlrIDs.xml, CtrlrLuaManager.cpp, CtrlrLuaMethodManager.h, CtrlrLuaMethodManagerCalls.cpp, CtrlrFixedImageSlider.cpp, CtrlrFixedImageSlider.cpp, CtrlrImageSlider.cpp, CtrlrSliderInternal.cpp & h
+* UPDATED Decimal interval steps are now supported for Sliders (ie. 0.1)
 * FIXED Useless shortcuts such as "New Panel", "Export" enabled on restricted instances. CtrlrEditorApplicationCommands.cpp
 * FIXED FileChooser still hanging when exporting instance on OSX Catalina & macOS BigSur. CtrlrManager.cpp
+* ADDED Slider value Suffix (ie. Hz, ms, dB, etc)
+* ADDED JUCE systemStats support for WIN11, macOS 11, macOS 12, macOS 13, macOS 14, macOS 15 and macOS 16. juce_mac_systemStats.cpp, juce_win32_systemStats.cpp, juce_systemStats.h
 
 #### Version 5.6.31 | 2025.01
 * Security update : Encryption of the panel file in the macOS bundle for restricted instances. CtrlrMac.cpp, CtrlrEditorApplicationCommandsMenu.cpp, CtrlrManager.cpp

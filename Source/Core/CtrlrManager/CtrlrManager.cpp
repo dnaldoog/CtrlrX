@@ -80,8 +80,10 @@ void CtrlrManager::setDefaults()
     setProperty (Ids::ctrlrNativeAlerts, false);
     
     // Added v5.6.31. Prevents the native FileChooser hanging when calling for an instance export by requesting the fallback ugly embedded JUCE FileChooser
-    auto type = juce::SystemStats::getOperatingSystemType ();
-    if ( type == juce::SystemStats::OperatingSystemType::MacOSX_10_15 || type == juce::SystemStats::OperatingSystemType::MacOS_11) // For OSX 10.15 Catalina and macOS 11 BigSur
+    setProperty (Ids::ctrlrNativeFileDialogs, true);
+    auto typeOS = juce::SystemStats::getOperatingSystemType ();
+    std::cout << "typeOS: " << typeOS << std::endl;
+    if ( typeOS == juce::SystemStats::OperatingSystemType::MacOSX_10_15 || typeOS == juce::SystemStats::OperatingSystemType::MacOS_11) // For OSX 10.15 Catalina and macOS 11 BigSur
     {
         setProperty (Ids::ctrlrNativeFileDialogs, false);
     }
