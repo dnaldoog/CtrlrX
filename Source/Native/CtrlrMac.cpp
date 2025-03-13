@@ -31,6 +31,8 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
     String error;
     PluginLogger logger(me); // Create logger instance
     
+    logger.log("Starting exportWithDefaultPanel");
+    
     // Defines FileChooser and source file name to clone and mod as output file
     auto typeOS = juce::SystemStats::getOperatingSystemType();
     std::cout << "MAC native, launch fileChooser to select export destination path. typeOS : " << typeOS << std::endl;
@@ -161,141 +163,152 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                 logger.log("Failed to delete source file " + panelFile.getFullPathName());
             }
         }
-
-        // Replace the stock VST3 plugin identifiers with the panel to export ones.
+        
         if (executableFile.existsAsFile()) {
-
+            
             if (fileExtension == (".vst3")) {
                 std::cout << "fileExtension is : " << fileExtension << std::endl;
                 logger.log("fileExtension is : " + fileExtension );
-
-                MemoryBlock executableData;
-                if (executableFile.loadFileAsData(executableData))
-                {
-                    std::cout << "Executable loaded into memory successfully." << std::endl;
-                    logger.log("Executable loaded into memory successfully.");
-
-                    // Convert plugin name to hex for substitution
-                    String pluginName = panelToWrite->getProperty(Ids::name).toString();
-                    int pluginNameMaxLength = 32;
-                    MemoryBlock pluginNameHex;
-                    hexStringToBytes(pluginName, pluginNameMaxLength, pluginNameHex);
-                    std::cout << "pluginName: " << pluginName << std::endl;
-                    std::cout << "pluginNameHex representation: " << bytesToHexString(pluginNameHex) << std::endl;
-                    logger.log("pluginName: " + pluginName);
-                    logger.log("pluginNameHex representation: " + bytesToHexString(pluginNameHex));
-
-                    // Convert plugin code to hex for substitution
-                    String pluginCode = panelToWrite->getProperty(Ids::panelInstanceUID).toString();
-                    int pluginCodeMaxLength = 4;
-                    MemoryBlock pluginCodeHex;
-                    hexStringToBytes(pluginCode, pluginCodeMaxLength, pluginCodeHex);
-                    std::cout << "pluginCode: " << pluginCode << std::endl;
-                    std::cout << "pluginCodeHex representation: " << bytesToHexString(pluginCodeHex) << std::endl;
-                    logger.log("pluginCode: " + pluginCode);
-                    logger.log("pluginCodeHex representation: " + bytesToHexString(pluginCodeHex));
-
-                    // Convert manufacturer name to hex for substitution
-                    String manufacturerName = panelToWrite->getProperty(Ids::panelAuthorName).toString();
-                    int manufacturerNameMaxLength = 16;
-                    MemoryBlock manufacturerNameHex;
-                    hexStringToBytes(manufacturerName, manufacturerNameMaxLength, manufacturerNameHex);
-                    std::cout << "manufacturerName: " << manufacturerName << std::endl;
-                    std::cout << "manufacturerNameHex representation: " << bytesToHexString(manufacturerNameHex) << std::endl;
-                    logger.log("manufacturerName: " + manufacturerName);
-                    logger.log("manufacturerNameHex representation: " + bytesToHexString(manufacturerNameHex));
-
-                    // Convert plugin code to hex for substitution
-                    String manufacturerCode = panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString();
-                    int manufacturerCodeMaxLength = 4;
-                    MemoryBlock manufacturerCodeHex;
-                    hexStringToBytes(manufacturerCode, manufacturerCodeMaxLength, manufacturerCodeHex);
-                    std::cout << "manufacturerCode: " << manufacturerCode << std::endl;
-                    std::cout << "manufacturerCodeHex representation: " << bytesToHexString(manufacturerCodeHex) << std::endl;
-                    logger.log("manufacturerCode: " + manufacturerCode);
-                    logger.log("manufacturerCodeHex representation: " + bytesToHexString(manufacturerCodeHex));
-
-                    // Convert version Major to hex for substitution
-                    String versionMajor = panelToWrite->getProperty(Ids::panelVersionMajor).toString();
-                    int versionMajorMaxLength = 2;
-                    MemoryBlock versionMajorHex;
-                    hexStringToBytes(versionMajor, versionMajorMaxLength, versionMajorHex);
-                    std::cout << "versionMajor: " << versionMajor << std::endl;
-                    std::cout << "versionMajorHex representation: " << bytesToHexString(versionMajorHex) << std::endl;
-                    logger.log("versionMajor: " + versionMajor);
-                    logger.log("versionMajorHex representation: " + bytesToHexString(versionMajorHex));
-
-                    // Convert version minor to hex for substitution
-                    String versionMinor = panelToWrite->getProperty(Ids::panelVersionMinor).toString();
-                    int versionMinorMaxLength = 2;
-                    MemoryBlock versionMinorHex;
-                    hexStringToBytes(versionMinor, versionMinorMaxLength, versionMinorHex);
-                    std::cout << "versionMinor: " << versionMinor << std::endl;
-                    std::cout << "versionMinorHex representation: " << bytesToHexString(versionMinorHex) << std::endl;
-                    logger.log("versionMinor: " + versionMinor);
-                    logger.log("versionMinorHex representation: " + bytesToHexString(versionMinorHex));
-
-                    // Convert plugType to hex for substitution
-                    String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
-                    int plugTypeMaxLength = 16;
-                    MemoryBlock plugTypeHex;
-                    hexStringToBytes(plugType, plugTypeMaxLength, plugTypeHex);
-                    std::cout << "plugType: " << plugType << std::endl;
-                    std::cout << "plugTypeHex representation: " << bytesToHexString(plugTypeHex) << std::endl;
-                    logger.log("plugType: " + plugType);
-                    logger.log("plugTypeHex representation: " + bytesToHexString(plugTypeHex));
-
-                    // Substitution process
-                    // Replace CtrlrX plugin name "CtrlrX          "
-                    MemoryBlock searchPluginNameHex;
-                    hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20", searchPluginNameHex);
-                    replaceAllOccurrences(executableData, searchPluginNameHex, pluginNameHex);
-                    std::cout << "Plugin name replacement complete." << std::endl;
-                    logger.log("Plugin name replacement complete.");
-
-                    // Replace CtrlrX plugin manufacturer code "cTrX"
-                    MemoryBlock searchPluginCodeHex;
-                    hexStringToBytes("63 54 72 58", searchPluginCodeHex);
-                    replaceAllOccurrences(executableData, searchPluginCodeHex, pluginCodeHex);
-                    std::cout << "Plugin code replacement complete." << std::endl;
-                    logger.log("Plugin code replacement complete.");
-
-                    // Replace "CtrlrX Project  "
-                    MemoryBlock searchManufacturerNameHex;
-                    hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20", searchManufacturerNameHex);
-                    replaceAllOccurrences(executableData, searchManufacturerNameHex, manufacturerNameHex);
-                    std::cout << "Manufacturer name replacement complete." << std::endl;
-                    logger.log("Manufacturer name replacement complete.");
-
-                    // Replace CtrlrX plugin code "cTrl"
-                    MemoryBlock searchManufacturerCodeHex;
-                    hexStringToBytes("63 54 72 6C", searchManufacturerCodeHex);
-                    replaceAllOccurrences(executableData, searchManufacturerCodeHex, manufacturerCodeHex);
-                    std::cout << "Manufacturer code replacement complete." << std::endl;
-                    logger.log("Manufacturer code replacement complete.");
-
-                    // Replace plugType "Instrument|Tools"
-                    MemoryBlock searchPlugTypeHex;
-                    hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHex);
-                    replaceAllOccurrences(executableData, searchPlugTypeHex, plugTypeHex);
-                    std::cout << "VST3 plugin type replacement complete." << std::endl;
-                    logger.log("VST3 plugin type replacement complete.");
-
-                    // Save the modified executable
-                    File newExecutableFile = newMe.getChildFile("Contents/MacOS/CtrlrX");
-                    if (!newExecutableFile.replaceWithData(executableData.getData(), executableData.getSize()))
+                
+                // Replace the stock VST3 plugin identifiers with the panel to export ones.
+                const bool replaceVst3PluginIds = panelToWrite->getProperty(Ids::panelReplaceVst3PluginIds);
+                
+                if (replaceVst3PluginIds) {
+                    std::cout << "Replace the VST3 plugin identifiers with the panel ones : " << replaceVst3PluginIds << std::endl;
+                    logger.log("Replace the VST3 plugin identifiers with the panel ones : " + replaceVst3PluginIds);
+                    
+                    MemoryBlock executableData;
+                    if (executableFile.loadFileAsData(executableData))
                     {
-                        std::cout << "Failed to write modified executable data." << std::endl;
-                        logger.log("MAC Native: Failed to write modified executable data");
-                        return (Result::fail("MAC Native: Failed to write modified executable data"));
+                        std::cout << "Executable loaded into memory successfully." << std::endl;
+                        logger.log("Executable loaded into memory successfully.");
+                        
+                        // Convert plugin name to hex for substitution
+                        String pluginName = panelToWrite->getProperty(Ids::name).toString();
+                        int pluginNameMaxLength = 32;
+                        MemoryBlock pluginNameHex;
+                        hexStringToBytes(pluginName, pluginNameMaxLength, pluginNameHex);
+                        std::cout << "pluginName: " << pluginName << std::endl;
+                        std::cout << "pluginNameHex representation: " << bytesToHexString(pluginNameHex) << std::endl;
+                        logger.log("pluginName: " + pluginName);
+                        logger.log("pluginNameHex representation: " + bytesToHexString(pluginNameHex));
+                        
+                        // Convert plugin code to hex for substitution
+                        String pluginCode = panelToWrite->getProperty(Ids::panelInstanceUID).toString();
+                        int pluginCodeMaxLength = 4;
+                        MemoryBlock pluginCodeHex;
+                        hexStringToBytes(pluginCode, pluginCodeMaxLength, pluginCodeHex);
+                        std::cout << "pluginCode: " << pluginCode << std::endl;
+                        std::cout << "pluginCodeHex representation: " << bytesToHexString(pluginCodeHex) << std::endl;
+                        logger.log("pluginCode: " + pluginCode);
+                        logger.log("pluginCodeHex representation: " + bytesToHexString(pluginCodeHex));
+                        
+                        // Convert manufacturer name to hex for substitution
+                        String manufacturerName = panelToWrite->getProperty(Ids::panelAuthorName).toString();
+                        int manufacturerNameMaxLength = 16;
+                        MemoryBlock manufacturerNameHex;
+                        hexStringToBytes(manufacturerName, manufacturerNameMaxLength, manufacturerNameHex);
+                        std::cout << "manufacturerName: " << manufacturerName << std::endl;
+                        std::cout << "manufacturerNameHex representation: " << bytesToHexString(manufacturerNameHex) << std::endl;
+                        logger.log("manufacturerName: " + manufacturerName);
+                        logger.log("manufacturerNameHex representation: " + bytesToHexString(manufacturerNameHex));
+                        
+                        // Convert plugin code to hex for substitution
+                        String manufacturerCode = panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString();
+                        int manufacturerCodeMaxLength = 4;
+                        MemoryBlock manufacturerCodeHex;
+                        hexStringToBytes(manufacturerCode, manufacturerCodeMaxLength, manufacturerCodeHex);
+                        std::cout << "manufacturerCode: " << manufacturerCode << std::endl;
+                        std::cout << "manufacturerCodeHex representation: " << bytesToHexString(manufacturerCodeHex) << std::endl;
+                        logger.log("manufacturerCode: " + manufacturerCode);
+                        logger.log("manufacturerCodeHex representation: " + bytesToHexString(manufacturerCodeHex));
+                        
+                        // Convert version Major to hex for substitution
+                        String versionMajor = panelToWrite->getProperty(Ids::panelVersionMajor).toString();
+                        int versionMajorMaxLength = 2;
+                        MemoryBlock versionMajorHex;
+                        hexStringToBytes(versionMajor, versionMajorMaxLength, versionMajorHex);
+                        std::cout << "versionMajor: " << versionMajor << std::endl;
+                        std::cout << "versionMajorHex representation: " << bytesToHexString(versionMajorHex) << std::endl;
+                        logger.log("versionMajor: " + versionMajor);
+                        logger.log("versionMajorHex representation: " + bytesToHexString(versionMajorHex));
+                        
+                        // Convert version minor to hex for substitution
+                        String versionMinor = panelToWrite->getProperty(Ids::panelVersionMinor).toString();
+                        int versionMinorMaxLength = 2;
+                        MemoryBlock versionMinorHex;
+                        hexStringToBytes(versionMinor, versionMinorMaxLength, versionMinorHex);
+                        std::cout << "versionMinor: " << versionMinor << std::endl;
+                        std::cout << "versionMinorHex representation: " << bytesToHexString(versionMinorHex) << std::endl;
+                        logger.log("versionMinor: " + versionMinor);
+                        logger.log("versionMinorHex representation: " + bytesToHexString(versionMinorHex));
+                        
+                        // Convert plugType to hex for substitution
+                        String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
+                        int plugTypeMaxLength = 16;
+                        MemoryBlock plugTypeHex;
+                        hexStringToBytes(plugType, plugTypeMaxLength, plugTypeHex);
+                        std::cout << "plugType: " << plugType << std::endl;
+                        std::cout << "plugTypeHex representation: " << bytesToHexString(plugTypeHex) << std::endl;
+                        logger.log("plugType: " + plugType);
+                        logger.log("plugTypeHex representation: " + bytesToHexString(plugTypeHex));
+                        
+                        // Substitution process
+                        // Replace CtrlrX plugin name "CtrlrX          "
+                        MemoryBlock searchPluginNameHex;
+                        hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20", searchPluginNameHex);
+                        replaceAllOccurrences(executableData, searchPluginNameHex, pluginNameHex);
+                        std::cout << "Plugin name replacement complete." << std::endl;
+                        logger.log("Plugin name replacement complete.");
+                        
+                        // Replace CtrlrX plugin manufacturer code "cTrX"
+                        MemoryBlock searchPluginCodeHex;
+                        hexStringToBytes("63 54 72 58", searchPluginCodeHex);
+                        replaceAllOccurrences(executableData, searchPluginCodeHex, pluginCodeHex);
+                        std::cout << "Plugin code replacement complete." << std::endl;
+                        logger.log("Plugin code replacement complete.");
+                        
+                        // Replace "CtrlrX Project  "
+                        MemoryBlock searchManufacturerNameHex;
+                        hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20", searchManufacturerNameHex);
+                        replaceAllOccurrences(executableData, searchManufacturerNameHex, manufacturerNameHex);
+                        std::cout << "Manufacturer name replacement complete." << std::endl;
+                        logger.log("Manufacturer name replacement complete.");
+                        
+                        // Replace CtrlrX plugin code "cTrl"
+                        MemoryBlock searchManufacturerCodeHex;
+                        hexStringToBytes("63 54 72 6C", searchManufacturerCodeHex);
+                        replaceAllOccurrences(executableData, searchManufacturerCodeHex, manufacturerCodeHex);
+                        std::cout << "Manufacturer code replacement complete." << std::endl;
+                        logger.log("Manufacturer code replacement complete.");
+                        
+                        // Replace plugType "Instrument|Tools"
+                        MemoryBlock searchPlugTypeHex;
+                        hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHex);
+                        replaceAllOccurrences(executableData, searchPlugTypeHex, plugTypeHex);
+                        std::cout << "VST3 plugin type replacement complete." << std::endl;
+                        logger.log("VST3 plugin type replacement complete.");
+                        
+                        // Save the modified executable
+                        File newExecutableFile = newMe.getChildFile("Contents/MacOS/CtrlrX");
+                        if (!newExecutableFile.replaceWithData(executableData.getData(), executableData.getSize()))
+                        {
+                            std::cout << "Failed to write modified executable data." << std::endl;
+                            logger.log("MAC Native: Failed to write modified executable data");
+                            return (Result::fail("MAC Native: Failed to write modified executable data"));
+                        }
+                        std::cout << "Modified executable saved successfully." << std::endl;
+                        logger.log("Modified executable saved successfully."); //Added logger.
+                    } else {
+                        logger.log("Failed to load executable into memory."); // Added Logger.
+                        return Result::fail("Failed to load executable into memory.");
                     }
-                    std::cout << "Modified executable saved successfully." << std::endl;
-                    logger.log("Modified executable saved successfully."); //Added logger.
-                } else {
-                    logger.log("Failed to load executable into memory."); // Added Logger.
-                    return Result::fail("Failed to load executable into memory.");
+                } // End if replaceVst3PluginIds
+                else {
+                    std::cout << "replaceVst3PluginIds set to false, Vst3 IDs replacement skipped." << std::endl;
+                    logger.log("replaceVst3PluginIds set to false, Vst3 IDs replacement skipped."); // Added Logger.
                 }
-
+                
                 // Introduce a delay before codesigning
                 logger.log("Thread sleep to delay codesigning task.");
                 juce::Thread::sleep(500); // milliseconds (250ms should be ok, adjust as needed)
@@ -305,11 +318,11 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                 juce::String newMePathName = newMe.getFullPathName();
                 std::cout << "File FullPathname: " << newMePathName << std::endl;
                 logger.log("File FullPathname: " + newMePathName);
-
+                
                 juce::String panelCertificateMacIdentity = panelToWrite->getProperty(Ids::panelCertificateMacId).toString();
                 std::cout << "MAC Certificate Identity: " << panelCertificateMacIdentity << std::endl;
                 logger.log("MAC Certificate Identity: " + panelCertificateMacIdentity);
-
+                
                 const Result codesignResult = codesignFileMac(newMePathName, panelCertificateMacIdentity);
                 if (!codesignResult.wasOk()) {
                     logger.logResult(codesignResult); // Added logger.
@@ -318,15 +331,15 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                 logger.log("Codesigning successful.");
                 logger.logResult(codesignResult); // Added Logger for successful codesign.
             } // end if is .vst3
-
+            
             else { // if is not .vst3
                 // Now, codesign the newMe file and return result
                 const juce::String newMePathName = newMe.getFullPathName();
                 std::cout << "File FullPathname: " << newMePathName << std::endl;
-
+                
                 const juce::String panelCertificateMacIdentity = panelToWrite->getProperty(Ids::panelCertificateMacId).toString();
                 std::cout << "MAC Certificate Identity: " << panelCertificateMacIdentity << std::endl;
-
+                
                 const Result codesignResult = codesignFileMac(newMePathName, panelCertificateMacIdentity);
                 if (!codesignResult.wasOk()) {
                     logger.logResult(codesignResult); // Added Logger.
@@ -335,7 +348,7 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                 logger.log("Codesigning successful.");
                 logger.logResult(codesignResult); // Added Logger for successful codesign.
             } // end if is not .vst3
-
+            
         } // end if exist as file
         
     } // end if error

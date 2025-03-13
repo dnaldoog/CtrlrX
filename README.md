@@ -11,7 +11,6 @@ ToDo
 
 * Update to the latest version of JUCE 7
 * Upgrade LUABIND to another LUA/C++ library
-* VST Host must get the panel name while exported as VST3 plugin (currently always named as Ctrlr | Instigator)
 * APP/Plugin identifiers properly updated from panel infos in exported instances package. (info.plist, .exe, vst3, etc)
 * Implementation of the entire JUCE ValueTree Class with LUA
 * File path needs to be updated on save while the panel ID is changed (Save vs. Save as...)

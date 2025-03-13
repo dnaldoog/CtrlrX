@@ -85,12 +85,19 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
     setProperty (Ids::panelVersionName, "");
     setProperty (Ids::panelVendor, "");
     setProperty (Ids::panelDevice, "");
-    
-    // add if os is mac vs win to display only current system related props
-    setProperty (Ids::panelCertificateMacSelectId, 0); // Added v5.6.32
-    setProperty (Ids::panelCertificateMacId, ""); // Added v5.6.32
-    setProperty (Ids::panelCertificateWinSelectPath, ""); // Added v5.6.32
-    setProperty (Ids::panelCertificateWinPassCode, ""); // Added v5.6.32
+
+    // Exported Instance management
+    setProperty (Ids::panelReplaceVst3PluginIds, 1); // Added v5.6.32
+    // If OS is macOS
+    if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) != 0) {
+        setProperty (Ids::panelCertificateMacSelectId, 0); // Added v5.6.32
+        setProperty (Ids::panelCertificateMacId, ""); // Added v5.6.32
+    }
+    // if OS is WINDOWS
+    else if  ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::Windows) != 0) {
+        setProperty (Ids::panelCertificateWinSelectPath, ""); // Added v5.6.32
+        setProperty (Ids::panelCertificateWinPassCode, ""); // Added v5.6.32
+    }
     setProperty (Ids::panelPlugType, "Instrument|Synth"); // Added v5.6.32
 
     setProperty (Ids::panelMidiSnapshotAfterLoad, false);
