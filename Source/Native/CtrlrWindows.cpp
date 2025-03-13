@@ -114,7 +114,7 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
 			String filename = panelToWrite->getProperty(Ids::name).toString();
 			String lcFirstFourChars = filename.substring(0, 4).toLowerCase();
 			String firstSixChars = filename.substring(0, jmin(6, filename.length()));
-			String firstSixteenChars = filename.substring(0, jmin(16, filename.length()));
+			String firstFourteenChars = filename.substring(0, jmin(14, filename.length()));
 
 			// Convert to hex for substitution
 			MemoryBlock lcFirstFourHex;
@@ -124,14 +124,20 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
 				lcFirstFourHex.append(&byte, 1);
 			}
 
-			// Convert firstSixteenChars to hex for substitution
-			MemoryBlock firstSixteenHex;
-			for (int i = 0; i < firstSixteenChars.length(); ++i)
+			// Convert firstFourteenHex to hex for substitution
+			MemoryBlock firstFourteenHex;
+			for (int i = 0; i < firstFourteenChars.length(); ++i)
 			{
-				uint8 byte = static_cast<uint8>(firstSixChars[i]);
-				firstSixteenHex.append(&byte, 1);
+				uint8 byte = static_cast<uint8>(firstFourteenChars[i]);
+				firstFourteenHex.append(&byte, 1);
 			}
-
+			// Pad with zeros if less than 14 characters
+			size_t padding14 = 14 - firstFourteenChars.length();
+			for (size_t i = 0; i < padding14; ++i)
+			{
+				uint8 zero = 0;
+				firstFourteenHex.append(&zero, 1);
+			}
 			// Convert firstSixChars to hex for substitution
 			MemoryBlock firstSixHex;
 			for (int i = 0; i < firstSixChars.length(); ++i)
@@ -163,14 +169,18 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
 			hexStringToBytes("63 54 72 6C", searchHex3);
 			replaceAllOccurrences(executableData, searchHex3, lcFirstFourHex);
 
-			// 4. Replace first 32 instances of "CtrlrX" (43 74 72 6C 72 58) with first 6 chars of filename
-			MemoryBlock searchHex4;
-			hexStringToBytes("43 74 72 6C 72 58", searchHex4);
-			replaceFirstNOccurrences(executableData, searchHex4, firstSixHex, 32);
-
+			//5. Replace first instance of "CtrlrX" (43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74) with first 14 chars of filename
 			MemoryBlock searchHexProjName;
 			hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74", searchHexProjName);
-			replaceFirstNOccurrences(executableData, searchHexProjName, firstSixteenHex, 1);
+			replaceFirstNOccurrences(executableData, searchHexProjName, firstFourteenHex, 4);
+
+
+			// 6. Replace first 32 instances of "CtrlrX" (43 74 72 6C 72 58) with first 6 chars of filename
+			MemoryBlock searchHex4;
+			hexStringToBytes("43 74 72 6C 72 58", searchHex4);
+			replaceFirstNOccurrences(executableData, searchHex4, firstSixHex, 31);
+
+
 
 			// Save the modified executable
 			if (!newMe.replaceWithData(executableData.getData(), executableData.getSize()))
