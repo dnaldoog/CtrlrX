@@ -21,6 +21,9 @@ class CtrlrWindows : public CtrlrNative
 		const Result registerFileHandler();
 		const Result sendKeyPressEvent (const KeyPress &event);
 		const Result sendKeyPressEvent (const KeyPress &event, const String &targetWindowName);
+		static void hexStringToBytes(const String& hexString, MemoryBlock& result);
+		static void  replaceAllOccurrences(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData);
+		static void replaceFirstNOccurrences(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData, int maxOccurrences);
     private:
         CtrlrManager &owner;
 };

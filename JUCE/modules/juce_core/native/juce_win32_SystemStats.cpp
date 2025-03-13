@@ -237,31 +237,34 @@ static DebugFlagsInitialiser debugFlagsInitialiser;
  }
 #endif
 
-SystemStats::OperatingSystemType SystemStats::getOperatingSystemType()
-{
-   #if JUCE_MINGW
-    auto v = getWindowsVersion();
-    auto major = (v >> 16) & 0xff;
-    auto minor = (v >> 0)  & 0xff;
-   #else
-    auto versionInfo = getWindowsVersionInfo();
-    auto major = versionInfo.dwMajorVersion;
-    auto minor = versionInfo.dwMinorVersion;
-   #endif
+ SystemStats::OperatingSystemType SystemStats::getOperatingSystemType()
+ {
+#if JUCE_MINGW
+     const auto v = getWindowsVersion();
+     const auto major = (v >> 48) & 0xffff;
+     const auto minor = (v >> 32) & 0xffff;
+     const auto build = (v >> 16) & 0xffff;
+#else
+     const auto versionInfo = getWindowsVersionInfo();
+     const auto major = versionInfo.dwMajorVersion;
+     const auto minor = versionInfo.dwMinorVersion;
+     const auto build = versionInfo.dwBuildNumber;
+#endif
 
-    jassert (major <= 10); // need to add support for new version!
+     jassert(major <= 10); // need to add support for new version!
 
-    if (major == 10 && build >= 22000) return Windows11;
-    if (major == 6 && minor == 3)    return Windows8_1;
-    if (major == 6 && minor == 2)    return Windows8_0;
-    if (major == 6 && minor == 1)    return Windows7;
-    if (major == 6 && minor == 0)    return WinVista;
-    if (major == 5 && minor == 1)    return WinXP;
-    if (major == 5 && minor == 0)    return Win2000;
+     if (major == 10 && build >= 22000) return Windows11;
+     if (major == 10)                   return Windows10;
+     if (major == 6 && minor == 3)      return Windows8_1;
+     if (major == 6 && minor == 2)      return Windows8_0;
+     if (major == 6 && minor == 1)      return Windows7;
+     if (major == 6 && minor == 0)      return WinVista;
+     if (major == 5 && minor == 1)      return WinXP;
+     if (major == 5 && minor == 0)      return Win2000;
 
-    jassertfalse;
-    return UnknownOS;
-}
+     jassertfalse;
+     return UnknownOS;
+ }
 
 String SystemStats::getOperatingSystemName()
 {
