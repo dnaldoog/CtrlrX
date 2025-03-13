@@ -114,7 +114,8 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
 			String filename = panelToWrite->getProperty(Ids::name).toString();
 			String lcFirstFourChars = filename.substring(0, 4).toLowerCase();
 			String firstSixChars = filename.substring(0, jmin(6, filename.length()));
-			String firstFourteenChars = filename.substring(0, jmin(14, filename.length()));
+			String first32Chars = filename.substring(0, jmin(32, filename.length()));
+
 
 			// Convert to hex for substitution
 			MemoryBlock lcFirstFourHex;
@@ -124,21 +125,7 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
 				lcFirstFourHex.append(&byte, 1);
 			}
 
-			// Convert firstFourteenHex to hex for substitution
-			MemoryBlock firstFourteenHex;
-			for (int i = 0; i < firstFourteenChars.length(); ++i)
-			{
-				uint8 byte = static_cast<uint8>(firstFourteenChars[i]);
-				firstFourteenHex.append(&byte, 1);
-			}
-			// Pad with zeros if less than 14 characters
-			size_t padding14 = 14 - firstFourteenChars.length();
-			for (size_t i = 0; i < padding14; ++i)
-			{
-				uint8 zero = 0;
-				firstFourteenHex.append(&zero, 1);
-			}
-			// Convert firstSixChars to hex for substitution
+		// Convert firstSixChars to hex for substitution
 			MemoryBlock firstSixHex;
 			for (int i = 0; i < firstSixChars.length(); ++i)
 			{
@@ -146,18 +133,27 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
 				firstSixHex.append(&byte, 1);
 			}
 			// Pad with zeros if less than 6 characters
-			size_t padding = 6 - firstSixChars.length();
+			size_t padding = static_cast<size_t>(6) - firstSixChars.length();
 			for (size_t i = 0; i < padding; ++i)
 			{
 				uint8 zero = 0;
 				firstSixHex.append(&zero, 1);
 			}
 
-			// 1. Replace "Instrument|Tools" with "Instrument|Synth"
-			MemoryBlock searchHex1, replaceHex1;
-			hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73 00 00 00 00 43 74 72 6C 72", searchHex1);
-			hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 53 79 6E 74 68 00 00 00 00 43 74 72 6C 72", replaceHex1);
-			replaceAllOccurrences(executableData, searchHex1, replaceHex1);
+			// Pad with zeros if less than 32 characters
+			MemoryBlock first32Hex;
+			size_t padding32 = static_cast<size_t>(32) - first32Chars.length();
+			for (size_t i = 0; i < padding32; ++i)
+			{
+				uint8 zero = 0;
+				first32Hex.append(&zero, 1);
+			}
+
+			// 1. Replace "Instrument|Synth Ctrlr with Instrument|Synth filename without extension
+			String ics = "49 6E 73 74 72 75 6D 65 6E 74 7C 53 79 6E 74 68 00 00 00 00 43 74 72 6C 72 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20";
+			MemoryBlock searchISCtrlr;
+			hexStringToBytes(ics, searchISCtrlr);
+			replaceAllOccurrences(executableData, searchISCtrlr, first32Hex);
 
 			// 2. Replace "cTrX" (63 54 72 58) with lowercase first 4 chars of filename
 			MemoryBlock searchHex2;
@@ -169,18 +165,10 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
 			hexStringToBytes("63 54 72 6C", searchHex3);
 			replaceAllOccurrences(executableData, searchHex3, lcFirstFourHex);
 
-			//5. Replace first instance of "CtrlrX" (43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74) with first 14 chars of filename
-			MemoryBlock searchHexProjName;
-			hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74", searchHexProjName);
-			replaceFirstNOccurrences(executableData, searchHexProjName, firstFourteenHex, 4);
-
-
-			// 6. Replace first 32 instances of "CtrlrX" (43 74 72 6C 72 58) with first 6 chars of filename
+			// 4 Replace first 32 instances of "CtrlrX" (43 74 72 6C 72 58) with first 6 chars of filename
 			MemoryBlock searchHex4;
 			hexStringToBytes("43 74 72 6C 72 58", searchHex4);
 			replaceFirstNOccurrences(executableData, searchHex4, firstSixHex, 31);
-
-
 
 			// Save the modified executable
 			if (!newMe.replaceWithData(executableData.getData(), executableData.getSize()))
@@ -294,7 +282,7 @@ void CtrlrWindows::replaceFirstNOccurrences(MemoryBlock& targetData, const Memor
 		if (memcmp(rawData + i, searchData.getData(), searchSize) == 0)
 		{
 			// Replace the data
-			targetData.copyFrom(replaceData.getData(), i, replaceData.getSize());
+			targetData.copyFrom(replaceData.getData(), static_cast<size_t>(i), replaceData.getSize());
 			// Update rawData pointer as the memory might have been reallocated
 			rawData = static_cast<const uint8*>(targetData.getData());
 			occurrencesFound++;
