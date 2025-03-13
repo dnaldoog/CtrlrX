@@ -58,7 +58,7 @@ CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
     creditsLabel->setColour (TextEditor::backgroundColourId, Colour(getLookAndFeel().findColour (Label::backgroundColourId)));
     creditsLabel->setColour (TextEditor::outlineColourId, Colour(getLookAndFeel().findColour (TextEditor::outlineColourId).withAlpha(0.0f)));
     creditsLabel->setColour (TextEditor::shadowColourId, Colour(getLookAndFeel().findColour (TextEditor::shadowColourId).withAlpha(0.0f)));
-    creditsLabel->setText ("CtrlrX by Damien Sellier is an update version of \n"
+    creditsLabel->setText ("CtrlrX by Damien Sellier is an updated version of \n"
                            "Ctrlr by Roman Kubiak under BSD|GPL license.");
     
     

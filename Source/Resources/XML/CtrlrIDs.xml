@@ -159,6 +159,7 @@
   <id name="panelCtrlrRevision"             text="Ctrlr revision that this panel was saved with" type="Text"/>
   <id name="panelVendor"                    text="Vendor that made the device that this panel controls" type="Text"/>
   <id name="panelDevice"                    text="Device which this panel controls" type="Text"/>
+  <id name="panelReplaceVst3PluginIds"      text="VST3 identifiers" type="Bool" defaults="Replace with Panel IDs/Keep default IDs" />
   <id name="panelPlugType"                  text="VST3 exported instance plugin type" type="VarText" defaults="@plugType"/>
   <id name="panelCertificateMacSelectId"    text="Apple certificate ID" buttonText="Click to select ID" type="ActionButtonText" />
   <id name="panelCertificateMacId"          text="Apple certificate ID selected" type="ReadOnly" />
