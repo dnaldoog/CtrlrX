@@ -239,15 +239,17 @@ static DebugFlagsInitialiser debugFlagsInitialiser;
 
 SystemStats::OperatingSystemType SystemStats::getOperatingSystemType()
 {
-   #if JUCE_MINGW
-    auto v = getWindowsVersion();
-    auto major = (v >> 16) & 0xff;
-    auto minor = (v >> 0)  & 0xff;
-   #else
-    auto versionInfo = getWindowsVersionInfo();
-    auto major = versionInfo.dwMajorVersion;
-    auto minor = versionInfo.dwMinorVersion;
-   #endif
+    #if JUCE_MINGW
+    const auto v = getWindowsVersion();
+    const auto major = (v >> 48) & 0xffff;
+    const auto minor = (v >> 32) & 0xffff;
+    const auto build = (v >> 16) & 0xffff;
+    #else
+    const auto versionInfo = getWindowsVersionInfo();
+    const auto major = versionInfo.dwMajorVersion;
+    const auto minor = versionInfo.dwMinorVersion;
+    const auto build = versionInfo.dwBuildNumber;
+    #endif
 
     jassert (major <= 10); // need to add support for new version!
 
