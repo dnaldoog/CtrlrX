@@ -215,7 +215,7 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
 			
 			MemoryBlock trimReplace;
 			hexStringToBytes(trimProjectReplString, trimReplace);
-			trim(executableData, trimSearch, trimReplace, -1, 4);
+			trim(executableData, trimSearch, trimReplace, -1);
 
 			// Save the modified executable
 			if (!newMe.replaceWithData(executableData.getData(), executableData.getSize()))
@@ -284,54 +284,33 @@ void CtrlrWindows::hexStringToBytes(const String& hexString, MemoryBlock& result
 		}
 	}
 }
-void CtrlrWindows::trim(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData, int maxOccurrence, int position)
+void CtrlrWindows::trim(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData, int maxReplace)
 {
 	const uint8* rawData = static_cast<const uint8*>(targetData.getData());
 	size_t dataSize = targetData.getSize();
 	size_t searchSize = searchData.getSize();
 	int occurrencesFound = 0;
-	if (maxOccurrence == -1){
+	if (maxReplace == -1){
 		for (size_t i = 0; i <= dataSize - searchSize; ++i)
 		{
 			if (memcmp(rawData + i, searchData.getData(), searchSize) == 0)
 			{
-				// Replace the data
-				if (position == -1) {
 					targetData.copyFrom(replaceData.getData(), static_cast<size_t>(i), replaceData.getSize());
 					// Update rawData pointer as the memory might have been reallocated
 					rawData = static_cast<const uint8*>(targetData.getData());
-				}
-				else
-
-					if (i == position) {
-						targetData.copyFrom(replaceData.getData(), static_cast<size_t>(i), replaceData.getSize());
-						// Update rawData pointer as the memory might have been reallocated
-						rawData = static_cast<const uint8*>(targetData.getData());
-							}
 			}
 		}
 	}
 	else{
 	
-		for (size_t i = 0; i <= dataSize - searchSize && occurrencesFound < maxOccurrence; ++i)
+		for (size_t i = 0; i <= dataSize - searchSize && occurrencesFound < maxReplace; ++i)
 		{
 			if (memcmp(rawData + i, searchData.getData(), searchSize) == 0)
 			{
-				// Replace the data
-				if (position == -1) {
 					targetData.copyFrom(replaceData.getData(), static_cast<size_t>(i), replaceData.getSize());
 					// Update rawData pointer as the memory might have been reallocated
 					rawData = static_cast<const uint8*>(targetData.getData());
-				}
-				else
 
-					if (i == position) {
-						targetData.copyFrom(replaceData.getData(), static_cast<size_t>(i), replaceData.getSize());
-						// Update rawData pointer as the memory might have been reallocated
-						rawData = static_cast<const uint8*>(targetData.getData());
-						occurrencesFound++;
-
-					}
 			}
 		}
 	}

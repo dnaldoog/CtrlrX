@@ -25,9 +25,9 @@ public:
 	static void hexStringToBytes(const String& hexString, MemoryBlock& result);
 	static void  replaceAllOccurrences(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData);
 	static void replaceFirstNOccurrences(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData, int maxOccurrences);
-	static void trim(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData, int maxOccureence, int position);
+	static void trim(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData, int maxReplace);
 	// replace string will equal search string with trailing 00 instead of 20
-	// position could be last count etc -1 is ignore maxOccurence -1 means replace all
+	// maxReplace -1 means replace all
 private:
 	CtrlrManager& owner;
 };
