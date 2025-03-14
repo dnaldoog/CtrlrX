@@ -230,31 +230,25 @@ bool CtrlrMidiInputComparatorSingle::cacheMatch(CtrlrMidiMessageType type, const
 		return (cacheMatchSysEx());
 	}
 
-	Array<CtrlrCacheDataSingle>	&cache	= getCache(type);
+	Array<CtrlrCacheDataSingle>& cache = getCache(type);
 
-	for (int i=0; i<cache.size(); i++)
+	for (int i = 0; i < cache.size(); i++)
 	{
 		if (cache[i].key == number)
 		{
-			for (int j=0; j<cache[i].mapData.targets.size(); j++)
+			for (int j = 0; j < cache[i].mapData.targets.size(); j++)
 			{
 				if (cache[i].mapData.targets[j]->getMidiMessage().getChannel() == channel)
 				{
-					cache[i].mapData.targets[j]->getProcessor().setValueFromMIDI (messageContainer);
-					return (true);
-				}
-				else
-				{
-					return (false);
+					cache[i].mapData.targets[j]->getProcessor().setValueFromMIDI(messageContainer);
+					return true;
 				}
 			}
-		}
-		else
-		{
-			return (false);
+			// Only return false for this specific key if we've checked all targets
+			// and none matched the channel
 		}
 	}
-	return (false);
+	return false;
 }
 
 bool CtrlrMidiInputComparatorSingle::cacheMatchSysEx ()
