@@ -141,14 +141,21 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
 			}
 
 			// Pad with zeros if less than 32 characters
+// Create block with first 32 chars of name, padded with zeros if needed
 			MemoryBlock first32Hex;
+			// First add the actual characters from the name
+			for (int i = 0; i < first32Chars.length(); ++i) {
+				uint8 byte = static_cast<uint8>(first32Chars[i]);
+				first32Hex.append(&byte, 1);
+			}
+			// Then pad with zeros if needed
+			/*
 			size_t padding32 = static_cast<size_t>(31) - first32Chars.length();
-			for (size_t i = 0; i < padding32; ++i)
-			{
+			for (size_t i = 0; i < padding32; ++i) {
 				uint8 zero = 0;
 				first32Hex.append(&zero, 1);
 			}
-
+		*/
 			// 1. Replace "Instrument|Synth Ctrlr with Instrument|Synth filename without extension
 			//String orgInstToolsCtrlr = "49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73 00 00 00 00 00 00 00 00 43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20";
 			//String orgInstToolsCtrlr = "49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73 00 00 00 00 00 00 00 00 43 74 72 6C 72 58 20 20 20 20 69 68 43 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20";
@@ -164,29 +171,30 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
 			replaceFirstNOccurrences(executableData, searchFirstOccurrenceOfIntrumentTools, replaceFirstOccurrenceOfIntrumentTools, 3); // 1 replacement should do it
 
 			// Create the search pattern based on the "Instrument|Synth" pattern followed by zeros and "Ctrlr"
-String newInstSynth = instSynthHexString;
-String a=" 00 00 00 00 00 00 00 00 43 74 72 6C 72 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20";
-newInstSynth.append(a, a.length());
+			String newInstSynth = instSynthHexString;
+			String a = " 00 00 00 00 00 00 00 00 43 74 72 6C 72 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20";
+			newInstSynth.append(a, a.length());
 
-// Create the search memory block
-MemoryBlock searchFirstSynth;
-hexStringToBytes(newInstSynth, searchFirstSynth);
+			// Create the search memory block
+			MemoryBlock searchFirstSynth;
+			hexStringToBytes(newInstSynth, searchFirstSynth);
 
-// Create the replacement block with the same pattern
-MemoryBlock replaceFirstSynth;
-hexStringToBytes(newInstSynth, replaceFirstSynth);
+			// Create the replacement block with the same pattern
+			MemoryBlock replaceFirstSynth;
+			hexStringToBytes(newInstSynth, replaceFirstSynth);
 
-// Now replace the appropriate section (starting after "Instrument|Synth" and zeros) with the filename
-// The offset 24 should point to where "Ctrlr" starts in the pattern
-if (24 + first32Hex.getSize() <= replaceFirstSynth.getSize()) {
-    replaceFirstSynth.copyFrom(first32Hex.getData(), 24, first32Hex.getSize());
-} else {
-    // Handle error - can't fit the replacement data
-    return (Result::fail("Windows Native: first32Hex is too large to fit in the replacement pattern"));
-}
+			// Now replace the appropriate section (starting after "Instrument|Synth" and zeros) with the filename
+			// The offset 24 should point to where "Ctrlr" starts in the pattern
+			if (24 + first32Hex.getSize() <= replaceFirstSynth.getSize()) {
+				replaceFirstSynth.copyFrom(first32Hex.getData(), 24, first32Hex.getSize());
+			}
+			else {
+				// Handle error - can't fit the replacement data
+				return (Result::fail("Windows Native: first32Hex is too large to fit in the replacement pattern"));
+			}
 
-// Now perform the replacement
-replaceFirstNOccurrences(executableData, searchFirstSynth, replaceFirstSynth, 3);
+			// Now perform the replacement
+			replaceFirstNOccurrences(executableData, searchFirstSynth, replaceFirstSynth, 3);
 			/*
 			MemoryBlock orgSearch;
 			hexStringToBytes(orgInstToolsCtrlr,orgSearch);
@@ -316,7 +324,7 @@ void CtrlrWindows::replaceFirstNOccurrences(MemoryBlock& targetData, const Memor
 	if (searchData.getSize() != replaceData.getSize() || searchData.getSize() == 0)
 	{
 		DBG("Invalid search/replace data sizes");
-		return;
+		//return;
 	}
 
 	const uint8* rawData = static_cast<const uint8*>(targetData.getData());
