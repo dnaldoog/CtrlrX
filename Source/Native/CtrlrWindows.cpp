@@ -159,6 +159,9 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
 			// 1. Replace "Instrument|Synth Ctrlr with Instrument|Synth filename without extension
 		    String instToolsHexString = "49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73"; // Instrument|Tools
 			String instSynthHexString = "49 6E 73 74 72 75 6D 65 6E 74 7C 53 79 6E 74 68"; //Instrument|Synth
+			String trimProjectFindString = "43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20";
+			String trimProjectReplString = "43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00";
+
 			MemoryBlock searchFirstOccurrenceOfIntrumentTools;
 			MemoryBlock replaceFirstOccurrenceOfIntrumentTools;
 			hexStringToBytes(instToolsHexString, searchFirstOccurrenceOfIntrumentTools);
@@ -205,6 +208,14 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
 			MemoryBlock searchHex4;
 			hexStringToBytes("43 74 72 6C 72 58", searchHex4);
 			replaceFirstNOccurrences(executableData, searchHex4, firstSixHex, 31);
+
+			// 5 trim Ctrlr Project trailing 20 20 20 ...
+			MemoryBlock trimSearch;
+			hexStringToBytes(trimProjectFindString, trimSearch);			
+			
+			MemoryBlock trimReplace;
+			hexStringToBytes(trimProjectReplString, trimReplace);
+			trim(executableData, trimSearch, trimReplace, -1, 4);
 
 			// Save the modified executable
 			if (!newMe.replaceWithData(executableData.getData(), executableData.getSize()))
@@ -275,6 +286,55 @@ void CtrlrWindows::hexStringToBytes(const String& hexString, MemoryBlock& result
 }
 void CtrlrWindows::trim(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData, int maxOccurrence, int position)
 {
+	const uint8* rawData = static_cast<const uint8*>(targetData.getData());
+	size_t dataSize = targetData.getSize();
+	size_t searchSize = searchData.getSize();
+	int occurrencesFound = 0;
+	if (maxOccurrence == -1){
+		for (size_t i = 0; i <= dataSize - searchSize; ++i)
+		{
+			if (memcmp(rawData + i, searchData.getData(), searchSize) == 0)
+			{
+				// Replace the data
+				if (position == -1) {
+					targetData.copyFrom(replaceData.getData(), static_cast<size_t>(i), replaceData.getSize());
+					// Update rawData pointer as the memory might have been reallocated
+					rawData = static_cast<const uint8*>(targetData.getData());
+				}
+				else
+
+					if (i == position) {
+						targetData.copyFrom(replaceData.getData(), static_cast<size_t>(i), replaceData.getSize());
+						// Update rawData pointer as the memory might have been reallocated
+						rawData = static_cast<const uint8*>(targetData.getData());
+							}
+			}
+		}
+	}
+	else{
+	
+		for (size_t i = 0; i <= dataSize - searchSize && occurrencesFound < maxOccurrence; ++i)
+		{
+			if (memcmp(rawData + i, searchData.getData(), searchSize) == 0)
+			{
+				// Replace the data
+				if (position == -1) {
+					targetData.copyFrom(replaceData.getData(), static_cast<size_t>(i), replaceData.getSize());
+					// Update rawData pointer as the memory might have been reallocated
+					rawData = static_cast<const uint8*>(targetData.getData());
+				}
+				else
+
+					if (i == position) {
+						targetData.copyFrom(replaceData.getData(), static_cast<size_t>(i), replaceData.getSize());
+						// Update rawData pointer as the memory might have been reallocated
+						rawData = static_cast<const uint8*>(targetData.getData());
+						occurrencesFound++;
+
+					}
+			}
+		}
+	}
 
 
 }
