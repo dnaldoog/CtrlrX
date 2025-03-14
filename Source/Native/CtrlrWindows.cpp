@@ -6,7 +6,7 @@
 #include "CtrlrWindows.h"
 #include <psapi.h>
 
-CtrlrWindows::CtrlrWindows(CtrlrManager &_owner) : owner(_owner)
+CtrlrWindows::CtrlrWindows(CtrlrManager& _owner) : owner(_owner)
 {
 }
 
@@ -14,13 +14,13 @@ CtrlrWindows::~CtrlrWindows()
 {
 }
 
-const Result CtrlrWindows::writeResource (void *handle, const LPSTR resourceId, const LPSTR resourceType, const MemoryBlock &resourceData)
+const Result CtrlrWindows::writeResource(void* handle, const LPSTR resourceId, const LPSTR resourceType, const MemoryBlock& resourceData)
 {
 	HANDLE	hResource = (HANDLE)handle;
 
 	if (hResource)
 	{
-		return (UpdateResource (hResource, resourceType, resourceId, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPVOID) resourceData.getData(), (DWORD)resourceData.getSize()) ? Result::ok() : Result::fail("WIN32 UpdateResource failed"));
+		return (UpdateResource(hResource, resourceType, resourceId, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPVOID)resourceData.getData(), (DWORD)resourceData.getSize()) ? Result::ok() : Result::fail("WIN32 UpdateResource failed"));
 	}
 	else
 	{
@@ -28,12 +28,12 @@ const Result CtrlrWindows::writeResource (void *handle, const LPSTR resourceId, 
 	}
 }
 
-const Result CtrlrWindows::readResource (void *handle, const LPSTR resourceId, const LPSTR resourceType, MemoryBlock &resourceData)
+const Result CtrlrWindows::readResource(void* handle, const LPSTR resourceId, const LPSTR resourceType, MemoryBlock& resourceData)
 {
 	HRSRC	panelResource;
 	HGLOBAL panelLoadedResource;
 	String  data;
-	char	*dataPointer;
+	char* dataPointer;
 	DWORD	dataSize;
 	HMODULE myModuleHandle;
 
@@ -56,10 +56,10 @@ const Result CtrlrWindows::readResource (void *handle, const LPSTR resourceId, c
 
 			if (panelLoadedResource)
 			{
-				dataSize	= SizeofResource (myModuleHandle, panelResource);
-				dataPointer = (char *) LockResource (panelLoadedResource);
+				dataSize = SizeofResource(myModuleHandle, panelResource);
+				dataPointer = (char*)LockResource(panelLoadedResource);
 
-				resourceData = MemoryBlock(dataPointer,dataSize);
+				resourceData = MemoryBlock(dataPointer, dataSize);
 
 				return (Result::ok());
 			}
@@ -75,11 +75,11 @@ const Result CtrlrWindows::readResource (void *handle, const LPSTR resourceId, c
 	}
 	else
 	{
-		return (Result::fail("Windows Native: GetModuleHandle() for: \""+File::getSpecialLocation(File::currentExecutableFile).getFullPathName()+"\" failed"));
+		return (Result::fail("Windows Native: GetModuleHandle() for: \"" + File::getSpecialLocation(File::currentExecutableFile).getFullPathName() + "\" failed"));
 	}
 }
 
-const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel*  panelToWrite, const bool isRestricted, const bool signPanel)
+const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bool isRestricted, const bool signPanel)
 {
 	if (panelToWrite == nullptr)
 	{
@@ -89,13 +89,13 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel*  panelToWrite, con
 	File	me = File::getSpecialLocation(File::currentExecutableFile);
 	File	newMe;
 	HANDLE	hResource;
-	MemoryBlock panelExportData,panelResourcesData;
+	MemoryBlock panelExportData, panelResourcesData;
 	//MemoryBlock iconData(BinaryData::ico_midi_png, BinaryData::ico_midi_pngSize);
 
 	FileChooser fc(CTRLR_NEW_INSTANCE_DIALOG_TITLE,
-					me.getParentDirectory().getChildFile(File::createLegalFileName(panelToWrite->getProperty(Ids::name))).withFileExtension(me.getFileExtension()),
-					"*"+me.getFileExtension(),
-					panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs));
+		me.getParentDirectory().getChildFile(File::createLegalFileName(panelToWrite->getProperty(Ids::name))).withFileExtension(me.getFileExtension()),
+		"*" + me.getFileExtension(),
+		panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs));
 
 	if (fc.browseForFileToSave(true))
 	{
@@ -106,9 +106,130 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel*  panelToWrite, con
 			newMe = newMe.withFileExtension(me.getFileExtension());
 		}
 
-		if (!me.copyFileTo (newMe))
+		// Load the original executable into memory for binary search and replace
+		MemoryBlock executableData;
+		if (me.loadFileAsData(executableData))
 		{
-			return (Result::fail("Windows Native: exportMeWithNewResource can't copy \""+me.getFullPathName()+"\" to \""+newMe.getFullPathName()+"\""));
+			// Get the filename for use in substitutions
+			String filename = panelToWrite->getProperty(Ids::name).toString();
+			String lcFirstFourChars = filename.substring(0, 4).toLowerCase();
+			String firstSixChars = filename.substring(0, jmin(6, filename.length()));
+			String first32Chars = filename.substring(0, jmin(31, filename.length()));
+
+
+			// Convert to hex for substitution
+			MemoryBlock lcFirstFourHex;
+			for (int i = 0; i < lcFirstFourChars.length(); ++i)
+			{
+				uint8 byte = static_cast<uint8>(lcFirstFourChars[i]);
+				lcFirstFourHex.append(&byte, 1);
+			}
+
+		// Convert firstSixChars to hex for substitution
+			MemoryBlock firstSixHex;
+			for (int i = 0; i < firstSixChars.length(); ++i)
+			{
+				uint8 byte = static_cast<uint8>(firstSixChars[i]);
+				firstSixHex.append(&byte, 1);
+			}
+			// Pad with zeros if less than 6 characters
+			size_t padding = static_cast<size_t>(6) - firstSixChars.length();
+			for (size_t i = 0; i < padding; ++i)
+			{
+				uint8 zero = 0;
+				firstSixHex.append(&zero, 1);
+			}
+
+			// Pad with zeros if less than 32 characters
+// Create block with first 32 chars of name, padded with zeros if needed
+			MemoryBlock first32Hex;
+			// First add the actual characters from the name
+			for (int i = 0; i < first32Chars.length(); ++i) {
+				uint8 byte = static_cast<uint8>(first32Chars[i]);
+				first32Hex.append(&byte, 1);
+			}
+			// Then pad with zeros if needed
+	
+			size_t padding32 = static_cast<size_t>(31) - first32Chars.length();
+			for (size_t i = 0; i < padding32; ++i) {
+				uint8 zero = 0;
+				first32Hex.append(&zero, 1);
+			}
+		
+			// 1. Replace "Instrument|Synth Ctrlr with Instrument|Synth filename without extension
+		    String instToolsHexString = "49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73"; // Instrument|Tools
+			String instSynthHexString = "49 6E 73 74 72 75 6D 65 6E 74 7C 53 79 6E 74 68"; //Instrument|Synth
+			String trimProjectFindString = "43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20";
+			String trimProjectReplString = "43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00";
+
+			MemoryBlock searchFirstOccurrenceOfIntrumentTools;
+			MemoryBlock replaceFirstOccurrenceOfIntrumentTools;
+			hexStringToBytes(instToolsHexString, searchFirstOccurrenceOfIntrumentTools);
+			hexStringToBytes(instSynthHexString, replaceFirstOccurrenceOfIntrumentTools);
+
+			replaceFirstNOccurrences(executableData, searchFirstOccurrenceOfIntrumentTools, replaceFirstOccurrenceOfIntrumentTools, 1); // 1 replacement should do it
+
+			// Create the search pattern based on the "Instrument|Synth" pattern followed by zeros and "CtrlrX"
+			String newInstSynth = instSynthHexString;
+			String a = " 00 00 00 00 00 00 00 00 43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20";
+			newInstSynth.append(a, a.length());
+
+			// Create the search memory block
+			MemoryBlock searchFirstSynth;
+			hexStringToBytes(newInstSynth, searchFirstSynth);
+
+			// Create the replacement block with the same pattern
+			MemoryBlock replaceFirstSynth;
+			hexStringToBytes(newInstSynth, replaceFirstSynth);
+
+			// Now replace the appropriate section (starting after "Instrument|Synth" and zeros) with the filename
+			// The offset 24 should point to where "Ctrlr" starts in the pattern
+			if (24 + first32Hex.getSize() <= replaceFirstSynth.getSize()) {
+				replaceFirstSynth.copyFrom(first32Hex.getData(), 24, first32Hex.getSize());
+			}
+			else {
+				// Handle error - can't fit the replacement data
+				return (Result::fail("Windows Native: first32Hex is too large to fit in the replacement pattern"));
+			}
+
+			// Now perform the replacement
+			replaceFirstNOccurrences(executableData, searchFirstSynth, replaceFirstSynth, 1);
+			// 2. Replace "cTrX" (63 54 72 58) with lowercase first 4 chars of filename
+			MemoryBlock searchHex2;
+			hexStringToBytes("63 54 72 58", searchHex2);
+			replaceAllOccurrences(executableData, searchHex2, lcFirstFourHex);
+
+			// 3. Replace "cTrl" (63 54 72 6C) with lowercase first 4 chars of filename
+			MemoryBlock searchHex3;
+			hexStringToBytes("63 54 72 6C", searchHex3);
+			replaceAllOccurrences(executableData, searchHex3, lcFirstFourHex);
+
+			// 4 Replace first 32 instances of "CtrlrX" (43 74 72 6C 72 58) with first 6 chars of filename
+			MemoryBlock searchHex4;
+			hexStringToBytes("43 74 72 6C 72 58", searchHex4);
+			replaceFirstNOccurrences(executableData, searchHex4, firstSixHex, 31);
+
+			// 5 trim Ctrlr Project trailing 20 20 20 ...
+			MemoryBlock trimSearch;
+			hexStringToBytes(trimProjectFindString, trimSearch);			
+			
+			MemoryBlock trimReplace;
+			hexStringToBytes(trimProjectReplString, trimReplace);
+			trim(executableData, trimSearch, trimReplace, -1);
+
+			// Save the modified executable
+			if (!newMe.replaceWithData(executableData.getData(), executableData.getSize()))
+			{
+				return (Result::fail("Windows Native: Failed to write modified executable data"));
+			}
+		}
+		else
+		{
+			// Fallback to regular file copy if we can't load the file
+			if (!me.copyFileTo(newMe))
+			{
+				return (Result::fail("Windows Native: exportMeWithNewResource can't copy \"" + me.getFullPathName() + "\" to \"" + newMe.getFullPathName() + "\""));
+			}
 		}
 	}
 	else
@@ -122,10 +243,10 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel*  panelToWrite, con
 	{
 		String error;
 
-		if ( (error = CtrlrPanel::exportPanel (panelToWrite, File(), newMe, &panelExportData, &panelResourcesData, isRestricted)) == "")
+		if ((error = CtrlrPanel::exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData, isRestricted)) == "")
 		{
-			if (	writeResource (hResource, MAKEINTRESOURCE(CTRLR_INTERNAL_PANEL_RESID), RT_RCDATA, panelExportData)
-				&&	writeResource (hResource, MAKEINTRESOURCE(CTRLR_INTERNAL_RESOURCES_RESID), RT_RCDATA, panelResourcesData)
+			if (writeResource(hResource, MAKEINTRESOURCE(CTRLR_INTERNAL_PANEL_RESID), RT_RCDATA, panelExportData)
+				&& writeResource(hResource, MAKEINTRESOURCE(CTRLR_INTERNAL_RESOURCES_RESID), RT_RCDATA, panelResourcesData)
 				)
 			{
 				EndUpdateResource(hResource, FALSE);
@@ -137,7 +258,7 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel*  panelToWrite, con
 		}
 		else
 		{
-			return (Result::fail("Windows Native: exportMeWithNewResource exportPanel error: \""+error+"\""));
+			return (Result::fail("Windows Native: exportMeWithNewResource exportPanel error: \"" + error + "\""));
 		}
 
 		return (Result::ok());
@@ -146,15 +267,119 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel*  panelToWrite, con
 	return (Result::fail("Windows Native: exportMeWithNewResource BeginUpdateResource failed"));
 }
 
-const Result CtrlrWindows::getDefaultPanel(MemoryBlock &dataToWrite)
+// Helper function to convert hex string to binary data
+void CtrlrWindows::hexStringToBytes(const String& hexString, MemoryBlock& result)
+{
+	result.reset();
+	String cleanedHex = hexString.removeCharacters(" \t\r\n");
+
+	for (int i = 0; i < cleanedHex.length(); i += 2)
+	{
+		if (i + 1 < cleanedHex.length())
+		{
+			String byteStr = cleanedHex.substring(i, i + 2);
+			int byteVal = byteStr.getHexValue32();
+			uint8 byte = static_cast<uint8>(byteVal);
+			result.append(&byte, 1);
+		}
+	}
+}
+void CtrlrWindows::trim(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData, int maxReplace)
+{
+	const uint8* rawData = static_cast<const uint8*>(targetData.getData());
+	size_t dataSize = targetData.getSize();
+	size_t searchSize = searchData.getSize();
+	int occurrencesFound = 0;
+	if (maxReplace == -1){
+		for (size_t i = 0; i <= dataSize - searchSize; ++i)
+		{
+			if (memcmp(rawData + i, searchData.getData(), searchSize) == 0)
+			{
+					targetData.copyFrom(replaceData.getData(), static_cast<size_t>(i), replaceData.getSize());
+					// Update rawData pointer as the memory might have been reallocated
+					rawData = static_cast<const uint8*>(targetData.getData());
+			}
+		}
+	}
+	else{
+	
+		for (size_t i = 0; i <= dataSize - searchSize && occurrencesFound < maxReplace; ++i)
+		{
+			if (memcmp(rawData + i, searchData.getData(), searchSize) == 0)
+			{
+					targetData.copyFrom(replaceData.getData(), static_cast<size_t>(i), replaceData.getSize());
+					// Update rawData pointer as the memory might have been reallocated
+					rawData = static_cast<const uint8*>(targetData.getData());
+
+			}
+		}
+	}
+
+
+}
+
+
+// Replace all occurrences of searchData with replaceData in the targetData
+void CtrlrWindows::replaceAllOccurrences(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData)
+{
+	if (searchData.getSize() != replaceData.getSize() || searchData.getSize() == 0)
+	{
+		DBG("Invalid search/replace data sizes");
+		return;
+	}
+
+	const uint8* rawData = static_cast<const uint8*>(targetData.getData());
+	size_t dataSize = targetData.getSize();
+	size_t searchSize = searchData.getSize();
+
+	for (size_t i = 0; i <= dataSize - searchSize; ++i)
+	{
+		if (memcmp(rawData + i, searchData.getData(), searchSize) == 0)
+		{
+			// Replace the data
+			targetData.copyFrom(replaceData.getData(), static_cast<size_t>(i), replaceData.getSize());
+			// Update rawData pointer as the memory might have been reallocated
+			rawData = static_cast<const uint8*>(targetData.getData());
+		}
+	}
+}
+
+// Replace only the first N occurrences of searchData with replaceData in the targetData
+void CtrlrWindows::replaceFirstNOccurrences(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData, int maxOccurrences)
+{
+	if (searchData.getSize() != replaceData.getSize() || searchData.getSize() == 0)
+	{
+		DBG("Invalid search/replace data sizes");
+		//return;
+	}
+
+	const uint8* rawData = static_cast<const uint8*>(targetData.getData());
+	size_t dataSize = targetData.getSize();
+	size_t searchSize = searchData.getSize();
+	int occurrencesFound = 0;
+
+	for (size_t i = 0; i <= dataSize - searchSize && occurrencesFound < maxOccurrences; ++i)
+	{
+		if (memcmp(rawData + i, searchData.getData(), searchSize) == 0)
+		{
+			// Replace the data
+			targetData.copyFrom(replaceData.getData(), static_cast<size_t>(i), replaceData.getSize());
+			// Update rawData pointer as the memory might have been reallocated
+			rawData = static_cast<const uint8*>(targetData.getData());
+			occurrencesFound++;
+		}
+	}
+}
+
+const Result CtrlrWindows::getDefaultPanel(MemoryBlock& dataToWrite)
 {
 #ifdef DEBUG_INSTANCE
 	File temp("c:\\devel\\debug_small.bpanelz");
-	temp.loadFileAsData (dataToWrite);
+	temp.loadFileAsData(dataToWrite);
 	return (Result::ok());
 #endif
 
-	return (readResource (nullptr, MAKEINTRESOURCE(CTRLR_INTERNAL_PANEL_RESID), RT_RCDATA, dataToWrite));
+	return (readResource(nullptr, MAKEINTRESOURCE(CTRLR_INTERNAL_PANEL_RESID), RT_RCDATA, dataToWrite));
 }
 
 const Result CtrlrWindows::getDefaultResources(MemoryBlock& dataToWrite)
@@ -164,20 +389,20 @@ const Result CtrlrWindows::getDefaultResources(MemoryBlock& dataToWrite)
 
 	MemoryBlock data;
 	{
-		ScopedPointer <FileInputStream> fis (temp.createInputStream());
-		fis->readIntoMemoryBlock (data);
+		ScopedPointer <FileInputStream> fis(temp.createInputStream());
+		fis->readIntoMemoryBlock(data);
 	}
 
 	ValueTree t = ValueTree::readFromGZIPData(data.getData(), data.getSize());
 
 	if (t.isValid())
 	{
-		ValueTree r = t.getChildWithName (Ids::resourceExportList);
+		ValueTree r = t.getChildWithName(Ids::resourceExportList);
 		if (r.isValid())
 		{
-			MemoryOutputStream mos (dataToWrite, false);
+			MemoryOutputStream mos(dataToWrite, false);
 			{
-				GZIPCompressorOutputStream gzipOutputStream (&mos);
+				GZIPCompressorOutputStream gzipOutputStream(&mos);
 				r.writeToStream(gzipOutputStream);
 				gzipOutputStream.flush();
 			}
@@ -190,12 +415,12 @@ const Result CtrlrWindows::getDefaultResources(MemoryBlock& dataToWrite)
 	}
 #endif
 
-	return (readResource (nullptr, MAKEINTRESOURCE(CTRLR_INTERNAL_RESOURCES_RESID), RT_RCDATA, dataToWrite));
+	return (readResource(nullptr, MAKEINTRESOURCE(CTRLR_INTERNAL_RESOURCES_RESID), RT_RCDATA, dataToWrite));
 }
 
-const Result CtrlrWindows::getSignature(MemoryBlock &dataToWrite)
+const Result CtrlrWindows::getSignature(MemoryBlock& dataToWrite)
 {
-	return (readResource (nullptr, MAKEINTRESOURCE(CTRLR_INTERNAL_SIGNATURE_RESID), RT_RCDATA, dataToWrite));
+	return (readResource(nullptr, MAKEINTRESOURCE(CTRLR_INTERNAL_SIGNATURE_RESID), RT_RCDATA, dataToWrite));
 }
 
 const Result CtrlrWindows::registerFileHandler()
@@ -206,16 +431,16 @@ const Result CtrlrWindows::registerFileHandler()
 	const char* const exts[] = { ".panel", ".panelz", ".bpanel", ".bpanelz", nullptr };
 	StringArray extensions(exts);
 
-	for (int i=0; i<extensions.size(); i++)
+	for (int i = 0; i < extensions.size(); i++)
 	{
-		if (!WindowsRegistry::registerFileAssociation (extensions[i], "ctrlr"+extensions[i], "Ctrlr panel file ("+extensions[i]+")", File::getSpecialLocation(File::currentApplicationFile), -1, true))
-			return (Result::fail("Can't register ["+extensions[i]+"] file extension"));
+		if (!WindowsRegistry::registerFileAssociation(extensions[i], "ctrlr" + extensions[i], "Ctrlr panel file (" + extensions[i] + ")", File::getSpecialLocation(File::currentApplicationFile), -1, true))
+			return (Result::fail("Can't register [" + extensions[i] + "] file extension"));
 	}
 
 	return (Result::ok());
 }
 
-static void sendKey(const KeyPress &event)
+static void sendKey(const KeyPress& event)
 {
 	INPUT input;
 	input.type = INPUT_KEYBOARD;
@@ -267,21 +492,21 @@ static void sendKey(const KeyPress &event)
 	}
 }
 
-const Result CtrlrWindows::sendKeyPressEvent (const KeyPress &event)
+const Result CtrlrWindows::sendKeyPressEvent(const KeyPress& event)
 {
 	return (sendKeyPressEvent(event, ""));
 }
 
-const Result CtrlrWindows::sendKeyPressEvent (const KeyPress &event, const String &targetWindowName)
+const Result CtrlrWindows::sendKeyPressEvent(const KeyPress& event, const String& targetWindowName)
 {
 	HWND firstwindow = FindWindowEx(NULL, NULL, NULL, NULL);
-    HWND window = firstwindow;
-    TCHAR windowtext[MAX_PATH];
+	HWND window = firstwindow;
+	TCHAR windowtext[MAX_PATH];
 	// INPUT input;
 
 	if (targetWindowName != "")
 	{
-		while(1)
+		while (1)
 		{
 
 			GetWindowText(window, windowtext, MAX_PATH);
