@@ -239,22 +239,17 @@ bool CtrlrMidiInputComparatorSingle::cacheMatch(CtrlrMidiMessageType type, const
 			for (int j=0; j<cache[i].mapData.targets.size(); j++)
 			{
 				if (cache[i].mapData.targets[j]->getMidiMessage().getChannel() == channel)
-				{
-					cache[i].mapData.targets[j]->getProcessor().setValueFromMIDI (messageContainer);
-					return (true);
-				}
-				else
-				{
-					return (false);
-				}
-			}
-		}
-		else
-		{
-			return (false);
-		}
-	}
-	return (false);
+                {
+                    cache[i].mapData.targets[j]->getProcessor().setValueFromMIDI (messageContainer);
+                    return (true);
+                }
+            }
+            // Updated v5.6.32. Fix VS warning at line 239. Error C4702 "unreachable code". Mod by @dnaldoog
+            // Only return false for this specific key if we've checked all targets
+            // and none matched the channel
+        }
+    }
+    return (false);
 }
 
 bool CtrlrMidiInputComparatorSingle::cacheMatchSysEx ()
