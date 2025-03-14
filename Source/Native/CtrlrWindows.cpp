@@ -149,30 +149,26 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
 				first32Hex.append(&byte, 1);
 			}
 			// Then pad with zeros if needed
-			/*
+	
 			size_t padding32 = static_cast<size_t>(31) - first32Chars.length();
 			for (size_t i = 0; i < padding32; ++i) {
 				uint8 zero = 0;
 				first32Hex.append(&zero, 1);
 			}
-		*/
+		
 			// 1. Replace "Instrument|Synth Ctrlr with Instrument|Synth filename without extension
-			//String orgInstToolsCtrlr = "49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73 00 00 00 00 00 00 00 00 43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20";
-			//String orgInstToolsCtrlr = "49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73 00 00 00 00 00 00 00 00 43 74 72 6C 72 58 20 20 20 20 69 68 43 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20";
-			//String newInstSynth =       "49 6E 73 74 72 75 6D 65 6E 74 7C 53 79 6E 74 68 00 00 00 00 00 00 00 00"; // 43 74 72 6C 72 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20";
-			//String replacetoolswithsynth = "49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73 00 00 00 00"; // 43 74 72 6C 72 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20";
-			String instToolsHexString = "49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73"; // Instrument|Tools
+		    String instToolsHexString = "49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73"; // Instrument|Tools
 			String instSynthHexString = "49 6E 73 74 72 75 6D 65 6E 74 7C 53 79 6E 74 68"; //Instrument|Synth
 			MemoryBlock searchFirstOccurrenceOfIntrumentTools;
 			MemoryBlock replaceFirstOccurrenceOfIntrumentTools;
 			hexStringToBytes(instToolsHexString, searchFirstOccurrenceOfIntrumentTools);
 			hexStringToBytes(instSynthHexString, replaceFirstOccurrenceOfIntrumentTools);
 
-			replaceFirstNOccurrences(executableData, searchFirstOccurrenceOfIntrumentTools, replaceFirstOccurrenceOfIntrumentTools, 3); // 1 replacement should do it
+			replaceFirstNOccurrences(executableData, searchFirstOccurrenceOfIntrumentTools, replaceFirstOccurrenceOfIntrumentTools, 1); // 1 replacement should do it
 
-			// Create the search pattern based on the "Instrument|Synth" pattern followed by zeros and "Ctrlr"
+			// Create the search pattern based on the "Instrument|Synth" pattern followed by zeros and "CtrlrX"
 			String newInstSynth = instSynthHexString;
-			String a = " 00 00 00 00 00 00 00 00 43 74 72 6C 72 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20";
+			String a = " 00 00 00 00 00 00 00 00 43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20";
 			newInstSynth.append(a, a.length());
 
 			// Create the search memory block
@@ -194,22 +190,7 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
 			}
 
 			// Now perform the replacement
-			replaceFirstNOccurrences(executableData, searchFirstSynth, replaceFirstSynth, 3);
-			/*
-			MemoryBlock orgSearch;
-			hexStringToBytes(orgInstToolsCtrlr,orgSearch);
-
-			MemoryBlock constructedReplacement;
-			hexStringToBytes(newInstSynth,constructedReplacement);
-			constructedReplacement.append(&first32Hex, first32Hex.getSize());
-
-			MemoryBlock searchIsUserDesignatedName(constructedReplacement.getSize());
-			//hexStringToBytes(, searchIsUserDesignatedName);
-			searchIsUserDesignatedName.copyFrom(&constructedReplacement, 0, constructedReplacement.getSize());
-			//replaceAllOccurrences(executableData, searchISCtrlr, first32Hex);
-			replaceFirstNOccurrences(executableData, orgSearch, constructedReplacement,1);
-			*/
-
+			replaceFirstNOccurrences(executableData, searchFirstSynth, replaceFirstSynth, 1);
 			// 2. Replace "cTrX" (63 54 72 58) with lowercase first 4 chars of filename
 			MemoryBlock searchHex2;
 			hexStringToBytes("63 54 72 58", searchHex2);
@@ -292,6 +273,12 @@ void CtrlrWindows::hexStringToBytes(const String& hexString, MemoryBlock& result
 		}
 	}
 }
+void CtrlrWindows::trim(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData, int maxOccurrence, int position)
+{
+
+
+}
+
 
 // Replace all occurrences of searchData with replaceData in the targetData
 void CtrlrWindows::replaceAllOccurrences(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData)
@@ -311,7 +298,7 @@ void CtrlrWindows::replaceAllOccurrences(MemoryBlock& targetData, const MemoryBl
 		if (memcmp(rawData + i, searchData.getData(), searchSize) == 0)
 		{
 			// Replace the data
-			targetData.copyFrom(replaceData.getData(), i, replaceData.getSize());
+			targetData.copyFrom(replaceData.getData(), static_cast<size_t>(i), replaceData.getSize());
 			// Update rawData pointer as the memory might have been reallocated
 			rawData = static_cast<const uint8*>(targetData.getData());
 		}

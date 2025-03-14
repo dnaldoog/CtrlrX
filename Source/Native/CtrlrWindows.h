@@ -25,7 +25,7 @@ public:
 	static void hexStringToBytes(const String& hexString, MemoryBlock& result);
 	static void  replaceAllOccurrences(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData);
 	static void replaceFirstNOccurrences(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData, int maxOccurrences);
-	//static void findPatternAndInsertFilename(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData, int location, int maxOccurrences);
+	static void trim(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData, int maxOccureence, int position);// position could be last count etc -1 is ignore
 private:
 	CtrlrManager& owner;
 };
