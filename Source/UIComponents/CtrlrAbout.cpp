@@ -439,7 +439,7 @@ void CtrlrAbout::resized()
     copyrightLabel->setBounds (ctrlrLogoSize + paddingSize*3 +4, heightPosition, rightColumnWidth, copyrightLabelheight);
     
     
-    int versionInfoLabelHeight = 56;
+    // int versionInfoLabelHeight = 56;
     heightPosition += ( descriptionLabelheight + paddingSize*2 );
     // versionInfoLabel->setBounds (paddingSize, heightPosition, getWidth() - paddingSize*2, versionInfoLabelHeight); // Frame with codeEditor for CtrlrX libraries' versions
     
