@@ -94,8 +94,9 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
         setProperty (Ids::panelCertificateMacId, ""); // Added v5.6.32
     }
     // if OS is WINDOWS
-    else if  ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::Windows) != 0) {
-        setProperty (Ids::panelCertificateWinSelectPath, ""); // Added v5.6.32
+	// else if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::Windows) != 0) { // v5.6.32. Won't work with WIN10 or will require an addon in Manifest https://forum.juce.com/t/bug-systemstats-getoperatingsystemname-on-windows-10/21659/3
+	else {
+		setProperty (Ids::panelCertificateWinSelectPath, ""); // Added v5.6.32
         setProperty (Ids::panelCertificateWinPassCode, ""); // Added v5.6.32
     }
     setProperty (Ids::panelPlugType, "Instrument|Synth"); // Added v5.6.32
