@@ -39,7 +39,7 @@ void CtrlrModulatorProcessor::handleAsyncUpdate()
 
 		/* If we already have the same value, calling setProperty on the ValueTree won't cause a
 			propertyChanged callback, we need to remove the property and re-set it */
-		if ( (double) owner.getProperty(Ids::modulatorValue) == currentValue.value ) // v5.6.32. double to float
+		if ( (double) owner.getProperty(Ids::modulatorValue) == currentValue.value )
 		{
 			owner.removeProperty(Ids::modulatorValue);
 		}
@@ -259,8 +259,8 @@ void CtrlrModulatorProcessor::setValueFromHost(const float inValue)
 		if ( possibleNewValue == roundDoubleToInt(currentValue.value) ) // v5.6.32. Added roundDoubleToInt to force comparison from both integers, not float vs integers
 		{
 			/* the host told us the same exact value we already have, we won't do anything about it */
-			// We don't event trigger an update since it would erroneously generate a call to Lua callbacks
-			//triggerAsyncUpdate();
+			// Update 5.6.23. We don't event trigger an update since it would erroneously generate a call to Lua callbacks
+			//triggerAsyncUpdate(); // Removed v5.6.23
 			return;
 		}
 	}
@@ -288,7 +288,7 @@ void CtrlrModulatorProcessor::setValueFromMIDI(CtrlrMidiMessage &m, const CtrlrM
 	{
 		const ScopedWriteLock sl (processorLock);
 
-		/* merge the icomming midi data with our message */
+		/* merge the incomming midi data with our message */
 		mergeMidiData (m, getMidiMessage(source));
 
 		/* fetch the value from the midi message and pass it to the host */
@@ -303,6 +303,9 @@ void CtrlrModulatorProcessor::setValueFromMIDI(CtrlrMidiMessage &m, const CtrlrM
 
 				/* notify the pluginHost about the change */
 				setParameterNotifyingHost();
+                
+                /* update the modulator ValueTree and tell the GUI about the changes */
+                triggerAsyncUpdate(); // Added v5.6.32. Required to update mod value from MIDI input message
 			}
 		}
 	}
@@ -428,6 +431,12 @@ void CtrlrModulatorProcessor::sendMidiMessage()
             if (!isMute)
             {
                 owner.getOwnerPanel().sendMidi (getMidiMessage(), -1);
+                // Removed v5.6.23
+                // if (owner.getOwnerPanel().getMidiOptionBool(panelMidiOutputToHost))
+                // {
+                //    owner.getOwnerPanel().queueMessageForHostOutput (getMidiMessage());
+                // }
+
             }
         }
 	}
