@@ -73,6 +73,8 @@ getModulatorInt(), getModulatorValueInt(), getMinModulatorValueInt(), getMaxModu
 * FIXED About popup design refurbished with new CtrlrX logo. CtrlrAbout.cpp & CtrlrAbout.h
 * FIXED About popup not getting current build date, fixed with C++ Macro timestamp. CtrlrRevision.h
 * FIXED VST crashing DAW when loading a project with panelIsDirty = 0. CtrlPanelFileOperations.cpp
+* FIXED modulator not reacting to MIDI input messages. CtrlrModulatorProcessor.cpp
+
 
 #### Version 5.6.30 | 2024.03.13
 * Missing JUCE File Class definitions bound to LUA
@@ -188,6 +190,12 @@ Since Steinberg has discontinued the VST2 API we no longer distribute a VST2. If
 The first thing is to be sure to check the path to the VST2 sdk (only available from Steinberg's VST3 directory sdk) in Projucer before calling any script builds.
 
 ## VST3 Support
+### UPDATE v5.6.32+
+VST3 exported instances of CtrlrX panels are finally working properly. On macOS, you need to export VST3 with at least an ad-hoc signature. This process is managed automatically by CtrlrX, if you have an Apple developer certificate, select it in the appropriate field, it will prevent the VST3 to be held by the Gatekeeper. If you want to sign your WIN exported instances with a PFX Certificate, it's now also possible.
+
+If for some reasons you still want to produce your own VST3 intermediates you can simply disable the unique identifiers replacement process from the appropriate field.
+
+### Prior v5.6.32
 Currently VST3 instances of CTRLR panels are not working properly because CTRLR is not able to generate different VST3 compliant plugin identifiers. 
 Unfortunately, exported VST3 instances of your panel will always be named after CTRLR | Instigator. 
 The only way to get the correct identifiers for a panel project is to force them at the core during the building step of the VST3 in Xcode/VS/IDE.
