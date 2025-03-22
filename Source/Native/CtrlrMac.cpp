@@ -257,37 +257,59 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                         // Replace CtrlrX plugin name "CtrlrX          "
                         MemoryBlock searchPluginNameHex;
                         hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20", searchPluginNameHex);
-                        replaceAllOccurrences(executableData, searchPluginNameHex, pluginNameHex);
+                        replaceOccurrences(executableData, searchPluginNameHex, pluginNameHex, -1);
                         std::cout << "Plugin name replacement complete." << std::endl;
                         logger.log("Plugin name replacement complete.");
                         
                         // Replace CtrlrX plugin manufacturer code "cTrX"
                         MemoryBlock searchPluginCodeHex;
                         hexStringToBytes("63 54 72 58", searchPluginCodeHex);
-                        replaceAllOccurrences(executableData, searchPluginCodeHex, pluginCodeHex);
+                        replaceOccurrences(executableData, searchPluginCodeHex, pluginCodeHex, -1);
                         std::cout << "Plugin code replacement complete." << std::endl;
                         logger.log("Plugin code replacement complete.");
                         
                         // Replace "CtrlrX Project  "
                         MemoryBlock searchManufacturerNameHex;
                         hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20", searchManufacturerNameHex);
-                        replaceAllOccurrences(executableData, searchManufacturerNameHex, manufacturerNameHex);
+                        replaceOccurrences(executableData, searchManufacturerNameHex, manufacturerNameHex, -1);
                         std::cout << "Manufacturer name replacement complete." << std::endl;
                         logger.log("Manufacturer name replacement complete.");
                         
                         // Replace CtrlrX plugin code "cTrl"
                         MemoryBlock searchManufacturerCodeHex;
                         hexStringToBytes("63 54 72 6C", searchManufacturerCodeHex);
-                        replaceAllOccurrences(executableData, searchManufacturerCodeHex, manufacturerCodeHex);
+                        replaceOccurrences(executableData, searchManufacturerCodeHex, manufacturerCodeHex, -1);
                         std::cout << "Manufacturer code replacement complete." << std::endl;
                         logger.log("Manufacturer code replacement complete.");
                         
-                        // Replace plugType "Instrument|Tools"
-                        MemoryBlock searchPlugTypeHex;
-                        hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHex);
-                        replaceAllOccurrences(executableData, searchPlugTypeHex, plugTypeHex);
-                        std::cout << "VST3 plugin type replacement complete." << std::endl;
-                        logger.log("VST3 plugin type replacement complete.");
+                        
+                        // Replace plugType
+                        // If searchData is in one block, not split
+                        MemoryBlock searchPlugTypeHex, searchPlugTypeHexTools, searchPlugTypeHexSynth, searchPlugTypeHexToolsInserted, searchPlugTypeHexSynthInserted, plugTypeHexInsertData;
+                        
+                        hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHexTools); // plugType "Instrument|Tools"
+                        // replaceOccurrences(executableData, searchPlugTypeHexTools, plugTypeHex, -1); // If no insertion is required
+                        hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 53 79 6E 74 68", searchPlugTypeHexSynth); // plugType "Instrument|Synth"
+                        // replaceOccurrences(executableData, searchPlugTypeHexSynth, plugTypeHex, -1); // If no insertion is required
+                        // std::cout << "VST3 plugin type replacement process complete. (Instrument|Synth)" << std::endl;
+                        // logger.log("VST3 plugin type replacement process complete. (Instrument|Synth)");
+                        // std::cout << "VST3 plugin type replacement process complete. (Instrument|Tools)" << std::endl;
+                        // logger.log("VST3 plugin type replacement process complete. (Instrument|Tools)");
+                        
+                        // If searchData is split in two parts with an assembly markup inserted
+                        // For "Instrument|Synth" with insert "InstrumeHCxH¸nt|Synth"
+                        hexStringToBytes("48 89 43 78 48 B8", plugTypeHexInsertData); // Convert insert "HCxH¸"
+                        hexStringToBytes("49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 53 79 6E 74 68", searchPlugTypeHexSynthInserted); // plugType "Instrument|Synth" with insert "InstrumeHCxH¸nt|Synth"
+                        replaceOccurrencesIfSplitted(executableData, searchPlugTypeHexSynthInserted, plugTypeHexInsertData, plugTypeHex, 8, 1);
+                        std::cout << "VST3 plugin type replacement complete. (Instrument|Synth with insertData)" << std::endl;
+                        logger.log("VST3 plugin type replacement complete. (Instrument|Synth with insertData)");
+                        
+                        // For "Instrument|Tools" with insert "InstrumeHCxH¸nt|Tools"
+                        // hexStringToBytes("49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHexToolsInserted); // plugType "Instrument|Synth" with insert "InstrumeHCxH¸nt|Tools"
+                        // replaceOccurrencesIfSplitted(executableData, searchPlugTypeHexToolsInserted, plugTypeHexInsertData, plugTypeHex, 8, 1);
+                        // std::cout << "VST3 plugin type replacement complete. (Instrument|Tools with insertData)" << std::endl;
+                        // logger.log("VST3 plugin type replacement complete. (Instrument|Tools with insertData)");
+                        
                         
                         // Save the modified executable
                         File newExecutableFile = newMe.getChildFile("Contents/MacOS/CtrlrX");
@@ -298,15 +320,15 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                             return (Result::fail("MAC Native: Failed to write modified executable data"));
                         }
                         std::cout << "Modified executable saved successfully." << std::endl;
-                        logger.log("Modified executable saved successfully."); //Added logger.
+                        logger.log("Modified executable saved successfully.");
                     } else {
-                        logger.log("Failed to load executable into memory."); // Added Logger.
+                        logger.log("Failed to load executable into memory.");
                         return Result::fail("Failed to load executable into memory.");
                     }
                 } // End if replaceVst3PluginIds
                 else {
                     std::cout << "replaceVst3PluginIds set to false, Vst3 IDs replacement skipped." << std::endl;
-                    logger.log("replaceVst3PluginIds set to false, Vst3 IDs replacement skipped."); // Added Logger.
+                    logger.log("replaceVst3PluginIds set to false, Vst3 IDs replacement skipped.");
                 }
                 
                 // Introduce a delay before codesigning
@@ -325,7 +347,7 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                 
                 const Result codesignResult = codesignFileMac(newMePathName, panelCertificateMacIdentity);
                 if (!codesignResult.wasOk()) {
-                    logger.logResult(codesignResult); // Added logger.
+                    logger.logResult(codesignResult);
                     return (codesignResult);
                 }
                 logger.log("Codesigning successful.");
@@ -342,7 +364,7 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                 
                 const Result codesignResult = codesignFileMac(newMePathName, panelCertificateMacIdentity);
                 if (!codesignResult.wasOk()) {
-                    logger.logResult(codesignResult); // Added Logger.
+                    logger.logResult(codesignResult);
                     return (codesignResult);
                 }
                 logger.log("Codesigning successful.");
@@ -431,66 +453,178 @@ void CtrlrMac::hexStringToBytes(const juce::String& hexString, int maxLength, ju
 
 
 // Convert binary data to hex string
-String CtrlrMac::bytesToHexString(const juce::MemoryBlock& memoryBlock) {
+juce::String CtrlrMac::bytesToHexString(const juce::MemoryBlock& memoryBlock, bool addSpaces) {
     std::stringstream ss;
     ss << std::hex << std::setfill('0');
     for (size_t i = 0; i < memoryBlock.getSize(); ++i) {
         ss << std::setw(2) << static_cast<int>(static_cast<const uint8*>(memoryBlock.getData())[i]);
+        if (addSpaces) {
+            ss << " ";
+        }
     }
     return juce::String(ss.str());
 }
 
 
-// Replace all occurrences of searchData with replaceData in the targetData
-void CtrlrMac::replaceAllOccurrences(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData)
-{
-    if (searchData.getSize() != replaceData.getSize() || searchData.getSize() == 0)
-    {
-        DBG("Invalid search/replace data sizes");
-        return;
-    }
-
-    const uint8* rawData = static_cast<const uint8*>(targetData.getData());
-    size_t dataSize = targetData.getSize();
-    size_t searchSize = searchData.getSize();
-
-    for (size_t i = 0; i <= dataSize - searchSize; ++i)
-    {
-        if (memcmp(rawData + i, searchData.getData(), searchSize) == 0)
-        {
-            // Replace the data
-            targetData.copyFrom(replaceData.getData(), i, replaceData.getSize());
-            // Update rawData pointer as the memory might have been reallocated
-            rawData = static_cast<const uint8*>(targetData.getData());
+// Convert binary data to text string
+juce::String CtrlrMac::hexStringToText(const juce::MemoryBlock& memoryBlock) {
+    juce::String hexString = CtrlrMac::bytesToHexString(memoryBlock);
+    juce::String textString;
+    
+    for (int i = 0; i < hexString.length(); i += 2) {
+        if (i + 1 < hexString.length()) {
+            juce::String byteStr = hexString.substring(i, i + 2);
+            int byteVal = byteStr.getHexValue32();
+            textString += static_cast<char>(byteVal);
         }
     }
+    return textString;
 }
 
 
-// Replace only the first N occurrences of searchData with replaceData in the targetData
-void CtrlrMac::replaceFirstNOccurrences(MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData, int maxOccurrences)
-{
-    if (searchData.getSize() != replaceData.getSize() || searchData.getSize() == 0)
-    {
-        DBG("Invalid search/replace data sizes");
+// Replace all occurrences of searchData with replaceData in the targetData
+// Replace occurrences implementation when searchData is in one piece
+void CtrlrMac::replaceOccurrences(juce::MemoryBlock& targetData, const juce::MemoryBlock& searchData, const juce::MemoryBlock& replaceData, int maxOccurrences) {
+    File me = File::getSpecialLocation(File::currentApplicationFile);
+    PluginLogger logger(me);
+
+    if (searchData.getSize() != replaceData.getSize()) {
+        std::cerr << "Invalid search/replace data sizes" << std::endl;
+        logger.log("Invalid search/replace data sizes");
         return;
     }
 
     const uint8* rawData = static_cast<const uint8*>(targetData.getData());
     size_t dataSize = targetData.getSize();
     size_t searchSize = searchData.getSize();
-    int occurrencesFound = 0;
+    int replacements = 0;
 
-    for (size_t i = 0; i <= dataSize - searchSize && occurrencesFound < maxOccurrences; ++i)
-    {
-        if (memcmp(rawData + i, searchData.getData(), searchSize) == 0)
-        {
-            // Replace the data
+    for (size_t i = 0; i <= dataSize - searchSize && (maxOccurrences == -1 || replacements < maxOccurrences); ++i) {
+        if (memcmp(rawData + i, searchData.getData(), searchSize) == 0) {
             targetData.copyFrom(replaceData.getData(), i, replaceData.getSize());
-            // Update rawData pointer as the memory might have been reallocated
             rawData = static_cast<const uint8*>(targetData.getData());
-            occurrencesFound++;
+            replacements++;
+
+            std::cout << "Replacement occurrence " << replacements << ". Search (text): " << CtrlrMac::hexStringToText(searchData) << ", Replace (text): " << CtrlrMac::hexStringToText(replaceData) << std::endl;
+            logger.log(juce::String("Replacement occurrence ") + juce::String(replacements) + ". Search (text): " + CtrlrMac::hexStringToText(searchData) + ", Replace (text): " + CtrlrMac::hexStringToText(replaceData));
+           }
+    }
+
+    if (replacements == 0) {
+        std::cout << "Search data not found for replacement. Search (text): " << CtrlrMac::hexStringToText(searchData) << ", Replace (text): " << CtrlrMac::hexStringToText(replaceData) << std::endl;
+        logger.log("Search data not found for replacement. Search (text): " + CtrlrMac::hexStringToText(searchData) + ", Replace (text): " + CtrlrMac::hexStringToText(replaceData));
+    }
+}
+
+// Replacement function if assembly markup is already inserted in the string searchData
+//void CtrlrMac::replaceOccurrences(juce::MemoryBlock& targetData, const juce::MemoryBlock& searchData, const juce::MemoryBlock& replaceData, const juce::MemoryBlock& insertData, size_t insertAfterN, int maxOccurrences) {
+//    File me = File::getSpecialLocation(File::currentApplicationFile);
+//    PluginLogger logger(me);
+//
+//    const uint8* rawData = static_cast<const uint8*>(targetData.getData());
+//    size_t dataSize = targetData.getSize();
+//    size_t searchSize = searchData.getSize();
+//    int insertions = 0;
+//
+//    for (size_t i = 0; i <= dataSize - searchSize && (maxOccurrences == -1 || insertions < maxOccurrences); ++i) {
+//        if (memcmp(rawData + i, searchData.getData(), searchSize) == 0) {
+//            juce::MemoryBlock newData;
+//            newData.append(targetData.getData(), i + insertAfterN);
+//            newData.append(insertData.getData(), insertData.getSize());
+//            newData.append(static_cast<const uint8*>(targetData.getData()) + i + insertAfterN, targetData.getSize() - (i + insertAfterN));
+//
+//            targetData = newData;
+//            rawData = static_cast<const uint8*>(targetData.getData());
+//            dataSize = targetData.getSize();
+//            i += insertData.getSize() - 1;
+//            insertions++;
+//
+//            std::cout << "Insertion occurrence " << insertions << ". Search (text): " << CtrlrMac::hexStringToText(searchData) << ", Insert (text): " << CtrlrMac::hexStringToText(insertData) << std::endl;
+//            logger.log(juce::String("Insertion occurrence ") + juce::String(insertions) + ". Search (text): " + CtrlrMac::hexStringToText(searchData) + ", Insert (text): " + CtrlrMac::hexStringToText(insertData));
+//
+//        }
+//    }
+//
+//    if (insertions == 0) {
+//        std::cout << "Search data not found for insertion. Search (text): " << CtrlrMac::hexStringToText(searchData) << ", Insert (text): " << CtrlrMac::hexStringToText(insertData) << std::endl;
+//        logger.log("Search data not found for insertion. Search (text): " + CtrlrMac::hexStringToText(searchData) + ", Insert (text): " + CtrlrMac::hexStringToText(insertData));
+//    }
+//}
+
+// Replacement function if assembly markup is already inserted in the string searchData
+void CtrlrMac::replaceOccurrencesIfSplitted(juce::MemoryBlock& targetData, const juce::MemoryBlock& searchData, const juce::MemoryBlock& insertData, juce::MemoryBlock& replaceData, size_t insertAfterN, int maxOccurrences) {
+    File me = File::getSpecialLocation(File::currentApplicationFile);
+    PluginLogger logger(me);
+
+    logger.log("We are into the function replaceOccurrencesIfSplitted() after PluginLogger casting.");
+
+    // 1. Create combined searched data (searchData already has insertData)
+    if (insertAfterN > searchData.getSize()) {
+        logger.log("Error: insertAfterN is out of range. insertAfterN: " + juce::String(insertAfterN) + ", searchData size: " + juce::String(searchData.getSize()));
+        return;
+    }
+
+    juce::MemoryBlock combinedSearchData(searchData.getData(), searchData.getSize());
+    logger.log("combinedSearchData append step 1 size: " + juce::String(combinedSearchData.getSize()));
+    logger.log("combinedSearchData append step 1 value: " + CtrlrMac::bytesToHexString(combinedSearchData));
+    logger.log("targetData size: " + juce::String(targetData.getSize()));
+
+    logger.log("combinedSearchData append step 2 size: " + juce::String(combinedSearchData.getSize()));
+    logger.log("combinedSearchData append step 2 value: " + CtrlrMac::bytesToHexString(combinedSearchData));
+
+    
+    // 2. Create modified replacing data (insert insertData into replaceData)
+    juce::MemoryBlock modifiedReplaceData;
+
+    if (insertAfterN > replaceData.getSize()) {
+        logger.log("Error: insertAfterN is out of range for replaceData. insertAfterN: " + juce::String(insertAfterN) + ", replaceSize: " + juce::String(replaceData.getSize()));
+        return;
+    }
+
+    modifiedReplaceData.append(replaceData.getData(), insertAfterN);
+    logger.log("modifiedReplaceData append step 1 size: " + juce::String(modifiedReplaceData.getSize()));
+    logger.log("modifiedReplaceData append step 1 value: " + CtrlrMac::bytesToHexString(modifiedReplaceData));
+    modifiedReplaceData.append(insertData.getData(), insertData.getSize());
+    logger.log("modifiedReplaceData append step 2 size: " + juce::String(modifiedReplaceData.getSize()));
+    logger.log("modifiedReplaceData append step 2 value: " + CtrlrMac::bytesToHexString(modifiedReplaceData));
+    modifiedReplaceData.append(static_cast<const uint8*>(replaceData.getData()) + insertAfterN, replaceData.getSize() - insertAfterN);
+    logger.log("modifiedReplaceData append step 3 size: " + juce::String(modifiedReplaceData.getSize()));
+    logger.log("modifiedReplaceData append step 3 value: " + CtrlrMac::bytesToHexString(modifiedReplaceData));
+
+    // 3. Size check
+    if (combinedSearchData.getSize() != modifiedReplaceData.getSize()) {
+        logger.log("Error: combinedSearchData and modifiedReplaceData sizes do not match.");
+        logger.log("combinedSearchData size: " + juce::String(combinedSearchData.getSize()));
+        logger.log("modifiedReplaceData size: " + juce::String(modifiedReplaceData.getSize()));
+        return;
+    }
+
+    logger.log("insertAfterN: " + juce::String(insertAfterN) + ", replaceSize: " + juce::String(replaceData.getSize()));
+    logger.log("combinedSearchData size: " + juce::String(combinedSearchData.getSize()));
+    logger.log("modifiedReplaceData size: " + juce::String(modifiedReplaceData.getSize()));
+
+    // 4. Replacement loop
+    const uint8* rawData = static_cast<const uint8*>(targetData.getData());
+    size_t dataSize = targetData.getSize();
+    size_t searchSize = combinedSearchData.getSize();
+    int replacements = 0;
+
+    for (size_t i = 0; i < dataSize && (maxOccurrences == -1 || replacements < maxOccurrences); ++i) {
+        if (i + searchSize > dataSize) {
+            break;
         }
+        if (memcmp(rawData + i, combinedSearchData.getData(), searchSize) == 0) {
+            targetData.copyFrom(modifiedReplaceData.getData(), i, searchSize);
+            rawData = static_cast<const uint8*>(targetData.getData());
+            replacements++;
+            std::cout << "Replacement number " << replacements << " at index " << i << ". Searched text: " << CtrlrMac::hexStringToText(combinedSearchData) << ", Replacing text: " << CtrlrMac::hexStringToText(modifiedReplaceData) << std::endl;
+            logger.log(juce::String("Replacement number ") + juce::String(replacements) + juce::String(" at index ") + juce::String(i) + ". Searched text: " + CtrlrMac::hexStringToText(combinedSearchData) + ", Replacing text: " + CtrlrMac::hexStringToText(modifiedReplaceData));
+        }
+    }
+
+    if (std::search(rawData, rawData + dataSize, combinedSearchData.begin(), combinedSearchData.end()) == rawData + dataSize) {
+        std::cout << "Search data not found for replacement. The Process could have reached the end of the file. Searched text: " << CtrlrMac::hexStringToText(combinedSearchData) << ", Replacing text: " << CtrlrMac::hexStringToText(modifiedReplaceData) << std::endl;
+        logger.log(juce::String("Search data not found for replacement. The Process could have reached the end of the file. Search text: ") + CtrlrMac::hexStringToText(combinedSearchData) + ", Replacing text: " + CtrlrMac::hexStringToText(modifiedReplaceData));
     }
 }
 
