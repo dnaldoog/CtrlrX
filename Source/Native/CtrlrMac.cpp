@@ -285,30 +285,34 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                         
                         // Replace plugType
                         // If searchData is in one block, not split
-                        MemoryBlock searchPlugTypeHex, searchPlugTypeHexTools, searchPlugTypeHexSynth, searchPlugTypeHexToolsInserted, searchPlugTypeHexSynthInserted, plugTypeHexInsertData;
+                        MemoryBlock searchPlugTypeHex, searchPlugTypeHexSynth, searchPlugTypeHexTools, searchPlugTypeBytesToolsInserted, searchPlugTypeBytesSynthInserted, plugTypeBytesInsertData;
                         
-                        hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHexTools); // plugType "Instrument|Tools"
+                        String plugTypeHexInstrumentSynth = "49 6E 73 74 72 75 6D 65 6E 74 7C 53 79 6E 74 68";
+                        String plugTypeHexInstrumentTools = "49 6E 73 74 72 75 6D 65 6E 74 7C 53 79 6E 74 68";
+                        hexStringToBytes(plugTypeHexInstrumentSynth, searchPlugTypeHexTools); // plugType "Instrument|Tools"
                         // replaceOccurrences(executableData, searchPlugTypeHexTools, plugTypeHex, -1); // If no insertion is required
-                        hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 53 79 6E 74 68", searchPlugTypeHexSynth); // plugType "Instrument|Synth"
+                        hexStringToBytes(plugTypeHexInstrumentTools, searchPlugTypeHexSynth); // plugType "Instrument|Synth"
                         // replaceOccurrences(executableData, searchPlugTypeHexSynth, plugTypeHex, -1); // If no insertion is required
-                        // std::cout << "VST3 plugin type replacement process complete. (Instrument|Synth)" << std::endl;
-                        // logger.log("VST3 plugin type replacement process complete. (Instrument|Synth)");
-                        // std::cout << "VST3 plugin type replacement process complete. (Instrument|Tools)" << std::endl;
-                        // logger.log("VST3 plugin type replacement process complete. (Instrument|Tools)");
+                        // std::cout << "VST3 plugin type replacement complete. (Instrument|Synth, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
+                        // logger.log("VST3 plugin type replacement complete. (Instrument|Synth, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
+                        // std::cout << "VST3 plugin type replacement complete. (Instrument|Tools, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
+                        // logger.log("VST3 plugin type replacement complete. (Instrument|Tools, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
                         
                         // If searchData is split in two parts with an assembly markup inserted
                         // For "Instrument|Synth" with insert "InstrumeHCxH¸nt|Synth"
-                        hexStringToBytes("48 89 43 78 48 B8", plugTypeHexInsertData); // Convert insert "HCxH¸"
-                        hexStringToBytes("49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 53 79 6E 74 68", searchPlugTypeHexSynthInserted); // plugType "Instrument|Synth" with insert "InstrumeHCxH¸nt|Synth"
-                        replaceOccurrencesIfSplitted(executableData, searchPlugTypeHexSynthInserted, plugTypeHexInsertData, plugTypeHex, 8, 1);
-                        std::cout << "VST3 plugin type replacement complete. (Instrument|Synth with insertData)" << std::endl;
-                        logger.log("VST3 plugin type replacement complete. (Instrument|Synth with insertData)");
+                        hexStringToBytes("48 89 43 78 48 B8", plugTypeBytesInsertData); // Convert insert "HCxH¸"
+                        String plugTypeHexInstrumentSynthInserted = "49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 53 79 6E 74 68"; // plugType "Instrument|Synth" with insert "InstrumeHCxH¸nt|Synth"
+                        hexStringToBytes(plugTypeHexInstrumentSynthInserted, searchPlugTypeBytesSynthInserted);
+                        replaceOccurrencesIfSplitted(executableData, searchPlugTypeBytesSynthInserted, plugTypeBytesInsertData, plugTypeHex, 8, 1);
+                        std::cout << "VST3 plugin type replacement complete. (Instrument|Synth, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
+                        logger.log("VST3 plugin type replacement complete. (Instrument|Synth, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
                         
                         // For "Instrument|Tools" with insert "InstrumeHCxH¸nt|Tools"
-                        // hexStringToBytes("49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHexToolsInserted); // plugType "Instrument|Synth" with insert "InstrumeHCxH¸nt|Tools"
-                        // replaceOccurrencesIfSplitted(executableData, searchPlugTypeHexToolsInserted, plugTypeHexInsertData, plugTypeHex, 8, 1);
-                        // std::cout << "VST3 plugin type replacement complete. (Instrument|Tools with insertData)" << std::endl;
-                        // logger.log("VST3 plugin type replacement complete. (Instrument|Tools with insertData)");
+                        // String plugTypeHexInstrumentToolsInserted = "49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 53 79 6E 74 68";
+                        // hexStringToBytes("49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeBytesToolsInserted); // plugType "Instrument|Synth" with insert "InstrumeHCxH¸nt|Tools"
+                        // replaceOccurrencesIfSplitted(executableData, searchPlugTypeBytesToolsInserted, plugTypeBytesInsertData, plugTypeHex, 8, 1);
+                        // std::cout << "VST3 plugin type replacement complete. (Instrument|Tools, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
+                        // logger.log("VST3 plugin type replacement complete. (Instrument|Tools, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
                         
                         
                         // Save the modified executable
@@ -505,51 +509,17 @@ void CtrlrMac::replaceOccurrences(juce::MemoryBlock& targetData, const juce::Mem
             rawData = static_cast<const uint8*>(targetData.getData());
             replacements++;
 
-            std::cout << "Replacement occurrence " << replacements << ". Search (text): " << CtrlrMac::hexStringToText(searchData) << ", Replace (text): " << CtrlrMac::hexStringToText(replaceData) << std::endl;
-            logger.log(juce::String("Replacement occurrence ") + juce::String(replacements) + ". Search (text): " + CtrlrMac::hexStringToText(searchData) + ", Replace (text): " + CtrlrMac::hexStringToText(replaceData));
+            std::cout << "Replacement occurrence " << replacements << ". Searched text: " << CtrlrMac::hexStringToText(searchData) << ", Replacing text: " << CtrlrMac::hexStringToText(replaceData) << std::endl;
+            logger.log(juce::String("Replacement occurrence ") + juce::String(replacements) + ". Searched text: " + CtrlrMac::hexStringToText(searchData) + ", Replacing text: " + CtrlrMac::hexStringToText(replaceData));
            }
     }
 
     if (replacements == 0) {
-        std::cout << "Search data not found for replacement. Search (text): " << CtrlrMac::hexStringToText(searchData) << ", Replace (text): " << CtrlrMac::hexStringToText(replaceData) << std::endl;
-        logger.log("Search data not found for replacement. Search (text): " + CtrlrMac::hexStringToText(searchData) + ", Replace (text): " + CtrlrMac::hexStringToText(replaceData));
+        std::cout << "Search data not found for replacement. Searched text: " << CtrlrMac::hexStringToText(searchData) << ", Replacing text: " << CtrlrMac::hexStringToText(replaceData) << std::endl;
+        logger.log("Search data not found for replacement. Searched text: " + CtrlrMac::hexStringToText(searchData) + ", Replacing text: " + CtrlrMac::hexStringToText(replaceData));
     }
 }
 
-// Replacement function if assembly markup is already inserted in the string searchData
-//void CtrlrMac::replaceOccurrences(juce::MemoryBlock& targetData, const juce::MemoryBlock& searchData, const juce::MemoryBlock& replaceData, const juce::MemoryBlock& insertData, size_t insertAfterN, int maxOccurrences) {
-//    File me = File::getSpecialLocation(File::currentApplicationFile);
-//    PluginLogger logger(me);
-//
-//    const uint8* rawData = static_cast<const uint8*>(targetData.getData());
-//    size_t dataSize = targetData.getSize();
-//    size_t searchSize = searchData.getSize();
-//    int insertions = 0;
-//
-//    for (size_t i = 0; i <= dataSize - searchSize && (maxOccurrences == -1 || insertions < maxOccurrences); ++i) {
-//        if (memcmp(rawData + i, searchData.getData(), searchSize) == 0) {
-//            juce::MemoryBlock newData;
-//            newData.append(targetData.getData(), i + insertAfterN);
-//            newData.append(insertData.getData(), insertData.getSize());
-//            newData.append(static_cast<const uint8*>(targetData.getData()) + i + insertAfterN, targetData.getSize() - (i + insertAfterN));
-//
-//            targetData = newData;
-//            rawData = static_cast<const uint8*>(targetData.getData());
-//            dataSize = targetData.getSize();
-//            i += insertData.getSize() - 1;
-//            insertions++;
-//
-//            std::cout << "Insertion occurrence " << insertions << ". Search (text): " << CtrlrMac::hexStringToText(searchData) << ", Insert (text): " << CtrlrMac::hexStringToText(insertData) << std::endl;
-//            logger.log(juce::String("Insertion occurrence ") + juce::String(insertions) + ". Search (text): " + CtrlrMac::hexStringToText(searchData) + ", Insert (text): " + CtrlrMac::hexStringToText(insertData));
-//
-//        }
-//    }
-//
-//    if (insertions == 0) {
-//        std::cout << "Search data not found for insertion. Search (text): " << CtrlrMac::hexStringToText(searchData) << ", Insert (text): " << CtrlrMac::hexStringToText(insertData) << std::endl;
-//        logger.log("Search data not found for insertion. Search (text): " + CtrlrMac::hexStringToText(searchData) + ", Insert (text): " + CtrlrMac::hexStringToText(insertData));
-//    }
-//}
 
 // Replacement function if assembly markup is already inserted in the string searchData
 void CtrlrMac::replaceOccurrencesIfSplitted(juce::MemoryBlock& targetData, const juce::MemoryBlock& searchData, const juce::MemoryBlock& insertData, juce::MemoryBlock& replaceData, size_t insertAfterN, int maxOccurrences) {
