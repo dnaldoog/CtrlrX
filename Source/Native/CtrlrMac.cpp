@@ -129,7 +129,7 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
             }
             
             // Define the BlowFish encryption key as string
-            String keyString = "yourkey"; // Replace with your actual key (security!) Added v5.6.31
+            String keyString = "Fw2rXbRh74Vxe53BfapNvGjz8kTDLYmU"; // Replace with your actual key (security!) Updated v5.6.32
             
             // Key is provided, proceed with encryption
             BlowFish blowfish(keyString.toUTF8(), keyString.getNumBytesAsUTF8());
@@ -615,7 +615,7 @@ const Result CtrlrMac::getDefaultPanel(MemoryBlock &dataToWrite) {
         }
         
         // Define the BlowFish encryption key as string
-        String keyString = "yourkey"; // Replace with your actual key (security!). Added v5.6.31
+        String keyString = "Fw2rXbRh74Vxe53BfapNvGjz8kTDLYmU"; // Replace with your actual key (security!). Updated v5.6.32
         
         // Check if a blowfish key is provided
         if (keyString.isEmpty()) {
