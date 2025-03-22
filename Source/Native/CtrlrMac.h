@@ -16,11 +16,12 @@ class CtrlrMac : public CtrlrNative
 		const Result getDefaultResources(MemoryBlock& dataToWrite);
 		const Result setBundleInfo (CtrlrPanel *sourceInfo, const File &bundle);
 		const Result setBundleInfoCarbon (CtrlrPanel *sourceInfo, const File &bundle);
-        static void  replaceAllOccurrences (MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData); // Added v5.6.32
-        static void replaceFirstNOccurrences (MemoryBlock& targetData, const MemoryBlock& searchData, const MemoryBlock& replaceData, int maxOccurrences); // Added v5.6.32
+        static void replaceOccurrences (juce::MemoryBlock& targetData, const juce::MemoryBlock& searchData, const juce::MemoryBlock& replaceData, int maxOccurrences); // Added v5.6.32
+        static void replaceOccurrencesIfSplitted (juce::MemoryBlock& targetData, const juce::MemoryBlock& searchData, const juce::MemoryBlock& insertData, juce::MemoryBlock& replaceData, size_t insertAfterN, int maxOccurrences); // Added v5.6.32
         static void hexStringToBytes(const String& hexString, MemoryBlock& result); // Added v5.6.32
         static void hexStringToBytes(const juce::String& hexString, int maxLength, juce::MemoryBlock& result); // Added v5.6.32
-        String bytesToHexString(const juce::MemoryBlock& memoryBlock); // Added v5.6.32
+        static juce::String bytesToHexString(const juce::MemoryBlock& memoryBlock, bool addSpaces = false); // Added v5.6.32
+        static juce::String hexStringToText(const juce::MemoryBlock& memoryBlock); // Added v5.6.32
         const Result codesignFileMac(const juce::String& newMePathName, const juce::String& panelCertificateMacIdentity); // Added v5.6.32
     
     private:
