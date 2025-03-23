@@ -42,10 +42,10 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
     std::cout << "MAC native, launch fileChooser to select export destination path. nameOS : " << nameOS << std::endl;
     logger.log("MAC native, launch fileChooser to select export destination path. nameOS : " + nameOS);
     
-    if ( typeOS == juce::SystemStats::OperatingSystemType::MacOSX_10_15
-        || typeOS == juce::SystemStats::OperatingSystemType::MacOS_11
-        || typeOS == juce::SystemStats::OperatingSystemType::MacOS_12
-        ) // For OSX Catalina and macOS BigSur and Monterey
+    if ( typeOS == juce::SystemStats::OperatingSystemType::MacOSX_10_15 // For OSX Catalina
+        || typeOS == juce::SystemStats::OperatingSystemType::MacOS_11 //  For macOS BigSur
+        || typeOS == juce::SystemStats::OperatingSystemType::MacOS_12 //  For macOS Monterey
+        )
     {
         fc = std::make_unique<FileChooser> (CTRLR_NEW_INSTANCE_DIALOG_TITLE,
                                             me.getParentDirectory().getChildFile(File::createLegalFileName(panelToWrite->getProperty(Ids::name))).withFileExtension(me.getFileExtension()),
