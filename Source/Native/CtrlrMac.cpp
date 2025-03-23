@@ -42,7 +42,10 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
     std::cout << "MAC native, launch fileChooser to select export destination path. nameOS : " << nameOS << std::endl;
     logger.log("MAC native, launch fileChooser to select export destination path. nameOS : " + nameOS);
     
-    if ( typeOS == juce::SystemStats::OperatingSystemType::MacOSX_10_15 || typeOS == juce::SystemStats::OperatingSystemType::MacOS_11) // For OSX Catalina and macOS BigSur
+    if ( typeOS == juce::SystemStats::OperatingSystemType::MacOSX_10_15
+        || typeOS == juce::SystemStats::OperatingSystemType::MacOS_11
+        || typeOS == juce::SystemStats::OperatingSystemType::MacOS_12
+        ) // For OSX Catalina and macOS BigSur and Monterey
     {
         fc = std::make_unique<FileChooser> (CTRLR_NEW_INSTANCE_DIALOG_TITLE,
                                             me.getParentDirectory().getChildFile(File::createLegalFileName(panelToWrite->getProperty(Ids::name))).withFileExtension(me.getFileExtension()),
@@ -304,8 +307,8 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                         String plugTypeHexInstrumentSynthInserted = "49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 53 79 6E 74 68"; // plugType "Instrument|Synth" with insert "InstrumeHCxH¸nt|Synth"
                         hexStringToBytes(plugTypeHexInstrumentSynthInserted, searchPlugTypeBytesSynthInserted);
                         replaceOccurrencesIfSplitted(executableData, searchPlugTypeBytesSynthInserted, plugTypeBytesInsertData, plugTypeHex, 8, 1);
-                        std::cout << "VST3 plugin type replacement complete. (Instrument|Synth, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
-                        logger.log("VST3 plugin type replacement complete. (Instrument|Synth, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
+                        std::cout << "VST3 plugin type replacement process complete. (Instrument|Synth, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
+                        logger.log("VST3 plugin type replacement process complete. (Instrument|Synth, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
                         
                         // For "Instrument|Tools" with insert "InstrumeHCxH¸nt|Tools"
                         // String plugTypeHexInstrumentToolsInserted = "49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 53 79 6E 74 68";

@@ -83,7 +83,10 @@ void CtrlrManager::setDefaults()
     setProperty (Ids::ctrlrNativeFileDialogs, true);
     auto typeOS = juce::SystemStats::getOperatingSystemType ();
     std::cout << "typeOS: " << typeOS << std::endl;
-    if ( typeOS == juce::SystemStats::OperatingSystemType::MacOSX_10_15 || typeOS == juce::SystemStats::OperatingSystemType::MacOS_11) // For OSX 10.15 Catalina and macOS 11 BigSur
+    if ( typeOS == juce::SystemStats::OperatingSystemType::MacOSX_10_15
+        || typeOS == juce::SystemStats::OperatingSystemType::MacOS_11
+        || typeOS == juce::SystemStats::OperatingSystemType::MacOS_12
+        ) // For OSX 10.15 Catalina and macOS 11 BigSur and Monterey
     {
         setProperty (Ids::ctrlrNativeFileDialogs, false);
     }
