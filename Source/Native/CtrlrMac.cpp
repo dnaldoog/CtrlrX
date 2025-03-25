@@ -42,25 +42,20 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
     std::cout << "MAC native, launch fileChooser to select export destination path. nameOS : " << nameOS << std::endl;
     logger.log("MAC native, launch fileChooser to select export destination path. nameOS : " + nameOS);
     
-    if ( typeOS == juce::SystemStats::OperatingSystemType::MacOSX_10_15 // For OSX Catalina
-        || typeOS == juce::SystemStats::OperatingSystemType::MacOS_11 //  For macOS BigSur
-        || typeOS == juce::SystemStats::OperatingSystemType::MacOS_12 //  For macOS Monterey
-        )
-    {
-        fc = std::make_unique<FileChooser> (CTRLR_NEW_INSTANCE_DIALOG_TITLE,
+    bool nativeFileChooser = !( typeOS == juce::SystemStats::OperatingSystemType::MacOSX_10_15 // For OSX Catalina
+                               || typeOS == juce::SystemStats::OperatingSystemType::MacOS_11 //  For macOS BigSur
+                               || typeOS == juce::SystemStats::OperatingSystemType::MacOS_12 //  For macOS Monterey
+                               );
+
+    File defaultDirectory = me.getParentDirectory().getChildFile(File::createLegalFileName(panelToWrite->getProperty(Ids::name))).withFileExtension(me.getFileExtension());
+    
+    fc = std::make_unique<FileChooser> (CTRLR_NEW_INSTANCE_DIALOG_TITLE,
                                             me.getParentDirectory().getChildFile(File::createLegalFileName(panelToWrite->getProperty(Ids::name))).withFileExtension(me.getFileExtension()),
                                             me.getFileExtension(),
-                                            false);
-    }
-    else
-    {
-        fc = std::make_unique<FileChooser> (CTRLR_NEW_INSTANCE_DIALOG_TITLE,
-                                            me.getParentDirectory().getChildFile(File::createLegalFileName(panelToWrite->getProperty(Ids::name))).withFileExtension(me.getFileExtension()),
-                                            me.getFileExtension(),
-                                            true); // panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs)); // if vst3, won't work since there's no ctrlr.settings
-    }
+                                            nativeFileChooser); // panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs)); // if vst3, won't work since there's no ctrlr.settings
     
     // Launch FileChooser to export file and define the new output file name and extension
+    // browseForFileToSave(true) to show "cancel | Save" instead of "Cancel | Open" buttons won't work. It will show a filename box (we don't want that) and will force to save a the file with doubled extension such as filename.vst3..vst3
     if (fc->browseForDirectory()) {
         newMe = fc->getResult().getChildFile(File::createLegalFileName(panelToWrite->getProperty(Ids::name).toString() + me.getFileExtension()));
         if (!me.copyDirectoryTo(newMe)) {
