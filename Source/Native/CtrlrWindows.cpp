@@ -257,18 +257,22 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel*  panelToWrite, con
 					hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20", searchManufacturerNameHex);
 					// Replace CtrlrX plugin code "cTrl"
 					hexStringToBytes("63 54 72 6C", searchManufacturerCodeHex);
+					
 					// Replace plugType "Instrument|Tools"
-					hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHex);
+					// hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHex);
+					
+					// Replace plugType "Instrument|Synth"
+					hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 53 79 6E 74 68", searchPlugTypeHex);
 
-					logger.log("Starting string replacement...");
+					logger.log("Starting string replacement process...");
 
 					replaceAllOccurrences(executableData, searchPluginNameHex, pluginNameHex);
 					replaceAllOccurrences(executableData, searchPluginCodeHex, pluginCodeHex);
 					replaceAllOccurrences(executableData, searchManufacturerNameHex, manufacturerNameHex);
 					replaceAllOccurrences(executableData, searchManufacturerCodeHex, manufacturerCodeHex);
-					replaceAllOccurrences(executableData, searchPlugTypeHex, plugTypeHex);
+					replaceFirstNOccurrences(executableData, searchPlugTypeHex, plugTypeHex, 1);
 
-					logger.log("String replacement completed.");
+					logger.log("String replacement process completed.");
 
 					if (!executableFile.replaceWithData(executableData.getData(), executableData.getSize()))
 					{
