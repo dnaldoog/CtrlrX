@@ -298,19 +298,19 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                         
                         // If searchData is split in two parts with an assembly markup inserted
                         // For "Instrument|Synth" with insert "InstrumeHCxH¸nt|Synth"
-                        hexStringToBytes("48 89 43 78 48 B8", plugTypeBytesInsertData); // Convert insert "HCxH¸"
-                        String plugTypeHexInstrumentSynthInserted = "49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 53 79 6E 74 68"; // plugType "Instrument|Synth" with insert "InstrumeHCxH¸nt|Synth"
-                        hexStringToBytes(plugTypeHexInstrumentSynthInserted, searchPlugTypeBytesSynthInserted);
-                        replaceOccurrencesIfSplitted(executableData, searchPlugTypeBytesSynthInserted, plugTypeBytesInsertData, plugTypeHex, 8, 1);
-                        std::cout << "VST3 plugin type replacement process complete. (Instrument|Synth, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
-                        logger.log("VST3 plugin type replacement process complete. (Instrument|Synth, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
+                        // hexStringToBytes("48 89 43 78 48 B8", plugTypeBytesInsertData); // Convert insert "HCxH¸"
+                        // String plugTypeHexInstrumentSynthInserted = "49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 53 79 6E 74 68"; // plugType "Instrument|Synth" with insert "InstrumeHCxH¸nt|Synth"
+                        // hexStringToBytes(plugTypeHexInstrumentSynthInserted, searchPlugTypeBytesSynthInserted);
+                        // replaceOccurrencesIfSplitted(executableData, searchPlugTypeBytesSynthInserted, plugTypeBytesInsertData, plugTypeHex, 8, 1);
+                        // std::cout << "VST3 plugin type replacement process complete. (Instrument|Synth, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
+                        // logger.log("VST3 plugin type replacement process complete. (Instrument|Synth, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
                         
                         // For "Instrument|Tools" with insert "InstrumeHCxH¸nt|Tools"
-                        // String plugTypeHexInstrumentToolsInserted = "49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 53 79 6E 74 68";
-                        // hexStringToBytes("49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeBytesToolsInserted); // plugType "Instrument|Synth" with insert "InstrumeHCxH¸nt|Tools"
-                        // replaceOccurrencesIfSplitted(executableData, searchPlugTypeBytesToolsInserted, plugTypeBytesInsertData, plugTypeHex, 8, 1);
-                        // std::cout << "VST3 plugin type replacement complete. (Instrument|Tools, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
-                        // logger.log("VST3 plugin type replacement complete. (Instrument|Tools, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
+                        String plugTypeHexInstrumentToolsInserted = "49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 53 79 6E 74 68";
+                        hexStringToBytes("49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeBytesToolsInserted); // plugType "Instrument|Synth" with insert "InstrumeHCxH¸nt|Tools"
+                        replaceOccurrencesIfSplitted(executableData, searchPlugTypeBytesToolsInserted, plugTypeBytesInsertData, plugTypeHex, 8, 1);
+                        std::cout << "VST3 plugin type replacement complete. (Instrument|Tools, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
+                        logger.log("VST3 plugin type replacement complete. (Instrument|Tools, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
                         
                         
                         // Save the modified executable

@@ -13,7 +13,7 @@
               jucerFormatVersion="1" pluginAUMainType="'aumu'" displaySplashScreen="1"
               pluginRTASDisableBypass="0" pluginRTASDisableMultiMono="0" pluginAAXDisableBypass="0"
               pluginAAXDisableMultiMono="0" pluginAAXCategory="0" cppLanguageStandard="14"
-              pluginVST3Category="Instrument,Synth">
+              pluginVST3Category="Instrument,Tools">
   <MAINGROUP id="SRLsFb" name="CtrlrX">
     <GROUP id="{BE407432-92DD-AEAB-3C70-AAE03FCD0B1D}" name="Source">
       <GROUP id="{F4D7C0F1-7F03-CB3F-30C6-F728F0E39FE2}" name="Misc">
