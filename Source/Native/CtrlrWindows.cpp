@@ -270,7 +270,7 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel*  panelToWrite, con
 					replaceAllOccurrences(executableData, searchPluginCodeHex, pluginCodeHex);
 					replaceAllOccurrences(executableData, searchManufacturerNameHex, manufacturerNameHex);
 					replaceAllOccurrences(executableData, searchManufacturerCodeHex, manufacturerCodeHex);
-					replaceFirstNOccurrences(executableData, searchPlugTypeHex, plugTypeHex, 1);
+					replaceAllOccurrences(executableData, searchPlugTypeHex, plugTypeHex);
 
 					logger.log("String replacement process completed.");
 
