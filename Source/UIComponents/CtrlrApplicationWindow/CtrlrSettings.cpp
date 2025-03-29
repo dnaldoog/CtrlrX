@@ -65,8 +65,9 @@ CtrlrSettings::CtrlrSettings (CtrlrManager &_owner) : Component ("Global Propert
     
     // Debug section
     debugProperties.add(owner.getIDManager().createComponentForProperty(Identifier("ctrlrLogToFile"), owner.getManagerTree(), nullptr));
-    debugProperties.add(owner.getIDManager().createComponentForProperty(Identifier("ctrlrLuaDisabled"), owner.getManagerTree(), nullptr));
+    debugProperties.add(owner.getIDManager().createComponentForProperty(Identifier("ctrlrWarningInBootstrapState"), owner.getManagerTree(), nullptr));
     debugProperties.add(owner.getIDManager().createComponentForProperty(Identifier("ctrlrLuaDebug"), owner.getManagerTree(), nullptr));
+    debugProperties.add(owner.getIDManager().createComponentForProperty(Identifier("ctrlrLuaDisabled"), owner.getManagerTree(), nullptr));
     debugProperties.add(owner.getIDManager().createComponentForProperty(Identifier("uiLuaConsoleInputRemoveAfterRun"), owner.getManagerTree(), nullptr)); // Clear Console After Execute
     
     // Directory section

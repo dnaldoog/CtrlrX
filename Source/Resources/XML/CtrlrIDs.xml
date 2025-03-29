@@ -735,7 +735,8 @@
   <!-- Global Ctrlr settings -->
   <id name="ctrlrMaxExportedVstParameters"    text="Max exported VST params" type="Numeric" min="0" max="999999" int="1" />
   <id name="ctrlrLogToFile"                   text="Log everything to file" type="Bool" />
-  <id name="ctrlrLuaDebug"                    text="Enable some LUA debugging" type="Bool" />
+  <id name="ctrlrWarningInBootstrapState"     text="Enable LUA error window in Bootstrap state" type="Bool" />
+  <id name="ctrlrLuaDebug"                    text="Enable LUA debugging" type="Bool" />
   <id name="ctrlrShutdownDelay"               text="Plugin shutdown delay" type="Numeric" min="0" max="10000" int="1" />
   <id name="ctrlrUseEditorWrapper"            text="Use the Editor Wrapper for VST plugins" type="Bool"/>
   <id name="ctrlrVersionSeparator"            text="Version field separator" type="Text"/>
@@ -763,6 +764,7 @@
   <id name="ctrlrLegacyMode"                  text="LookAndFeel V3 for older panels" type="Bool" defaults="Legacy Mode/Disabled" />
   <id name="ctrlrColourScheme"                text="Default lookAndFeel V4 colourScheme" type="VarText" defaults="@ctrlrColourSchemes"/>
   <id name="ctrlrLookAndFeel"                 text="Default lookAndFeel Version" type="VarText" defaults="@lookandfeel"/>
+  
 
 
   <!-- Logging settings  -->

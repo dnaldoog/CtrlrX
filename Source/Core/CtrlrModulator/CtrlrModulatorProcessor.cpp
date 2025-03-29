@@ -59,18 +59,37 @@ void CtrlrModulatorProcessor::handleAsyncUpdate()
 
         owner.setProperty (Ids::modulatorValue, roundedValue); // v5.6.32. NOTE : mod value prop field is updated here
 	}
-
-	// if (valueChangedCbk.get() && !owner.getRestoreState()) //
-    if (valueChangedCbk.get() && !owner.getRestoreState() && currentValue.lastChangeSource != CtrlrModulatorValue::changedByProgram) // Added v5.6.31 to help avoid feedback loops between LUA and (delayed) UI commit 6e5a0b2 by midibox
-	{
-		CtrlrPanel &ownerPanel = owner.getOwnerPanel();
-		if (!ownerPanel.getRestoreState() && !ownerPanel.getBootstrapState() && valueChangedCbk->isValid())
-		{
-			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (valueChangedCbk,
-																				&owner,
-																				currentValue.value, // v5.6.32. call() int to double
-																				(uint8)currentValue.lastChangeSource);
-		}
+    
+    CtrlrPanel &ownerPanel = owner.getOwnerPanel();
+    const bool warningInBoostrapState = owner.getCtrlrManagerOwner().getProperty (Ids::ctrlrWarningInBootstrapState); // Added v5.5.32 for John Goodland @dnaldoog
+    
+    if (warningInBoostrapState == (true)) // Old behaviour like in Ctrlr 5.3.198
+    {
+        if (valueChangedCbk && !valueChangedCbk.wasObjectDeleted() && !owner.getOwnerPanel().getRestoreState())
+        {
+            if (valueChangedCbk->isValid())
+            {
+                owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (valueChangedCbk,
+                                                                                    &owner,
+                                                                                    currentValue.value,
+                                                                                    (uint8)currentValue.lastChangeSource);
+            }
+        }
+    }
+    else
+    {
+        // if (valueChangedCbk.get() && !owner.getRestoreState()) // Updated v5.6.31
+        if (valueChangedCbk.get() && !owner.getRestoreState() && currentValue.lastChangeSource != CtrlrModulatorValue::changedByProgram) // Added v5.6.31 to help avoid feedback loops between LUA and (delayed) UI commit 6e5a0b2 by midibox
+        {
+            CtrlrPanel &ownerPanel = owner.getOwnerPanel();
+            if (!ownerPanel.getRestoreState() && !ownerPanel.getBootstrapState() && valueChangedCbk->isValid())
+            {
+                owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (valueChangedCbk,
+                                                                                    &owner,
+                                                                                    currentValue.value,
+                                                                                    (uint8)currentValue.lastChangeSource);
+            }
+        }
 	}
 
 	if (linkedToGlobal)

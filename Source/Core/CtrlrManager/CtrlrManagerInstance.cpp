@@ -20,6 +20,7 @@ void CtrlrManager::setEmbeddedDefaults()
 	ctrlrProperties.reset(new CtrlrProperties (*this));
 
 	setProperty (Ids::ctrlrLogToFile, false);
+    setProperty (Ids::ctrlrWarningInBootstrapState, false); // Added v5.6.32
 	setProperty (Ids::ctrlrLuaDebug, false);
 	setProperty (Ids::ctrlrVersionSeparator, "_");
 	setProperty (Ids::ctrlrVersionCompressed, false);
