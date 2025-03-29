@@ -788,6 +788,7 @@ namespace Ids
     DECLARE_ID (ctrlrLuaDisabled);
     DECLARE_ID (ctrlrLastBrowsedResourceDir);
     DECLARE_ID (ctrlrLogToFile);
+    DECLARE_ID (ctrlrWarningInBootstrapState); // Added v5.6.32
     DECLARE_ID (ctrlrLuaDebug);
     DECLARE_ID (ctrlrOverwriteResources);
     DECLARE_ID (ctrlrAutoSave);

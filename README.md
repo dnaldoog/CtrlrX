@@ -40,6 +40,7 @@ getModulatorInt(), getModulatorValueInt(), getMinModulatorValueInt(), getMaxModu
 * FIXED FileChooser still hanging when exporting instance on OSX Catalina & macOS BigSur. CtrlrManager.cpp
 * ADDED Slider value Suffix (ie. Hz, ms, dB, etc)
 * ADDED JUCE systemStats support for WIN11, macOS 11, macOS 12, macOS 13, macOS 14, macOS 15 and macOS 16. juce_mac_systemStats.cpp, juce_win32_systemStats.cpp, juce_systemStats.h
+* ADDED show/hide LUA error window in Boostrap state. CtrlrManagerInstance.cpp, CtrlrModulatorProcessor.cpp, CrrlrIDs.h, CtrlrIDs.xml, CtrlrSettings.cpp
 
 #### Version 5.6.31 | 2025.01
 * Security update : Encryption of the panel file in the macOS bundle for restricted instances. CtrlrMac.cpp, CtrlrEditorApplicationCommandsMenu.cpp, CtrlrManager.cpp
