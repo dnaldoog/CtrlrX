@@ -1,4 +1,4 @@
-<img src="/Source/Resources/Icons/ctrlrx_logo.svg" align="left" width="400" >
+<img src="/Source/Resources/Icons/ctrlrx_logo.svg" width="400" float="none" >
 
 
 CtrlrX
