@@ -1,4 +1,4 @@
-![alt text](/blob/master/Source/Resources/Icons/ctrlrx_logo.svg?raw=true&width=400)
+![alt text](/blob/master/Source/Resources/Icons/ctrlrx_logo.svg?raw=true)
 
 
 CtrlrX
