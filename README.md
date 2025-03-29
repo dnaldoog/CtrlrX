@@ -1,3 +1,6 @@
+![alt text](/blob/master/Source/Resources/Icons/ctrlrx_logo.svg?raw=true&width=400)
+
+
 CtrlrX
 =====
 
@@ -17,7 +20,7 @@ ToDo
 * Re-generating UID must update resource path automatically
 * Modulators located within a tabs must have their properties updated while the tab properties are changed 
 * Allow earlier "Undo" after a modulator has been deleted
-* Export instance process must be improved (dialog alerts, overwriting existing file...)
+
 
 Changelog
 ---------
