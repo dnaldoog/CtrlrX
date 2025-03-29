@@ -1,9 +1,9 @@
-![alt text](/Source/Resources/Icons/CtrlrX-README-250x315.png)
+![alt text](/Source/Resources/Icons/CtrlrX-README-250x315.png?raw=true "CtrlrX")
 
 
 
-About CtrlrX
-============
+About
+-----
 
 CtlrX is an alternative fork of Roman Kubiak's Ctrlr.
 This project is ONLY aimed at delivering updates, a wiki, documentation, tutorials or anything that the community cannot share on the original Ctrlr github due to credential restrictions. 
