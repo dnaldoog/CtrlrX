@@ -1,4 +1,4 @@
-![alt text](/Source/Resources/Icons/ctrlrx_logo.svg?raw=true&width=400)
+<img src="/Source/Resources/Icons/ctrlrx_logo.svg" align="left" width="400" >
 
 
 CtrlrX
