@@ -60,7 +60,6 @@ void CtrlrModulatorProcessor::handleAsyncUpdate()
         owner.setProperty (Ids::modulatorValue, roundedValue); // v5.6.32. NOTE : mod value prop field is updated here
 	}
     
-    CtrlrPanel &ownerPanel = owner.getOwnerPanel();
     const bool warningInBoostrapState = owner.getCtrlrManagerOwner().getProperty (Ids::ctrlrWarningInBootstrapState); // Added v5.5.32 for John Goodland @dnaldoog
     
     if (warningInBoostrapState == (true)) // Old behaviour like in Ctrlr 5.3.198
@@ -79,7 +78,7 @@ void CtrlrModulatorProcessor::handleAsyncUpdate()
     else
     {
         // if (valueChangedCbk.get() && !owner.getRestoreState()) // Updated v5.6.31
-        if (valueChangedCbk.get() && !owner.getRestoreState() && currentValue.lastChangeSource != CtrlrModulatorValue::changedByProgram) // Added v5.6.31 to help avoid feedback loops between LUA and (delayed) UI commit 6e5a0b2 by midibox
+        if (valueChangedCbk.get() && !owner.getRestoreState() && currentValue.lastChangeSource != CtrlrModulatorValue::changedByProgram) // Updated v5.6.31 to help avoid feedback loops between LUA and (delayed) UI commit 6e5a0b2 by midibox
         {
             CtrlrPanel &ownerPanel = owner.getOwnerPanel();
             if (!ownerPanel.getRestoreState() && !ownerPanel.getBootstrapState() && valueChangedCbk->isValid())
