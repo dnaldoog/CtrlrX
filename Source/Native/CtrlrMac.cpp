@@ -282,19 +282,23 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                         
                         
                         // Replace plugType
+                        
                         // If searchData is in one block, not split
                         MemoryBlock searchPlugTypeHex, searchPlugTypeHexSynth, searchPlugTypeHexTools, searchPlugTypeBytesToolsInserted, searchPlugTypeBytesSynthInserted, plugTypeBytesInsertData;
                         
                         String plugTypeHexInstrumentSynth = "49 6E 73 74 72 75 6D 65 6E 74 7C 53 79 6E 74 68";
                         String plugTypeHexInstrumentTools = "49 6E 73 74 72 75 6D 65 6E 74 7C 53 79 6E 74 68";
+                        
                         hexStringToBytes(plugTypeHexInstrumentSynth, searchPlugTypeHexTools); // plugType "Instrument|Tools"
                         // replaceOccurrences(executableData, searchPlugTypeHexTools, plugTypeHex, -1); // If no insertion is required
+                        // std::cout << "VST3 plugin type replacement complete. (Instrument|Tools, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
+                        // logger.log("VST3 plugin type replacement complete. (Instrument|Tools, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
+                        
                         hexStringToBytes(plugTypeHexInstrumentTools, searchPlugTypeHexSynth); // plugType "Instrument|Synth"
                         // replaceOccurrences(executableData, searchPlugTypeHexSynth, plugTypeHex, -1); // If no insertion is required
                         // std::cout << "VST3 plugin type replacement complete. (Instrument|Synth, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
                         // logger.log("VST3 plugin type replacement complete. (Instrument|Synth, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
-                        // std::cout << "VST3 plugin type replacement complete. (Instrument|Tools, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
-                        // logger.log("VST3 plugin type replacement complete. (Instrument|Tools, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
+                        
                         
                         // If searchData is split in two parts with an assembly markup inserted
                         hexStringToBytes("48 89 43 78 48 B8", plugTypeBytesInsertData); // Convert insert "HCxH¸"

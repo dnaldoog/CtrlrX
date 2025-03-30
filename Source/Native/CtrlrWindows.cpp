@@ -330,7 +330,7 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel*  panelToWrite, con
 		return (Result::fail("Windows Native: Executable file does not exist"));
 	} // End if file does not exist
 	
-	// return (Result::ok()); // Removed v5.6.32
+    return (Result::ok()); // Should be removed v5.6.32 ? all other elements already return ok() or fail() anyway.
 
 } // end result() overall function
 

@@ -541,7 +541,7 @@
 
   <luaMethod name="luaPanelGlobalChanged">
     --
-    -- Called when a global variable has changed it's value
+    -- Called when a global variable has changed its value
     --
 
     __method_name = function(--[[ number --]] index, --[[ number --]] value)
