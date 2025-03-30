@@ -297,8 +297,9 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                         // logger.log("VST3 plugin type replacement complete. (Instrument|Tools, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
                         
                         // If searchData is split in two parts with an assembly markup inserted
+                        hexStringToBytes("48 89 43 78 48 B8", plugTypeBytesInsertData); // Convert insert "HCxH¸"
+                        
                         // For "Instrument|Synth" with insert "InstrumeHCxH¸nt|Synth"
-                        // hexStringToBytes("48 89 43 78 48 B8", plugTypeBytesInsertData); // Convert insert "HCxH¸"
                         // String plugTypeHexInstrumentSynthInserted = "49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 53 79 6E 74 68"; // plugType "Instrument|Synth" with insert "InstrumeHCxH¸nt|Synth"
                         // hexStringToBytes(plugTypeHexInstrumentSynthInserted, searchPlugTypeBytesSynthInserted);
                         // replaceOccurrencesIfSplitted(executableData, searchPlugTypeBytesSynthInserted, plugTypeBytesInsertData, plugTypeHex, 8, 1);
@@ -534,10 +535,13 @@ void CtrlrMac::replaceOccurrencesIfSplitted(juce::MemoryBlock& targetData, const
 
     juce::MemoryBlock combinedSearchData(searchData.getData(), searchData.getSize());
     logger.log("combinedSearchData append step 1 size: " + juce::String(combinedSearchData.getSize()));
+    logger.log("combinedSearchData append step 1 value: " + CtrlrMac::hexStringToText(combinedSearchData));
     logger.log("combinedSearchData append step 1 value: " + CtrlrMac::bytesToHexString(combinedSearchData));
+    
     logger.log("targetData size: " + juce::String(targetData.getSize()));
 
     logger.log("combinedSearchData append step 2 size: " + juce::String(combinedSearchData.getSize()));
+    logger.log("combinedSearchData append step 2 value: " + CtrlrMac::hexStringToText(combinedSearchData));
     logger.log("combinedSearchData append step 2 value: " + CtrlrMac::bytesToHexString(combinedSearchData));
 
     
@@ -551,13 +555,25 @@ void CtrlrMac::replaceOccurrencesIfSplitted(juce::MemoryBlock& targetData, const
 
     modifiedReplaceData.append(replaceData.getData(), insertAfterN);
     logger.log("modifiedReplaceData append step 1 size: " + juce::String(modifiedReplaceData.getSize()));
+    logger.log("modifiedReplaceData append step 1 value: " + CtrlrMac::hexStringToText(modifiedReplaceData));
     logger.log("modifiedReplaceData append step 1 value: " + CtrlrMac::bytesToHexString(modifiedReplaceData));
+    
     modifiedReplaceData.append(insertData.getData(), insertData.getSize());
     logger.log("modifiedReplaceData append step 2 size: " + juce::String(modifiedReplaceData.getSize()));
+    logger.log("modifiedReplaceData append step 2 value: " + CtrlrMac::hexStringToText(modifiedReplaceData));
     logger.log("modifiedReplaceData append step 2 value: " + CtrlrMac::bytesToHexString(modifiedReplaceData));
+    
     modifiedReplaceData.append(static_cast<const uint8*>(replaceData.getData()) + insertAfterN, replaceData.getSize() - insertAfterN);
     logger.log("modifiedReplaceData append step 3 size: " + juce::String(modifiedReplaceData.getSize()));
+    logger.log("modifiedReplaceData append step 3 value: " + CtrlrMac::hexStringToText(modifiedReplaceData));
     logger.log("modifiedReplaceData append step 3 value: " + CtrlrMac::bytesToHexString(modifiedReplaceData));
+
+    // Adjust modifiedReplaceData size to 22 bytes
+    if (modifiedReplaceData.getSize() < 22) {
+        modifiedReplaceData.setSize(22);
+        // Add null padding if necessary.
+        memset(static_cast<uint8*>(modifiedReplaceData.getData()) + 16, 0, 6);
+    }
 
     // 3. Size check
     if (combinedSearchData.getSize() != modifiedReplaceData.getSize()) {
