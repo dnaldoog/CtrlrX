@@ -213,6 +213,7 @@ void CtrlrLuaMethodManager::restoreMethod (const ValueTree &savedState, const Uu
 	if ((int)savedState.getProperty(Ids::luaMethodSource) == (int)CtrlrLuaMethod::codeInFile)
 	{
 		addMethodFromFile	(getGroupByUuid(parentUuid),
+                                // File(savedState.getProperty(Ids::luaMethodSourcePath).toString()), // Updated v5.6.23+
 								owner.getOwner().getLuaMethodSourceFile(&savedState),
 								Uuid(savedState.getProperty(Ids::uuid).toString()));
 	}

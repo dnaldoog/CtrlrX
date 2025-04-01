@@ -64,6 +64,7 @@ void CtrlrModulatorProcessor::handleAsyncUpdate()
     
     if (warningInBoostrapState == (true)) // Old behaviour like in Ctrlr 5.3.198
     {
+        // if (valueChangedCbk && !valueChangedCbk.wasObjectDeleted() && !owner.getOwnerPanel().getRestoreState())
         if (valueChangedCbk && !valueChangedCbk.wasObjectDeleted() && !owner.getOwnerPanel().getRestoreState())
         {
             if (valueChangedCbk->isValid())

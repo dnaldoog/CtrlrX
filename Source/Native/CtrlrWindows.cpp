@@ -109,14 +109,14 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel*  panelToWrite, con
 		return (Result::fail("Windows Native: exportWithDefaultPanel got nullptr for panel"));
 	}
 
-	FileChooser fc(CTRLR_NEW_INSTANCE_DIALOG_TITLE,
+	FileChooser exportFc(CTRLR_NEW_INSTANCE_DIALOG_TITLE,
 		me.getParentDirectory().getChildFile(File::createLegalFileName(panelToWrite->getProperty(Ids::name))).withFileExtension(me.getFileExtension()),
 		"*" + me.getFileExtension(),
 		panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs));
 
-	if (fc.browseForFileToSave(true))
+	if (exportFc.browseForFileToSave(true))
 	{
-		newMe = fc.getResult();
+		newMe = exportFc.getResult();
 		logger.log("File selected: " + newMe.getFullPathName());
 
 		if (!newMe.hasFileExtension(me.getFileExtension()))
