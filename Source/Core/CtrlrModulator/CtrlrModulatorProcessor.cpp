@@ -65,8 +65,7 @@ void CtrlrModulatorProcessor::handleAsyncUpdate()
     if (warningInBoostrapState == (true))
     {
         // Old behaviour like in Ctrlr 5.3.198, loose conditions, will show error alert window when loading the panel
-        if (valueChangedCbk.get() // Updated v5.6.32. Replacing weak ref
-            // valueChangedCbk //  Removed v5.6.32. Weak ref
+        if (valueChangedCbk.get() // Updated v5.6.32. Replacing weak ref : if (valueChangedCbk)
             && !owner.getOwnerPanel().getRestoreState()
             && !valueChangedCbk.wasObjectDeleted())
         {
