@@ -62,32 +62,45 @@ void CtrlrModulatorProcessor::handleAsyncUpdate()
     
     const bool warningInBoostrapState = owner.getCtrlrManagerOwner().getProperty (Ids::ctrlrWarningInBootstrapState); // Added v5.5.32 for John Goodland @dnaldoog
     
-    if (warningInBoostrapState == (true)) // Old behaviour like in Ctrlr 5.3.198
+    if (warningInBoostrapState == (true))
     {
-        // if (valueChangedCbk && !valueChangedCbk.wasObjectDeleted() && !owner.getOwnerPanel().getRestoreState())
-        if (valueChangedCbk && !valueChangedCbk.wasObjectDeleted() && !owner.getOwnerPanel().getRestoreState())
+        // Old behaviour like in Ctrlr 5.3.198, loose conditions, will show error alert window when loading the panel
+        if (valueChangedCbk.get() // Updated v5.6.32. Replacing weak ref
+            // valueChangedCbk //  Removed v5.6.32. Weak ref
+            && !owner.getOwnerPanel().getRestoreState()
+            && !valueChangedCbk.wasObjectDeleted())
         {
-            if (valueChangedCbk->isValid())
+            if (valueChangedCbk->isValid()) // Valid means LUA syntax OK. Can be "valid" even though it can return code errors and can even be crashing Ctrlr
             {
                 owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (valueChangedCbk,
                                                                                     &owner,
                                                                                     currentValue.value,
                                                                                     (uint8)currentValue.lastChangeSource);
             }
+            else{
+                AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error", owner.getName() + "\n" + "LUA script not valid: LuaModulatorValueChange");
+            }
         }
     }
-    else
+    else // else if (warningInBoostrapState == (false))
     {
-        // if (valueChangedCbk.get() && !owner.getRestoreState()) // Updated v5.6.31
-        if (valueChangedCbk.get() && !owner.getRestoreState() && currentValue.lastChangeSource != CtrlrModulatorValue::changedByProgram) // Updated v5.6.31 to help avoid feedback loops between LUA and (delayed) UI commit 6e5a0b2 by midibox
+        // if (valueChangedCbk.get() && !owner.getRestoreState()) // Removed v5.6.31
+        // if (valueChangedCbk.get() && !owner.getRestoreState() && currentValue.lastChangeSource != CtrlrModulatorValue::changedByProgram) // Updated v5.6.31 to help avoid feedback loops between LUA and (delayed) UI commit 6e5a0b2 by midibox
+        if (valueChangedCbk.get()
+            && !owner.getOwnerPanel().getBootstrapState()
+            && !owner.getOwnerPanel().getRestoreState()
+            && !valueChangedCbk.wasObjectDeleted()
+            && currentValue.lastChangeSource != CtrlrModulatorValue::changedByProgram) // Updated v5.6.32. Stricter conditions
         {
-            CtrlrPanel &ownerPanel = owner.getOwnerPanel();
-            if (!ownerPanel.getRestoreState() && !ownerPanel.getBootstrapState() && valueChangedCbk->isValid())
+            if (valueChangedCbk->isValid()) // Valid means LUA syntax OK. Can be "valid" even though it can return code errors and can even be crashing Ctrlr
             {
                 owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (valueChangedCbk,
                                                                                     &owner,
                                                                                     currentValue.value,
                                                                                     (uint8)currentValue.lastChangeSource);
+            }
+            else{
+                AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error", owner.getName() + "\n LUA script not valid: LuaModulatorValueChange");
             }
         }
 	}
