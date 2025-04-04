@@ -254,6 +254,7 @@ SystemStats::OperatingSystemType SystemStats::getOperatingSystemType()
     jassert (major <= 10); // need to add support for new version!
 
     if (major == 10 && build >= 22000) return Windows11;
+    if (major == 10)                 return Windows10;
     if (major == 6 && minor == 3)    return Windows8_1;
     if (major == 6 && minor == 2)    return Windows8_0;
     if (major == 6 && minor == 1)    return Windows7;
