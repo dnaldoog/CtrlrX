@@ -32,17 +32,17 @@ CtrlrModulatorProcessor::~CtrlrModulatorProcessor()
 
 void CtrlrModulatorProcessor::handleAsyncUpdate()
 {
-	{
-	/* update the GUI and the ValueTree from the value provided by the HOST or
-		the MIDI subsystem */
-		const ScopedReadLock sl (processorLock);
-
-		/* If we already have the same value, calling setProperty on the ValueTree won't cause a
-			propertyChanged callback, we need to remove the property and re-set it */
-		if ( (double) owner.getProperty(Ids::modulatorValue) == currentValue.value )
-		{
-			owner.removeProperty(Ids::modulatorValue);
-		}
+    {
+        /* update the GUI and the ValueTree from the value provided by the HOST or
+         the MIDI subsystem */
+        const ScopedReadLock sl (processorLock);
+        
+        /* If we already have the same value, calling setProperty on the ValueTree won't cause a
+         propertyChanged callback, we need to remove the property and re-set it */
+        if ( (double) owner.getProperty(Ids::modulatorValue) == currentValue.value )
+        {
+            owner.removeProperty(Ids::modulatorValue);
+        }
         
         // owner.setProperty (Ids::modulatorValue, (double) currentValue.value); // v5.6.32. NOTE : mod value prop field is updated here
         
@@ -56,9 +56,9 @@ void CtrlrModulatorProcessor::handleAsyncUpdate()
         // std::cout << "sliderDecPlace: " << sliderDecPlace << std::endl;
         // std::cout << "multiplier: " << multiplier << std::endl;
         // std::cout << "roundedValue: " << roundedValue << std::endl;
-
+        
         owner.setProperty (Ids::modulatorValue, roundedValue); // v5.6.32. NOTE : mod value prop field is updated here
-	}
+    }
     
     const bool warningInBoostrapState = owner.getCtrlrManagerOwner().getProperty (Ids::ctrlrWarningInBootstrapState); // Added v5.5.32 for John Goodland @dnaldoog
     
@@ -102,12 +102,12 @@ void CtrlrModulatorProcessor::handleAsyncUpdate()
                 AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error", owner.getName() + "\n LUA script not valid: LuaModulatorValueChange");
             }
         }
-	}
-
-	if (linkedToGlobal)
-	{
-		owner.getOwnerPanel().setGlobalVariable (getLinkedToGlobalIndex(), currentValue.value);
-	}
+    }
+    
+    if (linkedToGlobal)
+    {
+        owner.getOwnerPanel().setGlobalVariable (getLinkedToGlobalIndex(), currentValue.value);
+    }
 }
 
 void CtrlrModulatorProcessor::setValue(const double value)  // Updated v5.6.32. int to double
