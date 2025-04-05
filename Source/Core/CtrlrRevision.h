@@ -1,11 +1,30 @@
 #ifndef __CTRLR_REVISION__
 #define __CTRLR_REVISION__
 
+static const char *ctrlrRevision          = JucePlugin_VersionString;
 
-
-// static const char *ctrlrRevision              	= "5.6.31";
-// static const char *ctrlrRevisionDate        	= "Thu, 23 Jan 2025, 14:00:00 EST";
-
-static const char *ctrlrRevision                = JucePlugin_VersionString; // Updated v5.6.31. version taken from Projucer project settings
-static const char *ctrlrRevisionDate            = __TIMESTAMP__; // Updated v5.6.31. C++ macro to show timestamp. Fri Jan 24 16:00:00 2025
+#ifdef JUCE_MAC
+// macOS build: Use build script-generated timestamp
+#ifndef BUILD_TIMESTAMP
+#define BUILD_TIMESTAMP "2025-04-05 16:45:27"
 #endif
+static const char *ctrlrRevisionDate      = BUILD_TIMESTAMP; // Updated v5.6.32. FIX for Xcode not updating build time properly and keeping the first build timestamp as ref
+
+#else
+// All other platforms: Use __TIMESTAMP__
+static const char *ctrlrRevisionDate      = __TIMESTAMP__;
+#endif
+
+#endif // __CTRLR_REVISION__
+
+// Updated v5.6.32.
+// Following code should be added to CtrlrX.jucer "Pre-Build Script" field
+//#!/bin/bash
+//timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+//headerFile="../../Source/Core/CtrlrRevision.h"
+//# Use sed to replace or append the BUILD_TIMESTAMP definition
+//if grep -q "BUILD_TIMESTAMP" "$headerFile"; then
+//    sed -i "" "s/#define BUILD_TIMESTAMP "2025-04-05 16:45:27"
+//else
+//    echo "#define BUILD_TIMESTAMP "2025-04-05 16:45:27"
+//fi
