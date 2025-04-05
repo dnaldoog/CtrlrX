@@ -735,7 +735,7 @@
   <!-- Global Ctrlr settings -->
   <id name="ctrlrMaxExportedVstParameters"    text="Max exported VST params" type="Numeric" min="0" max="999999" int="1" />
   <id name="ctrlrLogToFile"                   text="Log everything to file" type="Bool" />
-  <id name="ctrlrWarningInBootstrapState"     text="Enable LUA error window in Bootstrap state" type="Bool" />
+  <id name="ctrlrWarningInBootstrapState"     text="Run modulator valueChange LUA callback in Bootstrap state" type="Bool" />
   <id name="ctrlrLuaDebug"                    text="Enable LUA debugging" type="Bool" />
   <id name="ctrlrShutdownDelay"               text="Plugin shutdown delay" type="Numeric" min="0" max="10000" int="1" />
   <id name="ctrlrUseEditorWrapper"            text="Use the Editor Wrapper for VST plugins" type="Bool"/>
