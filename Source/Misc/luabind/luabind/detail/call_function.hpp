@@ -79,7 +79,8 @@ namespace luabind
                     rhs.m_called = true;
                 }
 
-                ~proxy_function_caller() LUABIND_MAY_THROW
+                //~proxy_function_caller() LUABIND_MAY_THROW // Updated v.5.6.32 by JG 4/5/2023
+                ~proxy_function_caller() noexcept (false)  // v5.6.32. Prevent crashing on LUA errors. Fix by John Goodland @dnaldoog. CtrlrX Issue #77
                 {
                     if (m_called) return;
 
@@ -242,7 +243,8 @@ namespace luabind
                     rhs.m_called = true;
                 }
 
-                ~proxy_function_void_caller() LUABIND_MAY_THROW
+                //~proxy_function_void_caller() LUABIND_MAY_THROW
+                ~proxy_function_void_caller() noexcept (false) // v5.6.32. Prevent crashing on LUA errors. Fix by John Goodland @dnaldoog. CtrlrX Issue #77
                 {
                     if (m_called) return;
 

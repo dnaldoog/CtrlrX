@@ -77,7 +77,7 @@ void CtrlrModulatorProcessor::handleAsyncUpdate()
                                                                                     (uint8)currentValue.lastChangeSource);
             }
             else{
-                AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error", owner.getName() + "\n" + "LUA script not valid: LuaModulatorValueChange");
+                AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error", owner.getName() + "\n" + "LUA script not valid: luaModulatorValueChange");
             }
         }
     }
@@ -99,7 +99,7 @@ void CtrlrModulatorProcessor::handleAsyncUpdate()
                                                                                     (uint8)currentValue.lastChangeSource);
             }
             else{
-                AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error", owner.getName() + "\n LUA script not valid: LuaModulatorValueChange");
+                AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error", owner.getName() + "\n LUA script not valid: luaModulatorValueChange");
             }
         }
     }
