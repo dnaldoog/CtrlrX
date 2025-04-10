@@ -42,6 +42,14 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
     std::cout << "MAC native, launch fileChooser to select export destination path. nameOS : " << nameOS << std::endl;
     logger.log("MAC native, launch fileChooser to select export destination path. nameOS : " + nameOS);
     
+    auto vendorCpu = juce::SystemStats::getCpuVendor(); // Added v5.6.33
+    std::cout << "MAC native, launch fileChooser to select export destination path. vendorCpu : " << vendorCpu << std::endl;
+    logger.log("MAC native, launch fileChooser to select export destination path. vendorCpu : " + vendorCpu);
+    
+    auto modelCpu = juce::SystemStats::getCpuModel(); // Added v5.6.33
+    std::cout << "MAC native, launch fileChooser to select export destination path. modelCpu : " << modelCpu << std::endl;
+    logger.log("MAC native, launch fileChooser to select export destination path. modelCpu : " + modelCpu);
+    
     bool nativeFileChooser = !( typeOS == juce::SystemStats::OperatingSystemType::MacOSX_10_15 // For OSX Catalina
                                || typeOS == juce::SystemStats::OperatingSystemType::MacOS_11 //  For macOS BigSur
                                || typeOS == juce::SystemStats::OperatingSystemType::MacOS_12 //  For macOS Monterey
@@ -182,14 +190,24 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                         logger.log("Executable loaded into memory successfully.");
                         
                         // Convert plugin name to hex for substitution
-                        String pluginName = panelToWrite->getProperty(Ids::name).toString();
-                        int pluginNameMaxLength = 32;
-                        MemoryBlock pluginNameHex;
-                        hexStringToBytes(pluginName, pluginNameMaxLength, pluginNameHex);
-                        std::cout << "pluginName: " << pluginName << std::endl;
-                        std::cout << "pluginNameHex representation: " << bytesToHexString(pluginNameHex) << std::endl;
-                        logger.log("pluginName: " + pluginName);
-                        logger.log("pluginNameHex representation: " + bytesToHexString(pluginNameHex));
+                        
+                        String pluginName32 = panelToWrite->getProperty(Ids::name).toString();
+                        int pluginNameMaxLength32 = 32; // Updated v.5.6.33. 32 char long.
+                        MemoryBlock pluginNameHex32;
+                        hexStringToBytes(pluginName32, pluginNameMaxLength32, pluginNameHex32);
+                        std::cout << "pluginName (32 char long): " << pluginName32 << std::endl;
+                        std::cout << "pluginNameHex representation (32 char long): " << bytesToHexString(pluginNameHex32) << std::endl;
+                        logger.log("pluginName (32 char long): " + pluginName32);
+                        logger.log("pluginNameHex representation (32 char long): " + bytesToHexString(pluginNameHex32));
+                        
+                        String pluginName16 = panelToWrite->getProperty(Ids::name).toString();
+                        int pluginNameMaxLength16 = 16; // Updated v.5.6.33. Only 16 char long.
+                        MemoryBlock pluginNameHex16;
+                        hexStringToBytes(pluginName16, pluginNameMaxLength16, pluginNameHex16);
+                        std::cout << "pluginName (16 char long): " << pluginName16 << std::endl;
+                        std::cout << "pluginNameHex representation (16 char long): " << bytesToHexString(pluginNameHex16) << std::endl;
+                        logger.log("pluginName (16 char long): " + pluginName16);
+                        logger.log("pluginNameHex representation (16 char long): " + bytesToHexString(pluginNameHex16));
                         
                         // Convert plugin code to hex for substitution
                         String pluginCode = panelToWrite->getProperty(Ids::panelInstanceUID).toString();
@@ -251,13 +269,28 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                         logger.log("plugType: " + plugType);
                         logger.log("plugTypeHex representation: " + bytesToHexString(plugTypeHex));
                         
+                        
                         // Substitution process
-                        // Replace CtrlrX plugin name "CtrlrX          "
-                        MemoryBlock searchPluginNameHex;
-                        hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20", searchPluginNameHex);
-                        replaceOccurrences(executableData, searchPluginNameHex, pluginNameHex, -1);
-                        std::cout << "Plugin name replacement complete." << std::endl;
-                        logger.log("Plugin name replacement complete.");
+                        // Replace CtrlrX plugin name
+                        String searchPluginName32 = "43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20"; // Updated v5.6.33. Only for 32 bytes name length. "CtrlrX                                 "
+                        if (isStringPresent(executableData, searchPluginName32)) {
+                            // if the searched identifier is present in the executable data
+                            // Replace CtrlrX plugin name "CtrlrX                                 "
+                            MemoryBlock searchPluginNameHex32;
+                            hexStringToBytes(searchPluginName32, searchPluginNameHex32);
+                            replaceOccurrences(executableData, searchPluginNameHex32, pluginNameHex32, -1);
+                            std::cout << "Plugin name (32 char) replacement process complete." << std::endl;
+                            logger.log("Plugin name (32 char) replacement process complete.");
+                        } else {
+                            // if the searched identifier is NOT present in the executable data
+                            // Replace CtrlrX plugin name "CtrlrX            "
+                            String searchPluginName16 = "43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20"; // Updated v5.6.33. Only for 16 bytes name length. "CtrlrX            "
+                            MemoryBlock searchPluginNameHex16;
+                            hexStringToBytes(searchPluginName16, searchPluginNameHex16); // Corrected call
+                            replaceOccurrences(executableData, searchPluginNameHex16, pluginNameHex16, -1);
+                            std::cout << "Plugin name (16 char) replacement process complete." << std::endl;
+                            logger.log("Plugin name (16 char) replacement process complete.");
+                        }
                         
                         // Replace CtrlrX plugin manufacturer code "cTrX"
                         MemoryBlock searchPluginCodeHex;
@@ -284,39 +317,31 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                         // Replace plugType
                         
                         // If searchData is in one block, not split
-                        MemoryBlock searchPlugTypeHex, searchPlugTypeHexSynth, searchPlugTypeHexTools, searchPlugTypeBytesToolsInserted, searchPlugTypeBytesSynthInserted, plugTypeBytesInsertData;
-                        
-                        String plugTypeHexInstrumentSynth = "49 6E 73 74 72 75 6D 65 6E 74 7C 53 79 6E 74 68";
-                        String plugTypeHexInstrumentTools = "49 6E 73 74 72 75 6D 65 6E 74 7C 53 79 6E 74 68";
-                        
-                        hexStringToBytes(plugTypeHexInstrumentSynth, searchPlugTypeHexTools); // plugType "Instrument|Tools"
-                        // replaceOccurrences(executableData, searchPlugTypeHexTools, plugTypeHex, -1); // If no insertion is required
-                        // std::cout << "VST3 plugin type replacement complete. (Instrument|Tools, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
-                        // logger.log("VST3 plugin type replacement complete. (Instrument|Tools, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
-                        
-                        hexStringToBytes(plugTypeHexInstrumentTools, searchPlugTypeHexSynth); // plugType "Instrument|Synth"
-                        // replaceOccurrences(executableData, searchPlugTypeHexSynth, plugTypeHex, -1); // If no insertion is required
-                        // std::cout << "VST3 plugin type replacement complete. (Instrument|Synth, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
-                        // logger.log("VST3 plugin type replacement complete. (Instrument|Synth, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
-                        
-                        
-                        // If searchData is split in two parts with an assembly markup inserted
-                        hexStringToBytes("48 89 43 78 48 B8", plugTypeBytesInsertData); // Convert insert "HCxH¸"
-                        
-                        // For "Instrument|Synth" with insert "InstrumeHCxH¸nt|Synth"
-                        // String plugTypeHexInstrumentSynthInserted = "49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 53 79 6E 74 68"; // plugType "Instrument|Synth" with insert "InstrumeHCxH¸nt|Synth"
-                        // hexStringToBytes(plugTypeHexInstrumentSynthInserted, searchPlugTypeBytesSynthInserted);
-                        // replaceOccurrencesIfSplitted(executableData, searchPlugTypeBytesSynthInserted, plugTypeBytesInsertData, plugTypeHex, 8, 1);
-                        // std::cout << "VST3 plugin type replacement process complete. (Instrument|Synth, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
-                        // logger.log("VST3 plugin type replacement process complete. (Instrument|Synth, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
-                        
+                        MemoryBlock searchPlugTypeHex, searchPlugTypeHexTools, searchPlugTypeBytesToolsInserted, plugTypeBytesInsertData;
+                                                
                         // For "Instrument|Tools" with insert "InstrumeHCxH¸nt|Tools"
-                        String plugTypeHexInstrumentToolsInserted = "49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 53 79 6E 74 68";
-                        hexStringToBytes("49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeBytesToolsInserted); // plugType "Instrument|Synth" with insert "InstrumeHCxH¸nt|Tools"
-                        replaceOccurrencesIfSplitted(executableData, searchPlugTypeBytesToolsInserted, plugTypeBytesInsertData, plugTypeHex, 8, 1);
-                        std::cout << "VST3 plugin type replacement complete. (Instrument|Tools, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
-                        logger.log("VST3 plugin type replacement complete. (Instrument|Tools, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
+                        String plugTypeHexInstrumentToolsInserted = "49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 54 6F 6F 6C 73"; // Updated v5.6.33. "InstrumeHCxH¸nt|Tools"
+
                         
+                        // Determine if the string is split by assembly markup on compilation, then do the replacement of strings accordingly
+                        if (plugTypeIsNotSplit(executableData, plugTypeHexInstrumentToolsInserted)) {
+                            // The inserted hex string was NOT found.
+                            // Replace pluginType
+                            String plugTypeHexInstrumentTools = "49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73"; // Updated v5.6.33
+                            hexStringToBytes(plugTypeHexInstrumentTools, searchPlugTypeHexTools); // plugType "Instrument|Tools"
+                            replaceOccurrences(executableData, searchPlugTypeHexTools, plugTypeHex, -1); // If no insertion is required
+                            std::cout << "VST3 plugin type replacement process complete. (Instrument|Tools, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
+                            logger.log("VST3 plugin type replacement process complete. (Instrument|Tools, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
+                            
+                        } else {
+                            // Replace pluginType
+                            // If searchData is split in two parts with an assembly markup inserted
+                            hexStringToBytes("48 89 43 78 48 B8", plugTypeBytesInsertData); // Convert insert "HCxH¸"
+                            hexStringToBytes(plugTypeHexInstrumentToolsInserted, searchPlugTypeBytesToolsInserted); // plugType "Instrument|Tools" with insert "InstrumeHCxH¸nt|Tools"
+                            replaceOccurrencesIfSplitted(executableData, searchPlugTypeBytesToolsInserted, plugTypeBytesInsertData, plugTypeHex, 8, 1);
+                            std::cout << "VST3 plugin type replacement complete. (Instrument|Tools, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
+                            logger.log("VST3 plugin type replacement complete. (Instrument|Tools, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
+                        }
                         
                         // Save the modified executable
                         File newExecutableFile = newMe.getChildFile("Contents/MacOS/CtrlrX");
@@ -385,6 +410,70 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
 } // end result() overall function
 
 
+
+// Check if a string is present or not and return if isStringPresent()
+bool CtrlrMac::isStringPresent(const juce::MemoryBlock& applicationData, const juce::String& stringToFind) {
+    File me = File::getSpecialLocation(File::currentApplicationFile);
+    PluginLogger logger(me);
+    
+    if (stringToFind.isEmpty()) {
+        logger.log("Searching for an empty string. Considered present.");
+        return true; // Empty string is considered present
+    }
+    
+    MemoryBlock stringAsMemoryBlock;
+    hexStringToBytes(stringToFind, stringAsMemoryBlock);
+    
+    String stringAsHexString = bytesToHexString(stringAsMemoryBlock); // For logging
+    
+    const uint8* data = static_cast<const uint8*>(applicationData.getData());
+    size_t dataSize = applicationData.getSize();
+    const uint8* searchData = static_cast<const uint8*>(stringAsMemoryBlock.getData());
+    size_t searchSize = stringAsMemoryBlock.getSize();
+    
+    const uint8* found = static_cast<const uint8*>(std::search(data, data + dataSize, searchData, searchData + searchSize));
+    
+    bool isPresent = (found != data + dataSize);
+    
+    if (isPresent) {
+        logger.log("String \"" + stringToFind + "\" (Hex: " + stringAsHexString + ") FOUND in application data.");
+    } else {
+        logger.log("String \"" + stringToFind + "\" (Hex: " + stringAsHexString + ") NOT found in application data.");
+    }
+    
+    return isPresent;
+}
+
+// Check if the pluginType string is split with assembly text or not and return if isNotSplit()
+bool CtrlrMac::plugTypeIsNotSplit(const juce::MemoryBlock& executableData, const juce::String& insertedPlugTypeHex) {
+    File me = File::getSpecialLocation(File::currentApplicationFile);
+    PluginLogger logger(me);
+
+    juce::MemoryBlock plugTypeBytesInserted;
+    hexStringToBytes(insertedPlugTypeHex, plugTypeBytesInserted); // Call your existing overload
+
+    const uint8* data = static_cast<const uint8*>(executableData.getData());
+    size_t dataSize = executableData.getSize();
+    const uint8* searchData = static_cast<const uint8*>(plugTypeBytesInserted.getData());
+    size_t searchSize = plugTypeBytesInserted.getSize();
+
+    // Search for the inserted plugType string
+    const uint8* found = static_cast<const uint8*>(std::search(data, data + dataSize, searchData, searchData + searchSize));
+
+    // If std::search returns the end iterator, the sequence was not found
+    bool isNotSplit = (found == data + dataSize);
+
+    if (isNotSplit) {
+        logger.log("Plug-in type with assembly markup NOT found for hex: " + insertedPlugTypeHex + ". Plug-in type is likely not split yet.");
+    } else {
+        logger.log("Plug-in type with assembly markup FOUND for hex: " + insertedPlugTypeHex + ". Plug-in type is likely already split.");
+    }
+
+    return isNotSplit;
+}
+
+
+// CodeSign exported instance
 const Result CtrlrMac::codesignFileMac(const juce::String& newMePathName, const juce::String& panelCertificateMacIdentity) {
     juce::StringArray commandParts;
     commandParts.add("codesign");
@@ -422,6 +511,7 @@ const Result CtrlrMac::codesignFileMac(const juce::String& newMePathName, const 
         return juce::Result::fail("Failed to start codesign process."); // Failed to start process
     }
 }
+
 
 // Convert hex string to binary data
 void CtrlrMac::hexStringToBytes(const String& hexString, MemoryBlock& result) {

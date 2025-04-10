@@ -34,7 +34,7 @@ CtrlrProcessor::CtrlrProcessor() :
 	overridesFile	= currentExec.withFileExtension("overrides");
 
 	overridesTree.setProperty (Ids::ctrlrMaxExportedVstParameters, 64, 0);
-	overridesTree.setProperty (Ids::ctrlrShutdownDelay, 512, 0);
+	overridesTree.setProperty (Ids::ctrlrShutdownDelay, 512, 0); // name, value, undoManager
 
 	if (overridesFile.existsAsFile())
 	{
@@ -67,7 +67,7 @@ CtrlrProcessor::CtrlrProcessor() :
 CtrlrProcessor::~CtrlrProcessor()
 {
 #ifdef JUCE_MAC // Updated v5.5.31. was JUCE_OSX
-	MessageManager::getInstance()->runDispatchLoopUntil((int)overridesTree.getProperty(Ids::ctrlrShutdownDelay)); // Updated v5.6.31. Not sure if it's useful anyway
+	MessageManager::getInstance()->runDispatchLoopUntil((int)overridesTree.getProperty(Ids::ctrlrShutdownDelay, 512)); // Updated v5.6.33. Added default value to 512 for Apple Silicon & macOS 15 Sequoia.
 #endif
 }
 

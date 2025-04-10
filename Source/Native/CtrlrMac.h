@@ -18,6 +18,9 @@ class CtrlrMac : public CtrlrNative
 		const Result setBundleInfoCarbon (CtrlrPanel *sourceInfo, const File &bundle);
         static void replaceOccurrences (juce::MemoryBlock& targetData, const juce::MemoryBlock& searchData, const juce::MemoryBlock& replaceData, int maxOccurrences); // Added v5.6.32
         static void replaceOccurrencesIfSplitted (juce::MemoryBlock& targetData, const juce::MemoryBlock& searchData, const juce::MemoryBlock& insertData, juce::MemoryBlock& replaceData, size_t insertAfterN, int maxOccurrences); // Added v5.6.32
+        bool isStringPresent(const juce::MemoryBlock& applicationData, const juce::String& stringToFind); // Added v5.6.33
+        bool plugTypeIsNotSplit(const juce::MemoryBlock& executableData, const juce::String& insertedPlugTypeHex); // Added v5.6.33
+        String stringToMemoryBlockForSearch(const juce::String& str); // Added v5.6.33
         static void hexStringToBytes(const String& hexString, MemoryBlock& result); // Added v5.6.32
         static void hexStringToBytes(const juce::String& hexString, int maxLength, juce::MemoryBlock& result); // Added v5.6.32
         static juce::String bytesToHexString(const juce::MemoryBlock& memoryBlock, bool addSpaces = false); // Added v5.6.32

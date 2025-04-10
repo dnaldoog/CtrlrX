@@ -30,11 +30,11 @@ CtrlrSettings::CtrlrSettings (CtrlrManager &_owner) : Component ("Global Propert
     globalProperties.add(owner.getIDManager().createComponentForProperty(Identifier("ctrlrVersionCompressed"), owner.getManagerTree(), nullptr));
     globalProperties.add(owner.getIDManager().createComponentForProperty(Identifier("ctrlrAutoSave"), owner.getManagerTree(), nullptr));
     globalProperties.add(owner.getIDManager().createComponentForProperty(Identifier("ctrlrAutoSaveInterval"), owner.getManagerTree(), nullptr));
-
+    
     // Useless because ctrlrShutdownDelay is overriden in ctrlrProcessor.cpp to 512
-    // #ifdef JUCE_MAC
-    // globalProperties.add(owner.getIDManager().createComponentForProperty(Identifier("ctrlrShutdownDelay"), owner.getManagerTree(), nullptr)); // ifdef JUCE_OSX not working
-    // #endif
+#ifdef JUCE_MAC  // ifdef JUCE_OSX not working
+    globalProperties.add(owner.getIDManager().createComponentForProperty(Identifier("ctrlrShutdownDelay"), owner.getManagerTree(), nullptr)); // Updated v5.6.33.
+#endif
     
     globalProperties.add(owner.getIDManager().createComponentForProperty(Identifier("luaCtrlrSaveState"), owner.getManagerTree(), nullptr));
     globalProperties.add(owner.getIDManager().createComponentForProperty(Identifier("luaCtrlrRestoreState"), owner.getManagerTree(), nullptr));
