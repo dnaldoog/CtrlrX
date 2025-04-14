@@ -284,7 +284,7 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                         } else {
                             // if the searched identifier is NOT present in the executable data
                             // Replace CtrlrX plugin name "CtrlrX            "
-                            String searchPluginName16 = "43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20"; // Updated v5.6.33. Only for 16 bytes name length. "CtrlrX            "
+                            String searchPluginName16 = "43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20"; // Updated v5.6.33. Only for 16 bytes name length. "CtrlrX            "
                             MemoryBlock searchPluginNameHex16;
                             hexStringToBytes(searchPluginName16, searchPluginNameHex16); // Corrected call
                             replaceOccurrences(executableData, searchPluginNameHex16, pluginNameHex16, -1);
