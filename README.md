@@ -26,7 +26,7 @@ ToDo
 Changelog
 ---------
 
-#### Version 5.6.32 | 2025.04.05
+#### Version 5.6.32 | 2025.04.14
 
 * NEW From now on, uisliders will return double float type values to manage decimals. If required values are integers,  new LUA function has been added : getValueInt()
 getModulatorInt(), getModulatorValueInt(), getMinModulatorValueInt(), getMaxModulatorValueInt(), getValueMappedInt(), getValueNonMappedInt(), getMinMappedInt(), getMaxMappedInt()
@@ -43,6 +43,9 @@ getModulatorInt(), getModulatorValueInt(), getMinModulatorValueInt(), getMaxModu
 * ADDED Slider value Suffix (ie. Hz, ms, dB, etc)
 * ADDED JUCE systemStats support for WIN11, macOS 11, macOS 12, macOS 13, macOS 14, macOS 15 and macOS 16. juce_mac_systemStats.cpp, juce_win32_systemStats.cpp, juce_systemStats.h
 * ADDED Enable/Disable  "Run modulator valueChange LUA callback in Bootstrap state". CtrlrManagerInstance.cpp, CtrlrModulatorProcessor.cpp, CrrlrIDs.h, CtrlrIDs.xml, CtrlrSettings.cpp
+* FIXED VST3 Host>CtrlrX interface. Sliders now reacts to Host automations of parameter values. Related Modulators send MIDI output messages. CtrlrProcessor.cpp & .h, CtrlrModulator.cpp & .h, CtrlrModulatorProcessor.cpp & .h
+* FIXED Manufacturer Name to VST2 Plugin Export. CtrlrMac.cpp, CtrlrWindows.cpp
+
 
 #### Version 5.6.31 | 2025.01
 * Security update : Encryption of the panel file in the macOS bundle for restricted instances. CtrlrMac.cpp, CtrlrEditorApplicationCommandsMenu.cpp, CtrlrManager.cpp

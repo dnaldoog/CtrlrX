@@ -172,7 +172,7 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
         
         if (executableFile.existsAsFile()) {
             
-            if (fileExtension == (".vst3")) {
+            if (fileExtension == (".vst3") || (".vst")) { // Update v5.6.33. Added VST2
                 std::cout << "fileExtension is : " << fileExtension << std::endl;
                 logger.log("fileExtension is : " + fileExtension );
                 

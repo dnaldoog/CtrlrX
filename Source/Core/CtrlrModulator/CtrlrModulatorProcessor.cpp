@@ -11,19 +11,19 @@
 #include "CtrlrComponents/CtrlrComponent.h"
 
 CtrlrModulatorProcessor::CtrlrModulatorProcessor(CtrlrModulator &_owner)
-	: owner(_owner),
-		valueChangedCbk(0),
-		usingForwardProcess(false),
-		usingReverseProcess(false),
-		minValue(0),
-		maxValue(127),
-		usingValueMap(false),
-		ctrlrMidiMessage(nullptr),
-		ctrlrMidiControllerMessage(nullptr),
-		isMute(false)
+    : owner(_owner),
+        valueChangedCbk(0),
+        usingForwardProcess(false),
+        usingReverseProcess(false),
+        minValue(0),
+        maxValue(127),
+        usingValueMap(false),
+        ctrlrMidiMessage(nullptr),
+        ctrlrMidiControllerMessage(nullptr),
+        isMute(false)
 {
-	ctrlrMidiMessage	        = new CtrlrOwnedMidiMessage(*this);
-	ctrlrMidiControllerMessage  = new CtrlrOwnedMidiMessage(*this, Identifier(Ids::controllerMIDI));
+    ctrlrMidiMessage            = new CtrlrOwnedMidiMessage(*this);
+    ctrlrMidiControllerMessage  = new CtrlrOwnedMidiMessage(*this, Identifier(Ids::controllerMIDI));
 }
 
 CtrlrModulatorProcessor::~CtrlrModulatorProcessor()
@@ -116,277 +116,273 @@ void CtrlrModulatorProcessor::setValue(const double value)  // Updated v5.6.32. 
 
 void CtrlrModulatorProcessor::setModulatorMaxValue (const double newMaxValue) // Updated v5.6.32. int to double
 {
-	const ScopedWriteLock sl (processorLock);
-	maxValue = newMaxValue;
+    const ScopedWriteLock sl (processorLock);
+    maxValue = newMaxValue;
 }
 
 void CtrlrModulatorProcessor::setModulatorMinValue (const double newMinValue) // Updated v5.6.32. int to double
 {
-	const ScopedWriteLock sl (processorLock);
-	minValue = newMinValue;
+    const ScopedWriteLock sl (processorLock);
+    minValue = newMinValue;
 }
 
 void CtrlrModulatorProcessor::setForwardExpression (const String &forwardExpressionString)
 {
-	if (forwardExpressionString == "" || forwardExpressionString == EXP_MODULATOR_FORWARD)
-	{
-		const ScopedWriteLock sl (processorLock);
+    if (forwardExpressionString == "" || forwardExpressionString == EXP_MODULATOR_FORWARD)
+    {
+        const ScopedWriteLock sl (processorLock);
 
-		usingForwardProcess = false;
-		return;
-	}
+        usingForwardProcess = false;
+        return;
+    }
 
-	{
-		const ScopedWriteLock sl (processorLock);
-		String parseError;
+    {
+        const ScopedWriteLock sl (processorLock);
+        String parseError;
 
-		forwardProcess = Expression(forwardExpressionString, parseError);
-		if (!parseError.isEmpty())
-		{
-			_ERR("CtrlrModulatorProcessor::setForwardExpression parse error: " + parseError);
-			usingForwardProcess = false;
+        forwardProcess = Expression(forwardExpressionString, parseError);
+        if (!parseError.isEmpty())
+        {
+            _ERR("CtrlrModulatorProcessor::setForwardExpression parse error: " + parseError);
+            usingForwardProcess = false;
 
-			return;
-		}
+            return;
+        }
 
-		usingForwardProcess = true;
-	}
+        usingForwardProcess = true;
+    }
 }
 
 void CtrlrModulatorProcessor::setReverseExpression (const String &reverseExpressionString)
 {
-	if (reverseExpressionString == "" || reverseExpressionString == EXP_MODULATOR_REVERSE)
-	{
-		const ScopedWriteLock sl (processorLock);
+    if (reverseExpressionString == "" || reverseExpressionString == EXP_MODULATOR_REVERSE)
+    {
+        const ScopedWriteLock sl (processorLock);
 
-		usingReverseProcess = false;
-		return;
-	}
+        usingReverseProcess = false;
+        return;
+    }
 
-	{
-		const ScopedWriteLock sl (processorLock);
-		String parseError;
-		reverseProcess = Expression(reverseExpressionString, parseError);
-		if (!parseError.isEmpty())
-		{
-			_ERR("CtrlrModulatorProcessor::setReverseExpression parse error: " + parseError);
-			usingReverseProcess = false;
+    {
+        const ScopedWriteLock sl (processorLock);
+        String parseError;
+        reverseProcess = Expression(reverseExpressionString, parseError);
+        if (!parseError.isEmpty())
+        {
+            _ERR("CtrlrModulatorProcessor::setReverseExpression parse error: " + parseError);
+            usingReverseProcess = false;
 
-			return;
-		}
+            return;
+        }
 
-		usingReverseProcess = true;
-	}
+        usingReverseProcess = true;
+    }
 }
 
 void CtrlrModulatorProcessor::setValueChangedCallback (const String &methodName)
 {
-	if (methodName.isEmpty())
-		return;
+    if (methodName.isEmpty())
+        return;
 
-	valueChangedCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(methodName);
+    valueChangedCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(methodName);
 }
 
 void CtrlrModulatorProcessor::setGetValueForMidiCallback (const String &methodName)
 {
-	if (methodName.isEmpty())
-		return;
+    if (methodName.isEmpty())
+        return;
 
-	getValueForMidiCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(methodName);
+    getValueForMidiCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(methodName);
 }
 
 void CtrlrModulatorProcessor::setGetValueFromMidiCallback (const String &methodName)
 {
-	if (methodName.isEmpty())
-		return;
+    if (methodName.isEmpty())
+        return;
 
-	getValueFromMidiCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(methodName);
+    getValueFromMidiCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(methodName);
 }
 
 void CtrlrModulatorProcessor::setMappedValue (const CtrlrModulatorValue mappedValue, const bool force, const bool mute)
 {
-	setValueGeneric (CtrlrModulatorValue (valueMap.getIndexForValue (mappedValue.value), mappedValue.lastChangeSource), force, mute);
+    setValueGeneric (CtrlrModulatorValue (valueMap.getIndexForValue (mappedValue.value), mappedValue.lastChangeSource), force, mute);
 }
 
 void CtrlrModulatorProcessor::setValueGeneric(const CtrlrModulatorValue inValue, const bool force, const bool mute)
 {
-	/* there are 3 sources of value changes
+    /* there are 3 sources of value changes
 
-		- gui
-		- midi
-		- host
+        - gui
+        - midi
+        - host
 
-		- gui should affect the MIDI first and then send the value to host, when it comes back from host
-			and is the same as the value set before sending it to host, nothing should happen, if theyre
-			different it should be set to the MIDI and a async update should be triggered
+        - gui should affect the MIDI first and then send the value to host, when it comes back from host
+            and is the same as the value set before sending it to host, nothing should happen, if theyre
+            different it should be set to the MIDI and a async update should be triggered
 
-		- midi should affect the host first
+        - midi should affect the host first
 
-		- host update has to check what's different from the value received, if it is different an update
-			should be triggered (midi sent and/or async update done)
+        - host update has to check what's different from the value received, if it is different an update
+            should be triggered (midi sent and/or async update done)
 
 
-		** problem, when a value comes back from host it needs to be re-mapped to a midi value that lives
-			in the UI component, this will be the audio thread so asking the component will require locking
-			it might be better to keep a copy of value mapping (just the numeric part, we don't need the text, or do we?)
-			internaly in the processor so we can avoid locking at runtime
-	*/
-	{
-		/* if the values are already the same, and the force flag is set to false
-			don't do anything the modulator is already in the state it should be */
+        ** problem, when a value comes back from host it needs to be re-mapped to a midi value that lives
+            in the UI component, this will be the audio thread so asking the component will require locking
+            it might be better to keep a copy of value mapping (just the numeric part, we don't need the text, or do we?)
+            internaly in the processor so we can avoid locking at runtime
+    */
+    {
+        /* if the values are already the same, and the force flag is set to false
+            don't do anything the modulator is already in the state it should be */
 
-		const ScopedReadLock sl(processorLock);
+        const ScopedReadLock sl(processorLock);
 
-		if (currentValue.value == inValue.value && force == false)
-		{
-			return;
-		}
-	}
+        if (currentValue.value == inValue.value && force == false)
+        {
+            return;
+        }
+    }
 
-	{
-		/* set the current value and the midi messages value,
-			send the MIDI out and notify the host about the parameter change */
-		const ScopedWriteLock sl(processorLock);
+    {
+        /* set the current value and the midi messages value,
+            send the MIDI out and notify the host about the parameter change */
+        const ScopedWriteLock sl(processorLock);
 
-		/* it's the same value, but it's forced, send out MIDI and triggerAsyncUpdate
-			don't inform the host, it already knows about it
+        /* it's the same value, but it's forced, send out MIDI and triggerAsyncUpdate
+            don't inform the host, it already knows about it
 
-			if mute is true, no midi goes out */
-		if (currentValue.value == inValue.value && force == true)
-		{
-			if (!mute)
-				sendMidiMessage();
+            if mute is true, no midi goes out */
+        if (currentValue.value == inValue.value && force == true)
+        {
+            if (!mute)
+                sendMidiMessage();
 
-			triggerAsyncUpdate();
+            triggerAsyncUpdate();
 
-			return;
-		}
+            return;
+        }
 
-		/* first we se the currentValue to the new value comming from the gui, it's needed for the
-			expressions evaluations to work */
+        /* first we set the currentValue to the new value comming from the gui, it's needed for the
+            expressions evaluations to work */
 
-		currentValue = inValue;
+        currentValue = inValue;
 
-		/* send the midi message, this is done using a special thread so it won't wait until it's actualy sent */
-		if (!mute)
-			sendMidiMessage();
+        /* send the midi message, this is done using a special thread so it won't wait until it's actualy sent */
+        if (!mute)
+            sendMidiMessage();
 
-		triggerAsyncUpdate();
-	}
+        triggerAsyncUpdate();
+    }
 
-	/* notify the pluginHost about the change */
-	setParameterNotifyingHost();
+    /* notify the pluginHost about the change */
+    setParameterNotifyingHost();
 }
 
-void CtrlrModulatorProcessor::setValueFromHost(const float inValue)
+void CtrlrModulatorProcessor::setValueFromHost(const float inValue) // Note v5.6.33. Host->CtrlrX : This is where the param value automation happens
 {
-	/* called from the audio thread */
-	{
-		/* first quickly check if we need to change anything at all */
-		const ScopedReadLock sl (processorLock);
+    /* called from the audio thread */
+    const int possibleNewValue = denormalizeValue (inValue, minValue, maxValue);
 
-		const int possibleNewValue	= denormalizeValue (inValue, minValue, maxValue);
+    // Quick check for early exit under a read lock
+    {
+        const ScopedReadLock sl (processorLock);
+        if (possibleNewValue == roundDoubleToInt(currentValue.value))
+        {
+            return; // No need to triggerAsyncUpdate here if the value hasn't changed
+        }
+    }
 
-		if ( possibleNewValue == roundDoubleToInt(currentValue.value) ) // v5.6.32. Added roundDoubleToInt to force comparison from both integers, not float vs integers
-		{
-			/* the host told us the same exact value we already have, we won't do anything about it */
-			// Update 5.6.23. We don't event trigger an update since it would erroneously generate a call to Lua callbacks
-			//triggerAsyncUpdate(); // Removed v5.6.23
-			return;
-		}
-	}
+    // If the value has changed, acquire a write lock and update
+    {
+        const ScopedWriteLock sl(processorLock);
+        
+        /* set the new value for the modulator */
+        currentValue.value = possibleNewValue;
+        currentValue.lastChangeSource = CtrlrModulatorValue::changedByHost;
+        
+        /* send a midi message */
+        sendMidiMessage();
+    }
 
-	{
-		/* if we got here the value from the host is new and we need to update things */
-		const ScopedWriteLock sl(processorLock);
-
-		/* set the new value for the modulator */
-		currentValue.value 				= denormalizeValue (inValue, minValue, maxValue);
- 		currentValue.lastChangeSource	= CtrlrModulatorValue::changedByHost;
-
-		/* send a midi message */
-		sendMidiMessage();
-	}
-
-	/* update the modulator ValueTree and tell the GUI about the changes */
-	triggerAsyncUpdate();
+    /* update the modulator ValueTree and tell the GUI about the changes */
+    triggerAsyncUpdate();
 }
 
 
 void CtrlrModulatorProcessor::setValueFromMIDI(CtrlrMidiMessage &m, const CtrlrMIDIDeviceType source)
 {
-	/* called from the Panel's MIDI thread */
-	{
-		const ScopedWriteLock sl (processorLock);
+    /* called from the Panel's MIDI thread */
+    {
+        const ScopedWriteLock sl (processorLock);
 
-		/* merge the incomming midi data with our message */
-		mergeMidiData (m, getMidiMessage(source));
+        /* merge the incomming midi data with our message */
+        mergeMidiData (m, getMidiMessage(source));
 
-		/* fetch the value from the midi message and pass it to the host */
-		const int possibleValue = getValueFromMidiMessage(source);
+        /* fetch the value from the midi message and pass it to the host */
+        const int possibleValue = getValueFromMidiMessage(source);
 
-		if (currentValue.value != possibleValue)
-		{
-			if (isInValidMappedRange (possibleValue))
-			{
-				currentValue.value 				= possibleValue;
-				currentValue.lastChangeSource	= CtrlrModulatorValue::changedByMidiIn;
+        if (currentValue.value != possibleValue)
+        {
+            if (isInValidMappedRange (possibleValue))
+            {
+                currentValue.value                 = possibleValue;
+                currentValue.lastChangeSource    = CtrlrModulatorValue::changedByMidiIn;
 
-				/* notify the pluginHost about the change */
-				setParameterNotifyingHost();
+                /* notify the pluginHost about the change */
+                setParameterNotifyingHost();
                 
                 /* update the modulator ValueTree and tell the GUI about the changes */
                 triggerAsyncUpdate(); // Added v5.6.32. Required to update mod value from MIDI input message
-			}
-		}
-	}
+            }
+        }
+    }
 }
 
-void CtrlrModulatorProcessor::setParameterNotifyingHost()
+void CtrlrModulatorProcessor::setParameterNotifyingHost() // CtrlrX->VST Host
 {
-	if (owner.getVstIndex() >= 0 && owner.isExportedToVst())
-	{
-		getProcessor()->setParameterNotifyingHost (owner.getVstIndex(), normalizeValue (currentValue.value, minValue, maxValue));
-	}
+    if (owner.getVstIndex() >= 0 && owner.isExportedToVst())
+    {
+        getProcessor()->setParameterNotifyingHost (owner.getVstIndex(), normalizeValue (currentValue.value, minValue, maxValue));
+    }
 }
 
 int CtrlrModulatorProcessor::getValueFromMidiMessage(const CtrlrMIDIDeviceType source)
 {
-	int evaluationResult = 0;
-	if (usingValueMap)
-	{
-		const int possibleValue = valueMap.getIndexForValue(evaluateReverse (getMidiMessage(source).getValue()));
+    int evaluationResult = 0;
+    if (usingValueMap)
+    {
+        const int possibleValue = valueMap.getIndexForValue(evaluateReverse (getMidiMessage(source).getValue()));
 
-		if (possibleValue >= 0)
-		{
-			evaluationResult = possibleValue;
-		}
-		else
-		{
-			evaluationResult = currentValue.value;
-		}
-	}
-	else
-	{
-		evaluationResult = evaluateReverse (getMidiMessage(source).getValue());
-	}
+        if (possibleValue >= 0)
+        {
+            evaluationResult = possibleValue;
+        }
+        else
+        {
+            evaluationResult = currentValue.value;
+        }
+    }
+    else
+    {
+        evaluationResult = evaluateReverse (getMidiMessage(source).getValue());
+    }
 
-	if (getValueFromMidiCbk)
-	{
-		if (!getValueFromMidiCbk.wasObjectDeleted() && getValueForMidiCbk->isValid())
-		{
-			evaluationResult = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().callWithRet (getValueFromMidiCbk, &owner, getMidiMessage(source), evaluationResult);
-		}
-	}
+    if (getValueFromMidiCbk)
+    {
+        if (!getValueFromMidiCbk.wasObjectDeleted() && getValueForMidiCbk->isValid())
+        {
+            evaluationResult = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().callWithRet (getValueFromMidiCbk, &owner, getMidiMessage(source), evaluationResult);
+        }
+    }
 
-	return (evaluationResult);
+    return (evaluationResult);
 }
 
 float CtrlrModulatorProcessor::getValueForHost() const
 {
-	const ScopedReadLock sl (processorLock);
+    const ScopedReadLock sl (processorLock);
 
-	return (normalizeValue (currentValue.value, minValue, maxValue));
+    return (normalizeValue (currentValue.value, minValue, maxValue));
 }
 
 CtrlrOwnedMidiMessage *CtrlrModulatorProcessor::getMidiMessagePtr(const CtrlrMIDIDeviceType source)
@@ -394,68 +390,68 @@ CtrlrOwnedMidiMessage *CtrlrModulatorProcessor::getMidiMessagePtr(const CtrlrMID
     if (source == controllerDevice)
         return (ctrlrMidiControllerMessage);
 
-	return (ctrlrMidiMessage);
+    return (ctrlrMidiMessage);
 }
 
 CtrlrMidiMessage &CtrlrModulatorProcessor::getMidiMessage(const CtrlrMIDIDeviceType source)
 {
-	const ScopedReadLock sl (processorLock);
+    const ScopedReadLock sl (processorLock);
     if (source == controllerDevice)
         return (*ctrlrMidiControllerMessage);
 
-	return (*ctrlrMidiMessage);
+    return (*ctrlrMidiMessage);
 }
 
 CtrlrOwnedMidiMessage &CtrlrModulatorProcessor::getOwnedMidiMessage(const CtrlrMIDIDeviceType source)
 {
-	const ScopedReadLock sl (processorLock);
-	if (source == controllerDevice)
+    const ScopedReadLock sl (processorLock);
+    if (source == controllerDevice)
         return (*ctrlrMidiControllerMessage);
 
-	return (*ctrlrMidiMessage);
+    return (*ctrlrMidiMessage);
 }
 
 CtrlrProcessor *CtrlrModulatorProcessor::getProcessor()
 {
-	return (owner.getOwnerPanel().getCtrlrManagerOwner().getProcessorOwner());
+    return (owner.getOwnerPanel().getCtrlrManagerOwner().getProcessorOwner());
 }
 
 double CtrlrModulatorProcessor::getValue() const // Updated v5.6.32. int to double
 {
-	const ScopedReadLock sl (processorLock);
+    const ScopedReadLock sl (processorLock);
 
-	return (currentValue.value);
+    return (currentValue.value);
 }
 
 double CtrlrModulatorProcessor::getValueMapped() const // Updated v5.6.32. int to double
 {
-	const ScopedReadLock sl (processorLock);
+    const ScopedReadLock sl (processorLock);
 
-	return (valueMap.getMappedValue(currentValue.value));
+    return (valueMap.getMappedValue(currentValue.value));
 }
 
 double CtrlrModulatorProcessor::getMax() const // Updated v5.6.32. int to double
 {
-	const ScopedReadLock sl (processorLock);
+    const ScopedReadLock sl (processorLock);
 
-	return (maxValue);
+    return (maxValue);
 }
 
 double CtrlrModulatorProcessor::getMin() const // Updated v5.6.32. int to double
 {
-	const ScopedReadLock sl (processorLock);
+    const ScopedReadLock sl (processorLock);
 
-	return (minValue);
+    return (minValue);
 }
 
 void CtrlrModulatorProcessor::sendMidiMessage()
 {
-	if (getMidiMessage().getMidiMessageType() == None)
-		return;
+    if (getMidiMessage().getMidiMessageType() == None)
+        return;
 
-	if (!owner.getRestoreState())
-	{
-		ctrlrMidiMessage->setValue (getValueForMidiMessage(currentValue.value));
+    if (!owner.getRestoreState())
+    {
+        ctrlrMidiMessage->setValue (getValueForMidiMessage(currentValue.value));
 
         {
             ScopedReadLock srl(processorLock);
@@ -470,240 +466,240 @@ void CtrlrModulatorProcessor::sendMidiMessage()
 
             }
         }
-	}
-	else
-	{
-		ctrlrMidiMessage->setValue (getValueForMidiMessage(currentValue.value));
-	}
+    }
+    else
+    {
+        ctrlrMidiMessage->setValue (getValueForMidiMessage(currentValue.value));
+    }
 }
 
 const CtrlrValueMap &CtrlrModulatorProcessor::setValueMap (const String &mapAsString)
 {
-	{
-		const ScopedWriteLock sl (processorLock);
-		valueMap.parseString (mapAsString);
-		usingValueMap	= true;
-	}
+    {
+        const ScopedWriteLock sl (processorLock);
+        valueMap.parseString (mapAsString);
+        usingValueMap    = true;
+    }
 
-	{
-		const ScopedReadLock sl (processorLock);
+    {
+        const ScopedReadLock sl (processorLock);
 
-		owner.setProperty (Ids::modulatorMax, valueMap.getNonMappedMax());
-		owner.setProperty (Ids::modulatorMin, valueMap.getNonMappedMin());
-		return (valueMap);
-	}
+        owner.setProperty (Ids::modulatorMax, valueMap.getNonMappedMax());
+        owner.setProperty (Ids::modulatorMin, valueMap.getNonMappedMin());
+        return (valueMap);
+    }
 }
 
 void CtrlrModulatorProcessor::setValueMap (const CtrlrValueMap &map)
 {
-	{
-		const ScopedWriteLock sl (processorLock);
-		valueMap.copyFrom (map);
-		usingValueMap	= true;
-	}
+    {
+        const ScopedWriteLock sl (processorLock);
+        valueMap.copyFrom (map);
+        usingValueMap    = true;
+    }
 
-	{
-		const ScopedReadLock sl (processorLock);
+    {
+        const ScopedReadLock sl (processorLock);
 
-		owner.setProperty (Ids::modulatorMax, valueMap.getNonMappedMax());
-		owner.setProperty (Ids::modulatorMin, valueMap.getNonMappedMin());
-	}
+        owner.setProperty (Ids::modulatorMax, valueMap.getNonMappedMax());
+        owner.setProperty (Ids::modulatorMin, valueMap.getNonMappedMin());
+    }
 }
 
 int CtrlrModulatorProcessor::getValueForMidiMessage(const int value)
 {
-	int evaluationResult = value;
+    int evaluationResult = value;
 
-	if (usingValueMap)
-	{
-		if (usingForwardProcess)
-		{
-			evaluationResult = evaluateForward (valueMap.getMappedValue(value));
-		}
-		else
-		{
-			evaluationResult = valueMap.getMappedValue(value);
-		}
-	}
-	else
-	{
-		evaluationResult = evaluateForward(value);
-	}
+    if (usingValueMap)
+    {
+        if (usingForwardProcess)
+        {
+            evaluationResult = evaluateForward (valueMap.getMappedValue(value));
+        }
+        else
+        {
+            evaluationResult = valueMap.getMappedValue(value);
+        }
+    }
+    else
+    {
+        evaluationResult = evaluateForward(value);
+    }
 
-	if (getValueForMidiCbk)
-	{
-		if (!getValueForMidiCbk.wasObjectDeleted() && getValueForMidiCbk->isValid())
-		{
-			evaluationResult = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().callWithRet (getValueForMidiCbk, &owner, evaluationResult);
-		}
-	}
+    if (getValueForMidiCbk)
+    {
+        if (!getValueForMidiCbk.wasObjectDeleted() && getValueForMidiCbk->isValid())
+        {
+            evaluationResult = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().callWithRet (getValueForMidiCbk, &owner, evaluationResult);
+        }
+    }
 
-	return (evaluationResult);
+    return (evaluationResult);
 }
 
 bool CtrlrModulatorProcessor::isInValidMappedRange(const int possibleValue) const
 {
-	if (usingValueMap)
-	{
-		if (possibleValue >= valueMap.getMappedMin() && possibleValue <= valueMap.getMappedMax())
-		{
-			return (true);
-		}
-	}
-	else
-	{
-		if (possibleValue >= minValue && possibleValue <= maxValue)
-		{
-			return (true);
-		}
-	}
+    if (usingValueMap)
+    {
+        if (possibleValue >= valueMap.getMappedMin() && possibleValue <= valueMap.getMappedMax())
+        {
+            return (true);
+        }
+    }
+    else
+    {
+        if (possibleValue >= minValue && possibleValue <= maxValue)
+        {
+            return (true);
+        }
+    }
 
-	return (false);
+    return (false);
 }
 
 void CtrlrModulatorProcessor::setLinkedToGlobal(const bool _linkedToGlobal, const int _globalIndex)
 {
-	{
-		const ScopedWriteLock sl (processorLock);
-		linkedToGlobal	= _linkedToGlobal;
-		globalIndex		= _globalIndex;
-	}
+    {
+        const ScopedWriteLock sl (processorLock);
+        linkedToGlobal    = _linkedToGlobal;
+        globalIndex        = _globalIndex;
+    }
 }
 
 bool CtrlrModulatorProcessor::getLinkedToGlobal()
 {
-	const ScopedReadLock sl (processorLock);
+    const ScopedReadLock sl (processorLock);
 
-	return (linkedToGlobal);
+    return (linkedToGlobal);
 }
 
 int CtrlrModulatorProcessor::getLinkedToGlobalIndex()
 {
-	const ScopedReadLock sl (processorLock);
+    const ScopedReadLock sl (processorLock);
 
-	return (globalIndex);
+    return (globalIndex);
 }
 
 CtrlrValueMap &CtrlrModulatorProcessor::getValueMap()
 {
-	return (valueMap);
+    return (valueMap);
 }
 
 double CtrlrModulatorProcessor::evaluateForward(const double inValue) // Updated v5.6.32. int to double
 {
-	if (usingForwardProcess)
-	{
-		String errors;
-		double ret;
+    if (usingForwardProcess)
+    {
+        String errors;
+        double ret;
 
-		ret = forwardProcess.evaluate (*this, errors);
+        ret = forwardProcess.evaluate (*this, errors);
 
-		if (!errors.isEmpty())
-		{
-			_ERR("CtrlrModulatorProcessor::evaluateForward " + errors);
-		}
+        if (!errors.isEmpty())
+        {
+            _ERR("CtrlrModulatorProcessor::evaluateForward " + errors);
+        }
 
-		return (ret);
-	}
+        return (ret);
+    }
 
-	return (inValue);
+    return (inValue);
 }
 
 double CtrlrModulatorProcessor::evaluateReverse(const double inValue) // Updated v5.6.32. int to double
 {
-	if (usingReverseProcess)
-	{
-		String errors;
-		double ret;
-		ret = reverseProcess.evaluate (*this, errors);
-		if (!errors.isEmpty())
-		{
-			_ERR("CtrlrModulatorProcessor::evaluateReverse " + errors);
-		}
+    if (usingReverseProcess)
+    {
+        String errors;
+        double ret;
+        ret = reverseProcess.evaluate (*this, errors);
+        if (!errors.isEmpty())
+        {
+            _ERR("CtrlrModulatorProcessor::evaluateReverse " + errors);
+        }
 
-		return (ret);
-	}
+        return (ret);
+    }
 
-	return (inValue);
+    return (inValue);
 }
 
 String CtrlrModulatorProcessor::getScopeUID() const
 {
-	return ("mProcessor");
+    return ("mProcessor");
 }
 
 double CtrlrModulatorProcessor::evaluateFunction (const String& functionName, const double* parameters, int numParameters) const
 {
-	return (evaluateFormulaFunction (owner.getOwnerPanel(), functionName, parameters, numParameters));
+    return (evaluateFormulaFunction (owner.getOwnerPanel(), functionName, parameters, numParameters));
 }
 
 void CtrlrModulatorProcessor::visitRelativeScope (const String &scopeName, Visitor &visitor) const
 {
-	if (scopeName == "panel")
-	{
-		visitor.visit (owner.getOwnerPanel().getPanelEvaluationScope());
-	}
-	else if (scopeName == "global")
-	{
-		visitor.visit (owner.getOwnerPanel().getGlobalEvaluationScope());
-	}
+    if (scopeName == "panel")
+    {
+        visitor.visit (owner.getOwnerPanel().getPanelEvaluationScope());
+    }
+    else if (scopeName == "global")
+    {
+        visitor.visit (owner.getOwnerPanel().getGlobalEvaluationScope());
+    }
 }
 
 Expression CtrlrModulatorProcessor::getSymbolValue (const String& symbol) const
 {
-	if (symbol == "modulatorValue")
-	{
-		return (Expression((double)currentValue.value));
-	}
-	else if (symbol == "modulatorMappedValue")
-	{
-		return (Expression((double)valueMap.getMappedValue(currentValue.value)));
-	}
-	else if (symbol == "modulatorMax")
-	{
-		return (Expression((double)maxValue));
-	}
-	else if (symbol == "modulatorMin")
-	{
-		return (Expression((double)minValue));
-	}
-	else if (symbol == "modulatorMappedMax")
-	{
-		return (Expression((double)valueMap.getMappedMax()));
-	}
-	else if (symbol == "modulatorMappedMin")
-	{
-		return (Expression((double)valueMap.getMappedMin()));
-	}
-	else if (symbol == "vstIndex")
-	{
-		return (Expression((double)owner.getVstIndex()));
-	}
-	else if (symbol == "midiValue")
-	{
-		return (Expression((double)ctrlrMidiMessage->getValue()));
-	}
-	else if (symbol == "midiNumber")
-	{
-		return (Expression((double)ctrlrMidiMessage->getNumber()));
-	}
+    if (symbol == "modulatorValue")
+    {
+        return (Expression((double)currentValue.value));
+    }
+    else if (symbol == "modulatorMappedValue")
+    {
+        return (Expression((double)valueMap.getMappedValue(currentValue.value)));
+    }
+    else if (symbol == "modulatorMax")
+    {
+        return (Expression((double)maxValue));
+    }
+    else if (symbol == "modulatorMin")
+    {
+        return (Expression((double)minValue));
+    }
+    else if (symbol == "modulatorMappedMax")
+    {
+        return (Expression((double)valueMap.getMappedMax()));
+    }
+    else if (symbol == "modulatorMappedMin")
+    {
+        return (Expression((double)valueMap.getMappedMin()));
+    }
+    else if (symbol == "vstIndex")
+    {
+        return (Expression((int)owner.getVstIndex())); // Updated v5.5.33. double to int
+    }
+    else if (symbol == "midiValue")
+    {
+        return (Expression((double)ctrlrMidiMessage->getValue()));
+    }
+    else if (symbol == "midiNumber")
+    {
+        return (Expression((double)ctrlrMidiMessage->getNumber()));
+    }
 
-	return (Expression(1.0));
+    return (Expression(1.0));
 }
 
 int CtrlrModulatorProcessor::getMidiChannelForOwnedMidiMessages()
 {
-	return (owner.getOwnerPanel().getProperty(Ids::panelMidiOutputChannelDevice));
+    return (owner.getOwnerPanel().getProperty(Ids::panelMidiOutputChannelDevice));
 }
 
 CtrlrSysexProcessor *CtrlrModulatorProcessor::getSysexProcessor()
 {
-	return (&owner.getOwnerPanel().getSysExProcessor());
+    return (&owner.getOwnerPanel().getSysExProcessor());
 }
 
 Array<int,CriticalSection> &CtrlrModulatorProcessor::getGlobalVariables()
 {
-	return (owner.getOwnerPanel().getGlobalVariables());
+    return (owner.getOwnerPanel().getGlobalVariables());
 }
 
 void CtrlrModulatorProcessor::setMute (bool _isMute)

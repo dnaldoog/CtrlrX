@@ -207,7 +207,7 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel*  panelToWrite, con
 	File executableFile = newMe; // Assuming the newMe file is the executable
 	if (executableFile.existsAsFile()) {
 
-		if (fileExtension == (".vst3")) {
+		if (fileExtension == (".vst3") || (".dll")) { // Updated v5.6.33. Added VST2 .dll
 			logger.log("fileExtension is : " + fileExtension);
 
 			// Replace the stock VST3 plugin identifiers with the panel to export ones.
