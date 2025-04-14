@@ -877,11 +877,13 @@ void channelizeBuffer(MidiBuffer &inputBuffer, MidiBuffer &outputBuffer, const i
 	}
 }
 
-float normalizeValue(const double& value, const double& minValue, const double& maxValue)
+float normalizeValue(const double& value, const double& minValue, const double& maxValue) // Updated v5.6.33
 {
-	// jassert(maxValue > minValue);
-	// jassert(normalized >= 0.0f && normalized <= 1.0f);
-	return ((float)((value - minValue) / (maxValue - minValue)));
+    if (maxValue > minValue)
+    {
+        return ((float)((value - minValue) / (maxValue - minValue)));
+    }
+    return 0.0f; // Or some other appropriate default value
 }
 
 double denormalizeValue(const float& normalized, const double& minValue, const double& maxValue)
@@ -890,6 +892,7 @@ double denormalizeValue(const float& normalized, const double& minValue, const d
 	// jassert(maxValue > minValue);
 
 	return roundFloatToInt(minValue + normalized * (maxValue - minValue));
+    // return minValue + normalized * (maxValue - minValue); // Updated v5.6.33. Won't round the value
 }
 
 void restoreProperties(const ValueTree &sourceTree, ValueTree &destinationTree, UndoManager *undoManager, const String &propertyPrefix)

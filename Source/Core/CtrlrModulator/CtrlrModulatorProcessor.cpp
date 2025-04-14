@@ -262,7 +262,7 @@ void CtrlrModulatorProcessor::setValueGeneric(const CtrlrModulatorValue inValue,
 			return;
 		}
 
-		/* first we se the currentValue to the new value comming from the gui, it's needed for the
+		/* first we set the currentValue to the new value comming from the gui, it's needed for the
 			expressions evaluations to work */
 
 		currentValue = inValue;
@@ -278,38 +278,34 @@ void CtrlrModulatorProcessor::setValueGeneric(const CtrlrModulatorValue inValue,
 	setParameterNotifyingHost();
 }
 
-void CtrlrModulatorProcessor::setValueFromHost(const float inValue)
+void CtrlrModulatorProcessor::setValueFromHost(const float inValue) // Note v5.6.33. Host->CtrlrX : This is where the param value automation happens
 {
-	/* called from the audio thread */
-	{
-		/* first quickly check if we need to change anything at all */
-		const ScopedReadLock sl (processorLock);
+    /* called from the audio thread */
+    const int possibleNewValue = denormalizeValue (inValue, minValue, maxValue);
 
-		const int possibleNewValue	= denormalizeValue (inValue, minValue, maxValue);
+    // Quick check for early exit under a read lock
+    {
+        const ScopedReadLock sl (processorLock);
+        if (possibleNewValue == roundDoubleToInt(currentValue.value))
+        {
+            return; // No need to triggerAsyncUpdate here if the value hasn't changed
+        }
+    }
 
-		if ( possibleNewValue == roundDoubleToInt(currentValue.value) ) // v5.6.32. Added roundDoubleToInt to force comparison from both integers, not float vs integers
-		{
-			/* the host told us the same exact value we already have, we won't do anything about it */
-			// Update 5.6.23. We don't event trigger an update since it would erroneously generate a call to Lua callbacks
-			//triggerAsyncUpdate(); // Removed v5.6.23
-			return;
-		}
-	}
+    // If the value has changed, acquire a write lock and update
+    {
+        const ScopedWriteLock sl(processorLock);
+        
+        /* set the new value for the modulator */
+        currentValue.value = possibleNewValue;
+        currentValue.lastChangeSource = CtrlrModulatorValue::changedByHost;
+        
+        /* send a midi message */
+        sendMidiMessage();
+    }
 
-	{
-		/* if we got here the value from the host is new and we need to update things */
-		const ScopedWriteLock sl(processorLock);
-
-		/* set the new value for the modulator */
-		currentValue.value 				= denormalizeValue (inValue, minValue, maxValue);
- 		currentValue.lastChangeSource	= CtrlrModulatorValue::changedByHost;
-
-		/* send a midi message */
-		sendMidiMessage();
-	}
-
-	/* update the modulator ValueTree and tell the GUI about the changes */
-	triggerAsyncUpdate();
+    /* update the modulator ValueTree and tell the GUI about the changes */
+    triggerAsyncUpdate();
 }
 
 
@@ -342,7 +338,7 @@ void CtrlrModulatorProcessor::setValueFromMIDI(CtrlrMidiMessage &m, const CtrlrM
 	}
 }
 
-void CtrlrModulatorProcessor::setParameterNotifyingHost()
+void CtrlrModulatorProcessor::setParameterNotifyingHost() // CtrlrX->VST Host
 {
 	if (owner.getVstIndex() >= 0 && owner.isExportedToVst())
 	{
@@ -677,7 +673,7 @@ Expression CtrlrModulatorProcessor::getSymbolValue (const String& symbol) const
 	}
 	else if (symbol == "vstIndex")
 	{
-		return (Expression((double)owner.getVstIndex()));
+		return (Expression((int)owner.getVstIndex())); // Updated v5.5.33. double to int
 	}
 	else if (symbol == "midiValue")
 	{

@@ -114,7 +114,7 @@ CtrlrManagerVst &CtrlrManager::getVstManager()
 
 void CtrlrManager::addModulator (CtrlrModulator *modulatorToAdd)
 {
-    // _DBG("CtrlrManager::addModulator [PRE] vstIndex=="+modulatorToAdd->getProperty(Ids::vstIndex).toString());
+    _DBG("CtrlrManager::addModulator [PRE] vstIndex=="+modulatorToAdd->getProperty(Ids::vstIndex).toString());
 	ctrlrManagerVst->set (modulatorToAdd);
 	ctrlrModulators.addIfNotAlreadyThere (modulatorToAdd);
 	// _DBG("CtrlrManager::addModulator [POST] vstIndex=="+modulatorToAdd->getProperty(Ids::vstIndex).toString());
