@@ -7,6 +7,8 @@
 #include "boost/bind.hpp"
 #include "boost/function.hpp"
 
+#include <fstream> // Added v5.6.33. Required for vst3 logger
+
 class CtrlrLog;
 class CtrlrManager;
 class CtrlrMidiMessage;
@@ -64,12 +66,11 @@ class CtrlrProcessor : public AudioProcessor, public ChangeBroadcaster
 
     
         // DEPRECATED WITH JUCE 5
-        int getNumParameters();
-		float getParameter (int index);
-		void setParameter (int index, float newValue);
-
-		const String getParameterName (int index);
-		const String getParameterText (int index);
+        int getNumParameters() override;
+        float getParameter (int index) override;
+        void setParameter (int index, float newValue) override;
+        const juce::String getParameterName (int index) override;
+        const juce::String getParameterText (int index) override;
            
         // const String getInputChannelName (int channelIndex) const;
         // const String getOutputChannelName (int channelIndex) const;
@@ -86,6 +87,7 @@ class CtrlrProcessor : public AudioProcessor, public ChangeBroadcaster
         double getTailLengthSeconds() const override;
        
         int getNumPrograms() override;
+        String getParameterID(int index) override; // Added v5.6.33
         int getCurrentProgram() override;
         void setCurrentProgram (int index) override;
         const String getProgramName (int index) override;
@@ -163,5 +165,39 @@ class CtrlrProcessor : public AudioProcessor, public ChangeBroadcaster
     
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrProcessor);
 };
+
+
+
+class PluginLoggerVst3 { // Added v5.6.32
+public:
+    PluginLoggerVst3(const juce::File& pluginExecutableFile) {
+        logFile = pluginExecutableFile.getParentDirectory().getChildFile("CtrlrX_vst3_debug_log.txt");
+        if (!logFile.exists()) {
+            logFile.create();
+        }
+    }
+
+    void log(const juce::String& message) {
+        std::ofstream outfile(logFile.getFullPathName().toStdString(), std::ios_base::app);
+        if (outfile.is_open()) {
+            outfile << juce::Time::getCurrentTime().toString(true, true, true, true) << ": " << message.toStdString() << std::endl;
+            outfile.close();
+        } else {
+            std::cerr << "Error: Could not open log file for writing." << std::endl;
+        }
+    }
+
+    void logResult(const juce::Result& result) {
+        if (result.wasOk()) {
+            log("Result: OK");
+        } else {
+            log("Result: FAIL - " + result.getErrorMessage());
+        }
+    }
+
+private:
+    juce::File logFile;
+};
+
 
 #endif

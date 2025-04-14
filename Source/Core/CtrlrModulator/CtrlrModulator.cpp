@@ -251,8 +251,8 @@ void CtrlrModulator::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasCh
 		{
 			owner.getCtrlrManagerOwner().getVstManager().remove (this);
 		}
-
 		vstExported = (bool)getProperty(property);
+        // Note v5.6.33. Does it require to set the property again ???
 	}
 	else if (property == Ids::vstIndex)
 	{
@@ -277,7 +277,7 @@ int CtrlrModulator::getVstIndex() const
 	return ((int)getProperty(Ids::vstIndex));
 }
 
-float CtrlrModulator::getVstValue(const int intValueToUse) const
+float CtrlrModulator::getVstValue(const int intValueToUse) const // Note v5.6.33. Useless, never called
 {
 	if (intValueToUse >= 0)
 	{

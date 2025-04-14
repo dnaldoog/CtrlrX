@@ -71,10 +71,9 @@ CtrlrProcessor::~CtrlrProcessor()
 #endif
 }
 
-//==============================================================================
+
 // NAMING FROM getName() WORKS ONLY FOR WIN VST2.
 // macOS VST2 ARE NAMED AFTER CFBundleName string in /Contents/Info.plist
-//==============================================================================
 
 const String CtrlrProcessor::getName() const
 {
@@ -87,8 +86,6 @@ const String CtrlrProcessor::getName() const
 		return ("Ctrlr");
     }
 }
-
-//==============================================================================
 
 
 void CtrlrProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
@@ -119,31 +116,11 @@ void CtrlrProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuffer& midiMe
     MidiBuffer::Iterator i(midiMessages);
     while (i.getNextEvent(logResult, logSamplePos))
     _MOUT("VST OUTPUT", logResult, logSamplePos);
-    
-    
-    // Added v5.6.32. Useless
-    // Loop the audio from the inputs to the corroesponding outputs
-//    juce::ScopedNoDenormals noDenormals;
-//    auto totalNumInputChannels  = getTotalNumInputChannels();
-//    auto totalNumOutputChannels = getTotalNumOutputChannels();
-//
-//    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-//    buffer.clear (i, 0, buffer.getNumSamples());
-//
-//    double rawVolume = 1.0; // vol gain in = vol gain out 1/1
-//    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-//    {
-//        auto* channelData = buffer.getWritePointer (channel);
-//
-//        for (int sample = 0; sample < buffer.getNumSamples(); sample++)
-//        {
-//            channelData[sample] = buffer.getSample(channel, sample) * rawVolume;
-//        }
-//    }
 }
 
+
 //==============================================================================
-//
+
 // These methods are all deprecated in favour of using AudioProcessorParameter
 // and AudioProcessorParameterGroup
 //
@@ -154,7 +131,6 @@ void CtrlrProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuffer& midiMe
 //JUCE_DEPRECATED (virtual String getParameterName (int parameterIndex, int maximumStringLength));
 //JUCE_DEPRECATED (virtual const String getParameterText (int parameterIndex));
 //JUCE_DEPRECATED (virtual String getParameterText (int parameterIndex, int maximumStringLength));
-//
 
 int CtrlrProcessor::getNumParameters() // Updated 5.6.31. VST Host was assigned (64) params most of the time since panels hardly have more than 64 params passed as VST controls
 {
@@ -171,7 +147,46 @@ int CtrlrProcessor::getNumParameters() // Updated 5.6.31. VST Host was assigned 
         return (CTRLR_DEFAULT_PARAMETER_COUNT);
 }
 
-float CtrlrProcessor::getParameter (int index)
+String CtrlrProcessor::getParameterID(int index) // Added v5.6.33. Will pass vstIndex as VST3 ID
+{
+    //File debugLog = File::getSpecialLocation(File::currentApplicationFile);
+    //PluginLoggerVst3 logger(debugLog); // Create logger instance
+    
+    //logger.log("getParameterID() called with index: " + String(index));
+
+    if (CtrlrModulator* m = ctrlrManager->getModulatorByVstIndex (index))
+    {
+        int vstIndex = m->getVstIndex();
+        //logger.log("  Found modulator. vstIndex: " + String(vstIndex));
+        String idPrefix = "CtrlrMod_";
+        String vstIndexString = String(vstIndex);
+        String fullId = idPrefix + vstIndexString;
+        //logger.log("  ID Prefix: " + idPrefix);
+        //logger.log("  vstIndex as String: " + vstIndexString);
+        //logger.log("  Constructed ID: " + fullId);
+        return fullId;
+    }
+    else
+    {
+        String fallbackId = "undefined_ID_" + String(index);
+        //logger.log("  No modulator found for index: " + String(index) + ". Returning fallback ID: " + fallbackId);
+        return fallbackId;
+    }
+}
+
+const String CtrlrProcessor::getParameterName (int index)
+{
+    if (ctrlrManager->getModulatorByVstIndex (index))
+    {
+        return (ctrlrManager->getModulatorByVstIndex (index)->getNameForHost());
+    }
+    else
+    {
+        return ("undefined_"+String(index));
+    }
+}
+
+float CtrlrProcessor::getParameter (int index) // Updated v5.6.33
 {
     CtrlrModulator *m = ctrlrManager->getModulatorByVstIndex (index);
     if (m)
@@ -188,29 +203,9 @@ void CtrlrProcessor::setParameter (int index, float newValue)
 {
     CtrlrModulator *m = ctrlrManager->getModulatorByVstIndex (index);
     if (m == nullptr)
-    {
         return;
-    }
-    else if (newValue > 1.0f || newValue < 0.000000f)
-    {
-        return;
-    }
-    else
-    {
-        return (m->getProcessor().setValueFromHost(newValue));
-    }
-}
-
-const String CtrlrProcessor::getParameterName (int index)
-{
-    if (ctrlrManager->getModulatorByVstIndex (index))
-    {
-        return (ctrlrManager->getModulatorByVstIndex (index)->getNameForHost());
-    }
-    else
-    {
-        return ("undefined_"+String(index));
-    }
+    
+    m->getProcessor().setValueFromHost(newValue);
 }
 
 const String CtrlrProcessor::getParameterText (int index)
@@ -225,106 +220,6 @@ const String CtrlrProcessor::getParameterText (int index)
         return ("value_"+String(index));
     }
 }
-
-//==============================================================================
-//
-// DEPRECATED IN JUCE 5
-//
-// These functions are deprecated: your audio processor can inform the host
-// on its bus and channel layouts and names using the AudioChannelSet and various bus classes.
-//const String CtrlrProcessor::getInputChannelName (const int channelIndex) const
-//
-//{
-//#if JucePlugin_Build_VST
-//    if (channelIndex >= 1024)
-//    {
-//        /* used internally */
-//        switch (channelIndex)
-//        {
-//            case VST_INDEX_UNIQUEID:
-//                if (ctrlrManager)
-//                {
-//                    if (ctrlrManager->getActivePanel())
-//                    {
-//                        return (ctrlrManager->getActivePanel()->getPanelInstanceID());
-//                    }
-//                }
-//                return ("CTRL");
-//
-//            case VST_INDEX_MANUFACTURER:
-//                if (ctrlrManager)
-//                {
-//                    if (ctrlrManager->getActivePanel())
-//                    {
-//                        return (ctrlrManager->getActivePanel()->getPanelInstanceManufacturer());
-//                    }
-//                }
-//                return ("Instigator");
-//
-//            case VST_INDEX_NAME:
-//                if (ctrlrManager)
-//                {
-//                    if (ctrlrManager->getActivePanel())
-//                    {
-//                        return (ctrlrManager->getActivePanel()->getPanelInstanceName());
-//                    }
-//                }
-//                return ("Ctrlr");
-//
-//            case VST_INDEX_VERSION_STRING:
-//                if (ctrlrManager)
-//                {
-//                    if (ctrlrManager->getActivePanel())
-//                    {
-//                        return (ctrlrManager->getActivePanel()->getPanelInstanceVersionString());
-//                    }
-//                }
-//                return (ProjectInfo::versionString);
-//
-//            case VST_INDEX_VERSION_CODE:
-//                if (ctrlrManager)
-//                {
-//                    if (ctrlrManager->getActivePanel())
-//                    {
-//                        return (String(ctrlrManager->getActivePanel()->getPanelInstanceVersionInt()));
-//                    }
-//                }
-//                return (String(ProjectInfo::versionNumber));
-//
-//            default:
-//                break;
-//        }
-//    }
-//#endif
-//    return ("Audio Input: "+_STR(channelIndex));
-//}
-//
-//const String CtrlrProcessor::getOutputChannelName (const int channelIndex) const
-//{
-//    return ("Audio Output: "+_STR(channelIndex));
-//}
-
-
-//==============================================================================
-//
-// DEPRECATED IN JUCE 5
-//
-// These functions are deprecated: your audio processor can inform the host
-// on its bus and channel layouts and names using the AudioChannelSet and various bus classes.
-//  JUCE_DEPRECATED (virtual bool isInputChannelStereoPair  (int index) const);
-//  JUCE_DEPRECATED (virtual bool isOutputChannelStereoPair (int index) const);
-//
-//#if JucePlugin_Build_VST
-//bool CtrlrProcessor::isInputChannelStereoPair (int index) const
-//{
-//    return true;
-//}
-//
-//bool CtrlrProcessor::isOutputChannelStereoPair (int index) const
-//{
-//    return (true);
-//}
-//#endif
 
 //==============================================================================
 
