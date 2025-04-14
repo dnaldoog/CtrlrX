@@ -1,9 +1,5 @@
 #include "stdafx.h"
-<<<<<<< Updated upstream
 #include "CtrlrLuaManager.h"
-=======
-#include "CtrlrLuaManager.h" // added adterwards to check if useful
->>>>>>> Stashed changes
 #include "CtrlrManager/CtrlrManager.h"
 #include "CtrlrMacros.h"
 #include "CtrlrUtilities.h"
@@ -23,7 +19,6 @@
 #include "CtrlrComponents/CtrlrComponent.h"
 
 
-<<<<<<< Updated upstream
 CtrlrPanelNotifier::CtrlrPanelNotifier(CtrlrPanelEditor &_owner) // Added back v5.6.31 for file management bottom notification bar
     : owner(_owner), background(Colours::lightgrey)
 {
@@ -265,87 +260,6 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
     setSize(600, 400);
     
     ctrlrComponentSelection->sendChangeMessage();
-=======
-CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManager, const String &panelName)
-		: Component(L"Ctrlr Panel Editor"),
-		  lastEditMode(true),
-		  ctrlrManager(_ctrlrManager),
-		  owner(_owner),
-		  panelEditorTree(Ids::uiPanelEditor),
-		  ctrlrComponentSelection(nullptr),
-		  ctrlrPanelProperties(nullptr),
-		  spacerComponent(nullptr)
-{
-	ctrlrComponentSelection = new CtrlrComponentSelection(*this);
-
-	removeColour(TooltipWindow::textColourId);
-
-	addAndMakeVisible(ctrlrPanelViewport = new CtrlrPanelViewport(*this));
-	addAndMakeVisible(ctrlrPanelProperties = new CtrlrPanelProperties(*this));
-	addAndMakeVisible(spacerComponent = new StretchableLayoutResizerBar(&layoutManager, 1, true));
-
-	spacerComponent->setName(L"spacerComponent");
-
-	getPanelEditorTree().addListener(this);
-
-	layoutManager.setItemLayout(0, -0.001, -1.0, -0.8);
-	layoutManager.setItemLayout(1, 8, 8, 8);
-	layoutManager.setItemLayout(2, -0.001, -1.0, -0.2);
-
-	editorComponentsInEditMode[0] = ctrlrPanelViewport;
-	editorComponentsInEditMode[1] = spacerComponent;
-	editorComponentsInEditMode[2] = ctrlrPanelProperties;
-
-	editorComponents[0] = ctrlrPanelViewport;
-
-	setProperty(Ids::uiPanelSnapSize, 8);
-	setProperty(Ids::uiPanelBackgroundColour, "0xffffffff");
-	setProperty(Ids::uiPanelBackgroundColour1, "0xffffffff");
-	setProperty(Ids::uiPanelBackgroundColour2, "0xffffffff");
-	setProperty(Ids::uiPanelBackgroundGradientType, 0); // Default set to none [No background gradient]
-	setProperty(Ids::uiPanelImageResource, COMBO_ITEM_NONE);
-	setProperty(Ids::uiPanelEditMode, true);
-	setProperty(Ids::uiPanelLock, false);
-	setProperty(Ids::uiPanelDisabledOnEdit, false);
-	setProperty(Ids::uiPanelMenuBarVisible, true);
-	setProperty(Ids::uiPanelMenuBarHideOnExport, false);
-	setProperty(Ids::uiPanelProgramsMenuHideOnExport, false);
-	setProperty(Ids::uiPanelMidiControllerMenuHideOnExport, false);
-	setProperty(Ids::uiPanelMidiThruMenuHideOnExport, false);
-	setProperty(Ids::uiPanelMidiChannelMenuHideOnExport, false);
-	setProperty(Ids::uiPanelViewPortSize, 800);
-	setProperty(Ids::uiPanelPropertiesSize, 300);
-	setProperty(Ids::uiPanelWidth, 400);
-	setProperty(Ids::uiPanelHeight, 400);
-	setProperty(Ids::name, panelName);
-	setProperty(Ids::uiPanelImageAlpha, 255);
-	setProperty(Ids::uiPanelImageLayout, 64);
-	setProperty(Ids::uiPanelSnapActive, true);
-	setProperty(Ids::uiPanelPropertiesOnRight, false);
-	setProperty(Ids::luaPanelPaintBackground, COMBO_ITEM_NONE);
-	setProperty(Ids::luaPanelEditorResized, COMBO_ITEM_NONE); // Added for callback on window resize
-	setProperty(Ids::luaPanelResized, COMBO_ITEM_NONE);
-	setProperty(Ids::luaPanelFileDragDropHandler, COMBO_ITEM_NONE);
-	setProperty(Ids::luaPanelFileDragEnterHandler, COMBO_ITEM_NONE);
-	setProperty(Ids::luaPanelFileDragExitHandler, COMBO_ITEM_NONE);
-
-	setProperty(Ids::uiPanelInvisibleComponentAlpha, 0.5);
-	setProperty(Ids::uiPanelTooltipBackgroundColour, "0xffeeeebb");
-	setProperty(Ids::uiPanelTooltipOutlineColour, "0xff000000");
-	setProperty(Ids::uiPanelTooltipColour, "0xff000000");
-	setProperty(Ids::uiPanelTooltipCornerRound, 1.0);
-	setProperty(Ids::uiPanelTooltipPlacement, BubbleComponent::below);
-	setProperty(Ids::uiPanelTooltipFont, Font(15.0f, Font::bold).toString());
-	setProperty(Ids::uiPanelLookAndFeel, "V3");
-	setProperty(Ids::uiPanelColourScheme, "Light");
-	setProperty(Ids::uiPanelZoom, 1.0);
-
-	ctrlrComponentSelection->addChangeListener(ctrlrPanelProperties);
-
-	setSize(600, 400);
-
-	ctrlrComponentSelection->sendChangeMessage();
->>>>>>> Stashed changes
 }
 
 CtrlrPanelEditor::~CtrlrPanelEditor()
@@ -368,7 +282,6 @@ void CtrlrPanelEditor::visibilityChanged()
 
 void CtrlrPanelEditor::resized()
 {
-<<<<<<< Updated upstream
     ctrlrPanelViewport->setBounds(0, 0, getWidth() - 608, getHeight()); // Was 308
     ctrlrPanelProperties->setBounds(getWidth() - 600, 32, 600, getHeight() - 32);
     spacerComponent->setBounds(getWidth(), 32, 8, getHeight() - 32);
@@ -394,30 +307,6 @@ void CtrlrPanelEditor::resized()
             owner.getCtrlrLuaManager().getMethodManager().call (resizedCbk, &owner);
         }
     }
-=======
-	ctrlrPanelViewport->setBounds(0, 0, getWidth() - 308, getHeight());
-	ctrlrPanelProperties->setBounds(getWidth() - 300, 32, 300, getHeight() - 32);
-	spacerComponent->setBounds(getWidth(), 32, 8, getHeight() - 32);
-    setProperty(Ids::uiPanelWidth, getWidth()); // Update W property value in field on resize
-    setProperty(Ids::uiPanelHeight, getHeight()); // Update H property value in field on resize
-    
-    // requires callback on resize to trigger script
-    if (resizedEditorCbk && !resizedEditorCbk.wasObjectDeleted())
-	{
-		if (resizedEditorCbk->isValid())
-		{
-			// Requires callback on resize
-            //owner.getOwner().getCtrlrLuaManager().getMethodManager().call (resizedEditorCbk, &owner.getOwner());
-		}
-	}
-    
-	layoutItems();
-
-	if (!getRestoreState())
-	{
-		saveLayout();
-	}
->>>>>>> Stashed changes
 }
 
 CtrlrComponentSelection *CtrlrPanelEditor::getSelection()
@@ -448,15 +337,8 @@ void CtrlrPanelEditor::layoutItems()
 
 void CtrlrPanelEditor::saveLayout()
 {
-<<<<<<< Updated upstream
     setProperty(Ids::uiPanelViewPortSize, layoutManager.getItemCurrentAbsoluteSize(0));
     setProperty(Ids::uiPanelPropertiesSize, layoutManager.getItemCurrentAbsoluteSize(2));
-=======
-	setProperty(Ids::uiPanelWidth, getWidth()); // Set W property on save
-    setProperty(Ids::uiPanelHeight, getHeight()); // Set H property on save
-	setProperty(Ids::uiPanelViewPortSize, layoutManager.getItemCurrentAbsoluteSize(0));
-	setProperty(Ids::uiPanelPropertiesSize, layoutManager.getItemCurrentAbsoluteSize(2));
->>>>>>> Stashed changes
 }
 
 CtrlrPanelCanvas *CtrlrPanelEditor::getCanvas()
@@ -578,7 +460,6 @@ CtrlrComponent *CtrlrPanelEditor::getSelected(const Identifier &type)
 
 void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
 {
-<<<<<<< Updated upstream
     if (treeWhosePropertyHasChanged.hasType(Ids::uiPanelEditor))
     {
         if (property == Ids::uiPanelEditMode)
@@ -758,94 +639,6 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
             
         }
     }
-=======
-	if (treeWhosePropertyHasChanged.hasType(Ids::uiPanelEditor))
-	{
-		if (property == Ids::uiPanelEditMode)
-		{
-			editModeChanged();
-		}
-		else if (property == Ids::uiPanelSnapSize)
-		{
-			repaint();
-		}
-		else if (property == Ids::name)
-		{
-			// Use getPanelWindowTitle() to get the "*" when the panel is dirty
-			Component::setName(owner.getPanelWindowTitle());
-		}
-		else if (property == Ids::uiPanelWidth)
-		{
-			if (getProperty(property) == "")
-				return;
-				
-			//Requires callback on resize
-            //resizedCbk = owner.getOwner().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
-		}
-		else if (property == Ids::uiPanelHeight)
-		{
-			if (getProperty(property) == "")
-				return;
-				
-			//Requires callback on resize
-            //resizedCbk = owner.getOwner().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
-		}
-		else if (property == Ids::uiPanelPropertiesOnRight)
-		{
-			ctrlrPanelProperties->layoutChanged();
-
-			if (!owner.getCtrlrManagerOwner().isRestoring())
-			{
-				resized();
-			}
-		}
-		else if (property == Ids::uiPanelDisableCombosOnEdit)
-		{
-			if ((bool) getProperty(property) && getMode())
-			{
-				setAllCombosDisabled();
-			}
-			else
-			{
-				setAllCombosEnabled();
-			}
-		}
-		else if (property == Ids::uiPanelZoom)
-		{
-			getPanelViewport()->setZoom(getProperty(property), getCanvas()->getBounds().getCentre().getX(),
-			                            getCanvas()->getBounds().getCentre().getY());
-		}
-		else if (property == Ids::uiPanelMenuBarVisible)
-		{
-			if (owner.getCtrlrManagerOwner().getEditor())
-			{
-				owner.getCtrlrManagerOwner().getEditor()->activeCtrlrChanged();
-			}
-		}
-		else if (property == Ids::uiPanelLookAndFeel)
-		{
-			if (lookAndFeel)
-			{
-				getCanvas()->setLookAndFeel(nullptr);
-				delete lookAndFeel.release();
-			}
-			lookAndFeel.reset(getLookAndFeelFromDescription(getProperty(property)));
-			getCanvas()->setLookAndFeel(lookAndFeel.get());
-		}
-		else if (property == Ids::uiPanelBackgroundGradientType
-		         || property == Ids::uiPanelBackgroundColour1
-		         || property == Ids::uiPanelBackgroundColour2
-		         || property == Ids::uiPanelBackgroundColour
-				)
-		{
-			repaint();
-		}
-		else if (property == Ids::uiPanelLookAndFeel)
-		{
-			setLookAndFeel(getLookAndFeelFromDescription(getProperty(Ids::uiPanelLookAndFeel)));
-		}
-	}
->>>>>>> Stashed changes
 }
 
 
