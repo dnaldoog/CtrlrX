@@ -26,6 +26,11 @@ ToDo
 Changelog
 ---------
 
+#### Version 5.6.33 | 2025.04.13
+* FIXED VST3 Host>CtrlrX interface. Sliders now reacts to Host automations of parameter values. Related Modulators send MIDI output messages. CtrlrProcessor.cpp & .h, CtrlrModulator.cpp & .h, CtrlrModulatorProcessor.cpp & .h
+
+
+
 #### Version 5.6.32 | 2025.04.05
 
 * NEW From now on, uisliders will return double float type values to manage decimals. If required values are integers,  new LUA function has been added : getValueInt()

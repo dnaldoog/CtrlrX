@@ -164,7 +164,7 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
         
         if (executableFile.existsAsFile()) {
             
-            if (fileExtension == (".vst3")) {
+            if (fileExtension == (".vst3") || (".vst")) {  // Updated v5.6.33. Added .vst to identify vst2 instances in Cubase for macOS
                 std::cout << "fileExtension is : " << fileExtension << std::endl;
                 logger.log("fileExtension is : " + fileExtension );
                 
