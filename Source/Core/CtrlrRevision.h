@@ -6,11 +6,7 @@ static const char *ctrlrRevision          = JucePlugin_VersionString;
 #ifdef JUCE_MAC
 // macOS build: Use build script-generated timestamp
 #ifndef BUILD_TIMESTAMP
-<<<<<<< Updated upstream
-#define BUILD_TIMESTAMP "2025-04-05 16:45:27"
-=======
-#define BUILD_TIMESTAMP "2025-04-13 22:31:42"
->>>>>>> Stashed changes
+#define BUILD_TIMESTAMP "2025-04-16 02:45:48"
 #endif
 static const char *ctrlrRevisionDate      = BUILD_TIMESTAMP; // Updated v5.6.32. FIX for Xcode not updating build time properly and keeping the first build timestamp as ref
 
@@ -28,13 +24,7 @@ static const char *ctrlrRevisionDate      = __TIMESTAMP__;
 //headerFile="../../Source/Core/CtrlrRevision.h"
 //# Use sed to replace or append the BUILD_TIMESTAMP definition
 //if grep -q "BUILD_TIMESTAMP" "$headerFile"; then
-<<<<<<< Updated upstream
-//    sed -i "" "s/#define BUILD_TIMESTAMP "2025-04-05 16:45:27"
+//    sed -i "" "s/#define BUILD_TIMESTAMP "2025-04-16 02:45:48"
 //else
-//    echo "#define BUILD_TIMESTAMP "2025-04-05 16:45:27"
-=======
-//    sed -i "" "s/#define BUILD_TIMESTAMP "2025-04-13 22:31:42"
-//else
-//    echo "#define BUILD_TIMESTAMP "2025-04-13 22:31:42"
->>>>>>> Stashed changes
+//    echo "#define BUILD_TIMESTAMP "2025-04-16 02:45:48"
 //fi

@@ -102,107 +102,116 @@ Component *CtrlrPropertyComponent::getPropertyComponent()
 	{
         visibleText = identifierDefinition.getProperty ("text").toString();
 	}
-
+    
 	propertyType = CtrlrIDManager::stringToType(identifierDefinition.getProperty("type"));
     
-    int propertyLineBaseHeight = panel->getOwner().getManagerTree().getProperty(Ids::ctrlrPropertyLineheightBaseValue); // Added v5.6.33.
-	
+    int propertyLineheightBaseValue; // Declare the variable outside the if-else block
+
+    if (panel)
+    {
+        propertyLineheightBaseValue = panel->getOwner().getManagerTree().getProperty(Ids::ctrlrPropertyLineheightBaseValue, 36); // Accessing to managerTree crashes CtrlrX
+    }
+    else
+    {
+        propertyLineheightBaseValue = 36;
+    }
+    
     switch (propertyType)
 	{
 		case CtrlrIDManager::ReadOnly:
             // preferredHeight = 36;
-            preferredHeight = propertyLineBaseHeight * 1.0; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
 			return (new CtrlrTextPropertyComponent (valueToControl, 1024, false, true)); // valueToControl, maxNumChars, isMultiLine, isReadOnly
             
 		case CtrlrIDManager::Text:
             // preferredHeight = 36;
-            preferredHeight = propertyLineBaseHeight * 1.0; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
 			return (new CtrlrTextPropertyComponent (valueToControl, 1024, false));
 
 		case CtrlrIDManager::MultiLine:
 			// preferredHeight = 96;
-            preferredHeight = propertyLineBaseHeight * 2.7; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 2.7); // Updated v5.6.33.
 			return (new CtrlrTextPropertyComponent (valueToControl, 8192*4, true));
 
 		case CtrlrIDManager::MultiLineSmall:
 			// preferredHeight = 64;
-            preferredHeight = propertyLineBaseHeight * 1.78; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.78); // Updated v5.6.33.
 			return (new CtrlrTextPropertyComponent (valueToControl, 8192, true));
 
 		case CtrlrIDManager::Expression:
 			// preferredHeight = 64;
-            preferredHeight = propertyLineBaseHeight * 1.78; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.78); // Updated v5.6.33.
 			return (new CtrlrExpressionProperty (valueToControl));
 
 		case CtrlrIDManager::Colour:
             // preferredHeight = 36;
-            preferredHeight = propertyLineBaseHeight * 1.0; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
 			return (new CtrlrColourPropertyComponent (valueToControl));
             
 		case CtrlrIDManager::Font:
             // preferredHeight = 36;
-            preferredHeight = propertyLineBaseHeight * 1.0; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
 			return (new CtrlrFontPropertyComponent (valueToControl, panel));
 
 		case CtrlrIDManager::Bool:
             // preferredHeight = 36;
-            preferredHeight = propertyLineBaseHeight * 1.0; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
 			return (new CtrlrBooleanPropertyComponent(valueToControl, identifierDefinition.getProperty ("defaults")));
             
 		case CtrlrIDManager::MultiMidi:
 			// preferredHeight = 128;
-            preferredHeight = propertyLineBaseHeight * 3.56; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 3.56); // Updated v5.6.33.
 			return (new CtrlrMultiMidiPropertyComponent(valueToControl));
 
 		case CtrlrIDManager::SysEx:
 			// preferredHeight = 36;
-            preferredHeight = propertyLineBaseHeight * 1.0; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
 			return (new CtrlrSysExPropertyComponent(valueToControl, propertyElement, propertyName, panel));
 
 		case CtrlrIDManager::LuaMethod:
             // preferredHeight = 36;
-            preferredHeight = propertyLineBaseHeight * 1.0; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
 			return (new CtrlrLuaMethodProperty(valueToControl, propertyName, panel));
             
 		case CtrlrIDManager::ActionButton:
             // preferredHeight = 36;
-            preferredHeight = propertyLineBaseHeight * 1.0; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
 			return (new CtrlrButtonPropertyComponent(valueToControl, visibleText));
         
         case CtrlrIDManager::ActionButtonText: // Added v5.6.32
             // preferredHeight = 36;
-            preferredHeight = propertyLineBaseHeight * 1.0; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
             buttonText = identifierDefinition.getProperty ("buttonText").toString();
             return (new CtrlrButtonTextPropertyComponent(valueToControl, visibleText, buttonText));
             
 		case CtrlrIDManager::Numeric:
             // preferredHeight = 36;
-            preferredHeight = propertyLineBaseHeight * 1.0; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
 			return (new CtrlrSliderPropertyComponent(valueToControl, (double)identifierDefinition.getProperty ("min", 0), (double)identifierDefinition.getProperty ("max", 127), (double)identifierDefinition.getProperty ("int", 1)));
             
 		case CtrlrIDManager::VarNumeric:
             // preferredHeight = 36;
-            preferredHeight = propertyLineBaseHeight * 1.0; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
 			return (new CtrlrChoicePropertyComponent(valueToControl, possibleChoices, possibleValues, true));
             
 		case CtrlrIDManager::VarText:
             // preferredHeight = 36;
-            preferredHeight = propertyLineBaseHeight * 1.0; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
 			return (new CtrlrChoicePropertyComponent(valueToControl, possibleChoices, possibleValues, false));
             
 		case CtrlrIDManager::FileProperty:
             // preferredHeight = 36;
-            preferredHeight = propertyLineBaseHeight * 1.0; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
 			return (new CtrlrFileProperty (valueToControl));
             
 		case CtrlrIDManager::Timestamp:
             // preferredHeight = 36;
-            preferredHeight = propertyLineBaseHeight * 1.0; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
 			return (new CtrlrTimestampProperty (valueToControl));
             
 		case CtrlrIDManager::ModulatorList:
             // preferredHeight = 36;
-            preferredHeight = propertyLineBaseHeight * 1.0; // Updated v5.6.33.
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
 			return (new CtrlrModulatorListProperty (valueToControl, panel));
 
 		default:
