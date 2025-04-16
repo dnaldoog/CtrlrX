@@ -819,6 +819,7 @@ namespace Ids
     DECLARE_ID (ctrlrMenuBarFont);
     DECLARE_ID (ctrlrPrivateKey);
     DECLARE_ID (ctrlrFontSizeBaseValue);
+    DECLARE_ID (ctrlrPropertyLineheightBaseValue); // Added v5.5.33
     DECLARE_ID (ctrlrScrollbarThickness);
     DECLARE_ID (ctrlrLegacyMode);
     DECLARE_ID (ctrlrColourScheme);
