@@ -107,7 +107,7 @@ Component *CtrlrPropertyComponent::getPropertyComponent()
     
     int propertyLineheightBaseValue; // Declare the variable outside the if-else block
 
-    if (panel)
+    if (panel) // Added v5.5.33.
     {
         propertyLineheightBaseValue = panel->getOwner().getManagerTree().getProperty(Ids::ctrlrPropertyLineheightBaseValue, 36); // Accessing to managerTree crashes CtrlrX
     }
