@@ -977,7 +977,7 @@ namespace adl
           other.value_wrapper = 0;
       }
 
-      ~call_proxy() LUABIND_MAY_THROW
+      ~call_proxy() noexcept (false) // added JG 4/23/2025 LUABIND_MAY_THROW
       {
           if (value_wrapper)
               call(static_cast<detail::null_type*>(0));
