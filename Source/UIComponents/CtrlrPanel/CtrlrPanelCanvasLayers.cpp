@@ -84,7 +84,7 @@ bool CtrlrPanelCanvas::isLayer(Component *componentToCheck)
 	return (layers.contains((CtrlrPanelCanvasLayer*)componentToCheck));
 }
 
-/** @brief Gets a layer by it's name, if the layer is not found 0 is returned
+/** @brief Gets a layer by its name, if the layer is not found 0 is returned
 
 */
 CtrlrPanelCanvasLayer *CtrlrPanelCanvas::getLayerByName(const String &layerName)
@@ -100,7 +100,7 @@ CtrlrPanelCanvasLayer *CtrlrPanelCanvas::getLayerByName(const String &layerName)
 	return (0);
 }
 
-/** @brief Gets a layer by it's unique identifier, if the layer is not found 0 is returned
+/** @brief Gets a layer by its unique identifier, if the layer is not found 0 is returned
 
 */
 CtrlrPanelCanvasLayer *CtrlrPanelCanvas::getLayer(const String &layerUid)
