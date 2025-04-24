@@ -19,25 +19,25 @@ CtrlrPanelResourceEditor::CtrlrPanelResourceEditor (CtrlrPanelEditor &_owner)
     addAndMakeVisible (resourceList = new TableListBox ("Resource List", this));
     resourceList->setName (L"resourceList");
 
-    addAndMakeVisible (add = new TextButton (L"new button"), -1); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/20025
+    addAndMakeVisible (add = new TextButton (L"new button"));
     add->setTooltip (L"Add new resources");
     add->setButtonText (L"Add");
     add->addListener (this);
     add->setColour (TextButton::buttonColourId, Colour (0xffb2b2b2));
 
-	addAndMakeVisible (remove = new TextButton (""), -1); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/20025
+	addAndMakeVisible (remove = new TextButton (""));
     remove->setTooltip (L"Remove selected resources");
     remove->setButtonText (L"Remove");
     remove->addListener (this);
     remove->setColour (TextButton::buttonColourId, Colour (0xffb2b2b2));
 
-	addAndMakeVisible(move = new TextButton(""), -1); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/20025
+	addAndMakeVisible(move = new TextButton(""));
 	move->setTooltip(L"Move resources to panel folder");
 	move->setButtonText(L"Move...");
 	move->addListener(this);
 	move->setColour(TextButton::buttonColourId, Colour(0xffb2b2b2));
 
-	addAndMakeVisible (reload = new TextButton (""), -1); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/20025
+	addAndMakeVisible (reload = new TextButton (""));
     reload->setTooltip (L"Reload all resources");
     reload->setButtonText (L"Reload");
     reload->addListener (this);

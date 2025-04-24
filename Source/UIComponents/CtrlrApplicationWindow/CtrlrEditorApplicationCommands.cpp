@@ -230,7 +230,7 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 			break;
 
 		case doPanelMode:
-			result.setInfo ("Panel mode", "Switches panel from and to EDIT mode", panelCategory, 0);
+			result.setInfo ("Panel mode", "Toggles EDIT mode", panelCategory, 0);
             if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
             {
                 result.addDefaultKeypress ('e', ModifierKeys::commandModifier);

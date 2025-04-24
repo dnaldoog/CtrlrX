@@ -143,7 +143,7 @@ CtrlrEditor::CtrlrEditor (CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
 
     getLookAndFeel().setUsingNativeAlertWindows((bool)owner.getProperty(Ids::ctrlrNativeAlerts)); // Sets OS Native alert windows or JUCE
     
-    activeCtrlrChanged(); // Refresh CtrlrEditor Template and menuBar LnF, wether panel mode or Editor with or WO menuBar from properties
+    activeCtrlrChanged(); // Refresh CtrlrEditor Template and menuBar LnF, whether panel mode or Editor with or WO menuBar from properties
     
     if (isRestricted() && owner.getActivePanel())
     {
