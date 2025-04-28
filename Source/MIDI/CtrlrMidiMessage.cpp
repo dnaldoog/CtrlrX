@@ -920,6 +920,6 @@ void CtrlrMidiMessage::wrapForLua(lua_State *L)
 			.def("toString", &CtrlrMidiMessage::toString)
 			.def("getInitializationResult", &CtrlrMidiMessage::getInitializationResult)
             .def("getProperty", (const var &(CtrlrMidiMessage::*)(const Identifier &) const) &CtrlrMidiMessage::getProperty) // Added v5.6.31
-            .def("setProperty", (void (CtrlrMidiMessage::*)(const Identifier &, const var &, const bool))&CtrlrMidiMessage::setProperty) // Added v5.6.33. crash
+            .def("setProperty", (void (CtrlrMidiMessage::*)(const Identifier &, const var &, const bool))&CtrlrMidiMessage::setProperty) // Added v5.6.33
 	];
 }
