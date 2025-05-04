@@ -19,25 +19,25 @@ CtrlrPanelResourceEditor::CtrlrPanelResourceEditor (CtrlrPanelEditor &_owner)
     addAndMakeVisible (resourceList = new TableListBox ("Resource List", this));
     resourceList->setName (L"resourceList");
 
-    addAndMakeVisible (add = new TextButton (L"new button"));
+    addAndMakeVisible (add = new TextButton (L"new button"), -1); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/20025
     add->setTooltip (L"Add new resources");
     add->setButtonText (L"Add");
     add->addListener (this);
     add->setColour (TextButton::buttonColourId, Colour (0xffb2b2b2));
 
-	addAndMakeVisible (remove = new TextButton (""));
+	addAndMakeVisible (remove = new TextButton (""), -1); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/20025
     remove->setTooltip (L"Remove selected resources");
     remove->setButtonText (L"Remove");
     remove->addListener (this);
     remove->setColour (TextButton::buttonColourId, Colour (0xffb2b2b2));
 
-	addAndMakeVisible(move = new TextButton(""));
+	addAndMakeVisible(move = new TextButton(""), -1); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/20025
 	move->setTooltip(L"Move resources to panel folder");
 	move->setButtonText(L"Move...");
 	move->addListener(this);
 	move->setColour(TextButton::buttonColourId, Colour(0xffb2b2b2));
 
-	addAndMakeVisible (reload = new TextButton (""));
+	addAndMakeVisible (reload = new TextButton (""), -1); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/20025
     reload->setTooltip (L"Reload all resources");
     reload->setButtonText (L"Reload");
     reload->addListener (this);
@@ -68,13 +68,13 @@ void CtrlrPanelResourceEditor::paint (Graphics& g)
 {
 }
 
-void CtrlrPanelResourceEditor::resized()
+void CtrlrPanelResourceEditor::resized() // Updated v5.6.33. FIX issue #86 : unresponsive buttons
 {
-    resourceList->setBounds (0, 0, getWidth() - 0, getHeight() - 32);
-    add->setBounds (0, getHeight() - 28, 64, 24);
-	remove->setBounds (72, getHeight() - 28, 64, 24);
-	move->setBounds(144, getHeight() - 28, 64, 24);
-	reload->setBounds (getWidth() - 64, getHeight() - 28, 64, 24);
+    resourceList->setBounds(0, 0, getWidth() - 0, getHeight() - 64);
+    add->setBounds(0, getHeight() - 48, 72, 32);
+    remove->setBounds(72, getHeight() - 48, 72, 32);
+    move->setBounds(144, getHeight() - 48, 72, 32);
+    reload->setBounds(getWidth() - 64, getHeight() - 48, 64, 32);
 }
 
 void CtrlrPanelResourceEditor::buttonClicked (Button* buttonThatWasClicked)
