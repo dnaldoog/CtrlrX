@@ -227,6 +227,9 @@ namespace Ids
     DECLARE_ID (panelCtrlrRevision);
     DECLARE_ID (panelVendor);
     DECLARE_ID (panelDevice);
+    DECLARE_ID (panelExportResourceEncryption); // Added v5.6.33
+    DECLARE_ID (panelExportDelayBtwSteps); // Added v5.6.33
+    DECLARE_ID (panelExportCodesign); // Added v5.6.33
     DECLARE_ID (panelReplaceVst3PluginIds); // Added v5.6.32
     DECLARE_ID (panelPlugType); // Added v5.6.32
     DECLARE_ID (panelCertificateMacSelectId); // Added v5.6.32

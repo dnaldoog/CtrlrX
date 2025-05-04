@@ -26,6 +26,7 @@ class CtrlrMac : public CtrlrNative
         static juce::String bytesToHexString(const juce::MemoryBlock& memoryBlock, bool addSpaces = false); // Added v5.6.32
         static juce::String hexStringToText(const juce::MemoryBlock& memoryBlock); // Added v5.6.32
         const Result codesignFileMac(const juce::String& newMePathName, const juce::String& panelCertificateMacIdentity); // Added v5.6.32
+        const Result codesignFileMac(const juce::String& newMePathName, const juce::String& panelCertificateMacIdentity, juce::String& logOutput); // Added v5.6.33
     
     private:
         CtrlrManager &owner;
