@@ -87,16 +87,29 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
     setProperty (Ids::panelDevice, "");
 
     // Exported Instance management
-    setProperty (Ids::panelReplaceVst3PluginIds, 1); // Added v5.6.32
+    // Get application type
+    File me = File::getSpecialLocation(File::currentApplicationFile);
+    String fileExtension = me.getFileExtension();
     // If OS is macOS
     if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) != 0) {
+        setProperty (Ids::panelExportResourceEncryption, 1); // Added v5.6.33. Helps with debugging crash at export on Apple Silicon
+        setProperty (Ids::panelExportDelayBtwSteps, 1); // Added v5.6.33. Helps with debugging crash at export on Apple Silicon
+        // For VST2 & VST3
+        if (fileExtension == ".vst3" || fileExtension == ".vst") {
+            setProperty (Ids::panelReplaceVst3PluginIds, 1); // Added v5.6.32
+        }
+        setProperty (Ids::panelExportCodesign, 1); // Added v5.6.33. Helps with debugging crash at export on Apple Silicon
         setProperty (Ids::panelCertificateMacSelectId, 0); // Added v5.6.32
         setProperty (Ids::panelCertificateMacId, ""); // Added v5.6.32
     }
     // if OS is WINDOWS
 	// else if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::Windows) != 0) { // v5.6.32. Won't work with WIN10 or will require an addon in Manifest https://forum.juce.com/t/bug-systemstats-getoperatingsystemname-on-windows-10/21659/3
 	else {
-		setProperty (Ids::panelCertificateWinSelectPath, ""); // Added v5.6.32
+        // For VST2 & VST3
+        if (fileExtension == ".vst3" || fileExtension == ".dll") {
+            setProperty (Ids::panelReplaceVst3PluginIds, 1); // Added v5.6.32
+        }
+        setProperty (Ids::panelCertificateWinSelectPath, ""); // Added v5.6.32
         setProperty (Ids::panelCertificateWinPassCode, ""); // Added v5.6.32
     }
     setProperty (Ids::panelPlugType, "Instrument|Synth"); // Added v5.6.32

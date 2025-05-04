@@ -68,13 +68,15 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
     }
     
     
-    Result res = setBundleInfo(panelToWrite, newMe);
-    if (!res.wasOk()) {
+    Result res = setBundleInfo(panelToWrite, newMe); // Bundle Info
+    if (!res.wasOk())
+    {
         return (res);
     }
-    
-    res = setBundleInfoCarbon(panelToWrite, newMe);
-    if (!res.wasOk()) {
+
+    res = setBundleInfoCarbon(panelToWrite, newMe); // Bundle Info carbon
+    if (!res.wasOk())
+    {
         return (res);
     }
     
@@ -87,7 +89,7 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
         std::cout << "CtrlrX source fileExtension is : " << fileExtension << std::endl;
         logger.log("CtrlrX source fileExtension is :" + fileExtension);
         
-        if (panelFile.create() && panelFile.hasWriteAccess()){
+        if (panelFile.create() && panelFile.hasWriteAccess()){ // Panel File
             if (!panelFile.replaceWithData(panelExportData.getData(), panelExportData.getSize()))
             {
                 return (Result::fail("MAC native, failed to write panel file at: " + panelFile.getFullPathName()));
@@ -98,7 +100,7 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
             }
         }
         
-        if (resourcesFile.create() && resourcesFile.hasWriteAccess())
+        if (resourcesFile.create() && resourcesFile.hasWriteAccess()) // Resources File
         {
             if (!resourcesFile.replaceWithData(panelResourcesData.getData(), panelResourcesData.getSize()))
             {
@@ -110,61 +112,74 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
             }
         }
         
-        // Introduce a delay before ecncrypting
-        logger.log("Thread sleep to delay encryption task.");
-        juce::Thread::sleep(500); // milliseconds (250ms should be ok, adjust as needed)
-        logger.log("Thread restarted for encryption task.");
         
+        const bool enableExportResourceEncryption = panelToWrite->getProperty(Ids::panelExportResourceEncryption);
         
-        // Encrypt the Gzipped panel file as a new Blowfish encrypyted derived file. Added v5.6.31
-        if (panelFile.existsAsFile()) {
-            // Read file contents into a MemoryBlock
-            MemoryBlock dataToEncrypt;
-            if (!panelFile.loadFileAsData(dataToEncrypt)) {
-                // Handle error: Failed to read source file
-                return Result::fail("Error: Failed to read source file");
-                logger.log("Error: Failed to read source file");
+        if (enableExportResourceEncryption) {
+            
+            // Introduce a delay before encrypting
+            const bool enableExportDelayBtwSteps = panelToWrite->getProperty(Ids::panelExportDelayBtwSteps);
+            
+            if (enableExportDelayBtwSteps) {
+                logger.log("Thread sleep to delay encryption task.");
+                juce::Thread::sleep(500); // milliseconds (250ms should be ok, adjust as needed)
+                logger.log("Thread restarted for encryption task.");
+            }
+            else
+            {
+                logger.log("Thread sleep to delay encryption task bypassed.");
             }
             
-            // Define the BlowFish encryption key as string
-            String keyString = "Fw2rXbRh74Vxe53BfapNvGjz8kTDLYmU"; // Replace with your actual key (security!) Updated v5.6.32
-            
-            // Key is provided, proceed with encryption
-            BlowFish blowfish(keyString.toUTF8(), keyString.getNumBytesAsUTF8());
-            
-            // Encrypt the data in-place (modifies the original file)
-            blowfish.encrypt(dataToEncrypt);
-            
-            // Create the encrypted file
-            fileEncrypted.create();
-            if (!fileEncrypted.existsAsFile()) {
-                // Handle error: Failed to create encrypted file
-                return Result::fail("Error: Failed to create encrypted file");
-                logger.log("Error: Failed to create encrypted file");
-            }
-            
-            // Open encrypted file for writing
-            FileOutputStream fos(fileEncrypted);
-            if (!fos.openedOk()) {
-                // Handle error: Failed to open encrypted file for writing
-                return Result::fail("Error: Failed to open encrypted file");
-                logger.log("Error: Failed to open encrypted file");
-            }
-            
-            // Write encrypted data to the file
-            fos.write(dataToEncrypt.getData(), dataToEncrypt.getSize());
-            fos.flush();
-            
-            // Encryption successful, delete the source file
-            if (!panelFile.deleteFile()) {
-                return Result::fail("Failed to delete source file " + panelFile.getFullPathName());
-                logger.log("Failed to delete source file " + panelFile.getFullPathName());
+            // Encrypt the Gzipped panel file as a new Blowfish encrypyted derived file. Added v5.6.31
+            if (panelFile.existsAsFile()) {
+                // Read file contents into a MemoryBlock
+                MemoryBlock dataToEncrypt;
+                if (!panelFile.loadFileAsData(dataToEncrypt)) {
+                    // Handle error: Failed to read source file
+                    return Result::fail("Error: Failed to read source file");
+                    logger.log("Error: Failed to read source file");
+                }
+                
+                // Define the BlowFish encryption key as string
+                String keyString = "modulatorlist"; // Replace with your actual key (security!) Updated v5.6.32
+                
+                // Key is provided, proceed with encryption
+                BlowFish blowfish(keyString.toUTF8(), keyString.getNumBytesAsUTF8());
+                
+                // Encrypt the data in-place (modifies the original file)
+                blowfish.encrypt(dataToEncrypt);
+                
+                // Create the encrypted file
+                fileEncrypted.create();
+                if (!fileEncrypted.existsAsFile()) {
+                    // Handle error: Failed to create encrypted file
+                    return Result::fail("Error: Failed to create encrypted file");
+                    logger.log("Error: Failed to create encrypted file");
+                }
+                
+                // Open encrypted file for writing
+                FileOutputStream fos(fileEncrypted);
+                if (!fos.openedOk()) {
+                    // Handle error: Failed to open encrypted file for writing
+                    return Result::fail("Error: Failed to open encrypted file");
+                    logger.log("Error: Failed to open encrypted file");
+                }
+                
+                // Write encrypted data to the file
+                fos.write(dataToEncrypt.getData(), dataToEncrypt.getSize());
+                fos.flush();
+                
+                // Encryption successful, delete the source file
+                if (!panelFile.deleteFile()) {
+                    return Result::fail("Failed to delete source file " + panelFile.getFullPathName());
+                    logger.log("Failed to delete source file " + panelFile.getFullPathName());
+                }
             }
         }
         
         if (executableFile.existsAsFile()) {
             
-            if (fileExtension == (".vst3") || (".vst")) {  // Updated v5.6.33. Added .vst to identify vst2 instances in Cubase for macOS
+            if (fileExtension == ".vst3" || fileExtension == ".vst") { // Updated v5.6.33. Added .vst to identify vst2 instances in Cubase for macOS.(fileExtension == ".vst3" || ".vst") was wrong. FIXED on 2025.04.29
                 std::cout << "fileExtension is : " << fileExtension << std::endl;
                 logger.log("fileExtension is : " + fileExtension );
                 
@@ -182,14 +197,24 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                         logger.log("Executable loaded into memory successfully.");
                         
                         // Convert plugin name to hex for substitution
-                        String pluginName = panelToWrite->getProperty(Ids::name).toString();
-                        int pluginNameMaxLength = 32;
-                        MemoryBlock pluginNameHex;
-                        hexStringToBytes(pluginName, pluginNameMaxLength, pluginNameHex);
-                        std::cout << "pluginName: " << pluginName << std::endl;
-                        std::cout << "pluginNameHex representation: " << bytesToHexString(pluginNameHex) << std::endl;
-                        logger.log("pluginName: " + pluginName);
-                        logger.log("pluginNameHex representation: " + bytesToHexString(pluginNameHex));
+                        
+                        String pluginName32 = panelToWrite->getProperty(Ids::name).toString();
+                        int pluginNameMaxLength32 = 32; // Updated v.5.6.33. 32 char long.
+                        MemoryBlock pluginNameHex32;
+                        hexStringToBytes(pluginName32, pluginNameMaxLength32, pluginNameHex32);
+                        std::cout << "pluginName (32 char long): " << pluginName32 << std::endl;
+                        std::cout << "pluginNameHex representation (32 char long): " << bytesToHexString(pluginNameHex32) << std::endl;
+                        logger.log("pluginName (32 char long): " + pluginName32);
+                        logger.log("pluginNameHex representation (32 char long): " + bytesToHexString(pluginNameHex32));
+                        
+                        String pluginName16 = panelToWrite->getProperty(Ids::name).toString();
+                        int pluginNameMaxLength16 = 16; // Updated v.5.6.33. Only 16 char long.
+                        MemoryBlock pluginNameHex16;
+                        hexStringToBytes(pluginName16, pluginNameMaxLength16, pluginNameHex16);
+                        std::cout << "pluginName (16 char long): " << pluginName16 << std::endl;
+                        std::cout << "pluginNameHex representation (16 char long): " << bytesToHexString(pluginNameHex16) << std::endl;
+                        logger.log("pluginName (16 char long): " + pluginName16);
+                        logger.log("pluginNameHex representation (16 char long): " + bytesToHexString(pluginNameHex16));
                         
                         // Convert plugin code to hex for substitution
                         String pluginCode = panelToWrite->getProperty(Ids::panelInstanceUID).toString();
@@ -251,13 +276,28 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                         logger.log("plugType: " + plugType);
                         logger.log("plugTypeHex representation: " + bytesToHexString(plugTypeHex));
                         
+                        
                         // Substitution process
-                        // Replace CtrlrX plugin name "CtrlrX          "
-                        MemoryBlock searchPluginNameHex;
-                        hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20", searchPluginNameHex);
-                        replaceOccurrences(executableData, searchPluginNameHex, pluginNameHex, -1);
-                        std::cout << "Plugin name replacement complete." << std::endl;
-                        logger.log("Plugin name replacement complete.");
+                        // Replace CtrlrX plugin name
+                        String searchPluginName32 = "43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20"; // Updated v5.6.33. Only for 32 bytes name length. "CtrlrX                                 "
+                        if (isStringPresent(executableData, searchPluginName32)) {
+                            // if the searched identifier is present in the executable data
+                            // Replace CtrlrX plugin name "CtrlrX                                 "
+                            MemoryBlock searchPluginNameHex32;
+                            hexStringToBytes(searchPluginName32, searchPluginNameHex32);
+                            replaceOccurrences(executableData, searchPluginNameHex32, pluginNameHex32, -1);
+                            std::cout << "Plugin name (32 char) replacement process complete." << std::endl;
+                            logger.log("Plugin name (32 char) replacement process complete.");
+                        } else {
+                            // if the searched identifier is NOT present in the executable data
+                            // Replace CtrlrX plugin name "CtrlrX            "
+                            String searchPluginName16 = "43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20"; // Updated v5.6.33. Only for 16 bytes name length. "CtrlrX            "
+                            MemoryBlock searchPluginNameHex16;
+                            hexStringToBytes(searchPluginName16, searchPluginNameHex16); // Corrected call
+                            replaceOccurrences(executableData, searchPluginNameHex16, pluginNameHex16, -1);
+                            std::cout << "Plugin name (16 char) replacement process complete." << std::endl;
+                            logger.log("Plugin name (16 char) replacement process complete.");
+                        }
                         
                         // Replace CtrlrX plugin manufacturer code "cTrX"
                         MemoryBlock searchPluginCodeHex;
@@ -284,39 +324,31 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                         // Replace plugType
                         
                         // If searchData is in one block, not split
-                        MemoryBlock searchPlugTypeHex, searchPlugTypeHexSynth, searchPlugTypeHexTools, searchPlugTypeBytesToolsInserted, searchPlugTypeBytesSynthInserted, plugTypeBytesInsertData;
-                        
-                        String plugTypeHexInstrumentSynth = "49 6E 73 74 72 75 6D 65 6E 74 7C 53 79 6E 74 68";
-                        String plugTypeHexInstrumentTools = "49 6E 73 74 72 75 6D 65 6E 74 7C 53 79 6E 74 68";
-                        
-                        hexStringToBytes(plugTypeHexInstrumentSynth, searchPlugTypeHexTools); // plugType "Instrument|Tools"
-                        // replaceOccurrences(executableData, searchPlugTypeHexTools, plugTypeHex, -1); // If no insertion is required
-                        // std::cout << "VST3 plugin type replacement complete. (Instrument|Tools, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
-                        // logger.log("VST3 plugin type replacement complete. (Instrument|Tools, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
-                        
-                        hexStringToBytes(plugTypeHexInstrumentTools, searchPlugTypeHexSynth); // plugType "Instrument|Synth"
-                        // replaceOccurrences(executableData, searchPlugTypeHexSynth, plugTypeHex, -1); // If no insertion is required
-                        // std::cout << "VST3 plugin type replacement complete. (Instrument|Synth, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
-                        // logger.log("VST3 plugin type replacement complete. (Instrument|Synth, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
-                        
-                        
-                        // If searchData is split in two parts with an assembly markup inserted
-                        hexStringToBytes("48 89 43 78 48 B8", plugTypeBytesInsertData); // Convert insert "HCxH¸"
-                        
-                        // For "Instrument|Synth" with insert "InstrumeHCxH¸nt|Synth"
-                        // String plugTypeHexInstrumentSynthInserted = "49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 53 79 6E 74 68"; // plugType "Instrument|Synth" with insert "InstrumeHCxH¸nt|Synth"
-                        // hexStringToBytes(plugTypeHexInstrumentSynthInserted, searchPlugTypeBytesSynthInserted);
-                        // replaceOccurrencesIfSplitted(executableData, searchPlugTypeBytesSynthInserted, plugTypeBytesInsertData, plugTypeHex, 8, 1);
-                        // std::cout << "VST3 plugin type replacement process complete. (Instrument|Synth, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
-                        // logger.log("VST3 plugin type replacement process complete. (Instrument|Synth, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
+                        MemoryBlock searchPlugTypeHex, searchPlugTypeHexTools, searchPlugTypeBytesToolsInserted, plugTypeBytesInsertData;
                         
                         // For "Instrument|Tools" with insert "InstrumeHCxH¸nt|Tools"
-                        String plugTypeHexInstrumentToolsInserted = "49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 53 79 6E 74 68";
-                        hexStringToBytes("49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeBytesToolsInserted); // plugType "Instrument|Synth" with insert "InstrumeHCxH¸nt|Tools"
-                        replaceOccurrencesIfSplitted(executableData, searchPlugTypeBytesToolsInserted, plugTypeBytesInsertData, plugTypeHex, 8, 1);
-                        std::cout << "VST3 plugin type replacement complete. (Instrument|Tools, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
-                        logger.log("VST3 plugin type replacement complete. (Instrument|Tools, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
+                        String plugTypeHexInstrumentToolsInserted = "49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 54 6F 6F 6C 73"; // Updated v5.6.33. "InstrumeHCxH¸nt|Tools"
                         
+                        
+                        // Determine if the string is split by assembly markup on compilation, then do the replacement of strings accordingly
+                        if (plugTypeIsNotSplit(executableData, plugTypeHexInstrumentToolsInserted)) {
+                            // The inserted hex string was NOT found.
+                            // Replace pluginType
+                            String plugTypeHexInstrumentTools = "49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73"; // Updated v5.6.33
+                            hexStringToBytes(plugTypeHexInstrumentTools, searchPlugTypeHexTools); // plugType "Instrument|Tools"
+                            replaceOccurrences(executableData, searchPlugTypeHexTools, plugTypeHex, -1); // If no insertion is required
+                            std::cout << "VST3 plugin type replacement process complete. (Instrument|Tools, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
+                            logger.log("VST3 plugin type replacement process complete. (Instrument|Tools, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
+                            
+                        } else {
+                            // Replace pluginType
+                            // If searchData is split in two parts with an assembly markup inserted
+                            hexStringToBytes("48 89 43 78 48 B8", plugTypeBytesInsertData); // Convert insert "HCxH¸"
+                            hexStringToBytes(plugTypeHexInstrumentToolsInserted, searchPlugTypeBytesToolsInserted); // plugType "Instrument|Tools" with insert "InstrumeHCxH¸nt|Tools"
+                            replaceOccurrencesIfSplitted(executableData, searchPlugTypeBytesToolsInserted, plugTypeBytesInsertData, plugTypeHex, 8, 1);
+                            std::cout << "VST3 plugin type replacement complete. (Instrument|Tools, replaced by " << CtrlrMac::hexStringToText(plugTypeHex) << ")." << std::endl;
+                            logger.log("VST3 plugin type replacement complete. (Instrument|Tools, replaced by " + CtrlrMac::hexStringToText(plugTypeHex) + ")." );
+                        }
                         
                         // Save the modified executable
                         File newExecutableFile = newMe.getChildFile("Contents/MacOS/CtrlrX");
@@ -337,60 +369,131 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bo
                     std::cout << "replaceVst3PluginIds set to false, Vst3 IDs replacement skipped." << std::endl;
                     logger.log("replaceVst3PluginIds set to false, Vst3 IDs replacement skipped.");
                 }
-                
-                // Introduce a delay before codesigning
-                logger.log("Thread sleep to delay codesigning task.");
-                juce::Thread::sleep(500); // milliseconds (250ms should be ok, adjust as needed)
-                logger.log("Thread restarted for codesigning task.");
-                
-                // Now, codesign the newMe file and return result
-                juce::String newMePathName = newMe.getFullPathName();
-                std::cout << "File FullPathname: " << newMePathName << std::endl;
-                logger.log("File FullPathname: " + newMePathName);
-                
-                juce::String panelCertificateMacIdentity = panelToWrite->getProperty(Ids::panelCertificateMacId).toString();
-                std::cout << "MAC Certificate Identity: " << panelCertificateMacIdentity << std::endl;
-                logger.log("MAC Certificate Identity: " + panelCertificateMacIdentity);
-                
-                const Result codesignResult = codesignFileMac(newMePathName, panelCertificateMacIdentity);
-                if (!codesignResult.wasOk()) {
-                    logger.logResult(codesignResult);
-                    return (codesignResult);
-                }
-                logger.log("Codesigning successful.");
-                logger.logResult(codesignResult); // Added Logger for successful codesign.
             } // end if is .vst3
             
             else { // if is not .vst3
-                // Now, codesign the newMe file and return result
+            } // end if is not .vst3
+            
+            // Now, codesign the newMe file and return result
+            const bool codesignExportedPanel = panelToWrite->getProperty(Ids::panelExportCodesign);
+            
+            if (codesignExportedPanel) {
+                
+                // Introduce a delay before codesigning
+                const bool enableExportDelayBtwSteps = panelToWrite->getProperty(Ids::panelExportDelayBtwSteps);
+                
+                if (enableExportDelayBtwSteps) {
+                    logger.log("Thread sleep to delay codesigning task.");
+                    juce::Thread::sleep(500); // milliseconds (250ms should be ok, adjust as needed)
+                    logger.log("Thread restarted for codesigning task.");
+                }
+                else
+                {
+                    logger.log("Thread sleep to delay codesigning task bypassed.");
+                }
+                
+                logger.log("Codesigning process started. Ready to call codesignFileMac");
                 const juce::String newMePathName = newMe.getFullPathName();
                 std::cout << "File FullPathname: " << newMePathName << std::endl;
+                logger.log("File FullPathname: " + newMePathName);
                 
                 const juce::String panelCertificateMacIdentity = panelToWrite->getProperty(Ids::panelCertificateMacId).toString();
                 std::cout << "MAC Certificate Identity: " << panelCertificateMacIdentity << std::endl;
+                logger.log("MAC Certificate Identity: " + panelCertificateMacIdentity);
                 
-                const Result codesignResult = codesignFileMac(newMePathName, panelCertificateMacIdentity);
+                //const Result codesignResult = codesignFileMac(newMePathName, panelCertificateMacIdentity);
+                juce::String codesignLog;
+                const Result codesignResult = codesignFileMac(newMePathName, panelCertificateMacIdentity, codesignLog);
+                logger.log("Codesign Result wasOk(): " + String(codesignResult.wasOk() ? "true" : "false"));
+                logger.log("Codesign Log Output: " + codesignLog);
+                
                 if (!codesignResult.wasOk()) {
-                    logger.logResult(codesignResult);
-                    return (codesignResult);
+                    logger.log("Codesign failed. Error: " + codesignResult.getErrorMessage());
+                    return codesignResult;
+                } else {
+                    logger.log("Codesigning successful.");
                 }
-                logger.log("Codesigning successful.");
-                logger.logResult(codesignResult); // Added Logger for successful codesign.
-            } // end if is not .vst3
-            
+                logger.log("Finished call to codesignFileMac, result wasOk(): " + String(codesignResult.wasOk() ? "true" : "false"));
+            } else {
+                logger.log("Codesign step was skipped.");
+                return Result::ok(); // Correctly returns Result::ok()
+            }
         } // end if exist as file
-        
     } // end if error
-    
+    return Result::ok(); // This final return is also good as a fallback
 } // end result() overall function
 
 
+
+// Check if a string is present or not and return if isStringPresent()
+bool CtrlrMac::isStringPresent(const juce::MemoryBlock& applicationData, const juce::String& stringToFind) {
+    File me = File::getSpecialLocation(File::currentApplicationFile);
+    PluginLogger logger(me);
+    
+    if (stringToFind.isEmpty()) {
+        logger.log("Searching for an empty string. Considered present.");
+        return true; // Empty string is considered present
+    }
+    
+    MemoryBlock stringAsMemoryBlock;
+    hexStringToBytes(stringToFind, stringAsMemoryBlock);
+    
+    String stringAsHexString = bytesToHexString(stringAsMemoryBlock); // For logging
+    
+    const uint8* data = static_cast<const uint8*>(applicationData.getData());
+    size_t dataSize = applicationData.getSize();
+    const uint8* searchData = static_cast<const uint8*>(stringAsMemoryBlock.getData());
+    size_t searchSize = stringAsMemoryBlock.getSize();
+    
+    const uint8* found = static_cast<const uint8*>(std::search(data, data + dataSize, searchData, searchData + searchSize));
+    
+    bool isPresent = (found != data + dataSize);
+    
+    if (isPresent) {
+        logger.log("String \"" + stringToFind + "\" (Hex: " + stringAsHexString + ") FOUND in application data.");
+    } else {
+        logger.log("String \"" + stringToFind + "\" (Hex: " + stringAsHexString + ") NOT found in application data.");
+    }
+    
+    return isPresent;
+}
+
+// Check if the pluginType string is split with assembly text or not and return if isNotSplit()
+bool CtrlrMac::plugTypeIsNotSplit(const juce::MemoryBlock& executableData, const juce::String& insertedPlugTypeHex) {
+    File me = File::getSpecialLocation(File::currentApplicationFile);
+    PluginLogger logger(me);
+    
+    juce::MemoryBlock plugTypeBytesInserted;
+    hexStringToBytes(insertedPlugTypeHex, plugTypeBytesInserted); // Call your existing overload
+    
+    const uint8* data = static_cast<const uint8*>(executableData.getData());
+    size_t dataSize = executableData.getSize();
+    const uint8* searchData = static_cast<const uint8*>(plugTypeBytesInserted.getData());
+    size_t searchSize = plugTypeBytesInserted.getSize();
+    
+    // Search for the inserted plugType string
+    const uint8* found = static_cast<const uint8*>(std::search(data, data + dataSize, searchData, searchData + searchSize));
+    
+    // If std::search returns the end iterator, the sequence was not found
+    bool isNotSplit = (found == data + dataSize);
+    
+    if (isNotSplit) {
+        logger.log("Plug-in type with assembly markup NOT found for hex: " + insertedPlugTypeHex + ". Plug-in type is likely not split yet.");
+    } else {
+        logger.log("Plug-in type with assembly markup FOUND for hex: " + insertedPlugTypeHex + ". Plug-in type is likely already split.");
+    }
+    
+    return isNotSplit;
+}
+
+
+// CodeSign exported instance v5.6.32
 const Result CtrlrMac::codesignFileMac(const juce::String& newMePathName, const juce::String& panelCertificateMacIdentity) {
     juce::StringArray commandParts;
     commandParts.add("codesign");
     commandParts.add("-f");
     commandParts.add("-s");
-    
+
     if (panelCertificateMacIdentity.isNotEmpty()) //Check if there is a certificate identity
     {
         commandParts.add(panelCertificateMacIdentity); // Use the provided certificate identity
@@ -399,29 +502,121 @@ const Result CtrlrMac::codesignFileMac(const juce::String& newMePathName, const 
     {
         commandParts.add("-"); // Use the default identity
     }
-    
+
     commandParts.add(newMePathName);
-    
+
     juce::ChildProcess childProcess;
     if (childProcess.start(commandParts)) {
         childProcess.waitForProcessToFinish(-1);
-        
+
         if (!childProcess.isRunning()) { // Check if process has finished
             if (childProcess.getExitCode() == 0) {
                 return juce::Result::ok(); // Codesign successful
                 std::cout << "Codesign successful. " << newMePathName << std::endl;
-                
+
             } else {
                 return juce::Result::fail("Codesign failed with exit code: " + juce::String(childProcess.getExitCode())); // Codesign failed
             }
         } else {
             return juce::Result::fail("Codesign process did not finish properly."); // Process still running
         }
-        
+
     } else {
         return juce::Result::fail("Failed to start codesign process."); // Failed to start process
     }
 }
+
+
+// CodeSign exported instance 5.6.33
+const Result CtrlrMac::codesignFileMac(const juce::String& newMePathName, const juce::String& panelCertificateMacIdentity, juce::String& logOutput) {
+    juce::StringArray commandParts;
+    commandParts.add("/usr/bin/codesign"); // Use full path
+    commandParts.add("-f");
+    commandParts.add("-s");
+
+    if (panelCertificateMacIdentity.isNotEmpty()) {
+        commandParts.add(panelCertificateMacIdentity);
+    } else {
+        commandParts.add("-"); // Use the default identity
+    }
+
+    commandParts.add(newMePathName);
+
+    juce::ChildProcess childProcess;
+
+    logOutput = ("Codesign command: " + commandParts.joinIntoString(" "));
+    if (childProcess.start(commandParts)) {
+        const bool finished = childProcess.waitForProcessToFinish(-1); // Wait for infinity
+        //const bool finished = childProcess.waitForProcessToFinish(500); // Wait for up to 500ms
+
+        if (finished) {
+            int exitCode = childProcess.getExitCode();
+            logOutput += "\nCodesign process finished with exit code: " + String(exitCode);
+            if (exitCode == 0) {
+                return Result::ok();
+            } else {
+                logOutput += "\nCodesign failed with output:\n" + childProcess.readAllProcessOutput();
+                return Result::fail(logOutput);
+            }
+        } else {
+            logOutput += "\nCodesign process timed out.";
+            return Result::fail(logOutput);
+        }
+    } else {
+        logOutput = "Failed to start codesign process. Command: " + commandParts.joinIntoString(" ");
+        return Result::fail(logOutput);
+    }
+}
+
+
+// CodeSign exported instance 5.6.33 ALTERNATE METHOD
+//const Result CtrlrMac::codesignFileMac(const juce::String& newMePathName, const juce::String& panelCertificateMacIdentity, juce::String& logOutput) {
+//    juce::StringArray commandParts;
+//    commandParts.add("/usr/bin/codesign"); // Use full path
+//    commandParts.add("-f");
+//    commandParts.add("-s");
+//
+//    if (panelCertificateMacIdentity.isNotEmpty()) {
+//        commandParts.add(panelCertificateMacIdentity);
+//    } else {
+//        commandParts.add("-"); // Use the default identity
+//    }
+//
+//    commandParts.add(newMePathName);
+//
+//    juce::ChildProcess childProcess;
+//
+//    logOutput = ("Codesign command: " + commandParts.joinIntoString(" "));
+//    std::cout << "Codesign command: " << logOutput << std::endl;
+//
+//    if (childProcess.start(commandParts)) {
+//        std::cout << "Codesign process started." << std::endl;
+//        while (childProcess.isRunning()) {
+//            std::cout << "Codesign process is running..." << std::endl;
+//            Thread::sleep(100); // Sleep for a short time to avoid busy-waiting
+//        }
+//
+//        const int exitCode = childProcess.getExitCode();
+//        logOutput += "\nCodesign process finished with exit code: " + String(exitCode);
+//        std::cout << "Codesign process finished with exit code: " << exitCode << std::endl;
+//
+//        if (exitCode == 0) {
+//            logOutput += "\nCodesign successful.";
+//            std::cout << "Codesign successful." << std::endl;
+//            return Result::ok();
+//        } else {
+//            const String processOutput = childProcess.readAllProcessOutput();
+//            logOutput += "\nCodesign failed with output:\n" + processOutput;
+//            std::cerr << "Codesign failed with output:\n" << processOutput << std::endl;
+//            return Result::fail(logOutput);
+//        }
+//    } else {
+//        logOutput = "Failed to start codesign process. Command: " + commandParts.joinIntoString(" ");
+//        std::cerr << "Failed to start codesign process. Command: " << logOutput << std::endl;
+//        return Result::fail(logOutput);
+//    }
+//}
+
 
 // Convert hex string to binary data
 void CtrlrMac::hexStringToBytes(const String& hexString, MemoryBlock& result) {
@@ -633,7 +828,7 @@ const Result CtrlrMac::getDefaultPanel(MemoryBlock &dataToWrite) {
         }
         
         // Define the BlowFish encryption key as string
-        String keyString = "Fw2rXbRh74Vxe53BfapNvGjz8kTDLYmU"; // Replace with your actual key (security!). Updated v5.6.32
+        String keyString = "modulatorlist"; // Replace with your actual key (security!). Updated v5.6.33
         
         // Check if a blowfish key is provided
         if (keyString.isEmpty()) {
