@@ -33,6 +33,7 @@ Changelog
 * ADDED Property line height base value in Preferences>GUI. CrrlrIDs.h, CtrlrIDs.xml, CtrlrSettings.cpp, CtrlrManager.cpp, CtrlrManagerInstance.cpp, CtrlrPropertyComponent.cpp
 * ADDED LuaBind functions setType(), setMidiMessageType(), setProperty(). CtrlrMidiMessage.cpp
 * ADDED "Encrypt exported panel resources", "Delay between steps at export" & "Codesign exported panel" properties to improve panel export process. CrrlrIDs.h, CtrlrIDs.xml, CtrlrMac.cpp, CtrlrPanel.cpp
+* FIXED Useless menu item "Register file extensions" hidden for macOS binaries. CtrlrEditorApplicationCommandsMenus.cpp
 
 #### Version 5.6.32 | 2025.04.05
 
