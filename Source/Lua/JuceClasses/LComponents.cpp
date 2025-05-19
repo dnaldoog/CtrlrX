@@ -1581,6 +1581,7 @@ void LPopupMenu::wrapForLua (lua_State *L)
 				.def("addColouredItem", (void(PopupMenu::*)(int, String, Colour, bool, bool, const Image &))&PopupMenu::addColouredItem)
 				.def("addSubMenu", &LPopupMenu::addSubMenu)
 				.def("addSeparator", &PopupMenu::addSeparator)
+                .def("addColumnBreak", &LPopupMenu::addColumnBreak) // Added v5.6.33. @dnaldoog
 				.def("addSectionHeader", &PopupMenu::addSectionHeader)
 				.def("getNumItems", &PopupMenu::getNumItems)
 				.def("show", (int(PopupMenu::*)(int, int, int, int))&LPopupMenu::show)
