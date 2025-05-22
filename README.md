@@ -35,6 +35,7 @@ Changelog
 * ADDED "Encrypt exported panel resources", "Delay between steps at export" & "Codesign exported panel" properties to improve panel export process. CrrlrIDs.h, CtrlrIDs.xml, CtrlrMac.cpp, CtrlrPanel.cpp
 * FIXED Useless menu item "Register file extensions" hidden for macOS binaries. CtrlrEditorApplicationCommandsMenus.cpp
 * ADDED LuaBind function addColumnBreak() for PopupMenu. LComponents.cpp
+* ADDED SliderType LinearBarVertical, RotaryHorizontalVerticalDrag, TwoValueHorizontal, TwoValueVertical, ThreeValueHorizontal, ThreeValueVertical. CtrlrComponentTypeManager.h & CtrlrComponentTypeManager.cpp, CtrlrIDs.xml
 
 #### Version 5.6.32 | 2025.04.05
 
