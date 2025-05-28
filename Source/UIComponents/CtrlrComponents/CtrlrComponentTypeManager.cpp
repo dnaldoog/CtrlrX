@@ -198,14 +198,26 @@ const String CtrlrComponentTypeManager::sliderStyleToString (CtrlrComponentTypeM
 			return "LinearVertical";
 		case Slider::LinearBar:
 			return "LinearBar";
+        case Slider::LinearBarVertical: // Added v5.6.33.
+            return "LinearBarVertical";
 		case Slider::Rotary:
 			return "Rotary";
 		case Slider::RotaryHorizontalDrag:
 			return "RotaryHorizontalDrag";
 		case Slider::RotaryVerticalDrag:
 			return "RotaryVerticalDrag";
-		case Slider::IncDecButtons:
-			return "IncDecButtons";
+        case Slider::RotaryHorizontalVerticalDrag: // Added v5.6.33.
+            return "RotaryHorizontalVerticalDrag";
+		case Slider::TwoValueHorizontal: // Added v5.6.33.
+			return "TwoValueHorizontal";
+        case Slider::TwoValueVertical: // Added v5.6.33.
+            return "TwoValueVertical";
+        case Slider::ThreeValueHorizontal: // Added v5.6.33.
+            return "ThreeValueHorizontal";
+        case Slider::ThreeValueVertical: // Added v5.6.33.
+            return "ThreeValueVertical";
+        case Slider::IncDecButtons:
+            return "IncDecButtons";
 		default:
 			return "Unknown";
 	}
@@ -219,12 +231,24 @@ const CtrlrComponentTypeManager::CtrlrSliderStyle CtrlrComponentTypeManager::sli
 		return LinearVertical;
 	else if (s == "LinearBar")
 		return LinearBar;
+    else if (s == "LinearBarVertical") // Added v5.6.33.
+        return LinearBarVertical;
 	else if (s == "Rotary")
 		return Rotary;
 	else if (s == "RotaryHorizontalDrag")
 		return RotaryHorizontalDrag;
 	else if (s == "RotaryVerticalDrag")
 		return RotaryVerticalDrag;
+    else if (s == "RotaryHorizontalVerticalDrag") // Added v5.6.33.
+        return RotaryHorizontalVerticalDrag;
+    else if (s == "TwoValueHorizontal") // Added v5.6.33.
+        return TwoValueHorizontal;
+    else if (s == "TwoValueVertical") // Added v5.6.33.
+        return TwoValueVertical;
+    else if (s == "ThreeValueHorizontal") // Added v5.6.33.
+        return ThreeValueHorizontal;
+    else if (s == "ThreeValueVertical") // Added v5.6.33.
+        return ThreeValueVertical;
 	else if (s == "IncDecButtons")
 		return IncDecButtons;
 
