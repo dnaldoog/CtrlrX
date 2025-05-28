@@ -254,9 +254,13 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 		
         if(!isRestricted())
 		{
-			menu.addCommandItem(commandManager, doRegisterExtension);
+            if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) != 0) { // added v5.6.33. Hidden for macOS
+            }
+            else { // // added v5.6.33. Showing up on Windows
+                menu.addCommandItem(commandManager, doRegisterExtension);
+            }
 			// menu.addCommandItem(commandManager, doKeyGenerator);  // Updated v5.6.31. Useless
-		}
+		} // end if restricted
 	}
 	
     else if ((!isRestricted() && (topLevelMenuIndex == MenuHelp))

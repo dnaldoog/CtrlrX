@@ -245,7 +245,7 @@
   
   <id name="uiSliderLookAndFeel"            text="LookAndFeel type" type="VarText" defaults="@componentlookandfeel" />
   <id name="uiSliderLookAndFeelIsCustom"    text="LookAndFeel is customized" type="Bool" defaults="Custom Colours/Default Colours" />
-  <id name="uiSliderStyle" 					text="Slider style"     type="VarNumeric" defaults="LinearHorizontal,LinearVertical,LinearBar,Rotary,RotaryHorizontalDrag,RotaryVerticalDrag,IncDecButtons"/>
+  <id name="uiSliderStyle" 					text="Slider style"     type="VarNumeric" defaults="LinearHorizontal,LinearVertical,LinearBar,LinearBarVertical,Rotary,RotaryHorizontalDrag,RotaryVerticalDrag,RotaryHorizontalVerticalDrag,IncDecButtons,TwoValueHorizontal,TwoValueVertical,ThreeValueHorizontal,ThreeValueVertical"/>
   
   <!-- Updated v5.6.32 -->
   <id name="uiSliderMin" 					text="Minimum value"    type="Numeric" min="-65536" max="65536"  int="0.0001" />

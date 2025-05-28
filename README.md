@@ -29,10 +29,13 @@ Changelog
 #### Version 5.6.33 | 2025.05
 * FIXED VST3 Host>CtrlrX interface. Sliders now reacts to Host automations of parameter values. Related Modulators send MIDI output messages. CtrlrProcessor.cpp & .h, CtrlrModulator.cpp & .h, CtrlrModulatorProcessor.cpp & .h
 * FIXED Linux Makefile. CtrlrX requires binutils-dev & libsframe1 installed on the system to compile. Thanks @sgorpi for the PR. Builds/Linux/Makefile/Makefile
-* FIXED ADD, REMOVE, RELOAD Buttons not reacting on certain setups. Thanks @dnaldoog. CtrlrPanelResourceEditor.cpp
+* FIXED ADD, REMOVE, RELOAD resource pane buttons not reacting on certain setups. Z-index added. Thanks to @dnaldoog. CtrlrPanelResourceEditor.cpp
 * ADDED Property line height base value in Preferences>GUI. CrrlrIDs.h, CtrlrIDs.xml, CtrlrSettings.cpp, CtrlrManager.cpp, CtrlrManagerInstance.cpp, CtrlrPropertyComponent.cpp
 * ADDED LuaBind functions setType(), setMidiMessageType(), setProperty(). CtrlrMidiMessage.cpp
 * ADDED "Encrypt exported panel resources", "Delay between steps at export" & "Codesign exported panel" properties to improve panel export process. CrrlrIDs.h, CtrlrIDs.xml, CtrlrMac.cpp, CtrlrPanel.cpp
+* FIXED Useless menu item "Register file extensions" hidden for macOS binaries. CtrlrEditorApplicationCommandsMenus.cpp
+* ADDED LuaBind function addColumnBreak() for PopupMenu. LComponents.cpp
+* ADDED SliderType LinearBarVertical, RotaryHorizontalVerticalDrag, TwoValueHorizontal, TwoValueVertical, ThreeValueHorizontal, ThreeValueVertical. CtrlrComponentTypeManager.h & CtrlrComponentTypeManager.cpp, CtrlrIDs.xml
 
 #### Version 5.6.32 | 2025.04.05
 

@@ -14,10 +14,16 @@ class CtrlrComponentTypeManager
 			LinearHorizontal=Slider::LinearHorizontal,
 			LinearVertical=Slider::LinearVertical,
 			LinearBar=Slider::LinearBar,
+            LinearBarVertical=Slider::LinearBarVertical, // Added v5.6.33.
 			Rotary=Slider::Rotary,
 			RotaryHorizontalDrag=Slider::RotaryHorizontalDrag,
 			RotaryVerticalDrag=Slider::RotaryVerticalDrag,
+            RotaryHorizontalVerticalDrag=Slider::RotaryHorizontalVerticalDrag, // Added v5.6.33.
 			IncDecButtons=Slider::IncDecButtons,
+            TwoValueHorizontal=Slider::TwoValueHorizontal, // Added v5.6.33.
+            TwoValueVertical=Slider::TwoValueVertical, // Added v5.6.33.
+            ThreeValueHorizontal=Slider::ThreeValueHorizontal, // Added v5.6.33.
+            ThreeValueVertical=Slider::ThreeValueVertical, // Added v5.6.33.
 			__nCtrlrSliderStyle
 		};
 
