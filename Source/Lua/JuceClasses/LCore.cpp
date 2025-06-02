@@ -902,7 +902,9 @@ void LValueTree::wrapForLua (lua_State *L)
 				.def("getChildWithName", &ValueTree::getChildWithName)
 				.def("getOrCreateChildWithName", &ValueTree::getOrCreateChildWithName)
 				.def("getChildWithProperty", &ValueTree::getChildWithProperty)
-				.def("addChild", &ValueTree::addChild)
+                //.def("addChild", &ValueTree::addChild) // won't work in 5.6+
+                .def("addChild", (void (ValueTree::*)(const ValueTree&, int, UndoManager*)) &ValueTree::addChild)// Added v5.6.34
+                .def("addChild", (void (ValueTree::*)(const ValueTree&, UndoManager*)) &ValueTree::addChild)// Added v5.6.34
 				.def("removeChild", (void(ValueTree::*)(const ValueTree &, UndoManager *))&ValueTree::removeChild)
 				.def("removeChild", (void(ValueTree::*)(const int, UndoManager *))&ValueTree::removeChild)
 				.def("removeAllChildren", &ValueTree::removeAllChildren)
