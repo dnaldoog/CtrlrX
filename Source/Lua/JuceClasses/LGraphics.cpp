@@ -197,7 +197,45 @@ void LColourGradient::wrapForLua (lua_State *L)
 			.def("isInvisible", &FillType::isInvisible)
 	];
 }
+/* Added by copilot*/
+namespace LDrawableJuce6Factories
+{
+	static Drawable* createFromImageData(const void* data, size_t numBytes)
+	{
+		auto drawable = Drawable::createFromImageData(data, numBytes);
+		return drawable ? drawable.release() : nullptr;
+	}
 
+	static Drawable* createFromImageDataStream(InputStream* stream)
+	{
+		auto drawable = Drawable::createFromImageDataStream(*stream);
+		return drawable ? drawable.release() : nullptr;
+	}
+
+	static Drawable* createFromImageFile(const File& file)
+	{
+		auto drawable = Drawable::createFromImageFile(file);
+		return drawable ? drawable.release() : nullptr;
+	}
+	static Drawable* createFromSVG(const String& svgText)
+	{
+		auto xmlDocument = juce::XmlDocument::parse(svgText);
+		if (xmlDocument != nullptr)
+		{
+			auto drawable = juce::Drawable::createFromSVG(*xmlDocument);
+			return drawable ? drawable.release() : nullptr; // Return the created drawable or nullptr
+		}
+		else
+		{
+			// Handle the error if the XML parsing fails
+			DBG("Failed to parse SVG text into XML.");
+			return nullptr; // Return nullptr if XML parsing fails
+		}
+	}
+
+}
+
+/* Added by copilot*/
 void LDrawable::wrapForLua (lua_State *L)
 {
 	using namespace luabind;
@@ -214,15 +252,23 @@ void LDrawable::wrapForLua (lua_State *L)
 			.def("getParent", &Drawable::getParent)
 			// .def("createFromImageFile", &Drawable::createFromValueTree) removed from JUCE
 			.def("getDrawableBounds", &Drawable::getDrawableBounds)
-			/*.scope
+			.scope
 			[
-				def("createFromImageData", &Drawable::createFromImageData, adopt(result)),
-				def("createFromImageDataStream", &Drawable::createFromImageDataStream, adopt(result)),
-				def("createFromImageFile", &Drawable::createFromImageFile, adopt(result)),
-				def("createFromSVG", &Drawable::createFromSVG, adopt(result)),
-				def("createFromValueTree", &Drawable::createFromValueTree, adopt(result)), removed from JUCE
+				def("createFromImageData", &LDrawableJuce6Factories::createFromImageData, adopt(result)),
+				def("createFromImageDataStream", &LDrawableJuce6Factories::createFromImageDataStream, adopt(result)),
+				def("createFromImageFile", &LDrawableJuce6Factories::createFromImageFile, adopt(result)),
+				def("createFromSVG", &LDrawableJuce6Factories::createFromSVG, adopt(result)),
 				def("toDrawableComposite", &LDrawable::toDrawableComposite)
-			]*/
+			]
+			//.scope
+			//[
+			//	def("createFromImageData", &Drawable::createFromImageData, adopt(result)),
+			//	def("createFromImageDataStream", &Drawable::createFromImageDataStream, adopt(result)),
+			//	def("createFromImageFile", &Drawable::createFromImageFile, adopt(result)),
+			//	def("createFromSVG", &Drawable::createFromSVG, adopt(result)),
+			//	//def("createFromValueTree", &Drawable::createFromValueTree, adopt(result)), removed from JUCE
+			//	def("toDrawableComposite", &LDrawable::toDrawableComposite)
+			//]
 		,
 		class_<DrawableComposite, bases<Drawable> >("DrawableComposite")
 			.def(constructor<>())
