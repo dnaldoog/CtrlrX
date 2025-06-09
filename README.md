@@ -24,6 +24,8 @@ ToDo
 Changelog
 ---------
 #### Version 5.6.34 | 2025.05
+* UPDATED LuaBind Drawable class. LCore.cpp, LGraphics.cpp
+* UPDATED JUCE ZipFile Module. juce_ZipFile.cpp & .h
 
 
 #### Version 5.6.33 | 2025.05.28
@@ -38,7 +40,6 @@ Changelog
 * ADDED SliderType LinearBarVertical, RotaryHorizontalVerticalDrag, TwoValueHorizontal, TwoValueVertical, ThreeValueHorizontal, ThreeValueVertical. CtrlrComponentTypeManager.h & CtrlrComponentTypeManager.cpp, CtrlrIDs.xml
 
 #### Version 5.6.32 | 2025.04.05
-
 * NEW From now on, uisliders will return double float type values to manage decimals. If required values are integers,  new LUA function has been added : getValueInt()
 getModulatorInt(), getModulatorValueInt(), getMinModulatorValueInt(), getMaxModulatorValueInt(), getValueMappedInt(), getValueNonMappedInt(), getMinMappedInt(), getMaxMappedInt()
 
