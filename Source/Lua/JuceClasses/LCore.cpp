@@ -903,8 +903,8 @@ void LValueTree::wrapForLua (lua_State *L)
 				.def("getOrCreateChildWithName", &ValueTree::getOrCreateChildWithName)
 				.def("getChildWithProperty", &ValueTree::getChildWithProperty)
                 //.def("addChild", &ValueTree::addChild) // won't work in 5.6+
-                .def("addChild", (void (ValueTree::*)(const ValueTree&, int, UndoManager*)) &ValueTree::addChild)// Added v5.6.34
-                .def("addChild", (void (ValueTree::*)(const ValueTree&, UndoManager*)) &ValueTree::addChild)// Added v5.6.34
+                .def("addChild", (void (ValueTree::*)(const ValueTree&, int, UndoManager*)) &ValueTree::addChild) // Added v5.6.34
+                .def("addChild", (void (ValueTree::*)(const ValueTree&, UndoManager*)) &ValueTree::addChild) // Added v5.6.34
 				.def("removeChild", (void(ValueTree::*)(const ValueTree &, UndoManager *))&ValueTree::removeChild)
 				.def("removeChild", (void(ValueTree::*)(const int, UndoManager *))&ValueTree::removeChild)
 				.def("removeAllChildren", &ValueTree::removeAllChildren)
@@ -1029,6 +1029,8 @@ void LZipFile::wrapForLua (lua_State *L)
 			.def("getEntry", (const ZipFile::ZipEntry *(ZipFile::*)(int) const noexcept) &ZipFile::getEntry)
 			.def("getIndexOfFileName", &ZipFile::getIndexOfFileName)
 			//.def("getEntry", (const ZipFile::ZipEntry *(ZipFile::*)(const String &) const noexcept) &ZipFile::getEntry)
+            .def("getEntry", (const ZipFile::ZipEntry * (ZipFile::*)(int) const noexcept) & ZipFile::getEntry)
+            .def("getEntry", (const ZipFile::ZipEntry * (ZipFile::*)(const String&) const noexcept) & ZipFile::getEntryString)
 			.def("sortEntriesByFilename", &ZipFile::sortEntriesByFilename)
 			.def("createStreamForEntry", (InputStream *(ZipFile::*)(int)) &ZipFile::createStreamForEntry, adopt(result))
 			.def("createStreamForEntry", (InputStream *(ZipFile::*)(const ZipFile::ZipEntry &)) &ZipFile::createStreamForEntry, adopt(result))
