@@ -300,7 +300,7 @@ void LGlobalFunctions::wrapForLua (lua_State *L)
 		def("jlimit", (double (*) (const double, const double, const double))&juce::jlimit<double>),
 		def("isPositiveAndBelow", (bool (*) (const double, const double))&juce::isPositiveAndBelow<double>),
 		def("isPositiveAndNotGreaterThan", (bool (*) (const double, const double))&juce::isPositiveAndNotGreaterThan<double>),
-        def("roundToInt", &juce::roundToInt<double>),
+		def("roundToInt", &juce::roundToInt<double>),
 		def("roundToIntAccurate", &juce::roundToIntAccurate),
 		def("roundDoubleToInt", &juce::roundDoubleToInt),
 		def("roundFloatToInt", &juce::roundFloatToInt),
@@ -362,8 +362,8 @@ void LKeyPress::wrapForLua (lua_State *L)
 			.def("isCurrentlyDown", &KeyPress::isCurrentlyDown)
 			.scope
 			[
-                def("createFromDescription", &KeyPress::createFromDescription),
-                def("isKeyCurrentlyDown", &KeyPress::isKeyCurrentlyDown)
+				def("createFromDescription", &KeyPress::createFromDescription),
+				def("isKeyCurrentlyDown", &KeyPress::isKeyCurrentlyDown)
 			]
 			.enum_("KeyCode")
 			[
@@ -470,7 +470,7 @@ void LMouseEvent::wrapForLua (lua_State *L)
 			.def("getScreenY", &MouseEvent::getScreenY)
 			.def("getMouseDownScreenX", &MouseEvent::getMouseDownScreenX)
 			.def("getMouseDownScreenY", &MouseEvent::getMouseDownScreenY)
-            .def_readonly("source", &MouseEvent::source)
+			.def_readonly("source", &MouseEvent::source)
 			.def_readonly("x", &MouseEvent::x)
 			.def_readonly("y", &MouseEvent::y)
 			.def_readonly("mods", &MouseEvent::mods)
@@ -902,9 +902,9 @@ void LValueTree::wrapForLua (lua_State *L)
 				.def("getChildWithName", &ValueTree::getChildWithName)
 				.def("getOrCreateChildWithName", &ValueTree::getOrCreateChildWithName)
 				.def("getChildWithProperty", &ValueTree::getChildWithProperty)
-                //.def("addChild", &ValueTree::addChild) // won't work in 5.6+
-                .def("addChild", (void (ValueTree::*)(const ValueTree&, int, UndoManager*)) &ValueTree::addChild) // Added v5.6.34
-                .def("addChild", (void (ValueTree::*)(const ValueTree&, UndoManager*)) &ValueTree::addChild) // Added v5.6.34
+				//.def("addChild", &ValueTree::addChild) // won't work in 5.6+
+				.def("addChild", (void (ValueTree::*)(const ValueTree&, int, UndoManager*)) &ValueTree::addChild) // Added v5.6.34
+				.def("addChild", (void (ValueTree::*)(const ValueTree&, UndoManager*)) &ValueTree::addChild) // Added v5.6.34
 				.def("removeChild", (void(ValueTree::*)(const ValueTree &, UndoManager *))&ValueTree::removeChild)
 				.def("removeChild", (void(ValueTree::*)(const int, UndoManager *))&ValueTree::removeChild)
 				.def("removeAllChildren", &ValueTree::removeAllChildren)
@@ -973,14 +973,14 @@ void LXmlElement::wrapForLua (lua_State *L)
 			.def("deleteAllChildElementsWithTagName", &XmlElement::deleteAllChildElementsWithTagName)
 			.def("containsChildElement", &XmlElement::containsChildElement)
 			.def("findParentElementOf", &XmlElement::findParentElementOf)
-            .def("isTextElement", &XmlElement::isTextElement)
-            .def("getText", &XmlElement::getText)
-            .def("setText", &XmlElement::setText)
-            .def("getAllSubText", &XmlElement::getAllSubText)
-            .def("getChildElementAllSubText", &XmlElement::getChildElementAllSubText)
-            .def("addTextElement", &XmlElement::addTextElement)
-            .def("deleteAllTextElements", &XmlElement::deleteAllTextElements)
-            .def("getChildElementAllSubText", &XmlElement::getChildElementAllSubText)
+			.def("isTextElement", &XmlElement::isTextElement)
+			.def("getText", &XmlElement::getText)
+			.def("setText", &XmlElement::setText)
+			.def("getAllSubText", &XmlElement::getAllSubText)
+			.def("getChildElementAllSubText", &XmlElement::getChildElementAllSubText)
+			.def("addTextElement", &XmlElement::addTextElement)
+			.def("deleteAllTextElements", &XmlElement::deleteAllTextElements)
+			.def("getChildElementAllSubText", &XmlElement::getChildElementAllSubText)
             .scope[
                 def("createTextElement", &XmlElement::createTextElement)
             ]
@@ -1026,11 +1026,10 @@ void LZipFile::wrapForLua (lua_State *L)
 			.def(constructor<InputStream &>())
 			.def(constructor<InputSource *>())
 			.def("getNumEntries", &ZipFile::getNumEntries)
-			.def("getEntry", (const ZipFile::ZipEntry *(ZipFile::*)(int) const noexcept) &ZipFile::getEntry)
 			.def("getIndexOfFileName", &ZipFile::getIndexOfFileName)
-			//.def("getEntry", (const ZipFile::ZipEntry *(ZipFile::*)(const String &) const noexcept) &ZipFile::getEntry)
-            .def("getEntry", (const ZipFile::ZipEntry * (ZipFile::*)(int) const noexcept) & ZipFile::getEntry)
-            .def("getEntry", (const ZipFile::ZipEntry * (ZipFile::*)(const String&) const noexcept) & ZipFile::getEntryString)
+			.def("getEntry", (const ZipFile::ZipEntry * (ZipFile::*)(int) const noexcept) &ZipFile::getEntry)
+			// .def("getEntry", (const ZipFile::ZipEntry *(ZipFile::*)(const String&) const noexcept) &ZipFile::getEntry)
+			.def("getEntry", (const ZipFile::ZipEntry * (ZipFile::*)(const String&) const noexcept) &ZipFile::getEntryString) // Added v5.6.34. Thanks to @dnaldoog. Duplicate?
 			.def("sortEntriesByFilename", &ZipFile::sortEntriesByFilename)
 			.def("createStreamForEntry", (InputStream *(ZipFile::*)(int)) &ZipFile::createStreamForEntry, adopt(result))
 			.def("createStreamForEntry", (InputStream *(ZipFile::*)(const ZipFile::ZipEntry &)) &ZipFile::createStreamForEntry, adopt(result))
