@@ -306,6 +306,11 @@ void LGlobalFunctions::wrapForLua (lua_State *L)
 		def("roundFloatToInt", &juce::roundFloatToInt),
 		def("isPowerOfTwo", (bool (*) (int))&juce::isPowerOfTwo<int>),
 		def("nextPowerOfTwo", &juce::nextPowerOfTwo),
+        def("jmap", (double (*)(const double, const  double, const  double, const  double, const double)) & juce::jmap<double>), // Added 5.6.34. Thanks to @dnaldoog
+        def("jmap", (double (*)(const double, const double, const double)) & juce::jmap<double>), // Added 5.6.34. Thanks to @dnaldoog
+        def("mapToLog10", (double (*)(const double, const double, const double)) & juce::mapToLog10<double>), // Added 5.6.34. Thanks to @dnaldoog
+        def("mapFromLog10", (double (*)(const double, const double, const double)) & juce::mapFromLog10<double>), // Added 5.6.34. Thanks to @dnaldoog
+        def("isWithin", (double (*)(const double, const double, const double)) & juce::isWithin<double>), // Added 5.6.34. Thanks to @dnaldoog
 
 		def("cos", (double (*) (double))&cos),
 		def("cosf", (float (*) (float))&cosf),
