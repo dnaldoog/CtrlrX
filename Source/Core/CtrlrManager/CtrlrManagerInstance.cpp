@@ -179,8 +179,7 @@ const String CtrlrManager::getInstanceNameForHost() const
 	}
 	else
 	{
-		// return ("CtrlrX|CtrlrX Project"); // Updated v5.6.34. Pro Tools also get this plugin name
-        return ("CtrlrX"); // Updated v5.6.34. Default Plugin Name
+		return ("CtrlrX"); // Updated v5.6.34. Default Plugin Name
 	}
 }
 
