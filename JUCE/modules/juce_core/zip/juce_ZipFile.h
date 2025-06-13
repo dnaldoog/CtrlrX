@@ -116,7 +116,6 @@ public:
         @see ZipFile::ZipEntry
     */
     const ZipEntry* getEntry (const String& fileName, bool ignoreCase = false) const noexcept;
-    const ZipEntry* getEntryString (const String& fileName, bool ignoreCase = false) const noexcept; // Added v5.6.34. Thanks to @dnaldoog
 
     /** Sorts the list of entries, based on the filename. */
     void sortEntriesByFilename();
