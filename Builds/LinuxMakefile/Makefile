@@ -48,7 +48,7 @@ ifeq ($(CONFIG),Debug)
   JUCE_CFLAGS_VST3 := -fPIC -fvisibility=hidden
   JUCE_LDFLAGS_VST3 := -shared -Wl,--no-undefined
   JUCE_VST3DIR := CtrlrX-Debug.vst3
-  VST3_PLATFORM_ARCH := $(shell $(CXX) ../../JUCE/extras/Build/CMake/juce_runtime_arch_detection.cpp 2>&1 | tr '\n' ' ' | sed "s/.*JUCE_ARCH \([a-zA-Z0-9_-]*\).*/\1/")
+  VST3_PLATFORM_ARCH := $(shell $(CXX) make_helpers/arch_detection.cpp 2>&1 | tr '\n' ' ' | sed "s/.*JUCE_ARCH \([a-zA-Z0-9_-]*\).*/\1/")
   JUCE_VST3SUBDIR := Contents/$(VST3_PLATFORM_ARCH)-linux
   JUCE_TARGET_VST3 := $(JUCE_VST3DIR)/$(JUCE_VST3SUBDIR)/CtrlrX-Debug.so
   JUCE_VST3DESTDIR := $(HOME)/.vst3
@@ -60,9 +60,9 @@ ifeq ($(CONFIG),Debug)
   JUCE_CPPFLAGS_SHARED_CODE :=  "-DJucePlugin_Build_VST=1" "-DJucePlugin_Build_VST3=1" "-DJucePlugin_Build_AU=0" "-DJucePlugin_Build_AUv3=0" "-DJucePlugin_Build_RTAS=0" "-DJucePlugin_Build_AAX=0" "-DJucePlugin_Build_Standalone=1" "-DJucePlugin_Build_Unity=0" "-DJUCE_SHARED_CODE=1"
   JUCE_TARGET_SHARED_CODE := CtrlrX-Debug.a
 
-  JUCE_CFLAGS += $(JUCE_CPPFLAGS) $(TARGET_ARCH) -fPIC -g -ggdb -O0 -Wall -Wstrict-aliasing -Wuninitialized -Wunused-parameter -Wswitch-enum -Wsign-conversion -Wsign-compare -Wunreachable-code -Wcast-align -Wno-ignored-qualifiers -Wextra -Wsign-compare -Wno-implicit-fallthrough -Wno-maybe-uninitialized -Wno-missing-field-initializers -Wredundant-decls -Wno-strict-overflow -Wshadow -w $(CFLAGS)
-  JUCE_CXXFLAGS += $(JUCE_CFLAGS) -Woverloaded-virtual -Wreorder -Wzero-as-null-pointer-constant -std=gnu++14 $(CXXFLAGS)
-  JUCE_LDFLAGS += $(TARGET_ARCH) -L$(JUCE_BINDIR) -L$(JUCE_LIBDIR) $(shell pkg-config --libs alsa freetype2 libcurl) -fvisibility=hidden -lrt -ldl -lpthread -ludev -l:libbfd.a -liberty -lz -lX11 -lsframe $(shell pkg-config --libs libzstd) $(LDFLAGS)
+  JUCE_CFLAGS += $(JUCE_CPPFLAGS) $(TARGET_ARCH) -fPIC -g -ggdb -O0 -Wall -Wextra -Wstrict-aliasing -Wuninitialized -Wunused-parameter -Wsign-compare -Woverloaded-virtual -Wreorder -Wsign-conversion -Wunreachable-code -Wzero-as-null-pointer-constant -Wcast-align -Wno-implicit-fallthrough -Wno-maybe-uninitialized -Wno-missing-field-initializers -Wno-ignored-qualifiers -Wswitch-enum -Wredundant-decls -w $(CFLAGS)
+  JUCE_CXXFLAGS += $(JUCE_CFLAGS) -std=gnu++14 $(CXXFLAGS)
+  JUCE_LDFLAGS += $(TARGET_ARCH) -L$(JUCE_BINDIR) -L$(JUCE_LIBDIR) $(shell pkg-config --libs alsa freetype2 libcurl) -fvisibility=hidden -lrt -ldl -lpthread -ludev -l:libbfd.a -liberty -lz -lX11 $(LDFLAGS)
 
   CLEANCMD = rm -rf $(JUCE_OUTDIR)/$(TARGET) $(JUCE_OBJDIR)
 endif
@@ -90,7 +90,7 @@ ifeq ($(CONFIG),Release)
   JUCE_CFLAGS_VST3 := -fPIC -fvisibility=hidden
   JUCE_LDFLAGS_VST3 := -shared -Wl,--no-undefined
   JUCE_VST3DIR := CtrlrX.vst3
-  VST3_PLATFORM_ARCH := $(shell $(CXX) ../../JUCE/extras/Build/CMake/juce_runtime_arch_detection.cpp 2>&1 | tr '\n' ' ' | sed "s/.*JUCE_ARCH \([a-zA-Z0-9_-]*\).*/\1/")
+  VST3_PLATFORM_ARCH := $(shell $(CXX) make_helpers/arch_detection.cpp 2>&1 | tr '\n' ' ' | sed "s/.*JUCE_ARCH \([a-zA-Z0-9_-]*\).*/\1/")
   JUCE_VST3SUBDIR := Contents/$(VST3_PLATFORM_ARCH)-linux
   JUCE_TARGET_VST3 := $(JUCE_VST3DIR)/$(JUCE_VST3SUBDIR)/CtrlrX.so
   JUCE_VST3DESTDIR := $(HOME)/.vst3
@@ -104,7 +104,7 @@ ifeq ($(CONFIG),Release)
 
   JUCE_CFLAGS += $(JUCE_CPPFLAGS) $(TARGET_ARCH) -fPIC -O3 -w $(CFLAGS)
   JUCE_CXXFLAGS += $(JUCE_CFLAGS) -std=gnu++14 $(CXXFLAGS)
-  JUCE_LDFLAGS += $(TARGET_ARCH) -L$(JUCE_BINDIR) -L$(JUCE_LIBDIR) $(shell pkg-config --libs alsa freetype2 libcurl) -fvisibility=hidden -lrt -ldl -lpthread -ludev -l:libbfd.a -liberty -lz -lX11 -lsframe $(shell pkg-config --libs libzstd) $(LDFLAGS)
+  JUCE_LDFLAGS += $(TARGET_ARCH) -L$(JUCE_BINDIR) -L$(JUCE_LIBDIR) $(shell pkg-config --libs alsa freetype2 libcurl) -fvisibility=hidden -lrt -ldl -lpthread -ludev -l:libbfd.a -liberty -lz -lX11 $(LDFLAGS)
 
   CLEANCMD = rm -rf $(JUCE_OUTDIR)/$(TARGET) $(JUCE_OBJDIR)
 endif
