@@ -298,10 +298,10 @@ const ZipFile::ZipEntry* ZipFile::getEntry (const String& fileName, bool ignoreC
     return getEntry (getIndexOfFileName (fileName, ignoreCase));
 }
 
-const ZipFile::ZipEntry* ZipFile::getEntryString (const String& fileName, bool ignoreCase) const noexcept  // Added v5.6.34. Thanks to @dnaldoog
-{
-    return getEntry (getIndexOfFileName (fileName, ignoreCase));
-}
+//const ZipFile::ZipEntry* ZipFile::getEntryString (const String& fileName, bool ignoreCase) const noexcept  // Added v5.6.34. Thanks to @dnaldoog
+//{
+//    return getEntry (getIndexOfFileName (fileName, ignoreCase));
+//}
 
 InputStream* ZipFile::createStreamForEntry (const int index)
 {

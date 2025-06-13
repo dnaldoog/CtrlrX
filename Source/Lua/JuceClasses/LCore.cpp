@@ -1017,30 +1017,41 @@ void LZipEntry::wrapForLua (lua_State *L)
 	];
 }
 
-void LZipFile::wrapForLua (lua_State *L)
+struct LuaZipFileEntry
 {
-	LZipEntry::wrapForLua (L);
+	static const ZipFile::ZipEntry* getZipEntryByName(ZipFile* zipFile, const String& entryName)
+	{
+		if (zipFile)
+			return zipFile->getEntry(entryName);
+		else
+			return nullptr;
+	}
+};
+
+
+void LZipFile::wrapForLua(lua_State* L)
+{
+	LZipEntry::wrapForLua(L);
 
 	using namespace luabind;
 
 	module(L)
-    [
-		class_<ZipFile>("ZipFile")
-			.def(constructor<const File &>())
-			.def(constructor<InputStream *, bool>())
-			.def(constructor<InputStream &>())
-			.def(constructor<InputSource *>())
-			.def("getNumEntries", &ZipFile::getNumEntries)
-			.def("getIndexOfFileName", &ZipFile::getIndexOfFileName)
-			.def("getEntry", (const ZipFile::ZipEntry * (ZipFile::*)(int) const noexcept) &ZipFile::getEntry)
-			// .def("getEntry", (const ZipFile::ZipEntry *(ZipFile::*)(const String&) const noexcept) &ZipFile::getEntry)
-			.def("getEntry", (const ZipFile::ZipEntry * (ZipFile::*)(const String&) const noexcept) &ZipFile::getEntryString) // Added v5.6.34. Thanks to @dnaldoog. Duplicate?
-			.def("sortEntriesByFilename", &ZipFile::sortEntriesByFilename)
-			.def("createStreamForEntry", (InputStream *(ZipFile::*)(int)) &ZipFile::createStreamForEntry, adopt(result))
-			.def("createStreamForEntry", (InputStream *(ZipFile::*)(const ZipFile::ZipEntry &)) &ZipFile::createStreamForEntry, adopt(result))
-			.def("uncompressTo", &ZipFile::uncompressTo)
-			.def("uncompressEntry", &ZipFile::uncompressEntry)
-	];
+		[
+			class_<ZipFile>("ZipFile")
+				.def(constructor<const File&>())
+				.def(constructor<InputStream*, bool>())
+				.def(constructor<InputStream&>())
+				.def(constructor<InputSource*>())
+				.def("getNumEntries", &ZipFile::getNumEntries)
+				.def("getIndexOfFileName", &ZipFile::getIndexOfFileName)
+				.def("getEntry", (const ZipFile::ZipEntry * (ZipFile::*)(int) const noexcept) & ZipFile::getEntry)
+				.def("getEntry", &LuaZipFileEntry::getZipEntryByName)
+				.def("sortEntriesByFilename", &ZipFile::sortEntriesByFilename)
+				.def("createStreamForEntry", (InputStream * (ZipFile::*)(int)) & ZipFile::createStreamForEntry, adopt(result))
+				.def("createStreamForEntry", (InputStream * (ZipFile::*)(const ZipFile::ZipEntry&)) & ZipFile::createStreamForEntry, adopt(result))
+				.def("uncompressTo", &ZipFile::uncompressTo)
+				.def("uncompressEntry", &ZipFile::uncompressEntry)
+		];
 }
 
 
