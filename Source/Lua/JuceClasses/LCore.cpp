@@ -929,40 +929,46 @@ void LValueTree::wrapForLua(lua_State* L)
 
 namespace LXmlJuce6Factories
 {
-	static XmlDocument* getDocumentElement()
+	static XmlElement* getDocumentElement()
 	{
-		XmlDocument* xmlDoc = new XmlDocument("");
-		return xmlDoc;
+		XmlDocument xmlDoc("");
+		XmlElement* rootElement = xmlDoc.getDocumentElement().release();
+		return rootElement;
 	}
 
-	static XmlDocument* parsefile(const File& file)
+	static XmlElement* parsefile(const File& file)
+        // Fix the error by using the `release()` method of `std::unique_ptr` to obtain a raw pointer.  
+        XmlElement* rootElement = doc->getDocumentElement().release();
 	{
-		std::unique_ptr<XmlDocument> xdoc = std::make_unique<XmlDocument>(file);
-		if (xdoc)
+		std::unique_ptr<XmlDocument> doc = std::make_unique<XmlDocument>(file);
+		if (doc)
 		{
-			return xdoc.release();
+			XmlElement* rootElement = doc->getDocumentElement().get();
+			if (rootElement)
+			{
+				return rootElement.release();
+			}
 		}
-		else
-		{
-			return nullptr;
-		}
+		return nullptr;
 	}
 
-	static XmlDocument* parsedata(const String& xmldata)
+	static XmlElement* parsedata(const String& xmldata)
 	{
-		std::unique_ptr<XmlDocument> xdoc = std::make_unique<XmlDocument>(xmldata);
-		if (xdoc)
+		std::unique_ptr<XmlDocument> doc = std::make_unique<XmlDocument>(xmldata);
+		if (doc)
 		{
-			return xdoc.release();
+			XmlElement* rootElement = doc->getDocumentElement().get();
+			if (rootElement)
+			{
+				return rootElement->createCopy();
+			}
 		}
-		else
-		{
-			return nullptr;
-		}
+		return nullptr;
 	}
 }
-
-
+		
+// Fix the error by using the `release()` method of `std::unique_ptr` to obtain a raw pointer.  
+XmlElement* rootElement = doc->getDocumentElement().release();
 void LXmlElement::wrapForLua(lua_State* L)
 {
 	using namespace luabind;
@@ -1024,6 +1030,9 @@ void LXmlElement::wrapForLua(lua_State* L)
 				.def("getChildElementAllSubText", &XmlElement::getChildElementAllSubText)
 				.scope[
 					def("createTextElement", &XmlElement::createTextElement)
+					
+					//def("parsefile", LXmlJuce6Factories::parsefile),
+					//def("parsedata", LXmlJuce6Factories::parsedata)
 				]
 				,
 				class_<XmlDocument>("XmlDocument")
@@ -1035,10 +1044,8 @@ void LXmlElement::wrapForLua(lua_State* L)
 				.def("setEmptyTextElementsIgnored", &XmlDocument::setEmptyTextElementsIgnored)
 				.def("getDocumentElement", LXmlJuce6Factories::getDocumentElement)
 				.scope[
-					//def("parse", (XmlElement *(*)(const File &))&XmlDocument::parse),
-					//def("parse", (XmlElement *(*)(const String &))&XmlDocument::parse)
-					def("parse", LXmlJuce6Factories::parsefile),
-					def("parse", LXmlJuce6Factories::parsedata)
+					def("parsefile", LXmlJuce6Factories::parsefile),
+					def("parsedata", LXmlJuce6Factories::parsedata)
 				]
 		];
 }
