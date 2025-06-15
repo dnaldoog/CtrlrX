@@ -931,44 +931,59 @@ namespace LXmlJuce6Factories
 {
 	static XmlElement* getDocumentElement()
 	{
-		XmlDocument xmlDoc("");
-		XmlElement* rootElement = xmlDoc.getDocumentElement().release();
+		std::unique_ptr<XmlDocument> doc = std::make_unique<XmlDocument>(""); // Initialize with an empty string or valid XML content
+		XmlElement* rootElement = doc->getDocumentElement().release();
 		return rootElement;
 	}
-
-	static XmlElement* parsefile(const File& file)
-        // Fix the error by using the `release()` method of `std::unique_ptr` to obtain a raw pointer.  
-        XmlElement* rootElement = doc->getDocumentElement().release();
+	static XmlElement* parseXMLFile(const File& fileToParse)
 	{
-		std::unique_ptr<XmlDocument> doc = std::make_unique<XmlDocument>(file);
-		if (doc)
+		std::unique_ptr<XmlDocument> doc = std::make_unique<XmlDocument>(fileToParse);
+		if (doc->parse(fileToParse))
 		{
-			XmlElement* rootElement = doc->getDocumentElement().get();
-			if (rootElement)
+			//XmlElement* rootElement = doc->getDocumentElement();
+			std::unique_ptr<juce::XmlElement> rootElement = doc->getDocumentElement();
+			if (rootElement != nullptr)
 			{
-				return rootElement.release();
+				return  rootElement.get();// --->createXmlCopy();
+				
+			}
+			else
+			{
+				/* File parsed successfully but has no root element */
+				return nullptr;
 			}
 		}
-		return nullptr;
+		else
+		{
+			/* Parsing failed, log the error */
+			return nullptr;
+		}
 	}
-
-	static XmlElement* parsedata(const String& xmldata)
+	static XmlElement* parseXMLData(const String xmlData)
 	{
-		std::unique_ptr<XmlDocument> doc = std::make_unique<XmlDocument>(xmldata);
-		if (doc)
+		std::unique_ptr<XmlDocument> doc = std::make_unique<XmlDocument>(xmlData);
+		if (doc->parse(xmlData))
 		{
-			XmlElement* rootElement = doc->getDocumentElement().get();
-			if (rootElement)
+			//XmlElement* rootElement = doc->getDocumentElement();
+			std::unique_ptr<juce::XmlElement> rootElement = doc->getDocumentElement();
+			if (rootElement != nullptr)
 			{
-				return rootElement->createCopy();
+				return  rootElement.get();// --->createXmlCopy();
+				
+			}
+			else
+			{
+				/* File parsed successfully but has no root element */
+				return nullptr;
 			}
 		}
-		return nullptr;
+		else
+		{
+			/* Parsing failed, log the error */
+			return nullptr;
+		}
 	}
 }
-		
-// Fix the error by using the `release()` method of `std::unique_ptr` to obtain a raw pointer.  
-XmlElement* rootElement = doc->getDocumentElement().release();
 void LXmlElement::wrapForLua(lua_State* L)
 {
 	using namespace luabind;
@@ -1029,12 +1044,20 @@ void LXmlElement::wrapForLua(lua_State* L)
 				.def("deleteAllTextElements", &XmlElement::deleteAllTextElements)
 				.def("getChildElementAllSubText", &XmlElement::getChildElementAllSubText)
 				.scope[
-					def("createTextElement", &XmlElement::createTextElement)
-					
-					//def("parsefile", LXmlJuce6Factories::parsefile),
-					//def("parsedata", LXmlJuce6Factories::parsedata)
-				]
-				,
+							def("createTextElement", &XmlElement::createTextElement),
+							def("parseXML", LXmlJuce6Factories::parseXMLFile),
+							def("parseXML", LXmlJuce6Factories::parseXMLData)
+							//def("createTextElement", &XmlElement::createTextElement)
+							//std::unique_ptr<XmlElement> parseXML(const String & textToParse),
+							//std::unique_ptr<XmlElement> parseXML(const File & fileToParse)
+						]
+,
+/** Attempts to parse some XML text, returning a new XmlElement if it was valid.
+    If the parse fails, this will return a nullptr - if you need more information about
+    errors or more parsing options, see the XmlDocument class instead.
+    @see XmlDocument, parseXMLIfTagMatches
+*/
+
 				class_<XmlDocument>("XmlDocument")
 				.def(constructor<const String&>())
 				.def(constructor<const File&>())
@@ -1043,10 +1066,6 @@ void LXmlElement::wrapForLua(lua_State* L)
 				.def("setInputSource", &XmlDocument::setInputSource)
 				.def("setEmptyTextElementsIgnored", &XmlDocument::setEmptyTextElementsIgnored)
 				.def("getDocumentElement", LXmlJuce6Factories::getDocumentElement)
-				.scope[
-					def("parsefile", LXmlJuce6Factories::parsefile),
-					def("parsedata", LXmlJuce6Factories::parsedata)
-				]
 		];
 }
 
@@ -1074,7 +1093,6 @@ struct LuaZipFileEntry // Updated v5.6.34. void to struct. Thanks to @dnaldoog
 	}
 };
 
-
 void LZipFile::wrapForLua(lua_State* L) // Updated v5.6.34. Thanks to @dnaldoog
 {
 	LZipEntry::wrapForLua(L);
@@ -1100,7 +1118,6 @@ void LZipFile::wrapForLua(lua_State* L) // Updated v5.6.34. Thanks to @dnaldoog
 
 		];
 }
-
 
 void LInputStream::wrapForLua(lua_State* L)
 {
