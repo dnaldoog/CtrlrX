@@ -256,6 +256,7 @@ void LGlobalFunctions::wrapForLua(lua_State* L)
 	using namespace luabind;
 
 	module(L)
+<<<<<<< HEAD
 		[
 			def("getNativeKeyMapping", &getNativeKeyMapping)
 				,
@@ -311,6 +312,63 @@ void LGlobalFunctions::wrapForLua(lua_State* L)
 				def("mapToLog10", (double (*)(const double, const double, const double)) & juce::mapToLog10<double>), // Added 5.6.34. Thanks to @dnaldoog
 				def("mapFromLog10", (double (*)(const double, const double, const double)) & juce::mapFromLog10<double>), // Added 5.6.34. Thanks to @dnaldoog
 				def("isWithin", (double (*)(const double, const double, const double)) & juce::isWithin<double>), // Added 5.6.34. Thanks to @dnaldoog
+=======
+    [
+        def("getNativeKeyMapping", &getNativeKeyMapping)
+        ,
+        //def("console", (void (*) (const std::string &)) &LGlobalFunctions::console),
+        def("console", (void (*) (const String &)) &LGlobalFunctions::console)
+        ,
+		def("J", (const String (*) (const std::string &)) &LGlobalFunctions::toJuceString),
+		def("toJuceString", (const String (*) (const std::string &)) &LGlobalFunctions::toJuceString)
+		,
+		def("L", &LGlobalFunctions::stringToLua),
+		def("toLuaString", &LGlobalFunctions::stringToLua)
+        ,
+        def("print_debug", (void (*)(const String &))&LGlobalFunctions::debug),
+        def("print_d", (void (*)(const String &))&LGlobalFunctions::debug),
+        def("_DBG", (void (*)(const String &))&LGlobalFunctions::debug),
+        def("_debug", (void (*)(const String &))&LGlobalFunctions::debug)
+        ,
+        def("sleep", &LGlobalFunctions::sleep)
+        ,
+		class_<LGlobalFunctions>("juce")
+			.def(constructor<>())
+			.scope
+			[
+				def("double_Pi", &LGlobalFunctions::double_Pi),
+				def("float_Pi", &LGlobalFunctions::float_Pi)
+			]
+		,
+		class_<CtrlrNative>("CtrlrNative")
+            .def("sendKeyPressEvent", (const Result (CtrlrNative::*) (const KeyPress &, const String &)) &CtrlrNative::sendKeyPressEvent)
+			.def("sendKeyPressEvent", (const Result (CtrlrNative::*) (const KeyPress &)) &CtrlrNative::sendKeyPressEvent)
+            .scope
+            [
+                def("getNativeObject", &CtrlrNative::getNativeObject)
+            ]
+		,
+		def("jmax", (double (*) (const double, const double))&juce::jmax<double>),
+		def("jmax", (double (*) (const double, const double, const double))&juce::jmax<double>),
+		def("jmax", (double (*) (const double, const double, const double, const double))&juce::jmax<double>),
+		def("jmin", (double (*) (const double, const double))&juce::jmin<double>),
+		def("jmin", (double (*) (const double, const double, const double))&juce::jmin<double>),
+		def("jmin", (double (*) (const double, const double, const double, const double))&juce::jmin<double>),
+		def("jmap", (double (*)(const double, const  double, const  double, const  double, const double)) & juce::jmap<double>),
+		def("jmap", (double (*)(const double, const double, const double)) & juce::jmap<double>),
+		def("mapToLog10", (double (*)(const double, const double, const double)) & juce::mapToLog10<double>),
+		def("mapFromLog10", (double (*)(const double, const double, const double)) & juce::mapFromLog10<double>),
+		def("jlimit", (double (*) (const double, const double, const double))&juce::jlimit<double>),
+		def("isPositiveAndBelow", (bool (*) (const double, const double))&juce::isPositiveAndBelow<double>),
+		def("isPositiveAndNotGreaterThan", (bool (*) (const double, const double))&juce::isPositiveAndNotGreaterThan<double>),
+		def("isWithin", (double (*)(const double, const double, const double)) & juce::isWithin<double>),
+		def("roundToInt", &juce::roundToInt<double>),
+		def("roundToIntAccurate", &juce::roundToIntAccurate),
+		def("roundDoubleToInt", &juce::roundDoubleToInt),
+		def("roundFloatToInt", &juce::roundFloatToInt),
+		def("isPowerOfTwo", (bool (*) (int))&juce::isPowerOfTwo<int>),
+		def("nextPowerOfTwo", &juce::nextPowerOfTwo),
+>>>>>>> 1acb70b14b716a258b34d02d50b1379eb0c0307d
 
 				def("cos", (double (*) (double)) & cos),
 				def("cosf", (float (*) (float)) & cosf),
