@@ -486,6 +486,11 @@ Tuturial coming soon.
 
 ## Changelog
 
+#### Version 5.6.35 | 2025.11.16
+
+* **UPDATED** ctrlrAutoSave & ctrlrAutoSaveInterval properties in Preferences only if isStandaloneApp. `CtrlrManager.cpp`, `CtrlrManagerInstance.cpp`, `CtrlrSettings.cpp`
+* **UPDATED** flag IS_MIDI_EFFECT FALSE. `CMakeLists.txt`
+
 #### Version 5.6.34 | 2025.11.07
 
 * **NEW** ProTools AAX plugin support (requires AAX SDK 2.8+ and codesigning via PACE)
