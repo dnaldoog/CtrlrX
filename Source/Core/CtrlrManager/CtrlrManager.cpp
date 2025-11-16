@@ -71,8 +71,11 @@ void CtrlrManager::setDefaults()
     setProperty (Ids::ctrlrMidiMonOutputBufferSize, 8192);
     setProperty (Ids::ctrlrLuaDisabled, false);
     setProperty (Ids::ctrlrOverwriteResources, true);
-    setProperty (Ids::ctrlrAutoSave, true);
-    setProperty (Ids::ctrlrAutoSaveInterval, 300);
+    if (JUCEApplication::isStandaloneApp()) // Added v5.6.35
+    {
+        setProperty (Ids::ctrlrAutoSave, true);
+        setProperty (Ids::ctrlrAutoSaveInterval, 300);
+    }
     // setProperty (Ids::ctrlrLogOptions, 32); // Updated v5.6.31. Value sets default properties as enabled
     setProperty (Ids::ctrlrLogOptions, 6014); // 6014 shows everything by default with MIDI messages in Hex
     // setProperty (Ids::ctrlrUseEditorWrapper, true); // Removed v5.6.34. Conditions hard coded for the wrapper with Ableton Live on Windows
