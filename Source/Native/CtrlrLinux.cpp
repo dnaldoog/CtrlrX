@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#define LINUX
+//#define LINUX
 #ifdef LINUX
 #define PACKAGE "Ctrlr"
 
