@@ -112,30 +112,33 @@ CtrlrLuaManager::~CtrlrLuaManager()
 void CtrlrLuaManager::createLuaState()
 {
 	luaState = luaL_newstate();
+	if (luaState == nullptr)
+	{
+		_ERR("Failed to create Lua state");
+		return;
+	}
 	luaL_openlibs(luaState);
 
-	// don't try to load standard libs again, here this will crash!!!
-
-
-	lua_pushcfunction(luaStateAudio, luaopen_bit);
-	lua_pushliteral(luaStateAudio, "bit");
-	lua_call(luaStateAudio, 1, 0);
-
-	lua_pushcfunction(luaState, luaopen_usb);
-	lua_pushliteral(luaState, "usb");
+	lua_pushcfunction(luaState, luaopen_bit);
+	lua_pushliteral(luaState, "bit");
 	lua_call(luaState, 1, 0);
+
+	// luaopen_usb removed - no implementation exists
 
 	using namespace luabind;
 	open(luaState);
-
 	luabind::bind_class_info(luaState);
-
 	set_pcall_callback(add_file_and_line);
 }
 
 void CtrlrLuaManager::createLuaStateAudio()
 {
 	luaStateAudio = luaL_newstate();
+	if (luaStateAudio == nullptr)
+	{
+		_ERR("Failed to create Lua audio state");
+		return;
+	}
 
 	lua_pushcfunction(luaStateAudio, luaopen_base);
 	lua_pushliteral(luaStateAudio, "base");
@@ -161,14 +164,13 @@ void CtrlrLuaManager::createLuaStateAudio()
 	lua_pushliteral(luaStateAudio, "package");
 	lua_call(luaStateAudio, 1, 0);
 
-	lua_pushcfunction(luaState, luaopen_bit);
-	lua_pushliteral(luaState, "bit");
-	lua_call(luaState, 1, 0);
+	lua_pushcfunction(luaStateAudio, luaopen_bit);
+	lua_pushliteral(luaStateAudio, "bit");
+	lua_call(luaStateAudio, 1, 0);
 
 	using namespace luabind;
 	open(luaStateAudio);
 	luabind::bind_class_info(luaStateAudio);
-
 	set_pcall_callback(add_file_and_line);
 }
 
@@ -1381,7 +1383,112 @@ void CtrlrPanel::wrapForLua(lua_State* L)
 					value("InstanceMultiEngine", (uint8)InstanceMultiEngine),
 					value("InstanceSingleRestrictedEngine", (uint8)InstanceSingleRestrictedEngine)
 				]
-		];
+
+			.def("getModulatorByName", &CtrlrPanel::getModulator)
+		.def("getModulator", &CtrlrPanel::getModulator)
+		.def("getModulatorByIndex", &CtrlrPanel::getModulatorByIndex)
+		.def("getNumModulators", &CtrlrPanel::getNumModulators)
+		.def("sendMidiMessageNow", (void (CtrlrPanel::*)(CtrlrMidiMessage &)) &CtrlrPanel::sendMidiNow)
+		.def("sendMidi", (void (CtrlrPanel::*)(CtrlrMidiMessage &, double)) &CtrlrPanel::sendMidi)
+		.def("sendMidi", (void (CtrlrPanel::*)(const MidiMessage &, double)) &CtrlrPanel::sendMidi)
+		.def("sendMidi", (void (CtrlrPanel::*)(const MidiBuffer &, double)) &CtrlrPanel::sendMidi)
+		.def("getPanelEditor", &CtrlrPanel::getPanelEditor)
+		.def("getRestoreState", &CtrlrPanel::getRestoreState)
+		.def("getBootstrapState", &CtrlrPanel::getBootstrapState)
+		.def("isRestoring", &CtrlrPanel::getRestoreState)
+		.def("setRestoreState", &CtrlrPanel::setRestoreState)
+		.def("setProgramState", &CtrlrPanel::setProgramState)
+		.def("getProgramState", &CtrlrPanel::getProgramState)
+		.def("getComponent", &CtrlrPanel::getComponent)
+		.def("getGlobalVariable", &CtrlrPanel::getGlobalVariable)
+		.def("setGlobalVariable", &CtrlrPanel::setGlobalVariable)
+		.def("getCanvas", &CtrlrPanel::getCanvas)
+		.def("getWaveformComponent", &CtrlrPanel::getWaveformComponent)
+		.def("getWaveform", &CtrlrPanel::getWaveformComponent)
+		.def("getLabelComponent", &CtrlrPanel::getLabelComponent)
+		.def("getLabel", &CtrlrPanel::getLabelComponent)
+		.def("getLCDLabelComponent", &CtrlrPanel::getLCDLabelComponent)
+		.def("getLCDLabel", &CtrlrPanel::getLCDLabelComponent)
+		.def("getToggleButtonComponent", &CtrlrPanel::getToggleButtonComponent)
+		.def("getToggleButton", &CtrlrPanel::getToggleButtonComponent)
+		.def("getImageButtonComponent", &CtrlrPanel::getImageButtonComponent)
+		.def("getImageButton", &CtrlrPanel::getImageButtonComponent)
+		.def("getButtonComponent", &CtrlrPanel::getButtonComponent)
+		.def("getButton", &CtrlrPanel::getButtonComponent)
+		.def("getComboComponent", &CtrlrPanel::getComboComponent)
+		.def("getCombo", &CtrlrPanel::getComboComponent)
+		.def("getListBoxComponent", &CtrlrPanel::getListBoxComponent)
+		.def("getListBox", &CtrlrPanel::getListBoxComponent)
+		.def("getFileListBoxComponent", &CtrlrPanel::getFileListBoxComponent)
+		.def("getFileListBox", &CtrlrPanel::getFileListBoxComponent)
+		.def("getSliderComponent", &CtrlrPanel::getSliderComponent)
+		.def("getSlider", &CtrlrPanel::getSliderComponent)
+		.def("getFixedImageSliderComponent", &CtrlrPanel::getFixedImageSliderComponent)
+		.def("getFixedImageSlider", &CtrlrPanel::getFixedImageSliderComponent)
+		.def("getFixedSliderComponent", &CtrlrPanel::getFixedSliderComponent)
+		.def("getFixedSlider", &CtrlrPanel::getFixedSliderComponent)
+		.def("getImageSliderComponent", &CtrlrPanel::getImageSliderComponent)
+		.def("getImageSlider", &CtrlrPanel::getImageSliderComponent)
+		.def("getModulatorWithProperty", (CtrlrModulator *(CtrlrPanel::*)(const String &, const int)) &CtrlrPanel::getModulatorWithProperty)
+		.def("getModulatorWithProperty", (CtrlrModulator *(CtrlrPanel::*)(const String &, const String &)) &CtrlrPanel::getModulatorWithProperty)
+		.def("getModulatorsWithProperty", &CtrlrPanel::getModulatorsWithPropertyLua)
+		.def("getModulatorsWildcard", (luabind::object (CtrlrPanel::*)(const String &, const bool))&CtrlrPanel::getModulatorsWildcardLua)
+		.def("getModulatorsWildcard", (luabind::object (CtrlrPanel::*)(const String &, const String &, const bool))&CtrlrPanel::getModulatorsWildcardLua)
+		.def("getInputComparator", &CtrlrPanel::getInputComparator)
+		.def("getModulatorValuesAsData", (LMemoryBlock (CtrlrPanel::*)(const String &, const CtrlrByteEncoding, const int, const bool))&CtrlrPanel::getModulatorValuesAsData)
+		.def("getModulatorValuesAsData", (LMemoryBlock (CtrlrPanel::*)(const ValueTree &, const String &, const CtrlrByteEncoding, const int, const bool))&CtrlrPanel::getModulatorValuesAsData)
+		.def("getModulatorValuesAsData", (LMemoryBlock (CtrlrPanel::*)(const String &, const CtrlrByteEncoding, const int, const int, const int, const bool))&CtrlrPanel::getModulatorValuesAsData)
+		.def("setModulatorValuesFromData", &CtrlrPanel::setModulatorValuesFromData)
+		.def("dumpDebugData", &CtrlrPanel::dumpDebugData)
+		.enum_("CtrlrPanelFileType")
+		[
+			value("PanelFileXML", 0),
+			value("PanelFileXMLCompressed", 1),
+			value("PanelFileBinary", 2),
+			value("PanelFileBinaryCompressed", 3),
+			value("PanelFileExport", 4)
+		]
+	.enum_("CtrlrNotificationType")
+		[
+			value("NotifySuccess", (uint8)NotifySuccess),
+			value("NotifyFailure", (uint8)NotifyFailure),
+			value("NotifyInformation", (uint8)NotifyInformation),
+			value("NotifyWarning", (uint8)NotifyWarning)
+		]
+		.enum_("CtrlrByteEncoding")
+		[
+			value("EncodeNormal", EncodeNormal),
+			value("Encode7bitMSBFirst", EncodeMSBFirst),
+			value("Encode7bitLSBFirst", EncodeLSBFirst),
+			value("EncodeMSBFirst", EncodeMSBFirst),
+			value("EncodeLSBFirst", EncodeLSBFirst),
+			value("Encode4bitMsbFirst", EncodeNibbleMsbFirst),
+			value("Encode4bitLsbFirst", EncodeNibbleLsbFirst),
+			value("EncodeMsbFirst", EncodeNibbleMsbFirst),
+			value("EncodeLsbFirst", EncodeNibbleLsbFirst),
+			value("EncodeNibbleMsbFirst", EncodeNibbleMsbFirst),
+			value("EncodeNibbleLsbFirst", EncodeNibbleLsbFirst),
+			value("EncodeSignedNibbleMsbFirst", EncodeSignedNibbleMsbFirst),
+			value("EncodeSignedNibbleLsbFirst", EncodeSignedNibbleLsbFirst),
+			value("EncodeDSI", EncodeDSI)
+		]
+	.enum_("CtrlrByteSplit")
+		[
+			value("SplitNone", (uint8)SplitNone),
+			value("Split4Bits", (uint8)Split4Bits),
+			value("Split7Bits", (uint8)Split7Bits),
+			value("Split8Bits", (uint8)Split8Bits)
+		]
+	.enum_("CtrlrInstance")
+		[
+			value("InstanceSingle", (uint8)InstanceSingle),
+			value("InstanceMulti", (uint8)InstanceMulti),
+			value("InstanceSingleRestriced", (uint8)InstanceSingleRestriced),
+			value("InstanceSingleEngine", (uint8)InstanceSingleEngine),
+			value("InstanceMultiEngine", (uint8)InstanceMultiEngine),
+			value("InstanceSingleRestrictedEngine", (uint8)InstanceSingleRestrictedEngine)
+		]
+	];
 }
 
 //

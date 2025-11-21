@@ -466,7 +466,8 @@ void CtrlrTabsComponent::setOwned (CtrlrComponent *componentToOwn, const int sub
 		componentToOwn->setProperty (Ids::componentTabName, owner.getName(), true);
 		componentToOwn->setProperty (Ids::componentTabId, subIndexInGroup, true);
 		componentToOwn->setProperty (Ids::componentGroupped, true, true);
-		componentToOwn->setProperty(Ids::componentGroupName, "", true);
+		componentToOwn->setProperty(Ids::componentGroupName, "", true); // Clear group name when assigning to tab
+
 		if (ctrlrTabs->getTabContentComponent(subIndexInGroup))
 			ctrlrTabs->getTabContentComponent(subIndexInGroup)->addAndMakeVisible (componentToOwn);
 	}
