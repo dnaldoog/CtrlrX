@@ -1,8 +1,6 @@
 #include "stdafx.h"
-#define LINUX
-#ifdef LINUX
+#ifdef __linux__
 #define PACKAGE "Ctrlr"
-
 #include "CtrlrMacros.h"
 #include "CtrlrLinux.h"
 #include "CtrlrPanel/CtrlrPanel.h"

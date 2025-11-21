@@ -252,8 +252,6 @@
           </GROUP>
         </GROUP>
         <FILE id="ba8H2u" name="keys.cpp" compile="1" resource="0" file="Source/Misc/keys.cpp"/>
-        <FILE id="N35AKi" name="libr-bfd.c" compile="1" resource="0" file="Source/Misc/libr-bfd.c"/>
-        <FILE id="u4JZiN" name="libr.c" compile="1" resource="0" file="Source/Misc/libr.c"/>
       </GROUP>
       <GROUP id="{1F581EC7-DF90-90BB-9490-7707A3326EA3}" name="Core">
         <GROUP id="{D43D8BB9-ABDE-2422-2D6D-93DD2D24C15D}" name="CtrlrManager">
