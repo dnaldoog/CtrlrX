@@ -887,6 +887,8 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 	return (modulatorData);
 }
 
+/** @brief Get modulator values as raw data */
+
 LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexBy,
 	const CtrlrByteEncoding byteEncoding,
 	const int propertyValueStart,
