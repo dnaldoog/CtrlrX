@@ -742,114 +742,531 @@ CtrlrFixedImageSlider *CtrlrPanel::getFixedImageSliderComponent (const String &c
 	return (nullptr);
 }
 
-LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String &propertyToIndexBy, const CtrlrByteEncoding byteEncoding, const int bytesPerValue, const bool useMappedValues)
+LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexBy,
+	const CtrlrByteEncoding byteEncoding,
+	const int bytesPerValue,
+	const bool useMappedValues)
 {
-	MemoryBlock modulatorData (getNumModulators() * bytesPerValue, true);
-	uint32 truncateTo = getNumModulators() * bytesPerValue;
-	uint32 modulatorValue;
-
-	for (int i = 0; i<getNumModulators(); i++)
+	int maxIndex = -1;
+	for (int i = 0; i < getNumModulators(); i++)
 	{
-		const int index = getModulatorByIndex(i)->getProperty(propertyToIndexBy);
-
-		if (index >= 0)
+		CtrlrModulator* mod = getModulatorByIndex(i);
+		if (mod->hasProperty(propertyToIndexBy))
 		{
-			if (useMappedValues)
-				modulatorValue = getModulatorByIndex(i)->getValueMapped();
-			else
-				modulatorValue = getModulatorByIndex(i)->getValueNonMapped();
+			const var propertyValue = mod->getProperty(propertyToIndexBy);
+			const String strValue = propertyValue.toString().trim();
 
-			modulatorData.setBitRange (index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
-		}
-		else
-		{
-			truncateTo--;
+			// Check if property is a valid non-negative integer
+			if (!strValue.isEmpty() && strValue.containsOnly("0123456789"))
+			{
+				const int index = strValue.getIntValue();
+				if (index > maxIndex)
+					maxIndex = index;
+			}
 		}
 	}
 
-	modulatorData.setSize (truncateTo, false);
+	if (maxIndex < 0)
+	{
+		return MemoryBlock();
+	}
+
+	MemoryBlock modulatorData((maxIndex + 1) * bytesPerValue, true);
+	uint32 modulatorValue;
+
+	for (int i = 0; i < getNumModulators(); i++)
+	{
+		CtrlrModulator* mod = getModulatorByIndex(i);
+		if (mod->hasProperty(propertyToIndexBy))
+		{
+			const var propertyValue = mod->getProperty(propertyToIndexBy);
+			const String strValue = propertyValue.toString().trim();
+
+			if (!strValue.isEmpty() && strValue.containsOnly("0123456789"))
+			{
+				const int index = strValue.getIntValue();
+				if (index >= 0 && index <= maxIndex)
+				{
+					if (useMappedValues)
+						modulatorValue = mod->getValueMapped();
+					else
+						modulatorValue = mod->getValueNonMapped();
+
+					switch (byteEncoding)
+					{
+					case EncodeNormal:
+						if (bytesPerValue == 1)
+							modulatorData[index] = (uint8)modulatorValue;
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+
+					case EncodeMSBFirst:
+					case EncodeDSI:
+						if (bytesPerValue == 2)
+						{
+							uint8 msb = (modulatorValue >> 7) & 0x7F;
+							uint8 lsb = modulatorValue & 0x7F;
+							modulatorData[index * 2] = msb;
+							modulatorData[index * 2 + 1] = lsb;
+						}
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+
+					case EncodeLSBFirst:
+						if (bytesPerValue == 2)
+						{
+							uint8 msb = (modulatorValue >> 7) & 0x7F;
+							uint8 lsb = modulatorValue & 0x7F;
+							modulatorData[index * 2] = lsb;
+							modulatorData[index * 2 + 1] = msb;
+						}
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+
+					case EncodeNibbleMsbFirst:
+						if (bytesPerValue == 2)
+						{
+							uint8 msbNibble = (modulatorValue >> 4) & 0x0F;
+							uint8 lsbNibble = modulatorValue & 0x0F;
+							modulatorData[index * 2] = msbNibble;
+							modulatorData[index * 2 + 1] = lsbNibble;
+						}
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+
+					case EncodeNibbleLsbFirst:
+						if (bytesPerValue == 2)
+						{
+							uint8 msbNibble = (modulatorValue >> 4) & 0x0F;
+							uint8 lsbNibble = modulatorValue & 0x0F;
+							modulatorData[index * 2] = lsbNibble;
+							modulatorData[index * 2 + 1] = msbNibble;
+						}
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+
+					case EncodeSignedNibbleMsbFirst:
+						if (bytesPerValue == 2)
+						{
+							int8 signedValue = (int8)modulatorValue;
+							uint8 unsignedByte = (uint8)signedValue;
+							uint8 msbNibble = (unsignedByte >> 4) & 0x0F;
+							uint8 lsbNibble = unsignedByte & 0x0F;
+							modulatorData[index * 2] = msbNibble;
+							modulatorData[index * 2 + 1] = lsbNibble;
+						}
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+
+					case EncodeSignedNibbleLsbFirst:
+						if (bytesPerValue == 2)
+						{
+							int8 signedValue = (int8)modulatorValue;
+							uint8 unsignedByte = (uint8)signedValue;
+							uint8 msbNibble = (unsignedByte >> 4) & 0x0F;
+							uint8 lsbNibble = unsignedByte & 0x0F;
+							modulatorData[index * 2] = lsbNibble;
+							modulatorData[index * 2 + 1] = msbNibble;
+						}
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+					}
+				}
+			}
+		}
+	}
+
 	return (modulatorData);
 }
 
-LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String &propertyToIndexBy,
+LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexBy,
 	const CtrlrByteEncoding byteEncoding,
 	const int propertyValueStart,
 	const int howMany,
 	const int bytesPerValue,
 	const bool useMappedValues)
 {
-	MemoryBlock modulatorData (getNumModulators() * bytesPerValue, true);
-	uint32 truncateTo = getNumModulators() * bytesPerValue;
+	MemoryBlock modulatorData(howMany * bytesPerValue, true);
 	uint32 modulatorValue;
 
-	for (int i = 0; i<getNumModulators(); i++)
+	for (int i = 0; i < getNumModulators(); i++)
 	{
-		const int index = getModulatorByIndex(i)->getProperty(propertyToIndexBy);
-
-		if (index >= propertyValueStart && index < howMany)
+		CtrlrModulator* mod = getModulatorByIndex(i);
+		if (mod->hasProperty(propertyToIndexBy))
 		{
-			if (useMappedValues)
-				modulatorValue = getModulatorByIndex(i)->getValueMapped();
-			else
-				modulatorValue = getModulatorByIndex(i)->getValueNonMapped();
+			const var propertyValue = mod->getProperty(propertyToIndexBy);
+			const String strValue = propertyValue.toString().trim();
 
-			modulatorData.setBitRange (index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
-		}
-		else
-		{
-			truncateTo--;
-		}
-	}
-
-	modulatorData.setSize (truncateTo, false);
-	return (modulatorData);
-}
-
-LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const ValueTree &programTree, const String &propertyToIndexBy, const CtrlrByteEncoding byteEncoding, const int bytesPerValue, const bool useMappedValues)
-{
-	MemoryBlock modulatorData (getNumModulators() * bytesPerValue, true);
-	uint32 truncateTo = getNumModulators() * bytesPerValue;
-	uint32 modulatorValue;
-
-	for (int i = 0; i<getNumModulators(); i++)
-	{
-		const int index = getModulatorByIndex(i)->getProperty(propertyToIndexBy);
-
-		if (index >= 0)
-		{
-			if (useMappedValues)
-				modulatorValue = getModulatorByIndex(i)->getValueMapped();
-			else
-				modulatorValue = getModulatorByIndex(i)->getValueNonMapped();
-
-			modulatorData.setBitRange (index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
-		}
-		else
-		{
-			truncateTo--;
-		}
-	}
-
-	modulatorData.setSize (truncateTo, false);
-	return (modulatorData);
-}
-
-void CtrlrPanel::setModulatorValuesFromData (const MemoryBlock &dataSource, const String &propertyToIndexBy, const CtrlrByteEncoding byteEncoding, int propertyOffset, int bytesPerValue, const bool useMappedValues)
-{
-	for (unsigned int index = 0; index<dataSource.getSize() / bytesPerValue; index++)
-	{
-		CtrlrModulator *m = getModulatorWithProperty (propertyToIndexBy, propertyOffset + index);
-		if (m)
-		{
-			const int v = dataSource.getBitRange (index * bytesPerValue * 8, bytesPerValue * 8);
-
-			if (!m->isStatic())
+			if (!strValue.isEmpty() && strValue.containsOnly("0123456789"))
 			{
-				if (useMappedValues)
-					m->setValueMapped (v, false, true);
-				else
-					m->setValueNonMapped (v, false, true);
+				const int index = strValue.getIntValue();
+				if (index >= propertyValueStart && index < propertyValueStart + howMany)
+				{
+					if (useMappedValues)
+						modulatorValue = mod->getValueMapped();
+					else
+						modulatorValue = mod->getValueNonMapped();
+
+					const int relativeIndex = index - propertyValueStart;
+
+					switch (byteEncoding)
+					{
+					case EncodeNormal:
+						if (bytesPerValue == 1)
+							modulatorData[relativeIndex] = (uint8)modulatorValue;
+						else
+							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+
+					case EncodeMSBFirst:
+					case EncodeDSI:
+						if (bytesPerValue == 2)
+						{
+							uint8 msb = (modulatorValue >> 7) & 0x7F;
+							uint8 lsb = modulatorValue & 0x7F;
+							modulatorData[relativeIndex * 2] = msb;
+							modulatorData[relativeIndex * 2 + 1] = lsb;
+						}
+						else
+							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+
+					case EncodeLSBFirst:
+						if (bytesPerValue == 2)
+						{
+							uint8 msb = (modulatorValue >> 7) & 0x7F;
+							uint8 lsb = modulatorValue & 0x7F;
+							modulatorData[relativeIndex * 2] = lsb;
+							modulatorData[relativeIndex * 2 + 1] = msb;
+						}
+						else
+							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+
+					case EncodeNibbleMsbFirst:
+						if (bytesPerValue == 2)
+						{
+							uint8 msbNibble = (modulatorValue >> 4) & 0x0F;
+							uint8 lsbNibble = modulatorValue & 0x0F;
+							modulatorData[relativeIndex * 2] = msbNibble;
+							modulatorData[relativeIndex * 2 + 1] = lsbNibble;
+						}
+						else
+							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+
+					case EncodeNibbleLsbFirst:
+						if (bytesPerValue == 2)
+						{
+							uint8 msbNibble = (modulatorValue >> 4) & 0x0F;
+							uint8 lsbNibble = modulatorValue & 0x0F;
+							modulatorData[relativeIndex * 2] = lsbNibble;
+							modulatorData[relativeIndex * 2 + 1] = msbNibble;
+						}
+						else
+							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+
+					case EncodeSignedNibbleMsbFirst:
+						if (bytesPerValue == 2)
+						{
+							int8 signedValue = (int8)modulatorValue;
+							uint8 unsignedByte = (uint8)signedValue;
+							uint8 msbNibble = (unsignedByte >> 4) & 0x0F;
+							uint8 lsbNibble = unsignedByte & 0x0F;
+							modulatorData[relativeIndex * 2] = msbNibble;
+							modulatorData[relativeIndex * 2 + 1] = lsbNibble;
+						}
+						else
+							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+
+					case EncodeSignedNibbleLsbFirst:
+						if (bytesPerValue == 2)
+						{
+							int8 signedValue = (int8)modulatorValue;
+							uint8 unsignedByte = (uint8)signedValue;
+							uint8 msbNibble = (unsignedByte >> 4) & 0x0F;
+							uint8 lsbNibble = unsignedByte & 0x0F;
+							modulatorData[relativeIndex * 2] = lsbNibble;
+							modulatorData[relativeIndex * 2 + 1] = msbNibble;
+						}
+						else
+							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+					}
+				}
 			}
+		}
+	}
+
+	return (modulatorData);
+}
+
+LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const ValueTree& programTree,
+	const String& propertyToIndexBy,
+	const CtrlrByteEncoding byteEncoding,
+	const int bytesPerValue,
+	const bool useMappedValues)
+{
+	int maxIndex = -1;
+	for (int i = 0; i < getNumModulators(); i++)
+	{
+		CtrlrModulator* mod = getModulatorByIndex(i);
+		if (mod->hasProperty(propertyToIndexBy))
+		{
+			const var propertyValue = mod->getProperty(propertyToIndexBy);
+			const String strValue = propertyValue.toString().trim();
+
+			if (!strValue.isEmpty() && strValue.containsOnly("0123456789"))
+			{
+				const int index = strValue.getIntValue();
+				if (index > maxIndex)
+					maxIndex = index;
+			}
+		}
+	}
+
+	if (maxIndex < 0)
+	{
+		return MemoryBlock();
+	}
+
+	MemoryBlock modulatorData((maxIndex + 1) * bytesPerValue, true);
+	uint32 modulatorValue;
+
+	for (int i = 0; i < getNumModulators(); i++)
+	{
+		CtrlrModulator* mod = getModulatorByIndex(i);
+		if (mod->hasProperty(propertyToIndexBy))
+		{
+			const var propertyValue = mod->getProperty(propertyToIndexBy);
+			const String strValue = propertyValue.toString().trim();
+
+			if (!strValue.isEmpty() && strValue.containsOnly("0123456789"))
+			{
+				const int index = strValue.getIntValue();
+				if (index >= 0 && index <= maxIndex)
+				{
+					if (useMappedValues)
+						modulatorValue = mod->getValueMapped();
+					else
+						modulatorValue = mod->getValueNonMapped();
+
+					switch (byteEncoding)
+					{
+					case EncodeNormal:
+						if (bytesPerValue == 1)
+							modulatorData[index] = (uint8)modulatorValue;
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+
+					case EncodeMSBFirst:
+					case EncodeDSI:
+						if (bytesPerValue == 2)
+						{
+							uint8 msb = (modulatorValue >> 7) & 0x7F;
+							uint8 lsb = modulatorValue & 0x7F;
+							modulatorData[index * 2] = msb;
+							modulatorData[index * 2 + 1] = lsb;
+						}
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+
+					case EncodeLSBFirst:
+						if (bytesPerValue == 2)
+						{
+							uint8 msb = (modulatorValue >> 7) & 0x7F;
+							uint8 lsb = modulatorValue & 0x7F;
+							modulatorData[index * 2] = lsb;
+							modulatorData[index * 2 + 1] = msb;
+						}
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+
+					case EncodeNibbleMsbFirst:
+						if (bytesPerValue == 2)
+						{
+							uint8 msbNibble = (modulatorValue >> 4) & 0x0F;
+							uint8 lsbNibble = modulatorValue & 0x0F;
+							modulatorData[index * 2] = msbNibble;
+							modulatorData[index * 2 + 1] = lsbNibble;
+						}
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+
+					case EncodeNibbleLsbFirst:
+						if (bytesPerValue == 2)
+						{
+							uint8 msbNibble = (modulatorValue >> 4) & 0x0F;
+							uint8 lsbNibble = modulatorValue & 0x0F;
+							modulatorData[index * 2] = lsbNibble;
+							modulatorData[index * 2 + 1] = msbNibble;
+						}
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+
+					case EncodeSignedNibbleMsbFirst:
+						if (bytesPerValue == 2)
+						{
+							int8 signedValue = (int8)modulatorValue;
+							uint8 unsignedByte = (uint8)signedValue;
+							uint8 msbNibble = (unsignedByte >> 4) & 0x0F;
+							uint8 lsbNibble = unsignedByte & 0x0F;
+							modulatorData[index * 2] = msbNibble;
+							modulatorData[index * 2 + 1] = lsbNibble;
+						}
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+
+					case EncodeSignedNibbleLsbFirst:
+						if (bytesPerValue == 2)
+						{
+							int8 signedValue = (int8)modulatorValue;
+							uint8 unsignedByte = (uint8)signedValue;
+							uint8 msbNibble = (unsignedByte >> 4) & 0x0F;
+							uint8 lsbNibble = unsignedByte & 0x0F;
+							modulatorData[index * 2] = lsbNibble;
+							modulatorData[index * 2 + 1] = msbNibble;
+						}
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	return (modulatorData);
+}
+
+void CtrlrPanel::setModulatorValuesFromData(const MemoryBlock& dataSource,
+	const String& propertyToIndexBy,
+	const CtrlrByteEncoding byteEncoding,
+	int propertyOffset,
+	int bytesPerValue,
+	const bool useMappedValues)
+{
+	for (unsigned int index = 0; index < dataSource.getSize() / bytesPerValue; index++)
+	{
+		const int targetIndex = propertyOffset + index;
+
+		// Only process non-negative indices
+		if (targetIndex < 0)
+			continue;
+
+		CtrlrModulator* m = getModulatorWithProperty(propertyToIndexBy, targetIndex);
+		if (m && !m->isStatic())
+		{
+			// Additional validation: verify the modulator's property is actually a valid non-negative integer
+			if (m->hasProperty(propertyToIndexBy))
+			{
+				const var propertyValue = m->getProperty(propertyToIndexBy);
+				const String strValue = propertyValue.toString().trim();
+
+				// Skip if not a valid non-negative integer
+				if (strValue.isEmpty() || !strValue.containsOnly("0123456789"))
+					continue;
+			}
+
+			int decodedValue = 0;
+
+			switch (byteEncoding)
+			{
+			case EncodeNormal:
+				decodedValue = dataSource.getBitRange(index * bytesPerValue * 8, bytesPerValue * 8);
+				break;
+
+			case EncodeMSBFirst:
+			case EncodeDSI:
+				if (bytesPerValue == 2)
+				{
+					uint8 msb = dataSource[index * 2];
+					uint8 lsb = dataSource[index * 2 + 1];
+					decodedValue = ((msb & 0x7F) << 7) | (lsb & 0x7F);
+				}
+				else
+					decodedValue = dataSource.getBitRange(index * bytesPerValue * 8, bytesPerValue * 8);
+				break;
+
+			case EncodeLSBFirst:
+				if (bytesPerValue == 2)
+				{
+					uint8 lsb = dataSource[index * 2];
+					uint8 msb = dataSource[index * 2 + 1];
+					decodedValue = ((msb & 0x7F) << 7) | (lsb & 0x7F);
+				}
+				else
+					decodedValue = dataSource.getBitRange(index * bytesPerValue * 8, bytesPerValue * 8);
+				break;
+
+			case EncodeNibbleMsbFirst:
+				if (bytesPerValue == 2)
+				{
+					uint8 msbNibble = dataSource[index * 2];
+					uint8 lsbNibble = dataSource[index * 2 + 1];
+					decodedValue = ((msbNibble & 0x0F) << 4) | (lsbNibble & 0x0F);
+				}
+				else
+					decodedValue = dataSource.getBitRange(index * bytesPerValue * 8, bytesPerValue * 8);
+				break;
+
+			case EncodeNibbleLsbFirst:
+				if (bytesPerValue == 2)
+				{
+					uint8 lsbNibble = dataSource[index * 2];
+					uint8 msbNibble = dataSource[index * 2 + 1];
+					decodedValue = ((msbNibble & 0x0F) << 4) | (lsbNibble & 0x0F);
+				}
+				else
+					decodedValue = dataSource.getBitRange(index * bytesPerValue * 8, bytesPerValue * 8);
+				break;
+
+			case EncodeSignedNibbleMsbFirst:
+				if (bytesPerValue == 2)
+				{
+					uint8 msbNibble = dataSource[index * 2];
+					uint8 lsbNibble = dataSource[index * 2 + 1];
+					uint8 unsignedByte = ((msbNibble & 0x0F) << 4) | (lsbNibble & 0x0F);
+					int8 signedValue = (int8)unsignedByte;
+					decodedValue = (int)signedValue;
+				}
+				else
+					decodedValue = dataSource.getBitRange(index * bytesPerValue * 8, bytesPerValue * 8);
+				break;
+
+			case EncodeSignedNibbleLsbFirst:
+				if (bytesPerValue == 2)
+				{
+					uint8 lsbNibble = dataSource[index * 2];
+					uint8 msbNibble = dataSource[index * 2 + 1];
+					uint8 unsignedByte = ((msbNibble & 0x0F) << 4) | (lsbNibble & 0x0F);
+					int8 signedValue = (int8)unsignedByte;
+					decodedValue = (int)signedValue;
+				}
+				else
+					decodedValue = dataSource.getBitRange(index * bytesPerValue * 8, bytesPerValue * 8);
+				break;
+			}
+
+			if (useMappedValues)
+				m->setValueMapped(decodedValue, false, true);
+			else
+				m->setValueNonMapped(decodedValue, false, true);
 		}
 	}
 }
@@ -932,12 +1349,22 @@ void CtrlrPanel::wrapForLua (lua_State *L)
 			value("NotifyInformation", (uint8)NotifyInformation),
 			value("NotifyWarning", (uint8)NotifyWarning)
 		]
-	.enum_("CtrlrByteEncoding")
+		.enum_("CtrlrByteEncoding")
 		[
-			value("EncodeNormal", (uint8)EncodeNormal),
-			value("EncodeMSBFirst", (uint8)EncodeMSBFirst),
-			value("EncodeLSBFirst", (uint8)EncodeLSBFirst),
-			value("EncodeDSI", (uint8)EncodeDSI)
+			value("EncodeNormal", EncodeNormal),
+			value("Encode7bitMSBFirst", EncodeMSBFirst),
+			value("Encode7bitLSBFirst", EncodeLSBFirst),
+			value("EncodeMSBFirst", EncodeMSBFirst),
+			value("EncodeLSBFirst", EncodeLSBFirst),
+			luabind::value("Encode4bitMsbFirst", EncodeNibbleMsbFirst),
+			luabind::value("Encode4bitLsbFirst", EncodeNibbleLsbFirst),
+			luabind::value("EncodeMsbFirst", EncodeNibbleMsbFirst),
+			luabind::value("EncodeLsbFirst", EncodeNibbleLsbFirst),
+			luabind::value("EncodeNibbleMsbFirst", EncodeNibbleMsbFirst),
+			luabind::value("EncodeNibbleLsbFirst", EncodeNibbleLsbFirst),
+			luabind::value("EncodeSignedNibbleMsbFirst", EncodeSignedNibbleMsbFirst),
+			luabind::value("EncodeSignedNibbleLsbFirst", EncodeSignedNibbleLsbFirst),
+			luabind::value("EncodeDSI", EncodeDSI)
 		]
 	.enum_("CtrlrByteSplit")
 		[
