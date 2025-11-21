@@ -486,10 +486,11 @@ Tuturial coming soon.
 
 ## Changelog
 
-#### Version 5.6.35 | 2025.11.16
+#### Version 5.6.35 | 2025.11.21
 
 * **UPDATED** ctrlrAutoSave & ctrlrAutoSaveInterval properties in Preferences only if isStandaloneApp. `CtrlrManager.cpp`, `CtrlrManagerInstance.cpp`, `CtrlrSettings.cpp`
 * **UPDATED** flag IS_MIDI_EFFECT FALSE. `CMakeLists.txt`
+* **UPDATED** Projucer files without useless linux libs. `CtrlrX 5.6.35.jucer, `CtrlrX 5.6.35 [Without AAX].jucer`, `CtrlrX 5.6.35 [Without AAX & VST].jucer`
 
 #### Version 5.6.34 | 2025.11.07
 
