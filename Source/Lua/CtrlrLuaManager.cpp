@@ -1356,15 +1356,15 @@ void CtrlrPanel::wrapForLua (lua_State *L)
 			value("Encode7bitLSBFirst", EncodeLSBFirst),
 			value("EncodeMSBFirst", EncodeMSBFirst),
 			value("EncodeLSBFirst", EncodeLSBFirst),
-			luabind::value("Encode4bitMsbFirst", EncodeNibbleMsbFirst),
-			luabind::value("Encode4bitLsbFirst", EncodeNibbleLsbFirst),
-			luabind::value("EncodeMsbFirst", EncodeNibbleMsbFirst),
-			luabind::value("EncodeLsbFirst", EncodeNibbleLsbFirst),
-			luabind::value("EncodeNibbleMsbFirst", EncodeNibbleMsbFirst),
-			luabind::value("EncodeNibbleLsbFirst", EncodeNibbleLsbFirst),
-			luabind::value("EncodeSignedNibbleMsbFirst", EncodeSignedNibbleMsbFirst),
-			luabind::value("EncodeSignedNibbleLsbFirst", EncodeSignedNibbleLsbFirst),
-			luabind::value("EncodeDSI", EncodeDSI)
+			value("Encode4bitMsbFirst", EncodeNibbleMsbFirst),
+			value("Encode4bitLsbFirst", EncodeNibbleLsbFirst),
+			value("EncodeMsbFirst", EncodeNibbleMsbFirst),
+			value("EncodeLsbFirst", EncodeNibbleLsbFirst),
+			value("EncodeNibbleMsbFirst", EncodeNibbleMsbFirst),
+			value("EncodeNibbleLsbFirst", EncodeNibbleLsbFirst),
+			value("EncodeSignedNibbleMsbFirst", EncodeSignedNibbleMsbFirst),
+			value("EncodeSignedNibbleLsbFirst", EncodeSignedNibbleLsbFirst),
+			value("EncodeDSI", EncodeDSI)
 		]
 	.enum_("CtrlrByteSplit")
 		[
