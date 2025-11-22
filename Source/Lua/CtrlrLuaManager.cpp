@@ -1164,24 +1164,46 @@ void CtrlrPanel::setModulatorValuesFromData(const MemoryBlock& dataSource,
 	int bytesPerValue,
 	const bool useMappedValues)
 {
-	for (unsigned int index = 0; index < dataSource.getSize() / bytesPerValue; index++)
+	// propertyOffset is the byte position where data starts (header size)
+	// If negative, treat absolute value as header size, modulators start at index 0
+	// If positive, data starts at byte 0, modulators start at propertyOffset
+
+	int dataStartByte;
+	int modulatorStartIndex;
+
+	if (propertyOffset < 0)
 	{
-		const int targetIndex = propertyOffset + index;
+		// Negative: skip this many header bytes, modulators start at 0
+		dataStartByte = -propertyOffset;
+		modulatorStartIndex = 0;
+	}
+	else
+	{
+		// Positive: data starts at byte 0, modulator indices start at propertyOffset
+		dataStartByte = 0;
+		modulatorStartIndex = propertyOffset;
+	}
 
-		// Only process non-negative indices
-		if (targetIndex < 0)
-			continue;
+	const int availableBytes = (int)dataSource.getSize() - dataStartByte;
+	if (availableBytes <= 0)
+		return;
 
-		CtrlrModulator* m = getModulatorWithProperty(propertyToIndexBy, targetIndex);
+	const int numValues = availableBytes / bytesPerValue;
+
+	for (int i = 0; i < numValues; i++)
+	{
+		const int dataIndex = dataStartByte + (i * bytesPerValue);
+		const int targetIndex = modulatorStartIndex + i;
+
+		const String targetIndexStr(targetIndex);
+		CtrlrModulator* m = getModulatorWithProperty(propertyToIndexBy, targetIndexStr);
+
 		if (m && !m->isStatic())
 		{
-			// Additional validation: verify the modulator's property is actually a valid non-negative integer
 			if (m->hasProperty(propertyToIndexBy))
 			{
 				const var propertyValue = m->getProperty(propertyToIndexBy);
 				const String strValue = propertyValue.toString().trim();
-
-				// Skip if not a valid non-negative integer
 				if (strValue.isEmpty() || !strValue.containsOnly("0123456789"))
 					continue;
 			}
@@ -1191,78 +1213,81 @@ void CtrlrPanel::setModulatorValuesFromData(const MemoryBlock& dataSource,
 			switch (byteEncoding)
 			{
 			case EncodeNormal:
-				decodedValue = dataSource.getBitRange(index * bytesPerValue * 8, bytesPerValue * 8);
+				if (bytesPerValue == 1)
+					decodedValue = dataSource[dataIndex];
+				else
+					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
 				break;
 
 			case EncodeMSBFirst:
 			case EncodeDSI:
 				if (bytesPerValue == 2)
 				{
-					uint8 msb = dataSource[index * 2];
-					uint8 lsb = dataSource[index * 2 + 1];
+					uint8 msb = dataSource[dataIndex];
+					uint8 lsb = dataSource[dataIndex + 1];
 					decodedValue = ((msb & 0x7F) << 7) | (lsb & 0x7F);
 				}
 				else
-					decodedValue = dataSource.getBitRange(index * bytesPerValue * 8, bytesPerValue * 8);
+					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
 				break;
 
 			case EncodeLSBFirst:
 				if (bytesPerValue == 2)
 				{
-					uint8 lsb = dataSource[index * 2];
-					uint8 msb = dataSource[index * 2 + 1];
+					uint8 lsb = dataSource[dataIndex];
+					uint8 msb = dataSource[dataIndex + 1];
 					decodedValue = ((msb & 0x7F) << 7) | (lsb & 0x7F);
 				}
 				else
-					decodedValue = dataSource.getBitRange(index * bytesPerValue * 8, bytesPerValue * 8);
+					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
 				break;
 
 			case EncodeNibbleMsbFirst:
 				if (bytesPerValue == 2)
 				{
-					uint8 msbNibble = dataSource[index * 2];
-					uint8 lsbNibble = dataSource[index * 2 + 1];
+					uint8 msbNibble = dataSource[dataIndex];
+					uint8 lsbNibble = dataSource[dataIndex + 1];
 					decodedValue = ((msbNibble & 0x0F) << 4) | (lsbNibble & 0x0F);
 				}
 				else
-					decodedValue = dataSource.getBitRange(index * bytesPerValue * 8, bytesPerValue * 8);
+					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
 				break;
 
 			case EncodeNibbleLsbFirst:
 				if (bytesPerValue == 2)
 				{
-					uint8 lsbNibble = dataSource[index * 2];
-					uint8 msbNibble = dataSource[index * 2 + 1];
+					uint8 lsbNibble = dataSource[dataIndex];
+					uint8 msbNibble = dataSource[dataIndex + 1];
 					decodedValue = ((msbNibble & 0x0F) << 4) | (lsbNibble & 0x0F);
 				}
 				else
-					decodedValue = dataSource.getBitRange(index * bytesPerValue * 8, bytesPerValue * 8);
+					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
 				break;
 
 			case EncodeSignedNibbleMsbFirst:
 				if (bytesPerValue == 2)
 				{
-					uint8 msbNibble = dataSource[index * 2];
-					uint8 lsbNibble = dataSource[index * 2 + 1];
+					uint8 msbNibble = dataSource[dataIndex];
+					uint8 lsbNibble = dataSource[dataIndex + 1];
 					uint8 unsignedByte = ((msbNibble & 0x0F) << 4) | (lsbNibble & 0x0F);
 					int8 signedValue = (int8)unsignedByte;
 					decodedValue = (int)signedValue;
 				}
 				else
-					decodedValue = dataSource.getBitRange(index * bytesPerValue * 8, bytesPerValue * 8);
+					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
 				break;
 
 			case EncodeSignedNibbleLsbFirst:
 				if (bytesPerValue == 2)
 				{
-					uint8 lsbNibble = dataSource[index * 2];
-					uint8 msbNibble = dataSource[index * 2 + 1];
+					uint8 lsbNibble = dataSource[dataIndex];
+					uint8 msbNibble = dataSource[dataIndex + 1];
 					uint8 unsignedByte = ((msbNibble & 0x0F) << 4) | (lsbNibble & 0x0F);
 					int8 signedValue = (int8)unsignedByte;
 					decodedValue = (int)signedValue;
 				}
 				else
-					decodedValue = dataSource.getBitRange(index * bytesPerValue * 8, bytesPerValue * 8);
+					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
 				break;
 			}
 
