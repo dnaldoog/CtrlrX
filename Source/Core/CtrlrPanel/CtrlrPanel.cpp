@@ -953,27 +953,28 @@ const Array <CtrlrModulator*> CtrlrPanel::getModulatorsByUIType(const Identifier
 	return (ret);
 }
 
-const Array <CtrlrModulator*> CtrlrPanel::getModulatorsWithProperty(const Identifier &propertyName, const var &propertyValue)
+const Array<CtrlrModulator*> CtrlrPanel::getModulatorsWithProperty(const Identifier& propertyName, const var& propertyValue)
 {
-	Array <CtrlrModulator *>ret;
+	Array<CtrlrModulator*> ret;
+	const String propertyValueStr = propertyValue.toString().trim();
 
-	for (int i=0; i<ctrlrModulators.size(); i++)
+	for (int i = 0; i < ctrlrModulators.size(); i++)
 	{
-		if (ctrlrModulators[i]->getProperty(propertyName) == propertyValue)
+		// Compare as strings to handle type mismatches (e.g., "0" vs 0)
+		if (ctrlrModulators[i]->getProperty(propertyName).toString().trim() == propertyValueStr)
 		{
 			ret.addIfNotAlreadyThere(ctrlrModulators[i]);
 		}
 
 		if (ctrlrModulators[i]->getComponent())
 		{
-			if (ctrlrModulators[i]->getComponent()->getProperty(propertyName) == propertyValue)
+			if (ctrlrModulators[i]->getComponent()->getProperty(propertyName).toString().trim() == propertyValueStr)
 			{
 				ret.addIfNotAlreadyThere(ctrlrModulators[i]);
 			}
 		}
 	}
-
-	return (ret);
+	return ret;
 }
 
 const String CtrlrPanel::getUniqueModulatorName(const String &proposedName)
