@@ -12,19 +12,20 @@ public:
         : comp(c), alpha(0.0f)
     {
         comp->setAlpha(alpha);
-        startTimer(10);
+        startTimer(5); // 5ms interval for smoother/faster update
     }
 
     void timerCallback() override
     {
         if (!comp) { stopTimer(); return; }
 
-        alpha += 0.1f;
+        alpha += 0.25f; // faster increment (0.25 per tick)
         if (alpha >= 1.0f)
         {
             alpha = 1.0f;
             stopTimer();
         }
+
         comp->setAlpha(alpha);
     }
 
@@ -32,6 +33,7 @@ private:
     Component* comp;
     float alpha;
 };
+
 
 class CtrlrTempDialogWindow : public DialogWindow
 {
