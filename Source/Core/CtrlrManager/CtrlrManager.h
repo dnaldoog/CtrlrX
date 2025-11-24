@@ -290,6 +290,13 @@ class CtrlrManager :    public ValueTree::Listener,
 		CtrlrModulator *getInvalidModulator()																	{ return (nullModulator); }  
 		/** Detects if the current Linux session is running Wayland */
 		/*Not actually using right now but might come in handy in future*/
+		/*
+		usage example:
+		if (CtrlrManager::isWaylandSession())
+		{
+    	// Wayland-specific handling
+		}
+		*/
 		static bool isWaylandSession()
 		{
     	#if JUCE_LINUX
