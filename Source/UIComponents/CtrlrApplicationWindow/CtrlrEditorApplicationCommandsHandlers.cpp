@@ -207,10 +207,10 @@ bool CtrlrEditor::perform (const InvocationInfo &info) // Updated v5.6.34. Will 
 
 case CtrlrEditor::showGlobalSettingsDialog:
     #if JUCE_LINUX
-        // Non-modal on Linux to avoid Wayland crashes
-        owner.getWindowManager().showModalDialog ("CtrlrX/Settings", 
-            ScopedPointer <CtrlrSettings> (new CtrlrSettings(owner)), false, this);
+        // Use toggle() on all Linux to avoid Wayland/compositor issues
+        owner.getWindowManager().toggle(CtrlrManagerWindowManager::GlobalSettings, true);
     #else
+        // Modal dialog on Windows/macOS where it's stable
         owner.getWindowManager().showModalDialog ("CtrlrX/Settings", 
             ScopedPointer <CtrlrSettings> (new CtrlrSettings(owner)), true, this);
     #endif
@@ -218,12 +218,10 @@ case CtrlrEditor::showGlobalSettingsDialog:
 
 case CtrlrEditor::showAboutDialog:
     #if JUCE_LINUX
-        // Non-modal on Linux to avoid Wayland crashes
-        {
-            CtrlrAbout* aboutWindow = new CtrlrAbout(owner);
-            owner.getWindowManager().showModalDialog ("CtrlrX/About", aboutWindow, false, this);
-        }
+        // Use toggle() on all Linux to avoid Wayland/compositor issues
+        owner.getWindowManager().toggle(CtrlrManagerWindowManager::AboutWindow, true);
     #else
+        // Non-modal dialog on Windows/macOS
         {
             CtrlrAbout* aboutWindow = new CtrlrAbout(owner);
             owner.getWindowManager().showModalDialog ("CtrlrX/About", aboutWindow, false, this);

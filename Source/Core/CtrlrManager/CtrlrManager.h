@@ -306,6 +306,24 @@ class CtrlrManager :    public ValueTree::Listener,
         	return false;
     	#endif
 			}
+			/** Detects if running under GNOME Shell (not GNOME Classic) */
+/** Detects if running under GNOME Shell (not GNOME Classic).
+    GNOME Shell has issues with modal dialogs on Wayland in JUCE 6.x
+*/
+static bool isGnomeShell()
+{
+    #if JUCE_LINUX
+        const char* session = std::getenv("GDMSESSION");
+        if (session != nullptr)
+        {
+            String sessionStr(session);
+            // If it's "gnome" but NOT "gnome-classic", it's GNOME Shell
+            return sessionStr.containsIgnoreCase("gnome") && 
+                   !sessionStr.containsIgnoreCase("classic");
+        }
+    #endif
+    return false;
+}
 		/** Instance handlers **/
 		const String getInstanceName() const;
         const String getInstanceNameForHost() const;
