@@ -288,7 +288,17 @@ class CtrlrManager :    public ValueTree::Listener,
 		ApplicationCommandManager &getCommandManager()															{ return (commandManager); }
 		void panelFileOpened(const File &panelFile);
 		CtrlrModulator *getInvalidModulator()																	{ return (nullModulator); }  
-		
+		/** Detects if the current Linux session is running Wayland */
+		/*Not actually using right now but might come in handy in future*/
+		static bool isWaylandSession()
+		{
+    	#if JUCE_LINUX
+        	const char* session = std::getenv("XDG_SESSION_TYPE");
+        return session != nullptr && String(session) == "wayland";
+    	#else
+        	return false;
+    	#endif
+			}
 		/** Instance handlers **/
 		const String getInstanceName() const;
         const String getInstanceNameForHost() const;

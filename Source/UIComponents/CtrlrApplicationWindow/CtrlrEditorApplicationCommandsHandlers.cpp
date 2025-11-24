@@ -205,16 +205,32 @@ bool CtrlrEditor::perform (const InvocationInfo &info) // Updated v5.6.34. Will 
             }
             break;
 
-        case CtrlrEditor::showGlobalSettingsDialog:
-            owner.getWindowManager().showModalDialog ("CtrlrX/Settings", ScopedPointer <CtrlrSettings> (new CtrlrSettings(owner)), true, this); // Updated v5.6.34. Was "Ctrlr/"
-            break;
+case CtrlrEditor::showGlobalSettingsDialog:
+    #if JUCE_LINUX
+        // Non-modal on Linux to avoid Wayland crashes
+        owner.getWindowManager().showModalDialog ("CtrlrX/Settings", 
+            ScopedPointer <CtrlrSettings> (new CtrlrSettings(owner)), false, this);
+    #else
+        owner.getWindowManager().showModalDialog ("CtrlrX/Settings", 
+            ScopedPointer <CtrlrSettings> (new CtrlrSettings(owner)), true, this);
+    #endif
+    break;
 
-        case CtrlrEditor::showAboutDialog:
+case CtrlrEditor::showAboutDialog:
+    #if JUCE_LINUX
+        // Non-modal on Linux to avoid Wayland crashes
         {
             CtrlrAbout* aboutWindow = new CtrlrAbout(owner);
-            owner.getWindowManager().showModalDialog ("CtrlrX/About", aboutWindow, false, this); // Updated v5.6.34. Was "Ctrlr/"
+            owner.getWindowManager().showModalDialog ("CtrlrX/About", aboutWindow, false, this);
         }
-        break;
+    #else
+        {
+            CtrlrAbout* aboutWindow = new CtrlrAbout(owner);
+            owner.getWindowManager().showModalDialog ("CtrlrX/About", aboutWindow, false, this);
+        }
+    #endif
+    break;
+
 
         case CtrlrEditor::doZoomIn:
             if (getActivePanelEditor())
