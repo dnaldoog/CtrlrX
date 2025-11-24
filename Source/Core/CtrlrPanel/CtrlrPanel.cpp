@@ -953,27 +953,40 @@ const Array <CtrlrModulator*> CtrlrPanel::getModulatorsByUIType(const Identifier
 	return (ret);
 }
 
-const Array <CtrlrModulator*> CtrlrPanel::getModulatorsWithProperty(const Identifier &propertyName, const var &propertyValue)
+const Array<CtrlrModulator*> CtrlrPanel::getModulatorsWithProperty(const Identifier& propertyName, const var& propertyValue)
 {
-	Array <CtrlrModulator *>ret;
+	Array<CtrlrModulator*> ret;
 
-	for (int i=0; i<ctrlrModulators.size(); i++)
+	// Always convert to string and trim for consistent comparison
+	String searchValue = propertyValue.toString().trim();
+
+	// Handle edge case: if the var is numeric 0, toString() works fine
+	// but let's be explicit about it
+	if (propertyValue.isInt() || propertyValue.isInt64() || propertyValue.isDouble())
 	{
-		if (ctrlrModulators[i]->getProperty(propertyName) == propertyValue)
+		searchValue = String((int)propertyValue);
+	}
+
+	for (int i = 0; i < ctrlrModulators.size(); i++)
+	{
+		String modValue = ctrlrModulators[i]->getProperty(propertyName).toString().trim();
+
+		if (modValue == searchValue)
 		{
 			ret.addIfNotAlreadyThere(ctrlrModulators[i]);
 		}
 
 		if (ctrlrModulators[i]->getComponent())
 		{
-			if (ctrlrModulators[i]->getComponent()->getProperty(propertyName) == propertyValue)
+			String compValue = ctrlrModulators[i]->getComponent()->getProperty(propertyName).toString().trim();
+
+			if (compValue == searchValue)
 			{
 				ret.addIfNotAlreadyThere(ctrlrModulators[i]);
 			}
 		}
 	}
-
-	return (ret);
+	return ret;
 }
 
 const String CtrlrPanel::getUniqueModulatorName(const String &proposedName)

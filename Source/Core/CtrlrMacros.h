@@ -267,9 +267,13 @@ enum CtrlrByteSplit
 enum CtrlrByteEncoding
 {
 	EncodeNormal,
-	EncodeMSBFirst,
-	EncodeLSBFirst,
-	EncodeDSI
+	EncodeMSBFirst,           // 7-bit: MSB, LSB
+	EncodeLSBFirst,           // 7-bit: LSB, MSB
+	EncodeNibbleMsbFirst,     // 4-bit: MSB nibble, LSB nibble (unsigned)
+	EncodeNibbleLsbFirst,     // 4-bit: LSB nibble, MSB nibble (unsigned)
+	EncodeSignedNibbleMsbFirst, // 4-bit: MSB nibble, LSB nibble (signed int8)
+	EncodeSignedNibbleLsbFirst, // 4-bit: LSB nibble, MSB nibble (signed int8)
+	EncodeDSI                 // Dave Smith Instruments (same as MSBFirst?)
 };
 
 enum CtrlrMIDIDeviceType
