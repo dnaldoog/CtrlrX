@@ -486,11 +486,14 @@ Tuturial coming soon.
 
 ## Changelog
 
-#### Version 5.6.35 | 2025.11.21
+#### Version 5.6.35 | 2025.11.24
 
 * **UPDATED** ctrlrAutoSave & ctrlrAutoSaveInterval properties in Preferences only if isStandaloneApp. `CtrlrManager.cpp`, `CtrlrManagerInstance.cpp`, `CtrlrSettings.cpp`
 * **UPDATED** flag IS_MIDI_EFFECT FALSE. `CMakeLists.txt`
 * **UPDATED** Projucer files without useless linux libs. `CtrlrX 5.6.35.jucer, `CtrlrX 5.6.35 [Without AAX].jucer`, `CtrlrX 5.6.35 [Without AAX & VST].jucer`
+* **UPDATED** Get/Set modValue As/From Data with getModulatorValuesAsData() & setModulatorValuesFromData(). Thanks to [John Goodland](https://github.com/dnaldoog) `CtrlrLuaManager.cpp`, `CtrlrMacros.h`, `CtrlrPanel.cpp`
+* **FIXED** saving uiSlider positions on uiTabs. Thanks to [John Goodland](https://github.com/dnaldoog) `CtrlrTabsComponents.cpp`
+* **FIXED** MemoryBlock(int) faulty constructor returning actual size x2. Thanks to [John Goodland](https://github.com/dnaldoog) `LMemory.cpp`
 
 #### Version 5.6.34 | 2025.11.07
 
