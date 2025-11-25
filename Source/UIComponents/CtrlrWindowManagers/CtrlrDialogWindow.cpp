@@ -34,17 +34,16 @@ private:
     float alpha;
 };
 
-
 class CtrlrTempDialogWindow : public DialogWindow
 {
 public:
     CtrlrTempDialogWindow(const String& title,
-                          Component* contentComponent_,
-                          Component* /*unused*/,
-                          const Colour& colour,
-                          const bool escapeKeyTriggersCloseButton_,
-                          const bool shouldBeResizable,
-                          const bool useBottomRightCornerResizer)
+        Component* contentComponent_,
+        Component* /*unused*/,
+        const Colour& colour,
+        const bool escapeKeyTriggersCloseButton_,
+        const bool shouldBeResizable,
+        const bool useBottomRightCornerResizer)
         : DialogWindow(title, colour, escapeKeyTriggersCloseButton_, false)
     {
         setUsingNativeTitleBar(true);
@@ -63,7 +62,7 @@ public:
         setContentNonOwned(contentComponent_, true);
 
         addToDesktop(ComponentPeer::windowHasTitleBar
-                     | ComponentPeer::windowAppearsOnTaskbar);
+            | ComponentPeer::windowAppearsOnTaskbar);
 
         centreWithSize(getWidth(), getHeight());
         setResizable(shouldBeResizable, useBottomRightCornerResizer);
@@ -78,25 +77,25 @@ private:
     JUCE_DECLARE_NON_COPYABLE(CtrlrTempDialogWindow);
 };
 
-int CtrlrDialogWindow::showModalDialog(const String &title,
-                                       Component *content,
-                                       const bool resizable,
-                                       Component* /*parent*/)
+int CtrlrDialogWindow::showModalDialog(const String& title,
+    Component* content,
+    const bool resizable,
+    Component* /*parent*/)
 {
     CtrlrTempDialogWindow dw(title, content, nullptr,
-                             Colours::lightgrey, true, resizable, false);
+        Colours::lightgrey, true, resizable, false);
     return dw.runModalLoop();
 }
 
-DialogWindow* CtrlrDialogWindow::showNonModalDialog(const String &title,
-                                                    Component *content,
-                                                    const Colour& backgroundColour,
-                                                    bool escapeKeyCloses,
-                                                    bool resizable)
+DialogWindow* CtrlrDialogWindow::showNonModalDialog(const String& title,
+    Component* content,
+    const Colour& backgroundColour,
+    bool escapeKeyCloses,
+    bool resizable)
 {
     return new CtrlrTempDialogWindow(title, content, nullptr,
-                                     backgroundColour, escapeKeyCloses,
-                                     resizable, false);
+        backgroundColour, escapeKeyCloses,
+        resizable, false);
 }
 
 #else
@@ -106,12 +105,12 @@ class CtrlrTempDialogWindow : public DialogWindow
 {
 public:
     CtrlrTempDialogWindow(const String& title,
-                          Component* contentComponent_,
-                          Component* componentToCentreAround,
-                          const Colour& colour,
-                          const bool escapeKeyTriggersCloseButton_,
-                          const bool shouldBeResizable,
-                          const bool useBottomRightCornerResizer)
+        Component* contentComponent_,
+        Component* componentToCentreAround,
+        const Colour& colour,
+        const bool escapeKeyTriggersCloseButton_,
+        const bool shouldBeResizable,
+        const bool useBottomRightCornerResizer)
         : DialogWindow(title, colour, escapeKeyTriggersCloseButton_, true)
     {
         setUsingNativeTitleBar(true);
@@ -127,14 +126,25 @@ private:
     JUCE_DECLARE_NON_COPYABLE(CtrlrTempDialogWindow);
 };
 
-const int CtrlrDialogWindow::showModalDialog(const String &title,
-                                             Component *content,
-                                             const bool resizable,
-                                             Component *parent)
+int CtrlrDialogWindow::showModalDialog(const String& title,
+    Component* content,
+    const bool resizable,
+    Component* parent)
 {
     CtrlrTempDialogWindow dw(title, content, parent,
-                             Colours::lightgrey, true, resizable, false);
+        Colours::lightgrey, true, resizable, false);
     return dw.runModalLoop();
+}
+
+DialogWindow* CtrlrDialogWindow::showNonModalDialog(const String& title,
+    Component* content,
+    const Colour& backgroundColour,
+    bool escapeKeyCloses,
+    bool resizable)
+{
+    return new CtrlrTempDialogWindow(title, content, nullptr,
+        backgroundColour, escapeKeyCloses,
+        resizable, false);
 }
 
 #endif // JUCE_LINUX
