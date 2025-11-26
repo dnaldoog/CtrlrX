@@ -544,163 +544,68 @@ int CtrlrMidiMessage::getValue()
 	return (1);
 }
 
-bool CtrlrMidiMessage::setMultiMessageFromString(const String& savedState)
+// CtrlrMidiMessage.cpp
+
+void CtrlrMidiMessage::setMultiMessageFromString(const String& savedState)
 {
-	multiMessages.clear();
+	multiMessages.clear(); // start fresh
 
-	if (savedState.trim().isEmpty())
-		return false;
+	if (savedState.isEmpty())
+		return;
 
-	// Split by colon delimiter
-	StringArray blocks;
-	blocks.addTokens(savedState, ":", "\"'");
-	blocks.trim();
-	blocks.removeEmptyStrings();
+	StringArray entries;
+	entries.addTokens(savedState.trim(), ":", "\"'"); // split by colon
 
-	for (auto block : blocks)
+	for (auto& entry : entries)
 	{
-		block = block.trim();
-		if (block.isEmpty())
+		entry = entry.trim();
+		if (entry.isEmpty())
 			continue;
 
-		StringArray csv;
-		csv.addTokens(block, ",", "\"'");
-		csv.trim();
+		MultiMessage msg;
 
-		if (csv.size() < 1)
-			continue;
+		StringArray tokens;
+		tokens.addTokens(entry, ",", "\"'");
 
-		MultiMessage mm;
-		mm.type = csv[0].trim();
-
-		// -------------------------
-		// OLD FORMAT: Always 6 fields
-		// Example: CC,Direct,Direct,-1,-1,0
-		//          SysEx,F0 43 12 F7,0,0,0,0
-		// -------------------------
-		if (csv.size() == 6)
+		// ----- New CSV format detection -----
+		// CC,-1,-1
+		// ProgramChange,-1
+		// SysEx,F0 00 07
+		if (tokens.size() >= 1)
 		{
-			mm.data1Source = csv[1].trim();
-			mm.data2Source = csv[2].trim();
-			mm.data1Value = csv[3].getIntValue();
-			mm.data2Value = csv[4].getIntValue();
-			mm.channel = csv[5].getIntValue();
-			multiMessages.add(mm);
-			continue;
-		}
+			msg.midiType = tokens[0];
 
-		// -------------------------
-		// NEW FORMAT: Flexible based on MIDI type
-		// -------------------------
-
-		// SysEx: Type,HexData
-		// Example: SysEx,F0 00 07 F7
-		if (mm.type.equalsIgnoreCase("SysEx"))
-		{
-			if (csv.size() >= 2)
+			if (msg.midiType == "CC" || msg.midiType == "Aftertouch" || msg.midiType == "ChannelPressure" ||
+				msg.midiType == "NoteOn" || msg.midiType == "NoteOff" || msg.midiType == "PitchWheel")
 			{
-				mm.sysexData = csv[1].trim();
-				multiMessages.add(mm);
+				msg.midiNumber = (tokens.size() > 1) ? tokens[1].getIntValue() : -1;
+				msg.midiValue = (tokens.size() > 2) ? tokens[2].getIntValue() : -1;
 			}
-			continue;
-		}
-
-		// CC: Type,CCNumber,Value
-		// Example: CC,-1,-1 (component's CC and value)
-		//          CC,7,-1 (CC 7, component's value)
-		//          CC,7,64 (CC 7, fixed value 64)
-		if (mm.type.equalsIgnoreCase("CC"))
-		{
-			if (csv.size() >= 3)
+			else if (msg.midiType == "ProgramChange")
 			{
-				mm.data1Value = csv[1].getIntValue(); // CC number
-				mm.data2Value = csv[2].getIntValue(); // CC value
-				multiMessages.add(mm);
+				msg.midiNumber = (tokens.size() > 1) ? tokens[1].getIntValue() : -1;
+				msg.midiValue = -1;
 			}
-			continue;
-		}
-
-		// Program Change: Type,Program
-		// Example: ProgramChange,-1 (component's value)
-		//          ProgramChange,5 (fixed program 5)
-		if (mm.type.equalsIgnoreCase("ProgramChange"))
-		{
-			if (csv.size() >= 2)
+			else if (msg.midiType == "SysEx")
 			{
-				mm.data1Value = csv[1].getIntValue(); // Program number
-				multiMessages.add(mm);
+				// Store the raw data in midiValue (or could have a separate String if needed)
+				msg.midiNumber = -1;
+				msg.midiValue = -1;
 			}
-			continue;
 		}
 
-		// NoteOn/NoteOff: Type,Note,Velocity
-		// Example: NoteOn,-1,-1
-		//          NoteOn,60,-1 (Middle C, component's velocity)
-		if (mm.type.equalsIgnoreCase("NoteOn") || mm.type.equalsIgnoreCase("NoteOff"))
+		// ----- Old CSV fallback -----
+		// e.g., CC,Direct,Direct,-1,-1,?
+		if (tokens.size() == 6 && msg.midiType.isEmpty())
 		{
-			if (csv.size() >= 2)
-			{
-				mm.data1Value = csv[1].getIntValue(); // Note number
-				mm.data2Value = (csv.size() >= 3) ? csv[2].getIntValue() : -1; // Velocity
-				multiMessages.add(mm);
-			}
-			continue;
+			msg.midiType = tokens[0];
+			msg.midiNumber = tokens[3].getIntValue();
+			msg.midiValue = tokens[4].getIntValue();
 		}
 
-		// Aftertouch (Polyphonic): Type,Note,Pressure
-		// Example: Aftertouch,-1,-1
-		if (mm.type.equalsIgnoreCase("Aftertouch"))
-		{
-			if (csv.size() >= 2)
-			{
-				mm.data1Value = csv[1].getIntValue(); // Note number
-				mm.data2Value = (csv.size() >= 3) ? csv[2].getIntValue() : -1; // Pressure
-				multiMessages.add(mm);
-			}
-			continue;
-		}
-
-		// Channel Pressure (Monophonic): Type,Pressure
-		// Example: ChannelPressure,-1
-		if (mm.type.equalsIgnoreCase("ChannelPressure"))
-		{
-			if (csv.size() >= 2)
-			{
-				mm.data1Value = csv[1].getIntValue(); // Pressure value
-				multiMessages.add(mm);
-			}
-			continue;
-		}
-
-		// Pitch Wheel: Type,Value
-		// Example: PitchWheel,-1
-		//          PitchWheel,8192 (center position)
-		if (mm.type.equalsIgnoreCase("PitchWheel"))
-		{
-			if (csv.size() >= 2)
-			{
-				mm.data1Value = csv[1].getIntValue(); // Pitch wheel value (0-16383)
-				multiMessages.add(mm);
-			}
-			continue;
-		}
-
-		// -------------------------
-		// FALLBACK: Unknown type with generic parsing
-		// Try to extract up to 2 data values
-		// -------------------------
-		if (csv.size() >= 2)
-		{
-			mm.data1Value = csv[1].getIntValue();
-			if (csv.size() >= 3)
-				mm.data2Value = csv[2].getIntValue();
-			multiMessages.add(mm);
-		}
+		multiMessages.add(msg); // JUCE Array method, copyable
 	}
-
-	return (multiMessages.size() > 0);
 }
-
 
 void CtrlrMidiMessage::setNumber(const int number)
 {

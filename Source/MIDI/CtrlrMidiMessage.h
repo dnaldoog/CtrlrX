@@ -126,7 +126,7 @@ class CtrlrMidiMessage : public ValueTree::Listener
 		void setValueToSingle (const int index, const int value);
 		void setNumberToMulti (const int number);
 		void setValueToMulti (const int value); 
-		bool setMultiMessageFromString(const String& savedState);
+		void setMultiMessageFromString(const String& savedState);
 		void addMidiMessage (const MidiMessage &message);
 		void sortMidiArray() { messageArray.sort(timestampComparator); }
 		MidiBuffer getMidiBuffer(const int startSample=1);
@@ -173,18 +173,34 @@ class CtrlrMidiMessage : public ValueTree::Listener
 		MidiBuffer midiBuffer;
 		MemoryBlock messagePattern;
 		TimestampComparator timestampComparator;
+
+		enum class Type
+		{
+			CC,
+			ProgramChange,
+			SysEx,
+			NoteOn,
+			NoteOff,
+			Aftertouch,
+			ChannelPressure,
+			PitchWheel,
+			Unknown
+		};
+
+		struct MidiMessageData
+		{
+			Type type = Type::Unknown;
+			int midiNumber = -1;    // For CC/ProgramChange/etc
+			int midiValue = -1;    // For CC/ProgramChange/etc
+			juce::String sysexData; // For SysEx
+		};
+
+
 		struct MultiMessage
 		{
-			String type;
-			int channel = -1;
-
-			int data1Value = -1;
-			int data2Value = -1;
-
-			String data1Source;
-			String data2Source;
-
-			String sysexData;
+			String midiType;   // "CC", "ProgramChange", "SysEx", etc.
+			int midiNumber;    // -1 = use default
+			int midiValue;     // -1 = use default
 		};
 
 		

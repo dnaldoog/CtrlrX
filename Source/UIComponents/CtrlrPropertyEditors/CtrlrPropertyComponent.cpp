@@ -1405,14 +1405,14 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button* buttonThatWasClicked
         };
 
         const StandardType standardTypes[] = {
-            { "CC",             "CC,Direct,Direct,-1,-1" },
-            { "Program Change",  "ProgramChange,Direct,-1" },
-            { "SysEx",           "SysEx,F0 00 F7" },
-            { "Aftertouch",      "Aftertouch,Direct,-1" },
-            { "Channel Pressure","ChannelPressure,Direct,-1" },
-            { "NoteOn",          "NoteOn,Direct,-1" },
-            { "NoteOff",         "NoteOff,Direct,-1" },
-            { "PitchWheel",      "PitchWheel,Direct,-1" }
+    { "CC",              "CC,-1,-1" },
+    { "Program Change",  "ProgramChange,-1" },
+    { "SysEx",           "SysEx,F0 00 F7" },
+    { "Aftertouch",      "Aftertouch,-1" },
+    { "Channel Pressure","ChannelPressure,-1" },
+    { "NoteOn",          "NoteOn,-1,-1" },
+    { "NoteOff",         "NoteOff,-1,-1" },
+    { "PitchWheel",      "PitchWheel,-1" }
         };
 
         int standardStartId = templateKeys.size() + 1;
