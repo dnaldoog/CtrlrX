@@ -444,12 +444,12 @@ class MultiMidiAlert : public AlertWindow
 			addComboBox ("value", StringArray(v), "Value mapping");
 			addComboBox ("number", StringArray(v), "Number mapping");
 			addTextEditor ("sysexFormula", "F0 00 F7", "SysEx Formula", false);
-			valueSlider.setSize (300,24);
+			valueSlider.setSize (300,32);
 			valueSlider.setSliderStyle (Slider::LinearBar);
 			valueSlider.setRange (-2,127,1);
 			valueSlider.setValue (-1);
 
-			numberSlider.setSize (300,24);
+			numberSlider.setSize (300,32);
 			numberSlider.setSliderStyle (Slider::LinearBar);
 			numberSlider.setRange (-2,127,1);
 			numberSlider.setValue (-1);
@@ -465,8 +465,7 @@ class MultiMidiAlert : public AlertWindow
 
 		void buttonClicked (Button* button)
 		{
-			//getParentComponent()->exitModalState(1); could be null ptr so does nothing
-			exitModalState(1);
+			getParentComponent()->exitModalState(1);
 		}
 
 		const String getValue()

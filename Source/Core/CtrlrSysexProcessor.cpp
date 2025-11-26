@@ -4,8 +4,6 @@
 #include "CtrlrUtilities.h"
 #include "CtrlrPanel/CtrlrPanel.h"
 #include "CtrlrLog.h"
-#include <CtrlrPropertyEditors/CtrlrPropertyComponent.h>
-
 
 CtrlrSysexProcessor::CtrlrSysexProcessor()
 {
@@ -495,44 +493,3 @@ void CtrlrSysexProcessor::checksumXor(const CtrlrSysexToken token, MidiMessage& 
 	}
 	*(ptr + token.getPosition()) = chTotal & 0x7f;
 }
-String CtrlrSysexProcessor::openAdvancedMessageEditor()
-{
-	MultiMidiAlert alert;
-
-	if (alert.runModalLoop() == 1)
-	{
-		const String newMsg = alert.getValue();
-		if (newMsg.isNotEmpty())
-			return newMsg;
-	}
-
-	return String();
-}
-void CtrlrSysexProcessor::showMidiHelp()
-{
-	// Construct the text you want to show
-	const String helpText =
-		"MIDI Message Conventions:\n\n"
-		"Direct          = UI component's current value\n"
-		"-1              = Parent component value\n"
-		"-2              = Parent component number\n"
-		"\nSysEx Messages:\n"
-		"Use the same formula as in the SysEx editor (F0 .. F7)\n"
-		"\nCC, Program Change, etc. only support single-byte or standard values.\n"
-		"NRPN/RPN templates are pre-defined for common controller mappings.";
-
-#if JUCE_LINUX
-	auto* alert = new AlertWindow("MIDI Message Help", helpText, AlertWindow::InfoIcon);
-	alert->addButton("OK", 1);
-
-	alert->enterModalState(true, ModalCallbackFunction::create([alert](int /*result*/) {
-		delete alert;
-		}), true);
-#else
-	AlertWindow questionWindow("MIDI Message Help", helpText, AlertWindow::InfoIcon);
-	questionWindow.addButton("OK", 1);
-	questionWindow.runModalLoop();
-#endif
-}
-
-
