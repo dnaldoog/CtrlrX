@@ -421,6 +421,8 @@ class CtrlrModulatorListProperty :	public CtrlrPropertyChild,
 		void modulatorChanged (CtrlrModulator *modulatorThatChanged);
 		void modulatorAdded (CtrlrModulator *modulatorThatWasAdded);
 		void modulatorRemoved (CtrlrModulator *modulatorRemoved);
+		void listBoxItemClicked(int row, const MouseEvent& e)
+		//void listBoxItemDoubleClicked(int row, const MouseEvent& e);
 		void listChanged();
 
 	private:
@@ -514,7 +516,7 @@ class CtrlrMultiMidiPropertyComponent  : public Component,
 		StringPairArray templates;
         DrawableButton* add;
         DrawableButton* remove;
-		ListBox* list;
+		ListBox* multiCsvList;
 		DrawableButton* copy;
         DrawableButton* paste;
         DrawableButton* insert;

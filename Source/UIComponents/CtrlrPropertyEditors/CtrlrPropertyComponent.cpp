@@ -1298,7 +1298,7 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent (const Value &_
     : valueToControl(_valueToControl),
       add (0),
       remove (0),
-      list (0),
+      multiCsvList (0),
       copy (0),
       paste (0),
       insert (0)
@@ -1312,7 +1312,7 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent (const Value &_
     remove->addListener (this);
 
 
-    addAndMakeVisible (list = new ListBox ("list", this));
+    addAndMakeVisible (multiCsvList = new ListBox ("list", this));
 
     addAndMakeVisible (copy = gui::createDrawableButton("Copy", BIN2STR(copy_svg)));
     copy->setTooltip (L"Copy to clipboard");
@@ -1323,11 +1323,13 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent (const Value &_
     paste->addListener (this);
 
     // Create the help button
-    addAndMakeVisible(insert = gui::createDrawableButton("Insert", BIN2STR(stop_svg)));
-    insert->setTooltip(L"Click to see Multi MIDI message syntax");
-    insert->addListener(this); // JUCE 6 compatible
+    //addAndMakeVisible(insert = gui::createDrawableButton("Insert", BIN2STR(stop_svg)));
+    //insert->setTooltip(L"Click to see Multi MIDI message syntax");
+    //insert->addListener(this); // JUCE 6 compatible
+    addAndMakeVisible(insert = gui::createDrawableButton("Help", "help_icon"));
+    insert->setTooltip("Click for Multi MIDI syntax help");
 
-    list->setRowHeight (14);
+    multiCsvList->setRowHeight (14);
 	add->setMouseCursor (MouseCursor::PointingHandCursor);
 	remove->setMouseCursor (MouseCursor::PointingHandCursor);
 	copy->setMouseCursor (MouseCursor::PointingHandCursor);
@@ -1342,7 +1344,7 @@ CtrlrMultiMidiPropertyComponent::~CtrlrMultiMidiPropertyComponent()
 {
     deleteAndZero (add);
     deleteAndZero (remove);
-    deleteAndZero (list);
+    deleteAndZero (multiCsvList);
     deleteAndZero (copy);
     deleteAndZero (paste);
     deleteAndZero (insert);
@@ -1369,7 +1371,7 @@ void CtrlrMultiMidiPropertyComponent::resized()
 {
     add->setBounds (8, 4, 24, 24);
     remove->setBounds (72, 4, 24, 24);
-    list->setBounds (0, 32, getWidth() - 0, getHeight() - 32);
+    multiCsvList->setBounds (0, 32, getWidth() - 0, getHeight() - 32);
     copy->setBounds ((getWidth() - 32) + -32, 4, 24, 24);
     paste->setBounds (getWidth() - 32, 4, 24, 24);
     insert->setBounds (40, 4, 24, 24);
@@ -1474,7 +1476,7 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button* buttonThatWasClicked
 	}
 	else if (buttonThatWasClicked == remove)
 	{
-		values.remove(list->getSelectedRow());
+		values.remove(multiCsvList->getSelectedRow());
 		valueToControl = values.joinIntoString(":");
 	}
 	else if (buttonThatWasClicked == copy)
@@ -1498,7 +1500,7 @@ void CtrlrMultiMidiPropertyComponent::mouseDown (const MouseEvent& e)
 	if (l)
 	{
 		const int id = l->getProperties().getWithDefault("dOb", -1);
-		list->selectRow (id, true, true);
+        multiCsvList->selectRow (id, true, true);
 	}
 }
 
@@ -1509,7 +1511,7 @@ void CtrlrMultiMidiPropertyComponent::mouseDoubleClick (const MouseEvent& e)
 	if (l)
 	{
 		const int id = l->getProperties().getWithDefault("dOb", -1);
-		list->selectRow (id, true, true);
+        multiCsvList->selectRow (id, true, true);
 	}
 }
 
@@ -1561,8 +1563,8 @@ void CtrlrMultiMidiPropertyComponent::refresh()
 {
 	values.clear();
 	values.addTokens (valueToControl.toString().trim(), ":", "\"\'");
-	list->updateContent();
-	list->repaint();
+    multiCsvList->updateContent();
+    multiCsvList->repaint();
 }
 
 void CtrlrMultiMidiPropertyComponent::loadAdditionalTemplates(const File &templateFile)
