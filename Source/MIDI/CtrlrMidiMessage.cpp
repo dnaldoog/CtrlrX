@@ -496,11 +496,11 @@ void CtrlrMidiMessage::setValueToSingle(const int index, const int value)
 	}
 }
 
-void CtrlrMidiMessage::setValueToMulti (const int value)
+void CtrlrMidiMessage::setValueToMulti(const int value)
 {
-	for (int i=0; i<messageArray.size(); i++)
+	for (int i = 0; i < messageArray.size(); i++)
 	{
-		setValueToSingle (i, value);
+		setValueToSingle(i, value);
 	}
 }
 
@@ -517,14 +517,14 @@ int CtrlrMidiMessage::getValue()
 	{
 		BigInteger value(0);
 
-		for (int i=0; i<messageArray.size(); i++)
+		for (int i = 0; i < messageArray.size(); i++)
 		{
 			if (messageArray.getReference(i).overrideValue == -2)
 				continue;
 
 			value |= messageArray.getReference(i).getBitValue();
 		}
-		return (value.getBitRangeAsInt(0,14));
+		return (value.getBitRangeAsInt(0, 14));
 	}
 	else if (messageType == SysEx)
 	{
@@ -532,17 +532,175 @@ int CtrlrMidiMessage::getValue()
 		{
 			if (getSysexProcessor())
 			{
-				return (getSysexProcessor()->getValueFromSysExData (messageArray.getReference(0).getTokenArray(), messageArray.getReference(0)));
+				return (getSysexProcessor()->getValueFromSysExData(messageArray.getReference(0).getTokenArray(), messageArray.getReference(0)));
 			}
 			else
 			{
-				return (CtrlrSysexProcessor::getValue (messageArray.getReference(0).getTokenArray(), messageArray.getReference(0)));
+				return (CtrlrSysexProcessor::getValue(messageArray.getReference(0).getTokenArray(), messageArray.getReference(0)));
 			}
 		}
 	}
 
 	return (1);
 }
+
+bool CtrlrMidiMessage::setMultiMessageFromString(const String& savedState)
+{
+	multiMessages.clear();
+
+	if (savedState.trim().isEmpty())
+		return false;
+
+	// Split by colon delimiter
+	StringArray blocks;
+	blocks.addTokens(savedState, ":", "\"'");
+	blocks.trim();
+	blocks.removeEmptyStrings();
+
+	for (auto block : blocks)
+	{
+		block = block.trim();
+		if (block.isEmpty())
+			continue;
+
+		StringArray csv;
+		csv.addTokens(block, ",", "\"'");
+		csv.trim();
+
+		if (csv.size() < 1)
+			continue;
+
+		MultiMessage mm;
+		mm.type = csv[0].trim();
+
+		// -------------------------
+		// OLD FORMAT: Always 6 fields
+		// Example: CC,Direct,Direct,-1,-1,0
+		//          SysEx,F0 43 12 F7,0,0,0,0
+		// -------------------------
+		if (csv.size() == 6)
+		{
+			mm.data1Source = csv[1].trim();
+			mm.data2Source = csv[2].trim();
+			mm.data1Value = csv[3].getIntValue();
+			mm.data2Value = csv[4].getIntValue();
+			mm.channel = csv[5].getIntValue();
+			multiMessages.add(mm);
+			continue;
+		}
+
+		// -------------------------
+		// NEW FORMAT: Flexible based on MIDI type
+		// -------------------------
+
+		// SysEx: Type,HexData
+		// Example: SysEx,F0 00 07 F7
+		if (mm.type.equalsIgnoreCase("SysEx"))
+		{
+			if (csv.size() >= 2)
+			{
+				mm.sysexData = csv[1].trim();
+				multiMessages.add(mm);
+			}
+			continue;
+		}
+
+		// CC: Type,CCNumber,Value
+		// Example: CC,-1,-1 (component's CC and value)
+		//          CC,7,-1 (CC 7, component's value)
+		//          CC,7,64 (CC 7, fixed value 64)
+		if (mm.type.equalsIgnoreCase("CC"))
+		{
+			if (csv.size() >= 3)
+			{
+				mm.data1Value = csv[1].getIntValue(); // CC number
+				mm.data2Value = csv[2].getIntValue(); // CC value
+				multiMessages.add(mm);
+			}
+			continue;
+		}
+
+		// Program Change: Type,Program
+		// Example: ProgramChange,-1 (component's value)
+		//          ProgramChange,5 (fixed program 5)
+		if (mm.type.equalsIgnoreCase("ProgramChange"))
+		{
+			if (csv.size() >= 2)
+			{
+				mm.data1Value = csv[1].getIntValue(); // Program number
+				multiMessages.add(mm);
+			}
+			continue;
+		}
+
+		// NoteOn/NoteOff: Type,Note,Velocity
+		// Example: NoteOn,-1,-1
+		//          NoteOn,60,-1 (Middle C, component's velocity)
+		if (mm.type.equalsIgnoreCase("NoteOn") || mm.type.equalsIgnoreCase("NoteOff"))
+		{
+			if (csv.size() >= 2)
+			{
+				mm.data1Value = csv[1].getIntValue(); // Note number
+				mm.data2Value = (csv.size() >= 3) ? csv[2].getIntValue() : -1; // Velocity
+				multiMessages.add(mm);
+			}
+			continue;
+		}
+
+		// Aftertouch (Polyphonic): Type,Note,Pressure
+		// Example: Aftertouch,-1,-1
+		if (mm.type.equalsIgnoreCase("Aftertouch"))
+		{
+			if (csv.size() >= 2)
+			{
+				mm.data1Value = csv[1].getIntValue(); // Note number
+				mm.data2Value = (csv.size() >= 3) ? csv[2].getIntValue() : -1; // Pressure
+				multiMessages.add(mm);
+			}
+			continue;
+		}
+
+		// Channel Pressure (Monophonic): Type,Pressure
+		// Example: ChannelPressure,-1
+		if (mm.type.equalsIgnoreCase("ChannelPressure"))
+		{
+			if (csv.size() >= 2)
+			{
+				mm.data1Value = csv[1].getIntValue(); // Pressure value
+				multiMessages.add(mm);
+			}
+			continue;
+		}
+
+		// Pitch Wheel: Type,Value
+		// Example: PitchWheel,-1
+		//          PitchWheel,8192 (center position)
+		if (mm.type.equalsIgnoreCase("PitchWheel"))
+		{
+			if (csv.size() >= 2)
+			{
+				mm.data1Value = csv[1].getIntValue(); // Pitch wheel value (0-16383)
+				multiMessages.add(mm);
+			}
+			continue;
+		}
+
+		// -------------------------
+		// FALLBACK: Unknown type with generic parsing
+		// Try to extract up to 2 data values
+		// -------------------------
+		if (csv.size() >= 2)
+		{
+			mm.data1Value = csv[1].getIntValue();
+			if (csv.size() >= 3)
+				mm.data2Value = csv[2].getIntValue();
+			multiMessages.add(mm);
+		}
+	}
+
+	return (multiMessages.size() > 0);
+}
+
 
 void CtrlrMidiMessage::setNumber(const int number)
 {

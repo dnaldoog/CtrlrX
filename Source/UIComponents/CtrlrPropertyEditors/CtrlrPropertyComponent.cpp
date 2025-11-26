@@ -1293,7 +1293,13 @@ void CtrlrModulatorListProperty::modulatorRemoved (CtrlrModulator *modulatorRemo
 {
 	listChanged();
 }
+/**********************************************************************
 
+
+                CtrlrMultiMidiPropertyComponent
+
+
+***********************************************************************/
 CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent (const Value &_valueToControl)
     : valueToControl(_valueToControl),
       add (0),

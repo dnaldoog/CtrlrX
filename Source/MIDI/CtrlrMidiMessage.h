@@ -125,8 +125,8 @@ class CtrlrMidiMessage : public ValueTree::Listener
 		void setNumberToSingle (const int index, const int number);
 		void setValueToSingle (const int index, const int value);
 		void setNumberToMulti (const int number);
-		void setValueToMulti (const int value);
-		void setMultiMessageFromString (const String &savedState);
+		void setValueToMulti (const int value); 
+		bool setMultiMessageFromString(const String& savedState);
 		void addMidiMessage (const MidiMessage &message);
 		void sortMidiArray() { messageArray.sort(timestampComparator); }
 		MidiBuffer getMidiBuffer(const int startSample=1);
@@ -173,4 +173,22 @@ class CtrlrMidiMessage : public ValueTree::Listener
 		MidiBuffer midiBuffer;
 		MemoryBlock messagePattern;
 		TimestampComparator timestampComparator;
+		struct MultiMessage
+		{
+			String type;
+			int channel = -1;
+
+			int data1Value = -1;
+			int data2Value = -1;
+
+			String data1Source;
+			String data2Source;
+
+			String sysexData;
+		};
+
+		
+		Array<MultiMessage> multiMessages;
+
+
 };
