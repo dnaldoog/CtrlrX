@@ -444,12 +444,12 @@ class MultiMidiAlert : public AlertWindow
 			addComboBox ("value", StringArray(v), "Value mapping");
 			addComboBox ("number", StringArray(v), "Number mapping");
 			addTextEditor ("sysexFormula", "F0 00 F7", "SysEx Formula", false);
-			valueSlider.setSize (300,32);
+			valueSlider.setSize (300,24);
 			valueSlider.setSliderStyle (Slider::LinearBar);
 			valueSlider.setRange (-2,127,1);
 			valueSlider.setValue (-1);
 
-			numberSlider.setSize (300,32);
+			numberSlider.setSize (300,24);
 			numberSlider.setSliderStyle (Slider::LinearBar);
 			numberSlider.setRange (-2,127,1);
 			numberSlider.setValue (-1);
@@ -465,7 +465,8 @@ class MultiMidiAlert : public AlertWindow
 
 		void buttonClicked (Button* button)
 		{
-			getParentComponent()->exitModalState(1);
+			//getParentComponent()->exitModalState(1); could be null ptr so does nothing
+			exitModalState(1);
 		}
 
 		const String getValue()
@@ -488,7 +489,8 @@ class CtrlrMultiMidiPropertyComponent  : public Component,
                                          public ListBoxModel,
                                          public Label::Listener,
 										 public Button::Listener,
-										 public CtrlrPropertyChild
+										 public CtrlrPropertyChild,
+										 public MouseListener
 {
 	public:
 		CtrlrMultiMidiPropertyComponent (const Value &_valueToControl);
@@ -502,8 +504,9 @@ class CtrlrMultiMidiPropertyComponent  : public Component,
 		void paint (Graphics& g);
 		void resized();
 		void buttonClicked (Button* buttonThatWasClicked);
-		void mouseDown (const MouseEvent& e);
-		void mouseDoubleClick (const MouseEvent& e);
+		void mouseDown(const MouseEvent& e) override;
+		void mouseDoubleClick(const MouseEvent& e) override;
+
 
 	private:
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrMultiMidiPropertyComponent)
@@ -517,6 +520,7 @@ class CtrlrMultiMidiPropertyComponent  : public Component,
 		DrawableButton* copy;
         DrawableButton* paste;
         DrawableButton* insert;
+
 };
 
 class CtrlrSliderPropertyComponent   : public Component, private Slider::Listener, public CtrlrPropertyChild

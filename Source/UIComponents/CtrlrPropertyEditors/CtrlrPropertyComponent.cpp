@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "CtrlrPropertyComponent.h"
 #include "CtrlrLua/MethodEditor/CtrlrLuaMethodEditor.h"
 #include "CtrlrLuaManager.h"
@@ -1322,11 +1322,12 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent (const Value &_
     paste->setTooltip (L"Paste from clipboard");
     paste->addListener (this);
 
-    addAndMakeVisible (insert = gui::createDrawableButton("Insert", BIN2STR(receive_svg)));
-    insert->setTooltip (L"Insert pre-defined");
-    insert->addListener (this);
+    // Create the help button
+    addAndMakeVisible(insert = gui::createDrawableButton("Insert", BIN2STR(stop_svg)));
+    insert->setTooltip(L"Click to see Multi MIDI message syntax");
+    insert->addListener(this); // JUCE 6 compatible
 
-	list->setRowHeight (14);
+    list->setRowHeight (14);
 	add->setMouseCursor (MouseCursor::PointingHandCursor);
 	remove->setMouseCursor (MouseCursor::PointingHandCursor);
 	copy->setMouseCursor (MouseCursor::PointingHandCursor);
@@ -1374,90 +1375,127 @@ void CtrlrMultiMidiPropertyComponent::resized()
     insert->setBounds (40, 4, 24, 24);
 }
 
-void CtrlrMultiMidiPropertyComponent::buttonClicked (Button* buttonThatWasClicked)
+void CtrlrMultiMidiPropertyComponent::buttonClicked(Button* buttonThatWasClicked)
 {
-        if (buttonThatWasClicked == add)
+    if (buttonThatWasClicked == insert) {
+        CtrlrSysexProcessor::showMidiHelp();
+    }
+    else if (buttonThatWasClicked == add)
     {
-        #if JUCE_LINUX
-        
-        auto* alert = new MultiMidiAlert();
-    	alert->enterModalState(true, ModalCallbackFunction::create([this, alert](int result) {
-        if (result == 1) {
-            values.add(alert->getValue().trim());
-            valueToControl = values.joinIntoString(":");
-            if (list) list->updateContent();
+        PopupMenu m;
+
+        // --- Add XML templates dynamically ---
+        StringArray templateKeys = templates.getAllKeys();
+        for (int i = 0; i < templateKeys.size(); ++i)
+            m.addItem(i + 1, templateKeys[i]);
+
+        m.addSeparator();
+
+        // --- 2️⃣ Standard MIDI types ---
+        struct StandardType
+        {
+            const char* name;
+            const char* defaultCsv;
+        };
+
+        const StandardType standardTypes[] = {
+            { "CC",             "CC,Direct,Direct,-1,-1" },
+            { "Program Change",  "ProgramChange,Direct,-1" },
+            { "SysEx",           "SysEx,F0 00 F7" },
+            { "Aftertouch",      "Aftertouch,Direct,-1" },
+            { "Channel Pressure","ChannelPressure,Direct,-1" },
+            { "NoteOn",          "NoteOn,Direct,-1" },
+            { "NoteOff",         "NoteOff,Direct,-1" },
+            { "PitchWheel",      "PitchWheel,Direct,-1" }
+        };
+
+        int standardStartId = templateKeys.size() + 1;
+        for (int i = 0; i < numElementsInArray(standardTypes); ++i)
+            m.addItem(standardStartId + i, standardTypes[i].name);
+
+        m.addSeparator();
+
+        // --- 3️⃣ Custom editor ---
+        int customId = standardStartId + numElementsInArray(standardTypes);
+        m.addItem(customId, "Custom...");
+
+        // --- 4️⃣ Show popup and handle selection ---
+        int ret = m.show();
+
+        if (ret <= 0)
+            return; // cancelled
+
+        if (ret == customId) // Custom editor
+        {
+            CtrlrSysexProcessor sysexProcessor;
+            String newCsv = sysexProcessor.openAdvancedMessageEditor();
+
+            if (newCsv.isNotEmpty())
+            {
+                // FIXED: Append instead of overwrite
+                String currentValue = valueToControl.toString();
+                if (currentValue.isNotEmpty())
+                    valueToControl = currentValue + ":" + newCsv;
+                else
+                    valueToControl = newCsv;
+                refresh();
+            }
         }
-        delete alert;
-    }), true);
-        #else
-		CtrlrManagerWindowManager::showModalDialog("Add MIDI message", &questionWindow, false, this);
-		values.add (questionWindow.getValue().trim());
-		valueToControl = values.joinIntoString (":");
-		# endif
+        else if (ret <= templateKeys.size()) // XML template
+        {
+            String data = templates.getValue(templateKeys[ret - 1], "");
+            if (data.isNotEmpty())
+            {
+                // FIXED: Append instead of overwrite
+                String currentValue = valueToControl.toString();
+                if (currentValue.isNotEmpty())
+                    valueToControl = currentValue + ":" + data;
+                else
+                    valueToControl = data;
+                refresh();
+            }
+        }
+        else // Standard MIDI type
+        {
+            int index = ret - standardStartId;
+            if (index >= 0 && index < numElementsInArray(standardTypes))
+            {
+                // FIXED: Append instead of overwrite
+                String currentValue = valueToControl.toString();
+                if (currentValue.isNotEmpty())
+                    valueToControl = currentValue + ":" + standardTypes[index].defaultCsv;
+                else
+                    valueToControl = standardTypes[index].defaultCsv;
+                refresh();
+            }
+        }
     }
     else if (buttonThatWasClicked == remove)
     {
-		values.remove (list->getSelectedRow());
-		valueToControl = values.joinIntoString (":");
+        int selectedRow = list->getSelectedRow();
+        if (selectedRow >= 0)
+        {
+            // Rebuild the string without the selected item
+            StringArray temp;
+            temp.addTokens(valueToControl.toString().trim(), ":", "\"\'");
+            if (selectedRow < temp.size())
+            {
+                temp.remove(selectedRow);
+                valueToControl = temp.joinIntoString(":");
+                refresh();
+            }
+        }
     }
     else if (buttonThatWasClicked == copy)
     {
-		SystemClipboard::copyTextToClipboard (values.joinIntoString(":"));
+        SystemClipboard::copyTextToClipboard(values.joinIntoString(":"));
     }
     else if (buttonThatWasClicked == paste)
     {
-		valueToControl = SystemClipboard::getTextFromClipboard();
-		refresh();
+        valueToControl = SystemClipboard::getTextFromClipboard();
+        refresh();
     }
-    else if (buttonThatWasClicked == insert)
-    {
-		PopupMenu m;
-		for (int i=0; i<templates.getAllKeys().size(); i++)
-		{
-			m.addItem (i+1, templates.getAllKeys() [i]);
-		}
-		const int ret = m.show();
-		if (ret > 0)
-		{
-			const String data = templates.getValue (templates.getAllKeys() [ret-1], "");
-			if (data != "")
-			{
-				valueToControl = data;
-				refresh();
-			}
-		}
-		else
-		{
-			return;
-		}
-    }
-
-	if (list)
-		list->updateContent();
 }
-
-void CtrlrMultiMidiPropertyComponent::mouseDown (const MouseEvent& e)
-{
-	Label *l = dynamic_cast<Label*>(e.eventComponent);
-
-	if (l)
-	{
-		const int id = l->getProperties().getWithDefault("dOb", -1);
-		list->selectRow (id, true, true);
-	}
-}
-
-void CtrlrMultiMidiPropertyComponent::mouseDoubleClick (const MouseEvent& e)
-{
-	Label *l = dynamic_cast<Label*>(e.eventComponent);
-
-	if (l)
-	{
-		const int id = l->getProperties().getWithDefault("dOb", -1);
-		list->selectRow (id, true, true);
-	}
-}
-
 void CtrlrMultiMidiPropertyComponent::paintListBoxItem(int rowNumber, Graphics &g, int width, int height, bool rowIsSelected)
 {
 	if (rowIsSelected)
@@ -1496,7 +1534,27 @@ Component *CtrlrMultiMidiPropertyComponent::refreshComponentForRow (int rowNumbe
 
 	return l;
 }
+void CtrlrMultiMidiPropertyComponent::mouseDown(const MouseEvent& e)
+{
+    Label* l = dynamic_cast<Label*>(e.eventComponent);
 
+    if (l)
+    {
+        const int id = l->getProperties().getWithDefault("dOb", -1);
+        list->selectRow(id, true, true);
+    }
+}
+
+void CtrlrMultiMidiPropertyComponent::mouseDoubleClick(const MouseEvent& e)
+{
+    Label* l = dynamic_cast<Label*>(e.eventComponent);
+
+    if (l)
+    {
+        const int id = l->getProperties().getWithDefault("dOb", -1);
+        list->selectRow(id, true, true);
+    }
+}
 int CtrlrMultiMidiPropertyComponent::getNumRows()
 {
 	return (values.size());
