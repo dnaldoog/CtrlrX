@@ -1538,13 +1538,15 @@ Component *CtrlrMultiMidiPropertyComponent::refreshComponentForRow (int rowNumbe
 		l->setColour (Label::backgroundColourId, Colours::transparentBlack);
 		l->getProperties().set ("dOb", rowNumber);
 		l->addListener (this);
-		l->addMouseListener (this, false);
+		l->addMouseListener(static_cast<juce::MouseListener*>(this), false);
+
 	}
 	else
 	{
 		l->getProperties().set ("dOb", rowNumber);
 		l->setText (values[rowNumber], dontSendNotification);
-		l->addMouseListener (this, false);
+		l->addMouseListener(static_cast<juce::MouseListener*>(this), false);
+
 	}
 
 	return l;
