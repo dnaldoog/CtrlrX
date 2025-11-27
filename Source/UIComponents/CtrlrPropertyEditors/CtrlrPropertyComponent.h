@@ -543,8 +543,8 @@ class CtrlrMultiMidiPropertyComponent  : public Component,
 		ListBox* list;
 		DrawableButton* copy;
         DrawableButton* paste;
-        DrawableButton* insert;
-
+        //DrawableButton* insert;
+		TextButton* helpMmidi;
 };
 
 class CtrlrSliderPropertyComponent   : public Component, private Slider::Listener, public CtrlrPropertyChild
