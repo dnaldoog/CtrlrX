@@ -538,13 +538,12 @@ class CtrlrMultiMidiPropertyComponent  : public Component,
 		StringArray values;
 		Value valueToControl;
 		StringPairArray templates;
-        DrawableButton* add;
+        DrawableButton* addMulti;
         DrawableButton* remove;
 		ListBox* list;
 		DrawableButton* copy;
         DrawableButton* paste;
-        //DrawableButton* insert;
-		TextButton* helpMmidi;
+		DrawableButton* helpMmidi;
 };
 
 class CtrlrSliderPropertyComponent   : public Component, private Slider::Listener, public CtrlrPropertyChild

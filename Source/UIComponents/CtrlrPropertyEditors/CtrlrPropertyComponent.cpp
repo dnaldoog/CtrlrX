@@ -1302,16 +1302,16 @@ void CtrlrModulatorListProperty::modulatorRemoved (CtrlrModulator *modulatorRemo
 ***********************************************************************/
 CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent (const Value &_valueToControl)
     : valueToControl(_valueToControl),
-      add (0),
+      addMulti (0),
       remove (0),
       list (0),
       copy (0),
       paste (0),
       helpMmidi (0)
 {
-    addAndMakeVisible (add = gui::createDrawableButton("Add", BIN2STR(file_svg)));
-    add->setTooltip (L"Add message");
-    add->addListener (this);
+    addAndMakeVisible (addMulti = gui::createDrawableButton("Add Multi", BIN2STR(listulsolid_svg)));
+    addMulti->setTooltip (L"Add message");
+    addMulti->addListener (this);
 
     addAndMakeVisible (remove = gui::createDrawableButton("Remove", BIN2STR(clear_svg)));
     remove->setTooltip (L"Remove selected message");
@@ -1329,19 +1329,19 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent (const Value &_
     paste->addListener (this);
 
     // Create the help button
-    //addAndMakeVisible(insert = gui::createDrawableButton("Insert", BIN2STR(stop_svg)));
-    //insert->setTooltip(L"Click to see Multi MIDI message syntax");
-    //insert->addListener(this); // JUCE 6 compatible
-    addAndMakeVisible(helpMmidi = new TextButton(L"editButton"));
-    helpMmidi->setButtonText(L"?");
-    helpMmidi->addListener(this);
+    addAndMakeVisible(helpMmidi = gui::createDrawableButton("Insert", BIN2STR(clipboardquestionsolid_svg)));
+    helpMmidi->setTooltip(L"Click to see Multi MIDI message syntax");
+    helpMmidi->addListener(this); // JUCE 6 compatible
+    //addAndMakeVisible(helpMmidi = new TextButton(L"editButton"));
+    //helpMmidi->setButtonText(L"?");
+    //helpMmidi->addListener(this);
 
     // Optional styling
     //insert->setColour(juce::TextButton::buttonColourId, juce::Colours::lightgrey);
     //insert->setColour(juce::TextButton::textColourOffId, juce::Colours::black);
     //insert->setConnectedEdges(juce::Button::ConnectedOnLeft); // optional for layout
     list->setRowHeight (14);
-	add->setMouseCursor (MouseCursor::PointingHandCursor);
+    addMulti->setMouseCursor (MouseCursor::PointingHandCursor);
 	remove->setMouseCursor (MouseCursor::PointingHandCursor);
 	copy->setMouseCursor (MouseCursor::PointingHandCursor);
 	paste->setMouseCursor (MouseCursor::PointingHandCursor);
@@ -1353,7 +1353,7 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent (const Value &_
 
 CtrlrMultiMidiPropertyComponent::~CtrlrMultiMidiPropertyComponent()
 {
-    deleteAndZero (add);
+    deleteAndZero (addMulti);
     deleteAndZero (remove);
     deleteAndZero (list);
     deleteAndZero (copy);
@@ -1380,7 +1380,7 @@ void CtrlrMultiMidiPropertyComponent::paint (Graphics& g)
 
 void CtrlrMultiMidiPropertyComponent::resized()
 {
-    add->setBounds (8, 4, 24, 24);
+    addMulti->setBounds (8, 4, 24, 24);
     remove->setBounds (72, 4, 24, 24);
     list->setBounds (0, 32, getWidth() - 0, getHeight() - 32);
     copy->setBounds ((getWidth() - 32) + -32, 4, 24, 24);
@@ -1393,7 +1393,7 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button* buttonThatWasClicked
     if (buttonThatWasClicked == helpMmidi) {
         CtrlrSysexProcessor::showMidiHelp();
     }
-    else if (buttonThatWasClicked == add)
+    else if (buttonThatWasClicked == addMulti)
     {
         PopupMenu m;
 

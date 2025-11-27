@@ -636,6 +636,10 @@
           <FILE id="OOpHQ2" name="FONT_ZX81.ttf" compile="0" resource="1" file="Source/Resources/Fonts/FONT_ZX81.ttf"/>
         </GROUP>
         <GROUP id="{57CA4634-99B0-23FB-F19C-154181EAAE85}" name="Icons">
+          <FILE id="pH355G" name="clipboard-question-solid.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/clipboard-question-solid.svg"/>
+          <FILE id="bSkMjO" name="list-ul-solid.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/list-ul-solid.svg"/>
           <FILE id="hvQjEJ" name="github_line.svg" compile="0" resource="1" file="Source/Resources/Icons/github_line.svg"/>
           <FILE id="tsirkk" name="paypal_colour.svg" compile="0" resource="1"
                 file="Source/Resources/Icons/paypal_colour.svg"/>
@@ -1093,6 +1097,8 @@
               file="Source/UIComponents/CtrlrValueTreeEditor.h"/>
       </GROUP>
     </GROUP>
+    <FILE id="VgGBOS" name="clipboard-question-solid.svg" compile="0" resource="1"
+          file="../../Downloads/clipboard-question-solid.svg"/>
   </MAINGROUP>
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX" extraDefs="JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1 BOOST_BIND_GLOBAL_PLACEHOLDERS=1"
