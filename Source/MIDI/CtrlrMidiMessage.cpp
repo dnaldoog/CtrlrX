@@ -679,6 +679,7 @@ void CtrlrMidiMessage::setMultiMessageFromString(const String& savedState)
 	buildMidiMessagesFromMulti();
 }
 
+// Add this new helper function to build the actual MIDI messages
 void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 {
 	const int channel = getChannel();
@@ -702,7 +703,7 @@ void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 
 			CtrlrMidiMessageEx mex;
 			mex.m = MidiMessage::controllerEvent(channel, jmin(ccNum, 127), jmin(ccVal, 127));
-			mex.overrideValue = mm.valueToken; // Store original token for later updates
+			mex.overrideValue = mm.valueToken;
 			messageArray.add(mex);
 		}
 		else if (mm.midiType.equalsIgnoreCase("ProgramChange"))
@@ -718,86 +719,68 @@ void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 		{
 			if (mm.sysexData.isNotEmpty())
 			{
-				// Parse space-separated hex bytes (e.g., "F0 00 07 F7")
-				StringArray hexBytes;
-				hexBytes.addTokens(mm.sysexData, " ", "");
-				hexBytes.trim();
-				hexBytes.removeEmptyStrings();
-
-				if (hexBytes.size() > 0)
-				{
-					MemoryBlock mb;
-					for (const auto& hexByte : hexBytes)
-					{
-						// Parse each hex byte (e.g., "F0" -> 0xF0)
-						int byte = hexByte.getHexValue32();
-						if (byte >= 0 && byte <= 0xFF)
-						{
-							uint8 b = (uint8)byte;
-							mb.append(&b, 1);
-						}
-					}
-
-					if (mb.getSize() > 0)
-					{
-						CtrlrMidiMessageEx mex;
-						mex.m = MidiMessage(mb.getData(), (int)mb.getSize());
-						messageArray.add(mex);
-					}
-				}
-			}
-			else if (mm.midiType.equalsIgnoreCase("Aftertouch"))
-			{
-				int note = resolveToken(mm.numberToken, componentNumber);
-				int pressure = resolveToken(mm.valueToken, componentValue);
-
-				CtrlrMidiMessageEx mex;
-				mex.m = MidiMessage::aftertouchChange(channel, jmin(note, 127), jmin(pressure, 127));
-				mex.overrideValue = mm.valueToken;
-				messageArray.add(mex);
-			}
-			else if (mm.midiType.equalsIgnoreCase("ChannelPressure"))
-			{
-				int pressure = resolveToken(mm.numberToken, componentValue);
-
-				CtrlrMidiMessageEx mex;
-				mex.m = MidiMessage::channelPressureChange(channel, jmin(pressure, 127));
-				mex.overrideValue = mm.numberToken;
-				messageArray.add(mex);
-			}
-			else if (mm.midiType.equalsIgnoreCase("NoteOn"))
-			{
-				int note = resolveToken(mm.numberToken, componentNumber);
-				int velocity = resolveToken(mm.valueToken, componentValue);
-
-				CtrlrMidiMessageEx mex;
-				mex.m = MidiMessage::noteOn(channel, jmin(note, 127), (uint8)jmin(velocity, 127));
-				mex.overrideValue = mm.valueToken;
-				messageArray.add(mex);
-			}
-			else if (mm.midiType.equalsIgnoreCase("NoteOff"))
-			{
-				int note = resolveToken(mm.numberToken, componentNumber);
-				int velocity = resolveToken(mm.valueToken, componentValue);
-
-				CtrlrMidiMessageEx mex;
-				mex.m = MidiMessage::noteOff(channel, jmin(note, 127), (uint8)jmin(velocity, 127));
-				mex.overrideValue = mm.valueToken;
-				messageArray.add(mex);
-			}
-			else if (mm.midiType.equalsIgnoreCase("PitchWheel"))
-			{
-				int value = resolveToken(mm.numberToken, componentValue);
-
-				CtrlrMidiMessageEx mex;
-				mex.m = MidiMessage::pitchWheel(channel, jmin(value, 16383));
-				mex.overrideValue = mm.numberToken;
-				messageArray.add(mex);
+				// midiMessageExfromString expects old 6-field format:
+				// type,data1Source,data2Source,numberToken,valueToken,sysexData
+				String oldFormatString = "SysEx,0,0,0,0," + mm.sysexData;
+				messageArray.add(midiMessageExfromString(
+					oldFormatString,
+					channel,
+					componentNumber,
+					componentValue
+				));
 			}
 		}
+		else if (mm.midiType.equalsIgnoreCase("Aftertouch"))
+		{
+			int note = resolveToken(mm.numberToken, componentNumber);
+			int pressure = resolveToken(mm.valueToken, componentValue);
 
-		patternChanged();
+			CtrlrMidiMessageEx mex;
+			mex.m = MidiMessage::aftertouchChange(channel, jmin(note, 127), jmin(pressure, 127));
+			mex.overrideValue = mm.valueToken;
+			messageArray.add(mex);
+		}
+		else if (mm.midiType.equalsIgnoreCase("ChannelPressure"))
+		{
+			int pressure = resolveToken(mm.numberToken, componentValue);
+
+			CtrlrMidiMessageEx mex;
+			mex.m = MidiMessage::channelPressureChange(channel, jmin(pressure, 127));
+			mex.overrideValue = mm.numberToken;
+			messageArray.add(mex);
+		}
+		else if (mm.midiType.equalsIgnoreCase("NoteOn"))
+		{
+			int note = resolveToken(mm.numberToken, componentNumber);
+			int velocity = resolveToken(mm.valueToken, componentValue);
+
+			CtrlrMidiMessageEx mex;
+			mex.m = MidiMessage::noteOn(channel, jmin(note, 127), (uint8)jmin(velocity, 127));
+			mex.overrideValue = mm.valueToken;
+			messageArray.add(mex);
+		}
+		else if (mm.midiType.equalsIgnoreCase("NoteOff"))
+		{
+			int note = resolveToken(mm.numberToken, componentNumber);
+			int velocity = resolveToken(mm.valueToken, componentValue);
+
+			CtrlrMidiMessageEx mex;
+			mex.m = MidiMessage::noteOff(channel, jmin(note, 127), (uint8)jmin(velocity, 127));
+			mex.overrideValue = mm.valueToken;
+			messageArray.add(mex);
+		}
+		else if (mm.midiType.equalsIgnoreCase("PitchWheel"))
+		{
+			int value = resolveToken(mm.numberToken, componentValue);
+
+			CtrlrMidiMessageEx mex;
+			mex.m = MidiMessage::pitchWheel(channel, jmin(value, 16383));
+			mex.overrideValue = mm.numberToken;
+			messageArray.add(mex);
+		}
 	}
+
+	patternChanged();
 }
 
 void CtrlrMidiMessage::setNumber(const int number)
