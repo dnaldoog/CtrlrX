@@ -652,7 +652,11 @@ void CtrlrMidiMessage::setMultiMessageFromString(const String& savedState)
 
 void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 {
-	const int channel = getChannel();
+	// Determine which channel to use
+	const bool channelOverride = getProperty(Ids::midiMessageChannelOverride);
+	const int localChannel = getProperty(Ids::midiMessageChannel);
+	const int globalChannel = getChannel(); // This gets the panel global channel or current channel
+
 	const int componentNumber = getNumber();
 	const int componentValue = getValue();
 
@@ -665,18 +669,52 @@ void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 			return defaultValue;
 			};
 
+		// Helper to determine channel for this message
+		auto getChannelForMessage = [&](const String& midiData = String()) -> int {
+			// Priority 1: If user hard-coded channel in Custom message (e.g., B4 = channel 5)
+			if (midiData.isNotEmpty())
+			{
+				StringArray bytes;
+				bytes.addTokens(midiData, " ", "");
+				if (bytes.size() > 0)
+				{
+					String firstByte = bytes[0].trim();
+					// Check if it's a status byte with embedded channel (0x80-0xEF range)
+					if (firstByte.length() == 2)
+					{
+						int statusByte = firstByte.getHexValue32();
+						if (statusByte >= 0x80 && statusByte <= 0xEF)
+						{
+							// Extract channel from lower nibble (1-16)
+							int hardCodedChannel = (statusByte & 0x0F) + 1;
+							return hardCodedChannel;
+						}
+					}
+				}
+			}
+
+			// Priority 2: If channelOverride is enabled, use local channel
+			if (channelOverride)
+				return jmax(localChannel, 1);
+
+			// Priority 3: Use global/panel channel
+			return jmax(globalChannel, 1);
+			};
+
 		CtrlrMidiMessageEx mex;
 
 		if (mm.midiType.equalsIgnoreCase("CC"))
 		{
 			int ccNum = resolveToken(mm.numberToken, componentNumber);
 			int ccVal = resolveToken(mm.valueToken, componentValue);
+			int channel = getChannelForMessage();
 			mex.m = MidiMessage::controllerEvent(channel, jmin(ccNum, 127), jmin(ccVal, 127));
 			mex.overrideValue = mm.valueToken;
 		}
 		else if (mm.midiType.equalsIgnoreCase("ProgramChange"))
 		{
 			int program = resolveToken(mm.numberToken, componentValue);
+			int channel = getChannelForMessage();
 			mex.m = MidiMessage::programChange(channel, jmin(program, 127));
 			mex.overrideValue = mm.numberToken;
 		}
@@ -684,12 +722,14 @@ void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 		{
 			int note = resolveToken(mm.numberToken, componentNumber);
 			int pressure = resolveToken(mm.valueToken, componentValue);
+			int channel = getChannelForMessage();
 			mex.m = MidiMessage::aftertouchChange(channel, jmin(note, 127), jmin(pressure, 127));
 			mex.overrideValue = mm.valueToken;
 		}
 		else if (mm.midiType.equalsIgnoreCase("ChannelPressure"))
 		{
 			int pressure = resolveToken(mm.numberToken, componentValue);
+			int channel = getChannelForMessage();
 			mex.m = MidiMessage::channelPressureChange(channel, jmin(pressure, 127));
 			mex.overrideValue = mm.numberToken;
 		}
@@ -697,6 +737,7 @@ void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 		{
 			int note = resolveToken(mm.numberToken, componentNumber);
 			int velocity = resolveToken(mm.valueToken, componentValue);
+			int channel = getChannelForMessage();
 			mex.m = MidiMessage::noteOn(channel, jmin(note, 127), (uint8)jmin(velocity, 127));
 			mex.overrideValue = mm.valueToken;
 		}
@@ -704,12 +745,14 @@ void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 		{
 			int note = resolveToken(mm.numberToken, componentNumber);
 			int velocity = resolveToken(mm.valueToken, componentValue);
+			int channel = getChannelForMessage();
 			mex.m = MidiMessage::noteOff(channel, jmin(note, 127), (uint8)jmin(velocity, 127));
 			mex.overrideValue = mm.valueToken;
 		}
 		else if (mm.midiType.equalsIgnoreCase("PitchWheel"))
 		{
 			int val = resolveToken(mm.numberToken, componentValue);
+			int channel = getChannelForMessage();
 			mex.m = MidiMessage::pitchWheel(channel, jmin(val, 16383));
 			mex.overrideValue = mm.numberToken;
 		}
@@ -720,14 +763,16 @@ void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 				String trimmed = mm.sysexData.trimStart();
 				if (trimmed.startsWithIgnoreCase("F0"))
 				{
-					// SysEx tokens: xx, MS, LS, ms, ls, z5, yy, etc.
+					// SysEx: always uses global channel (doesn't support channel override)
 					String oldFormatString = "SysEx,0,0,0,0," + mm.sysexData;
-					messageArray.add(midiMessageExfromString(oldFormatString, channel, componentNumber, componentValue));
+					messageArray.add(midiMessageExfromString(oldFormatString, globalChannel, componentNumber, componentValue));
 					continue; // already added
 				}
 				else
 				{
-					// Standard MIDI byte parsing for Custom non-F0 messages
+					// Custom non-SysEx: parse and respect hard-coded channel if present
+					int customChannel = getChannelForMessage(mm.sysexData);
+
 					StringArray hexBytes;
 					hexBytes.addTokens(mm.sysexData, " ", "");
 					hexBytes.trim();
@@ -736,6 +781,8 @@ void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 					if (hexBytes.size() > 0)
 					{
 						MemoryBlock mb;
+						bool firstByte = true;
+
 						for (const auto& hexByte : hexBytes)
 						{
 							if (hexByte.equalsIgnoreCase("xx") || hexByte == "-1")
@@ -753,11 +800,19 @@ void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 								int b = hexByte.getHexValue32();
 								if (b >= 0 && b <= 0xFF)
 								{
+									// If this is the first byte and it's a status byte, apply channel
+									if (firstByte && b >= 0x80 && b <= 0xEF)
+									{
+										// Replace channel nibble with determined channel
+										b = (b & 0xF0) | ((customChannel - 1) & 0x0F);
+									}
 									uint8 val = (uint8)b;
 									mb.append(&val, 1);
+									firstByte = false;
 								}
 							}
 						}
+
 						if (mb.getSize() > 0)
 						{
 							mex.m = MidiMessage(mb.getData(), (int)mb.getSize());
