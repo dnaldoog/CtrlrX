@@ -778,6 +778,79 @@ void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 			mex.overrideValue = mm.numberToken;
 			messageArray.add(mex);
 		}
+		else if (mm.midiType.equalsIgnoreCase("Custom"))
+		{
+			// Handle custom MIDI hex bytes (e.g., "Custom,B0 55 -1")
+			if (mm.sysexData.isNotEmpty())
+			{
+				// If it starts with F0, it's SysEx - use the full token processor
+				if (mm.sysexData.trimStart().startsWithIgnoreCase("F0"))
+				{
+					// Build old format string and use existing SysEx processor
+					String oldFormatString = "SysEx,0,0,0,0," + mm.sysexData;
+					messageArray.add(midiMessageExfromString(
+						oldFormatString,
+						channel,
+						componentNumber,
+						componentValue
+					));
+				}
+				else
+				{
+					// Standard MIDI message - parse hex bytes with basic token support
+					StringArray hexBytes;
+					hexBytes.addTokens(mm.sysexData, " ", "");
+					hexBytes.trim();
+					hexBytes.removeEmptyStrings();
+
+					if (hexBytes.size() > 0)
+					{
+						MemoryBlock mb;
+						for (const auto& hexByte : hexBytes)
+						{
+							// Check if it's a token
+							if (hexByte.equalsIgnoreCase("xx") || hexByte == "-1")
+							{
+								uint8 val = (uint8)(componentValue & 0xFF);
+								mb.append(&val, 1);
+							}
+							else if (hexByte == "-2")
+							{
+								uint8 num = (uint8)(componentNumber & 0xFF);
+								mb.append(&num, 1);
+							}
+							else if (hexByte.equalsIgnoreCase("ms"))
+							{
+								uint8 nibble = (componentValue >> 4) & 0x0F;
+								mb.append(&nibble, 1);
+							}
+							else if (hexByte.equalsIgnoreCase("MS"))
+							{
+								uint8 msb = (componentValue >> 7) & 0x7F;
+								mb.append(&msb, 1);
+							}
+							else
+							{
+								// Parse as hex byte
+								int byte = hexByte.getHexValue32();
+								if (byte >= 0 && byte <= 0xFF)
+								{
+									uint8 b = (uint8)byte;
+									mb.append(&b, 1);
+								}
+							}
+						}
+
+						if (mb.getSize() > 0)
+						{
+							CtrlrMidiMessageEx mex;
+							mex.m = MidiMessage(mb.getData(), (int)mb.getSize());
+							messageArray.add(mex);
+						}
+					}
+				}
+			}
+		}
 	}
 
 	patternChanged();

@@ -434,34 +434,52 @@ class CtrlrModulatorListProperty :	public CtrlrPropertyChild,
 class MultiMidiAlert : public AlertWindow
 {
 	public:
-		MultiMidiAlert ()
-			:	AlertWindow ("", "Add a new message to the multi list\n[-1 for parent value setting, -2 for parent number setting. For SysEx message the formula is the same as in the SysEx editor.]", AlertWindow::QuestionIcon, 0),
-				valueSlider("Controller Value"), numberSlider("Controller Number")
+
+		MultiMidiAlert()
+			: AlertWindow("Add Custom MIDI Message",
+				"Enter a Raw MIDI message:\n\n"
+				"Examples:\n"
+				"  Bn,-2,-1           (CC using component number & value)\n"
+				"  Cn,-1   (Program change using component value)\n"
+				"  SysEx,F0 00 xx F7  (SysEx with tokens)\n\n"
+				"  B4 03 67           (Raw MIDI hex bytes)\n\n"
+				"Tokens: -2=component number, -1=component value, xx etc = SysEx tokens",
+				AlertWindow::QuestionIcon,
+				nullptr)
 		{
-			const char *types[] = { "CC", "Aftertouch", "ChannelPressure", "NoteOn", "NoteOff", "SysEx", "--", "ProgramChange", "PitchWheel", 0 };
-			const char *v[] = { "Direct", "LSB7bit", "MSB7bit", "LSB4bit", "MSB4bit", 0};
-			addComboBox ("messageType", StringArray(types), "Midi message type");
-			addComboBox ("value", StringArray(v), "Value mapping");
-			addComboBox ("number", StringArray(v), "Number mapping");
-			addTextEditor ("sysexFormula", "F0 00 F7", "SysEx Formula", false);
-			valueSlider.setSize (300,24);
-			valueSlider.setSliderStyle (Slider::LinearBar);
-			valueSlider.setRange (-2,127,1);
-			valueSlider.setValue (-1);
-
-			numberSlider.setSize (300,24);
-			numberSlider.setSliderStyle (Slider::LinearBar);
-			numberSlider.setRange (-2,127,1);
-			numberSlider.setValue (-1);
-
-			addCustomComponent (&numberSlider);
-			addCustomComponent (&valueSlider);
-
-			addButton ("OK", 1);
-			getComboBoxComponent("messageType")->setSelectedId (1, dontSendNotification);
-			getComboBoxComponent("value")->setSelectedId (1, dontSendNotification);
-			getComboBoxComponent("number")->setSelectedId (1, dontSendNotification);
+			addTextEditor("customMidi", "F0 00 xx F7", "MIDI Message", false);
+			addButton("OK", 1);
+			addButton("Cancel", 0);
 		}
+		/* This is the old system. Keep in case someone complains and wants it back!*/
+		//MultiMidiAlert ()
+		//	:	AlertWindow ("", "Add a new message to the multi list\n[-1 for parent value setting, -2 for parent number setting. For SysEx message the formula is the same as in the SysEx editor.]", AlertWindow::QuestionIcon, 0),
+		//		valueSlider("Controller Value"), numberSlider("Controller Number")
+		//{
+		//	const char *types[] = { "CC", "Aftertouch", "ChannelPressure", "NoteOn", "NoteOff", "SysEx", "--", "ProgramChange", "PitchWheel", 0 };
+		//	const char *v[] = { "Direct", "LSB7bit", "MSB7bit", "LSB4bit", "MSB4bit", 0};
+		//	addComboBox ("messageType", StringArray(types), "Midi message type");
+		//	addComboBox ("value", StringArray(v), "Value mapping");
+		//	addComboBox ("number", StringArray(v), "Number mapping");
+		//	addTextEditor ("sysexFormula", "F0 00 F7", "SysEx Formula", false);
+		//	valueSlider.setSize (300,24);
+		//	valueSlider.setSliderStyle (Slider::LinearBar);
+		//	valueSlider.setRange (-2,127,1);
+		//	valueSlider.setValue (-1);
+
+		//	numberSlider.setSize (300,24);
+		//	numberSlider.setSliderStyle (Slider::LinearBar);
+		//	numberSlider.setRange (-2,127,1);
+		//	numberSlider.setValue (-1);
+
+		//	addCustomComponent (&numberSlider);
+		//	addCustomComponent (&valueSlider);
+
+		//	addButton ("OK", 1);
+		//	getComboBoxComponent("messageType")->setSelectedId (1, dontSendNotification);
+		//	getComboBoxComponent("value")->setSelectedId (1, dontSendNotification);
+		//	getComboBoxComponent("number")->setSelectedId (1, dontSendNotification);
+		//}
 
 		void buttonClicked (Button* button)
 		{
@@ -471,14 +489,20 @@ class MultiMidiAlert : public AlertWindow
 
 		const String getValue()
 		{
-			String ret;
-			ret << getComboBoxComponent("messageType")->getText() + ",";
-			ret << getComboBoxComponent("number")->getText() + ",";
-			ret << getComboBoxComponent("value")->getText() + ",";
-			ret << String (((Slider*)getCustomComponent(0))->getValue()) + ",";
-			ret << String (((Slider*)getCustomComponent(1))->getValue()) + ",";
-			ret << getTextEditor ("sysexFormula")->getText();
-			return (ret);
+			//String ret;
+			//ret << getComboBoxComponent("messageType")->getText() + ",";
+			//ret << getComboBoxComponent("number")->getText() + ",";
+			//ret << getComboBoxComponent("value")->getText() + ",";
+			//ret << String (((Slider*)getCustomComponent(0))->getValue()) + ",";
+			//ret << String (((Slider*)getCustomComponent(1))->getValue()) + ",";
+			//ret << getTextEditor ("sysexFormula")->getText();
+			//return (ret);
+			String userInput = getTextEditor("customMidi")->getText().trim();
+			if (userInput.isEmpty())
+				return String();
+
+			// Prepend "Custom," to the user's input
+			return "Custom," + userInput;
 		}
 
 	private:
