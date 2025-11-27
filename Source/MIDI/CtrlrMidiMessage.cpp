@@ -548,34 +548,24 @@ void CtrlrMidiMessage::setMultiMessageFromString(const String& savedState)
 {
 	// Clear old
 	multiMessages.clear();
-	messageArray.clear();  // IMPORTANT: Also clear the message array
+	messageArray.clear();
 
 	const String s = savedState.trim();
 	if (s.isEmpty())
 		return;
 
 	// helper to interpret token (handles "Direct"/"Default" etc. as -1)
-	auto tokenToInt = [](const String& tok)->int {
+	auto tokenToInt = [](const String& tok) -> int {
 		const String t = tok.trim();
 		if (t.isEmpty()) return -1;
-		// textual synonyms that mean "component value"
 		if (t.equalsIgnoreCase("Direct") || t.equalsIgnoreCase("Default") || t.equalsIgnoreCase("Value"))
 			return -1;
-		// textual synonyms for "component number" -> treat as -2
 		if (t.equalsIgnoreCase("Number") || t.equalsIgnoreCase("CtrlNumber") || t.equalsIgnoreCase("ByteValue"))
 			return -2;
-		// parse numeric
-		if (t.startsWithChar('-'))
-		{
-			return t.getIntValue();
-		}
-		// otherwise try integer parse
-		if (t.containsOnly("0123456789"))
-			return t.getIntValue();
-		// fallback: if token looks like hex pair (e.g. "F0")
+		if (t.startsWithChar('-')) return t.getIntValue();
+		if (t.containsOnly("0123456789")) return t.getIntValue();
 		if (t.containsOnly("0123456789ABCDEFabcdef ") && t.length() <= 2)
 			return t.getHexValue32();
-		// unknown -> fallback to -1 (component value) to be safe
 		return -1;
 		};
 
@@ -596,39 +586,30 @@ void CtrlrMidiMessage::setMultiMessageFromString(const String& savedState)
 		parts.trim();
 		parts.removeEmptyStrings();
 
-		// If this exactly matches the legacy 6-field format
+		MultiMessage mm;
+		mm.midiType = parts[0].trim();
+
+		// Legacy 6-field format
 		if (parts.size() == 6)
 		{
-			MultiMessage mm;
-			mm.midiType = parts[0].trim();
 			mm.numberToken = parts[3].getIntValue();
 			mm.valueToken = parts[4].getIntValue();
-
 			if (mm.midiType.equalsIgnoreCase("SysEx"))
 				mm.sysexData = parts[5].trim();
-
 			multiMessages.add(mm);
 			continue;
 		}
 
-		// New-style format
-		MultiMessage mm;
-		mm.midiType = parts[0].trim();
-
-		if (mm.midiType.equalsIgnoreCase("SysEx"))
+		// SysEx / Custom / Other new-style
+		if (mm.midiType.equalsIgnoreCase("SysEx") || mm.midiType.equalsIgnoreCase("Custom"))
 		{
 			if (parts.size() >= 2)
 			{
 				String raw;
-				if (parts.size() == 2)
-					raw = parts[1].trim();
-				else
+				for (int p = 1; p < parts.size(); ++p)
 				{
-					for (int p = 1; p < parts.size(); ++p)
-					{
-						if (raw.isNotEmpty()) raw += " ";
-						raw += parts[p].trim();
-					}
+					if (raw.isNotEmpty()) raw += " ";
+					raw += parts[p].trim();
 				}
 				mm.sysexData = raw;
 			}
@@ -636,7 +617,7 @@ void CtrlrMidiMessage::setMultiMessageFromString(const String& savedState)
 			continue;
 		}
 
-		// For CC and other standard messages
+		// Standard messages
 		if (mm.midiType.equalsIgnoreCase("CC") ||
 			mm.midiType.equalsIgnoreCase("Aftertouch") ||
 			mm.midiType.equalsIgnoreCase("ChannelPressure") ||
@@ -644,16 +625,8 @@ void CtrlrMidiMessage::setMultiMessageFromString(const String& savedState)
 			mm.midiType.equalsIgnoreCase("NoteOff") ||
 			mm.midiType.equalsIgnoreCase("PitchWheel"))
 		{
-			if (parts.size() > 1)
-				mm.numberToken = tokenToInt(parts[1]);
-			else
-				mm.numberToken = -1;
-
-			if (parts.size() > 2)
-				mm.valueToken = tokenToInt(parts[2]);
-			else
-				mm.valueToken = -1;
-
+			mm.numberToken = (parts.size() > 1) ? tokenToInt(parts[1]) : -1;
+			mm.valueToken = (parts.size() > 2) ? tokenToInt(parts[2]) : -1;
 			multiMessages.add(mm);
 			continue;
 		}
@@ -667,19 +640,16 @@ void CtrlrMidiMessage::setMultiMessageFromString(const String& savedState)
 			continue;
 		}
 
-		// Unknown/other: generic numeric mapping
+		// Unknown / generic numeric
 		mm.numberToken = (parts.size() > 1) ? tokenToInt(parts[1]) : -1;
 		mm.valueToken = (parts.size() > 2) ? tokenToInt(parts[2]) : -1;
 		multiMessages.add(mm);
 	}
 
-	// ========================================================================
-	// NOW BUILD ACTUAL MIDI MESSAGES FROM THE PARSED DATA
-	// ========================================================================
+	// Build actual MIDI messages
 	buildMidiMessagesFromMulti();
 }
 
-// Add this new helper function to build the actual MIDI messages
 void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 {
 	const int channel = getChannel();
@@ -688,7 +658,6 @@ void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 
 	for (const auto& mm : multiMessages)
 	{
-		// Resolve tokens: -2 = component number, -1 = component value, >=0 = literal
 		auto resolveToken = [&](int token, int defaultValue) -> int {
 			if (token == -2) return componentNumber;
 			if (token == -1) return componentValue;
@@ -696,108 +665,69 @@ void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 			return defaultValue;
 			};
 
+		CtrlrMidiMessageEx mex;
+
 		if (mm.midiType.equalsIgnoreCase("CC"))
 		{
 			int ccNum = resolveToken(mm.numberToken, componentNumber);
 			int ccVal = resolveToken(mm.valueToken, componentValue);
-
-			CtrlrMidiMessageEx mex;
 			mex.m = MidiMessage::controllerEvent(channel, jmin(ccNum, 127), jmin(ccVal, 127));
 			mex.overrideValue = mm.valueToken;
-			messageArray.add(mex);
 		}
 		else if (mm.midiType.equalsIgnoreCase("ProgramChange"))
 		{
 			int program = resolveToken(mm.numberToken, componentValue);
-
-			CtrlrMidiMessageEx mex;
 			mex.m = MidiMessage::programChange(channel, jmin(program, 127));
 			mex.overrideValue = mm.numberToken;
-			messageArray.add(mex);
-		}
-		else if (mm.midiType.equalsIgnoreCase("SysEx"))
-		{
-			if (mm.sysexData.isNotEmpty())
-			{
-				// midiMessageExfromString expects old 6-field format:
-				// type,data1Source,data2Source,numberToken,valueToken,sysexData
-				String oldFormatString = "SysEx,0,0,0,0," + mm.sysexData;
-				messageArray.add(midiMessageExfromString(
-					oldFormatString,
-					channel,
-					componentNumber,
-					componentValue
-				));
-			}
 		}
 		else if (mm.midiType.equalsIgnoreCase("Aftertouch"))
 		{
 			int note = resolveToken(mm.numberToken, componentNumber);
 			int pressure = resolveToken(mm.valueToken, componentValue);
-
-			CtrlrMidiMessageEx mex;
 			mex.m = MidiMessage::aftertouchChange(channel, jmin(note, 127), jmin(pressure, 127));
 			mex.overrideValue = mm.valueToken;
-			messageArray.add(mex);
 		}
 		else if (mm.midiType.equalsIgnoreCase("ChannelPressure"))
 		{
 			int pressure = resolveToken(mm.numberToken, componentValue);
-
-			CtrlrMidiMessageEx mex;
 			mex.m = MidiMessage::channelPressureChange(channel, jmin(pressure, 127));
 			mex.overrideValue = mm.numberToken;
-			messageArray.add(mex);
 		}
 		else if (mm.midiType.equalsIgnoreCase("NoteOn"))
 		{
 			int note = resolveToken(mm.numberToken, componentNumber);
 			int velocity = resolveToken(mm.valueToken, componentValue);
-
-			CtrlrMidiMessageEx mex;
 			mex.m = MidiMessage::noteOn(channel, jmin(note, 127), (uint8)jmin(velocity, 127));
 			mex.overrideValue = mm.valueToken;
-			messageArray.add(mex);
 		}
 		else if (mm.midiType.equalsIgnoreCase("NoteOff"))
 		{
 			int note = resolveToken(mm.numberToken, componentNumber);
 			int velocity = resolveToken(mm.valueToken, componentValue);
-
-			CtrlrMidiMessageEx mex;
 			mex.m = MidiMessage::noteOff(channel, jmin(note, 127), (uint8)jmin(velocity, 127));
 			mex.overrideValue = mm.valueToken;
-			messageArray.add(mex);
 		}
 		else if (mm.midiType.equalsIgnoreCase("PitchWheel"))
 		{
-			int value = resolveToken(mm.numberToken, componentValue);
-
-			CtrlrMidiMessageEx mex;
-			mex.m = MidiMessage::pitchWheel(channel, jmin(value, 16383));
+			int val = resolveToken(mm.numberToken, componentValue);
+			mex.m = MidiMessage::pitchWheel(channel, jmin(val, 16383));
 			mex.overrideValue = mm.numberToken;
-			messageArray.add(mex);
 		}
-		else if (mm.midiType.equalsIgnoreCase("Custom"))
+		else if (mm.midiType.equalsIgnoreCase("SysEx") || mm.midiType.equalsIgnoreCase("Custom"))
 		{
-			// Handle custom MIDI hex bytes (e.g., "Custom,B0 55 -1")
 			if (mm.sysexData.isNotEmpty())
 			{
-				// If it starts with F0, it's SysEx - use the full token processor
-				if (mm.sysexData.trimStart().startsWithIgnoreCase("F0"))
+				String trimmed = mm.sysexData.trimStart();
+				if (trimmed.startsWithIgnoreCase("F0"))
 				{
-					// Build old format string and use existing SysEx processor
+					// SysEx tokens: xx, MS, LS, ms, ls, z5, yy, etc.
 					String oldFormatString = "SysEx,0,0,0,0," + mm.sysexData;
-					messageArray.add(midiMessageExfromString(
-						oldFormatString,
-						channel,
-						componentNumber,
-						componentValue
-					));
+					messageArray.add(midiMessageExfromString(oldFormatString, channel, componentNumber, componentValue));
+					continue; // already added
 				}
 				else
 				{
-					// Standard MIDI message - parse hex bytes with basic token support
+					// Standard MIDI byte parsing for Custom non-F0 messages
 					StringArray hexBytes;
 					hexBytes.addTokens(mm.sysexData, " ", "");
 					hexBytes.trim();
@@ -808,53 +738,44 @@ void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 						MemoryBlock mb;
 						for (const auto& hexByte : hexBytes)
 						{
-							// Check if it's a token
 							if (hexByte.equalsIgnoreCase("xx") || hexByte == "-1")
 							{
-								uint8 val = (uint8)(componentValue & 0xFF);
-								mb.append(&val, 1);
+								uint8 v = (uint8)(componentValue & 0xFF);
+								mb.append(&v, 1);
 							}
 							else if (hexByte == "-2")
 							{
-								uint8 num = (uint8)(componentNumber & 0xFF);
-								mb.append(&num, 1);
-							}
-							else if (hexByte.equalsIgnoreCase("ms"))
-							{
-								uint8 nibble = (componentValue >> 4) & 0x0F;
-								mb.append(&nibble, 1);
-							}
-							else if (hexByte.equalsIgnoreCase("MS"))
-							{
-								uint8 msb = (componentValue >> 7) & 0x7F;
-								mb.append(&msb, 1);
+								uint8 n = (uint8)(componentNumber & 0xFF);
+								mb.append(&n, 1);
 							}
 							else
 							{
-								// Parse as hex byte
-								int byte = hexByte.getHexValue32();
-								if (byte >= 0 && byte <= 0xFF)
+								int b = hexByte.getHexValue32();
+								if (b >= 0 && b <= 0xFF)
 								{
-									uint8 b = (uint8)byte;
-									mb.append(&b, 1);
+									uint8 val = (uint8)b;
+									mb.append(&val, 1);
 								}
 							}
 						}
-
 						if (mb.getSize() > 0)
 						{
-							CtrlrMidiMessageEx mex;
 							mex.m = MidiMessage(mb.getData(), (int)mb.getSize());
-							messageArray.add(mex);
 						}
+						else continue;
 					}
+					else continue;
 				}
 			}
 		}
+
+		messageArray.add(mex);
 	}
 
 	patternChanged();
 }
+
+
 
 void CtrlrMidiMessage::setNumber(const int number)
 {
