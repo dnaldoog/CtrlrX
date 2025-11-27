@@ -544,66 +544,259 @@ int CtrlrMidiMessage::getValue()
 	return (1);
 }
 
-// CtrlrMidiMessage.cpp
-
 void CtrlrMidiMessage::setMultiMessageFromString(const String& savedState)
 {
-	multiMessages.clear(); // start fresh
+	// Clear old
+	multiMessages.clear();
+	messageArray.clear();  // IMPORTANT: Also clear the message array
 
-	if (savedState.isEmpty())
+	const String s = savedState.trim();
+	if (s.isEmpty())
 		return;
 
-	StringArray entries;
-	entries.addTokens(savedState.trim(), ":", "\"'"); // split by colon
+	// helper to interpret token (handles "Direct"/"Default" etc. as -1)
+	auto tokenToInt = [](const String& tok)->int {
+		const String t = tok.trim();
+		if (t.isEmpty()) return -1;
+		// textual synonyms that mean "component value"
+		if (t.equalsIgnoreCase("Direct") || t.equalsIgnoreCase("Default") || t.equalsIgnoreCase("Value"))
+			return -1;
+		// textual synonyms for "component number" -> treat as -2
+		if (t.equalsIgnoreCase("Number") || t.equalsIgnoreCase("CtrlNumber") || t.equalsIgnoreCase("ByteValue"))
+			return -2;
+		// parse numeric
+		if (t.startsWithChar('-'))
+		{
+			return t.getIntValue();
+		}
+		// otherwise try integer parse
+		if (t.containsOnly("0123456789"))
+			return t.getIntValue();
+		// fallback: if token looks like hex pair (e.g. "F0")
+		if (t.containsOnly("0123456789ABCDEFabcdef ") && t.length() <= 2)
+			return t.getHexValue32();
+		// unknown -> fallback to -1 (component value) to be safe
+		return -1;
+		};
 
-	for (auto& entry : entries)
+	// Split colon-separated messages (new multi-message)
+	StringArray msgs;
+	msgs.addTokens(s, ":", "\"\'");
+	msgs.trim();
+	msgs.removeEmptyStrings();
+
+	for (int i = 0; i < msgs.size(); ++i)
 	{
-		entry = entry.trim();
-		if (entry.isEmpty())
+		String msgStr = msgs[i].trim();
+		if (msgStr.isEmpty()) continue;
+
+		// split on commas
+		StringArray parts;
+		parts.addTokens(msgStr, ",", "\"\'");
+		parts.trim();
+		parts.removeEmptyStrings();
+
+		// If this exactly matches the legacy 6-field format
+		if (parts.size() == 6)
+		{
+			MultiMessage mm;
+			mm.midiType = parts[0].trim();
+			mm.numberToken = parts[3].getIntValue();
+			mm.valueToken = parts[4].getIntValue();
+
+			if (mm.midiType.equalsIgnoreCase("SysEx"))
+				mm.sysexData = parts[5].trim();
+
+			multiMessages.add(mm);
 			continue;
+		}
 
-		MultiMessage msg;
+		// New-style format
+		MultiMessage mm;
+		mm.midiType = parts[0].trim();
 
-		StringArray tokens;
-		tokens.addTokens(entry, ",", "\"'");
-
-		// ----- New CSV format detection -----
-		// CC,-1,-1
-		// ProgramChange,-1
-		// SysEx,F0 00 07
-		if (tokens.size() >= 1)
+		if (mm.midiType.equalsIgnoreCase("SysEx"))
 		{
-			msg.midiType = tokens[0];
+			if (parts.size() >= 2)
+			{
+				String raw;
+				if (parts.size() == 2)
+					raw = parts[1].trim();
+				else
+				{
+					for (int p = 1; p < parts.size(); ++p)
+					{
+						if (raw.isNotEmpty()) raw += " ";
+						raw += parts[p].trim();
+					}
+				}
+				mm.sysexData = raw;
+			}
+			multiMessages.add(mm);
+			continue;
+		}
 
-			if (msg.midiType == "CC" || msg.midiType == "Aftertouch" || msg.midiType == "ChannelPressure" ||
-				msg.midiType == "NoteOn" || msg.midiType == "NoteOff" || msg.midiType == "PitchWheel")
+		// For CC and other standard messages
+		if (mm.midiType.equalsIgnoreCase("CC") ||
+			mm.midiType.equalsIgnoreCase("Aftertouch") ||
+			mm.midiType.equalsIgnoreCase("ChannelPressure") ||
+			mm.midiType.equalsIgnoreCase("NoteOn") ||
+			mm.midiType.equalsIgnoreCase("NoteOff") ||
+			mm.midiType.equalsIgnoreCase("PitchWheel"))
+		{
+			if (parts.size() > 1)
+				mm.numberToken = tokenToInt(parts[1]);
+			else
+				mm.numberToken = -1;
+
+			if (parts.size() > 2)
+				mm.valueToken = tokenToInt(parts[2]);
+			else
+				mm.valueToken = -1;
+
+			multiMessages.add(mm);
+			continue;
+		}
+
+		// ProgramChange (single param)
+		if (mm.midiType.equalsIgnoreCase("ProgramChange") || mm.midiType.equalsIgnoreCase("Program"))
+		{
+			mm.numberToken = (parts.size() > 1) ? tokenToInt(parts[1]) : -1;
+			mm.valueToken = -1;
+			multiMessages.add(mm);
+			continue;
+		}
+
+		// Unknown/other: generic numeric mapping
+		mm.numberToken = (parts.size() > 1) ? tokenToInt(parts[1]) : -1;
+		mm.valueToken = (parts.size() > 2) ? tokenToInt(parts[2]) : -1;
+		multiMessages.add(mm);
+	}
+
+	// ========================================================================
+	// NOW BUILD ACTUAL MIDI MESSAGES FROM THE PARSED DATA
+	// ========================================================================
+	buildMidiMessagesFromMulti();
+}
+
+void CtrlrMidiMessage::buildMidiMessagesFromMulti()
+{
+	const int channel = getChannel();
+	const int componentNumber = getNumber();
+	const int componentValue = getValue();
+
+	for (const auto& mm : multiMessages)
+	{
+		// Resolve tokens: -2 = component number, -1 = component value, >=0 = literal
+		auto resolveToken = [&](int token, int defaultValue) -> int {
+			if (token == -2) return componentNumber;
+			if (token == -1) return componentValue;
+			if (token >= 0) return token;
+			return defaultValue;
+			};
+
+		if (mm.midiType.equalsIgnoreCase("CC"))
+		{
+			int ccNum = resolveToken(mm.numberToken, componentNumber);
+			int ccVal = resolveToken(mm.valueToken, componentValue);
+
+			CtrlrMidiMessageEx mex;
+			mex.m = MidiMessage::controllerEvent(channel, jmin(ccNum, 127), jmin(ccVal, 127));
+			mex.overrideValue = mm.valueToken; // Store original token for later updates
+			messageArray.add(mex);
+		}
+		else if (mm.midiType.equalsIgnoreCase("ProgramChange"))
+		{
+			int program = resolveToken(mm.numberToken, componentValue);
+
+			CtrlrMidiMessageEx mex;
+			mex.m = MidiMessage::programChange(channel, jmin(program, 127));
+			mex.overrideValue = mm.numberToken;
+			messageArray.add(mex);
+		}
+		else if (mm.midiType.equalsIgnoreCase("SysEx"))
+		{
+			if (mm.sysexData.isNotEmpty())
 			{
-				msg.midiNumber = (tokens.size() > 1) ? tokens[1].getIntValue() : -1;
-				msg.midiValue = (tokens.size() > 2) ? tokens[2].getIntValue() : -1;
+				// Parse space-separated hex bytes (e.g., "F0 00 07 F7")
+				StringArray hexBytes;
+				hexBytes.addTokens(mm.sysexData, " ", "");
+				hexBytes.trim();
+				hexBytes.removeEmptyStrings();
+
+				if (hexBytes.size() > 0)
+				{
+					MemoryBlock mb;
+					for (const auto& hexByte : hexBytes)
+					{
+						// Parse each hex byte (e.g., "F0" -> 0xF0)
+						int byte = hexByte.getHexValue32();
+						if (byte >= 0 && byte <= 0xFF)
+						{
+							uint8 b = (uint8)byte;
+							mb.append(&b, 1);
+						}
+					}
+
+					if (mb.getSize() > 0)
+					{
+						CtrlrMidiMessageEx mex;
+						mex.m = MidiMessage(mb.getData(), (int)mb.getSize());
+						messageArray.add(mex);
+					}
+				}
 			}
-			else if (msg.midiType == "ProgramChange")
+			else if (mm.midiType.equalsIgnoreCase("Aftertouch"))
 			{
-				msg.midiNumber = (tokens.size() > 1) ? tokens[1].getIntValue() : -1;
-				msg.midiValue = -1;
+				int note = resolveToken(mm.numberToken, componentNumber);
+				int pressure = resolveToken(mm.valueToken, componentValue);
+
+				CtrlrMidiMessageEx mex;
+				mex.m = MidiMessage::aftertouchChange(channel, jmin(note, 127), jmin(pressure, 127));
+				mex.overrideValue = mm.valueToken;
+				messageArray.add(mex);
 			}
-			else if (msg.midiType == "SysEx")
+			else if (mm.midiType.equalsIgnoreCase("ChannelPressure"))
 			{
-				// Store the raw data in midiValue (or could have a separate String if needed)
-				msg.midiNumber = -1;
-				msg.midiValue = -1;
+				int pressure = resolveToken(mm.numberToken, componentValue);
+
+				CtrlrMidiMessageEx mex;
+				mex.m = MidiMessage::channelPressureChange(channel, jmin(pressure, 127));
+				mex.overrideValue = mm.numberToken;
+				messageArray.add(mex);
+			}
+			else if (mm.midiType.equalsIgnoreCase("NoteOn"))
+			{
+				int note = resolveToken(mm.numberToken, componentNumber);
+				int velocity = resolveToken(mm.valueToken, componentValue);
+
+				CtrlrMidiMessageEx mex;
+				mex.m = MidiMessage::noteOn(channel, jmin(note, 127), (uint8)jmin(velocity, 127));
+				mex.overrideValue = mm.valueToken;
+				messageArray.add(mex);
+			}
+			else if (mm.midiType.equalsIgnoreCase("NoteOff"))
+			{
+				int note = resolveToken(mm.numberToken, componentNumber);
+				int velocity = resolveToken(mm.valueToken, componentValue);
+
+				CtrlrMidiMessageEx mex;
+				mex.m = MidiMessage::noteOff(channel, jmin(note, 127), (uint8)jmin(velocity, 127));
+				mex.overrideValue = mm.valueToken;
+				messageArray.add(mex);
+			}
+			else if (mm.midiType.equalsIgnoreCase("PitchWheel"))
+			{
+				int value = resolveToken(mm.numberToken, componentValue);
+
+				CtrlrMidiMessageEx mex;
+				mex.m = MidiMessage::pitchWheel(channel, jmin(value, 16383));
+				mex.overrideValue = mm.numberToken;
+				messageArray.add(mex);
 			}
 		}
 
-		// ----- Old CSV fallback -----
-		// e.g., CC,Direct,Direct,-1,-1,?
-		if (tokens.size() == 6 && msg.midiType.isEmpty())
-		{
-			msg.midiType = tokens[0];
-			msg.midiNumber = tokens[3].getIntValue();
-			msg.midiValue = tokens[4].getIntValue();
-		}
-
-		multiMessages.add(msg); // JUCE Array method, copyable
+		patternChanged();
 	}
 }
 
@@ -754,7 +947,8 @@ void CtrlrMidiMessage::setMidiMessageType (const CtrlrMidiMessageType newType)
 			break;
 
 		case Multi:
-			CtrlrSysexProcessor::setMultiMessageFromString (*this, getProperty(Ids::midiMessageMultiList));
+			//CtrlrSysexProcessor::setMultiMessageFromString (*this, getProperty(Ids::midiMessageMultiList));
+			setMultiMessageFromString(getProperty(Ids::midiMessageMultiList).toString());
 			break;
 
 		case PitchWheel:
@@ -841,7 +1035,7 @@ void CtrlrMidiMessage::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
 	}
 	else if (property == Ids::midiMessageMultiList)
 	{
-		CtrlrSysexProcessor::setMultiMessageFromString (*this, getProperty(Ids::midiMessageMultiList));
+		setMultiMessageFromString (getProperty(Ids::midiMessageMultiList));
 
 		setNumber ((int)getProperty(Ids::midiMessageCtrlrNumber));
 	}
@@ -986,3 +1180,4 @@ void CtrlrMidiMessage::wrapForLua(lua_State *L)
             .def("setProperty", (void (CtrlrMidiMessage::*)(const Identifier &, const var &, const bool))&CtrlrMidiMessage::setProperty) // Added v5.6.33
 	];
 }
+
