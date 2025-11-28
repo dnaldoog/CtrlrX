@@ -426,9 +426,9 @@ void CtrlrEditor::performRecentFileOpen(const int menuItemID)
 void CtrlrEditor::performShowKeyboardMappingDialog(const int menuItemID)
 {
     #if JUCE_LINUX
-        // Non-modal on Linux to avoid Wayland crashes
+        // Use async dialog on Linux (works but may need second click from menu)
         auto* keys = new KeyMappingEditorComponent(*owner.getCommandManager().getKeyMappings(), true);
-        keys->setSize(600, 400);  // Set a proper size
+        keys->setSize(600, 400);
         
         DialogWindow::LaunchOptions options;
         options.content.setOwned(keys);
@@ -437,26 +437,21 @@ void CtrlrEditor::performShowKeyboardMappingDialog(const int menuItemID)
         options.useNativeTitleBar = true;
         options.dialogBackgroundColour = Colours::lightgrey;
         options.escapeKeyTriggersCloseButton = true;
-        options.componentToCentreAround = this;
         
         options.launchAsync();
         
-        // Save the key mappings when dialog closes
-        MessageManager::callAsync([this]() {
-            ScopedPointer<XmlElement> keysXml(owner.getCommandManager().getKeyMappings()->createXml(true).release());
-            
-            if (keysXml)
-            {
-                owner.setProperty(Ids::ctrlrKeyboardMapping, keysXml->createDocument(""));
-            }
-        });
+        // Save mappings when changed
+        ScopedPointer<XmlElement> keysXml(owner.getCommandManager().getKeyMappings()->createXml(true).release());
+        if (keysXml)
+        {
+            owner.setProperty(Ids::ctrlrKeyboardMapping, keysXml->createDocument(""));
+        }
     #else
         // Modal on other platforms (original code)
         ScopedPointer<KeyMappingEditorComponent> keys(new KeyMappingEditorComponent(*owner.getCommandManager().getKeyMappings(), true));
         owner.getWindowManager().showModalDialog("Keyboard mapping", keys, true, this);
 
         ScopedPointer<XmlElement> keysXml(owner.getCommandManager().getKeyMappings()->createXml(true).release());
-
         if (keysXml)
         {
             owner.setProperty(Ids::ctrlrKeyboardMapping, keysXml->createDocument(""));
