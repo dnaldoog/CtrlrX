@@ -1303,8 +1303,8 @@ void CtrlrModulatorListProperty::modulatorRemoved (CtrlrModulator *modulatorRemo
 CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent (const Value &_valueToControl)
     : valueToControl(_valueToControl),
       addMulti (0),
-      remove (0),
-      list (0),
+      removeMulti(0),
+      listMulti(0),
       copy (0),
       paste (0),
       helpMmidi (0)
@@ -1313,12 +1313,12 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent (const Value &_
     addMulti->setTooltip (L"Add message");
     addMulti->addListener (this);
 
-    addAndMakeVisible (remove = gui::createDrawableButton("Remove", BIN2STR(clear_svg)));
-    remove->setTooltip (L"Remove selected message");
-    remove->addListener (this);
+    addAndMakeVisible (removeMulti = gui::createDrawableButton("Remove", BIN2STR(clear_svg)));
+    removeMulti->setTooltip (L"Remove selected message");
+    removeMulti->addListener (this);
 
 
-    addAndMakeVisible (list = new ListBox ("list", this));
+    addAndMakeVisible (listMulti = new ListBox ("list", this));
 
     addAndMakeVisible (copy = gui::createDrawableButton("Copy", BIN2STR(copy_svg)));
     copy->setTooltip (L"Copy to clipboard");
@@ -1340,13 +1340,13 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent (const Value &_
     //insert->setColour(juce::TextButton::buttonColourId, juce::Colours::lightgrey);
     //insert->setColour(juce::TextButton::textColourOffId, juce::Colours::black);
     //insert->setConnectedEdges(juce::Button::ConnectedOnLeft); // optional for layout
-    list->setRowHeight (14);
+    listMulti->setRowHeight (14);
     addMulti->setMouseCursor (MouseCursor::PointingHandCursor);
-	remove->setMouseCursor (MouseCursor::PointingHandCursor);
+	removeMulti->setMouseCursor (MouseCursor::PointingHandCursor);
 	copy->setMouseCursor (MouseCursor::PointingHandCursor);
 	paste->setMouseCursor (MouseCursor::PointingHandCursor);
     helpMmidi->setMouseCursor (MouseCursor::PointingHandCursor);
-	remove->setTooltip ("Remove selected");
+	removeMulti->setTooltip ("Remove selected");
 	loadAdditionalTemplates(File());
     setSize (256, 96);
 }
@@ -1354,8 +1354,8 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent (const Value &_
 CtrlrMultiMidiPropertyComponent::~CtrlrMultiMidiPropertyComponent()
 {
     deleteAndZero (addMulti);
-    deleteAndZero (remove);
-    deleteAndZero (list);
+    deleteAndZero (removeMulti);
+    deleteAndZero (listMulti);
     deleteAndZero (copy);
     deleteAndZero (paste);
     deleteAndZero (helpMmidi);
@@ -1381,8 +1381,8 @@ void CtrlrMultiMidiPropertyComponent::paint (Graphics& g)
 void CtrlrMultiMidiPropertyComponent::resized()
 {
     addMulti->setBounds (8, 4, 24, 24);
-    remove->setBounds (72, 4, 24, 24);
-    list->setBounds (0, 32, getWidth() - 0, getHeight() - 32);
+    removeMulti->setBounds (72, 4, 24, 24);
+    listMulti->setBounds (0, 32, getWidth() - 0, getHeight() - 32);
     copy->setBounds ((getWidth() - 32) + -32, 4, 24, 24);
     paste->setBounds (getWidth() - 32, 4, 24, 24);
     helpMmidi->setBounds (40, 4, 24, 24);
@@ -1485,9 +1485,9 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button* buttonThatWasClicked
             }
         }
     }
-    else if (buttonThatWasClicked == remove)
+    else if (buttonThatWasClicked == removeMulti)
     {
-        int selectedRow = list->getSelectedRow();
+        int selectedRow = listMulti->getSelectedRow();
         if (selectedRow >= 0)
         {
             // Rebuild the string without the selected item
@@ -1558,7 +1558,7 @@ void CtrlrMultiMidiPropertyComponent::mouseDown(const MouseEvent& e)
     if (l)
     {
         const int id = l->getProperties().getWithDefault("dOb", -1);
-        list->selectRow(id, true, true);
+        listMulti->selectRow(id, true, true);
     }
 }
 
@@ -1569,7 +1569,7 @@ void CtrlrMultiMidiPropertyComponent::mouseDoubleClick(const MouseEvent& e)
     if (l)
     {
         const int id = l->getProperties().getWithDefault("dOb", -1);
-        list->selectRow(id, true, true);
+        listMulti->selectRow(id, true, true);
     }
 }
 int CtrlrMultiMidiPropertyComponent::getNumRows()
@@ -1581,8 +1581,8 @@ void CtrlrMultiMidiPropertyComponent::refresh()
 {
 	values.clear();
 	values.addTokens (valueToControl.toString().trim(), ":", "\"\'");
-	list->updateContent();
-	list->repaint();
+	listMulti->updateContent();
+	listMulti->repaint();
 }
 
 void CtrlrMultiMidiPropertyComponent::loadAdditionalTemplates(const File &templateFile)

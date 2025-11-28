@@ -198,36 +198,20 @@ private:
 		juce::String sysexData; // For SysEx
 	};
 
-
-	//		struct MultiMessage
-	//		{
-	//			String midiType;   // "CC", "ProgramChange", "SysEx", etc.
-	//			int midiNumber;    // -1 = use default
-	//			int midiValue;     // -1 = use default
-	//		};
-	//
-	//		
-	//		Array<MultiMessage> multiMessages;
-	//
-	//
-	//};
-
-	// Simple POD - must be copyable for juce::Array
 	struct MultiMessage
 	{
-		String midiType;    // "CC", "ProgramChange", "SysEx", "NoteOn", "NoteOff", etc.
-
-		// Tokens using convention:
-		//  -2 == component's MIDI number (use component's "number")
-		//  -1 == component's MIDI value (use component's "value")
-		// >=0  => literal numeric value
-		int numberToken = -1;  // for CC / Note / Program (first numeric slot)
-		int valueToken = -1;  // for CC value / velocity (second numeric slot)
-
-		// For SysEx messages store raw hex string (space separated bytes)
+		String midiType;    // "CC", "ProgramChange", "SysEx", "NRPN", "RPN", etc.
+		int numberToken = -1;
+		int valueToken = -1;
 		String sysexData;
 
-		// convenience
+		// For legacy NRPN/RPN support
+		String legacyData1Source;  // "ByteValue", etc.
+		String legacyData2Source;  // "MSB7bitValue", "LSB7bitValue"
+
+		// For new NRPN/RPN support
+		String nrpnType;  // "NRPN_MSB", "NRPN_LSB", "NRPN_VAL_MSB", "NRPN_VAL_LSB", etc.
+
 		bool isSysEx() const noexcept { return midiType.equalsIgnoreCase("SysEx"); }
 	};
 	Array<MultiMessage> multiMessages;

@@ -539,8 +539,8 @@ class CtrlrMultiMidiPropertyComponent  : public Component,
 		Value valueToControl;
 		StringPairArray templates;
         DrawableButton* addMulti;
-        DrawableButton* remove;
-		ListBox* list;
+        DrawableButton* removeMulti;
+		ListBox* listMulti;
 		DrawableButton* copy;
         DrawableButton* paste;
 		DrawableButton* helpMmidi;
