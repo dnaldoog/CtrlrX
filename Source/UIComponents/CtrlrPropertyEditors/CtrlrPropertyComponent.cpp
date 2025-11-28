@@ -1418,7 +1418,7 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button* buttonThatWasClicked
             { "NRPN",          "CC,ByteValue,MSB7bitValue,99,-2:CC,ByteValue,LSB7bitValue,98,-2:CC,ByteValue,MSB7bitValue,6,-1:CC,ByteValue,LSB7bitValue,38,-1" },
             { "NRPN (Korg)",   "CC,ByteValue,MSB7bitValue,99,-2:CC,ByteValue,LSB7bitValue,98,-2:CC,ByteValue,MSB7bitValue,6,-1" },
             { "RPN", "CC,ByteValue,MSB7bitValue,101,-2:CC,ByteValue,LSB7bitValue,100,-2:CC,ByteValue,MSB7bitValue,6,-1:CC,ByteValue,LSB7bitValue,38,-1" },
-        { "NRPN Null",     "CC,ByteValue,LSB7bitValue,101,127:CC,ByteValue,LSB7bitValue,100,127" }
+        	{ "NRPN Null",     "CC,ByteValue,LSB7bitValue,101,127:CC,ByteValue,LSB7bitValue,100,127" }
 
 
         };
