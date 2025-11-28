@@ -1309,8 +1309,7 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent (const Value &_
       paste (0),
       helpMmidi (0)
 {
-     //   addAndMakeVisible (addMulti = gui::createDrawableButton("Add Multi", BIN2STR(listulsolid_svg)));
-    addAndMakeVisible (addMulti = gui::createDrawableButton("Add Multi", BIN2STR(clear_svg)));
+    addAndMakeVisible (addMulti = gui::createDrawableButton("Add Multi", BIN2STR(list_ul_solid_svg)));
     addMulti->setTooltip (L"Add message");
     addMulti->addListener (this);
 
@@ -1330,8 +1329,7 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent (const Value &_
     paste->addListener (this);
 
     // Create the help button
-    // addAndMakeVisible(helpMmidi = gui::createDrawableButton("Insert", BIN2STR(clipboardquestionsolid_svg)));
-       addAndMakeVisible(helpMmidi = gui::createDrawableButton("Insert", BIN2STR(paste_svg)));
+     addAndMakeVisible(helpMmidi = gui::createDrawableButton("Insert", BIN2STR(clipboard_question_solid_svg)));
     helpMmidi->setTooltip(L"Click to see Multi MIDI message syntax");
     helpMmidi->addListener(this); // JUCE 6 compatible
     //addAndMakeVisible(helpMmidi = new TextButton(L"editButton"));

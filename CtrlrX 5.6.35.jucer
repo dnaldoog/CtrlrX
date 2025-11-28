@@ -636,10 +636,10 @@
           <FILE id="OOpHQ2" name="FONT_ZX81.ttf" compile="0" resource="1" file="Source/Resources/Fonts/FONT_ZX81.ttf"/>
         </GROUP>
         <GROUP id="{57CA4634-99B0-23FB-F19C-154181EAAE85}" name="Icons">
-          <FILE id="Tlk3Kf" name="clipboard-question-solid.svg" compile="0" resource="1"
-                file="Source/Resources/Icons/clipboard-question-solid.svg"/>
-          <FILE id="mC0utX" name="list-ul-solid.svg" compile="0" resource="1"
-                file="Source/Resources/Icons/list-ul-solid.svg"/>
+          <FILE id="Tlk3Kf" name="clipboard_question_solid.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/clipboard_question_solid.svg"/>
+          <FILE id="mC0utX" name="list_ul_solid.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/list_ul_solid.svg"/>
           <FILE id="hvQjEJ" name="github_line.svg" compile="0" resource="1" file="Source/Resources/Icons/github_line.svg"/>
           <FILE id="tsirkk" name="paypal_colour.svg" compile="0" resource="1"
                 file="Source/Resources/Icons/paypal_colour.svg"/>
