@@ -1417,14 +1417,22 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button* buttonThatWasClicked
             { "SysEx",         "SysEx,F0 00 xx F7" },
             { "NRPN",          "CC,ByteValue,MSB7bitValue,99,-2:CC,ByteValue,LSB7bitValue,98,-2:CC,ByteValue,MSB7bitValue,6,-1:CC,ByteValue,LSB7bitValue,38,-1" },
             { "NRPN (Korg)",   "CC,ByteValue,MSB7bitValue,99,-2:CC,ByteValue,LSB7bitValue,98,-2:CC,ByteValue,MSB7bitValue,6,-1" },
-            { "RPN",           "CC,ByteValue,MSB7bitValue,101,-2:CC,ByteValue,LSB7bitValue,100,-2:CC,ByteValue,MSB7bitValue,6,-1:CC,ByteValue,LSB7bitValue,38,-1" }
+            { "RPN", "CC,ByteValue,MSB7bitValue,101,-2:CC,ByteValue,LSB7bitValue,100,-2:CC,ByteValue,MSB7bitValue,6,-1:CC,ByteValue,LSB7bitValue,38,-1" },
+        { "NRPN Null",     "CC,ByteValue,LSB7bitValue,101,127:CC,ByteValue,LSB7bitValue,100,127" }
+
+
         };
 
         int standardStartId = templateKeys.size() + 1;
         for (int i = 0; i < numElementsInArray(standardTypes); ++i)
+        {
+            if (i % 3 == 0){
+                m.addSeparator();
+			}
             m.addItem(standardStartId + i, standardTypes[i].name);
-
+        }
         m.addSeparator();
+
 
         // --- 3️⃣ Custom editor ---
         int customId = standardStartId + numElementsInArray(standardTypes);
