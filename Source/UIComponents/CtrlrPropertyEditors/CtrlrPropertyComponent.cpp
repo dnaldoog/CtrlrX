@@ -1309,9 +1309,28 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent (const Value &_
       paste (0),
       helpMmidi (0)
 {
-    addAndMakeVisible (addMulti = gui::createDrawableButton("Add Multi", BIN2STR(list_ul_solid_svg)));
-    addMulti->setTooltip (L"Add message");
-    addMulti->addListener (this);
+   
+   
+ // 1. Create a Drawable (the icon) from your manager
+auto listIcon = SvgIconManager::getDrawable(IconType::UlBars, *this); // *** Replace IconType::EyeSlash with your actual new list IconType ***
+
+// 2. Create the DrawableButton using the standard JUCE constructor
+addMulti = new juce::DrawableButton("Add Multi", juce::DrawableButton::ImageFitted);
+
+// 3. Set the drawable on the button
+addMulti->setImages (listIcon.release()); // .release() transfers ownership to the button
+
+// 4. Add the component to the parent
+addAndMakeVisible (addMulti);
+
+// 5. Restore the rest of the button setup
+addMulti->setTooltip (L"Add message");
+addMulti->addListener (this);   
+
+/* I couldn't add these as Resources in Linux but the SvgIconManager class is just as good*/
+    // addAndMakeVisible (addMulti = gui::createDrawableButton("Add Multi", BIN2STR(list_ul_solid_svg)));
+    // addMulti->setTooltip (L"Add message");
+    // addMulti->addListener (this);
 
     addAndMakeVisible (removeMulti = gui::createDrawableButton("Remove", BIN2STR(clear_svg)));
     removeMulti->setTooltip (L"Remove selected message");
@@ -1329,9 +1348,26 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent (const Value &_
     paste->addListener (this);
 
     // Create the help button
-     addAndMakeVisible(helpMmidi = gui::createDrawableButton("Insert", BIN2STR(clipboard_question_solid_svg)));
-    helpMmidi->setTooltip(L"Click to see Multi MIDI message syntax");
-    helpMmidi->addListener(this); // JUCE 6 compatible
+    // 1. Create a Drawable (the icon) from your manager
+auto helpIcon = SvgIconManager::getDrawable(IconType::SolidQuest, *this); 
+
+// 2. Create the DrawableButton using the standard JUCE constructor
+helpMmidi = new juce::DrawableButton("Help", juce::DrawableButton::ImageFitted);
+
+// 3. Set the drawable on the button
+helpMmidi->setImages (helpIcon.release()); // .release() transfers ownership to the button
+
+// 4. Add the component to the parent
+addAndMakeVisible (helpMmidi);
+
+// 5. Restore the rest of the button setup
+helpMmidi->setTooltip(L"Click to see Multi MIDI message syntax");
+helpMmidi->addListener(this);
+/* I couldn't add these as Resources in Linux but the SvgIconManager class is just as good*/
+
+    //  addAndMakeVisible(helpMmidi = gui::createDrawableButton("Help", BIN2STR(clipboard_question_solid_svg)));
+    // helpMmidi->setTooltip(L"Click to see Multi MIDI message syntax");
+    // helpMmidi->addListener(this); // JUCE 6 compatible
     //addAndMakeVisible(helpMmidi = new TextButton(L"editButton"));
     //helpMmidi->setButtonText(L"?");
     //helpMmidi->addListener(this);

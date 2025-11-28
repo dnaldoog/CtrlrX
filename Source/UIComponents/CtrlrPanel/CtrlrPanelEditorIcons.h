@@ -22,7 +22,9 @@ enum class IconType
     DragDropThin,
     EyeDropper,
     Eye,
-    EyeSlash
+    EyeSlash,
+    SolidQuest,
+    UlBars
 };
 
 class SvgIconManager
@@ -38,6 +40,8 @@ private:
     static const juce::String eyeDropperIcon;
     static const juce::String eyeOpen;
     static const juce::String eyeSlash;
+    static const juce::String ulBars;
+    static const juce::String questionSolid;
 };
 
 class ToggleIconComponent : public juce::Button
