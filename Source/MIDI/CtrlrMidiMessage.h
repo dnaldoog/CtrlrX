@@ -200,19 +200,36 @@ private:
 
 	struct MultiMessage
 	{
-		String midiType;    // "CC", "ProgramChange", "SysEx", "NRPN", "RPN", etc.
+		String midiType;
 		int numberToken = -1;
 		int valueToken = -1;
 		String sysexData;
 
-		// For legacy NRPN/RPN support
-		String legacyData1Source;  // "ByteValue", etc.
-		String legacyData2Source;  // "MSB7bitValue", "LSB7bitValue"
+		// For MS/LS split support (NEW format: CC,MS,99,-2)
+		String splitType;  // "MS", "LS", "MSB", "LSB", etc.
 
-		// For new NRPN/RPN support
-		String nrpnType;  // "NRPN_MSB", "NRPN_LSB", "NRPN_VAL_MSB", "NRPN_VAL_LSB", etc.
+		// For legacy NRPN/RPN support (OLD format: CC,ByteValue,MSB7bitValue,99,-2)
+		String legacyData1Source;
+		String legacyData2Source;
 
 		bool isSysEx() const noexcept { return midiType.equalsIgnoreCase("SysEx"); }
 	};
 	Array<MultiMessage> multiMessages;
+
+	//int CtrlrMidiMessage::getSplitValue(const int value, const String& splitType)
+	//{
+	//	// Handle MSB (Shift right by 7)
+	//	if (splitType.equalsIgnoreCase("MS") || splitType.equalsIgnoreCase("MSB") || splitType.equalsIgnoreCase("MSB7bitValue"))
+	//	{
+	//		return ((value >> 7) & 0x7F);
+	//	}
+	//	// Handle LSB (Mask 7 bits)
+	//	if (splitType.equalsIgnoreCase("LS") || splitType.equalsIgnoreCase("LSB") || splitType.equalsIgnoreCase("LSB7bitValue"))
+	//	{
+	//		return (value & 0x7F);
+	//	}
+	//	// Default 7-bit clamp
+	//	return (jlimit(0, 127, value));
+	//}
+
 };
