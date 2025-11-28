@@ -59,17 +59,11 @@ namespace BinaryData
     extern const char*   FONT_ZX81_ttf;
     const int            FONT_ZX81_ttfSize = 17176;
 
-    extern const char*   clipboardquestionsolid_svg;
-    const int            clipboardquestionsolid_svgSize = 874;
-
-    extern const char*   listulsolid_svg;
-    const int            listulsolid_svgSize = 635;
-
     extern const char*   github_line_svg;
     const int            github_line_svgSize = 1633;
 
     extern const char*   paypal_colour_svg;
-    const int            paypal_colour_svgSize = 2053;
+    const int            paypal_colour_svgSize = 2052;
 
     extern const char*   paypal_bw_svg;
     const int            paypal_bw_svgSize = 1518;
@@ -273,7 +267,7 @@ namespace BinaryData
     const int            RSRC_zipSize = 49800;
 
     extern const char*   CtrlrIDs_xml;
-    const int            CtrlrIDs_xmlSize = 92143;
+    const int            CtrlrIDs_xmlSize = 92139;
 
     extern const char*   CtrlrLuaClassTemplates_xml;
     const int            CtrlrLuaClassTemplates_xmlSize = 110;
@@ -282,7 +276,7 @@ namespace BinaryData
     const int            CtrlrLuaMethodTemplates_xmlSize = 22470;
 
     extern const char*   CtrlrMidiMultiTemplate_xml;
-    const int            CtrlrMidiMultiTemplate_xmlSize = 912;
+    const int            CtrlrMidiMultiTemplate_xmlSize = 662;
 
     extern const char*   CtrlrMIDITransactions_xml;
     const int            CtrlrMIDITransactions_xmlSize = 1963;
@@ -291,7 +285,7 @@ namespace BinaryData
     const int            CtrlrMIDIVendors_xmlSize = 15061;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 94;
+    const int namedResourceListSize = 92;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

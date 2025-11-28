@@ -32,7 +32,7 @@ set(JUCE_MODULES_DIR "${JUCE_SOURCE_DIR}/modules" CACHE INTERNAL
 
 include(extras/Build/CMake/JUCEUtils.cmake)
 
-#juce_disable_default_flags()
+juce_disable_default_flags()
 
 set_directory_properties(PROPERTIES
     JUCE_COMPANY_NAME       "JUCE"
