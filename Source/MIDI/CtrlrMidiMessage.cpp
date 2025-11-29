@@ -787,6 +787,11 @@ void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 
 		messageArray.add(mex);
 	}
+	if (messageArray.size() > 1)
+	{
+		messageType = Multi;
+		setProperty(Ids::midiMessageType, Multi);
+	}
 
 	patternChanged();
 }
