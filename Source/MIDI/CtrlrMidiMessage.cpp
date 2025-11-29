@@ -944,7 +944,9 @@ void CtrlrMidiMessage::setMidiMessageType (const CtrlrMidiMessageType newType)
 
 		case PitchWheel:
 			messageArray.clear();
-			messageArray.add (MidiMessage::pitchWheel (ch, (uint8)jmin<int>(getValue(),16383)));
+			//messageArray.add (MidiMessage::pitchWheel (ch, (uint8)jmin<int>(getValue(),16383)));
+			// remove the cast to uint8 - pitchWheel needs the full 14-bit value
+			messageArray.add(MidiMessage::pitchWheel(ch, jmin<int>(getValue(), 16383)));
 			break;
 
 		case ProgramChange:
@@ -1015,11 +1017,17 @@ void CtrlrMidiMessage::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
 	{
 		setChannel (getProperty(Ids::midiMessageChannel));
 	}
-	else if (property == Ids::midiMessageCtrlrValue)
-	{
-		setValue ((int)getProperty(Ids::midiMessageCtrlrValue));
-		return;
-	}
+else if (property == Ids::midiMessageCtrlrValue)
+{
+    int newVal = (int)getProperty(Ids::midiMessageCtrlrValue);
+    _DBG("CtrlrMidiMessage::valueTreePropertyChanged midiMessageCtrlrValue=" + String(newVal) + " messageArraySize=" + String((int)messageArray.size()));
+    if (messageArray.size() > 0)
+        _DBG("CtrlrMidiMessage BEFORE raw=" + String::toHexString(messageArray.getReference(0).m.getRawData(), messageArray.getReference(0).m.getRawDataSize()));
+    setValue (newVal);
+    if (messageArray.size() > 0)
+        _DBG("CtrlrMidiMessage AFTER raw=" + String::toHexString(messageArray.getReference(0).m.getRawData(), messageArray.getReference(0).m.getRawDataSize()));
+    return;
+}
 	else if (property == Ids::midiMessageCtrlrNumber)
 	{
 		setNumber ((int)getProperty(Ids::midiMessageCtrlrNumber));
