@@ -63,7 +63,7 @@ namespace BinaryData
     const int            github_line_svgSize = 1633;
 
     extern const char*   paypal_colour_svg;
-    const int            paypal_colour_svgSize = 2052;
+    const int            paypal_colour_svgSize = 2053;
 
     extern const char*   paypal_bw_svg;
     const int            paypal_bw_svgSize = 1518;
@@ -267,7 +267,7 @@ namespace BinaryData
     const int            RSRC_zipSize = 49800;
 
     extern const char*   CtrlrIDs_xml;
-    const int            CtrlrIDs_xmlSize = 92139;
+    const int            CtrlrIDs_xmlSize = 92146;
 
     extern const char*   CtrlrLuaClassTemplates_xml;
     const int            CtrlrLuaClassTemplates_xmlSize = 110;
@@ -276,7 +276,7 @@ namespace BinaryData
     const int            CtrlrLuaMethodTemplates_xmlSize = 22470;
 
     extern const char*   CtrlrMidiMultiTemplate_xml;
-    const int            CtrlrMidiMultiTemplate_xmlSize = 662;
+    const int            CtrlrMidiMultiTemplate_xmlSize = 912;
 
     extern const char*   CtrlrMIDITransactions_xml;
     const int            CtrlrMIDITransactions_xmlSize = 1963;
