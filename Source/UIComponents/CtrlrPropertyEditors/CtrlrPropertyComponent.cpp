@@ -4,30 +4,41 @@
 #include "CtrlrLuaManager.h"
 #include "CtrlrInlineUtilitiesGUI.h"
 
-CtrlrPropertyComponent::CtrlrPropertyComponent (const Identifier &_propertyName,
-								const ValueTree &_propertyElement,
-								const ValueTree &_identifierDefinition,
-								CtrlrPanel *_panel,
-								StringArray *_possibleChoices,
-								Array<var>  *_possibleValues)
-	:	PropertyComponent (_propertyName.toString()),
-		identifierDefinition(_identifierDefinition),
-		propertyName(_propertyName),
-		propertyElement(_propertyElement),
-		panel(_panel),
-		possibleChoices(_possibleChoices),
-		possibleValues(_possibleValues)
+CtrlrPropertyComponent::CtrlrPropertyComponent(const Identifier& _propertyName,
+    const ValueTree& _propertyElement,
+    const ValueTree& _identifierDefinition,
+    CtrlrPanel* _panel,
+    StringArray* _possibleChoices,
+    Array<var>* _possibleValues)
+    : PropertyComponent(_propertyName.toString()),
+    identifierDefinition(_identifierDefinition),
+    propertyName(_propertyName),
+    propertyElement(_propertyElement),
+    panel(_panel),
+    possibleChoices(_possibleChoices),
+    possibleValues(_possibleValues)
 {
-	if (!identifierDefinition.isValid())
-	{
-		addAndMakeVisible (new CtrlrUnknownPropertyComponent (propertyName, propertyElement, identifierDefinition));
-		visibleText	 = propertyName.toString();
-		propertyType = CtrlrIDManager::UnknownProperty;
-	}
-	else
-	{
-		addAndMakeVisible (getPropertyComponent());
-	}
+    if (propertyName == Ids::midiMessageCtrlrValue)
+    {
+        setVisible(false);
+        // this hides the midi message ctrlr value slider becasue I don't think it does anything
+        visibleText = identifierDefinition.isValid() ? identifierDefinition.getProperty("text").toString()
+            : propertyName.toString();
+        visibleText.clear();
+        propertyType = CtrlrIDManager::Numeric;
+        return;
+    }
+
+    if (!identifierDefinition.isValid())
+    {
+        addAndMakeVisible(new CtrlrUnknownPropertyComponent(propertyName, propertyElement, identifierDefinition));
+        visibleText = propertyName.toString();
+        propertyType = CtrlrIDManager::UnknownProperty;
+    }
+    else
+    {
+        addAndMakeVisible(getPropertyComponent());
+    }
 }
 
 CtrlrPropertyComponent::~CtrlrPropertyComponent()
