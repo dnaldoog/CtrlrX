@@ -724,6 +724,7 @@ namespace Ids
     
     DECLARE_ID (modulatorReference);
     DECLARE_ID (midiMessageCtrlrNumber);
+    DECLARE_ID (midiMessageCtrlrNumberSize);
     DECLARE_ID (midiMessageChannel);
     DECLARE_ID (midiMessageCtrlrValue);
     DECLARE_ID (midiMessageType);

@@ -222,12 +222,31 @@ Component *CtrlrPropertyComponent::getPropertyComponent()
             preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
             buttonText = identifierDefinition.getProperty ("buttonText").toString();
             return (new CtrlrButtonTextPropertyComponent(valueToControl, visibleText, buttonText));
-            
-		case CtrlrIDManager::Numeric:
-            // preferredHeight = 36;
-            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
-			return (new CtrlrSliderPropertyComponent(valueToControl, (double)identifierDefinition.getProperty ("min", 0), (double)identifierDefinition.getProperty ("max", 127), (double)identifierDefinition.getProperty ("int", 1)));
-            
+            // Example within CtrlrPropertyComponent::getPropertyComponent() or similar:
+
+        case CtrlrIDManager::Numeric:
+        {
+            // Check if the property is the MIDI Controller Number
+            if (propertyName == Ids::midiMessageCtrlrNumber && propertyElement.hasType(Ids::midi))
+            {
+                // 1. Get the persistent state Value
+                Value sizeValue = propertyElement.getPropertyAsValue(
+                    Ids::midiMessageCtrlrNumberSize,
+                    panel ? panel->getUndoManager() : nullptr
+                );
+
+                // 2. Return your custom component
+                return new CtrlrMidiNumberPropertyComponent(valueToControl, sizeValue);
+            }
+
+            // Fall-through to the standard numeric slider for other properties...
+            return (new CtrlrSliderPropertyComponent(valueToControl, (double)identifierDefinition.getProperty("min", 0), (double)identifierDefinition.getProperty("max", 127), (double)identifierDefinition.getProperty("int", 1)));
+        }
+		//case CtrlrIDManager::Numeric:
+  //          // preferredHeight = 36;
+  //          preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
+		//	return (new CtrlrSliderPropertyComponent(valueToControl, (double)identifierDefinition.getProperty ("min", 0), (double)identifierDefinition.getProperty ("max", 127), (double)identifierDefinition.getProperty ("int", 1)));
+  //          
 		case CtrlrIDManager::VarNumeric:
             // preferredHeight = 36;
             preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
@@ -2489,4 +2508,229 @@ void CtrlrUnknownPropertyComponent::resized()
 void CtrlrUnknownPropertyComponent::refresh()
 {
 	l.setText (propertyElement.getPropertyAsValue(propertyName, 0).toString(), dontSendNotification);
+}
+
+
+// ==================================================================================
+// CtrlrRadioCheckboxPropertyComponent IMPLEMENTATION
+// ==================================================================================
+
+CtrlrRadioCheckboxPropertyComponent::CtrlrRadioCheckboxPropertyComponent(
+    const juce::Value& _valueToControl,
+    const juce::StringArray* _choices,
+    const juce::Array<juce::var>* _values)
+    : valueToControl(_valueToControl),
+    choices(_choices),
+    values(_values)
+{
+    // A unique group ID based on the component's memory address ensures exclusion 
+    // only among buttons within THIS instance.
+    const int groupId = (int)(reinterpret_cast<intptr_t>(this) & 0x7fffffff);
+
+    // Dynamic Button Creation
+    for (int i = 0; i < choices->size(); ++i)
+    {
+        juce::ToggleButton* button = new juce::ToggleButton();
+        button->setButtonText(choices->getReference(i));
+        button->setRadioGroupId(groupId);
+        button->setClickingTogglesState(true);
+        button->addListener(this);
+
+        // Use ComponentID to store the index, simplifying value retrieval in buttonClicked
+        button->setComponentID(juce::String(i));
+
+        addAndMakeVisible(button);
+        buttons.add(button);
+    }
+
+    // Attach listener to the persistent property
+    valueToControl.addListener(this);
+
+    // Load initial state
+    refresh();
+}
+
+CtrlrRadioCheckboxPropertyComponent::~CtrlrRadioCheckboxPropertyComponent()
+{
+    valueToControl.removeListener(this);
+}
+
+// Called when the persistent property changes (e.g., loading, undo/redo, or button click)
+void CtrlrRadioCheckboxPropertyComponent::valueChanged(juce::Value& value)
+{
+    refresh();
+}
+
+void CtrlrRadioCheckboxPropertyComponent::refresh()
+{
+    const juce::var currentValue = valueToControl.getValue();
+
+    for (int i = 0; i < buttons.size(); ++i)
+    {
+        juce::Button* button = buttons.getUnchecked(i);
+        bool isChecked = false;
+
+        if (i < values->size())
+        {
+            // Check if the property's current value matches the value associated with this button
+            isChecked = (values->getReference(i) == currentValue);
+        }
+
+        // Set the state without triggering the buttonClicked callback
+        button->setToggleState(isChecked, juce::dontSendNotification);
+    }
+}
+
+void CtrlrRadioCheckboxPropertyComponent::resized()
+{
+    // Simple vertical layout
+    juce::Rectangle<int> bounds = getLocalBounds().reduced(2);
+    const int buttonHeight = 20;
+
+    // Distribute all buttons vertically
+    for (juce::Button* button : buttons)
+    {
+        button->setBounds(bounds.removeFromTop(buttonHeight));
+    }
+}
+// Handles user interaction
+void CtrlrRadioCheckboxPropertyComponent::buttonClicked(juce::Button* buttonThatWasClicked)
+{
+    // Retrieve the index of the value to write
+    int index = buttonThatWasClicked->getComponentID().getIntValue();
+
+    if (index >= 0 && index < values->size())
+    {
+        // Write the value back to the ValueTree. 
+        // This triggers valueChanged() -> refresh(), which handles the UI update.
+        valueToControl = values->getReference(index);
+    }
+}
+// ==================================================================================
+// CtrlrMidiNumberPropertyComponent IMPLEMENTATION
+// ==================================================================================
+
+CtrlrMidiNumberPropertyComponent::CtrlrMidiNumberPropertyComponent(const juce::Value& _valueToControl, const juce::Value& _sizeValueToControl)
+    : valueToControl(_valueToControl),
+    sizeValueToControl(_sizeValueToControl)
+{
+    // --- Radio Button Setup ---
+    rb7.setButtonText("7 bit");
+    rb14.setButtonText("14 bit");
+
+    rb7.setClickingTogglesState(true);
+    rb14.setClickingTogglesState(true);
+
+    // Create a unique radio group ID
+    const int groupId = (int)(reinterpret_cast<intptr_t>(this) & 0x7fffffff);
+    rb7.setRadioGroupId(groupId);
+    rb14.setRadioGroupId(groupId);
+
+    addAndMakeVisible(&rb7);
+    addAndMakeVisible(&rb14);
+
+    rb7.addListener(this);
+    rb14.addListener(this);
+    sizeValueToControl.addListener(this); // Listen to the persistent size property
+
+    // --- Slider Setup ---
+    addAndMakeVisible(&slider);
+    slider.setSliderStyle(juce::Slider::LinearBar);
+    slider.setTextBoxStyle(juce::Slider::TextBoxLeft, false, 64, 20);
+    slider.getValueObject().referTo(valueToControl); // Bind slider directly to the main property
+    slider.addListener(this);
+
+    // Initial state setup (reads saved size and sets the slider range/radio state)
+    updateRange();
+}
+
+CtrlrMidiNumberPropertyComponent::~CtrlrMidiNumberPropertyComponent()
+{
+    slider.removeListener(this);
+    sizeValueToControl.removeListener(this);
+}
+
+void CtrlrMidiNumberPropertyComponent::resized()
+{
+    auto r = getLocalBounds();
+    const int radioW = 80;
+    const int padding = 6;
+
+    // Layout: Allocate space for radio buttons on the left
+    juce::Rectangle<int> left = r.removeFromLeft(radioW * 3 + padding * 2);
+
+    // Position the 7-bit radio button
+    rb7.setBounds(left.removeFromLeft(radioW).reduced(4));
+
+    // Position the 14-bit radio button
+    rb14.setBounds(left.removeFromLeft(radioW).reduced(4));
+
+    // Position the slider in the remaining space
+    slider.setBounds(r.reduced(4));
+}
+
+// Called when the size property changes (by the user or external loading)
+void CtrlrMidiNumberPropertyComponent::valueChanged(juce::Value& value)
+{
+    // Check if the change originated from the size property we are listening to
+    if (value.refersToSameTargetAs(sizeValueToControl))
+    {
+        updateRange();
+    }
+}
+
+void CtrlrMidiNumberPropertyComponent::updateRange()
+{
+    int64 minV = 0, maxV = 127;
+
+    // Read the persistent state from the ValueTree
+    const int currentSize = (int)sizeValueToControl.getValue();
+
+    // Logic to set max range and radio button state
+    if (currentSize == 14)
+    {
+        minV = 0; maxV = 16383;
+        rb14.setToggleState(true, juce::dontSendNotification);
+        rb7.setToggleState(false, juce::dontSendNotification);
+    }
+    else // Defaults to 7 bit if the property is 7, 0, or missing
+    {
+        minV = 0; maxV = 127;
+        rb7.setToggleState(true, juce::dontSendNotification);
+        rb14.setToggleState(false, juce::dontSendNotification);
+    }
+
+    // Set slider range and clamp current value if it falls outside the new range
+    slider.setRange((double)minV, (double)maxV, 1.0);
+    double cur = slider.getValue();
+    if (cur < (double)minV || cur >(double)maxV)
+        slider.setValue(juce::jlimit((double)minV, (double)maxV, cur), juce::sendNotificationAsync);
+}
+
+// --- Add this block to CtrlrPropertyComponent.cpp ---
+
+// --- Add or ensure this block exists in CtrlrPropertyComponent.cpp ---
+
+void CtrlrMidiNumberPropertyComponent::buttonClicked(juce::Button* b)
+{
+    // Check if the 7-bit radio button was clicked AND is now toggled on
+    if (b == &rb7 && rb7.getToggleState())
+    {
+        // Set the persistent property to 7. 
+        // This triggers valueChanged() -> updateRange(), which updates the slider range.
+        sizeValueToControl = 7;
+    }
+    // Check if the 14-bit radio button was clicked AND is now toggled on
+    else if (b == &rb14 && rb14.getToggleState())
+    {
+        // Set the persistent property to 14.
+        // This triggers valueChanged() -> updateRange(), which updates the slider range.
+        sizeValueToControl = 14;
+    }
+}
+void CtrlrMidiNumberPropertyComponent::sliderValueChanged(juce::Slider* s)
+{
+    // The persistence is handled by the binding: 
+    // slider.getValueObject().referTo(valueToControl);
+    // This function body can remain empty.
 }

@@ -694,6 +694,7 @@
   <!-- MIDI message properties -->
   <id name="midiMessageCtrlrNumber" text="MIDI Controller number" type="Numeric" min="0" max="16383" />
   <id name="midiMessageChannel" text="MIDI Channel" type="Numeric" min="1" max="16"/>
+  <id name ="midiMessageCtrlrNumberSize" text = "MIDI Controller number size" type = "Numeric" defaults = "7" / >
   <id name="midiMessageCtrlrValue" text="MIDI Controller value" type="Numeric" min="-8192" max="8191" />
   <id name="midiMessageType" text="MIDI message type" type="VarNumeric"  defaults="CC=0,Aftertouch=1,ChannelPressure=2,NoteOn=3,NoteOff=4,SysEx=5,Multi=6,ProgramChange=7,PitchWheel=8,None=9"/>
   <id name="midiMessageSysExFormula" text="SysEx Formula" type="SysEx"/>
