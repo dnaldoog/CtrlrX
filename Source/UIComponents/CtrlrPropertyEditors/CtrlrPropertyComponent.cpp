@@ -226,21 +226,27 @@ Component *CtrlrPropertyComponent::getPropertyComponent()
 
         case CtrlrIDManager::Numeric:
         {
-            // Check if the property is the MIDI Controller Number
+            // 1. Declare and initialize the default range variables from the identifierDefinition.
+            //    These will be used for ALL numeric properties EXCEPT midiMessageCtrlrNumber.
+            const double rangeMin = (double)identifierDefinition.getProperty("min", 0);
+            const double rangeMax = (double)identifierDefinition.getProperty("max", 127);
+            const double interval = (double)identifierDefinition.getProperty("int", 1);
+
+            // 2. Check for the custom MIDI Controller Number
             if (propertyName == Ids::midiMessageCtrlrNumber && propertyElement.hasType(Ids::midi))
             {
-                // 1. Get the persistent state Value
-                Value sizeValue = propertyElement.getPropertyAsValue(
+                // Get the persistent state Value (sizeValue)
+                juce::Value sizeValue = propertyElement.getPropertyAsValue(
                     Ids::midiMessageCtrlrNumberSize,
                     panel ? panel->getUndoManager() : nullptr
                 );
 
-                // 2. Return your custom component
+                // Return the custom component with radio buttons
                 return new CtrlrMidiNumberPropertyComponent(valueToControl, sizeValue);
             }
 
-            // Fall-through to the standard numeric slider for other properties...
-            return (new CtrlrSliderPropertyComponent(valueToControl, (double)identifierDefinition.getProperty("min", 0), (double)identifierDefinition.getProperty("max", 127), (double)identifierDefinition.getProperty("int", 1)));
+            // 3. Fall-through: Return the standard slider using the variables declared in step 1.
+            return new CtrlrSliderPropertyComponent(valueToControl, rangeMin, rangeMax, interval);
         }
 		//case CtrlrIDManager::Numeric:
   //          // preferredHeight = 36;
@@ -2673,10 +2679,10 @@ void CtrlrMidiNumberPropertyComponent::resized()
 void CtrlrMidiNumberPropertyComponent::valueChanged(juce::Value& value)
 {
     // Check if the change originated from the size property we are listening to
-    if (value.refersToSameTargetAs(sizeValueToControl))
-    {
+   // if (&value.getReference() == &sizeValueToControl.getReference())
+   // {
         updateRange();
-    }
+   // }
 }
 
 void CtrlrMidiNumberPropertyComponent::updateRange()

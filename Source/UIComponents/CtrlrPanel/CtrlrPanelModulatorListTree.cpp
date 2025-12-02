@@ -360,6 +360,13 @@ void CtrlrModulatorTreePropertyPanel::setSelectedTree(ValueTree &selectedTree)
 	Array <PropertyComponent*> propertyEditors;
 	for (int i=0; i<selectedTree.getNumProperties(); i++)
 	{
+		const Identifier propertyId = selectedTree.getPropertyName(i);
+
+		// Check if the property is the one we want to hide.
+		if (propertyId == Ids::midiMessageCtrlrNumberSize)
+		{
+			continue; // Skip the rest of the loop for this property.
+		}
 		propertyEditors.add (new TextPropertyComponent (selectedTree.getPropertyAsValue (selectedTree.getPropertyName (i),0), selectedTree.getPropertyName (i).toString(), 4096, false));
 	}
 	properties.addProperties (propertyEditors);
