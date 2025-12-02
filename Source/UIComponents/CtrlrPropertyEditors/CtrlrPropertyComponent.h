@@ -21,7 +21,8 @@ class CtrlrPropertyChild: public ChangeBroadcaster
 		virtual void refresh()=0;
 };
 
-class CtrlrPropertyComponent  : public PropertyComponent
+class CtrlrPropertyComponent  : public PropertyComponent,
+								public ValueTree::Listener
 {
 	public:
 		CtrlrPropertyComponent (const Identifier &_propertyName,
@@ -42,6 +43,12 @@ class CtrlrPropertyComponent  : public PropertyComponent
 		const String getVisibleText();
 		const String getElementSubType();
 		const String getElementType();
+		void valueTreePropertyChanged(ValueTree& treeWhosePropertyHasChanged,
+			const Identifier& property) override;
+		void valueTreeChildAdded(ValueTree& parentTree, ValueTree& childWhichHasBeenAdded) override {}
+		void valueTreeChildRemoved(ValueTree& parentTree, ValueTree& childWhichHasBeenRemoved, int indexFromWhichChildWasRemoved) override {}
+		void valueTreeChildOrderChanged(ValueTree& parentTreeWhoseChildrenHaveMoved, int oldIndex, int newIndex) override {}
+		void valueTreeParentChanged(ValueTree& treeWhoseParentHasChanged) override {}
 
 	private:
 	    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrPropertyComponent);
@@ -731,76 +738,5 @@ class CtrlrUnknownPropertyComponent : public Component, public CtrlrPropertyChil
 		Identifier propertyName;
 		ValueTree propertyElement;
 };
-/** Component for dynamically creating Radio Buttons from property choices **/
 
-class CtrlrRadioCheckboxPropertyComponent : public Component,
-	public Button::Listener,
-	public Value::Listener, // Essential for refreshing when the ValueTree changes
-	public CtrlrPropertyChild
-{
-public:
-	CtrlrRadioCheckboxPropertyComponent(const juce::Value& _valueToControl,
-		const juce::StringArray* _choices,
-		const juce::Array<juce::var>* _values);
-
-	~CtrlrRadioCheckboxPropertyComponent() override;
-
-	void refresh() override;
-	void resized() override;
-
-	// Button::Listener implementation
-	void buttonClicked(juce::Button* buttonThatWasClicked) override;
-
-	// Value::Listener implementation
-	void valueChanged(juce::Value& value) override;
-
-private:
-	juce::Value valueToControl;
-	const juce::StringArray* choices;
-	const juce::Array<juce::var>* values;
-
-	// OwnedArray manages the memory for the buttons
-	juce::OwnedArray<juce::Button> buttons;
-
-	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrRadioCheckboxPropertyComponent)
-};
-
-
-
-/** New property component for 7-bit/14-bit MIDI Controller Number slider **/
-class CtrlrMidiNumberPropertyComponent : public juce::Component,
-	private juce::Slider::Listener,
-	private juce::Button::Listener,
-	public juce::Value::Listener // Necessary to listen for changes to sizeValueToControl
-{
-public:
-	// Constructor requires the main property value and the persistent size property value
-	CtrlrMidiNumberPropertyComponent(const juce::Value& _valueToControl, const juce::Value& _sizeValueToControl);
-
-	~CtrlrMidiNumberPropertyComponent() override;
-
-	// Component overrides
-	void resized() override;
-
-	// Value::Listener implementation
-	void valueChanged(juce::Value& value) override;
-
-private:
-	// Internal logic to read the size and update the slider range/radio button states
-	void updateRange();
-
-	// Slider::Listener implementation
-	void sliderValueChanged(juce::Slider* s) override;
-
-	// Button::Listener implementation
-	void buttonClicked(juce::Button* b) override;
-
-private:
-	juce::Value valueToControl;
-	juce::Value sizeValueToControl; // This holds the persistent 7 or 14 bit state
-	juce::Slider slider;
-	juce::ToggleButton rb7, rb14;
-
-	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrMidiNumberPropertyComponent)
-};
 #endif

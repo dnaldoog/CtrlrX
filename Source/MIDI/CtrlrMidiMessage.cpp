@@ -413,6 +413,7 @@ Result CtrlrMidiMessage::fillMessagePropertiesFromData()
 		setProperty (Ids::midiMessageChannel, 1);
 		setProperty (Ids::midiMessageCtrlrNumber, 1);
 		setProperty (Ids::midiMessageCtrlrValue, 0);
+		setProperty(Ids::midiMessageCtrlrNumberSize, false);
 		setProperty (Ids::midiMessageMultiList, "");
 		setProperty (Ids::midiMessageSysExFormula, "");
 
