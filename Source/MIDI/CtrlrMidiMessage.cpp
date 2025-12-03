@@ -783,7 +783,8 @@ void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 			if (mm.sysexData.isNotEmpty())
 			{
 				int channel = getChannelForMultiMessage(mm, mm.sysexData);
-				mex.m = midiMessageExfromString(mm.sysexData, channel, componentNumber, componentValue).m;
+				//mex.m = midiMessageExfromString(mm.sysexData, channel, componentNumber, componentValue).m; // don't use this -> needs the old 6 value csv
+				mex = CtrlrSysexProcessor::sysexMessageFromString(mm.sysexData, componentValue, channel);
 			}
 		}
 
