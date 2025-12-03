@@ -25,6 +25,17 @@ public:
         String content =
             "EXPRESSIONS HELP\n\n"
 
+            "EXAMPLE USAGE:\n\n\n"
+            "setGlobal(0, modulatorValue * 2)  \n"
+            "  This sets global variable 0 to twice the current modulator value.\n\n"
+
+            "setGlobal(0, setBitRangeAsInt(global.k0, 4, 2, 0))\n"
+            "  This clears bits 4 and 5 in global variable 0.\n\n"
+
+            "modulatorValue*127\n"
+            "   Useful for on/off boolean values where you want to map uiButton false/true to 0,127\n\n"
+
+
             "CONSTANTS:\n\n"
 
             "modulatorValue\n"

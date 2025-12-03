@@ -804,7 +804,7 @@ void CtrlrExpressionProperty::buttonClicked (Button* buttonThatWasClicked)
     {
 		if (compile(true))
 		{
-			AlertWindow::showMessageBox (AlertWindow::InfoIcon, "Expression validation", "Expression is valid");
+			AlertWindow::showMessageBox (AlertWindow::InfoIcon, "Expression validation", "Expression is valid\n\nSee Expressions tab for help and examples");
 		}
     }
 }
@@ -836,7 +836,7 @@ const bool CtrlrExpressionProperty::compile(const bool setPropertyIfValid)
 	if (!parseError.isEmpty())
 	{
 		text->setColour (TextEditor::backgroundColourId, Colours::deeppink);
-		AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Expression validation", "Validation failed: "+parseError, "OK", this);
+		AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Expression validation", "Validation failed: "+parseError+"\n\nSee Expressions tab for help and examples", "OK", this);
 		return (false);
 	}
 
