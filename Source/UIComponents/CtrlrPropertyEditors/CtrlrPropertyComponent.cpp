@@ -215,10 +215,15 @@ Component *CtrlrPropertyComponent::getPropertyComponent()
             preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
 			return (new CtrlrFontPropertyComponent (valueToControl, panel));
 
-		case CtrlrIDManager::Bool:
-            // preferredHeight = 36;
-            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
-			return (new CtrlrBooleanPropertyComponent(valueToControl, identifierDefinition.getProperty ("defaults")));
+        case CtrlrIDManager::Bool:
+            preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0);
+
+            if (propertyName == Ids::midiMessageCtrlrNumberSize)
+            {
+                return (new CtrlrBooleanPropertyComponent(valueToControl, String("14-bit"), String("7-bit")));
+            }
+
+            return (new CtrlrBooleanPropertyComponent(valueToControl, identifierDefinition.getProperty("defaults")));
             
 		case CtrlrIDManager::MultiMidi:
 			// preferredHeight = 128;
@@ -357,26 +362,42 @@ const String CtrlrPropertyComponent::getElementType()
 		return (propertyElement.getType().toString());
 	}
 }
+// Constructor 1:  custom true/false text
+CtrlrBooleanPropertyComponent::CtrlrBooleanPropertyComponent(const Value& _valueToControl,
+    const juce::String& _trueText,
+    const juce::String& _falseText)
+    : valueToControl(_valueToControl),
+    stateText(""),
+    onText(_trueText),      // onText = "14-bit"
+    offText(_falseText)     // offText = "7-bit"
+{
+    addAndMakeVisible(&button);
+    button.addListener(this);
+    button.setClickingTogglesState(false);
+    button.setButtonText(offText);  // Start with "7-bit" when false
+    button.setClickingTogglesState(true);
+    button.setToggleState(valueToControl.getValue(), dontSendNotification);
+}
 
-CtrlrBooleanPropertyComponent::CtrlrBooleanPropertyComponent (const Value& _valueToControl, const String& _stateText)
+// Constructor 2:  stateText
+CtrlrBooleanPropertyComponent::CtrlrBooleanPropertyComponent(const Value& _valueToControl, const String& _stateText)
     : valueToControl(_valueToControl), stateText(_stateText)
 {
-	if (stateText.contains ("/"))
-	{
-		onText	= stateText.upToFirstOccurrenceOf ("/", false, false);
-		offText	= stateText.fromFirstOccurrenceOf ("/", false, false);
-	}
-	else
-	{
-		onText = offText = stateText;
-	}
-
-    addAndMakeVisible (&button);
-	button.addListener (this);
-    button.setClickingTogglesState (false);
-    button.setButtonText (offText);
-    button.setClickingTogglesState (true);
-	button.setToggleState (valueToControl.getValue(), dontSendNotification);
+    if (stateText.contains("/"))
+    {
+        onText = stateText.upToFirstOccurrenceOf("/", false, false);
+        offText = stateText.fromFirstOccurrenceOf("/", false, false);
+    }
+    else
+    {
+        onText = offText = stateText;
+    }
+    addAndMakeVisible(&button);
+    button.addListener(this);
+    button.setClickingTogglesState(false);
+    button.setButtonText(offText);
+    button.setClickingTogglesState(true);
+    button.setToggleState(valueToControl.getValue(), dontSendNotification);
 }
 
 CtrlrBooleanPropertyComponent::~CtrlrBooleanPropertyComponent()

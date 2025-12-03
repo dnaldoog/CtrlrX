@@ -69,6 +69,7 @@ class CtrlrPropertyComponent  : public PropertyComponent,
 class CtrlrBooleanPropertyComponent : public Component, public Button::Listener, public CtrlrPropertyChild
 {
 	public:
+		CtrlrBooleanPropertyComponent(const Value& _valueToControl, const String& _trueText, const String& _falseText);
 		CtrlrBooleanPropertyComponent (const Value& _valueToControl, const String& _stateText);
 		~CtrlrBooleanPropertyComponent();
 		void paint (Graphics& g);
@@ -80,9 +81,13 @@ class CtrlrBooleanPropertyComponent : public Component, public Button::Listener,
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrBooleanPropertyComponent);
 
 		Value valueToControl;
-		ToggleButton button;
-		String onText,offText;
 		String stateText;
+		String onText;    // This is what shows when true
+		String offText;   // This is what shows when false
+		String trueText;  // ADD THIS if not there
+		String falseText; // ADD THIS if not there
+		bool useCustomLabels; // ADD THIS if not there
+		ToggleButton  button;
 };
 
 class CtrlrButtonPropertyComponent : public Component, public Button::Listener, public CtrlrPropertyChild
