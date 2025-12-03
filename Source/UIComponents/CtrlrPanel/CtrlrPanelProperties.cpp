@@ -19,6 +19,7 @@ public:
         helpText.setScrollbarsShown(true);
         helpText.setCaretVisible(false);
         helpText.setPopupMenuEnabled(true);
+        helpText.setWantsKeyboardFocus(false);
 
         // Set the help text content
         String content =
@@ -65,7 +66,8 @@ public:
             "  Returns the absolute value of the parameter\n\n"
 
             "floor(x)\n"
-            "  Returns the largest integral value that is not greater than the parameter\n\n"
+            "  Returns the largest integral value that is not greater than the\n"
+            "  parameter\n\n"
 
             "mod(a,b)\n"
             "  Divides two numbers and returns the result of the MODULO operation %.\n"
@@ -79,7 +81,7 @@ public:
 
             "gte(a,b,retTrue,retFalse)\n"
             "  Return the larger or equal of the two passed parameters (a >= b).\n"
-            "  Example: gte(modulatorValue, 0, modulatorValue, 128 - modulatorValue)\n"
+            "  Example: gte(modulatorValue, 0, modulatorValue, 128-modulatorValue)\n"
             "  will return modulatorValue if modulatorValue is greater than 0 and\n"
             "  (128 - modulatorValue) if it is less than zero\n\n"
 
@@ -138,7 +140,6 @@ public:
 
     void parentHierarchyChanged() override
     {
-        // Update colors when component is added to hierarchy
         updateColors();
     }
 
