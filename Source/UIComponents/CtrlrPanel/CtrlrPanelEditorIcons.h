@@ -24,7 +24,8 @@ enum class IconType
     Eye,
     EyeSlash,
     SolidQuest,
-    UlBars
+    UlBars,
+    QuestCirc
 };
 
 class SvgIconManager
@@ -42,6 +43,7 @@ private:
     static const juce::String eyeSlash;
     static const juce::String ulBars;
     static const juce::String questionSolid;
+    static const juce::String questionCircle;
 };
 
 class ToggleIconComponent : public juce::Button

@@ -774,8 +774,9 @@ CtrlrExpressionProperty::CtrlrExpressionProperty (const Value &_valeToControl) :
 	text->setColour (TextEditor::highlightColourId, findColour(TextEditor::focusedOutlineColourId));
 
     addAndMakeVisible (apply = gui::createDrawableButton("Apply", BIN2STR(bug_svg)));
+    //auto questCircle = SvgIconManager::getDrawable(IconType::QuestCirc, *this);
     apply->addListener (this);
-	apply->setTooltip ("Compile expression, if it's valid set the property");
+	apply->setTooltip ("Compile expression, if it's valid, set the property");
 	apply->setMouseCursor (MouseCursor::PointingHandCursor);
 
 	text->setFont (Font (Font::getDefaultMonospacedFontName(), 10.0f, Font::plain));
@@ -1383,7 +1384,7 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent (const Value &_
    
    
  // 1. Create a Drawable (the icon) from your manager
-auto listIcon = SvgIconManager::getDrawable(IconType::UlBars, *this); // *** Replace IconType::EyeSlash with your actual new list IconType ***
+auto listIcon = SvgIconManager::getDrawable(IconType::UlBars, *this); 
 
 // 2. Create the DrawableButton using the standard JUCE constructor
 addMulti = new juce::DrawableButton("Add Multi", juce::DrawableButton::ImageFitted);
