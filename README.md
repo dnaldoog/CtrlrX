@@ -486,7 +486,7 @@ Tuturial coming soon.
 
 ## Changelog
 
-#### Version 5.6.35 | 2025.11.30
+#### Version 5.6.35 | 2025.12.04
 
 * **UPDATED** ctrlrAutoSave & ctrlrAutoSaveInterval properties in Preferences only if isStandaloneApp. `CtrlrManager.cpp`, `CtrlrManagerInstance.cpp`, `CtrlrSettings.cpp`
 * **UPDATED** flag IS_MIDI_EFFECT FALSE. `CMakeLists.txt`
@@ -495,6 +495,7 @@ Tuturial coming soon.
 * **FIXED** saving uiSlider positions on uiTabs. Thanks to [John Goodland](https://github.com/dnaldoog) `CtrlrTabsComponents.cpp`
 * **FIXED** MemoryBlock(int) faulty constructor returning actual size x2. Thanks to [John Goodland](https://github.com/dnaldoog) `LMemory.cpp`
 * **ADDED** GH action to create UML diagrams using clang-uml. Thanks to [Sgorpi](https://github.com/sgorpi). `clang_uml_diagrams.yml`, `.clang-uml`
+* **FIXED** Linux Gnome Wayland modal Dialog Windows. Thanks to [John Goodland](https://github.com/dnaldoog) 
 
 #### Version 5.6.34 | 2025.11.07
 
