@@ -94,7 +94,7 @@ Builds/VisualStudio2022/
 Source/Misc/boost/__MACOSX/
 
 # 2. Ignore the main extracted Boost library folder (recursive ignore)
-Source/Misc/boost/boost/
+Source/Misc/boost/*
 
 # 3. Explicitly UN-IGNORE the files you want (required for tracking)
 !Source/Misc/boost/boost.zip
