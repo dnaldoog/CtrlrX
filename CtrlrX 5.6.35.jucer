@@ -1043,6 +1043,8 @@
                 file="Source/UIComponents/CtrlrPropertyEditors/CtrlrPropertyComponent.h"/>
         </GROUP>
         <GROUP id="{B01F1BE8-BD6C-CC8D-6AFE-E508BFBBDC7F}" name="CtrlrWindowManagers">
+          <FILE id="sLaKA8" name="CtrlrAboutContent.h" compile="0" resource="0"
+                file="Source/UIComponents/CtrlrWindowManagers/CtrlrAboutContent.h"/>
           <FILE id="MXMqnG" name="CtrlrChildWindow.cpp" compile="1" resource="0"
                 file="Source/UIComponents/CtrlrWindowManagers/CtrlrChildWindow.cpp"/>
           <FILE id="I8i09a" name="CtrlrChildWindow.h" compile="0" resource="0"
@@ -1067,6 +1069,8 @@
                 file="Source/UIComponents/CtrlrWindowManagers/CtrlrPanelWindowManager.cpp"/>
           <FILE id="rrTHIh" name="CtrlrPanelWindowManager.h" compile="0" resource="0"
                 file="Source/UIComponents/CtrlrWindowManagers/CtrlrPanelWindowManager.h"/>
+          <FILE id="OtSH87" name="CtrlrSettingsContent.h" compile="0" resource="0"
+                file="Source/UIComponents/CtrlrWindowManagers/CtrlrSettingsContent.h"/>
         </GROUP>
         <FILE id="Pd2NHo" name="CtrlrAbout.cpp" compile="1" resource="0" file="Source/UIComponents/CtrlrAbout.cpp"/>
         <FILE id="TkpXbV" name="CtrlrAbout.h" compile="0" resource="0" file="Source/UIComponents/CtrlrAbout.h"/>
