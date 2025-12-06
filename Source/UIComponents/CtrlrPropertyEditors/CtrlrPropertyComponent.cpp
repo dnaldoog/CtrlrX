@@ -1896,7 +1896,15 @@ void CtrlrSysExEditor::mouseDown (const MouseEvent& e)
 			m.addItem (8, "Roland JV1010 upper middle byte");
 			m.addItem (9, "Roland JV1010 lower middle byte");
 			m.addItem (10, "Roland JV1010 lower byte");
-
+            m.addSectionHeader("16-bit value nibbles");
+            m.addItem(19, "16-bit LSB nibble 0 (bits 0-3)");
+            m.addItem(20, "16-bit LSB nibble 1 (bits 4-7)");
+            m.addItem(21, "16-bit LSB nibble 2 (bits 8-11)");
+            m.addItem(22, "16-bit LSB nibble 3 (bits 12-15)");
+            m.addItem(23, "16-bit MSB nibble 0 (bits 12-15)");
+            m.addItem(24, "16-bit MSB nibble 1 (bits 8-11)");
+            m.addItem(25, "16-bit MSB nibble 2 (bits 4-7)");
+            m.addItem(26, "16-bit MSB nibble 3 (bits 0-3)");
 			m.addSectionHeader ("Insert static");
 
 			m.addItem (11, "SysEx Start");
@@ -1941,83 +1949,106 @@ void CtrlrSysExEditor::mouseDown (const MouseEvent& e)
 			m.addSubMenu ("Global variable[3]",nm);
 
 			const int ret = m.show();
-			switch (ret)
-			{
-			case 1:
-				l->setText("yy", sendNotification);
-				break;
-			case 2:
-				l->setText ("0y", sendNotification);
-				break;
-			case 3:
-				l->setText ("LS", sendNotification);
-				break;
-			case 4:
-				l->setText ("MS", sendNotification);
-				break;
-			case 5:
-				l->setText ("ls", sendNotification);
-				break;
-			case 6:
-				l->setText ("ms", sendNotification);
-				break;
-			case 7:
-				l->setText ("r1", sendNotification);
-				break;
-			case 8:
-				l->setText ("r2", sendNotification);
-				break;
-			case 9:
-				l->setText ("r3", sendNotification);
-				break;
-			case 10:
-				l->setText ("r4", sendNotification);
-				break;
-			case 11:
-				l->setText ("f0", sendNotification);
-				break;
-			case 12:
-				l->setText ("f7", sendNotification);
-				break;
-			case 13:
-				l->setText ("z5", sendNotification);
-				break;
-			case 14:
-				l->setText("X5", sendNotification); // Exclusive OR, Akai, Korg, Sequential
-				break;
-			case 15:
-				l->setText("w5", sendNotification); // Simple Summing, Waldorf, Lexicon, Oberheim
-				break;
-			case 16:
-				l->setText("tc", sendNotification); // Technics Matsushita, XOR Byte 1
-				break;
-			case 17:
-				l->setText("O5", sendNotification); //1s Complement, E-mu, Korg
-				break;
-			case 18:
-				l->setText("ii", sendNotification); // ignore this byte on input
-				break;
-			}
+            switch (ret)
+            {
+            case 1:
+                l->setText("yy", sendNotification);
+                break;
+            case 2:
+                l->setText("0y", sendNotification);
+                break;
+            case 3:
+                l->setText("LS", sendNotification);
+                break;
+            case 4:
+                l->setText("MS", sendNotification);
+                break;
+            case 5:
+                l->setText("ls", sendNotification);
+                break;
+            case 6:
+                l->setText("ms", sendNotification);
+                break;
+            case 7:
+                l->setText("r1", sendNotification);
+                break;
+            case 8:
+                l->setText("r2", sendNotification);
+                break;
+            case 9:
+                l->setText("r3", sendNotification);
+                break;
+            case 10:
+                l->setText("r4", sendNotification);
+                break;
+            case 11:
+                l->setText("f0", sendNotification);
+                break;
+            case 12:
+                l->setText("f7", sendNotification);
+                break;
+            case 13:
+                l->setText("z5", sendNotification);
+                break;
+            case 14:
+                l->setText("X5", sendNotification); // Exclusive OR, Akai, Korg, Sequential
+                break;
+            case 15:
+                l->setText("w5", sendNotification); // Simple Summing, Waldorf, Lexicon, Oberheim
+                break;
+            case 16:
+                l->setText("tc", sendNotification); // Technics Matsushita, XOR Byte 1
+                break;
+            case 17:
+                l->setText("O5", sendNotification); //1s Complement, E-mu, Korg
+                break;
+            case 18:
+                l->setText("ii", sendNotification); // ignore this byte on input
+                break;
+            case 19:
+                l->setText("q0", sendNotification);
+                break;
+            case 20:
+                l->setText("q1", sendNotification);
+                break;
+            case 21:
+                l->setText("q2", sendNotification);
+                break;
+            case 22:
+                l->setText("q3", sendNotification);
+                break;
+            case 23:
+                l->setText("Q0", sendNotification);
+                break;
+            case 24:
+                l->setText("Q1", sendNotification);
+                break;
+            case 25:
+                l->setText("Q2", sendNotification);
+                break;
+            case 26:
+                l->setText("Q3", sendNotification);
+                break;
+            }
+            if (ret >= 27 && ret < 43)  
+            {
+                l->setText("k" + String::toHexString(ret - 27), sendNotification);  
+            }
 
-			if (ret >= 19 && ret < 37)
-			{
-				l->setText ("k"+String::toHexString(ret-20), sendNotification);
-			}
+            if (ret >= 43 && ret < 59)  
+            {
+                l->setText("o" + String::toHexString(ret - 43), sendNotification); 
+            }
 
-			if (ret >= 37 && ret < 53)
-			{
-				l->setText ("o"+String::toHexString(ret-37), sendNotification);
-			}
+            if (ret >= 59 && ret < 75)  
+            {
+                l->setText("p" + String::toHexString(ret - 59), sendNotification); 
+            }
 
-			if (ret >= 53 && ret < 69)
-			{
-				l->setText ("p"+String::toHexString(ret-53), sendNotification);
-			}
-
-			if (ret >= 69 && ret < 86)
-			{
-				l->setText ("n"+String::toHexString(ret-69), sendNotification);
-			}
+            if (ret >= 75 && ret < 91)  
+            {
+                l->setText("n" + String::toHexString(ret - 75), sendNotification);  
+            }
 
 			if (ret > 1024 && ret < 4096)
 			{
@@ -2031,7 +2062,7 @@ void CtrlrSysExEditor::mouseDown (const MouseEvent& e)
 
 				if (vendorId.length() == 6)
 				{
-					/* moder vendor id, 3 bytes
+					/* modern vendor id, 3 bytes
 					   check if the next bytes are available so we can fill them with data
 					   */
 

@@ -24,7 +24,10 @@ void CtrlrSysexProcessor::sysExProcessToken (const CtrlrSysexToken token, uint8 
 {
 	if (byte == NULL)
 		return;
-
+	if (token.getType() >= Nibble16bitLsb0 && token.getType() <= Nibble16bitMsb3)
+	{
+		_DBG("Processing token type=" + String(token.getType()) + " position=" + String(token.getPosition()) + " value=" + String(value));
+	}
 	BigInteger bi;
 
 	switch (token.getType())
@@ -79,7 +82,44 @@ void CtrlrSysexProcessor::sysExProcessToken (const CtrlrSysexToken token, uint8 
 		case RolandSplitByte4:
 			*byte = getRolandSplit (value, 4);
 			break;
+		case Nibble16bitLsb0:
+			*byte = (uint8)(value & 0x0F);
+			break;
 
+		case Nibble16bitLsb1:
+			*byte = (uint8)((value >> 4) & 0x0F);
+			_DBG("Nibble16bitLsb1: wrote " + String::toHexString(byte, 1) + " at position");
+			break;
+
+		case Nibble16bitLsb2:
+			*byte = (uint8)((value >> 8) & 0x0F);
+			_DBG("Nibble16bitLsb1: wrote " + String::toHexString(byte, 1) + " at position");
+			break;
+
+		case Nibble16bitLsb3:
+			*byte = (uint8)((value >> 12) & 0x0F);
+			//_DBG("Nibble16bitLsb1: wrote " + String::toHexString(byte, 1) + " at position");
+			break;
+
+		case Nibble16bitMsb0:
+			*byte = (uint8)((value >> 12) & 0x0F);
+			//_DBG("Nibble16bitLsb1: wrote " + String::toHexString(byte, 1) + " at position");
+			break;
+
+		case Nibble16bitMsb1:
+			*byte = (uint8)((value >> 8) & 0x0F);
+			//_DBG("Nibble16bitLsb1: wrote " + String::toHexString(byte, 1) + " at position");
+			break;
+
+		case Nibble16bitMsb2:
+			*byte = (uint8)((value >> 4) & 0x0F);
+			//_DBG("Nibble16bitLsb1: wrote " + String::toHexString(byte, 1) + " at position");
+			break;
+
+		case Nibble16bitMsb3:
+			*byte = (uint8)(value & 0x0F);
+			//_DBG("Nibble16bitLsb1: wrote " + String::toHexString(byte, 1) + " at position");
+			break;
         case CurrentProgram:
         case CurrentBank:
 		case Ignore:
@@ -389,6 +429,38 @@ CtrlrSysExFormulaToken CtrlrSysexProcessor::sysExIdentifyToken(const String &s)
 	if (s == "tc")
 	{
 		return (ChecksumTechnics);
+	}
+	if (s == "q0")
+	{
+		return (Nibble16bitLsb0);
+	}
+	if (s == "q1")
+	{
+		return (Nibble16bitLsb1);
+	}
+	if (s == "q2")
+	{
+		return (Nibble16bitLsb2);
+	}
+	if (s == "q3")
+	{
+		return (Nibble16bitLsb3);
+	}
+	if (s == "Q0")
+	{
+		return (Nibble16bitMsb0);
+	}
+	if (s == "Q1")
+	{
+		return (Nibble16bitMsb1);
+	}
+	if (s == "Q2")
+	{
+		return (Nibble16bitMsb2);
+	}
+	if (s == "Q3")
+	{
+		return (Nibble16bitMsb3);
 	}
 	if (s.startsWith("k") || s.startsWith("p") || s.startsWith("n") || s.startsWith("o"))
 	{

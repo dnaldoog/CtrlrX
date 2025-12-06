@@ -106,6 +106,14 @@ enum CtrlrSysExFormulaToken
 	ChecksumXor,
 	CurrentProgram,
 	CurrentBank,
+	Nibble16bitLsb0,    // bits 0-3
+	Nibble16bitLsb1,    // bits 4-7
+	Nibble16bitLsb2,    // bits 8-11
+	Nibble16bitLsb3,    // bits 12-15
+	Nibble16bitMsb0,    // bits 12-15
+	Nibble16bitMsb1,    // bits 8-11
+	Nibble16bitMsb2,    // bits 4-7
+	Nibble16bitMsb3,    // bits 0-3
 	NoToken
 };
 
@@ -273,7 +281,8 @@ enum CtrlrByteEncoding
 	EncodeNibbleLsbFirst,     // 4-bit: LSB nibble, MSB nibble (unsigned)
 	EncodeSignedNibbleMsbFirst, // 4-bit: MSB nibble, LSB nibble (signed int8)
 	EncodeSignedNibbleLsbFirst, // 4-bit: LSB nibble, MSB nibble (signed int8)
-	EncodeDSI                 // Dave Smith Instruments (same as MSBFirst?)
+	Encode16bitLsbFirst,                 // 4 bit *4 = 16 bit)
+	Encode16bitMsbFirst                 // 4 bit *4 = 16 bit)
 };
 
 enum CtrlrMIDIDeviceType

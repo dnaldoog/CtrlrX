@@ -221,11 +221,16 @@ public:
             "EncodeSignedNibbleLsbFirst\n"
             "  4-bit: LSB nibble, MSB nibble (signed int8)\n\n"
 
-            "EncodeDSI\n"
-            "  Dave Smith Instruments (same as MSBFirst)\n"
-            "  Originally included by Roman\n\n\n"
+            "Encode16bitLsbFirst\n"
+            "Encodes a 16 - bit value as four 4 - bit nibbles, least significant first.\n"
+            "Tokens: q0 q1 q2 q3\n"
+            "Example : 51379 ? 03 0B 08 0C\n\n"
 
-            "EXAMPLE - SEND:\n\n"
+            "Encode16bitMsbFirst\n"
+            "Encodes a 16 - bit value as four 4 - bit nibbles, most significant first.\n"
+            "Tokens: Q0 Q1 Q2 Q3\n"
+            "Example : 51379 ? 0C 08 0B 03\n\n"
+
 
             "Non mapped:\n"
             "  panel:getModulatorValuesAsData(CUSTINDEX, CtrlrPanel.EncodeNormal, 1, false)\n\n"
