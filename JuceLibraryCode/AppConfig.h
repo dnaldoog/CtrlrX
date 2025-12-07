@@ -36,7 +36,14 @@
 */
 
 // BEGIN SECTION A
+// ==== CtrlrX Linux override: disable GTK/WebKit ====
+#if JUCE_LINUX
+ #undef JUCE_WEB_BROWSER
+ #define JUCE_WEB_BROWSER 0
+#endif
 
+// ==== Fix for Wayland popup issues on Linux ====
+// ==== This must go at the top of this file ====
 #ifndef JUCE_DISPLAY_SPLASH_SCREEN
  #define JUCE_DISPLAY_SPLASH_SCREEN 1
 #endif
