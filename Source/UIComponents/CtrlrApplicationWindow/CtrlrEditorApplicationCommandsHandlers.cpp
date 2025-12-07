@@ -12,6 +12,7 @@
 #include "CtrlrLua/MethodEditor/CtrlrLuaMethodEditorCommandIDs.h" // Added v5.6.34.
 
 
+
 void CtrlrEditor::performLuaEditorCommand(const int commandID) // Added v5.6.34. Declare the functions to call depending on the LUA method editor menu item selected from the GUI.
 {
     _DBG("performLuaEditorCommand called with ID: " + String(commandID));
@@ -470,41 +471,89 @@ void CtrlrEditor::performRecentFileOpen(const int menuItemID)
 	}
 }
 
-void CtrlrEditor::performShowKeyboardMappingDialog(const int menuItemID)
+void CtrlrEditor::performShowKeyboardMappingDialog(const int /*menuItemID*/)
 {
-    #if JUCE_LINUX
-        // Use async dialog on Linux (works but may need second click from menu)
-        auto* keys = new KeyMappingEditorComponent(*owner.getCommandManager().getKeyMappings(), true);
-        keys->setSize(600, 400);
-        
-        DialogWindow::LaunchOptions options;
-        options.content.setOwned(keys);
-        options.dialogTitle = "Keyboard mapping";
-        options.resizable = true;
-        options.useNativeTitleBar = true;
-        options.dialogBackgroundColour = Colours::lightgrey;
-        options.escapeKeyTriggersCloseButton = true;
-        
-        options.launchAsync();
-        
-        // Save mappings when changed
-        ScopedPointer<XmlElement> keysXml(owner.getCommandManager().getKeyMappings()->createXml(true).release());
-        if (keysXml)
-        {
-            owner.setProperty(Ids::ctrlrKeyboardMapping, keysXml->createDocument(""));
-        }
-    #else
-        // Modal on other platforms (original code)
-        ScopedPointer<KeyMappingEditorComponent> keys(new KeyMappingEditorComponent(*owner.getCommandManager().getKeyMappings(), true));
-        owner.getWindowManager().showModalDialog("Keyboard mapping", keys, true, this);
+#if JUCE_LINUX
 
-        ScopedPointer<XmlElement> keysXml(owner.getCommandManager().getKeyMappings()->createXml(true).release());
-        if (keysXml)
+// 0) Cancel visible popups immediately
+if (auto* mm = ModalComponentManager::getInstanceWithoutCreating())
+    mm->cancelAllModalComponents();
+
+// 1) First defer: exit menu callback
+MessageManager::callAsync([this]
+{
+    _DBG("KBMap: first async (exited menu callback)");
+
+    // 2) Second defer: next event loop tick
+    MessageManager::callAsync([this]
+    {
+        _DBG("KBMap: second async (next frame)");
+
+        // 3) Third defer: final safety — tiny delay to let compositor settle.
+        // Use callAsync or a tiny timer; timer is slightly more deterministic on some Wayland setups.
+        const int extraDelayMs = 20; // tweak 10-40ms if needed
+
+        Timer::callAfterDelay(extraDelayMs, [this]()
         {
-            owner.setProperty(Ids::ctrlrKeyboardMapping, keysXml->createDocument(""));
-        }
-    #endif
+            _DBG("KBMap: final launch (after extraDelay)");
+
+            auto* keys = new KeyMappingEditorComponent(
+                *owner.getCommandManager().getKeyMappings(), true);
+
+            keys->setSize(600, 400);
+
+            DialogWindow::LaunchOptions options;
+            options.content.setOwned(keys);
+            options.dialogTitle = "Keyboard mapping";
+            options.resizable = true;
+
+            // CRUCIAL: use JUCE titlebar on Linux to avoid native/GTK transient issues
+            options.useNativeTitleBar = false;
+
+            options.dialogBackgroundColour = Colours::lightgrey;
+            options.escapeKeyTriggersCloseButton = true;
+
+            // don't set componentToCentreAround (or set to nullptr) if centering causes issues
+            // options.componentToCentreAround = this;
+
+            options.launchAsync();
+
+            // Save mappings when changed
+            if (auto xml = owner.getCommandManager()
+                            .getKeyMappings()->createXml(true))
+            {
+                owner.setProperty(Ids::ctrlrKeyboardMapping,
+                                  xml->createDocument(""));
+            }
+        }); // end Timer::callAfterDelay
+    }); // end second callAsync
+}); // end first callAsync
+
+return;
+
+#else
+    // Original modal version (unchanged)
+    ScopedPointer<KeyMappingEditorComponent> keys(
+        new KeyMappingEditorComponent(
+            *owner.getCommandManager().getKeyMappings(), true));
+
+    owner.getWindowManager()
+         .showModalDialog("Keyboard mapping", keys, true, this);
+
+    ScopedPointer<XmlElement> keysXml(
+        owner.getCommandManager()
+             .getKeyMappings()->createXml(true).release());
+
+    if (keysXml)
+    {
+        owner.setProperty(Ids::ctrlrKeyboardMapping,
+                          keysXml->createDocument(""));
+    }
+#endif
 }
+
+
+
 
 void CtrlrEditor::performMidiChannelChange(const int menuItemID)
 {
