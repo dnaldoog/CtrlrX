@@ -3,6 +3,10 @@
 #include "CtrlrLua/MethodEditor/CtrlrLuaMethodEditor.h"
 #include "CtrlrLuaManager.h"
 #include "CtrlrInlineUtilitiesGUI.h"
+#include <juce_gui_basics/juce_gui_basics.h> 
+using namespace juce;
+
+
 
 CtrlrPropertyComponent::CtrlrPropertyComponent(const Identifier& _propertyName,
     const ValueTree& _propertyElement,
@@ -1779,429 +1783,349 @@ void CtrlrSliderPropertyComponent::resized()
 }
 
 //==============================================================================
-CtrlrSysExEditor::CtrlrSysExEditor (Value &_val, CtrlrPanel *_owner)
+// Constructor
+CtrlrSysExEditor::CtrlrSysExEditor(Value &_val, CtrlrPanel *_owner)
     : val(_val),
-      messageLength (0),
-      label (0),
-      owner(_owner)
+      messageLength(nullptr),
+      label(nullptr),
+      addTokenButton(nullptr),
+      owner(_owner),
+      lastFocusedLabel(nullptr)
 {
-    addAndMakeVisible (messageLength = new Slider (L"messageLength"));
-    messageLength->setRange (0, 512, 1);
-    messageLength->setSliderStyle (Slider::IncDecButtons);
-    messageLength->setTextBoxStyle (Slider::TextBoxLeft, false, 32, 20);
-    messageLength->addListener (this);
+    // Slider for message length
+    addAndMakeVisible(messageLength = new Slider("messageLength"));
+    messageLength->setRange(0, 512, 1);
+    messageLength->setSliderStyle(Slider::IncDecButtons);
+    messageLength->setTextBoxStyle(Slider::TextBoxLeft, false, 32, 20);
+    messageLength->addListener(this);
 
-    addAndMakeVisible (label = new Label ("Length", "Length"));
-    label->setFont (Font (14.0000f, Font::bold));
-    label->setJustificationType (Justification::centred);
-    label->setEditable (true, true, true);
-    label->addListener (this);
+    // Length label
+    addAndMakeVisible(label = new Label("Length", "Length"));
+    label->setFont(Font(14.0f, Font::bold));
+    label->setJustificationType(Justification::centred);
+    label->setEditable(true, true, true);
+    label->addListener(this);
 
-	splitMessage.addTokens (val.toString(), " :;", "\'\"");
-	setLength (splitMessage.size());
-    setSize (612, 256);
-}
-
-CtrlrSysExEditor::~CtrlrSysExEditor()
+    // Add Token button
+    addAndMakeVisible(addTokenButton = new TextButton("Add Token"));
+addTokenButton->onClick = [this]()
 {
-    //[Destructor_pre]. You can add your own custom destruction code here..
-    //[/Destructor_pre]
+    if (byteValueLabels.size() == 0)
+    {
+        // Show a warning dialog if there are no labels
+        AlertWindow::showMessageBoxAsync(
+            AlertWindow::WarningIcon,
+            "Add Token",
+            "No bytes available. Please add a value first before inserting a token."
+        );
+        return;
+    }
 
-    deleteAndZero (messageLength);
-    deleteAndZero (label);
+    // Determine target label
+    Label* target = lastFocusedLabel;
+    if (!target)
+        target = byteValueLabels[0]; // default to first label
 
+    // Highlight the focused label
+    updateLabelHighlights(target);
 
-    //[Destructor]. You can add your own custom destruction code here..
-    //[/Destructor]
+    // Show token menu
+    showTokenMenuForLabel(target);
+
+    // Keep the highlight after popup closes
+    lastFocusedLabel = target;
+};
+
+    // Split initial value into labels
+    splitMessage.addTokens(val.toString(), " :;", "\'\"");
+    setLength(splitMessage.size());
+
+    setSize(612, 256);
 }
 
 //==============================================================================
-void CtrlrSysExEditor::paint (Graphics& g)
+// Destructor
+CtrlrSysExEditor::~CtrlrSysExEditor()
 {
-    //[UserPrePaint] Add your own custom painting code here..
-    //[/UserPrePaint]
-
-	Colour backGroundColor = findColour(TextEditor::backgroundColourId);
-	Colour lightBackGroundColor = findColour(TextEditor::outlineColourId);
-    g.fillAll (backGroundColor);
-
-    g.setGradientFill (ColourGradient (backGroundColor,
-                                       (float) ((getWidth() / 2)), 0.0f,
-									   lightBackGroundColor,
-                                       (float) ((getWidth() / 2)), 32.0f,
-                                       false));
-    g.fillRect (0, 0, getWidth() - 0, 32);
-
-    g.setGradientFill (ColourGradient (Colour (0xffd6d6d6),
-                                       (float) ((getWidth() / 2)), 29.0f,
-                                       Colour (0xff767676),
-                                       (float) ((getWidth() / 2)), 32.0f,
-                                       false));
-    g.fillRect (0, 29, getWidth() - 0, 3);
-
-    //[UserPaint] Add your own custom painting code here..
-    //[/UserPaint]
+    deleteAndZero(messageLength);
+    deleteAndZero(label);
+    deleteAndZero(addTokenButton);
 }
 
+//==============================================================================
+// Paint
+void CtrlrSysExEditor::paint(Graphics &g)
+{
+    Colour backGroundColor = findColour(TextEditor::backgroundColourId);
+    Colour lightBackGroundColor = findColour(TextEditor::outlineColourId);
+    g.fillAll(backGroundColor);
+
+    g.setGradientFill(ColourGradient(backGroundColor, getWidth() / 2.0f, 0.0f,
+                                     lightBackGroundColor, getWidth() / 2.0f, 32.0f, false));
+    g.fillRect(0, 0, getWidth(), 32);
+
+    g.setGradientFill(ColourGradient(Colour(0xffd6d6d6), getWidth() / 2.0f, 29.0f,
+                                     Colour(0xff767676), getWidth() / 2.0f, 32.0f, false));
+    g.fillRect(0, 29, getWidth(), 3);
+}
+
+//==============================================================================
+// Resized
 void CtrlrSysExEditor::resized()
 {
-    messageLength->setBounds (72, 4, 88, 22);
-    label->setBounds (8, 8, 55, 16);
-	int y;
-	int x=0;
-	for (int i=0; i<byteValueLabels.size(); i++)
-	{
-		y = 48 + ((i/16)*48);
-		byteValueLabels[i]->setBounds (16+(x*36), y, 32, 32);
-		x++;
-		if (x==16)
-			x=0;
-	}
+    messageLength->setBounds(72, 4, 88, 22);
+    label->setBounds(8, 8, 55, 16);
+    addTokenButton->setBounds(170, 4, 80, 22);
 
-	for (int i=0; i<rows.size(); i++)
-	{
-		rows[i]->setBounds (16, 40+(i*48), getWidth()-32, 8);
-	}
-}
-
-void CtrlrSysExEditor::sliderValueChanged (Slider* sliderThatWasMoved)
-{
-    if (sliderThatWasMoved == messageLength)
+    int y;
+    int x = 0;
+    for (int i = 0; i < byteValueLabels.size(); i++)
     {
-		setLength ((int)messageLength->getValue());
+        y = 48 + ((i / 16) * 48);
+        byteValueLabels[i]->setBounds(16 + (x * 36), y, 32, 32);
+        x++;
+        if (x == 16) x = 0;
+    }
+
+    for (int i = 0; i < rows.size(); i++)
+    {
+        rows[i]->setBounds(16, 40 + (i * 48), getWidth() - 32, 8);
     }
 }
 
-void CtrlrSysExEditor::labelTextChanged (Label* labelThatHasChanged)
+//==============================================================================
+// Slider listener
+void CtrlrSysExEditor::sliderValueChanged(Slider* sliderThatWasMoved)
+{
+    if (sliderThatWasMoved == messageLength)
+        setLength((int)messageLength->getValue());
+}
+
+//==============================================================================
+// Add a byte label
+Label* CtrlrSysExEditor::addByte(const String &byteAsString)
+{
+    Label* byteLabel = new Label("byteLabel", byteAsString);
+    addAndMakeVisible(byteLabel);
+
+    byteLabel->setFont(Font(Font::getDefaultMonospacedFontName(), 15.0f, Font::plain));
+    byteLabel->setJustificationType(Justification::centred);
+    byteLabel->setEditable(true, true, false);
+
+    // Fully visible colors
+    byteLabel->setColour(Label::backgroundColourId, Colours::white);
+    byteLabel->setColour(Label::outlineColourId, Colours::black);
+    byteLabel->setColour(Label::textColourId, Colours::black);
+    byteLabel->setColour(TextEditor::highlightColourId, Colours::skyblue);
+    byteLabel->setColour(TextEditor::highlightedTextColourId, Colours::white);
+
+    byteLabel->addListener(this);
+    byteLabel->addMouseListener(this, false);
+
+    return byteLabel;
+}
+
+
+//==============================================================================
+// Label focus tracking
+void CtrlrSysExEditor::labelTextChanged(Label* labelThatHasChanged)
 {
     sendChangeMessage();
 }
 
-void CtrlrSysExEditor::mouseDown (const MouseEvent& e)
+//==============================================================================
+// Mouse down for token menu
+void CtrlrSysExEditor::mouseDown(const MouseEvent& e)
 {
-	if (e.mods.isPopupMenu())
-	{
-		Label *l = dynamic_cast<Label*>(e.eventComponent);
-		if (l!=0)
-		{
-			PopupMenu m;
-			m.addSectionHeader ("Insert variable");
-			m.addItem (1, "MIDI Channel (7bits)");
-			m.addItem (2, "MIDI Channel (4bits)");
-			m.addItem (3, "LSB part of value (7bits)");
-			m.addItem (4, "MSB part of value (7bits)");
-			m.addItem (5, "LSB part of value (4bits)");
-			m.addItem (6, "MSB part of value (4bits)");
-			m.addItem (7, "Roland JV1010 upper byte");
-			m.addItem (8, "Roland JV1010 upper middle byte");
-			m.addItem (9, "Roland JV1010 lower middle byte");
-			m.addItem (10, "Roland JV1010 lower byte");
-            m.addSectionHeader("16-bit value nibbles");
-            m.addItem(19, "16-bit LSB nibble 0 (bits 0-3)");
-            m.addItem(20, "16-bit LSB nibble 1 (bits 4-7)");
-            m.addItem(21, "16-bit LSB nibble 2 (bits 8-11)");
-            m.addItem(22, "16-bit LSB nibble 3 (bits 12-15)");
-            m.addItem(23, "16-bit MSB nibble 0 (bits 12-15)");
-            m.addItem(24, "16-bit MSB nibble 1 (bits 8-11)");
-            m.addItem(25, "16-bit MSB nibble 2 (bits 4-7)");
-            m.addItem(26, "16-bit MSB nibble 3 (bits 0-3)");
-			m.addSectionHeader ("Insert static");
-
-			m.addItem (11, "SysEx Start");
-			m.addItem (12, "SysEx EOM");
-			m.addSubMenu ("Vendor ID", getVendorIdMenu());
-
-			m.addSectionHeader ("Program variables");
-			m.addItem (8192, "Current program number");
-			m.addItem (8193, "Current bank number");
-
-			m.addSectionHeader ("Checksums (tN) t=type N=num bytes to count");
-			m.addItem(13, "2's Complement (Roland, Yamaha)"); // Updated v5.6.34.
-			m.addItem(14, "Exclusive OR (XOR) (Akai, Korg, Sequential) "); // Added v5.6.34.
-			m.addItem (15, "Simple Summing (Waldorf, Lexicon, Oberheim)"); // Added v5.6.34.
-			m.addItem (16, "XOR Byte 1 (Technics)"); // Added v5.6.34.
-			m.addItem (17, "1's Complement (E-mu, Korg)"); // Added v5.6.34.
-			m.addItem (18, "Ignore this byte on input");
-			PopupMenu km,lm,mm,nm;
-
-			for (int i=0; i<16; i++)
-			{
-				km.addItem (20+i, "Global variable [k"+String::toHexString(i)+"]");
-			}
-			m.addSubMenu ("Global variable[0]",km);
-
-			for (int i=0; i<16; i++)
-			{
-				lm.addItem (37+i, "Global variable [o"+String::toHexString(i)+"]");
-			}
-			m.addSubMenu ("Global variable[1]",lm);
-
-			for (int i=0; i<16; i++)
-			{
-				mm.addItem (53+i, "Global variable [p"+String::toHexString(i)+"]");
-			}
-			m.addSubMenu ("Global variable[2]",mm);
-
-			for (int i=0; i<16; i++)
-			{
-				nm.addItem (69+i, "Global variable [n"+String::toHexString(i)+"]");
-			}
-			m.addSubMenu ("Global variable[3]",nm);
-
-			const int ret = m.show();
-            switch (ret)
-            {
-            case 1:
-                l->setText("yy", sendNotification);
-                break;
-            case 2:
-                l->setText("0y", sendNotification);
-                break;
-            case 3:
-                l->setText("LS", sendNotification);
-                break;
-            case 4:
-                l->setText("MS", sendNotification);
-                break;
-            case 5:
-                l->setText("ls", sendNotification);
-                break;
-            case 6:
-                l->setText("ms", sendNotification);
-                break;
-            case 7:
-                l->setText("r1", sendNotification);
-                break;
-            case 8:
-                l->setText("r2", sendNotification);
-                break;
-            case 9:
-                l->setText("r3", sendNotification);
-                break;
-            case 10:
-                l->setText("r4", sendNotification);
-                break;
-            case 11:
-                l->setText("f0", sendNotification);
-                break;
-            case 12:
-                l->setText("f7", sendNotification);
-                break;
-            case 13:
-                l->setText("z5", sendNotification);
-                break;
-            case 14:
-                l->setText("X5", sendNotification); // Exclusive OR, Akai, Korg, Sequential
-                break;
-            case 15:
-                l->setText("w5", sendNotification); // Simple Summing, Waldorf, Lexicon, Oberheim
-                break;
-            case 16:
-                l->setText("tc", sendNotification); // Technics Matsushita, XOR Byte 1
-                break;
-            case 17:
-                l->setText("O5", sendNotification); //1s Complement, E-mu, Korg
-                break;
-            case 18:
-                l->setText("ii", sendNotification); // ignore this byte on input
-                break;
-            case 19:
-                l->setText("q0", sendNotification);
-                break;
-            case 20:
-                l->setText("q1", sendNotification);
-                break;
-            case 21:
-                l->setText("q2", sendNotification);
-                break;
-            case 22:
-                l->setText("q3", sendNotification);
-                break;
-            case 23:
-                l->setText("Q0", sendNotification);
-                break;
-            case 24:
-                l->setText("Q1", sendNotification);
-                break;
-            case 25:
-                l->setText("Q2", sendNotification);
-                break;
-            case 26:
-                l->setText("Q3", sendNotification);
-                break;
-            }
-            if (ret >= 27 && ret < 43)  
-            {
-                l->setText("k" + String::toHexString(ret - 27), sendNotification);  
-            }
-
-            if (ret >= 43 && ret < 59)  
-            {
-                l->setText("o" + String::toHexString(ret - 43), sendNotification); 
-            }
-
-            if (ret >= 59 && ret < 75)  
-            {
-                l->setText("p" + String::toHexString(ret - 59), sendNotification); 
-            }
-
-            if (ret >= 75 && ret < 91)  
-            {
-                l->setText("n" + String::toHexString(ret - 75), sendNotification);  
-            }
-
-			if (ret > 1024 && ret < 4096)
-			{
-				ValueTree vendor = owner->getCtrlrManagerOwner().getIDManager().getVendorTree().getChild (ret - 1024);
-				const String vendorId = vendor.getProperty(Ids::id).toString();
-				if (vendorId.length() == 2)
-				{
-					/* vendor is oldSkool */
-					l->setText (vendorId, sendNotification);
-				}
-
-				if (vendorId.length() == 6)
-				{
-					/* modern vendor id, 3 bytes
-					   check if the next bytes are available so we can fill them with data
-					   */
-
-					const int indexOfLabel = byteValueLabels.indexOf (l);
-					if (byteValueLabels[indexOfLabel+1] && byteValueLabels[indexOfLabel+2])
-					{
-						byteValueLabels[indexOfLabel]->setText (vendorId.substring   (0,2), dontSendNotification);
-						byteValueLabels[indexOfLabel+1]->setText (vendorId.substring (2,4), dontSendNotification);
-						byteValueLabels[indexOfLabel+2]->setText (vendorId.substring (4,6), dontSendNotification);
-					}
-					else
-					{
-						WARN("Not enough space to fit a 3 byte vendor ID, add some space.");
-					}
-				}
-			}
-
-			if (ret == 8192)
-			{
-				l->setText ("tp", sendNotification);
-			}
-			if (ret == 8193)
-			{
-				l->setText ("tb", sendNotification);
-			}
-		}
-	}
+    if (auto* l = dynamic_cast<Label*>(e.originalComponent))
+    {
+        lastFocusedLabel = l; // store focus for Add Token button
+        updateLabelHighlights(l); // highlight clicked label
+    }
 }
 
+
+//==============================================================================
+void CtrlrSysExEditor::showTokenMenuForLabel(Label* l)
+{
+    if (!l) return;
+
+    PopupMenu m;
+
+    // --- Variables ---
+    m.addSectionHeader("Insert variable");
+    m.addItem(1, "MIDI Channel (7bits)");
+    m.addItem(2, "MIDI Channel (4bits)");
+    m.addItem(3, "LSB part of value (7bits)");
+    m.addItem(4, "MSB part of value (7bits)");
+    m.addItem(5, "LSB part of value (4bits)");
+    m.addItem(6, "MSB part of value (4bits)");
+    m.addItem(7, "Roland JV1010 upper byte");
+    m.addItem(8, "Roland JV1010 upper middle byte");
+    m.addItem(9, "Roland JV1010 lower middle byte");
+    m.addItem(10, "Roland JV1010 lower byte");
+
+    // --- 16-bit nibbles ---
+    m.addSectionHeader("16-bit value nibbles");
+    for (int i = 0; i < 4; ++i)
+        m.addItem(19 + i, "16-bit LSB nibble " + String(i));
+    for (int i = 0; i < 4; ++i)
+        m.addItem(23 + i, "16-bit MSB nibble " + String(i));
+
+    // --- Static items ---
+    m.addSectionHeader("Insert static");
+    m.addItem(11, "SysEx Start");
+    m.addItem(12, "SysEx EOM");
+    m.addSubMenu("Vendor ID", getVendorIdMenu());
+
+    // --- Program variables ---
+    m.addSectionHeader("Program variables");
+    m.addItem(8192, "Current program number");
+    m.addItem(8193, "Current bank number");
+
+    // --- Checksums ---
+    m.addSectionHeader("Checksums (tN)");
+    m.addItem(13, "2's Complement (Roland, Yamaha)");
+    m.addItem(14, "Exclusive OR (XOR) (Akai, Korg, Sequential)");
+    m.addItem(15, "Simple Summing (Waldorf, Lexicon, Oberheim)");
+    m.addItem(16, "XOR Byte 1 (Technics)");
+    m.addItem(17, "1's Complement (E-mu, Korg)");
+    m.addItem(18, "Ignore this byte on input");
+
+    // --- Global variables ---
+    PopupMenu km, lm, mm, nm;
+    for (int i = 0; i < 16; ++i)
+    {
+        km.addItem(20+i, "Global variable [k" + String::toHexString(i) + "]");
+        lm.addItem(37+i, "Global variable [o" + String::toHexString(i) + "]");
+        mm.addItem(53+i, "Global variable [p" + String::toHexString(i) + "]");
+        nm.addItem(69+i, "Global variable [n" + String::toHexString(i) + "]");
+    }
+    m.addSubMenu("Global variable[0]", km);
+    m.addSubMenu("Global variable[1]", lm);
+    m.addSubMenu("Global variable[2]", mm);
+    m.addSubMenu("Global variable[3]", nm);
+
+    // --- Show menu ---
+    const int ret = m.show();
+
+    // --- Handle selection ---
+    if      (ret == 1) l->setText("yy", sendNotification);
+    else if (ret == 2) l->setText("0y", sendNotification);
+    else if (ret == 3) l->setText("LS", sendNotification);
+    else if (ret == 4) l->setText("MS", sendNotification);
+    else if (ret == 5) l->setText("ls", sendNotification);
+    else if (ret == 6) l->setText("ms", sendNotification);
+    else if (ret == 7) l->setText("r1", sendNotification);
+    else if (ret == 8) l->setText("r2", sendNotification);
+    else if (ret == 9) l->setText("r3", sendNotification);
+    else if (ret == 10) l->setText("r4", sendNotification);
+    else if (ret == 11) l->setText("f0", sendNotification);
+    else if (ret == 12) l->setText("f7", sendNotification);
+    else if (ret == 13) l->setText("z5", sendNotification);
+    else if (ret == 14) l->setText("X5", sendNotification);
+    else if (ret == 15) l->setText("w5", sendNotification);
+    else if (ret == 16) l->setText("tc", sendNotification);
+    else if (ret == 17) l->setText("O5", sendNotification);
+    else if (ret == 18) l->setText("ii", sendNotification);
+    else if (ret >= 19 && ret < 27) l->setText("q" + String(ret-19), sendNotification);
+    else if (ret >= 27 && ret < 43) l->setText("k" + String::toHexString(ret-27), sendNotification);
+    else if (ret >= 43 && ret < 59) l->setText("o" + String::toHexString(ret-43), sendNotification);
+    else if (ret >= 59 && ret < 75) l->setText("p" + String::toHexString(ret-59), sendNotification);
+    else if (ret >= 75 && ret < 91) l->setText("n" + String::toHexString(ret-75), sendNotification);
+    else if (ret > 1024 && ret < 4096)
+    {
+        ValueTree vendor = owner->getCtrlrManagerOwner().getIDManager().getVendorTree().getChild(ret-1024);
+        const String vendorId = vendor.getProperty(Ids::id).toString();
+        if (vendorId.length() == 2) l->setText(vendorId, sendNotification);
+        else if (vendorId.length() == 6)
+        {
+            int index = byteValueLabels.indexOf(l);
+            if (byteValueLabels[index+1] && byteValueLabels[index+2])
+            {
+                byteValueLabels[index]->setText(vendorId.substring(0,2), dontSendNotification);
+                byteValueLabels[index+1]->setText(vendorId.substring(2,4), dontSendNotification);
+                byteValueLabels[index+2]->setText(vendorId.substring(4,6), dontSendNotification);
+            }
+        }
+    }
+    else if (ret == 8192) l->setText("tp", sendNotification);
+    else if (ret == 8193) l->setText("tb", sendNotification);
+}
+
+//==============================================================================
+// Vendor menu
 const PopupMenu CtrlrSysExEditor::getVendorIdMenu()
 {
     PopupMenu m;
     ValueTree vendorTree = owner->getCtrlrManagerOwner().getIDManager().getVendorTree();
-
     for (int i=0; i<vendorTree.getNumChildren(); i++)
-	{
-		m.addItem (1024+i, vendorTree.getChild(i).getProperty(Ids::name));
-	}
-    return (m);
+        m.addItem(1024+i, vendorTree.getChild(i).getProperty(Ids::name));
+    return m;
 }
 
-void CtrlrSysExEditor::setLength (const int newLength)
+//==============================================================================
+// Set length
+void CtrlrSysExEditor::setLength(const int newLength)
 {
+    currentMessageLength = newLength;
+    messageLength->setValue(currentMessageLength, dontSendNotification);
 
-	currentMessageLength = newLength;
+    if (byteValueLabels.size() < currentMessageLength)
+    {
+        for (int i=byteValueLabels.size(); i<currentMessageLength; i++)
+            byteValueLabels.add(addByte(splitMessage[i]));
+    }
+    else if (byteValueLabels.size() > currentMessageLength)
+    {
+        byteValueLabels.removeLast(byteValueLabels.size() - currentMessageLength);
+    }
 
-	messageLength->setValue (currentMessageLength, dontSendNotification);
+    rows.clear();
+    for (int i=0; i<=byteValueLabels.size()/16; i++)
+    {
+        SysExRow *r = new SysExRow(i);
+        addAndMakeVisible(r);
+        rows.add(r);
+    }
 
-	if (byteValueLabels.size() < currentMessageLength)
-	{
-		for (int i=byteValueLabels.size(); i<currentMessageLength; i++)
-		{
-			byteValueLabels.add (addByte (splitMessage[i]));
-		}
-	}
-	else if (byteValueLabels.size() > currentMessageLength)
-	{
-		byteValueLabels.removeLast (byteValueLabels.size() - currentMessageLength);
-	}
-
-	rows.clear();
-	for (int i=0; i<=byteValueLabels.size()/16; i++)
-	{
-		SysExRow *r = new SysExRow(i);
-		addAndMakeVisible(r);
-		rows.add (r);
-	}
-
-	resized();
-
-	sendChangeMessage();
+    resized();
+    sendChangeMessage();
 }
-
-Label *CtrlrSysExEditor::addByte(const String &byteAsString)
+void CtrlrSysExEditor::updateLabelHighlights(Label* focusedLabel)
 {
-	Label *byteLabel = new Label ("byteLabel", byteAsString);
-	addAndMakeVisible (byteLabel);
-    byteLabel->setFont (Font (Font::getDefaultMonospacedFontName(), 15.0000f, Font::plain));
-    byteLabel->setJustificationType (Justification::centredLeft);
-    byteLabel->setEditable (true, true, false);
-   // byteLabel->setColour (Label::outlineColourId, Colours::white);
-   // byteLabel->setColour (TextEditor::textColourId, findColour(TextEditor::textColourId));
-   // byteLabel->setColour (TextEditor::backgroundColourId, findColour(TextEditor::backgroundColourId));
-   // byteLabel->setColour (TextEditor::highlightColourId, findColour(TextEditor::focusedOutlineColourId));
-   // --- FIXED LOOK & FEEL / BACKGROUND VISIBILITY FOR LINUX & WAYLAND ---
-
-// --------- HARD CODED COLORS FOR GTK / WAYLAND STABILITY ---------
-
-// Text and outline
-byteLabel->setColour (TextEditor::textColourId, Colours::black);
-byteLabel->setColour (Label::outlineColourId, Colour (40, 40, 40));
-
-// Solid white background (no alpha!)
-byteLabel->setColour (Label::backgroundColourId, Colours::white);
-byteLabel->setColour (TextEditor::backgroundColourId, Colours::white);
-
-// Visible highlight (medium steel blue)
-byteLabel->setColour (TextEditor::highlightColourId, Colour (70, 130, 180));
-
-// Cursor color (optional but recommended)
-byteLabel->setColour (TextEditor::highlightedTextColourId, Colours::white);
-
-
-    byteLabel->addListener (this);
-	byteLabel->addMouseListener (this, false);
-
-	return (byteLabel);
+    for (auto* label : byteValueLabels)
+    {
+        if (label == focusedLabel)
+            label->setColour(Label::backgroundColourId, Colours::lightblue);
+        else
+            label->setColour(Label::backgroundColourId, Colours::white);
+    }
 }
-
+//==============================================================================
+// Get value
 const String CtrlrSysExEditor::getValue()
 {
-	String ret;
-	for (int i=0; i<byteValueLabels.size(); i++)
-	{
-		ret<< byteValueLabels[i]->getText()+" ";
-	}
-
-	return (ret.trim());
+    String ret;
+    for (int i=0; i<byteValueLabels.size(); i++)
+        ret << byteValueLabels[i]->getText() + " ";
+    return ret.trim();
 }
 
-SysExRow::SysExRow(const int _n, const int _w, const int _gap) : n(_n), w(_w), gap(_gap)
+//==============================================================================
+// SysExRow
+SysExRow::SysExRow(const int _n, const int _w, const int _gap) : n(_n), w(_w), gap(_gap) {}
+void SysExRow::paint(Graphics &g)
 {
-}
+    g.setFont(Font(Font::getDefaultMonospacedFontName(), 8.0f, Font::plain));
+    g.setColour(findColour(TextEditor::textColourId));
+    for (int i=0; i<16; i++)
+        g.drawFittedText(String((16*n)+(i+1)), i*(w+gap), 0, w, 8, Justification::centred, 1);
 
-void SysExRow::paint (Graphics &g)
-{
-	g.setFont (Font (Font::getDefaultMonospacedFontName(), 8.0f, Font::plain));
-	g.setColour (findColour(TextEditor::textColourId));
-	for (int i=0; i<16; i++)
-	{
-		g.drawFittedText (String ((16*n)+(i+1)), i*(w+gap), 0, w, 8, Justification::centred, 1);
-	}
-
-	g.fillRect (0,getHeight()-1,getWidth(),1);
+    g.fillRect(0, getHeight()-1, getWidth(), 1);
 }
+void SysExRow::resized() {}
 
-void SysExRow::resized()
-{
-}
 
 CtrlrSysExFormulaEditor::CtrlrSysExFormulaEditor ()
     : forwardFormula (0),

@@ -603,6 +603,8 @@ class CtrlrSysExEditor  : public Component,
 		void sliderValueChanged (Slider* sliderThatWasMoved);
 		void labelTextChanged (Label* labelThatHasChanged);
 		void mouseDown (const MouseEvent& e);
+		void showTokenMenuForLabel(Label* l);
+		void updateLabelHighlights(Label* focusedLabel);
 
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrSysExEditor)
 
@@ -615,6 +617,9 @@ class CtrlrSysExEditor  : public Component,
 		int currentMessageLength;
 		Slider* messageLength;
 		Label* label;
+		TextButton* addTokenButton = nullptr;
+		Label* lastFocusedLabel = nullptr;
+
 
 };
 
