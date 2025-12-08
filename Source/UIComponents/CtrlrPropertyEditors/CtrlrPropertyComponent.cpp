@@ -2143,10 +2143,29 @@ Label *CtrlrSysExEditor::addByte(const String &byteAsString)
     byteLabel->setFont (Font (Font::getDefaultMonospacedFontName(), 15.0000f, Font::plain));
     byteLabel->setJustificationType (Justification::centredLeft);
     byteLabel->setEditable (true, true, false);
-    byteLabel->setColour (Label::outlineColourId, Colours::white);
-    byteLabel->setColour (TextEditor::textColourId, findColour(TextEditor::textColourId));
-    byteLabel->setColour (TextEditor::backgroundColourId, findColour(TextEditor::backgroundColourId));
-	byteLabel->setColour (TextEditor::highlightColourId, findColour(TextEditor::focusedOutlineColourId));
+   // byteLabel->setColour (Label::outlineColourId, Colours::white);
+   // byteLabel->setColour (TextEditor::textColourId, findColour(TextEditor::textColourId));
+   // byteLabel->setColour (TextEditor::backgroundColourId, findColour(TextEditor::backgroundColourId));
+   // byteLabel->setColour (TextEditor::highlightColourId, findColour(TextEditor::focusedOutlineColourId));
+   // --- FIXED LOOK & FEEL / BACKGROUND VISIBILITY FOR LINUX & WAYLAND ---
+
+// --------- HARD CODED COLORS FOR GTK / WAYLAND STABILITY ---------
+
+// Text and outline
+byteLabel->setColour (TextEditor::textColourId, Colours::black);
+byteLabel->setColour (Label::outlineColourId, Colour (40, 40, 40));
+
+// Solid white background (no alpha!)
+byteLabel->setColour (Label::backgroundColourId, Colours::white);
+byteLabel->setColour (TextEditor::backgroundColourId, Colours::white);
+
+// Visible highlight (medium steel blue)
+byteLabel->setColour (TextEditor::highlightColourId, Colour (70, 130, 180));
+
+// Cursor color (optional but recommended)
+byteLabel->setColour (TextEditor::highlightedTextColourId, Colours::white);
+
+
     byteLabel->addListener (this);
 	byteLabel->addMouseListener (this, false);
 
@@ -2350,14 +2369,24 @@ void CtrlrSysExPropertyComponent::buttonClicked (Button* buttonThatWasClicked)
 
 		o.content.set (editor, true);
 		o.resizable						= true;
-		o.useNativeTitleBar				= true;
+		o.useNativeTitleBar				= false;
 		o.dialogBackgroundColour 		= findColour(TextEditor::backgroundColourId);
 		o.escapeKeyTriggersCloseButton	= true;
 		o.componentToCentreAround		= this;
 		o.launchAsync();
-
+/*
 		valueToControl = editor->getValue();
 		sysexPreview->setText (valueToControl.toString(), dontSendNotification);
+//===================================================================================
+This is wrong / useless because:
+o.launchAsync() shows the dialog non-blocking.
+The user hasn’t edited anything yet.
+editor->getValue() returns the initial value, not the edited one.
+When the dialog closes, this code will not run again.
+Use the following instead
+*/
+
+
     }
     else if (buttonThatWasClicked == copy)
     {
@@ -2374,16 +2403,15 @@ void CtrlrSysExPropertyComponent::buttonClicked (Button* buttonThatWasClicked)
     }
 }
 
-void CtrlrSysExPropertyComponent::changeListenerCallback (ChangeBroadcaster *cb)
+void CtrlrSysExPropertyComponent::changeListenerCallback (ChangeBroadcaster* source)
 {
-	CtrlrSysExEditor *ed = dynamic_cast<CtrlrSysExEditor*>(cb);
-
-	if (ed != nullptr)
-	{
-		valueToControl = ed->getValue();
-		refresh();
-	}
+    if (auto* editor = dynamic_cast<CtrlrSysExEditor*>(source))
+    {
+        valueToControl = editor->getValue();
+        sysexPreview->setText (valueToControl.toString(), dontSendNotification);
+    }
 }
+
 
 void CtrlrSysExPropertyComponent::refresh()
 {
