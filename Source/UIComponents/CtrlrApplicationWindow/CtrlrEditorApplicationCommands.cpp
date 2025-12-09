@@ -160,7 +160,10 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 			result.setInfo ("About", "About CTRLR", globalCategory, 0);
 			result.addDefaultKeypress ('a', ModifierKeys::commandModifier);
 			break;
-
+		case showExpressionHelp:
+			result.setInfo ("Expression Help", "Show help for writing Lua expressions", globalCategory, 0);
+			result.addDefaultKeypress ('h', ModifierKeys::commandModifier);
+			break;
 		case showKeyboardMappingDialog:
 			result.setInfo ("Keyboard mapping", "Change default keyboard mappings", globalCategory, 0);
             if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance

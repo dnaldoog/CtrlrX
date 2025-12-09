@@ -266,7 +266,11 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
     else if ((!isRestricted() && (topLevelMenuIndex == MenuHelp))
         || (isRestricted() && (topLevelMenuIndex == (hideProgramsMenu ? (MenuRestrictedHelp - 1) : MenuRestrictedHelp)))) // Help
 	{
-        menu.addCommandItem (commandManager, showAboutDialog);
+        menu.addCommandItem (commandManager, showAboutDialog);		
+		if (!isRestricted()){
+			menu.addCommandItem(commandManager, showExpressionHelp);
+			menu.addSeparator();
+		}
 		menu.addSeparator();
 #ifdef JUCE_DEBUG
 		menu.addCommandItem (commandManager, doCrash);
@@ -279,7 +283,7 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 
 void CtrlrEditor::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 {
-	/* Some items are not commands, they need to be invoked manualy here */
+	/* Some items are not commands, they need to be invoked manually here */
 	//_DBG("CtrlrEditor::menuItemSelected topLevelMenuIndex="+STR(topLevelMenuIndex)+" menuItemID="+STR(menuItemID)+" MENU_OFFSET_MIDI="+STR(MENU_OFFSET_MIDI));
 
 	if (topLevelMenuIndex == 3 || topLevelMenuIndex == 4)

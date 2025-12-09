@@ -277,7 +277,11 @@ case CtrlrEditor::showAboutDialog:
     #endif
     break;
 
-
+        case showExpressionHelp:
+        {
+            new CtrlrExpressionsHelp();
+            break;
+        }
         case CtrlrEditor::doZoomIn:
             if (getActivePanelEditor())
             {

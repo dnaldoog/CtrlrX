@@ -7,6 +7,180 @@
 
 class CtrlrManager;
 class CtrlrProcessor;
+class CtrlrExpressionsHelp : public Component
+{
+public:
+    CtrlrExpressionsHelp()
+    {
+        addAndMakeVisible(helpText);
+
+        helpText.setMultiLine(true);
+        helpText.setReadOnly(true);
+        helpText.setScrollbarsShown(true);
+        helpText.setCaretVisible(false);
+        helpText.setPopupMenuEnabled(true);
+        helpText.setWantsKeyboardFocus(false);
+
+        // Set the help text content
+        String content =
+            "EXPRESSIONS HELP\n\n"
+
+            "EXAMPLE USAGE:\n\n\n"
+            "setGlobal(0, modulatorValue * 2)  \n"
+            "  This sets global variable 0 to twice the current modulator value.\n\n"
+
+            "setGlobal(0, setBitRangeAsInt(global.k0, 4, 2, 0))\n"
+            "  This clears bits 4 and 5 in global variable 0.\n\n"
+
+            "modulatorValue*127\n"
+            "   Useful for on/off boolean values where you want to map uiButton false/true to 0,127\n\n"
+
+
+            "CONSTANTS:\n\n"
+
+            "modulatorValue\n"
+            "  The current linear value of the modulator, this is the index of the\n"
+            "  array of values; is always positive.\n\n"
+
+            "modulatorMappedValue\n"
+            "  The current mapped value in case of components that have mappings.\n"
+            "  This might be negative.\n\n"
+
+            "modulatorMax\n"
+            "  The maximum value the modulator can have (non mapped)\n\n"
+
+            "modulatorMin\n"
+            "  The minimum value the modulator can have (non mapped)\n\n"
+
+            "modulatorMappedMax\n"
+            "  The maximum value the modulator can have (mapped)\n\n"
+
+            "modulatorMappedMin\n"
+            "  The maximum value the modulator can have (mapped)\n\n"
+
+            "vstIndex\n"
+            "  The VST/AU index of the parameter as seen by the host program\n\n"
+
+            "midiValue\n"
+            "  The current value stored in the MIDI MESSAGE associated with the\n"
+            "  modulator.\n\n"
+
+            "midiNumber\n"
+            "  The number of the MIDI MESSAGE controller if applicable\n\n\n"
+
+            "FUNCTIONS:\n\n"
+
+            "ceil(x)\n"
+            "  Returns the smallest integral value of the parameter\n\n"
+
+            "abs(x)\n"
+            "  Returns the absolute value of the parameter\n\n"
+
+            "floor(x)\n"
+            "  Returns the largest integral value that is not greater than the\n"
+            "  parameter\n\n"
+
+            "mod(a,b)\n"
+            "  Divides two numbers and returns the result of the MODULO operation %.\n"
+            "  Examples: 10 % 3 = 1, 0 % 5 = 0; 30 % 6 = 0; 32 % 5 = 2\n\n"
+
+            "fmod(numerator,denominator)\n"
+            "  Returns the floating-point remainder of the two parameters passed in\n\n"
+
+            "pow(a,b)\n"
+            "  Returns the first parameter raised to the power of the second (a^b)\n\n"
+
+            "gte(a,b,retTrue,retFalse)\n"
+            "  Return the larger or equal of the two passed parameters (a >= b).\n"
+            "  Example: gte(modulatorValue, 0, modulatorValue, 128-modulatorValue)\n"
+            "  will return modulatorValue if modulatorValue is greater than 0 and\n"
+            "  (128 - modulatorValue) if it is less than zero\n\n"
+
+            "gt(a,b,retTrue,retFalse)\n"
+            "  Same as gte but greater than without the equal sign (a > b)\n\n"
+
+            "lt(a,b,retTrue,retFalse)\n"
+            "  Same as gte but less than (a < b)\n\n"
+
+            "lte(a,b,retTrue,retFalse)\n"
+            "  Same as gte but less than or equal (a <= b)\n\n"
+
+            "eq(a,b,retTrue,retFalse)\n"
+            "  Equals sign true if (a == b)\n\n"
+
+            "max(a,b)\n"
+            "  Returns the bigger of two parameters.\n\n"
+
+            "min(a,b)\n"
+            "  Returns the smaller of two parameters.\n\n"
+
+            "getBitRangeAsInt(value, startBit, numBits)\n"
+            "  Gets a number of bits (numBits) starting at position startBit as an\n"
+            "  Integer and returns that integer.\n\n"
+
+            "setBitRangeAsInt(value, startBit, numBits, valueToSet)\n"
+            "  Sets a range of bits in value\n\n"
+
+            "clearBit(value, bitToClear)\n"
+            "  Clears a bit at position bitToClear in the value and returns that\n"
+            "  modified value.\n\n"
+
+            "isBitSet(value, bitPosition)\n"
+            "  Return true if a bit at position bitPosition in value is set,\n"
+            "  false otherwise.\n\n"
+
+            "setBit(value, bitToSet)\n"
+            "  Sets one bit in an integer at position (bitToSet) and returns the\n"
+            "  modified value with the bit set.\n\n"
+
+            "setGlobal(globalIndex, newValueToSet)\n"
+            "  This sets the value of one of the global variables in the panel,\n"
+            "  and returns that set value so the expression can continue.\n";
+
+        helpText.setText(content);
+
+        // Use a custom font for better readability
+        Font monoFont = Font(Font::getDefaultMonospacedFontName(), 13.0f, Font::plain);
+        helpText.setFont(monoFont);
+    }
+
+    void resized() override
+    {
+        helpText.setBounds(getLocalBounds().reduced(4));
+    }
+
+    void parentHierarchyChanged() override
+    {
+        updateColors();
+    }
+
+    void lookAndFeelChanged() override
+    {
+        updateColors();
+    }
+
+    void updateColors()
+    {
+        Colour bgColour = findColour(TextEditor::backgroundColourId);
+
+        // Determine if background is light or dark
+        float brightness = bgColour.getBrightness();
+        Colour textColour = (brightness > 0.5f) ? Colours::black : Colours::white;
+
+        helpText.setColour(TextEditor::textColourId, textColour);
+        helpText.setColour(TextEditor::backgroundColourId, bgColour);
+        helpText.setColour(TextEditor::outlineColourId, findColour(Slider::textBoxOutlineColourId));
+
+        helpText.applyColourToAllText(textColour);
+        helpText.repaint();
+    }
+
+private:
+    TextEditor helpText;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrExpressionsHelp)
+};
+
 
 class CtrlrEditor  : public AudioProcessorEditor,
 					 public ApplicationCommandTarget,
@@ -54,6 +228,7 @@ class CtrlrEditor  : public AudioProcessorEditor,
 			showMidiCalculator          = 0x2007,
 			showAboutDialog             = 0x2008,
 			showKeyboardMappingDialog	= 0x200a,
+			showExpressionHelp			= 0x2009,
 
 			/* Panel commands */
 
