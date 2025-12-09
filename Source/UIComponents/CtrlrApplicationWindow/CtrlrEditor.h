@@ -406,7 +406,7 @@ class CtrlrEditor  : public AudioProcessorEditor,
 			showLogViewer				= 0x2006,
 			showMidiCalculator          = 0x2007,
 			showAboutDialog             = 0x2008,
-            showKeyboardMappingDialog = 0x200a,
+            showKeyboardMappingDialog   = 0x2009,
 
 
 			/* Panel commands */
