@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "CtrlrEditor.h"
 #include "CtrlrAbout.h"
+#include "CtrlrLog.h"
 #include "CtrlrPanel/CtrlrPanel.h"
 #include "CtrlrPanel/CtrlrPanelEditor.h"
 
@@ -266,8 +267,12 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
     else if ((!isRestricted() && (topLevelMenuIndex == MenuHelp))
         || (isRestricted() && (topLevelMenuIndex == (hideProgramsMenu ? (MenuRestrictedHelp - 1) : MenuRestrictedHelp)))) // Help
 	{
+		_DBG("Building help menu: index=" + String(topLevelMenuIndex)
+			+ " MenuHelp=" + String(MenuHelp) + " restricted=" + String(isRestricted() ? "true" : "false" ));
+
         menu.addCommandItem (commandManager, showAboutDialog);		
 		if (!isRestricted()){
+			menu.addCommandItem(commandManager, showDumpByLuaHelp);
 			menu.addCommandItem(commandManager, showExpressionHelp);
 			menu.addSeparator();
 		}

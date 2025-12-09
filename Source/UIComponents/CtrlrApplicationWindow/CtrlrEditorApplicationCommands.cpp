@@ -69,7 +69,10 @@ void CtrlrEditor::getAllCommands (Array< CommandID > &commands)
 								doRegisterExtension,
 								doKeyGenerator,
 								doProgramWizard,
-								doQuit
+								doQuit,
+								showDumpByLuaHelp,
+								showExpressionHelp
+
 							};
 
     // This adds the first array of commands
@@ -160,9 +163,15 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 			result.setInfo ("About", "About CTRLR", globalCategory, 0);
 			result.addDefaultKeypress ('a', ModifierKeys::commandModifier);
 			break;
+		case showDumpByLuaHelp:
+			result.setInfo ("Bulk Dump by Lua Help", "Show help reading/writing Dumps to panel", globalCategory, 0);
+			result.addDefaultKeypress ('h', ModifierKeys::commandModifier);
+
+			break;
 		case showExpressionHelp:
 			result.setInfo ("Expression Help", "Show help for writing Lua expressions", globalCategory, 0);
 			result.addDefaultKeypress ('h', ModifierKeys::commandModifier);
+
 			break;
 		case showKeyboardMappingDialog:
 			result.setInfo ("Keyboard mapping", "Change default keyboard mappings", globalCategory, 0);
