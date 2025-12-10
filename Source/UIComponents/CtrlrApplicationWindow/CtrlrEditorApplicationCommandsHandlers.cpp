@@ -277,34 +277,22 @@ case CtrlrEditor::showAboutDialog:
     #endif
     break;
 
-        case showDumpByLuaHelp:
-        {
-            CtrlrTransferDumpHelp* helpWindowDump = new CtrlrTransferDumpHelp();
+case showDumpByLuaHelp:
+{
+    new CtrlrHelpWindow("Bulk Read/Write Dump Help",
+                        new CtrlrTransferDumpHelp());
+    return true;
+}
 
-            owner.getWindowManager().showModalDialog(
-                "Bulk Read/Write Dump Help",
-                helpWindowDump,
-                false,  // deleteOnClose
-                this
-            );
+case showExpressionHelp:
+{
+    new CtrlrHelpWindow("Expressions Help",
+                        new CtrlrExpressionsHelp());
+    return true;
+}
 
-            return true;
-            break;
-        }
-        case showExpressionHelp:
-        {
-            CtrlrExpressionsHelp* helpWindowExp = new CtrlrExpressionsHelp();
 
-            owner.getWindowManager().showModalDialog(
-                "Expressions Help",
-                helpWindowExp,
-                false,  // deleteOnClose
-                this
-            );
 
-            return true;
-            break;
-        }
         case CtrlrEditor::doZoomIn:
             if (getActivePanelEditor())
             {

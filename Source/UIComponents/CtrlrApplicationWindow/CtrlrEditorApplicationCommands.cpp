@@ -165,12 +165,12 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 			break;
 		case showDumpByLuaHelp:
 			result.setInfo ("Bulk Dump by Lua Help", "Show help reading/writing Dumps to panel", globalCategory, 0);
-			result.addDefaultKeypress ('h', ModifierKeys::commandModifier);
+			result.addDefaultKeypress ('d', ModifierKeys::commandModifier);
 
 			break;
 		case showExpressionHelp:
 			result.setInfo ("Expression Help", "Show help for writing Lua expressions", globalCategory, 0);
-			result.addDefaultKeypress ('h', ModifierKeys::commandModifier);
+			result.addDefaultKeypress ('r', ModifierKeys::commandModifier);
 
 			break;
 		case showKeyboardMappingDialog:

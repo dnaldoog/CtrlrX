@@ -8,6 +8,70 @@
 class CtrlrManager;
 class CtrlrProcessor;
 
+/* open help windows here */
+class CtrlrHelpWindow : public DocumentWindow,
+                        public KeyListener
+{
+public:
+    CtrlrHelpWindow(const String& name, Component* content)
+        : DocumentWindow(name,
+                         Colours::lightgrey,
+                         DocumentWindow::closeButton)
+    {
+        setUsingNativeTitleBar(false);
+        setResizable(true, true);
+        setContentOwned(content, true);
+        centreWithSize(700, 600);
+        setVisible(true);
+
+        content->addKeyListener(this);
+        content->setWantsKeyboardFocus(true);
+    }
+
+    bool keyPressed(const KeyPress& key, Component*) override // needs override
+    {
+        if (key.getKeyCode() == KeyPress::escapeKey)
+        {
+            delete this;
+            return true;
+        }
+        return false;
+    }
+
+    bool keyStateChanged(bool, Component*) override
+    {
+        return false; // we don’t need it
+    }
+
+    void closeButtonPressed() override
+    {
+        delete this;
+    }
+};
+
+
+// class HelpWindow : public DocumentWindow
+// {
+// public:
+//     HelpWindow (const String& title, Component* content)
+//         : DocumentWindow (title,
+//                           Colours::lightgrey,
+//                           DocumentWindow::allButtons,
+//                           true)   // addToDesktop
+//     {
+//         setUsingNativeTitleBar (false);   // safer on Wayland
+//         setResizable (true, true);
+//         setContentOwned (content, true);
+//         centreWithSize (600, 500);
+//         setVisible (true);
+//     }
+
+//     void closeButtonPressed() override
+//     {
+//         delete this;
+//     }
+// };
+
 class CtrlrTransferDumpHelp : public Component
 {
 public:
