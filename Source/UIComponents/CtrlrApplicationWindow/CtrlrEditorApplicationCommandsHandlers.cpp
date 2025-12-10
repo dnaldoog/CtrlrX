@@ -279,17 +279,22 @@ case CtrlrEditor::showAboutDialog:
 
 case showDumpByLuaHelp:
 {
-    new CtrlrHelpWindow("Bulk Read/Write Dump Help",
-                        new CtrlrTransferDumpHelp());
+    auto* w = new CtrlrHelpWindow("Bulk Read/Write Dump Help");
+    w->setContentOwned(new CtrlrTransferDumpHelp(), true);
+    w->centreWithSize(600, 500);
+    w->setVisible(true);
     return true;
 }
 
 case showExpressionHelp:
 {
-    new CtrlrHelpWindow("Expressions Help",
-                        new CtrlrExpressionsHelp());
+    auto* w = new CtrlrHelpWindow("Expressions Help");
+    w->setContentOwned(new CtrlrExpressionsHelp(), true);
+    w->centreWithSize(600, 500);
+    w->setVisible(true);
     return true;
 }
+
 
 
 

@@ -19613,6 +19613,169 @@ static const unsigned char temp_binary_data_91[] =
 
 const char* CtrlrMIDIVendors_xml = (const char*) temp_binary_data_91;
 
+//================== BulkReadWriteDump.md ==================
+static const unsigned char temp_binary_data_92[] =
+"## HOW TO PROCESS BULK MIDI MESSAGES\r\n"
+"\r\n"
+"### ENCODING TYPES:\r\n"
+"\r\n"
+"- **EncodeNormal**  Single 7-bit byte 0-127\r\n"
+"- **EncodeMSBFirst**  7-bit: MSB, LSB\r\n"
+"- **EncodeLSBFirst**  7-bit: LSB, MSB\r\n"
+"- **EncodeNibbleMsbFirst**  4-bit: MSB nibble, LSB nibble (unsigned)\r\n"
+"- **EncodeNibbleLsbFirst**  4-bit: LSB nibble, MSB nibble (unsigned)\r\n"
+"- **EncodeSignedNibbleMsbFirst**  4-bit: MSB nibble, LSB nibble (signed int8)\r\n"
+"- **EncodeSignedNibbleLsbFirst**  4-bit: LSB nibble, MSB nibble (signed int8)\r\n"
+"- **Encode16bitLsbFirst**\r\n"
+"*Encodes a 16 - bit value as four 4 - bit nibbles, least significant first*\r\n"
+"_Tokens_: `q0 q1 q2 q3`\\\r\n"
+"_Example_ : 51379 ? 03 0B 08 0C\r\n"
+"- **Encode16bitMsbFirst** Encodes a 16 - bit value as four 4 - bit nibbles, most significant first.\r\n"
+"_Tokens_: `Q0 Q1 Q2 Q3`\r\n"
+"_Example_ : 51379 ? 0C 08 0B 03\r\n"
+"----\r\n"
+"### Difference between mapped/non-mapped\r\n"
+"**Non mapped**:\\\r\n"
+"  panel:getModulatorValuesAsData(CUSTINDEX, CtrlrPanel.EncodeNormal, 1, **false**)\\\r\n"
+"**Mapped**:\\\r\n"
+"  panel:getModulatorValuesAsData(CUSTINDEX, CtrlrPanel.EncodeNormal, 1, **true**)\r\n"
+"\r\n"
+"----\r\n"
+"### EXAMPLE - SEND (4 bit nibble)\r\n"
+"LSB/MSB two byte 4-bit nibble:\r\n"
+"  panel:getModulatorValuesAsData(CUSTINDEX, CtrlrPanel.EncodeNibbleLsbFirst,\r\n"
+"                                 2, false)\r\n"
+"\r\n"
+"### EXAMPLE - RECEIVE (Where Header is 5 bytes in length):\r\n"
+"\r\n"
+"  panel:setModulatorValuesFromData(midi:getData(), \"modulatorCustomIndex\",\r\n"
+"                                   CtrlrPanel.EncodeMSBFirst, -5, 2, false)\r\n"
+"\r\n"
+"  panel:setModulatorValuesFromData(midi:getData(), \"modulatorCustomIndex\",\r\n"
+"                                   CtrlrPanel.EncodeNormal, -5, 1, false)\r\n"
+"\r\n"
+"  panel:setModulatorValuesFromData(midi:getData(), \"modulatorCustomIndex\",\r\n"
+"                                   CtrlrPanel.EncodeSignedNibbleMsbFirst,\r\n"
+"                                   -54, 2, false)\r\n"
+"\r\n"
+"## How to code Bulk Dump Send/Receive in lua\r\n"
+"### STEP 1: CREATE TABLE OF MODULATORS IN SYSEX DUMP ORDER\r\n"
+"````\r\n"
+"  listOfModulators = {\r\n"
+"      \"lfoDelay\",\r\n"
+"      \"lfoRate\",\r\n"
+"      \"VCF Resonance\",\r\n"
+"      \"VCF Cutoff\",\r\n"
+"      \"Delay\"\r\n"
+"  }\r\n"
+"````\r\n"
+"List all modulators here in order of sysex message data position\r\n"
+"\r\n"
+"\r\n"
+"### STEP 2: FILL modulatorCustomIndex WITH VALUES\r\n"
+"\r\n"
+"You can create your own custom modulator property (e.g. \"CUSTINDEX\")\r\n"
+"Run this in the console editor:\r\n"
+"````\r\n"
+"  local t = listOfModulators\r\n"
+"  for i, v in ipairs(t) do\r\n"
+"      panel:getModulatorByName(v):setProperty(\"CUSTINDEX\", tostring(i - 1),\r\n"
+"                                              false)\r\n"
+"  end\r\n"
+"````\r\n"
+"\r\n"
+"### STEP 2b: REMOVE CUSTOM INDEX (UNDO)\r\n"
+"\r\n"
+"You can completely remove the custom index you created:\r\n"
+"````\r\n"
+"  local t = listOfModulators\r\n"
+"  for i, v in ipairs(t) do\r\n"
+"      panel:getModulatorByName(v):removeProperty(\"CUSTINDEX\")\r\n"
+"  end\r\n"
+"````\r\n"
+"\r\n"
+"### STEP 3: SEND THE BULK MIDI MESSAGE\r\n"
+"\r\n"
+"Create a (GLOBAL) header string and an EOX string:\r\n"
+"\r\n"
+"  HEADER = \"F0 41 00 00 11\"\r\n"
+"  EOX = \"F7\"\r\n"
+"````\r\n"
+"  local data = panel:getModulatorValuesAsData(\"CUSTINDEX\",\r\n"
+"                                              CtrlrPanel.EncodeNormal,\r\n"
+"                                              1, false)\r\n"
+"  panel:sendMidiMessageNow(CtrlrMidiMessage(string.format(\"%s %s %s\",\r\n"
+"                                                          HEADER,\r\n"
+"                                                          data:toHexString(1),\r\n"
+"                                                          EOX)))\r\n"
+"````\r\n"
+"\r\n"
+"### STEP 4: RECEIVE A MIDI MESSAGE\r\n"
+"\r\n"
+"Create a method in 'Called when a panel receives a MIDI message':\r\n"
+"````\r\n"
+"  local headerSize = MemoryBlock(HEADER):getSize()\r\n"
+"  panel:setModulatorValuesFromData(midi:getData(), \"CUSTINDEX\",\r\n"
+"                                   CtrlrPanel.EncodeNormal,\r\n"
+"                                   -headerSize, 1, false)\r\n"
+"````\r\n"
+"Note that headerSize = headerSize * -1\r\n"
+"\r\n"
+"The last argument of these methods when changed to true reads/writes\r\n"
+"mapped values\r\n";
+
+const char* BulkReadWriteDump_md = (const char*) temp_binary_data_92;
+
+//================== Expressions.md ==================
+static const unsigned char temp_binary_data_93[] =
+"Constants:\r\n"
+"modulatorValue : The current linear value of the modulator, this is the index of the\r\n"
+"array of values; is always positive.\r\n"
+"modulatorMappedValue : The current mapped value in case of components that have\r\n"
+"mappings. This might be negative.\r\n"
+"modulatorMax : The maximum value the modulator can have (non mapped)\r\n"
+"modulatorMin : The minimum value the modulator can have (non mapped)\r\n"
+"modulatorMappedMax : the maximum value the modulator can have (mapped)\r\n"
+"modulatorMappedMin : the maximum value the modulator can have (mapped)\r\n"
+"vstIndex : The VST/AU index of the parameter as seen by the host program\r\n"
+"midiValue : The current value stored in the MIDI MESSAGE assosiated with the\r\n"
+"modulator.\r\n"
+"midiNumber : The number of the MIDI MESSAGE controller if applicable\r\n"
+"Functions:\r\n"
+"ceil(x) : Returns the smallest integral value of the parameter\r\n"
+"abs(x) : Returns the absolute value of the parameter\r\n"
+"floor(x) : Returns the largest integral value that is not greater than the parameter\r\n"
+"mod(a,b) : Divides two numbers and returns the result of the MODULO operation \xe2\x80\x9c%\xe2\x80\x9d.\r\n"
+"Examples 10 % 3 = 1, 0 % 5 = 0; 30 % 6 = 0; 32 % 5 = 2 For more info\r\n"
+"fmod(numerator,denominator) : Returns the floating-point remainder of the two\r\n"
+"parameters passed in\r\n"
+"pow(a,b) : Returns the first parameter raised to the power of the second (a^b)\r\n"
+"gte(a,b,retTrue,retFalse) : Return the larger or equal of the two passed\r\n"
+"parameters (a >= b). For example\r\n"
+"gte (modulatorValue, 0, modulatorValue, 128 - modulatorValue) will return\r\n"
+"modulatorValue if modulatorValue is greater then 0 and (128 \xe2\x80\x93 modulatorValue) if it is\r\n"
+"less then zero\r\n"
+"gt(a,b,retTrue,retFalse) : Same as gte but greater then without the equal sign (a\r\n"
+"> b)\r\n"
+"lt(a,b,retTrue,retFalse) : Same as gte but less then (a < b)\r\n"
+"lte(a,b,retTrue,retFalse): Same as gte but less then or equal (a <= b)\r\n"
+"eq(a,b,retTrue,retFalse) : Equals sign true if (a == b)\r\n"
+"max(a,b) : Returns the bigger of two parameters.\r\n"
+"min(a,b) : Returns the smaller of two parameters.\r\n"
+"getBitRangeAsInt (value, startBit, numBits) : Gets a number of bits (numBits)\r\n"
+"starting at position startBit as an Integer and returns that integer.\r\n"
+"setBitRangeAsInt (value, startBit, numBits, valueToSet) :\r\n"
+"clearBit (value, bitToClear) : Clears a bit at position bitToClear in the value and\r\n"
+"return that modified value.\r\n"
+"isBitSet (value, bitPosition) : Return true if a bit at position bitPosition in value\r\n"
+"is set, false otherwise.\r\n"
+"setBit (value, bitToSet) : Sets one bit in an integer at position (bitToSet) and\r\n"
+"returns the modified value with the bit set.\r\n"
+"setGlobal (globalIndex, newValueToSet) : This sets the value of one of the global\r\n"
+"variables in the panel, and returns that set value so the expression can continue.\r\n";
+
+const char* Expressions_md = (const char*) temp_binary_data_93;
+
 
 const char* getNamedResource (const char* resourceNameUTF8, int& numBytes);
 const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
@@ -19717,6 +19880,8 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
         case 0xcfea1483:  numBytes = 912; return CtrlrMidiMultiTemplate_xml;
         case 0xa5970535:  numBytes = 1963; return CtrlrMIDITransactions_xml;
         case 0x37e081fb:  numBytes = 15061; return CtrlrMIDIVendors_xml;
+        case 0xf2d75ceb:  numBytes = 3856; return BulkReadWriteDump_md;
+        case 0x75bd0b9b:  numBytes = 2726; return Expressions_md;
         default: break;
     }
 
@@ -19817,7 +19982,9 @@ const char* namedResourceList[] =
     "CtrlrLuaMethodTemplates_xml",
     "CtrlrMidiMultiTemplate_xml",
     "CtrlrMIDITransactions_xml",
-    "CtrlrMIDIVendors_xml"
+    "CtrlrMIDIVendors_xml",
+    "BulkReadWriteDump_md",
+    "Expressions_md"
 };
 
 const char* originalFilenames[] =
@@ -19913,7 +20080,9 @@ const char* originalFilenames[] =
     "CtrlrLuaMethodTemplates.xml",
     "CtrlrMidiMultiTemplate.xml",
     "CtrlrMIDITransactions.xml",
-    "CtrlrMIDIVendors.xml"
+    "CtrlrMIDIVendors.xml",
+    "BulkReadWriteDump.md",
+    "Expressions.md"
 };
 
 const char* getNamedResourceOriginalFilename (const char* resourceNameUTF8);

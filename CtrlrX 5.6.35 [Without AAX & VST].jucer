@@ -1094,6 +1094,21 @@
               file="Source/UIComponents/CtrlrValueTreeEditor.h"/>
       </GROUP>
     </GROUP>
+    <FILE id="t7rcnB" name="BulkReadWriteDump.md" compile="0" resource="1"
+          file="Source/Resources/Doc/BulkReadWriteDump.md"/>
+    <FILE id="DOBpHa" name="CtrlrExpressionsHelp.cpp" compile="1" resource="0"
+          file="Source/UIComponents/CtrlrExpressionsHelp.cpp"/>
+    <FILE id="ADHTay" name="CtrlrExpressionsHelp.h" compile="0" resource="0"
+          file="Source/UIComponents/CtrlrExpressionsHelp.h"/>
+    <FILE id="eQbuKf" name="CtrlrMarkdownParser.cpp" compile="1" resource="0"
+          file="Source/UIComponents/CtrlrMarkdownParser.cpp"/>
+    <FILE id="HLhdmG" name="CtrlrMarkdownParser.h" compile="0" resource="0"
+          file="Source/UIComponents/CtrlrMarkdownParser.h"/>
+    <FILE id="P1nMCh" name="CtrlrTransferDumpHelp.cpp" compile="1" resource="0"
+          file="Source/UIComponents/CtrlrTransferDumpHelp.cpp"/>
+    <FILE id="OpFwP0" name="CtrlrTransferDumpHelp.h" compile="0" resource="0"
+          file="Source/UIComponents/CtrlrTransferDumpHelp.h"/>
+    <FILE id="bWshxK" name="Expressions.md" compile="0" resource="1" file="Source/Resources/Doc/Expressions.md"/>
   </MAINGROUP>
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX" extraDefs="JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1 BOOST_BIND_GLOBAL_PLACEHOLDERS=1"
