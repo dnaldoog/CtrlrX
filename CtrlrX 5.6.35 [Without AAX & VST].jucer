@@ -615,6 +615,7 @@
               resource="0" file="Source/Plugin/CtrlrProcessorEditorForLive.h"/>
       </GROUP>
       <GROUP id="{A473FE32-72A8-D607-99DF-96F6BF23D1C7}" name="Resources">
+        <GROUP id="{7F5C97F1-DDC3-4772-4FD6-000B73DF06A6}" name="New Group"/>
         <GROUP id="{5425C584-8B65-E29D-5410-23D72492F06C}" name="Fonts">
           <FILE id="iMatU9" name="FONT_60sekuntia.ttf" compile="0" resource="1"
                 file="Source/Resources/Fonts/FONT_60sekuntia.ttf"/>
@@ -1077,6 +1078,14 @@
               file="Source/UIComponents/CtrlrComponentSelection.cpp"/>
         <FILE id="Q0Bt0V" name="CtrlrComponentSelection.h" compile="0" resource="0"
               file="Source/UIComponents/CtrlrComponentSelection.h"/>
+        <FILE id="ZsqDr3" name="CtrlrGenericHelp.cpp" compile="1" resource="0"
+              file="Source/UIComponents/CtrlrGenericHelp.cpp"/>
+        <FILE id="fvibmy" name="CtrlrGenericHelp.h" compile="0" resource="0"
+              file="Source/UIComponents/CtrlrGenericHelp.h"/>
+        <FILE id="ox5iKs" name="CtrlrHelpWindow.cpp" compile="1" resource="0"
+              file="Source/UIComponents/CtrlrHelpWindow.cpp"/>
+        <FILE id="PkRgcX" name="CtrlrHelpWindow.h" compile="0" resource="0"
+              file="Source/UIComponents/CtrlrHelpWindow.h"/>
         <FILE id="T5Q5Dn" name="CtrlrLogViewer.cpp" compile="1" resource="0"
               file="Source/UIComponents/CtrlrLogViewer.cpp"/>
         <FILE id="FEt5Md" name="CtrlrLogViewer.h" compile="0" resource="0"
@@ -1094,8 +1103,8 @@
               file="Source/UIComponents/CtrlrValueTreeEditor.h"/>
       </GROUP>
     </GROUP>
-    <FILE id="t7rcnB" name="BulkReadWriteDump.md" compile="0" resource="1"
-          file="Source/Resources/Doc/BulkReadWriteDump.md"/>
+    <FILE id="KHvwkJ" name="BulkReadWriteDump.md" compile="0" resource="1"
+          file="Source/Resources/Doc/BulkReadWriteDump.md" xcodeResource="1"/>
     <FILE id="DOBpHa" name="CtrlrExpressionsHelp.cpp" compile="1" resource="0"
           file="Source/UIComponents/CtrlrExpressionsHelp.cpp"/>
     <FILE id="ADHTay" name="CtrlrExpressionsHelp.h" compile="0" resource="0"
@@ -1108,7 +1117,8 @@
           file="Source/UIComponents/CtrlrTransferDumpHelp.cpp"/>
     <FILE id="OpFwP0" name="CtrlrTransferDumpHelp.h" compile="0" resource="0"
           file="Source/UIComponents/CtrlrTransferDumpHelp.h"/>
-    <FILE id="bWshxK" name="Expressions.md" compile="0" resource="1" file="Source/Resources/Doc/Expressions.md"/>
+    <FILE id="ugfFq6" name="Expressions.md" compile="0" resource="1" file="Source/Resources/Doc/Expressions.md"
+          xcodeResource="1"/>
   </MAINGROUP>
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX" extraDefs="JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1 BOOST_BIND_GLOBAL_PLACEHOLDERS=1"

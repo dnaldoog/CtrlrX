@@ -20,5 +20,6 @@ public:
 
 private:
     juce::TextEditor helpText;
+
 };
 

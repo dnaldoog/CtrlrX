@@ -10,6 +10,9 @@
 #include "CtrlrMIDI/CtrlrMIDISettingsDialog.h"
 #include "CtrlrMIDI/CtrlrMIDISettingsDialog.h"
 #include "CtrlrLua/MethodEditor/CtrlrLuaMethodEditorCommandIDs.h" // Added v5.6.34.
+#include "CtrlrHelpWindow.h"
+#include "CtrlrTransferDumpHelp.h"
+#include "CtrlrGenericHelp.h
 
 
 
@@ -277,27 +280,17 @@ case CtrlrEditor::showAboutDialog:
     #endif
     break;
 
-case showDumpByLuaHelp:
-{
-    auto* w = new CtrlrHelpWindow("Bulk Read/Write Dump Help");
-    w->setContentOwned(new CtrlrTransferDumpHelp(), true);
-    w->centreWithSize(600, 500);
-    w->setVisible(true);
+    case showDumpByLuaHelp:
+    new CtrlrHelpWindow("Bulk Read/Write Dump Help",
+        new CtrlrGenericHelp(BinaryData::BulkReadWriteDump_md,
+            BinaryData::BulkReadWriteDump_mdSize));
     return true;
-}
 
-case showExpressionHelp:
-{
-    auto* w = new CtrlrHelpWindow("Expressions Help");
-    w->setContentOwned(new CtrlrExpressionsHelp(), true);
-    w->centreWithSize(600, 500);
-    w->setVisible(true);
+    case showExpressionHelp:
+    new CtrlrHelpWindow("Expressions Help",
+        new CtrlrGenericHelp(BinaryData::Expressions_md,
+            BinaryData::Expressions_mdSize));
     return true;
-}
-
-
-
-
         case CtrlrEditor::doZoomIn:
             if (getActivePanelEditor())
             {

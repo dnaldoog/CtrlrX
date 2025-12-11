@@ -1,23 +1,18 @@
-/*
-  ==============================================================================
-
-    CtrlrTransferDumpHelp.h
-    Created: 11 Dec 2025 7:05:43am
-    Author:  zan64
-
-  ==============================================================================
-*/
-
 #pragma once
-#include <juce_gui_basics/juce_gui_basics.h>
+#include <JuceHeader.h>
+#include "CtrlrMarkdownParser.h"
 
+// A help component that displays markdown content in a scrollable viewport
 class CtrlrTransferDumpHelp : public juce::Component
 {
 public:
     CtrlrTransferDumpHelp();
+    ~CtrlrTransferDumpHelp() override = default;
 
+    void paint(juce::Graphics& g) override;
     void resized() override;
 
 private:
-    juce::TextEditor helpText;
+    juce::AttributedString attributedContent;
+    juce::TextLayout layout;   // JUCE class for layouting text
 };

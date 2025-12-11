@@ -4,29 +4,35 @@
 #include "CtrlrMacros.h"
 #include "CtrlrWindowManagers/CtrlrChildWindowContainer.h"
 #include "CtrlrSettings.h"
-#include "CtrlrExpressionsHelp.h"
-#include "CtrlrTransferDumpHelp.h"
+#include "CtrlrHelpWindow.h"
 
 class CtrlrManager;
 class CtrlrProcessor;
 
-class CtrlrHelpWindow : public juce::DocumentWindow
-{
-public:
-	CtrlrHelpWindow(const juce::String& title)
-		: DocumentWindow(title,
-			juce::Colours::lightgrey,
-			DocumentWindow::closeButton)
-	{
-		setUsingNativeTitleBar(true);
-		setResizable(true, false);
-	}
-
-	void closeButtonPressed() override
-	{
-		delete this; // self-destruct window
-	}
-};
+/*Moved to its own header file*/
+//class CtrlrHelpWindow : public juce::DocumentWindow
+//{
+//public:
+//	CtrlrHelpWindow(const juce::String& title,
+//		juce::Component* helpComponent)
+//		: juce::DocumentWindow(title,
+//			juce::Colours::white,
+//			DocumentWindow::allButtons)
+//	{
+//		setUsingNativeTitleBar(true);
+//		setResizable(true, false);
+//
+//		// Take ownership of the supplied help component
+//		setContentOwned(helpComponent, true);
+//		centreWithSize(600, 600);
+//		setVisible(true);
+//	}
+//
+//	void closeButtonPressed() override
+//	{
+//		delete this;
+//	}
+//};
 
 
 
@@ -145,8 +151,11 @@ class CtrlrEditor  : public AudioProcessorEditor,
 		};
 
 		void activeCtrlrChanged();
-		const WeakReference<CtrlrEditor>::SharedRef& getWeakReference();
-		CtrlrManager &getOwner()											{ return (owner); }
+		//const WeakReference<CtrlrEditor>::SharedRef& getWeakReference();
+		CtrlrManager &getOwner()
+		{ 
+			return (owner); 
+		}
 		
         // WeakReference<CtrlrEditor>::Master masterReference;
 		

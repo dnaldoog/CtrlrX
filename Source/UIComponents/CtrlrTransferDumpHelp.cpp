@@ -1,37 +1,38 @@
-/*
-  ==============================================================================
-
-    CtrlrTransferDumpHelp.cpp
-    Created: 11 Dec 2025 7:05:43am
-    Author:  zan64
-
-  ==============================================================================
-*/
-#include <JuceHeader.h>
-#include "CtrlrTransferDumpHelp.h"
+﻿#include "CtrlrTransferDumpHelp.h"
+#include "CtrlrMarkdownParser.h"
+#include "BinaryData.h"
 
 CtrlrTransferDumpHelp::CtrlrTransferDumpHelp()
 {
-    addAndMakeVisible(helpText);
+    // Load embedded markdown content
+    juce::String content;
+    if (BinaryData::BulkReadWriteDump_md != nullptr)
+        content = juce::String::fromUTF8(BinaryData::BulkReadWriteDump_md,
+            BinaryData::BulkReadWriteDump_mdSize);
+    else
+        content = "Help file not found.";
 
-    helpText.setMultiLine(true);
-    helpText.setReadOnly(true);
-    helpText.setScrollbarsShown(true);
-    helpText.setCaretVisible(false);
-    helpText.setPopupMenuEnabled(true);
-    helpText.setWantsKeyboardFocus(false);
+    // Parse markdown to AttributedString
+    attributedContent = CtrlrMarkdownParser::parse(content);
 
-    auto mdFile = juce::File::getCurrentWorkingDirectory()
-        .getChildFile("Source/Resources/Doc/BulkReadWriteDump.md");
+    // Initial layout
+    layout.createLayout(attributedContent, 800.0f);
 
-    juce::String content = mdFile.existsAsFile()
-        ? mdFile.loadFileAsString()
-        : "Help file not found.";
+    // Set initial size to match content
+    setSize(800, (int)layout.getHeight());
+}
 
-    helpText.setText(content);
+void CtrlrTransferDumpHelp::paint(juce::Graphics& g)
+{
+    g.fillAll(juce::Colours::white);
+
+    auto area = getLocalBounds().reduced(12).toFloat(); // 12 px padding
+    layout.draw(g, area);
 }
 
 void CtrlrTransferDumpHelp::resized()
 {
-    helpText.setBounds(getLocalBounds());
+    layout.createLayout(attributedContent, (float)getWidth() - 24); // account for left+right padding
+    setSize(getWidth(), (int)layout.getHeight());
 }
+

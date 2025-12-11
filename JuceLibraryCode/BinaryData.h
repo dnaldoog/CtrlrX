@@ -285,7 +285,7 @@ namespace BinaryData
     const int            CtrlrMIDIVendors_xmlSize = 15061;
 
     extern const char*   BulkReadWriteDump_md;
-    const int            BulkReadWriteDump_mdSize = 3856;
+    const int            BulkReadWriteDump_mdSize = 3870;
 
     extern const char*   Expressions_md;
     const int            Expressions_mdSize = 2726;
