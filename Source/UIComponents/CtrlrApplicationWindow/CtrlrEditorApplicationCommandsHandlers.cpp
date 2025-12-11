@@ -8,11 +8,10 @@
 #include "CtrlrLua/MethodEditor/CtrlrLuaMethodCodeEditorSettings.h" // Added v5.6.34.
 #include "CtrlrWindowManagers/CtrlrDialogWindow.h"
 #include "CtrlrMIDI/CtrlrMIDISettingsDialog.h"
-#include "CtrlrMIDI/CtrlrMIDISettingsDialog.h"
 #include "CtrlrLua/MethodEditor/CtrlrLuaMethodEditorCommandIDs.h" // Added v5.6.34.
 #include "CtrlrHelpWindow.h"
 #include "CtrlrTransferDumpHelp.h"
-#include "CtrlrGenericHelp.h
+#include "CtrlrGenericHelp.h"
 
 
 
@@ -285,12 +284,13 @@ case CtrlrEditor::showAboutDialog:
         new CtrlrGenericHelp(BinaryData::BulkReadWriteDump_md,
             BinaryData::BulkReadWriteDump_mdSize));
     return true;
-
+    break;
     case showExpressionHelp:
     new CtrlrHelpWindow("Expressions Help",
         new CtrlrGenericHelp(BinaryData::Expressions_md,
             BinaryData::Expressions_mdSize));
     return true;
+    break;
         case CtrlrEditor::doZoomIn:
             if (getActivePanelEditor())
             {
