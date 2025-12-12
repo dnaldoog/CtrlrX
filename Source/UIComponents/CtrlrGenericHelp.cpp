@@ -10,7 +10,6 @@ CtrlrGenericHelp::CtrlrGenericHelp(const char* mdData, int mdSize)
     attributedContent = CtrlrMarkdownParser::parse(content);
     plainText = CtrlrMarkdownParser::parseToPlainText(content);
 
-    // Calculate height
     juce::TextLayout layout;
     layout.createLayout(attributedContent, 776.0f);
     contentHeight = layout.getHeight() + 24.0f;
@@ -40,11 +39,12 @@ void CtrlrGenericHelp::resized()
 
 void CtrlrGenericHelp::mouseDown(const juce::MouseEvent& e)
 {
-    if (e.mods.isRightButtonDown() || e.mods.isCtrlDown())
+    // Right-click or Ctrl+Click to copy all text
+    if (e.mods.isPopupMenu())
     {
-        // Show context menu for copying all text
         juce::PopupMenu menu;
-        menu.addItem(1, "Copy All Text");
+        menu.addItem(1, "Copy All Text", true);
+        menu.addItem(2, "Select All (Ctrl+A)", false);  // Visual hint
 
         menu.showMenuAsync(juce::PopupMenu::Options(), [this](int result) {
             if (result == 1)
@@ -53,9 +53,4 @@ void CtrlrGenericHelp::mouseDown(const juce::MouseEvent& e)
             }
             });
     }
-}
-
-void CtrlrGenericHelp::mouseDrag(const juce::MouseEvent& e)
-{
-    // Could implement text selection here if needed
 }
