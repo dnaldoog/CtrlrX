@@ -15,6 +15,7 @@ public:
     void resized() override;
 
 private:
+    float contentHeight = 0.0f;
     juce::AttributedString attributedContent;
 };
 
