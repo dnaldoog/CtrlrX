@@ -615,14 +615,12 @@ void CtrlrColourEditorComponent::resized()
         colourTextInput.setBounds(0, 0, getWidth() - buttonWidth - 2, getHeight());
     }
 }
-
 void CtrlrColourEditorComponent::lookAndFeelChanged()
 {
     // Simply repaint the button to force it to redraw with the new colors
     if (colourPickerButton != nullptr)
         colourPickerButton->repaint();
 }
-
 void CtrlrColourEditorComponent::updateLabel()
 {
     if (colourPickerButton != nullptr)
@@ -1376,147 +1374,151 @@ void CtrlrModulatorListProperty::modulatorRemoved (CtrlrModulator *modulatorRemo
 
 
 ***********************************************************************/
-CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent (const Value &_valueToControl)
+CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent(const Value& _valueToControl)
     : valueToControl(_valueToControl),
-      addMulti (0),
-      removeMulti(0),
-      listMulti(0),
-      copy (0),
-      paste (0),
-      helpMmidi (0)
+    addMulti(0),
+    removeMulti(0),
+    listMulti(0),
+    copy(0),
+    paste(0),
+    helpMmidi(0)
 {
-   
-   
- // 1. Create a Drawable (the icon) from your manager
-auto listIcon = SvgIconManager::getDrawable(IconType::UlBars, *this); 
+    // Create Add button
+    auto addIcon = SvgIconManager::getDrawable(IconType::UlBars, *this);
+    addMulti = new juce::DrawableButton("Add Multi", juce::DrawableButton::ImageFitted);
+    addMulti->setImages(addIcon.release());
+    addAndMakeVisible(addMulti);
+    addMulti->setTooltip(L"Add message");
+    addMulti->addListener(this);
+    addMulti->setMouseCursor(MouseCursor::PointingHandCursor);
 
-// 2. Create the DrawableButton using the standard JUCE constructor
-addMulti = new juce::DrawableButton("Add Multi", juce::DrawableButton::ImageFitted);
+    // Create Remove button
+    removeMulti = gui::createDrawableButton("Remove", BIN2STR(clear_svg));
+    addAndMakeVisible(removeMulti);
+    removeMulti->setTooltip(L"Remove selected message");
+    removeMulti->addListener(this);
+    removeMulti->setMouseCursor(MouseCursor::PointingHandCursor);
 
-// 3. Set the drawable on the button
-addMulti->setImages (listIcon.release()); // .release() transfers ownership to the button
+    // Create ListBox
+    listMulti = new ListBox("list", this);
+    addAndMakeVisible(listMulti);
+    listMulti->setRowHeight(14);
 
-// 4. Add the component to the parent
-addAndMakeVisible (addMulti);
+    // Create Copy button
+    copy = gui::createDrawableButton("Copy", BIN2STR(copy_svg));
+    addAndMakeVisible(copy);
+    copy->setTooltip(L"Copy to clipboard");
+    copy->addListener(this);
+    copy->setMouseCursor(MouseCursor::PointingHandCursor);
 
-// 5. Restore the rest of the button setup
-addMulti->setTooltip (L"Add message");
-addMulti->addListener (this);   
+    // Create Paste button
+    paste = gui::createDrawableButton("Paste", BIN2STR(paste_svg));
+    addAndMakeVisible(paste);
+    paste->setTooltip(L"Paste from clipboard");
+    paste->addListener(this);
+    paste->setMouseCursor(MouseCursor::PointingHandCursor);
 
-/* I couldn't add these as Resources in Linux but the SvgIconManager class is just as good*/
-    // addAndMakeVisible (addMulti = gui::createDrawableButton("Add Multi", BIN2STR(list_ul_solid_svg)));
-    // addMulti->setTooltip (L"Add message");
-    // addMulti->addListener (this);
+    // Create Help button
+    auto helpIcon = SvgIconManager::getDrawable(IconType::SolidQuest, *this);
+    helpMmidi = new juce::DrawableButton("Help", juce::DrawableButton::ImageFitted);
+    helpMmidi->setImages(helpIcon.release());
+    addAndMakeVisible(helpMmidi);
+    helpMmidi->setTooltip(L"Click to see Multi MIDI message syntax");
+    helpMmidi->addListener(this);
+    helpMmidi->setMouseCursor(MouseCursor::PointingHandCursor);
 
-    addAndMakeVisible (removeMulti = gui::createDrawableButton("Remove", BIN2STR(clear_svg)));
-    removeMulti->setTooltip (L"Remove selected message");
-    removeMulti->addListener (this);
+    loadAdditionalTemplates(File());
+    setSize(256, 96);
 
-
-    addAndMakeVisible (listMulti = new ListBox ("list", this));
-
-    addAndMakeVisible (copy = gui::createDrawableButton("Copy", BIN2STR(copy_svg)));
-    copy->setTooltip (L"Copy to clipboard");
-    copy->addListener (this);
-
-    addAndMakeVisible (paste = gui::createDrawableButton("Paste", BIN2STR(paste_svg)));
-    paste->setTooltip (L"Paste from clipboard");
-    paste->addListener (this);
-
-    // Create the help button
-    // 1. Create a Drawable (the icon) from your manager
-auto helpIcon = SvgIconManager::getDrawable(IconType::SolidQuest, *this); 
-
-// 2. Create the DrawableButton using the standard JUCE constructor
-helpMmidi = new juce::DrawableButton("Help", juce::DrawableButton::ImageFitted);
-
-// 3. Set the drawable on the button
-helpMmidi->setImages (helpIcon.release()); // .release() transfers ownership to the button
-
-// 4. Add the component to the parent
-addAndMakeVisible (helpMmidi);
-
-// 5. Restore the rest of the button setup
-helpMmidi->setTooltip(L"Click to see Multi MIDI message syntax");
-helpMmidi->addListener(this);
-/* I couldn't add these as Resources in Linux but the SvgIconManager class is just as good*/
-
-    //  addAndMakeVisible(helpMmidi = gui::createDrawableButton("Help", BIN2STR(clipboard_question_solid_svg)));
-    // helpMmidi->setTooltip(L"Click to see Multi MIDI message syntax");
-    // helpMmidi->addListener(this); // JUCE 6 compatible
-    //addAndMakeVisible(helpMmidi = new TextButton(L"editButton"));
-    //helpMmidi->setButtonText(L"?");
-    //helpMmidi->addListener(this);
-
-    // Optional styling
-    //insert->setColour(juce::TextButton::buttonColourId, juce::Colours::lightgrey);
-    //insert->setColour(juce::TextButton::textColourOffId, juce::Colours::black);
-    //insert->setConnectedEdges(juce::Button::ConnectedOnLeft); // optional for layout
-    listMulti->setRowHeight (14);
-    addMulti->setMouseCursor (MouseCursor::PointingHandCursor);
-	removeMulti->setMouseCursor (MouseCursor::PointingHandCursor);
-	copy->setMouseCursor (MouseCursor::PointingHandCursor);
-	paste->setMouseCursor (MouseCursor::PointingHandCursor);
-    helpMmidi->setMouseCursor (MouseCursor::PointingHandCursor);
-	removeMulti->setTooltip ("Remove selected");
-	loadAdditionalTemplates(File());
-    setSize (256, 96);
+    // Initialize button icons for current look and feel
+    updateButtonIcons();
 }
 
 CtrlrMultiMidiPropertyComponent::~CtrlrMultiMidiPropertyComponent()
 {
-    deleteAndZero (addMulti);
-    deleteAndZero (removeMulti);
-    deleteAndZero (listMulti);
-    deleteAndZero (copy);
-    deleteAndZero (paste);
-    deleteAndZero (helpMmidi);
+    deleteAndZero(addMulti);
+    deleteAndZero(removeMulti);
+    deleteAndZero(listMulti);
+    deleteAndZero(copy);
+    deleteAndZero(paste);
+    deleteAndZero(helpMmidi);
 }
 
-void CtrlrMultiMidiPropertyComponent::paint (Graphics& g)
+void CtrlrMultiMidiPropertyComponent::lookAndFeelChanged()
 {
-    g.setGradientFill (ColourGradient (Colours::white,
-                                       (float) ((getWidth() / 2)), 0.0f,
-                                       Colour (0xffe2e2e2),
-                                       (float) ((getWidth() / 2)), 32.0f,
-                                       false));
-    g.fillRect (0, 0, getWidth() - 0, 32);
+    Component::lookAndFeelChanged();
+    updateButtonIcons();
 
-    g.setGradientFill (ColourGradient (Colour (0xffd6d6d6),
-                                       (float) ((getWidth() / 2)), 29.0f,
-                                       Colour (0xff767676),
-                                       (float) ((getWidth() / 2)), 32.0f,
-                                       false));
-    g.fillRect (0, 29, getWidth() - 0, 3);
+    if (listMulti)
+        listMulti->repaint();
+}
+
+void CtrlrMultiMidiPropertyComponent::paint(Graphics& g)
+{
+    // Use look-and-feel colors instead of hardcoded ones
+    auto bgColour = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
+    auto lighterBg = bgColour.brighter(0.1f);
+    auto darkerBg = bgColour.darker(0.2f);
+
+    g.setGradientFill(ColourGradient(lighterBg,
+        (float)((getWidth() / 2)), 0.0f,
+        bgColour,
+        (float)((getWidth() / 2)), 32.0f,
+        false));
+    g.fillRect(0, 0, getWidth(), 32);
+
+    g.setGradientFill(ColourGradient(bgColour,
+        (float)((getWidth() / 2)), 29.0f,
+        darkerBg,
+        (float)((getWidth() / 2)), 32.0f,
+        false));
+    g.fillRect(0, 29, getWidth(), 3);
 }
 
 void CtrlrMultiMidiPropertyComponent::resized()
 {
-    addMulti->setBounds (8, 4, 24, 24);
-    removeMulti->setBounds (72, 4, 24, 24);
-    listMulti->setBounds (0, 32, getWidth() - 0, getHeight() - 32);
-    copy->setBounds ((getWidth() - 32) + -32, 4, 24, 24);
-    paste->setBounds (getWidth() - 32, 4, 24, 24);
-    helpMmidi->setBounds (40, 4, 24, 24);
+    addMulti->setBounds(8, 4, 24, 24);
+    helpMmidi->setBounds(40, 4, 24, 24);
+    removeMulti->setBounds(72, 4, 24, 24);
+    copy->setBounds((getWidth() - 32) + -32, 4, 24, 24);
+    paste->setBounds(getWidth() - 32, 4, 24, 24);
+    listMulti->setBounds(0, 32, getWidth() - 0, getHeight() - 32);
+}
+
+void CtrlrMultiMidiPropertyComponent::paintListBoxItem(int rowNumber, Graphics& g,
+    int width, int height, bool rowIsSelected)
+{
+    // Just paint the background, no text (Labels handle text rendering)
+    if (rowIsSelected)
+    {
+        g.fillAll(getLookAndFeel().findColour(juce::ListBox::backgroundColourId).contrasting(0.2f));
+    }
+    else
+    {
+        g.fillAll(getLookAndFeel().findColour(juce::ListBox::backgroundColourId));
+    }
+
+    // DON'T draw text here - the Label components do that
 }
 
 void CtrlrMultiMidiPropertyComponent::buttonClicked(Button* buttonThatWasClicked)
 {
-    if (buttonThatWasClicked == helpMmidi) {
+    if (buttonThatWasClicked == helpMmidi)
+    {
         CtrlrSysexProcessor::showMidiHelp();
     }
     else if (buttonThatWasClicked == addMulti)
     {
         PopupMenu m;
 
-        // --- Add XML templates dynamically ---
+        // Add XML templates dynamically
         StringArray templateKeys = templates.getAllKeys();
         for (int i = 0; i < templateKeys.size(); ++i)
             m.addItem(i + 1, templateKeys[i]);
 
         m.addSeparator();
 
-        // --- 2️⃣ Standard MIDI types ---
+        // Standard MIDI types
         struct StandardType
         {
             const char* name;
@@ -1524,33 +1526,29 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button* buttonThatWasClicked
         };
 
         const StandardType standardTypes[] = {
-            { "CC",            "CC,-2,-1" },
-            { "Program Change","ProgramChange,-1" },
-            { "SysEx",         "SysEx,F0 00 xx F7" },
-            { "NRPN",          "CC,ByteValue,MSB7bitValue,99,-2:CC,ByteValue,LSB7bitValue,98,-2:CC,ByteValue,MSB7bitValue,6,-1:CC,ByteValue,LSB7bitValue,38,-1" },
-            { "NRPN (Korg)",   "CC,ByteValue,MSB7bitValue,99,-2:CC,ByteValue,LSB7bitValue,98,-2:CC,ByteValue,MSB7bitValue,6,-1" },
-            { "RPN", "CC,ByteValue,MSB7bitValue,101,-2:CC,ByteValue,LSB7bitValue,100,-2:CC,ByteValue,MSB7bitValue,6,-1:CC,ByteValue,LSB7bitValue,38,-1" },
-        	{ "NRPN Null",     "CC,ByteValue,LSB7bitValue,101,127:CC,ByteValue,LSB7bitValue,100,127" }
-
-
+            { "CC",              "CC,-2,-1" },
+            { "Program Change",  "ProgramChange,-1" },
+            { "SysEx",           "SysEx,F0 00 xx F7" },
+            { "NRPN",            "CC,ByteValue,MSB7bitValue,99,-2:CC,ByteValue,LSB7bitValue,98,-2:CC,ByteValue,MSB7bitValue,6,-1:CC,ByteValue,LSB7bitValue,38,-1" },
+            { "NRPN (Korg)",     "CC,ByteValue,MSB7bitValue,99,-2:CC,ByteValue,LSB7bitValue,98,-2:CC,ByteValue,MSB7bitValue,6,-1" },
+            { "RPN",             "CC,ByteValue,MSB7bitValue,101,-2:CC,ByteValue,LSB7bitValue,100,-2:CC,ByteValue,MSB7bitValue,6,-1:CC,ByteValue,LSB7bitValue,38,-1" },
+            { "NRPN Null",       "CC,ByteValue,LSB7bitValue,101,127:CC,ByteValue,LSB7bitValue,100,127" }
         };
 
         int standardStartId = templateKeys.size() + 1;
         for (int i = 0; i < numElementsInArray(standardTypes); ++i)
         {
-            if (i % 3 == 0){
+            if (i % 3 == 0)
                 m.addSeparator();
-			}
             m.addItem(standardStartId + i, standardTypes[i].name);
         }
         m.addSeparator();
 
-
-        // --- 3️⃣ Custom editor ---
+        // Custom editor
         int customId = standardStartId + numElementsInArray(standardTypes);
         m.addItem(customId, "Custom...");
 
-        // --- 4️⃣ Show popup and handle selection ---
+        // Show popup and handle selection
         int ret = m.show();
 
         if (ret <= 0)
@@ -1563,7 +1561,6 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button* buttonThatWasClicked
 
             if (newCsv.isNotEmpty())
             {
-                // FIXED: Append instead of overwrite
                 String currentValue = valueToControl.toString();
                 if (currentValue.isNotEmpty())
                     valueToControl = currentValue + ":" + newCsv;
@@ -1577,7 +1574,6 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button* buttonThatWasClicked
             String data = templates.getValue(templateKeys[ret - 1], "");
             if (data.isNotEmpty())
             {
-                // FIXED: Append instead of overwrite
                 String currentValue = valueToControl.toString();
                 if (currentValue.isNotEmpty())
                     valueToControl = currentValue + ":" + data;
@@ -1591,7 +1587,6 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button* buttonThatWasClicked
             int index = ret - standardStartId;
             if (index >= 0 && index < numElementsInArray(standardTypes))
             {
-                // FIXED: Append instead of overwrite
                 String currentValue = valueToControl.toString();
                 if (currentValue.isNotEmpty())
                     valueToControl = currentValue + ":" + standardTypes[index].defaultCsv;
@@ -1606,7 +1601,6 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button* buttonThatWasClicked
         int selectedRow = listMulti->getSelectedRow();
         if (selectedRow >= 0)
         {
-            // Rebuild the string without the selected item
             StringArray temp;
             temp.addTokens(valueToControl.toString().trim(), ":", "\"\'");
             if (selectedRow < temp.size())
@@ -1627,50 +1621,97 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button* buttonThatWasClicked
         refresh();
     }
 }
-void CtrlrMultiMidiPropertyComponent::paintListBoxItem(int rowNumber, Graphics &g, int width, int height, bool rowIsSelected)
+void CtrlrMultiMidiPropertyComponent::updateButtonIcons()
 {
-	if (rowIsSelected)
-	{
-		g.setColour (Colours::lightblue);
-        //g.setColour (findColour(ListBox::backgroundColourId));
-		g.fillAll();
-	}
-	else
-	{
-        g.setColour (Colours::white);
-        //g.setColour (findColour(ListBox::backgroundColourId));
-		g.fillAll();
-	}
+    auto bgColour = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
+    bool isDarkTheme = bgColour.getBrightness() < 0.5f;
+    auto iconColour = isDarkTheme ? juce::Colours::white : juce::Colours::black;
+
+    // Update Add button
+    if (addMulti)
+    {
+        auto icon = SvgIconManager::getDrawable(IconType::UlBars, *this);
+        if (icon)
+        {
+            icon->replaceColour(juce::Colours::black, iconColour);
+            addMulti->setImages(icon.get());
+        }
+    }
+
+    // Update Help button
+    if (helpMmidi)
+    {
+        auto icon = SvgIconManager::getDrawable(IconType::SolidQuest, *this);
+        if (icon)
+        {
+            icon->replaceColour(juce::Colours::black, iconColour);
+            helpMmidi->setImages(icon.get());
+        }
+    }
+
+    // Update Remove button (BIN2STR)
+    if (removeMulti)
+    {
+        String svgData = String(BIN2STR(clear_svg));
+        auto icon = juce::Drawable::createFromImageData(svgData.toRawUTF8(), svgData.length());
+        if (icon)
+        {
+            icon->replaceColour(juce::Colours::black, iconColour);
+            removeMulti->setImages(icon.get());
+        }
+    }
+
+    // Update Copy button (BIN2STR)
+    if (copy)
+    {
+        String svgData = String(BIN2STR(copy_svg));
+        auto icon = juce::Drawable::createFromImageData(svgData.toRawUTF8(), svgData.length());
+        if (icon)
+        {
+            icon->replaceColour(juce::Colours::black, iconColour);
+            copy->setImages(icon.get());
+        }
+    }
+
+    // Update Paste button (BIN2STR)
+    if (paste)
+    {
+        String svgData = String(BIN2STR(paste_svg));
+        auto icon = juce::Drawable::createFromImageData(svgData.toRawUTF8(), svgData.length());
+        if (icon)
+        {
+            icon->replaceColour(juce::Colours::black, iconColour);
+            paste->setImages(icon.get());
+        }
+    }
+}
+Component* CtrlrMultiMidiPropertyComponent::refreshComponentForRow(int rowNumber, bool isRowSelected,
+    Component* existingComponentToUpdate)
+{
+    Label* l = (Label*)existingComponentToUpdate;
+
+    if (l == 0)
+    {
+        l = new Label("", values[rowNumber]);
+        l->setEditable(false, true, false);
+        l->setColour(Label::backgroundColourId, Colours::transparentBlack);
+        l->getProperties().set("dOb", rowNumber);
+        l->addListener(this);
+        l->addMouseListener(static_cast<juce::Component*>(this), false);
+    }
+    else
+    {
+        l->getProperties().set("dOb", rowNumber);
+        l->setText(values[rowNumber], dontSendNotification);
+        l->addMouseListener(static_cast<juce::Component*>(this), false);
+    }
+
+    return l;
 }
 
-Component *CtrlrMultiMidiPropertyComponent::refreshComponentForRow (int rowNumber, bool isRowSelected, Component *existingComponentToUpdate)
-{
-	Label *l = (Label*) existingComponentToUpdate;
-
-	if (l == 0)
-	{
-		l = new Label ("", values[rowNumber]);
-		l->setEditable (false, true, false);
-		l->setColour (Label::backgroundColourId, Colours::transparentBlack);
-		l->getProperties().set ("dOb", rowNumber);
-		l->addListener (this);
-        l->addMouseListener(static_cast<juce::Component*>(this), false);
-
-	}
-	else
-	{
-		l->getProperties().set ("dOb", rowNumber);
-		l->setText (values[rowNumber], dontSendNotification);
-        l->addMouseListener(static_cast<juce::Component*>(this), false);
-
-	}
-
-	return l;
-}
 void CtrlrMultiMidiPropertyComponent::mouseDown(const MouseEvent& e)
 {
     Label* l = dynamic_cast<Label*>(e.eventComponent);
-
     if (l)
     {
         const int id = l->getProperties().getWithDefault("dOb", -1);
@@ -1681,66 +1722,66 @@ void CtrlrMultiMidiPropertyComponent::mouseDown(const MouseEvent& e)
 void CtrlrMultiMidiPropertyComponent::mouseDoubleClick(const MouseEvent& e)
 {
     Label* l = dynamic_cast<Label*>(e.eventComponent);
-
     if (l)
     {
         const int id = l->getProperties().getWithDefault("dOb", -1);
         listMulti->selectRow(id, true, true);
     }
 }
+
 int CtrlrMultiMidiPropertyComponent::getNumRows()
 {
-	return (values.size());
+    return (values.size());
 }
 
 void CtrlrMultiMidiPropertyComponent::refresh()
 {
-	values.clear();
-	values.addTokens (valueToControl.toString().trim(), ":", "\"\'");
-	listMulti->updateContent();
-	listMulti->repaint();
+    values.clear();
+    values.addTokens(valueToControl.toString().trim(), ":", "\"\'");
+    listMulti->updateContent();
+    listMulti->repaint();
 }
 
-void CtrlrMultiMidiPropertyComponent::loadAdditionalTemplates(const File &templateFile)
+void CtrlrMultiMidiPropertyComponent::loadAdditionalTemplates(const File& templateFile)
 {
-	XmlDocument staticTemplates(MemoryBlock (BinaryData::CtrlrMidiMultiTemplate_xml, BinaryData::CtrlrMidiMultiTemplate_xmlSize).toString());
-	XmlDocument dynamicTemplates(templateFile);
+    XmlDocument staticTemplates(MemoryBlock(BinaryData::CtrlrMidiMultiTemplate_xml,
+        BinaryData::CtrlrMidiMultiTemplate_xmlSize).toString());
+    XmlDocument dynamicTemplates(templateFile);
 
-	ScopedPointer <XmlElement> dynamicXml(dynamicTemplates.getDocumentElement().release());
-	ScopedPointer <XmlElement> staticXml(staticTemplates.getDocumentElement().release());
+    ScopedPointer<XmlElement> dynamicXml(dynamicTemplates.getDocumentElement().release());
+    ScopedPointer<XmlElement> staticXml(staticTemplates.getDocumentElement().release());
 
-	if (dynamicXml)
-	{
-		forEachXmlChildElement (*dynamicXml, t)
-		{
-			if (t->hasTagName("template"))
-			{
-				templates.set (t->getStringAttribute ("name"), t->getAllSubText().trim());
-			}
-		}
-	}
+    if (dynamicXml)
+    {
+        forEachXmlChildElement(*dynamicXml, t)
+        {
+            if (t->hasTagName("template"))
+            {
+                templates.set(t->getStringAttribute("name"), t->getAllSubText().trim());
+            }
+        }
+    }
 
-	if (staticXml)
-	{
-		forEachXmlChildElement (*staticXml, t)
-		{
-			if (t->hasTagName("template"))
-			{
-				templates.set (t->getStringAttribute ("name"), t->getAllSubText().trim());
-			}
-		}
-	}
+    if (staticXml)
+    {
+        forEachXmlChildElement(*staticXml, t)
+        {
+            if (t->hasTagName("template"))
+            {
+                templates.set(t->getStringAttribute("name"), t->getAllSubText().trim());
+            }
+        }
+    }
 }
 
-void CtrlrMultiMidiPropertyComponent::labelTextChanged (Label* l)
+void CtrlrMultiMidiPropertyComponent::labelTextChanged(Label* l)
 {
-	const int id = l->getProperties().getWithDefault("dOb", -1);
-
-	if (id >= 0)
-	{
-		values.set (id, l->getText());
-		valueToControl = values.joinIntoString (":");
-	}
+    const int id = l->getProperties().getWithDefault("dOb", -1);
+    if (id >= 0)
+    {
+        values.set(id, l->getText());
+        valueToControl = values.joinIntoString(":");
+    }
 }
 
 //==============================================================================

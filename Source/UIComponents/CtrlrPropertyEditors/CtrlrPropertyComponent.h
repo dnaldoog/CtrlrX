@@ -521,42 +521,46 @@ class MultiMidiAlert : public AlertWindow
 		Slider valueSlider, numberSlider;
 };
 
-class CtrlrMultiMidiPropertyComponent  : public Component,
-                                         public ListBoxModel,
-                                         public Label::Listener,
-										 public Button::Listener,
-										 public CtrlrPropertyChild
-										 //public MouseListener
+class CtrlrMultiMidiPropertyComponent : public Component,
+	public ListBoxModel,
+	public Label::Listener,
+	public Button::Listener,
+	public CtrlrPropertyChild
 {
-	public:
-		CtrlrMultiMidiPropertyComponent (const Value &_valueToControl);
-		~CtrlrMultiMidiPropertyComponent();
-		void paintListBoxItem(int rowNumber, Graphics &g, int width, int height, bool rowIsSelected);
-		int getNumRows();
-		void refresh();
-		void loadAdditionalTemplates(const File &templateFile);
-		Component *refreshComponentForRow (int rowNumber, bool isRowSelected, Component *existingComponentToUpdate);
-		void labelTextChanged (Label* labelThatHasChanged);
-		void paint (Graphics& g);
-		void resized();
-		void buttonClicked (Button* buttonThatWasClicked);
-		void mouseDown(const MouseEvent& e) override;
-		void mouseDoubleClick(const MouseEvent& e) override;
+public:
+	CtrlrMultiMidiPropertyComponent(const Value& _valueToControl);
+	~CtrlrMultiMidiPropertyComponent();
+	void paintListBoxItem(int rowNumber, Graphics& g, int width, int height, bool rowIsSelected);
+	int getNumRows();
+	void refresh();
+	void loadAdditionalTemplates(const File& templateFile);
+	Component* refreshComponentForRow(int rowNumber, bool isRowSelected, Component* existingComponentToUpdate);
+	void labelTextChanged(Label* labelThatHasChanged);
+	void paint(Graphics& g);
+	void resized();
+	void buttonClicked(Button* buttonThatWasClicked);
+	void mouseDown(const MouseEvent& e) override;
+	void mouseDoubleClick(const MouseEvent& e) override;
+	void lookAndFeelChanged() override;
 
+private:
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrMultiMidiPropertyComponent)
 
-	private:
-		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrMultiMidiPropertyComponent)
-		MultiMidiAlert questionWindow;
-		StringArray values;
-		Value valueToControl;
-		StringPairArray templates;
-        DrawableButton* addMulti;
-        DrawableButton* removeMulti;
-		ListBox* listMulti;
-		DrawableButton* copy;
-        DrawableButton* paste;
-		DrawableButton* helpMmidi;
+		// ADD THIS HELPER METHOD:
+		void updateButtonIcons();
+
+	MultiMidiAlert questionWindow;
+	StringArray values;
+	Value valueToControl;
+	StringPairArray templates;
+	DrawableButton* addMulti;
+	DrawableButton* removeMulti;
+	ListBox* listMulti;
+	DrawableButton* copy;
+	DrawableButton* paste;
+	DrawableButton* helpMmidi;
 };
+
 
 class CtrlrSliderPropertyComponent   : public Component, private Slider::Listener, public CtrlrPropertyChild
 {
