@@ -290,6 +290,11 @@ case CtrlrEditor::showAboutDialog:
         new CtrlrGenericHelp(BinaryData::Expressions_md,
             BinaryData::Expressions_mdSize));
     return true;
+    case showMidiProgrammingHelp:
+    new CtrlrHelpWindow("MIDI programming Help",
+        new CtrlrGenericHelp(BinaryData::MidiProgramming_md,
+            BinaryData::MidiProgramming_mdSize));
+    return true;
     break;
         case CtrlrEditor::doZoomIn:
             if (getActivePanelEditor())

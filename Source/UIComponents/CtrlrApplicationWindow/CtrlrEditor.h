@@ -147,7 +147,8 @@ class CtrlrEditor  : public AudioProcessorEditor,
 			doProgramWizard             = 0x24,
 			doQuit						= 0x00fffffe,
 			showDumpByLuaHelp	        = 0x7100,
-			showExpressionHelp			= 0x7101
+			showExpressionHelp			= 0x7101,
+			showMidiProgrammingHelp		= 0x7102
 		};
 
 		void activeCtrlrChanged();

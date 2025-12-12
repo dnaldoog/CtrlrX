@@ -274,6 +274,7 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 		if (!isRestricted()){
 			menu.addCommandItem(commandManager, showDumpByLuaHelp);
 			menu.addCommandItem(commandManager, showExpressionHelp);
+			menu.addCommandItem(commandManager, showMidiProgrammingHelp);
 			menu.addSeparator();
 		}
 		menu.addSeparator();

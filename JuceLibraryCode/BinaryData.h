@@ -285,13 +285,16 @@ namespace BinaryData
     const int            CtrlrMIDIVendors_xmlSize = 15061;
 
     extern const char*   Expressions_md;
-    const int            Expressions_mdSize = 2902;
+    const int            Expressions_mdSize = 2908;
 
     extern const char*   BulkReadWriteDump_md;
-    const int            BulkReadWriteDump_mdSize = 3870;
+    const int            BulkReadWriteDump_mdSize = 3901;
+
+    extern const char*   MidiProgramming_md;
+    const int            MidiProgramming_mdSize = 9692;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 94;
+    const int namedResourceListSize = 95;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

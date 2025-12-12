@@ -19,13 +19,15 @@ public:
     CtrlrHelpWindow(const juce::String& title, juce::Component* helpContent)
         : DocumentWindow(title,
             juce::Colours::lightgrey,
-            juce::DocumentWindow::allButtons)
+            juce::DocumentWindow::allButtons,
+            true)  // Use native title bar
     {
         viewport = std::make_unique<juce::Viewport>();
-        viewport->setViewedComponent(helpContent, false); // false: don't resize height
-        viewport->setScrollBarsShown(true, true);         // show vertical & horizontal if needed
-
+        viewport->setViewedComponent(helpContent, false);
+        viewport->setScrollBarsShown(true, true);
         setContentOwned(viewport.get(), true);
+
+        setUsingNativeTitleBar(true);
 
         centreWithSize(800, 600);
         setResizable(true, true);
@@ -34,11 +36,10 @@ public:
 
     void closeButtonPressed() override
     {
-        delete this; // self-delete when user closes window
+        delete this;
     }
 
 private:
     std::unique_ptr<juce::Viewport> viewport;
-
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrHelpWindow)
 };
