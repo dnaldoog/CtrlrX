@@ -19613,8 +19613,59 @@ static const unsigned char temp_binary_data_91[] =
 
 const char* CtrlrMIDIVendors_xml = (const char*) temp_binary_data_91;
 
-//================== BulkReadWriteDump.md ==================
+//================== Expressions.md ==================
 static const unsigned char temp_binary_data_92[] =
+"## Ctrlr Expressions\r\n"
+"### Constants:\r\n"
+"modulatorValue : The current linear value of the modulator, this is the index of the\r\n"
+"array of values; is always positive.\r\n"
+"- **modulatorMappedValue** : The current mapped value in case of components that have\r\n"
+"mappings. This might be negative.\r\n"
+"- **modulatorMax** : The maximum value the modulator can have (non mapped)\r\n"
+"- **modulatorMin** : The minimum value the modulator can have (non mapped)\r\n"
+"- **modulatorMappedMax** : the maximum value the modulator can have (mapped)\r\n"
+"- **modulatorMappedMin** : the maximum value the modulator can have (mapped)\r\n"
+"- **vstIndex** : The VST/AU index of the parameter as seen by the host program\r\n"
+"- **midiValue** : The current value stored in the MIDI MESSAGE assosiated with the\r\n"
+"modulator.\r\n"
+"- **midiNumber** : The number of the MIDI MESSAGE controller if applicable\r\n"
+"### Functions:\r\n"
+"- `ceil(x)` : Returns the smallest integral value of the parameter\r\n"
+"- `abs(x)` : Returns the absolute value of the parameter\r\n"
+"- `floor(x)` : Returns the largest integral value that is not greater than the parameter\r\n"
+"- `mod(a,b)` : Divides two numbers and returns the result of the *MODULO* operation \xe2\x80\x9c%\xe2\x80\x9d.\r\n"
+" <span style=\"color:red\">Examples 10 % 3 = 1, 0 % 5 = 0; 30 % 6 = 0; 32 % 5 = 2 </span>\r\n"
+"- `fmod`(numerator,denominator) : Returns the floating-point remainder of the two\r\n"
+"parameters passed in\r\n"
+"- `pow(a,b)` : Returns the first parameter raised to the power of the second (a^b)\r\n"
+"- `gte(a,b,retTrue,retFalse)` : Return the larger or equal of the two passed\r\n"
+"parameters (a >= b). For example\r\n"
+"`gte (modulatorValue, 0, modulatorValue, 128 - modulatorValue)` will return\r\n"
+"modulatorValue if modulatorValue is greater then 0 and (128 \xe2\x80\x93 modulatorValue) if it is\r\n"
+"less then zero\r\n"
+"`gt(a,b,retTrue,retFalse`) : Same as gte but greater then without the equal sign (a\r\n"
+"&gt; b)\r\n"
+"- `lt(a,b,retTrue,retFalse)` : Same as gte but less then (a < b)\r\n"
+"- `lte(a,b,retTrue,retFalse)`: Same as gte but less then or equal (a <= b)\r\n"
+"- `eq(a,b,retTrue,retFalse)` : Equals sign true if (a == b)\r\n"
+"- `max(a,b)` : Returns the bigger of two parameters.\r\n"
+"- `min(a,b)` : Returns the smaller of two parameters.\r\n"
+"- `getBitRangeAsInt (value, startBit, numBits)` : Gets a number of bits (numBits)\r\n"
+"starting at position startBit as an Integer and returns that integer.\r\n"
+"- `setBitRangeAsInt (value, startBit, numBits, valueToSet)` :\r\n"
+"- `clearBit (value, bitToClear)` : Clears a bit at position bitToClear in the value and\r\n"
+"return that modified value.\r\n"
+"- `isBitSet (value, bitPosition)` : Return true if a bit at position bitPosition in value\r\n"
+"is set, false otherwise.\r\n"
+"- `setBit (value, bitToSet)` : Sets one bit in an integer at position (bitToSet) and\r\n"
+"returns the modified value with the bit set.\r\n"
+"- `setGlobal (globalIndex, newValueToSet)` : This sets the value of one of the global\r\n"
+"variables in the panel, and returns that set value so the expression can continue.";
+
+const char* Expressions_md = (const char*) temp_binary_data_92;
+
+//================== BulkReadWriteDump.md ==================
+static const unsigned char temp_binary_data_93[] =
 "## HOW TO PROCESS BULK MIDI MESSAGES\r\n"
 "\r\n"
 "### ENCODING TYPES:\r\n"
@@ -19726,57 +19777,7 @@ static const unsigned char temp_binary_data_92[] =
 "<br>\r\n"
 "<br>\r\n";
 
-const char* BulkReadWriteDump_md = (const char*) temp_binary_data_92;
-
-//================== Expressions.md ==================
-static const unsigned char temp_binary_data_93[] =
-"Constants:\r\n"
-"modulatorValue : The current linear value of the modulator, this is the index of the\r\n"
-"array of values; is always positive.\r\n"
-"modulatorMappedValue : The current mapped value in case of components that have\r\n"
-"mappings. This might be negative.\r\n"
-"modulatorMax : The maximum value the modulator can have (non mapped)\r\n"
-"modulatorMin : The minimum value the modulator can have (non mapped)\r\n"
-"modulatorMappedMax : the maximum value the modulator can have (mapped)\r\n"
-"modulatorMappedMin : the maximum value the modulator can have (mapped)\r\n"
-"vstIndex : The VST/AU index of the parameter as seen by the host program\r\n"
-"midiValue : The current value stored in the MIDI MESSAGE assosiated with the\r\n"
-"modulator.\r\n"
-"midiNumber : The number of the MIDI MESSAGE controller if applicable\r\n"
-"Functions:\r\n"
-"ceil(x) : Returns the smallest integral value of the parameter\r\n"
-"abs(x) : Returns the absolute value of the parameter\r\n"
-"floor(x) : Returns the largest integral value that is not greater than the parameter\r\n"
-"mod(a,b) : Divides two numbers and returns the result of the MODULO operation \xe2\x80\x9c%\xe2\x80\x9d.\r\n"
-"Examples 10 % 3 = 1, 0 % 5 = 0; 30 % 6 = 0; 32 % 5 = 2 For more info\r\n"
-"fmod(numerator,denominator) : Returns the floating-point remainder of the two\r\n"
-"parameters passed in\r\n"
-"pow(a,b) : Returns the first parameter raised to the power of the second (a^b)\r\n"
-"gte(a,b,retTrue,retFalse) : Return the larger or equal of the two passed\r\n"
-"parameters (a >= b). For example\r\n"
-"gte (modulatorValue, 0, modulatorValue, 128 - modulatorValue) will return\r\n"
-"modulatorValue if modulatorValue is greater then 0 and (128 \xe2\x80\x93 modulatorValue) if it is\r\n"
-"less then zero\r\n"
-"gt(a,b,retTrue,retFalse) : Same as gte but greater then without the equal sign (a\r\n"
-"> b)\r\n"
-"lt(a,b,retTrue,retFalse) : Same as gte but less then (a < b)\r\n"
-"lte(a,b,retTrue,retFalse): Same as gte but less then or equal (a <= b)\r\n"
-"eq(a,b,retTrue,retFalse) : Equals sign true if (a == b)\r\n"
-"max(a,b) : Returns the bigger of two parameters.\r\n"
-"min(a,b) : Returns the smaller of two parameters.\r\n"
-"getBitRangeAsInt (value, startBit, numBits) : Gets a number of bits (numBits)\r\n"
-"starting at position startBit as an Integer and returns that integer.\r\n"
-"setBitRangeAsInt (value, startBit, numBits, valueToSet) :\r\n"
-"clearBit (value, bitToClear) : Clears a bit at position bitToClear in the value and\r\n"
-"return that modified value.\r\n"
-"isBitSet (value, bitPosition) : Return true if a bit at position bitPosition in value\r\n"
-"is set, false otherwise.\r\n"
-"setBit (value, bitToSet) : Sets one bit in an integer at position (bitToSet) and\r\n"
-"returns the modified value with the bit set.\r\n"
-"setGlobal (globalIndex, newValueToSet) : This sets the value of one of the global\r\n"
-"variables in the panel, and returns that set value so the expression can continue.\r\n";
-
-const char* Expressions_md = (const char*) temp_binary_data_93;
+const char* BulkReadWriteDump_md = (const char*) temp_binary_data_93;
 
 
 const char* getNamedResource (const char* resourceNameUTF8, int& numBytes);
@@ -19882,8 +19883,8 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
         case 0xcfea1483:  numBytes = 912; return CtrlrMidiMultiTemplate_xml;
         case 0xa5970535:  numBytes = 1963; return CtrlrMIDITransactions_xml;
         case 0x37e081fb:  numBytes = 15061; return CtrlrMIDIVendors_xml;
+        case 0x75bd0b9b:  numBytes = 2902; return Expressions_md;
         case 0xf2d75ceb:  numBytes = 3870; return BulkReadWriteDump_md;
-        case 0x75bd0b9b:  numBytes = 2726; return Expressions_md;
         default: break;
     }
 
@@ -19985,8 +19986,8 @@ const char* namedResourceList[] =
     "CtrlrMidiMultiTemplate_xml",
     "CtrlrMIDITransactions_xml",
     "CtrlrMIDIVendors_xml",
-    "BulkReadWriteDump_md",
-    "Expressions_md"
+    "Expressions_md",
+    "BulkReadWriteDump_md"
 };
 
 const char* originalFilenames[] =
@@ -20083,8 +20084,8 @@ const char* originalFilenames[] =
     "CtrlrMidiMultiTemplate.xml",
     "CtrlrMIDITransactions.xml",
     "CtrlrMIDIVendors.xml",
-    "BulkReadWriteDump.md",
-    "Expressions.md"
+    "Expressions.md",
+    "BulkReadWriteDump.md"
 };
 
 const char* getNamedResourceOriginalFilename (const char* resourceNameUTF8);

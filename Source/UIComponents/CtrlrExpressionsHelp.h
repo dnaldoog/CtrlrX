@@ -13,13 +13,13 @@
 
 class CtrlrExpressionsHelp : public juce::Component
 {
-public:
-    CtrlrExpressionsHelp();
-
-    void resized() override;
-
-private:
-    juce::TextEditor helpText;
+//public:
+//    CtrlrExpressionsHelp();
+//
+//    void resized() override;
+//
+//private:
+//    juce::TextEditor helpText;
 
 };
 

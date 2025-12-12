@@ -88,6 +88,7 @@ juce::String CtrlrMarkdownParser::stripInlineCode(const juce::String& s)
 }
 
 // ----------------------------- Inline formatting ------------------------------
+// ----------------------------- Inline formatting ------------------------------
 void CtrlrMarkdownParser::appendInlineStyled(juce::AttributedString& as, const juce::String& raw)
 {
     // replace <br> with actual newline
@@ -95,6 +96,7 @@ void CtrlrMarkdownParser::appendInlineStyled(juce::AttributedString& as, const j
 
     enum Mode { Normal, Bold, Italic, Code };
     Mode mode = Normal;
+    juce::Colour currentColour = juce::Colours::black;
 
     juce::String buffer;
 
@@ -102,9 +104,9 @@ void CtrlrMarkdownParser::appendInlineStyled(juce::AttributedString& as, const j
         if (buffer.isEmpty()) return;
         switch (mode)
         {
-        case Normal: as.append(buffer, normalFont(), juce::Colours::black); break;
-        case Bold:   as.append(buffer, boldFont(), juce::Colours::black); break;
-        case Italic: as.append(buffer, italicFont(), juce::Colours::black); break;
+        case Normal: as.append(buffer, normalFont(), currentColour); break;
+        case Bold:   as.append(buffer, boldFont(), currentColour); break;
+        case Italic: as.append(buffer, italicFont(), currentColour); break;
         case Code:   as.append(buffer, getMonospaceFont(13.0f), juce::Colours::darkorange); break;
         }
         buffer.clear();
@@ -115,6 +117,46 @@ void CtrlrMarkdownParser::appendInlineStyled(juce::AttributedString& as, const j
 
     while (i < L)
     {
+        // Check for <span style="color:...">
+        if (s[i] == '<' && s.substring(i).startsWith("<span style=\"color:"))
+        {
+            flush();
+
+            // Find the color value
+            int colorStart = i + 19; // length of "<span style=\"color:"
+            int colorEnd = s.indexOfChar(colorStart, '"');
+
+            if (colorEnd > colorStart)
+            {
+                juce::String colorStr = s.substring(colorStart, colorEnd).trim();
+
+                // Parse color (support named colors and hex)
+                if (colorStr.startsWith("#"))
+                {
+                    // Hex color: #RRGGBB or #RGB
+                    currentColour = juce::Colour::fromString(colorStr);
+                }
+                else
+                {
+                    // Named color
+                    currentColour = juce::Colours::findColourForName(colorStr, juce::Colours::black);
+                }
+
+                // Skip past the closing >
+                i = s.indexOfChar(colorEnd, '>') + 1;
+                continue;
+            }
+        }
+
+        // Check for </span> to reset color
+        if (s[i] == '<' && s.substring(i).startsWith("</span>"))
+        {
+            flush();
+            currentColour = juce::Colours::black;
+            i += 7; // length of "</span>"
+            continue;
+        }
+
         // escape backslash: \* \_ \` -> literal char
         if (s[i] == '\\' && i + 1 < L)
         {

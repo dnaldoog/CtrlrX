@@ -1101,6 +1101,8 @@
               file="Source/UIComponents/CtrlrValueTreeEditor.cpp"/>
         <FILE id="otPH5I" name="CtrlrValueTreeEditor.h" compile="0" resource="0"
               file="Source/UIComponents/CtrlrValueTreeEditor.h"/>
+        <FILE id="cu1KKl" name="Expressions.md" compile="0" resource="1" file="Source/Resources/Doc/Expressions.md"
+              xcodeResource="1"/>
       </GROUP>
     </GROUP>
     <FILE id="KHvwkJ" name="BulkReadWriteDump.md" compile="0" resource="1"
@@ -1117,8 +1119,6 @@
           file="Source/UIComponents/CtrlrTransferDumpHelp.cpp"/>
     <FILE id="OpFwP0" name="CtrlrTransferDumpHelp.h" compile="0" resource="0"
           file="Source/UIComponents/CtrlrTransferDumpHelp.h"/>
-    <FILE id="ugfFq6" name="Expressions.md" compile="0" resource="1" file="Source/Resources/Doc/Expressions.md"
-          xcodeResource="1"/>
   </MAINGROUP>
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX" extraDefs="JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1 BOOST_BIND_GLOBAL_PLACEHOLDERS=1"
