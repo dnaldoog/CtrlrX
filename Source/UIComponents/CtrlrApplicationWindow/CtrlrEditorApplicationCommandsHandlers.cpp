@@ -10,7 +10,6 @@
 #include "CtrlrMIDI/CtrlrMIDISettingsDialog.h"
 #include "CtrlrLua/MethodEditor/CtrlrLuaMethodEditorCommandIDs.h" // Added v5.6.34.
 #include "CtrlrHelpWindow.h"
-#include "CtrlrTransferDumpHelp.h"
 #include "CtrlrGenericHelp.h"
 
 
@@ -294,6 +293,12 @@ case CtrlrEditor::showAboutDialog:
     new CtrlrHelpWindow("MIDI programming Help",
         new CtrlrGenericHelp(BinaryData::MidiProgramming_md,
             BinaryData::MidiProgramming_mdSize));
+    return true;
+    break;
+    case showLuaUsefulCommandsHelp:
+    new CtrlrHelpWindow("lua programming Help",
+        new CtrlrGenericHelp(BinaryData::LuaUsefulCommands_md,
+            BinaryData::LuaUsefulCommands_mdSize));
     return true;
     break;
         case CtrlrEditor::doZoomIn:

@@ -290,11 +290,14 @@ namespace BinaryData
     extern const char*   BulkReadWriteDump_md;
     const int            BulkReadWriteDump_mdSize = 3901;
 
+    extern const char*   LuaUsefulCommands_md;
+    const int            LuaUsefulCommands_mdSize = 7371;
+
     extern const char*   MidiProgramming_md;
     const int            MidiProgramming_mdSize = 9692;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 95;
+    const int namedResourceListSize = 96;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

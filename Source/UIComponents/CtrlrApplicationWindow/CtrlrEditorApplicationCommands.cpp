@@ -72,7 +72,8 @@ void CtrlrEditor::getAllCommands (Array< CommandID > &commands)
 								doQuit,
 								showDumpByLuaHelp,
 								showExpressionHelp,
-								showMidiProgrammingHelp
+								showMidiProgrammingHelp,
+								showLuaUsefulCommandsHelp
 
 							};
 
@@ -185,6 +186,11 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 		case showMidiProgrammingHelp:
 			result.setInfo("MIDI programming Help", "Show help for MIDI programming", globalCategory, 0);
 			result.addDefaultKeypress('m', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
+			break;
+
+		case showLuaUsefulCommandsHelp:
+			result.setInfo("Various lua commands", "Show help for lua programming", globalCategory, 0);
+			result.addDefaultKeypress('l', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
 			break;
 
 		case doViewPropertyDisplayIDs:

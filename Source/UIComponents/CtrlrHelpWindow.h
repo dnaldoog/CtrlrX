@@ -10,7 +10,7 @@
 
 #pragma once
 #include <JuceHeader.h>
-#include "CtrlrTransferDumpHelp.h"
+
 
 // A window that shows a help component inside a viewport for scrolling
 class CtrlrHelpWindow : public juce::DocumentWindow
