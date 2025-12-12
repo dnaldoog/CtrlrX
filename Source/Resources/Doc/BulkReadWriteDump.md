@@ -102,7 +102,7 @@ Create a method in 'Called when a panel receives a MIDI message':
                                    CtrlrPanel.EncodeNormal,
                                    -headerSize, 1, false)
 ```
-Note that headerSize = headerSize * -1
+<span style="color:red">Note that headerSize = headerSize * -1</span>
 
 The last argument of these methods when changed to true reads/writes
 mapped values

@@ -47,8 +47,9 @@ void CtrlrMarkdownParser::addCodeLine(juce::AttributedString& as, const juce::St
 
 void CtrlrMarkdownParser::addListItem(juce::AttributedString& as, const juce::String& text)
 {
-    // bullet + styled contents
-    as.append("• ", normalFont(), juce::Colours::darkred);
+    // Explicitly create UTF-8 bullet character
+    juce::String bullet = juce::CharPointer_UTF8("\xe2\x80\xa2 "); // • in UTF-8
+    as.append(bullet, normalFont(), juce::Colours::darkred);
     appendInlineStyled(as, text);
 }
 
