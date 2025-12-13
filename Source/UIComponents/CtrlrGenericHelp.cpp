@@ -46,7 +46,7 @@ void CtrlrGenericHelp::mouseDown(const juce::MouseEvent& e)
     {
         juce::PopupMenu menu;
         menu.addItem(1, "Copy All Text", true);
-        menu.addItem(2, "Select All (Ctrl+A)", false);  // Visual hint
+        menu.addItem(2, "Select All (Ctrl+A)", false);
 
         menu.showMenuAsync(juce::PopupMenu::Options(), [this](int result) {
             if (result == 1)
