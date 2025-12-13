@@ -149,7 +149,8 @@ class CtrlrEditor  : public AudioProcessorEditor,
 			showDumpByLuaHelp	        = 0x7100,
 			showExpressionHelp			= 0x7101,
 			showMidiProgrammingHelp		= 0x7102,
-			showLuaUsefulCommandsHelp	= 0x7103
+			showLuaUsefulCommandsHelp	= 0x7103,
+			showLuaFileOperationsHelp	= 0x7104
 		};
 
 		void activeCtrlrChanged();

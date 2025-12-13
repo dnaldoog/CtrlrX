@@ -284,20 +284,23 @@ namespace BinaryData
     extern const char*   CtrlrMIDIVendors_xml;
     const int            CtrlrMIDIVendors_xmlSize = 15061;
 
-    extern const char*   Expressions_md;
-    const int            Expressions_mdSize = 2908;
-
     extern const char*   BulkReadWriteDump_md;
     const int            BulkReadWriteDump_mdSize = 3901;
 
+    extern const char*   Expressions_md;
+    const int            Expressions_mdSize = 2908;
+
+    extern const char*   LuaFileOperations_md;
+    const int            LuaFileOperations_mdSize = 3521;
+
     extern const char*   LuaUsefulCommands_md;
-    const int            LuaUsefulCommands_mdSize = 7371;
+    const int            LuaUsefulCommands_mdSize = 8114;
 
     extern const char*   MidiProgramming_md;
-    const int            MidiProgramming_mdSize = 9692;
+    const int            MidiProgramming_mdSize = 9678;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 96;
+    const int namedResourceListSize = 97;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

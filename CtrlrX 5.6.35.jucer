@@ -1093,6 +1093,27 @@
               file="Source/UIComponents/CtrlrValueTreeEditor.h"/>
       </GROUP>
     </GROUP>
+    <FILE id="oqg4p4" name="BulkReadWriteDump.md" compile="0" resource="1"
+          file="Source/Resources/Doc/BulkReadWriteDump.md"/>
+    <FILE id="wTwmLX" name="CtrlrGenericHelp.cpp" compile="1" resource="0"
+          file="Source/UIComponents/CtrlrGenericHelp.cpp"/>
+    <FILE id="H0haaO" name="CtrlrGenericHelp.h" compile="0" resource="0"
+          file="Source/UIComponents/CtrlrGenericHelp.h"/>
+    <FILE id="JOHYSc" name="CtrlrHelpWindow.cpp" compile="1" resource="0"
+          file="Source/UIComponents/CtrlrHelpWindow.cpp"/>
+    <FILE id="b70S1j" name="CtrlrHelpWindow.h" compile="0" resource="0"
+          file="Source/UIComponents/CtrlrHelpWindow.h"/>
+    <FILE id="JAHGm3" name="CtrlrMarkdownParser.cpp" compile="1" resource="0"
+          file="Source/UIComponents/CtrlrMarkdownParser.cpp"/>
+    <FILE id="GexC0X" name="CtrlrMarkdownParser.h" compile="0" resource="0"
+          file="Source/UIComponents/CtrlrMarkdownParser.h"/>
+    <FILE id="DahwIi" name="Expressions.md" compile="0" resource="1" file="Source/Resources/Doc/Expressions.md"/>
+    <FILE id="Ur9pgw" name="LuaFileOperations.md" compile="0" resource="1"
+          file="Source/Resources/Doc/LuaFileOperations.md"/>
+    <FILE id="Il28No" name="LuaUsefulCommands.md" compile="0" resource="1"
+          file="Source/Resources/Doc/LuaUsefulCommands.md"/>
+    <FILE id="URDeof" name="MidiProgramming.md" compile="0" resource="1"
+          file="Source/Resources/Doc/MidiProgramming.md"/>
   </MAINGROUP>
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX" extraDefs="JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1 BOOST_BIND_GLOBAL_PLACEHOLDERS=1"

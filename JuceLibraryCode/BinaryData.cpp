@@ -19613,59 +19613,8 @@ static const unsigned char temp_binary_data_91[] =
 
 const char* CtrlrMIDIVendors_xml = (const char*) temp_binary_data_91;
 
-//================== Expressions.md ==================
-static const unsigned char temp_binary_data_92[] =
-"## Ctrlr Expressions\r\n"
-"### Constants:\r\n"
-"- **modulatorValue** : The current linear value of the modulator, this is the index of the\r\n"
-"array of values; is always positive.\r\n"
-"- **modulatorMappedValue** : The current mapped value in case of components that have\r\n"
-"mappings. This might be negative.\r\n"
-"- **modulatorMax** : The maximum value the modulator can have (non mapped)\r\n"
-"- **modulatorMin** : The minimum value the modulator can have (non mapped)\r\n"
-"- **modulatorMappedMax** : the maximum value the modulator can have (mapped)\r\n"
-"- **modulatorMappedMin** : the maximum value the modulator can have (mapped)\r\n"
-"- **vstIndex** : The VST/AU index of the parameter as seen by the host program\r\n"
-"- **midiValue** : The current value stored in the MIDI MESSAGE assosiated with the\r\n"
-"modulator.\r\n"
-"- **midiNumber** : The number of the MIDI MESSAGE controller if applicable\r\n"
-"### Functions:\r\n"
-"- `ceil(x)` : Returns the smallest integral value of the parameter\r\n"
-"- `abs(x)` : Returns the absolute value of the parameter\r\n"
-"- `floor(x)` : Returns the largest integral value that is not greater than the parameter\r\n"
-"- `mod(a,b)` : Divides two numbers and returns the result of the *MODULO* operation \xe2\x80\x9c%\xe2\x80\x9d.\r\n"
-" <span style=\"color:red\">Examples 10 % 3 = 1, 0 % 5 = 0; 30 % 6 = 0; 32 % 5 = 2 </span>\r\n"
-"- `fmod`(numerator,denominator) : Returns the floating-point remainder of the two\r\n"
-"parameters passed in\r\n"
-"- `pow(a,b)` : Returns the first parameter raised to the power of the second (a^b)\r\n"
-"- `gte(a,b,retTrue,retFalse)` : Return the larger or equal of the two passed\r\n"
-"parameters (a >= b). For example\r\n"
-"`gte (modulatorValue, 0, modulatorValue, 128 - modulatorValue)` will return\r\n"
-"modulatorValue if modulatorValue is greater then 0 and (128 \xe2\x80\x93 modulatorValue) if it is\r\n"
-"less then zero\r\n"
-"`gt(a,b,retTrue,retFalse`) : Same as gte but greater then without the equal sign (a\r\n"
-"&gt; b)\r\n"
-"- `lt(a,b,retTrue,retFalse)` : Same as gte but less then (a < b)\r\n"
-"- `lte(a,b,retTrue,retFalse)`: Same as gte but less then or equal (a <= b)\r\n"
-"- `eq(a,b,retTrue,retFalse)` : Equals sign true if (a == b)\r\n"
-"- `max(a,b)` : Returns the bigger of two parameters.\r\n"
-"- `min(a,b)` : Returns the smaller of two parameters.\r\n"
-"- `getBitRangeAsInt (value, startBit, numBits)` : Gets a number of bits (numBits)\r\n"
-"starting at position startBit as an Integer and returns that integer.\r\n"
-"- `setBitRangeAsInt (value, startBit, numBits, valueToSet)` :\r\n"
-"- `clearBit (value, bitToClear)` : Clears a bit at position bitToClear in the value and\r\n"
-"return that modified value.\r\n"
-"- `isBitSet (value, bitPosition)` : Return true if a bit at position bitPosition in value\r\n"
-"is set, false otherwise.\r\n"
-"- `setBit (value, bitToSet)` : Sets one bit in an integer at position (bitToSet) and\r\n"
-"returns the modified value with the bit set.\r\n"
-"- `setGlobal (globalIndex, newValueToSet)` : This sets the value of one of the global\r\n"
-"variables in the panel, and returns that set value so the expression can continue.";
-
-const char* Expressions_md = (const char*) temp_binary_data_92;
-
 //================== BulkReadWriteDump.md ==================
-static const unsigned char temp_binary_data_93[] =
+static const unsigned char temp_binary_data_92[] =
 "## HOW TO PROCESS BULK MIDI MESSAGES\r\n"
 "\r\n"
 "### ENCODING TYPES:\r\n"
@@ -19777,10 +19726,251 @@ static const unsigned char temp_binary_data_93[] =
 "<br>\r\n"
 "<br>\r\n";
 
-const char* BulkReadWriteDump_md = (const char*) temp_binary_data_93;
+const char* BulkReadWriteDump_md = (const char*) temp_binary_data_92;
+
+//================== Expressions.md ==================
+static const unsigned char temp_binary_data_93[] =
+"## Ctrlr Expressions\r\n"
+"### Constants:\r\n"
+"- **modulatorValue** : The current linear value of the modulator, this is the index of the\r\n"
+"array of values; is always positive.\r\n"
+"- **modulatorMappedValue** : The current mapped value in case of components that have\r\n"
+"mappings. This might be negative.\r\n"
+"- **modulatorMax** : The maximum value the modulator can have (non mapped)\r\n"
+"- **modulatorMin** : The minimum value the modulator can have (non mapped)\r\n"
+"- **modulatorMappedMax** : the maximum value the modulator can have (mapped)\r\n"
+"- **modulatorMappedMin** : the maximum value the modulator can have (mapped)\r\n"
+"- **vstIndex** : The VST/AU index of the parameter as seen by the host program\r\n"
+"- **midiValue** : The current value stored in the MIDI MESSAGE assosiated with the\r\n"
+"modulator.\r\n"
+"- **midiNumber** : The number of the MIDI MESSAGE controller if applicable\r\n"
+"### Functions:\r\n"
+"- `ceil(x)` : Returns the smallest integral value of the parameter\r\n"
+"- `abs(x)` : Returns the absolute value of the parameter\r\n"
+"- `floor(x)` : Returns the largest integral value that is not greater than the parameter\r\n"
+"- `mod(a,b)` : Divides two numbers and returns the result of the *MODULO* operation \xe2\x80\x9c%\xe2\x80\x9d.\r\n"
+" <span style=\"color:red\">Examples 10 % 3 = 1, 0 % 5 = 0; 30 % 6 = 0; 32 % 5 = 2 </span>\r\n"
+"- `fmod`(numerator,denominator) : Returns the floating-point remainder of the two\r\n"
+"parameters passed in\r\n"
+"- `pow(a,b)` : Returns the first parameter raised to the power of the second (a^b)\r\n"
+"- `gte(a,b,retTrue,retFalse)` : Return the larger or equal of the two passed\r\n"
+"parameters (a >= b). For example\r\n"
+"`gte (modulatorValue, 0, modulatorValue, 128 - modulatorValue)` will return\r\n"
+"modulatorValue if modulatorValue is greater then 0 and (128 \xe2\x80\x93 modulatorValue) if it is\r\n"
+"less then zero\r\n"
+"`gt(a,b,retTrue,retFalse`) : Same as gte but greater then without the equal sign (a\r\n"
+"&gt; b)\r\n"
+"- `lt(a,b,retTrue,retFalse)` : Same as gte but less then (a < b)\r\n"
+"- `lte(a,b,retTrue,retFalse)`: Same as gte but less then or equal (a <= b)\r\n"
+"- `eq(a,b,retTrue,retFalse)` : Equals sign true if (a == b)\r\n"
+"- `max(a,b)` : Returns the bigger of two parameters.\r\n"
+"- `min(a,b)` : Returns the smaller of two parameters.\r\n"
+"- `getBitRangeAsInt (value, startBit, numBits)` : Gets a number of bits (numBits)\r\n"
+"starting at position startBit as an Integer and returns that integer.\r\n"
+"- `setBitRangeAsInt (value, startBit, numBits, valueToSet)` :\r\n"
+"- `clearBit (value, bitToClear)` : Clears a bit at position bitToClear in the value and\r\n"
+"return that modified value.\r\n"
+"- `isBitSet (value, bitPosition)` : Return true if a bit at position bitPosition in value\r\n"
+"is set, false otherwise.\r\n"
+"- `setBit (value, bitToSet)` : Sets one bit in an integer at position (bitToSet) and\r\n"
+"returns the modified value with the bit set.\r\n"
+"- `setGlobal (globalIndex, newValueToSet)` : This sets the value of one of the global\r\n"
+"variables in the panel, and returns that set value so the expression can continue.";
+
+const char* Expressions_md = (const char*) temp_binary_data_93;
+
+//================== LuaFileOperations.md ==================
+static const unsigned char temp_binary_data_94[] =
+"# lua file operations save/load\r\n"
+"<hr>\r\n"
+"\r\n"
+"### Load file as text\r\n"
+"\r\n"
+"```\r\n"
+"readFileAsText = function(mod, value)\r\n"
+"\tfileToRead = utils.openFileWindow(\r\n"
+"\t\t\"Open file to read as text\",\r\n"
+"\t\tFile.getSpecialLocation(File.userHomeDirectory),\r\n"
+"\t\t\"*.*\",\r\n"
+"\t\ttrue\r\n"
+"\t)\r\n"
+"\r\n"
+"\tif fileToRead:existsAsFile() then\r\n"
+"\r\n"
+"\t\tconsole(fileToRead:loadFileAsString())\r\n"
+"\tend\r\n"
+"end\r\n"
+"```\r\n"
+"<hr>\r\n"
+"\r\n"
+"### Load file as data\r\n"
+"\r\n"
+"```\r\n"
+"readFileAsData = function(mod, value)\r\n"
+"    fileToRead =\r\n"
+"        utils.openFileWindow(\"Open file to read as data\", \r\n"
+"        File.getSpecialLocation(File.userHomeDirectory), \"*.syx\", \r\n"
+"        true)\r\n"
+"\r\n"
+"    if fileToRead:existsAsFile() then\r\n"
+"    fileData = MemoryBlock()\r\n"
+"  --  fileData = MemoryBlock(fileToRead:getSize())\r\n"
+"    fileToRead:loadFileAsData(fileData)\r\n"
+"    console(string.format(\"%s\\n%d bytes\", fileData:getRange(0, 16):toHexString(1), fileData:getSize()))\r\n"
+"end\r\n"
+"end\r\n"
+"```\r\n"
+"<hr>\r\n"
+"\r\n"
+"### Save file as text\r\n"
+"\r\n"
+"```\r\n"
+"myText = \"a string\"\r\n"
+"saveContentAsText = function(mod, value)\r\n"
+"\tfileToWrite = utils.saveFileWindow(\r\n"
+"\t\t\"Save content as text\",\r\n"
+"\t\tFile.getSpecialLocation(File.userDesktopDirectory),\r\n"
+"\t\t\"*.txt\",\r\n"
+"\t\ttrue\r\n"
+"\t)\r\n"
+"\r\n"
+"\tif fileToWrite:isValid() == false then\r\n"
+"\t\treturn\r\n"
+"\tend\r\n"
+"\r\n"
+"\t-- Let's see if the file exists\r\n"
+"\tif fileToWrite:existsAsFile() == false then\r\n"
+"\t\t\r\n"
+"\t\t-- The file is not there, that's ok, let's try to create it\r\n"
+"\t\tif fileToWrite:create() == false then\r\n"
+"\r\n"
+"\t\t\t-- Ooooh we can't create it, we need to fail here\r\n"
+"\t\t\tutils.warnWindow (\"File write\", \"The destination file does not exist\")\r\n"
+"\r\n"
+"\t\t\treturn\r\n"
+"\t\tend\r\n"
+"\tend\r\n"
+"\r\n"
+"\ttextToWrite = myText\r\n"
+"\r\n"
+"\tif textToWrite:length() == 0 then\r\n"
+"\t\tutils.warnWindow (\"Data to write\", \"There is no data to write\")\r\n"
+"\t\ttextToWrite = \"OK\"\r\n"
+"\tend\r\n"
+"\r\n"
+"\t-- If we reached this point, we have a valid file we can try to write to\r\n"
+"\t\r\n"
+"\t-- There are two flags when writing text\r\n"
+"\t-- asUnicode - if should write our text as UNICODE\r\n"
+"\t-- writeUnicodeHeaderBytes - if we should add a special \r\n"
+"  -- unicode header at the beginning of the file\r\n"
+"\t-- we set both to false\r\n"
+"\r\n"
+"\tif fileToWrite:replaceWithText (textToWrite, false, false) == false then\r\n"
+"\t\tutils.warnWindow (\"File write\", \"Failed to write data to file: \"..fileToWrite.getFullPathName())\r\n"
+"\tend\r\n"
+"end\r\n"
+"\r\n"
+"```\r\n"
+"<hr>\r\n"
+"\r\n"
+"### Save file as data\r\n"
+"\r\n"
+"```\r\n"
+"data = MemoryBlock of your data you want to save\r\n"
+"\r\n"
+"saveContentAsData = function(mod, value)\r\n"
+"\tfileToWrite = utils.saveFileWindow(\r\n"
+"\t\t\"Save content as data\",\r\n"
+"\t\tFile.getSpecialLocation(File.userDesktopDirectory),\r\n"
+"\t\t\"*.syx\",\r\n"
+"\t\ttrue\r\n"
+"\t)\r\n"
+"\r\n"
+"\tif fileToWrite:isValid() == false then\r\n"
+"\t\treturn\r\n"
+"\tend\r\n"
+"\r\n"
+"\t-- Let's see if the file exists\r\n"
+"\tif fileToWrite:existsAsFile() == false then\r\n"
+"\t\t\r\n"
+"\t\t-- The file is not there, that's ok, let's try to create it\r\n"
+"\t\tif fileToWrite:create() == false then\r\n"
+"\r\n"
+"\t\t\t-- Ooooh we can't create it, we need to fail here\r\n"
+"\t\t\tutils.warnWindow (\"File write\", \"The destination file does not exist, and I can't create it\")\r\n"
+"\r\n"
+"\t\t\treturn\r\n"
+"\t\tend\r\n"
+"\tend\r\n"
+"\r\n"
+"\t\r\n"
+"\tdataToWrite = data\r\n"
+"\r\n"
+"\tif dataToWrite:getSize() <= 0 then\r\n"
+"\t\tutils.warnWindow (\"Data to write\", \"There is no data to write\")\r\n"
+"\t\treturn\r\n"
+"\tend\r\n"
+"\r\n"
+"\t-- If we reached this point, we have a valid file we can try to write to\r\n"
+"\t\r\n"
+"\tif fileToWrite:replaceWithData (dataToWrite) == false then\r\n"
+"\t\tutils.warnWindow (\"File write\", \"Failed to write data to file: \"..fileToWrite.getFullPathName())\r\n"
+"\tend\r\n"
+"end\r\n"
+"\r\n"
+"```\r\n"
+"<hr>\r\n"
+"\r\n"
+"### Convert MemoryBlock data to string\r\n"
+"\r\n"
+"local s=\"F0 41 12 00 49 20 61 6D 20 61 20 73 74 72 69 6E 67 f7\"\r\n"
+"local m=MemoryBlock(s)\r\n"
+"console(string.format(\"%s\",m:getRange(4,13):toString()))\r\n"
+"prints \"I am a string\"\r\n";
+
+const char* LuaFileOperations_md = (const char*) temp_binary_data_94;
 
 //================== LuaUsefulCommands.md ==================
-static const unsigned char temp_binary_data_94[] =
+static const unsigned char temp_binary_data_95[] =
+"# lua useful commands\r\n"
+"\r\n"
+"### Tables\r\n"
+"\r\n"
+"<span style=\"color:blue\">indexed tables start at 1</span>\r\n"
+"\r\n"
+"```\r\n"
+"local t={\r\n"
+"\"lfo\",\r\n"
+"\"vcf\",\r\n"
+"\"vca\",\r\n"
+"\"resonance\"\r\n"
+"}\r\n"
+"```\r\n"
+"<span style=\"color:green\">Loop through table with **ipairs**</span>\r\n"
+"```\r\n"
+"for i,v in ipairs(t) do\r\n"
+"panel:getModulatorByName(v):setProperty(\"modulatorCustomIndex\",i,true)\r\n"
+"end\r\n"
+"```\r\n"
+"<hr>\r\n"
+"<span style=\"color:blue\">Key/Value pair tables will print in no set order</span>\r\n"
+"\r\n"
+"```\r\n"
+"local t={\r\n"
+"[\"lfo delay\"]=100,\r\n"
+"vcf=panel:getModulatorByName(\"Vcf\"):getModulatorValue(),\r\n"
+"vca=20,\r\n"
+"resonance=0\r\n"
+"}\r\n"
+"```\r\n"
+"<span style=\"color:green\">Loop through table with **pairs**</span>\r\n"
+"```\r\n"
+"for k,v in pairs(t) do\r\n"
+"console(string.format(\"Key %s=value %d\",k,v))\r\n"
+"end\r\n"
+"```\r\n"
+"\r\n"
 "### Get channel out\r\n"
 "```\r\n"
 "    local channelOut = panel:getProperty(\"panelMidiOutputChannelDevice\") - 1\r\n"
@@ -19977,7 +20167,7 @@ static const unsigned char temp_binary_data_94[] =
 "```\r\n"
 "### Cache Ctrlr modulators as lua variables\r\n"
 "```\r\n"
-"Call\r\n"
+"<span style=\"color:red\">Call</span>\r\n"
 "_m[\"control\"]:getModulatorValue()\r\n"
 "_c[\"control\"]:getProperty(\"modulatorCustomIndex\")\r\n"
 "_c[\"control\"]:setProperty(\"modulatorCustomIndex\",2,true)\r\n"
@@ -20038,11 +20228,11 @@ static const unsigned char temp_binary_data_94[] =
 "\r\n"
 "```";
 
-const char* LuaUsefulCommands_md = (const char*) temp_binary_data_94;
+const char* LuaUsefulCommands_md = (const char*) temp_binary_data_95;
 
 //================== MidiProgramming.md ==================
-static const unsigned char temp_binary_data_95[] =
-"# MIDI Programming Guide for Beginners\r\n"
+static const unsigned char temp_binary_data_96[] =
+"# MIDI Programming Guide\r\n"
 "\r\n"
 "## Understanding MIDI Data\r\n"
 "\r\n"
@@ -20339,7 +20529,7 @@ static const unsigned char temp_binary_data_95[] =
 "- **Status Byte:** A MIDI byte with bit 7 set to 1 (values 128\xe2\x80\x93""255)\r\n"
 "- **Data Byte:** A MIDI byte with bit 7 set to 0 (values 0\xe2\x80\x93""127)\r\n";
 
-const char* MidiProgramming_md = (const char*) temp_binary_data_95;
+const char* MidiProgramming_md = (const char*) temp_binary_data_96;
 
 
 const char* getNamedResource (const char* resourceNameUTF8, int& numBytes);
@@ -20445,10 +20635,11 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
         case 0xcfea1483:  numBytes = 912; return CtrlrMidiMultiTemplate_xml;
         case 0xa5970535:  numBytes = 1963; return CtrlrMIDITransactions_xml;
         case 0x37e081fb:  numBytes = 15061; return CtrlrMIDIVendors_xml;
-        case 0x75bd0b9b:  numBytes = 2908; return Expressions_md;
         case 0xf2d75ceb:  numBytes = 3901; return BulkReadWriteDump_md;
-        case 0x1a400140:  numBytes = 7371; return LuaUsefulCommands_md;
-        case 0xa82dd45e:  numBytes = 9692; return MidiProgramming_md;
+        case 0x75bd0b9b:  numBytes = 2908; return Expressions_md;
+        case 0x0bb1c5b6:  numBytes = 3521; return LuaFileOperations_md;
+        case 0x1a400140:  numBytes = 8114; return LuaUsefulCommands_md;
+        case 0xa82dd45e:  numBytes = 9678; return MidiProgramming_md;
         default: break;
     }
 
@@ -20550,8 +20741,9 @@ const char* namedResourceList[] =
     "CtrlrMidiMultiTemplate_xml",
     "CtrlrMIDITransactions_xml",
     "CtrlrMIDIVendors_xml",
-    "Expressions_md",
     "BulkReadWriteDump_md",
+    "Expressions_md",
+    "LuaFileOperations_md",
     "LuaUsefulCommands_md",
     "MidiProgramming_md"
 };
@@ -20650,8 +20842,9 @@ const char* originalFilenames[] =
     "CtrlrMidiMultiTemplate.xml",
     "CtrlrMIDITransactions.xml",
     "CtrlrMIDIVendors.xml",
-    "Expressions.md",
     "BulkReadWriteDump.md",
+    "Expressions.md",
+    "LuaFileOperations.md",
     "LuaUsefulCommands.md",
     "MidiProgramming.md"
 };

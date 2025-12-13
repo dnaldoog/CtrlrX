@@ -1,4 +1,4 @@
-# MIDI Programming Guide for Beginners
+# MIDI Programming Guide
 
 ## Understanding MIDI Data
 

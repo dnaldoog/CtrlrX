@@ -1,3 +1,41 @@
+# lua useful commands
+
+### Tables
+
+<span style="color:blue">indexed tables start at 1</span>
+
+```
+local t={
+"lfo",
+"vcf",
+"vca",
+"resonance"
+}
+```
+<span style="color:green">Loop through table with **ipairs**</span>
+```
+for i,v in ipairs(t) do
+panel:getModulatorByName(v):setProperty("modulatorCustomIndex",i,true)
+end
+```
+<hr>
+<span style="color:blue">Key/Value pair tables will print in no set order</span>
+
+```
+local t={
+["lfo delay"]=100,
+vcf=panel:getModulatorByName("Vcf"):getModulatorValue(),
+vca=20,
+resonance=0
+}
+```
+<span style="color:green">Loop through table with **pairs**</span>
+```
+for k,v in pairs(t) do
+console(string.format("Key %s=value %d",k,v))
+end
+```
+
 ### Get channel out
 ```
     local channelOut = panel:getProperty("panelMidiOutputChannelDevice") - 1
@@ -194,7 +232,7 @@ end
 ```
 ### Cache Ctrlr modulators as lua variables
 ```
-Call
+<span style="color:red">Call</span>
 _m["control"]:getModulatorValue()
 _c["control"]:getProperty("modulatorCustomIndex")
 _c["control"]:setProperty("modulatorCustomIndex",2,true)

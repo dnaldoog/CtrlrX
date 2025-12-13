@@ -300,6 +300,11 @@ case CtrlrEditor::showAboutDialog:
         new CtrlrGenericHelp(BinaryData::LuaUsefulCommands_md,
             BinaryData::LuaUsefulCommands_mdSize));
     return true;
+    case showLuaFileOperationsHelp:
+    new CtrlrHelpWindow("lua File Save/Load Help",
+        new CtrlrGenericHelp(BinaryData::LuaFileOperations_md,
+            BinaryData::LuaFileOperations_mdSize));
+    return true;
     break;
         case CtrlrEditor::doZoomIn:
             if (getActivePanelEditor())

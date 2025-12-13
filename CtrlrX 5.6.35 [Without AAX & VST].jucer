@@ -1111,6 +1111,8 @@
           file="Source/UIComponents/CtrlrMarkdownParser.cpp"/>
     <FILE id="HLhdmG" name="CtrlrMarkdownParser.h" compile="0" resource="0"
           file="Source/UIComponents/CtrlrMarkdownParser.h"/>
+    <FILE id="DzX57y" name="LuaFileOperations.md" compile="0" resource="1"
+          file="Source/Resources/Doc/LuaFileOperations.md" xcodeResource="1"/>
     <FILE id="NCPesj" name="LuaUsefulCommands.md" compile="0" resource="1"
           file="Source/Resources/Doc/LuaUsefulCommands.md" xcodeResource="1"/>
     <FILE id="rDLY7J" name="MidiProgramming.md" compile="0" resource="1"
