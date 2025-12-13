@@ -16,21 +16,27 @@
 class CtrlrHelpWindow : public juce::DocumentWindow
 {
 public:
-    CtrlrHelpWindow(const juce::String& title, juce::Component* helpContent)
-        : DocumentWindow(title,
+    CtrlrHelpWindow(const juce::String& title,
+        juce::Component* helpContent)
+        : juce::DocumentWindow(title,
             juce::Colours::lightgrey,
             juce::DocumentWindow::allButtons,
-            true)  // Use native title bar
+            true)
     {
-        viewport = std::make_unique<juce::Viewport>();
-        viewport->setViewedComponent(helpContent, false);
+        auto* viewport = new juce::Viewport();
+        viewport->setViewedComponent(helpContent, true);
         viewport->setScrollBarsShown(true, true);
-        setContentOwned(viewport.get(), true);
+
+        // Windows scrollbar visibility fix (safe on Linux)
+        viewport->setLookAndFeel(&helpLookAndFeel);
 
         setUsingNativeTitleBar(true);
+        setContentOwned(viewport, true);
+
+        setResizable(true, true);
+        setResizeLimits(400, 300, 4096, 4096);
 
         centreWithSize(800, 600);
-        setResizable(true, true);
         setVisible(true);
     }
 
@@ -40,6 +46,16 @@ public:
     }
 
 private:
-    std::unique_ptr<juce::Viewport> viewport;
+    class HelpLookAndFeel : public juce::LookAndFeel_V4
+    {
+    public:
+        int getDefaultScrollbarWidth() override
+        {
+            return 14; // makes Windows scrollbar visible
+        }
+    };
+
+    HelpLookAndFeel helpLookAndFeel;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrHelpWindow)
 };
