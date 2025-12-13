@@ -1,5 +1,8 @@
 ﻿#include "CtrlrMarkdownParser.h"
-
+namespace
+{
+    constexpr float LINE_SPACING = 20.0f;  // Increase from 4.0f to 8.0f for more space
+}
 // ----------------------------- Fonts ---------------------------------
 juce::Font CtrlrMarkdownParser::normalFont(float h)
 {
@@ -88,7 +91,6 @@ juce::String CtrlrMarkdownParser::stripInlineCode(const juce::String& s)
     return out;
 }
 
-// ----------------------------- Inline formatting ------------------------------
 // ----------------------------- Inline formatting ------------------------------
 void CtrlrMarkdownParser::appendInlineStyled(juce::AttributedString& as, const juce::String& raw)
 {
@@ -224,7 +226,7 @@ std::vector<CtrlrMarkdownParser::MarkdownBlock> CtrlrMarkdownParser::parseToBloc
 
     bool inCodeBlock = false;
     juce::AttributedString paragraph;
-    paragraph.setLineSpacing(4.0f);
+    paragraph.setLineSpacing(LINE_SPACING);
 
     auto flushParagraph = [&]() {
         if (paragraph.getText().trim().isNotEmpty() || paragraph.getNumAttributes() > 0)
@@ -234,7 +236,7 @@ std::vector<CtrlrMarkdownParser::MarkdownBlock> CtrlrMarkdownParser::parseToBloc
             b.content = paragraph;
             blocks.push_back(std::move(b));
             paragraph = juce::AttributedString();
-            paragraph.setLineSpacing(4.0f);
+            paragraph.setLineSpacing(LINE_SPACING);
         }
         };
 
@@ -257,7 +259,7 @@ std::vector<CtrlrMarkdownParser::MarkdownBlock> CtrlrMarkdownParser::parseToBloc
             MarkdownBlock cb;
             cb.isHorizontalRule = false;
             juce::AttributedString as;
-            as.setLineSpacing(4.0f);
+            as.setLineSpacing(LINE_SPACING);
             addCodeLine(as, line);
             cb.content = as;
             blocks.push_back(std::move(cb));
@@ -279,7 +281,7 @@ std::vector<CtrlrMarkdownParser::MarkdownBlock> CtrlrMarkdownParser::parseToBloc
         {
             flushParagraph();
             MarkdownBlock hb; hb.isHorizontalRule = false;
-            juce::AttributedString as; as.setLineSpacing(4.0f);
+            juce::AttributedString as; as.setLineSpacing(LINE_SPACING);
             addHeading(as, line.substring(4).trim(), 18.0f, juce::Colours::black);
             hb.content = as;
             blocks.push_back(std::move(hb));
@@ -289,7 +291,7 @@ std::vector<CtrlrMarkdownParser::MarkdownBlock> CtrlrMarkdownParser::parseToBloc
         {
             flushParagraph();
             MarkdownBlock hb; hb.isHorizontalRule = false;
-            juce::AttributedString as; as.setLineSpacing(4.0f);
+            juce::AttributedString as; as.setLineSpacing(LINE_SPACING);
             addHeading(as, line.substring(3).trim(), 24.0f, juce::Colours::black);
             hb.content = as;
             blocks.push_back(std::move(hb));
@@ -299,7 +301,7 @@ std::vector<CtrlrMarkdownParser::MarkdownBlock> CtrlrMarkdownParser::parseToBloc
         {
             flushParagraph();
             MarkdownBlock hb; hb.isHorizontalRule = false;
-            juce::AttributedString as; as.setLineSpacing(4.0f);
+            juce::AttributedString as; as.setLineSpacing(LINE_SPACING);
             addHeading(as, line.substring(2).trim(), 32.0f, juce::Colours::black);
             hb.content = as;
             blocks.push_back(std::move(hb));
@@ -311,7 +313,7 @@ std::vector<CtrlrMarkdownParser::MarkdownBlock> CtrlrMarkdownParser::parseToBloc
         {
             flushParagraph();
             MarkdownBlock lb; lb.isHorizontalRule = false;
-            juce::AttributedString as; as.setLineSpacing(4.0f);
+            juce::AttributedString as; as.setLineSpacing(LINE_SPACING);
             addListItem(as, line.substring(line.indexOfChar('-') + 2).trim());
             lb.content = as;
             blocks.push_back(std::move(lb));
@@ -328,7 +330,7 @@ std::vector<CtrlrMarkdownParser::MarkdownBlock> CtrlrMarkdownParser::parseToBloc
         // Append inline-styled line to paragraph.
         // To keep inline attributes intact we append into paragraph directly as a new line.
         {
-            juce::AttributedString tmp; tmp.setLineSpacing(4.0f);
+            juce::AttributedString tmp; tmp.setLineSpacing(LINE_SPACING);
             appendInlineStyled(tmp, line);
             // If paragraph empty just take tmp; otherwise flush paragraph and push tmp as its own block
             if (paragraph.getNumAttributes() > 0 ||
@@ -355,7 +357,7 @@ juce::AttributedString CtrlrMarkdownParser::parse(const juce::String& md)
 {
     auto blocks = parseToBlocks(md);
     juce::AttributedString out;
-    out.setLineSpacing(4.0f);
+    out.setLineSpacing(LINE_SPACING);
 
     for (auto& b : blocks)
     {

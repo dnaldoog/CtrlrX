@@ -9,33 +9,6 @@
 class CtrlrManager;
 class CtrlrProcessor;
 
-/*Moved to its own header file*/
-//class CtrlrHelpWindow : public juce::DocumentWindow
-//{
-//public:
-//	CtrlrHelpWindow(const juce::String& title,
-//		juce::Component* helpComponent)
-//		: juce::DocumentWindow(title,
-//			juce::Colours::white,
-//			DocumentWindow::allButtons)
-//	{
-//		setUsingNativeTitleBar(true);
-//		setResizable(true, false);
-//
-//		// Take ownership of the supplied help component
-//		setContentOwned(helpComponent, true);
-//		centreWithSize(600, 600);
-//		setVisible(true);
-//	}
-//
-//	void closeButtonPressed() override
-//	{
-//		delete this;
-//	}
-//};
-
-
-
 class CtrlrEditor  : public AudioProcessorEditor,
 					 public ApplicationCommandTarget,
 					 public MenuBarModel,
