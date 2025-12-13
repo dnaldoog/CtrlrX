@@ -127,7 +127,7 @@ class CtrlrEditor  : public AudioProcessorEditor,
 		};
 
 		void activeCtrlrChanged();
-		//const WeakReference<CtrlrEditor>::SharedRef& getWeakReference();
+		//const WeakReference<CtrlrEditor>::SharedRef& getWeakReference(); JG disabled
 		CtrlrManager &getOwner()
 		{ 
 			return (owner); 
