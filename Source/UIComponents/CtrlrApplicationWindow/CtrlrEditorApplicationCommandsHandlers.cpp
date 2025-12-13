@@ -301,7 +301,7 @@ case CtrlrEditor::showAboutDialog:
             BinaryData::LuaUsefulCommands_mdSize));
     return true;
     case showLuaFileOperationsHelp:
-    new CtrlrHelpWindow("lua File Save/Load Help",
+    new CtrlrHelpWindow("Lua File Save/Load Help",
         new CtrlrGenericHelp(BinaryData::LuaFileOperations_md,
             BinaryData::LuaFileOperations_mdSize));
     return true;
