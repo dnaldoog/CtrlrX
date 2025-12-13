@@ -195,7 +195,7 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 			break;
 
 		case showLuaFileOperationsHelp:
-			result.setInfo("La file load/save", "Show help for lua file load/save", globalCategory, 0);
+			result.setInfo("Lua file load/save", "Show help for lua file load/save", globalCategory, 0);
 			result.addDefaultKeypress('f', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
 			break;
 
