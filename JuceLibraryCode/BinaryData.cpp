@@ -18731,7 +18731,7 @@ static const unsigned char temp_binary_data_88[] =
 "  <luaMethod name=\"luaPanelSaved\">\r\n"
 "    --\r\n"
 "    -- Called when the panel is saved\r\n"
-"    -- @saveType         A number that indicates the type of file beeing saved http://ctrlr.org/api/class_ctrlr_panel.html\r\n"
+"    -- @saveType         A number that indicates the type of file being saved http://ctrlr.org/api/class_ctrlr_panel.html\r\n"
 "    -- @destinationFile  A file object http://ctrlr.org/api/class_ctrlr_lua_file.html\r\n"
 "    --                      see more http://www.rawmaterialsoftware.com/juce/api/classFile.html\r\n"
 "    --\r\n"
@@ -18932,7 +18932,7 @@ static const unsigned char temp_binary_data_88[] =
 "    --\r\n"
 "    -- Called when the panel has finished loading\r\n"
 "    --\r\n"
-"    -- @type the type of instance beeing started, types available in the CtrlrPanel\r\n"
+"    -- @type the type of instance being started, types available in the CtrlrPanel\r\n"
 "    -- class as enum\r\n"
 "    --\r\n"
 "    -- InstanceSingle\r\n"
@@ -20631,7 +20631,7 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
         case 0xfc902594:  numBytes = 49800; return RSRC_zip;
         case 0xa32a74e9:  numBytes = 92304; return CtrlrIDs_xml;
         case 0x4321d08a:  numBytes = 110; return CtrlrLuaClassTemplates_xml;
-        case 0x75a28bbf:  numBytes = 22470; return CtrlrLuaMethodTemplates_xml;
+        case 0x75a28bbf:  numBytes = 22468; return CtrlrLuaMethodTemplates_xml;
         case 0xcfea1483:  numBytes = 912; return CtrlrMidiMultiTemplate_xml;
         case 0xa5970535:  numBytes = 1963; return CtrlrMIDITransactions_xml;
         case 0x37e081fb:  numBytes = 15061; return CtrlrMIDIVendors_xml;

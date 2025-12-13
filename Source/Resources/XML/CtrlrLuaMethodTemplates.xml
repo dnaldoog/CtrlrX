@@ -298,7 +298,7 @@
   <luaMethod name="luaPanelSaved">
     --
     -- Called when the panel is saved
-    -- @saveType         A number that indicates the type of file beeing saved http://ctrlr.org/api/class_ctrlr_panel.html
+    -- @saveType         A number that indicates the type of file being saved http://ctrlr.org/api/class_ctrlr_panel.html
     -- @destinationFile  A file object http://ctrlr.org/api/class_ctrlr_lua_file.html
     --                      see more http://www.rawmaterialsoftware.com/juce/api/classFile.html
     --
@@ -499,7 +499,7 @@
     --
     -- Called when the panel has finished loading
     --
-    -- @type the type of instance beeing started, types available in the CtrlrPanel
+    -- @type the type of instance being started, types available in the CtrlrPanel
     -- class as enum
     --
     -- InstanceSingle

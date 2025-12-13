@@ -56,7 +56,7 @@ class CtrlrPanel:	public ValueTree::Listener,
                     public LookAndFeel_V4
 {
 	public:
-		/** @brief When saving a panel this tells the LUA callback what sort of format is beeing saved
+		/** @brief When saving a panel this tells the LUA callback what sort of format is being saved
 
 		*/
 		enum CtrlrPanelFileType
