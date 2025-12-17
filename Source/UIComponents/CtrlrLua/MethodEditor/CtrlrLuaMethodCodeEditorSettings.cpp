@@ -433,91 +433,93 @@ void CtrlrLuaMethodCodeEditorSettings::comboBoxChanged(ComboBox* comboBoxThatHas
     }
 }
 
-void CtrlrLuaMethodCodeEditorSettings::buttonClicked(Button* buttonThatWasClicked)
+	void CtrlrLuaMethodCodeEditorSettings::buttonClicked(Button* buttonThatWasClicked)
 {
-	if (buttonThatWasClicked == resetToPreviousButton)
-	{
-		_DBG("Resetting to previous font settings");
-		_DBG(String("Current font: ") + fontTypeface->getText());
-		_DBG(String("Previous font to restore: ") + previousFont.getTypefaceName());
-		
-		if (previousFont.getTypefaceName().isNotEmpty())
-		{
-			// Create font object from current UI state BEFORE changing it
-			Font currentUIFont = Font(fontTypeface->getText(),
-									  fontSize->getValue(),
-									  (fontBold->getToggleState() ? Font::bold : 0) |
-									  (fontItalic->getToggleState() ? Font::italic : 0));
-			
-			// Apply the previous font settings
-			fontTypeface->setText(previousFont.getTypefaceName(), dontSendNotification);
-			fontSize->setValue(previousFont.getHeight(), dontSendNotification);
-			fontBold->setToggleState(previousFont.isBold(), dontSendNotification);
-			fontItalic->setToggleState(previousFont.isItalic(), dontSendNotification);
-			
-			// Now swap: current becomes previous for next reset
-			previousFont = currentUIFont;
-			
-			_DBG(String("Font restored. New previous font: ") + previousFont.getTypefaceName());
-			
-			changeListenerCallback(nullptr);
-		}
-	}
-	else if (buttonThatWasClicked == applyButton)
-	{
-		applySettings();
-		closeWindow(); // Added to apply and close settings window
-	}
-	else if (buttonThatWasClicked == resetButton)
-	{
-		int result = AlertWindow::showOkCancelBox(AlertWindow::QuestionIcon,
-												  "Reset Editor",
-												  "Reset Editor to default?"
-												  );
-		
-		if (result == 1)
-		{
-			// Reset to defaults
-			// fontTypeface->setText(getDefaultFont(), dontSendNotification);
-			fontTypeface->setText("<Monospaced>", dontSendNotification); // "Courrier New" ???
-			fontBold->setToggleState(false, dontSendNotification);
-			fontItalic->setToggleState(false, dontSendNotification);
-			openSearchTabs->setToggleState(false, dontSendNotification);
-			fontSize->setValue(14.0f, dontSendNotification);
-			bgColour->setSelectedId(findColourIndex(Colours::white), dontSendNotification);
-			lineNumbersBgColour->setSelectedId(findColourIndex(Colours::cornflowerblue), dontSendNotification);
-			lineNumbersColour->setSelectedId(findColourIndex(Colours::black), dontSendNotification);
-			
-			customSyntaxColors.clear();
-			clearSyntaxColorSettings();
-			String currentToken = getCurrentSelectedTokenType();
-			updateTokenColorDisplay(currentToken);
-			updateSyntaxColors();
-			
-			previousFont = getFont();
-			resetToPreviousButton->setEnabled(true);
-			changeListenerCallback(nullptr);
-			closeWindow(); // Added to apply and close settings window
-		}
-		else if (buttonThatWasClicked == fontBold || buttonThatWasClicked == fontItalic)
-		{
-			// For style changes, also enable reset and store previous
-			if (!resetToPreviousButton->isEnabled())
-			{
-				previousFont = getFont(); // Store current before style change
-				resetToPreviousButton->setEnabled(true);
-			}
-		}
-		else if (buttonThatWasClicked == openSearchTabs)
-		{
-			bool currentState = openSearchTabs->getToggleState();
-			owner.setOpenSearchTabsEnabled(currentState);
-			owner.getComponentTree().setProperty(Ids::openSearchTabsState, currentState, nullptr);
-		}
-		
-	}
-	
-	changeListenerCallback(nullptr);
+    if (buttonThatWasClicked == resetToPreviousButton)
+    {
+        _DBG("Resetting to previous font settings");
+        _DBG(String("Current font: ") + fontTypeface->getText());
+        _DBG(String("Previous font to restore: ") + previousFont.getTypefaceName());
+        
+        if (previousFont.getTypefaceName().isNotEmpty())
+        {
+            // Create font object from current UI state BEFORE changing it
+            Font currentUIFont = Font(fontTypeface->getText(),
+                                      fontSize->getValue(),
+                                      (fontBold->getToggleState() ? Font::bold : 0) |
+                                      (fontItalic->getToggleState() ? Font::italic : 0));
+            
+            // Apply the previous font settings
+            fontTypeface->setText(previousFont.getTypefaceName(), dontSendNotification);
+            fontSize->setValue(previousFont.getHeight(), dontSendNotification);
+            fontBold->setToggleState(previousFont.isBold(), dontSendNotification);
+            fontItalic->setToggleState(previousFont.isItalic(), dontSendNotification);
+            
+            // Now swap: current becomes previous for next reset
+            previousFont = currentUIFont;
+            
+            _DBG(String("Font restored. New previous font: ") + previousFont.getTypefaceName());
+            
+            changeListenerCallback(nullptr);
+        }
+    }
+    else if (buttonThatWasClicked == applyButton)
+    {
+        applySettings();
+        closeWindow();
+    }
+    else if (buttonThatWasClicked == resetButton)
+    {
+        int result = AlertWindow::showOkCancelBox(AlertWindow::QuestionIcon,
+                                                  "Reset Editor",
+                                                  "Reset Editor to default?"
+                                                  );
+        
+        if (result == 1)
+        {
+            // Reset to defaults
+            fontTypeface->setText("<Monospaced>", dontSendNotification);
+            fontBold->setToggleState(false, dontSendNotification);
+            fontItalic->setToggleState(false, dontSendNotification);
+            openSearchTabs->setToggleState(false, dontSendNotification);
+            fontSize->setValue(14.0f, dontSendNotification);
+            bgColour->setSelectedId(findColourIndex(Colours::white), dontSendNotification);
+            lineNumbersBgColour->setSelectedId(findColourIndex(Colours::cornflowerblue), dontSendNotification);
+            lineNumbersColour->setSelectedId(findColourIndex(Colours::black), dontSendNotification);
+            
+            customSyntaxColors.clear();
+            clearSyntaxColorSettings();
+            String currentToken = getCurrentSelectedTokenType();
+            updateTokenColorDisplay(currentToken);
+            updateSyntaxColors();
+            
+            previousFont = getFont();
+            resetToPreviousButton->setEnabled(true);
+            changeListenerCallback(nullptr);
+            
+            // FIXED: Apply settings before closing
+            applySettings();
+            closeWindow();
+        }
+    }
+    // FIXED: These else-if blocks were incorrectly nested inside resetButton
+    else if (buttonThatWasClicked == fontBold || buttonThatWasClicked == fontItalic)
+    {
+        // For style changes, also enable reset and store previous
+        if (!resetToPreviousButton->isEnabled())
+        {
+            previousFont = getFont(); // Store current before style change
+            resetToPreviousButton->setEnabled(true);
+        }
+    }
+    else if (buttonThatWasClicked == openSearchTabs)
+    {
+        bool currentState = openSearchTabs->getToggleState();
+        owner.setOpenSearchTabsEnabled(currentState);
+        owner.getComponentTree().setProperty(Ids::openSearchTabsState, currentState, nullptr);
+    }
+    
+    changeListenerCallback(nullptr);
 }
 
 void CtrlrLuaMethodCodeEditorSettings::sliderValueChanged (Slider* sliderThatWasMoved)
