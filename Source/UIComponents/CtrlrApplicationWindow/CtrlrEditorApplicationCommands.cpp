@@ -635,12 +635,18 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
             result.setActive(isPanelActive());
             break;
             
-        case LuaMethodEditorCommandIDs::editMultiLineComment:
-            result.setInfo("Toggle Multi-Line Comment", "Toggles multi-line comments on the selection", luaCategory, 0);
-            result.addDefaultKeypress('/', ModifierKeys::commandModifier | ModifierKeys::shiftModifier); // Cmd+Shift+/
-            result.setActive(isPanelActive());
-            break;
-            
+		case LuaMethodEditorCommandIDs::editMultiLineComment:
+    	result.setInfo("Toggle Multi-Line Comment", "Toggles multi-line comments on the selection", luaCategory, 0);
+    
+		#if JUCE_LINUX
+    	result.addDefaultKeypress('/', ModifierKeys::altModifier);  // Alt+/ on Linux to avoid conflict with Ctrl+Shift+/
+		#else
+    	result.addDefaultKeypress('/', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);  // Cmd+Shift+/
+		#endif
+    
+    	result.setActive(isPanelActive());
+    	break;
+
         case LuaMethodEditorCommandIDs::editDuplicateLine:
             result.setInfo("Duplicate Line", "Duplicates the current line or selection", luaCategory, 0);
             result.addDefaultKeypress(CharacterFunctions::toUpperCase('d'), ModifierKeys::commandModifier);

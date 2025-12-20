@@ -123,13 +123,55 @@ bool CtrlrLuaMethodCodeEditor::keyStateChanged(bool isKeyDown, Component* origin
     return false;
 }
 
-bool CtrlrLuaMethodCodeEditor::keyPressed(const KeyPress& key, Component* originatingComponent) //Updated v5.6.34.
+#if JUCE_LINUX
+bool CtrlrLuaMethodCodeEditor::keyPressed(const KeyPress& key, Component* originatingComponent)
 {
+    DBG("Key pressed: " + key.getTextDescription());
+    
+    // Ctrl+D - Duplicate line
+    if (key.getModifiers().isCtrlDown() && !key.getModifiers().isShiftDown() && key.getKeyCode() == 'd')
+    {
+        DBG("Executing: Duplicate Line");
+        duplicateCurrentLine();
+        return true;
+    }
+    
+    // Ctrl+/ - Line comment
+    if (key.getModifiers().isCtrlDown() && !key.getModifiers().isShiftDown() && key.getKeyCode() == '/')
+    {
+        DBG("Executing: Toggle Line Comment");
+        toggleLineComment();
+        return true;
+    }
+    
+    // Alt+/ - Block comment (Linux alternative to Ctrl+Shift+/)
+    if (key.getModifiers().isAltDown() && !key.getModifiers().isCtrlDown() && key.getKeyCode() == '/')
+    {
+        DBG("Executing: Toggle Block Comment (Alt+/)");
+        toggleLongLineComment();
+        return true;
+    }
+    
+    return false;
+}
+
+#else  // Windows and macOS
+
+ bool CtrlrLuaMethodCodeEditor::keyPressed(const KeyPress& key, Component* originatingComponent)
+ {
+   
+    return false;
+}
     // The parent class handles all the shortcuts.
     // We just return false here to allow the default code editor behaviour
     // (typing, deleting, etc.) to occur.
-    return false;
-}
+    // return false;
+    //Note: On Linux, returning false from keyPressed() doesn't properly route to CommandManager
+    // due to JUCE issue. Explicit key handling is required.
+
+#endif
+
+
 
 void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const String& newText, int insertIndex)
 {
@@ -1259,7 +1301,7 @@ void CtrlrLuaMethodCodeEditor::toggleLineComment() // Updated v5.6.34
 
     // Check if we should comment or uncomment
     bool allLinesCommented = true;
-    for (int lineNum = startLine; lineNum <= endLine; ++lineNum)
+    for (int lineNum = startLine; lineNum < endLine; ++lineNum)
     {
         String line = document.getLine(lineNum);
         if (line.trimStart().isEmpty() || !line.trimStart().startsWith("--"))
@@ -1270,7 +1312,7 @@ void CtrlrLuaMethodCodeEditor::toggleLineComment() // Updated v5.6.34
     }
 
     // Comment or uncomment
-    for (int lineNum = startLine; lineNum <= endLine; ++lineNum)
+    for (int lineNum = startLine; lineNum < endLine; ++lineNum)
     {
         CodeDocument::Position lineStart(document, lineNum, 0);
         String line = document.getLine(lineNum);
