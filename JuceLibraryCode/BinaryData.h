@@ -294,7 +294,7 @@ namespace BinaryData
     const int            LuaFileOperations_mdSize = 3521;
 
     extern const char*   LuaUsefulCommands_md;
-    const int            LuaUsefulCommands_mdSize = 8114;
+    const int            LuaUsefulCommands_mdSize = 9582;
 
     extern const char*   MidiProgramming_md;
     const int            MidiProgramming_mdSize = 9678;

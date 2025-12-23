@@ -1,5 +1,13 @@
 #include "CtrlrGenericHelp.h"
 
+namespace { 
+    const float LINEHEIGHT = 4.0f; 
+    const float TEXTWIDTH = 12.0f; 
+    const float LEFTMARGIN = 12.0f; 
+    const float RIGHTMARGIN = 12.0f; 
+} 
+
+
 CtrlrGenericHelp::CtrlrGenericHelp(const char* mdData, int mdSize)
 {
     juce::String content = (mdData != nullptr)
@@ -11,7 +19,7 @@ CtrlrGenericHelp::CtrlrGenericHelp(const char* mdData, int mdSize)
 
     juce::TextLayout layout;
     layout.createLayout(attributedContent, 776.0f);
-    contentHeight = layout.getHeight() + 24.0f;
+    contentHeight = layout.getHeight() + LEFTMARGIN;
 
     setSize(800, juce::jmax(600, (int)contentHeight));
 }
@@ -21,19 +29,19 @@ void CtrlrGenericHelp::paint(juce::Graphics& g)
 
     juce::Rectangle<float> textBounds(
         12.0f, 12.0f,
-        (float)getWidth() - 24.0f,
+        (float)getWidth() - LEFTMARGIN,
         contentHeight);
 
     attributedContent.draw(g, textBounds);
 }
 void CtrlrGenericHelp::resized()
 {
-    const float textWidth = (float)getWidth() - 24.0f;
+    const float textWidth = (float)getWidth() - LEFTMARGIN;
 
     juce::TextLayout layout;
     layout.createLayout(attributedContent, textWidth);
 
-    contentHeight = layout.getHeight() + 24.0f;
+    contentHeight = layout.getHeight() + LINEHEIGHT;
     setSize(getWidth(), (int)contentHeight);
 
     repaint();
@@ -46,7 +54,7 @@ void CtrlrGenericHelp::mouseDown(const juce::MouseEvent& e)
     {
         juce::PopupMenu menu;
         menu.addItem(1, "Copy All Text", true);
-        menu.addItem(2, "Select All (Ctrl+A)", false);
+        menu.addItem(2, "Select All (Ctrl+A)", false);  // Visual hint
 
         menu.showMenuAsync(juce::PopupMenu::Options(), [this](int result) {
             if (result == 1)
