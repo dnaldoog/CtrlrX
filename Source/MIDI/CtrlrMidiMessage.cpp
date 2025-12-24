@@ -167,7 +167,7 @@ void CtrlrMidiMessage::initializeEmptyMessage()
 	setProperty (Ids::midiMessageChannel, 1);
 	setProperty (Ids::midiMessageCtrlrNumber, 1);
 	//setProperty (Ids::midiMessageCtrlrValue, 0); this doesn't seem to do anything so I hid it from the GUI
-	setProperty (Ids::midiMessageCtrlrNumberSize, 7);
+	setProperty (Ids::midiMessageCtrlrNumberSize, false);
 	setProperty (Ids::midiMessageMultiList, "");
 	setProperty (Ids::midiMessageSysExFormula, "");
 

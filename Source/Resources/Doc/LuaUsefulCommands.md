@@ -9,15 +9,16 @@ function f(mod,value,source)
 - mod = modulator (CtrlrPanel) - i.e L(mod:getName()) returns your control name<br>
 - value = value - i.e mod:getModulatorValue()<br>
 - source =<br>
-value(“initialValue”, 0),<br>
-value(“changedByHost”, 1),<br>
-value(“changedByMidiIn”, 2),<br>
-value(“changedByMidiController”, 3),<br>
-value(“changedByGUI”, 4),<br>
-value(“changedByLua”, 5),<br>
-value(“changedByProgram”, 6),<br>
-value(“changedByLink”, 7),<br>
-value(“changeByUnknown”, 8)<br>
+initialValue=0<br>
+changedByHost=1<br>
+changedByMidiIn=2<br>
+changedByMidiController=3<br>
+changedByGUI=4<br>
+changedByLua=5<br>
+changedByProgram=6<br>
+changedByLink=7<br>
+changeByUnknown=8<br>
+
 ***e.g.*** ```if source ==4 then ...``` = was the modulator was changed by the gui (user)?
 ```
 function f(comp,event)
