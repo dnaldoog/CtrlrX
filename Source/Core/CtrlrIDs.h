@@ -547,7 +547,7 @@ namespace Ids
     DECLARE_ID (uiArrowHeadHeight);
     DECLARE_ID (uiArrowOrientation);
     DECLARE_ID (uiArrowRotation);
-    DECLARE_ID (uiArrowStokeThickness);
+    DECLARE_ID (uiArrowStrokeThickness);
     
     DECLARE_ID (uiCustomResizedCallback);
     DECLARE_ID (uiCustomPaintCallback);

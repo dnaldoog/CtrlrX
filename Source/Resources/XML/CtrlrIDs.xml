@@ -510,7 +510,7 @@
   <id name="uiArrowHeadHeight" text="Arrow head height" type="Numeric" min="0" max="4096" int="1" />
   <id name="uiArrowOrientation" text="Arrow orientation" type="VarNumeric" defaults="PointingTop=0,PointingBottom=1,PointingLeft=2,PointigRight=3"/>
   <id name="uiArrowRotation" text="Arrow rotation" type="Numeric" min="0" max="360" int="1" />
-  <id name="uiArrowStokeThickness" text="Arrow stroke thickness" type="Numeric" min="1" max="255" int="1" />
+  <id name="uiArrowStrokeThickness" text="Arrow stroke thickness" type="Numeric" min="1" max="255" int="1" />
 
   <!-- Custom component -->
   <id name="uiCustomResizedCallback" text="Resized callback" type="LuaMethod"/>
