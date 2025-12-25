@@ -71,6 +71,12 @@ class CtrlrPanelModulatorList  : public CtrlrChildWindowContent,
 		void menuItemSelected(int menuItemID, int topLevelMenuIndex);
 		void handleColumnSelection(const int itemId);
 		void handleSortSelection(const int itemId);
+
+		static const String getPropertyCategory(const String& propertyName);
+		static const Colour getCategoryColour(const String& category);
+		static const String generateLuaUsage(const String& propertyName, bool includeGetter, bool includeSetter);
+		void showClipboardBubble(const String& text);
+
 		JUCE_LEAK_DETECTOR(CtrlrPanelModulatorList)
 
 	private:
@@ -80,6 +86,9 @@ class CtrlrPanelModulatorList  : public CtrlrChildWindowContent,
 		bool isSortedForward;
 		CtrlrPanelModulatorListTree modulatorListTree;
 	    TableListBox* modulatorList;
+
+
+
 };
 
 

@@ -520,54 +520,103 @@ StringArray CtrlrPanelModulatorList::getMenuBarNames()
 	return StringArray (names);
 }
 
-PopupMenu CtrlrPanelModulatorList::getMenuForIndex(int topLevelMenuIndex, const String &menuName)
+PopupMenu CtrlrPanelModulatorList::getMenuForIndex(int topLevelMenuIndex, const String& menuName)
 {
 	PopupMenu menu;
 	if (topLevelMenuIndex == 0)
 	{
-		menu.addItem (1, "Close");
-		menu.addSectionHeader ("Export list");
-		menu.addItem (10, "Export as HTML");
-		menu.addItem (11, "Export as CSV");
-		menu.addItem (12, "Export as XML");
+		menu.addItem(1, "Close");
+		menu.addSectionHeader("Export list");
+		menu.addItem(10, "Export as HTML");
+		menu.addItem(11, "Export as CSV");
+		menu.addItem(12, "Export as XML");
 	}
 	else if (topLevelMenuIndex == 1) /* Edit */
 	{
-		menu.addItem (2, "Delete selected");
-		menu.addItem (7, "Make selected visible on canvas");
+		menu.addItem(2, "Delete selected");
+		menu.addItem(7, "Make selected visible on canvas");
 	}
 	else if (topLevelMenuIndex == 2) /* View */
 	{
-		menu.addItem (4, "Refresh view");
-		menu.addItem (5, "Sort using lexicographical algorithm", true, (bool)owner.getProperty (Ids::panelModulatorListSortOption));
-		menu.addItem (6, "Sort using simple numeric comparison", true, !(bool)owner.getProperty (Ids::panelModulatorListSortOption));
+		menu.addItem(4, "Refresh view");
+		menu.addItem(5, "Sort using lexicographical algorithm", true, (bool)owner.getProperty(Ids::panelModulatorListSortOption));
+		menu.addItem(6, "Sort using simple numeric comparison", true, !(bool)owner.getProperty(Ids::panelModulatorListSortOption));
 		menu.addSeparator();
-		menu.addItem (3, (bool)owner.getProperty (Ids::uiPanelModulatorListViewTree) ? "Switch to List" : "Switch to Tree", true);
-		PopupMenu m;
-		for (int i=0; i<getIdTree().getNumChildren(); i++)
+		menu.addItem(3, (bool)owner.getProperty(Ids::uiPanelModulatorListViewTree) ? "Switch to List" : "Switch to Tree", true);
+
+		// Original "Visible columns" submenu
+		PopupMenu visibleColumnsMenu;
+		for (int i = 0; i < getIdTree().getNumChildren(); i++)
 		{
-			m.addItem (8192+i, getIdTree().getChild(i).getProperty(Ids::name), true, modulatorList->getHeader().isColumnVisible(i+1));
+			String propName = getIdTree().getChild(i).getProperty(Ids::name);
+			visibleColumnsMenu.addItem(8192 + i, propName, true, modulatorList->getHeader().isColumnVisible(i + 1));
 		}
-		menu.addSubMenu ("Visible columns", m);
-		menu.addItem (13, "Reset columns to default");
+		menu.addSubMenu("Visible columns", visibleColumnsMenu);
+
+		// NEW: "Copy Lua Usage" submenu with colored items
+		PopupMenu luaCopyMenu;
+		for (int i = 0; i < getIdTree().getNumChildren(); i++)
+		{
+			String propName = getIdTree().getChild(i).getProperty(Ids::name);
+			String category = getPropertyCategory(propName);
+			Colour colour = getCategoryColour(category);
+
+			// Use ID range 16384+ for Lua copy items (different from visibility toggle items)
+			luaCopyMenu.addColouredItem(16384 + i, propName, colour);
+		}
+		menu.addSubMenu("Copy Lua Usage", luaCopyMenu);
+
+		menu.addItem(13, "Reset columns to default");
 	}
 	return (menu);
 }
+
 
 void CtrlrPanelModulatorList::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 {
 	if (menuItemID == 1)
 	{
-        // close handle
-        owner.getWindowManager().toggle (CtrlrPanelWindowManager::ModulatorList, false);
+		owner.getWindowManager().toggle(CtrlrPanelWindowManager::ModulatorList, false);
 	}
-	if (menuItemID == 2)
+	else if (menuItemID == 2)
 	{
 		deleteSelected();
 	}
 	else if (menuItemID == 3)
 	{
 		switchView();
+	}
+	else if (menuItemID >= 16384) // NEW: Handle Lua copy items
+	{
+		int index = menuItemID - 16384;
+		String propName = getIdTree().getChild(index).getProperty(Ids::name);
+
+		// Generate both getter and setter
+		String luaCode = generateLuaUsage(propName, true, true);
+
+		// Copy to clipboard
+		SystemClipboard::copyTextToClipboard(luaCode);
+		AlertWindow::showMessageBoxAsync(
+			AlertWindow::InfoIcon,
+			"Lua Usage Copied",
+			"Copied to clipboard.\n\n"
+			"Paste into the Lua editor.\n"
+			"Guide only – please double-check syntax."
+		);
+	//	 Optional: Show a message to user
+		//String category = getPropertyCategory(propName);
+		//owner.getCtrlrManagerOwner().getCtrlrLog().logMessage(
+		//	"Copied Lua usage for '" + propName + "' (" + category + ") to clipboard"
+		//);
+
+		//SystemClipboard::copyTextToClipboard(luaCode);
+
+		//showClipboardBubble(
+		//	"Copied to clipboard\n"
+		//	"Paste into Lua editor\n"
+		//	"Guide only – double-check syntax"
+		//);
+
 	}
 	else if (menuItemID >= 8192)
 	{
@@ -579,7 +628,7 @@ void CtrlrPanelModulatorList::menuItemSelected(int menuItemID, int topLevelMenuI
 	}
 	else if (menuItemID == 5 || menuItemID == 6)
 	{
-		handleSortSelection (menuItemID);
+		handleSortSelection(menuItemID);
 	}
 	else if (menuItemID == 7)
 	{
@@ -594,7 +643,6 @@ void CtrlrPanelModulatorList::menuItemSelected(int menuItemID, int topLevelMenuI
 		resetToDefaults();
 	}
 }
-
 void CtrlrPanelModulatorList::handleColumnSelection(const int itemId)
 {
 	if (modulatorList->getHeader().isColumnVisible ((itemId - 8192) + 1))
@@ -617,4 +665,95 @@ void CtrlrPanelModulatorList::handleSortSelection(const int itemId)
 		owner.setProperty (Ids::panelModulatorListSortOption, false);
 
 	modulatorList->updateContent();
+}
+const String CtrlrPanelModulatorList::getPropertyCategory(const String& propertyName)
+{
+	if (propertyName.startsWith("modulator"))
+		return "modulator";
+	else if (propertyName.startsWith("component") || propertyName.startsWith("ui"))
+		return "component";
+	else if (propertyName.startsWith("midi") || propertyName.startsWith("panelMidi"))
+		return "midi";
+	else if (propertyName.startsWith("panel") || propertyName.startsWith("uiPanel"))
+		return "panel";
+	else if (propertyName.startsWith("lua"))
+		return "lua";
+	else
+		return "other";
+}
+
+const Colour CtrlrPanelModulatorList::getCategoryColour(const String& category)
+{
+	if (category == "modulator")
+		return Colours::blue;
+	else if (category == "component")
+		return Colours::green;
+	else if (category == "midi")
+		return Colours::red;
+	else if (category == "panel")
+		return Colours::orange;
+	else if (category == "lua")
+		return Colours::purple;
+	else
+		return Colours::grey;
+}
+
+const String CtrlrPanelModulatorList::generateLuaUsage(const String& propertyName, bool includeGetter, bool includeSetter)
+{
+	String category = getPropertyCategory(propertyName);
+	String result = "";
+	String modName = "modulatorName";
+
+	if (category == "modulator")
+	{
+		if (includeGetter)
+			result += "-- Getter\nlocal value = panel:getModulatorByName(\"" + modName + "\"):getProperty(\"" + propertyName + "\")\n\n";
+		if (includeSetter)
+			result += "-- Setter\npanel:getModulatorByName(\"" + modName + "\"):setProperty(\"" + propertyName + "\", value, bool)\n";
+	}
+	else if (category == "component")
+	{
+		if (includeGetter)
+			result += "-- Getter\nlocal value = panel:getModulatorByName(\"" + modName + "\"):getComponent():getProperty(\"" + propertyName + "\")\n\n";
+		if (includeSetter)
+			result += "-- Setter\npanel:getModulatorByName(\"" + modName + "\"):getComponent():setProperty(\"" + propertyName + "\", value, bool)\n";
+	}
+	else if (category == "midi")
+	{
+		if (includeGetter)
+			result += "-- Getter\nlocal value = panel:getModulatorByName(\"" + modName + "\"):getMidiMessage():getProperty(\"" + propertyName + "\")\n\n";
+		if (includeSetter)
+			result += "-- Setter\npanel:getModulatorByName(\"" + modName + "\"):getMidiMessage():setProperty(\"" + propertyName + "\", value, bool)\n";
+	}
+	else if (category == "panel")
+	{
+		if (includeGetter)
+			result += "-- Getter\nlocal value = panel:getProperty(\"" + propertyName + "\")\n\n";
+		if (includeSetter)
+			result += "-- Setter\npanel:setProperty(\"" + propertyName + "\", value, bool)\n";
+	}
+	else
+	{
+		result = "-- Unknown category for property: " + propertyName + "\n";
+	}
+
+	return result;
+}
+void CtrlrPanelModulatorList::showClipboardBubble(const String& text)
+{
+	auto* bubble = new BubbleMessageComponent();
+
+	bubble->setAllowedPlacement(BubbleComponent::above
+		| BubbleComponent::below
+		| BubbleComponent::left
+		| BubbleComponent::right);
+
+	bubble->showAt(
+		getScreenBounds(),   // anchor near the list
+		AttributedString(text),
+		3000                 // milliseconds visible
+	);
+
+	// Bubble deletes itself after timeout
+	Desktop::getInstance().addGlobalMouseListener(bubble);
 }
