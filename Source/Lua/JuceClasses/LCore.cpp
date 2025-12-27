@@ -1027,7 +1027,7 @@ void LXmlElement::wrapForLua (lua_State *L)
         class_<XmlDocument>("XmlDocument")
             .def(constructor<const String &>())
             .def(constructor<const File &>())
-            //.def("getDocumentElement", &XmlDocument::getDocumentElement)
+            .def("getDocumentElement", &XmlDocument::getDocumentElement) // was commented out?? https://github.com/damiensellier/CtrlrX/issues/206
             .def("getLastParseError", &XmlDocument::getLastParseError)
             .def("setInputSource", &XmlDocument::setInputSource)
             .def("setEmptyTextElementsIgnored", &XmlDocument::setEmptyTextElementsIgnored)
