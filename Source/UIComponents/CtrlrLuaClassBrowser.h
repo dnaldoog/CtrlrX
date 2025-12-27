@@ -60,20 +60,57 @@ public:
 
         void listBoxItemClicked(int row, const juce::MouseEvent& e) override
         {
-            juce::String itemName;
-            bool isMethod = (row < ownerRef->methodList.size());
+            if (e.mods.isRightButtonDown())
+            {
+                // Right-click context menu
+                juce::String itemName;
+                bool isMethod = (row < ownerRef->methodList.size());
 
-            if (isMethod)
-                itemName = ownerRef->methodList[row];
+                if (isMethod)
+                    itemName = ownerRef->methodList[row];
+                else
+                    itemName = ownerRef->attributeList[row - ownerRef->methodList.size()];
+
+                juce::PopupMenu menu;
+                menu.addItem(1, "Copy Usage Code");
+                menu.addItem(2, "Copy Example Function");
+                menu.addSeparator();
+                menu.addItem(3, "Copy Method Name Only");
+
+                menu.showMenuAsync(juce::PopupMenu::Options(), [this, itemName](int result)
+                    {
+                        if (result == 1)
+                        {
+                            ownerRef->copyMethodUsageToClipboard(ownerRef->currentClassName, itemName);
+                        }
+                        else if (result == 2)
+                        {
+                            ownerRef->copyExampleToClipboard(ownerRef->currentClassName, itemName);
+                        }
+                        else if (result == 3)
+                        {
+                            juce::SystemClipboard::copyTextToClipboard(itemName);
+                        }
+                    });
+            }
             else
-                itemName = ownerRef->attributeList[row - ownerRef->methodList.size()];
+            {
+                // Left-click behavior
+                juce::String itemName;
+                bool isMethod = (row < ownerRef->methodList.size());
 
-            // Show description in info display
-            juce::String description = ownerRef->getMethodDescription(itemName);
-            ownerRef->infoDisplay->setText(description, false);
+                if (isMethod)
+                    itemName = ownerRef->methodList[row];
+                else
+                    itemName = ownerRef->attributeList[row - ownerRef->methodList.size()];
 
-            // Copy usage on click
-            ownerRef->copyMethodUsageToClipboard(ownerRef->currentClassName, itemName);
+                // Show description with introspection info
+                juce::String description = ownerRef->getMethodDescription(itemName);
+                ownerRef->infoDisplay->setText(description, false);
+
+                // Copy usage on click
+                ownerRef->copyMethodUsageToClipboard(ownerRef->currentClassName, itemName);
+            }
         }
 
     private:
@@ -84,14 +121,22 @@ private:
     void loadClassList();
     void loadMethodsForClass(const juce::String& className);
     juce::String getMethodDescription(const juce::String& methodName);
+    juce::String introspectMethod(const juce::String& className, const juce::String& methodName);
     void copyMethodUsageToClipboard(const juce::String& className,
+        const juce::String& methodName);
+    void copyExampleToClipboard(const juce::String& className,
         const juce::String& methodName);
     juce::String generateLuaUsageForMethod(const juce::String& className,
         const juce::String& methodName);
+    juce::String generateExampleFunction(const juce::String& className,
+        const juce::String& methodName,
+        bool isStatic);
+    void filterClassList(const juce::String& searchText);
 
     class CtrlrLuaManager* luaManagerRef;
 
     juce::StringArray classList;
+    juce::StringArray fullClassList;  // Unfiltered list for search
     juce::StringArray methodList;
     juce::StringArray attributeList;
     juce::String currentClassName;
@@ -100,6 +145,8 @@ private:
     std::unique_ptr<juce::ListBox> methodListBox;
     std::unique_ptr<juce::Viewport> methodViewport;
     std::unique_ptr<juce::TextEditor> infoDisplay;
+    std::unique_ptr<juce::TextEditor> searchBox;
+    std::unique_ptr<juce::TextButton> refreshButton;
 
     std::unique_ptr<MethodListModel> methodListModel;
 
