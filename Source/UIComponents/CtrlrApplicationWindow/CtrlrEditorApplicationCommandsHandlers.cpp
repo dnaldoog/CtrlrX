@@ -318,7 +318,7 @@ case CtrlrEditor::showAboutDialog:
         if (panel)
         {
             auto* browser = new CtrlrLuaClassBrowser(&panel->getCtrlrLuaManager());
-            browser->setSize(1000, 700);
+            browser->setSize(1000, 800);
             new CtrlrHelpWindow("Lua Class API", browser);
         }
         return true;

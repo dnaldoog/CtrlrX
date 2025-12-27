@@ -388,17 +388,18 @@ juce::String CtrlrLuaClassBrowser::introspectMethod(const juce::String& classNam
 void CtrlrLuaClassBrowser::copyMethodUsageToClipboard(const juce::String& className,
     const juce::String& methodName)
 {
-    juce::String luaCode = generateLuaUsageForMethod(className, methodName);
+    /* this function creates AlertWindow on left click, but now we use right click to access various clipboard operations*/
+    //juce::String luaCode = generateLuaUsageForMethod(className, methodName);
 
-    juce::SystemClipboard::copyTextToClipboard(luaCode);
+    //juce::SystemClipboard::copyTextToClipboard(luaCode);
 
-    juce::AlertWindow::showMessageBoxAsync(
-        juce::AlertWindow::InfoIcon,
-        "Lua Usage Copied",
-        "Usage code copied to clipboard.\n\n"
-        "Paste into the Lua editor.\n"
-        "Right-click for example function."
-    );
+    //juce::AlertWindow::showMessageBoxAsync(
+    //    juce::AlertWindow::InfoIcon,
+    //    "Lua Usage Copied",
+    //    "Usage code copied to clipboard.\n\n"
+    //    "Paste into the Lua editor.\n"
+    //    "Right-click for example function."
+    //);
 }
 
 // Copy example function to clipboard
