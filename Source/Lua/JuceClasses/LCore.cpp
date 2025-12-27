@@ -960,7 +960,12 @@ namespace LXmlJuce6Factories // Added v5.6.34. Thanks to @dnaldoog
 		return element ? element.release() : nullptr;
 	}
 }
-
+// Helper to handle the unique_ptr conversion
+static XmlElement* getDocumentElementWrapper(XmlDocument* doc, bool onlyReadOuter)
+{
+	// .release() takes the pointer out of the unique_ptr without deleting the object
+	return doc->getDocumentElement(onlyReadOuter).release();
+}
 void LXmlElement::wrapForLua (lua_State *L)
 {
 	using namespace luabind;
@@ -1027,7 +1032,7 @@ void LXmlElement::wrapForLua (lua_State *L)
         class_<XmlDocument>("XmlDocument")
             .def(constructor<const String &>())
             .def(constructor<const File &>())
-            .def("getDocumentElement", &XmlDocument::getDocumentElement) // was commented out?? https://github.com/damiensellier/CtrlrX/issues/206
+            .def("getDocumentElement", &getDocumentElementWrapper, adopt(result)) // was commented out?? https://github.com/damiensellier/CtrlrX/issues/206
             .def("getLastParseError", &XmlDocument::getLastParseError)
             .def("setInputSource", &XmlDocument::setInputSource)
             .def("setEmptyTextElementsIgnored", &XmlDocument::setEmptyTextElementsIgnored)
