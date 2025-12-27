@@ -496,6 +496,8 @@ Tuturial coming soon.
 * **FIXED** MemoryBlock(int) faulty constructor returning actual size x2. Thanks to [John Goodland](https://github.com/dnaldoog) `LMemory.cpp`
 * **ADDED** GH action to create UML diagrams using clang-uml. Thanks to [Sgorpi](https://github.com/sgorpi). `clang_uml_diagrams.yml`, `.clang-uml`
 * **FIXED** Linux Gnome Wayland modal Dialog Windows. Thanks to [John Goodland](https://github.com/dnaldoog) 
+* **FIXED** memory issues identified with Valgrind. Thanks to [Sgorpi](https://github.com/sgorpi).
+* **FIXED** XML file reading. Thanks to [John Goodland](https://github.com/dnaldoog) `LCore.cpp`
 
 #### Version 5.6.34 | 2025.11.07
 
