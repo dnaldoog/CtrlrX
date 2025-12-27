@@ -433,7 +433,7 @@ void CtrlrLuaClassBrowser::copyExampleToClipboard(const juce::String& className,
         juce::AlertWindow::InfoIcon,
         "Example Function Copied",
         "Example function copied to clipboard.\n\n"
-        "This is a " + juce::String(isStatic ? "static" : "instance") + " method.\n"
+        "This is " + juce::String(isStatic ? "a static" : "an instance") + " method.\n"
         "Paste into your Lua code and customize."
     );
 }
