@@ -111,27 +111,17 @@ void CtrlrLuaClassBrowser::loadClassList()
 {
     classList.clear();
 
-    DBG("loadClassList called");
-    DBG("luaApiXml is: " + juce::String(luaApiXml ? "valid" : "NULL"));
-
     if (!luaApiXml)
     {
-        infoDisplay->setText("ERROR: No XML data provided!\n"
-            "Make sure LuaAPI.xml was loaded.", false);
+        infoDisplay->setText("XML data not available.\n"
+            "Lua API browser cannot load classes.", false);
         return;
     }
 
-    DBG("XML root tag: " + luaApiXml->getTagName());
-    DBG("XML has " + juce::String(luaApiXml->getNumChildElements()) + " children");
-
     forEachXmlChildElementWithTagName(*luaApiXml, cls, "class")
     {
-        juce::String className = cls->getStringAttribute("name");
-        DBG("Found class: " + className);
-        classList.add(className);
+        classList.add(cls->getStringAttribute("name"));
     }
-
-    DBG("Total classes found: " + juce::String(classList.size()));
 
     classList.removeDuplicates(false);
     classList.sort(true);
@@ -140,13 +130,12 @@ void CtrlrLuaClassBrowser::loadClassList()
 
     if (classList.isEmpty())
     {
-        infoDisplay->setText("WARNING: No classes found in XML!\n"
-            "Check LuaAPI.xml file structure.", false);
+        infoDisplay->setText("No classes found in XML.", false);
     }
     else
     {
-        infoDisplay->setText("Loaded " + juce::String(classList.size()) + " classes.\n"
-            "Click on a class to see methods.", false);
+        infoDisplay->setText("Loaded " + juce::String(classList.size()) + " classes.\n\n"
+            "Click on a class to see its methods and attributes.", false);
     }
 }
 
@@ -553,6 +542,7 @@ void CtrlrLuaClassBrowser::setLuaApiXml(const juce::XmlElement* xml)
     luaApiXml = xml;
     loadClassList();
 }
+
 juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& methodName)
 {
     juce::String description;

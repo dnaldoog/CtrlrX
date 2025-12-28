@@ -97,37 +97,37 @@ CtrlrLuaManager::CtrlrLuaManager(CtrlrPanel& _owner)
 
 	{
 		// Try multiple locations for LuaAPI.xml
+		// Load Lua API database from XML
 		juce::File xmlFile;
 
-		// Location 1: Source directory (for development)
+		// Try source directory first (for development)
 		xmlFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+			.getParentDirectory()  // Standalone Plugin folder
 			.getParentDirectory()  // Debug/Release folder
 			.getParentDirectory()  // x64
 			.getParentDirectory()  // VisualStudio2022
 			.getParentDirectory()  // Builds
 			.getParentDirectory()  // CtrlrX root
-			.getParentDirectory()
 			.getChildFile("Source")
 			.getChildFile("Resources")
 			.getChildFile("XML")
 			.getChildFile("LuaAPI.xml");
 
-		DBG("Trying source location: " + xmlFile.getFullPathName());
-
+		// Fall back to deployed location if not found
 		if (!xmlFile.existsAsFile())
 		{
-			// Location 2: Next to executable (for deployed builds)
 			xmlFile = juce::File::getSpecialLocation(juce::File::currentApplicationFile)
 				.getParentDirectory()
 				.getChildFile("Resources")
 				.getChildFile("XML")
 				.getChildFile("LuaAPI.xml");
-
-			DBG("Trying deployed location: " + xmlFile.getFullPathName());
 		}
 
-		DBG("Final XML path: " + xmlFile.getFullPathName());
-		DBG("File exists: " + juce::String(xmlFile.existsAsFile() ? "YES" : "NO"));
+		// Load the XML (continue silently if not found - feature is optional)
+		if (xmlFile.existsAsFile())
+		{
+			luaApi.loadFromFile(xmlFile);
+		}
 
 		const bool loaded = luaApi.loadFromFile(xmlFile);
 		DBG("XML loaded: " + juce::String(loaded ? "YES" : "NO"));
