@@ -333,14 +333,10 @@ juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& meth
     return description;
 }
 
-// Introspect method using Lua
+// Introspect method using Lua - simplified to avoid crashes
 juce::String CtrlrLuaClassBrowser::introspectMethod(const juce::String& className,
     const juce::String& methodName)
 {
-    lua_State* L = luaManagerRef->getLuaState();
-    if (!L)
-        return "Lua state not available";
-
     juce::String result;
     bool isStatic = false;
 
@@ -362,63 +358,9 @@ juce::String CtrlrLuaClassBrowser::introspectMethod(const juce::String& classNam
         result += "Reason: Standard method name pattern\n";
     }
 
-    // Try to get type info - safer approach without string formatting
-    // Push class name onto stack first
-    lua_getglobal(L, className.toRawUTF8());
-    if (lua_isnil(L, -1))
-    {
-        lua_pop(L, 1);
-        result += "Type: Class not accessible from Lua\n";
-        return result;
-    }
-
-    // Get the method from the class
-    lua_getfield(L, -1, methodName.toRawUTF8());
-
-    if (lua_isnil(L, -1))
-    {
-        lua_pop(L, 2); // Pop method and class
-        result += "Type: Method not found\n";
-    }
-    else
-    {
-        int methodType = lua_type(L, -1);
-        switch (methodType)
-        {
-        case LUA_TFUNCTION:
-            result += "Type: function (C function)\n";
-            break;
-        case LUA_TUSERDATA:
-        {
-            // Check if it's callable
-            if (lua_getmetatable(L, -1))
-            {
-                lua_getfield(L, -1, "__call");
-                if (!lua_isnil(L, -1))
-                {
-                    result += "Type: callable userdata (luabind bound)\n";
-                }
-                else
-                {
-                    result += "Type: userdata\n";
-                }
-                lua_pop(L, 2); // Pop __call and metatable
-            }
-            else
-            {
-                result += "Type: userdata\n";
-            }
-            break;
-        }
-        case LUA_TTABLE:
-            result += "Type: table/object\n";
-            break;
-        default:
-            result += "Type: " + juce::String(lua_typename(L, methodType)) + "\n";
-            break;
-        }
-        lua_pop(L, 2); // Pop method and class
-    }
+    // Check if it's in the method list or attribute list
+    bool isMethod = methodList.contains(methodName);
+    result += "Type: " + juce::String(isMethod ? "Method (function)" : "Attribute (property)") + "\n";
 
     // Add usage guide
     result += "\n";
@@ -611,7 +553,7 @@ juce::String CtrlrLuaClassBrowser::generateLuaUsageForMethod(const juce::String&
     bool isMethod = methodList.contains(methodName);
 
     result += "-- Class: " + className + "\n";
-    result += "-- " + juce::String(isMethod ? "Method" : "Attribute") + ": " + methodName + "\n\n";
+    result += juce::String("-- ") + (isMethod ? "Method" : "Attribute") + ": " + methodName + "\n\n";
 
     // Generate appropriate usage based on common Ctrlr patterns
     if (className == "CtrlrPanel" || className == "panel")
