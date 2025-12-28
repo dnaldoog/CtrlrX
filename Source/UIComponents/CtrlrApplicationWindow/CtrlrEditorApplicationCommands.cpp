@@ -74,7 +74,8 @@ void CtrlrEditor::getAllCommands (Array< CommandID > &commands)
 								showExpressionHelp,
 								showMidiProgrammingHelp,
 								showLuaUsefulCommandsHelp,
-								showLuaFileOperationsHelp
+								showLuaFileOperationsHelp,
+								showMenuLuaClassBrowser
 
 							};
 
@@ -197,6 +198,11 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 		case showLuaFileOperationsHelp:
 			result.setInfo("Lua file load/save", "Show help for lua file load/save", globalCategory, 0);
 			result.addDefaultKeypress('f', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
+			break;
+
+		case showMenuLuaClassBrowser:
+			result.setInfo("Browse class API", "Select lua class API", globalCategory, 0);
+			result.addDefaultKeypress('c', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
 			break;
 
 		case doViewPropertyDisplayIDs:

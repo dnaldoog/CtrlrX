@@ -19944,15 +19944,16 @@ static const unsigned char temp_binary_data_95[] =
 "- mod = modulator (CtrlrPanel) - i.e L(mod:getName()) returns your control name<br>\r\n"
 "- value = value - i.e mod:getModulatorValue()<br>\r\n"
 "- source =<br>\r\n"
-"value(\x93initialValue\x94, 0),<br>\r\n"
-"value(\x93""changedByHost\x94, 1),<br>\r\n"
-"value(\x93""changedByMidiIn\x94, 2),<br>\r\n"
-"value(\x93""changedByMidiController\x94, 3),<br>\r\n"
-"value(\x93""changedByGUI\x94, 4),<br>\r\n"
-"value(\x93""changedByLua\x94, 5),<br>\r\n"
-"value(\x93""changedByProgram\x94, 6),<br>\r\n"
-"value(\x93""changedByLink\x94, 7),<br>\r\n"
-"value(\x93""changeByUnknown\x94, 8)<br>\r\n"
+"initialValue=0<br>\r\n"
+"changedByHost=1<br>\r\n"
+"changedByMidiIn=2<br>\r\n"
+"changedByMidiController=3<br>\r\n"
+"changedByGUI=4<br>\r\n"
+"changedByLua=5<br>\r\n"
+"changedByProgram=6<br>\r\n"
+"changedByLink=7<br>\r\n"
+"changeByUnknown=8<br>\r\n"
+"\r\n"
 "***e.g.*** ```if source ==4 then ...``` = was the modulator was changed by the gui (user)?\r\n"
 "```\r\n"
 "function f(comp,event)\r\n"
@@ -20271,7 +20272,7 @@ static const unsigned char temp_binary_data_95[] =
 "_m = {}\r\n"
 "setmetatable(_m, mtm)\r\n"
 "\r\n"
-"```";
+"```\r\n";
 
 const char* LuaUsefulCommands_md = (const char*) temp_binary_data_95;
 
@@ -20683,7 +20684,7 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
         case 0x75bd0b9b:  numBytes = 2908; return Expressions_md;
         case 0xf2d75ceb:  numBytes = 3901; return BulkReadWriteDump_md;
         case 0x0bb1c5b6:  numBytes = 3521; return LuaFileOperations_md;
-        case 0x1a400140:  numBytes = 9582; return LuaUsefulCommands_md;
+        case 0x1a400140:  numBytes = 9488; return LuaUsefulCommands_md;
         case 0xa82dd45e:  numBytes = 9678; return MidiProgramming_md;
         default: break;
     }

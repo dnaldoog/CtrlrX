@@ -11,6 +11,8 @@
 #include "CtrlrLua/MethodEditor/CtrlrLuaMethodEditorCommandIDs.h" // Added v5.6.34.
 #include "CtrlrHelpWindow.h"
 #include "CtrlrGenericHelp.h"
+#include "CtrlrLuaClassBrowser.h"
+
 
 
 
@@ -284,27 +286,46 @@ case CtrlrEditor::showAboutDialog:
             BinaryData::BulkReadWriteDump_mdSize));
     return true;
     break;
+
     case showExpressionHelp:
     new CtrlrHelpWindow("Expressions Help",
         new CtrlrGenericHelp(BinaryData::Expressions_md,
             BinaryData::Expressions_mdSize));
     return true;
+
     case showMidiProgrammingHelp:
     new CtrlrHelpWindow("MIDI programming Help",
         new CtrlrGenericHelp(BinaryData::MidiProgramming_md,
             BinaryData::MidiProgramming_mdSize));
     return true;
+
     break;
     case showLuaUsefulCommandsHelp:
     new CtrlrHelpWindow("lua programming Help",
         new CtrlrGenericHelp(BinaryData::LuaUsefulCommands_md,
             BinaryData::LuaUsefulCommands_mdSize));
     return true;
+
     case showLuaFileOperationsHelp:
     new CtrlrHelpWindow("Lua File Save/Load Help",
         new CtrlrGenericHelp(BinaryData::LuaFileOperations_md,
             BinaryData::LuaFileOperations_mdSize));
     return true;
+
+    case showMenuLuaClassBrowser:
+    {
+        CtrlrPanel* panel = getActivePanel();
+        if (panel)
+        {
+            auto* browser = new CtrlrLuaClassBrowser(&panel->getCtrlrLuaManager());
+            browser->setSize(1000, 800);
+            new CtrlrHelpWindow("Lua Class API", browser);
+        }
+        return true;
+    }
+    break;
+    return true;
+
     break;
         case CtrlrEditor::doZoomIn:
             if (getActivePanelEditor())

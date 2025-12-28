@@ -1107,6 +1107,10 @@
     </GROUP>
     <FILE id="KHvwkJ" name="BulkReadWriteDump.md" compile="0" resource="1"
           file="Source/Resources/Doc/BulkReadWriteDump.md" xcodeResource="1"/>
+    <FILE id="uGxIUn" name="CtrlrLuaClassBrowser.cpp" compile="1" resource="0"
+          file="Source/UIComponents/CtrlrLuaClassBrowser.cpp"/>
+    <FILE id="LV1gub" name="CtrlrLuaClassBrowser.h" compile="0" resource="0"
+          file="Source/UIComponents/CtrlrLuaClassBrowser.h"/>
     <FILE id="eQbuKf" name="CtrlrMarkdownParser.cpp" compile="1" resource="0"
           file="Source/UIComponents/CtrlrMarkdownParser.cpp"/>
     <FILE id="HLhdmG" name="CtrlrMarkdownParser.h" compile="0" resource="0"
