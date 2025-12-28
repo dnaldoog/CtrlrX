@@ -318,15 +318,21 @@ case CtrlrEditor::showAboutDialog:
         if (panel)
         {
             auto* browser = new CtrlrLuaClassBrowser(&panel->getCtrlrLuaManager());
+
+            browser->setLuaApiXml(
+                panel->getCtrlrLuaManager()
+                .getLuaApiDatabase()
+                .getXmlRoot()
+            );
+
             browser->setSize(1200, 1000);
             new CtrlrHelpWindow("Lua Class API", browser);
         }
         return true;
     }
-    break;
-    return true;
 
-    break;
+
+    //break;
         case CtrlrEditor::doZoomIn:
             if (getActivePanelEditor())
             {

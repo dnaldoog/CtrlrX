@@ -1,5 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
+#include "CtrlrLuaApiDatabase.h"    
+namespace juce { class XmlElement; }
 
 class CtrlrLuaClassBrowser : public juce::Component,
     public juce::ListBoxModel
@@ -16,6 +18,7 @@ public:
     void paintListBoxItem(int rowNumber, juce::Graphics& g,
         int width, int height, bool rowIsSelected) override;
     void listBoxItemClicked(int row, const juce::MouseEvent& e) override;
+    void setLuaApiXml(const juce::XmlElement* xml);
 
     // Nested class for displaying method details
     class MethodListModel : public juce::ListBoxModel
@@ -147,8 +150,7 @@ private:
     std::unique_ptr<juce::TextEditor> infoDisplay;
     std::unique_ptr<juce::TextEditor> searchBox;
     std::unique_ptr<juce::TextButton> refreshButton;
-
+    const juce::XmlElement* luaApiXml = nullptr; // non-owning, const
     std::unique_ptr<MethodListModel> methodListModel;
-
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrLuaClassBrowser)
 };

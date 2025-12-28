@@ -36,6 +36,7 @@
 #include "CtrlrLuaMultiTimer.h"
 #include "CtrlrLuaAudioConverter.h"
 #include "CtrlrLuaDebugger.h"
+#include "CtrlrLuaApiDatabase.h"
 
 // Deprecated classes
 #include "Deprecated/CtrlrLuaBigInteger.h"
@@ -90,6 +91,68 @@ CtrlrLuaManager::CtrlrLuaManager(CtrlrPanel& _owner)
 	ctrlrLuaDebugger = new CtrlrLuaDebugger(*this);
 
 	luaManagerTree.addChild(methodManager->getManagerTree(), -1, 0);
+	//==============================================================================
+// Load Lua API XML database (for class browser / help popup)
+//==============================================================================
+
+	{
+		// Try multiple locations for LuaAPI.xml
+		juce::File xmlFile;
+
+		// Location 1: Source directory (for development)
+		xmlFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+			.getParentDirectory()  // Debug/Release folder
+			.getParentDirectory()  // x64
+			.getParentDirectory()  // VisualStudio2022
+			.getParentDirectory()  // Builds
+			.getParentDirectory()  // CtrlrX root
+			.getParentDirectory()
+			.getChildFile("Source")
+			.getChildFile("Resources")
+			.getChildFile("XML")
+			.getChildFile("LuaAPI.xml");
+
+		DBG("Trying source location: " + xmlFile.getFullPathName());
+
+		if (!xmlFile.existsAsFile())
+		{
+			// Location 2: Next to executable (for deployed builds)
+			xmlFile = juce::File::getSpecialLocation(juce::File::currentApplicationFile)
+				.getParentDirectory()
+				.getChildFile("Resources")
+				.getChildFile("XML")
+				.getChildFile("LuaAPI.xml");
+
+			DBG("Trying deployed location: " + xmlFile.getFullPathName());
+		}
+
+		DBG("Final XML path: " + xmlFile.getFullPathName());
+		DBG("File exists: " + juce::String(xmlFile.existsAsFile() ? "YES" : "NO"));
+
+		const bool loaded = luaApi.loadFromFile(xmlFile);
+		DBG("XML loaded: " + juce::String(loaded ? "YES" : "NO"));
+
+		if (loaded && luaApi.getXmlRoot())
+		{
+			DBG("XML root has " + juce::String(luaApi.getXmlRoot()->getNumChildElements()) + " child elements");
+		}
+		jassert(loaded);
+		jassert(luaApi.isLoaded());
+		if (loaded && luaApi.getXmlRoot())
+		{
+			DBG("XML root has " + juce::String(luaApi.getXmlRoot()->getNumChildElements()) + " classes");
+		}
+#if JUCE_DEBUG
+		if (loaded)
+		{
+			if (auto* mb = luaApi.getClass("MemoryBlock"))
+			{
+				jassert(mb->instanceMethods.size() > 0);
+			}
+		}
+#endif
+	}
+
 }
 
 CtrlrLuaManager::~CtrlrLuaManager()

@@ -1,5 +1,6 @@
 #include "CtrlrLuaClassBrowser.h"
 #include "CtrlrLuaManager.h"
+#include "CtrlrLuaApiDatabase.h"
 
 extern "C"
 {
@@ -49,7 +50,7 @@ CtrlrLuaClassBrowser::CtrlrLuaClassBrowser(CtrlrLuaManager* luaManager)
     addAndMakeVisible(infoDisplay.get());
 
     // Load the class list
-    loadClassList();
+	//loadClassList(); Done in header after luaManagerRef is set
 }
 
 CtrlrLuaClassBrowser::~CtrlrLuaClassBrowser()
@@ -110,239 +111,115 @@ void CtrlrLuaClassBrowser::loadClassList()
 {
     classList.clear();
 
-    if (!luaManagerRef)
+    DBG("loadClassList called");
+    DBG("luaApiXml is: " + juce::String(luaApiXml ? "valid" : "NULL"));
+
+    if (!luaApiXml)
     {
-        infoDisplay->setText("Error: Lua Manager not available.", false);
-        classListBox->updateContent();
+        infoDisplay->setText("ERROR: No XML data provided!\n"
+            "Make sure LuaAPI.xml was loaded.", false);
         return;
     }
 
-    // Call the Lua how() function and get result from stack
-    lua_State* L = luaManagerRef->getLuaState();
-    if (!L)
+    DBG("XML root tag: " + luaApiXml->getTagName());
+    DBG("XML has " + juce::String(luaApiXml->getNumChildElements()) + " children");
+
+    forEachXmlChildElementWithTagName(*luaApiXml, cls, "class")
     {
-        infoDisplay->setText("Error: Lua state not available.", false);
-        return;
+        juce::String className = cls->getStringAttribute("name");
+        DBG("Found class: " + className);
+        classList.add(className);
     }
 
-    juce::String luaResult;
+    DBG("Total classes found: " + juce::String(classList.size()));
 
-    // Execute how() and get result
-    if (luaL_dostring(L, "return how()") == 0)
-    {
-        // Get result from top of stack
-        if (lua_isstring(L, -1))
-        {
-            luaResult = juce::String(lua_tostring(L, -1));
-        }
-        lua_pop(L, 1); // Clean up stack
-    }
-    else
-    {
-        // Error executing
-        if (lua_isstring(L, -1))
-        {
-            juce::String error = juce::String(lua_tostring(L, -1));
-            infoDisplay->setText("Error calling how():\n" + error, false);
-            lua_pop(L, 1);
-        }
-        return;
-    }
-
-    if (luaResult.isEmpty())
-    {
-        infoDisplay->setText("Warning: The how() function returned no data.\n"
-            "Make sure the Lua utilities are loaded.", false);
-        return;
-    }
-
-    // Parse the result - extract class names between the separator lines
-    juce::StringArray lines;
-    lines.addLines(luaResult);
-
-    bool inClassSection = false;
-
-    for (const auto& line : lines)
-    {
-        juce::String trimmed = line.trim();
-
-        if (trimmed.contains("---------"))
-        {
-            inClassSection = !inClassSection;
-            continue;
-        }
-
-        if (inClassSection && trimmed.isNotEmpty() && !trimmed.startsWith("Available"))
-        {
-            classList.add(trimmed);
-        }
-    }
+    classList.removeDuplicates(false);
+    classList.sort(true);
+    fullClassList = classList;
+    classListBox->updateContent();
 
     if (classList.isEmpty())
     {
-        infoDisplay->setText("Warning: No classes found.\n"
-            "The how() function may have failed or returned unexpected format.", false);
+        infoDisplay->setText("WARNING: No classes found in XML!\n"
+            "Check LuaAPI.xml file structure.", false);
     }
     else
     {
-        classList.removeDuplicates(false);  // Remove duplicate entries
-        classList.sort(true);
-        fullClassList = classList;  // Store unfiltered list for search
-        infoDisplay->setText("Loaded " + juce::String(classList.size()) +
-            " Lua classes.\n\n"
-            "Click on a class to see its methods and attributes.", false);
+        infoDisplay->setText("Loaded " + juce::String(classList.size()) + " classes.\n"
+            "Click on a class to see methods.", false);
     }
-
-    classListBox->updateContent();
 }
+
 
 void CtrlrLuaClassBrowser::loadMethodsForClass(const juce::String& className)
 {
-    if (!luaManagerRef || className.isEmpty())
-        return;
-
-    currentClassName = className;
     methodList.clear();
     attributeList.clear();
+    currentClassName = className;
 
-    lua_State* L = luaManagerRef->getLuaState();
-    if (!L)
-    {
-        infoDisplay->setText("Error: Lua state not available.", false);
+    if (!luaApiXml)
         return;
-    }
 
-    juce::String luaResult;
-
-    // Execute what(className) and get result
-    juce::String luaCode = "return what(" + className + ")";
-    if (luaL_dostring(L, luaCode.toRawUTF8()) == 0)
+    // Find the class by name attribute
+    forEachXmlChildElementWithTagName(*luaApiXml, cls, "class")
     {
-        // Get result from top of stack
-        if (lua_isstring(L, -1))
+        if (cls->getStringAttribute("name") == className)
         {
-            luaResult = juce::String(lua_tostring(L, -1));
-        }
-        lua_pop(L, 1); // Clean up stack
-    }
-    else
-    {
-        // Error executing
-        if (lua_isstring(L, -1))
-        {
-            juce::String error = juce::String(lua_tostring(L, -1));
-            infoDisplay->setText("Error calling what(" + className + "):\n" + error, false);
-            lua_pop(L, 1);
-        }
-        return;
-    }
-
-    if (luaResult.isEmpty() || luaResult.contains("nil"))
-    {
-        infoDisplay->setText("Warning: Class '" + className +
-            "' returned no information.\n"
-            "This class may not have accessible methods or attributes.", false);
-        methodListBox->updateContent();
-        return;
-    }
-
-    // Parse the result
-    juce::StringArray lines;
-    lines.addLines(luaResult);
-
-    bool inMethodSection = false;
-    bool inAttributeSection = false;
-
-    for (const auto& line : lines)
-    {
-        juce::String trimmed = line.trim();
-
-        if (trimmed.startsWith("Members:"))
-        {
-            inMethodSection = true;
-            inAttributeSection = false;
-            continue;
-        }
-        else if (trimmed.startsWith("Attributes:"))
-        {
-            inMethodSection = false;
-            inAttributeSection = true;
-            continue;
-        }
-        else if (trimmed.contains("--------") || trimmed.isEmpty())
-        {
-            continue;
-        }
-
-        // Parse method/attribute lines (format: "    methodName:    type")
-        if ((inMethodSection || inAttributeSection) && trimmed.isNotEmpty())
-        {
-            juce::String itemName = trimmed.upToFirstOccurrenceOf(":", false, false).trim();
-
-            if (itemName.isNotEmpty())
+            // Get methods from <methods> container
+            if (auto* methodsElem = cls->getChildByName("methods"))
             {
-                if (inMethodSection)
-                    methodList.add(itemName);
-                else if (inAttributeSection)
-                    attributeList.add(itemName);
+                forEachXmlChildElementWithTagName(*methodsElem, m, "method")
+                {
+                    methodList.add(m->getStringAttribute("name"));
+                }
             }
+
+            // Get static methods from <static_methods> container
+            if (auto* staticElem = cls->getChildByName("static_methods"))
+            {
+                forEachXmlChildElementWithTagName(*staticElem, m, "method")
+                {
+                    methodList.add(m->getStringAttribute("name") + " [STATIC]");
+                }
+            }
+
+            // Get enums from <enums> container
+            if (auto* enumsElem = cls->getChildByName("enums"))
+            {
+                forEachXmlChildElementWithTagName(*enumsElem, e, "enum")
+                {
+                    juce::String enumName = e->getStringAttribute("name");
+                    forEachXmlChildElementWithTagName(*e, v, "value")
+                    {
+                        attributeList.add(enumName + "." + v->getStringAttribute("name"));
+                    }
+                }
+            }
+
+            break;
         }
     }
 
-    // Sort alphabetically
     methodList.sort(true);
     attributeList.sort(true);
-
     methodListBox->updateContent();
 
-    // Update info display
     infoDisplay->setText("Class: " + className + "\n\n" +
         "Methods: " + juce::String(methodList.size()) + "\n" +
-        "Attributes: " + juce::String(attributeList.size()) + "\n\n" +
-        "Click on any method or attribute to copy its Lua usage code.",
+        "Enums: " + juce::String(attributeList.size()) + "\n\n" +
+        "Click on any method to copy Lua usage code.",
         false);
 }
-
-juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& methodName)
-{
-    juce::String description;
-
-    description += "Class: " + currentClassName + "\n";
-    description += "Method/Attribute: " + methodName + "\n\n";
-
-    // Use Lua introspection to get method info
-    juce::String introspectionInfo = introspectMethod(currentClassName, methodName);
-
-    if (introspectionInfo.isNotEmpty())
-    {
-        description += "=== Detection Info ===\n";
-        description += introspectionInfo + "\n\n";
-    }
-    else
-    {
-        description += "=== Detection Info ===\n";
-        description += "No introspection data available\n\n";
-    }
-
-    description += "=== Usage ===\n";
-    description += "Lua code copied to clipboard.\n";
-    description += "Right-click for example function.";
-
-    DBG("Method description generated: " + description.substring(0, 100));
-
-    return description;
-}
-
 // Introspect method using Lua - simplified to avoid crashes
-juce::String CtrlrLuaClassBrowser::introspectMethod(const juce::String& className,
+juce::String CtrlrLuaClassBrowser::introspectMethod(
+    const juce::String& className,
     const juce::String& methodName)
 {
     juce::String result;
     bool isStatic = false;
 
-    // Method naming heuristics for static detection
+    // Check naming patterns
     juce::String lowerMethod = methodName.toLowerCase();
-
     if (lowerMethod.startsWith("from") ||
         lowerMethod.startsWith("create") ||
         lowerMethod == "new" ||
@@ -350,7 +227,7 @@ juce::String CtrlrLuaClassBrowser::introspectMethod(const juce::String& classNam
     {
         isStatic = true;
         result = "Likely STATIC method (use .)\n";
-        result += "Reason: Method name pattern '" + methodName + "' suggests factory/constructor\n";
+        result += "Reason: Method name pattern suggests factory/constructor\n";
     }
     else
     {
@@ -358,25 +235,9 @@ juce::String CtrlrLuaClassBrowser::introspectMethod(const juce::String& classNam
         result += "Reason: Standard method name pattern\n";
     }
 
-    // Check if it's in the method list or attribute list
+    // Check if it's a method or attribute
     bool isMethod = methodList.contains(methodName);
     result += "Type: " + juce::String(isMethod ? "Method (function)" : "Attribute (property)") + "\n";
-
-    // Add usage guide
-    result += "\n";
-    if (isStatic)
-    {
-        result += "Usage: " + className + "." + methodName + "()\n";
-        result += "Example:\n";
-        result += "  local obj = " + className + "." + methodName + "(params)";
-    }
-    else
-    {
-        result += "Usage: instance:" + methodName + "()\n";
-        result += "Example:\n";
-        result += "  local m = " + className + "()  -- Create instance\n";
-        result += "  local result = m:" + methodName + "(params)";
-    }
 
     return result;
 }
@@ -672,4 +533,61 @@ void CtrlrLuaClassBrowser::filterClassList(const juce::String& searchText)
     }
 
     classListBox->updateContent();
+}
+juce::String generateLuaSnippet(
+    const CtrlrLuaApiDatabase::Class& cls,
+    const juce::String& symbol,
+    bool isStatic,
+    bool isEnum)
+{
+    if (isEnum)
+        return cls.name + "." + symbol;
+
+    if (isStatic)
+        return cls.name + "." + symbol + "()";
+
+    return "obj:" + symbol + "()";
+}
+void CtrlrLuaClassBrowser::setLuaApiXml(const juce::XmlElement* xml)
+{
+    luaApiXml = xml;
+    loadClassList();
+}
+juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& methodName)
+{
+    juce::String description;
+
+    description += "Class: " + currentClassName + "\n";
+    description += "Method/Attribute: " + methodName + "\n\n";
+
+    // Detect static vs instance from naming patterns
+    bool isStatic = false;
+    juce::String lowerMethod = methodName.toLowerCase();
+
+    if (lowerMethod.startsWith("from") ||
+        lowerMethod.startsWith("create") ||
+        lowerMethod == "new" ||
+        lowerMethod.startsWith("wrap"))
+    {
+        isStatic = true;
+        description += "=== Detection Info ===\n";
+        description += "Likely STATIC method (use .)\n";
+        description += "Reason: Method name pattern suggests factory/constructor\n\n";
+    }
+    else
+    {
+        description += "=== Detection Info ===\n";
+        description += "Likely INSTANCE method (use :)\n";
+        description += "Reason: Standard method name pattern\n\n";
+    }
+
+    // Check if it's in method list
+    bool isMethod = methodList.contains(methodName);
+    description += "Type: " + juce::String(isMethod ? "Method (function)" : "Enum/Attribute") + "\n\n";
+
+    description += "=== Usage ===\n";
+    description += "Lua code copied to clipboard.\n";
+    description += "Right-click for example function.";
+
+    return description;
 }
