@@ -533,6 +533,425 @@
       <method name="tryEnter" type="instance" />
     </methods>
   </class>
+  <class name="CtrlrButton" cpp_name="CtrlrButton">
+    <methods>
+      <method name="getToggleState" type="instance" />
+      <method name="getValueMap" type="instance" />
+      <method name="isToggleButton" type="instance" />
+      <method name="setToggleState" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrCombo" cpp_name="CtrlrCombo">
+    <methods>
+      <method name="getOwnedComboBox" type="instance" />
+      <method name="getSelectedId" type="instance" />
+      <method name="getSelectedItemIndex" type="instance" />
+      <method name="getText" type="instance" />
+      <method name="getValueMap" type="instance" />
+      <method name="setSelectedId" type="instance" />
+      <method name="setSelectedItemIndex" type="instance" />
+      <method name="setText" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrComponent" cpp_name="CtrlrComponent">
+    <methods>
+      <method name="click" type="instance" />
+      <method name="getBounds" type="instance" />
+      <method name="getComponentMidiValue" type="instance" />
+      <method name="getComponentText" type="instance" />
+      <method name="getComponentValue" type="instance" />
+      <method name="getHeight" type="instance" />
+      <method name="getLuaBounds" type="instance" />
+      <method name="getMaximum" type="instance" />
+      <method name="getMidiValue" type="instance" />
+      <method name="getMinimum" type="instance" />
+      <method name="getOwner" type="instance" />
+      <method name="getRect" type="instance" />
+      <method name="getTextForValue" type="instance" />
+      <method name="getTransform" type="instance" />
+      <method name="getValue" type="instance" />
+      <method name="getWidth" type="instance" />
+      <method name="getX" type="instance" />
+      <method name="getY" type="instance" />
+      <method name="isMouseButtonDown" type="instance" />
+      <method name="isMouseOver" type="instance" />
+      <method name="isMouseOverOrDragging" type="instance" />
+      <method name="isVisible" type="instance" />
+      <method name="keyPressed" type="instance" />
+      <method name="mouseEnter" type="instance" />
+      <method name="mouseExit" type="instance" />
+      <method name="mouseUp" type="instance" />
+      <method name="repaint" type="instance" />
+      <method name="setBounds" type="instance" />
+      <method name="setComponentMidiValue" type="instance" />
+      <method name="setComponentText" type="instance" />
+      <method name="setComponentValue" type="instance" />
+      <method name="setCustomLookAndFeel" type="instance" />
+      <method name="setMidiValue" type="instance" />
+      <method name="setSize" type="instance" />
+      <method name="setTransform" type="instance" />
+      <method name="setValue" type="instance" />
+      <method name="setVisible" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrCustomComponent" cpp_name="CtrlrCustomComponent" />
+  <class name="CtrlrFileListBox" cpp_name="CtrlrFileListBox">
+    <methods>
+      <method name="deselectAllFiles" type="instance" />
+      <method name="getNumSelectedFiles" type="instance" />
+      <method name="getSelectedFile" type="instance" />
+      <method name="refresh" type="instance" />
+      <method name="scrollToTop" type="instance" />
+      <method name="setSelectedFile" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrFixedImageSlider" cpp_name="CtrlrFixedImageSlider">
+    <methods>
+      <method name="getOwnedSlider" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrFixedSlider" cpp_name="CtrlrFixedSlider">
+    <methods>
+      <method name="getOwnedSlider" type="instance" />
+      <method name="getValueMap" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrImageButton" cpp_name="CtrlrImageButton">
+    <methods>
+      <method name="getToggleState" type="instance" />
+      <method name="getValueMap" type="instance" />
+      <method name="isToggleButton" type="instance" />
+      <method name="setToggleState" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrImageSlider" cpp_name="CtrlrImageSlider">
+    <methods>
+      <method name="getOwnedSlider" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrLCDLabel" cpp_name="CtrlrLCDLabel">
+    <methods>
+      <method name="append" type="instance" />
+      <method name="appendText" type="instance" />
+      <method name="getText" type="instance" />
+      <method name="setText" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrLabel" cpp_name="CtrlrLabel">
+    <methods>
+      <method name="append" type="instance" />
+      <method name="appendText" type="instance" />
+      <method name="getText" type="instance" />
+      <method name="setText" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrListBox" cpp_name="CtrlrListBox">
+    <methods>
+      <method name="deselectAllRows" type="instance" />
+      <method name="deselectRow" type="instance" />
+      <method name="flipRowSelection" type="instance" />
+      <method name="getLastRowSelected" type="instance" />
+      <method name="getNumRows" type="instance" />
+      <method name="getNumSelectedRows" type="instance" />
+      <method name="getSelectedRow" type="instance" />
+      <method name="getSelectedRows" type="instance" />
+      <method name="isRowSelected" type="instance" />
+      <method name="selectRangeOfRows" type="instance" />
+      <method name="selectRow" type="instance" />
+      <method name="setMultipleSelectionEnabled" type="instance" />
+      <method name="updateContent" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrLuaAudioConverter" cpp_name="CtrlrLuaAudioConverter">
+    <methods>
+      <method name="convertInt16" type="instance" />
+      <method name="convertInt24" type="instance" />
+      <method name="convertInt32" type="instance" />
+      <method name="convertInt8" type="instance" />
+      <method name="convertToUInt8" type="instance" />
+      <method name="convertUInt16" type="instance" />
+      <method name="convertUInt8" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrLuaBigInteger" cpp_name="CtrlrLuaBigInteger">
+    <methods>
+      <method name="clear" type="instance" />
+      <method name="clearBit" type="instance" />
+      <method name="clearRange" type="instance" />
+      <method name="getBit" type="instance" />
+      <method name="getBitRangeAsInt" type="instance" />
+      <method name="setBit" type="instance" />
+      <method name="setBitRangeAsInt" type="instance" />
+      <method name="setRange" type="instance" />
+      <method name="shiftBits" type="instance" />
+      <method name="toString" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrLuaComponentAnimator" cpp_name="CtrlrLuaComponentAnimator">
+    <methods>
+      <method name="animateComponent" type="instance" />
+      <method name="cancelAllAnimations" type="instance" />
+      <method name="cancelAnimation" type="instance" />
+      <method name="fadeIn" type="instance" />
+      <method name="fadeOut" type="instance" />
+      <method name="getComponentDestination" type="instance" />
+      <method name="isAnimating" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrLuaDebugger" cpp_name="CtrlrLuaDebugger">
+    <methods>
+      <method name="read" type="instance" />
+      <method name="write" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrLuaMemoryBlock" cpp_name="CtrlrLuaMemoryBlock">
+    <methods>
+      <method name="append" type="instance" />
+      <method name="copyFrom" type="instance" />
+      <method name="copyTo" type="instance" />
+      <method name="getByte" type="instance" />
+      <method name="getRange" type="instance" />
+      <method name="getSize" type="instance" />
+      <method name="insert" type="instance" />
+      <method name="loadFromHexString" type="instance" />
+      <method name="removeSection" type="instance" />
+      <method name="setByte" type="instance" />
+      <method name="toHexString" type="instance" />
+      <method name="toSafeString" type="instance" />
+      <method name="toString" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrLuaMultiTimer" cpp_name="CtrlrLuaMultiTimer">
+    <methods>
+      <method name="getTimerInterval" type="instance" />
+      <method name="isRegistered" type="instance" />
+      <method name="isTimerRunning" type="instance" />
+      <method name="setCallback" type="instance" />
+      <method name="startTimer" type="instance" />
+      <method name="stopTimer" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrLuaObject" cpp_name="CtrlrLuaObject">
+    <methods>
+      <method name="getObjectTree" type="instance" />
+      <method name="getProperty" type="instance" />
+      <method name="getPropertyDouble" type="instance" />
+      <method name="getPropertyInt" type="instance" />
+      <method name="getPropertyString" type="instance" />
+      <method name="removeProperty" type="instance" />
+      <method name="setProperty" type="instance" />
+      <method name="setPropertyColour" type="instance" />
+      <method name="setPropertyDouble" type="instance" />
+      <method name="setPropertyInt" type="instance" />
+      <method name="setPropertyString" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrLuaRectangle" cpp_name="CtrlrLuaRectangle">
+    <methods>
+      <method name="contains" type="instance" />
+      <method name="enlargeIfAdjacent" type="instance" />
+      <method name="expand" type="instance" />
+      <method name="getAspectRatio" type="instance" />
+      <method name="getBottom" type="instance" />
+      <method name="getCentreX" type="instance" />
+      <method name="getCentreY" type="instance" />
+      <method name="getHeight" type="instance" />
+      <method name="getIntersection" type="instance" />
+      <method name="getRight" type="instance" />
+      <method name="getUnion" type="instance" />
+      <method name="getWidth" type="instance" />
+      <method name="getX" type="instance" />
+      <method name="getY" type="instance" />
+      <method name="intersects" type="instance" />
+      <method name="reduce" type="instance" />
+      <method name="reduceIfPartlyContainedIn" type="instance" />
+      <method name="setBottom" type="instance" />
+      <method name="setBounds" type="instance" />
+      <method name="setHeight" type="instance" />
+      <method name="setLeft" type="instance" />
+      <method name="setPosition" type="instance" />
+      <method name="setRight" type="instance" />
+      <method name="setSize" type="instance" />
+      <method name="setTop" type="instance" />
+      <method name="setWidth" type="instance" />
+      <method name="setX" type="instance" />
+      <method name="setY" type="instance" />
+      <method name="toString" type="instance" />
+      <method name="translate" type="instance" />
+      <method name="translated" type="instance" />
+      <method name="withBottom" type="instance" />
+      <method name="withHeight" type="instance" />
+      <method name="withLeft" type="instance" />
+      <method name="withPosition" type="instance" />
+      <method name="withRight" type="instance" />
+      <method name="withTop" type="instance" />
+      <method name="withWidth" type="instance" />
+      <method name="withX" type="instance" />
+      <method name="withY" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrLuaUtils" cpp_name="CtrlrLuaUtils">
+    <methods>
+      <method name="askForTextInputWindow" type="instance" />
+      <method name="base64_decode" type="instance" />
+      <method name="base64_encode" type="instance" />
+      <method name="get16bitSigned" type="instance" />
+      <method name="get8bitSigned" type="instance" />
+      <method name="getDirectoryWindow" type="instance" />
+      <method name="getMidiInputDevices" type="instance" />
+      <method name="getMidiOutputDevices" type="instance" />
+      <method name="getPi" type="instance" />
+      <method name="getVersionMajor" type="instance" />
+      <method name="getVersionMinor" type="instance" />
+      <method name="getVersionRevision" type="instance" />
+      <method name="getVersionString" type="instance" />
+      <method name="infoWindow" type="instance" />
+      <method name="openFileWindow" type="instance" />
+      <method name="openMultipleFilesWindow" type="instance" />
+      <method name="packDsiData" type="instance" />
+      <method name="questionWindow" type="instance" />
+      <method name="saveFileWindow" type="instance" />
+      <method name="unpackDsiData" type="instance" />
+      <method name="warnWindow" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrMIDIDevice" cpp_name="CtrlrMIDIDevice">
+    <methods>
+      <method name="closeDevice" type="instance" />
+      <method name="getName" type="instance" />
+      <method name="getState" type="instance" />
+      <method name="getType" type="instance" />
+      <method name="openDevice" type="instance" />
+      <method name="sendMidiBuffer" type="instance" />
+      <method name="sendMidiMessage" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrMIDIDeviceManager" cpp_name="CtrlrMIDIDeviceManager">
+    <methods>
+      <method name="getDeviceByIndex" type="instance" />
+      <method name="getDeviceByName" type="instance" />
+      <method name="getDeviceName" type="instance" />
+      <method name="getManagedDevices" type="instance" />
+      <method name="getNumDevices" type="instance" />
+      <method name="isDeviceOpened" type="instance" />
+      <method name="refreshDevices" type="instance" />
+    </methods>
+    <enums>
+      <enum name="CtrlrMIDIDeviceType">
+        <value name="outputDevice" value="outputDevice" />
+        <value name="inputDevice" value="inputDevice" />
+        <value name="controllerDevice" value="controllerDevice" />
+        <value name="hostInputDevice" value="hostInputDevice" />
+        <value name="hostOutputDevice" value="hostOutputDevice" />
+        <value name="oscInputDevice" value="oscInputDevice" />
+        <value name="oscOutputDevice" value="oscOutputDevice" />
+        <value name="serialDevice" value="serialDevice" />
+      </enum>
+      <enum name="DeviceState">
+        <value name="closed" value="CtrlrMIDIDeviceManager::closed" />
+        <value name="opened" value="CtrlrMIDIDeviceManager::opened" />
+        <value name="error" value="CtrlrMIDIDeviceManager::error" />
+      </enum>
+    </enums>
+  </class>
+  <class name="CtrlrMidiInputComparator" cpp_name="CtrlrMidiInputComparator">
+    <methods>
+      <method name="addMatchTarget" type="instance" />
+      <method name="clear" type="instance" />
+      <method name="dumpTables" type="instance" />
+      <method name="match" type="instance" />
+      <method name="rehashComparator" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrMidiMessage" cpp_name="CtrlrMidiMessage">
+    <methods>
+      <method name="getChannel" type="instance" />
+      <method name="getData" type="instance" />
+      <method name="getInitializationResult" type="instance" />
+      <method name="getLuaData" type="instance" />
+      <method name="getMidiMessageType" type="instance" />
+      <method name="getNumber" type="instance" />
+      <method name="getProperty" type="instance" />
+      <method name="getSize" type="instance" />
+      <method name="getType" type="instance" />
+      <method name="getValue" type="instance" />
+      <method name="setChannel" type="instance" />
+      <method name="setMidiMessageType" type="instance" />
+      <method name="setNumber" type="instance" />
+      <method name="setProperty" type="instance" />
+      <method name="setType" type="instance" />
+      <method name="setValue" type="instance" />
+      <method name="toString" type="instance" />
+    </methods>
+    <enums>
+      <enum name="CtrlrMidiMessageType">
+        <value name="CC" value="0" />
+        <value name="Aftertouch" value="1" />
+        <value name="ChannelPressure" value="2" />
+        <value name="NoteOn" value="3" />
+        <value name="NoteOff" value="4" />
+        <value name="SysEx" value="5" />
+        <value name="Multi" value="6" />
+        <value name="ProgramChange" value="7" />
+        <value name="PitchWheel" value="8" />
+        <value name="None" value="9" />
+        <value name="MidiClock" value="10" />
+        <value name="MidiClockContinue" value="11" />
+        <value name="MidiClockStop" value="12" />
+        <value name="MidiClockStart" value="13" />
+      </enum>
+    </enums>
+  </class>
+  <class name="CtrlrModulator" cpp_name="CtrlrModulator">
+    <methods>
+      <method name="getComponent" type="instance" />
+      <method name="getLuaName" type="instance" />
+      <method name="getMaxMapped" type="instance" />
+      <method name="getMaxMappedInt" type="instance" />
+      <method name="getMaxModulatorValue" type="instance" />
+      <method name="getMaxModulatorValueInt" type="instance" />
+      <method name="getMaxNonMapped" type="instance" />
+      <method name="getMaxNonMappedInt" type="instance" />
+      <method name="getMidiMessage" type="instance" />
+      <method name="getMinMapped" type="instance" />
+      <method name="getMinMappedInt" type="instance" />
+      <method name="getMinModulatorValue" type="instance" />
+      <method name="getMinModulatorValueInt" type="instance" />
+      <method name="getMinNonMapped" type="instance" />
+      <method name="getMinNonMappedInt" type="instance" />
+      <method name="getModulatorName" type="instance" />
+      <method name="getModulatorValue" type="instance" />
+      <method name="getModulatorValueInt" type="instance" />
+      <method name="getName" type="instance" />
+      <method name="getRestoreState" type="instance" />
+      <method name="getValue" type="instance" />
+      <method name="getValueInt" type="instance" />
+      <method name="getValueMapped" type="instance" />
+      <method name="getValueMappedInt" type="instance" />
+      <method name="getValueNonMapped" type="instance" />
+      <method name="getValueNonMappedInt" type="instance" />
+      <method name="getVstIndex" type="instance" />
+      <method name="isRestoring" type="instance" />
+      <method name="setModulatorValue" type="instance" />
+      <method name="setRestoreState" type="instance" />
+      <method name="setValue" type="instance" />
+      <method name="setValueMapped" type="instance" />
+      <method name="setValueNonMapped" type="instance" />
+    </methods>
+    <enums>
+      <enum name="CtrlrModulatorValue">
+        <value name="initialValue" value="0" />
+        <value name="changedByHost" value="1" />
+        <value name="changedByMidiIn" value="2" />
+        <value name="changedByMidiController" value="3" />
+        <value name="changedByGUI" value="4" />
+        <value name="changedByLua" value="5" />
+        <value name="changedByProgram" value="6" />
+        <value name="changedByLink" value="7" />
+        <value name="changeByUnknown" value="8" />
+      </enum>
+    </enums>
+  </class>
   <class name="CtrlrNative" cpp_name="CtrlrNative">
     <methods>
       <method name="sendKeyPressEvent" type="instance" />
@@ -541,7 +960,235 @@
       <method name="getNativeObject" type="static" />
     </static_methods>
   </class>
+  <class name="CtrlrPanel" cpp_name="CtrlrPanel">
+    <methods>
+      <method name="dumpDebugData" type="instance" />
+      <method name="getBootstrapState" type="instance" />
+      <method name="getButton" type="instance" />
+      <method name="getButtonComponent" type="instance" />
+      <method name="getCanvas" type="instance" />
+      <method name="getCombo" type="instance" />
+      <method name="getComboComponent" type="instance" />
+      <method name="getComponent" type="instance" />
+      <method name="getFileListBox" type="instance" />
+      <method name="getFileListBoxComponent" type="instance" />
+      <method name="getFixedImageSlider" type="instance" />
+      <method name="getFixedImageSliderComponent" type="instance" />
+      <method name="getFixedSlider" type="instance" />
+      <method name="getFixedSliderComponent" type="instance" />
+      <method name="getGlobalVariable" type="instance" />
+      <method name="getImageButton" type="instance" />
+      <method name="getImageButtonComponent" type="instance" />
+      <method name="getImageSlider" type="instance" />
+      <method name="getImageSliderComponent" type="instance" />
+      <method name="getInputComparator" type="instance" />
+      <method name="getLCDLabel" type="instance" />
+      <method name="getLCDLabelComponent" type="instance" />
+      <method name="getLabel" type="instance" />
+      <method name="getLabelComponent" type="instance" />
+      <method name="getListBox" type="instance" />
+      <method name="getListBoxComponent" type="instance" />
+      <method name="getModulator" type="instance" />
+      <method name="getModulatorByIndex" type="instance" />
+      <method name="getModulatorByName" type="instance" />
+      <method name="getModulatorValuesAsData" type="instance" />
+      <method name="getModulatorWithProperty" type="instance" />
+      <method name="getModulatorsWildcard" type="instance" />
+      <method name="getModulatorsWithProperty" type="instance" />
+      <method name="getNumModulators" type="instance" />
+      <method name="getPanelEditor" type="instance" />
+      <method name="getProgramState" type="instance" />
+      <method name="getRestoreState" type="instance" />
+      <method name="getSlider" type="instance" />
+      <method name="getSliderComponent" type="instance" />
+      <method name="getToggleButton" type="instance" />
+      <method name="getToggleButtonComponent" type="instance" />
+      <method name="getWaveform" type="instance" />
+      <method name="getWaveformComponent" type="instance" />
+      <method name="isRestoring" type="instance" />
+      <method name="sendMidi" type="instance" />
+      <method name="sendMidiMessageNow" type="instance" />
+      <method name="setGlobalVariable" type="instance" />
+      <method name="setModulatorValuesFromData" type="instance" />
+      <method name="setProgramState" type="instance" />
+      <method name="setRestoreState" type="instance" />
+    </methods>
+    <enums>
+      <enum name="CtrlrPanelFileType">
+        <value name="PanelFileXML" value="0" />
+        <value name="PanelFileXMLCompressed" value="1" />
+        <value name="PanelFileBinary" value="2" />
+        <value name="PanelFileBinaryCompressed" value="3" />
+        <value name="PanelFileExport" value="4" />
+      </enum>
+      <enum name="CtrlrNotificationType">
+        <value name="NotifySuccess" value="(uint8" />
+        <value name="NotifyFailure" value="(uint8" />
+        <value name="NotifyInformation" value="(uint8" />
+        <value name="NotifyWarning" value="(uint8" />
+      </enum>
+      <enum name="CtrlrByteEncoding">
+        <value name="EncodeNormal" value="EncodeNormal" />
+        <value name="Encode7bitMSBFirst" value="EncodeMSBFirst" />
+        <value name="Encode7bitLSBFirst" value="EncodeLSBFirst" />
+        <value name="EncodeMSBFirst" value="EncodeMSBFirst" />
+        <value name="EncodeLSBFirst" value="EncodeLSBFirst" />
+        <value name="Encode4bitMsbFirst" value="EncodeNibbleMsbFirst" />
+        <value name="Encode4bitLsbFirst" value="EncodeNibbleLsbFirst" />
+        <value name="EncodeMsbFirst" value="EncodeNibbleMsbFirst" />
+        <value name="EncodeLsbFirst" value="EncodeNibbleLsbFirst" />
+        <value name="EncodeNibbleMsbFirst" value="EncodeNibbleMsbFirst" />
+        <value name="EncodeNibbleLsbFirst" value="EncodeNibbleLsbFirst" />
+        <value name="EncodeSignedNibbleMsbFirst" value="EncodeSignedNibbleMsbFirst" />
+        <value name="EncodeSignedNibbleLsbFirst" value="EncodeSignedNibbleLsbFirst" />
+        <value name="Encode16bitLsbFirst" value="Encode16bitLsbFirst" />
+        <value name="Encode16bitMsbFirst" value="Encode16bitMsbFirst" />
+      </enum>
+      <enum name="CtrlrByteSplit">
+        <value name="SplitNone" value="(uint8" />
+        <value name="Split4Bits" value="(uint8" />
+        <value name="Split7Bits" value="(uint8" />
+        <value name="Split8Bits" value="(uint8" />
+      </enum>
+      <enum name="CtrlrInstance">
+        <value name="InstanceSingle" value="(uint8" />
+        <value name="InstanceMulti" value="(uint8" />
+        <value name="InstanceSingleRestriced" value="(uint8" />
+        <value name="InstanceSingleEngine" value="(uint8" />
+        <value name="InstanceMultiEngine" value="(uint8" />
+        <value name="InstanceSingleRestrictedEngine" value="(uint8" />
+      </enum>
+    </enums>
+  </class>
+  <class name="CtrlrPanelCanvas" cpp_name="CtrlrPanelCanvas">
+    <methods>
+      <method name="getLayer" type="instance" />
+      <method name="getLayerByName" type="instance" />
+      <method name="getLayerFromArray" type="instance" />
+      <method name="getLayerName" type="instance" />
+      <method name="getNumLayers" type="instance" />
+      <method name="setCustomLookAndFeel" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrPanelCanvasLayer" cpp_name="CtrlrPanelCanvasLayer">
+    <methods>
+      <method name="moveDown" type="instance" />
+      <method name="moveUp" type="instance" />
+      <method name="setCustomLookAndFeel" type="instance" />
+      <method name="setVisible" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrPanelEditor" cpp_name="CtrlrPanelEditor">
+    <methods>
+      <method name="getCanvas" type="instance" />
+      <method name="getHeight" type="instance" />
+      <method name="getOwner" type="instance" />
+      <method name="getWidth" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrPanelResource" cpp_name="CtrlrPanelResource">
+    <methods>
+      <method name="asAudioFormat" type="instance" />
+      <method name="asData" type="instance" />
+      <method name="asFont" type="instance" />
+      <method name="asGzipText" type="instance" />
+      <method name="asImage" type="instance" />
+      <method name="asText" type="instance" />
+      <method name="asXml" type="instance" />
+      <method name="createInputStream" type="instance" />
+      <method name="getFile" type="instance" />
+      <method name="getHashCode" type="instance" />
+      <method name="getName" type="instance" />
+      <method name="getSizeDouble" type="instance" />
+      <method name="getType" type="instance" />
+      <method name="getTypeDescription" type="instance" />
+      <method name="load" type="instance" />
+      <method name="loadIfNeeded" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrPanelResourceManager" cpp_name="CtrlrPanelResourceManager">
+    <methods>
+      <method name="getNumResources" type="instance" />
+      <method name="getResource" type="instance" />
+      <method name="getResourceAsFont" type="instance" />
+      <method name="getResourceAsImage" type="instance" />
+      <method name="getResourceIndex" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrSlider" cpp_name="CtrlrSlider">
+    <methods>
+      <method name="getOwnedSlider" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrTabsComponent" cpp_name="CtrlrTabsComponent" />
+  <class name="CtrlrToggleButton" cpp_name="CtrlrToggleButton">
+    <methods>
+      <method name="getToggleState" type="instance" />
+      <method name="getValueMap" type="instance" />
+      <method name="setToggleState" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrValue" cpp_name="CtrlrValue" />
+  <class name="CtrlrValueMap" cpp_name="CtrlrValueMap">
+    <methods>
+      <method name="addAdditionalData" type="instance" />
+      <method name="clear" type="instance" />
+      <method name="copyFrom" type="instance" />
+      <method name="decrement" type="instance" />
+      <method name="fillCombo" type="instance" />
+      <method name="getCurrentMappedValue" type="instance" />
+      <method name="getCurrentNonMappedValue" type="instance" />
+      <method name="getCurrentText" type="instance" />
+      <method name="getIndexForValue" type="instance" />
+      <method name="getMap" type="instance" />
+      <method name="getMappedMax" type="instance" />
+      <method name="getMappedMin" type="instance" />
+      <method name="getMappedValue" type="instance" />
+      <method name="getNonMappedMax" type="instance" />
+      <method name="getNonMappedMin" type="instance" />
+      <method name="getNonMappedValue" type="instance" />
+      <method name="getNumericValues" type="instance" />
+      <method name="getTextForIndex" type="instance" />
+      <method name="increment" type="instance" />
+      <method name="mappedValueExists" type="instance" />
+      <method name="parseString" type="instance" />
+      <method name="setCurrentMappedValue" type="instance" />
+      <method name="setCurrentNonMappedValue" type="instance" />
+      <method name="setPair" type="instance" />
+      <method name="toString" type="instance" />
+    </methods>
+  </class>
+  <class name="CtrlrWaveform" cpp_name="CtrlrWaveform">
+    <methods>
+      <method name="addBlock" type="instance" />
+      <method name="clear" type="instance" />
+      <method name="getApproximateMinMax" type="instance" />
+      <method name="getApproximatePeak" type="instance" />
+      <method name="getCurrentAudioBuffer" type="instance" />
+      <method name="getCurrentFile" type="instance" />
+      <method name="getHashCode" type="instance" />
+      <method name="getNumChannels" type="instance" />
+      <method name="getNumSamplesFinished" type="instance" />
+      <method name="getTotalLength" type="instance" />
+      <method name="isFullyLoaded" type="instance" />
+      <method name="loadFromFile" type="instance" />
+      <method name="reset" type="instance" />
+      <method name="setEnd" type="instance" />
+      <method name="setReader" type="instance" />
+      <method name="setSourceSamplesPerThumbnailSample" type="instance" />
+      <method name="setStart" type="instance" />
+      <method name="setVerticalZoomFactor" type="instance" />
+    </methods>
+  </class>
   <class name="CurrentPositionInfo" cpp_name="CurrentPositionInfo" />
+  <class name="DragAndDropSourceDetails" cpp_name="DragAndDropSourceDetails">
+    <methods>
+      <method name="getDescription" type="instance" />
+      <method name="getLocalPositionX" type="instance" />
+      <method name="getLocalPositionY" type="instance" />
+      <method name="getSourceComponent" type="instance" />
+    </methods>
+  </class>
   <class name="Drawable" cpp_name="Drawable">
     <methods>
       <method name="draw" type="instance" />
@@ -869,6 +1516,12 @@
         <value name="highResamplingQuality" value="2" />
       </enum>
     </enums>
+  </class>
+  <class name="GroupComponent" cpp_name="GroupComponent">
+    <methods>
+      <method name="getText" type="instance" />
+      <method name="setText" type="instance" />
+    </methods>
   </class>
   <class name="Identifier" cpp_name="Identifier">
     <methods>

@@ -1,4 +1,6 @@
 #include "CtrlrGenericHelp.h"
+#include "CtrlrMarkdownParser.h"
+
 
 namespace { 
     const float LINEHEIGHT = 4.0f; 
@@ -71,3 +73,20 @@ void CtrlrGenericHelp::parentSizeChanged()
     if (newWidth > 0 && newWidth != getWidth())
         setSize(newWidth, getHeight());
 }
+void CtrlrGenericHelp::setMarkdownContent(const juce::String& markdown)
+{
+    attributedContent = CtrlrMarkdownParser::parse(markdown);
+    plainText         = CtrlrMarkdownParser::parseToPlainText(markdown);
+
+    juce::TextLayout layout;
+    layout.createLayout(attributedContent, (float)getWidth() - LEFTMARGIN);
+
+    contentHeight = layout.getHeight() + LINEHEIGHT;
+
+    repaint();
+}
+int CtrlrGenericHelp::getRequiredHeight() const
+{
+    return juce::roundToInt(contentHeight);
+}
+

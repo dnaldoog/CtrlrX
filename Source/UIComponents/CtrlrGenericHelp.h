@@ -10,6 +10,9 @@ public:
     void resized() override;
     void mouseDown(const juce::MouseEvent& e) override;
     void parentSizeChanged() override;
+    void setMarkdownContent(const juce::String& markdown);
+    int getRequiredHeight() const;
+
 private:
     juce::AttributedString attributedContent;
     juce::String plainText;
