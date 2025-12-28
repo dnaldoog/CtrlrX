@@ -498,6 +498,7 @@ Tuturial coming soon.
 * **FIXED** Linux Gnome Wayland modal Dialog Windows. Thanks to [John Goodland](https://github.com/dnaldoog) 
 * **FIXED** memory issues identified with Valgrind. Thanks to [Sgorpi](https://github.com/sgorpi).
 * **FIXED** XML file reading. Thanks to [John Goodland](https://github.com/dnaldoog) `LCore.cpp`
+* **FIXED** Highlight Background & Text for FileListBox Component. Thanks to [Dominique Bonptemps](https://github.com/dobo365) `CtrlrFileListBox.cpp`
 
 #### Version 5.6.34 | 2025.11.07
 
