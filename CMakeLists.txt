@@ -221,6 +221,35 @@ endif()
 # Adds a BinaryData target for embedding assets into the binary
 include(Assets)
 
+set(LUA_API_XML_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resources/XML/LuaAPI.xml")
+
+# Create the Resources/XML directory in the build output
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Resources/XML")
+
+# Copy the XML file to the build directory
+configure_file(
+    "${LUA_API_XML_SOURCE}"
+    "${CMAKE_BINARY_DIR}/Resources/XML/LuaAPI.xml"
+    COPYONLY
+)
+
+# For each plugin format, also copy to the target directory after build
+foreach(format IN LISTS FORMATS)
+    set(target_name "${PROJECT_NAME}_${format}")
+    if(TARGET ${target_name})
+        add_custom_command(
+            TARGET ${target_name} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory 
+                "$<TARGET_FILE_DIR:${target_name}>/Resources/XML"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${LUA_API_XML_SOURCE}"
+                "$<TARGET_FILE_DIR:${target_name}>/Resources/XML/LuaAPI.xml"
+            COMMENT "Copying LuaAPI.xml to ${format} build directory"
+        )
+    endif()
+endforeach()
+
+message(STATUS "Lua API XML will be copied from: ${LUA_API_XML_SOURCE}")
 # MacOS only: Cleans up folder and target organization on Xcode.
 include(XcodePrettify)
 
