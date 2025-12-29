@@ -48,14 +48,19 @@ public:
             {
                 text = ownerRef->methodList[rowNumber];
                 prefix = "[M] ";
-                g.setColour(juce::Colours::darkblue);
+
+                if (text.contains("[STATIC]"))
+                    g.setColour(juce::Colour(0xffc00000)); // red hue for static
+                else
+                    g.setColour(juce::Colours::darkblue); // normal method
             }
             else
             {
                 text = ownerRef->attributeList[rowNumber - ownerRef->methodList.size()];
                 prefix = "[A] ";
-                g.setColour(juce::Colours::darkgreen);
+                g.setColour(juce::Colours::darkgreen); // attribute
             }
+
 
             g.drawText(prefix + text, 5, 0, width - 10, height,
                 juce::Justification::centredLeft, true);
