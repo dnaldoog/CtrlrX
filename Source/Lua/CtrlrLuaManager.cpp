@@ -92,69 +92,102 @@ CtrlrLuaManager::CtrlrLuaManager(CtrlrPanel& _owner)
 
 	luaManagerTree.addChild(methodManager->getManagerTree(), -1, 0);
 	//==============================================================================
-// Load Lua API XML database (for class browser / help popup)
-//==============================================================================
-
+	// Load Lua API XML database (for class browser / help popup)
+	//==============================================================================
 	{
-		// Try multiple locations for LuaAPI.xml
-		// Load Lua API database from XML
-		juce::File xmlFile;
+		juce::Array<juce::File> searchLocations;
 
-		// Try source directory first (for development)
-		xmlFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
-			.getParentDirectory()  // Standalone Plugin folder
-			.getParentDirectory()  // Debug/Release folder
-			.getParentDirectory()  // x64
-			.getParentDirectory()  // VisualStudio2022
-			.getParentDirectory()  // Builds
-			.getParentDirectory()  // CtrlrX root
+		// Location 1: Relative to executable (most common for deployed builds)
+		searchLocations.add(
+			juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+			.getSiblingFile("Resources")
+			.getChildFile("XML")
+			.getChildFile("LuaAPI.xml")
+		);
+
+		// Location 2: Resources next to executable parent
+		searchLocations.add(
+			juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+			.getParentDirectory()
+			.getChildFile("Resources")
+			.getChildFile("XML")
+			.getChildFile("LuaAPI.xml")
+		);
+
+		// Location 3: Source directory (for development - works on all platforms)
+		searchLocations.add(
+			juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+			.getParentDirectory()
+			.getParentDirectory()
+			.getParentDirectory()
+			.getParentDirectory()
+			.getParentDirectory()
+			.getParentDirectory()
 			.getChildFile("Source")
 			.getChildFile("Resources")
 			.getChildFile("XML")
-			.getChildFile("LuaAPI.xml");
+			.getChildFile("LuaAPI.xml")
+		);
 
-		// Fall back to deployed location if not found
-		if (!xmlFile.existsAsFile())
-		{
-			xmlFile = juce::File::getSpecialLocation(juce::File::currentApplicationFile)
-				.getParentDirectory()
-				.getChildFile("Resources")
-				.getChildFile("XML")
-				.getChildFile("LuaAPI.xml");
-		}
+		// Location 4: Try current working directory
+		searchLocations.add(
+			juce::File::getCurrentWorkingDirectory()
+			.getChildFile("Resources")
+			.getChildFile("XML")
+			.getChildFile("LuaAPI.xml")
+		);
 
-		// Load the XML (continue silently if not found - feature is optional)
-		if (xmlFile.existsAsFile())
-		{
-			luaApi.loadFromFile(xmlFile);
-		}
+		// Location 5: Source relative to current working directory
+		searchLocations.add(
+			juce::File::getCurrentWorkingDirectory()
+			.getChildFile("Source")
+			.getChildFile("Resources")
+			.getChildFile("XML")
+			.getChildFile("LuaAPI.xml")
+		);
 
-		const bool loaded = luaApi.loadFromFile(xmlFile);
-		DBG("XML loaded: " + juce::String(loaded ? "YES" : "NO"));
+		juce::File xmlFile;
+		bool found = false;
 
-		if (loaded && luaApi.getXmlRoot())
+		for (const auto& location : searchLocations)
 		{
-			DBG("XML root has " + juce::String(luaApi.getXmlRoot()->getNumChildElements()) + " child elements");
-		}
-		jassert(loaded);
-		jassert(luaApi.isLoaded());
-		if (loaded && luaApi.getXmlRoot())
-		{
-			DBG("XML root has " + juce::String(luaApi.getXmlRoot()->getNumChildElements()) + " classes");
-		}
-#if JUCE_DEBUG
-		if (loaded)
-		{
-			if (auto* mb = luaApi.getClass("MemoryBlock"))
+			if (location.existsAsFile())
 			{
-				jassert(mb->instanceMethods.size() > 0);
+				xmlFile = location;
+				found = true;
+				break;
 			}
 		}
+
+		if (found)
+		{
+			const bool loaded = luaApi.loadFromFile(xmlFile);
+
+#if JUCE_DEBUG
+			if (loaded)
+			{
+				_DBG("Lua API XML loaded from: " + xmlFile.getFullPathName());
+				_DBG("Found " + juce::String(luaApi.getXmlRoot() ? luaApi.getXmlRoot()->getNumChildElements() : 0) + " classes");
+			}
+			else
+			{
+				_WRN("Failed to parse Lua API XML from: " + xmlFile.getFullPathName());
+			}
 #endif
+		}
+		else
+		{
+#if JUCE_DEBUG
+			_WRN("Lua API XML (LuaAPI.xml) not found. Class browser will be unavailable.");
+			_WRN("Searched locations:");
+			for (const auto& location : searchLocations)
+			{
+				_WRN("  - " + location.getFullPathName());
+			}
+#endif
+		}
 	}
-
 }
-
 CtrlrLuaManager::~CtrlrLuaManager()
 {
 	deleteAndZero(methodManager);
