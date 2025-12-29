@@ -564,7 +564,7 @@ PopupMenu CtrlrPanelModulatorList::getMenuForIndex(int topLevelMenuIndex, const 
 			// Use ID range 16384+ for Lua copy items (different from visibility toggle items)
 			luaCopyMenu.addColouredItem(16384 + i, propName, colour);
 		}
-		menu.addSubMenu("Copy Lua Usage", luaCopyMenu);
+		//menu.addSubMenu("Copy Lua Usage", luaCopyMenu); now using CtrlrLuaApi instead
 
 		menu.addItem(13, "Reset columns to default");
 	}
@@ -601,7 +601,7 @@ void CtrlrPanelModulatorList::menuItemSelected(int menuItemID, int topLevelMenuI
 			"Lua Usage Copied",
 			"Copied to clipboard.\n\n"
 			"Paste into the Lua editor.\n"
-			"Guide only – please double-check syntax."
+			"Guide only ï¿½ please double-check syntax."
 		);
 	//	 Optional: Show a message to user
 		//String category = getPropertyCategory(propName);
@@ -614,7 +614,7 @@ void CtrlrPanelModulatorList::menuItemSelected(int menuItemID, int topLevelMenuI
 		//showClipboardBubble(
 		//	"Copied to clipboard\n"
 		//	"Paste into Lua editor\n"
-		//	"Guide only – double-check syntax"
+		//	"Guide only ï¿½ double-check syntax"
 		//);
 
 	}
