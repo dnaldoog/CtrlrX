@@ -583,48 +583,87 @@ juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& meth
 }
 void CtrlrLuaClassBrowser::MethodListModel::listBoxItemClicked(int row, const juce::MouseEvent& e)
 {
+    if (!ownerRef) return;
+
+    juce::String itemName;
     bool isMethod = (row < ownerRef->methodList.size());
     bool isStatic = false;
-    bool isAttribute = false;
-    juce::String itemName;
 
     if (isMethod)
     {
         itemName = ownerRef->methodList[row];
-        isStatic = itemName.contains("[STATIC]");
+        if (itemName.contains("[STATIC]"))
+        {
+            isStatic = true;
+            itemName = itemName.replace("[STATIC]", "");
+        }
     }
     else
     {
         itemName = ownerRef->attributeList[row - ownerRef->methodList.size()];
-        isAttribute = true;
     }
 
-    // Generate example depending on type
-    juce::String example;
+    // Show right-click menu only
+    if (e.mods.isRightButtonDown())
+    {
+        juce::PopupMenu menu;
 
-    if (isStatic)
-    {
-        example = "Static method example:\n";
-        example += "local result = " + ownerRef->currentClassName + "." + itemName.replace("[STATIC]", "") + "(parameters)\n";
-    }
-    else if (isMethod)
-    {
-        example = "Method example:\n";
-        example += "local result = " + ownerRef->currentClassName + ":" + itemName + "(parameters)\n";
-        example += "local result = panel:getModulatorByName(\"modulatorName\"):getProperty(\"" + itemName + "\")\n";
-        example += "local result = panel:getModulatorByName(\"modulatorName\"):setProperty(\"" + itemName + "\", value, bool)\n";
-        example += "local result = panel:getModulatorByName(\"modulatorName\"):" + itemName + "(parameters)\n";
-        example += "local result = panel:getComponent(\"modulatorName\"):" + itemName + "(parameters)\n";
-    }
-    else if (isAttribute)
-    {
-        example = "Attribute example:\n";
-        example += "local result = " + ownerRef->currentClassName + "." + itemName + "\n";
-    }
+        menu.addItem(1, "Copy Class Name");
+        menu.addItem(2, "Copy Method/Attribute Name");
+        menu.addItem(3, "Copy Class and Method");
+        menu.addItem(4, "Copy Example Function (Lua)");
 
-    juce::AlertWindow::showMessageBoxAsync(
-        juce::AlertWindow::InfoIcon,
-        "Lua Usage Example",
-        example
-    );
+        menu.showMenuAsync(juce::PopupMenu::Options(), [this, itemName, isMethod, isStatic](int result)
+            {
+                if (!ownerRef) return;
+
+                switch (result)
+                {
+                case 1: // Copy class
+                    juce::SystemClipboard::copyTextToClipboard(ownerRef->currentClassName);
+                    break;
+
+                case 2: // Copy method or attribute
+                    juce::SystemClipboard::copyTextToClipboard(itemName);
+                    break;
+
+                case 3: // Copy class + method
+                {
+                    juce::String combined = ownerRef->currentClassName;
+                    if (isMethod)
+                        combined += (isStatic ? "." : ":") + itemName;
+                    else
+                        combined += "." + itemName;
+                    juce::SystemClipboard::copyTextToClipboard(combined);
+                    break;
+                }
+
+                case 4: // Copy example function
+                {
+                    juce::String example;
+                    if (isMethod)
+                    {
+                        if (isStatic)
+                        {
+                            example = "local result = " + ownerRef->currentClassName + "." + itemName + "(parameters)\n";
+                        }
+                        else
+                        {
+                            example = "local result = " + ownerRef->currentClassName + ":" + itemName + "(parameters)\n";
+                            example += "local result = panel:getModulatorByName(\"modulatorName\"):" + itemName + "(parameters)\n";
+                            example += "local result = panel:getComponent(\"modulatorName\"):" + itemName + "(parameters)\n";
+                        }
+                    }
+                    else
+                    {
+                        example = "local result = " + ownerRef->currentClassName + "." + itemName + "\n";
+                    }
+
+                    juce::SystemClipboard::copyTextToClipboard(example);
+                    break;
+                }
+                }
+            });
+    }
 }
+
