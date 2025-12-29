@@ -1103,11 +1103,26 @@
           file="Source/UIComponents/CtrlrHelpWindow.cpp"/>
     <FILE id="b70S1j" name="CtrlrHelpWindow.h" compile="0" resource="0"
           file="Source/UIComponents/CtrlrHelpWindow.h"/>
+    <FILE id="dkwvyU" name="CtrlrLuaApiDatabase.cpp" compile="1" resource="0"
+          file="Source/UIComponents/CtrlrLuaApiDatabase.cpp"/>
+    <FILE id="kzKAA2" name="CtrlrLuaApiDatabase.h" compile="0" resource="0"
+          file="Source/UIComponents/CtrlrLuaApiDatabase.h"/>
+    <FILE id="WiuJ8m" name="CtrlrLuaApiExplorer.cpp" compile="1" resource="0"
+          file="Source/UIComponents/CtrlrLuaApiExplorer.cpp"/>
+    <FILE id="MJ1SHj" name="CtrlrLuaApiExplorer.h" compile="0" resource="0"
+          file="Source/UIComponents/CtrlrLuaApiExplorer.h"/>
+    <FILE id="ZGh2vu" name="CtrlrLuaClassBrowser.cpp" compile="1" resource="0"
+          file="Source/UIComponents/CtrlrLuaClassBrowser.cpp"/>
+    <FILE id="fJeM6Z" name="CtrlrLuaClassBrowser.h" compile="0" resource="0"
+          file="Source/UIComponents/CtrlrLuaClassBrowser.h"/>
     <FILE id="JAHGm3" name="CtrlrMarkdownParser.cpp" compile="1" resource="0"
           file="Source/UIComponents/CtrlrMarkdownParser.cpp"/>
     <FILE id="GexC0X" name="CtrlrMarkdownParser.h" compile="0" resource="0"
           file="Source/UIComponents/CtrlrMarkdownParser.h"/>
     <FILE id="DahwIi" name="Expressions.md" compile="0" resource="1" file="Source/Resources/Doc/Expressions.md"/>
+    <FILE id="ZR3dF7" name="LuaAPI.xml" compile="0" resource="1" file="Source/Resources/XML/LuaAPI.xml"/>
+    <FILE id="VQmJn4" name="luabind_parser.py" compile="0" resource="1"
+          file="luabind_parser.py"/>
     <FILE id="Ur9pgw" name="LuaFileOperations.md" compile="0" resource="1"
           file="Source/Resources/Doc/LuaFileOperations.md"/>
     <FILE id="Il28No" name="LuaUsefulCommands.md" compile="0" resource="1"
