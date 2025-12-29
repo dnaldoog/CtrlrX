@@ -66,60 +66,8 @@ public:
                 juce::Justification::centredLeft, true);
         }
 
-        void listBoxItemClicked(int row, const juce::MouseEvent& e) override
-        {
-            if (e.mods.isRightButtonDown())
-            {
-                // Right-click context menu
-                juce::String itemName;
-                bool isMethod = (row < ownerRef->methodList.size());
+     void listBoxItemClicked(int row, const juce::MouseEvent & e) override;
 
-                if (isMethod)
-                    itemName = ownerRef->methodList[row];
-                else
-                    itemName = ownerRef->attributeList[row - ownerRef->methodList.size()];
-
-                juce::PopupMenu menu;
-                menu.addItem(1, "Copy Usage Code");
-                menu.addItem(2, "Copy Example Function");
-                menu.addSeparator();
-                menu.addItem(3, "Copy Method Name Only");
-
-                menu.showMenuAsync(juce::PopupMenu::Options(), [this, itemName](int result)
-                    {
-                        if (result == 1)
-                        {
-                            ownerRef->copyMethodUsageToClipboard(ownerRef->currentClassName, itemName);
-                        }
-                        else if (result == 2)
-                        {
-                            ownerRef->copyExampleToClipboard(ownerRef->currentClassName, itemName);
-                        }
-                        else if (result == 3)
-                        {
-                            juce::SystemClipboard::copyTextToClipboard(itemName);
-                        }
-                    });
-            }
-            else
-            {
-                // Left-click behavior
-                juce::String itemName;
-                bool isMethod = (row < ownerRef->methodList.size());
-
-                if (isMethod)
-                    itemName = ownerRef->methodList[row];
-                else
-                    itemName = ownerRef->attributeList[row - ownerRef->methodList.size()];
-
-                // Show description with introspection info
-                juce::String description = ownerRef->getMethodDescription(itemName);
-                ownerRef->infoDisplay->setText(description, false);
-
-                // Copy usage on click
-                ownerRef->copyMethodUsageToClipboard(ownerRef->currentClassName, itemName);
-            }
-        }
 
     private:
         CtrlrLuaClassBrowser* ownerRef;

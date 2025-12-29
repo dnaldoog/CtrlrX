@@ -581,3 +581,50 @@ juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& meth
 
     return description;
 }
+void CtrlrLuaClassBrowser::MethodListModel::listBoxItemClicked(int row, const juce::MouseEvent& e)
+{
+    bool isMethod = (row < ownerRef->methodList.size());
+    bool isStatic = false;
+    bool isAttribute = false;
+    juce::String itemName;
+
+    if (isMethod)
+    {
+        itemName = ownerRef->methodList[row];
+        isStatic = itemName.contains("[STATIC]");
+    }
+    else
+    {
+        itemName = ownerRef->attributeList[row - ownerRef->methodList.size()];
+        isAttribute = true;
+    }
+
+    // Generate example depending on type
+    juce::String example;
+
+    if (isStatic)
+    {
+        example = "Static method example:\n";
+        example += "local result = " + ownerRef->currentClassName + "." + itemName.replace("[STATIC]", "") + "(parameters)\n";
+    }
+    else if (isMethod)
+    {
+        example = "Method example:\n";
+        example += "local result = " + ownerRef->currentClassName + ":" + itemName + "(parameters)\n";
+        example += "local result = panel:getModulatorByName(\"modulatorName\"):getProperty(\"" + itemName + "\")\n";
+        example += "local result = panel:getModulatorByName(\"modulatorName\"):setProperty(\"" + itemName + "\", value, bool)\n";
+        example += "local result = panel:getModulatorByName(\"modulatorName\"):" + itemName + "(parameters)\n";
+        example += "local result = panel:getComponent(\"modulatorName\"):" + itemName + "(parameters)\n";
+    }
+    else if (isAttribute)
+    {
+        example = "Attribute example:\n";
+        example += "local result = " + ownerRef->currentClassName + "." + itemName + "\n";
+    }
+
+    juce::AlertWindow::showMessageBoxAsync(
+        juce::AlertWindow::InfoIcon,
+        "Lua Usage Example",
+        example
+    );
+}
