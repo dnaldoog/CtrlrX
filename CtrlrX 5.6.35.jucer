@@ -732,6 +732,7 @@
           <FILE id="NdGwMn" name="RSRC.zip" compile="0" resource="1" file="Source/Resources/Misc/RSRC.zip"/>
         </GROUP>
         <GROUP id="{3E28051A-C67A-EB61-FFEC-E15E9C2440B2}" name="XML">
+          <FILE id="apYczx" name="LuaAPI.xml" compile="0" resource="1" file="Source/Resources/XML/LuaAPI.xml"/>
           <FILE id="sfPVqB" name="CtrlrIDs.xml" compile="0" resource="1" file="Source/Resources/XML/CtrlrIDs.xml"/>
           <FILE id="c2a7q2" name="CtrlrLuaClassTemplates.xml" compile="0" resource="1"
                 file="Source/Resources/XML/CtrlrLuaClassTemplates.xml"/>
@@ -882,6 +883,10 @@
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaCodeTokeniser.h"/>
             <FILE id="YPDQdL" name="CtrlrLuaCodeTokeniserFunctions.h" compile="0"
                   resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaCodeTokeniserFunctions.h"/>
+            <FILE id="gpXl6W" name="CtrlrLuaMethodAutoCompleteManager.cpp" compile="1"
+                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodAutoCompleteManager.cpp"/>
+            <FILE id="Qy95en" name="CtrlrLuaMethodAutoCompleteManager.h" compile="0"
+                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodAutoCompleteManager.h"/>
             <FILE id="gZgxEW" name="CtrlrLuaMethodCodeEditor.cpp" compile="1" resource="0"
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodCodeEditor.cpp"/>
             <FILE id="Xumynu" name="CtrlrLuaMethodCodeEditor.h" compile="0" resource="0"

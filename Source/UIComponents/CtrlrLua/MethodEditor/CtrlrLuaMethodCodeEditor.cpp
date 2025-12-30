@@ -7,32 +7,212 @@
 #include "CtrlrLuaDebugger.h"
 #include "CtrlrLuaManager.h"
 
-CtrlrLuaMethodCodeEditor::CtrlrLuaMethodCodeEditor(CtrlrLuaMethodEditor& _owner, CtrlrLuaMethod* _method, juce::Value& sharedSearchTabsValue_)
-
-    : owner(_owner), method(_method), sharedSearchTabsValue(sharedSearchTabsValue_), lastFoundPosition(0)
+// A simple popup window to show the Lua suggestions, matching the editor's LookAndFeel
+class LuaSuggestionPopup : public juce::Component, public juce::ListBoxModel
 {
+public:
+    LuaSuggestionPopup(std::function<void(juce::String)> onChosen) : onSelection(onChosen)
+    {
+        setAlwaysOnTop(true);
+        setWantsKeyboardFocus(false);
+        listBox.setColour(juce::ListBox::backgroundColourId, juce::Colours::transparentBlack);
+        listBox.setOutlineThickness(0);
+        addAndMakeVisible(listBox);
+        listBox.setModel(this);
+        listBox.setRowHeight(22);
+        listBox.setWantsKeyboardFocus(false);
+    }
+
+    void setSuggestions(const std::vector<SuggestionItem>& newSuggestions)
+    {
+        activeItems = newSuggestions;
+        listBox.updateContent();
+        if (activeItems.size() > 0) listBox.selectRow(0);
+        
+        int totalHeight = juce::jmin(10, (int)activeItems.size()) * 22;
+        setSize(300, totalHeight);
+        repaint();
+    }
+
+    // --- ADDED THIS METHOD ---
+    SuggestionItem getSelectedItem()
+    {
+        int row = listBox.getSelectedRow();
+        if (row >= 0 && row < (int)activeItems.size())
+            return activeItems[row];
+        
+        return SuggestionItem(); // Returns an empty/default item
+    }
+
+    void paint(juce::Graphics& g) override
+    {
+        auto bg = getLookAndFeel().findColour(juce::TextEditor::backgroundColourId);
+        g.fillAll(bg);
+        auto border = getLookAndFeel().findColour(juce::TextEditor::outlineColourId);
+        g.setColour(border.withAlpha(0.6f));
+        g.drawRect(getLocalBounds().toFloat(), 1.0f);
+    }
+
+    void resized() override { listBox.setBounds(getLocalBounds().reduced(1)); }
+
+    int getNumRows() override { return (int)activeItems.size(); }
+    
+	void paintListBoxItem (int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected) override
+	{
+		if (rowNumber >= (int)activeItems.size()) return;
+		
+		auto highlightBg = getLookAndFeel().findColour(juce::TextEditor::highlightColourId);
+		auto mainText = getLookAndFeel().findColour(juce::TextEditor::textColourId);
+		auto highlightText = getLookAndFeel().findColour(juce::TextEditor::highlightedTextColourId);
+		
+		if (rowIsSelected) {
+			g.setColour(highlightBg.withAlpha(0.4f)); // Slightly softer highlight
+			g.fillRect(0, 0, width, height);
+		}
+		
+		auto& item = activeItems[rowNumber];
+		
+		// Icon Area (float for precision)
+		auto iconArea = juce::Rectangle<float> (6.0f, 4.0f, (float)height - 8.0f, (float)height - 8.0f);
+		
+		juce::Colour iconColor;
+		juce::String iconLetter;
+		
+		switch (item.type) {
+			case TypeClass:   iconColor = juce::Colours::darkorange; iconLetter = "C"; break;
+			case TypeMethod:  iconColor = juce::Colours::darkcyan;   iconLetter = "M"; break;
+			case TypeGlobal:  iconColor = juce::Colours::darkgreen;  iconLetter = "V"; break;
+			case TypeUtility: iconColor = juce::Colours::purple; iconLetter = "f"; break;
+			default:          iconColor = mainText.withAlpha(0.6f); iconLetter = "?"; break;
+		}
+		
+		// --- DRAW THE OUTLINE ---
+		g.setColour(iconColor.withAlpha(0.8f)); // Border slightly transparent
+		g.drawRoundedRectangle(iconArea, 3.0f, 1.2f); // 3.0f radius, 1.2f line thickness
+		
+		// --- DRAW THE LETTER (Matching Icon Color) ---
+		g.setColour(iconColor);
+		g.setFont(juce::Font(height * 0.5f, juce::Font::bold));
+		g.drawText(iconLetter, iconArea.getSmallestIntegerContainer(), juce::Justification::centred);
+		
+		// --- DRAW THE MAIN TEXT LABEL ---
+		g.setColour(rowIsSelected ? highlightText : mainText);
+		g.setFont(height * 0.65f);
+		
+		// Offset the text label slightly to the right of the icon
+		g.drawText(item.text, (int)iconArea.getRight() + 8, 0,
+				   width - (int)iconArea.getRight() - 10, height,
+				   juce::Justification::centredLeft);
+	}
+
+    void listBoxItemClicked(int row, const juce::MouseEvent&) override { commit(row); }
+    void moveSelection(int delta) {
+        int nextRow = juce::jlimit(0, (int)activeItems.size() - 1, listBox.getSelectedRow() + delta);
+        listBox.selectRow(nextRow);
+        listBox.scrollToEnsureRowIsOnscreen(nextRow);
+    }
+    void commitCurrent() { commit(listBox.getSelectedRow()); }
+
+private:
+    void commit(int row) {
+        if (row >= 0 && row < (int)activeItems.size())
+            onSelection(activeItems[row].text);
+    }
+    juce::ListBox listBox;
+    std::vector<SuggestionItem> activeItems;
+    std::function<void(juce::String)> onSelection;
+};
+
+
+// A call-tip for the suggestion popup
+class LuaCallTip : public juce::Component
+{
+public:
+    LuaCallTip() {
+        setAlwaysOnTop(true);
+        setInterceptsMouseClicks(false, false); // Don't block the mouse
+    }
+
+	void setTipText(const juce::String& newText) {
+		if (tipText != newText) {
+			tipText = newText;
+			repaint();
+		}
+	}
+	
+	void showTip(const juce::String& text, juce::Point<int> pos) {
+		tipText = text;
+		setVisible(true);
+		
+		juce::Font font(13.0f);
+		int width = font.getStringWidth(tipText) + 20;
+		setSize(width, 24);
+		
+		setTopLeftPosition(pos.x, pos.y - 30);
+		
+		toFront(false); // Ensure it's not hidden behind the editor
+		repaint();      // Force a redraw of the new text
+	}
+
+    void paint(juce::Graphics& g) override {
+        g.setColour(juce::Colours::darkgrey.withAlpha(0.9f));
+        g.fillRoundedRectangle(getLocalBounds().toFloat(), 4.0f);
+        g.setColour(juce::Colours::white);
+        g.setFont(13.0f);
+        g.drawText(tipText, getLocalBounds(), juce::Justification::centred);
+    }
+
+private:
+    juce::String tipText;
+};
+
+
+CtrlrLuaMethodCodeEditor::CtrlrLuaMethodCodeEditor(CtrlrLuaMethodEditor& _owner, CtrlrLuaMethod* _method, juce::Value& sharedSearchTabsValue_)
+    : owner(_owner),
+      method(_method),
+      sharedSearchTabsValue(sharedSearchTabsValue_),
+      lastFoundPosition(0),
+      isReplacingText(false)
+{
+    // 1. Initialize the Editor Component
+    // Note: ensure GenericCodeEditorComponent::keyPressed is overridden in its .cpp
+    // to call this->keyPressed.
     addAndMakeVisible(editorComponent = new GenericCodeEditorComponent(*this,
         document, codeTokeniser = new CtrlrLuaCodeTokeniser()));
 
-    // Create the hidden toggle button
+    // 2. Autocomplete & CallTip Initialization
+    callTip = std::make_unique<LuaCallTip>();
+    addChildComponent(callTip.get());
+
+    suggestionPopup = std::make_unique<LuaSuggestionPopup>([this](juce::String chosen) {
+        handleSuggestionChosen(chosen);
+    });
+    addChildComponent(suggestionPopup.get());
+
+    // 3. Search Tabs Logic
     hiddenSearchTabsToggle = new ToggleButton("Hidden Search Tabs");
-    hiddenSearchTabsToggle->setVisible(false); // Make it hidden
+    hiddenSearchTabsToggle->setVisible(false);
     addAndMakeVisible(hiddenSearchTabsToggle);
 
     // Connect the hidden toggle to the shared value
     hiddenSearchTabsToggle->getToggleStateValue().referTo(SharedValues::getSearchTabsValue());
-
-    // Listen for changes to the shared value
-    //sharedSearchTabsValue.addListener(this);
     SharedValues::getSearchTabsValue().addListener(this);
+
+    // 4. Editor Styling & Content
     editorComponent->setScrollbarThickness(owner.getOwner().getOwner().getProperty(Ids::ctrlrScrollbarThickness));
     document.replaceAllContent(method->getCode());
     document.setSavePoint();
 
+    // 5. EVENT ROUTING (Only for Autocomplete. Crucial Section)
     document.addListener(this);
+    
+    // Mouse listener is fine for clicks
     editorComponent->addMouseListener(this, true);
-    editorComponent->addKeyListener(this);
-
+	editorComponent->addKeyListener(this);
+	
+	// editorComponent->setWantsKeyboardFocus(true); // Not sure if actually required
+	// editorComponent->grabKeyboardFocus(); // Not sure if actually required
+	
     editorComponent->setColour(CodeEditorComponent::backgroundColourId, Colours::white); // findColour(CodeEditorComponent::backgroundColourId));
     editorComponent->setColour(CodeEditorComponent::defaultTextColourId, Colours::black); // findColour(CodeEditorComponent::defaultTextColourId));
     editorComponent->setColour(CodeEditorComponent::highlightColourId, findColour(CodeEditorComponent::highlightColourId));
@@ -57,7 +237,6 @@ CtrlrLuaMethodCodeEditor::CtrlrLuaMethodCodeEditor(CtrlrLuaMethodEditor& _owner,
     {
         setFontAndColour(Font(Font::getDefaultMonospacedFontName(), 14.0f, Font::plain), Colours::white); // findColour(CodeEditorComponent::backgroundColourId));
     }
-    //editorComponent->grabKeyboardFocus();
 }
 
 CtrlrLuaMethodCodeEditor::~CtrlrLuaMethodCodeEditor()
@@ -86,10 +265,20 @@ void CtrlrLuaMethodCodeEditor::mouseDown(const MouseEvent& e)
 {
     CodeDocument::Position pos = editorComponent->getCaretPos();
     String url;
+    
+    // 1. Hide the autocomplete popup if the user clicks the editor
+    if (suggestionPopup)
+        suggestionPopup->setVisible(false);
+
+    // 2. Hide the call tip if the user clicks elsewhere
+    if (callTip)
+        callTip->setVisible(false);
+
     if (isMouseOverUrl(pos, &url))
     {
         URL(url).launchInDefaultBrowser();
     }
+    
     owner.setPositionLabelText("Line:  " + String(pos.getLineNumber() + 1) + " Column: " + String(pos.getIndexInLine()));
 }
 
@@ -109,8 +298,7 @@ void CtrlrLuaMethodCodeEditor::mouseMove(const MouseEvent& e)
         }
     }
 }
-
-bool CtrlrLuaMethodCodeEditor::keyStateChanged(bool isKeyDown, Component* originatingComponent) // Updated v5.6.34.
+bool CtrlrLuaMethodCodeEditor::keyStateChanged(bool isKeyDown, Component* originatingComponent)
 {
     // This is the correct place to update the position label, as it is called
     // continuously as the caret moves via key repeats.
@@ -118,28 +306,195 @@ bool CtrlrLuaMethodCodeEditor::keyStateChanged(bool isKeyDown, Component* origin
     {
         CodeDocument::Position pos = editorComponent->getCaretPos();
         owner.setPositionLabelText("Line:  " + String(pos.getLineNumber() + 1) + " Column: " + String(pos.getIndexInLine()));
+        
+        // --- ADDED: Update highlight when moving with arrows or typing ---
+        updateCallTipHighlight();
     }
     
     return false;
 }
 
-bool CtrlrLuaMethodCodeEditor::keyPressed(const KeyPress& key, Component* originatingComponent) //Updated v5.6.34.
+bool CtrlrLuaMethodCodeEditor::keyPressed(const juce::KeyPress& key, juce::Component* originatingComponent)
 {
-    // The parent class handles all the shortcuts.
-    // We just return false here to allow the default code editor behaviour
-    // (typing, deleting, etc.) to occur.
-    return false;
+    if (editorComponent == nullptr) return false;
+
+    const int currentPos = editorComponent->getCaretPos().getPosition();
+    juce::String allText = document.getAllContent();
+
+    // --- 1. TAB JUMPING (For Argument Bubble / Commas) ---
+    if (key == juce::KeyPress::tabKey && nextTabJumpPosition != -1)
+    {
+        // Only jump if the autocomplete list isn't using the Tab key
+        if (suggestionPopup == nullptr || !suggestionPopup->isVisible())
+        {
+            int targetPos = -1;
+            for (int i = currentPos; i < allText.length() - 1; ++i)
+            {
+                if (allText[i] == ',') {
+                    targetPos = i + 1;
+                    if (i + 1 < allText.length() && allText[i + 1] == ' ') targetPos = i + 2;
+                    break;
+                }
+                if (allText[i] == ')') break;
+            }
+
+			if (targetPos != -1) {
+				editorComponent->moveCaretTo(juce::CodeDocument::Position(document, targetPos), false);
+				
+				// Use callAsync to ensure the caret has actually moved
+				// before we calculate the new comma count.
+				juce::MessageManager::callAsync([this]() {
+					updateCallTipHighlight();
+				});
+				
+				return true;
+            }
+        }
+    }
+
+    // --- 2. SUGGESTION LIST NAVIGATION ---
+    if (suggestionPopup && suggestionPopup->isVisible())
+    {
+        if (key == juce::KeyPress::upKey)    { suggestionPopup->moveSelection(-1); return true; }
+        if (key == juce::KeyPress::downKey)  { suggestionPopup->moveSelection(1);  return true; }
+        
+        if (key == juce::KeyPress::returnKey || key == juce::KeyPress::tabKey)
+        {
+            suggestionPopup->commitCurrent();
+            return true;
+        }
+    }
+
+    // --- 3. DISMISSAL (ESCAPE) ---
+    if (key == juce::KeyPress::escapeKey)
+    {
+        bool handled = false;
+        if (suggestionPopup && suggestionPopup->isVisible()) { suggestionPopup->setVisible(false); handled = true; }
+        if (callTip && callTip->isVisible())                 { callTip->setVisible(false); handled = true; }
+        if (handled) return true;
+    }
+
+    return false; // Let every other key (brackets, quotes, letters) behave normally
 }
 
-void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const String& newText, int insertIndex)
+// --- NEW FUNCTION: The logic for the highlighting ---
+void CtrlrLuaMethodCodeEditor::updateCallTipHighlight()
 {
+    if (callTip == nullptr || !callTip->isVisible() || lastAutocompletedMethod.isEmpty())
+        return;
+
+    int caretPos = editorComponent->getCaretPos().getPosition();
+    juce::String allText = document.getAllContent();
+
+    // 1. Find the opening bracket
+    int openBracket = allText.substring(0, caretPos).lastIndexOfChar('(');
+    int closeBracket = allText.indexOfChar(openBracket, ')');
+
+    if (openBracket == -1 || (closeBracket != -1 && caretPos > closeBracket))
+    {
+        callTip->setVisible(false);
+        nextTabJumpPosition = -1;
+        return;
+    }
+
+    // 2. Count commas (The "Catch-Up" Logic)
+    int parameterIndex = 0;
+    
+    // We check every character from '(' up to the caret
+    for (int i = openBracket; i < caretPos; ++i)
+    {
+        if (allText[i] == ',')
+            parameterIndex++;
+    }
+
+    // --- THE JUMP FIX ---
+    // If the caret is sitting right after a comma (or comma+space),
+    // but the loop didn't increment enough, we look 1 character behind.
+    if (caretPos > 0 && allText[caretPos - 1] == ' ' && allText[caretPos - 2] == ',')
+    {
+        // This handles the "Tab" landing at: setBounds(10, |10)
+    }
+    else if (caretPos > 0 && allText[caretPos - 1] == ',')
+    {
+        // This handles the "Tab" landing at: setBounds(10,|10)
+    }
+
+    // 3. Get and Format Parameters
+    juce::String params = owner.getAutocompleteManager().getMethodParams(lastAutocompletedMethod);
+    juce::StringArray pArray;
+    pArray.addTokens(params, ",", "");
+
+    juce::String formattedTip = "(";
+    for (int i = 0; i < pArray.size(); ++i)
+    {
+        juce::String p = pArray[i].trim();
+        
+        // Use the calculated index
+        if (i == parameterIndex)
+            formattedTip += "[" + p + "]";
+        else
+            formattedTip += p;
+
+        if (i < pArray.size() - 1)
+            formattedTip += ", ";
+    }
+    formattedTip += ")";
+
+    callTip->setTipText(formattedTip);
+}
+
+void CtrlrLuaMethodCodeEditor::hideCallTip()
+{
+    if (callTip != nullptr)
+        callTip->setVisible(false);
+    
+    nextTabJumpPosition = -1;
+}
+
+void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newText, int insertIndex)
+{
+    // Hide the argument bubble if we move past the function
+    if (callTip && nextTabJumpPosition == -1)
+        callTip->setVisible(false);
+
     document.newTransaction();
     documentChanged(false);
+
+    // AUTOCOMPLETE LOGIC
+    int wordStart = 0;
+    juce::String currentWord = getWordBeforeCaret(wordStart);
+
+    if (currentWord.length() >= 2 && suggestionPopup)
+    {
+        auto& manager = owner.getAutocompleteManager();
+        std::vector<SuggestionItem> matches = manager.getGlobalSuggestions(currentWord);
+
+        if (!matches.empty())
+        {
+            suggestionPopup->setSuggestions(matches);
+            
+            // Position the listbox at the caret
+            juce::CodeDocument::Position pos(document, insertIndex);
+            juce::Rectangle<int> caretRect = editorComponent->getCharacterBounds(pos);
+            auto popupPos = getLocalPoint(editorComponent, caretRect.getBottomLeft());
+            
+            suggestionPopup->setBounds(popupPos.getX(), popupPos.getY() + 2, 300,
+                                     juce::jmin(10, (int)matches.size()) * 22);
+            suggestionPopup->setVisible(true);
+            suggestionPopup->toFront(false);
+        }
+        else { suggestionPopup->setVisible(false); }
+    }
+    else if (suggestionPopup) { suggestionPopup->setVisible(false); }
 }
 
 void CtrlrLuaMethodCodeEditor::codeDocumentTextDeleted(int startIndex, int endIndex)
 {
-    document.newTransaction();
+    // If we are programmatically replacing text, don't start new transactions
+    if (isReplacingText)
+        return;
+
+    document.newTransaction(); // Standard manual deletion (backspace) gets a transaction
     documentChanged(false);
 }
 
@@ -1199,6 +1554,50 @@ void GenericCodeEditorComponent::markedLinesChanged(int lineNumber, bool isNowSe
 {
     getDebugger().setBreakpoint(lineNumber, owner.getMethod() ? owner.getMethod()->getName() : "ctrlr", isNowSelected);
 }
+
+bool GenericCodeEditorComponent::keyPressed(const juce::KeyPress& key)
+{
+    const int currentPos = getCaretPos().getPosition();
+    const juce::juce_wchar character = key.getTextCharacter();
+    juce::String allText = getDocument().getAllContent();
+
+    // --- 1. HANDLE PAIR INSERTION ---
+    if (character == '(' || character == '"')
+    {
+        // Quote specific logic: if we are already on a quote, just step over (Type-over)
+        if (character == '"' && currentPos < allText.length() && allText[currentPos] == '"')
+        {
+            moveCaretTo(juce::CodeDocument::Position(getDocument(), currentPos + 1), false);
+            return true;
+        }
+
+        juce::String pair = (character == '(') ? "()" : "\"\"";
+        
+        // Atomically insert the pair
+        getDocument().insertText(currentPos, pair);
+        
+        // Move caret into the middle immediately
+        moveCaretTo(juce::CodeDocument::Position(getDocument(), currentPos + 1), false);
+        
+        return true; // STOP JUCE from adding a 3rd character
+    }
+
+    // --- 2. HANDLE CLOSING PARENTHESIS TYPE-OVER ---
+    if (character == ')' && currentPos < allText.length() && allText[currentPos] == ')')
+    {
+        moveCaretTo(juce::CodeDocument::Position(getDocument(), currentPos + 1), false);
+        return true;
+    }
+
+    // --- 3. HAND OVER TO PARENT ---
+    // This calls your CtrlrLuaMethodCodeEditor::keyPressed for Tabs, Esc, and Autocomplete
+    if (owner.keyPressed(key, this))
+        return true;
+
+    // --- 4. DEFAULT JUCE TYPING ---
+    return juce::CodeEditorComponent::keyPressed(key);
+}
+
 /***************************************************************************************/
 
 void CtrlrLuaMethodCodeEditor::duplicateCurrentLine()
@@ -1419,4 +1818,199 @@ void CtrlrLuaMethodCodeEditor::valueChanged(Value& value)
         // The hiddenSearchTabsToggle will automatically update because it's referencing the same value
         // You can also trigger any additional UI updates here if needed
     }
+}
+
+String CtrlrLuaMethodCodeEditor::getWordBeforeCaret(int& startOfWord) // Added v5.6.35. Autocomplete typing feature
+{
+    int caretPos = editorComponent->getCaretPos().getPosition();
+    
+    // Create a position at the current caret location
+    juce::CodeDocument::Position pos (document, caretPos);
+
+    // Move backwards as long as we are within a word
+    while (pos.getPosition() > 0)
+    {
+        // Move back one character to inspect it
+        juce::CodeDocument::Position prevPos = pos.movedBy(-1);
+        juce::juce_wchar c = prevPos.getCharacter();
+
+        // If the character is not a word-part, stop here
+        if (!CharacterFunctions::isLetterOrDigit(c) && c != '_')
+            break;
+
+        pos = prevPos;
+    }
+
+    startOfWord = pos.getPosition();
+    
+    juce::CodeDocument::Position start(document, startOfWord);
+    juce::CodeDocument::Position end(document, caretPos);
+
+    return document.getTextBetween(start, end).trim();
+}
+
+void CtrlrLuaMethodCodeEditor::handleSuggestionChosen(juce::String suggestion)
+{
+    // 1. Immediate Lock: prevent any other events from entering
+    if (suggestion.isEmpty() || isReplacingText)
+        return;
+
+    isReplacingText = true;
+    pendingSuggestion = suggestion;
+
+    // 2. Hide the UI immediately to prevent double-clicks
+    if (suggestionPopup)
+        suggestionPopup->setVisible(false);
+
+    // 3. The Circuit Breaker:
+    // We use callAfterDelay to wait until the 'Enter' key or 'Mouse Click'
+    // has COMPLETELY finished its journey through the JUCE event system.
+    juce::Timer::callAfterDelay(20, [this]()
+    {
+        if (pendingSuggestion.isNotEmpty())
+        {
+            performReplacement(pendingSuggestion);
+            pendingSuggestion = "";
+        }
+    });
+}
+
+bool CtrlrLuaMethodCodeEditor::isLuaObjectInstance(const juce::String& s, SuggestionType type)
+{
+    if (type == TypeClass)
+        return true;
+
+    static const char* objectNames[] = { "panel", "mod", "owner", "source", "instance" };
+
+    for (auto* name : objectNames)
+    {
+        if (s.equalsIgnoreCase(name))
+            return true;
+    }
+
+    return false;
+}
+
+void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion)
+{
+    if (suggestion.isEmpty() || editorComponent == nullptr)
+        return;
+
+    // Store for the CallTip highlight logic
+    lastAutocompletedMethod = suggestion;
+
+    int wordStart = 0;
+    juce::String currentWord = getWordBeforeCaret(wordStart);
+    int actualLen = currentWord.length();
+
+    if (actualLen <= 0)
+        return;
+
+    // 1. Capture the item metadata from the popup
+    SuggestionItem selectedItem;
+    if (suggestionPopup)
+        selectedItem = suggestionPopup->getSelectedItem();
+
+    isReplacingText = true;
+    document.newTransaction();
+
+    // 2. Clear the old prefix (e.g., 'pa' or 'getM')
+    editorComponent->moveCaretTo(juce::CodeDocument::Position(document, wordStart + actualLen), false);
+    for (int i = 0; i < actualLen; ++i)
+    {
+        editorComponent->keyPressed(juce::KeyPress(juce::KeyPress::backspaceKey));
+    }
+
+    // 3. Determine Suffix and Tab Jump Logic
+    juce::String textToInsert = suggestion;
+    int caretOffset = 0;
+    nextTabJumpPosition = -1; // Reset any existing jump
+
+    if (selectedItem.type == TypeMethod || selectedItem.type == TypeUtility)
+    {
+        juce::String params = owner.getAutocompleteManager().getMethodParams(suggestion);
+        
+        if (params.isNotEmpty())
+        {
+            juce::StringArray individualParams;
+            individualParams.addTokens(params, ",", "");
+            
+            juce::String suffix = "(";
+            int firstSlotOffset = 0;
+
+			for (int i = 0; i < individualParams.size(); ++i)
+			{
+				juce::String p = individualParams[i].trim();
+				
+				if (p.containsIgnoreCase("String"))
+				{
+					if (i == 0) firstSlotOffset = suffix.length() + 1;
+					suffix += "\"\"";
+				}
+				else
+				{
+					if (i == 0) firstSlotOffset = suffix.length();
+					// REMOVED: the suffix += " " here. We want it empty.
+				}
+				
+				if (i < individualParams.size() - 1)
+					suffix += ", "; // This adds the space AFTER the comma
+			}
+            
+            suffix += ")";
+            textToInsert += suffix;
+            
+            // Set offset for the initial caret landing
+            caretOffset = textToInsert.length() - (suggestion.length() + firstSlotOffset);
+            
+            // Activate Tab Jump mode if there are multiple parameters
+            if (individualParams.size() > 1)
+                nextTabJumpPosition = 1;
+        }
+        else
+        {
+            textToInsert += "()";
+            caretOffset = 1;
+        }
+    }
+    else if (isLuaObjectInstance(suggestion, selectedItem.type))
+    {
+        textToInsert += ":";
+        caretOffset = 0;
+    }
+
+    // 4. Atomic Insert and Reposition
+    document.insertText(wordStart, textToInsert);
+
+    int finalPos = wordStart + textToInsert.length() - caretOffset;
+    editorComponent->moveCaretTo(juce::CodeDocument::Position(document, finalPos), false);
+
+    document.newTransaction();
+    
+    // 5. Display CallTip and apply the first highlight
+    if (callTip != nullptr)
+    {
+        juce::String params = owner.getAutocompleteManager().getMethodParams(suggestion);
+        if (params.isNotEmpty())
+        {
+            auto caretRect = editorComponent->getCaretRectangle();
+            auto localCaretPos = getLocalPoint(editorComponent, caretRect.getTopLeft());
+            
+            // Show the initial tip
+            callTip->showTip("(" + params + ")", localCaretPos);
+            
+            // Immediately run the highlight logic to put [brackets] on the first param
+            updateCallTipHighlight();
+        }
+    }
+    
+    // 6. UI Cleanup
+    if (suggestionPopup)
+        suggestionPopup->setVisible(false);
+
+    juce::Timer::callAfterDelay(50, [this]() {
+        isReplacingText = false;
+    });
+
+    editorComponent->grabKeyboardFocus();
 }
