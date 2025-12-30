@@ -499,6 +499,7 @@ Tuturial coming soon.
 * **FIXED** memory issues identified with Valgrind. Thanks to [Sgorpi](https://github.com/sgorpi).
 * **FIXED** XML file reading. Thanks to [John Goodland](https://github.com/dnaldoog) `LCore.cpp`
 * **FIXED** Highlight Background & Text for FileListBox Component. Thanks to [Dominique Bonptemps](https://github.com/dobo365) `CtrlrFileListBox.cpp`
+* **UPDATED** CtrlrLuaMethodEditor with IDE-like autocomplete on typing. `CtrlrLuaMethodAutoCompleteManager.cpp` & `.h`, `CtrlrLuaMethodCodeEditor.cpp` & `.h`, `CtrlrLuaMethodEditor.h`
 
 #### Version 5.6.34 | 2025.11.07
 
