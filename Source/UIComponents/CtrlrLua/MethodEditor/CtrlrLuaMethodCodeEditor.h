@@ -85,20 +85,26 @@ private:
     // Add the autocomplete typing feature
 	// Autocomplete UI and Logic
     std::unique_ptr<LuaSuggestionPopup> suggestionPopup;
-    juce::String pendingSuggestion;
+    SuggestionItem pendingItem;
     bool isReplacingText = false;
 
-    void handleSuggestionChosen(juce::String selectedText);
-    juce::String getWordBeforeCaret(int& startOfWord);
-    void performReplacement(const juce::String& suggestion);
+	SuggestionItem pendingSuggestionItem;
+	void handleSuggestionChosen(const SuggestionItem& item);
+    juce::String getWordBeforeCaret (int& startOfWord, int offset = 0);
+	void performReplacement(const juce::String& suggestion, bool triggerMethods);
     
     // Helper to determine if we should append a colon ':'
 	bool isLuaObjectInstance(const juce::String& s, SuggestionType type);
+	
+	// Resolve the return type of a method call for chaining
+    juce::String resolveReturnType(const juce::String& methodName);
 	
 	// The call-tip for the arguments with the suggested function
 	std::unique_ptr<LuaCallTip> callTip;
 	
     juce::String lastAutocompletedMethod;
+	
+	bool triggerSuggestionsAfterReplacement = false;
 	
 	int nextTabJumpPosition = -1; // -1 means no jump active
 };
