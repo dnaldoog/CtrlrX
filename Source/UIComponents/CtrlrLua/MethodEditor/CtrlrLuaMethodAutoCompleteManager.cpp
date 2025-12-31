@@ -34,24 +34,28 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
                     LuaClass lc;
                     lc.name = classXml->getStringAttribute("name");
 
+                    // Parse INSTANCE methods (accessed via :)
                     if (auto* mList = classXml->getChildByName("methods"))
                     {
                         forEachXmlChildElement (*mList, m)
                         {
                             juce::String methodName = m->getStringAttribute("name");
                             juce::String params = m->getStringAttribute("args");
+                            
                             lc.methods.add({ methodName, params, false });
                             allMethodNames.addIfNotAlreadyThere(methodName);
                         }
                     }
 
+                    // Parse STATIC methods (accessed via .)
                     if (auto* sList = classXml->getChildByName("static_methods"))
                     {
                         forEachXmlChildElement (*sList, s)
                         {
                             juce::String staticMethodName = s->getStringAttribute("name");
                             juce::String staticParams = s->getStringAttribute("args");
-                            lc.methods.add({ staticMethodName, staticParams, true });
+                            
+                            lc.staticMethods.add({ staticMethodName, staticParams, true });
                             allMethodNames.addIfNotAlreadyThere(staticMethodName);
                         }
                     }
@@ -63,7 +67,41 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
         }
     }
 
-    // 2. Load the TEMPLATES
+    // 2. Manual Injection for Helper Libraries
+    // --- CtrlrLuaUtils ---
+    LuaClass utilsCls;
+    utilsCls.name = "CtrlrLuaUtils";
+    juce::StringArray uMethods = { "warnWindow", "infoWindow", "questionWindow", "openFileWindow", "saveFileWindow", "base64_encode", "base64_decode" };
+    for (auto& m : uMethods) {
+        utilsCls.staticMethods.add({ m, "", true });
+        allMethodNames.addIfNotAlreadyThere(m);
+    }
+    classes.set(utilsCls.name, utilsCls);
+    classNames.add(utilsCls.name);
+
+    // --- Lua table library ---
+    LuaClass tableLib;
+    tableLib.name = "table";
+    juce::StringArray tMethods = { "insert", "remove", "sort", "concat", "getn", "maxn" };
+    for (auto& m : tMethods) {
+        tableLib.staticMethods.add({ m, "", true });
+        allMethodNames.addIfNotAlreadyThere(m);
+    }
+    classes.set(tableLib.name, tableLib);
+    classNames.add(tableLib.name);
+
+    // --- Lua math library ---
+    LuaClass mathLib;
+    mathLib.name = "math";
+    juce::StringArray mathMethods = { "abs", "floor", "ceil", "min", "max", "sqrt", "pow", "random", "sin", "cos", "tan", "pi" };
+    for (auto& m : mathMethods) {
+        mathLib.staticMethods.add({ m, "", true });
+        allMethodNames.addIfNotAlreadyThere(m);
+    }
+    classes.set(mathLib.name, mathLib);
+    classNames.add(mathLib.name);
+
+    // 3. Load the TEMPLATES
     if (BinaryData::CtrlrLuaMethodTemplates_xml != nullptr)
     {
         juce::XmlDocument doc (juce::String::createStringFromData (BinaryData::CtrlrLuaMethodTemplates_xml, BinaryData::CtrlrLuaMethodTemplates_xmlSize));
@@ -99,55 +137,47 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
         }
     }
 
-    // 3. EXPANDED LIBRARY: Inject ESSENTIAL TOKENS & MISSING METHODS
-    // Add any methods here that you want to appear in the list regardless of XML content
+    // 4. EXPANDED LIBRARY: Inject ESSENTIAL TOKENS & KEYWORDS
     juce::StringArray essentialTokens = {
-        // --- Global Objects ---
+        // Ctrlr Globals
         "panel", "mod", "value", "source", "comp", "event",
         "canvas", "g", "midi", "multiMidi", "path", "arguments",
-        "utils", "resources", "timer",
-
-        // --- Modulator Methods ---
-        "getModulatorByName", "getModulatorValue", "setControlParameter",
-        "getModulatorByIndex", "getNumModulators", "getModulator",
+        "utils", "resources", "timer", "repaint", "setBounds",
+        "setVisible", "setName", "getComponent", "setFont", "drawText",
+        "fillAll", "setColour", "warn", "info", "question",
+        "getDeltaTime", "getFrameStart", "AlertWindow", "showMessageBox",
+        "sendMidiMessage", "MidiMessage", "table", "math", "string", "debug",
         
-        // --- UI / Graphics ---
-        "repaint", "setBounds", "setVisible", "setName", "getComponent",
-        "setFont", "drawText", "fillAll", "setColour",
-        
-        // --- Utilities & Dialogs ---
-        "warn", "info", "question", "getDeltaTime", "getFrameStart",
-        "AlertWindow", "showMessageBox",
-        
-        // --- MIDI ---
-        "sendMidiMessage", "MidiMessage"
+        // Lua Keywords (for space-based completion)
+        "local", "function", "if", "then", "else", "elseif", "end",
+        "for", "while", "do", "return", "break", "nil", "true", "false"
     };
     
     for (const auto& token : essentialTokens) {
         allMethodNames.addIfNotAlreadyThere(token);
     }
 
-    // Final sorting for a clean UI list
+    // Final sorting
     classNames.sort(true);
     allMethodNames.sort(true);
     utilityMethodNames.sort(true);
 
-    _DBG("Autocomplete: Loaded " + juce::String(classNames.size()) + " classes, "
-         + juce::String(allMethodNames.size()) + " methods.");
+    _DBG("Autocomplete: Loaded " + juce::String(classes.size()) + " classes, "
+         + juce::String(allMethodNames.size()) + " total methods/tokens.");
 }
 
 std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggestions(const juce::String& prefix)
 {
     std::vector<SuggestionItem> results;
 
-    // 1. Essential Tokens (Globals) -> Icon "V"
-    juce::StringArray globals = { "panel", "mod", "value", "source", "comp", "event", "canvas", "g", "midi", "console" };
+    // 1. Essential Tokens (Globals) -> Icon "V" (TypeGlobal)
+    juce::StringArray globals = { "local", "panel", "mod", "value", "source", "comp", "event", "canvas", "g", "midi", "console" };
     for (auto& g : globals) {
         if (g.startsWithIgnoreCase(prefix))
             results.push_back({ g, TypeGlobal });
     }
 
-    // 2. Classes -> Icon "C"
+    // 2. Classes -> Icon "C" (TypeClass)
     for (auto& c : classNames) {
         if (c.startsWithIgnoreCase(prefix))
             results.push_back({ c, TypeClass });
@@ -156,10 +186,48 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggesti
     // 3. Methods/Utilities -> Icon "M" or "f"
     for (auto& m : allMethodNames) {
         if (m.startsWithIgnoreCase(prefix)) {
-            if (utilityMethodNames.contains(m))
-                results.push_back({ m, TypeUtility });
-            else
-                results.push_back({ m, TypeMethod });
+            // Check if it was already added as a global/class to avoid duplicates
+            bool alreadyAdded = false;
+            for (auto& r : results) { if (r.text == m) { alreadyAdded = true; break; } }
+            
+            if (!alreadyAdded) {
+                if (utilityMethodNames.contains(m))
+                    results.push_back({ m, TypeUtility });
+                else
+                    results.push_back({ m, TypeMethod });
+            }
+        }
+    }
+
+    return results;
+}
+
+std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggestionsForClass(const juce::String& className, const juce::String& prefix, bool includeInstance)
+{
+    std::vector<SuggestionItem> results;
+
+    if (classes.contains(className))
+    {
+        auto& cls = classes.getReference(className);
+        
+        // 1. Try the primary list based on the separator (. or :)
+        auto& primaryList = includeInstance ? cls.methods : cls.staticMethods;
+        for (auto& m : primaryList)
+        {
+            if (prefix.isEmpty() || m.name.startsWithIgnoreCase(prefix))
+                results.push_back({ m.name, TypeMethod });
+        }
+
+        // 2. FALLBACK: If primary list is empty, search the other list too
+        // This handles cases where the XML defines methods as instance but they are used as static
+        if (results.empty())
+        {
+            auto& secondaryList = includeInstance ? cls.staticMethods : cls.methods;
+            for (auto& m : secondaryList)
+            {
+                if (prefix.isEmpty() || m.name.startsWithIgnoreCase(prefix))
+                    results.push_back({ m.name, TypeMethod });
+            }
         }
     }
 
@@ -168,51 +236,50 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggesti
 
 juce::String CtrlrLuaMethodAutoCompleteManager::getMethodParams(const juce::String& methodName)
 {
-    // 1. Clean the input: remove () if they were accidentally passed in
+    // 1. Clean the input
     juce::String cleanName = methodName.upToFirstOccurrenceOf("(", false, false).trim();
 
-    // 2. Check the XML-loaded classes first
-    for (const auto& lc : classes)
+	// 2. Check the XML-loaded classes (Using JUCE HashMap Iterator)
+    juce::HashMap<juce::String, LuaClass>::Iterator it (classes);
+    while (it.next())
     {
+        // Remove the '&' because getValue() returns by value
+        auto lc = it.getValue();
+        
+        // Check standard methods
         for (const auto& m : lc.methods)
+        {
+            if (m.name == cleanName && m.parameters.isNotEmpty())
+                return m.parameters;
+        }
+        // Check static methods
+        for (const auto& m : lc.staticMethods)
         {
             if (m.name == cleanName && m.parameters.isNotEmpty())
                 return m.parameters;
         }
     }
 
-    // 3. HARDCODED DICTIONARY (Manual Overrides for Auto-Insertion)
-    
-    // --- Modulator / Panel Actions ---
+    // 3. HARDCODED DICTIONARY (Manual Overrides)
     if (cleanName == "setControlParameter")  return "String key, String value";
     if (cleanName == "getModulatorByName")   return "String name";
     if (cleanName == "getModulatorByIndex")  return "int index";
     if (cleanName == "getModulatorValue")    return "String name";
     if (cleanName == "getModulator")         return "String name";
-
-    // --- UI / Component Layout ---
     if (cleanName == "setBounds")            return "int x, int y, int w, int h";
     if (cleanName == "setVisible")           return "bool shouldBeVisible";
     if (cleanName == "setName")              return "String newName";
     if (cleanName == "setColour")            return "int colourId, Colour newColour";
-    if (cleanName == "repaint")              return ""; // No params needed, just adds ()
-    
-    // --- Graphics / Drawing (inside paint) ---
+    if (cleanName == "repaint")              return "";
     if (cleanName == "drawText")             return "String text, int x, int y, int w, int h, Justification alignment";
     if (cleanName == "fillAll")              return "Colour colour";
     if (cleanName == "setFont")              return "float height";
-
-    // --- Utilities & Messaging ---
     if (cleanName == "warn")                 return "String message";
     if (cleanName == "info")                 return "String title, String message";
     if (cleanName == "question")             return "String title, String message";
     if (cleanName == "AlertWindow")          return "String title, String message, String button1";
-    
-    // --- MIDI ---
     if (cleanName == "sendMidiMessage")      return "MidiMessage message";
     if (cleanName == "MidiMessage")          return "int byte1, int byte2, int byte3";
-
-    // --- Timer ---
     if (cleanName == "startTimer")           return "int timerId, int intervalMs";
     if (cleanName == "stopTimer")            return "int timerId";
 
