@@ -16,7 +16,12 @@ enum SuggestionType {
     TypeGlobal,
     TypeUtility
 };
-
+/** Defines whether we are looking for instance methods (:) or static methods (.) */
+enum LookupType
+{
+    LookupInstance,
+    LookupStatic
+};
 struct SuggestionItem {
     juce::String text;
     SuggestionType type;
@@ -40,8 +45,10 @@ public:
      * to support icons in the popup.
      */
     std::vector<SuggestionItem> getGlobalSuggestions(const juce::String& prefix);
-    std::vector<SuggestionItem> getMethodSuggestions(const juce::String& className, const juce::String& prefix);
-
+    std::vector<SuggestionItem> getMethodSuggestions(const juce::String& className,
+        const juce::String& prefix,
+        LookupType type);
+    juce::String resolveClass(const juce::String& symbol, const juce::String& fullDocumentText);
 	juce::String getMethodParams(const juce::String& methodName);
 
 private:

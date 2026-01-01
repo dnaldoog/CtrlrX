@@ -450,43 +450,112 @@ void CtrlrLuaMethodCodeEditor::hideCallTip()
     
     nextTabJumpPosition = -1;
 }
-
 void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newText, int insertIndex)
 {
-    // Hide the argument bubble if we move past the function
-    if (callTip && nextTabJumpPosition == -1)
-        callTip->setVisible(false);
-
     document.newTransaction();
     documentChanged(false);
 
-    // AUTOCOMPLETE LOGIC
+    if (suggestionPopup == nullptr) return;
+
+    // 1. Get current typing context
     int wordStart = 0;
     juce::String currentWord = getWordBeforeCaret(wordStart);
+    juce::String allText = document.getAllContent();
 
-    if (currentWord.length() >= 2 && suggestionPopup)
+    // 2. DETECT METHOD CALLS (looking behind the current word)
+    // We check if the character right before the word is ':' or '.'
+    if (wordStart > 0)
+    {
+        juce::juce_wchar triggerChar = allText[wordStart - 1];
+
+        if (triggerChar == ':' || triggerChar == '.')
+        {
+            // Find the symbol before the trigger (e.g., "panel" in "panel:get")
+            int symbolEnd = wordStart - 1;
+            int symbolStart = symbolEnd - 1;
+            while (symbolStart >= 0 && (juce::CharacterFunctions::isLetterOrDigit(allText[symbolStart]) || allText[symbolStart] == '_'))
+                symbolStart--;
+
+            juce::String symbol = allText.substring(symbolStart + 1, symbolEnd);
+
+            // Resolve symbol (panel -> CtrlrPanel, comp -> CtrlrComponent, etc.)
+            auto& manager = owner.getAutocompleteManager();
+            juce::String className = manager.resolveClass(symbol, allText);
+
+            if (className.isNotEmpty())
+            {
+                LookupType type = (triggerChar == ':') ? LookupInstance : LookupStatic;
+
+                // Get suggestions using the class we found and the (possibly empty) current word
+                auto matches = manager.getMethodSuggestions(className, currentWord, type);
+
+                if (!matches.empty())
+                {
+                    showPopup(matches, insertIndex);
+                    return; // Exit early so we don't fall through to global suggestions
+                }
+            }
+        }
+    }
+
+    // 3. FALLBACK: GLOBAL SUGGESTIONS
+    // If we aren't following a ':' or '.', or the class wasn't found, show globals
+    if (currentWord.length() >= 2)
     {
         auto& manager = owner.getAutocompleteManager();
         std::vector<SuggestionItem> matches = manager.getGlobalSuggestions(currentWord);
 
         if (!matches.empty())
         {
-            suggestionPopup->setSuggestions(matches);
-            
-            // Position the listbox at the caret
-            juce::CodeDocument::Position pos(document, insertIndex);
-            juce::Rectangle<int> caretRect = editorComponent->getCharacterBounds(pos);
-            auto popupPos = getLocalPoint(editorComponent, caretRect.getBottomLeft());
-            
-            suggestionPopup->setBounds(popupPos.getX(), popupPos.getY() + 2, 300,
-                                     juce::jmin(10, (int)matches.size()) * 22);
-            suggestionPopup->setVisible(true);
-            suggestionPopup->toFront(false);
+            showPopup(matches, insertIndex);
         }
-        else { suggestionPopup->setVisible(false); }
+        else
+        {
+            suggestionPopup->setVisible(false);
+        }
     }
-    else if (suggestionPopup) { suggestionPopup->setVisible(false); }
+    else
+    {
+        // Hide if the word is too short and no trigger character is present
+        suggestionPopup->setVisible(false);
+    }
 }
+//void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newText, int insertIndex)
+//{
+//    // Hide the argument bubble if we move past the function
+//    if (callTip && nextTabJumpPosition == -1)
+//        callTip->setVisible(false);
+//
+//    document.newTransaction();
+//    documentChanged(false);
+//
+//    // AUTOCOMPLETE LOGIC
+//    int wordStart = 0;
+//    juce::String currentWord = getWordBeforeCaret(wordStart);
+//
+//    if (currentWord.length() >= 2 && suggestionPopup)
+//    {
+//        auto& manager = owner.getAutocompleteManager();
+//        std::vector<SuggestionItem> matches = manager.getGlobalSuggestions(currentWord);
+//
+//        if (!matches.empty())
+//        {
+//            suggestionPopup->setSuggestions(matches);
+//            
+//            // Position the listbox at the caret
+//            juce::CodeDocument::Position pos(document, insertIndex);
+//            juce::Rectangle<int> caretRect = editorComponent->getCharacterBounds(pos);
+//            auto popupPos = getLocalPoint(editorComponent, caretRect.getBottomLeft());
+//            
+//            suggestionPopup->setBounds(popupPos.getX(), popupPos.getY() + 2, 300,
+//                                     juce::jmin(10, (int)matches.size()) * 22);
+//            suggestionPopup->setVisible(true);
+//            suggestionPopup->toFront(false);
+//        }
+//        else { suggestionPopup->setVisible(false); }
+//    }
+//    else if (suggestionPopup) { suggestionPopup->setVisible(false); }
+//}
 
 void CtrlrLuaMethodCodeEditor::codeDocumentTextDeleted(int startIndex, int endIndex)
 {
@@ -1819,61 +1888,121 @@ void CtrlrLuaMethodCodeEditor::valueChanged(Value& value)
         // You can also trigger any additional UI updates here if needed
     }
 }
-
-String CtrlrLuaMethodCodeEditor::getWordBeforeCaret(int& startOfWord) // Added v5.6.35. Autocomplete typing feature
+juce::String CtrlrLuaMethodCodeEditor::getWordBeforeCaret(int& wordStart)
 {
     int caretPos = editorComponent->getCaretPos().getPosition();
-    
-    // Create a position at the current caret location
-    juce::CodeDocument::Position pos (document, caretPos);
+    juce::String allText = document.getAllContent();
+    int pos = caretPos - 1;
 
-    // Move backwards as long as we are within a word
-    while (pos.getPosition() > 0)
-    {
-        // Move back one character to inspect it
-        juce::CodeDocument::Position prevPos = pos.movedBy(-1);
-        juce::juce_wchar c = prevPos.getCharacter();
-
-        // If the character is not a word-part, stop here
-        if (!CharacterFunctions::isLetterOrDigit(c) && c != '_')
-            break;
-
-        pos = prevPos;
+    // Skip the trigger if we are sitting right after it
+    if (pos >= 0 && (allText[pos] == ':' || allText[pos] == '.')) {
+        // We don't decrement pos here, because wordStart should be caretPos
     }
 
-    startOfWord = pos.getPosition();
-    
-    juce::CodeDocument::Position start(document, startOfWord);
-    juce::CodeDocument::Position end(document, caretPos);
-
-    return document.getTextBetween(start, end).trim();
-}
-
-void CtrlrLuaMethodCodeEditor::handleSuggestionChosen(juce::String suggestion)
-{
-    // 1. Immediate Lock: prevent any other events from entering
-    if (suggestion.isEmpty() || isReplacingText)
-        return;
-
-    isReplacingText = true;
-    pendingSuggestion = suggestion;
-
-    // 2. Hide the UI immediately to prevent double-clicks
-    if (suggestionPopup)
-        suggestionPopup->setVisible(false);
-
-    // 3. The Circuit Breaker:
-    // We use callAfterDelay to wait until the 'Enter' key or 'Mouse Click'
-    // has COMPLETELY finished its journey through the JUCE event system.
-    juce::Timer::callAfterDelay(20, [this]()
+    while (pos >= 0 && (juce::CharacterFunctions::isLetterOrDigit(allText[pos]) || allText[pos] == '_'))
     {
-        if (pendingSuggestion.isNotEmpty())
-        {
-            performReplacement(pendingSuggestion);
-            pendingSuggestion = "";
-        }
-    });
+        pos--;
+    }
+
+    wordStart = pos + 1;
+    return allText.substring(wordStart, caretPos);
 }
+//String CtrlrLuaMethodCodeEditor::getWordBeforeCaret(int& startOfWord) // Added v5.6.35. Autocomplete typing feature
+//{
+//    int caretPos = editorComponent->getCaretPos().getPosition();
+//    
+//    // Create a position at the current caret location
+//    juce::CodeDocument::Position pos (document, caretPos);
+//
+//    // Move backwards as long as we are within a word
+//    while (pos.getPosition() > 0)
+//    {
+//        // Move back one character to inspect it
+//        juce::CodeDocument::Position prevPos = pos.movedBy(-1);
+//        juce::juce_wchar c = prevPos.getCharacter();
+//
+//        // If the character is not a word-part, stop here
+//        if (!CharacterFunctions::isLetterOrDigit(c) && c != '_')
+//            break;
+//
+//        pos = prevPos;
+//    }
+//
+//    startOfWord = pos.getPosition();
+//    
+//    juce::CodeDocument::Position start(document, startOfWord);
+//    juce::CodeDocument::Position end(document, caretPos);
+//
+//    return document.getTextBetween(start, end).trim();
+//}
+void CtrlrLuaMethodCodeEditor::handleSuggestionChosen(juce::String chosen)
+{
+    if (suggestionPopup == nullptr) return;
+    suggestionPopup->setVisible(false);
+
+    int wordStart = 0;
+    juce::String currentWord = getWordBeforeCaret(wordStart);
+    int caretPos = editorComponent->getCaretPos().getPosition();
+    juce::String allText = document.getAllContent();
+
+    isReplacingText = true; // Prevent feedback loops
+
+    // Determine if we are following a trigger
+    bool isAfterTrigger = (caretPos > 0 && (allText[caretPos - 1] == ':' || allText[caretPos - 1] == '.'));
+
+    if (isAfterTrigger)
+    {
+        // Just insert the method name at the caret
+        document.insertText(caretPos, chosen + "()");
+        editorComponent->moveCaretTo(juce::CodeDocument::Position(document, caretPos + chosen.length() + 1), false);
+    }
+    else
+    {
+        // Replace the partial word being typed
+        document.deleteSection(wordStart, caretPos);
+        document.insertText(wordStart, chosen);
+        editorComponent->moveCaretTo(juce::CodeDocument::Position(document, wordStart + chosen.length()), false);
+    }
+
+    // Trigger Call-Tip bubble if it's a method
+    juce::String params = owner.getAutocompleteManager().getMethodParams(chosen);
+    if (params.isNotEmpty())
+    {
+        lastAutocompletedMethod = chosen;
+        juce::Rectangle<int> caretRect = editorComponent->getCharacterBounds(editorComponent->getCaretPos());
+        auto tipPos = getLocalPoint(editorComponent, caretRect.getTopLeft());
+        callTip->showTip("(" + params + ")", tipPos);
+        updateCallTipHighlight();
+    }
+
+    isReplacingText = false;
+    document.newTransaction();
+}
+//void CtrlrLuaMethodCodeEditor::handleSuggestionChosen(juce::String suggestion)
+//{
+//    // 1. Immediate Lock: prevent any other events from entering
+//    if (suggestion.isEmpty() || isReplacingText)
+//        return;
+//
+//    isReplacingText = true;
+//    pendingSuggestion = suggestion;
+//
+//    // 2. Hide the UI immediately to prevent double-clicks
+//    if (suggestionPopup)
+//        suggestionPopup->setVisible(false);
+//
+//    // 3. The Circuit Breaker:
+//    // We use callAfterDelay to wait until the 'Enter' key or 'Mouse Click'
+//    // has COMPLETELY finished its journey through the JUCE event system.
+//    juce::Timer::callAfterDelay(20, [this]()
+//    {
+//        if (pendingSuggestion.isNotEmpty())
+//        {
+//            performReplacement(pendingSuggestion);
+//            pendingSuggestion = "";
+//        }
+//    });
+//}
 
 bool CtrlrLuaMethodCodeEditor::isLuaObjectInstance(const juce::String& s, SuggestionType type)
 {
@@ -2013,4 +2142,17 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
     });
 
     editorComponent->grabKeyboardFocus();
+}
+void CtrlrLuaMethodCodeEditor::showPopup(const std::vector<SuggestionItem>& matches, int insertIndex)
+{
+    suggestionPopup->setSuggestions(matches);
+
+    juce::CodeDocument::Position pos(document, insertIndex);
+    juce::Rectangle<int> caretRect = editorComponent->getCharacterBounds(pos);
+    auto popupPos = getLocalPoint(editorComponent, caretRect.getBottomLeft());
+
+    suggestionPopup->setBounds(popupPos.getX(), popupPos.getY() + 2, 300,
+        juce::jmin(10, (int)matches.size()) * 22);
+    suggestionPopup->setVisible(true);
+    suggestionPopup->toFront(false);
 }

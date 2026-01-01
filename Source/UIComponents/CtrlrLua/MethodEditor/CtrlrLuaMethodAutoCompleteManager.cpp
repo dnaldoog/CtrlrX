@@ -135,7 +135,49 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
     _DBG("Autocomplete: Loaded " + juce::String(classNames.size()) + " classes, "
          + juce::String(allMethodNames.size()) + " methods.");
 }
+juce::String CtrlrLuaMethodAutoCompleteManager::resolveClass(const juce::String& symbol, const juce::String& fullDocumentText)
+{
+    // 1. Direct Class Check (e.g., MemoryBlock.)
+    // If the symbol itself is a known class, return it immediately.
+    if (classes.contains(symbol))
+        return symbol;
 
+    // 2. Shorthand Map
+    if (symbol == "panel")      return "CtrlrPanel";
+    if (symbol == "modulator")  return "CtrlrModulator";
+    if (symbol == "mod")        return "CtrlrModulator";
+    if (symbol == "comp")       return "CtrlrComponent";
+    if (symbol == "utils")      return "CtrlrLuaUtils";
+
+    // 3. Variable Assignment Search (e.g., m = LMemoryBlock())
+    // We look for "symbol =" or "symbol="
+    int assignPos = fullDocumentText.lastIndexOf(symbol + "=");
+    if (assignPos == -1) assignPos = fullDocumentText.lastIndexOf(symbol + " =");
+
+    if (assignPos != -1)
+    {
+        // Move index to the right of the '='
+        int startOfClass = fullDocumentText.indexOf(assignPos, "=") + 1;
+
+        // Skip whitespace
+        while (startOfClass < fullDocumentText.length() &&
+            juce::CharacterFunctions::isWhitespace(fullDocumentText[startOfClass]))
+            startOfClass++;
+
+        // Read the class name
+        int endOfClass = startOfClass;
+        while (endOfClass < fullDocumentText.length() &&
+            (juce::CharacterFunctions::isLetterOrDigit(fullDocumentText[endOfClass])))
+            endOfClass++;
+
+        juce::String foundClass = fullDocumentText.substring(startOfClass, endOfClass);
+
+        if (classes.contains(foundClass))
+            return foundClass;
+    }
+
+    return "";
+}
 std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggestions(const juce::String& prefix)
 {
     std::vector<SuggestionItem> results;
@@ -165,7 +207,39 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggesti
 
     return results;
 }
+std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggestions(const juce::String& className,
+    const juce::String& prefix,
+    LookupType type)
+{
+    std::vector<SuggestionItem> results;
 
+    // Check if we actually have this class in our map
+    if (classes.contains(className))
+    {
+        const auto& lc = classes[className];
+
+        for (const auto& m : lc.methods)
+        {
+            // 1. Filter by prefix (e.g., user typed "panel:getM...")
+            if (prefix.isNotEmpty() && !m.name.startsWithIgnoreCase(prefix))
+                continue;
+
+            // 2. Filter by Static vs Instance
+            // If trigger was ':', we only want instance methods (isStatic == false)
+            if (type == LookupInstance && !m.isStatic)
+            {
+                results.push_back({ m.name, TypeMethod });
+            }
+            // If trigger was '.', we only want static methods (isStatic == true)
+            else if (type == LookupStatic && m.isStatic)
+            {
+                results.push_back({ m.name, TypeMethod });
+            }
+        }
+    }
+
+    return results;
+}
 juce::String CtrlrLuaMethodAutoCompleteManager::getMethodParams(const juce::String& methodName)
 {
     // 1. Clean the input: remove () if they were accidentally passed in

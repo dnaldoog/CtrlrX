@@ -54,15 +54,13 @@ public:
     void duplicateCurrentLine();
     void toggleLineComment(); // --
     void toggleLongLineComment(); // --[[ --]]
-
+    void showPopup(const std::vector<SuggestionItem>& matches, int insertIndex);
     // Add method to handle shared value changes
     void valueChanged(Value& value) override;
 
     // Add method to get the hidden toggle state
     bool getSearchTabsState() const { return hiddenSearchTabsToggle->getToggleState(); }
-	
 	void updateCallTipHighlight();
-	
 	void hideCallTip();
 
     JUCE_LEAK_DETECTOR(CtrlrLuaMethodCodeEditor)
