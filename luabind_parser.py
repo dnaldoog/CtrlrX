@@ -1,259 +1,152 @@
-#!/usr/bin/env python3
-"""
-Ctrlr Luabind Parser
-Extracts Lua API from Ctrlr / JUCE luabind C++ bindings
-
-Usage:
-  python luabind_parser.py <source_directory> <output_xml>
-"""
-
 import re
+import os
 import sys
-from pathlib import Path
-from xml.etree.ElementTree import Element, SubElement, ElementTree, indent
 
-# ================= CONFIG =================
-
-VERBOSE = True
-STRIP_NAMESPACES = True
-
-# ==========================================
-
-
-def strip_namespace(name: str) -> str:
-    if not STRIP_NAMESPACES:
-        return name.strip()
-    return name.split("::")[-1].strip()
-
-
-def file_contains_lua_bindings(filepath: Path) -> bool:
-    try:
-        text = filepath.read_text(encoding="utf-8", errors="ignore")
-        return "wrapForLua" in text or "module(L)" in text
-    except Exception:
-        return False
-
-
-class LuabindParser:
+class LuaAPIGenerator:
     def __init__(self):
-        self.classes = {}
+        # Detects C++ class definitions
+        self.class_re = re.compile(r'^\s*class\s+([A-Za-z0-9_]+)\s*(?::\s*public\s+[^{]+)?\s*\{', re.MULTILINE)
+        # Relaxed Method Regex to capture standard and virtual methods
+        self.method_re = re.compile(r'(?:virtual\s+)?(?:[\w<>\d::]+\s+)+(\w+)\s*\(([^)]*)\)', re.MULTILINE)
 
-    # -------------------------------------------------------------
+    def clean_args(self, args):
+        """Refines C++ arguments, normalizes types, and filters logic/comment leaks."""
+        if not args or args.strip().lower() in ["void", "nullptr", "0"]:
+            return "()"
+        
+        # 1. Strip default values (= 0), comments (//), and C++ syntax keys
+        args = re.sub(r'=[^,)]+', '', args)
+        args = re.sub(r'/\*.*?\*/|//.*', '', args)
+        args = re.sub(r'juce::|std::|const|&|\*|override|final|virtual|inline|noexcept', '', args)
+        
+        # 2. Logic Leak Check: Filter out descriptive human text 
+        # (e.g., "not GNOME Classic", "set to 0", "binary")
+        noise_phrases = [
+            "jump to", "updated with", "byte", "user just", "chained", 
+            "gnome", "set to", "binary", "dunno", "internal", "check"
+        ]
+        if any(phrase in args.lower() for phrase in noise_phrases):
+            return "()"
 
-    def parse_file(self, filepath: Path):
-        content = filepath.read_text(encoding="utf-8", errors="ignore")
+        # 3. Symbol Check: If it contains math or scope operators, it's code, not a param list
+        if any(c in args for c in ['+', '"', '/', '{', '}', '.', '?', '!', '<', '>']):
+            return "()"
+            
+        # 4. Clean up spacing and commas
+        args = ' '.join(args.split()).strip().strip(',')
 
-        wrap_pattern = r'wrapForLua\s*\([^)]*lua_State\s*\*[^)]*\)'
-        wraps = list(re.finditer(wrap_pattern, content))
+        # 5. Type Normalization for Lua
+        replacements = {
+            r'\bString\b': 'string',
+            r'\bbool\b': 'boolean',
+            r'\bint\b': 'number',
+            r'\buint\d*\b': 'number',
+            r'\bint\d*\b': 'number',
+            r'\bdouble\b': 'number',
+            r'\bfloat\b': 'number',
+            r'\bvar\b': 'variable',
+            r'\bsize_t\b': 'number',
+            r'\bptrdiff_t\b': 'number'
+        }
+        for pattern, replacement in replacements.items():
+            args = re.sub(pattern, replacement, args, flags=re.IGNORECASE)
 
-        if not wraps:
+        return f"({args})" if args else "()"
+
+    def process_directory(self, input_path):
+        all_classes = {}
+        # Blacklist of C++ keywords and internal JUCE macros misidentified as methods
+        blacklisted_names = [
+            "if", "for", "while", "return", "switch", "static_assert",
+            "JUCE_LEAK_DETECTOR", "JUCE_DECLARE", "JUCE_API",
+            "JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR",
+            "JUCE_DECLARE_NON_COPYABLE"
+        ]
+
+        file_count = 0
+        class_count = 0
+
+        for root, _, files in os.walk(input_path):
+            for file in files:
+                if file.endswith((".h", ".cpp")):
+                    file_count += 1
+                    try:
+                        with open(os.path.join(root, file), 'r', encoding='utf-8', errors='ignore') as f:
+                            content = f.read()
+                            for match in self.class_re.finditer(content):
+                                class_name = match.group(1).strip()
+                                
+                                # Skip blacklisted class names or noise
+                                if class_name in blacklisted_names or len(class_name) < 2:
+                                    continue
+
+                                block_start = match.end()
+                                next_class = self.class_re.search(content, block_start)
+                                block_end = next_class.start() if next_class else len(content)
+                                class_block = content[block_start:block_end]
+                                
+                                methods = []
+                                for m_match in self.method_re.finditer(class_block):
+                                    m_name = m_match.group(1)
+                                    
+                                    # Filter: Destructors, Blacklisted keywords, and Lua wrapper internal methods
+                                    if (m_name.startswith('~') or 
+                                        m_name in blacklisted_names or 
+                                        m_name[0].isdigit() or # Methods can't start with numbers (e.g., 8bit)
+                                        "wrapForLua" in m_name):
+                                        continue
+                                    
+                                    m_args = self.clean_args(m_match.group(2))
+                                    methods.append({'name': m_name, 'args': m_args})
+                                
+                                if methods:
+                                    class_count += 1
+                                    all_classes.setdefault(class_name, []).extend(methods)
+                    except Exception as e:
+                        print(f"Error processing {file}: {e}")
+                        continue
+        
+        print(f"--- Statistics ---")
+        print(f"Files scanned: {file_count}")
+        print(f"Classes found: {class_count}")
+        return all_classes
+
+    def save_xml(self, classes, output_file):
+        if not classes:
+            print("No valid API data found. XML not saved.")
             return
 
-        if VERBOSE:
-            print(f"\nFILE: {filepath.name} ({len(wraps)} wrapForLua)")
-
-        for wrap in wraps:
-            self.parse_wrap_block(content, wrap.start())
-
-    # -------------------------------------------------------------
-
-    def parse_wrap_block(self, content: str, start_pos: int):
-        module_match = re.search(
-            r'(?:luabind::)?module\s*\(\s*L\s*\)',
-            content[start_pos:]
-        )
-
-        if not module_match:
-            return
-
-        module_start = start_pos + module_match.end()
-        bracket_start = content.find('[', module_start)
-
-        if bracket_start == -1:
-            return
-
-        module_body = self.extract_bracket_block(content, bracket_start)
-
-        if module_body:
-            self.parse_module(module_body)
-
-    # -------------------------------------------------------------
-
-    def extract_bracket_block(self, text: str, start: int):
-        depth = 0
-        in_string = False
-        escape = False
-
-        for i in range(start, len(text)):
-            c = text[i]
-
-            if escape:
-                escape = False
-                continue
-
-            if c == '\\':
-                escape = True
-                continue
-
-            if c == '"':
-                in_string = not in_string
-                continue
-
-            if in_string:
-                continue
-
-            if c == '[':
-                depth += 1
-            elif c == ']':
-                depth -= 1
-                if depth == 0:
-                    return text[start + 1:i]
-
-        return None
-
-    # -------------------------------------------------------------
-
-    def parse_module(self, content: str):
-        content = re.sub(r'//.*', '', content)
-        content = re.sub(r'/\*.*?\*/', '', content, flags=re.S)
-
-        class_iter = re.finditer(r'class_<\s*([^,>]+)', content)
-
-        positions = [m.start() for m in class_iter]
-
-        for idx, pos in enumerate(positions):
-            end = positions[idx + 1] if idx + 1 < len(positions) else len(content)
-            self.parse_class_block(content[pos:end])
-
-    # -------------------------------------------------------------
-
-    def parse_class_block(self, block: str):
-        header = re.search(
-            r'class_<\s*([^,>]+)[^>]*>\s*(\(\s*"([^"]+)"\s*\))?',
-            block
-        )
-
-        if not header:
-            return
-
-        cpp_class = strip_namespace(header.group(1))
-        lua_name = header.group(3) or cpp_class
-
-        if VERBOSE:
-            print(f"  Class: {lua_name} (C++: {cpp_class})")
-
-        cls = self.classes.setdefault(lua_name, {
-            "cpp_name": cpp_class,
-            "methods": set(),
-            "static": set(),
-            "enums": {}
-        })
-
-        body = block[header.end():]
-
-        # Instance methods
-        for m in re.finditer(r'\.def\s*\(\s*"([^"]+)"', body):
-            cls["methods"].add(m.group(1))
-
-        # Static methods (.scope)
-        for scope in re.finditer(r'\.scope\s*\[', body):
-            scope_body = self.extract_bracket_block(body, scope.end() - 1)
-            if not scope_body:
-                continue
-
-            for m in re.finditer(r'def\s*\(\s*"([^"]+)"', scope_body):
-                cls["static"].add(m.group(1))
-
-        # Enums
-        for enum in re.finditer(r'\.enum_\s*\(\s*"([^"]+)"\s*\)\s*\[', body):
-            enum_name = enum.group(1)
-            enum_body = self.extract_bracket_block(body, enum.end() - 1)
-
-            if not enum_body:
-                continue
-
-            values = {}
-            for v in re.finditer(
-                r'value\s*\(\s*"([^"]+)"\s*,\s*([^)]+)\)',
-                enum_body
-            ):
-                values[v.group(1)] = v.group(2).strip()
-
-            if values:
-                cls["enums"][enum_name] = values
-
-    # -------------------------------------------------------------
-
-    def generate_xml(self, output_file: str):
-        root = Element("LuaAPI")
-
-        for name in sorted(self.classes):
-            cls = self.classes[name]
-
-            ce = SubElement(root, "class", {
-                "name": name,
-                "cpp_name": cls["cpp_name"]
-            })
-
-            if cls["methods"]:
-                me = SubElement(ce, "methods")
-                for m in sorted(cls["methods"]):
-                    SubElement(me, "method", {
-                        "name": m,
-                        "type": "instance"
-                    })
-
-            if cls["static"]:
-                se = SubElement(ce, "static_methods")
-                for m in sorted(cls["static"]):
-                    SubElement(se, "method", {
-                        "name": m,
-                        "type": "static"
-                    })
-
-            if cls["enums"]:
-                ee = SubElement(ce, "enums")
-                for ename, values in cls["enums"].items():
-                    e = SubElement(ee, "enum", {"name": ename})
-                    for vname, vval in values.items():
-                        SubElement(e, "value", {
-                            "name": vname,
-                            "value": vval
-                        })
-
-        indent(root, space="  ")
-        ElementTree(root).write(
-            output_file,
-            encoding="utf-8",
-            xml_declaration=True
-        )
-
-        print("\nGenerated:", output_file)
-        print("Classes:", len(self.classes))
-
-
-# ================================================================
-
-def main():
-    if len(sys.argv) != 3:
-        print("Usage: python luabind_parser.py <source_dir> <output.xml>")
-        sys.exit(1)
-
-    source_dir = Path(sys.argv[1])
-    output_xml = sys.argv[2]
-
-    parser = LuabindParser()
-
-    cpp_files = sorted(source_dir.glob("**/*.cpp"))
-
-    for f in cpp_files:
-        if not file_contains_lua_bindings(f):
-            continue
-        parser.parse_file(f)
-
-    parser.generate_xml(output_xml)
-
+        xml = ['<?xml version="1.0" ?>', '<LuaAPI>']
+        for name in sorted(classes.keys()):
+            cpp_name = name
+            if name == "BigInteger": cpp_name = "LBigInteger"
+            
+            xml.append(f'  <class name="{name}" cpp_name="{cpp_name}">')
+            xml.append('    <methods>')
+            
+            seen_signatures = set()
+            for m in classes[name]:
+                # Unique signature ensures we don't have literal duplicates
+                sig = f"{m['name']}_{m['args']}"
+                if sig not in seen_signatures:
+                    # Strip brackets for the XML attribute
+                    clean_args = m['args'].strip('()')
+                    xml.append(f'      <method name="{m["name"]}" args="{clean_args}" type="instance"/>')
+                    seen_signatures.add(sig)
+                    
+            xml.append('    </methods>')
+            xml.append('  </class>')
+        xml.append('</LuaAPI>')
+        
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(xml))
+        print(f"Successfully saved API to: {output_file}")
 
 if __name__ == "__main__":
-    main()
-
+    if len(sys.argv) < 3:
+        print("Usage: python3 script.py <input_dir> <output_xml>")
+    else:
+        gen = LuaAPIGenerator()
+        print("Parsing Source...")
+        data = gen.process_directory(sys.argv[1])
+        gen.save_xml(data, sys.argv[2])

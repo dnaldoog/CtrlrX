@@ -88,7 +88,6 @@ private:
     SuggestionItem pendingItem;
     bool isReplacingText = false;
 
-	SuggestionItem pendingSuggestionItem;
 	void handleSuggestionChosen(const SuggestionItem& item);
     juce::String getWordBeforeCaret (int& startOfWord, int offset = 0);
 	void performReplacement(const juce::String& suggestion, bool triggerMethods);
@@ -96,13 +95,11 @@ private:
     // Helper to determine if we should append a colon ':'
 	bool isLuaObjectInstance(const juce::String& s, SuggestionType type);
 	
-	// Resolve the return type of a method call for chaining
-    juce::String resolveReturnType(const juce::String& methodName);
-	
 	// The call-tip for the arguments with the suggested function
 	std::unique_ptr<LuaCallTip> callTip;
 	
     juce::String lastAutocompletedMethod;
+	juce::String lastAutocompletedClass;
 	
 	bool triggerSuggestionsAfterReplacement = false;
 	

@@ -13,50 +13,69 @@ CtrlrLuaMethodAutoCompleteManager::CtrlrLuaMethodAutoCompleteManager()
 
 void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
 {
-    // Clear everything first to avoid duplicates on re-load
     classes.clear();
     classNames.clear();
     allMethodNames.clear();
     utilityMethodNames.clear();
 
-    // 1. Load the MAIN API (Classes and Methods from LuaAPI.xml)
+    // 1. Load the MAIN API (Classes, Methods, Properties, Constructors)
     if (BinaryData::LuaAPI_xml != nullptr)
     {
-        juce::XmlDocument doc (juce::String::createStringFromData (BinaryData::LuaAPI_xml, BinaryData::LuaAPI_xmlSize));
-        std::unique_ptr<juce::XmlElement> root (doc.getDocumentElement());
+        juce::XmlDocument doc(juce::String::createStringFromData(BinaryData::LuaAPI_xml, BinaryData::LuaAPI_xmlSize));
+        std::unique_ptr<juce::XmlElement> root(doc.getDocumentElement());
 
         if (root != nullptr && root->hasTagName("LuaAPI"))
         {
-            forEachXmlChildElement (*root, classXml)
+            forEachXmlChildElement(*root, classXml)
             {
                 if (classXml->hasTagName("class"))
                 {
                     LuaClass lc;
                     lc.name = classXml->getStringAttribute("name");
 
-                    // Parse INSTANCE methods (accessed via :)
-                    if (auto* mList = classXml->getChildByName("methods"))
+                    // Parse CONSTRUCTORS
+                    if (auto* cList = classXml->getChildByName("constructors"))
                     {
-                        forEachXmlChildElement (*mList, m)
-                        {
-                            juce::String methodName = m->getStringAttribute("name");
-                            juce::String params = m->getStringAttribute("args");
-                            
-                            lc.methods.add({ methodName, params, false });
-                            allMethodNames.addIfNotAlreadyThere(methodName);
+                        forEachXmlChildElement(*cList, c) {
+                            lc.constructors.add(c->getStringAttribute("args"));
                         }
                     }
 
-                    // Parse STATIC methods (accessed via .)
+					// Parse INSTANCE methods (:)
+					if (auto* mList = classXml->getChildByName("methods"))
+					{
+						forEachXmlChildElement(*mList, m) {
+							juce::String name = m->getStringAttribute("name");
+							juce::String args = m->getStringAttribute("args");
+							
+							// ADD THIS CHECK:
+							if (name == lc.name) {
+								lc.constructors.add(args); // Add to constructor list
+							}
+							
+							lc.methods.add({ name, args, false });
+							allMethodNames.add(name); // Fast add
+						}
+					}
+
+                    // Parse STATIC methods (.)
                     if (auto* sList = classXml->getChildByName("static_methods"))
                     {
-                        forEachXmlChildElement (*sList, s)
-                        {
-                            juce::String staticMethodName = s->getStringAttribute("name");
-                            juce::String staticParams = s->getStringAttribute("args");
-                            
-                            lc.staticMethods.add({ staticMethodName, staticParams, true });
-                            allMethodNames.addIfNotAlreadyThere(staticMethodName);
+                        forEachXmlChildElement(*sList, s) {
+                            juce::String name = s->getStringAttribute("name");
+                            juce::String args = s->getStringAttribute("args");
+                            lc.staticMethods.add({ name, args, true });
+                            allMethodNames.add(name);
+                        }
+                    }
+
+                    // Parse PROPERTIES (.)
+                    if (auto* pList = classXml->getChildByName("properties"))
+                    {
+                        forEachXmlChildElement(*pList, p) {
+                            juce::String propName = p->getStringAttribute("name");
+                            lc.properties.add(propName);
+                            allMethodNames.add(propName);
                         }
                     }
 
@@ -67,69 +86,41 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
         }
     }
 
-    // 2. Manual Injection for Helper Libraries
-    // --- CtrlrLuaUtils ---
-    LuaClass utilsCls;
-    utilsCls.name = "CtrlrLuaUtils";
-    juce::StringArray uMethods = { "warnWindow", "infoWindow", "questionWindow", "openFileWindow", "saveFileWindow", "base64_encode", "base64_decode" };
-    for (auto& m : uMethods) {
-        utilsCls.staticMethods.add({ m, "", true });
-        allMethodNames.addIfNotAlreadyThere(m);
-    }
-    classes.set(utilsCls.name, utilsCls);
-    classNames.add(utilsCls.name);
+    // 2. Manual Injection for Standard Lua Libraries
+    auto injectStaticLib = [this](juce::String libName, juce::StringArray methods) {
+        LuaClass lc;
+        lc.name = libName;
+        for (auto& m : methods) {
+            lc.staticMethods.add({ m, "", true });
+            allMethodNames.add(m);
+        }
+        classes.set(libName, lc);
+        classNames.add(libName);
+    };
 
-    // --- Lua table library ---
-    LuaClass tableLib;
-    tableLib.name = "table";
-    juce::StringArray tMethods = { "insert", "remove", "sort", "concat", "getn", "maxn" };
-    for (auto& m : tMethods) {
-        tableLib.staticMethods.add({ m, "", true });
-        allMethodNames.addIfNotAlreadyThere(m);
-    }
-    classes.set(tableLib.name, tableLib);
-    classNames.add(tableLib.name);
+    injectStaticLib("table", { "insert", "remove", "sort", "concat", "unpack" });
+    injectStaticLib("math", { "abs", "floor", "ceil", "min", "max", "sqrt", "sin", "cos", "pi", "random" });
+    injectStaticLib("string", { "format", "sub", "upper", "lower", "find", "gsub", "len" });
 
-    // --- Lua math library ---
-    LuaClass mathLib;
-    mathLib.name = "math";
-    juce::StringArray mathMethods = { "abs", "floor", "ceil", "min", "max", "sqrt", "pow", "random", "sin", "cos", "tan", "pi" };
-    for (auto& m : mathMethods) {
-        mathLib.staticMethods.add({ m, "", true });
-        allMethodNames.addIfNotAlreadyThere(m);
-    }
-    classes.set(mathLib.name, mathLib);
-    classNames.add(mathLib.name);
-
-    // 3. Load the TEMPLATES
+    // 3. Load Templates
     if (BinaryData::CtrlrLuaMethodTemplates_xml != nullptr)
     {
         juce::XmlDocument doc (juce::String::createStringFromData (BinaryData::CtrlrLuaMethodTemplates_xml, BinaryData::CtrlrLuaMethodTemplates_xmlSize));
         std::unique_ptr<juce::XmlElement> root (doc.getDocumentElement());
-
         if (root != nullptr)
         {
             forEachXmlChildElement (*root, child)
             {
-                if (child->hasTagName("luaMethod"))
-                {
-                    juce::String methodName = child->getStringAttribute("name");
-                    if (methodName.isNotEmpty())
-                        allMethodNames.addIfNotAlreadyThere(methodName);
+                if (child->hasTagName("luaMethod")) {
+                    juce::String mName = child->getStringAttribute("name");
+                    if (mName.isNotEmpty()) allMethodNames.add(mName);
                 }
-                
-                if (child->hasTagName("utilityMethods"))
-                {
-                    forEachXmlChildElement (*child, util)
-                    {
-                        if (util->hasTagName("utility"))
-                        {
-                            juce::String uName = util->getStringAttribute("name");
-                            if (uName.isNotEmpty())
-                            {
-                                allMethodNames.addIfNotAlreadyThere(uName);
-                                utilityMethodNames.addIfNotAlreadyThere(uName);
-                            }
+                if (child->hasTagName("utilityMethods")) {
+                    forEachXmlChildElement (*child, util) {
+                        juce::String uName = util->getStringAttribute("name");
+                        if (uName.isNotEmpty()) {
+                            allMethodNames.add(uName);
+                            utilityMethodNames.add(uName);
                         }
                     }
                 }
@@ -137,151 +128,217 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
         }
     }
 
-    // 4. EXPANDED LIBRARY: Inject ESSENTIAL TOKENS & KEYWORDS
-    juce::StringArray essentialTokens = {
-        // Ctrlr Globals
-        "panel", "mod", "value", "source", "comp", "event",
-        "canvas", "g", "midi", "multiMidi", "path", "arguments",
-        "utils", "resources", "timer", "repaint", "setBounds",
-        "setVisible", "setName", "getComponent", "setFont", "drawText",
-        "fillAll", "setColour", "warn", "info", "question",
-        "getDeltaTime", "getFrameStart", "AlertWindow", "showMessageBox",
-        "sendMidiMessage", "MidiMessage", "table", "math", "string", "debug",
-        
-        // Lua Keywords (for space-based completion)
-        "local", "function", "if", "then", "else", "elseif", "end",
-        "for", "while", "do", "return", "break", "nil", "true", "false"
+    // 4. Essential Keywords
+    juce::StringArray tokens = {
+        "local", "function", "if", "then", "else", "elseif", "end", "for", "while", "do",
+        "return", "break", "nil", "true", "false", "panel", "mod", "value", "source", "comp", "event", "canvas", "g", "midi", "console"
     };
-    
-    for (const auto& token : essentialTokens) {
-        allMethodNames.addIfNotAlreadyThere(token);
-    }
+	for (auto& t : tokens) allMethodNames.add(t);
 
-    // Final sorting
-    classNames.sort(true);
-    allMethodNames.sort(true);
-    utilityMethodNames.sort(true);
-
-    _DBG("Autocomplete: Loaded " + juce::String(classes.size()) + " classes, "
-         + juce::String(allMethodNames.size()) + " total methods/tokens.");
+	// Final Post-Processing (Performance Optimization)
+	allMethodNames.removeDuplicates(false); // false = case-sensitive (essential for Lua)
+	allMethodNames.sort(true);               // true = ignore case while sorting (better for UI lists)
+	
+	classNames.removeDuplicates(false);
+	classNames.sort(true);
+	
+	utilityMethodNames.removeDuplicates(false);
+	utilityMethodNames.sort(true);
 }
 
-std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggestions(const juce::String& prefix)
-{
+std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggestions(const juce::String& prefix) {
     std::vector<SuggestionItem> results;
+    juce::StringArray added;
 
-    // 1. Essential Tokens (Globals) -> Icon "V" (TypeGlobal)
-    juce::StringArray globals = { "local", "panel", "mod", "value", "source", "comp", "event", "canvas", "g", "midi", "console" };
+    // 1. Globals/Keywords (Icon "V")
+    juce::StringArray globals = { "local", "function", "if", "then", "else", "elseif", "end", "for", "while", "do", "return", "break", "nil", "true", "false", "panel", "mod", "value", "source", "comp", "event", "canvas", "g", "midi", "console" };
     for (auto& g : globals) {
-        if (g.startsWithIgnoreCase(prefix))
+        if (g.startsWithIgnoreCase(prefix)) {
             results.push_back({ g, TypeGlobal });
+            added.add(g);
+        }
     }
 
-    // 2. Classes -> Icon "C" (TypeClass)
+    // 2. Classes (Icon "C")
     for (auto& c : classNames) {
-        if (c.startsWithIgnoreCase(prefix))
+        if (c.startsWithIgnoreCase(prefix) && !added.contains(c)) {
             results.push_back({ c, TypeClass });
+            added.add(c);
+        }
     }
 
-    // 3. Methods/Utilities -> Icon "M" or "f"
+    // 3. The rest (Methods/Utilities)
     for (auto& m : allMethodNames) {
-        if (m.startsWithIgnoreCase(prefix)) {
-            // Check if it was already added as a global/class to avoid duplicates
-            bool alreadyAdded = false;
-            for (auto& r : results) { if (r.text == m) { alreadyAdded = true; break; } }
-            
-            if (!alreadyAdded) {
-                if (utilityMethodNames.contains(m))
-                    results.push_back({ m, TypeUtility });
-                else
-                    results.push_back({ m, TypeMethod });
+        if (m.startsWithIgnoreCase(prefix) && !added.contains(m)) {
+            results.push_back({ m, utilityMethodNames.contains(m) ? TypeUtility : TypeMethod });
+            added.add(m);
+        }
+    }
+    return results;
+}
+
+std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggestionsForClass(
+    const juce::String& className, const juce::String& prefix,
+    bool includeInstance, bool includeStatic, bool includeProperties)
+{
+    std::vector<SuggestionItem> suggestions;
+    
+    if (!classes.contains(className)) return suggestions;
+    const auto& lc = classes.getReference(className);
+
+    // 1. Add Instance Methods (Triggered by ':')
+    if (includeInstance) {
+        for (const auto& m : lc.methods) {
+            if (m.name.startsWithIgnoreCase(prefix))
+                suggestions.push_back({ m.name, TypeMethod });
+        }
+    }
+
+    // 2. Add Static Methods (Triggered by '.')
+    if (includeStatic) {
+        for (const auto& m : lc.staticMethods) {
+            if (m.name.startsWithIgnoreCase(prefix))
+                suggestions.push_back({ m.name, TypeMethod });
+        }
+    }
+
+    // 3. Add Properties (Triggered by '.')
+    if (includeProperties) {
+        for (const auto& p : lc.properties) {
+            if (p.startsWithIgnoreCase(prefix))
+                suggestions.push_back({ p, TypeProperty });
+        }
+    }
+
+    return suggestions;
+}
+
+juce::String CtrlrLuaMethodAutoCompleteManager::getMethodParams(const juce::String& className,
+                                                              const juce::String& methodNameOrClass)
+{
+    // --- 1. HARDCODED COMMON FALLBACKS (Using 'number' for Lua consistency) ---
+    // This ensures the bubble is stable and fast for common JUCE/Ctrlr calls
+    if (methodNameOrClass == "setBounds")
+        return "number x, number y, number width, number height";
+    
+    if (methodNameOrClass == "setSize")
+        return "number width, number height";
+    
+    if (methodNameOrClass == "setTopLeftPosition")
+        return "number x, number y";
+
+    if (methodNameOrClass == "setHeight")
+        return "number newHeight"; // Only 1 argument
+
+    if (methodNameOrClass == "setWidth")
+        return "number newWidth";  // Only 1 argument
+    // --- 2. DATABASE LOOKUP ---
+    if (!classes.contains(className))
+        return "";
+
+    const auto& lc = classes.getReference(className);
+    juce::StringArray allPossibleParams;
+
+    // A. Check for Constructor calls
+    if (methodNameOrClass == className && !lc.constructors.isEmpty())
+    {
+        for (auto& c : lc.constructors) {
+            juce::String trimmed = c.trim();
+            if (trimmed.isNotEmpty() && trimmed != "()") {
+                allPossibleParams.add(trimmed);
+                _DBG("MANAGER: Found CONSTRUCTOR for [" + className + "] Params: [" + trimmed + "]");
             }
         }
     }
 
-    return results;
-}
-
-std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggestionsForClass(const juce::String& className, const juce::String& prefix, bool includeInstance)
-{
-    std::vector<SuggestionItem> results;
-
-    if (classes.contains(className))
+    // B. Search Instance Methods
+    for (auto& m : lc.methods)
     {
-        auto& cls = classes.getReference(className);
-        
-        // 1. Try the primary list based on the separator (. or :)
-        auto& primaryList = includeInstance ? cls.methods : cls.staticMethods;
-        for (auto& m : primaryList)
+        if (m.name == methodNameOrClass)
         {
-            if (prefix.isEmpty() || m.name.startsWithIgnoreCase(prefix))
-                results.push_back({ m.name, TypeMethod });
+            juce::String p = m.parameters.trim();
+            if (p.isNotEmpty() && p != "()") {
+                allPossibleParams.add(p);
+                _DBG("MANAGER: Found INSTANCE method [" + methodNameOrClass + "] in [" + className + "] Params: [" + p + "]");
+            }
         }
-
-        // 2. FALLBACK: If primary list is empty, search the other list too
-        // This handles cases where the XML defines methods as instance but they are used as static
-        if (results.empty())
+    }
+        
+    // C. Search Static Methods
+    for (auto& m : lc.staticMethods)
+    {
+        if (m.name == methodNameOrClass)
         {
-            auto& secondaryList = includeInstance ? cls.staticMethods : cls.methods;
-            for (auto& m : secondaryList)
-            {
-                if (prefix.isEmpty() || m.name.startsWithIgnoreCase(prefix))
-                    results.push_back({ m.name, TypeMethod });
+            juce::String p = m.parameters.trim();
+            if (p.isNotEmpty() && p != "()") {
+                allPossibleParams.add(p);
+                _DBG("MANAGER: Found STATIC method [" + methodNameOrClass + "] in [" + className + "] Params: [" + p + "]");
             }
         }
     }
 
-    return results;
-}
-
-juce::String CtrlrLuaMethodAutoCompleteManager::getMethodParams(const juce::String& methodName)
-{
-    // 1. Clean the input
-    juce::String cleanName = methodName.upToFirstOccurrenceOf("(", false, false).trim();
-
-	// 2. Check the XML-loaded classes (Using JUCE HashMap Iterator)
-    juce::HashMap<juce::String, LuaClass>::Iterator it (classes);
-    while (it.next())
-    {
-        // Remove the '&' because getValue() returns by value
-        auto lc = it.getValue();
-        
-        // Check standard methods
-        for (const auto& m : lc.methods)
-        {
-            if (m.name == cleanName && m.parameters.isNotEmpty())
-                return m.parameters;
-        }
-        // Check static methods
-        for (const auto& m : lc.staticMethods)
-        {
-            if (m.name == cleanName && m.parameters.isNotEmpty())
-                return m.parameters;
-        }
+    if (allPossibleParams.isEmpty()) {
+        _DBG("MANAGER: No valid params found for [" + methodNameOrClass + "] in class [" + className + "]");
+        return "";
     }
 
-    // 3. HARDCODED DICTIONARY (Manual Overrides)
-    if (cleanName == "setControlParameter")  return "String key, String value";
-    if (cleanName == "getModulatorByName")   return "String name";
-    if (cleanName == "getModulatorByIndex")  return "int index";
-    if (cleanName == "getModulatorValue")    return "String name";
-    if (cleanName == "getModulator")         return "String name";
-    if (cleanName == "setBounds")            return "int x, int y, int w, int h";
-    if (cleanName == "setVisible")           return "bool shouldBeVisible";
-    if (cleanName == "setName")              return "String newName";
-    if (cleanName == "setColour")            return "int colourId, Colour newColour";
-    if (cleanName == "repaint")              return "";
-    if (cleanName == "drawText")             return "String text, int x, int y, int w, int h, Justification alignment";
-    if (cleanName == "fillAll")              return "Colour colour";
-    if (cleanName == "setFont")              return "float height";
-    if (cleanName == "warn")                 return "String message";
-    if (cleanName == "info")                 return "String title, String message";
-    if (cleanName == "question")             return "String title, String message";
-    if (cleanName == "AlertWindow")          return "String title, String message, String button1";
-    if (cleanName == "sendMidiMessage")      return "MidiMessage message";
-    if (cleanName == "MidiMessage")          return "int byte1, int byte2, int byte3";
-    if (cleanName == "startTimer")           return "int timerId, int intervalMs";
-    if (cleanName == "stopTimer")            return "int timerId";
+    // Join with newline to show overloads in the bubble
+    return allPossibleParams.joinIntoString("\n");
+}
+
+juce::String CtrlrLuaMethodAutoCompleteManager::resolveReturnType(const juce::String& className, const juce::String& methodName)
+{
+    // 1. Context-Specific Overrides (Priority)
+    if (className == "CtrlrPanel") {
+        if (methodName.contains("getModulator")) return "CtrlrModulator";
+    }
+    
+    if (className == "CtrlrModulator") {
+        if (methodName == "getComponent") return "CtrlrComponent";
+    }
+
+    // 2. Global Method Name Mappings (Fallback)
+    if (methodName == "getModulatorByName" || methodName == "getModulator" || methodName == "getModulatorByIndex")
+        return "CtrlrModulator";
+
+    if (methodName == "getComponent" || methodName == "getOwner" || methodName == "getControl")
+        return "CtrlrComponent";
+
+    if (methodName == "getPanel" || methodName == "getOwnerPanel")
+        return "CtrlrPanel";
+
+    if (methodName == "getMemoryBlock" || methodName == "getData")
+        return "MemoryBlock";
+
+    if (methodName == "getLuaManager")
+        return "CtrlrLuaManager";
+
+    if (methodName == "getCanvas")
+        return "Graphics"; // Matches your getClassNameForVariable mapping
+
+    if (methodName == "getGlobalTimer")
+        return "Timer";
+	
+	if (methodName == "setBounds")
+        return "number x, number y, number width, number height";
+
+    // 3. XML Database Lookup (Optional)
+    // If you want to be super advanced, you could look up the 'type'
+    // attribute in your LuaAPI.xml here, but hardcoding common ones
+    // is much faster for performance.
 
     return "";
+}
+
+juce::StringArray CtrlrLuaMethodAutoCompleteManager::getClassNames() const
+{
+    juce::StringArray names;
+
+    // JUCE HashMap iterator usage
+    for (juce::HashMap<juce::String, LuaClass>::Iterator it (classes); it.next();)
+    {
+        names.add (it.getKey());
+    }
+
+    return names;
 }
