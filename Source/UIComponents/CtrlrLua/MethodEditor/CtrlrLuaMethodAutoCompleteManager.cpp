@@ -137,34 +137,27 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
 }
 juce::String CtrlrLuaMethodAutoCompleteManager::resolveClass(const juce::String& symbol, const juce::String& fullDocumentText)
 {
-    // 1. Direct Class Check (e.g., MemoryBlock.)
-    // If the symbol itself is a known class, return it immediately.
+    // 1. Direct match: Handles 'utils', 'MemoryBlock', 'Path', etc. 
+    // because the Python script renamed them in the XML.
     if (classes.contains(symbol))
         return symbol;
 
-    // 2. Shorthand Map
-    if (symbol == "panel")      return "CtrlrPanel";
-    if (symbol == "modulator")  return "CtrlrModulator";
-    if (symbol == "mod")        return "CtrlrModulator";
-    if (symbol == "comp")       return "CtrlrComponent";
-    if (symbol == "utils")      return "CtrlrLuaUtils";
+    // 2. Variable shorthand aliases (The only ones not in XML)
+    if (symbol == "panel")     return "CtrlrPanel";
+    if (symbol == "mod")       return "CtrlrModulator";
+    if (symbol == "comp")      return "CtrlrComponent";
 
-    // 3. Variable Assignment Search (e.g., m = LMemoryBlock())
-    // We look for "symbol =" or "symbol="
+    // 3. Variable Assignment Search (e.g., m = MemoryBlock())
     int assignPos = fullDocumentText.lastIndexOf(symbol + "=");
     if (assignPos == -1) assignPos = fullDocumentText.lastIndexOf(symbol + " =");
 
     if (assignPos != -1)
     {
-        // Move index to the right of the '='
         int startOfClass = fullDocumentText.indexOf(assignPos, "=") + 1;
-
-        // Skip whitespace
         while (startOfClass < fullDocumentText.length() &&
             juce::CharacterFunctions::isWhitespace(fullDocumentText[startOfClass]))
             startOfClass++;
 
-        // Read the class name
         int endOfClass = startOfClass;
         while (endOfClass < fullDocumentText.length() &&
             (juce::CharacterFunctions::isLetterOrDigit(fullDocumentText[endOfClass])))
@@ -182,31 +175,22 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggesti
 {
     std::vector<SuggestionItem> results;
 
-    // 1. Essential Tokens (Globals) -> Icon "V"
-    juce::StringArray globals = { "panel", "mod", "value", "source", "comp", "event", "canvas", "g", "midi", "console" };
+    // 1. Common Ctrlr Globals (the "Start Points")
+    juce::StringArray globals = { "panel", "mod", "comp", "utils", "storage", "vst" };
     for (auto& g : globals) {
         if (g.startsWithIgnoreCase(prefix))
             results.push_back({ g, TypeGlobal });
     }
 
-    // 2. Classes -> Icon "C"
+    // 2. All Classes from XML (MemoryBlock, Path, etc.)
     for (auto& c : classNames) {
         if (c.startsWithIgnoreCase(prefix))
             results.push_back({ c, TypeClass });
     }
 
-    // 3. Methods/Utilities -> Icon "M" or "f"
-    for (auto& m : allMethodNames) {
-        if (m.startsWithIgnoreCase(prefix)) {
-            if (utilityMethodNames.contains(m))
-                results.push_back({ m, TypeUtility });
-            else
-                results.push_back({ m, TypeMethod });
-        }
-    }
-
     return results;
 }
+
 std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggestions(const juce::String& className,
     const juce::String& prefix,
     LookupType type)
