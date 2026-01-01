@@ -618,26 +618,32 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
                 searchPos--;
             }
         }
+		
         // --- SCENARIO B: STANDARD VARIABLE ---
-        else
-        {
-            int varStart = 0;
-            varName = getWordBeforeCaret(varStart, -1);
-            
-            if (varName.isEmpty() || varName == ":" || varName == ".")
-                varName = getWordBeforeCaret(varStart, -2);
-                
-            // Use the manager's centralized mapping
-            className = manager.getClassNameForVariable(varName);
-
-            if (className.isEmpty())
-            {
-                // Fallback for specific hardcoded cases if not in Manager yet
-                if (varName.equalsIgnoreCase("panel"))      className = "CtrlrPanel";
-                else if (varName.startsWithIgnoreCase("mod")) className = "CtrlrModulator";
-                else if (varName == "stateData")            className = "CtrlrPanel";
-            }
-        }
+		else
+		{
+			int varStart = 0;
+			varName = getWordBeforeCaret(varStart, -1);
+			
+			if (varName.isEmpty() || varName == ":" || varName == ".")
+				varName = getWordBeforeCaret(varStart, -2);
+			
+			// Use the manager's centralized mapping
+			className = manager.getClassNameForVariable(varName);
+			
+			if (className.isEmpty())
+			{
+				// ADD THESE FALLBACKS HERE
+				if (varName.equalsIgnoreCase("panel"))             className = "CtrlrPanel";
+				else if (varName.startsWithIgnoreCase("mod"))      className = "CtrlrModulator";
+				else if (varName == "stateData")                   className = "CtrlrPanel";
+				else if (varName == "utils")                       className = "utils";        // Added
+				else if (varName == "MemoryBlock")                 className = "MemoryBlock";  // Added
+				else if (varName == "table")                       className = "table";        // Added
+				else if (varName == "string")                      className = "string";       // Added
+				else if (varName == "math")                        className = "math";         // Added
+			}
+		}
         
         // --- COMMON EXECUTION ---
         if (className.isNotEmpty())
@@ -2137,7 +2143,7 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
     lastAutocompletedMethod = ""; // Reset memory
 
     _DBG("AUTOCOMPLETE: performReplacement EXECUTION START for: " + suggestion);
-	
+    
     // 1. CAPTURE DATA FIRST
     auto& manager = owner.getAutocompleteManager();
     SuggestionItem selectedItem;
@@ -2240,14 +2246,11 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
                     suffix += "\"\"";
                     if (i == 0) firstParamInsideOffset = 2; // Caret inside ""
                 } else {
-                    // FIX: Removed leading space here
                     if (i == 0) firstParamInsideOffset = 0; // Caret right after (
-                    // We don't add anything for generic params so it looks like ( , )
-                    // If you want a placeholder char like a space, keep it, but trim the comma
                 }
 
                 if (i < individualParams.size() - 1)
-                    suffix += ", "; // FIX: Standard separator without leading space
+                    suffix += ", ";
             }
             suffix += ")";
             textToInsert += suffix;
@@ -2265,6 +2268,7 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
     }
     else if (selectedItem.type == TypeClass || triggerMethods)
     {
+        // FIX: Ensure these classes use '.' and trigger the static method list
         if (cleanSuggestion == "utils" || cleanSuggestion == "table" ||
             cleanSuggestion == "string" || cleanSuggestion == "math" ||
             cleanSuggestion == "MemoryBlock")
@@ -2289,14 +2293,13 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
     // 5. RE-ACTIVATE BUBBLE (Enhanced)
     if ((selectedItem.type == TypeMethod || selectedItem.type == TypeUtility) && methodParams.isNotEmpty())
     {
-        // SET THESE FIRST
         lastAutocompletedMethod = cleanSuggestion;
         lastAutocompletedClass = className;
 
         juce::MessageManager::callAsync([this]() {
             if (callTip != nullptr)
             {
-                updateCallTipHighlight(); // This will now find the right name
+                updateCallTipHighlight();
                 callTip->setVisible(true);
                 callTip->toFront(false);
             }
@@ -2312,6 +2315,7 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
         if (triggerSuggestionsAfterReplacement)
         {
             triggerSuggestionsAfterReplacement = false;
+            // This triggers codeDocumentTextInserted with the dot or colon
             codeDocumentTextInserted(sepToUse, editorComponent->getCaretPos().getPosition());
         }
         isReplacingText = false;
