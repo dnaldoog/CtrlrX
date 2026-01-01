@@ -5,29 +5,31 @@
 /** Represents a single Lua method from the XML */
 struct LuaMethod {
     juce::String name;
-    juce::String parameters; // e.g., "int index, String name"
-    bool isStatic;           // True if found in <static_methods>, False if in <methods>
+    juce::String parameters;
+    bool isStatic;
 };
 
 /** Define the types for our icons in the SuggestionPopup */
 enum SuggestionType {
     TypeClass,      // Icon "C"
     TypeMethod,     // Icon "M"
+    TypeProperty,   // Icon "P" (New: for .x, .width, etc)
     TypeGlobal,     // Icon "V"
     TypeUtility     // Icon "f"
 };
 
-/** The item used by the ListBox to display suggestions */
 struct SuggestionItem {
     juce::String text;
     SuggestionType type;
 };
 
-/** Represents a Lua class and its associated methods */
+/** Represents a Lua class and its associated methods, properties, and constructors */
 struct LuaClass {
     juce::String name;
-    juce::Array<LuaMethod> methods;        // Instance methods (accessed via :)
-    juce::Array<LuaMethod> staticMethods;  // Static methods (accessed via .)
+    juce::Array<LuaMethod> methods;       // Instance methods (accessed via :)
+    juce::Array<LuaMethod> staticMethods; // Static methods (accessed via .)
+    juce::StringArray properties;         // New: Member variables (accessed via .)
+    juce::StringArray constructors;       // New: For bubble tips on Class()
 };
 
 class CtrlrLuaMethodAutoCompleteManager {
@@ -35,29 +37,24 @@ public:
     CtrlrLuaMethodAutoCompleteManager();
     ~CtrlrLuaMethodAutoCompleteManager() = default;
 
-    /** Parses the XML and populates the internal 'classes' HashMap */
     void loadDefinitions();
 
-    /** * Returns a list of global suggestions (Classes, Utilities, Globals)
-     * used when the user is typing a fresh word.
-     */
+    /** Global suggestions (Classes, Keywords, Globals) */
     std::vector<SuggestionItem> getGlobalSuggestions(const juce::String& prefix);
 
-    /** * Context-Aware: Returns methods belonging specifically to a class.
-     * @param className The class name (e.g., "CtrlrPanel")
-     * @param prefix    The current typing prefix after the ':' or '.'
-     * @param includeStatic If true, looks in staticMethods; if false, looks in methods.
+    /** * Context-Aware Suggestions:
+     * If user types ':', includeInstance should be true.
+     * If user types '.', includeStatic and includeProperties should be true.
      */
     std::vector<SuggestionItem> getMethodSuggestionsForClass(const juce::String& className,
-                                                       const juce::String& prefix,
-                                                       bool includeInstance);
+                                                           const juce::String& prefix,
+                                                           bool includeInstance,
+                                                           bool includeStatic,
+                                                           bool includeProperties);
 
-    /** Returns the parameter string for the CallTip bubble */
-    juce::String getMethodParams(const juce::String& methodName);
+    /** Returns parameter string for bubble tips, checking methods AND constructors */
+    juce::String getMethodParams(const juce::String& className, const juce::String& methodNameOrClass);
 
-    /** * Helper to map common Lua variables to their C++ Class Types.
-     * You can expand this as you find more common variables.
-     */
     juce::String getClassNameForVariable(const juce::String& varName) {
         if (varName == "panel")  return "CtrlrPanel";
         if (varName == "mod")    return "CtrlrModulator";
@@ -66,18 +63,18 @@ public:
         if (varName == "canvas") return "Component";
         return "";
     }
+	
+	/** Predicts the return type of a method to allow for chained autocomplete */
+    juce::String resolveReturnType(const juce::String& className, const juce::String& methodName);
+	
+	/** Returns a list of all known class names in the database */
+    juce::StringArray getClassNames() const;
 
 private:
-    /** The main database: Maps Class Name -> LuaClass Object */
     juce::HashMap<juce::String, LuaClass> classes;
-
-    /** Quick lookup lists for global-level autocompletion */
     juce::StringArray classNames;
-	juce::StringArray allMethodNames;
+    juce::StringArray allMethodNames;
     juce::StringArray utilityMethodNames;
-    
-    // Internal helper to find a method's params across all classes
-    LuaMethod* findMethodInCache(const juce::String& methodName);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrLuaMethodAutoCompleteManager)
 };

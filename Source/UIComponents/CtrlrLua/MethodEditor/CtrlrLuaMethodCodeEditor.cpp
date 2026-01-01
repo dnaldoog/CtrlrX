@@ -416,7 +416,7 @@ bool CtrlrLuaMethodCodeEditor::keyPressed(const juce::KeyPress& key, juce::Compo
 // --- The logic for the highlighting ---
 void CtrlrLuaMethodCodeEditor::updateCallTipHighlight()
 {
-    if (callTip == nullptr || !callTip->isVisible() || lastAutocompletedMethod.isEmpty())
+    if (callTip == nullptr)
         return;
 
     int caretPos = editorComponent->getCaretPos().getPosition();
@@ -424,70 +424,120 @@ void CtrlrLuaMethodCodeEditor::updateCallTipHighlight()
 
     // 1. Find the opening bracket for the CURRENT method
     int openBracket = allText.substring(0, caretPos).lastIndexOfChar('(');
-    int closeBracket = allText.indexOfChar(openBracket, ')');
+    
+    // If we just inserted a snippet, the caret might be RIGHT after or ON the '('
+    if (openBracket == -1 && allText.length() > caretPos && allText[caretPos] == '(')
+        openBracket = caretPos;
 
+    // If no bracket found, or if there's a closing bracket before our caret, hide tip
+    int closeBracket = allText.indexOfChar(openBracket, ')');
     if (openBracket == -1 || (closeBracket != -1 && caretPos > closeBracket))
     {
         callTip->setVisible(false);
-        nextTabJumpPosition = -1;
         return;
     }
 
-    // 2. Count commas strictly between '(' and the caret
-    // Added 'nestingLevel' to ignore commas inside nested function calls
+    // --- IDENTIFY METHOD NAME FROM TEXT (The "Source of Truth") ---
+    int nameEnd = openBracket;
+    while (nameEnd > 0 && juce::CharacterFunctions::isWhitespace(allText[nameEnd - 1]))
+        nameEnd--;
+
+    int methodStart = nameEnd;
+    while (methodStart > 0 && (juce::CharacterFunctions::isLetterOrDigit(allText[methodStart - 1]) || allText[methodStart - 1] == '_'))
+        methodStart--;
+
+    juce::String actualMethodInText = allText.substring(methodStart, nameEnd);
+
+    // FIX: Context Verification.
+    // If we are typing a NEW method (like 'setHeight') but the bubble is
+    // still trying to show the OLD method ('setBounds'), hide it.
+    if (lastAutocompletedMethod.isNotEmpty() && actualMethodInText != lastAutocompletedMethod)
+    {
+        // If the user is manually typing and just hit '(', sync the name
+        // Otherwise, if it's a mismatch during autocomplete navigation, hide it.
+        if (actualMethodInText.isNotEmpty())
+            lastAutocompletedMethod = actualMethodInText;
+        else
+        {
+            callTip->setVisible(false);
+            return;
+        }
+    }
+    
+    // Safety fallback
+    if (actualMethodInText.isEmpty())
+        actualMethodInText = lastAutocompletedMethod;
+
+    if (actualMethodInText.isEmpty())
+    {
+        callTip->setVisible(false);
+        return;
+    }
+
+    // 2. Get Parameters (Check Hardcoded Fallbacks in Manager)
+    // We pass the lastAutocompletedClass for context resolution
+    juce::String params = owner.getAutocompleteManager().getMethodParams(lastAutocompletedClass, actualMethodInText);
+    
+    if (params.isEmpty())
+    {
+        callTip->setVisible(false);
+        return;
+    }
+
+    // 3. Count commas to determine parameter index
     int parameterIndex = 0;
     int nestingLevel = 0;
-
     for (int i = openBracket + 1; i < caretPos; ++i)
     {
         juce::juce_wchar c = allText[i];
-
-        if (c == '(')
-            nestingLevel++;
-        else if (c == ')')
-            nestingLevel--;
-        else if (c == ',' && nestingLevel == 0) // Only count commas at the same level
-            parameterIndex++;
+        if (c == '(') nestingLevel++;
+        else if (c == ')') nestingLevel--;
+        else if (c == ',' && nestingLevel == 0) parameterIndex++;
     }
 
-    // 3. Get Parameters from Manager
-    juce::String params = owner.getAutocompleteManager().getMethodParams(lastAutocompletedMethod);
+    // 4. Formatting logic
+    // Grab the first line/overload if multiple exist
+    juce::String firstOverload = params.contains("\n") ? params.upToFirstOccurrenceOf("\n", false, false) : params;
     juce::StringArray pArray;
-    pArray.addTokens(params, ",", "");
+    pArray.addTokens(firstOverload, ",", "");
 
-    // --- SAFETY CHECK ---
-    if (pArray.size() > 0 && parameterIndex >= pArray.size())
+    if (pArray.size() > 0)
     {
-        parameterIndex = pArray.size() - 1;
-    }
+        if (parameterIndex >= pArray.size())
+            parameterIndex = pArray.size() - 1;
 
-    // 4. Format the final string
-    juce::String formattedTip = "(";
-    for (int i = 0; i < pArray.size(); ++i)
-    {
-        juce::String p = pArray[i].trim();
+        juce::String formattedTip = "(";
+        for (int i = 0; i < pArray.size(); ++i)
+        {
+            juce::String p = pArray[i].trim();
+            if (i == parameterIndex)
+                formattedTip += "[" + p + "]";
+            else
+                formattedTip += p;
+
+            if (i < pArray.size() - 1)
+                formattedTip += ", ";
+        }
+        formattedTip += ")";
+
+        // 5. Update UI
+        callTip->setTipText(formattedTip);
+        callTip->setVisible(true);
         
-        if (i == parameterIndex)
-            formattedTip += "[" + p + "]";
-        else
-            formattedTip += p;
-
-        if (i < pArray.size() - 1)
-            formattedTip += ", ";
+        juce::Font font(13.0f);
+        int newWidth = font.getStringWidth(formattedTip) + 20;
+        callTip->setSize(newWidth, 24);
+        
+        auto caretRect = editorComponent->getCaretRectangle();
+        
+        // Position slightly above the current line
+        callTip->setTopLeftPosition(caretRect.getX() - (newWidth / 4), caretRect.getY() - 28);
+        callTip->toFront(false);
     }
-    formattedTip += ")";
-
-    // 5. Update UI
-    callTip->setTipText(formattedTip);
-    
-    juce::Font font(13.0f);
-    int newWidth = font.getStringWidth(formattedTip) + 20;
-    callTip->setSize(newWidth, 24);
-    
-    // Pin above caret
-    auto caretRect = editorComponent->getCaretRectangle();
-    callTip->setTopLeftPosition(caretRect.getX() - (newWidth / 4),
-                                caretRect.getY() - 28);
+    else
+    {
+        callTip->setVisible(false);
+    }
 }
 
 void CtrlrLuaMethodCodeEditor::hideCallTip()
@@ -539,7 +589,7 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
 
         juce::CodeDocument::Position posBeforeSeparator(document, caretPosInt - 1);
         
-        // --- SCENARIO A: BRACKET CONTEXT ---
+        // --- SCENARIO A: BRACKET CONTEXT (Chaining) ---
         if (posBeforeSeparator.movedBy(-1).getCharacter() == ')')
         {
             int bracketCount = 0;
@@ -553,12 +603,16 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
                 if (bracketCount == 0)
                 {
                     int methodStartIdx = 0;
+                    // Look back to find the method name that produced this bracket
                     varName = getWordBeforeCaret(methodStartIdx, -(caretPosInt - searchPos));
+                    
                     juce::String cleanMethod = varName;
                     if (cleanMethod.contains(":")) cleanMethod = cleanMethod.fromLastOccurrenceOf(":", false, false);
                     else if (cleanMethod.contains(".")) cleanMethod = cleanMethod.fromLastOccurrenceOf(".", false, false);
                     
-                    className = resolveReturnType(cleanMethod.trim());
+                    // UPDATED: Now calling manager with 2 arguments for return type resolution
+                    // We pass "" as className because we are resolving based on a global-style method name
+                    className = manager.resolveReturnType("", cleanMethod.trim());
                     break;
                 }
                 searchPos--;
@@ -573,59 +627,55 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
             if (varName.isEmpty() || varName == ":" || varName == ".")
                 varName = getWordBeforeCaret(varStart, -2);
                 
+            // Use the manager's centralized mapping
             className = manager.getClassNameForVariable(varName);
 
             if (className.isEmpty())
             {
-                // Ensure these strings match EXACTLY what is in your XML/Manager database
+                // Fallback for specific hardcoded cases if not in Manager yet
                 if (varName.equalsIgnoreCase("panel"))      className = "CtrlrPanel";
                 else if (varName.startsWithIgnoreCase("mod")) className = "CtrlrModulator";
-                else if (varName == "g" || varName == "canvas") className = "juce::Graphics";
-                else if (varName == "utils")                className = "CtrlrLuaUtils";
-                else if (varName == "table")                className = "table";
-                else if (varName == "string")               className = "string";
-                else if (varName == "math")                 className = "math";
-                else if (varName == "MemoryBlock")          className = "MemoryBlock";
                 else if (varName == "stateData")            className = "CtrlrPanel";
             }
         }
         
         // --- COMMON EXECUTION ---
-        _DBG("AUTOCOMPLETE: Resolved Context: [" + varName + "] to Class: [" + className + "]");
-
         if (className.isNotEmpty())
         {
-            // First try with the current word (which might be empty right after a dot)
-            matches = manager.getMethodSuggestionsForClass(className, currentWord, isInstance);
+            _DBG("AUTOCOMPLETE: Resolved Context: [" + varName + "] to Class: [" + className + "]");
+
+            bool includeInstance   = isInstance;
+            bool includeStatic     = !isInstance;
+            bool includeProperties = !isInstance;
             
-            // IF MATCHES ARE EMPTY but we HAVE a class, force-fetch all methods for that class
+            // 1. First try with the current word
+            matches = manager.getMethodSuggestionsForClass(className,
+                                                           currentWord,
+                                                           includeInstance,
+                                                           includeStatic,
+                                                           includeProperties);
+            
+            // 2. Fallback: Fetch all if no partial match
             if (matches.empty())
             {
-                _DBG("AUTOCOMPLETE: Matches empty for class [" + className + "], fetching all methods...");
-                matches = manager.getMethodSuggestionsForClass(className, "", isInstance);
+                matches = manager.getMethodSuggestionsForClass(className,
+                                                               "",
+                                                               includeInstance,
+                                                               includeStatic,
+                                                               includeProperties);
             }
         }
-    } // End of separator check
+    }
 
-    // --- MERGED GLOBAL FALLBACK ---
+    // --- GLOBAL FALLBACK ---
     if (matches.empty() && currentWord.length() >= 1)
     {
         matches = manager.getGlobalSuggestions(currentWord);
-        
-        // MANUALLY INJECT missing libraries if they aren't in the global list
-        if (currentWord.length() >= 1)
-        {
-            if (juce::String("utils").startsWith(currentWord)) matches.push_back({ "utils", TypeClass });
-            if (juce::String("table").startsWith(currentWord)) matches.push_back({ "table", TypeClass });
-            if (juce::String("MemoryBlock").startsWith(currentWord)) matches.push_back({ "MemoryBlock", TypeClass });
-            if (juce::String("string").startsWith(currentWord)) matches.push_back({ "string", TypeClass });
-        }
     }
-	
+    
     // UI Display Logic
     if (!matches.empty())
     {
-        _DBG("AUTOCOMPLETE: Success! Showing ListBox with " + juce::String((int)matches.size()) + " items.");
         suggestionPopup->setSuggestions(matches);
         juce::Rectangle<int> caretRect = editorComponent->getCharacterBounds(editorComponent->getCaretPos());
         auto popupPos = getLocalPoint(editorComponent, caretRect.getBottomLeft());
@@ -633,10 +683,9 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
         suggestionPopup->setVisible(true);
         suggestionPopup->toFront(false);
     }
-    else
+    else if (suggestionPopup)
     {
-        if (suggestionPopup)
-            suggestionPopup->setVisible(false);
+        suggestionPopup->setVisible(false);
     }
 }
 
@@ -2080,15 +2129,17 @@ bool CtrlrLuaMethodCodeEditor::isLuaObjectInstance(const juce::String& s, Sugges
 
 void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion, bool triggerMethods)
 {
-    _DBG("AUTOCOMPLETE: performReplacement EXECUTION START for: " + suggestion + " (Trigger: " + juce::String((int)triggerMethods) + ")");
-    
-    if (suggestion.isEmpty() || editorComponent == nullptr)
+    if (callTip != nullptr)
     {
-        isReplacingText = false;
-        return;
+        callTip->setVisible(false);
+        callTip->setTipText(""); // Clear old text immediately
     }
+    lastAutocompletedMethod = ""; // Reset memory
 
+    _DBG("AUTOCOMPLETE: performReplacement EXECUTION START for: " + suggestion);
+	
     // 1. CAPTURE DATA FIRST
+    auto& manager = owner.getAutocompleteManager();
     SuggestionItem selectedItem;
     if (suggestionPopup)
         selectedItem = suggestionPopup->getSelectedItem();
@@ -2100,6 +2151,28 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
     int wordStart = 0;
     juce::String currentWord = getWordBeforeCaret(wordStart);
     int actualLen = currentWord.length();
+
+    // --- RESOLVE CLASS CONTEXT ---
+    juce::String className = "";
+    juce::String allText = document.getAllContent();
+    
+    if (wordStart > 0)
+    {
+        juce::juce_wchar separator = allText[wordStart - 1];
+        if (separator == '.' || separator == ':')
+        {
+            int varStart = wordStart - 1;
+            while (varStart > 0 && (juce::CharacterFunctions::isLetterOrDigit(allText[varStart - 1]) || allText[varStart - 1] == '_'))
+                varStart--;
+            
+            juce::String varName = allText.substring(varStart, wordStart - 1);
+            className = manager.getClassNameForVariable(varName);
+            if (className.isEmpty()) className = varName;
+        }
+    }
+    
+    if (className.isEmpty() && selectedItem.type == TypeClass)
+        className = cleanSuggestion;
 
     // 2. START THE REPLACEMENT
     isReplacingText = true;
@@ -2120,15 +2193,41 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
 
     // 3. TYPE-SPECIFIC LOGIC (Method Snippet Generation)
     juce::String methodParams = "";
+
     if (selectedItem.type == TypeMethod || selectedItem.type == TypeUtility)
     {
         lastAutocompletedMethod = cleanSuggestion;
-        methodParams = owner.getAutocompleteManager().getMethodParams(cleanSuggestion);
+        _DBG("AUTOCOMPLETE: --- Replacement Started for [" + cleanSuggestion + "] ---");
         
+        methodParams = manager.getMethodParams(className, cleanSuggestion);
+        
+        if (methodParams.isEmpty())
+        {
+            methodParams = manager.getMethodParams(cleanSuggestion, cleanSuggestion);
+            if (methodParams.isNotEmpty()) className = cleanSuggestion;
+        }
+
+        if (methodParams.isEmpty() || methodParams == "()")
+        {
+            for (const auto& c : manager.getClassNames())
+            {
+                juce::String p = manager.getMethodParams(c, cleanSuggestion);
+                if (p.isNotEmpty() && p != "()")
+                {
+                    methodParams = p;
+                    className = c;
+                    break;
+                }
+            }
+        }
+        
+        lastAutocompletedClass = className;
+
         if (methodParams.isNotEmpty())
         {
             juce::StringArray individualParams;
-            individualParams.addTokens(methodParams, ",", "");
+            juce::String firstOption = methodParams.contains("\n") ? methodParams.upToFirstOccurrenceOf("\n", false, false) : methodParams;
+            individualParams.addTokens(firstOption, ",", "");
             
             juce::String suffix = "(";
             int firstParamInsideOffset = 0;
@@ -2136,46 +2235,39 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
             for (int i = 0; i < individualParams.size(); ++i)
             {
                 juce::String p = individualParams[i].trim();
-                if (i == 0)
-                {
-                    if (p.containsIgnoreCase("String")) {
-                        suffix += "\"\"";
-                        firstParamInsideOffset = 2;
-                    } else {
-                        firstParamInsideOffset = 1;
-                    }
-                }
-                else if (p.containsIgnoreCase("String")) {
+                
+                if (p.containsIgnoreCase("string")) {
                     suffix += "\"\"";
+                    if (i == 0) firstParamInsideOffset = 2; // Caret inside ""
+                } else {
+                    // FIX: Removed leading space here
+                    if (i == 0) firstParamInsideOffset = 0; // Caret right after (
+                    // We don't add anything for generic params so it looks like ( , )
+                    // If you want a placeholder char like a space, keep it, but trim the comma
                 }
 
                 if (i < individualParams.size() - 1)
-                    suffix += ", ";
+                    suffix += ", "; // FIX: Standard separator without leading space
             }
             suffix += ")";
             textToInsert += suffix;
-            caretOffsetFromEnd = suffix.length() - firstParamInsideOffset;
             
-            // Enable jump for multi-parameter methods
+            // Adjust caret offset.
+            caretOffsetFromEnd = suffix.length() - (firstParamInsideOffset > 0 ? firstParamInsideOffset : 1);
             nextTabJumpPosition = 1;
+            _DBG("AUTOCOMPLETE: Snippet generated: " + suffix);
         }
         else
         {
             textToInsert += "()";
             caretOffsetFromEnd = 1;
-            // Enable jump even for empty () so Tab can exit the parentheses
-            nextTabJumpPosition = 1;
         }
     }
     else if (selectedItem.type == TypeClass || triggerMethods)
     {
-        if (cleanSuggestion.endsWith(" "))
-        {
-             caretOffsetFromEnd = 0;
-        }
-        else if (cleanSuggestion == "utils" || cleanSuggestion == "table" ||
-                 cleanSuggestion == "string" || cleanSuggestion == "math" ||
-                 cleanSuggestion == "MemoryBlock")
+        if (cleanSuggestion == "utils" || cleanSuggestion == "table" ||
+            cleanSuggestion == "string" || cleanSuggestion == "math" ||
+            cleanSuggestion == "MemoryBlock")
         {
             forcedSeparator = ".";
             textToInsert += ".";
@@ -2186,7 +2278,7 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
             textToInsert += ":";
         }
     }
-
+    
     // 4. DOCUMENT UPDATE
     document.insertText(wordStart, textToInsert);
     
@@ -2194,29 +2286,24 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
     editorComponent->moveCaretTo(juce::CodeDocument::Position(document, finalPos), false);
     document.newTransaction();
 
-    // 5. RE-ACTIVATE BUBBLE (Fixed Positioning & Sync)
+    // 5. RE-ACTIVATE BUBBLE (Enhanced)
     if ((selectedItem.type == TypeMethod || selectedItem.type == TypeUtility) && methodParams.isNotEmpty())
     {
-        // Set this immediately, NOT inside the async block
+        // SET THESE FIRST
         lastAutocompletedMethod = cleanSuggestion;
+        lastAutocompletedClass = className;
 
         juce::MessageManager::callAsync([this]() {
             if (callTip != nullptr)
             {
-                auto caretRect = editorComponent->getCaretRectangle();
-                auto localPos = caretRect.getTopLeft();
-                
-                // Force an update immediately while we are sure of the context
-                updateCallTipHighlight();
-                
-                // Use the text that was JUST generated by updateCallTipHighlight
-                callTip->showTip(callTip->getTipText(), localPos);
+                updateCallTipHighlight(); // This will now find the right name
+                callTip->setVisible(true);
                 callTip->toFront(false);
             }
         });
     }
 
-    // 6. CLEANUP & TIMER
+    // 6. CLEANUP
     if (suggestionPopup)
         suggestionPopup->setVisible(false);
 
@@ -2225,42 +2312,10 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
         if (triggerSuggestionsAfterReplacement)
         {
             triggerSuggestionsAfterReplacement = false;
-            int currentCaret = editorComponent->getCaretPos().getPosition();
-            codeDocumentTextInserted(sepToUse, currentCaret);
+            codeDocumentTextInserted(sepToUse, editorComponent->getCaretPos().getPosition());
         }
         isReplacingText = false;
         if (editorComponent != nullptr)
             editorComponent->grabKeyboardFocus();
     });
-}
-
-juce::String CtrlrLuaMethodCodeEditor::resolveReturnType(const juce::String& methodName)
-{
-    // Common Ctrlr Lua API return types
-    if (methodName == "getModulatorByName" || methodName == "getModulator" || methodName == "getModulatorByIndex")
-        return "CtrlrModulator";
-        
-    if (methodName == "getComponent" || methodName == "getOwner")
-        return "CtrlrComponent";
-        
-    if (methodName == "getPanel" || methodName == "getOwnerPanel")
-        return "CtrlrPanel";
-
-    if (methodName == "getComponent" || methodName == "getOwner" || methodName == "getControl")
-        return "CtrlrComponent";
-	
-	if (methodName == "getMemoryBlock" || methodName == "getData")
-        return "MemoryBlock";
-        
-    if (methodName == "getLuaManager")
-        return "CtrlrLuaManager";
-
-    if (methodName == "getCanvas")
-        return "juce::Graphics";
-	
-	if (methodName == "getGlobalTimer")
-        return "juce::Timer";
-
-    _DBG("AUTOCOMPLETE: No return type mapping for method: " + methodName);
-    return "";
 }
