@@ -18,7 +18,7 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
     allMethodNames.clear();
     utilityMethodNames.clear();
 
-    // 1. Load the MAIN API (Classes, Methods, Properties, Constructors)
+    // 1. Load the MAIN API (Classes, Methods, Properties, Constructors, Static Methods)
     if (BinaryData::LuaAPI_xml != nullptr)
     {
         juce::XmlDocument doc(juce::String::createStringFromData(BinaryData::LuaAPI_xml, BinaryData::LuaAPI_xmlSize));
@@ -32,8 +32,10 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
                 {
                     LuaClass lc;
                     lc.name = classXml->getStringAttribute("name");
+					
+					juce::String cppName = classXml->getStringAttribute("cpp_name");
 
-                    // Parse CONSTRUCTORS
+                    // Parse explicit CONSTRUCTORS tag (if present)
                     if (auto* cList = classXml->getChildByName("constructors"))
                     {
                         forEachXmlChildElement(*cList, c) {
@@ -41,48 +43,57 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
                         }
                     }
 
-					// Parse INSTANCE methods (:)
-					if (auto* mList = classXml->getChildByName("methods"))
-					{
-						forEachXmlChildElement(*mList, m) {
-							juce::String name = m->getStringAttribute("name");
-							juce::String args = m->getStringAttribute("args");
-							
-							// ADD THIS CHECK:
-							if (name == lc.name) {
-								lc.constructors.add(args); // Add to constructor list
-							}
-							
-							lc.methods.add({ name, args, false });
-							allMethodNames.add(name); // Fast add
-						}
-					}
+                    // Parse INSTANCE methods (Triggered by ':')
+                    if (auto* mList = classXml->getChildByName("methods"))
+                    {
+                        forEachXmlChildElement(*mList, m) {
+                            juce::String name = m->getStringAttribute("name");
+                            juce::String args = m->getStringAttribute("args");
+                            
+                            // If method name matches class name, it's a constructor
+                            if (name == lc.name) {
+                                lc.constructors.add(args);
+                            }
+                            else {
+                                lc.methods.add({ name, args, false });
+                                allMethodNames.add(name);
+                            }
+                        }
+                    }
 
-                    // Parse STATIC methods (.)
+                    // Parse STATIC methods (Triggered by '.')
+                    // This matches the new output from Python Script v10
                     if (auto* sList = classXml->getChildByName("static_methods"))
                     {
                         forEachXmlChildElement(*sList, s) {
                             juce::String name = s->getStringAttribute("name");
                             juce::String args = s->getStringAttribute("args");
+                            
                             lc.staticMethods.add({ name, args, true });
                             allMethodNames.add(name);
                         }
                     }
 
-                    // Parse PROPERTIES (.)
+                    // Parse PROPERTIES (Triggered by '.')
                     if (auto* pList = classXml->getChildByName("properties"))
                     {
                         forEachXmlChildElement(*pList, p) {
                             juce::String propName = p->getStringAttribute("name");
-                            lc.properties.add(propName);
-                            allMethodNames.add(propName);
-                        }
-                    }
-
-                    classes.set(lc.name, lc);
-                    classNames.add(lc.name);
-                }
-            }
+							lc.properties.add(propName);
+							allMethodNames.add(propName);
+						}
+					}
+					
+					classes.set(lc.name, lc);    // Store as "utils" or "panel"
+					
+					// Also store as "CtrlrLuaUtils" or "CtrlrPanel" if different
+					if (cppName.isNotEmpty() && cppName != lc.name) {
+						classes.set(cppName, lc);
+					}
+					
+					classNames.add(lc.name);
+				}
+			}
         }
     }
 
@@ -102,7 +113,7 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
     injectStaticLib("math", { "abs", "floor", "ceil", "min", "max", "sqrt", "sin", "cos", "pi", "random" });
     injectStaticLib("string", { "format", "sub", "upper", "lower", "find", "gsub", "len" });
 
-    // 3. Load Templates
+    // 3. Load Templates (Method Body Templates)
     if (BinaryData::CtrlrLuaMethodTemplates_xml != nullptr)
     {
         juce::XmlDocument doc (juce::String::createStringFromData (BinaryData::CtrlrLuaMethodTemplates_xml, BinaryData::CtrlrLuaMethodTemplates_xmlSize));
@@ -128,22 +139,23 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
         }
     }
 
-    // 4. Essential Keywords
+    // 4. Essential Keywords & Global Variables
     juce::StringArray tokens = {
         "local", "function", "if", "then", "else", "elseif", "end", "for", "while", "do",
-        "return", "break", "nil", "true", "false", "panel", "mod", "value", "source", "comp", "event", "canvas", "g", "midi", "console"
+        "return", "break", "nil", "true", "false", "panel", "mod", "value", "source",
+        "comp", "event", "canvas", "g", "midi", "console"
     };
-	for (auto& t : tokens) allMethodNames.add(t);
+    for (auto& t : tokens) allMethodNames.add(t);
 
-	// Final Post-Processing (Performance Optimization)
-	allMethodNames.removeDuplicates(false); // false = case-sensitive (essential for Lua)
-	allMethodNames.sort(true);               // true = ignore case while sorting (better for UI lists)
-	
-	classNames.removeDuplicates(false);
-	classNames.sort(true);
-	
-	utilityMethodNames.removeDuplicates(false);
-	utilityMethodNames.sort(true);
+    // Final Post-Processing (Performance Optimization)
+    allMethodNames.removeDuplicates(false); // Case-sensitive for Lua
+    allMethodNames.sort(true);               // Case-insensitive sort for UI display
+    
+    classNames.removeDuplicates(false);
+    classNames.sort(true);
+    
+    utilityMethodNames.removeDuplicates(false);
+    utilityMethodNames.sort(true);
 }
 
 std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggestions(const juce::String& prefix) {
