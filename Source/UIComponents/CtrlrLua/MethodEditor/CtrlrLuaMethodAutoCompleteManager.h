@@ -56,17 +56,7 @@ public:
     /** Returns parameter string for bubble tips, checking methods AND constructors */
     juce::String getMethodParams(const juce::String& className, const juce::String& methodNameOrClass);
 
-    juce::String getClassNameForVariable(const juce::String& varName) {
-        if (varName == "panel")  return "CtrlrPanel";
-        if (varName == "mod")    return "CtrlrModulator";
-        if (varName == "comp")   return "CtrlrComponent";
-        if (varName == "g")      return "Graphics";
-        if (varName == "canvas") return "Component";
-		if (varName == "m" || varName == "mb" || varName == "mem") return "MemoryBlock";
-		if (varName == "f") return "File";
-		if (varName == "s") return "LString";
-        return "";
-    }
+	juce::String getClassNameForVariable(const juce::String& varName, const juce::String& currentDocumentText);
 	
 	/** Predicts the return type of a method to allow for chained autocomplete */
     juce::String resolveReturnType(const juce::String& className, const juce::String& methodName);

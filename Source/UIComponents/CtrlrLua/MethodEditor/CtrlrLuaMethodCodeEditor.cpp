@@ -640,7 +640,8 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
             // Get the word before the separator
             varName = getWordBeforeCaret(vStart, -(caretPosInt - searchOrigin));
             
-            className = manager.getClassNameForVariable(varName);
+            // Pass the full text of the document to the manager
+			className = manager.getClassNameForVariable(varName, document.getAllContent());
             
             if (className.isEmpty())
             {
@@ -2158,7 +2159,7 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
                 varStart--;
             
             juce::String varName = allText.substring(varStart, wordStart - 1);
-            className = manager.getClassNameForVariable(varName);
+			className = manager.getClassNameForVariable(varName, document.getAllContent());
             if (className.isEmpty()) className = varName;
         }
     }
