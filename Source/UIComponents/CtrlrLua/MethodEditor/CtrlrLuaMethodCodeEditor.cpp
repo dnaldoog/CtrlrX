@@ -609,10 +609,11 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
         juce::CodeDocument::Position posBeforeSeparator(document, searchOrigin);
         
         // --- SCENARIO A: BRACKET CONTEXT (Chaining) ---
-        if (posBeforeSeparator.movedBy(-1).getCharacter() == ')')
+        // Modified to capture the full chain (e.g., panel:getModulator():)
+        if (posBeforeSeparator.getCharacter() == ')')
         {
             int bracketCount = 0;
-            int searchPos = searchOrigin - 1;
+            int searchPos = searchOrigin;
             while (searchPos > 0)
             {
                 juce::juce_wchar c = juce::CodeDocument::Position(document, searchPos).getCharacter();
@@ -621,13 +622,23 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
                 
                 if (bracketCount == 0)
                 {
-                    int methodStartIdx = 0;
-                    varName = getWordBeforeCaret(methodStartIdx, -(searchOrigin - searchPos));
-                    juce::String cleanMethod = varName;
-                    if (cleanMethod.contains(":")) cleanMethod = cleanMethod.fromLastOccurrenceOf(":", false, false);
-                    else if (cleanMethod.contains(".")) cleanMethod = cleanMethod.fromLastOccurrenceOf(".", false, false);
+                    // Now search back for the beginning of the whole chain
+                    int chainStart = searchPos - 1;
+                    while (chainStart > 0) {
+                        juce::juce_wchar cc = juce::CodeDocument::Position(document, chainStart).getCharacter();
+                        if (juce::CharacterFunctions::isWhitespace(cc) || cc == ';' || cc == '=') {
+                            chainStart++;
+                            break;
+                        }
+                        chainStart--;
+                    }
                     
-                    className = manager.resolveReturnType("", cleanMethod.trim());
+                    // Grab the whole chain: e.g. "panel:getModulator("test")"
+                    juce::String fullChain = document.getTextBetween(juce::CodeDocument::Position(document, chainStart),
+                                                                    juce::CodeDocument::Position(document, searchOrigin + 1));
+                    
+                    className = manager.getClassNameForVariable(fullChain.trim(), document.getAllContent());
+                    varName = fullChain.trim();
                     break;
                 }
                 searchPos--;
@@ -637,52 +648,23 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
         else
         {
             int vStart = 0;
-            // Get the word before the separator
             varName = getWordBeforeCaret(vStart, -(caretPosInt - searchOrigin));
             
-            // Pass the full text of the document to the manager
-			className = manager.getClassNameForVariable(varName, document.getAllContent());
+            // Simplified: Use the manager's recursive logic for all variable/alias lookups
+            className = manager.getClassNameForVariable(varName, document.getAllContent());
             
+            // Fallback for hardcoded shortcuts if getClassNameForVariable returned empty
             if (className.isEmpty())
             {
-                int currentLine = editorComponent->getCaretPos().getLineNumber();
-                int scanLimit = juce::jmax(0, currentLine - 50);
-
-                for (int i = currentLine; i >= scanLimit; --i)
-                {
-                    juce::String line = document.getLine(i).trim();
-                    if (line.contains("="))
-                    {
-                        juce::String leftSide = line.upToFirstOccurrenceOf("=", false, false).trim();
-                        if (leftSide == varName)
-                        {
-                            juce::String rightSide = line.fromFirstOccurrenceOf("=", false, false).trim();
-                            for (auto& cName : manager.getClassNames())
-                            {
-                                if (rightSide.startsWith(cName))
-                                {
-                                    className = cName;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (className.isNotEmpty()) break;
-                }
+                if (varName.equalsIgnoreCase("panel"))           className = "CtrlrPanel";
+                else if (varName.startsWithIgnoreCase("mod"))    className = "CtrlrModulator";
+                else if (varName == "utils")                     className = "utils";
+                else if (varName == "MemoryBlock")               className = "MemoryBlock";
+                else if (varName == "math")                      className = "math";
+                else if (varName == "table")                     className = "table";
+                else if (varName == "string")                    className = "string";
             }
-
-			if (className.isEmpty())
-			{
-				if (varName.equalsIgnoreCase("panel"))             className = "CtrlrPanel";
-				else if (varName.startsWithIgnoreCase("mod"))      className = "CtrlrModulator";
-				else if (varName == "utils")                       className = "utils";
-				else if (varName == "MemoryBlock")                 className = "MemoryBlock";
-				// ADD THESE LINES:
-				else if (varName == "math")                        className = "math";
-				else if (varName == "table")                       className = "table";
-				else if (varName == "string")                      className = "string";
-			}
-		}
+        }
         
         if (className.isNotEmpty())
         {
@@ -693,19 +675,14 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
             bool includeStatic     = !isInstance;
             bool includeProperties = !isInstance;
             
-            // Search using the class context and the current word as prefix
             matches = manager.getMethodSuggestionsForClass(className, currentWord, includeInstance, includeStatic, includeProperties);
-            
             _DBG("AUTOCOMPLETE: Found " + juce::String((int)matches.size()) + " class-specific matches.");
         }
     }
 
     // --- 4. GLOBAL FALLBACK ---
-    // Only happens if we aren't in a class context, or if the class search yielded nothing
     if (matches.empty() && currentWord.length() >= 1)
     {
-        // If we are typing after a colon but found no class matches,
-        // we don't want to show random global "set" methods.
         if (separator != ':' && separator != '.')
         {
             _DBG("AUTOCOMPLETE: Fetching Global Suggestions for [" + currentWord + "]");
@@ -725,7 +702,6 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
         juce::Rectangle<int> caretRect = editorComponent->getCharacterBounds(editorComponent->getCaretPos());
         auto popupPos = getLocalPoint(editorComponent, caretRect.getBottomLeft());
         
-        // Calculate dynamic height (max 10 rows)
         int rowHeight = 22;
         int displayCount = juce::jmin(10, (int)matches.size());
         suggestionPopup->setBounds(popupPos.getX(), popupPos.getY() + 2, 300, displayCount * rowHeight);

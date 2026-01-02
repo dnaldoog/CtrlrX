@@ -32,7 +32,10 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
                 {
                     LuaClass lc;
                     lc.name = classXml->getStringAttribute("name");
+                    
+                    // --- NEW: INHERITANCE DATA MAPPING ---
                     lc.parentClass = classXml->getStringAttribute("inherits");
+                    
                     juce::String cppName = classXml->getStringAttribute("cpp_name");
 
                     if (auto* mList = classXml->getChildByName("methods"))
@@ -105,14 +108,14 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
     }
 
     // 2. Manual Injection of Base Classes (THE CHAIN)
-	
-	if (!classes.contains("MemoryBlock")) {
-		LuaClass mbClass;
-		mbClass.name = "MemoryBlock";
-		classes.set("MemoryBlock", mbClass);
-		classNames.add("MemoryBlock");
-	}
-	
+    
+    if (!classes.contains("MemoryBlock")) {
+        LuaClass mbClass;
+        mbClass.name = "MemoryBlock";
+        classes.set("MemoryBlock", mbClass);
+        classNames.add("MemoryBlock");
+    }
+    
     if (!classes.contains("Component")) {
         LuaClass comp; comp.name = "Component";
         juce::StringArray ui = { "setBounds", "setSize", "setVisible", "getX", "getY", "getWidth", "getHeight", "repaint", "setHeight", "setWidth" };
@@ -170,7 +173,6 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
                 lm.parameters = (mName.contains("ByName")) ? "(String name)" :
                                 (mName.contains("ByIndex")) ? "(int index)" : "()";
                 panel.methods.add(lm);
-                // allMethodNames.addIfNotAlreadyThere(mName); // Keep commented as per your logic
                 if (lm.parameters != "()") {
                     LuaMethod def; def.name = mName; def.parameters = "()";
                     panel.methods.insert(0, def);
@@ -342,6 +344,7 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggesti
 
     _DBG("--- START SEARCH: [" + prefix + "] in Class: [" + className + "] ---");
 
+    // We use a while loop to traverse the inheritance tree (v21 data)
     while (currentClass.isNotEmpty())
     {
         if (!classes.contains(currentClass)) {
@@ -390,7 +393,9 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggesti
         _DBG("    Found " + juce::String(classMatches) + " matches in [" + currentClass + "]");
 
         // THE JUMP: Move to parent for the next loop iteration
+        // Because of v21, lc.parentClass now contains the data from the XML 'inherits' attribute
         currentClass = lc.parentClass;
+        
         if (currentClass.isNotEmpty()) {
             _DBG("    Moving up the tree to: [" + currentClass + "]");
         }
@@ -414,15 +419,16 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getMethodParams(const juce::Stri
     if (methodNameOrClass == "setSize") return "int width, int height";
 
     // Helper lambda to clean up "(arg1, arg2)" into "arg1, arg2" for the bubble
-    auto sanitizeForBubble = [](juce::String p) -> juce::String {
-        p = p.trim();
-        if (p == "()" || p.isEmpty() || p == "( )") return "";
-        if (p.startsWith("(") && p.endsWith(")"))
-            return p.substring(1, p.length() - 1).trim();
-        return p;
-    };
-
-    // Helper lambda for Global Search
+	auto sanitizeForBubble = [](juce::String p) -> juce::String {
+		p = p.trim();
+		if (p.startsWith("(") && p.endsWith(")"))
+			p = p.substring(1, p.length() - 1).trim();
+		
+		if (p == "()" || p.isEmpty() || p == "( )") return "";
+		return p;
+	};
+	
+	// Helper lambda for Global Search
     auto performGlobalSearch = [&](const juce::String& methodName) {
         juce::StringArray results;
         for (juce::HashMap<juce::String, LuaClass>::Iterator it (classes); it.next();) {
@@ -445,6 +451,8 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getMethodParams(const juce::Stri
     else
     {
         juce::String currentClass = className;
+        
+        // --- UPDATED: RECURSIVE INHERITANCE SEARCH ---
         while (currentClass.isNotEmpty() && classes.contains(currentClass))
         {
             const auto& lc = classes.getReference(currentClass);
@@ -463,17 +471,18 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getMethodParams(const juce::Stri
                 }
             }
 
-            // Search Constructors
+            // Search Constructors (Only relevant if class name matches method name)
             if (methodNameOrClass == lc.name) {
                 if (lc.constructors.size() > 0) {
                     return sanitizeForBubble(lc.constructors[0]);
                 }
             }
 
-            currentClass = lc.parentClass; // Climb the tree
+            // THE JUMP: Move to the parent class for the next iteration of the while loop
+            currentClass = lc.parentClass;
         }
 
-        // 3. FALLBACK TO GLOBAL if specific class search yielded nothing
+        // 3. FALLBACK TO GLOBAL if specific class search and its parent chain yielded nothing
         return performGlobalSearch(methodNameOrClass);
     }
 
@@ -482,16 +491,31 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getMethodParams(const juce::Stri
 
 juce::String CtrlrLuaMethodAutoCompleteManager::resolveReturnType(const juce::String& className, const juce::String& methodName)
 {
-    // 1. Context-Specific Overrides (Priority)
-    if (className == "CtrlrPanel") {
-        if (methodName.contains("getModulator")) return "CtrlrModulator";
-    }
-    
-    if (className == "CtrlrModulator") {
-        if (methodName == "getComponent") return "CtrlrComponent";
+    juce::String currentClass = className;
+
+    // --- NEW: RECURSIVE INHERITANCE SEARCH ---
+    while (currentClass.isNotEmpty() && classes.contains(currentClass))
+    {
+        const auto& lc = classes.getReference(currentClass);
+
+        // 1. Context-Specific Overrides (Priority)
+        if (currentClass == "CtrlrPanel") {
+            if (methodName.contains("getModulator")) return "CtrlrModulator";
+        }
+        
+        if (currentClass == "CtrlrModulator") {
+            if (methodName == "getComponent") return "CtrlrComponent";
+        }
+
+        // If your XML structure eventually includes return types,
+        // you would look them up here inside the loop.
+
+        // Move to parent to see if it has specific context overrides
+        currentClass = lc.parentClass;
     }
 
     // 2. Global Method Name Mappings (Fallback)
+    // These work regardless of the class context
     if (methodName == "getModulatorByName" || methodName == "getModulator" || methodName == "getModulatorByIndex")
         return "CtrlrModulator";
 
@@ -512,8 +536,8 @@ juce::String CtrlrLuaMethodAutoCompleteManager::resolveReturnType(const juce::St
 
     if (methodName == "getGlobalTimer")
         return "Timer";
-	
-	if (methodName == "setBounds")
+    
+    if (methodName == "setBounds")
         return "number x, number y, number width, number height";
 
     // 3. XML Database Lookup (Optional)
@@ -538,28 +562,60 @@ juce::StringArray CtrlrLuaMethodAutoCompleteManager::getClassNames() const
 }
 
 
-juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const juce::String& varName, const juce::String& code) {
-    // 1. Hardcoded shortcuts
+juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const juce::String& varName, const juce::String& code)
+{
+    // 1. Static/Global Shortcuts (Priority)
     if (varName == "panel")  return "CtrlrPanel";
     if (varName == "mod")    return "CtrlrModulator";
     if (varName == "comp")   return "CtrlrComponent";
     if (varName == "g")      return "Graphics";
     
-    // 2. DYNAMIC LOOK-BACK
-    // We use the 'code' string passed in from the editor
+    // 2. Look for "local varName = ..." assignments
+    // This regex looks for the variable name followed by an equals sign
     int assignmentPos = code.lastIndexOf(varName + " =");
-    if (assignmentPos != -1) {
-        juce::String afterEquals = code.substring(assignmentPos + varName.length() + 2).trimStart();
-        for (auto& className : classNames) {
-            if (afterEquals.startsWith(className)) {
-                return className;
+    if (assignmentPos == -1) assignmentPos = code.lastIndexOf(varName + "=");
+
+    if (assignmentPos != -1)
+    {
+        // Extract the right-hand side of the assignment
+        juce::String rhs = code.substring(assignmentPos + varName.length() + 1).trimStart();
+        rhs = rhs.substring(1).trimStart(); // remove the '='
+        
+        // Take only the first part of the RHS (up to newline or semicolon)
+        int endOfLine = rhs.indexOfAnyOf(";\n\r");
+        if (endOfLine != -1) rhs = rhs.substring(0, endOfLine).trim();
+
+        // Check if it's a simple alias: local p = panel
+        if (rhs == "panel") return "CtrlrPanel";
+        if (rhs == "mod")   return "CtrlrModulator";
+
+        // --- NEW: CHAINED RESOLUTION ---
+        // If RHS is 'panel:getComponent()', we need to resolve it
+        if (rhs.contains(":"))
+        {
+            juce::StringArray tokens;
+            tokens.addTokens(rhs, ":", "");
+            
+            juce::String currentType = "";
+            for (int i = 0; i < tokens.size(); ++i)
+            {
+                juce::String segment = tokens[i].trim();
+                // Strip parentheses if present: getComponent() -> getComponent
+                if (segment.contains("(")) segment = segment.substring(0, segment.indexOf("(")).trim();
+
+                if (i == 0) {
+                    // First token is the base variable (e.g., 'panel')
+                    currentType = getClassNameForVariable(segment, "");
+                } else {
+                    // Subsequent tokens are method calls
+                    currentType = resolveReturnType(currentType, segment);
+                }
+                
+                if (currentType.isEmpty()) break;
             }
+            return currentType;
         }
     }
-    
-    // 3. Fallbacks
-    if (varName == "m" || varName == "mb" || varName == "mem") return "MemoryBlock";
-    if (varName == "f") return "File";
     
     return "";
 }
