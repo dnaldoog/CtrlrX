@@ -75,7 +75,6 @@ private:
     CodeDocument document;
     ValueTree methodTree;
     CtrlrLuaMethodEditor& owner;
-
     // Add the hidden toggle and shared value reference
     ScopedPointer<ToggleButton> hiddenSearchTabsToggle;
     juce::Value& sharedSearchTabsValue;
@@ -86,7 +85,7 @@ private:
     juce::String pendingSuggestion;
     bool isReplacingText = false;
 
-    void handleSuggestionChosen(juce::String selectedText);
+    void handleSuggestionChosen(juce::String chosen);
     juce::String getWordBeforeCaret(int& startOfWord);
     void performReplacement(const juce::String& suggestion);
     

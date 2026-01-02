@@ -2,6 +2,7 @@
 <LuaAPI>
   <class name="AffineTransform" cpp_name="AffineTransform">
     <methods>
+      <method name="__init" type="constructor" args="(AffineTransform)" />
       <method name="followedBy" type="instance" />
       <method name="getScaleFactor" type="instance" />
       <method name="getTranslationX" type="instance" />
@@ -26,6 +27,7 @@
   </class>
   <class name="AiffAudioFormat" cpp_name="AiffAudioFormat">
     <methods>
+      <method name="__init" type="constructor" />
       <method name="canDoMono" type="instance" />
       <method name="canDoStereo" type="instance" />
       <method name="canHandleFile" type="instance" />
@@ -41,9 +43,14 @@
       <method name="triggerAsyncUpdate" type="instance" />
     </methods>
   </class>
-  <class name="Attribute" cpp_name="Attribute" />
+  <class name="Attribute" cpp_name="Attribute">
+    <methods>
+      <method name="__init" type="constructor" args="(AttributedString::Attribute)" />
+    </methods>
+  </class>
   <class name="AttributedString" cpp_name="AttributedString">
     <methods>
+      <method name="__init" type="constructor" args="(AttributedString)" />
       <method name="append" type="instance" />
       <method name="clear" type="instance" />
       <method name="getAttribute" type="instance" />
@@ -100,6 +107,7 @@
   </class>
   <class name="AudioSampleBuffer" cpp_name="AudioSampleBuffer">
     <methods>
+      <method name="__init" type="constructor" args="(float **,int,int,int)" />
       <method name="addFrom" type="instance" />
       <method name="addFromWithRamp" type="instance" />
       <method name="applyGain" type="instance" />
@@ -118,6 +126,7 @@
   </class>
   <class name="AudioThumbnail" cpp_name="AudioThumbnail">
     <methods>
+      <method name="__init" type="constructor" args="(int,AudioFormatManager &amp;,AudioThumbnailCache)" />
       <method name="addBlock" type="instance" />
       <method name="clear" type="instance" />
       <method name="drawChannel" type="instance" />
@@ -139,6 +148,7 @@
   </class>
   <class name="AudtioThumbnailCache" cpp_name="AudioThumbnailCache">
     <methods>
+      <method name="__init" type="constructor" args="(int)" />
       <method name="clear" type="instance" />
       <method name="getTimeSliceThread" type="instance" />
       <method name="loadThumb" type="instance" />
@@ -150,6 +160,7 @@
   </class>
   <class name="BigInteger" cpp_name="LBigInteger">
     <methods>
+      <method name="__init" type="constructor" args="(int)" />
       <method name="clear" type="instance" />
       <method name="clearBit" type="instance" />
       <method name="compare" type="instance" />
@@ -227,6 +238,7 @@
   <class name="CharType" cpp_name="CharType" />
   <class name="Colour" cpp_name="Colour">
     <methods>
+      <method name="__init" type="constructor" args="(int,int,int,int)" />
       <method name="brighter" type="instance" />
       <method name="darker" type="instance" />
       <method name="getARGB" type="instance" />
@@ -267,6 +279,7 @@
   </class>
   <class name="ColourGradient" cpp_name="ColourGradient">
     <methods>
+      <method name="__init" type="constructor" />
       <method name="addColour" type="instance" />
       <method name="clearColours" type="instance" />
       <method name="getColour" type="instance" />
@@ -282,6 +295,7 @@
   </class>
   <class name="ComboBox" cpp_name="ComboBox">
     <methods>
+      <method name="__init" type="constructor" args="(string)" />
       <method name="addItem" type="instance" />
       <method name="addItemList" type="instance" />
       <method name="addListener" type="instance" />
@@ -317,6 +331,7 @@
   </class>
   <class name="Component" cpp_name="Component">
     <methods>
+      <method name="__init" type="constructor" args="(string)" />
       <method name="addAndMakeVisible" type="instance" />
       <method name="addChildAndSetID" type="instance" />
       <method name="addChildComponent" type="instance" />
@@ -459,7 +474,7 @@
       <method name="setLookAndFeel" type="instance" />
       <method name="setMouseClickGrabsKeyboardFocus" type="instance" />
       <method name="setMouseCursor" type="instance" />
-      <method name="setName" type="instance" />
+      <method name="setName" type="instance" args="(owner.getPanelWindowTitle()" />
       <method name="setOpaque" type="instance" />
       <method name="setPaintingIsUnclipped" type="instance" />
       <method name="setPositioner" type="instance" />
@@ -468,7 +483,7 @@
       <method name="setTopLeftPosition" type="instance" />
       <method name="setTopRightPosition" type="instance" />
       <method name="setTransform" type="instance" />
-      <method name="setVisible" type="instance" />
+      <method name="setVisible" type="instance" args="(shouldBeVisible)" />
       <method name="setWantsKeyboardFocus" type="instance" />
       <method name="toBack" type="instance" />
       <method name="toBehind" type="instance" />
@@ -488,6 +503,7 @@
   <class name="ComponentPeer" cpp_name="ComponentPeer" />
   <class name="CriticalSection" cpp_name="CriticalSection">
     <methods>
+      <method name="__init" type="constructor" />
       <method name="enter" type="instance" />
       <method name="exit" type="instance" />
       <method name="tryEnter" type="instance" />
@@ -498,7 +514,7 @@
       <method name="getToggleState" type="instance" />
       <method name="getValueMap" type="instance" />
       <method name="isToggleButton" type="instance" />
-      <method name="setToggleState" type="instance" />
+      <method name="setToggleState" type="instance" args="(bool toggleState,bool sendChangeMessage)" />
     </methods>
   </class>
   <class name="CtrlrCombo" cpp_name="CtrlrCombo">
@@ -508,9 +524,9 @@
       <method name="getSelectedItemIndex" type="instance" />
       <method name="getText" type="instance" />
       <method name="getValueMap" type="instance" />
-      <method name="setSelectedId" type="instance" />
-      <method name="setSelectedItemIndex" type="instance" />
-      <method name="setText" type="instance" />
+      <method name="setSelectedId" type="instance" args="(int id,bool dontNotify)" />
+      <method name="setSelectedItemIndex" type="instance" args="(int index,bool dontNotify)" />
+      <method name="setText" type="instance" args="(String &amp;text,bool dontNotify)" />
     </methods>
   </class>
   <class name="CtrlrComponent" cpp_name="CtrlrComponent">
@@ -527,7 +543,7 @@
       <method name="getMinimum" type="instance" />
       <method name="getOwner" type="instance" />
       <method name="getRect" type="instance" />
-      <method name="getTextForValue" type="instance" />
+      <method name="getTextForValue" type="instance" args="(double value)" />
       <method name="getTransform" type="instance" />
       <method name="getValue" type="instance" />
       <method name="getWidth" type="instance" />
@@ -538,15 +554,15 @@
       <method name="isMouseOverOrDragging" type="instance" />
       <method name="isVisible" type="instance" />
       <method name="keyPressed" type="instance" />
-      <method name="mouseEnter" type="instance" />
-      <method name="mouseExit" type="instance" />
-      <method name="mouseUp" type="instance" />
+      <method name="mouseEnter" type="instance" args="(MouseEvent &amp;e)" />
+      <method name="mouseExit" type="instance" args="(MouseEvent &amp;e)" />
+      <method name="mouseUp" type="instance" args="(MouseEvent &amp;e)" />
       <method name="repaint" type="instance" />
       <method name="setBounds" type="instance" />
-      <method name="setComponentMidiValue" type="instance" />
+      <method name="setComponentMidiValue" type="instance" args="(int newValue,bool sendChangeMessage)" />
       <method name="setComponentText" type="instance" />
       <method name="setComponentValue" type="instance" />
-      <method name="setCustomLookAndFeel" type="instance" />
+      <method name="setCustomLookAndFeel" type="instance" args="(LookAndFeelBase *customLookAndFeel)" />
       <method name="setMidiValue" type="instance" />
       <method name="setSize" type="instance" />
       <method name="setTransform" type="instance" />
@@ -559,10 +575,10 @@
     <methods>
       <method name="deselectAllFiles" type="instance" />
       <method name="getNumSelectedFiles" type="instance" />
-      <method name="getSelectedFile" type="instance" />
+      <method name="getSelectedFile" type="instance" args="(int index)" />
       <method name="refresh" type="instance" />
       <method name="scrollToTop" type="instance" />
-      <method name="setSelectedFile" type="instance" />
+      <method name="setSelectedFile" type="instance" args="(File &amp;file)" />
     </methods>
   </class>
   <class name="CtrlrFixedImageSlider" cpp_name="CtrlrFixedImageSlider">
@@ -581,7 +597,7 @@
       <method name="getToggleState" type="instance" />
       <method name="getValueMap" type="instance" />
       <method name="isToggleButton" type="instance" />
-      <method name="setToggleState" type="instance" />
+      <method name="setToggleState" type="instance" args="(bool toggleState,bool sendChangeMessage)" />
     </methods>
   </class>
   <class name="CtrlrImageSlider" cpp_name="CtrlrImageSlider">
@@ -608,54 +624,57 @@
   <class name="CtrlrListBox" cpp_name="CtrlrListBox">
     <methods>
       <method name="deselectAllRows" type="instance" />
-      <method name="deselectRow" type="instance" />
-      <method name="flipRowSelection" type="instance" />
+      <method name="deselectRow" type="instance" args="(int rowNumber)" />
+      <method name="flipRowSelection" type="instance" args="(int rowNumber)" />
       <method name="getLastRowSelected" type="instance" />
       <method name="getNumRows" type="instance" />
       <method name="getNumSelectedRows" type="instance" />
-      <method name="getSelectedRow" type="instance" />
+      <method name="getSelectedRow" type="instance" args="(int index)" />
       <method name="getSelectedRows" type="instance" />
-      <method name="isRowSelected" type="instance" />
-      <method name="selectRangeOfRows" type="instance" />
-      <method name="selectRow" type="instance" />
-      <method name="setMultipleSelectionEnabled" type="instance" />
+      <method name="isRowSelected" type="instance" args="(int rowNumber)" />
+      <method name="selectRangeOfRows" type="instance" args="(int firstRow,int lastRow)" />
+      <method name="selectRow" type="instance" args="(int rowNumber,bool dontScrollToShowThisRow,bool deselectOthersFirst)" />
+      <method name="setMultipleSelectionEnabled" type="instance" args="(bool shouldBeEnabled)" />
       <method name="updateContent" type="instance" />
     </methods>
   </class>
   <class name="CtrlrLuaAudioConverter" cpp_name="CtrlrLuaAudioConverter">
     <methods>
-      <method name="convertInt16" type="instance" />
-      <method name="convertInt24" type="instance" />
-      <method name="convertInt32" type="instance" />
-      <method name="convertInt8" type="instance" />
-      <method name="convertToUInt8" type="instance" />
-      <method name="convertUInt16" type="instance" />
-      <method name="convertUInt8" type="instance" />
+      <method name="__init" type="constructor" />
+      <method name="convertInt16" type="instance" args="(MemoryBlock &amp;sourceData,AudioSampleBuffer &amp;destination,int numSamples,int numChannels,bool interleaved)" />
+      <method name="convertInt24" type="instance" args="(MemoryBlock &amp;sourceData,AudioSampleBuffer &amp;destination,int numSamples,int numChannels,bool interleaved)" />
+      <method name="convertInt32" type="instance" args="(MemoryBlock &amp;sourceData,AudioSampleBuffer &amp;destination,int numSamples,int numChannels,bool interleaved)" />
+      <method name="convertInt8" type="instance" args="(MemoryBlock &amp;sourceData,AudioSampleBuffer &amp;destination,int numSamples,int numChannels,bool interleaved)" />
+      <method name="convertToUInt8" type="instance" args="(AudioFormatReader *sourceFormatReader,int numSamples,int sampleOffset,int sourceChannel,bool sourceIsInterleaved)" />
+      <method name="convertUInt16" type="instance" args="(MemoryBlock &amp;sourceData,AudioSampleBuffer &amp;destination,int numSamples,int numChannels,bool interleaved)" />
+      <method name="convertUInt8" type="instance" args="(MemoryBlock &amp;sourceData,AudioSampleBuffer &amp;destination,int numSamples,int numChannels,bool interleaved)" />
     </methods>
   </class>
   <class name="CtrlrLuaBigInteger" cpp_name="CtrlrLuaBigInteger">
     <methods>
+      <method name="__init" type="constructor" args="(int)" />
       <method name="clear" type="instance" />
-      <method name="clearBit" type="instance" />
-      <method name="clearRange" type="instance" />
-      <method name="getBit" type="instance" />
-      <method name="getBitRangeAsInt" type="instance" />
-      <method name="setBit" type="instance" />
-      <method name="setBitRangeAsInt" type="instance" />
-      <method name="setRange" type="instance" />
-      <method name="shiftBits" type="instance" />
-      <method name="toString" type="instance" />
+      <method name="clearBit" type="instance" args="(int bitPosition)" />
+      <method name="clearRange" type="instance" args="(int startBit,int numBits)" />
+      <method name="getBit" type="instance" args="(int bitPosition)" />
+      <method name="getBitRangeAsInt" type="instance" args="(int startBit,int numBits)" />
+      <method name="setBit" type="instance" args="(int bitPosition,bool shouldBeSet)" />
+      <method name="setBitRangeAsInt" type="instance" args="(int startBit,int numBits,int valueToSet)" />
+      <method name="setRange" type="instance" args="(int startBit,int numBits)" />
+      <method name="shiftBits" type="instance" args="(int howManyBitsLeft,int startBit)" />
+      <method name="toString" type="instance" args="(int base,int minimumNumCharacters)" />
     </methods>
   </class>
   <class name="CtrlrLuaComponentAnimator" cpp_name="CtrlrLuaComponentAnimator">
     <methods>
-      <method name="animateComponent" type="instance" />
-      <method name="cancelAllAnimations" type="instance" />
-      <method name="cancelAnimation" type="instance" />
-      <method name="fadeIn" type="instance" />
-      <method name="fadeOut" type="instance" />
-      <method name="getComponentDestination" type="instance" />
-      <method name="isAnimating" type="instance" />
+      <method name="__init" type="constructor" />
+      <method name="animateComponent" type="instance" args="(CtrlrComponent *component,CtrlrLuaRectangle &amp;finalBounds,float finalAlpha,int animationDurationMilliseconds,bool useProxyComponent,double startSpeed,double endSpeed)" />
+      <method name="cancelAllAnimations" type="instance" args="(bool moveComponentsToTheirFinalPositions)" />
+      <method name="cancelAnimation" type="instance" args="(CtrlrComponent *component,bool moveComponentToItsFinalPosition)" />
+      <method name="fadeIn" type="instance" args="(CtrlrComponent *component,int millisecondsToTake)" />
+      <method name="fadeOut" type="instance" args="(CtrlrComponent *component,int millisecondsToTake)" />
+      <method name="getComponentDestination" type="instance" args="(CtrlrComponent *component)" />
+      <method name="isAnimating" type="instance" args="(CtrlrComponent *component)" />
     </methods>
   </class>
   <class name="CtrlrLuaDebugger" cpp_name="CtrlrLuaDebugger">
@@ -666,88 +685,89 @@
   </class>
   <class name="CtrlrLuaMemoryBlock" cpp_name="CtrlrLuaMemoryBlock">
     <methods>
-      <method name="append" type="instance" />
-      <method name="copyFrom" type="instance" />
-      <method name="copyTo" type="instance" />
-      <method name="getByte" type="instance" />
-      <method name="getRange" type="instance" />
+      <method name="__init" type="constructor" args="(luabind::object)" />
+      <method name="append" type="instance" args="(CtrlrLuaObjectWrapper &amp;dataToAppend)" />
+      <method name="copyFrom" type="instance" args="(CtrlrLuaMemoryBlock &amp;sourceData,int destinationOffset,int numBytes)" />
+      <method name="copyTo" type="instance" args="(CtrlrLuaMemoryBlock &amp;destinationData,int sourceOffset,int numBytes)" />
+      <method name="getByte" type="instance" args="(int bytePosition)" />
+      <method name="getRange" type="instance" args="(int startByte,int numBytes)" />
       <method name="getSize" type="instance" />
-      <method name="insert" type="instance" />
-      <method name="loadFromHexString" type="instance" />
-      <method name="removeSection" type="instance" />
-      <method name="setByte" type="instance" />
-      <method name="toHexString" type="instance" />
+      <method name="insert" type="instance" args="(CtrlrLuaMemoryBlock &amp;dataToInsert,int numBytesToInsert,int insertPosition)" />
+      <method name="loadFromHexString" type="instance" args="(String &amp;string)" />
+      <method name="removeSection" type="instance" args="(int startByte,int numBytesToRemove)" />
+      <method name="setByte" type="instance" args="(unsigned int bytePosition,int byteValue)" />
+      <method name="toHexString" type="instance" args="(int groupSize)" />
       <method name="toSafeString" type="instance" />
       <method name="toString" type="instance" />
     </methods>
   </class>
   <class name="CtrlrLuaMultiTimer" cpp_name="CtrlrLuaMultiTimer">
     <methods>
-      <method name="getTimerInterval" type="instance" />
-      <method name="isRegistered" type="instance" />
-      <method name="isTimerRunning" type="instance" />
-      <method name="setCallback" type="instance" />
-      <method name="startTimer" type="instance" />
-      <method name="stopTimer" type="instance" />
+      <method name="getTimerInterval" type="instance" args="(int timerId)" />
+      <method name="isRegistered" type="instance" args="(int timerId)" />
+      <method name="isTimerRunning" type="instance" args="(int timerId)" />
+      <method name="setCallback" type="instance" args="(int timerId,luabind::object callback)" />
+      <method name="startTimer" type="instance" args="(int timerId,int interval)" />
+      <method name="stopTimer" type="instance" args="(int timerId)" />
     </methods>
   </class>
   <class name="CtrlrLuaObject" cpp_name="CtrlrLuaObject">
     <methods>
       <method name="getObjectTree" type="instance" />
       <method name="getProperty" type="instance" />
-      <method name="getPropertyDouble" type="instance" />
-      <method name="getPropertyInt" type="instance" />
-      <method name="getPropertyString" type="instance" />
-      <method name="removeProperty" type="instance" />
+      <method name="getPropertyDouble" type="instance" args="(String &amp;propertyName)" />
+      <method name="getPropertyInt" type="instance" args="(String &amp;propertyName)" />
+      <method name="getPropertyString" type="instance" args="(String &amp;propertyName)" />
+      <method name="removeProperty" type="instance" args="(Identifier &amp;propertyName)" />
       <method name="setProperty" type="instance" />
-      <method name="setPropertyColour" type="instance" />
-      <method name="setPropertyDouble" type="instance" />
-      <method name="setPropertyInt" type="instance" />
-      <method name="setPropertyString" type="instance" />
+      <method name="setPropertyColour" type="instance" args="(String &amp;propertyName,Colour value)" />
+      <method name="setPropertyDouble" type="instance" args="(String &amp;propertyName,double value)" />
+      <method name="setPropertyInt" type="instance" args="(String &amp;propertyName,int value)" />
+      <method name="setPropertyString" type="instance" args="(String &amp;propertyName,String &amp;value)" />
     </methods>
   </class>
   <class name="CtrlrLuaRectangle" cpp_name="CtrlrLuaRectangle">
     <methods>
-      <method name="contains" type="instance" />
-      <method name="enlargeIfAdjacent" type="instance" />
-      <method name="expand" type="instance" />
+      <method name="contains" type="instance" args="(int x,int y)" />
+      <method name="enlargeIfAdjacent" type="instance" args="(CtrlrLuaRectangle &amp;other)" />
+      <method name="expand" type="instance" args="(int x,int y)" />
       <method name="getAspectRatio" type="instance" />
       <method name="getBottom" type="instance" />
       <method name="getCentreX" type="instance" />
       <method name="getCentreY" type="instance" />
       <method name="getHeight" type="instance" />
-      <method name="getIntersection" type="instance" />
+      <method name="getIntersection" type="instance" args="(CtrlrLuaRectangle &amp;other)" />
       <method name="getRight" type="instance" />
-      <method name="getUnion" type="instance" />
+      <method name="getUnion" type="instance" args="(CtrlrLuaRectangle &amp;other)" />
       <method name="getWidth" type="instance" />
       <method name="getX" type="instance" />
       <method name="getY" type="instance" />
-      <method name="intersects" type="instance" />
-      <method name="reduce" type="instance" />
-      <method name="reduceIfPartlyContainedIn" type="instance" />
-      <method name="setBottom" type="instance" />
-      <method name="setBounds" type="instance" />
-      <method name="setHeight" type="instance" />
-      <method name="setLeft" type="instance" />
-      <method name="setPosition" type="instance" />
-      <method name="setRight" type="instance" />
-      <method name="setSize" type="instance" />
-      <method name="setTop" type="instance" />
-      <method name="setWidth" type="instance" />
-      <method name="setX" type="instance" />
-      <method name="setY" type="instance" />
+      <method name="intersects" type="instance" args="(CtrlrLuaRectangle &amp;other)" />
+      <method name="reduce" type="instance" args="(int x,int y)" />
+      <method name="reduceIfPartlyContainedIn" type="instance" args="(CtrlrLuaRectangle &amp;other)" />
+      <method name="setBottom" type="instance" args="(int p)" />
+      <method name="setBounds" type="instance" args="(int x,int y,int width,int height)" />
+      <method name="setHeight" type="instance" args="(int height)" />
+      <method name="setLeft" type="instance" args="(int p)" />
+      <method name="setPosition" type="instance" args="(int x,int y)" />
+      <method name="setRight" type="instance" args="(int p)" />
+      <method name="setSize" type="instance" args="(int width,int height)" />
+      <method name="setTop" type="instance" args="(int p)" />
+      <method name="setWidth" type="instance" args="(int width)" />
+      <method name="setX" type="instance" args="(int x)" />
+      <method name="setY" type="instance" args="(int y)" />
       <method name="toString" type="instance" />
-      <method name="translate" type="instance" />
-      <method name="translated" type="instance" />
-      <method name="withBottom" type="instance" />
-      <method name="withHeight" type="instance" />
-      <method name="withLeft" type="instance" />
-      <method name="withPosition" type="instance" />
-      <method name="withRight" type="instance" />
-      <method name="withTop" type="instance" />
-      <method name="withWidth" type="instance" />
-      <method name="withX" type="instance" />
-      <method name="withY" type="instance" />
+      <method name="translate" type="instance" args="(int x,int y)" />
+      <method name="translated" type="instance" args="(int x,int y)" />
+      <method name="withBottom" type="instance" args="(int p)" />
+      <method name="withHeight" type="instance" args="(int p)" />
+      <method name="withLeft" type="instance" args="(int p)" />
+      <method name="withPosition" type="instance" args="(int x,int y)" />
+      <method name="withRight" type="instance" args="(int p)" />
+      <method name="withTop" type="instance" args="(int p)" />
+      <method name="withWidth" type="instance" args="(int p)" />
+      <method name="withX" type="instance" args="(int p)" />
+      <method name="withY" type="instance" args="(int p)" />
     </methods>
   </class>
   <class name="CtrlrMIDIDevice" cpp_name="CtrlrMIDIDevice">
@@ -757,32 +777,33 @@
       <method name="getState" type="instance" />
       <method name="getType" type="instance" />
       <method name="openDevice" type="instance" />
-      <method name="sendMidiBuffer" type="instance" />
-      <method name="sendMidiMessage" type="instance" />
+      <method name="sendMidiBuffer" type="instance" args="(MidiBuffer &amp;buffer,double millisecondCounterToStartAt)" />
+      <method name="sendMidiMessage" type="instance" args="(MidiMessage &amp;message,double millisecondCounterToStartAt)" />
     </methods>
   </class>
   <class name="CtrlrMIDIDeviceManager" cpp_name="CtrlrMIDIDeviceManager">
     <methods>
       <method name="getDeviceByIndex" type="instance" />
       <method name="getDeviceByName" type="instance" />
-      <method name="getDeviceName" type="instance" />
-      <method name="getManagedDevices" type="instance" />
-      <method name="getNumDevices" type="instance" />
-      <method name="isDeviceOpened" type="instance" />
+      <method name="getDeviceName" type="instance" args="(int idx,CtrlrMIDIDeviceType type)" />
+      <method name="getManagedDevices" type="instance" args="(CtrlrMIDIDeviceType type)" />
+      <method name="getNumDevices" type="instance" args="(CtrlrMIDIDeviceType type)" />
+      <method name="isDeviceOpened" type="instance" args="(int idx,CtrlrMIDIDeviceType type)" />
       <method name="refreshDevices" type="instance" />
     </methods>
   </class>
   <class name="CtrlrMidiInputComparator" cpp_name="CtrlrMidiInputComparator">
     <methods>
-      <method name="addMatchTarget" type="instance" />
+      <method name="addMatchTarget" type="instance" args="(CtrlrModulator *modulatorToAdd)" />
       <method name="clear" type="instance" />
       <method name="dumpTables" type="instance" />
-      <method name="match" type="instance" />
+      <method name="match" type="instance" args="(MidiMessage &amp;m)" />
       <method name="rehashComparator" type="instance" />
     </methods>
   </class>
   <class name="CtrlrMidiMessage" cpp_name="CtrlrMidiMessage">
     <methods>
+      <method name="__init" type="constructor" args="(MemoryBlock)" />
       <method name="getChannel" type="instance" />
       <method name="getData" type="instance" />
       <method name="getInitializationResult" type="instance" />
@@ -793,12 +814,12 @@
       <method name="getSize" type="instance" />
       <method name="getType" type="instance" />
       <method name="getValue" type="instance" />
-      <method name="setChannel" type="instance" />
-      <method name="setMidiMessageType" type="instance" />
-      <method name="setNumber" type="instance" />
+      <method name="setChannel" type="instance" args="(int midiChannel)" />
+      <method name="setMidiMessageType" type="instance" args="(CtrlrMidiMessageType newType)" />
+      <method name="setNumber" type="instance" args="(int number)" />
       <method name="setProperty" type="instance" />
       <method name="setType" type="instance" />
-      <method name="setValue" type="instance" />
+      <method name="setValue" type="instance" args="(int value)" />
       <method name="toString" type="instance" />
     </methods>
   </class>
@@ -832,11 +853,11 @@
       <method name="getValueNonMappedInt" type="instance" />
       <method name="getVstIndex" type="instance" />
       <method name="isRestoring" type="instance" />
-      <method name="setModulatorValue" type="instance" />
-      <method name="setRestoreState" type="instance" />
-      <method name="setValue" type="instance" />
-      <method name="setValueMapped" type="instance" />
-      <method name="setValueNonMapped" type="instance" />
+      <method name="setModulatorValue" type="instance" args="(int newValue,bool vst,bool midi,bool ui)" />
+      <method name="setRestoreState" type="instance" args="(bool _restoreStateStatus)" />
+      <method name="setValue" type="instance" args="(int newValue,bool force)" />
+      <method name="setValueMapped" type="instance" args="(int newValue,bool force,bool mute)" />
+      <method name="setValueNonMapped" type="instance" args="(int newValue,bool force,bool mute)" />
     </methods>
   </class>
   <class name="CtrlrNative" cpp_name="CtrlrNative">
@@ -852,17 +873,17 @@
       <method name="getLayer" type="instance" />
       <method name="getLayerByName" type="instance" />
       <method name="getLayerFromArray" type="instance" />
-      <method name="getLayerName" type="instance" />
+      <method name="getLayerName" type="instance" args="(int indexInArray)" />
       <method name="getNumLayers" type="instance" />
-      <method name="setCustomLookAndFeel" type="instance" />
+      <method name="setCustomLookAndFeel" type="instance" args="(LookAndFeelBase *customLookAndFeel)" />
     </methods>
   </class>
   <class name="CtrlrPanelCanvasLayer" cpp_name="CtrlrPanelCanvasLayer">
     <methods>
       <method name="moveDown" type="instance" />
       <method name="moveUp" type="instance" />
-      <method name="setCustomLookAndFeel" type="instance" />
-      <method name="setVisible" type="instance" />
+      <method name="setCustomLookAndFeel" type="instance" args="(luabind::object &amp;customLookAndFeel)" />
+      <method name="setVisible" type="instance" args="(bool shouldBeVisible)" />
     </methods>
   </class>
   <class name="CtrlrPanelEditor" cpp_name="CtrlrPanelEditor">
@@ -898,9 +919,9 @@
     <methods>
       <method name="getNumResources" type="instance" />
       <method name="getResource" type="instance" />
-      <method name="getResourceAsFont" type="instance" />
-      <method name="getResourceAsImage" type="instance" />
-      <method name="getResourceIndex" type="instance" />
+      <method name="getResourceAsFont" type="instance" args="(String &amp;resourceName)" />
+      <method name="getResourceAsImage" type="instance" args="(String &amp;resourceName)" />
+      <method name="getResourceIndex" type="instance" args="(String &amp;resourceName)" />
     </methods>
   </class>
   <class name="CtrlrSlider" cpp_name="CtrlrSlider">
@@ -913,44 +934,44 @@
     <methods>
       <method name="getToggleState" type="instance" />
       <method name="getValueMap" type="instance" />
-      <method name="setToggleState" type="instance" />
+      <method name="setToggleState" type="instance" args="(bool toggleState,bool sendChangeMessage)" />
     </methods>
   </class>
   <class name="CtrlrValue" cpp_name="CtrlrValue" />
   <class name="CtrlrValueMap" cpp_name="CtrlrValueMap">
     <methods>
-      <method name="addAdditionalData" type="instance" />
+      <method name="addAdditionalData" type="instance" args="(int index,String &amp;data)" />
       <method name="clear" type="instance" />
-      <method name="copyFrom" type="instance" />
+      <method name="copyFrom" type="instance" args="(CtrlrValueMap &amp;map)" />
       <method name="decrement" type="instance" />
-      <method name="fillCombo" type="instance" />
+      <method name="fillCombo" type="instance" args="(ComboBox &amp;comboToFill,bool clearBeforeFill)" />
       <method name="getCurrentMappedValue" type="instance" />
       <method name="getCurrentNonMappedValue" type="instance" />
       <method name="getCurrentText" type="instance" />
-      <method name="getIndexForValue" type="instance" />
+      <method name="getIndexForValue" type="instance" args="(int value)" />
       <method name="getMap" type="instance" />
       <method name="getMappedMax" type="instance" />
       <method name="getMappedMin" type="instance" />
-      <method name="getMappedValue" type="instance" />
+      <method name="getMappedValue" type="instance" args="(int valueIndex)" />
       <method name="getNonMappedMax" type="instance" />
       <method name="getNonMappedMin" type="instance" />
-      <method name="getNonMappedValue" type="instance" />
+      <method name="getNonMappedValue" type="instance" args="(String &amp;textRepresentation)" />
       <method name="getNumericValues" type="instance" />
-      <method name="getTextForIndex" type="instance" />
+      <method name="getTextForIndex" type="instance" args="(int valueIndex)" />
       <method name="increment" type="instance" />
-      <method name="mappedValueExists" type="instance" />
-      <method name="parseString" type="instance" />
-      <method name="setCurrentMappedValue" type="instance" />
-      <method name="setCurrentNonMappedValue" type="instance" />
-      <method name="setPair" type="instance" />
+      <method name="mappedValueExists" type="instance" args="(int mappedValue)" />
+      <method name="parseString" type="instance" args="(String&amp; stringToParseAsMap)" />
+      <method name="setCurrentMappedValue" type="instance" args="(int _currentValue)" />
+      <method name="setCurrentNonMappedValue" type="instance" args="(int _currentValue)" />
+      <method name="setPair" type="instance" args="(int index,int value,String &amp;text)" />
       <method name="toString" type="instance" />
     </methods>
   </class>
   <class name="CtrlrWaveform" cpp_name="CtrlrWaveform">
     <methods>
-      <method name="addBlock" type="instance" />
+      <method name="addBlock" type="instance" args="(double sampleNumberInsource,AudioSampleBuffer &amp;newData,int startOffsetInBuffer,int numSamples)" />
       <method name="clear" type="instance" />
-      <method name="getApproximateMinMax" type="instance" />
+      <method name="getApproximateMinMax" type="instance" args="(double startTime,double endTime,int channelIndex,float &amp;minValue,float &amp;maxValue)" />
       <method name="getApproximatePeak" type="instance" />
       <method name="getCurrentAudioBuffer" type="instance" />
       <method name="getCurrentFile" type="instance" />
@@ -959,18 +980,19 @@
       <method name="getNumSamplesFinished" type="instance" />
       <method name="getTotalLength" type="instance" />
       <method name="isFullyLoaded" type="instance" />
-      <method name="loadFromFile" type="instance" />
-      <method name="reset" type="instance" />
-      <method name="setEnd" type="instance" />
-      <method name="setReader" type="instance" />
-      <method name="setSourceSamplesPerThumbnailSample" type="instance" />
-      <method name="setStart" type="instance" />
-      <method name="setVerticalZoomFactor" type="instance" />
+      <method name="loadFromFile" type="instance" args="(File &amp;fileToLoadFrom)" />
+      <method name="reset" type="instance" args="(int numChannels,double sampleRate,double totalSamplesInSource)" />
+      <method name="setEnd" type="instance" args="(double seconds)" />
+      <method name="setReader" type="instance" args="(AudioFormatReader *newReader,double hashCode)" />
+      <method name="setSourceSamplesPerThumbnailSample" type="instance" args="(int sourceSamplesPerThumbnailSample)" />
+      <method name="setStart" type="instance" args="(double seconds)" />
+      <method name="setVerticalZoomFactor" type="instance" args="(float verticalZoomFactor)" />
     </methods>
   </class>
   <class name="CurrentPositionInfo" cpp_name="CurrentPositionInfo" />
   <class name="DragAndDropSourceDetails" cpp_name="DragAndDropSourceDetails">
     <methods>
+      <method name="__init" type="constructor" />
       <method name="getDescription" type="instance" />
       <method name="getLocalPositionX" type="instance" />
       <method name="getLocalPositionY" type="instance" />
@@ -997,6 +1019,7 @@
   </class>
   <class name="DrawableComposite" cpp_name="DrawableComposite">
     <methods>
+      <method name="__init" type="constructor" args="(DrawableComposite)" />
       <method name="getBoundingBox" type="instance" />
       <method name="getContentArea" type="instance" />
       <method name="getDrawableBounds" type="instance" />
@@ -1008,6 +1031,7 @@
   </class>
   <class name="DropShadow" cpp_name="DropShadow">
     <methods>
+      <method name="__init" type="constructor" />
       <method name="drawForImage" type="instance" />
       <method name="drawForPath" type="instance" />
       <method name="drawForRectangle" type="instance" />
@@ -1015,11 +1039,13 @@
   </class>
   <class name="DropShadower" cpp_name="DropShadower">
     <methods>
+      <method name="__init" type="constructor" args="(DropShadow)" />
       <method name="setOwner" type="instance" />
     </methods>
   </class>
   <class name="Expression" cpp_name="Expression">
     <methods>
+      <method name="__init" type="constructor" args="(Expression)" />
       <method name="adjustedToGiveNewResult" type="instance" />
       <method name="evaluate" type="instance" />
       <method name="findReferencedSymbols" type="instance" />
@@ -1035,6 +1061,7 @@
   </class>
   <class name="File" cpp_name="LFile">
     <methods>
+      <method name="__init" type="constructor" args="(File)" />
       <method name="appendData" type="instance" />
       <method name="appendText" type="instance" />
       <method name="containsSubDirectories" type="instance" />
@@ -1112,6 +1139,7 @@
   </class>
   <class name="FillType" cpp_name="FillType">
     <methods>
+      <method name="__init" type="constructor" args="(Image &amp;,AffineTransform)" />
       <method name="getOpacity" type="instance" />
       <method name="isColour" type="instance" />
       <method name="isGradient" type="instance" />
@@ -1125,6 +1153,7 @@
   </class>
   <class name="FlacAudioFormat" cpp_name="FlacAudioFormat">
     <methods>
+      <method name="__init" type="constructor" />
       <method name="canDoMono" type="instance" />
       <method name="canDoStereo" type="instance" />
       <method name="canHandleFile" type="instance" />
@@ -1135,6 +1164,7 @@
   </class>
   <class name="Font" cpp_name="Font">
     <methods>
+      <method name="__init" type="constructor" args="(Typeface::Ptr)" />
       <method name="boldened" type="instance" />
       <method name="getAscent" type="instance" />
       <method name="getAscentInPoints" type="instance" />
@@ -1195,6 +1225,7 @@
   </class>
   <class name="GlyphArrangement" cpp_name="GlyphArrangement">
     <methods>
+      <method name="__init" type="constructor" args="(GlyphArrangement)" />
       <method name="addCurtailedLineOfText" type="instance" />
       <method name="addFittedText" type="instance" />
       <method name="addGlyph" type="instance" />
@@ -1216,6 +1247,7 @@
   </class>
   <class name="Graphics" cpp_name="Graphics">
     <methods>
+      <method name="__init" type="constructor" args="(Image)" />
       <method name="addTransform" type="instance" />
       <method name="beginTransparencyLayer" type="instance" />
       <method name="clipRegionIntersects" type="instance" />
@@ -1264,12 +1296,14 @@
   </class>
   <class name="GroupComponent" cpp_name="GroupComponent">
     <methods>
+      <method name="__init" type="constructor" args="(String &amp;,string)" />
       <method name="getText" type="instance" />
       <method name="setText" type="instance" />
     </methods>
   </class>
   <class name="Identifier" cpp_name="Identifier">
     <methods>
+      <method name="__init" type="constructor" args="(string)" />
       <method name="toString" type="instance" />
     </methods>
     <static_methods>
@@ -1278,6 +1312,7 @@
   </class>
   <class name="Image" cpp_name="Image">
     <methods>
+      <method name="__init" type="constructor" />
       <method name="desaturate" type="instance" />
       <method name="duplicateIfShared" type="instance" />
       <method name="getHeight" type="instance" />
@@ -1331,6 +1366,7 @@
   <class name="JUCEBigInteger" cpp_name="BigInteger" />
   <class name="Justification" cpp_name="Justification">
     <methods>
+      <method name="__init" type="constructor" args="(int)" />
       <method name="getFlags" type="instance" />
       <method name="getOnlyHorizontalFlags" type="instance" />
       <method name="getOnlyVerticalFlags" type="instance" />
@@ -1339,6 +1375,7 @@
   </class>
   <class name="KeyPress" cpp_name="KeyPress">
     <methods>
+      <method name="__init" type="constructor" args="(int,ModifierKeys &amp;,juce_wchar)" />
       <method name="getKeyCode" type="instance" />
       <method name="getModifiers" type="instance" />
       <method name="getTextCharacter" type="instance" />
@@ -1355,6 +1392,7 @@
   </class>
   <class name="LAlertWindow" cpp_name="LAlertWindow">
     <methods>
+      <method name="__init" type="constructor" args="(String &amp;,String &amp;,AlertIconType)" />
       <method name="addButton" type="instance" />
       <method name="addComboBox" type="instance" />
       <method name="addCustomComponent" type="instance" />
@@ -1374,20 +1412,21 @@
       <method name="runModalLoop" type="instance" />
       <method name="setEscapeKeyCancels" type="instance" />
       <method name="setMessage" type="instance" />
-      <method name="setModalHandler" type="instance" />
+      <method name="setModalHandler" type="instance" args="(luabind::object &amp; _o)" />
       <method name="triggerButtonClick" type="instance" />
     </methods>
     <static_methods>
-      <method name="queryText" type="static" />
-      <method name="showMessageBox" type="static" />
-      <method name="showMessageBoxAsync" type="static" />
-      <method name="showNativeDialogBox" type="static" />
-      <method name="showOkCancelBox" type="static" />
-      <method name="showYesNoCancelBox" type="static" />
+      <method name="queryText" type="static" args="(AlertIconType iconType,String &amp;title,String &amp;textMessage,String &amp;textAreaContent,String &amp;textAreaLabel,String &amp;button1Text,String &amp;button2Text,bool isContentPassword,luabind::object &amp;result)" />
+      <method name="showMessageBox" type="static" args="(AlertIconType iconType,String&amp; title,String&amp; message,String&amp; buttonText)" />
+      <method name="showMessageBoxAsync" type="static" args="(AlertIconType iconType,String&amp; title,String&amp; message,String&amp; buttonText)" />
+      <method name="showNativeDialogBox" type="static" args="(String&amp; title,String&amp; bodyText,bool isOkCancel)" />
+      <method name="showOkCancelBox" type="static" args="(AlertIconType iconType,String&amp; title,String&amp; message,String&amp; button1Text,String&amp; button2Text)" />
+      <method name="showYesNoCancelBox" type="static" args="(AlertIconType iconType,String&amp; title,String&amp; message,String&amp; button1Text,String&amp; button2Text,String&amp; button3Text)" />
     </static_methods>
   </class>
   <class name="LAudioFormatManager" cpp_name="LAudioFormatManager">
     <methods>
+      <method name="__init" type="constructor" />
       <method name="createReaderFor" type="instance" />
       <method name="findFormatForFileExtension" type="instance" />
       <method name="getDefaultFormat" type="instance" />
@@ -1399,28 +1438,31 @@
   </class>
   <class name="LBubbleMessageComponent" cpp_name="LBubbleMessageComponent">
     <methods>
-      <method name="getContentSize" type="instance" />
-      <method name="showAt" type="instance" />
+      <method name="__init" type="constructor" args="(int)" />
+      <method name="getContentSize" type="instance" args="(int &amp;w,int &amp;h)" />
+      <method name="showAt" type="instance" args="(Component *component,String &amp;message,int numMillisecondsBeforeRemoving,bool removeWhenMouseClicked,bool deleteSelfAfterUse)" />
     </methods>
   </class>
   <class name="LComponent" cpp_name="LComponent" />
   <class name="LFont" cpp_name="LFont" />
   <class name="LPopupMenu" cpp_name="LPopupMenu">
     <methods>
+      <method name="__init" type="constructor" />
       <method name="addColouredItem" type="instance" />
       <method name="addColumnBreak" type="instance" />
       <method name="addItem" type="instance" />
       <method name="addSectionHeader" type="instance" />
       <method name="addSeparator" type="instance" />
-      <method name="addSubMenu" type="instance" />
+      <method name="addSubMenu" type="instance" args="(String&amp; subMenuName,LPopupMenu&amp; subMenu,bool isEnabled,Image&amp; iconToUse,bool isTicked,int itemResultID)" />
       <method name="clear" type="instance" />
       <method name="getNumItems" type="instance" />
-      <method name="show" type="instance" />
-      <method name="showAt" type="instance" />
+      <method name="show" type="instance" args="(int itemIDThatMustBeVisible,int minimumWidth,int maximumNumColumns,int standardItemHeight)" />
+      <method name="showAt" type="instance" args="(Component *componentToAttachTo,int standardItemHeight)" />
     </methods>
   </class>
   <class name="LRelativeCoordinate" cpp_name="LRelativeCoordinate">
     <methods>
+      <method name="__init" type="constructor" args="(string)" />
       <method name="getExpression" type="instance" />
       <method name="isDynamic" type="instance" />
       <method name="isRecursive" type="instance" />
@@ -1431,11 +1473,12 @@
   </class>
   <class name="LSparseSet" cpp_name="LSparseSet">
     <methods>
+      <method name="__init" type="constructor" />
       <method name="addRange" type="instance" />
       <method name="clear" type="instance" />
       <method name="contains" type="instance" />
       <method name="containsRange" type="instance" />
-      <method name="get" type="instance" />
+      <method name="get" type="instance" args="(int index)" />
       <method name="getNumRanges" type="instance" />
       <method name="getRange" type="instance" />
       <method name="getTotalRange" type="instance" />
@@ -1449,10 +1492,11 @@
   <class name="LStringArray" cpp_name="LStringArray" />
   <class name="LThreadWithProgressWindow" cpp_name="LThreadWithProgressWindow">
     <methods>
+      <method name="__init" type="constructor" args="(String &amp;,bool,bool,int,string)" />
       <method name="runThread" type="instance" />
-      <method name="setProgress" type="instance" />
-      <method name="setStatusMessage" type="instance" />
-      <method name="setThreadFunction" type="instance" />
+      <method name="setProgress" type="instance" args="(double newProgress)" />
+      <method name="setStatusMessage" type="instance" args="(String &amp;newStatusMessage)" />
+      <method name="setThreadFunction" type="instance" args="(luabind::object &amp; _functionToRunOnThread)" />
       <method name="wait" type="instance" />
     </methods>
   </class>
@@ -1485,6 +1529,7 @@
   </class>
   <class name="Line&lt;float" cpp_name="Line&lt;float">
     <methods>
+      <method name="__init" type="constructor" args="(number,number,number,number)" />
       <method name="applyTransform" type="instance" />
       <method name="findNearestPointTo" type="instance" />
       <method name="findNearestProportionalPositionTo" type="instance" />
@@ -1512,8 +1557,9 @@
   </class>
   <class name="LookAndFeel" cpp_name="LookAndFeelBase">
     <methods>
-      <method name="setImplementation" type="instance" />
-      <method name="setMethod" type="instance" />
+      <method name="__init" type="constructor" />
+      <method name="setImplementation" type="instance" args="(luabind::object &amp;implementationAsTable)" />
+      <method name="setMethod" type="instance" args="(String &amp;methodName,luabind::object &amp;method)" />
     </methods>
     <static_methods>
       <method name="createDrawableComposite" type="static" />
@@ -1532,53 +1578,55 @@
   <class name="Ltime" cpp_name="LTime" />
   <class name="MemoryBlock" cpp_name="LMemoryBlock">
     <methods>
-      <method name="append" type="instance" />
+      <method name="__init" type="constructor" args="(string)" />
+      <method name="append" type="instance" args="(MemoryBlock &amp;dataToAppend)" />
       <method name="compressGzip" type="instance" />
       <method name="compressZlib" type="instance" />
-      <method name="copyFrom" type="instance" />
-      <method name="copyTo" type="instance" />
-      <method name="createFromTable" type="instance" />
+      <method name="copyFrom" type="instance" args="(MemoryBlock &amp;dataToCopy,int destinationOffset,int numBytes)" />
+      <method name="copyTo" type="instance" args="(MemoryBlock &amp;dataToCopy,int sourceOffset,int numBytes)" />
+      <method name="createFromTable" type="instance" args="(luabind::object &amp;table)" />
       <method name="decompressGzip" type="instance" />
       <method name="decompressZlib" type="instance" />
       <method name="ensureSize" type="instance" />
       <method name="fillWith" type="instance" />
       <method name="fromBase64Encoding" type="instance" />
-      <method name="getBitRange" type="instance" />
-      <method name="getByte" type="instance" />
+      <method name="getBitRange" type="instance" args="(int bitRangeStart,int numBits)" />
+      <method name="getByte" type="instance" args="(int position)" />
       <method name="getData" type="instance" />
-      <method name="getRange" type="instance" />
+      <method name="getRange" type="instance" args="(int startingPosition,int numBytes)" />
       <method name="getSize" type="instance" />
-      <method name="insert" type="instance" />
-      <method name="insertIntoTable" type="instance" />
+      <method name="insert" type="instance" args="(MemoryBlock &amp;dataToInsert,int insertPosition)" />
+      <method name="insertIntoTable" type="instance" args="(luabind::object &amp; table)" />
       <method name="loadFromHexString" type="instance" />
       <method name="pushLString" type="instance" />
-      <method name="removeSection" type="instance" />
-      <method name="replaceWith" type="instance" />
-      <method name="setBitRange" type="instance" />
-      <method name="setByte" type="instance" />
+      <method name="removeSection" type="instance" args="(int startByte,int dataSize)" />
+      <method name="replaceWith" type="instance" args="(MemoryBlock &amp;dataToReplace)" />
+      <method name="setBitRange" type="instance" args="(int bitRangeStart,int numBits,int binaryNumberToApply)" />
+      <method name="setByte" type="instance" args="(int bytePosition,uint8 byteValue)" />
       <method name="setSize" type="instance" />
       <method name="swapWith" type="instance" />
       <method name="toBase64Encoding" type="instance" />
       <method name="toBinarySafeString" type="instance" />
       <method name="toBinaryString" type="instance" />
-      <method name="toHexString" type="instance" />
+      <method name="toHexString" type="instance" args="(int groupSize)" />
       <method name="toLuaString" type="instance" />
-      <method name="toLuaTable" type="instance" />
+      <method name="toLuaTable" type="instance" args="(luabind::object tableToWriteTo)" />
       <method name="toRawString" type="instance" />
       <method name="toString" type="instance" />
       <method name="toStringNoTerminator" type="instance" />
       <method name="toStringWithNulls" type="instance" />
     </methods>
     <static_methods>
-      <method name="fromLuaBinaryString" type="static" />
-      <method name="fromLuaString" type="static" />
-      <method name="fromLuaStringToAscii" type="static" />
-      <method name="fromLuaTable" type="static" />
+      <method name="fromLuaBinaryString" type="static" args="(luabind::object &amp; luaString)" />
+      <method name="fromLuaString" type="static" args="(juce::String&amp; strData)" />
+      <method name="fromLuaStringToAscii" type="static" args="(juce::String&amp; strData)" />
+      <method name="fromLuaTable" type="static" args="(luabind::object &amp; table)" />
     </static_methods>
   </class>
   <class name="MemoryInputStream" cpp_name="MemoryInputStream" />
   <class name="MidiBuffer" cpp_name="MidiBuffer">
     <methods>
+      <method name="__init" type="constructor" args="(MidiBuffer)" />
       <method name="addEvent" type="instance" />
       <method name="addEvents" type="instance" />
       <method name="clear" type="instance" />
@@ -1592,6 +1640,7 @@
   </class>
   <class name="MidiBufferIterator" cpp_name="Iterator">
     <methods>
+      <method name="__init" type="constructor" args="(MidiBuffer)" />
       <method name="getNextEvent" type="instance" />
       <method name="setNextSamplePosition" type="instance" />
     </methods>
@@ -1599,6 +1648,7 @@
   <class name="MidiKeyboardComponent" cpp_name="MidiKeyboardComponent" />
   <class name="MidiMessage" cpp_name="MidiMessage">
     <methods>
+      <method name="__init" type="constructor" args="(void *,int,int,int,number)" />
       <method name="addToTimeStamp" type="instance" />
       <method name="getAfterTouchValue" type="instance" />
       <method name="getChannel" type="instance" />
@@ -1698,6 +1748,7 @@
   </class>
   <class name="ModifierKeys" cpp_name="ModifierKeys">
     <methods>
+      <method name="__init" type="constructor" args="(ModifierKeys)" />
       <method name="getNumMouseButtonsDown" type="instance" />
       <method name="getRawFlags" type="instance" />
       <method name="isAltDown" type="instance" />
@@ -1717,6 +1768,9 @@
     </static_methods>
   </class>
   <class name="MouseCursor" cpp_name="MouseCursor">
+    <methods>
+      <method name="__init" type="constructor" args="(MouseCursor)" />
+    </methods>
     <static_methods>
       <method name="hideWaitCursor" type="static" />
       <method name="showWaitCursor" type="static" />
@@ -1745,12 +1799,14 @@
   </class>
   <class name="MouseInputSource" cpp_name="MouseInputSource">
     <methods>
+      <method name="__init" type="constructor" args="(MouseInputSource)" />
       <method name="setScreenPosition" type="instance" />
     </methods>
   </class>
   <class name="NotificationType" cpp_name="NotificationType" />
   <class name="OggVorbisAudioFormat" cpp_name="OggVorbisAudioFormat">
     <methods>
+      <method name="__init" type="constructor" />
       <method name="canDoMono" type="instance" />
       <method name="canDoStereo" type="instance" />
       <method name="canHandleFile" type="instance" />
@@ -1769,7 +1825,7 @@
   </class>
   <class name="OnlineUnlockStatusCheck" cpp_name="LOnlineUnlockStatusCheck">
     <methods>
-      <method name="doesProductIDMatch" type="instance" />
+      <method name="doesProductIDMatch" type="instance" args="(juce::String&amp; returnedIDFromServer)" />
       <method name="getLocalMachineIDs" type="instance" />
       <method name="getParsedErrorMessage" type="instance" />
       <method name="getParsedInformativeMessage" type="instance" />
@@ -1783,14 +1839,15 @@
       <method name="isPluginUnlocked" type="instance" />
       <method name="isUnlocked" type="instance" />
       <method name="readReplyFromWebserver" type="instance" />
-      <method name="saveState" type="instance" />
-      <method name="setUnlockCompletionCallback" type="instance" />
-      <method name="setUserEmail" type="instance" />
-      <method name="triggerWebserverUnlock" type="instance" />
+      <method name="saveState" type="instance" args="(juce::String&amp; newState)" />
+      <method name="setUnlockCompletionCallback" type="instance" args="(luabind::object &amp; luaFunction)" />
+      <method name="setUserEmail" type="instance" args="(juce::String&amp; newEmailAddress)" />
+      <method name="triggerWebserverUnlock" type="instance" args="(juce::String&amp; email,juce::String&amp; password)" />
     </methods>
   </class>
   <class name="Path" cpp_name="Path">
     <methods>
+      <method name="__init" type="constructor" args="(Path)" />
       <method name="addArc" type="instance" />
       <method name="addArrow" type="instance" />
       <method name="addBubble" type="instance" />
@@ -1837,6 +1894,7 @@
   </class>
   <class name="PathStrokeType" cpp_name="LPathStrokeType">
     <methods>
+      <method name="__init" type="constructor" args="(PathStrokeType)" />
       <method name="createDashedStroke" type="instance" />
       <method name="createStrokeWithArrowheads" type="instance" />
       <method name="createStrokedPath" type="instance" />
@@ -1850,6 +1908,7 @@
   </class>
   <class name="Point&lt;float" cpp_name="Point&lt;float">
     <methods>
+      <method name="__init" type="constructor" args="(number,number)" />
       <method name="addXY" type="instance" />
       <method name="applyTransform" type="instance" />
       <method name="getAngleToPoint" type="instance" />
@@ -1871,6 +1930,7 @@
   </class>
   <class name="RSAKey" cpp_name="RSAKey">
     <methods>
+      <method name="__init" type="constructor" args="(juce::String)" />
       <method name="applyToValue" type="instance" />
       <method name="isValid" type="instance" />
       <method name="toString" type="instance" />
@@ -1878,6 +1938,7 @@
   </class>
   <class name="Random" cpp_name="Random">
     <methods>
+      <method name="__init" type="constructor" />
       <method name="combineSeed" type="instance" />
       <method name="fillBitsRandomly" type="instance" />
       <method name="nextBool" type="instance" />
@@ -1895,6 +1956,7 @@
   </class>
   <class name="Range&lt;int" cpp_name="Range&lt;int">
     <methods>
+      <method name="__init" type="constructor" args="(int,int)" />
       <method name="clipValue" type="instance" />
       <method name="constrainRange" type="instance" />
       <method name="contains" type="instance" />
@@ -1918,6 +1980,7 @@
   <class name="Rectangle" cpp_name="LRectangle" />
   <class name="Rectangle&lt;float" cpp_name="Rectangle&lt;float">
     <methods>
+      <method name="__init" type="constructor" args="(number,number)" />
       <method name="contains" type="instance" />
       <method name="enlargeIfAdjacent" type="instance" />
       <method name="expand" type="instance" />
@@ -1983,6 +2046,7 @@
   </class>
   <class name="Rectangle&lt;int" cpp_name="Rectangle&lt;int">
     <methods>
+      <method name="__init" type="constructor" args="(int,int)" />
       <method name="contains" type="instance" />
       <method name="enlargeIfAdjacent" type="instance" />
       <method name="expand" type="instance" />
@@ -2049,6 +2113,7 @@
   </class>
   <class name="RectanglePlacement" cpp_name="RectanglePlacement">
     <methods>
+      <method name="__init" type="constructor" args="(int)" />
       <method name="applyTo" type="instance" />
       <method name="getFlags" type="instance" />
       <method name="testFlags" type="instance" />
@@ -2056,6 +2121,7 @@
   </class>
   <class name="RelativeParallelogram" cpp_name="RelativeParallelogram">
     <methods>
+      <method name="__init" type="constructor" args="(String &amp;,String &amp;,string)" />
       <method name="getBounds" type="instance" />
       <method name="getPath" type="instance" />
       <method name="resetToPerpendicular" type="instance" />
@@ -2070,6 +2136,7 @@
   </class>
   <class name="RelativePoint" cpp_name="RelativePoint">
     <methods>
+      <method name="__init" type="constructor" args="(string)" />
       <method name="isDynamic" type="instance" />
       <method name="moveToAbsolute" type="instance" />
       <method name="resolve" type="instance" />
@@ -2078,7 +2145,7 @@
   </class>
   <class name="Result" cpp_name="Result">
     <methods>
-      <method name="fail" type="instance" />
+      <method name="fail" type="instance" args="(&quot;Linux native,panel pointer is invalid&quot;)" />
       <method name="failed" type="instance" />
       <method name="getErrorMessage" type="instance" />
       <method name="ok" type="instance" />
@@ -2086,13 +2153,22 @@
     </methods>
   </class>
   <class name="Scope" cpp_name="Scope" />
-  <class name="ScopedLock" cpp_name="ScopedLock" />
+  <class name="ScopedLock" cpp_name="ScopedLock">
+    <methods>
+      <method name="__init" type="constructor" args="(CriticalSection)" />
+    </methods>
+  </class>
   <class name="ScopedTryLock" cpp_name="ScopedTryLock">
     <methods>
+      <method name="__init" type="constructor" args="(CriticalSection)" />
       <method name="isLocked" type="instance" />
     </methods>
   </class>
-  <class name="ScopedUnlock" cpp_name="ScopedUnlock" />
+  <class name="ScopedUnlock" cpp_name="ScopedUnlock">
+    <methods>
+      <method name="__init" type="constructor" args="(CriticalSection)" />
+    </methods>
+  </class>
   <class name="SettableTooltipClient" cpp_name="SettableTooltipClient" />
   <class name="Slider" cpp_name="Slider">
     <methods>
@@ -2165,6 +2241,7 @@
   <class name="SparseSet&lt;int" cpp_name="SparseSet&lt;int" />
   <class name="String" cpp_name="String">
     <methods>
+      <method name="__init" type="constructor" args="(number,int)" />
       <method name="append" type="instance" />
       <method name="compare" type="instance" />
       <method name="compareIgnoreCase" type="instance" />
@@ -2230,6 +2307,7 @@
   </class>
   <class name="StringArray" cpp_name="StringArray">
     <methods>
+      <method name="__init" type="constructor" args="(StringArray)" />
       <method name="add" type="instance" />
       <method name="addArray" type="instance" />
       <method name="addIfNotAlreadyThere" type="instance" />
@@ -2272,15 +2350,21 @@
   </class>
   <class name="StringRef" cpp_name="StringRef">
     <methods>
+      <method name="__init" type="constructor" args="(std::string)" />
       <method name="isEmpty" type="instance" />
       <method name="isNotEmpty" type="instance" />
       <method name="length" type="instance" />
     </methods>
   </class>
   <class name="Symbol" cpp_name="Symbol" />
-  <class name="TextButton" cpp_name="TextButton" />
+  <class name="TextButton" cpp_name="TextButton">
+    <methods>
+      <method name="__init" type="constructor" args="(String &amp;,string)" />
+    </methods>
+  </class>
   <class name="TextEditor" cpp_name="TextEditor">
     <methods>
+      <method name="__init" type="constructor" args="(string)" />
       <method name="addListener" type="instance" />
       <method name="addPopupMenuItems" type="instance" />
       <method name="applyFontToAllText" type="instance" />
@@ -2358,22 +2442,24 @@
   </class>
   <class name="Thread" cpp_name="LThread">
     <methods>
+      <method name="__init" type="constructor" args="(string)" />
       <method name="getThreadId" type="instance" />
       <method name="getThreadName" type="instance" />
       <method name="isThreadRunning" type="instance" />
       <method name="notify" type="instance" />
-      <method name="setAffinityMask" type="instance" />
-      <method name="setPriority" type="instance" />
-      <method name="setThreadFunction" type="instance" />
+      <method name="setAffinityMask" type="instance" args="(int affMask)" />
+      <method name="setPriority" type="instance" args="(int priority)" />
+      <method name="setThreadFunction" type="instance" args="(luabind::object &amp; _functionToRunOnThread)" />
       <method name="signalThreadShouldExit" type="instance" />
       <method name="startThread" type="instance" />
       <method name="threadShoudExit" type="instance" />
-      <method name="wait" type="instance" />
-      <method name="waitForThreadToExit" type="instance" />
+      <method name="wait" type="instance" args="(int timeOutMilliseconds)" />
+      <method name="waitForThreadToExit" type="instance" args="(int timeOutMilliseconds)" />
     </methods>
   </class>
   <class name="Time" cpp_name="Time">
     <methods>
+      <method name="__init" type="constructor" args="(Time)" />
       <method name="formatted" type="instance" />
       <method name="getDayOfMonth" type="instance" />
       <method name="getDayOfWeek" type="instance" />
@@ -2418,6 +2504,7 @@
   </class>
   <class name="ToggleButton" cpp_name="ToggleButton">
     <methods>
+      <method name="__init" type="constructor" args="(string)" />
       <method name="changeWidthToFitText" type="instance" />
     </methods>
   </class>
@@ -2446,6 +2533,7 @@
   <class name="TypefacePtr" cpp_name="Ptr" />
   <class name="URL" cpp_name="URL">
     <methods>
+      <method name="__init" type="constructor" args="(string)" />
       <method name="addEscapeChars" type="instance" />
       <method name="getDomain" type="instance" />
       <method name="getPostData" type="instance" />
@@ -2467,6 +2555,7 @@
   </class>
   <class name="Value" cpp_name="Value">
     <methods>
+      <method name="__init" type="constructor" args="(variant)" />
       <method name="addListener" type="instance" />
       <method name="getValue" type="instance" />
       <method name="getValueSource" type="instance" />
@@ -2479,6 +2568,7 @@
   </class>
   <class name="ValueTree" cpp_name="ValueTree">
     <methods>
+      <method name="__init" type="constructor" args="(Identifier)" />
       <method name="addChild" type="instance" />
       <method name="addListener" type="instance" />
       <method name="createCopy" type="instance" />
@@ -2513,6 +2603,7 @@
   </class>
   <class name="WavAudioFormat" cpp_name="WavAudioFormat">
     <methods>
+      <method name="__init" type="constructor" />
       <method name="canDoMono" type="instance" />
       <method name="canDoStereo" type="instance" />
       <method name="canHandleFile" type="instance" />
@@ -2523,6 +2614,7 @@
   </class>
   <class name="XmlDocument" cpp_name="XmlDocument">
     <methods>
+      <method name="__init" type="constructor" args="(File)" />
       <method name="getDocumentElement" type="instance" />
       <method name="getLastParseError" type="instance" />
       <method name="setEmptyTextElementsIgnored" type="instance" />
@@ -2534,6 +2626,7 @@
   </class>
   <class name="XmlElement" cpp_name="XmlElement">
     <methods>
+      <method name="__init" type="constructor" args="(char)" />
       <method name="addChildElement" type="instance" />
       <method name="addTextElement" type="instance" />
       <method name="compareAttribute" type="instance" />
@@ -2587,6 +2680,7 @@
   <class name="ZipEntry" cpp_name="ZipEntry" />
   <class name="ZipFile" cpp_name="ZipFile">
     <methods>
+      <method name="__init" type="constructor" args="(InputSource)" />
       <method name="createStreamForEntry" type="instance" />
       <method name="getEntry" type="instance" />
       <method name="getIndexOfFileName" type="instance" />
@@ -2598,6 +2692,9 @@
   </class>
   <class name="int64" cpp_name="int64" />
   <class name="juce" cpp_name="LGlobalFunctions">
+    <methods>
+      <method name="__init" type="constructor" />
+    </methods>
     <static_methods>
       <method name="double_Pi" type="static" />
       <method name="float_Pi" type="static" />
@@ -2619,7 +2716,7 @@
       <method name="getFixedImageSliderComponent" type="instance" />
       <method name="getFixedSlider" type="instance" />
       <method name="getFixedSliderComponent" type="instance" />
-      <method name="getGlobalVariable" type="instance" />
+      <method name="getGlobalVariable" type="instance" args="(int index)" />
       <method name="getImageButton" type="instance" />
       <method name="getImageButtonComponent" type="instance" />
       <method name="getImageSlider" type="instance" />
@@ -2634,10 +2731,10 @@
       <method name="getModulator" type="instance" />
       <method name="getModulatorByIndex" type="instance" />
       <method name="getModulatorByName" type="instance" />
-      <method name="getModulatorValuesAsData" type="instance" />
+      <method name="getModulatorValuesAsData" type="instance" args="(String&amp; propertyToIndexBy,CtrlrByteEncoding byteEncoding,int bytesPerValue,bool useMappedValues)" />
       <method name="getModulatorWithProperty" type="instance" />
       <method name="getModulatorsWildcard" type="instance" />
-      <method name="getModulatorsWithProperty" type="instance" />
+      <method name="getModulatorsWithProperty" type="instance" args="(Identifier&amp; propertyName,var&amp; propertyValue)" />
       <method name="getNumModulators" type="instance" />
       <method name="getPanelEditor" type="instance" />
       <method name="getProgramState" type="instance" />
@@ -2649,38 +2746,42 @@
       <method name="getWaveform" type="instance" />
       <method name="getWaveformComponent" type="instance" />
       <method name="isRestoring" type="instance" />
-      <method name="sendMidi" type="instance" />
+      <method name="sendMidi" type="instance" args="(MidiBuffer &amp;messages,double millisecondCounterToStartAt)" />
       <method name="sendMidiMessageNow" type="instance" />
-      <method name="setGlobalVariable" type="instance" />
-      <method name="setModulatorValuesFromData" type="instance" />
-      <method name="setProgramState" type="instance" />
-      <method name="setRestoreState" type="instance" />
+      <method name="setGlobalVariable" type="instance" args="(int index,int value)" />
+      <method name="setModulatorValuesFromData" type="instance" args="(MemoryBlock&amp; dataSource,String&amp; propertyToIndexBy,CtrlrByteEncoding byteEncoding,int propertyOffset,int bytesPerValue,bool useMappedValues)" />
+      <method name="setProgramState" type="instance" args="(bool _programState)" />
+      <method name="setRestoreState" type="instance" args="(bool _restoreStateStatus)" />
     </methods>
   </class>
   <class name="utils" cpp_name="CtrlrLuaUtils">
     <static_methods>
-      <method name="askForTextInputWindow" type="static" />
-      <method name="base64_decode" type="static" />
-      <method name="base64_encode" type="static" />
-      <method name="get16bitSigned" type="static" />
-      <method name="get8bitSigned" type="static" />
-      <method name="getDirectoryWindow" type="static" />
-      <method name="getMidiInputDevices" type="static" />
-      <method name="getMidiOutputDevices" type="static" />
-      <method name="getPi" type="static" />
-      <method name="getVersionMajor" type="static" />
-      <method name="getVersionMinor" type="static" />
-      <method name="getVersionRevision" type="static" />
-      <method name="getVersionString" type="static" />
-      <method name="infoWindow" type="static" />
-      <method name="openFileWindow" type="static" />
-      <method name="openMultipleFilesWindow" type="static" />
-      <method name="packDsiData" type="static" />
-      <method name="questionWindow" type="static" />
-      <method name="saveFileWindow" type="static" />
-      <method name="unpackDsiData" type="static" />
-      <method name="warnWindow" type="static" />
+      <method name="askForTextInputWindow" type="instance" args="(String title,String message,String initialInputContent,String onScreenLabel,bool isPassword,String button1Text,String button2Text)" />
+      <method name="base64_decode" type="instance" />
+      <method name="base64_encode" type="instance" />
+      <method name="get16bitSigned" type="instance" />
+      <method name="get8bitSigned" type="instance" />
+      <method name="getDirectoryWindow" type="instance" args="(String &amp;dialogBoxTitle,File &amp;initialFileOrDirectory)" />
+      <method name="getMidiInputDevices" type="instance" />
+      <method name="getMidiOutputDevices" type="instance" />
+      <method name="getPi" type="instance" />
+      <method name="getVersionMajor" type="instance" />
+      <method name="getVersionMinor" type="instance" />
+      <method name="getVersionRevision" type="instance" />
+      <method name="getVersionString" type="instance" />
+      <method name="infoWindow" type="instance" args="(String title,String message)" />
+      <method name="openFileWindow" type="instance" args="(String &amp;dialogBoxTitle,File &amp;initialFileOrDirectory,String &amp;filePatternsAllowed,bool useOSNativeDialogBox)" />
+      <method name="openMultipleFilesWindow" type="instance" args="(String &amp;dialogBoxTitle,File &amp;initialFileOrDirectory,String &amp;filePatternsAllowed,bool useOSNativeDialogBox,luabind::object &amp; table)" />
+      <method name="packDsiData" type="instance" />
+      <method name="questionWindow" type="instance" args="(String title,String message,String button1Text,String button2Text)" />
+      <method name="saveFileWindow" type="instance" args="(String &amp;dialogBoxTitle,File &amp;initialFileOrDirectory,String &amp;filePatternsAllowed,bool useOSNativeDialogBox)" />
+      <method name="unpackDsiData" type="instance" />
+      <method name="warnWindow" type="instance" args="(String title,String message)" />
     </static_methods>
   </class>
-  <class name="var" cpp_name="var" />
+  <class name="var" cpp_name="var">
+    <methods>
+      <method name="__init" type="constructor" args="(string)" />
+    </methods>
+  </class>
 </LuaAPI>
