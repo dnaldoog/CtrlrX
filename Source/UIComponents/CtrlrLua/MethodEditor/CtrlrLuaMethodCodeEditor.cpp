@@ -2067,65 +2067,18 @@ juce::String CtrlrLuaMethodCodeEditor::getWordBeforeCaret(int& startOfWord, int 
 
 void CtrlrLuaMethodCodeEditor::handleSuggestionChosen(const SuggestionItem& item)
 {
-    _DBG("AUTOCOMPLETE: handleSuggestionChosen for [" + item.text + "] Type: " + juce::String((int)item.type));
-
-    if (item.text.isEmpty())
-        return;
-
-    // Reset lock if stuck
-    if (isReplacingText)
-    {
-        _DBG("AUTOCOMPLETE: handleSuggestionChosen found lock active, forcing reset.");
-        isReplacingText = false;
-    }
-
-    // 1. Close the popup first so it doesn't flicker
     if (suggestionPopup)
         suggestionPopup->setVisible(false);
 
-    // 2. SPECIAL CASE: The 'local' keyword
-    if (item.text == "local")
-    {
-        isReplacingText = true;
-        // We add the space here. 0 means "don't trigger a dot"
-        performReplacement(item.text + " ", 0);
-        isReplacingText = false;
-        return;
-    }
+    juce::String chosenText = item.text; // Fixed to use 'text' as per your header
     
-    // --- UPDATED TRIGGER LOGIC ---
-    // Trigger if it's a class (Type 2) OR if it's a known object variable
-    bool requestMethods = (item.type == TypeClass ||
-                           item.text.equalsIgnoreCase("panel") ||
-                           item.text.startsWithIgnoreCase("mod") ||
-                           item.text == "utils" ||
-                           item.text == "table" ||
-                           item.text == "math" || // Added math
-                           item.text == "string" ||
-                           item.text == "MemoryBlock" ||
-                           item.text == "stateData");
-    
-    _DBG("AUTOCOMPLETE: Intent to trigger methods: " + juce::String((int)requestMethods));
+    if (chosenText.contains("("))
+        chosenText = chosenText.upToFirstOccurrenceOf("(", false, false);
 
-    isReplacingText = true;
-    pendingItem = item;
+    performReplacement(chosenText, true);
     
-    // Use the delay to ensure the editor has focus and the cursor is ready
-    juce::Timer::callAfterDelay(10, [this, requestMethods]()
-    {
-        if (pendingItem.text.isNotEmpty())
-        {
-            _DBG("AUTOCOMPLETE: handleSuggestion Timer firing with Trigger: " + juce::String((int)requestMethods));
-            performReplacement(pendingItem.text, requestMethods);
-            pendingItem = SuggestionItem();
-            // isReplacingText is usually set to false inside performReplacement
-            // once the operation is done.
-        }
-        else
-        {
-            isReplacingText = false;
-        }
-    });
+    if (editorComponent)
+        editorComponent->grabKeyboardFocus();
 }
 
 bool CtrlrLuaMethodCodeEditor::isLuaObjectInstance(const juce::String& s, SuggestionType type)
@@ -2147,16 +2100,12 @@ bool CtrlrLuaMethodCodeEditor::isLuaObjectInstance(const juce::String& s, Sugges
 void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion, bool triggerMethods)
 {
     if (callTip != nullptr) { callTip->setVisible(false); callTip->setTipText(""); }
-    lastAutocompletedMethod = "";
-
+    
     auto& manager = owner.getAutocompleteManager();
     SuggestionItem selectedItem;
     if (suggestionPopup) selectedItem = suggestionPopup->getSelectedItem();
 
     juce::String cleanSuggestion = suggestion;
-    if (cleanSuggestion.contains("("))
-        cleanSuggestion = cleanSuggestion.upToFirstOccurrenceOf("(", false, false);
-
     int wordStart = 0;
     juce::String currentWord = getWordBeforeCaret(wordStart);
     int actualLen = currentWord.length();
@@ -2164,14 +2113,14 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
     juce::String methodParams = "";
     juce::String className = "";
     juce::String allText = document.getAllContent();
+    
     nextTabJumpPosition = -1;
+    int validParamCount = 0;
 
-    // --- 1. CONTEXT RESOLUTION ---
-    if (wordStart > 0)
-    {
+    // 1. CONTEXT RESOLUTION
+    if (wordStart > 0) {
         juce::juce_wchar separator = allText[wordStart - 1];
-        if (separator == '.' || separator == ':')
-        {
+        if (separator == '.' || separator == ':') {
             int varStart = wordStart - 1;
             while (varStart > 0 && (juce::CharacterFunctions::isLetterOrDigit(allText[varStart - 1]) || allText[varStart - 1] == '_'))
                 varStart--;
@@ -2181,150 +2130,105 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
             if (className.isEmpty()) className = varName;
         }
     }
-    
-    if (className.isEmpty() && selectedItem.type == TypeClass)
-        className = cleanSuggestion;
 
     isReplacingText = true;
     this->triggerSuggestionsAfterReplacement = triggerMethods;
     document.newTransaction();
 
     if (actualLen > 0)
-    {
-        for (int i = 0; i < actualLen; ++i)
-            editorComponent->keyPressed(juce::KeyPress(juce::KeyPress::backspaceKey));
-    }
+        document.deleteSection(wordStart, wordStart + actualLen);
 
     juce::String textToInsert = cleanSuggestion;
     int caretOffsetFromEnd = 0;
     juce::String forcedSeparator = "";
 
-    // --- 2. LOGIC BY TYPE ---
-    if (selectedItem.type == TypeGlobal)
-    {
+    // 2. LOGIC BY TYPE
+    if (selectedItem.type == TypeClass) {
+        if (cleanSuggestion == "utils" || cleanSuggestion == "table" || cleanSuggestion == "math") {
+            juce::String sep = ".";
+            textToInsert += sep;
+            forcedSeparator = sep;
+            this->triggerSuggestionsAfterReplacement = true;
+        }
+        else {
+            // MemoryBlock()|
+            textToInsert += "()";
+            caretOffsetFromEnd = 0;
+            this->triggerSuggestionsAfterReplacement = false;
+        }
+    }
+    else if (selectedItem.type == TypeGlobal) {
         textToInsert += ":";
         forcedSeparator = ":";
         this->triggerSuggestionsAfterReplacement = true;
     }
-    else if (selectedItem.type == TypeClass || selectedItem.type == TypeMethod || selectedItem.type == TypeUtility)
-    {
-        if (selectedItem.type == TypeClass) {
-            if (cleanSuggestion == "utils" || cleanSuggestion == "table" || cleanSuggestion == "math") {
-                textToInsert += ".";
-                forcedSeparator = ".";
-                this->triggerSuggestionsAfterReplacement = true;
-                methodParams = "";
-            } else {
-                methodParams = manager.getMethodParams(cleanSuggestion, cleanSuggestion);
-                if (methodParams.isEmpty()) methodParams = manager.getMethodParams(cleanSuggestion, "L" + cleanSuggestion);
-                this->triggerSuggestionsAfterReplacement = false;
-            }
-        } else {
-            methodParams = manager.getMethodParams(className, cleanSuggestion);
-        }
+    else if (selectedItem.type == TypeMethod || selectedItem.type == TypeUtility) {
+        methodParams = manager.getMethodParams(className, cleanSuggestion);
 
-        if (methodParams.isNotEmpty() && methodParams != "()")
-        {
+        if (methodParams.trim().isNotEmpty() && methodParams.trim() != "()") {
             juce::StringArray overloads;
             overloads.addLines(methodParams);
-            
             juce::String simplestLine = overloads[0];
-            auto countCommas = [](const juce::String& s) {
-                int count = 0;
-                for (auto* p = s.toRawUTF8(); *p != 0; ++p)
-                    if (*p == ',') count++;
-                return count;
-            };
+            
+            juce::String cleaned = simplestLine.replace("void ", "").replace("size_t ", "").replace("luabind::object ", "table ");
+            juce::StringArray params;
+            params.addTokens(cleaned, ",", "");
+            
+            juce::String suffix = "(";
+            bool firstParamIsString = false;
 
-            int minCommas = countCommas(simplestLine);
-            for (auto& line : overloads) {
-                int commas = countCommas(line);
-                if (commas < minCommas) {
-                    minCommas = commas;
-                    simplestLine = line;
-                }
-            }
-
-            if (cleanSuggestion == "MemoryBlock" && (minCommas > 0 || simplestLine.containsIgnoreCase("String"))) {
-                textToInsert += "()";
-                caretOffsetFromEnd = 0; // Cursor AFTER brackets
-                methodParams = "";
-            }
-            else {
-                juce::String cleaned = simplestLine.replace("void ", "").replace("size_t ", "").replace("luabind::object ", "").replace("String ", "");
-                juce::StringArray params;
-                params.addTokens(cleaned, ",", "");
-                
-                juce::String suffix = "(";
-                int validParamCount = 0;
-                int firstParamInsideOffset = 0;
-
-                for (int i = 0; i < params.size(); ++i) {
-                    juce::String p = params[i].trim();
-                    if (p.isNotEmpty()) {
-                        if (validParamCount > 0) suffix += ", ";
-                        if (p.containsIgnoreCase("data") || p.containsIgnoreCase("hex") || p.containsIgnoreCase("string")) {
-                            suffix += "\"\"";
-                            if (validParamCount == 0) firstParamInsideOffset = 2;
-                        }
-                        validParamCount++;
+            for (int i = 0; i < params.size(); ++i) {
+                juce::String p = params[i].trim();
+                if (p.isNotEmpty()) {
+                    if (validParamCount > 0) suffix += ", ";
+                    if (p.containsIgnoreCase("String") || p.containsIgnoreCase("name") || p.containsIgnoreCase("text")) {
+                        suffix += "\"\"";
+                        if (validParamCount == 0) firstParamIsString = true;
                     }
-                }
-                suffix += ")";
-                textToInsert += suffix;
-                
-                if (validParamCount > 0) {
-                    // Position cursor INSIDE for methods with params
-                    caretOffsetFromEnd = suffix.length() - (firstParamInsideOffset > 0 ? firstParamInsideOffset : 1);
-                    nextTabJumpPosition = wordStart + textToInsert.length();
-                } else {
-                    // Position cursor OUTSIDE for empty results
-                    caretOffsetFromEnd = 0;
-                    methodParams = "";
+                    validParamCount++;
                 }
             }
-        }
-        else if (forcedSeparator.isEmpty())
-        {
+            suffix += ")";
+            textToInsert += suffix;
+            
+            // Methods with args: land INSIDE (|)
+            caretOffsetFromEnd = firstParamIsString ? (suffix.length() - 2) : (suffix.length() - 1);
+        } else {
+            // No-arg methods: land OUTSIDE ()|
             textToInsert += "()";
-            caretOffsetFromEnd = 0; // Cursor AFTER brackets
-            methodParams = "";
+            caretOffsetFromEnd = 0;
         }
     }
 
-    // --- 3. EXECUTE ---
+    // 3. EXECUTION
     document.insertText(wordStart, textToInsert);
     int finalPos = wordStart + textToInsert.length() - caretOffsetFromEnd;
     editorComponent->moveCaretTo(juce::CodeDocument::Position(document, finalPos), false);
     document.newTransaction();
 
-    // --- 4. BUBBLE ---
-    if (methodParams.isNotEmpty() && methodParams != "()")
-    {
-        lastAutocompletedMethod = cleanSuggestion;
-        lastAutocompletedClass = (selectedItem.type == TypeClass) ? cleanSuggestion : className;
-        
-        juce::MessageManager::callAsync([this]() {
-            if (callTip) {
-                updateCallTipHighlight();
-                if (callTip->getTipText().trim().isNotEmpty())
-                    callTip->setVisible(true);
-            }
-        });
+    // 4. TAB ANCHOR
+    // We set this so the Tab Key logic knows it's okay to start jumping
+    if (validParamCount > 0) {
+        nextTabJumpPosition = finalPos;
     }
 
-    if (suggestionPopup) suggestionPopup->setVisible(false);
-
-    if (triggerSuggestionsAfterReplacement && forcedSeparator.isNotEmpty())
-    {
-        juce::Timer::callAfterDelay(50, [this, forcedSeparator]() {
+    // 5. TRIGGERING
+    if (triggerSuggestionsAfterReplacement && forcedSeparator.isNotEmpty()) {
+        juce::Timer::callAfterDelay(100, [this, forcedSeparator]() {
             this->triggerSuggestionsAfterReplacement = false;
             this->isReplacingText = false;
             this->codeDocumentTextInserted(forcedSeparator, editorComponent->getCaretPos().getPosition());
         });
-    }
-    else
-    {
+    } else {
         isReplacingText = false;
+    }
+
+    // 6. CALLTIP UI
+    if (methodParams.trim().isNotEmpty() && methodParams.trim() != "()") {
+        lastAutocompletedMethod = cleanSuggestion;
+        lastAutocompletedClass = className;
+        juce::MessageManager::callAsync([this]() {
+            if (callTip) { updateCallTipHighlight(); callTip->setVisible(true); }
+        });
     }
 }
