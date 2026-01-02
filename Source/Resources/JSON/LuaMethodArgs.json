@@ -1,0 +1,10 @@
+{
+    "MemoryBlock": {
+        "MemoryBlock": ["", "String hexData", "Table byteTable"],
+        "append": ["MemoryBlock source", "const void* data, int size"]
+    },
+    "utils": {
+        "warnWindow": ["String title, String message"],
+        "askForTextInputWindow": ["String title, String prompt, String initialText"]
+    }
+}
