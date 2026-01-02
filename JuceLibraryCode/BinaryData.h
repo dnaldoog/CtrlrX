@@ -267,7 +267,7 @@ namespace BinaryData
     const int            RSRC_zipSize = 49800;
 
     extern const char*   LuaAPI_xml;
-    const int            LuaAPI_xmlSize = 381714;
+    const int            LuaAPI_xmlSize = 282071;
 
     extern const char*   CtrlrIDs_xml;
     const int            CtrlrIDs_xmlSize = 92139;
