@@ -550,7 +550,7 @@ void CtrlrLuaMethodCodeEditor::hideCallTip()
 
 void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newText, int insertIndex)
 {
-    // --- AGGRESSIVE GUARD ---
+    // --- 1. AGGRESSIVE GUARD ---
     if (isReplacingText)
     {
         if (newText != ":" && newText != ".")
@@ -570,30 +570,42 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
     auto& manager = owner.getAutocompleteManager();
     std::vector<SuggestionItem> matches;
 
+    // --- 2. WORD AND SEPARATOR RESOLUTION (The Look-Back Fix) ---
     int caretPosInt = editorComponent->getCaretPos().getPosition();
-    juce::juce_wchar separator = juce::CodeDocument::Position(document, caretPosInt - 1).getCharacter();
-    
     int wordStart = 0;
     juce::String currentWord = getWordBeforeCaret(wordStart);
 
+    // Look at the character immediately before the current word
+    juce::juce_wchar separator = ' ';
+    if (wordStart > 0)
+    {
+        separator = juce::CodeDocument::Position(document, wordStart - 1).getCharacter();
+    }
+    
+    // Manual override if we just typed the separator itself
     if (newText == ":" || newText == ".")
         separator = newText[0];
 
-    _DBG("AUTOCOMPLETE: Scanning. Word: [" + currentWord + "] | Separator: [" + juce::String::charToString(separator) + "]");
+    _DBG("AUTOCOMPLETE: Triggered. Word: [" + currentWord + "] | Separator: [" + juce::String::charToString(separator) + "]");
     
+    bool contextResolved = false;
+
+    // --- 3. CONTEXTUAL SEARCH (Triggered by : or .) ---
     if (separator == ':' || separator == '.')
     {
         bool isInstance = (separator == ':');
         juce::String className = "";
         juce::String varName = "";
 
-        juce::CodeDocument::Position posBeforeSeparator(document, caretPosInt - 1);
+        // Determine where to start looking back for the variable/chain
+        int searchOrigin = wordStart > 0 ? wordStart - 1 : caretPosInt - 1;
+        juce::CodeDocument::Position posBeforeSeparator(document, searchOrigin);
         
         // --- SCENARIO A: BRACKET CONTEXT (Chaining) ---
         if (posBeforeSeparator.movedBy(-1).getCharacter() == ')')
         {
             int bracketCount = 0;
-            int searchPos = caretPosInt - 2;
+            int searchPos = searchOrigin - 1;
             while (searchPos > 0)
             {
                 juce::juce_wchar c = juce::CodeDocument::Position(document, searchPos).getCharacter();
@@ -603,7 +615,7 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
                 if (bracketCount == 0)
                 {
                     int methodStartIdx = 0;
-                    varName = getWordBeforeCaret(methodStartIdx, -(caretPosInt - searchPos));
+                    varName = getWordBeforeCaret(methodStartIdx, -(searchOrigin - searchPos));
                     juce::String cleanMethod = varName;
                     if (cleanMethod.contains(":")) cleanMethod = cleanMethod.fromLastOccurrenceOf(":", false, false);
                     else if (cleanMethod.contains(".")) cleanMethod = cleanMethod.fromLastOccurrenceOf(".", false, false);
@@ -614,19 +626,15 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
                 searchPos--;
             }
         }
-        // --- SCENARIO B: STANDARD VARIABLE (With Look-Backward) ---
+        // --- SCENARIO B: STANDARD VARIABLE ---
         else
         {
-            int varStart = 0;
-            varName = getWordBeforeCaret(varStart, -1);
+            int vStart = 0;
+            // Get the word before the separator
+            varName = getWordBeforeCaret(vStart, -(caretPosInt - searchOrigin));
             
-            if (varName.isEmpty() || varName == ":" || varName == ".")
-                varName = getWordBeforeCaret(varStart, -2);
-            
-            // 1. Hardwired Quick-lookup
             className = manager.getClassNameForVariable(varName);
             
-            // 2. Look-Backward Scan (Analysis)
             if (className.isEmpty())
             {
                 int currentLine = editorComponent->getCaretPos().getLineNumber();
@@ -641,14 +649,11 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
                         if (leftSide == varName)
                         {
                             juce::String rightSide = line.fromFirstOccurrenceOf("=", false, false).trim();
-                            
-                            // Check against all known Classes in the XML
                             for (auto& cName : manager.getClassNames())
                             {
                                 if (rightSide.startsWith(cName))
                                 {
                                     className = cName;
-                                    _DBG("AUTOCOMPLETE: Inferred [" + varName + "] is type [" + className + "] from line " + juce::String(i));
                                     break;
                                 }
                             }
@@ -658,7 +663,6 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
                 }
             }
 
-            // 3. Last Resort Fallbacks
             if (className.isEmpty())
             {
                 if (varName.equalsIgnoreCase("panel"))             className = "CtrlrPanel";
@@ -671,32 +675,50 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
         
         if (className.isNotEmpty())
         {
+            contextResolved = true;
             _DBG("AUTOCOMPLETE: Context Resolved: [" + varName + "] -> [" + className + "]");
 
             bool includeInstance   = isInstance;
             bool includeStatic     = !isInstance;
             bool includeProperties = !isInstance;
             
+            // Search using the class context and the current word as prefix
             matches = manager.getMethodSuggestionsForClass(className, currentWord, includeInstance, includeStatic, includeProperties);
             
-            if (matches.empty())
-                matches = manager.getMethodSuggestionsForClass(className, "", includeInstance, includeStatic, includeProperties);
+            _DBG("AUTOCOMPLETE: Found " + juce::String((int)matches.size()) + " class-specific matches.");
         }
     }
 
-    // --- GLOBAL FALLBACK ---
+    // --- 4. GLOBAL FALLBACK ---
+    // Only happens if we aren't in a class context, or if the class search yielded nothing
     if (matches.empty() && currentWord.length() >= 1)
     {
-        matches = manager.getGlobalSuggestions(currentWord);
+        // If we are typing after a colon but found no class matches,
+        // we don't want to show random global "set" methods.
+        if (separator != ':' && separator != '.')
+        {
+            _DBG("AUTOCOMPLETE: Fetching Global Suggestions for [" + currentWord + "]");
+            matches = manager.getGlobalSuggestions(currentWord);
+            _DBG("AUTOCOMPLETE: Found " + juce::String((int)matches.size()) + " global matches.");
+        }
+        else if (contextResolved)
+        {
+            _DBG("AUTOCOMPLETE: Class context matched 0 results. Suppressing global fallback to prevent 'Junk' list.");
+        }
     }
     
-    // --- UI DISPLAY ---
+    // --- 5. UI DISPLAY ---
     if (!matches.empty())
     {
         suggestionPopup->setSuggestions(matches);
         juce::Rectangle<int> caretRect = editorComponent->getCharacterBounds(editorComponent->getCaretPos());
         auto popupPos = getLocalPoint(editorComponent, caretRect.getBottomLeft());
-        suggestionPopup->setBounds(popupPos.getX(), popupPos.getY() + 2, 300, juce::jmin(10, (int)matches.size()) * 22);
+        
+        // Calculate dynamic height (max 10 rows)
+        int rowHeight = 22;
+        int displayCount = juce::jmin(10, (int)matches.size());
+        suggestionPopup->setBounds(popupPos.getX(), popupPos.getY() + 2, 300, displayCount * rowHeight);
+        
         suggestionPopup->setVisible(true);
         suggestionPopup->toFront(false);
     }
