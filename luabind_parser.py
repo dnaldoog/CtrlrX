@@ -3,151 +3,95 @@ import os
 import sys
 import html
 
-class LuaAPIGenerator:
+class InheritanceParserV21:
     def __init__(self):
-        # 1. STRICT C++ Class detection
-        self.class_re = re.compile(r'^\s*(?:class|struct)\s+([A-Za-z0-9_]+)\s*(?::\s*(?:public|protected|private)\s+[^{]+)?\s*\{', re.MULTILINE)
-        
-        # 2. STRICT Method detection (matches signatures and ignores common code blocks)
-        self.method_re = re.compile(r'^\s*((?:static|virtual|inline)\s+)?(?:[\w<>\d::*&]+\s+)?(\w+)\s*\(([^)]*)\)\s*(?:const|override|final|noexcept)*\s*[;{]', re.MULTILINE)
-
-        # Folders to completely ignore to keep the XML size down
-        self.BLACKLIST_DIRS = {
-            'Boost', 'boost', 'JuceLibraryCode', 'SDKs', 'VST3_SDK', 
-            '.git', 'Builds', 'BinaryData', 'Documentation', 'ThirdParty', 'libs'
-        }
-
-        # C++ Keywords that the parser might mistake for methods
-        self.BLACKLIST_METHODS = {
-            'if', 'for', 'while', 'return', 'switch', 'catch', 'using', 
-            'decltype', 'sizeof', 'static_assert', 'const_cast', 'dynamic_cast',
-            'reinterpret_cast', 'template', 'typedef', 'break', 'continue'
-        }
-
-        self.STRIP_L_PREFIX = ["MemoryBlock", "String", "File", "Rectangle", "Colour", "Graphics", "BigInteger"]
-        
-        self.CLASS_OVERRIDES = {
-            "CtrlrLuaUtils": {"name": "utils", "force_static": True},
-            "CtrlrPanel":    {"name": "panel", "force_static": False},
-            "CtrlrModulator":{"name": "modulator", "force_static": False},
-        }
+        self.signatures = {} 
+        self.lua_api = {}    
+        self.inheritance_map = {} # class_name -> parent_name
 
     def clean_args(self, args):
-        if not args or args.strip().lower() in ["void", "nullptr", "0"]: 
-            return ""
-        # Remove C++ default values, comments, and noise
-        a = re.sub(r'=[^,)]+', '', args)
-        a = re.sub(r'/\*.*?\*/|//.*', '', a)
+        if not args or args.strip().lower() in ["void", "nullptr"]: return "()"
+        a = re.sub(r'=[^,)]+', '', args) 
         a = re.sub(r'juce::|std::|const|&|\*|override|final|virtual|inline|noexcept', '', a)
-        # Normalize spaces and escape for XML safety
         clean = ' '.join(a.split()).strip().strip(',')
-        return html.escape(clean)
+        return f"({html.escape(clean)})"
 
-    def process_directory(self, input_path):
-        all_classes = {}
-        print(f"Scanning directory: {input_path}")
+    def run(self, source_dir, output_xml):
+        print(f"Scanning: {source_dir}")
         
-        for root, dirs, files in os.walk(input_path):
-            # Skip blacklisted directories
-            dirs[:] = [d for d in dirs if d not in self.BLACKLIST_DIRS]
-            
-            # Check if any part of the path is blacklisted
-            path_parts = set(re.split(r'[\\/]', root))
-            if any(b in path_parts for b in self.BLACKLIST_DIRS):
-                continue
-
+        # PASS 1: Scrape Definitions & Inheritance from Headers
+        for root, dirs, files in os.walk(source_dir):
             for file in files:
-                if file.endswith((".h", ".cpp", ".hpp")):
+                if file.endswith(('.h', '.hpp')):
+                    path = os.path.join(root, file)
                     try:
-                        with open(os.path.join(root, file), 'r', encoding='utf-8', errors='ignore') as f:
+                        with open(path, 'r', encoding='utf-8', errors='ignore') as f:
                             content = f.read()
-                            for class_match in self.class_re.finditer(content):
-                                c_name = class_match.group(1)
-                                
-                                # Skip macro-based classes or very short noise
-                                if c_name.isupper() or len(c_name) < 3: continue
-                                
-                                start = class_match.end()
-                                next_class = self.class_re.search(content, start)
-                                end = next_class.start() if next_class else len(content)
-                                class_block = content[start:end]
-                                
-                                methods = []
-                                for m_match in self.method_re.finditer(class_block):
-                                    m_name = m_match.group(2)
-                                    
-                                    # Skip destructors and C++ keywords
-                                    if m_name.startswith('~') or m_name in self.BLACKLIST_METHODS:
-                                        continue
-                                        
-                                    is_static = "static" in (m_match.group(1) or "")
-                                    m_args = self.clean_args(m_match.group(3))
-                                    methods.append({'name': m_name, 'args': m_args, 'is_static': is_static})
-                                
-                                if methods:
-                                    if c_name not in all_classes: all_classes[c_name] = []
-                                    all_classes[c_name].extend(methods)
-                    except Exception: continue
-        return all_classes
+                            
+                            # Detect Inheritance: class Name : public Parent
+                            inherit_matches = re.finditer(r'class\s+([A-Za-z0-9_]+)\s*:\s*(?:public|protected|private)\s+([A-Za-z0-9_:]+)', content)
+                            for im in inherit_matches:
+                                child, parent = im.groups()
+                                # Clean up namespace::Parent to just Parent
+                                self.inheritance_map[child] = parent.split("::")[-1].strip()
 
-    def save_xml(self, classes, output_file):
+                            # Scrape Methods
+                            matches = re.finditer(r'(\w+)\s*\(([^)]*)\)\s*(?:const)?\s*[;{]', content)
+                            for m in matches:
+                                name, args = m.groups()
+                                if len(name) > 3 and name not in ["if", "for", "while"]:
+                                    cleaned = self.clean_args(args)
+                                    if name not in self.signatures or len(cleaned) > len(self.signatures[name]):
+                                        self.signatures[name] = cleaned
+                    except: continue
+
+        # PASS 2: Luabind Mapping (The v1 part)
+        for root, dirs, files in os.walk(source_dir):
+            for file in files:
+                if file.endswith('.cpp'):
+                    path = os.path.join(root, file)
+                    try:
+                        with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+                            content = f.read()
+                            for c_match in re.finditer(r'class_<\s*([^,>]+)[^>]*>\s*(?:\(\s*"([^"]+)"\s*\))?', content):
+                                cpp_name = c_match.group(1).split("::")[-1].strip()
+                                lua_name = c_match.group(2) or cpp_name
+                                if lua_name not in self.lua_api:
+                                    self.lua_api[lua_name] = {"cpp": cpp_name, "methods": set()}
+                                
+                                block_end = content.find(';', c_match.end())
+                                block = content[c_match.end():block_end]
+                                for d_match in re.finditer(r'\.def\s*\(\s*"([^"]+)"', block):
+                                    self.lua_api[lua_name]["methods"].add(d_match.group(1))
+                    except: continue
+
+        self.generate_xml(output_xml)
+
+    def generate_xml(self, output_file):
         xml = ['<?xml version="1.0" encoding="UTF-8" ?>', '<LuaAPI>']
-        for cpp_name in sorted(classes.keys()):
-            methods = classes[cpp_name]
-            xml_name = cpp_name
-            force_static = False
+        for lua_name in sorted(self.lua_api.keys()):
+            data = self.lua_api[lua_name]
+            cpp_name = data["cpp"]
             
-            # 1. Apply L-Prefix Strip
-            if xml_name.startswith('L') and xml_name[1:] in self.STRIP_L_PREFIX:
-                xml_name = xml_name[1:]
+            # Look up the parent in our inheritance map
+            parent_attr = ""
+            if cpp_name in self.inheritance_map:
+                parent_attr = f' inherits="{self.inheritance_map[cpp_name]}"'
             
-            # 2. Apply Class Aliases/Overrides
-            if cpp_name in self.CLASS_OVERRIDES:
-                xml_name = self.CLASS_OVERRIDES[cpp_name]["name"]
-                force_static = self.CLASS_OVERRIDES[cpp_name]["force_static"]
-
-            xml.append(f'  <class name="{xml_name}" cpp_name="{cpp_name}">')
-            inst, stat = [], []
-            seen_sigs = set()
-
-            for m in methods:
-                # Deduplicate methods (handles .h and .cpp occurrences)
-                sig = f"{m['name']}({m['args']})"
-                if sig in seen_sigs: continue
-                seen_sigs.add(sig)
-
-                is_m_static = m["is_static"] or force_static
-                type_str = "static" if is_m_static else "instance"
-                line = f'      <method name="{m["name"]}" args="{m["args"]}" type="{type_str}"/>'
-                
-                if is_m_static: stat.append(line)
-                else: inst.append(line)
-
-            if inst:
+            xml.append(f'  <class name="{lua_name}" cpp_name="{cpp_name}"{parent_attr}>')
+            
+            if data["methods"]:
                 xml.append('    <methods>')
-                xml.extend(inst)
+                for m_name in sorted(data["methods"]):
+                    args = self.signatures.get(m_name, "()")
+                    xml.append(f'      <method name="{m_name}" args="{args}" type="instance"/>')
                 xml.append('    </methods>')
-            if stat:
-                xml.append('    <static_methods>')
-                xml.extend(stat)
-                xml.append('    </static_methods>')
-            
             xml.append('  </class>')
         
         xml.append('</LuaAPI>')
-        
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write('\n'.join(xml))
-        
-        print(f"--- SUCCESS ---")
-        print(f"File: {output_file}")
-        print(f"Size: {os.path.getsize(output_file) // 1024} KB")
-        print(f"Classes found: {len(classes)}")
+        print(f"Success! Created {output_file} with inheritance tracking.")
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: python3 luabind_parser.py [Source_Directory] [Output_XML_Path]")
-    else:
-        gen = LuaAPIGenerator()
-        found_data = gen.process_directory(sys.argv[1])
-        gen.save_xml(found_data, sys.argv[2])
+    InheritanceParserV21().run(sys.argv[1], sys.argv[2])
