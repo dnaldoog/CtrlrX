@@ -207,46 +207,56 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggesti
 {
     std::vector<SuggestionItem> suggestions;
     
-    if (!classes.contains(className)) return suggestions;
+    _DBG("AUTOCOMPLETE: Generating suggestions for Class [" + className + "] with Prefix [" + prefix + "]");
+
+    if (!classes.contains(className))
+    {
+        _DBG("AUTOCOMPLETE: Error - Class [" + className + "] not found in database.");
+        return suggestions;
+    }
+
     const auto& lc = classes.getReference(className);
 
     // 1. Add Instance Methods (Triggered by ':')
     if (includeInstance) {
         for (const auto& m : lc.methods) {
-            // --- TWEAK A: FILTERING LOGIC ---
-            // Skip methods starting with 'L' if followed by the class name (e.g., LMemoryBlock)
-            // or if the method name is exactly the class name (constructor duplicate).
             if (m.name.startsWith("L") && m.name.substring(1) == className)
                 continue;
             
             if (m.name == className && suggestions.size() > 0)
                 continue;
 
-            if (m.name.startsWithIgnoreCase(prefix))
+            if (m.name.startsWithIgnoreCase(prefix)) {
                 suggestions.push_back({ m.name, TypeMethod });
+                _DBG("  -> [Instance] Added: " + m.name);
+            }
         }
     }
 
     // 2. Add Static Methods (Triggered by '.')
     if (includeStatic) {
         for (const auto& m : lc.staticMethods) {
-            // Apply same filtering for internal static names if applicable
             if (m.name.startsWith("L") && m.name.substring(1) == className)
                 continue;
 
-            if (m.name.startsWithIgnoreCase(prefix))
+            if (m.name.startsWithIgnoreCase(prefix)) {
                 suggestions.push_back({ m.name, TypeMethod });
+                _DBG("  -> [Static] Added: " + m.name);
+            }
         }
     }
 
     // 3. Add Properties (Triggered by '.')
     if (includeProperties) {
         for (const auto& p : lc.properties) {
-            if (p.startsWithIgnoreCase(prefix))
+            if (p.startsWithIgnoreCase(prefix)) {
                 suggestions.push_back({ p, TypeProperty });
+                _DBG("  -> [Property] Added: " + p);
+            }
         }
     }
 
+    _DBG("AUTOCOMPLETE: Total suggestions for " + className + ": " + juce::String((int)suggestions.size()));
     return suggestions;
 }
 
