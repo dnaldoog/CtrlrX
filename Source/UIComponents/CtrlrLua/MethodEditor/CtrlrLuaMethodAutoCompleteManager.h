@@ -61,6 +61,9 @@ public:
         if (varName == "comp")   return "CtrlrComponent";
         if (varName == "g")      return "Graphics";
         if (varName == "canvas") return "Component";
+		if (varName == "m" || varName == "mb" || varName == "mem") return "MemoryBlock";
+		if (varName == "f") return "File";
+		if (varName == "s") return "LString";
         return "";
     }
 	

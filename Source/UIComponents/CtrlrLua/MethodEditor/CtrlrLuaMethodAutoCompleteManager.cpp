@@ -201,6 +201,15 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggesti
     // 1. Add Instance Methods (Triggered by ':')
     if (includeInstance) {
         for (const auto& m : lc.methods) {
+            // --- TWEAK A: FILTERING LOGIC ---
+            // Skip methods starting with 'L' if followed by the class name (e.g., LMemoryBlock)
+            // or if the method name is exactly the class name (constructor duplicate).
+            if (m.name.startsWith("L") && m.name.substring(1) == className)
+                continue;
+            
+            if (m.name == className && suggestions.size() > 0)
+                continue;
+
             if (m.name.startsWithIgnoreCase(prefix))
                 suggestions.push_back({ m.name, TypeMethod });
         }
@@ -209,6 +218,10 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggesti
     // 2. Add Static Methods (Triggered by '.')
     if (includeStatic) {
         for (const auto& m : lc.staticMethods) {
+            // Apply same filtering for internal static names if applicable
+            if (m.name.startsWith("L") && m.name.substring(1) == className)
+                continue;
+
             if (m.name.startsWithIgnoreCase(prefix))
                 suggestions.push_back({ m.name, TypeMethod });
         }

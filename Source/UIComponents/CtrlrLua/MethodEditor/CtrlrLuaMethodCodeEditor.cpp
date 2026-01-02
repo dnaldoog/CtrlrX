@@ -603,73 +603,84 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
                 if (bracketCount == 0)
                 {
                     int methodStartIdx = 0;
-                    // Look back to find the method name that produced this bracket
                     varName = getWordBeforeCaret(methodStartIdx, -(caretPosInt - searchPos));
-                    
                     juce::String cleanMethod = varName;
                     if (cleanMethod.contains(":")) cleanMethod = cleanMethod.fromLastOccurrenceOf(":", false, false);
                     else if (cleanMethod.contains(".")) cleanMethod = cleanMethod.fromLastOccurrenceOf(".", false, false);
                     
-                    // UPDATED: Now calling manager with 2 arguments for return type resolution
-                    // We pass "" as className because we are resolving based on a global-style method name
                     className = manager.resolveReturnType("", cleanMethod.trim());
                     break;
                 }
                 searchPos--;
             }
         }
-		
-        // --- SCENARIO B: STANDARD VARIABLE ---
-		else
-		{
-			int varStart = 0;
-			varName = getWordBeforeCaret(varStart, -1);
-			
-			if (varName.isEmpty() || varName == ":" || varName == ".")
-				varName = getWordBeforeCaret(varStart, -2);
-			
-			// Use the manager's centralized mapping
-			className = manager.getClassNameForVariable(varName);
-			
-			if (className.isEmpty())
-			{
-				// ADD THESE FALLBACKS HERE
-				if (varName.equalsIgnoreCase("panel"))             className = "CtrlrPanel";
-				else if (varName.startsWithIgnoreCase("mod"))      className = "CtrlrModulator";
-				else if (varName == "stateData")                   className = "CtrlrPanel";
-				else if (varName == "utils")                       className = "utils";        // Added
-				else if (varName == "MemoryBlock")                 className = "MemoryBlock";  // Added
-				else if (varName == "table")                       className = "table";        // Added
-				else if (varName == "string")                      className = "string";       // Added
-				else if (varName == "math")                        className = "math";         // Added
-			}
-		}
+        // --- SCENARIO B: STANDARD VARIABLE (With Look-Backward) ---
+        else
+        {
+            int varStart = 0;
+            varName = getWordBeforeCaret(varStart, -1);
+            
+            if (varName.isEmpty() || varName == ":" || varName == ".")
+                varName = getWordBeforeCaret(varStart, -2);
+            
+            // 1. Hardwired Quick-lookup
+            className = manager.getClassNameForVariable(varName);
+            
+            // 2. Look-Backward Scan (Analysis)
+            if (className.isEmpty())
+            {
+                int currentLine = editorComponent->getCaretPos().getLineNumber();
+                int scanLimit = juce::jmax(0, currentLine - 50);
+
+                for (int i = currentLine; i >= scanLimit; --i)
+                {
+                    juce::String line = document.getLine(i).trim();
+                    if (line.contains("="))
+                    {
+                        juce::String leftSide = line.upToFirstOccurrenceOf("=", false, false).trim();
+                        if (leftSide == varName)
+                        {
+                            juce::String rightSide = line.fromFirstOccurrenceOf("=", false, false).trim();
+                            
+                            // Check against all known Classes in the XML
+                            for (auto& cName : manager.getClassNames())
+                            {
+                                if (rightSide.startsWith(cName))
+                                {
+                                    className = cName;
+                                    _DBG("AUTOCOMPLETE: Inferred [" + varName + "] is type [" + className + "] from line " + juce::String(i));
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (className.isNotEmpty()) break;
+                }
+            }
+
+            // 3. Last Resort Fallbacks
+            if (className.isEmpty())
+            {
+                if (varName.equalsIgnoreCase("panel"))             className = "CtrlrPanel";
+                else if (varName.startsWithIgnoreCase("mod"))      className = "CtrlrModulator";
+                else if (varName == "utils")                       className = "utils";
+                else if (varName == "MemoryBlock")                 className = "MemoryBlock";
+                else if (varName == "table")                       className = "table";
+            }
+        }
         
-        // --- COMMON EXECUTION ---
         if (className.isNotEmpty())
         {
-            _DBG("AUTOCOMPLETE: Resolved Context: [" + varName + "] to Class: [" + className + "]");
+            _DBG("AUTOCOMPLETE: Context Resolved: [" + varName + "] -> [" + className + "]");
 
             bool includeInstance   = isInstance;
             bool includeStatic     = !isInstance;
             bool includeProperties = !isInstance;
             
-            // 1. First try with the current word
-            matches = manager.getMethodSuggestionsForClass(className,
-                                                           currentWord,
-                                                           includeInstance,
-                                                           includeStatic,
-                                                           includeProperties);
+            matches = manager.getMethodSuggestionsForClass(className, currentWord, includeInstance, includeStatic, includeProperties);
             
-            // 2. Fallback: Fetch all if no partial match
             if (matches.empty())
-            {
-                matches = manager.getMethodSuggestionsForClass(className,
-                                                               "",
-                                                               includeInstance,
-                                                               includeStatic,
-                                                               includeProperties);
-            }
+                matches = manager.getMethodSuggestionsForClass(className, "", includeInstance, includeStatic, includeProperties);
         }
     }
 
@@ -679,7 +690,7 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
         matches = manager.getGlobalSuggestions(currentWord);
     }
     
-    // UI Display Logic
+    // --- UI DISPLAY ---
     if (!matches.empty())
     {
         suggestionPopup->setSuggestions(matches);
@@ -2135,20 +2146,12 @@ bool CtrlrLuaMethodCodeEditor::isLuaObjectInstance(const juce::String& s, Sugges
 
 void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion, bool triggerMethods)
 {
-    if (callTip != nullptr)
-    {
-        callTip->setVisible(false);
-        callTip->setTipText(""); // Clear old text immediately
-    }
-    lastAutocompletedMethod = ""; // Reset memory
+    if (callTip != nullptr) { callTip->setVisible(false); callTip->setTipText(""); }
+    lastAutocompletedMethod = "";
 
-    _DBG("AUTOCOMPLETE: performReplacement EXECUTION START for: " + suggestion);
-    
-    // 1. CAPTURE DATA FIRST
     auto& manager = owner.getAutocompleteManager();
     SuggestionItem selectedItem;
-    if (suggestionPopup)
-        selectedItem = suggestionPopup->getSelectedItem();
+    if (suggestionPopup) selectedItem = suggestionPopup->getSelectedItem();
 
     juce::String cleanSuggestion = suggestion;
     if (cleanSuggestion.contains("("))
@@ -2158,10 +2161,12 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
     juce::String currentWord = getWordBeforeCaret(wordStart);
     int actualLen = currentWord.length();
 
-    // --- RESOLVE CLASS CONTEXT ---
+    juce::String methodParams = "";
     juce::String className = "";
     juce::String allText = document.getAllContent();
-    
+    nextTabJumpPosition = -1;
+
+    // --- 1. CONTEXT RESOLUTION ---
     if (wordStart > 0)
     {
         juce::juce_wchar separator = allText[wordStart - 1];
@@ -2180,146 +2185,146 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
     if (className.isEmpty() && selectedItem.type == TypeClass)
         className = cleanSuggestion;
 
-    // 2. START THE REPLACEMENT
     isReplacingText = true;
     this->triggerSuggestionsAfterReplacement = triggerMethods;
     document.newTransaction();
 
     if (actualLen > 0)
     {
-        editorComponent->moveCaretTo(juce::CodeDocument::Position(document, wordStart + actualLen), false);
         for (int i = 0; i < actualLen; ++i)
             editorComponent->keyPressed(juce::KeyPress(juce::KeyPress::backspaceKey));
     }
 
     juce::String textToInsert = cleanSuggestion;
     int caretOffsetFromEnd = 0;
-    nextTabJumpPosition = -1;
-    juce::String forcedSeparator = ":";
+    juce::String forcedSeparator = "";
 
-    // 3. TYPE-SPECIFIC LOGIC (Method Snippet Generation)
-    juce::String methodParams = "";
-
-    if (selectedItem.type == TypeMethod || selectedItem.type == TypeUtility)
+    // --- 2. LOGIC BY TYPE ---
+    if (selectedItem.type == TypeGlobal)
     {
-        lastAutocompletedMethod = cleanSuggestion;
-        _DBG("AUTOCOMPLETE: --- Replacement Started for [" + cleanSuggestion + "] ---");
-        
-        methodParams = manager.getMethodParams(className, cleanSuggestion);
-        
-        if (methodParams.isEmpty())
-        {
-            methodParams = manager.getMethodParams(cleanSuggestion, cleanSuggestion);
-            if (methodParams.isNotEmpty()) className = cleanSuggestion;
+        textToInsert += ":";
+        forcedSeparator = ":";
+        this->triggerSuggestionsAfterReplacement = true;
+    }
+    else if (selectedItem.type == TypeClass || selectedItem.type == TypeMethod || selectedItem.type == TypeUtility)
+    {
+        if (selectedItem.type == TypeClass) {
+            if (cleanSuggestion == "utils" || cleanSuggestion == "table" || cleanSuggestion == "math") {
+                textToInsert += ".";
+                forcedSeparator = ".";
+                this->triggerSuggestionsAfterReplacement = true;
+                methodParams = "";
+            } else {
+                methodParams = manager.getMethodParams(cleanSuggestion, cleanSuggestion);
+                if (methodParams.isEmpty()) methodParams = manager.getMethodParams(cleanSuggestion, "L" + cleanSuggestion);
+                this->triggerSuggestionsAfterReplacement = false;
+            }
+        } else {
+            methodParams = manager.getMethodParams(className, cleanSuggestion);
         }
 
-        if (methodParams.isEmpty() || methodParams == "()")
+        if (methodParams.isNotEmpty() && methodParams != "()")
         {
-            for (const auto& c : manager.getClassNames())
-            {
-                juce::String p = manager.getMethodParams(c, cleanSuggestion);
-                if (p.isNotEmpty() && p != "()")
-                {
-                    methodParams = p;
-                    className = c;
-                    break;
+            juce::StringArray overloads;
+            overloads.addLines(methodParams);
+            
+            juce::String simplestLine = overloads[0];
+            auto countCommas = [](const juce::String& s) {
+                int count = 0;
+                for (auto* p = s.toRawUTF8(); *p != 0; ++p)
+                    if (*p == ',') count++;
+                return count;
+            };
+
+            int minCommas = countCommas(simplestLine);
+            for (auto& line : overloads) {
+                int commas = countCommas(line);
+                if (commas < minCommas) {
+                    minCommas = commas;
+                    simplestLine = line;
                 }
             }
-        }
-        
-        lastAutocompletedClass = className;
 
-        if (methodParams.isNotEmpty())
-        {
-            juce::StringArray individualParams;
-            juce::String firstOption = methodParams.contains("\n") ? methodParams.upToFirstOccurrenceOf("\n", false, false) : methodParams;
-            individualParams.addTokens(firstOption, ",", "");
-            
-            juce::String suffix = "(";
-            int firstParamInsideOffset = 0;
-            
-            for (int i = 0; i < individualParams.size(); ++i)
-            {
-                juce::String p = individualParams[i].trim();
+            if (cleanSuggestion == "MemoryBlock" && (minCommas > 0 || simplestLine.containsIgnoreCase("String"))) {
+                textToInsert += "()";
+                caretOffsetFromEnd = 0; // Cursor AFTER brackets
+                methodParams = "";
+            }
+            else {
+                juce::String cleaned = simplestLine.replace("void ", "").replace("size_t ", "").replace("luabind::object ", "").replace("String ", "");
+                juce::StringArray params;
+                params.addTokens(cleaned, ",", "");
                 
-                if (p.containsIgnoreCase("string")) {
-                    suffix += "\"\"";
-                    if (i == 0) firstParamInsideOffset = 2; // Caret inside ""
-                } else {
-                    if (i == 0) firstParamInsideOffset = 0; // Caret right after (
-                }
+                juce::String suffix = "(";
+                int validParamCount = 0;
+                int firstParamInsideOffset = 0;
 
-                if (i < individualParams.size() - 1)
-                    suffix += ", ";
+                for (int i = 0; i < params.size(); ++i) {
+                    juce::String p = params[i].trim();
+                    if (p.isNotEmpty()) {
+                        if (validParamCount > 0) suffix += ", ";
+                        if (p.containsIgnoreCase("data") || p.containsIgnoreCase("hex") || p.containsIgnoreCase("string")) {
+                            suffix += "\"\"";
+                            if (validParamCount == 0) firstParamInsideOffset = 2;
+                        }
+                        validParamCount++;
+                    }
+                }
+                suffix += ")";
+                textToInsert += suffix;
+                
+                if (validParamCount > 0) {
+                    // Position cursor INSIDE for methods with params
+                    caretOffsetFromEnd = suffix.length() - (firstParamInsideOffset > 0 ? firstParamInsideOffset : 1);
+                    nextTabJumpPosition = wordStart + textToInsert.length();
+                } else {
+                    // Position cursor OUTSIDE for empty results
+                    caretOffsetFromEnd = 0;
+                    methodParams = "";
+                }
             }
-            suffix += ")";
-            textToInsert += suffix;
-            
-            // Adjust caret offset.
-            caretOffsetFromEnd = suffix.length() - (firstParamInsideOffset > 0 ? firstParamInsideOffset : 1);
-            nextTabJumpPosition = 1;
-            _DBG("AUTOCOMPLETE: Snippet generated: " + suffix);
         }
-        else
+        else if (forcedSeparator.isEmpty())
         {
             textToInsert += "()";
-            caretOffsetFromEnd = 1;
+            caretOffsetFromEnd = 0; // Cursor AFTER brackets
+            methodParams = "";
         }
     }
-    else if (selectedItem.type == TypeClass || triggerMethods)
-    {
-        // FIX: Ensure these classes use '.' and trigger the static method list
-        if (cleanSuggestion == "utils" || cleanSuggestion == "table" ||
-            cleanSuggestion == "string" || cleanSuggestion == "math" ||
-            cleanSuggestion == "MemoryBlock")
-        {
-            forcedSeparator = ".";
-            textToInsert += ".";
-        }
-        else
-        {
-            forcedSeparator = ":";
-            textToInsert += ":";
-        }
-    }
-    
-    // 4. DOCUMENT UPDATE
+
+    // --- 3. EXECUTE ---
     document.insertText(wordStart, textToInsert);
-    
     int finalPos = wordStart + textToInsert.length() - caretOffsetFromEnd;
     editorComponent->moveCaretTo(juce::CodeDocument::Position(document, finalPos), false);
     document.newTransaction();
 
-    // 5. RE-ACTIVATE BUBBLE (Enhanced)
-    if ((selectedItem.type == TypeMethod || selectedItem.type == TypeUtility) && methodParams.isNotEmpty())
+    // --- 4. BUBBLE ---
+    if (methodParams.isNotEmpty() && methodParams != "()")
     {
         lastAutocompletedMethod = cleanSuggestion;
-        lastAutocompletedClass = className;
-
+        lastAutocompletedClass = (selectedItem.type == TypeClass) ? cleanSuggestion : className;
+        
         juce::MessageManager::callAsync([this]() {
-            if (callTip != nullptr)
-            {
+            if (callTip) {
                 updateCallTipHighlight();
-                callTip->setVisible(true);
-                callTip->toFront(false);
+                if (callTip->getTipText().trim().isNotEmpty())
+                    callTip->setVisible(true);
             }
         });
     }
 
-    // 6. CLEANUP
-    if (suggestionPopup)
-        suggestionPopup->setVisible(false);
+    if (suggestionPopup) suggestionPopup->setVisible(false);
 
-    juce::String sepToUse = forcedSeparator;
-    juce::Timer::callAfterDelay(50, [this, sepToUse]() {
-        if (triggerSuggestionsAfterReplacement)
-        {
-            triggerSuggestionsAfterReplacement = false;
-            // This triggers codeDocumentTextInserted with the dot or colon
-            codeDocumentTextInserted(sepToUse, editorComponent->getCaretPos().getPosition());
-        }
+    if (triggerSuggestionsAfterReplacement && forcedSeparator.isNotEmpty())
+    {
+        juce::Timer::callAfterDelay(50, [this, forcedSeparator]() {
+            this->triggerSuggestionsAfterReplacement = false;
+            this->isReplacingText = false;
+            this->codeDocumentTextInserted(forcedSeparator, editorComponent->getCaretPos().getPosition());
+        });
+    }
+    else
+    {
         isReplacingText = false;
-        if (editorComponent != nullptr)
-            editorComponent->grabKeyboardFocus();
-    });
+    }
 }
