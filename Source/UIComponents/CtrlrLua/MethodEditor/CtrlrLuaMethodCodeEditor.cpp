@@ -663,15 +663,18 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
                 }
             }
 
-            if (className.isEmpty())
-            {
-                if (varName.equalsIgnoreCase("panel"))             className = "CtrlrPanel";
-                else if (varName.startsWithIgnoreCase("mod"))      className = "CtrlrModulator";
-                else if (varName == "utils")                       className = "utils";
-                else if (varName == "MemoryBlock")                 className = "MemoryBlock";
-                else if (varName == "table")                       className = "table";
-            }
-        }
+			if (className.isEmpty())
+			{
+				if (varName.equalsIgnoreCase("panel"))             className = "CtrlrPanel";
+				else if (varName.startsWithIgnoreCase("mod"))      className = "CtrlrModulator";
+				else if (varName == "utils")                       className = "utils";
+				else if (varName == "MemoryBlock")                 className = "MemoryBlock";
+				// ADD THESE LINES:
+				else if (varName == "math")                        className = "math";
+				else if (varName == "table")                       className = "table";
+				else if (varName == "string")                      className = "string";
+			}
+		}
         
         if (className.isNotEmpty())
         {

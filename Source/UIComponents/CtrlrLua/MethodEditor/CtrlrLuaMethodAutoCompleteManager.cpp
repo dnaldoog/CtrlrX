@@ -99,13 +99,12 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
         }
     }
 
-// 2. Manual Injection of Base Classes (THE CHAIN)
+    // 2. Manual Injection of Base Classes (THE CHAIN)
     if (!classes.contains("Component")) {
         LuaClass comp; comp.name = "Component";
         juce::StringArray ui = { "setBounds", "setSize", "setVisible", "getX", "getY", "getWidth", "getHeight", "repaint", "setHeight", "setWidth" };
         for (auto& n : ui) {
             LuaMethod m; m.name = n;
-            // Explicit parameters so we don't get empty bubbles
             if (n == "setBounds") m.parameters = "(int x, int y, int width, int height)";
             else if (n == "setSize") m.parameters = "(int width, int height)";
             else if (n == "setHeight") m.parameters = "(int height)";
@@ -113,11 +112,11 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
             else if (n == "setVisible") m.parameters = "(bool shouldBeVisible)";
             else m.parameters = "()";
 
-            comp.methods.add(m); // Add the one with parameters FIRST
+            comp.methods.add(m);
             
             if (m.parameters != "()") {
                 LuaMethod d; d.name = n; d.parameters = "()";
-                comp.methods.add(d); // .add() puts it at the END, so it's a fallback, not the primary hint
+                comp.methods.add(d);
             }
             allMethodNames.add(n);
         }
@@ -132,43 +131,33 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
         for (auto& n : om) {
             LuaMethod m; m.name = n;
             m.parameters = (n == "setProperty") ? "(String name, var value)" : "(String name)";
-            
-            obj.methods.add(m); // Add parameterized version first
-            
+            obj.methods.add(m);
             LuaMethod d; d.name = n; d.parameters = "()";
-            obj.methods.add(d); // Add empty version at the end
+            obj.methods.add(d);
             allMethodNames.add(n);
         }
         classes.set(obj.name, obj);
         classNames.add(obj.name);
     }
 
-	// 3. HARD-FIX SPECIFIC INSTANCES (Injecting missing C++ methods & ordering overloads)
-    // --- FIX: CtrlrPanel ---
+    // 3. HARD-FIX SPECIFIC INSTANCES
     if (classes.contains("CtrlrPanel")) {
         auto& panel = classes.getReference("CtrlrPanel");
         panel.parentClass = "Component";
-
         juce::StringArray missing = {
             "getModulatorByName", "getModulator", "getModulatorByIndex", "getNumModulators",
             "sendMidiMessageNow", "getCanvas", "getPanelEditor", "getGlobalVariable", "setGlobalVariable"
         };
-
         for (auto& mName : missing) {
             bool exists = false;
             for (auto& em : panel.methods) { if (em.name == mName) { exists = true; break; } }
-            
             if (!exists) {
                 LuaMethod lm;
                 lm.name = mName;
                 lm.parameters = (mName.contains("ByName")) ? "(String name)" :
                                 (mName.contains("ByIndex")) ? "(int index)" : "()";
-                
-                // Add the parameterized version first
                 panel.methods.add(lm);
                 allMethodNames.addIfNotAlreadyThere(mName);
-                
-                // CRITICAL: Insert the () version at index 0 so it's the default/preferred hint
                 if (lm.parameters != "()") {
                     LuaMethod def; def.name = mName; def.parameters = "()";
                     panel.methods.insert(0, def);
@@ -177,70 +166,82 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
         }
     }
 
-    // --- FIX: MemoryBlock ---
+    // --- FIX: Detailed Math Library Definitions ---
+    if (!classes.contains("math")) {
+        LuaClass mathLib;
+        mathLib.name = "math";
+        juce::StringArray mathMethods = {
+            "abs(x)", "acos(x)", "asin(x)", "atan(x)", "ceil(x)", "cos(x)",
+            "deg(x)", "exp(x)", "floor(x)", "fmod(x, y)", "huge", "log(x)",
+            "max(x, ...)", "min(x, ...)", "modf(x)", "pi", "pow(x, y)",
+            "rad(x)", "random(m, n)", "randomseed(x)", "sin(x)", "sqrt(x)", "tan(x)"
+        };
+        for (auto& mEntry : mathMethods) {
+            LuaMethod lm;
+            if (mEntry.contains("(")) {
+                lm.name = mEntry.upToFirstOccurrenceOf("(", false, false);
+                lm.parameters = "(" + mEntry.fromFirstOccurrenceOf("(", false, false);
+            } else {
+                lm.name = mEntry;
+                lm.parameters = "";
+            }
+            lm.isStatic = true;
+            mathLib.staticMethods.add(lm);
+            mathLib.methods.add(lm); // Add to methods as well for dot-notation search
+            allMethodNames.addIfNotAlreadyThere(lm.name);
+        }
+        classes.set("math", mathLib);
+        classNames.add("math");
+    }
+
     if (classes.contains("MemoryBlock")) {
         auto& mb = classes.getReference("MemoryBlock");
-        
-        // 1. Force Empty Constructor to index 0 for MemoryBlock()
-        if (!mb.constructors.contains("()")) {
-            mb.constructors.insert(0, "()");
-        } else {
-            // If it exists elsewhere, move it to 0
+        if (!mb.constructors.contains("()")) mb.constructors.insert(0, "()");
+        else {
             int idx = mb.constructors.indexOf("()");
-            if (idx > 0) {
-                mb.constructors.remove(idx);
-                mb.constructors.insert(0, "()");
-            }
+            if (idx > 0) { mb.constructors.remove(idx); mb.constructors.insert(0, "()"); }
         }
-
-        // 2. Handle init() Method - Ensure empty version is at index 0
         bool hasEmptyInit = false;
         for (int i = 0; i < mb.methods.size(); ++i) {
             if (mb.methods[i].name == "init" && (mb.methods[i].parameters == "()" || mb.methods[i].parameters.isEmpty())) {
                 LuaMethod m = mb.methods.removeAndReturn(i);
-                mb.methods.insert(0, m); // Move existing empty one to top
-                hasEmptyInit = true;
-                break;
+                mb.methods.insert(0, m);
+                hasEmptyInit = true; break;
             }
         }
-
         if (!hasEmptyInit) {
             LuaMethod lm; lm.name = "init"; lm.parameters = "()";
-            mb.methods.insert(0, lm); // Insert new empty one at top
+            mb.methods.insert(0, lm);
         }
-
-        // Ensure the size version exists at the end of the list
         bool hasSizeInit = false;
-        for (auto& m : mb.methods) {
-            if (m.name == "init" && m.parameters.contains("size")) { hasSizeInit = true; break; }
-        }
+        for (auto& m : mb.methods) { if (m.name == "init" && m.parameters.contains("size")) { hasSizeInit = true; break; } }
         if (!hasSizeInit) {
             LuaMethod lms; lms.name = "init"; lms.parameters = "(int size)";
             mb.methods.add(lms);
         }
-        
         allMethodNames.addIfNotAlreadyThere("init");
     }
-    
+
     if (classes.contains("CtrlrModulator")) {
         classes.getReference("CtrlrModulator").parentClass = "CtrlrObject";
     }
 
-    // 4. Inject Common Libs
+    // 4. Inject Common Libs (Table, String, and remaining Math)
     auto injectStaticLib = [this](juce::String libName, juce::StringArray methods) {
         LuaClass lc;
         if (classes.contains(libName)) lc = classes.getReference(libName);
         else lc.name = libName;
-        for (auto& m : methods) {
+
+        for (auto& mName : methods) {
             bool exists = false;
-            for (auto& sm : lc.staticMethods) { if (sm.name == m) { exists = true; break; } }
+            for (auto& sm : lc.staticMethods) { if (sm.name == mName) { exists = true; break; } }
+            
             if (!exists) {
-                LuaMethod lm; lm.name = m; lm.parameters = "()"; lm.isStatic = true;
+                LuaMethod lm; lm.name = mName; lm.parameters = "()"; lm.isStatic = true;
                 lc.staticMethods.add(lm);
-                // Also add to standard methods so math. shows up in the search loop
                 lc.methods.add(lm);
             }
-            allMethodNames.add(m);
+            allMethodNames.addIfNotAlreadyThere(mName);
         }
         classes.set(libName, lc);
         if (!classNames.contains(libName)) classNames.add(libName);
@@ -256,7 +257,7 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
     classNames.removeDuplicates(false);
     classNames.sort(true);
 
-    _DBG("AUTOCOMPLETE: Definition Loading Complete. CtrlrPanel patched with " + juce::String(classes.getReference("CtrlrPanel").methods.size()) + " methods.");
+    _DBG("AUTOCOMPLETE: Definition Loading Complete.");
 }
 
 std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggestions(const juce::String& prefix) {
