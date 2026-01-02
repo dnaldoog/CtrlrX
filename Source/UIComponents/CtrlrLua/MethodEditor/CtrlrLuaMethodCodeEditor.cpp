@@ -78,16 +78,23 @@ public:
         auto& item = activeItems[rowNumber];
         auto iconArea = juce::Rectangle<float> (6.0f, 4.0f, (float)height - 8.0f, (float)height - 8.0f);
         
-        juce::Colour iconColor;
-        juce::String iconLetter;
-        
-        switch (item.type) {
-            case TypeClass:   iconColor = juce::Colours::darkorange; iconLetter = "C"; break;
-            case TypeMethod:  iconColor = juce::Colours::darkcyan;   iconLetter = "M"; break;
-            case TypeGlobal:  iconColor = juce::Colours::darkgreen;  iconLetter = "V"; break;
-            case TypeUtility: iconColor = juce::Colours::purple;     iconLetter = "f"; break;
-            default:          iconColor = mainText.withAlpha(0.6f);  iconLetter = "?"; break;
-        }
+		// --- FORCE CLASS ICON FOR LIBRARIES ---
+		juce::StringArray libraries = { "math", "table", "string", "utils" };
+		SuggestionType displayType = item.type;
+		if (libraries.contains(item.text)) {
+			displayType = TypeClass;
+		}
+		
+		juce::Colour iconColor;
+		juce::String iconLetter;
+		
+		switch (displayType) {
+			case TypeClass:   iconColor = juce::Colours::darkorange; iconLetter = "C"; break;
+			case TypeMethod:  iconColor = juce::Colours::darkcyan;   iconLetter = "M"; break;
+			case TypeGlobal:  iconColor = juce::Colours::darkgreen;  iconLetter = "V"; break;
+			case TypeUtility: iconColor = juce::Colours::purple;     iconLetter = "f"; break;
+			default:          iconColor = mainText.withAlpha(0.6f);  iconLetter = "?"; break;
+		}
         
         g.setColour(iconColor.withAlpha(0.8f));
         g.drawRoundedRectangle(iconArea, 3.0f, 1.2f);
@@ -2169,7 +2176,7 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
 
     // 2. LOGIC BY TYPE
     if (selectedItem.type == TypeClass) {
-        if (cleanSuggestion == "utils" || cleanSuggestion == "table" || cleanSuggestion == "math") {
+        if (cleanSuggestion == "utils" || cleanSuggestion == "table" || cleanSuggestion == "math" || cleanSuggestion == "string") {
             juce::String sep = ".";
             textToInsert += sep;
             forcedSeparator = sep;
@@ -2182,11 +2189,15 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
             this->triggerSuggestionsAfterReplacement = false;
         }
     }
-    else if (selectedItem.type == TypeGlobal) {
-        textToInsert += ":";
-        forcedSeparator = ":";
-        this->triggerSuggestionsAfterReplacement = true;
-    }
+	else if (selectedItem.type == TypeGlobal) {
+		// Only add a colon to specific Ctrlr global objects
+		if (cleanSuggestion == "panel" || cleanSuggestion == "mod" || cleanSuggestion == "comp") {
+			textToInsert += ":";
+			forcedSeparator = ":";
+			this->triggerSuggestionsAfterReplacement = true;
+		}
+		// Otherwise, it's a keyword like 'local' or 'nil', so just leave it as is.
+	}
     else if (selectedItem.type == TypeMethod || selectedItem.type == TypeUtility) {
         methodParams = manager.getMethodParams(className, cleanSuggestion);
 
@@ -2195,7 +2206,7 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
             overloads.addLines(methodParams);
             juce::String simplestLine = overloads[0];
             
-            juce::String cleaned = simplestLine.replace("void ", "").replace("size_t ", "").replace("luabind::object ", "table ");
+            juce::String cleaned = simplestLine.replace("void ", "").replace("size_t ", "").replace("luabind::object ", "table ", cleanSuggestion == "string");
             juce::StringArray params;
             params.addTokens(cleaned, ",", "");
             
@@ -2221,7 +2232,7 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
         } else {
             // No-arg methods: land OUTSIDE ()|
             textToInsert += "()";
-            caretOffsetFromEnd = 0;
+            caretOffsetFromEnd = 0; // if you want the cursor to land inside the parentheses for classes like MemoryBlock(|), change caretOffsetFromEnd to 1. If you prefer it to stay outside as it is now, keep it at 0
         }
     }
 

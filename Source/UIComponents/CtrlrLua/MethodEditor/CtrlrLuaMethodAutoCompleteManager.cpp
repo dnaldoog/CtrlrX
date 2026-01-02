@@ -70,7 +70,10 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
                                         lc.methods.insert(0, def);
                                     }
                                 }
-                                allMethodNames.add(name);
+                                
+                                // Only add to global if it's not a reserved library name
+                                if (name != "string" && name != "math" && name != "table")
+                                    allMethodNames.add(name);
                             }
                         }
                     }
@@ -87,7 +90,9 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
                             }
                             LuaMethod sm; sm.name = name; sm.parameters = args; sm.isStatic = true;
                             lc.staticMethods.add(sm);
-                            allMethodNames.add(name);
+                            
+                            if (name != "string" && name != "math" && name != "table")
+                                allMethodNames.add(name);
                         }
                     }
 
@@ -157,7 +162,7 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
                 lm.parameters = (mName.contains("ByName")) ? "(String name)" :
                                 (mName.contains("ByIndex")) ? "(int index)" : "()";
                 panel.methods.add(lm);
-                allMethodNames.addIfNotAlreadyThere(mName);
+                // allMethodNames.addIfNotAlreadyThere(mName); // Keep commented as per your logic
                 if (lm.parameters != "()") {
                     LuaMethod def; def.name = mName; def.parameters = "()";
                     panel.methods.insert(0, def);
@@ -166,10 +171,29 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
         }
     }
 
-    // --- FIX: Detailed Math Library Definitions ---
+    // --- 4. Detailed Library Definitions (Pre-Injection) ---
+    if (!classes.contains("string")) {
+        LuaClass strLib; strLib.name = "string";
+        juce::StringArray strMethods = {
+            "byte(s, i, j)", "char(...)", "dump(function)", "find(s, pattern, init, plain)",
+            "format(formatstring, ...)", "gmatch(s, pattern)", "gsub(s, pattern, repl, n)",
+            "len(s)", "lower(s)", "match(s, pattern, init)", "rep(s, n)",
+            "reverse(s)", "sub(s, i, j)", "upper(s)"
+        };
+        for (auto& mEntry : strMethods) {
+            LuaMethod lm;
+            lm.name = mEntry.contains("(") ? mEntry.upToFirstOccurrenceOf("(", false, false) : mEntry;
+            lm.parameters = mEntry.contains("(") ? "(" + mEntry.fromFirstOccurrenceOf("(", false, false) : "()";
+            lm.isStatic = true;
+            strLib.staticMethods.add(lm);
+            strLib.methods.add(lm);
+        }
+        classes.set("string", strLib);
+        classNames.add("string");
+    }
+
     if (!classes.contains("math")) {
-        LuaClass mathLib;
-        mathLib.name = "math";
+        LuaClass mathLib; mathLib.name = "math";
         juce::StringArray mathMethods = {
             "abs(x)", "acos(x)", "asin(x)", "atan(x)", "ceil(x)", "cos(x)",
             "deg(x)", "exp(x)", "floor(x)", "fmod(x, y)", "huge", "log(x)",
@@ -178,22 +202,41 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
         };
         for (auto& mEntry : mathMethods) {
             LuaMethod lm;
-            if (mEntry.contains("(")) {
-                lm.name = mEntry.upToFirstOccurrenceOf("(", false, false);
-                lm.parameters = "(" + mEntry.fromFirstOccurrenceOf("(", false, false);
-            } else {
-                lm.name = mEntry;
-                lm.parameters = "";
-            }
+            lm.name = mEntry.contains("(") ? mEntry.upToFirstOccurrenceOf("(", false, false) : mEntry;
+            lm.parameters = mEntry.contains("(") ? "(" + mEntry.fromFirstOccurrenceOf("(", false, false) : "";
             lm.isStatic = true;
             mathLib.staticMethods.add(lm);
-            mathLib.methods.add(lm); // Add to methods as well for dot-notation search
-            allMethodNames.addIfNotAlreadyThere(lm.name);
+            mathLib.methods.add(lm);
         }
         classes.set("math", mathLib);
         classNames.add("math");
     }
 
+    // 5. Inject Common Libs (Fills in missing methods for table/string/math)
+    auto injectStaticLib = [this](juce::String libName, juce::StringArray methods) {
+        if (!classes.contains(libName)) {
+            LuaClass newLc; newLc.name = libName;
+            classes.set(libName, newLc);
+        }
+        auto& lc = classes.getReference(libName);
+        for (auto& mName : methods) {
+            bool exists = false;
+            for (auto& sm : lc.staticMethods) { if (sm.name == mName) { exists = true; break; } }
+            for (auto& m : lc.methods) { if (m.name == mName) { exists = true; break; } }
+            if (!exists) {
+                LuaMethod lm; lm.name = mName; lm.parameters = "()"; lm.isStatic = true;
+                lc.staticMethods.add(lm);
+                lc.methods.add(lm);
+            }
+        }
+        if (!classNames.contains(libName)) classNames.add(libName);
+    };
+
+    injectStaticLib("table", { "insert", "remove", "sort", "concat", "unpack" });
+    injectStaticLib("math", { "abs", "floor", "ceil", "min", "max", "sqrt", "sin", "cos", "pi", "random" });
+    injectStaticLib("string", { "format", "sub", "upper", "lower", "find", "gsub", "len" });
+
+    // 6. MemoryBlock and Modulator specialized fixes
     if (classes.contains("MemoryBlock")) {
         auto& mb = classes.getReference("MemoryBlock");
         if (!mb.constructors.contains("()")) mb.constructors.insert(0, "()");
@@ -213,12 +256,6 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
             LuaMethod lm; lm.name = "init"; lm.parameters = "()";
             mb.methods.insert(0, lm);
         }
-        bool hasSizeInit = false;
-        for (auto& m : mb.methods) { if (m.name == "init" && m.parameters.contains("size")) { hasSizeInit = true; break; } }
-        if (!hasSizeInit) {
-            LuaMethod lms; lms.name = "init"; lms.parameters = "(int size)";
-            mb.methods.add(lms);
-        }
         allMethodNames.addIfNotAlreadyThere("init");
     }
 
@@ -226,32 +263,7 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
         classes.getReference("CtrlrModulator").parentClass = "CtrlrObject";
     }
 
-    // 4. Inject Common Libs (Table, String, and remaining Math)
-    auto injectStaticLib = [this](juce::String libName, juce::StringArray methods) {
-        LuaClass lc;
-        if (classes.contains(libName)) lc = classes.getReference(libName);
-        else lc.name = libName;
-
-        for (auto& mName : methods) {
-            bool exists = false;
-            for (auto& sm : lc.staticMethods) { if (sm.name == mName) { exists = true; break; } }
-            
-            if (!exists) {
-                LuaMethod lm; lm.name = mName; lm.parameters = "()"; lm.isStatic = true;
-                lc.staticMethods.add(lm);
-                lc.methods.add(lm);
-            }
-            allMethodNames.addIfNotAlreadyThere(mName);
-        }
-        classes.set(libName, lc);
-        if (!classNames.contains(libName)) classNames.add(libName);
-    };
-
-    injectStaticLib("table", { "insert", "remove", "sort", "concat", "unpack" });
-    injectStaticLib("math", { "abs", "floor", "ceil", "min", "max", "sqrt", "sin", "cos", "pi", "random" });
-    injectStaticLib("string", { "format", "sub", "upper", "lower", "find", "gsub", "len" });
-
-    // 5. Finalize
+    // 7. Finalize and Sort
     allMethodNames.removeDuplicates(false);
     allMethodNames.sort(true);
     classNames.removeDuplicates(false);
@@ -263,33 +275,52 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
 std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggestions(const juce::String& prefix) {
     std::vector<SuggestionItem> results;
     juce::StringArray added;
+    
+    // 1. MANDATORY LIBRARIES (The "C" Icon)
+    // We add these first. No matter what, if "str" is typed, "string" is added here.
+    juce::StringArray libraries = { "math", "table", "string", "utils" };
+    for (auto& lib : libraries) {
+        if (lib.startsWithIgnoreCase(prefix)) {
+            results.push_back({ lib, TypeClass });
+            added.add(lib.toLowerCase());
+        }
+    }
 
-    // 1. Globals/Keywords (Icon "V")
+    // 2. GLOBALS / KEYWORDS
     juce::StringArray globals = { "local", "function", "if", "then", "else", "elseif", "end", "for", "while", "do", "return", "break", "nil", "true", "false", "panel", "mod", "value", "source", "comp", "event", "canvas", "g", "midi", "console" };
     for (auto& g : globals) {
-        if (g.startsWithIgnoreCase(prefix)) {
+        if (g.startsWithIgnoreCase(prefix) && !added.contains(g.toLowerCase())) {
             results.push_back({ g, TypeGlobal });
-            added.add(g);
+            added.add(g.toLowerCase());
         }
     }
 
-    // 2. Classes (Icon "C")
+    // 3. CLASSES (Ctrlr specific)
     for (auto& c : classNames) {
-        if (c.startsWithIgnoreCase(prefix) && !added.contains(c)) {
+        if (c.startsWithIgnoreCase(prefix) && !added.contains(c.toLowerCase())) {
             results.push_back({ c, TypeClass });
-            added.add(c);
+            added.add(c.toLowerCase());
         }
     }
 
-    // 3. The rest (Methods/Utilities)
+    // 4. METHODS (The "M" Icon)
     for (auto& m : allMethodNames) {
-        if (m.startsWithIgnoreCase(prefix) && !added.contains(m)) {
-            // Check if it's a utility method or a general class method
-            SuggestionType type = utilityMethodNames.contains(m) ? TypeUtility : TypeMethod;
-            results.push_back({ m, type });
-            added.add(m);
+        if (m.startsWithIgnoreCase(prefix)) {
+            juce::String lowerM = m.toLowerCase();
+            
+            // THE CRITICAL FIX:
+            // If the name is exactly "string" or "math", skip it.
+            // We ALREADY added the Class version in Step 1.
+            if (libraries.contains(lowerM)) continue;
+
+            if (!added.contains(lowerM)) {
+                SuggestionType type = utilityMethodNames.contains(m) ? TypeUtility : TypeMethod;
+                results.push_back({ m, type });
+                added.add(lowerM);
+            }
         }
     }
+    
     return results;
 }
 
