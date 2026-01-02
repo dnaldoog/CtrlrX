@@ -1100,6 +1100,8 @@
               file="Source/UIComponents/CtrlrValueTreeEditor.h"/>
       </GROUP>
     </GROUP>
+    <FILE id="RESkR9" name="LuaMethodArgs.json" compile="0" resource="1"
+          file="Source/Resources/JSON/LuaMethodArgs.json"/>
   </MAINGROUP>
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX" extraDefs="JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1 BOOST_BIND_GLOBAL_PLACEHOLDERS=1"
