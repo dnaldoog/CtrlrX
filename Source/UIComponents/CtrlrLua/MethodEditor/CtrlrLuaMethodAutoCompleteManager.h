@@ -26,6 +26,7 @@ struct SuggestionItem {
 /** Represents a Lua class and its associated methods, properties, and constructors */
 struct LuaClass {
     juce::String name;
+	juce::String parentClass;
     juce::Array<LuaMethod> methods;       // Instance methods (accessed via :)
     juce::Array<LuaMethod> staticMethods; // Static methods (accessed via .)
     juce::StringArray properties;         // New: Member variables (accessed via .)
