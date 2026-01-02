@@ -105,6 +105,14 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
     }
 
     // 2. Manual Injection of Base Classes (THE CHAIN)
+	
+	if (!classes.contains("MemoryBlock")) {
+		LuaClass mbClass;
+		mbClass.name = "MemoryBlock";
+		classes.set("MemoryBlock", mbClass);
+		classNames.add("MemoryBlock");
+	}
+	
     if (!classes.contains("Component")) {
         LuaClass comp; comp.name = "Component";
         juce::StringArray ui = { "setBounds", "setSize", "setVisible", "getX", "getY", "getWidth", "getHeight", "repaint", "setHeight", "setWidth" };
@@ -527,4 +535,31 @@ juce::StringArray CtrlrLuaMethodAutoCompleteManager::getClassNames() const
     }
 
     return names;
+}
+
+
+juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const juce::String& varName, const juce::String& code) {
+    // 1. Hardcoded shortcuts
+    if (varName == "panel")  return "CtrlrPanel";
+    if (varName == "mod")    return "CtrlrModulator";
+    if (varName == "comp")   return "CtrlrComponent";
+    if (varName == "g")      return "Graphics";
+    
+    // 2. DYNAMIC LOOK-BACK
+    // We use the 'code' string passed in from the editor
+    int assignmentPos = code.lastIndexOf(varName + " =");
+    if (assignmentPos != -1) {
+        juce::String afterEquals = code.substring(assignmentPos + varName.length() + 2).trimStart();
+        for (auto& className : classNames) {
+            if (afterEquals.startsWith(className)) {
+                return className;
+            }
+        }
+    }
+    
+    // 3. Fallbacks
+    if (varName == "m" || varName == "mb" || varName == "mem") return "MemoryBlock";
+    if (varName == "f") return "File";
+    
+    return "";
 }
