@@ -286,9 +286,9 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggesti
     std::vector<SuggestionItem> results;
     juce::StringArray added;
     
-    // 1. MANDATORY LIBRARIES (The "C" Icon)
-    // We add these first. No matter what, if "str" is typed, "string" is added here.
-    juce::StringArray libraries = { "math", "table", "string", "utils" };
+    // 1. MANDATORY LIBRARIES / CLASSES (The "C" Icon)
+    // We add these first. If "Mem" is typed, "MemoryBlock" is prioritized as a Class.
+    juce::StringArray libraries = { "math", "table", "string", "utils", "MemoryBlock" };
     for (auto& lib : libraries) {
         if (lib.startsWithIgnoreCase(prefix)) {
             results.push_back({ lib, TypeClass });
@@ -305,7 +305,9 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggesti
         }
     }
 
-    // 3. CLASSES (Ctrlr specific)
+    // 3. CLASSES (Ctrlr specific - extracted from XML)
+    // This ensures that any class found in your XML (like AffineTransform, etc.)
+    // shows up when you start typing its name.
     for (auto& c : classNames) {
         if (c.startsWithIgnoreCase(prefix) && !added.contains(c.toLowerCase())) {
             results.push_back({ c, TypeClass });
@@ -319,9 +321,9 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggesti
             juce::String lowerM = m.toLowerCase();
             
             // THE CRITICAL FIX:
-            // If the name is exactly "string" or "math", skip it.
-            // We ALREADY added the Class version in Step 1.
-            if (libraries.contains(lowerM)) continue;
+            // If the name is exactly "string", "math", or "MemoryBlock", skip it.
+            // We ALREADY added the Class version in Step 1 or Step 3.
+            if (libraries.contains(lowerM) || classNames.contains(m)) continue;
 
             if (!added.contains(lowerM)) {
                 SuggestionType type = utilityMethodNames.contains(m) ? TypeUtility : TypeMethod;
@@ -499,16 +501,23 @@ juce::String CtrlrLuaMethodAutoCompleteManager::resolveReturnType(const juce::St
         const auto& lc = classes.getReference(currentClass);
 
         // 1. Context-Specific Overrides (Priority)
-        if (currentClass == "CtrlrPanel") {
+        if (currentClass == "CtrlrPanel")
+        {
+            // Handles getModulatorByName, getModulatorByIndex, and getModulator
             if (methodName.contains("getModulator")) return "CtrlrModulator";
-        }
-        
-        if (currentClass == "CtrlrModulator") {
             if (methodName == "getComponent") return "CtrlrComponent";
         }
+        
+        if (currentClass == "CtrlrModulator")
+        {
+            if (methodName == "getComponent") return "CtrlrComponent";
+            if (methodName == "getPanel") return "CtrlrPanel";
+        }
 
-        // If your XML structure eventually includes return types,
-        // you would look them up here inside the loop.
+        if (currentClass == "CtrlrComponent")
+        {
+            if (methodName == "getOwner") return "CtrlrModulator";
+        }
 
         // Move to parent to see if it has specific context overrides
         currentClass = lc.parentClass;
@@ -532,18 +541,14 @@ juce::String CtrlrLuaMethodAutoCompleteManager::resolveReturnType(const juce::St
         return "CtrlrLuaManager";
 
     if (methodName == "getCanvas")
-        return "Graphics"; // Matches your getClassNameForVariable mapping
+        return "Graphics";
 
     if (methodName == "getGlobalTimer")
         return "Timer";
     
+    // Note: setBounds returns void in Lua, but keeping your return hint for documentation purposes
     if (methodName == "setBounds")
         return "number x, number y, number width, number height";
-
-    // 3. XML Database Lookup (Optional)
-    // If you want to be super advanced, you could look up the 'type'
-    // attribute in your LuaAPI.xml here, but hardcoding common ones
-    // is much faster for performance.
 
     return "";
 }
@@ -561,61 +566,73 @@ juce::StringArray CtrlrLuaMethodAutoCompleteManager::getClassNames() const
     return names;
 }
 
-
 juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const juce::String& varName, const juce::String& code)
 {
     // 1. Static/Global Shortcuts (Priority)
-    if (varName == "panel")  return "CtrlrPanel";
-    if (varName == "mod")    return "CtrlrModulator";
-    if (varName == "comp")   return "CtrlrComponent";
-    if (varName == "g")      return "Graphics";
-    
-    // 2. Look for "local varName = ..." assignments
-    // This regex looks for the variable name followed by an equals sign
+    if (varName == "panel" || varName == "pan")   return "CtrlrPanel";
+    if (varName == "mod")                         return "CtrlrModulator";
+    if (varName == "comp")                        return "CtrlrComponent";
+    if (varName == "g")                           return "Graphics";
+    if (varName == "utils")                       return "utils";
+    if (varName == "math")                        return "math";
+    if (varName == "table")                       return "table";
+    if (varName == "string")                      return "string";
+    if (varName == "MemoryBlock")                 return "MemoryBlock";
+
+    // 2. CHAIN RESOLUTION (e.g., mb:someMethod():)
+    if (varName.contains(":") || varName.contains("."))
+    {
+        juce::String normalized = varName.replace(".", ":");
+        juce::StringArray tokens;
+        tokens.addTokens(normalized, ":", "");
+
+        juce::String currentType = "";
+        for (int i = 0; i < tokens.size(); ++i)
+        {
+            juce::String segment = tokens[i].upToFirstOccurrenceOf("(", false, false).trim();
+            if (i == 0)
+                currentType = getClassNameForVariable(segment, code);
+            else
+                currentType = resolveReturnType(currentType, segment);
+            
+            if (currentType.isEmpty()) break;
+        }
+        if (currentType.isNotEmpty()) return currentType;
+    }
+
+    // 3. DYNAMIC LOOK-BACK (Assignments: mb = MemoryBlock())
+    // We look for the variable name followed by an equals sign, ignoring spaces
     int assignmentPos = code.lastIndexOf(varName + " =");
     if (assignmentPos == -1) assignmentPos = code.lastIndexOf(varName + "=");
 
     if (assignmentPos != -1)
     {
-        // Extract the right-hand side of the assignment
-        juce::String rhs = code.substring(assignmentPos + varName.length() + 1).trimStart();
-        rhs = rhs.substring(1).trimStart(); // remove the '='
+        juce::String rhs = code.substring(assignmentPos + varName.length()).trimStart();
+        if (rhs.startsWith("=")) rhs = rhs.substring(1).trimStart();
         
-        // Take only the first part of the RHS (up to newline or semicolon)
         int endOfLine = rhs.indexOfAnyOf(";\n\r");
         if (endOfLine != -1) rhs = rhs.substring(0, endOfLine).trim();
 
-        // Check if it's a simple alias: local p = panel
-        if (rhs == "panel") return "CtrlrPanel";
-        if (rhs == "mod")   return "CtrlrModulator";
-
-        // --- NEW: CHAINED RESOLUTION ---
-        // If RHS is 'panel:getComponent()', we need to resolve it
-        if (rhs.contains(":"))
+        // --- CONSTRUCTOR DETECTION (FIXED) ---
+        // Strip everything after the first '(' to handle MemoryBlock(1024)
+        juce::String potentialClass = rhs.upToFirstOccurrenceOf("(", false, false).trim();
+        
+        // Check if the RHS is a known class name directly
+        if (classNames.contains(potentialClass) || potentialClass == "MemoryBlock")
         {
-            juce::StringArray tokens;
-            tokens.addTokens(rhs, ":", "");
-            
-            juce::String currentType = "";
-            for (int i = 0; i < tokens.size(); ++i)
-            {
-                juce::String segment = tokens[i].trim();
-                // Strip parentheses if present: getComponent() -> getComponent
-                if (segment.contains("(")) segment = segment.substring(0, segment.indexOf("(")).trim();
+            return potentialClass;
+        }
 
-                if (i == 0) {
-                    // First token is the base variable (e.g., 'panel')
-                    currentType = getClassNameForVariable(segment, "");
-                } else {
-                    // Subsequent tokens are method calls
-                    currentType = resolveReturnType(currentType, segment);
-                }
-                
-                if (currentType.isEmpty()) break;
-            }
-            return currentType;
+        // --- RECURSIVE ALIAS/CHAIN RESOLUTION ---
+        if (rhs != varName && rhs.isNotEmpty())
+        {
+            return getClassNameForVariable(rhs, code);
         }
     }
+    
+    // 4. Static Fallbacks (If no assignment found, guess by name)
+    if (varName == "m" || varName == "mb" || varName == "mem") return "MemoryBlock";
+    if (varName == "f") return "File";
     
     return "";
 }
