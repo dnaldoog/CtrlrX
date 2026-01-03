@@ -467,7 +467,7 @@ void CtrlrLuaMethodCodeEditor::updateCallTipHighlight()
         formattedTip += ")";
 
         callTip->setTipText(formattedTip);
-        callTip->setVisible(true);
+        //callTip->setVisible(true);
 
         juce::Font font(13.0f);
         int newWidth = font.getStringWidth(formattedTip) + 20;
@@ -1922,16 +1922,39 @@ void CtrlrLuaMethodCodeEditor::handleSuggestionChosen(juce::String chosen)
     int caretPos = editorComponent->getCaretPos().getPosition();
     juce::String allText = document.getAllContent();
 
-    isReplacingText = true; // Prevent feedback loops
+    isReplacingText = true;
 
-    // Determine if we are following a trigger
-    bool isAfterTrigger = (caretPos > 0 && (allText[caretPos - 1] == ':' || allText[caretPos - 1] == '.'));
+    // Look for the trigger (:  or .) before the word
+    bool isAfterTrigger = false;
+    if (wordStart > 0 && (allText[wordStart - 1] == ':' || allText[wordStart - 1] == '.'))
+    {
+        isAfterTrigger = true;
+    }
 
     if (isAfterTrigger)
     {
-        // Just insert the method name at the caret
-        document.insertText(caretPos, chosen + "()");
-        editorComponent->moveCaretTo(juce::CodeDocument::Position(document, caretPos + chosen.length() + 1), false);
+        // Resolve class and get params
+        int symbolEnd = wordStart - 1;
+        int symbolStart = symbolEnd - 1;
+        while (symbolStart >= 0 && (juce::CharacterFunctions::isLetterOrDigit(allText[symbolStart]) || allText[symbolStart] == '_'))
+            symbolStart--;
+        juce::String symbol = allText.substring(symbolStart + 1, symbolEnd).trim();
+        juce::String resolvedClass = owner.getAutocompleteManager().resolveClass(symbol, allText);
+        juce::String params = owner.getAutocompleteManager().getMethodParams(resolvedClass, chosen);
+
+        // Delete the partial word and insert method with () and params
+        document.deleteSection(wordStart, caretPos);
+
+        if (params.isNotEmpty())
+        {
+            document.insertText(wordStart, chosen + "(" + params + ")");
+            editorComponent->moveCaretTo(juce::CodeDocument::Position(document, wordStart + chosen.length() + params.length() + 2), false);
+        }
+        else
+        {
+            document.insertText(wordStart, chosen + "()");
+            editorComponent->moveCaretTo(juce::CodeDocument::Position(document, wordStart + chosen.length() + 2), false);
+        }
     }
     else
     {
@@ -1941,33 +1964,9 @@ void CtrlrLuaMethodCodeEditor::handleSuggestionChosen(juce::String chosen)
         editorComponent->moveCaretTo(juce::CodeDocument::Position(document, wordStart + chosen.length()), false);
     }
 
-    // Trigger Call-Tip bubble if it's a method
-    juce::String resolvedClass = "";
-    if (isAfterTrigger)
-    {
-        int symbolEnd = wordStart - 1;
-        int symbolStart = symbolEnd - 1;
-        while (symbolStart >= 0 && (juce::CharacterFunctions::isLetterOrDigit(allText[symbolStart]) || allText[symbolStart] == '_'))
-            symbolStart--;
-        juce::String symbol = allText.substring(symbolStart + 1, symbolEnd);
-        resolvedClass = owner.getAutocompleteManager().resolveClass(symbol, allText);
-    }
-
-    juce::String params = owner.getAutocompleteManager().getMethodParams(resolvedClass, chosen);
-    if (params.isNotEmpty())
-    if (params.isNotEmpty())
-    {
-        lastAutocompletedMethod = chosen;
-        juce::Rectangle<int> caretRect = editorComponent->getCharacterBounds(editorComponent->getCaretPos());
-        auto tipPos = getLocalPoint(editorComponent, caretRect.getTopLeft());
-        callTip->showTip("(" + params + ")", tipPos);
-        updateCallTipHighlight();
-    }
-
     isReplacingText = false;
     document.newTransaction();
 }
-
 bool CtrlrLuaMethodCodeEditor::isLuaObjectInstance(const juce::String& s, SuggestionType type)
 {
     if (type == TypeClass)
@@ -1996,12 +1995,12 @@ void CtrlrLuaMethodCodeEditor::showPopup(const std::vector<SuggestionItem>& matc
     suggestionPopup->setVisible(true);
     suggestionPopup->toFront(false);
 }
+
 void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion)
 {
     if (suggestion.isEmpty() || editorComponent == nullptr)
         return;
 
-    // Store for the CallTip highlight logic
     lastAutocompletedMethod = suggestion;
 
     int wordStart = 0;
@@ -2011,7 +2010,6 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
     if (actualLen <= 0)
         return;
 
-    // 1. Capture the item metadata from the popup
     SuggestionItem selectedItem;
     if (suggestionPopup)
         selectedItem = suggestionPopup->getSelectedItem();
@@ -2019,75 +2017,57 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
     isReplacingText = true;
     document.newTransaction();
 
-    // 2. Clear the old prefix (e.g., 'pa' or 'getM')
+    // Clear the old prefix
     editorComponent->moveCaretTo(juce::CodeDocument::Position(document, wordStart + actualLen), false);
     for (int i = 0; i < actualLen; ++i)
     {
         editorComponent->keyPressed(juce::KeyPress(juce::KeyPress::backspaceKey));
     }
 
-    // 3. Determine Suffix and Tab Jump Logic
     juce::String textToInsert = suggestion;
     int caretOffset = 0;
-    nextTabJumpPosition = -1; // Reset any existing jump
+    nextTabJumpPosition = -1;
 
     if (selectedItem.type == TypeMethod || selectedItem.type == TypeUtility)
     {
+        // CAPTURE TEXT AND POSITION BEFORE TEXT CHANGES
+        juce::String allTextBefore = document.getAllContent();
+        int caretPosBefore = editorComponent->getCaretPos().getPosition();
 
-        int caretPos = editorComponent->getCaretPos().getPosition();
-        juce::String allText = document.getAllContent();
+        int tPos = allTextBefore.lastIndexOfAnyOf(":.", caretPosBefore - 1);
         juce::String resolvedClass = "";
 
-        int tPos = allText.lastIndexOfAnyOf(":.", caretPos - 1);
         if (tPos > 0) {
             int s = tPos - 1;
-            while (s >= 0 && (juce::CharacterFunctions::isLetterOrDigit(allText[s]) || allText[s] == '_'))
+            while (s >= 0 && (juce::CharacterFunctions::isLetterOrDigit(allTextBefore[s]) || allTextBefore[s] == '_'))
                 s--;
-            juce::String currentSymbol = allText.substring(s + 1, tPos).trim();
-            resolvedClass = owner.getAutocompleteManager().resolveClass(currentSymbol, allText);
+            juce::String currentSymbol = allTextBefore.substring(s + 1, tPos).trim();
+            resolvedClass = owner.getAutocompleteManager().resolveClass(currentSymbol, allTextBefore);
         }
 
         juce::String params = owner.getAutocompleteManager().getMethodParams(resolvedClass, suggestion);
 
+        DBG("=== performReplacement DEBUG ===");
+        DBG("suggestion: " + suggestion);
+        DBG("resolvedClass: " + resolvedClass);
+        DBG("params: " + params);
+
         if (params.isNotEmpty())
         {
-            juce::StringArray individualParams;
-            individualParams.addTokens(params, ",", "");
-
-            juce::String suffix = "(";
-            int firstSlotOffset = 0;
-
-            for (int i = 0; i < individualParams.size(); ++i)
-            {
-                juce::String p = individualParams[i].trim();
-
-                if (p.containsIgnoreCase("String"))
-                {
-                    if (i == 0) firstSlotOffset = suffix.length() + 1;
-                    suffix += "\"\"";
-                }
-                else
-                {
-                    if (i == 0) firstSlotOffset = suffix.length();
-                    // REMOVED: the suffix += " " here. We want it empty.
-                }
-
-                if (i < individualParams.size() - 1)
-                    suffix += ", "; // This adds the space AFTER the comma
-            }
-
-            suffix += ")";
+            // Write parameters directly into the code
+            juce::String suffix = "(" + params + ")";
             textToInsert += suffix;
 
-            // Set offset for the initial caret landing
-            caretOffset = textToInsert.length() - (suggestion.length() + firstSlotOffset);
+            // Position cursor at the opening paren + 1 (inside the parentheses)
+            caretOffset = suffix.length() - 1;
 
-            // Activate Tab Jump mode if there are multiple parameters
-            if (individualParams.size() > 1)
+            // Set up Tab navigation between parameters if multiple params
+            if (params.contains(","))
                 nextTabJumpPosition = 1;
         }
         else
         {
+            // No params, just empty parentheses
             textToInsert += "()";
             caretOffset = 1;
         }
@@ -2098,7 +2078,7 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
         caretOffset = 0;
     }
 
-    // 4. Atomic Insert and Reposition
+    // Insert the complete text
     document.insertText(wordStart, textToInsert);
 
     int finalPos = wordStart + textToInsert.length() - caretOffset;
@@ -2106,35 +2086,13 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
 
     document.newTransaction();
 
-    // 5. Display CallTip and apply the first highlight
-// 5. Display CallTip and apply the first highlight
-    if (callTip != nullptr)
-    {
-        // Resolve the class for this method
-        int caretPos = editorComponent->getCaretPos().getPosition();
-        juce::String allText = document.getAllContent();
-        juce::String resolvedClass = "";
+    // UI Cleanup
+    if (suggestionPopup)
+        suggestionPopup->setVisible(false);
 
-        int tPos = allText.lastIndexOfAnyOf(":.", caretPos - 1);
-        if (tPos > 0) {
-            int s = tPos - 1;
-            while (s >= 0 && (juce::CharacterFunctions::isLetterOrDigit(allText[s]) || allText[s] == '_'))
-                s--;
-            juce::String currentSymbol = allText.substring(s + 1, tPos).trim();
-            resolvedClass = owner.getAutocompleteManager().resolveClass(currentSymbol, allText);
-        }
+    juce::Timer::callAfterDelay(50, [this]() {
+        isReplacingText = false;
+        });
 
-        juce::String params = owner.getAutocompleteManager().getMethodParams(resolvedClass, suggestion);
-        if (params.isNotEmpty())
-
-            // 6. UI Cleanup
-            if (suggestionPopup)
-                suggestionPopup->setVisible(false);
-
-        juce::Timer::callAfterDelay(50, [this]() {
-            isReplacingText = false;
-            });
-
-        editorComponent->grabKeyboardFocus();
-    }
+    editorComponent->grabKeyboardFocus();
 }

@@ -170,14 +170,17 @@ juce::String CtrlrLuaMethodAutoCompleteManager::resolveClass(const juce::String&
 
     if (assignPos != -1)
     {
-        int startOfClass = fullDocumentText.indexOf(assignPos, "=") + 1;
+        // Skip past the symbol and "=" to get to the class name
+        int startOfClass = assignPos + symbol.length() + 1;  // Position right after "m="
+
+        // Skip whitespace
         while (startOfClass < fullDocumentText.length() &&
             juce::CharacterFunctions::isWhitespace(fullDocumentText[startOfClass]))
             startOfClass++;
 
         int endOfClass = startOfClass;
         while (endOfClass < fullDocumentText.length() &&
-            (juce::CharacterFunctions::isLetterOrDigit(fullDocumentText[endOfClass])))
+            (juce::CharacterFunctions::isLetterOrDigit(fullDocumentText[endOfClass]) || fullDocumentText[endOfClass] == '_'))
             endOfClass++;
 
         juce::String foundClass = fullDocumentText.substring(startOfClass, endOfClass);
