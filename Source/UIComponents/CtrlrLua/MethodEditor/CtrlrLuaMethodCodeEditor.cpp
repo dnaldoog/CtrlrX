@@ -36,7 +36,7 @@ public:
         if (activeItems.size() > 0) listBox.selectRow(0);
         
         int totalHeight = juce::jmin(10, (int)activeItems.size()) * 22;
-        setSize(300, totalHeight);
+        setSize(400, totalHeight); // was 300
         repaint();
     }
 
@@ -60,30 +60,30 @@ public:
 
     void resized() override { listBox.setBounds(getLocalBounds().reduced(1)); }
 
-    int getNumRows() override { return (int)activeItems.size(); }
-    
-    void paintListBoxItem (int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected) override
-    {
-        if (rowNumber >= (int)activeItems.size()) return;
-        
-        auto highlightBg = getLookAndFeel().findColour(juce::TextEditor::highlightColourId);
-        auto mainText = getLookAndFeel().findColour(juce::TextEditor::textColourId);
-        auto highlightText = getLookAndFeel().findColour(juce::TextEditor::highlightedTextColourId);
-        
-        if (rowIsSelected) {
-            g.setColour(highlightBg.withAlpha(0.4f));
-            g.fillRect(0, 0, width, height);
-        }
-        
-        auto& item = activeItems[rowNumber];
-        auto iconArea = juce::Rectangle<float> (6.0f, 4.0f, (float)height - 8.0f, (float)height - 8.0f);
-        
-		// --- FORCE CLASS ICON FOR LIBRARIES ---
+	int getNumRows() override { return (int)activeItems.size(); }
+	
+	void paintListBoxItem (int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected) override
+	{
+		if (rowNumber >= (int)activeItems.size()) return;
+		
+		// 1. Get Theme Colours
+		auto highlightBg = getLookAndFeel().findColour(juce::TextEditor::highlightColourId);
+		auto mainText = getLookAndFeel().findColour(juce::TextEditor::textColourId);
+		auto highlightText = getLookAndFeel().findColour(juce::TextEditor::highlightedTextColourId);
+		
+		// 2. Draw Background
+		if (rowIsSelected) {
+			g.setColour(highlightBg); // Full opacity for the selection bar
+			g.fillRect(0, 0, width, height);
+		}
+		
+		auto& item = activeItems[rowNumber];
+		auto iconArea = juce::Rectangle<float> (6.0f, 4.0f, (float)height - 8.0f, (float)height - 8.0f);
+		
+		// 3. Logic for Icon C/M/V/f
 		juce::StringArray libraries = { "math", "table", "string", "utils" };
 		SuggestionType displayType = item.type;
-		if (libraries.contains(item.text)) {
-			displayType = TypeClass;
-		}
+		if (libraries.contains(item.text)) displayType = TypeClass;
 		
 		juce::Colour iconColor;
 		juce::String iconLetter;
@@ -91,26 +91,45 @@ public:
 		switch (displayType) {
 			case TypeClass:   iconColor = juce::Colours::darkorange; iconLetter = "C"; break;
 			case TypeMethod:  iconColor = juce::Colours::darkcyan;   iconLetter = "M"; break;
-			case TypeGlobal:  iconColor = juce::Colours::darkgreen;  iconLetter = "V"; break;
-			case TypeUtility: iconColor = juce::Colours::purple;     iconLetter = "f"; break;
-			default:          iconColor = mainText.withAlpha(0.6f);  iconLetter = "?"; break;
+			case TypeGlobal:  iconColor = juce::Colours::darkgreen; iconLetter = "V"; break;
+			case TypeUtility: iconColor = juce::Colours::purple;   iconLetter = "f"; break;
+			default:          iconColor = mainText.withAlpha(0.5f); iconLetter = "?"; break;
 		}
-        
-        g.setColour(iconColor.withAlpha(0.8f));
-        g.drawRoundedRectangle(iconArea, 3.0f, 1.2f);
-        
-        g.setColour(iconColor);
-        g.setFont(juce::Font(height * 0.5f, juce::Font::bold));
-        g.drawText(iconLetter, iconArea.getSmallestIntegerContainer(), juce::Justification::centred);
-        
-        g.setColour(rowIsSelected ? highlightText : mainText);
-        g.setFont(height * 0.65f);
-        
-        g.drawText(item.text, (int)iconArea.getRight() + 8, 0,
-                   width - (int)iconArea.getRight() - 10, height,
-                   juce::Justification::centredLeft);
-    }
-
+		
+		// Draw Icon Box
+		g.setColour(iconColor.withAlpha(0.4f));
+		g.drawRoundedRectangle(iconArea, 3.0f, 1.0f);
+		g.setColour(iconColor);
+		g.setFont(juce::Font(height * 0.5f, juce::Font::bold));
+		g.drawText(iconLetter, iconArea.getSmallestIntegerContainer(), juce::Justification::centred);
+		
+		// 4. Split Text for Multi-Style Rendering
+		juce::String fullText = item.text;
+		juce::String methodName = fullText.upToFirstOccurrenceOf(" (", false, false);
+		juce::String params = fullText.fromFirstOccurrenceOf(" (", true, false);
+		
+		int textX = (int)iconArea.getRight() + 8;
+		
+		// --- DRAW METHOD NAME (High Contrast) ---
+		// If selected, use highlight text color. If not, use 100% main text color.
+		g.setColour(rowIsSelected ? highlightText : mainText);
+		g.setFont(juce::Font(height * 0.65f, juce::Font::bold));
+		
+		int methodWidth = g.getCurrentFont().getStringWidth(methodName);
+		g.drawText(methodName, textX, 0, methodWidth, height, juce::Justification::centredLeft);
+		
+		// --- DRAW PARAMETERS (Lower Contrast) ---
+		if (params.isNotEmpty()) {
+			// We use 0.6f alpha here to make it look "lighter" or "dimmed" compared to the name
+			g.setColour(rowIsSelected ? highlightText.withAlpha(0.7f) : mainText.withAlpha(0.5f));
+			g.setFont(juce::Font(height * 0.55f, juce::Font::plain));
+			
+			g.drawText(params, textX + methodWidth + 4, 0,
+					   width - textX - methodWidth - 10, height,
+					   juce::Justification::centredLeft);
+		}
+	}
+	
     // Fixed the error: currentMatches -> activeItems
     void listBoxItemClicked (int row, const juce::MouseEvent&) override
     {
@@ -2060,9 +2079,15 @@ void CtrlrLuaMethodCodeEditor::handleSuggestionChosen(const SuggestionItem& item
     if (suggestionPopup)
         suggestionPopup->setVisible(false);
 
-    juce::String chosenText = item.text; // Fixed to use 'text' as per your header
+    // Get the full text (e.g., "getValue (int index)")
+    juce::String chosenText = item.text;
     
-    if (chosenText.contains("("))
+    // --- STRIP PARAMETERS ---
+    // Since we now format as "methodName (args)", we strip at the first space
+    // or the first parenthesis to get just the clean method name.
+    if (chosenText.contains(" "))
+        chosenText = chosenText.upToFirstOccurrenceOf(" ", false, false);
+    else if (chosenText.contains("("))
         chosenText = chosenText.upToFirstOccurrenceOf("(", false, false);
 
     performReplacement(chosenText, true);
