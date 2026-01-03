@@ -577,7 +577,7 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
     auto& manager = owner.getAutocompleteManager();
     std::vector<SuggestionItem> matches;
 
-    // --- 2. WORD AND SEPARATOR RESOLUTION (The Look-Back Fix) ---
+    // --- 2. WORD AND SEPARATOR RESOLUTION ---
     int caretPosInt = editorComponent->getCaretPos().getPosition();
     int wordStart = 0;
     juce::String currentWord = getWordBeforeCaret(wordStart);
@@ -597,79 +597,60 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
     
     bool contextResolved = false;
 
-    // --- 3. CONTEXTUAL SEARCH (Triggered by : or .) ---
+// --- 3. CONTEXTUAL SEARCH (Triggered by : or .) ---
     if (separator == ':' || separator == '.')
     {
         bool isInstance = (separator == ':');
         juce::String className = "";
-        juce::String varName = "";
+        juce::String expressionToResolve = "";
 
         // Determine where to start looking back for the variable/chain
         int searchOrigin = wordStart > 0 ? wordStart - 1 : caretPosInt - 1;
-        juce::CodeDocument::Position posBeforeSeparator(document, searchOrigin);
         
-        // --- SCENARIO A: BRACKET CONTEXT (Chaining) ---
-        // Modified to capture the full chain (e.g., panel:getModulator():)
-        if (posBeforeSeparator.getCharacter() == ')')
+        int bracketStack = 0;
+        int searchPos = searchOrigin;
+
+        // NEW LOGIC: Walk backwards from the separator to find the start of the expression
+        while (searchPos > 0)
         {
-            int bracketCount = 0;
-            int searchPos = searchOrigin;
-            while (searchPos > 0)
+            // CORRECTED: Use Position to get character at index
+            juce::juce_wchar c = juce::CodeDocument::Position(document, searchPos - 1).getCharacter();
+
+            if (c == ')') bracketStack++;
+            else if (c == '(') bracketStack--;
+
+            // If we are not inside brackets, stop at whitespace or assignment
+            if (bracketStack == 0)
             {
-                juce::juce_wchar c = juce::CodeDocument::Position(document, searchPos).getCharacter();
-                if (c == ')') bracketCount++;
-                else if (c == '(') bracketCount--;
-                
-                if (bracketCount == 0)
-                {
-                    // Now search back for the beginning of the whole chain
-                    int chainStart = searchPos - 1;
-                    while (chainStart > 0) {
-                        juce::juce_wchar cc = juce::CodeDocument::Position(document, chainStart).getCharacter();
-                        if (juce::CharacterFunctions::isWhitespace(cc) || cc == ';' || cc == '=') {
-                            chainStart++;
-                            break;
-                        }
-                        chainStart--;
-                    }
-                    
-                    // Grab the whole chain: e.g. "panel:getModulator("test")"
-                    juce::String fullChain = document.getTextBetween(juce::CodeDocument::Position(document, chainStart),
-                                                                    juce::CodeDocument::Position(document, searchOrigin + 1));
-                    
-                    className = manager.getClassNameForVariable(fullChain.trim(), document.getAllContent());
-                    varName = fullChain.trim();
+                if (juce::CharacterFunctions::isWhitespace(c) || c == '=' || c == ',' || c == ';' || c == '\n' || c == '\r')
                     break;
-                }
-                searchPos--;
             }
+            searchPos--;
         }
-        // --- SCENARIO B: STANDARD VARIABLE ---
-        else
+
+        expressionToResolve = document.getTextBetween(juce::CodeDocument::Position(document, searchPos),
+                                                     juce::CodeDocument::Position(document, searchOrigin)).trim();
+
+        _DBG("AUTOCOMPLETE: Expression found to resolve: [" + expressionToResolve + "]");
+
+        if (expressionToResolve.isNotEmpty())
         {
-            int vStart = 0;
-            varName = getWordBeforeCaret(vStart, -(caretPosInt - searchOrigin));
-            
-            // Simplified: Use the manager's recursive logic for all variable/alias lookups
-            className = manager.getClassNameForVariable(varName, document.getAllContent());
-            
-            // Fallback for hardcoded shortcuts if getClassNameForVariable returned empty
+            // Use our recursive manager logic to resolve this whole string
+            className = manager.getClassNameForVariable(expressionToResolve, document.getAllContent());
+
+            // Fallback for hardcoded shortcuts
             if (className.isEmpty())
             {
-                if (varName.equalsIgnoreCase("panel"))           className = "CtrlrPanel";
-                else if (varName.startsWithIgnoreCase("mod"))    className = "CtrlrModulator";
-                else if (varName == "utils")                     className = "utils";
-                else if (varName == "MemoryBlock")               className = "MemoryBlock";
-                else if (varName == "math")                      className = "math";
-                else if (varName == "table")                     className = "table";
-                else if (varName == "string")                    className = "string";
+                if (expressionToResolve.equalsIgnoreCase("panel") || expressionToResolve == "pan") className = "CtrlrPanel";
+                else if (expressionToResolve.startsWithIgnoreCase("mod")) className = "CtrlrModulator";
+                else if (expressionToResolve == "utils") className = "utils";
             }
         }
-        
+
         if (className.isNotEmpty())
         {
             contextResolved = true;
-            _DBG("AUTOCOMPLETE: Context Resolved: [" + varName + "] -> [" + className + "]");
+            _DBG("AUTOCOMPLETE: Context Resolved: [" + expressionToResolve + "] -> [" + className + "]");
 
             bool includeInstance   = isInstance;
             bool includeStatic     = !isInstance;
