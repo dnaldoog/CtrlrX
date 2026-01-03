@@ -40,10 +40,12 @@ public:
 
     // The Parameter Lookup (Ensure this takes TWO arguments)
     juce::String getMethodParams(const juce::String& className, const juce::String& methodName);
-
+    juce::String getClassNameForVariable(const juce::String& varName, const juce::String& code);
+    juce::String resolveReturnType(const juce::String& className, const juce::String& methodName);
 private:
     juce::HashMap<juce::String, LuaClass> classes;
     juce::StringArray classNames;
     juce::StringArray allMethodNames;
     juce::StringArray utilityMethodNames;
+
 };

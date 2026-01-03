@@ -266,8 +266,11 @@ namespace BinaryData
     extern const char*   RSRC_zip;
     const int            RSRC_zipSize = 49800;
 
+    extern const char*   add_aliases_py;
+    const int            add_aliases_pySize = 4555;
+
     extern const char*   LuaAPI_xml;
-    const int            LuaAPI_xmlSize = 147957;
+    const int            LuaAPI_xmlSize = 200308;
 
     extern const char*   CtrlrIDs_xml;
     const int            CtrlrIDs_xmlSize = 92139;
@@ -288,7 +291,7 @@ namespace BinaryData
     const int            CtrlrMIDIVendors_xmlSize = 15061;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 93;
+    const int namedResourceListSize = 94;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

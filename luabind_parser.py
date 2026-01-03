@@ -26,21 +26,40 @@ class LuabindParser:
     def __init__(self, source_dir: Path):
         self.classes = {}
         self.source_dir = source_dir
-        self.cpp_cache = {}  # Cache for .cpp file contents
+        self.cpp_cache = {}  # Cache for Source .cpp files
+        self.juce_files = {}  # Cache for JUCE .cpp files (fallback)
         self.function_defs = {}  # Cache for parsed function definitions
 
     def load_cpp_files(self):
         """Pre-load all .cpp files for faster lookup"""
         if VERBOSE:
             print("[*] Pre-loading .cpp files for function lookup...")
+        
+        # Load Source files first (higher priority)
         cpp_files = list(self.source_dir.glob("**/*.cpp"))
-        for f in cpp_files:
+        cpp_files_source = [f for f in cpp_files if "JUCE" not in str(f)]
+        
+        for f in cpp_files_source:
             try:
                 self.cpp_cache[f.name] = f.read_text(encoding="utf-8", errors="ignore")
             except:
                 pass
+        
         if VERBOSE:
-            print(f"[*] Loaded {len(self.cpp_cache)} .cpp files")
+            print(f"[*] Loaded {len(self.cpp_cache)} Source .cpp files")
+        
+        # Store JUCE files separately for fallback lookup
+        self.juce_files = {}
+        cpp_files_juce = [f for f in cpp_files if "JUCE" in str(f)]
+        
+        for f in cpp_files_juce:
+            try:
+                self.juce_files[f.name] = f.read_text(encoding="utf-8", errors="ignore")
+            except:
+                pass
+        
+        if VERBOSE:
+            print(f"[*] Loaded {len(self.juce_files)} JUCE .cpp files (fallback)")
 
     def parse_file(self, filepath: Path):
         content = filepath.read_text(encoding="utf-8", errors="ignore")
@@ -165,18 +184,95 @@ class LuabindParser:
     def find_function_in_source(self, class_name: str, method_name: str) -> Optional[str]:
         """
         Search through source files for function definition and extract argument types
+        Tries both the class name as-is and with/without 'L' prefix
+        First searches Source files, then falls back to JUCE if not found
         """
-        # Try to find in cached files
-        for content in self.cpp_cache.values():
-            # Match: returnType ClassName::methodName(args)
-            pattern = rf'(?:^|\s+)\w+(?:<[^>]+>)?\s+{re.escape(class_name)}::{re.escape(method_name)}\s*\(\s*([^){{]*)\s*\)'
-            match = re.search(pattern, content, re.MULTILINE)
-            if match:
-                args_str = match.group(1).strip()
-                if args_str:
-                    return self.simplify_types(args_str)
-                return ""
+        # Build list of class name variations to try
+        class_names_to_try = [class_name]
+        
+        # If class starts with 'L', also try without it (e.g., LMemoryBlock -> MemoryBlock)
+        if class_name.startswith('L') and len(class_name) > 1:
+            class_names_to_try.append(class_name[1:])
+        
+        # If class doesn't start with 'L', also try with 'L' (e.g., MemoryBlock -> LMemoryBlock)
+        if not class_name.startswith('L'):
+            class_names_to_try.append('L' + class_name)
+        
+        # PASS 1: Try to find in Source files (higher priority)
+        for class_to_search in class_names_to_try:
+            for content in self.cpp_cache.values():
+                pattern = rf'(?:^|\s+)\w+(?:<[^>]+>)?\s+{re.escape(class_to_search)}::{re.escape(method_name)}\s*\(\s*([^){{]*)\s*\)'
+                match = re.search(pattern, content, re.MULTILINE)
+                if match:
+                    args_str = match.group(1).strip()
+                    if args_str:
+                        return self.simplify_types(args_str)
+                    return ""
+        
+        # PASS 2: Fall back to JUCE files if not found in Source
+        if hasattr(self, 'juce_files'):
+            for class_to_search in class_names_to_try:
+                for content in self.juce_files.values():
+                    pattern = rf'(?:^|\s+)\w+(?:<[^>]+>)?\s+{re.escape(class_to_search)}::{re.escape(method_name)}\s*\(\s*([^){{]*)\s*\)'
+                    match = re.search(pattern, content, re.MULTILINE)
+                    if match:
+                        args_str = match.group(1).strip()
+                        if args_str:
+                            return self.simplify_types(args_str)
+                        return ""
+        
         return None
+
+    def extract_method_spec(self, text: str, start: int) -> tuple:
+        """
+        Extract method name and full spec from .def("name", spec)
+        Handles nested parentheses correctly
+        Returns: (method_name, method_spec, end_position)
+        """
+        # Find the opening "
+        quote_start = text.find('"', start)
+        if quote_start == -1:
+            return (None, None, -1)
+        
+        # Find closing "
+        quote_end = text.find('"', quote_start + 1)
+        if quote_end == -1:
+            return (None, None, -1)
+        
+        method_name = text[quote_start + 1:quote_end]
+        
+        # Find the comma after the method name
+        comma_pos = text.find(',', quote_end)
+        if comma_pos == -1:
+            return (None, None, -1)
+        
+        # Now extract the spec with proper parenthesis matching
+        spec_start = comma_pos + 1
+        while spec_start < len(text) and text[spec_start] in ' \t':
+            spec_start += 1
+        
+        # Match parentheses/brackets to find the complete spec
+        paren_depth = 0
+        angle_depth = 0
+        spec_end = spec_start
+        
+        for i in range(spec_start, len(text)):
+            c = text[i]
+            
+            if c == '<':
+                angle_depth += 1
+            elif c == '>':
+                angle_depth -= 1
+            elif c == '(' and angle_depth == 0:
+                paren_depth += 1
+            elif c == ')' and angle_depth == 0:
+                paren_depth -= 1
+                if paren_depth < 0:  # Found the closing paren of .def()
+                    spec_end = i
+                    break
+        
+        method_spec = text[spec_start:spec_end].strip()
+        return (method_name, method_spec, spec_end)
 
     def parse_class_block(self, block: str):
         header = re.search(r'class_<\s*([^,>]+)[^>]*>\s*(\(\s*"([^"]+)"\s*\))?', block)
@@ -208,12 +304,12 @@ class LuabindParser:
 
         body = block[header.end():]
         
-        # Parse instance methods
-        for m in re.finditer(r'\.def\s*\(\s*"([^"]+)"\s*,\s*([^)]+)\)', body):
-            method_name = m.group(1)
-            method_spec = m.group(2).strip()
-            args = self.extract_args_from_def(method_spec, cpp_class, method_name)
-            cls["methods"][method_name] = {"type": "instance", "args": args}
+        # Parse instance methods with proper paren matching
+        for m in re.finditer(r'\.def\s*\(', body):
+            method_name, method_spec, _ = self.extract_method_spec(body, m.start())
+            if method_name and method_spec:
+                args = self.extract_args_from_def(method_spec, cpp_class, method_name)
+                cls["methods"][method_name] = {"type": "instance", "args": args}
 
         # Parse constructors
         for m in re.finditer(r'\.def\s*\(\s*constructor\s*<\s*([^>]*)\s*>\s*\(\s*\)', body):
@@ -228,11 +324,11 @@ class LuabindParser:
         for scope in re.finditer(r'\.scope\s*\[', body):
             scope_body = self.extract_bracket_block(body, scope.end() - 1)
             if scope_body:
-                for m in re.finditer(r'def\s*\(\s*"([^"]+)"\s*,\s*([^)]+)\)', scope_body):
-                    method_name = m.group(1)
-                    method_spec = m.group(2).strip()
-                    args = self.extract_args_from_def(method_spec, cpp_class, method_name)
-                    cls["static"][method_name] = {"type": "static", "args": args}
+                for m in re.finditer(r'def\s*\(', scope_body):
+                    method_name, method_spec, _ = self.extract_method_spec(scope_body, m.start())
+                    if method_name and method_spec:
+                        args = self.extract_args_from_def(method_spec, cpp_class, method_name)
+                        cls["static"][method_name] = {"type": "static", "args": args}
 
     def extract_args_from_def(self, method_spec: str, cpp_class: str, method_name: str) -> str:
         """

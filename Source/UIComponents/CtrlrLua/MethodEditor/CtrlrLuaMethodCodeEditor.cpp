@@ -412,7 +412,7 @@ void CtrlrLuaMethodCodeEditor::updateCallTipHighlight()
     }
 
     // Resolve the class (e.g., "panel" -> "CtrlrPanel")
-    juce::String resolvedClass = owner.getAutocompleteManager().resolveClass(currentSymbol, allText);
+    juce::String resolvedClass = owner.getAutocompleteManager().getClassNameForVariable(currentSymbol, allText);
 
     // --- IDENTIFY METHOD NAME ---
     int nameEnd = openBracket;
@@ -507,32 +507,42 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
     if (wordStart > 0)
     {
         juce::juce_wchar triggerChar = allText[wordStart - 1];
-
         if (triggerChar == ':' || triggerChar == '.')
         {
-            // Find the symbol before the trigger (e.g., "panel" in "panel:get")
-            int symbolEnd = wordStart - 1;
-            int symbolStart = symbolEnd - 1;
-            while (symbolStart >= 0 && (juce::CharacterFunctions::isLetterOrDigit(allText[symbolStart]) || allText[symbolStart] == '_'))
+            // Work backwards from the trigger to extract the symbol/chain
+            int triggerPos = wordStart - 1;  // Position of ':' or '.'
+            int symbolEnd = triggerPos - 1;
+            int symbolStart = symbolEnd;
+
+            // Go back while we see alphanumeric, underscore, or ')'
+            while (symbolStart >= 0 && (juce::CharacterFunctions::isLetterOrDigit(allText[symbolStart]) ||
+                allText[symbolStart] == '_' ||
+                allText[symbolStart] == ')' ||
+                allText[symbolStart] == ':' ||
+                allText[symbolStart] == '.'))
+            {
                 symbolStart--;
+            }
+            symbolStart++;
 
-            juce::String symbol = allText.substring(symbolStart + 1, symbolEnd);
+            juce::String expression = allText.substring(symbolStart, triggerPos).trim();
 
-            // Resolve symbol (panel -> CtrlrPanel, comp -> CtrlrComponent, etc.)
+            DBG("expression: " + expression);
+
             auto& manager = owner.getAutocompleteManager();
-            juce::String className = manager.resolveClass(symbol, allText);
+            juce::String className = manager.getClassNameForVariable(expression, allText);
+
+            DBG("className: " + (className.isEmpty() ? "EMPTY" : className));
 
             if (className.isNotEmpty())
             {
                 LookupType type = (triggerChar == ':') ? LookupInstance : LookupStatic;
-
-                // Get suggestions using the class we found and the (possibly empty) current word
                 auto matches = manager.getMethodSuggestions(className, currentWord, type);
 
                 if (!matches.empty())
                 {
                     showPopup(matches, insertIndex);
-                    return; // Exit early so we don't fall through to global suggestions
+                    return;
                 }
             }
         }
@@ -1939,7 +1949,7 @@ void CtrlrLuaMethodCodeEditor::handleSuggestionChosen(juce::String chosen)
         while (symbolStart >= 0 && (juce::CharacterFunctions::isLetterOrDigit(allText[symbolStart]) || allText[symbolStart] == '_'))
             symbolStart--;
         juce::String symbol = allText.substring(symbolStart + 1, symbolEnd).trim();
-        juce::String resolvedClass = owner.getAutocompleteManager().resolveClass(symbol, allText);
+        juce::String resolvedClass = owner.getAutocompleteManager().getClassNameForVariable(symbol, allText);
         juce::String params = owner.getAutocompleteManager().getMethodParams(resolvedClass, chosen);
 
         // Delete the partial word and insert method with () and params
