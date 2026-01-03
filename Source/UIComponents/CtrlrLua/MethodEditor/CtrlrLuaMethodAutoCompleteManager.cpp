@@ -32,10 +32,7 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
                 {
                     LuaClass lc;
                     lc.name = classXml->getStringAttribute("name");
-                    
-                    // --- NEW: INHERITANCE DATA MAPPING ---
                     lc.parentClass = classXml->getStringAttribute("inherits");
-                    
                     juce::String cppName = classXml->getStringAttribute("cpp_name");
 
                     if (auto* mList = classXml->getChildByName("methods"))
@@ -44,12 +41,14 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
                             juce::String name = m->getStringAttribute("name");
                             juce::String args = m->getStringAttribute("args").trim();
                             
-                            // SANITIZATION
+                            // --- CLEANED SANITIZATION ---
                             if (args.isEmpty() || args == "()" || args.containsOnly(", ") || args.containsOnly("(, )")) {
                                 args = "()";
                             } else {
                                 if (!args.startsWith("(")) args = "(" + args;
                                 if (!args.endsWith(")")) args = args + ")";
+                                
+                                // Double check if the content inside brackets is just commas
                                 if (args.substring(1, args.length() - 1).trim().containsOnly(", ")) args = "()";
                             }
 
@@ -64,17 +63,9 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
                                 LuaMethod lm; lm.name = name; lm.parameters = args; lm.isStatic = false;
                                 lc.methods.add(lm);
                                 
-                                // Priority insertion for no-argument version
-                                if (args != "()") {
-                                    bool hasNoArg = false;
-                                    for(auto& ex : lc.methods) { if(ex.name == name && ex.parameters == "()") { hasNoArg = true; break; } }
-                                    if (!hasNoArg) {
-                                        LuaMethod def; def.name = name; def.parameters = "()";
-                                        lc.methods.insert(0, def);
-                                    }
-                                }
+                                // FIX: We no longer manually insert a "()" version here.
+                                // The UI now handles displaying the real signature.
                                 
-                                // Only add to global if it's not a reserved library name
                                 if (name != "string" && name != "math" && name != "table")
                                     allMethodNames.add(name);
                             }
@@ -86,11 +77,13 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
                         forEachXmlChildElement(*sList, s) {
                             juce::String name = s->getStringAttribute("name");
                             juce::String args = s->getStringAttribute("args").trim();
+                            
                             if (args.isEmpty() || args.containsOnly(", ")) args = "()";
                             else {
                                 if (!args.startsWith("(")) args = "(" + args;
                                 if (!args.endsWith(")")) args = args + ")";
                             }
+                            
                             LuaMethod sm; sm.name = name; sm.parameters = args; sm.isStatic = true;
                             lc.staticMethods.add(sm);
                             
@@ -107,11 +100,9 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
         }
     }
 
-    // 2. Manual Injection of Base Classes (THE CHAIN)
-    
+    // 2. Manual Injection of Base Classes
     if (!classes.contains("MemoryBlock")) {
-        LuaClass mbClass;
-        mbClass.name = "MemoryBlock";
+        LuaClass mbClass; mbClass.name = "MemoryBlock";
         classes.set("MemoryBlock", mbClass);
         classNames.add("MemoryBlock");
     }
@@ -129,11 +120,7 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
             else m.parameters = "()";
 
             comp.methods.add(m);
-            
-            if (m.parameters != "()") {
-                LuaMethod d; d.name = n; d.parameters = "()";
-                comp.methods.add(d);
-            }
+            // FIX: Removed duplicate empty () injection that was overriding the real signatures.
             allMethodNames.add(n);
         }
         classes.set(comp.name, comp);
@@ -148,8 +135,7 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
             LuaMethod m; m.name = n;
             m.parameters = (n == "setProperty") ? "(String name, var value)" : "(String name)";
             obj.methods.add(m);
-            LuaMethod d; d.name = n; d.parameters = "()";
-            obj.methods.add(d);
+            // FIX: Removed duplicate empty () injection.
             allMethodNames.add(n);
         }
         classes.set(obj.name, obj);
@@ -164,24 +150,28 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
             "getModulatorByName", "getModulator", "getModulatorByIndex", "getNumModulators",
             "sendMidiMessageNow", "getCanvas", "getPanelEditor", "getGlobalVariable", "setGlobalVariable"
         };
+        
         for (auto& mName : missing) {
-            bool exists = false;
-            for (auto& em : panel.methods) { if (em.name == mName) { exists = true; break; } }
-            if (!exists) {
-                LuaMethod lm;
-                lm.name = mName;
-                lm.parameters = (mName.contains("ByName")) ? "(String name)" :
-                                (mName.contains("ByIndex")) ? "(int index)" : "()";
-                panel.methods.add(lm);
-                if (lm.parameters != "()") {
-                    LuaMethod def; def.name = mName; def.parameters = "()";
-                    panel.methods.insert(0, def);
+            // --- FIX: FORCE OVERRIDE ---
+            // Explicitly remove any existing versions (from XML) first.
+            // This prevents the empty-param version from blocking our high-quality fix.
+            for (int i = panel.methods.size(); --i >= 0;) {
+                if (panel.methods.getReference(i).name == mName) {
+                    panel.methods.remove(i);
                 }
             }
+
+            // Now add the correct version with parameters
+            LuaMethod lm;
+            lm.name = mName;
+            lm.parameters = (mName.contains("ByName")) ? "(String name)" :
+                            (mName.contains("ByIndex")) ? "(int index)" :
+                            (mName == "setGlobalVariable") ? "(int index, int value)" : "()";
+            panel.methods.add(lm);
         }
     }
 
-    // --- 4. Detailed Library Definitions (Pre-Injection) ---
+    // 4. Detailed Library Definitions
     if (!classes.contains("string")) {
         LuaClass strLib; strLib.name = "string";
         juce::StringArray strMethods = {
@@ -222,7 +212,7 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
         classNames.add("math");
     }
 
-    // 5. Inject Common Libs (Fills in missing methods for table/string/math)
+    // 5. Inject Common Libs (Final pass to ensure presence)
     auto injectStaticLib = [this](juce::String libName, juce::StringArray methods) {
         if (!classes.contains(libName)) {
             LuaClass newLc; newLc.name = libName;
@@ -243,10 +233,9 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
     };
 
     injectStaticLib("table", { "insert", "remove", "sort", "concat", "unpack" });
-    injectStaticLib("math", { "abs", "floor", "ceil", "min", "max", "sqrt", "sin", "cos", "pi", "random" });
-    injectStaticLib("string", { "format", "sub", "upper", "lower", "find", "gsub", "len" });
+    // Note: math and string already handled in detail above, but this catch-all is safe.
 
-    // 6. MemoryBlock and Modulator specialized fixes
+    // 6. MemoryBlock specialized fixes
     if (classes.contains("MemoryBlock")) {
         auto& mb = classes.getReference("MemoryBlock");
         if (!mb.constructors.contains("()")) mb.constructors.insert(0, "()");
@@ -341,12 +330,11 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggesti
     bool includeInstance, bool includeStatic, bool includeProperties)
 {
     std::vector<SuggestionItem> suggestions;
-    juce::StringArray addedNames;
+    juce::StringArray addedExactSignatures; // Changed to allow overloads
     juce::String currentClass = className;
 
     _DBG("--- START SEARCH: [" + prefix + "] in Class: [" + className + "] ---");
 
-    // We use a while loop to traverse the inheritance tree (v21 data)
     while (currentClass.isNotEmpty())
     {
         if (!classes.contains(currentClass)) {
@@ -359,48 +347,43 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggesti
 
         _DBG("    Searching: [" + currentClass + "] (Parent: " + (lc.parentClass.isEmpty() ? "None" : lc.parentClass) + ")");
 
-        // 1. Instance Methods
-        if (includeInstance) {
-            for (auto& m : lc.methods) {
-                if (m.name.startsWithIgnoreCase(prefix) && !addedNames.contains(m.name)) {
-                    suggestions.push_back({ m.name, TypeMethod });
-                    addedNames.add(m.name);
-                    classMatches++;
-                }
-            }
-        }
+		// 1. Instance Methods
+		if (includeInstance) {
+			for (auto& m : lc.methods) {
+				juce::String fullSignature = m.name + " " + m.parameters;
+				if (m.name.startsWithIgnoreCase(prefix) && !addedExactSignatures.contains(fullSignature)) {
+					suggestions.push_back({ fullSignature, TypeMethod });
+					addedExactSignatures.add(fullSignature);
+					classMatches++; // <--- Add this to keep the DBG count accurate
+				}
+			}
+		}
 
         // 2. Static Methods
         if (includeStatic) {
             for (auto& m : lc.staticMethods) {
-                if (m.name.startsWithIgnoreCase(prefix) && !addedNames.contains(m.name)) {
-                    suggestions.push_back({ m.name, TypeMethod });
-                    addedNames.add(m.name);
+                juce::String fullSignature = m.name + " " + m.parameters;
+                if (m.name.startsWithIgnoreCase(prefix) && !addedExactSignatures.contains(fullSignature)) {
+                    suggestions.push_back({ fullSignature, TypeMethod });
+                    addedExactSignatures.add(fullSignature);
                     classMatches++;
                 }
             }
         }
 
-        // 3. Properties
+        // 3. Properties (Properties don't have parameters, so check name only)
         if (includeProperties) {
             for (auto& p : lc.properties) {
-                if (p.startsWithIgnoreCase(prefix) && !addedNames.contains(p)) {
+                if (p.startsWithIgnoreCase(prefix) && !addedExactSignatures.contains(p)) {
                     suggestions.push_back({ p, TypeProperty });
-                    addedNames.add(p);
+                    addedExactSignatures.add(p);
                     classMatches++;
                 }
             }
         }
 
         _DBG("    Found " + juce::String(classMatches) + " matches in [" + currentClass + "]");
-
-        // THE JUMP: Move to parent for the next loop iteration
-        // Because of v21, lc.parentClass now contains the data from the XML 'inherits' attribute
         currentClass = lc.parentClass;
-        
-        if (currentClass.isNotEmpty()) {
-            _DBG("    Moving up the tree to: [" + currentClass + "]");
-        }
     }
 
     _DBG("--- SEARCH COMPLETE: Total " + juce::String(suggestions.size()) + " matches found ---");
