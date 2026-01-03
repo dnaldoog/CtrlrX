@@ -494,7 +494,6 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
 {
     document.newTransaction();
     documentChanged(false);
-
     if (suggestionPopup == nullptr) return;
 
     // 1. Get current typing context
@@ -503,7 +502,6 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
     juce::String allText = document.getAllContent();
 
     // 2. DETECT METHOD CALLS (looking behind the current word)
-    // We check if the character right before the word is ':' or '.'
     if (wordStart > 0)
     {
         juce::juce_wchar triggerChar = allText[wordStart - 1];
@@ -511,33 +509,47 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
         {
             // Work backwards from the trigger to extract the symbol/chain
             int triggerPos = wordStart - 1;  // Position of ':' or '.'
-            int symbolEnd = triggerPos - 1;
-            int symbolStart = symbolEnd;
+            int symbolStart = triggerPos - 1;
 
-            // Go back while we see alphanumeric, underscore, or ')'
-            while (symbolStart >= 0 && (juce::CharacterFunctions::isLetterOrDigit(allText[symbolStart]) ||
-                allText[symbolStart] == '_' ||
-                allText[symbolStart] == ')' ||
-                allText[symbolStart] == ':' ||
-                allText[symbolStart] == '.'))
+            // Go back through the chain, skipping spaces and keeping everything else
+            while (symbolStart >= 0)
             {
-                symbolStart--;
+                juce::juce_wchar c = allText[symbolStart];
+
+                // Valid chain characters
+                if (juce::CharacterFunctions::isLetterOrDigit(c) ||
+                    c == '_' || c == ')' || c == '(' || c == ':' || c == '.')
+                {
+                    symbolStart--;
+                }
+                // Stop at invalid characters (space, newline, operators, etc.)
+                else
+                {
+                    break;
+                }
             }
-            symbolStart++;
+            symbolStart++;  // Move back to the first valid character
 
             juce::String expression = allText.substring(symbolStart, triggerPos).trim();
 
-            DBG("expression: " + expression);
+            DBG("expression: [" + expression + "]");
+
+            DBG("=== TRIGGER DEBUG ===");
+            DBG("triggerPos: " + juce::String(triggerPos));
+            DBG("symbolStart: " + juce::String(symbolStart));
+            DBG("expression: [" + expression + "]");
 
             auto& manager = owner.getAutocompleteManager();
             juce::String className = manager.getClassNameForVariable(expression, allText);
 
-            DBG("className: " + (className.isEmpty() ? "EMPTY" : className));
+            DBG("resolved className: " + (className.isEmpty() ? "EMPTY" : className));
 
             if (className.isNotEmpty())
             {
                 LookupType type = (triggerChar == ':') ? LookupInstance : LookupStatic;
                 auto matches = manager.getMethodSuggestions(className, currentWord, type);
+
+                DBG("matches found: " + juce::String((int)matches.size()));
 
                 if (!matches.empty())
                 {
@@ -549,12 +561,10 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
     }
 
     // 3. FALLBACK: GLOBAL SUGGESTIONS
-    // If we aren't following a ':' or '.', or the class wasn't found, show globals
     if (currentWord.length() >= 2)
     {
         auto& manager = owner.getAutocompleteManager();
         std::vector<SuggestionItem> matches = manager.getGlobalSuggestions(currentWord);
-
         if (!matches.empty())
         {
             showPopup(matches, insertIndex);
@@ -566,7 +576,6 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
     }
     else
     {
-        // Hide if the word is too short and no trigger character is present
         suggestionPopup->setVisible(false);
     }
 }

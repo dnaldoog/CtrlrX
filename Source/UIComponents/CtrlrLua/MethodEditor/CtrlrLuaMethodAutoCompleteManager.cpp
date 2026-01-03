@@ -275,7 +275,7 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
         }
     }
 
-    // 4. Static Fallbacks
+    // 4. Static Fallbacks 
     if (varName == "m" || varName == "mb" || varName == "mem") return "MemoryBlock";
     if (varName == "f") return "File";
 
