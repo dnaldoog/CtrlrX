@@ -267,10 +267,10 @@ namespace BinaryData
     const int            RSRC_zipSize = 49800;
 
     extern const char*   add_aliases_py;
-    const int            add_aliases_pySize = 4555;
+    const int            add_aliases_pySize = 2896;
 
     extern const char*   LuaAPI_xml;
-    const int            LuaAPI_xmlSize = 200308;
+    const int            LuaAPI_xmlSize = 200426;
 
     extern const char*   CtrlrIDs_xml;
     const int            CtrlrIDs_xmlSize = 92139;

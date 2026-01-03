@@ -1607,7 +1607,7 @@
       <method name="getSize" type="instance" />
       <method name="insert" type="instance" args="(MemoryBlock &amp;,int,int)" />
       <method name="insertIntoTable" type="instance" args="(luabind::object &amp; table)" />
-      <method name="loadFromHexString" type="instance" args="(StringRef hex)" />
+      <method name="loadFromHexString" type="instance" args="(String hex)" />
       <method name="pushLString" type="instance" />
       <method name="removeSection" type="instance" args="(int startByte,int dataSize)" />
       <method name="replaceWith" type="instance" args="(MemoryBlock &amp;dataToReplace)" />
@@ -1870,7 +1870,7 @@
       <method name="addPieSegment" type="instance" args="(float x,float y,float width,float height,float fromRadians,float toRadians,float innerCircleProportionalSize)" />
       <method name="addPolygon" type="instance" args="(Point centre,int numberOfSides,float radius,float startAngle)" />
       <method name="addQuadrilateral" type="instance" args="(float x1,float y1,float x2,float y2,float x3,float y3,float x4,float y4)" />
-      <method name="addRectangle" type="instance" args="(number,number,number,number)" />
+      <method name="addRectangle" type="instance" args="(number x,number y,number width,number height)" />
       <method name="addRoundedRectangle" type="instance" args="(number,number,number,number,number,number,bool,bool,bool,bool)" />
       <method name="addStar" type="instance" args="(Point centre,int numberOfPoints,float innerRadius,float outerRadius,float startAngle)" />
       <method name="addTriangle" type="instance" args="(number,number,number,number,number,number)" />
@@ -1891,14 +1891,14 @@
       <method name="intersectsLine" type="instance" args="(Line line,float tolerance)" />
       <method name="isEmpty" type="instance" />
       <method name="isUsingNonZeroWinding" type="instance" />
-      <method name="lineTo" type="instance" args="(Point)" />
+      <method name="lineTo" type="instance" args="(number x,number y)" />
       <method name="loadPathFromData" type="instance" args="(void* pathData,size_t numberOfBytes)" />
       <method name="loadPathFromStream" type="instance" args="(InputStream&amp; source)" />
       <method name="quadraticTo" type="instance" args="(Point,Point)" />
       <method name="restoreFromString" type="instance" args="(StringRef stringVersion)" />
       <method name="scaleToFit" type="instance" args="(float x,float y,float w,float h,bool preserveProportions)" />
       <method name="setUsingNonZeroWinding" type="instance" args="(bool isNonZero)" />
-      <method name="startNewSubPath" type="instance" args="(Point)" />
+      <method name="startNewSubPath" type="instance" args="(number x,number y)" />
       <method name="swapWithPath" type="instance" args="(Path&amp; other)" />
       <method name="toString" type="instance" />
       <method name="writePathToStream" type="instance" args="(OutputStream&amp; dest)" />
@@ -2742,8 +2742,8 @@
       <method name="getListBox" type="instance" />
       <method name="getListBoxComponent" type="instance" />
       <method name="getModulator" type="instance" />
-      <method name="getModulatorByIndex" type="instance" />
-      <method name="getModulatorByName" type="instance" />
+      <method name="getModulatorByIndex" type="instance" args="(int index)" />
+      <method name="getModulatorByName" type="instance" args="(String name)" />
       <method name="getModulatorValuesAsData" type="instance" args="(String&amp; propertyToIndexBy,CtrlrByteEncoding byteEncoding,int bytesPerValue,bool useMappedValues)" />
       <method name="getModulatorWithProperty" type="instance" />
       <method name="getModulatorsWildcard" type="instance" />
@@ -3104,8 +3104,8 @@
       <method name="getListBox" type="instance" />
       <method name="getListBoxComponent" type="instance" />
       <method name="getModulator" type="instance" />
-      <method name="getModulatorByIndex" type="instance" />
-      <method name="getModulatorByName" type="instance" />
+      <method name="getModulatorByIndex" type="instance" args="(int index)" />
+      <method name="getModulatorByName" type="instance" args="(String name)" />
       <method name="getModulatorValuesAsData" type="instance" args="(String&amp; propertyToIndexBy,CtrlrByteEncoding byteEncoding,int bytesPerValue,bool useMappedValues)" />
       <method name="getModulatorWithProperty" type="instance" />
       <method name="getModulatorsWildcard" type="instance" />

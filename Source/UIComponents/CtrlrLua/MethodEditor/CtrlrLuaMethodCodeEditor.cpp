@@ -1931,61 +1931,6 @@ juce::String CtrlrLuaMethodCodeEditor::getWordBeforeCaret(int& wordStart)
     return allText.substring(wordStart, caretPos);
 }
 
-void CtrlrLuaMethodCodeEditor::handleSuggestionChosen(juce::String chosen)
-{
-    if (suggestionPopup == nullptr) return;
-    suggestionPopup->setVisible(false);
-
-    int wordStart = 0;
-    juce::String currentWord = getWordBeforeCaret(wordStart);
-    int caretPos = editorComponent->getCaretPos().getPosition();
-    juce::String allText = document.getAllContent();
-
-    isReplacingText = true;
-
-    // Look for the trigger (:  or .) before the word
-    bool isAfterTrigger = false;
-    if (wordStart > 0 && (allText[wordStart - 1] == ':' || allText[wordStart - 1] == '.'))
-    {
-        isAfterTrigger = true;
-    }
-
-    if (isAfterTrigger)
-    {
-        // Resolve class and get params
-        int symbolEnd = wordStart - 1;
-        int symbolStart = symbolEnd - 1;
-        while (symbolStart >= 0 && (juce::CharacterFunctions::isLetterOrDigit(allText[symbolStart]) || allText[symbolStart] == '_'))
-            symbolStart--;
-        juce::String symbol = allText.substring(symbolStart + 1, symbolEnd).trim();
-        juce::String resolvedClass = owner.getAutocompleteManager().getClassNameForVariable(symbol, allText);
-        juce::String params = owner.getAutocompleteManager().getMethodParams(resolvedClass, chosen);
-
-        // Delete the partial word and insert method with () and params
-        document.deleteSection(wordStart, caretPos);
-
-        if (params.isNotEmpty())
-        {
-            document.insertText(wordStart, chosen + "(" + params + ")");
-            editorComponent->moveCaretTo(juce::CodeDocument::Position(document, wordStart + chosen.length() + params.length() + 2), false);
-        }
-        else
-        {
-            document.insertText(wordStart, chosen + "()");
-            editorComponent->moveCaretTo(juce::CodeDocument::Position(document, wordStart + chosen.length() + 2), false);
-        }
-    }
-    else
-    {
-        // Replace the partial word being typed
-        document.deleteSection(wordStart, caretPos);
-        document.insertText(wordStart, chosen);
-        editorComponent->moveCaretTo(juce::CodeDocument::Position(document, wordStart + chosen.length()), false);
-    }
-
-    isReplacingText = false;
-    document.newTransaction();
-}
 bool CtrlrLuaMethodCodeEditor::isLuaObjectInstance(const juce::String& s, SuggestionType type)
 {
     if (type == TypeClass)
@@ -2114,4 +2059,59 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
         });
 
     editorComponent->grabKeyboardFocus();
+}
+
+void CtrlrLuaMethodCodeEditor::handleSuggestionChosen(juce::String chosen)
+{
+    if (suggestionPopup == nullptr) return;
+    suggestionPopup->setVisible(false);
+
+    int wordStart = 0;
+    juce::String currentWord = getWordBeforeCaret(wordStart);
+    int caretPos = editorComponent->getCaretPos().getPosition();
+    juce::String allText = document.getAllContent();
+
+    isReplacingText = true;
+
+    // Resolve class context
+    juce::String resolvedClass = "";
+    if (wordStart > 0 && (allText[wordStart - 1] == ':' || allText[wordStart - 1] == '.'))
+    {
+        int triggerPos = wordStart - 1;
+        int symbolStart = triggerPos - 1;
+
+        while (symbolStart >= 0 &&
+            (juce::CharacterFunctions::isLetterOrDigit(allText[symbolStart]) ||
+                allText[symbolStart] == '_' || allText[symbolStart] == ')' ||
+                allText[symbolStart] == '(' || allText[symbolStart] == ':' ||
+                allText[symbolStart] == '.'))
+        {
+            symbolStart--;
+        }
+        symbolStart++;
+
+        juce::String expression = allText.substring(symbolStart, triggerPos).trim();
+        resolvedClass = owner.getAutocompleteManager().getClassNameForVariable(expression, allText);
+    }
+
+    DBG("=== handleSuggestionChosen ===");
+    DBG("chosen: " + chosen);
+    DBG("resolvedClass: " + (resolvedClass.isEmpty() ? "EMPTY" : resolvedClass));
+
+    juce::String params = owner.getAutocompleteManager().getMethodParams(resolvedClass, chosen);
+
+    DBG("params: " + (params.isEmpty() ? "EMPTY" : params));
+
+    // Delete and insert
+    document.deleteSection(wordStart, caretPos);
+
+    if (params.isNotEmpty())
+        document.insertText(wordStart, chosen + "(" + params + ")");
+    else
+        document.insertText(wordStart, chosen + "()");
+
+    editorComponent->moveCaretTo(juce::CodeDocument::Position(document, wordStart + chosen.length() + 1), false);
+
+    isReplacingText = false;
+    document.newTransaction();
 }
