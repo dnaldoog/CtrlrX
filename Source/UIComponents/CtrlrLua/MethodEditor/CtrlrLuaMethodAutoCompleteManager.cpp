@@ -141,6 +141,27 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
         classes.set(obj.name, obj);
         classNames.add(obj.name);
     }
+	
+	if (!classes.contains("CtrlrMidiMessage")) {
+        LuaClass mid;
+        mid.name = "CtrlrMidiMessage";
+        
+        // Add the three constructors for the bubble suggestions
+        mid.constructors.add("(String hexData)");
+        mid.constructors.add("({byteTable})");
+        mid.constructors.add("(MemoryBlock data)");
+        
+        // Basic common methods for MIDI objects
+        juce::StringArray methods = { "getSize", "getData", "getType", "getChannel", "getTimestamp", "setTimestamp" };
+        for (auto& n : methods) {
+            LuaMethod lm; lm.name = n; lm.parameters = "()";
+            mid.methods.add(lm);
+            allMethodNames.add(n);
+        }
+
+        classes.set("CtrlrMidiMessage", mid);
+        classNames.add("CtrlrMidiMessage");
+    }
 
     // 3. HARD-FIX SPECIFIC INSTANCES
     if (classes.contains("CtrlrPanel")) {
@@ -160,15 +181,40 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
                     panel.methods.remove(i);
                 }
             }
-
+            
             // Now add the correct version with parameters
             LuaMethod lm;
             lm.name = mName;
-            lm.parameters = (mName.contains("ByName")) ? "(String name)" :
-                            (mName.contains("ByIndex")) ? "(int index)" :
-                            (mName == "setGlobalVariable") ? "(int index, int value)" : "()";
+            
+            if (mName == "sendMidiMessageNow") {
+                // These names appear inside the bubble when the user opens the bracket '('
+                lm.parameters = "(MidiMessage) | (hexString) | ({table})"; // If the bubble is just single line
+            }
+            else if (mName.contains("ByName")) {
+                lm.parameters = "(String name)";
+            }
+            else if (mName.contains("ByIndex")) {
+                lm.parameters = "(int index)";
+            }
+            else if (mName == "setGlobalVariable") {
+                lm.parameters = "(int index, int value)";
+            }
+            else {
+                lm.parameters = "()";
+            }
             panel.methods.add(lm);
         }
+    }
+    
+    if (classes.contains("CtrlrMidiMessage")) {
+        auto& midiClass = classes.getReference("CtrlrMidiMessage");
+        // Clear old constructors if any
+        midiClass.constructors.clear();
+        
+        // Add the new overloads
+        midiClass.constructors.add("(String hexData)");
+        midiClass.constructors.add("({table bytes})");
+        midiClass.constructors.add("(MemoryBlock data)");
     }
 
     // 4. Detailed Library Definitions
@@ -459,7 +505,8 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getMethodParams(const juce::Stri
             // Search Constructors (Only relevant if class name matches method name)
             if (methodNameOrClass == lc.name) {
                 if (lc.constructors.size() > 0) {
-                    return sanitizeForBubble(lc.constructors[0]);
+                    // Return all constructors joined by a newline so the bubble shows overloads
+                    return sanitizeForBubble(lc.constructors.joinIntoString("\n"));
                 }
             }
 
@@ -529,6 +576,9 @@ juce::String CtrlrLuaMethodAutoCompleteManager::resolveReturnType(const juce::St
     if (methodName == "getGlobalTimer")
         return "Timer";
     
+    if (methodName == "getLastMidiMessage" || methodName == "getMidiMessage")
+        return "CtrlrMidiMessage";
+    
     // Note: setBounds returns void in Lua, but keeping your return hint for documentation purposes
     if (methodName == "setBounds")
         return "number x, number y, number width, number height";
@@ -561,7 +611,8 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
     if (varName == "table")                       return "table";
     if (varName == "string")                      return "string";
     if (varName == "MemoryBlock")                 return "MemoryBlock";
-
+    if (varName == "CtrlrMidiMessage") return "CtrlrMidiMessage";
+    
     // 2. CHAIN RESOLUTION (e.g., mb:someMethod():)
     if (varName.contains(":") || varName.contains("."))
     {
