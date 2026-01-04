@@ -17,44 +17,52 @@ CtrlrMidiMessage::CtrlrMidiMessage()
 }
 
 CtrlrMidiMessage::CtrlrMidiMessage (const String& hexData)
-	:	messageType(None), midiTree(Ids::midi), multiMasterValue(1),
-		multiMasterNumber(1), messagePattern(0,true),
-		initializationResult(Result::ok())
+    :   messageType(None), midiTree(Ids::midi), multiMasterValue(1),
+        multiMasterNumber(1), messagePattern(0,true),
+        initializationResult(Result::ok())
 {
-	initializeEmptyMessage();
+    initializeEmptyMessage();
 
-	if (!stringIsHexadecimal (hexData))
-	{
-		_WRN("CtrlrMidiMessage::ctor initial string is not a valid HEX data string");
-		initializationResult = Result::fail("Initial string is not a valid HEX data string");
-	}
-	else
-	{
-		/* create a data block from the hex string,
-			initialize properties based on that data */
+    // 1. Strip everything that isn't a Hex character
+    String sanitizedHex = hexData.replaceCharacter(' ', 0).replaceCharacter('\t', 0);
 
-		MidiMessage m = createFromHexData(hexData);
+    if (!stringIsHexadecimal (sanitizedHex))
+    {
+        _WRN("CtrlrMidiMessage::ctor invalid HEX: " + hexData);
+        initializationResult = Result::fail("Invalid HEX");
+    }
+    else
+    {
+        // 2. Convert Hex string to a temporary MemoryBlock FIRST
+        MemoryBlock rawData;
+        rawData.loadFromHexString(sanitizedHex);
+        
+        if (rawData.getSize() > 0)
+        {
+            const uint8* d = (const uint8*)rawData.getData();
+            const int size = (int)rawData.getSize();
 
-		if (m.getRawDataSize() == 0)
-		{
-			_WRN("CtrlrMidiMessage::ctor string passed to constructor resulted in zero size memory string:"+hexData);
-			initializationResult = Result::fail("String passed to constructor resulted in zero size memory");
-		}
-		else
-		{
-			initializationResult = fillMessagePropertiesFromData( MemoryBlock (m.getRawData(), m.getRawDataSize()) );
+            // 3. PRE-VALIDATE for the JUCE Assert
+            // This mirrors the logic on line 137 to prevent the pause
+            bool isSystem = (d[0] >= 0xf0);
+            int expectedLength = isSystem ? size : MidiMessage::getMessageLengthFromFirstByte(d[0]);
 
-			if (!initializationResult.wasOk())
-			{
-				_WRN("CtrlrMidiMessage::ctor from string failed to init MIDI message string:"+hexData);
-			}
-			// Sysex is not added automagicly (since we need a valid formula), do it now
-			else if (messageType == SysEx)
-			{
-				messageArray.add (m);
-			}
-		}
-	}
+            if (size > 3 || isSystem || expectedLength == size)
+            {
+                // Now it is safe to create the message; JUCE won't assert
+                MidiMessage m(d, size);
+                initializationResult = fillMessagePropertiesFromData(rawData);
+
+                if (messageType == SysEx)
+                    messageArray.add(m);
+            }
+            else
+            {
+                _WRN("CtrlrMidiMessage: Byte count mismatch for Status Byte " + String::toHexString(d[0]));
+                initializationResult = Result::fail("MIDI Byte count mismatch");
+            }
+        }
+    }
 }
 
 CtrlrMidiMessage::CtrlrMidiMessage (const MidiMessage& other)
@@ -100,6 +108,50 @@ CtrlrMidiMessage::CtrlrMidiMessage (MemoryBlock& other)
 		if (messageType == SysEx)
 		{
 			messageArray.add (m);
+		}
+	}
+}
+
+CtrlrMidiMessage::CtrlrMidiMessage (const luabind::object& tableData)
+	:	messageType(None), midiTree(Ids::midi), multiMasterValue(1),
+		multiMasterNumber(1), messagePattern(0,true),
+		initializationResult(Result::ok())
+{
+	initializeEmptyMessage();
+	MemoryBlock mb;
+
+	if (luabind::type(tableData) == LUA_TTABLE)
+	{
+		try
+		{
+			for (luabind::iterator i(tableData), end; i != end; ++i)
+			{
+				uint8 b = (uint8)luabind::object_cast<int>(*i);
+				mb.append (&b, 1);
+			}
+
+			if (mb.getSize() > 0)
+			{
+				// Check if the first byte is a valid status byte (bit 7 must be 1)
+				const uint8* data = (const uint8*)mb.getData();
+				if (data[0] < 0x80)
+				{
+					_WRN("CtrlrMidiMessage: First byte is not a valid status byte!");
+					// You can choose to ignore this or handle it,
+					// but passing it to MidiMessage is what causes the JUCE assertion.
+				}
+				initializationResult = fillMessagePropertiesFromData(mb);
+				
+				if (messageType == SysEx)
+				{
+					messageArray.add(MidiMessage(mb.getData(), (int)mb.getSize()));
+				}
+			}
+		}
+		catch (...)
+		{
+			_WRN("CtrlrMidiMessage::ctor failed to parse Lua table.");
+			initializationResult = Result::fail("Failed to parse Lua table");
 		}
 	}
 }
@@ -883,10 +935,19 @@ void CtrlrMidiMessage::wrapForLua(lua_State *L)
 	module(L)
     [
 		class_<CtrlrMidiMessage>("CtrlrMidiMessage")
+			// Ensure this is present - it allows CtrlrMidiMessage("F0 01 F7")
 			.def(constructor<const String&>())
+			
+			// This handles the old way where a Lua table might have been passed
 			.def(constructor<const CtrlrLuaObjectWrapper&>())
+			
 			.def(constructor<const MidiMessage&>())
+	 
+			.def(constructor<const luabind::object&>()) // Added v5.6.35. Direct Table support
+			
+			// This handles the new JUCE 6 way: CtrlrMidiMessage(MemoryBlock(...))
 			.def(constructor<MemoryBlock&>())
+			
 			.enum_("CtrlrMidiMessageType")
 			[
 	            value("CC",				0),
