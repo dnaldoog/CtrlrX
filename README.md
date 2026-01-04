@@ -486,7 +486,7 @@ Tuturial coming soon.
 
 ## Changelog
 
-#### Version 5.6.35 | 2025.12.04
+#### Version 5.6.35 | 2026.01.04
 
 * **UPDATED** ctrlrAutoSave & ctrlrAutoSaveInterval properties in Preferences only if isStandaloneApp. `CtrlrManager.cpp`, `CtrlrManagerInstance.cpp`, `CtrlrSettings.cpp`
 * **UPDATED** flag IS_MIDI_EFFECT FALSE. `CMakeLists.txt`
@@ -500,6 +500,7 @@ Tuturial coming soon.
 * **FIXED** XML file reading. Thanks to [John Goodland](https://github.com/dnaldoog) `LCore.cpp`
 * **FIXED** Highlight Background & Text for FileListBox Component. Thanks to [Dominique Bonptemps](https://github.com/dobo365) `CtrlrFileListBox.cpp`
 * **UPDATED** CtrlrLuaMethodEditor with IDE-like autocomplete on typing. `CtrlrLuaMethodAutoCompleteManager.cpp` & `.h`, `CtrlrLuaMethodCodeEditor.cpp` & `.h`, `CtrlrLuaMethodEditor.h`
+* **UPDATED** sendMidiMessageNow() compatibility with the old syntax and support table content as message. `CtrlrLuaMethodAutoCompleteManager.cpp` & `.h`
 
 #### Version 5.6.34 | 2025.11.07
 
