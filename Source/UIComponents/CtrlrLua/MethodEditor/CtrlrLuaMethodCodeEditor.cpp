@@ -505,30 +505,27 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
     if (wordStart > 0)
     {
         juce::juce_wchar triggerChar = allText[wordStart - 1];
-        if (triggerChar == ':' || triggerChar == '.')
-        {
-            // Work backwards from the trigger to extract the symbol/chain
-            int triggerPos = wordStart - 1;  // Position of ':' or '.'
-            int symbolStart = triggerPos - 1;
-
-            // Go back through the chain, skipping spaces and keeping everything else
-            while (symbolStart >= 0)
-            {
-                juce::juce_wchar c = allText[symbolStart];
-
-                // Valid chain characters
-                if (juce::CharacterFunctions::isLetterOrDigit(c) ||
-                    c == '_' || c == ')' || c == '(' || c == ':' || c == '.')
-                {
-                    symbolStart--;
-                }
-                // Stop at invalid characters (space, newline, operators, etc.)
-                else
-                {
-                    break;
-                }
-            }
-            symbolStart++;  // Move back to the first valid character
+if (triggerChar == ':' || triggerChar == '.')
+{
+    int triggerPos = wordStart - 1;
+    int symbolStart = triggerPos - 1;
+    
+    // Go back through chain, including spaces and common type chars
+    while (symbolStart >= 0 &&
+           (juce::CharacterFunctions::isLetterOrDigit(allText[symbolStart]) ||
+            allText[symbolStart] == '_' ||
+            allText[symbolStart] == ')' ||
+            allText[symbolStart] == '(' ||
+            allText[symbolStart] == ':' ||
+            allText[symbolStart] == '.' ||
+            allText[symbolStart] == ' ' ||   // <-- ADD THIS
+            allText[symbolStart] == '&' ||   // <-- For references
+            allText[symbolStart] == '*' ||   // <-- For pointers
+            allText[symbolStart] == ','))    // <-- For multiple args
+    {
+        symbolStart--;
+    }
+    symbolStart++;
 
             juce::String expression = allText.substring(symbolStart, triggerPos).trim();
 
