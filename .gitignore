@@ -1,5 +1,13 @@
 # Operating System & IDE Specific Files
-build/
+[Bb]uild/
+[Bb]uilds/
+Debug/
+Release/
+*.a
+*.o
+*.lib
+*.exe
+.DS_Storebuild/
 .DS_Store                 # macOS directory metadata
 Thumbs.db                 # Windows thumbnail cache
 Desktop.ini               # Windows custom folder settings
