@@ -9,64 +9,72 @@
 #include "JuceClasses/LMemoryBlock.h"
 
 CtrlrMidiMessage::CtrlrMidiMessage()
-	:	messageType(None), midiTree(Ids::midi), multiMasterValue(1),
-		multiMasterNumber(1), messagePattern(0,true), restoring(false),
-		initializationResult(Result::ok())
+	: messageType(None), midiTree(Ids::midi), multiMasterValue(1),
+	multiMasterNumber(1), messagePattern(0, true), restoring(false),
+	initializationResult(Result::ok())
 {
 	initializeEmptyMessage();
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage (const String& hexData)
-	:	messageType(None), midiTree(Ids::midi), multiMasterValue(1),
-		multiMasterNumber(1), messagePattern(0,true),
-		initializationResult(Result::ok())
+CtrlrMidiMessage::CtrlrMidiMessage(const String& hexData)
+	: messageType(None), midiTree(Ids::midi), multiMasterValue(1),
+	multiMasterNumber(1), messagePattern(0, true),
+	initializationResult(Result::ok())
 {
 	initializeEmptyMessage();
 
-	if (!stringIsHexadecimal (hexData))
+	// 1. Strip everything that isn't a Hex character
+	String sanitizedHex = hexData.replaceCharacter(' ', 0).replaceCharacter('\t', 0);
+
+	if (!stringIsHexadecimal(sanitizedHex))
 	{
-		_WRN("CtrlrMidiMessage::ctor initial string is not a valid HEX data string");
-		initializationResult = Result::fail("Initial string is not a valid HEX data string");
+		_WRN("CtrlrMidiMessage::ctor invalid HEX: " + hexData);
+		initializationResult = Result::fail("Invalid HEX");
 	}
 	else
 	{
-		/* create a data block from the hex string,
-			initialize properties based on that data */
+		// 2. Convert Hex string to a temporary MemoryBlock FIRST
+		MemoryBlock rawData;
+		rawData.loadFromHexString(sanitizedHex);
 
-		MidiMessage m = createFromHexData(hexData);
-
-		if (m.getRawDataSize() == 0)
+		if (rawData.getSize() > 0)
 		{
-			_WRN("CtrlrMidiMessage::ctor string passed to constructor resulted in zero size memory string:"+hexData);
-			initializationResult = Result::fail("String passed to constructor resulted in zero size memory");
-		}
-		else
-		{
-			initializationResult = fillMessagePropertiesFromData( MemoryBlock (m.getRawData(), m.getRawDataSize()) );
+			const uint8* d = (const uint8*)rawData.getData();
+			const int size = (int)rawData.getSize();
 
-			if (!initializationResult.wasOk())
+			// 3. PRE-VALIDATE for the JUCE Assert
+			// This mirrors the logic on line 137 to prevent the pause
+			bool isSystem = (d[0] >= 0xf0);
+			int expectedLength = isSystem ? size : MidiMessage::getMessageLengthFromFirstByte(d[0]);
+
+			if (size > 3 || isSystem || expectedLength == size)
 			{
-				_WRN("CtrlrMidiMessage::ctor from string failed to init MIDI message string:"+hexData);
+				// Now it is safe to create the message; JUCE won't assert
+				MidiMessage m(d, size);
+				initializationResult = fillMessagePropertiesFromData(rawData);
+
+				if (messageType == SysEx)
+					messageArray.add(m);
 			}
-			// Sysex is not added automagicly (since we need a valid formula), do it now
-			else if (messageType == SysEx)
+			else
 			{
-				messageArray.add (m);
+				_WRN("CtrlrMidiMessage: Byte count mismatch for Status Byte " + String::toHexString(d[0]));
+				initializationResult = Result::fail("MIDI Byte count mismatch");
 			}
 		}
 	}
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage (const MidiMessage& other)
-	:	messageType(None), midiTree(Ids::midi), messagePattern(0,true),
-		initializationResult(Result::ok())
+CtrlrMidiMessage::CtrlrMidiMessage(const MidiMessage& other)
+	: messageType(None), midiTree(Ids::midi), messagePattern(0, true),
+	initializationResult(Result::ok())
 {
 	initializeEmptyMessage();
 
 	/* Copy the passed in midi message
 		initialize properties based on that message*/
 
-	initializationResult = fillMessagePropertiesFromJuceMidi (other);
+	initializationResult = fillMessagePropertiesFromJuceMidi(other);
 
 	if (!initializationResult.wasOk())
 	{
@@ -74,12 +82,12 @@ CtrlrMidiMessage::CtrlrMidiMessage (const MidiMessage& other)
 	}
 	else if (messageType == SysEx)
 	{
-		messageArray.add (other);
+		messageArray.add(other);
 	}
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage (MemoryBlock& other)
-	:	messageType(None), midiTree(Ids::midi), messagePattern(0,true), initializationResult(Result::ok())
+CtrlrMidiMessage::CtrlrMidiMessage(MemoryBlock& other)
+	: messageType(None), midiTree(Ids::midi), messagePattern(0, true), initializationResult(Result::ok())
 {
 	initializeEmptyMessage();
 
@@ -88,7 +96,7 @@ CtrlrMidiMessage::CtrlrMidiMessage (MemoryBlock& other)
 
 	MidiMessage m = MidiMessage(other.getData(), (int)other.getSize());
 
-	initializationResult = fillMessagePropertiesFromJuceMidi (m);
+	initializationResult = fillMessagePropertiesFromJuceMidi(m);
 
 	if (!initializationResult.wasOk())
 	{
@@ -99,15 +107,59 @@ CtrlrMidiMessage::CtrlrMidiMessage (MemoryBlock& other)
 		// Sysex is not added automagicly (since we need a valid formula), do it now
 		if (messageType == SysEx)
 		{
-			messageArray.add (m);
+			messageArray.add(m);
 		}
 	}
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage (const CtrlrLuaObjectWrapper &luaArray)
-	:	messageType(None), midiTree(Ids::midi), multiMasterValue(1),
-		multiMasterNumber(1), messagePattern(0,true),
-		initializationResult(Result::ok())
+CtrlrMidiMessage::CtrlrMidiMessage(const luabind::object& tableData)
+	: messageType(None), midiTree(Ids::midi), multiMasterValue(1),
+	multiMasterNumber(1), messagePattern(0, true),
+	initializationResult(Result::ok())
+{
+	initializeEmptyMessage();
+	MemoryBlock mb;
+
+	if (luabind::type(tableData) == LUA_TTABLE)
+	{
+		try
+		{
+			for (luabind::iterator i(tableData), end; i != end; ++i)
+			{
+				uint8 b = (uint8)luabind::object_cast<int>(*i);
+				mb.append(&b, 1);
+			}
+
+			if (mb.getSize() > 0)
+			{
+				// Check if the first byte is a valid status byte (bit 7 must be 1)
+				const uint8* data = (const uint8*)mb.getData();
+				if (data[0] < 0x80)
+				{
+					_WRN("CtrlrMidiMessage: First byte is not a valid status byte!");
+					// You can choose to ignore this or handle it,
+					// but passing it to MidiMessage is what causes the JUCE assertion.
+				}
+				initializationResult = fillMessagePropertiesFromData(mb);
+
+				if (messageType == SysEx)
+				{
+					messageArray.add(MidiMessage(mb.getData(), (int)mb.getSize()));
+				}
+			}
+		}
+		catch (...)
+		{
+			_WRN("CtrlrMidiMessage::ctor failed to parse Lua table.");
+			initializationResult = Result::fail("Failed to parse Lua table");
+		}
+	}
+}
+
+CtrlrMidiMessage::CtrlrMidiMessage(const CtrlrLuaObjectWrapper& luaArray)
+	: messageType(None), midiTree(Ids::midi), multiMasterValue(1),
+	multiMasterNumber(1), messagePattern(0, true),
+	initializationResult(Result::ok())
 {
 	initializeEmptyMessage();
 
@@ -130,7 +182,7 @@ CtrlrMidiMessage::CtrlrMidiMessage (const CtrlrLuaObjectWrapper &luaArray)
 			// Sysex is not added automagicly (since we need a valid formula), do it now
 			if (messageType == SysEx)
 			{
-				messageArray.add (MidiMessage (possibleMidiData.getData(), (int)possibleMidiData.getSize()));
+				messageArray.add(MidiMessage(possibleMidiData.getData(), (int)possibleMidiData.getSize()));
 			}
 		}
 	}
@@ -140,264 +192,264 @@ CtrlrMidiMessage::CtrlrMidiMessage (const CtrlrLuaObjectWrapper &luaArray)
 	}
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage (const CtrlrMidiMessage &other)
+CtrlrMidiMessage::CtrlrMidiMessage(const CtrlrMidiMessage& other)
 	: messageType(None), midiTree(other.midiTree), initializationResult(Result::ok()),
-		messageArray(other.messageArray)
+	messageArray(other.messageArray)
 {
 
 	fillMessagePropertiesFromData();
 
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage (const Identifier &treeType)
-    : messageType(None), midiTree(treeType), messagePattern(0,true), initializationResult(Result::ok())
+CtrlrMidiMessage::CtrlrMidiMessage(const Identifier& treeType)
+	: messageType(None), midiTree(treeType), messagePattern(0, true), initializationResult(Result::ok())
 {
-    initializeEmptyMessage();
+	initializeEmptyMessage();
 }
 
 CtrlrMidiMessage::~CtrlrMidiMessage()
 {
-	midiTree.removeListener (this);
+	midiTree.removeListener(this);
 }
 
 void CtrlrMidiMessage::initializeEmptyMessage()
 {
-	setProperty (Ids::midiMessageType, None);
-	setProperty (Ids::midiMessageChannelOverride, false);
-	setProperty (Ids::midiMessageChannel, 1);
-	setProperty (Ids::midiMessageCtrlrNumber, 1);
-	setProperty (Ids::midiMessageCtrlrValue, 0);
-	setProperty (Ids::midiMessageMultiList, "");
-	setProperty (Ids::midiMessageSysExFormula, "");
+	setProperty(Ids::midiMessageType, None);
+	setProperty(Ids::midiMessageChannelOverride, false);
+	setProperty(Ids::midiMessageChannel, 1);
+	setProperty(Ids::midiMessageCtrlrNumber, 1);
+	setProperty(Ids::midiMessageCtrlrValue, 0);
+	setProperty(Ids::midiMessageMultiList, "");
+	setProperty(Ids::midiMessageSysExFormula, "");
 
-	midiTree.addListener (this);
+	midiTree.addListener(this);
 }
 
-Result CtrlrMidiMessage::fillMessagePropertiesFromJuceMidi(const MidiMessage &m)
+Result CtrlrMidiMessage::fillMessagePropertiesFromJuceMidi(const MidiMessage& m)
 {
 	if (m.isController())
 	{
 		messageType = CC;
-		setProperty (Ids::midiMessageType, CC);
-		setProperty (Ids::midiMessageChannel, m.getChannel());
-		setProperty (Ids::midiMessageCtrlrNumber, m.getControllerNumber());
-		setProperty (Ids::midiMessageCtrlrValue, m.getControllerValue());
+		setProperty(Ids::midiMessageType, CC);
+		setProperty(Ids::midiMessageChannel, m.getChannel());
+		setProperty(Ids::midiMessageCtrlrNumber, m.getControllerNumber());
+		setProperty(Ids::midiMessageCtrlrValue, m.getControllerValue());
 
 		return (Result::ok());
 	}
 	else if (m.isAftertouch())
 	{
 		messageType = Aftertouch;
-		setProperty (Ids::midiMessageType, Aftertouch);
-		setProperty (Ids::midiMessageChannel, m.getChannel());
-		setProperty (Ids::midiMessageCtrlrNumber, m.getNoteNumber());
-		setProperty (Ids::midiMessageCtrlrValue, m.getAfterTouchValue());
+		setProperty(Ids::midiMessageType, Aftertouch);
+		setProperty(Ids::midiMessageChannel, m.getChannel());
+		setProperty(Ids::midiMessageCtrlrNumber, m.getNoteNumber());
+		setProperty(Ids::midiMessageCtrlrValue, m.getAfterTouchValue());
 
 		return (Result::ok());
 	}
 	else if (m.isNoteOn())
 	{
 		messageType = NoteOn;
-		setProperty (Ids::midiMessageType, NoteOn);
-		setProperty (Ids::midiMessageChannel, m.getChannel());
-		setProperty (Ids::midiMessageCtrlrNumber, m.getNoteNumber());
-		setProperty (Ids::midiMessageCtrlrValue, m.getVelocity());
+		setProperty(Ids::midiMessageType, NoteOn);
+		setProperty(Ids::midiMessageChannel, m.getChannel());
+		setProperty(Ids::midiMessageCtrlrNumber, m.getNoteNumber());
+		setProperty(Ids::midiMessageCtrlrValue, m.getVelocity());
 
 		return (Result::ok());
 	}
 	else if (m.isNoteOff())
 	{
 		messageType = NoteOff;
-		setProperty (Ids::midiMessageType, NoteOff);
-		setProperty (Ids::midiMessageChannel, m.getChannel());
-		setProperty (Ids::midiMessageCtrlrNumber, m.getNoteNumber());
-		setProperty (Ids::midiMessageCtrlrValue, m.getVelocity());
+		setProperty(Ids::midiMessageType, NoteOff);
+		setProperty(Ids::midiMessageChannel, m.getChannel());
+		setProperty(Ids::midiMessageCtrlrNumber, m.getNoteNumber());
+		setProperty(Ids::midiMessageCtrlrValue, m.getVelocity());
 
 		return (Result::ok());
 	}
 	else if (m.isChannelPressure())
 	{
 		messageType = ChannelPressure;
-		setProperty (Ids::midiMessageType, ChannelPressure);
-		setProperty (Ids::midiMessageChannel, m.getChannel());
-		setProperty (Ids::midiMessageCtrlrValue, m.getChannelPressureValue());
+		setProperty(Ids::midiMessageType, ChannelPressure);
+		setProperty(Ids::midiMessageChannel, m.getChannel());
+		setProperty(Ids::midiMessageCtrlrValue, m.getChannelPressureValue());
 
 		return (Result::ok());
 	}
 	else if (m.isProgramChange())
 	{
 		messageType = ProgramChange;
-		setProperty (Ids::midiMessageType, ProgramChange);
-		setProperty (Ids::midiMessageChannel, m.getChannel());
-		setProperty (Ids::midiMessageCtrlrValue, m.getProgramChangeNumber());
+		setProperty(Ids::midiMessageType, ProgramChange);
+		setProperty(Ids::midiMessageChannel, m.getChannel());
+		setProperty(Ids::midiMessageCtrlrValue, m.getProgramChangeNumber());
 
 		return (Result::ok());
 	}
 	else if (m.isPitchWheel())
 	{
 		messageType = PitchWheel;
-		setProperty (Ids::midiMessageType, PitchWheel);
-		setProperty (Ids::midiMessageChannel, m.getChannel());
-		setProperty (Ids::midiMessageCtrlrValue, m.getPitchWheelValue());
+		setProperty(Ids::midiMessageType, PitchWheel);
+		setProperty(Ids::midiMessageChannel, m.getChannel());
+		setProperty(Ids::midiMessageCtrlrValue, m.getPitchWheelValue());
 
 		return (Result::ok());
 	}
 	else if (m.isSysEx())
 	{
 		messageType = SysEx;
-		setProperty (Ids::midiMessageType, SysEx);
+		setProperty(Ids::midiMessageType, SysEx);
 		return (Result::ok());
 	}
 	else if (m.isMidiClock())
 	{
 		messageType = MidiClock;
-		setProperty (Ids::midiMessageType, MidiClock);
+		setProperty(Ids::midiMessageType, MidiClock);
 		return (Result::ok());
 	}
 	else if (m.isMidiContinue())
 	{
 		messageType = MidiClockContinue;
-		setProperty (Ids::midiMessageType, MidiClockContinue);
+		setProperty(Ids::midiMessageType, MidiClockContinue);
 		return (Result::ok());
 	}
 	else if (m.isMidiStart())
 	{
 		messageType = MidiClockStart;
-		setProperty (Ids::midiMessageType, MidiClockStart);
+		setProperty(Ids::midiMessageType, MidiClockStart);
 		return (Result::ok());
 	}
 	else if (m.isMidiStop())
 	{
 		messageType = MidiClockStop;
-		setProperty (Ids::midiMessageType, MidiClockStop);
+		setProperty(Ids::midiMessageType, MidiClockStop);
 		return (Result::ok());
 	}
 	else if (m.isActiveSense())
 	{
 		messageType = ActiveSense;
-		setProperty (Ids::midiMessageType, ActiveSense);
+		setProperty(Ids::midiMessageType, ActiveSense);
 		return (Result::ok());
 	}
 	else
 	{
 		messageType = None;
-		setProperty (Ids::midiMessageType, None);
+		setProperty(Ids::midiMessageType, None);
 
 		return (Result::ok());
 	}
 }
 
-Result CtrlrMidiMessage::fillMessagePropertiesFromData(const MemoryBlock &data)
+Result CtrlrMidiMessage::fillMessagePropertiesFromData(const MemoryBlock& data)
 {
 	CtrlrMidiMessageEx mex(MidiMessage(data.getData(), (int)data.getSize()));
 
 	if (mex.m.isController())
 	{
 		messageType = CC;
-		setProperty (Ids::midiMessageType, CC);
-		setProperty (Ids::midiMessageChannel, mex.m.getChannel());
-		setProperty (Ids::midiMessageCtrlrNumber, mex.m.getControllerNumber());
-		setProperty (Ids::midiMessageCtrlrValue, mex.m.getControllerValue());
+		setProperty(Ids::midiMessageType, CC);
+		setProperty(Ids::midiMessageChannel, mex.m.getChannel());
+		setProperty(Ids::midiMessageCtrlrNumber, mex.m.getControllerNumber());
+		setProperty(Ids::midiMessageCtrlrValue, mex.m.getControllerValue());
 
 		return (Result::ok());
 	}
 	else if (mex.m.isAftertouch())
 	{
 		messageType = Aftertouch;
-		setProperty (Ids::midiMessageType, Aftertouch);
-		setProperty (Ids::midiMessageChannel, mex.m.getChannel());
-		setProperty (Ids::midiMessageCtrlrNumber, mex.m.getNoteNumber());
-		setProperty (Ids::midiMessageCtrlrValue, mex.m.getAfterTouchValue());
+		setProperty(Ids::midiMessageType, Aftertouch);
+		setProperty(Ids::midiMessageChannel, mex.m.getChannel());
+		setProperty(Ids::midiMessageCtrlrNumber, mex.m.getNoteNumber());
+		setProperty(Ids::midiMessageCtrlrValue, mex.m.getAfterTouchValue());
 
 		return (Result::ok());
 	}
 	else if (mex.m.isNoteOn())
 	{
 		messageType = NoteOn;
-		setProperty (Ids::midiMessageType, NoteOn);
-		setProperty (Ids::midiMessageChannel, mex.m.getChannel());
-		setProperty (Ids::midiMessageCtrlrNumber, mex.m.getNoteNumber());
-		setProperty (Ids::midiMessageCtrlrValue, mex.m.getVelocity());
+		setProperty(Ids::midiMessageType, NoteOn);
+		setProperty(Ids::midiMessageChannel, mex.m.getChannel());
+		setProperty(Ids::midiMessageCtrlrNumber, mex.m.getNoteNumber());
+		setProperty(Ids::midiMessageCtrlrValue, mex.m.getVelocity());
 
 		return (Result::ok());
 	}
 	else if (mex.m.isNoteOff())
 	{
 		messageType = NoteOff;
-		setProperty (Ids::midiMessageType, NoteOff);
-		setProperty (Ids::midiMessageChannel, mex.m.getChannel());
-		setProperty (Ids::midiMessageCtrlrNumber, mex.m.getNoteNumber());
-		setProperty (Ids::midiMessageCtrlrValue, mex.m.getVelocity());
+		setProperty(Ids::midiMessageType, NoteOff);
+		setProperty(Ids::midiMessageChannel, mex.m.getChannel());
+		setProperty(Ids::midiMessageCtrlrNumber, mex.m.getNoteNumber());
+		setProperty(Ids::midiMessageCtrlrValue, mex.m.getVelocity());
 
 		return (Result::ok());
 	}
 	else if (mex.m.isChannelPressure())
 	{
 		messageType = ChannelPressure;
-		setProperty (Ids::midiMessageType, ChannelPressure);
-		setProperty (Ids::midiMessageChannel, mex.m.getChannel());
-		setProperty (Ids::midiMessageCtrlrValue, mex.m.getChannelPressureValue());
+		setProperty(Ids::midiMessageType, ChannelPressure);
+		setProperty(Ids::midiMessageChannel, mex.m.getChannel());
+		setProperty(Ids::midiMessageCtrlrValue, mex.m.getChannelPressureValue());
 
 		return (Result::ok());
 	}
 	else if (mex.m.isProgramChange())
 	{
 		messageType = ProgramChange;
-		setProperty (Ids::midiMessageType, ProgramChange);
-		setProperty (Ids::midiMessageChannel, mex.m.getChannel());
-		setProperty (Ids::midiMessageCtrlrValue, mex.m.getProgramChangeNumber());
+		setProperty(Ids::midiMessageType, ProgramChange);
+		setProperty(Ids::midiMessageChannel, mex.m.getChannel());
+		setProperty(Ids::midiMessageCtrlrValue, mex.m.getProgramChangeNumber());
 
 		return (Result::ok());
 	}
 	else if (mex.m.isPitchWheel())
 	{
 		messageType = PitchWheel;
-		setProperty (Ids::midiMessageType, PitchWheel);
-		setProperty (Ids::midiMessageChannel, mex.m.getChannel());
-		setProperty (Ids::midiMessageCtrlrValue, mex.m.getPitchWheelValue());
+		setProperty(Ids::midiMessageType, PitchWheel);
+		setProperty(Ids::midiMessageChannel, mex.m.getChannel());
+		setProperty(Ids::midiMessageCtrlrValue, mex.m.getPitchWheelValue());
 
 		return (Result::ok());
 	}
 	else if (mex.m.isSysEx())
 	{
 		messageType = SysEx;
-		setProperty (Ids::midiMessageType, SysEx);
+		setProperty(Ids::midiMessageType, SysEx);
 		return (Result::ok());
 	}
 	else if (mex.m.isMidiClock())
 	{
 		messageType = MidiClock;
-		setProperty (Ids::midiMessageType, MidiClock);
+		setProperty(Ids::midiMessageType, MidiClock);
 		return (Result::ok());
 	}
 	else if (mex.m.isMidiContinue())
 	{
 		messageType = MidiClockContinue;
-		setProperty (Ids::midiMessageType, MidiClockContinue);
+		setProperty(Ids::midiMessageType, MidiClockContinue);
 		return (Result::ok());
 	}
 	else if (mex.m.isMidiStart())
 	{
 		messageType = MidiClockStart;
-		setProperty (Ids::midiMessageType, MidiClockStart);
+		setProperty(Ids::midiMessageType, MidiClockStart);
 		return (Result::ok());
 	}
 	else if (mex.m.isMidiStop())
 	{
 		messageType = MidiClockStop;
-		setProperty (Ids::midiMessageType, MidiClockStop);
+		setProperty(Ids::midiMessageType, MidiClockStop);
 		return (Result::ok());
 	}
 	else if (mex.m.isActiveSense())
 	{
 		messageType = ActiveSense;
-		setProperty (Ids::midiMessageType, ActiveSense);
+		setProperty(Ids::midiMessageType, ActiveSense);
 		return (Result::ok());
 	}
 	else
 	{
 		messageType = None;
-		setProperty (Ids::midiMessageType, None);
+		setProperty(Ids::midiMessageType, None);
 
 		return (Result::ok());
 	}
@@ -407,71 +459,71 @@ Result CtrlrMidiMessage::fillMessagePropertiesFromData()
 {
 	if (messageArray.size() == 0)
 	{
-		setProperty (Ids::midiMessageType, (uint8)None);
-		setProperty (Ids::midiMessageChannelOverride, false);
-		setProperty (Ids::midiMessageChannel, 1);
-		setProperty (Ids::midiMessageCtrlrNumber, 1);
-		setProperty (Ids::midiMessageCtrlrValue, 0);
-		setProperty (Ids::midiMessageMultiList, "");
-		setProperty (Ids::midiMessageSysExFormula, "");
+		setProperty(Ids::midiMessageType, (uint8)None);
+		setProperty(Ids::midiMessageChannelOverride, false);
+		setProperty(Ids::midiMessageChannel, 1);
+		setProperty(Ids::midiMessageCtrlrNumber, 1);
+		setProperty(Ids::midiMessageCtrlrValue, 0);
+		setProperty(Ids::midiMessageMultiList, "");
+		setProperty(Ids::midiMessageSysExFormula, "");
 
 		return (Result::fail("MessageArray is empty, initializing to empty NONE message"));
 	}
 	else
 	{
-		return (fillMessagePropertiesFromData( MemoryBlock (messageArray[0].m.getRawData(), messageArray[0].m.getRawDataSize()) ));
+		return (fillMessagePropertiesFromData(MemoryBlock(messageArray[0].m.getRawData(), messageArray[0].m.getRawDataSize())));
 	}
 }
 
-void CtrlrMidiMessage::restoreState (const ValueTree &savedState)
+void CtrlrMidiMessage::restoreState(const ValueTree& savedState)
 {
-	for (int i=0; i<savedState.getNumProperties(); i++)
+	for (int i = 0; i < savedState.getNumProperties(); i++)
 	{
-		midiTree.setProperty (savedState.getPropertyName(i), savedState.getProperty(savedState.getPropertyName(i), 0), 0);
+		midiTree.setProperty(savedState.getPropertyName(i), savedState.getProperty(savedState.getPropertyName(i), 0), 0);
 	}
 
-	for (int i=0; i<savedState.getNumChildren(); i++)
+	for (int i = 0; i < savedState.getNumChildren(); i++)
 	{
-		midiTree.addChild (savedState.getChild(i).createCopy(), -1, 0);
+		midiTree.addChild(savedState.getChild(i).createCopy(), -1, 0);
 	}
 
 	if (getProperty(Ids::midiMessageSysExFormula).toString().length() > 0 && (int)getProperty(Ids::midiMessageType) != SysEx)
-        
+
 	{
-		setProperty (Ids::midiMessageSysExFormula, "");
+		setProperty(Ids::midiMessageSysExFormula, "");
 	}
 	else if (getProperty(Ids::midiMessageSysExFormula).toString().length() > 0 && (int)getProperty(Ids::midiMessageType) == SysEx)
 	{
-		setProperty (Ids::midiMessageSysExFormula, getProperty(Ids::midiMessageSysExFormula));
-		setProperty (Ids::midiMessageType, SysEx);
+		setProperty(Ids::midiMessageSysExFormula, getProperty(Ids::midiMessageSysExFormula));
+		setProperty(Ids::midiMessageType, SysEx);
 	}
 }
 
-void CtrlrMidiMessage::setValue (const int value)
+void CtrlrMidiMessage::setValue(const int value)
 {
 	switch (messageType)
 	{
-		case CC:
-		case Aftertouch:
-		case ChannelPressure:
-		case NoteOn:
-		case NoteOff:
-		case SysEx:
-		case PitchWheel:
-		case ProgramChange:
-			setValueToSingle (0, value);
-			break;
-		case Multi:
-			setValueToMulti (value);
-			break;
-		case MidiClock:
-		case MidiClockContinue:
-		case MidiClockStop:
-		case kMidiMessageType:
-		case ActiveSense:
-		case MidiClockStart:
-		case None:
-			break;
+	case CC:
+	case Aftertouch:
+	case ChannelPressure:
+	case NoteOn:
+	case NoteOff:
+	case SysEx:
+	case PitchWheel:
+	case ProgramChange:
+		setValueToSingle(0, value);
+		break;
+	case Multi:
+		setValueToMulti(value);
+		break;
+	case MidiClock:
+	case MidiClockContinue:
+	case MidiClockStop:
+	case kMidiMessageType:
+	case ActiveSense:
+	case MidiClockStart:
+	case None:
+		break;
 	}
 }
 
@@ -481,26 +533,26 @@ void CtrlrMidiMessage::setValueToSingle(const int index, const int value)
 	{
 		return;
 	}
-	else if ( (messageArray.size() > index && messageArray.getReference(index).m.isSysEx())
-			|| (messageArray.size() > index && messageType == SysEx))
+	else if ((messageArray.size() > index && messageArray.getReference(index).m.isSysEx())
+		|| (messageArray.size() > index && messageType == SysEx))
 	{
 		if (getSysexProcessor())
 		{
-			getSysexProcessor()->sysExProcess (messageArray.getReference(index).getTokenArray(), messageArray.getReference(index).m, value, getChannel());
+			getSysexProcessor()->sysExProcess(messageArray.getReference(index).getTokenArray(), messageArray.getReference(index).m, value, getChannel());
 		}
 	}
 	else
 	{
 		if (messageArray.size() > index)
-			messageArray.getReference(index).setValue (value);
+			messageArray.getReference(index).setValue(value);
 	}
 }
 
-void CtrlrMidiMessage::setValueToMulti (const int value)
+void CtrlrMidiMessage::setValueToMulti(const int value)
 {
-	for (int i=0; i<messageArray.size(); i++)
+	for (int i = 0; i < messageArray.size(); i++)
 	{
-		setValueToSingle (i, value);
+		setValueToSingle(i, value);
 	}
 }
 
@@ -517,14 +569,14 @@ int CtrlrMidiMessage::getValue()
 	{
 		BigInteger value(0);
 
-		for (int i=0; i<messageArray.size(); i++)
+		for (int i = 0; i < messageArray.size(); i++)
 		{
 			if (messageArray.getReference(i).overrideValue == -2)
 				continue;
 
 			value |= messageArray.getReference(i).getBitValue();
 		}
-		return (value.getBitRangeAsInt(0,14));
+		return (value.getBitRangeAsInt(0, 14));
 	}
 	else if (messageType == SysEx)
 	{
@@ -532,11 +584,11 @@ int CtrlrMidiMessage::getValue()
 		{
 			if (getSysexProcessor())
 			{
-				return (getSysexProcessor()->getValueFromSysExData (messageArray.getReference(0).getTokenArray(), messageArray.getReference(0)));
+				return (getSysexProcessor()->getValueFromSysExData(messageArray.getReference(0).getTokenArray(), messageArray.getReference(0)));
 			}
 			else
 			{
-				return (CtrlrSysexProcessor::getValue (messageArray.getReference(0).getTokenArray(), messageArray.getReference(0)));
+				return (CtrlrSysexProcessor::getValue(messageArray.getReference(0).getTokenArray(), messageArray.getReference(0)));
 			}
 		}
 	}
@@ -550,52 +602,52 @@ void CtrlrMidiMessage::setNumber(const int number)
 
 	switch (messageType)
 	{
-		case CC:
-		case Aftertouch:
-		case ChannelPressure:
-		case NoteOn:
-		case NoteOff:
-		case PitchWheel:
-		case ProgramChange:
-			setNumberToSingle (0, number);
-			break;
+	case CC:
+	case Aftertouch:
+	case ChannelPressure:
+	case NoteOn:
+	case NoteOff:
+	case PitchWheel:
+	case ProgramChange:
+		setNumberToSingle(0, number);
+		break;
 
-		case Multi:
-			setNumberToMulti (number);
-			break;
+	case Multi:
+		setNumberToMulti(number);
+		break;
 
-		case SysEx:
-		case None:
-		case MidiClock:
-		case MidiClockContinue:
-		case MidiClockStop:
-		case kMidiMessageType:
-		case ActiveSense:
-		case MidiClockStart:
-			break;
+	case SysEx:
+	case None:
+	case MidiClock:
+	case MidiClockContinue:
+	case MidiClockStop:
+	case kMidiMessageType:
+	case ActiveSense:
+	case MidiClockStart:
+		break;
 	}
 }
 
-void CtrlrMidiMessage::setNumberToSingle (const int index, const int number)
+void CtrlrMidiMessage::setNumberToSingle(const int index, const int number)
 {
 	if (index >= messageArray.size())
 		return;
 
 	if (messageArray.getReference(index).overrideValue == -2)
 	{
-		messageArray.getReference(index).setValue (number);
+		messageArray.getReference(index).setValue(number);
 	}
 	else
 	{
-		messageArray.getReference(index).setNumber (number);
+		messageArray.getReference(index).setNumber(number);
 	}
 }
 
-void CtrlrMidiMessage::setNumberToMulti (const int number)
+void CtrlrMidiMessage::setNumberToMulti(const int number)
 {
-	for (int i=0; i<messageArray.size(); i++)
+	for (int i = 0; i < messageArray.size(); i++)
 	{
-		setNumberToSingle (i, number);
+		setNumberToSingle(i, number);
 	}
 }
 
@@ -629,126 +681,126 @@ int CtrlrMidiMessage::getChannel() const
 	{
 		if (!messageArray.getReference(0).m.isSysEx())
 		{
-			return (jmax <int>(messageArray.getReference(0).m.getChannel(),1));
+			return (jmax <int>(messageArray.getReference(0).m.getChannel(), 1));
 		}
 		else
 		{
-			return (jmax <int>(getProperty(Ids::midiMessageChannel),1));
+			return (jmax <int>(getProperty(Ids::midiMessageChannel), 1));
 		}
 	}
 
-	return (jmax <int>(getProperty(Ids::midiMessageChannel),1));
+	return (jmax <int>(getProperty(Ids::midiMessageChannel), 1));
 }
 
 void CtrlrMidiMessage::setChannel(const int midiChannel)
 {
-	for (int i=0; i<messageArray.size(); i++)
+	for (int i = 0; i < messageArray.size(); i++)
 	{
-		messageArray.getReference(i).setChannel (jmax<int>(midiChannel,1));
+		messageArray.getReference(i).setChannel(jmax<int>(midiChannel, 1));
 	}
 }
 
-void CtrlrMidiMessage::setMidiMessageType (const CtrlrMidiMessageType newType)
+void CtrlrMidiMessage::setMidiMessageType(const CtrlrMidiMessageType newType)
 {
 	const int ch = getChannel();
 
 	switch (newType)
 	{
-		case CC:
-			messageArray.clear();
-			messageArray.add (MidiMessage::controllerEvent(ch, jmin<int>(getNumber(),127), jmin<int>(getValue(),127)));
-			break;
+	case CC:
+		messageArray.clear();
+		messageArray.add(MidiMessage::controllerEvent(ch, jmin<int>(getNumber(), 127), jmin<int>(getValue(), 127)));
+		break;
 
-		case Aftertouch:
-			messageArray.clear();
-			messageArray.add (MidiMessage::aftertouchChange(ch, jmin<int>(getNumber(),127), jmin<int>(getValue(),127)));
-			break;
+	case Aftertouch:
+		messageArray.clear();
+		messageArray.add(MidiMessage::aftertouchChange(ch, jmin<int>(getNumber(), 127), jmin<int>(getValue(), 127)));
+		break;
 
-		case ChannelPressure:
-			messageArray.clear();
-			messageArray.add (MidiMessage::channelPressureChange (ch, jmin<int>(getValue(),127)));
-			break;
+	case ChannelPressure:
+		messageArray.clear();
+		messageArray.add(MidiMessage::channelPressureChange(ch, jmin<int>(getValue(), 127)));
+		break;
 
-		case NoteOn:
-			messageArray.clear();
-			messageArray.add (MidiMessage::noteOn (ch, jmin<int>(getNumber(),127), (uint8)jmin<int>(getValue(),127)));
-			break;
+	case NoteOn:
+		messageArray.clear();
+		messageArray.add(MidiMessage::noteOn(ch, jmin<int>(getNumber(), 127), (uint8)jmin<int>(getValue(), 127)));
+		break;
 
-		case NoteOff:
-			messageArray.clear();
-			messageArray.add (MidiMessage::noteOff (ch, jmin<int>(getNumber(),127), (uint8)jmin<int>(getValue(),127)));
-			break;
+	case NoteOff:
+		messageArray.clear();
+		messageArray.add(MidiMessage::noteOff(ch, jmin<int>(getNumber(), 127), (uint8)jmin<int>(getValue(), 127)));
+		break;
 
-		case SysEx:
-			messageArray.clear();
+	case SysEx:
+		messageArray.clear();
 
-			if (getProperty(Ids::midiMessageSysExFormula).toString().length() > 0)
-			{
-				messageArray.add (CtrlrSysexProcessor::sysexMessageFromString(getProperty(Ids::midiMessageSysExFormula),getValue(),getChannel()));
-				patternChanged();
-			}
+		if (getProperty(Ids::midiMessageSysExFormula).toString().length() > 0)
+		{
+			messageArray.add(CtrlrSysexProcessor::sysexMessageFromString(getProperty(Ids::midiMessageSysExFormula), getValue(), getChannel()));
+			patternChanged();
+		}
 
-			break;
+		break;
 
-		case Multi:
-			CtrlrSysexProcessor::setMultiMessageFromString (*this, getProperty(Ids::midiMessageMultiList));
-			break;
+	case Multi:
+		CtrlrSysexProcessor::setMultiMessageFromString(*this, getProperty(Ids::midiMessageMultiList));
+		break;
 
-		case PitchWheel:
-			messageArray.clear();
-			messageArray.add (MidiMessage::pitchWheel (ch, (uint8)jmin<int>(getValue(),16383)));
-			break;
+	case PitchWheel:
+		messageArray.clear();
+		messageArray.add(MidiMessage::pitchWheel(ch, (uint8)jmin<int>(getValue(), 16383)));
+		break;
 
-		case ProgramChange:
-			messageArray.clear();
-			messageArray.add (MidiMessage::programChange (ch, (uint8)jmin<int>(getValue(),127)));
-			break;
+	case ProgramChange:
+		messageArray.clear();
+		messageArray.add(MidiMessage::programChange(ch, (uint8)jmin<int>(getValue(), 127)));
+		break;
 
-		case MidiClock:
-			messageArray.clear();
-			messageArray.add (MidiMessage::midiClock());
-			break;
+	case MidiClock:
+		messageArray.clear();
+		messageArray.add(MidiMessage::midiClock());
+		break;
 
-		case MidiClockContinue:
-			messageArray.clear();
-			messageArray.add (MidiMessage::midiContinue());
-			break;
+	case MidiClockContinue:
+		messageArray.clear();
+		messageArray.add(MidiMessage::midiContinue());
+		break;
 
-		case MidiClockStop:
-			messageArray.clear();
-			messageArray.add (MidiMessage::midiStop());
-			break;
+	case MidiClockStop:
+		messageArray.clear();
+		messageArray.add(MidiMessage::midiStop());
+		break;
 
-		case MidiClockStart:
-			messageArray.clear();
-			messageArray.add (MidiMessage::midiStart());
-			break;
+	case MidiClockStart:
+		messageArray.clear();
+		messageArray.add(MidiMessage::midiStart());
+		break;
 
-		case ActiveSense:
-			messageArray.clear();
-			messageArray.add (MidiMessage());
-			break;
+	case ActiveSense:
+		messageArray.clear();
+		messageArray.add(MidiMessage());
+		break;
 
-		case None:
-			messageArray.clear();
-			break;
+	case None:
+		messageArray.clear();
+		break;
 
-		case kMidiMessageType:
-			break;
+	case kMidiMessageType:
+		break;
 	}
 
 	messageType = newType;
 }
 
-void CtrlrMidiMessage::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
+void CtrlrMidiMessage::valueTreePropertyChanged(ValueTree& treeWhosePropertyHasChanged, const Identifier& property)
 {
 	if (property == Ids::midiMessageType)
 	{
-		setMidiMessageType ((CtrlrMidiMessageType)(int)getProperty(Ids::midiMessageType));
-		setNumber ((int)getProperty(Ids::midiMessageCtrlrNumber));
+		setMidiMessageType((CtrlrMidiMessageType)(int)getProperty(Ids::midiMessageType));
+		setNumber((int)getProperty(Ids::midiMessageCtrlrNumber));
 		patternChanged();
 	}
-	else if(property == Ids::midiMessageSysExFormula)
+	else if (property == Ids::midiMessageSysExFormula)
 	{
 		if (restoring == false && (int)getProperty(Ids::midiMessageType) == SysEx)
 		{
@@ -756,31 +808,31 @@ void CtrlrMidiMessage::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
 			{
 				if (getSysexProcessor())
 				{
-					CtrlrSysexProcessor::setSysExFormula (*this, getProperty(Ids::midiMessageSysExFormula));
+					CtrlrSysexProcessor::setSysExFormula(*this, getProperty(Ids::midiMessageSysExFormula));
 				}
-				setValue ((int)getProperty(Ids::midiMessageCtrlrValue));
+				setValue((int)getProperty(Ids::midiMessageCtrlrValue));
 				patternChanged();
 			}
 		}
 	}
 	else if (property == Ids::midiMessageChannel)
 	{
-		setChannel (getProperty(Ids::midiMessageChannel));
+		setChannel(getProperty(Ids::midiMessageChannel));
 	}
 	else if (property == Ids::midiMessageCtrlrValue)
 	{
-		setValue ((int)getProperty(Ids::midiMessageCtrlrValue));
+		setValue((int)getProperty(Ids::midiMessageCtrlrValue));
 		return;
 	}
 	else if (property == Ids::midiMessageCtrlrNumber)
 	{
-		setNumber ((int)getProperty(Ids::midiMessageCtrlrNumber));
+		setNumber((int)getProperty(Ids::midiMessageCtrlrNumber));
 	}
 	else if (property == Ids::midiMessageMultiList)
 	{
-		CtrlrSysexProcessor::setMultiMessageFromString (*this, getProperty(Ids::midiMessageMultiList));
+		CtrlrSysexProcessor::setMultiMessageFromString(*this, getProperty(Ids::midiMessageMultiList));
 
-		setNumber ((int)getProperty(Ids::midiMessageCtrlrNumber));
+		setNumber((int)getProperty(Ids::midiMessageCtrlrNumber));
 	}
 
 	patternChanged();
@@ -790,9 +842,9 @@ MidiBuffer CtrlrMidiMessage::getMidiBuffer(const int startSample)
 {
 	midiBuffer.clear();
 
-	for (int i=0; i<messageArray.size(); i++)
+	for (int i = 0; i < messageArray.size(); i++)
 	{
-		midiBuffer.addEvent (messageArray.getReference(i).m,startSample+i);
+		midiBuffer.addEvent(messageArray.getReference(i).m, startSample + i);
 	}
 
 	return (midiBuffer);
@@ -801,9 +853,9 @@ MidiBuffer CtrlrMidiMessage::getMidiBuffer(const int startSample)
 const LMemoryBlock CtrlrMidiMessage::getData() const
 {
 	MemoryBlock bl(0);
-	for (int i=0; i<messageArray.size(); i++)
+	for (int i = 0; i < messageArray.size(); i++)
 	{
-		bl.append (messageArray.getReference(i).m.getRawData(), messageArray.getReference(i).m.getRawDataSize());
+		bl.append(messageArray.getReference(i).m.getRawData(), messageArray.getReference(i).m.getRawDataSize());
 	}
 	return (bl);
 }
@@ -812,7 +864,7 @@ void CtrlrMidiMessage::patternChanged()
 {
 	messagePattern.setSize(0);
 
-	for (int i=0; i<messageArray.size(); i++)
+	for (int i = 0; i < messageArray.size(); i++)
 	{
 		MemoryBlock bl(0);
 		if (messageArray.getReference(i).overrideValue == -2)
@@ -824,13 +876,13 @@ void CtrlrMidiMessage::patternChanged()
 			bl = midiMessagePattern(messageArray.getReference(i), messageArray.getReference(i).getTokenArray(), getGlobalVariables());
 		}
 
-		messagePattern.append (bl.getData(), bl.getSize());
+		messagePattern.append(bl.getData(), bl.getSize());
 	}
 }
 
-void CtrlrMidiMessage::addMidiMessage (const MidiMessage &message)
+void CtrlrMidiMessage::addMidiMessage(const MidiMessage& message)
 {
-	messageArray.add (message);
+	messageArray.add(message);
 	patternChanged();
 }
 
@@ -840,35 +892,35 @@ void CtrlrMidiMessage::clear()
 	patternChanged();
 }
 
-CtrlrMidiMessageEx &CtrlrMidiMessage::getReference(const int messageIndex) const
+CtrlrMidiMessageEx& CtrlrMidiMessage::getReference(const int messageIndex) const
 {
-	return ((CtrlrMidiMessageEx &)messageArray.getReference(messageIndex));
+	return ((CtrlrMidiMessageEx&)messageArray.getReference(messageIndex));
 }
 
-void CtrlrMidiMessage::memoryMerge (const CtrlrMidiMessage &otherMessage)
+void CtrlrMidiMessage::memoryMerge(const CtrlrMidiMessage& otherMessage)
 {
 	if (otherMessage.getNumMessages() == getNumMessages())
 	{
-		for (int i=0; i<messageArray.size(); i++)
+		for (int i = 0; i < messageArray.size(); i++)
 		{
 			messageArray.getReference(i).m = otherMessage.getMidiMessageEx(i).m;
 		}
 	}
 }
 
-const MemoryBlock &CtrlrMidiMessage::getMidiPattern() const
+const MemoryBlock& CtrlrMidiMessage::getMidiPattern() const
 {
 	return (messagePattern);
 }
 
-Array <CtrlrMidiMessageEx> &CtrlrMidiMessage::getMidiMessageArray()
+Array <CtrlrMidiMessageEx>& CtrlrMidiMessage::getMidiMessageArray()
 {
 	return (messageArray);
 }
 
 const String CtrlrMidiMessage::toString() const
 {
-	return (String::toHexString (getData().getData(), getData().getSize()));
+	return (String::toHexString(getData().getData(), getData().getSize()));
 }
 
 int CtrlrMidiMessage::getSize() const
@@ -876,50 +928,59 @@ int CtrlrMidiMessage::getSize() const
 	return (getData().getSize());
 }
 
-void CtrlrMidiMessage::wrapForLua(lua_State *L)
+void CtrlrMidiMessage::wrapForLua(lua_State* L)
 {
 	using namespace luabind;
 
 	module(L)
-    [
-		class_<CtrlrMidiMessage>("CtrlrMidiMessage")
-			.def(constructor<const String&>())
-			.def(constructor<const CtrlrLuaObjectWrapper&>())
-			.def(constructor<const MidiMessage&>())
-			.def(constructor<MemoryBlock&>())
-			.enum_("CtrlrMidiMessageType")
-			[
-	            value("CC",				0),
-				value("Aftertouch",		1),
-				value("ChannelPressure",2),
-				value("NoteOn",			3),
-				value("NoteOff",		4),
-				value("SysEx",			5),
-				value("Multi",			6),
-				value("ProgramChange",	7),
-				value("PitchWheel",		8),
-				value("None",			9),
-				value("MidiClock",		10),
-				value("MidiClockContinue", 11),
-				value("MidiClockStop", 12),
-				value("MidiClockStart", 13)
-			]
+		[
+			class_<CtrlrMidiMessage>("CtrlrMidiMessage")
+				// Ensure this is present - it allows CtrlrMidiMessage("F0 01 F7")
+				.def(constructor<const String&>())
+
+				// This handles the old way where a Lua table might have been passed
+				.def(constructor<const CtrlrLuaObjectWrapper&>())
+
+				.def(constructor<const MidiMessage&>())
+
+				.def(constructor<const luabind::object&>()) // Added v5.6.35. Direct Table support
+
+				// This handles the new JUCE 6 way: CtrlrMidiMessage(MemoryBlock(...))
+				.def(constructor<MemoryBlock&>())
+
+				.enum_("CtrlrMidiMessageType")
+				[
+					value("CC", 0),
+					value("Aftertouch", 1),
+					value("ChannelPressure", 2),
+					value("NoteOn", 3),
+					value("NoteOff", 4),
+					value("SysEx", 5),
+					value("Multi", 6),
+					value("ProgramChange", 7),
+					value("PitchWheel", 8),
+					value("None", 9),
+					value("MidiClock", 10),
+					value("MidiClockContinue", 11),
+					value("MidiClockStop", 12),
+					value("MidiClockStart", 13)
+				]
 			.def("setChannel", &CtrlrMidiMessage::setChannel)
-			.def("getChannel", &CtrlrMidiMessage::getChannel)
-			.def("setNumber", &CtrlrMidiMessage::setNumber)
-			.def("getNumber", &CtrlrMidiMessage::getNumber)
-			.def("setValue", &CtrlrMidiMessage::setValue)
-			.def("getValue", &CtrlrMidiMessage::getValue)
-			.def("getSize", &CtrlrMidiMessage::getSize)
-			.def("getData", &CtrlrMidiMessage::getData)
-			.def("getLuaData", &CtrlrMidiMessage::getData)
-			.def("getType", &CtrlrMidiMessage::getMidiMessageType)
-            .def("setType", &CtrlrMidiMessage::setMidiMessageType) // Added v5.6.33
-			.def("getMidiMessageType", &CtrlrMidiMessage::getMidiMessageType)
-            .def("setMidiMessageType", &CtrlrMidiMessage::setMidiMessageType) // Added v5.6.33
-			.def("toString", &CtrlrMidiMessage::toString)
-			.def("getInitializationResult", &CtrlrMidiMessage::getInitializationResult)
-            .def("getProperty", (const var &(CtrlrMidiMessage::*)(const Identifier &) const) &CtrlrMidiMessage::getProperty) // Added v5.6.31
-            .def("setProperty", (void (CtrlrMidiMessage::*)(const Identifier &, const var &, const bool))&CtrlrMidiMessage::setProperty) // Added v5.6.33
-	];
+				.def("getChannel", &CtrlrMidiMessage::getChannel)
+				.def("setNumber", &CtrlrMidiMessage::setNumber)
+				.def("getNumber", &CtrlrMidiMessage::getNumber)
+				.def("setValue", &CtrlrMidiMessage::setValue)
+				.def("getValue", &CtrlrMidiMessage::getValue)
+				.def("getSize", &CtrlrMidiMessage::getSize)
+				.def("getData", &CtrlrMidiMessage::getData)
+				.def("getLuaData", &CtrlrMidiMessage::getData)
+				.def("getType", &CtrlrMidiMessage::getMidiMessageType)
+				.def("setType", &CtrlrMidiMessage::setMidiMessageType) // Added v5.6.33
+				.def("getMidiMessageType", &CtrlrMidiMessage::getMidiMessageType)
+				.def("setMidiMessageType", &CtrlrMidiMessage::setMidiMessageType) // Added v5.6.33
+				.def("toString", &CtrlrMidiMessage::toString)
+				.def("getInitializationResult", &CtrlrMidiMessage::getInitializationResult)
+				.def("getProperty", (const var & (CtrlrMidiMessage::*)(const Identifier&) const) & CtrlrMidiMessage::getProperty) // Added v5.6.31
+				.def("setProperty", (void (CtrlrMidiMessage::*)(const Identifier&, const var&, const bool)) & CtrlrMidiMessage::setProperty) // Added v5.6.33
+		];
 }
