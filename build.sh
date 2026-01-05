@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the build directory path
-BUILD_DIR="$HOME/CtrlrX/build"
+BUILD_DIR="$HOME/Documents/CtrlrX/build"
 
 # Prompt the user for build type
 echo "Select build type:"
