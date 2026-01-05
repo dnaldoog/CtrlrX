@@ -157,6 +157,14 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings (CtrlrLuaMeth
 
     addAndMakeVisible (fontTest = new CodeEditorComponent (codeDocument, &luaTokeniser));
 
+    addAndMakeVisible(autoCompleteButton = new ToggleButton(""));
+    // Load saved state
+    bool savedAutoComplete = owner.getComponentTree().getProperty(Ids::autoCompleteEnabled, false);
+    autoCompleteButton->setToggleState(savedAutoComplete, dontSendNotification);
+    autoCompleteButton->getToggleStateValue().referTo(SharedValues::getAutoCompleteValue());
+    autoCompleteButton->setButtonText(SharedValues::getAutoCompleteLabel());
+    SharedValues::getAutoCompleteValue().setValue(savedAutoComplete);
+
     addAndMakeVisible(openSearchTabs = new ToggleButton(""));
     //openSearchTabs->setButtonText("Open Search Tabs"); // Corrected to use a string literal
     openSearchTabs->getToggleStateValue().referTo(SharedValues::getSearchTabsValue());
@@ -283,7 +291,7 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings (CtrlrLuaMeth
     originalLineNumbersColour = getLineNumbersColour();
     originalOpenSearchTabs = openSearchTabs->getToggleState();
 	
-    setSize(334, 586);
+    setSize(334, 600);
     updateSyntaxColors();
 }
 
@@ -321,6 +329,7 @@ CtrlrLuaMethodCodeEditorSettings::~CtrlrLuaMethodCodeEditorSettings()
     deleteAndZero(syntaxTokenColor);
     
     deleteAndZero(openSearchTabs);
+    deleteAndZero(autoCompleteButton);
     deleteAndZero(resetButton);
     deleteAndZero(applyButton);
 }
@@ -336,48 +345,51 @@ void CtrlrLuaMethodCodeEditorSettings::resized()
     marginLeft = 12;
     marginTop = 12;
     sampleWidth = 310;
-	sampleHeight = 144; // 145
-	
+    sampleHeight = 144; // 145
+
     if (fontTest != nullptr)
         fontTest->setBounds(marginLeft, marginTop, sampleWidth, sampleHeight);
-	
-	// Font type
+
+    // Font type
     label0->setBounds(marginLeft - 4, marginTop + sampleHeight + 8, sampleWidth, 24);
     fontTypeface->setBounds(marginLeft, marginTop + sampleHeight + 24 + 8, sampleWidth, 24);
-	
-	//Font style
+
+    //Font style
     fontBold->setBounds(marginLeft, marginTop + sampleHeight + 24 + 40, 56, 24);
     fontItalic->setBounds(marginLeft + 64, marginTop + sampleHeight + 24 + 40, 64, 24);
-	
-	// Font reset
+
+    // Font reset
     resetToPreviousButton->setBounds(marginLeft + 136, marginTop + sampleHeight + 24 + 40, 80, 24);
-	
-	// Font size
-	fontSize->setBounds(marginLeft + 224, marginTop + sampleHeight + 24 + 40, 88, 24);
-	
-	// Editor background
+
+    // Font size
+    fontSize->setBounds(marginLeft + 224, marginTop + sampleHeight + 24 + 40, 88, 24);
+
+    // Editor background
     label1->setBounds(marginLeft - 4, marginTop + sampleHeight + 24 + 72, sampleWidth, 24);
     bgColour->setBounds(marginLeft, marginTop + sampleHeight + 24 + 72 + 24, sampleWidth, 24);
-	
-	// Line numbers background
+
+    // Line numbers background
     label2->setBounds(marginLeft - 4, marginTop + sampleHeight + 24 + 72 + 24 + 32, sampleWidth, 24);
     lineNumbersBgColour->setBounds(marginLeft, marginTop + sampleHeight + 24 + 72 + 2 * 24 + 32, sampleWidth, 24);
-	
-	// Line numbers
+
+    // Line numbers
     label3->setBounds(marginLeft - 4, marginTop + sampleHeight + 24 + 72 + 2 * 24 + 2 * 32, sampleWidth, 24);
     lineNumbersColour->setBounds(marginLeft, marginTop + sampleHeight + 24 + 72 + 3 * 24 + 2 * 32, sampleWidth, 24);
 
-	// Highlights
+    // Highlights
     int syntaxY = marginTop + (sampleHeight + 24 + 72 + 3 * 24 + 2 * 32) + 40;
     syntaxLabel->setBounds(marginLeft - 4, syntaxY, sampleWidth, 24);
     syntaxTokenType->setBounds(marginLeft, syntaxY + 24, (sampleWidth - 8) / 2, 24);
     syntaxTokenColor->setBounds(marginLeft + (sampleWidth - 8) / 2 + 8, syntaxY + 24, (sampleWidth - 8) / 2, 24);
-    
-	// Open search tab  check box
-	openSearchTabs->setBounds(marginLeft + 0, syntaxY + 64, sampleWidth, 24);
+
+    // Open search tabs check box
+    openSearchTabs->setBounds(marginLeft + 0, syntaxY + 64, sampleWidth, 24);
+
+    // Autocomplete toggle
+    autoCompleteButton->setBounds(marginLeft + 0, syntaxY + 88, sampleWidth, 24);
 
     // Add horizontal line above buttons
-    int buttonY = syntaxY + 104;
+    int buttonY = syntaxY + 128;
 
     // Position the three buttons in a row: RESET  APPLY  CANCEL
     int buttonWidth = (sampleWidth - 16) / 2; // Account for spacing between buttons
@@ -487,7 +499,10 @@ void CtrlrLuaMethodCodeEditorSettings::buttonClicked(Button* buttonThatWasClicke
 			bgColour->setSelectedId(findColourIndex(Colours::white), dontSendNotification);
 			lineNumbersBgColour->setSelectedId(findColourIndex(Colours::cornflowerblue), dontSendNotification);
 			lineNumbersColour->setSelectedId(findColourIndex(Colours::black), dontSendNotification);
-			
+            autoCompleteButton->setToggleState(false, dontSendNotification);
+            //bool savedAutoComplete = owner.getComponentTree().getProperty(Ids::autoCompleteEnabled, false);
+            //SharedValues::getAutoCompleteValue().setValue(savedAutoComplete);
+            owner.getComponentTree().setProperty(Ids::autoCompleteEnabled, false, nullptr);
 			customSyntaxColors.clear();
 			clearSyntaxColorSettings();
 			String currentToken = getCurrentSelectedTokenType();
@@ -861,6 +876,9 @@ void CtrlrLuaMethodCodeEditorSettings::applySettings()
     owner.getComponentTree().setProperty(Ids::openSearchTabsState,
         openSearchTabs->getToggleState(), nullptr);
 
+    owner.getComponentTree().setProperty(Ids::autoCompleteEnabled,
+        autoCompleteButton->getToggleState(), nullptr);
+    SharedValues::getAutoCompleteValue().setValue(autoCompleteButton->getToggleState());
     // Save syntax colors
     saveSyntaxColorsToSettings();
 

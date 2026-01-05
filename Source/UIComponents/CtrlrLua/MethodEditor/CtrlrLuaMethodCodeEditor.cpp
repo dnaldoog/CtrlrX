@@ -492,6 +492,10 @@ void CtrlrLuaMethodCodeEditor::hideCallTip()
 }
 void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newText, int insertIndex)
 {
+    if (!SharedValues::getAutoCompleteValue().getValue())
+    {
+        return;  // Do nothing if disabled
+    }
     document.newTransaction();
     documentChanged(false);
     if (suggestionPopup == nullptr) return;
