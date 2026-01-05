@@ -86,27 +86,72 @@ void CtrlrEditor::performLuaEditorCommand(const int commandID) // Added v5.6.34.
             {
                 luaMethodEditor->getMethodEditArea()->clearOutputText();
             }
-            else if (commandID == LuaMethodEditorCommandIDs::editPreferences)
+               else if (commandID == LuaMethodEditorCommandIDs::editPreferences)
+{
+#if JUCE_LINUX
+
+auto* editor = luaMethodEditor;
+
+// Kill any popup/modals now
+if (auto* mm = ModalComponentManager::getInstanceWithoutCreating())
+    mm->cancelAllModalComponents();
+
+// Defer once so PopupMenu closes fully
+MessageManager::callAsync([this, editor]
+{
+    _DBG("Launching Linux async dialog");
+
+    auto* settings = new CtrlrLuaMethodCodeEditorSettings(
+        *editor, SharedValues::getSearchTabsValue());
+
+    settings->setSize(
+        settings->getWidth() ? settings->getWidth() : 600,
+        settings->getHeight() ? settings->getHeight() : 500
+    );
+
+    DialogWindow::LaunchOptions options;
+    options.content.setOwned(settings);
+    options.dialogTitle = "Code editor preferences";
+    options.resizable = false;
+    options.useNativeTitleBar = false;   // <-- CRUCIAL FIX
+    options.dialogBackgroundColour = Colours::lightgrey;
+    options.escapeKeyTriggersCloseButton = true;
+    options.componentToCentreAround = editor;
+
+    options.launchAsync();
+});
+
+return;
+   #else
+
+        {
+            CtrlrLuaMethodCodeEditorSettings s(*luaMethodEditor, SharedValues::getSearchTabsValue());
+
+            _DBG("Attempting to show modal dialog.");
+
+            CtrlrDialogWindow::showModalDialog("Code editor preferences", &s, false, luaMethodEditor);
+
+            _DBG("Modal dialog returned.");
+
+            if (activePanel)
             {
-                CtrlrLuaMethodCodeEditorSettings s(*luaMethodEditor, SharedValues::getSearchTabsValue());
-                
-                _DBG("Attempting to show modal dialog.");
+                auto& manager = activePanel->getCtrlrManagerOwner();
 
-                CtrlrDialogWindow::showModalDialog ("Code editor preferences", &s, false, luaMethodEditor);
-                
-                _DBG("Modal dialog returned.");
+                luaMethodEditor->getComponentTree().setProperty(Ids::luaMethodEditorFont,
+                    manager.getFontManager().getStringFromFont(s.getFont()), nullptr);
+                luaMethodEditor->getComponentTree().setProperty(Ids::luaMethodEditorBgColour,
+                    COLOUR2STR(s.getBgColour()), nullptr);
+                luaMethodEditor->getComponentTree().setProperty(Ids::luaMethodEditorLineNumbersBgColour,
+                    COLOUR2STR(s.getLineNumbersBgColour()), nullptr);
+                luaMethodEditor->getComponentTree().setProperty(Ids::luaMethodEditorLineNumbersColour,
+                    COLOUR2STR(s.getLineNumbersColour()), nullptr);
 
-                if (activePanel)
-                {
-                    auto& manager = activePanel->getCtrlrManagerOwner();
-
-                    luaMethodEditor->getComponentTree().setProperty (Ids::luaMethodEditorFont, manager.getFontManager().getStringFromFont (s.getFont()), nullptr);
-                    luaMethodEditor->getComponentTree().setProperty (Ids::luaMethodEditorBgColour, COLOUR2STR (s.getBgColour()), nullptr);
-                    luaMethodEditor->getComponentTree().setProperty (Ids::luaMethodEditorLineNumbersBgColour, COLOUR2STR(s.getLineNumbersBgColour()), nullptr);
-                    luaMethodEditor->getComponentTree().setProperty (Ids::luaMethodEditorLineNumbersColour, COLOUR2STR(s.getLineNumbersColour()), nullptr);
-                    luaMethodEditor->updateTabs();
-                }
+                luaMethodEditor->updateTabs();
             }
+        }
+
+   #endif
+}
             else if (commandID == LuaMethodEditorCommandIDs::editSingleLineComment)
             {
                 if (auto* editor = luaMethodEditor->getCurrentEditor())
