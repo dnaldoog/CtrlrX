@@ -856,6 +856,7 @@ namespace Ids
     DECLARE_ID (luaMethodValid);
     
     DECLARE_ID (openSearchTabsState); // Added v5.6.34
+    DECLARE_ID (autoCompleteEnabled); // Added v5.6.35 JG
     
     DECLARE_ID (luaModulatorValueChange);
     DECLARE_ID (luaModulatorComponentChange);

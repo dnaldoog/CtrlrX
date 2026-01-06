@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CtrlrMidiMessageEx.h"
+#include <luabind/object_fwd.hpp> // Use the official forward declaration header
 
 class CtrlrLuaObjectWrapper;
 
@@ -52,6 +53,7 @@ public:
 	CtrlrMidiMessage(const MidiMessage& other);
 	CtrlrMidiMessage(MemoryBlock& other);
 	CtrlrMidiMessage(const String& hexData);
+	CtrlrMidiMessage(const luabind::object& tableData); // Added v5.6.35. Support for table
 	CtrlrMidiMessage(const CtrlrLuaObjectWrapper& other);
 	//CtrlrMidiMessage(const MemoryBlock& data);
 

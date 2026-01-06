@@ -115,8 +115,8 @@ void LFile::wrapForLua (lua_State *L)
         .def("containsSubDirectories", &File::containsSubDirectories)
         .def("loadFileAsString", &File::loadFileAsString)
         .def("appendData", &LFile::appendData)
-        .def("replaceWithData", &File::replaceWithData)
-        .def("replaceWithData", &LFile::replaceWithData)
+        // .def("replaceWithData", &File::replaceWithData) // Removed v5.6.35. Low-level C++ API, difficult to use from Lua.
+        .def("replaceWithData", &LFile::replaceWithData) // High-level Lua-friendly wrapper that accepts LMemoryBlock objects directly
         .def("appendText", &File::appendText)
         .def("replaceWithText", &File::replaceWithText)
         .def("hasIdenticalContentTo", &File::hasIdenticalContentTo)

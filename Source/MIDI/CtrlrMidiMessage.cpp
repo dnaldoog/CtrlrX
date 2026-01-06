@@ -9,64 +9,72 @@
 #include "JuceClasses/LMemoryBlock.h"
 
 CtrlrMidiMessage::CtrlrMidiMessage()
-	:	midiTree(Ids::midi), multiMasterValue(1),
-		multiMasterNumber(1), messagePattern(0,true), restoring(false),
-		initializationResult(Result::ok())
+	: messageType(None), midiTree(Ids::midi), multiMasterValue(1),
+	multiMasterNumber(1), messagePattern(0, true), restoring(false),
+	initializationResult(Result::ok())
 {
 	initializeEmptyMessage();
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage (const String& hexData)
-	:	midiTree(Ids::midi), multiMasterValue(1),
-		multiMasterNumber(1), messagePattern(0,true),
-		initializationResult(Result::ok())
+CtrlrMidiMessage::CtrlrMidiMessage(const String& hexData)
+	: messageType(None), midiTree(Ids::midi), multiMasterValue(1),
+	multiMasterNumber(1), messagePattern(0, true),
+	initializationResult(Result::ok())
 {
 	initializeEmptyMessage();
 
-	if (!stringIsHexadecimal (hexData))
+	// 1. Strip everything that isn't a Hex character
+	String sanitizedHex = hexData.replaceCharacter(' ', 0).replaceCharacter('\t', 0);
+
+	if (!stringIsHexadecimal(sanitizedHex))
 	{
-		_WRN("CtrlrMidiMessage::ctor initial string is not a valid HEX data string");
-		initializationResult = Result::fail("Initial string is not a valid HEX data string");
+		_WRN("CtrlrMidiMessage::ctor invalid HEX: " + hexData);
+		initializationResult = Result::fail("Invalid HEX");
 	}
 	else
 	{
-		/* create a data block from the hex string,
-			initialize properties based on that data */
+		// 2. Convert Hex string to a temporary MemoryBlock FIRST
+		MemoryBlock rawData;
+		rawData.loadFromHexString(sanitizedHex);
 
-		MidiMessage m = createFromHexData(hexData);
-
-		if (m.getRawDataSize() == 0)
+		if (rawData.getSize() > 0)
 		{
-			_WRN("CtrlrMidiMessage::ctor string passed to constructor resulted in zero size memory string:"+hexData);
-			initializationResult = Result::fail("String passed to constructor resulted in zero size memory");
-		}
-		else
-		{
-			initializationResult = fillMessagePropertiesFromData( MemoryBlock (m.getRawData(), m.getRawDataSize()) );
+			const uint8* d = (const uint8*)rawData.getData();
+			const int size = (int)rawData.getSize();
 
-			if (!initializationResult.wasOk())
+			// 3. PRE-VALIDATE for the JUCE Assert
+			// This mirrors the logic on line 137 to prevent the pause
+			bool isSystem = (d[0] >= 0xf0);
+			int expectedLength = isSystem ? size : MidiMessage::getMessageLengthFromFirstByte(d[0]);
+
+			if (size > 3 || isSystem || expectedLength == size)
 			{
-				_WRN("CtrlrMidiMessage::ctor from string failed to init MIDI message string:"+hexData);
+				// Now it is safe to create the message; JUCE won't assert
+				MidiMessage m(d, size);
+				initializationResult = fillMessagePropertiesFromData(rawData);
+
+				if (messageType == SysEx)
+					messageArray.add(m);
 			}
-			// Sysex is not added automagicly (since we need a valid formula), do it now
-			else if (messageType == SysEx)
+			else
 			{
-				messageArray.add (m);
+				_WRN("CtrlrMidiMessage: Byte count mismatch for Status Byte " + String::toHexString(d[0]));
+				initializationResult = Result::fail("MIDI Byte count mismatch");
 			}
 		}
 	}
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage (const MidiMessage& other)
-	:	midiTree(Ids::midi), messagePattern(0,true),
-		initializationResult(Result::ok())
+CtrlrMidiMessage::CtrlrMidiMessage(const MidiMessage& other)
+	: messageType(None), midiTree(Ids::midi), messagePattern(0, true),
+	initializationResult(Result::ok())
 {
 	initializeEmptyMessage();
 
 	/* Copy the passed in midi message
 		initialize properties based on that message*/
 
-	initializationResult = fillMessagePropertiesFromJuceMidi (other);
+	initializationResult = fillMessagePropertiesFromJuceMidi(other);
 
 	if (!initializationResult.wasOk())
 	{
@@ -74,12 +82,12 @@ CtrlrMidiMessage::CtrlrMidiMessage (const MidiMessage& other)
 	}
 	else if (messageType == SysEx)
 	{
-		messageArray.add (other);
+		messageArray.add(other);
 	}
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage (MemoryBlock& other)
-	:	midiTree(Ids::midi), messagePattern(0,true), initializationResult(Result::ok())
+CtrlrMidiMessage::CtrlrMidiMessage(MemoryBlock& other)
+	: messageType(None), midiTree(Ids::midi), messagePattern(0, true), initializationResult(Result::ok())
 {
 	initializeEmptyMessage();
 
@@ -88,7 +96,7 @@ CtrlrMidiMessage::CtrlrMidiMessage (MemoryBlock& other)
 
 	MidiMessage m = MidiMessage(other.getData(), (int)other.getSize());
 
-	initializationResult = fillMessagePropertiesFromJuceMidi (m);
+	initializationResult = fillMessagePropertiesFromJuceMidi(m);
 
 	if (!initializationResult.wasOk())
 	{
@@ -99,15 +107,59 @@ CtrlrMidiMessage::CtrlrMidiMessage (MemoryBlock& other)
 		// Sysex is not added automagicly (since we need a valid formula), do it now
 		if (messageType == SysEx)
 		{
-			messageArray.add (m);
+			messageArray.add(m);
 		}
 	}
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage (const CtrlrLuaObjectWrapper &luaArray)
-	:	midiTree(Ids::midi), multiMasterValue(1),
-		multiMasterNumber(1), messagePattern(0,true),
-		initializationResult(Result::ok())
+CtrlrMidiMessage::CtrlrMidiMessage(const luabind::object& tableData)
+	: messageType(None), midiTree(Ids::midi), multiMasterValue(1),
+	multiMasterNumber(1), messagePattern(0, true),
+	initializationResult(Result::ok())
+{
+	initializeEmptyMessage();
+	MemoryBlock mb;
+
+	if (luabind::type(tableData) == LUA_TTABLE)
+	{
+		try
+		{
+			for (luabind::iterator i(tableData), end; i != end; ++i)
+			{
+				uint8 b = (uint8)luabind::object_cast<int>(*i);
+				mb.append(&b, 1);
+			}
+
+			if (mb.getSize() > 0)
+			{
+				// Check if the first byte is a valid status byte (bit 7 must be 1)
+				const uint8* data = (const uint8*)mb.getData();
+				if (data[0] < 0x80)
+				{
+					_WRN("CtrlrMidiMessage: First byte is not a valid status byte!");
+					// You can choose to ignore this or handle it,
+					// but passing it to MidiMessage is what causes the JUCE assertion.
+				}
+				initializationResult = fillMessagePropertiesFromData(mb);
+
+				if (messageType == SysEx)
+				{
+					messageArray.add(MidiMessage(mb.getData(), (int)mb.getSize()));
+				}
+			}
+		}
+		catch (...)
+		{
+			_WRN("CtrlrMidiMessage::ctor failed to parse Lua table.");
+			initializationResult = Result::fail("Failed to parse Lua table");
+		}
+	}
+}
+
+CtrlrMidiMessage::CtrlrMidiMessage(const CtrlrLuaObjectWrapper& luaArray)
+	: messageType(None), midiTree(Ids::midi), multiMasterValue(1),
+	multiMasterNumber(1), messagePattern(0, true),
+	initializationResult(Result::ok())
 {
 	initializeEmptyMessage();
 
@@ -140,17 +192,17 @@ CtrlrMidiMessage::CtrlrMidiMessage (const CtrlrLuaObjectWrapper &luaArray)
 	}
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage (const CtrlrMidiMessage &other)
-	: midiTree(other.midiTree), initializationResult(Result::ok()),
-		messageArray(other.messageArray)
+CtrlrMidiMessage::CtrlrMidiMessage(const CtrlrMidiMessage& other)
+	: messageType(None), midiTree(other.midiTree), initializationResult(Result::ok()),
+	messageArray(other.messageArray)
 {
 
 	fillMessagePropertiesFromData();
 
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage (const Identifier &treeType)
-    : midiTree(treeType), messagePattern(0,true), initializationResult(Result::ok())
+CtrlrMidiMessage::CtrlrMidiMessage(const Identifier& treeType)
+	: messageType(None), midiTree(treeType), messagePattern(0, true), initializationResult(Result::ok())
 {
     initializeEmptyMessage();
 }
@@ -162,14 +214,13 @@ CtrlrMidiMessage::~CtrlrMidiMessage()
 
 void CtrlrMidiMessage::initializeEmptyMessage()
 {
-	setProperty (Ids::midiMessageType, 9);
-	setProperty (Ids::midiMessageChannelOverride, false);
-	setProperty (Ids::midiMessageChannel, 1);
-	setProperty (Ids::midiMessageCtrlrNumber, 1);
-	//setProperty (Ids::midiMessageCtrlrValue, 0); this doesn't seem to do anything so I hid it from the GUI
-	setProperty (Ids::midiMessageCtrlrNumberSize, false);
-	setProperty (Ids::midiMessageMultiList, "");
-	setProperty (Ids::midiMessageSysExFormula, "");
+	setProperty(Ids::midiMessageType, None);
+	setProperty(Ids::midiMessageChannelOverride, false);
+	setProperty(Ids::midiMessageChannel, 1);
+	setProperty(Ids::midiMessageCtrlrNumber, 1);
+	setProperty(Ids::midiMessageCtrlrValue, 0);
+	setProperty(Ids::midiMessageMultiList, "");
+	setProperty(Ids::midiMessageSysExFormula, "");
 
 	midiTree.addListener (this);
 }
@@ -805,52 +856,52 @@ void CtrlrMidiMessage::setNumber(const int number)
 
 	switch (messageType)
 	{
-		case CC:
-		case Aftertouch:
-		case ChannelPressure:
-		case NoteOn:
-		case NoteOff:
-		case PitchWheel:
-		case ProgramChange:
-			setNumberToSingle (0, number);
-			break;
+	case CC:
+	case Aftertouch:
+	case ChannelPressure:
+	case NoteOn:
+	case NoteOff:
+	case PitchWheel:
+	case ProgramChange:
+		setNumberToSingle(0, number);
+		break;
 
-		case Multi:
-			setNumberToMulti (number);
-			break;
+	case Multi:
+		setNumberToMulti(number);
+		break;
 
-		case SysEx:
-		case None:
-		case MidiClock:
-		case MidiClockContinue:
-		case MidiClockStop:
-		case kMidiMessageType:
-		case ActiveSense:
-		case MidiClockStart:
-			break;
+	case SysEx:
+	case None:
+	case MidiClock:
+	case MidiClockContinue:
+	case MidiClockStop:
+	case kMidiMessageType:
+	case ActiveSense:
+	case MidiClockStart:
+		break;
 	}
 }
 
-void CtrlrMidiMessage::setNumberToSingle (const int index, const int number)
+void CtrlrMidiMessage::setNumberToSingle(const int index, const int number)
 {
 	if (index >= messageArray.size())
 		return;
 
 	if (messageArray.getReference(index).overrideValue == -2)
 	{
-		messageArray.getReference(index).setValue (number);
+		messageArray.getReference(index).setValue(number);
 	}
 	else
 	{
-		messageArray.getReference(index).setNumber (number);
+		messageArray.getReference(index).setNumber(number);
 	}
 }
 
-void CtrlrMidiMessage::setNumberToMulti (const int number)
+void CtrlrMidiMessage::setNumberToMulti(const int number)
 {
-	for (int i=0; i<messageArray.size(); i++)
+	for (int i = 0; i < messageArray.size(); i++)
 	{
-		setNumberToSingle (i, number);
+		setNumberToSingle(i, number);
 	}
 }
 
@@ -884,35 +935,35 @@ int CtrlrMidiMessage::getChannel() const
 	{
 		if (!messageArray.getReference(0).m.isSysEx())
 		{
-			return (jmax <int>(messageArray.getReference(0).m.getChannel(),1));
+			return (jmax <int>(messageArray.getReference(0).m.getChannel(), 1));
 		}
 		else
 		{
-			return (jmax <int>(getProperty(Ids::midiMessageChannel),1));
+			return (jmax <int>(getProperty(Ids::midiMessageChannel), 1));
 		}
 	}
 
-	return (jmax <int>(getProperty(Ids::midiMessageChannel),1));
+	return (jmax <int>(getProperty(Ids::midiMessageChannel), 1));
 }
 
 void CtrlrMidiMessage::setChannel(const int midiChannel)
 {
-	for (int i=0; i<messageArray.size(); i++)
+	for (int i = 0; i < messageArray.size(); i++)
 	{
-		messageArray.getReference(i).setChannel (jmax<int>(midiChannel,1));
+		messageArray.getReference(i).setChannel(jmax<int>(midiChannel, 1));
 	}
 }
 
-void CtrlrMidiMessage::setMidiMessageType (const CtrlrMidiMessageType newType)
+void CtrlrMidiMessage::setMidiMessageType(const CtrlrMidiMessageType newType)
 {
 	const int ch = getChannel();
 
 	switch (newType)
 	{
-		case CC:
-			messageArray.clear();
-			messageArray.add (MidiMessage::controllerEvent(ch, jmin<int>(getNumber(),127), jmin<int>(getValue(),127)));
-			break;
+	case CC:
+		messageArray.clear();
+		messageArray.add(MidiMessage::controllerEvent(ch, jmin<int>(getNumber(), 127), jmin<int>(getValue(), 127)));
+		break;
 
 		case Aftertouch:
 			messageArray.clear();
@@ -1025,17 +1076,11 @@ void CtrlrMidiMessage::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
 	{
 		setChannel (getProperty(Ids::midiMessageChannel));
 	}
-else if (property == Ids::midiMessageCtrlrValue)
-{
-    int newVal = (int)getProperty(Ids::midiMessageCtrlrValue);
-    _DBG("CtrlrMidiMessage::valueTreePropertyChanged midiMessageCtrlrValue=" + String(newVal) + " messageArraySize=" + String((int)messageArray.size()));
-    if (messageArray.size() > 0)
-        _DBG("CtrlrMidiMessage BEFORE raw=" + String::toHexString(messageArray.getReference(0).m.getRawData(), messageArray.getReference(0).m.getRawDataSize()));
-    setValue (newVal);
-    if (messageArray.size() > 0)
-        _DBG("CtrlrMidiMessage AFTER raw=" + String::toHexString(messageArray.getReference(0).m.getRawData(), messageArray.getReference(0).m.getRawDataSize()));
-    return;
-}
+	else if (property == Ids::midiMessageCtrlrValue)
+	{
+		setValue((int)getProperty(Ids::midiMessageCtrlrValue));
+		return;
+	}
 	else if (property == Ids::midiMessageCtrlrNumber)
 	{
 		setNumber ((int)getProperty(Ids::midiMessageCtrlrNumber));
@@ -1145,46 +1190,55 @@ void CtrlrMidiMessage::wrapForLua(lua_State *L)
 	using namespace luabind;
 
 	module(L)
-    [
-		class_<CtrlrMidiMessage>("CtrlrMidiMessage")
-			.def(constructor<const String&>())
-			.def(constructor<const CtrlrLuaObjectWrapper&>())
-			.def(constructor<const MidiMessage&>())
-			.def(constructor<MemoryBlock&>())
-			.enum_("CtrlrMidiMessageType")
-			[
-	            value("CC",				0),
-				value("Aftertouch",		1),
-				value("ChannelPressure",2),
-				value("NoteOn",			3),
-				value("NoteOff",		4),
-				value("SysEx",			5),
-				value("Multi",			6),
-				value("ProgramChange",	7),
-				value("PitchWheel",		8),
-				value("None",			9),
-				value("MidiClock",		10),
-				value("MidiClockContinue", 11),
-				value("MidiClockStop", 12),
-				value("MidiClockStart", 13)
-			]
+		[
+			class_<CtrlrMidiMessage>("CtrlrMidiMessage")
+				// Ensure this is present - it allows CtrlrMidiMessage("F0 01 F7")
+				.def(constructor<const String&>())
+
+				// This handles the old way where a Lua table might have been passed
+				.def(constructor<const CtrlrLuaObjectWrapper&>())
+
+				.def(constructor<const MidiMessage&>())
+
+				.def(constructor<const luabind::object&>()) // Added v5.6.35. Direct Table support
+
+				// This handles the new JUCE 6 way: CtrlrMidiMessage(MemoryBlock(...))
+				.def(constructor<MemoryBlock&>())
+
+				.enum_("CtrlrMidiMessageType")
+				[
+					value("CC", 0),
+					value("Aftertouch", 1),
+					value("ChannelPressure", 2),
+					value("NoteOn", 3),
+					value("NoteOff", 4),
+					value("SysEx", 5),
+					value("Multi", 6),
+					value("ProgramChange", 7),
+					value("PitchWheel", 8),
+					value("None", 9),
+					value("MidiClock", 10),
+					value("MidiClockContinue", 11),
+					value("MidiClockStop", 12),
+					value("MidiClockStart", 13)
+				]
 			.def("setChannel", &CtrlrMidiMessage::setChannel)
-			.def("getChannel", &CtrlrMidiMessage::getChannel)
-			.def("setNumber", &CtrlrMidiMessage::setNumber)
-			.def("getNumber", &CtrlrMidiMessage::getNumber)
-			.def("setValue", &CtrlrMidiMessage::setValue)
-			.def("getValue", &CtrlrMidiMessage::getValue)
-			.def("getSize", &CtrlrMidiMessage::getSize)
-			.def("getData", &CtrlrMidiMessage::getData)
-			.def("getLuaData", &CtrlrMidiMessage::getData)
-			.def("getType", &CtrlrMidiMessage::getMidiMessageType)
-            .def("setType", &CtrlrMidiMessage::setMidiMessageType) // Added v5.6.33
-			.def("getMidiMessageType", &CtrlrMidiMessage::getMidiMessageType)
-            .def("setMidiMessageType", &CtrlrMidiMessage::setMidiMessageType) // Added v5.6.33
-			.def("toString", &CtrlrMidiMessage::toString)
-			.def("getInitializationResult", &CtrlrMidiMessage::getInitializationResult)
-            .def("getProperty", (const var &(CtrlrMidiMessage::*)(const Identifier &) const) &CtrlrMidiMessage::getProperty) // Added v5.6.31
-            .def("setProperty", (void (CtrlrMidiMessage::*)(const Identifier &, const var &, const bool))&CtrlrMidiMessage::setProperty) // Added v5.6.33
-	];
+				.def("getChannel", &CtrlrMidiMessage::getChannel)
+				.def("setNumber", &CtrlrMidiMessage::setNumber)
+				.def("getNumber", &CtrlrMidiMessage::getNumber)
+				.def("setValue", &CtrlrMidiMessage::setValue)
+				.def("getValue", &CtrlrMidiMessage::getValue)
+				.def("getSize", &CtrlrMidiMessage::getSize)
+				.def("getData", &CtrlrMidiMessage::getData)
+				.def("getLuaData", &CtrlrMidiMessage::getData)
+				.def("getType", &CtrlrMidiMessage::getMidiMessageType)
+				.def("setType", &CtrlrMidiMessage::setMidiMessageType) // Added v5.6.33
+				.def("getMidiMessageType", &CtrlrMidiMessage::getMidiMessageType)
+				.def("setMidiMessageType", &CtrlrMidiMessage::setMidiMessageType) // Added v5.6.33
+				.def("toString", &CtrlrMidiMessage::toString)
+				.def("getInitializationResult", &CtrlrMidiMessage::getInitializationResult)
+				.def("getProperty", (const var & (CtrlrMidiMessage::*)(const Identifier&) const) & CtrlrMidiMessage::getProperty) // Added v5.6.31
+				.def("setProperty", (void (CtrlrMidiMessage::*)(const Identifier&, const var&, const bool)) & CtrlrMidiMessage::setProperty) // Added v5.6.33
+		];
 }
 

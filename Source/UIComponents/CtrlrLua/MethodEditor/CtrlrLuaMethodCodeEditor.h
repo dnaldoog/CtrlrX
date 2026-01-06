@@ -6,8 +6,11 @@
 #include "CtrlrWindowManagers/CtrlrChildWindowContent.h"
 #include "CtrlrWindowManagers/CtrlrPanelWindowManager.h"
 #include "CtrlrLuaCodeTokeniser.h"
+#include "CtrlrLuaMethodAutoCompleteManager.h"
 
 class CtrlrLuaMethodEditor;
+class LuaSuggestionPopup;
+class LuaCallTip;
 class GenericCodeEditorComponent;
 class CtrlrLuaDebugger;
 
@@ -51,12 +54,14 @@ public:
     void duplicateCurrentLine();
     void toggleLineComment(); // --
     void toggleLongLineComment(); // --[[ --]]
-
+    void showPopup(const std::vector<SuggestionItem>& matches, int insertIndex);
     // Add method to handle shared value changes
     void valueChanged(Value& value) override;
 
     // Add method to get the hidden toggle state
     bool getSearchTabsState() const { return hiddenSearchTabsToggle->getToggleState(); }
+	void updateCallTipHighlight();
+	void hideCallTip();
 
     JUCE_LEAK_DETECTOR(CtrlrLuaMethodCodeEditor)
 
@@ -70,10 +75,29 @@ private:
     CodeDocument document;
     ValueTree methodTree;
     CtrlrLuaMethodEditor& owner;
-
     // Add the hidden toggle and shared value reference
     ScopedPointer<ToggleButton> hiddenSearchTabsToggle;
     juce::Value& sharedSearchTabsValue;
+	
+    // Add the autocomplete typing feature
+	// Autocomplete UI and Logic
+    std::unique_ptr<LuaSuggestionPopup> suggestionPopup;
+    juce::String pendingSuggestion;
+    bool isReplacingText = false;
+
+    void handleSuggestionChosen(juce::String chosen);
+    juce::String getWordBeforeCaret(int& startOfWord);
+    void performReplacement(const juce::String& suggestion);
+    
+    // Helper to determine if we should append a colon ':'
+	bool isLuaObjectInstance(const juce::String& s, SuggestionType type);
+	
+	// The call-tip for the arguments with the suggested function
+	std::unique_ptr<LuaCallTip> callTip;
+	
+    juce::String lastAutocompletedMethod;
+	
+	int nextTabJumpPosition = -1; // -1 means no jump active
 };
 //==============================================================================
 class GenericCodeEditorComponent : public CodeEditorComponent
@@ -107,6 +131,8 @@ public:
     bool isCaseSensitiveSearch();
 
     CtrlrLuaMethodCodeEditor& getCtrlrLuaMethodCodeEditor() { return (owner); }
+	
+	bool keyPressed (const juce::KeyPress& key) override; // Added v5.6.35
 
 private:
     bool bSensitive;
