@@ -119,7 +119,7 @@ bool CtrlrLuaApiDatabase::isLoaded() const
 {
     return loaded;
 }
-//const juce::XmlElement* CtrlrLuaApiDatabase::getXmlRoot() const
-//{
+// const juce::XmlElement* CtrlrLuaApiDatabase::getXmlRoot() const
+// {
 //    return xmlRoot.get();
-//}
+// }

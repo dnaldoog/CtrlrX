@@ -40,7 +40,7 @@ public:
 
 	UndoManager* getUndoManager() { return (0); }
 	ValueTree& getLuaManagerTree() { return (luaManagerTree); }
-
+   const CtrlrLuaApiDatabase* getDatabase() const { return &luaApi; }
 	void valueTreePropertyChanged(ValueTree& treeWhosePropertyHasChanged, const Identifier& property);
 	void valueTreeChildrenChanged(ValueTree& treeWhoseChildHasChanged) {}
 	void valueTreeParentChanged(ValueTree& treeWhoseParentHasChanged) {}
@@ -77,7 +77,6 @@ private:
 	CtrlrLuaMultiTimer* multiTimer;
 	CtrlrLuaAudioConverter* audioConverter;
 	LAudioFormatManager* luaAudioFormatManager;
-
 	CtrlrPanel& owner;
 	ValueTree luaManagerTree;
 
