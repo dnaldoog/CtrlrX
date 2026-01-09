@@ -1,125 +1,175 @@
 #include "CtrlrLuaApiDatabase.h"
 
-//==============================================================================
 CtrlrLuaApiDatabase::CtrlrLuaApiDatabase()
 {
+    // Optionally auto-load from default location
+    loadFromDefaultLocation();
 }
 
 CtrlrLuaApiDatabase::~CtrlrLuaApiDatabase()
 {
+    clear();
 }
 
-//==============================================================================
-void CtrlrLuaApiDatabase::clear()
+juce::File CtrlrLuaApiDatabase::getDefaultXmlPath()
 {
-    classes.clear();
-    loaded = false;
+    // Try multiple potential locations in order of preference
+    
+    // 1. Try relative to executable (for installed applications)
+    juce::File exeDir = juce::File::getSpecialLocation(juce::File::currentApplicationFile)
+                            .getParentDirectory();
+    
+    juce::File xmlFile = exeDir.getChildFile("Resources/XML/LuaAPI.xml");
+    if (xmlFile.existsAsFile())
+        return xmlFile;
+    
+    // 2. Try one level up (for macOS .app bundles)
+    xmlFile = exeDir.getParentDirectory().getChildFile("Resources/XML/LuaAPI.xml");
+    if (xmlFile.existsAsFile())
+        return xmlFile;
+    
+    // 3. Try application data directory
+    juce::File appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+                                .getChildFile("Ctrlr");
+    
+    xmlFile = appDataDir.getChildFile("Resources/XML/LuaAPI.xml");
+    if (xmlFile.existsAsFile())
+        return xmlFile;
+    
+    // 4. Try current working directory (for development)
+    xmlFile = juce::File::getCurrentWorkingDirectory().getChildFile("Resources/XML/LuaAPI.xml");
+    if (xmlFile.existsAsFile())
+        return xmlFile;
+    
+    // 5. Try Source directory (for development builds)
+    xmlFile = juce::File::getCurrentWorkingDirectory().getChildFile("Source/Resources/XML/LuaAPI.xml");
+    if (xmlFile.existsAsFile())
+        return xmlFile;
+    
+    // 6. Return the preferred default path even if it doesn't exist yet
+    return exeDir.getChildFile("Resources/XML/LuaAPI.xml");
 }
 
-//==============================================================================
+bool CtrlrLuaApiDatabase::loadFromDefaultLocation()
+{
+    juce::File xmlFile = getDefaultXmlPath();
+    
+    if (!xmlFile.existsAsFile())
+    {
+        DBG("LuaAPI.xml not found at: " + xmlFile.getFullPathName());
+        return false;
+    }
+    
+    return loadFromFile(xmlFile);
+}
+
 bool CtrlrLuaApiDatabase::loadFromFile(const juce::File& xmlFile)
 {
     clear();
-    xmlRoot = juce::XmlDocument::parse(xmlFile);
-    if (!xmlRoot)
-        return false;
+    
     if (!xmlFile.existsAsFile())
+    {
+        DBG("XML file does not exist: " + xmlFile.getFullPathName());
         return false;
-
-    juce::XmlDocument doc(xmlFile);
-    std::unique_ptr<juce::XmlElement> root(doc.getDocumentElement());
-
-    if (root == nullptr)
+    }
+    
+    xmlRoot = juce::XmlDocument::parse(xmlFile);
+    
+    if (xmlRoot == nullptr)
+    {
+        DBG("Failed to parse XML file: " + xmlFile.getFullPathName());
         return false;
-
-    loaded = parseXml(*root);
+    }
+    
+    loaded = parseXml(*xmlRoot);
+    
+    if (loaded)
+    {
+        DBG("Successfully loaded LuaAPI.xml: " + juce::String(classes.size()) + " classes");
+    }
+    
     return loaded;
 }
 
-//==============================================================================
 bool CtrlrLuaApiDatabase::parseXml(const juce::XmlElement& root)
 {
-    if (!root.hasTagName("LuaAPI"))
-        return false;
-
-    forEachXmlChildElementWithTagName(root, c, "class")
+    classes.clear();
+    
+    // Iterate through all <class> elements
+    for (auto* classNode : root.getChildWithTagNameIterator("class"))
     {
-        Class cls;
-        cls.name = c->getStringAttribute("name");
-        cls.cppName = c->getStringAttribute("cpp_name");
-
-        // Instance methods
-        if (auto* methods = c->getChildByName("methods"))
+        Class classData;
+        classData.name = classNode->getStringAttribute("name");
+        classData.cppName = classNode->getStringAttribute("cpp_name");
+        classData.alias = classNode->getStringAttribute("alias");
+        
+        // Parse <methods> section
+        if (auto* methodsNode = classNode->getChildByName("methods"))
         {
-            forEachXmlChildElementWithTagName(*methods, m, "method")
+            for (auto* methodNode : methodsNode->getChildWithTagNameIterator("method"))
             {
-                Method mm;
-                mm.name = m->getStringAttribute("name");
-                cls.instanceMethods.add(mm);
+                Method method;
+                method.name = methodNode->getStringAttribute("name");
+                method.type = methodNode->getStringAttribute("type");
+                method.args = methodNode->getStringAttribute("args");
+                
+                // Sort into instance or static methods
+                if (method.type == "static")
+                    classData.staticMethods.add(method);
+                else
+                    classData.instanceMethods.add(method);
             }
         }
-
-        // Static methods
-        if (auto* statics = c->getChildByName("static_methods"))
+        
+        // Parse <enums> section if present
+        if (auto* enumsNode = classNode->getChildByName("enums"))
         {
-            forEachXmlChildElementWithTagName(*statics, m, "method")
+            for (auto* enumNode : enumsNode->getChildWithTagNameIterator("enum"))
             {
-                Method sm;
-                sm.name = m->getStringAttribute("name");
-                cls.staticMethods.add(sm);
-            }
-        }
-
-        // Enums
-        if (auto* enums = c->getChildByName("enums"))
-        {
-            forEachXmlChildElementWithTagName(*enums, e, "enum")
-            {
-                Enum en;
-                en.name = e->getStringAttribute("name");
-
-                forEachXmlChildElementWithTagName(*e, v, "value")
+                Enum enumData;
+                enumData.name = enumNode->getStringAttribute("name");
+                
+                for (auto* valueNode : enumNode->getChildWithTagNameIterator("value"))
                 {
-                    EnumValue ev;
-                    ev.name = v->getStringAttribute("name");
-                    ev.value = v->getStringAttribute("value");
-                    en.values.add(ev);
+                    EnumValue enumValue;
+                    enumValue.name = valueNode->getStringAttribute("name");
+                    enumValue.value = valueNode->getStringAttribute("value");
+                    enumData.values.add(enumValue);
                 }
-
-                cls.enums.add(en);
+                
+                classData.enums.add(enumData);
             }
         }
-
-        classes.add(cls);
+        
+        classes.add(classData);
     }
-
+    
     return classes.size() > 0;
 }
 
-//==============================================================================
-const CtrlrLuaApiDatabase::Class*
-CtrlrLuaApiDatabase::getClass(const juce::String& className) const
+const CtrlrLuaApiDatabase::Class* CtrlrLuaApiDatabase::getClass(const juce::String& className) const
 {
     for (const auto& c : classes)
-        if (c.name == className)
+    {
+        if (c.name == className || c.cppName == className || c.alias == className)
             return &c;
-
+    }
     return nullptr;
 }
 
-//==============================================================================
-const juce::Array<CtrlrLuaApiDatabase::Class>&
-CtrlrLuaApiDatabase::getAllClasses() const
+const juce::Array<CtrlrLuaApiDatabase::Class>& CtrlrLuaApiDatabase::getAllClasses() const
 {
     return classes;
 }
 
-//==============================================================================
 bool CtrlrLuaApiDatabase::isLoaded() const
 {
     return loaded;
 }
-// const juce::XmlElement* CtrlrLuaApiDatabase::getXmlRoot() const
-// {
-//    return xmlRoot.get();
-// }
+
+void CtrlrLuaApiDatabase::clear()
+{
+    classes.clear();
+    xmlRoot.reset();
+    loaded = false;
+}
