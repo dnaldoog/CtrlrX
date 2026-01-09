@@ -1,6 +1,6 @@
 #include "CtrlrLuaApiExplorer.h"
 #include "CtrlrLuaManager.h"
-#include "CtrlrLuaApiDatabase.h"
+#include "CtrlrGenericHelp.h"
 
 CtrlrLuaApiExplorer::CtrlrLuaApiExplorer(CtrlrLuaManager& lua)
     : luaManager(lua), methodsModel(*this)
@@ -17,7 +17,7 @@ CtrlrLuaApiExplorer::CtrlrLuaApiExplorer(CtrlrLuaManager& lua)
         classList.updateContent();
     };
 
-    // Details label setup
+    // Details label setup (replaces the viewport at top)
     addAndMakeVisible(detailsLabel);
     detailsLabel.setColour(juce::Label::backgroundColourId, juce::Colour(0xff2c2c2c));
     detailsLabel.setColour(juce::Label::textColourId, juce::Colours::white);
@@ -36,7 +36,59 @@ CtrlrLuaApiExplorer::CtrlrLuaApiExplorer(CtrlrLuaManager& lua)
     methodsList.setModel(&methodsModel);
     methodsList.setRowHeight(22);
 
+    // Load XML data
+    loadXMLData();
+    
     refreshClassList();
+}
+
+void CtrlrLuaApiExplorer::loadXMLData()
+{
+    // Try to load XML file - adjust path as needed
+    juce::File xmlFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+                            .getParentDirectory()
+                            .getChildFile("LuaAPI.xml");
+    
+    // Alternative: try relative to application data
+    if (!xmlFile.existsAsFile())
+    {
+        xmlFile = juce::File::getSpecialLocation(juce::File::currentApplicationFile)
+                     .getParentDirectory()
+                     .getChildFile("LuaAPI.xml");
+    }
+
+    if (xmlFile.existsAsFile())
+    {
+        auto xml = juce::XmlDocument::parse(xmlFile);
+        
+        if (xml != nullptr)
+        {
+            // Parse <class> elements
+            for (auto* classNode : xml->getChildWithTagNameIterator("class"))
+            {
+                ClassData classData;
+                classData.name = classNode->getStringAttribute("name");
+                classData.cppName = classNode->getStringAttribute("cpp_name");
+                classData.alias = classNode->getStringAttribute("alias");
+                
+                // Parse <methods> child
+                if (auto* methodsNode = classNode->getChildByName("methods"))
+                {
+                    for (auto* methodNode : methodsNode->getChildWithTagNameIterator("method"))
+                    {
+                        Method method;
+                        method.name = methodNode->getStringAttribute("name");
+                        method.type = methodNode->getStringAttribute("type");
+                        method.args = methodNode->getStringAttribute("args");
+                        
+                        classData.methods.add(method);
+                    }
+                }
+                
+                classDataArray.add(classData);
+            }
+        }
+    }
 }
 
 void CtrlrLuaApiExplorer::refreshClassList()
@@ -81,110 +133,35 @@ void CtrlrLuaApiExplorer::paintListBoxItem(
 void CtrlrLuaApiExplorer::selectedRowsChanged(int row)
 {
     if (row >= 0 && row < filteredClasses.size())
-    {
-        currentClassName = filteredClasses[row];
-        loadMethodsForClass(currentClassName);
-        updateDetailsLabel("Class: " + currentClassName);
-    }
+        showClass(filteredClasses[row]);
 }
 
-void CtrlrLuaApiExplorer::loadMethodsForClass(const juce::String& className)
+void CtrlrLuaApiExplorer::showClass(const juce::String& className)
 {
+    if (className.isEmpty())
+        return;
+
+    currentClassName = className;
     currentMethods.clear();
 
-    // Get the database from CtrlrLuaManager
-    const CtrlrLuaApiDatabase* database = luaManager.getDatabase();
-    
-    if (database && database->isLoaded())
+    // Find the class data from XML
+    for (auto& classData : classDataArray)
     {
-        const auto* classData = database->getClass(className);
-        
-        if (classData != nullptr)
+        if (classData.name == className || 
+            classData.cppName == className || 
+            classData.alias == className)
         {
-            // Get XML root to parse args
-            const juce::XmlElement* xmlRoot = database->getXmlRoot();
-            const juce::XmlElement* classNode = nullptr;
-            
-            if (xmlRoot)
-            {
-                forEachXmlChildElementWithTagName(*xmlRoot, node, "class")
-                {
-                    if (node->getStringAttribute("name") == className)
-                    {
-                        classNode = node;
-                        break;
-                    }
-                }
-            }
-
-            // Add instance methods
-            for (const auto& method : classData->instanceMethods)
-            {
-                MethodInfo info;
-                info.name = method.name;
-                info.type = "instance";
-                info.args = "";
-                
-                // Try to find args from XML
-                if (classNode)
-                {
-                    if (auto* methodsNode = classNode->getChildByName("methods"))
-                    {
-                        forEachXmlChildElementWithTagName(*methodsNode, mNode, "method")
-                        {
-                            if (mNode->getStringAttribute("name") == method.name)
-                            {
-                                info.args = mNode->getStringAttribute("args");
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                currentMethods.add(info);
-            }
-
-            // Add static methods
-            for (const auto& method : classData->staticMethods)
-            {
-                MethodInfo info;
-                info.name = method.name;
-                info.type = "static";
-                info.args = "";
-                
-                // Try to find args from XML
-                if (classNode)
-                {
-                    if (auto* methodsNode = classNode->getChildByName("static_methods"))
-                    {
-                        forEachXmlChildElementWithTagName(*methodsNode, mNode, "method")
-                        {
-                            if (mNode->getStringAttribute("name") == method.name)
-                            {
-                                info.args = mNode->getStringAttribute("args");
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                currentMethods.add(info);
-            }
-
-            // Add enums
-            for (const auto& enumData : classData->enums)
-            {
-                MethodInfo info;
-                info.name = enumData.name;
-                info.type = "enum";
-                info.args = "";
-                currentMethods.add(info);
-            }
+            currentMethods = classData.methods;
+            break;
         }
     }
 
+    // Update methods list
     methodsList.updateContent();
     methodsList.deselectAllRows();
+
+    // Update details label
+    updateDetailsLabel("Class: " + className);
 }
 
 void CtrlrLuaApiExplorer::showMethodDetails(int methodIndex)
@@ -202,7 +179,7 @@ void CtrlrLuaApiExplorer::showMethodDetails(int methodIndex)
     else
         details += " -> ()";
     
-    // Show method type
+    // Optionally show method type
     if (method.type.isNotEmpty())
         details += "  [" + method.type + "]";
     
@@ -212,39 +189,6 @@ void CtrlrLuaApiExplorer::showMethodDetails(int methodIndex)
 void CtrlrLuaApiExplorer::updateDetailsLabel(const juce::String& text)
 {
     detailsLabel.setText("  " + text, juce::dontSendNotification);
-}
-
-// MethodsListBoxModel implementation
-int CtrlrLuaApiExplorer::MethodsListBoxModel::getNumRows()
-{
-    return explorer.currentMethods.size();
-}
-
-void CtrlrLuaApiExplorer::MethodsListBoxModel::paintListBoxItem(
-    int row, juce::Graphics& g, int w, int h, bool selected)
-{
-    if (selected)
-        g.fillAll(juce::Colours::lightblue);
-
-    g.setColour(juce::Colours::black);
-    
-    if (row >= 0 && row < explorer.currentMethods.size())
-    {
-        const auto& method = explorer.currentMethods[row];
-        juce::String text = method.name;
-        
-        if (method.type == "static")
-            text += " (static)";
-        else if (method.type == "enum")
-            text += " (enum)";
-        
-        g.drawText(text, 6, 0, w, h, juce::Justification::centredLeft);
-    }
-}
-
-void CtrlrLuaApiExplorer::MethodsListBoxModel::selectedRowsChanged(int row)
-{
-    explorer.showMethodDetails(row);
 }
 
 void CtrlrLuaApiExplorer::resized()

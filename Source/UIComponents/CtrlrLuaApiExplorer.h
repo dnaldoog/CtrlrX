@@ -44,7 +44,7 @@ private:
         void paintListBoxItem(int row, juce::Graphics& g, int w, int h, bool selected) override;
         void selectedRowsChanged(int row) override;
 
-   private:
+    private:
         CtrlrLuaApiExplorer& explorer;
     };
 
