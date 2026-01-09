@@ -150,6 +150,16 @@ void CtrlrLuaClassBrowser::loadMethodsForClass(const juce::String& className)
     {
         if (cls->getStringAttribute("name") == className)
         {
+            // Get constructors
+            forEachXmlChildElementWithTagName(*cls, ctor, "constructor")
+            {
+                MethodInfo info;
+                info.name = className;  // Constructor has same name as class
+                info.args = ctor->getStringAttribute("args");
+                info.isStatic = true;  // Constructors are like static methods
+                methodList.add(info);
+            }
+
             // Get instance methods from <methods> container
             if (auto* methodsElem = cls->getChildByName("methods"))
             {
@@ -159,6 +169,14 @@ void CtrlrLuaClassBrowser::loadMethodsForClass(const juce::String& className)
                     info.name = m->getStringAttribute("name");
                     info.args = m->getStringAttribute("args");
                     info.isStatic = false;
+                    
+                    // Check if it's an overload
+                    juce::String overload = m->getStringAttribute("overload");
+                    if (overload.isNotEmpty())
+                    {
+                        info.name += " [" + overload + "]";
+                    }
+                    
                     methodList.add(info);
                 }
             }
@@ -172,6 +190,14 @@ void CtrlrLuaClassBrowser::loadMethodsForClass(const juce::String& className)
                     info.name = m->getStringAttribute("name");
                     info.args = m->getStringAttribute("args");
                     info.isStatic = true;
+                    
+                    // Check if it's an overload
+                    juce::String overload = m->getStringAttribute("overload");
+                    if (overload.isNotEmpty())
+                    {
+                        info.name += " [" + overload + "]";
+                    }
+                    
                     methodList.add(info);
                 }
             }
@@ -200,8 +226,16 @@ void CtrlrLuaClassBrowser::loadMethodsForClass(const juce::String& className)
     attributeList.sort(true);
     methodListBox->updateContent();
 
+    int constructorCount = 0;
+    for (const auto& method : methodList)
+    {
+        if (method.name.startsWith(className))
+            constructorCount++;
+    }
+
     infoDisplay->setText("Class: " + className + "\n\n" +
-        "Methods: " + juce::String(methodList.size()) + "\n" +
+        "Constructors: " + juce::String(constructorCount) + "\n" +
+        "Methods: " + juce::String(methodList.size() - constructorCount) + "\n" +
         "Enums: " + juce::String(attributeList.size()) + "\n\n" +
         "Click on any method to see usage details.",
         false);
@@ -578,14 +612,18 @@ void CtrlrLuaClassBrowser::setLuaApiXml(const juce::XmlElement* xml)
 juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& methodName)
 {
     juce::String description;
+    
+    // Strip overload markers like [1], [2] for display
+    juce::String cleanName = methodName.upToFirstOccurrenceOf(" [", false, false);
 
     description += "Class: " + currentClassName + "\n";
-    description += "Method: " + methodName + "\n";
+    description += "Method: " + cleanName + "\n";
 
     // Find method info
     bool isStatic = false;
     juce::String args;
     bool found = false;
+    bool isConstructor = false;
     
     for (const auto& method : methodList)
     {
@@ -594,6 +632,7 @@ juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& meth
             isStatic = method.isStatic;
             args = method.args;
             found = true;
+            isConstructor = cleanName == currentClassName;
             break;
         }
     }
@@ -601,7 +640,15 @@ juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& meth
     if (found)
     {
         description += "\n=== Method Info ===\n";
-        description += "Type: " + juce::String(isStatic ? "STATIC (use .)" : "INSTANCE (use :)") + "\n";
+        
+        if (isConstructor)
+        {
+            description += "Type: CONSTRUCTOR\n";
+        }
+        else
+        {
+            description += "Type: " + juce::String(isStatic ? "STATIC (use .)" : "INSTANCE (use :)") + "\n";
+        }
         
         if (args.isNotEmpty())
             description += "Arguments: " + args + "\n";
@@ -610,10 +657,18 @@ juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& meth
             
         description += "\n=== Usage ===\n";
         
-        if (isStatic)
-            description += currentClassName + "." + methodName + args + "\n";
+        if (isConstructor)
+        {
+            description += "local obj = " + currentClassName + args + "\n";
+        }
+        else if (isStatic)
+        {
+            description += currentClassName + "." + cleanName + args + "\n";
+        }
         else
-            description += "obj:" + methodName + args + "\n";
+        {
+            description += "obj:" + cleanName + args + "\n";
+        }
     }
     else
     {

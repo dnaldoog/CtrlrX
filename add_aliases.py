@@ -1,85 +1,111 @@
 #!/usr/bin/env python3
 """
-Patch script to add/fix args in LuaAPI.xml without re-parsing
-Useful for methods that didn't parse correctly or have complex signatures
+Enhanced patch script for LuaAPI.xml
+- Add/fix args without re-parsing
+- Support for overloaded methods
+- Add constructors
+- Add class aliases
+
+Usage:
+  python add_aliases.py
 """
 
 from pathlib import Path
-from xml.etree.ElementTree import parse, ElementTree, indent
+from xml.etree.ElementTree import parse, ElementTree, indent, SubElement
 
 xml_file = Path("Source/Resources/XML/LuaAPI.xml")
 
-# PATCH DEFINITIONS
-# Format: "ClassName": {"methodName": "args_string"}
-patches = {
-    "CtrlrPanel": {  # Use the real class name, not the alias
-        "getModulatorByName": "String name",
-        "getModulatorByIndex": "int index",
-    },
-    "mod": {  # This works because "mod" exists as its own class too
-        "getModulatorByName": "String name",
-        "getModulatorByIndex": "int index",
+# ================= PATCH DEFINITIONS =================
+
+# CLASS ALIASES - creates duplicate class entries with alias name
+CLASS_ALIASES = {
+    "CtrlrPanel": ["panel"],
+    "CtrlrModulator": ["mod", "modulator"],
+    "MemoryBlock": ["mem"],
+}
+
+# METHOD ARGS - Format: "ClassName": {"methodName": "args" or ["overload1", "overload2"]}
+METHOD_PATCHES = {
+    "CtrlrPanel": {
+        "getModulatorByName": "(String name)",
+        "getModulatorByIndex": "(int index)",
+        "getGlobalVariable": "(int index)",
+        "setGlobalVariable": "(int index, int value)",
+        "getModulatorWithProperty": [
+            "(String propertyName, String propertyValue)",
+            "(String propertyName, int propertyValue)"
+        ],
     },
     "CtrlrModulator": {
-        "setModulatorValue": "int newValue,bool vst,bool midi,bool ui",
+        "setModulatorValue": "(int newValue, bool vst, bool midi, bool ui)",
+        "setValue": [
+            "(int newValue, bool force)",
+            "(int newValue, bool force, bool mute)"
+        ],
     },
     "MemoryBlock": {
-        "loadFromHexString": "String hex",
+        "loadFromHexString": "(String hex)",
+        "toString": "()",
+        "toHexString": "(int groupSize)",
     },
-        "CtrlrMidiMessage": {
-        "CtrlrMidiMessage": "{int} <or> String hex",
+    "CtrlrMidiMessage": {
+        "CtrlrMidiMessage": [
+            "()",
+            "({int} midiData)",
+            "(String hexString)"
+        ],
     },
 }
 
-print("Loading XML...")
-tree = parse(xml_file)
-root = tree.getroot()
+# CONSTRUCTORS - Format: "ClassName": ["args1", "args2", ...]
+CONSTRUCTORS = {
+    "MemoryBlock": [
+        "()",
+        "(String hexString)",
+        "({int} luaTable)"
+    ],
+    "CtrlrMidiMessage": [
+        "()",
+        "({int} midiData)",
+        "(String hexString)"
+    ],
+}
 
-total_patched = 0
+# =====================================================
 
-for class_name, methods_to_patch in patches.items():
-    # Find the class
-    class_elem = root.find(f".//class[@name='{class_name}']")
-    
-    if class_elem is None:
-        print(f"  ✗ Class '{class_name}' not found")
-        continue
-    
-    # Find methods and static_methods sections
-    methods_elem = class_elem.find("methods")
-    static_elem = class_elem.find("static_methods")
-    
-    for method_name, args_string in methods_to_patch.items():
-        found = False
-        
-        # Search in methods
-        if methods_elem is not None:
-            method = methods_elem.find(f".//method[@name='{method_name}']")
-            if method is not None:
-                old_args = method.get("args", "")
-                method.set("args", f"({args_string})")
-                print(f"  ✓ Patched {class_name}::{method_name}")
-                print(f"      OLD: {old_args}")
-                print(f"      NEW: ({args_string})")
-                total_patched += 1
-                found = True
-        
-        # Search in static_methods
-        if not found and static_elem is not None:
-            method = static_elem.find(f".//method[@name='{method_name}']")
-            if method is not None:
-                old_args = method.get("args", "")
-                method.set("args", f"({args_string})")
-                print(f"  ✓ Patched {class_name}::{method_name} (static)")
-                print(f"      OLD: {old_args}")
-                print(f"      NEW: ({args_string})")
-                total_patched += 1
-                found = True
-        
-        if not found:
-            print(f"  ✗ Method '{class_name}::{method_name}' not found")
 
-indent(root, space="  ")
-tree.write(xml_file, encoding="utf-8", xml_declaration=True)
-print(f"\n✓ Updated: {xml_file}")
-print(f"✓ Total patches applied: {total_patched}")
+def add_class_aliases(root):
+    """Create duplicate class entries with alias names."""
+    print("\n=== Adding Class Aliases ===")
+    
+    for original_name, aliases in CLASS_ALIASES.items():
+        original = root.find(f".//class[@name='{original_name}']")
+        
+        if original is None:
+            print(f"  ✗ Class '{original_name}' not found")
+            continue
+        
+        for alias in aliases:
+            # Check if alias already exists
+            if root.find(f".//class[@name='{alias}']") is not None:
+                print(f"  ⊙ Alias '{alias}' already exists")
+                continue
+            
+            # Create a shallow copy with new name
+            alias_elem = SubElement(root, "class", {
+                "name": alias,
+                "cpp_name": original.get("cpp_name"),
+                "alias_of": original_name
+            })
+            
+            # Copy all child elements
+            for child in original:
+                alias_elem.append(child)
+            
+            print(f"  ✓ Created alias: {original_name} -> {alias}")
+
+
+def patch_method_args(root):
+    """Add or update args attribute for methods."""
+    print("\n=== Patching Method Arguments ===")
+    t

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Ctrlr Luabind Parser
+Ctrlr Luabind Parser - Enhanced with Overload Detection
 Extracts Lua API from Ctrlr / JUCE luabind C++ bindings
 
 Usage:
@@ -11,6 +11,7 @@ import re
 import sys
 from pathlib import Path
 from xml.etree.ElementTree import Element, SubElement, ElementTree, indent
+from collections import defaultdict
 
 # ================= CONFIG =================
 
@@ -26,16 +27,51 @@ def strip_namespace(name: str) -> str:
     return name.split("::")[-1].strip()
 
 
+def extract_args_from_signature(signature: str) -> str:
+    """
+    Extract arguments from C++ function signature.
+    Examples:
+      void(CtrlrModulator::*)(int, bool) -> "(int, bool)"
+      void(CtrlrPanel::*)(const String&) -> "(String)"
+    """
+    # Match function pointer signature
+    match = re.search(r'\([^)]*\)\s*\(([^)]*)\)', signature)
+    if match:
+        args = match.group(1).strip()
+        if not args:
+            return "()"
+        
+        # Clean up the args
+        clean_args = []
+        for arg in args.split(','):
+            arg = arg.strip()
+            # Remove const, &, *, etc.
+            arg = re.sub(r'\bconst\b', '', arg)
+            arg = re.sub(r'[&*]', '', arg)
+            # Get type (remove parameter names)
+            parts = arg.split()
+            if parts:
+                clean_args.append(parts[0])
+        
+        return f"({', '.join(clean_args)})"
+    
+    return ""
+
+
 def file_contains_lua_bindings(filepath: Path) -> bool:
+    """Quick check without full file read."""
     try:
-        text = filepath.read_text(encoding="utf-8", errors="ignore")
-        return "wrapForLua" in text or "module(L)" in text
+        # Read only first 1KB for quick check
+        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+            chunk = f.read(1024)
+            return "wrapForLua" in chunk or "module(L)" in chunk
     except Exception:
         return False
 
 
 class LuabindParser:
     def __init__(self):
+        # Changed to store list of methods to support overloads
         self.classes = {}
 
     # -------------------------------------------------------------
@@ -144,16 +180,29 @@ class LuabindParser:
 
         cls = self.classes.setdefault(lua_name, {
             "cpp_name": cpp_class,
-            "methods": set(),
-            "static": set(),
+            "methods": defaultdict(list),  # name -> list of signatures
+            "static": defaultdict(list),
+            "constructors": [],
             "enums": {}
         })
 
         body = block[header.end():]
 
-        # Instance methods
-        for m in re.finditer(r'\.def\s*\(\s*"([^"]+)"', body):
-            cls["methods"].add(m.group(1))
+        # Constructors
+        for ctor in re.finditer(r'\.def\s*\(\s*constructor\s*<([^>]*)>', body):
+            args = ctor.group(1).strip()
+            if args:
+                cls["constructors"].append(f"({args})")
+            else:
+                cls["constructors"].append("()")
+
+        # Instance methods - capture full .def() call
+        for m in re.finditer(r'\.def\s*\(\s*"([^"]+)"\s*,\s*([^)]+)\)', body):
+            method_name = m.group(1)
+            signature = m.group(2)
+            
+            args = extract_args_from_signature(signature)
+            cls["methods"][method_name].append(args)
 
         # Static methods (.scope)
         for scope in re.finditer(r'\.scope\s*\[', body):
@@ -161,8 +210,12 @@ class LuabindParser:
             if not scope_body:
                 continue
 
-            for m in re.finditer(r'def\s*\(\s*"([^"]+)"', scope_body):
-                cls["static"].add(m.group(1))
+            for m in re.finditer(r'def\s*\(\s*"([^"]+)"\s*,\s*([^)]+)\)', scope_body):
+                method_name = m.group(1)
+                signature = m.group(2)
+                
+                args = extract_args_from_signature(signature)
+                cls["static"][method_name].append(args)
 
         # Enums
         for enum in re.finditer(r'\.enum_\s*\(\s*"([^"]+)"\s*\)\s*\[', body):
@@ -195,22 +248,58 @@ class LuabindParser:
                 "cpp_name": cls["cpp_name"]
             })
 
+            # Constructors
+            if cls["constructors"]:
+                for ctor_args in cls["constructors"]:
+                    SubElement(ce, "constructor", {
+                        "args": ctor_args
+                    })
+
+            # Instance methods
             if cls["methods"]:
                 me = SubElement(ce, "methods")
-                for m in sorted(cls["methods"]):
-                    SubElement(me, "method", {
-                        "name": m,
-                        "type": "instance"
-                    })
+                for method_name in sorted(cls["methods"]):
+                    signatures = cls["methods"][method_name]
+                    
+                    if len(signatures) == 1:
+                        # Single overload
+                        SubElement(me, "method", {
+                            "name": method_name,
+                            "type": "instance",
+                            "args": signatures[0] or ""
+                        })
+                    else:
+                        # Multiple overloads
+                        for idx, args in enumerate(signatures, 1):
+                            SubElement(me, "method", {
+                                "name": method_name,
+                                "type": "instance",
+                                "args": args or "",
+                                "overload": str(idx)
+                            })
 
+            # Static methods
             if cls["static"]:
                 se = SubElement(ce, "static_methods")
-                for m in sorted(cls["static"]):
-                    SubElement(se, "method", {
-                        "name": m,
-                        "type": "static"
-                    })
+                for method_name in sorted(cls["static"]):
+                    signatures = cls["static"][method_name]
+                    
+                    if len(signatures) == 1:
+                        SubElement(se, "method", {
+                            "name": method_name,
+                            "type": "static",
+                            "args": signatures[0] or ""
+                        })
+                    else:
+                        for idx, args in enumerate(signatures, 1):
+                            SubElement(se, "method", {
+                                "name": method_name,
+                                "type": "static",
+                                "args": args or "",
+                                "overload": str(idx)
+                            })
 
+            # Enums
             if cls["enums"]:
                 ee = SubElement(ce, "enums")
                 for ename, values in cls["enums"].items():
@@ -244,11 +333,13 @@ def main():
 
     parser = LuabindParser()
 
-    cpp_files = sorted(source_dir.glob("**/*.cpp"))
+    # Optimized: filter files first
+    cpp_files = [f for f in sorted(source_dir.glob("**/*.cpp")) 
+                 if file_contains_lua_bindings(f)]
+
+    print(f"Found {len(cpp_files)} files with Lua bindings\n")
 
     for f in cpp_files:
-        if not file_contains_lua_bindings(f):
-            continue
         parser.parse_file(f)
 
     parser.generate_xml(output_xml)
@@ -256,4 +347,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
