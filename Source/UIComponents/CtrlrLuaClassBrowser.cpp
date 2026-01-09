@@ -150,12 +150,16 @@ void CtrlrLuaClassBrowser::loadMethodsForClass(const juce::String& className)
     {
         if (cls->getStringAttribute("name") == className)
         {
-            // Get methods from <methods> container
+            // Get instance methods from <methods> container
             if (auto* methodsElem = cls->getChildByName("methods"))
             {
                 forEachXmlChildElementWithTagName(*methodsElem, m, "method")
                 {
-                    methodList.add(m->getStringAttribute("name"));
+                    MethodInfo info;
+                    info.name = m->getStringAttribute("name");
+                    info.args = m->getStringAttribute("args");
+                    info.isStatic = false;
+                    methodList.add(info);
                 }
             }
 
@@ -164,7 +168,11 @@ void CtrlrLuaClassBrowser::loadMethodsForClass(const juce::String& className)
             {
                 forEachXmlChildElementWithTagName(*staticElem, m, "method")
                 {
-                    methodList.add(m->getStringAttribute("name") + " [STATIC]");
+                    MethodInfo info;
+                    info.name = m->getStringAttribute("name");
+                    info.args = m->getStringAttribute("args");
+                    info.isStatic = true;
+                    methodList.add(info);
                 }
             }
 
@@ -185,15 +193,28 @@ void CtrlrLuaClassBrowser::loadMethodsForClass(const juce::String& className)
         }
     }
 
-    methodList.sort(true);
+    // Sort methods by name
+    std::sort(methodList.begin(), methodList.end(), 
+              [](const MethodInfo& a, const MethodInfo& b) { return a.name < b.name; });
+    
     attributeList.sort(true);
     methodListBox->updateContent();
 
     infoDisplay->setText("Class: " + className + "\n\n" +
         "Methods: " + juce::String(methodList.size()) + "\n" +
         "Enums: " + juce::String(attributeList.size()) + "\n\n" +
-        "Click on any method to copy Lua usage code.",
+        "Click on any method to see usage details.",
         false);
+}
+
+juce::String CtrlrLuaClassBrowser::getMethodArgs(const juce::String& methodName) const
+{
+    for (const auto& method : methodList)
+    {
+        if (method.name == methodName)
+            return method.args;
+    }
+    return juce::String();
 }
 
 juce::String CtrlrLuaClassBrowser::introspectMethod(
@@ -201,26 +222,36 @@ juce::String CtrlrLuaClassBrowser::introspectMethod(
     const juce::String& methodName)
 {
     juce::String result;
+    
+    // Find the method to check if it's static
     bool isStatic = false;
-
-    juce::String lowerMethod = methodName.toLowerCase();
-    if (lowerMethod.startsWith("from") ||
-        lowerMethod.startsWith("create") ||
-        lowerMethod == "new" ||
-        lowerMethod.startsWith("wrap"))
+    juce::String args;
+    
+    for (const auto& method : methodList)
     {
-        isStatic = true;
-        result = "Likely STATIC method (use .)\n";
-        result += "Reason: Method name pattern suggests factory/constructor\n";
+        if (method.name == methodName)
+        {
+            isStatic = method.isStatic;
+            args = method.args;
+            break;
+        }
+    }
+
+    if (isStatic)
+    {
+        result = "STATIC method (use .)\n";
     }
     else
     {
-        result = "Likely INSTANCE method (use :)\n";
-        result += "Reason: Standard method name pattern\n";
+        result = "INSTANCE method (use :)\n";
     }
-
-    bool isMethod = methodList.contains(methodName);
-    result += "Type: " + juce::String(isMethod ? "Method (function)" : "Attribute (property)") + "\n";
+    
+    result += "Type: Method (function)\n";
+    
+    if (args.isNotEmpty())
+        result += "Args: " + args + "\n";
+    else
+        result += "Args: ()\n";
 
     return result;
 }
@@ -243,15 +274,18 @@ void CtrlrLuaClassBrowser::copyMethodUsageToClipboard(const juce::String& classN
 void CtrlrLuaClassBrowser::copyExampleToClipboard(const juce::String& className,
     const juce::String& methodName)
 {
+    // Find method info
     bool isStatic = false;
-    juce::String lowerMethod = methodName.toLowerCase();
-
-    if (lowerMethod.startsWith("from") ||
-        lowerMethod.startsWith("create") ||
-        lowerMethod == "new" ||
-        lowerMethod.startsWith("wrap"))
+    juce::String args;
+    
+    for (const auto& method : methodList)
     {
-        isStatic = true;
+        if (method.name == methodName)
+        {
+            isStatic = method.isStatic;
+            args = method.args.isNotEmpty() ? method.args : "()";
+            break;
+        }
     }
 
     juce::String example = generateExampleFunction(className, methodName, isStatic);
@@ -260,9 +294,9 @@ void CtrlrLuaClassBrowser::copyExampleToClipboard(const juce::String& className,
     juce::AlertWindow::showMessageBoxAsync(
         juce::AlertWindow::InfoIcon,
         "Example Function Copied",
-        "Example function copied to clipboard.\n\n"
-        "Detected as: " + juce::String(isStatic ? "STATIC" : "INSTANCE") + " method\n"
-        "Based on naming pattern analysis.\n\n"
+        "Example function copied to clipboard.\n\n" +
+        juce::String(isStatic ? "STATIC" : "INSTANCE") + " method\n" +
+        "Arguments: " + (args.isEmpty() ? "()" : args) + "\n\n" +
         "Paste into your Lua code and customize."
     );
 }
@@ -272,11 +306,31 @@ juce::String CtrlrLuaClassBrowser::generateExampleFunction(const juce::String& c
     bool isStatic)
 {
     juce::String example;
-    bool isMethod = methodList.contains(methodName);
+    
+    // Find method args
+    juce::String args;
+    for (const auto& method : methodList)
+    {
+        if (method.name == methodName)
+        {
+            args = method.args;
+            isStatic = method.isStatic;
+            break;
+        }
+    }
+    
+    // Extract parameter names from args like "(int index)" -> "index"
+    juce::String paramList = args.isEmpty() ? "" : args.fromFirstOccurrenceOf("(", false, false)
+                                                        .upToLastOccurrenceOf(")", false, false);
+    
+    bool isMethod = !methodList.isEmpty();
+    bool hasParams = paramList.isNotEmpty() && paramList != " ";
 
     example += "-- ==================================================\n";
     example += "-- Example function using " + className + "." + methodName + "\n";
     example += "-- " + juce::String(isStatic ? "Static method (use .)" : "Instance method (use :)") + "\n";
+    if (hasParams)
+        example += "-- Arguments: " + args + "\n";
     example += "-- ==================================================\n\n";
 
     juce::String functionName = "example" + methodName.substring(0, 1).toUpperCase() + methodName.substring(1);
@@ -286,17 +340,21 @@ juce::String CtrlrLuaClassBrowser::generateExampleFunction(const juce::String& c
         if (isStatic)
         {
             example += "function " + functionName + "()\n";
-            example += "    local result = " + className + "." + methodName + "()\n";
+            example += "    local result = " + className + "." + methodName + (hasParams ? "(" + paramList + ")" : "()") + "\n";
             example += "    console(\"Result: \" .. tostring(result))\n";
             example += "    return result\n";
             example += "end\n";
         }
         else
         {
-            example += "function " + functionName + "()\n";
+            if (hasParams)
+                example += "function " + functionName + "(" + paramList + ")\n";
+            else
+                example += "function " + functionName + "()\n";
+                
             if (isMethod)
             {
-                example += "    local result = panel:" + methodName + "()\n";
+                example += "    local result = panel:" + methodName + (hasParams ? "(" + paramList + ")" : "()") + "\n";
                 example += "    console(\"Result: \" .. tostring(result))\n";
                 example += "    return result\n";
             }
@@ -304,14 +362,17 @@ juce::String CtrlrLuaClassBrowser::generateExampleFunction(const juce::String& c
             {
                 example += "    local value = panel." + methodName + "\n";
                 example += "    console(\"Current value: \" .. tostring(value))\n";
-                example += "    panel." + methodName + " = newValue\n";
             }
             example += "end\n";
         }
     }
     else if (className.contains("Modulator"))
     {
-        example += "function " + functionName + "(modulatorName)\n";
+        if (hasParams)
+            example += "function " + functionName + "(modulatorName, " + paramList + ")\n";
+        else
+            example += "function " + functionName + "(modulatorName)\n";
+            
         example += "    local modulator = panel:getModulatorByName(modulatorName)\n";
         example += "    if not modulator then\n";
         example += "        console(\"Modulator not found: \" .. modulatorName)\n";
@@ -320,11 +381,11 @@ juce::String CtrlrLuaClassBrowser::generateExampleFunction(const juce::String& c
 
         if (isStatic)
         {
-            example += "    local result = " + className + "." + methodName + "()\n";
+            example += "    local result = " + className + "." + methodName + (hasParams ? "(" + paramList + ")" : "()") + "\n";
         }
         else if (isMethod)
         {
-            example += "    local result = modulator:" + methodName + "()\n";
+            example += "    local result = modulator:" + methodName + (hasParams ? "(" + paramList + ")" : "()") + "\n";
             example += "    console(\"Result: \" .. tostring(result))\n";
             example += "    return result\n";
         }
@@ -337,11 +398,14 @@ juce::String CtrlrLuaClassBrowser::generateExampleFunction(const juce::String& c
     }
     else
     {
-        example += "function " + functionName + "()\n";
+        if (hasParams)
+            example += "function " + functionName + "(" + paramList + ")\n";
+        else
+            example += "function " + functionName + "()\n";
 
         if (isStatic)
         {
-            example += "    local result = " + className + "." + methodName + "()\n";
+            example += "    local result = " + className + "." + methodName + (hasParams ? "(" + paramList + ")" : "()") + "\n";
             example += "    console(\"Result: \" .. tostring(result))\n";
             example += "    return result\n";
         }
@@ -350,7 +414,7 @@ juce::String CtrlrLuaClassBrowser::generateExampleFunction(const juce::String& c
             example += "    local m = " + className + "()\n\n";
             if (isMethod)
             {
-                example += "    local result = m:" + methodName + "()\n";
+                example += "    local result = m:" + methodName + (hasParams ? "(" + paramList + ")" : "()") + "\n";
                 example += "    console(\"Result: \" .. tostring(result))\n";
                 example += "    return result\n";
             }
@@ -364,7 +428,10 @@ juce::String CtrlrLuaClassBrowser::generateExampleFunction(const juce::String& c
     }
 
     example += "\n-- Call the example:\n";
-    example += "-- " + functionName + "()\n";
+    if (hasParams)
+        example += "-- " + functionName + "(" + paramList + ")\n";
+    else
+        example += "-- " + functionName + "()\n";
 
     return example;
 }
@@ -373,16 +440,36 @@ juce::String CtrlrLuaClassBrowser::generateLuaUsageForMethod(const juce::String&
     const juce::String& methodName)
 {
     juce::String result;
-    bool isMethod = methodList.contains(methodName);
+    
+    // Find method info
+    bool isStatic = false;
+    juce::String args;
+    bool isMethod = false;
+    
+    for (const auto& method : methodList)
+    {
+        if (method.name == methodName)
+        {
+            isStatic = method.isStatic;
+            args = method.args.isNotEmpty() ? method.args : "()";
+            isMethod = true;
+            break;
+        }
+    }
 
     result += "-- Class: " + className + "\n";
-    result += juce::String("-- ") + (isMethod ? "Method" : "Attribute") + ": " + methodName + "\n\n";
+    result += juce::String("-- ") + (isMethod ? "Method" : "Attribute") + ": " + methodName;
+    
+    if (isMethod && args.isNotEmpty())
+        result += " " + args;
+        
+    result += "\n\n";
 
     if (className == "CtrlrPanel" || className == "panel")
     {
         if (isMethod)
         {
-            result += "local result = panel:" + methodName + "()\n";
+            result += "local result = panel:" + methodName + args + "\n";
         }
         else
         {
@@ -395,7 +482,7 @@ juce::String CtrlrLuaClassBrowser::generateLuaUsageForMethod(const juce::String&
         if (isMethod)
         {
             result += "local modulator = panel:getModulatorByName(\"modulatorName\")\n";
-            result += "local result = modulator:" + methodName + "()\n";
+            result += "local result = modulator:" + methodName + args + "\n";
         }
         else
         {
@@ -408,7 +495,7 @@ juce::String CtrlrLuaClassBrowser::generateLuaUsageForMethod(const juce::String&
         if (isMethod)
         {
             result += "local component = panel:getModulatorByName(\"modulatorName\"):getComponent()\n";
-            result += "local result = component:" + methodName + "()\n";
+            result += "local result = component:" + methodName + args + "\n";
         }
         else
         {
@@ -421,7 +508,7 @@ juce::String CtrlrLuaClassBrowser::generateLuaUsageForMethod(const juce::String&
         if (isMethod)
         {
             result += "local obj = " + className + ":new()\n";
-            result += "local result = obj:" + methodName + "()\n";
+            result += "local result = obj:" + methodName + args + "\n";
         }
         else
         {
@@ -493,34 +580,47 @@ juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& meth
     juce::String description;
 
     description += "Class: " + currentClassName + "\n";
-    description += "Method/Attribute: " + methodName + "\n\n";
+    description += "Method: " + methodName + "\n";
 
+    // Find method info
     bool isStatic = false;
-    juce::String lowerMethod = methodName.toLowerCase();
-
-    if (lowerMethod.startsWith("from") ||
-        lowerMethod.startsWith("create") ||
-        lowerMethod == "new" ||
-        lowerMethod.startsWith("wrap"))
+    juce::String args;
+    bool found = false;
+    
+    for (const auto& method : methodList)
     {
-        isStatic = true;
-        description += "=== Detection Info ===\n";
-        description += "Likely STATIC method (use .)\n";
-        description += "Reason: Method name pattern suggests factory/constructor\n\n";
+        if (method.name == methodName)
+        {
+            isStatic = method.isStatic;
+            args = method.args;
+            found = true;
+            break;
+        }
+    }
+
+    if (found)
+    {
+        description += "\n=== Method Info ===\n";
+        description += "Type: " + juce::String(isStatic ? "STATIC (use .)" : "INSTANCE (use :)") + "\n";
+        
+        if (args.isNotEmpty())
+            description += "Arguments: " + args + "\n";
+        else
+            description += "Arguments: ()\n";
+            
+        description += "\n=== Usage ===\n";
+        
+        if (isStatic)
+            description += currentClassName + "." + methodName + args + "\n";
+        else
+            description += "obj:" + methodName + args + "\n";
     }
     else
     {
-        description += "=== Detection Info ===\n";
-        description += "Likely INSTANCE method (use :)\n";
-        description += "Reason: Standard method name pattern\n\n";
+        description += "\nType: Enum/Attribute\n";
     }
 
-    bool isMethod = methodList.contains(methodName);
-    description += "Type: " + juce::String(isMethod ? "Method (function)" : "Enum/Attribute") + "\n\n";
-
-    description += "=== Usage ===\n";
-    description += "Lua code copied to clipboard.\n";
-    description += "Right-click for example function.";
+    description += "\nRight-click for more options.";
 
     return description;
 }
@@ -530,21 +630,31 @@ void CtrlrLuaClassBrowser::MethodListModel::listBoxItemClicked(int row, const ju
     if (!ownerRef) return;
 
     juce::String itemName;
+    juce::String args;
     bool isMethod = (row < ownerRef->methodList.size());
     bool isStatic = false;
 
     if (isMethod)
     {
-        itemName = ownerRef->methodList[row];
-        if (itemName.contains("[STATIC]"))
-        {
-            isStatic = true;
-            itemName = itemName.replace("[STATIC]", "").trim();
-        }
+        const auto& method = ownerRef->methodList[row];
+        itemName = method.name;
+        args = method.args;
+        isStatic = method.isStatic;
+        
+        // Update info display when method is clicked
+        ownerRef->infoDisplay->setText(ownerRef->getMethodDescription(itemName), false);
     }
     else
     {
         itemName = ownerRef->attributeList[row - ownerRef->methodList.size()];
+        
+        // Update info for attributes
+        ownerRef->infoDisplay->setText(
+            "Class: " + ownerRef->currentClassName + "\n" +
+            "Attribute: " + itemName + "\n\n" +
+            "Type: Enum/Attribute\n" +
+            "Usage: " + ownerRef->currentClassName + "." + itemName,
+            false);
     }
 
     if (e.mods.isRightButtonDown())
@@ -553,10 +663,15 @@ void CtrlrLuaClassBrowser::MethodListModel::listBoxItemClicked(int row, const ju
 
         menu.addItem(1, "Copy Class Name");
         menu.addItem(2, "Copy Method/Attribute Name");
-        menu.addItem(3, "Copy Class and Method");
-        menu.addItem(4, "Copy Example Function (Lua)");
+        
+        if (isMethod && args.isNotEmpty())
+            menu.addItem(3, "Copy with Arguments: " + itemName + args);
+        else
+            menu.addItem(3, "Copy Class and Method");
+            
+        menu.addItem(4, "Copy Full Usage Example");
 
-        menu.showMenuAsync(juce::PopupMenu::Options(), [this, itemName, isMethod, isStatic](int result)
+        menu.showMenuAsync(juce::PopupMenu::Options(), [this, itemName, args, isMethod, isStatic](int result)
         {
             if (!ownerRef) return;
 
@@ -574,9 +689,17 @@ void CtrlrLuaClassBrowser::MethodListModel::listBoxItemClicked(int row, const ju
             {
                 juce::String combined = ownerRef->currentClassName;
                 if (isMethod)
+                {
                     combined += (isStatic ? "." : ":") + itemName;
+                    if (args.isNotEmpty())
+                        combined += args;
+                    else
+                        combined += "()";
+                }
                 else
+                {
                     combined += "." + itemName;
+                }
                 juce::SystemClipboard::copyTextToClipboard(combined);
                 break;
             }
@@ -586,18 +709,37 @@ void CtrlrLuaClassBrowser::MethodListModel::listBoxItemClicked(int row, const ju
                 juce::String example;
                 if (isMethod)
                 {
+                    juce::String argsToUse = args.isNotEmpty() ? args : "()";
+                    
                     if (isStatic)
                     {
-                        example = "local result = " + ownerRef->currentClassName + "." + itemName + "(parameters)\n";
+                        example = "-- Static method\n";
+                        example += "local result = " + ownerRef->currentClassName + "." + itemName + argsToUse + "\n";
                     }
                     else
                     {
-                        example = "local result = " + ownerRef->currentClassName + ":" + itemName + "(parameters)\n";
+                        example = "-- Instance method\n";
+                        
+                        if (ownerRef->currentClassName.contains("Panel"))
+                        {
+                            example += "local result = panel:" + itemName + argsToUse + "\n";
+                        }
+                        else if (ownerRef->currentClassName.contains("Modulator"))
+                        {
+                            example += "local mod = panel:getModulatorByName(\"modulatorName\")\n";
+                            example += "local result = mod:" + itemName + argsToUse + "\n";
+                        }
+                        else
+                        {
+                            example += "local obj = " + ownerRef->currentClassName + "()\n";
+                            example += "local result = obj:" + itemName + argsToUse + "\n";
+                        }
                     }
                 }
                 else
                 {
-                    example = "local result = " + ownerRef->currentClassName + "." + itemName + "\n";
+                    example = "-- Attribute/Enum\n";
+                    example += "local value = " + ownerRef->currentClassName + "." + itemName + "\n";
                 }
 
                 juce::SystemClipboard::copyTextToClipboard(example);

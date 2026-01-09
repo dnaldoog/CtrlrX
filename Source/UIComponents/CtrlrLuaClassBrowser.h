@@ -25,6 +25,14 @@ public:
     // Set the XML data source
     void setLuaApiXml(const juce::XmlElement* xml);
 
+    // Method info structure - public so it can be used in implementations
+    struct MethodInfo
+    {
+        juce::String name;
+        juce::String args;
+        bool isStatic;
+    };
+
     // Nested class for displaying method details
     class MethodListModel : public juce::ListBoxModel
     {
@@ -51,10 +59,16 @@ public:
 
             if (rowNumber < ownerRef->methodList.size())
             {
-                text = ownerRef->methodList[rowNumber];
+                const auto& method = ownerRef->methodList[rowNumber];
+                text = method.name;
+                
+                // Add args if present
+                if (method.args.isNotEmpty())
+                    text += " " + method.args;
+                
                 prefix = "[M] ";
 
-                if (text.contains("[STATIC]"))
+                if (method.isStatic)
                     g.setColour(juce::Colour(0xffc00000)); // Red for static
                 else
                     g.setColour(juce::Colours::darkblue); // Blue for instance methods
@@ -90,12 +104,15 @@ private:
     juce::String generateLuaUsageForMethod(const juce::String& className, const juce::String& methodName);
     juce::String generateExampleFunction(const juce::String& className, const juce::String& methodName, bool isStatic);
 
+    // Helper to get args for a method
+    juce::String getMethodArgs(const juce::String& methodName) const;
+
     CtrlrLuaManager* luaManagerRef;
 
     // Data
     juce::StringArray classList;
     juce::StringArray fullClassList;
-    juce::StringArray methodList;
+    juce::Array<MethodInfo> methodList;
     juce::StringArray attributeList;
     juce::String currentClassName;
     
