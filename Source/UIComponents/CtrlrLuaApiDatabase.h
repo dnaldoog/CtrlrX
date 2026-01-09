@@ -37,7 +37,10 @@ public:
     CtrlrLuaApiDatabase();
     ~CtrlrLuaApiDatabase();
     bool loadFromFile(const juce::File& xmlFile);
-    void loadMethodsForClass(const juce::String& className);
+    bool loadFromDefaultLocation();
+    // Get the default XML file path
+    static juce::File getDefaultXmlPath();
+   // void loadMethodsForClass(const juce::String& className);
     const juce::XmlElement* getXmlRoot() const { return xmlRoot.get(); }
     const Class* getClass(const juce::String& className) const;
     const juce::Array<Class>& getAllClasses() const;
