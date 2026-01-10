@@ -61,7 +61,7 @@ void CtrlrLuaClassBrowser::paint(juce::Graphics& g)
     g.setFont(14.0f);
 
     const int splitPos = getWidth() / 2;
-    const int labelY = 105;
+    const int labelY = 155;  // Adjusted for new info height (120 + margins)
 
     // Draw label for class list
     g.drawText("Available Classes", 5, labelY, 200, 20, juce::Justification::left);
@@ -78,32 +78,32 @@ void CtrlrLuaClassBrowser::resized()
 {
     auto bounds = getLocalBounds();
     const int buttonHeight = 25;
-    const int infoHeight = 60;
+    const int infoHeight = 120;  // Increased from 60 to 120
     const int labelHeight = 25;
     const int margin = 5;
-    
+
     int currentY = margin;
-    
+
     // Search and Refresh at top
     searchBox->setBounds(margin, currentY, bounds.getWidth() - 90, buttonHeight);
     refreshButton->setBounds(bounds.getWidth() - 80, currentY, 75, buttonHeight);
     currentY += buttonHeight + margin;
-    
-    // Info Display: Full width below search
+
+    // Info Display: Full width below search (now taller)
     infoDisplay->setBounds(margin, currentY, bounds.getWidth() - (2 * margin), infoHeight);
     currentY += infoHeight + margin;
-    
+
     // Labels (drawn in paint)
     currentY += labelHeight;
-    
+
     // Split view: Classes | Methods
     const int splitPos = bounds.getWidth() / 2;
     const int remainingHeight = bounds.getHeight() - currentY - margin;
-    
+
     classListBox->setBounds(margin, currentY, splitPos - (2 * margin), remainingHeight);
-    methodListBox->setBounds(splitPos + margin, currentY, 
-                            bounds.getWidth() - splitPos - (2 * margin), 
-                            remainingHeight);
+    methodListBox->setBounds(splitPos + margin, currentY,
+        bounds.getWidth() - splitPos - (2 * margin),
+        remainingHeight);
 }
 
 void CtrlrLuaClassBrowser::loadClassList()
@@ -169,14 +169,14 @@ void CtrlrLuaClassBrowser::loadMethodsForClass(const juce::String& className)
                     info.name = m->getStringAttribute("name");
                     info.args = m->getStringAttribute("args");
                     info.isStatic = false;
-                    
+
                     // Check if it's an overload
                     juce::String overload = m->getStringAttribute("overload");
                     if (overload.isNotEmpty())
                     {
                         info.name += " [" + overload + "]";
                     }
-                    
+
                     methodList.add(info);
                 }
             }
@@ -190,14 +190,14 @@ void CtrlrLuaClassBrowser::loadMethodsForClass(const juce::String& className)
                     info.name = m->getStringAttribute("name");
                     info.args = m->getStringAttribute("args");
                     info.isStatic = true;
-                    
+
                     // Check if it's an overload
                     juce::String overload = m->getStringAttribute("overload");
                     if (overload.isNotEmpty())
                     {
                         info.name += " [" + overload + "]";
                     }
-                    
+
                     methodList.add(info);
                 }
             }
@@ -220,9 +220,9 @@ void CtrlrLuaClassBrowser::loadMethodsForClass(const juce::String& className)
     }
 
     // Sort methods by name
-    std::sort(methodList.begin(), methodList.end(), 
-              [](const MethodInfo& a, const MethodInfo& b) { return a.name < b.name; });
-    
+    std::sort(methodList.begin(), methodList.end(),
+        [](const MethodInfo& a, const MethodInfo& b) { return a.name < b.name; });
+
     attributeList.sort(true);
     methodListBox->updateContent();
 
@@ -256,11 +256,11 @@ juce::String CtrlrLuaClassBrowser::introspectMethod(
     const juce::String& methodName)
 {
     juce::String result;
-    
+
     // Find the method to check if it's static
     bool isStatic = false;
     juce::String args;
-    
+
     for (const auto& method : methodList)
     {
         if (method.name == methodName)
@@ -279,9 +279,9 @@ juce::String CtrlrLuaClassBrowser::introspectMethod(
     {
         result = "INSTANCE method (use :)\n";
     }
-    
+
     result += "Type: Method (function)\n";
-    
+
     if (args.isNotEmpty())
         result += "Args: " + args + "\n";
     else
@@ -311,7 +311,7 @@ void CtrlrLuaClassBrowser::copyExampleToClipboard(const juce::String& className,
     // Find method info
     bool isStatic = false;
     juce::String args;
-    
+
     for (const auto& method : methodList)
     {
         if (method.name == methodName)
@@ -340,7 +340,7 @@ juce::String CtrlrLuaClassBrowser::generateExampleFunction(const juce::String& c
     bool isStatic)
 {
     juce::String example;
-    
+
     // Find method args
     juce::String args;
     for (const auto& method : methodList)
@@ -352,11 +352,11 @@ juce::String CtrlrLuaClassBrowser::generateExampleFunction(const juce::String& c
             break;
         }
     }
-    
+
     // Extract parameter names from args like "(int index)" -> "index"
     juce::String paramList = args.isEmpty() ? "" : args.fromFirstOccurrenceOf("(", false, false)
-                                                        .upToLastOccurrenceOf(")", false, false);
-    
+        .upToLastOccurrenceOf(")", false, false);
+
     bool isMethod = !methodList.isEmpty();
     bool hasParams = paramList.isNotEmpty() && paramList != " ";
 
@@ -385,7 +385,7 @@ juce::String CtrlrLuaClassBrowser::generateExampleFunction(const juce::String& c
                 example += "function " + functionName + "(" + paramList + ")\n";
             else
                 example += "function " + functionName + "()\n";
-                
+
             if (isMethod)
             {
                 example += "    local result = panel:" + methodName + (hasParams ? "(" + paramList + ")" : "()") + "\n";
@@ -406,7 +406,7 @@ juce::String CtrlrLuaClassBrowser::generateExampleFunction(const juce::String& c
             example += "function " + functionName + "(modulatorName, " + paramList + ")\n";
         else
             example += "function " + functionName + "(modulatorName)\n";
-            
+
         example += "    local modulator = panel:getModulatorByName(modulatorName)\n";
         example += "    if not modulator then\n";
         example += "        console(\"Modulator not found: \" .. modulatorName)\n";
@@ -474,12 +474,12 @@ juce::String CtrlrLuaClassBrowser::generateLuaUsageForMethod(const juce::String&
     const juce::String& methodName)
 {
     juce::String result;
-    
+
     // Find method info
     bool isStatic = false;
     juce::String args;
     bool isMethod = false;
-    
+
     for (const auto& method : methodList)
     {
         if (method.name == methodName)
@@ -493,10 +493,10 @@ juce::String CtrlrLuaClassBrowser::generateLuaUsageForMethod(const juce::String&
 
     result += "-- Class: " + className + "\n";
     result += juce::String("-- ") + (isMethod ? "Method" : "Attribute") + ": " + methodName;
-    
+
     if (isMethod && args.isNotEmpty())
         result += " " + args;
-        
+
     result += "\n\n";
 
     if (className == "CtrlrPanel" || className == "panel")
@@ -612,7 +612,7 @@ void CtrlrLuaClassBrowser::setLuaApiXml(const juce::XmlElement* xml)
 juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& methodName)
 {
     juce::String description;
-    
+
     // Strip overload markers like [1], [2] for display
     juce::String cleanName = methodName.upToFirstOccurrenceOf(" [", false, false);
 
@@ -624,7 +624,7 @@ juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& meth
     juce::String args;
     bool found = false;
     bool isConstructor = false;
-    
+
     for (const auto& method : methodList)
     {
         if (method.name == methodName)
@@ -640,7 +640,7 @@ juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& meth
     if (found)
     {
         description += "\n=== Method Info ===\n";
-        
+
         if (isConstructor)
         {
             description += "Type: CONSTRUCTOR\n";
@@ -649,14 +649,14 @@ juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& meth
         {
             description += "Type: " + juce::String(isStatic ? "STATIC (use .)" : "INSTANCE (use :)") + "\n";
         }
-        
+
         if (args.isNotEmpty())
             description += "Arguments: " + args + "\n";
         else
             description += "Arguments: ()\n";
-            
+
         description += "\n=== Usage ===\n";
-        
+
         if (isConstructor)
         {
             description += "local obj = " + currentClassName + args + "\n";
@@ -695,14 +695,14 @@ void CtrlrLuaClassBrowser::MethodListModel::listBoxItemClicked(int row, const ju
         itemName = method.name;
         args = method.args;
         isStatic = method.isStatic;
-        
+
         // Update info display when method is clicked
         ownerRef->infoDisplay->setText(ownerRef->getMethodDescription(itemName), false);
     }
     else
     {
         itemName = ownerRef->attributeList[row - ownerRef->methodList.size()];
-        
+
         // Update info for attributes
         ownerRef->infoDisplay->setText(
             "Class: " + ownerRef->currentClassName + "\n" +
@@ -718,89 +718,89 @@ void CtrlrLuaClassBrowser::MethodListModel::listBoxItemClicked(int row, const ju
 
         menu.addItem(1, "Copy Class Name");
         menu.addItem(2, "Copy Method/Attribute Name");
-        
+
         if (isMethod && args.isNotEmpty())
             menu.addItem(3, "Copy with Arguments: " + itemName + args);
         else
             menu.addItem(3, "Copy Class and Method");
-            
+
         menu.addItem(4, "Copy Full Usage Example");
 
         menu.showMenuAsync(juce::PopupMenu::Options(), [this, itemName, args, isMethod, isStatic](int result)
-        {
-            if (!ownerRef) return;
-
-            switch (result)
             {
-            case 1:
-                juce::SystemClipboard::copyTextToClipboard(ownerRef->currentClassName);
-                break;
+                if (!ownerRef) return;
 
-            case 2:
-                juce::SystemClipboard::copyTextToClipboard(itemName);
-                break;
+                switch (result)
+                {
+                case 1:
+                    juce::SystemClipboard::copyTextToClipboard(ownerRef->currentClassName);
+                    break;
 
-            case 3:
-            {
-                juce::String combined = ownerRef->currentClassName;
-                if (isMethod)
-                {
-                    combined += (isStatic ? "." : ":") + itemName;
-                    if (args.isNotEmpty())
-                        combined += args;
-                    else
-                        combined += "()";
-                }
-                else
-                {
-                    combined += "." + itemName;
-                }
-                juce::SystemClipboard::copyTextToClipboard(combined);
-                break;
-            }
+                case 2:
+                    juce::SystemClipboard::copyTextToClipboard(itemName);
+                    break;
 
-            case 4:
-            {
-                juce::String example;
-                if (isMethod)
+                case 3:
                 {
-                    juce::String argsToUse = args.isNotEmpty() ? args : "()";
-                    
-                    if (isStatic)
+                    juce::String combined = ownerRef->currentClassName;
+                    if (isMethod)
                     {
-                        example = "-- Static method\n";
-                        example += "local result = " + ownerRef->currentClassName + "." + itemName + argsToUse + "\n";
+                        combined += (isStatic ? "." : ":") + itemName;
+                        if (args.isNotEmpty())
+                            combined += args;
+                        else
+                            combined += "()";
                     }
                     else
                     {
-                        example = "-- Instance method\n";
-                        
-                        if (ownerRef->currentClassName.contains("Panel"))
+                        combined += "." + itemName;
+                    }
+                    juce::SystemClipboard::copyTextToClipboard(combined);
+                    break;
+                }
+
+                case 4:
+                {
+                    juce::String example;
+                    if (isMethod)
+                    {
+                        juce::String argsToUse = args.isNotEmpty() ? args : "()";
+
+                        if (isStatic)
                         {
-                            example += "local result = panel:" + itemName + argsToUse + "\n";
-                        }
-                        else if (ownerRef->currentClassName.contains("Modulator"))
-                        {
-                            example += "local mod = panel:getModulatorByName(\"modulatorName\")\n";
-                            example += "local result = mod:" + itemName + argsToUse + "\n";
+                            example = "-- Static method\n";
+                            example += "local result = " + ownerRef->currentClassName + "." + itemName + argsToUse + "\n";
                         }
                         else
                         {
-                            example += "local obj = " + ownerRef->currentClassName + "()\n";
-                            example += "local result = obj:" + itemName + argsToUse + "\n";
+                            example = "-- Instance method\n";
+
+                            if (ownerRef->currentClassName.contains("Panel"))
+                            {
+                                example += "local result = panel:" + itemName + argsToUse + "\n";
+                            }
+                            else if (ownerRef->currentClassName.contains("Modulator"))
+                            {
+                                example += "local mod = panel:getModulatorByName(\"modulatorName\")\n";
+                                example += "local result = mod:" + itemName + argsToUse + "\n";
+                            }
+                            else
+                            {
+                                example += "local obj = " + ownerRef->currentClassName + "()\n";
+                                example += "local result = obj:" + itemName + argsToUse + "\n";
+                            }
                         }
                     }
-                }
-                else
-                {
-                    example = "-- Attribute/Enum\n";
-                    example += "local value = " + ownerRef->currentClassName + "." + itemName + "\n";
-                }
+                    else
+                    {
+                        example = "-- Attribute/Enum\n";
+                        example += "local value = " + ownerRef->currentClassName + "." + itemName + "\n";
+                    }
 
-                juce::SystemClipboard::copyTextToClipboard(example);
-                break;
-            }
-            }
-        });
+                    juce::SystemClipboard::copyTextToClipboard(example);
+                    break;
+                }
+                }
+            });
     }
 }

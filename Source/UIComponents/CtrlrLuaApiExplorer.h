@@ -59,7 +59,7 @@ private:
     juce::Label detailsLabel;
     juce::ListBox classList { "LuaClasses", this };
     juce::ListBox methodsList { "LuaMethods", nullptr };
-    MethodsListBoxModel methodsModel;
+    MethodsListBoxModel methodsModel { *this };
 
     juce::StringArray allClasses;
     juce::StringArray filteredClasses;

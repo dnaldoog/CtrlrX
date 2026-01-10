@@ -994,7 +994,7 @@
       <method name="insert" type="instance" args="" overload="1" />
       <method name="insert" type="instance" args="" overload="2" />
       <method name="insertIntoTable" type="instance" args="" />
-      <method name="loadFromHexString" type="instance" args="" />
+      <method name="loadFromHexString" type="instance" args="(String hex)" />
       <method name="pushLString" type="instance" args="" />
       <method name="removeSection" type="instance" args="" />
       <method name="replaceWith" type="instance" args="" />
@@ -1005,11 +1005,11 @@
       <method name="toBase64Encoding" type="instance" args="" />
       <method name="toBinarySafeString" type="instance" args="" />
       <method name="toBinaryString" type="instance" args="" />
-      <method name="toHexString" type="instance" args="" />
+      <method name="toHexString" type="instance" args="(int groupSize)" />
       <method name="toLuaString" type="instance" args="" />
       <method name="toLuaTable" type="instance" args="" />
       <method name="toRawString" type="instance" args="" />
-      <method name="toString" type="instance" args="" />
+      <method name="toString" type="instance" args="()" />
       <method name="toStringNoTerminator" type="instance" args="" />
       <method name="toStringWithNulls" type="instance" args="" />
     </methods>
@@ -1102,10 +1102,6 @@
       <method name="withShortenedStart" type="instance" args="" />
     </methods>
   </class>
-  <class name="LookAndFeelBase" cpp_name="LookAndFeelBase">
-    <constructor args="()" />
-  </class>
-  <class name="LookAndFeelParamWrapper" cpp_name="LookAndFeelParamWrapper" />
   <class name="Ltime" cpp_name="LTime" />
   <class name="MemoryInputStream" cpp_name="MemoryInputStream" />
   <class name="MidiBuffer" cpp_name="MidiBuffer">
@@ -2187,5 +2183,61 @@
     <constructor args="(const char *)" />
     <constructor args="(const wchar_t *)" />
     <constructor args="(const String &amp;)" />
+  </class>
+  <class name="MemoryBlock" cpp_name="LMemoryBlock" alias_of="LMemoryBlock">
+    <constructor args="()" />
+    <constructor args="(const size_t, bool)" />
+    <constructor args="(const MemoryBlock&amp;)" />
+    <constructor args="(luabind::object const&amp;)" />
+    <constructor args="(const String&amp;)" />
+    <methods>
+      <method name="append" type="instance" args="" />
+      <method name="compressGzip" type="instance" args="" />
+      <method name="compressZlib" type="instance" args="" />
+      <method name="copyFrom" type="instance" args="" />
+      <method name="copyTo" type="instance" args="" />
+      <method name="createFromTable" type="instance" args="" />
+      <method name="decompressGzip" type="instance" args="" />
+      <method name="decompressZlib" type="instance" args="" />
+      <method name="ensureSize" type="instance" args="" />
+      <method name="fillWith" type="instance" args="" />
+      <method name="fromBase64Encoding" type="instance" args="" />
+      <method name="getBitRange" type="instance" args="" />
+      <method name="getByte" type="instance" args="" />
+      <method name="getData" type="instance" args="" />
+      <method name="getRange" type="instance" args="" />
+      <method name="getSize" type="instance" args="" />
+      <method name="init" type="instance" args="" />
+      <method name="insert" type="instance" args="" overload="1" />
+      <method name="insert" type="instance" args="" overload="2" />
+      <method name="insertIntoTable" type="instance" args="" />
+      <method name="loadFromHexString" type="instance" args="" />
+      <method name="pushLString" type="instance" args="" />
+      <method name="removeSection" type="instance" args="" />
+      <method name="replaceWith" type="instance" args="" />
+      <method name="setBitRange" type="instance" args="" />
+      <method name="setByte" type="instance" args="" />
+      <method name="setSize" type="instance" args="" />
+      <method name="swapWith" type="instance" args="" />
+      <method name="toBase64Encoding" type="instance" args="" />
+      <method name="toBinarySafeString" type="instance" args="" />
+      <method name="toBinaryString" type="instance" args="" />
+      <method name="toHexString" type="instance" args="" />
+      <method name="toLuaString" type="instance" args="" />
+      <method name="toLuaTable" type="instance" args="" />
+      <method name="toRawString" type="instance" args="" />
+      <method name="toString" type="instance" args="" />
+      <method name="toStringNoTerminator" type="instance" args="" />
+      <method name="toStringWithNulls" type="instance" args="" />
+    </methods>
+    <static_methods>
+      <method name="createWithSize" type="static" args="" />
+      <method name="fromLuaBinaryString" type="static" args="" />
+      <method name="fromLuaString" type="static" args="" overload="1" />
+      <method name="fromLuaString" type="static" args="" overload="2" />
+      <method name="fromLuaStringToAscii" type="static" args="" overload="1" />
+      <method name="fromLuaStringToAscii" type="static" args="" overload="2" />
+      <method name="fromLuaTable" type="static" args="" />
+    </static_methods>
   </class>
 </LuaAPI>

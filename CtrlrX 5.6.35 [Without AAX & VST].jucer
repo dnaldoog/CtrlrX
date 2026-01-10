@@ -751,6 +751,7 @@
       </GROUP>
       <GROUP id="{275DD23D-CE14-C99A-843C-3503D5B51EAF}" name="UIComponents">
         <GROUP id="{CECF90FC-BE84-9BE1-6182-2B925F3DCF28}" name="CtrlrApplicationWindow">
+          <FILE id="cXFPvo" name="add_aliases.py" compile="0" resource="1" file="add_aliases.py"/>
           <FILE id="STsk4W" name="CtrlrDocumentPanel.cpp" compile="1" resource="0"
                 file="Source/UIComponents/CtrlrApplicationWindow/CtrlrDocumentPanel.cpp"/>
           <FILE id="c1kcni" name="CtrlrDocumentPanel.h" compile="0" resource="0"
