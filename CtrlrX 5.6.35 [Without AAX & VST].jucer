@@ -1128,7 +1128,8 @@
           file="Source/UIComponents/CtrlrMarkdownParser.cpp"/>
     <FILE id="HLhdmG" name="CtrlrMarkdownParser.h" compile="0" resource="0"
           file="Source/UIComponents/CtrlrMarkdownParser.h"/>
-    <FILE id="UMFKcD" name="LuaAPI.xml" compile="0" resource="1" file="Source/Resources/XML/LuaAPI.xml"/>
+    <FILE id="UMFKcD" name="LuaAPI.xml" compile="0" resource="1" file="Source/Resources/XML/LuaAPI.xml"
+          xcodeResource="1"/>
     <FILE id="avL04X" name="luabind_parser.py" compile="0" resource="1"
           file="luabind_parser.py"/>
     <FILE id="DzX57y" name="LuaFileOperations.md" compile="0" resource="1"

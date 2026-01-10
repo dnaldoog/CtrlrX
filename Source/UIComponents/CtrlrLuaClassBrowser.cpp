@@ -613,13 +613,14 @@ juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& meth
 {
     juce::String description;
 
-    // Strip overload markers like [1], [2] for display
+    // Keep the full name with overload markers to match exact method
     juce::String cleanName = methodName.upToFirstOccurrenceOf(" [", false, false);
+    bool hasOverload = methodName.contains(" [");
 
     description += "Class: " + currentClassName + "\n";
     description += "Method: " + cleanName + "\n";
 
-    // Find method info
+    // Find method info - match the FULL name including overload markers
     bool isStatic = false;
     juce::String args;
     bool found = false;
@@ -627,7 +628,7 @@ juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& meth
 
     for (const auto& method : methodList)
     {
-        if (method.name == methodName)
+        if (method.name == methodName)  // Exact match including [1], [2], etc.
         {
             isStatic = method.isStatic;
             args = method.args;
@@ -643,11 +644,25 @@ juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& meth
 
         if (isConstructor)
         {
-            description += "Type: CONSTRUCTOR\n";
+            description += "Type: CONSTRUCTOR";
+            if (hasOverload)
+            {
+                juce::String overloadNum = methodName.fromFirstOccurrenceOf(" [", false, false)
+                    .upToFirstOccurrenceOf("]", false, false);
+                description += " [Overload " + overloadNum + "]";
+            }
+            description += "\n";
         }
         else
         {
-            description += "Type: " + juce::String(isStatic ? "STATIC (use .)" : "INSTANCE (use :)") + "\n";
+            description += "Type: " + juce::String(isStatic ? "STATIC (use .)" : "INSTANCE (use :)");
+            if (hasOverload)
+            {
+                juce::String overloadNum = methodName.fromFirstOccurrenceOf(" [", false, false)
+                    .upToFirstOccurrenceOf("]", false, false);
+                description += " [Overload " + overloadNum + "]";
+            }
+            description += "\n";
         }
 
         if (args.isNotEmpty())
@@ -692,11 +707,11 @@ void CtrlrLuaClassBrowser::MethodListModel::listBoxItemClicked(int row, const ju
     if (isMethod)
     {
         const auto& method = ownerRef->methodList[row];
-        itemName = method.name;
+        itemName = method.name;  // Keep full name with [1], [2], etc.
         args = method.args;
         isStatic = method.isStatic;
 
-        // Update info display when method is clicked
+        // Update info display when method is clicked - pass full name for exact match
         ownerRef->infoDisplay->setText(ownerRef->getMethodDescription(itemName), false);
     }
     else
@@ -730,6 +745,9 @@ void CtrlrLuaClassBrowser::MethodListModel::listBoxItemClicked(int row, const ju
             {
                 if (!ownerRef) return;
 
+                // Strip overload markers for copying
+                juce::String cleanName = itemName.upToFirstOccurrenceOf(" [", false, false);
+
                 switch (result)
                 {
                 case 1:
@@ -737,7 +755,7 @@ void CtrlrLuaClassBrowser::MethodListModel::listBoxItemClicked(int row, const ju
                     break;
 
                 case 2:
-                    juce::SystemClipboard::copyTextToClipboard(itemName);
+                    juce::SystemClipboard::copyTextToClipboard(cleanName);
                     break;
 
                 case 3:
@@ -745,7 +763,7 @@ void CtrlrLuaClassBrowser::MethodListModel::listBoxItemClicked(int row, const ju
                     juce::String combined = ownerRef->currentClassName;
                     if (isMethod)
                     {
-                        combined += (isStatic ? "." : ":") + itemName;
+                        combined += (isStatic ? "." : ":") + cleanName;
                         if (args.isNotEmpty())
                             combined += args;
                         else
@@ -769,7 +787,7 @@ void CtrlrLuaClassBrowser::MethodListModel::listBoxItemClicked(int row, const ju
                         if (isStatic)
                         {
                             example = "-- Static method\n";
-                            example += "local result = " + ownerRef->currentClassName + "." + itemName + argsToUse + "\n";
+                            example += "local result = " + ownerRef->currentClassName + "." + cleanName + argsToUse + "\n";
                         }
                         else
                         {
@@ -777,17 +795,17 @@ void CtrlrLuaClassBrowser::MethodListModel::listBoxItemClicked(int row, const ju
 
                             if (ownerRef->currentClassName.contains("Panel"))
                             {
-                                example += "local result = panel:" + itemName + argsToUse + "\n";
+                                example += "local result = panel:" + cleanName + argsToUse + "\n";
                             }
                             else if (ownerRef->currentClassName.contains("Modulator"))
                             {
                                 example += "local mod = panel:getModulatorByName(\"modulatorName\")\n";
-                                example += "local result = mod:" + itemName + argsToUse + "\n";
+                                example += "local result = mod:" + cleanName + argsToUse + "\n";
                             }
                             else
                             {
                                 example += "local obj = " + ownerRef->currentClassName + "()\n";
-                                example += "local result = obj:" + itemName + argsToUse + "\n";
+                                example += "local result = obj:" + cleanName + argsToUse + "\n";
                             }
                         }
                     }
