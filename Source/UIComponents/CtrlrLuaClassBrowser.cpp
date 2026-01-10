@@ -116,9 +116,16 @@ void CtrlrLuaClassBrowser::loadClassList()
         return;
     }
 
+    // Load classes directly from XML (includes aliases!)
     forEachXmlChildElementWithTagName(*luaApiXml, cls, "class")
     {
-        classList.add(cls->getStringAttribute("name"));
+        juce::String className = cls->getStringAttribute("name");
+
+        // Skip if it's a duplicate (shouldn't happen but just in case)
+        if (!classList.contains(className))
+        {
+            classList.add(className);
+        }
     }
 
     classList.removeDuplicates(false);

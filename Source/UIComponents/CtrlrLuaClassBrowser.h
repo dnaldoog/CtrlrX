@@ -7,7 +7,7 @@ class CtrlrLuaApiDatabase;
 namespace juce { class XmlElement; }
 
 class CtrlrLuaClassBrowser : public juce::Component,
-                             public juce::ListBoxModel
+    public juce::ListBoxModel
 {
 public:
     CtrlrLuaClassBrowser(CtrlrLuaManager* luaManager);
@@ -19,10 +19,10 @@ public:
     // ListBoxModel methods for the class list
     int getNumRows() override;
     void paintListBoxItem(int rowNumber, juce::Graphics& g,
-                         int width, int height, bool rowIsSelected) override;
+        int width, int height, bool rowIsSelected) override;
     void listBoxItemClicked(int row, const juce::MouseEvent& e) override;
-    
-    // Set the XML data source
+
+    // Set the XML data source (this triggers loading the class list)
     void setLuaApiXml(const juce::XmlElement* xml);
 
     // Method info structure - public so it can be used in implementations
@@ -45,10 +45,10 @@ public:
         }
 
         void paintListBoxItem(int rowNumber, juce::Graphics& g,
-                            int width, int height, bool rowIsSelected) override
+            int width, int height, bool rowIsSelected) override
         {
             if (!ownerRef) return;
-            
+
             if (rowIsSelected)
                 g.fillAll(juce::Colours::lightblue);
             else
@@ -61,11 +61,14 @@ public:
             {
                 const auto& method = ownerRef->methodList[rowNumber];
                 text = method.name;
-                
-                // Add args if present
-                if (method.args.isNotEmpty())
+
+                // Show args for overloads and constructors
+                if (method.args.isNotEmpty() &&
+                    (method.name.contains("[") || method.name == ownerRef->currentClassName))
+                {
                     text += " " + method.args;
-                
+                }
+
                 prefix = "[M] ";
 
                 if (method.isStatic)
@@ -81,7 +84,7 @@ public:
             }
 
             g.drawText(prefix + text, 5, 0, width - 10, height,
-                      juce::Justification::centredLeft, true);
+                juce::Justification::centredLeft, true);
         }
 
         void listBoxItemClicked(int row, const juce::MouseEvent& e) override;
@@ -94,13 +97,13 @@ private:
     void loadClassList();
     void loadMethodsForClass(const juce::String& className);
     void filterClassList(const juce::String& searchText);
-    
+
     juce::String getMethodDescription(const juce::String& methodName);
     juce::String introspectMethod(const juce::String& className, const juce::String& methodName);
-    
+
     void copyMethodUsageToClipboard(const juce::String& className, const juce::String& methodName);
     void copyExampleToClipboard(const juce::String& className, const juce::String& methodName);
-    
+
     juce::String generateLuaUsageForMethod(const juce::String& className, const juce::String& methodName);
     juce::String generateExampleFunction(const juce::String& className, const juce::String& methodName, bool isStatic);
 
@@ -115,7 +118,7 @@ private:
     juce::Array<MethodInfo> methodList;
     juce::StringArray attributeList;
     juce::String currentClassName;
-    
+
     // UI Components
     std::unique_ptr<juce::TextEditor> searchBox;
     std::unique_ptr<juce::TextButton> refreshButton;
@@ -123,7 +126,7 @@ private:
     std::unique_ptr<juce::ListBox> classListBox;
     std::unique_ptr<juce::ListBox> methodListBox;
     std::unique_ptr<MethodListModel> methodListModel;
-    
+
     // XML data (non-owning)
     const juce::XmlElement* luaApiXml = nullptr;
 

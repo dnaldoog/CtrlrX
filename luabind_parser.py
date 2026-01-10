@@ -17,6 +17,7 @@ from collections import defaultdict
 
 VERBOSE = True
 STRIP_NAMESPACES = True
+DEBUG = False  # Set to True to see detailed parsing info
 
 # ==========================================
 
@@ -61,10 +62,14 @@ def extract_args_from_signature(signature: str) -> str:
 def file_contains_lua_bindings(filepath: Path) -> bool:
     """Quick check without full file read."""
     try:
-        # Read only first 1KB for quick check
+        # Read only first 2KB for quick check
         with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-            chunk = f.read(1024)
-            return "wrapForLua" in chunk or "module(L)" in chunk
+            chunk = f.read(2048)
+            # Check for multiple indicators of Lua bindings
+            return ("wrapForLua" in chunk or 
+                    "module(L)" in chunk or 
+                    "class_<" in chunk or
+                    "luabind::" in chunk)
     except Exception:
         return False
 
@@ -79,17 +84,38 @@ class LuabindParser:
     def parse_file(self, filepath: Path):
         content = filepath.read_text(encoding="utf-8", errors="ignore")
 
+        # Look for wrapForLua functions
         wrap_pattern = r'wrapForLua\s*\([^)]*lua_State\s*\*[^)]*\)'
         wraps = list(re.finditer(wrap_pattern, content))
 
-        if not wraps:
+        # Look for top-level module(L) blocks
+        module_pattern = r'(?:luabind::)?module\s*\(\s*L\s*\)\s*\['
+        modules = list(re.finditer(module_pattern, content))
+
+        if not wraps and not modules:
             return
 
         if VERBOSE:
-            print(f"\nFILE: {filepath.name} ({len(wraps)} wrapForLua)")
+            if wraps:
+                print(f"\nFILE: {filepath.name} ({len(wraps)} wrapForLua)")
+            if modules and not wraps:
+                print(f"\nFILE: {filepath.name} ({len(modules)} direct module blocks)")
 
+        # Parse wrapForLua functions
         for wrap in wraps:
             self.parse_wrap_block(content, wrap.start())
+        
+        # Parse direct module(L) blocks (not inside wrapForLua)
+        if modules and not wraps:
+            for module_match in modules:
+                bracket_start = module_match.end() - 1
+                module_body = self.extract_bracket_block(content, bracket_start)
+                if module_body:
+                    if DEBUG:
+                        print(f"  Parsing module block, length: {len(module_body)}")
+                    self.parse_module(module_body)
+                elif DEBUG:
+                    print(f"  WARNING: Could not extract module block at position {bracket_start}")
 
     # -------------------------------------------------------------
 

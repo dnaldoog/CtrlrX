@@ -244,6 +244,42 @@
     </methods>
   </class>
   <class name="BorderSize&lt;int" cpp_name="BorderSize&lt;int" />
+  <class name="Button" cpp_name="Button">
+    <methods>
+      <method name="addListener" type="instance" args="" />
+      <method name="addShortcut" type="instance" args="" />
+      <method name="clearShortcuts" type="instance" args="" />
+      <method name="getButtonText" type="instance" args="" />
+      <method name="getClickingTogglesState" type="instance" args="" />
+      <method name="getCommandID" type="instance" args="" />
+      <method name="getConnectedEdgeFlags" type="instance" args="" />
+      <method name="getMillisecondsSinceButtonDown" type="instance" args="" />
+      <method name="getRadioGroupId" type="instance" args="" />
+      <method name="getToggleState" type="instance" args="" />
+      <method name="getToggleStateValue" type="instance" args="" />
+      <method name="getTooltip" type="instance" args="" />
+      <method name="isConnectedOnBottom" type="instance" args="" />
+      <method name="isConnectedOnLeft" type="instance" args="" />
+      <method name="isConnectedOnRight" type="instance" args="" />
+      <method name="isConnectedOnTop" type="instance" args="" />
+      <method name="isDown" type="instance" args="" />
+      <method name="isOver" type="instance" args="" />
+      <method name="isRegisteredForShortcut" type="instance" args="" />
+      <method name="removeListener" type="instance" args="" />
+      <method name="setButtonText" type="instance" args="" />
+      <method name="setClickingTogglesState" type="instance" args="" />
+      <method name="setCommandToTrigger" type="instance" args="" />
+      <method name="setConnectedEdges" type="instance" args="" />
+      <method name="setRadioGroupId" type="instance" args="" />
+      <method name="setRepeatSpeed" type="instance" args="" />
+      <method name="setState" type="instance" args="" />
+      <method name="setToggleState" type="instance" args="" />
+      <method name="setTooltip" type="instance" args="" />
+      <method name="setTriggeredOnMouseDown" type="instance" args="" />
+      <method name="triggerClick" type="instance" args="" />
+    </methods>
+  </class>
+  <class name="ButtonState" cpp_name="ButtonState" />
   <class name="CharPointer_UTF8" cpp_name="CharPointer_UTF8">
     <methods>
       <method name="getAddress" type="instance" args="" />
@@ -309,6 +345,242 @@
       <method name="removeColour" type="instance" args="" />
       <method name="setColour" type="instance" args="" />
     </methods>
+  </class>
+  <class name="ComboBox" cpp_name="ComboBox">
+    <constructor args="()" />
+    <constructor args="(const String &amp;)" />
+    <methods>
+      <method name="addItem" type="instance" args="" />
+      <method name="addItemList" type="instance" args="" />
+      <method name="addListener" type="instance" args="" />
+      <method name="addSectionHeading" type="instance" args="" />
+      <method name="addSeparator" type="instance" args="" />
+      <method name="changeItemText" type="instance" args="" />
+      <method name="clear" type="instance" args="" />
+      <method name="getItemId" type="instance" args="" />
+      <method name="getItemText" type="instance" args="" />
+      <method name="getJustificationType" type="instance" args="" />
+      <method name="getNumItems" type="instance" args="" />
+      <method name="getSelectedId" type="instance" args="" />
+      <method name="getSelectedIdAsValue" type="instance" args="" />
+      <method name="getSelectedItemIndex" type="instance" args="" />
+      <method name="getText" type="instance" args="" />
+      <method name="getTextWhenNothingSelected" type="instance" args="" />
+      <method name="indexOfItemId" type="instance" args="" />
+      <method name="isItemEnabled" type="instance" args="" />
+      <method name="isTextEditable" type="instance" args="" />
+      <method name="removeListener" type="instance" args="" />
+      <method name="setEditableText" type="instance" args="" />
+      <method name="setItemEnabled" type="instance" args="" />
+      <method name="setJustificationType" type="instance" args="" />
+      <method name="setSelectedId" type="instance" args="" />
+      <method name="setSelectedItemIndex" type="instance" args="" />
+      <method name="setText" type="instance" args="" />
+      <method name="setTextWhenNoChoicesAvailable" type="instance" args="" />
+      <method name="setTextWhenNothingSelected" type="instance" args="" />
+      <method name="setTooltip" type="instance" args="" />
+      <method name="showEditor" type="instance" args="" />
+      <method name="showPopup" type="instance" args="" />
+    </methods>
+  </class>
+  <class name="Component" cpp_name="Component">
+    <constructor args="()" />
+    <constructor args="(const String &amp;)" />
+    <methods>
+      <method name="addAndMakeVisible" type="instance" args="" overload="1" />
+      <method name="addAndMakeVisible" type="instance" args="" overload="2" />
+      <method name="addChildAndSetID" type="instance" args="" />
+      <method name="addChildComponent" type="instance" args="" overload="1" />
+      <method name="addChildComponent" type="instance" args="" overload="2" />
+      <method name="addComponentListener" type="instance" args="" />
+      <method name="addKeyListener" type="instance" args="" />
+      <method name="addMouseListener" type="instance" args="" />
+      <method name="addToDesktop" type="instance" args="" />
+      <method name="broughtToFront" type="instance" args="" />
+      <method name="canModalEventBeSentToComponent" type="instance" args="" />
+      <method name="centreWithSize" type="instance" args="" />
+      <method name="childBoundsChanged" type="instance" args="" />
+      <method name="childrenChanged" type="instance" args="" />
+      <method name="colourChanged" type="instance" args="" />
+      <method name="contains" type="instance" args="" />
+      <method name="copyAllExplicitColoursTo" type="instance" args="" />
+      <method name="createComponentSnapshot" type="instance" args="" />
+      <method name="createFocusTraverser" type="instance" args="" />
+      <method name="deleteAllChildren" type="instance" args="" />
+      <method name="enablementChanged" type="instance" args="" />
+      <method name="enterModalState" type="instance" args="" />
+      <method name="exitModalState" type="instance" args="" />
+      <method name="findChildWithID" type="instance" args="" />
+      <method name="findColour" type="instance" args="" />
+      <method name="focusGained" type="instance" args="" />
+      <method name="focusLost" type="instance" args="" />
+      <method name="focusOfChildComponentChanged" type="instance" args="" />
+      <method name="getAlpha" type="instance" args="" />
+      <method name="getBottom" type="instance" args="" />
+      <method name="getBounds" type="instance" args="" />
+      <method name="getBoundsInParent" type="instance" args="" />
+      <method name="getCachedComponentImage" type="instance" args="" />
+      <method name="getChildComponent" type="instance" args="" />
+      <method name="getComponentAt" type="instance" args="" overload="1" />
+      <method name="getComponentAt" type="instance" args="" overload="2" />
+      <method name="getComponentEffect" type="instance" args="" />
+      <method name="getComponentID" type="instance" args="" />
+      <method name="getExplicitFocusOrder" type="instance" args="" />
+      <method name="getHeight" type="instance" args="" />
+      <method name="getIndexOfChildComponent" type="instance" args="" />
+      <method name="getInterceptsMouseClicks" type="instance" args="" />
+      <method name="getLocalBounds" type="instance" args="" />
+      <method name="getLocalPoint" type="instance" args="" />
+      <method name="getLookAndFeel" type="instance" args="" />
+      <method name="getMouseClickGrabsKeyboardFocus" type="instance" args="" />
+      <method name="getMouseCursor" type="instance" args="" />
+      <method name="getMouseXYRelative" type="instance" args="" />
+      <method name="getNumChildComponents" type="instance" args="" />
+      <method name="getParentComponent" type="instance" args="" />
+      <method name="getParentHeight" type="instance" args="" />
+      <method name="getParentMonitorArea" type="instance" args="" />
+      <method name="getParentWidth" type="instance" args="" />
+      <method name="getPeer" type="instance" args="" />
+      <method name="getPosition" type="instance" args="" />
+      <method name="getPositioner" type="instance" args="" />
+      <method name="getProperties" type="instance" args="" overload="1" />
+      <method name="getProperties" type="instance" args="" overload="2" />
+      <method name="getRight" type="instance" args="" />
+      <method name="getScreenBounds" type="instance" args="" />
+      <method name="getScreenPosition" type="instance" args="" />
+      <method name="getScreenX" type="instance" args="" />
+      <method name="getScreenY" type="instance" args="" />
+      <method name="getTopLevelComponent" type="instance" args="" />
+      <method name="getTransform" type="instance" args="" />
+      <method name="getWantsKeyboardFocus" type="instance" args="" />
+      <method name="getWidth" type="instance" args="" />
+      <method name="getWindowHandle" type="instance" args="" />
+      <method name="getX" type="instance" args="" />
+      <method name="getY" type="instance" args="" />
+      <method name="grabKeyboardFocus" type="instance" args="" />
+      <method name="handleCommandMessage" type="instance" args="" />
+      <method name="hasKeyboardFocus" type="instance" args="" />
+      <method name="hitTest" type="instance" args="" />
+      <method name="inputAttemptWhenModal" type="instance" args="" />
+      <method name="isAlwaysOnTop" type="instance" args="" />
+      <method name="isBroughtToFrontOnMouseClick" type="instance" args="" />
+      <method name="isColourSpecified" type="instance" args="" />
+      <method name="isCurrentlyBlockedByAnotherModalComponent" type="instance" args="" />
+      <method name="isCurrentlyModal" type="instance" args="" />
+      <method name="isEnabled" type="instance" args="" />
+      <method name="isFocusContainer" type="instance" args="" />
+      <method name="isMouseButtonDown" type="instance" args="" />
+      <method name="isMouseOver" type="instance" args="" />
+      <method name="isMouseOverOrDragging" type="instance" args="" />
+      <method name="isOnDesktop" type="instance" args="" />
+      <method name="isOpaque" type="instance" args="" />
+      <method name="isParentOf" type="instance" args="" />
+      <method name="isShowing" type="instance" args="" />
+      <method name="isTransformed" type="instance" args="" />
+      <method name="isVisible" type="instance" args="" />
+      <method name="keyPressed" type="instance" args="" />
+      <method name="keyStateChanged" type="instance" args="" />
+      <method name="localPointToGlobal" type="instance" args="" />
+      <method name="lookAndFeelChanged" type="instance" args="" />
+      <method name="minimisationStateChanged" type="instance" args="" />
+      <method name="modifierKeysChanged" type="instance" args="" />
+      <method name="mouseDoubleClick" type="instance" args="" />
+      <method name="mouseDown" type="instance" args="" />
+      <method name="mouseDrag" type="instance" args="" />
+      <method name="mouseEnter" type="instance" args="" />
+      <method name="mouseExit" type="instance" args="" />
+      <method name="mouseMove" type="instance" args="" />
+      <method name="mouseUp" type="instance" args="" />
+      <method name="mouseWheelMove" type="instance" args="" />
+      <method name="moveKeyboardFocusToSibling" type="instance" args="" />
+      <method name="moved" type="instance" args="" />
+      <method name="paint" type="instance" args="" />
+      <method name="paintEntireComponent" type="instance" args="" />
+      <method name="paintOverChildren" type="instance" args="" />
+      <method name="parentHierarchyChanged" type="instance" args="" />
+      <method name="parentSizeChanged" type="instance" args="" />
+      <method name="postCommandMessage" type="instance" args="" />
+      <method name="proportionOfHeight" type="instance" args="" />
+      <method name="proportionOfWidth" type="instance" args="" />
+      <method name="reallyContains" type="instance" args="" />
+      <method name="removeAllChildren" type="instance" args="" />
+      <method name="removeChildComponent" type="instance" args="" overload="1" />
+      <method name="removeChildComponent" type="instance" args="" overload="2" />
+      <method name="removeColour" type="instance" args="" />
+      <method name="removeComponentListener" type="instance" args="" />
+      <method name="removeFromDesktop" type="instance" args="" />
+      <method name="removeKeyListener" type="instance" args="" />
+      <method name="removeMouseListener" type="instance" args="" />
+      <method name="repaint" type="instance" args="" overload="1" />
+      <method name="repaint" type="instance" args="" overload="2" />
+      <method name="resized" type="instance" args="" />
+      <method name="sendLookAndFeelChange" type="instance" args="" />
+      <method name="setAlpha" type="instance" args="" />
+      <method name="setAlwaysOnTop" type="instance" args="" />
+      <method name="setBounds" type="instance" args="" overload="1" />
+      <method name="setBounds" type="instance" args="" overload="2" />
+      <method name="setBoundsInset" type="instance" args="" />
+      <method name="setBoundsRelative" type="instance" args="" overload="1" />
+      <method name="setBoundsRelative" type="instance" args="" overload="2" />
+      <method name="setBoundsToFit" type="instance" args="" />
+      <method name="setBroughtToFrontOnMouseClick" type="instance" args="" />
+      <method name="setBufferedToImage" type="instance" args="" />
+      <method name="setCachedComponentImage" type="instance" args="" />
+      <method name="setCentreRelative" type="instance" args="" />
+      <method name="setColour" type="instance" args="" />
+      <method name="setComponentEffect" type="instance" args="" />
+      <method name="setComponentID" type="instance" args="" />
+      <method name="setEnabled" type="instance" args="" />
+      <method name="setExplicitFocusOrder" type="instance" args="" />
+      <method name="setFocusContainer" type="instance" args="" />
+      <method name="setInterceptsMouseClicks" type="instance" args="" />
+      <method name="setLookAndFeel" type="instance" args="" />
+      <method name="setMouseClickGrabsKeyboardFocus" type="instance" args="" />
+      <method name="setMouseCursor" type="instance" args="" />
+      <method name="setName" type="instance" args="" />
+      <method name="setOpaque" type="instance" args="" />
+      <method name="setPaintingIsUnclipped" type="instance" args="" />
+      <method name="setPositioner" type="instance" args="" />
+      <method name="setRepaintsOnMouseActivity" type="instance" args="" />
+      <method name="setSize" type="instance" args="" />
+      <method name="setTopLeftPosition" type="instance" args="" overload="1" />
+      <method name="setTopLeftPosition" type="instance" args="" overload="2" />
+      <method name="setTopRightPosition" type="instance" args="" />
+      <method name="setTransform" type="instance" args="" />
+      <method name="setVisible" type="instance" args="" />
+      <method name="setWantsKeyboardFocus" type="instance" args="" />
+      <method name="toBack" type="instance" args="" />
+      <method name="toBehind" type="instance" args="" />
+      <method name="toFront" type="instance" args="" />
+      <method name="updateMouseCursor" type="instance" args="" />
+      <method name="userTriedToCloseWindow" type="instance" args="" />
+      <method name="visibilityChanged" type="instance" args="" />
+    </methods>
+    <static_methods>
+      <method name="beginDragAutoRepeat" type="static" args="" />
+      <method name="getCurrentlyFocusedComponent" type="static" args="" />
+      <method name="getCurrentlyModalComponent" type="static" args="" />
+      <method name="getNumCurrentlyModalComponents" type="static" args="" />
+      <method name="isMouseButtonDownAnywhere" type="static" args="" />
+    </static_methods>
+  </class>
+  <class name="ComponentPeer" cpp_name="ComponentPeer">
+    <enums>
+      <enum name="StyleFlags">
+        <value name="windowAppearsOnTaskbar" value="(1 &lt;&lt; 0" />
+        <value name="windowIsTemporary" value="(1 &lt;&lt; 1" />
+        <value name="windowIgnoresMouseClicks" value="(1 &lt;&lt; 2" />
+        <value name="windowHasTitleBar" value="(1 &lt;&lt; 3" />
+        <value name="windowIsResizable" value="(1 &lt;&lt; 4" />
+        <value name="windowHasMinimiseButton" value="(1 &lt;&lt; 5" />
+        <value name="windowHasMaximiseButton" value="(1 &lt;&lt; 6" />
+        <value name="windowHasCloseButton" value="(1 &lt;&lt; 7" />
+        <value name="windowHasDropShadow" value="(1 &lt;&lt; 8" />
+        <value name="windowRepaintedExplictly" value="(1 &lt;&lt; 9" />
+        <value name="windowIgnoresKeyPresses" value="(1 &lt;&lt; 10" />
+        <value name="windowIsSemiTransparent" value="(1 &lt;&lt; 31" />
+      </enum>
+    </enums>
   </class>
   <class name="CriticalSection" cpp_name="CriticalSection">
     <constructor args="()" />
@@ -420,11 +692,59 @@
       <method name="toString" type="instance" args="" />
     </methods>
   </class>
+  <class name="CtrlrLuaComponentAnimator" cpp_name="CtrlrLuaComponentAnimator">
+    <constructor args="()" />
+    <methods>
+      <method name="animateComponent" type="instance" args="" />
+      <method name="cancelAllAnimations" type="instance" args="" />
+      <method name="cancelAnimation" type="instance" args="" />
+      <method name="fadeIn" type="instance" args="" />
+      <method name="fadeOut" type="instance" args="" />
+      <method name="getComponentDestination" type="instance" args="" />
+      <method name="isAnimating" type="instance" args="" />
+    </methods>
+  </class>
   <class name="CtrlrLuaDebugger" cpp_name="CtrlrLuaDebugger">
     <methods>
       <method name="read" type="instance" args="" overload="1" />
       <method name="read" type="instance" args="" overload="2" />
       <method name="write" type="instance" args="" />
+    </methods>
+  </class>
+  <class name="CtrlrLuaMemoryBlock" cpp_name="CtrlrLuaMemoryBlock">
+    <constructor args="()" />
+    <constructor args="(const int, bool)" />
+    <constructor args="(luabind::object const&amp;)" />
+    <methods>
+      <method name="append" type="instance" args="" overload="1" />
+      <method name="append" type="instance" args="" overload="2" />
+      <method name="copyFrom" type="instance" args="" />
+      <method name="copyTo" type="instance" args="" />
+      <method name="getByte" type="instance" args="" />
+      <method name="getRange" type="instance" args="" />
+      <method name="getSize" type="instance" args="" />
+      <method name="insert" type="instance" args="" />
+      <method name="loadFromHexString" type="instance" args="" />
+      <method name="removeSection" type="instance" args="" />
+      <method name="setByte" type="instance" args="" />
+      <method name="toHexString" type="instance" args="" />
+      <method name="toSafeString" type="instance" args="" />
+      <method name="toString" type="instance" args="" />
+    </methods>
+  </class>
+  <class name="CtrlrLuaObject" cpp_name="CtrlrLuaObject">
+    <methods>
+      <method name="getObjectTree" type="instance" args="" />
+      <method name="getProperty" type="instance" args="" />
+      <method name="getPropertyDouble" type="instance" args="" />
+      <method name="getPropertyInt" type="instance" args="" />
+      <method name="getPropertyString" type="instance" args="" />
+      <method name="removeProperty" type="instance" args="" />
+      <method name="setProperty" type="instance" args="" />
+      <method name="setPropertyColour" type="instance" args="" />
+      <method name="setPropertyDouble" type="instance" args="" />
+      <method name="setPropertyInt" type="instance" args="" />
+      <method name="setPropertyString" type="instance" args="" />
     </methods>
   </class>
   <class name="CtrlrNative" cpp_name="CtrlrNative">
@@ -479,6 +799,21 @@
       <method name="resetContentAreaAndBoundingBoxToFitChildren" type="instance" args="" />
       <method name="setBoundingBox" type="instance" args="" />
       <method name="setContentArea" type="instance" args="" />
+    </methods>
+  </class>
+  <class name="DropShadow" cpp_name="DropShadow">
+    <constructor args="()" />
+    <constructor args="(Colour, int, Point&lt;int)" />
+    <methods>
+      <method name="drawForImage" type="instance" args="" />
+      <method name="drawForPath" type="instance" args="" />
+      <method name="drawForRectangle" type="instance" args="" />
+    </methods>
+  </class>
+  <class name="DropShadower" cpp_name="DropShadower">
+    <constructor args="(const DropShadow &amp;)" />
+    <methods>
+      <method name="setOwner" type="instance" args="" />
     </methods>
   </class>
   <class name="Expression" cpp_name="Expression">
@@ -883,8 +1218,10 @@
       <method name="setPosition" type="instance" args="" />
     </methods>
   </class>
+  <class name="JAlertWindow" cpp_name="AlertWindow" />
   <class name="JAudioFormatManager" cpp_name="AudioFormatManager" />
   <class name="JMemoryBlock" cpp_name="MemoryBlock" />
+  <class name="JPopupMenu" cpp_name="PopupMenu" />
   <class name="JRelativeCoordinate" cpp_name="RelativeCoordinate" />
   <class name="JThread" cpp_name="Thread" />
   <class name="JThreadWithProgressWindow" cpp_name="ThreadWithProgressWindow" />
@@ -953,6 +1290,48 @@
       </enum>
     </enums>
   </class>
+  <class name="LAlertWindow" cpp_name="LAlertWindow">
+    <constructor args="(const String &amp;, const String &amp;, AlertIconType)" />
+    <methods>
+      <method name="addButton" type="instance" args="" />
+      <method name="addComboBox" type="instance" args="" />
+      <method name="addCustomComponent" type="instance" args="" />
+      <method name="addProgressBarComponent" type="instance" args="" />
+      <method name="addTextBlock" type="instance" args="" />
+      <method name="addTextEditor" type="instance" args="" />
+      <method name="containsAnyExtraComponents" type="instance" args="" />
+      <method name="exitModalState" type="instance" args="" />
+      <method name="getAlertType" type="instance" args="" />
+      <method name="getComboBoxComponent" type="instance" args="" />
+      <method name="getCustomComponent" type="instance" args="" />
+      <method name="getNumButtons" type="instance" args="" />
+      <method name="getNumCustomComponents" type="instance" args="" />
+      <method name="getTextEditor" type="instance" args="" />
+      <method name="getTextEditorContents" type="instance" args="" />
+      <method name="removeCustomComponent" type="instance" args="" />
+      <method name="runModalLoop" type="instance" args="" />
+      <method name="setEscapeKeyCancels" type="instance" args="" />
+      <method name="setMessage" type="instance" args="" />
+      <method name="setModalHandler" type="instance" args="" />
+      <method name="triggerButtonClick" type="instance" args="" />
+    </methods>
+    <static_methods>
+      <method name="queryText" type="static" args="" />
+      <method name="showMessageBox" type="static" args="" />
+      <method name="showMessageBoxAsync" type="static" args="" />
+      <method name="showNativeDialogBox" type="static" args="" />
+      <method name="showOkCancelBox" type="static" args="" />
+      <method name="showYesNoCancelBox" type="static" args="" />
+    </static_methods>
+    <enums>
+      <enum name="AlertIconType">
+        <value name="NoIcon" value="0" />
+        <value name="QuestionIcon" value="1" />
+        <value name="WarningIcon" value="2" />
+        <value name="InfoIcon" value="3" />
+      </enum>
+    </enums>
+  </class>
   <class name="LAudioFormatManager" cpp_name="LAudioFormatManager">
     <constructor args="()" />
     <methods>
@@ -965,6 +1344,17 @@
       <method name="registerBasicFormats" type="instance" args="" />
     </methods>
   </class>
+  <class name="LBubbleMessageComponent" cpp_name="LBubbleMessageComponent">
+    <constructor args="(int)" />
+    <methods>
+      <method name="getContentSize" type="instance" args="" />
+      <method name="showAt" type="instance" args="" overload="1" />
+      <method name="showAt" type="instance" args="" overload="2" />
+      <method name="showAt" type="instance" args="" overload="3" />
+      <method name="showAt" type="instance" args="" overload="4" />
+    </methods>
+  </class>
+  <class name="LComponent" cpp_name="LComponent" />
   <class name="LFile" cpp_name="LFile" />
   <class name="LFont" cpp_name="LFont" />
   <class name="LMemoryBlock" cpp_name="LMemoryBlock">
@@ -994,7 +1384,7 @@
       <method name="insert" type="instance" args="" overload="1" />
       <method name="insert" type="instance" args="" overload="2" />
       <method name="insertIntoTable" type="instance" args="" />
-      <method name="loadFromHexString" type="instance" args="(String hex)" />
+      <method name="loadFromHexString" type="instance" args="" />
       <method name="pushLString" type="instance" args="" />
       <method name="removeSection" type="instance" args="" />
       <method name="replaceWith" type="instance" args="" />
@@ -1005,11 +1395,11 @@
       <method name="toBase64Encoding" type="instance" args="" />
       <method name="toBinarySafeString" type="instance" args="" />
       <method name="toBinaryString" type="instance" args="" />
-      <method name="toHexString" type="instance" args="(int groupSize)" />
+      <method name="toHexString" type="instance" args="" />
       <method name="toLuaString" type="instance" args="" />
       <method name="toLuaTable" type="instance" args="" />
       <method name="toRawString" type="instance" args="" />
-      <method name="toString" type="instance" args="()" />
+      <method name="toString" type="instance" args="" />
       <method name="toStringNoTerminator" type="instance" args="" />
       <method name="toStringWithNulls" type="instance" args="" />
     </methods>
@@ -1022,6 +1412,24 @@
       <method name="fromLuaStringToAscii" type="static" args="" overload="2" />
       <method name="fromLuaTable" type="static" args="" />
     </static_methods>
+  </class>
+  <class name="LPopupMenu" cpp_name="LPopupMenu">
+    <constructor args="()" />
+    <methods>
+      <method name="addColouredItem" type="instance" args="" />
+      <method name="addColumnBreak" type="instance" args="" />
+      <method name="addItem" type="instance" args="" overload="1" />
+      <method name="addItem" type="instance" args="" overload="2" />
+      <method name="addSectionHeader" type="instance" args="" />
+      <method name="addSeparator" type="instance" args="" />
+      <method name="addSubMenu" type="instance" args="" />
+      <method name="clear" type="instance" args="" />
+      <method name="getNumItems" type="instance" args="" />
+      <method name="show" type="instance" args="" overload="1" />
+      <method name="show" type="instance" args="" overload="2" />
+      <method name="showAt" type="instance" args="" overload="1" />
+      <method name="showAt" type="instance" args="" overload="2" />
+    </methods>
   </class>
   <class name="LRectangle" cpp_name="LRectangle" />
   <class name="LRelativeCoordinate" cpp_name="LRelativeCoordinate">
@@ -1068,6 +1476,86 @@
       <method name="wait" type="instance" args="" />
     </methods>
   </class>
+  <class name="Label" cpp_name="Label">
+    <methods>
+      <method name="addListener" type="instance" args="" overload="1" />
+      <method name="addListener" type="instance" args="" overload="2" />
+      <method name="addListener" type="instance" args="" overload="3" />
+      <method name="attachToComponent" type="instance" args="" overload="1" />
+      <method name="attachToComponent" type="instance" args="" overload="2" />
+      <method name="attachToComponent" type="instance" args="" overload="3" />
+      <method name="doesLossOfFocusDiscardChanges" type="instance" args="" overload="1" />
+      <method name="doesLossOfFocusDiscardChanges" type="instance" args="" overload="2" />
+      <method name="doesLossOfFocusDiscardChanges" type="instance" args="" overload="3" />
+      <method name="getAttachedComponent" type="instance" args="" overload="1" />
+      <method name="getAttachedComponent" type="instance" args="" overload="2" />
+      <method name="getAttachedComponent" type="instance" args="" overload="3" />
+      <method name="getFont" type="instance" args="" overload="1" />
+      <method name="getFont" type="instance" args="" overload="2" />
+      <method name="getFont" type="instance" args="" overload="3" />
+      <method name="getJustificationType" type="instance" args="" overload="1" />
+      <method name="getJustificationType" type="instance" args="" overload="2" />
+      <method name="getJustificationType" type="instance" args="" overload="3" />
+      <method name="getMinimumHorizontalScale" type="instance" args="" overload="1" />
+      <method name="getMinimumHorizontalScale" type="instance" args="" overload="2" />
+      <method name="getMinimumHorizontalScale" type="instance" args="" overload="3" />
+      <method name="getText" type="instance" args="" overload="1" />
+      <method name="getText" type="instance" args="" overload="2" />
+      <method name="getText" type="instance" args="" overload="3" />
+      <method name="getTextValue" type="instance" args="" overload="1" />
+      <method name="getTextValue" type="instance" args="" overload="2" />
+      <method name="getTextValue" type="instance" args="" overload="3" />
+      <method name="hideEditor" type="instance" args="" overload="1" />
+      <method name="hideEditor" type="instance" args="" overload="2" />
+      <method name="hideEditor" type="instance" args="" overload="3" />
+      <method name="isAttachedOnLeft" type="instance" args="" overload="1" />
+      <method name="isAttachedOnLeft" type="instance" args="" overload="2" />
+      <method name="isAttachedOnLeft" type="instance" args="" overload="3" />
+      <method name="isBeingEdited" type="instance" args="" overload="1" />
+      <method name="isBeingEdited" type="instance" args="" overload="2" />
+      <method name="isBeingEdited" type="instance" args="" overload="3" />
+      <method name="isEditable" type="instance" args="" overload="1" />
+      <method name="isEditable" type="instance" args="" overload="2" />
+      <method name="isEditable" type="instance" args="" overload="3" />
+      <method name="isEditableOnDoubleClick" type="instance" args="" overload="1" />
+      <method name="isEditableOnDoubleClick" type="instance" args="" overload="2" />
+      <method name="isEditableOnDoubleClick" type="instance" args="" overload="3" />
+      <method name="isEditableOnSingleClick" type="instance" args="" overload="1" />
+      <method name="isEditableOnSingleClick" type="instance" args="" overload="2" />
+      <method name="isEditableOnSingleClick" type="instance" args="" overload="3" />
+      <method name="removeListener" type="instance" args="" overload="1" />
+      <method name="removeListener" type="instance" args="" overload="2" />
+      <method name="removeListener" type="instance" args="" overload="3" />
+      <method name="setBorderSize" type="instance" args="" overload="1" />
+      <method name="setBorderSize" type="instance" args="" overload="2" />
+      <method name="setBorderSize" type="instance" args="" overload="3" />
+      <method name="setEditable" type="instance" args="" overload="1" />
+      <method name="setEditable" type="instance" args="" overload="2" />
+      <method name="setEditable" type="instance" args="" overload="3" />
+      <method name="setFont" type="instance" args="" overload="1" />
+      <method name="setFont" type="instance" args="" overload="2" />
+      <method name="setFont" type="instance" args="" overload="3" />
+      <method name="setJustificationType" type="instance" args="" overload="1" />
+      <method name="setJustificationType" type="instance" args="" overload="2" />
+      <method name="setJustificationType" type="instance" args="" overload="3" />
+      <method name="setMinimumHorizontalScale" type="instance" args="" overload="1" />
+      <method name="setMinimumHorizontalScale" type="instance" args="" overload="2" />
+      <method name="setMinimumHorizontalScale" type="instance" args="" overload="3" />
+      <method name="setText" type="instance" args="" overload="1" />
+      <method name="setText" type="instance" args="" overload="2" />
+      <method name="setText" type="instance" args="" overload="3" />
+      <method name="showEditor" type="instance" args="" overload="1" />
+      <method name="showEditor" type="instance" args="" overload="2" />
+      <method name="showEditor" type="instance" args="" overload="3" />
+    </methods>
+    <enums>
+      <enum name="ColourIds">
+        <value name="backgroundColourId " value="0x1000280" />
+        <value name="textColourId" value="0x1000281" />
+        <value name="outlineColourId" value="0x1000282" />
+      </enum>
+    </enums>
+  </class>
   <class name="Line&lt;float" cpp_name="Line&lt;float">
     <constructor args="()" />
     <constructor args="(float,float,float,float)" />
@@ -1101,6 +1589,26 @@
       <method name="withShortenedEnd" type="instance" args="" />
       <method name="withShortenedStart" type="instance" args="" />
     </methods>
+  </class>
+  <class name="LookAndFeel" cpp_name="LookAndFeelBase">
+    <constructor args="()" />
+    <methods>
+      <method name="setImplementation" type="instance" args="" />
+      <method name="setMethod" type="instance" args="" />
+    </methods>
+    <static_methods>
+      <method name="createDrawableComposite" type="static" args="" />
+      <method name="createDrawableImage" type="static" args="" />
+      <method name="createDrawablePath" type="static" args="" />
+      <method name="createDrawableRectangle" type="static" args="" />
+      <method name="createDrawableText" type="static" args="" />
+      <method name="createDropShadowEffect" type="static" args="" />
+      <method name="createGlowEffect" type="static" args="" />
+      <method name="createImageButton" type="static" args="" />
+      <method name="createLabel" type="static" args="" />
+      <method name="createTextButton" type="static" args="" />
+      <method name="createToggleButton" type="static" args="" />
+    </static_methods>
   </class>
   <class name="Ltime" cpp_name="LTime" />
   <class name="MemoryInputStream" cpp_name="MemoryInputStream" />
@@ -1345,6 +1853,7 @@
       </enum>
     </enums>
   </class>
+  <class name="NotificationType" cpp_name="NotificationType" />
   <class name="OggVorbisAudioFormat" cpp_name="OggVorbisAudioFormat">
     <constructor args="()" />
     <methods>
@@ -1759,6 +2268,103 @@
   <class name="ScopedUnlock" cpp_name="ScopedUnlock">
     <constructor args="(CriticalSection&amp;)" />
   </class>
+  <class name="SettableTooltipClient" cpp_name="SettableTooltipClient" />
+  <class name="Slider" cpp_name="Slider">
+    <methods>
+      <method name="addListener" type="instance" args="" />
+      <method name="getCurrentPopupDisplay" type="instance" args="" />
+      <method name="getDoubleClickReturnValue" type="instance" args="" />
+      <method name="getInterval" type="instance" args="" />
+      <method name="getMaxValue" type="instance" args="" />
+      <method name="getMaxValueObject" type="instance" args="" />
+      <method name="getMaximum" type="instance" args="" />
+      <method name="getMinValue" type="instance" args="" />
+      <method name="getMinValueObject" type="instance" args="" />
+      <method name="getMinimum" type="instance" args="" />
+      <method name="getMouseDragSensitivity" type="instance" args="" />
+      <method name="getPositionOfValue" type="instance" args="" />
+      <method name="getSkewFactor" type="instance" args="" />
+      <method name="getSliderSnapsToMousePosition" type="instance" args="" />
+      <method name="getSliderStyle" type="instance" args="" />
+      <method name="getTextBoxHeight" type="instance" args="" />
+      <method name="getTextBoxPosition" type="instance" args="" />
+      <method name="getTextBoxWidth" type="instance" args="" />
+      <method name="getTextFromValue" type="instance" args="" />
+      <method name="getTextValueSuffix" type="instance" args="" />
+      <method name="getThumbBeingDragged" type="instance" args="" />
+      <method name="getValue" type="instance" args="" />
+      <method name="getValueFromText" type="instance" args="" />
+      <method name="getValueObject" type="instance" args="" />
+      <method name="getVelocityBasedMode" type="instance" args="" />
+      <method name="getVelocityModeIsSwappable" type="instance" args="" />
+      <method name="getVelocityOffset" type="instance" args="" />
+      <method name="getVelocitySensitivity" type="instance" args="" />
+      <method name="getVelocityThreshold" type="instance" args="" />
+      <method name="hideTextBox" type="instance" args="" />
+      <method name="isHorizontal" type="instance" args="" />
+      <method name="isTextBoxEditable" type="instance" args="" />
+      <method name="isVertical" type="instance" args="" />
+      <method name="proportionOfLengthToValue" type="instance" args="" />
+      <method name="removeListener" type="instance" args="" />
+      <method name="setChangeNotificationOnlyOnRelease" type="instance" args="" />
+      <method name="setDoubleClickReturnValue" type="instance" args="" />
+      <method name="setIncDecButtonsMode" type="instance" args="" />
+      <method name="setMaxValue" type="instance" args="" />
+      <method name="setMinAndMaxValues" type="instance" args="" />
+      <method name="setMinValue" type="instance" args="" />
+      <method name="setMouseDragSensitivity" type="instance" args="" />
+      <method name="setPopupDisplayEnabled" type="instance" args="" />
+      <method name="setPopupMenuEnabled" type="instance" args="" />
+      <method name="setRange" type="instance" args="" />
+      <method name="setRotaryParameters" type="instance" args="" />
+      <method name="setScrollWheelEnabled" type="instance" args="" />
+      <method name="setSkewFactor" type="instance" args="" />
+      <method name="setSkewFactorFromMidPoint" type="instance" args="" />
+      <method name="setSliderSnapsToMousePosition" type="instance" args="" />
+      <method name="setSliderStyle" type="instance" args="" />
+      <method name="setTextBoxIsEditable" type="instance" args="" />
+      <method name="setTextBoxStyle" type="instance" args="" />
+      <method name="setTextValueSuffix" type="instance" args="" />
+      <method name="setValue" type="instance" args="" />
+      <method name="setVelocityBasedMode" type="instance" args="" />
+      <method name="setVelocityModeParameters" type="instance" args="" />
+      <method name="showTextBox" type="instance" args="" />
+      <method name="startedDragging" type="instance" args="" />
+      <method name="stoppedDragging" type="instance" args="" />
+      <method name="updateText" type="instance" args="" />
+      <method name="valueChanged" type="instance" args="" />
+      <method name="valueToProportionOfLength" type="instance" args="" />
+    </methods>
+    <enums>
+      <enum name="TextEntryBoxPosition">
+        <value name="NoTextBox" value="Slider::NoTextBox" />
+        <value name="TextBoxLeft" value="Slider::TextBoxLeft" />
+        <value name="TextBoxRight" value="Slider::TextBoxRight" />
+        <value name="TextBoxAbove" value="Slider::TextBoxAbove" />
+        <value name="TextBoxBelow" value="Slider::TextBoxBelow" />
+      </enum>
+      <enum name="SliderStyle">
+        <value name="LinearHorizontal" value="Slider::LinearHorizontal" />
+        <value name="LinearVertical" value="Slider::LinearVertical" />
+        <value name="LinearBar" value="Slider::LinearBar" />
+        <value name="LinearBarVertical" value="Slider::LinearBarVertical" />
+        <value name="Rotary" value="Slider::Rotary" />
+        <value name="RotaryHorizontalDrag" value="Slider::RotaryHorizontalDrag" />
+        <value name="RotaryVerticalDrag" value="Slider::RotaryVerticalDrag" />
+        <value name="RotaryHorizontalVerticalDrag" value="Slider::RotaryHorizontalVerticalDrag" />
+        <value name="IncDecButtons" value="Slider::IncDecButtons" />
+        <value name="TwoValueHorizontal" value="Slider::TwoValueHorizontal" />
+        <value name="TwoValueVertical" value="Slider::TwoValueVertical" />
+        <value name="ThreeValueHorizontal" value="Slider::ThreeValueHorizontal" />
+        <value name="ThreeValueVertical" value="Slider::ThreeValueVertical" />
+      </enum>
+      <enum name="DragMode">
+        <value name="notDragging" value="Slider::notDragging" />
+        <value name="absoluteDrag" value="Slider::absoluteDrag" />
+        <value name="velocityDrag" value="Slider::velocityDrag" />
+      </enum>
+    </enums>
+  </class>
   <class name="SmpteTimecodeType" cpp_name="SmpteTimecodeType" />
   <class name="SparseSet&lt;int" cpp_name="SparseSet&lt;int" />
   <class name="String" cpp_name="String">
@@ -1896,6 +2502,91 @@
     </methods>
   </class>
   <class name="Symbol" cpp_name="Symbol" />
+  <class name="TextButton" cpp_name="TextButton">
+    <constructor args="(const String &amp;)" />
+    <constructor args="(const String &amp;, const String &amp;)" />
+  </class>
+  <class name="TextEditor" cpp_name="TextEditor">
+    <constructor args="()" />
+    <constructor args="(const String &amp;)" />
+    <methods>
+      <method name="addListener" type="instance" args="" />
+      <method name="addPopupMenuItems" type="instance" args="" />
+      <method name="applyFontToAllText" type="instance" args="" />
+      <method name="areScrollbarsShown" type="instance" args="" />
+      <method name="clear" type="instance" args="" />
+      <method name="copy" type="instance" args="" />
+      <method name="copyToClipboard" type="instance" args="" />
+      <method name="cut" type="instance" args="" />
+      <method name="cutToClipboard" type="instance" args="" />
+      <method name="deleteBackwards" type="instance" args="" />
+      <method name="deleteForwards" type="instance" args="" />
+      <method name="getBorder" type="instance" args="" />
+      <method name="getCaretPosition" type="instance" args="" />
+      <method name="getCaretRectangle" type="instance" args="" />
+      <method name="getFont" type="instance" args="" />
+      <method name="getHighlightedRegion" type="instance" args="" />
+      <method name="getHighlightedText" type="instance" args="" />
+      <method name="getPasswordCharacter" type="instance" args="" />
+      <method name="getReturnKeyStartsNewLine" type="instance" args="" />
+      <method name="getText" type="instance" args="" />
+      <method name="getTextInRange" type="instance" args="" />
+      <method name="getTextIndexAt" type="instance" args="" />
+      <method name="getTextValue" type="instance" args="" />
+      <method name="getTextWidth" type="instance" args="" />
+      <method name="getTotalNumChars" type="instance" args="" />
+      <method name="insertTextAtCaret" type="instance" args="" />
+      <method name="isCaretVisible" type="instance" args="" />
+      <method name="isEmpty" type="instance" args="" />
+      <method name="isMultiLine" type="instance" args="" />
+      <method name="isPopupMenuCurrentlyActive" type="instance" args="" />
+      <method name="isPopupMenuEnabled" type="instance" args="" />
+      <method name="isReadOnly" type="instance" args="" />
+      <method name="isTabKeyUsedAsCharacter" type="instance" args="" />
+      <method name="moveCaretDown" type="instance" args="" />
+      <method name="moveCaretLeft" type="instance" args="" />
+      <method name="moveCaretRight" type="instance" args="" />
+      <method name="moveCaretToEnd" type="instance" args="" overload="1" />
+      <method name="moveCaretToEnd" type="instance" args="" overload="2" />
+      <method name="moveCaretToEndOfLine" type="instance" args="" />
+      <method name="moveCaretToStartOfLine" type="instance" args="" />
+      <method name="moveCaretToTop" type="instance" args="" />
+      <method name="moveCaretUp" type="instance" args="" />
+      <method name="pageDown" type="instance" args="" />
+      <method name="pageUp" type="instance" args="" />
+      <method name="paste" type="instance" args="" />
+      <method name="pasteFromClipboard" type="instance" args="" />
+      <method name="redo" type="instance" args="" overload="1" />
+      <method name="redo" type="instance" args="" overload="2" />
+      <method name="removeListener" type="instance" args="" />
+      <method name="scrollDown" type="instance" args="" />
+      <method name="scrollEditorToPositionCaret" type="instance" args="" />
+      <method name="scrollUp" type="instance" args="" />
+      <method name="selectAll" type="instance" args="" />
+      <method name="setBorder" type="instance" args="" />
+      <method name="setCaretPosition" type="instance" args="" />
+      <method name="setCaretVisible" type="instance" args="" />
+      <method name="setEscapeAndReturnKeysConsumed" type="instance" args="" />
+      <method name="setFont" type="instance" args="" />
+      <method name="setHighlightedRegion" type="instance" args="" />
+      <method name="setIndents" type="instance" args="" />
+      <method name="setInputFilter" type="instance" args="" />
+      <method name="setInputRestrictions" type="instance" args="" />
+      <method name="setMultiLine" type="instance" args="" />
+      <method name="setPasswordCharacter" type="instance" args="" />
+      <method name="setPopupMenuEnabled" type="instance" args="" />
+      <method name="setReadOnly" type="instance" args="" />
+      <method name="setReturnKeyStartsNewLine" type="instance" args="" />
+      <method name="setScrollBarThickness" type="instance" args="" />
+      <method name="setScrollToShowCursor" type="instance" args="" />
+      <method name="setScrollbarsShown" type="instance" args="" />
+      <method name="setSelectAllWhenFocused" type="instance" args="" />
+      <method name="setTabKeyUsedAsCharacter" type="instance" args="" />
+      <method name="setText" type="instance" args="" />
+      <method name="setTextToShowWhenEmpty" type="instance" args="" />
+      <method name="undo" type="instance" args="" />
+    </methods>
+  </class>
   <class name="Thread" cpp_name="LThread">
     <constructor args="(const String&amp;)" />
     <methods>
@@ -1960,6 +2651,13 @@
       <method name="setCallback" type="instance" args="" />
       <method name="startTimer" type="instance" args="" />
       <method name="stopTimer" type="instance" args="" />
+    </methods>
+  </class>
+  <class name="ToggleButton" cpp_name="ToggleButton">
+    <constructor args="()" />
+    <constructor args="(const String &amp;)" />
+    <methods>
+      <method name="changeWidthToFitText" type="instance" args="" />
     </methods>
   </class>
   <class name="Typeface" cpp_name="Typeface">
@@ -2183,61 +2881,5 @@
     <constructor args="(const char *)" />
     <constructor args="(const wchar_t *)" />
     <constructor args="(const String &amp;)" />
-  </class>
-  <class name="MemoryBlock" cpp_name="LMemoryBlock" alias_of="LMemoryBlock">
-    <constructor args="()" />
-    <constructor args="(const size_t, bool)" />
-    <constructor args="(const MemoryBlock&amp;)" />
-    <constructor args="(luabind::object const&amp;)" />
-    <constructor args="(const String&amp;)" />
-    <methods>
-      <method name="append" type="instance" args="" />
-      <method name="compressGzip" type="instance" args="" />
-      <method name="compressZlib" type="instance" args="" />
-      <method name="copyFrom" type="instance" args="" />
-      <method name="copyTo" type="instance" args="" />
-      <method name="createFromTable" type="instance" args="" />
-      <method name="decompressGzip" type="instance" args="" />
-      <method name="decompressZlib" type="instance" args="" />
-      <method name="ensureSize" type="instance" args="" />
-      <method name="fillWith" type="instance" args="" />
-      <method name="fromBase64Encoding" type="instance" args="" />
-      <method name="getBitRange" type="instance" args="" />
-      <method name="getByte" type="instance" args="" />
-      <method name="getData" type="instance" args="" />
-      <method name="getRange" type="instance" args="" />
-      <method name="getSize" type="instance" args="" />
-      <method name="init" type="instance" args="" />
-      <method name="insert" type="instance" args="" overload="1" />
-      <method name="insert" type="instance" args="" overload="2" />
-      <method name="insertIntoTable" type="instance" args="" />
-      <method name="loadFromHexString" type="instance" args="" />
-      <method name="pushLString" type="instance" args="" />
-      <method name="removeSection" type="instance" args="" />
-      <method name="replaceWith" type="instance" args="" />
-      <method name="setBitRange" type="instance" args="" />
-      <method name="setByte" type="instance" args="" />
-      <method name="setSize" type="instance" args="" />
-      <method name="swapWith" type="instance" args="" />
-      <method name="toBase64Encoding" type="instance" args="" />
-      <method name="toBinarySafeString" type="instance" args="" />
-      <method name="toBinaryString" type="instance" args="" />
-      <method name="toHexString" type="instance" args="" />
-      <method name="toLuaString" type="instance" args="" />
-      <method name="toLuaTable" type="instance" args="" />
-      <method name="toRawString" type="instance" args="" />
-      <method name="toString" type="instance" args="" />
-      <method name="toStringNoTerminator" type="instance" args="" />
-      <method name="toStringWithNulls" type="instance" args="" />
-    </methods>
-    <static_methods>
-      <method name="createWithSize" type="static" args="" />
-      <method name="fromLuaBinaryString" type="static" args="" />
-      <method name="fromLuaString" type="static" args="" overload="1" />
-      <method name="fromLuaString" type="static" args="" overload="2" />
-      <method name="fromLuaStringToAscii" type="static" args="" overload="1" />
-      <method name="fromLuaStringToAscii" type="static" args="" overload="2" />
-      <method name="fromLuaTable" type="static" args="" />
-    </static_methods>
   </class>
 </LuaAPI>
