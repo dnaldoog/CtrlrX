@@ -284,23 +284,20 @@ namespace BinaryData
     extern const char*   CtrlrMIDIVendors_xml;
     const int            CtrlrMIDIVendors_xmlSize = 15061;
 
-    extern const char*   add_aliases_py;
-    const int            add_aliases_pySize = 12222;
-
-    extern const char*   debug_parser_py;
-    const int            debug_parser_pySize = 3692;
+    extern const char*   BulkReadWriteDump_md;
+    const int            BulkReadWriteDump_mdSize = 3901;
 
     extern const char*   Expressions_md;
     const int            Expressions_mdSize = 2908;
 
-    extern const char*   BulkReadWriteDump_md;
-    const int            BulkReadWriteDump_mdSize = 3901;
+    extern const char*   lua_api_patcher_py;
+    const int            lua_api_patcher_pySize = 5936;
 
     extern const char*   LuaAPI_xml;
-    const int            LuaAPI_xmlSize = 159973;
+    const int            LuaAPI_xmlSize = 173893;
 
     extern const char*   luabind_parser_py;
-    const int            luabind_parser_pySize = 12461;
+    const int            luabind_parser_pySize = 8155;
 
     extern const char*   LuaFileOperations_md;
     const int            LuaFileOperations_mdSize = 3521;
@@ -311,11 +308,8 @@ namespace BinaryData
     extern const char*   MidiProgramming_md;
     const int            MidiProgramming_mdSize = 9678;
 
-    extern const char*   verify_aliases_py;
-    const int            verify_aliases_pySize = 1532;
-
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 102;
+    const int namedResourceListSize = 100;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

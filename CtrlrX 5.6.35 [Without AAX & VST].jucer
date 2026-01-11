@@ -751,7 +751,6 @@
       </GROUP>
       <GROUP id="{275DD23D-CE14-C99A-843C-3503D5B51EAF}" name="UIComponents">
         <GROUP id="{CECF90FC-BE84-9BE1-6182-2B925F3DCF28}" name="CtrlrApplicationWindow">
-          <FILE id="cXFPvo" name="add_aliases.py" compile="0" resource="1" file="add_aliases.py"/>
           <FILE id="STsk4W" name="CtrlrDocumentPanel.cpp" compile="1" resource="0"
                 file="Source/UIComponents/CtrlrApplicationWindow/CtrlrDocumentPanel.cpp"/>
           <FILE id="c1kcni" name="CtrlrDocumentPanel.h" compile="0" resource="0"
@@ -1102,7 +1101,6 @@
               file="Source/UIComponents/CtrlrValueTreeEditor.cpp"/>
         <FILE id="otPH5I" name="CtrlrValueTreeEditor.h" compile="0" resource="0"
               file="Source/UIComponents/CtrlrValueTreeEditor.h"/>
-        <FILE id="eTs7je" name="debug_parser.py" compile="0" resource="1" file="debug_parser.py"/>
         <FILE id="cu1KKl" name="Expressions.md" compile="0" resource="1" file="Source/Resources/Doc/Expressions.md"
               xcodeResource="1"/>
       </GROUP>
@@ -1129,6 +1127,8 @@
           file="Source/UIComponents/CtrlrMarkdownParser.cpp"/>
     <FILE id="HLhdmG" name="CtrlrMarkdownParser.h" compile="0" resource="0"
           file="Source/UIComponents/CtrlrMarkdownParser.h"/>
+    <FILE id="ea9wH7" name="lua_api_patcher.py" compile="0" resource="1"
+          file="lua_api_patcher.py"/>
     <FILE id="UMFKcD" name="LuaAPI.xml" compile="0" resource="1" file="Source/Resources/XML/LuaAPI.xml"
           xcodeResource="1"/>
     <FILE id="avL04X" name="luabind_parser.py" compile="0" resource="1"
@@ -1139,8 +1139,6 @@
           file="Source/Resources/Doc/LuaUsefulCommands.md" xcodeResource="1"/>
     <FILE id="rDLY7J" name="MidiProgramming.md" compile="0" resource="1"
           file="Source/Resources/Doc/MidiProgramming.md" xcodeResource="1"/>
-    <FILE id="A5SlGp" name="verify_aliases.py" compile="0" resource="1"
-          file="verify_aliases.py"/>
   </MAINGROUP>
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX" extraDefs="JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1 BOOST_BIND_GLOBAL_PLACEHOLDERS=1"

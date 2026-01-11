@@ -1,375 +1,194 @@
 #!/usr/bin/env python3
-"""
-Ctrlr Luabind Parser - Enhanced with Overload Detection
-Extracts Lua API from Ctrlr / JUCE luabind C++ bindings
-
-Usage:
-  python luabind_parser.py <source_directory> <output_xml>
-"""
-
 import re
 import sys
 from pathlib import Path
 from xml.etree.ElementTree import Element, SubElement, ElementTree, indent
 from collections import defaultdict
+import copy
 
-# ================= CONFIG =================
-
+# ================= CONFIG & MANUAL PATCHES =================
 VERBOSE = True
 STRIP_NAMESPACES = True
-DEBUG = False  # Set to True to see detailed parsing info
 
-# ==========================================
+FORCE_STATIC_CLASSES = ["CtrlrLuaUtils"]
+CLASS_ALIASES = {
+    "CtrlrPanel": ["panel"],
+    "CtrlrModulator": ["mod", "modulator"],
+    "LMemoryBlock": ["MemoryBlock"],
+    "CtrlrLuaUtils": ["utils"],
+}
 
+# Use this to fix methods the indexer misses or misidentifies
+MANUAL_OVERRIDES = {
+    "MemoryBlock": {
+        "copyFrom": {"type": "static", "args": "(MemoryBlock, int, int)"},
+        "copyTo": {"type": "static", "args": "(MemoryBlock, int, int)"},
+        "loadFromHexString": {"args": "(String)"},
+        "fromBase64Encoding": {"args": "(String)"},
+        "fillWith": {"args": "(int)"},
+        "ensureSize": {"args": "(int)"},
+        "getData": {"args": "()"},
+    }
+}
+# ==========================================================
 
 def strip_namespace(name: str) -> str:
-    if not STRIP_NAMESPACES:
-        return name.strip()
+    if not STRIP_NAMESPACES: return name.strip()
     return name.split("::")[-1].strip()
 
-
-def extract_args_from_signature(signature: str) -> str:
-    """
-    Extract arguments from C++ function signature.
-    Examples:
-      void(CtrlrModulator::*)(int, bool) -> "(int, bool)"
-      void(CtrlrPanel::*)(const String&) -> "(String)"
-    """
-    # Match function pointer signature
-    match = re.search(r'\([^)]*\)\s*\(([^)]*)\)', signature)
-    if match:
-        args = match.group(1).strip()
-        if not args:
-            return "()"
-        
-        # Clean up the args
-        clean_args = []
-        for arg in args.split(','):
-            arg = arg.strip()
-            # Remove const, &, *, etc.
-            arg = re.sub(r'\bconst\b', '', arg)
-            arg = re.sub(r'[&*]', '', arg)
-            # Get type (remove parameter names)
-            parts = arg.split()
-            if parts:
-                clean_args.append(parts[0])
-        
-        return f"({', '.join(clean_args)})"
-    
-    return ""
-
+def clean_cpp_args(args_raw: str) -> str:
+    if not args_raw or not args_raw.strip(): return "()"
+    parts = []
+    raw_parts = re.split(r',(?![^<]*>)', args_raw)
+    for arg in raw_parts:
+        arg = arg.strip().split('=')[0].strip()
+        arg = re.sub(r'\b(const|volatile)\b|[&*]', '', arg)
+        arg = arg.replace("luabind::object", "table")
+        type_only = arg.split()
+        if type_only:
+            # Handle names like 'juce::String' -> 'String'
+            parts.append(type_only[0].split('::')[-1])
+    return f"({', '.join(parts)})"
 
 def file_contains_lua_bindings(filepath: Path) -> bool:
-    """Quick check without full file read."""
     try:
-        # Read only first 2KB for quick check
         with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-            chunk = f.read(2048)
-            # Check for multiple indicators of Lua bindings
-            return ("wrapForLua" in chunk or 
-                    "module(L)" in chunk or 
-                    "class_<" in chunk or
-                    "luabind::" in chunk)
-    except Exception:
-        return False
-
+            chunk = f.read(8192)
+            return any(x in chunk for x in ["wrapForLua", "module(L)", "class_<", "luabind::"])
+    except: return False
 
 class LuabindParser:
     def __init__(self):
-        # Changed to store list of methods to support overloads
         self.classes = {}
+        self.cpp_definition_map = {}
 
-    # -------------------------------------------------------------
+    def index_source_files(self, source_dir: Path):
+        if VERBOSE: print("[*] Building C++ type index...")
+        for f in source_dir.glob("**/*.[ch]*"):
+            try:
+                content = f.read_text(encoding="utf-8", errors="ignore")
+                # Updated regex to be more aggressive in finding signatures
+                def_pattern = r'(?:\w+)?\s+([\w:]+)::(\w+)\s*\(([^)]*)\)'
+                for match in re.finditer(def_pattern, content):
+                    cls, meth, args = match.groups()
+                    self.cpp_definition_map[f"{strip_namespace(cls)}::{meth}"] = args
+            except: continue
+
+    def extract_args(self, signature_text: str, current_cpp_class: str, method_name: str, lua_name: str) -> str:
+        # Check Manual Overrides first
+        if lua_name in MANUAL_OVERRIDES and method_name in MANUAL_OVERRIDES[lua_name]:
+            if "args" in MANUAL_OVERRIDES[lua_name][method_name]:
+                return MANUAL_OVERRIDES[lua_name][method_name]["args"]
+
+        # Check for Luabind explicit cast
+        cast_match = re.search(r'\([^)]*\)\s*\(([^)]*)\)', signature_text)
+        if cast_match:
+            return clean_cpp_args(cast_match.group(1))
+        
+        # Check C++ Index
+        keys = [f"{current_cpp_class}::{method_name}", f"L{current_cpp_class}::{method_name}"]
+        for k in keys:
+            if k in self.cpp_definition_map:
+                return clean_cpp_args(self.cpp_definition_map[k])
+            
+        return "()"
 
     def parse_file(self, filepath: Path):
         content = filepath.read_text(encoding="utf-8", errors="ignore")
+        clean_content = re.sub(r'//.*', '', content)
+        clean_content = re.sub(r'/\*.*?\*/', '', clean_content, flags=re.S)
 
-        # Look for wrapForLua functions
-        wrap_pattern = r'wrapForLua\s*\([^)]*lua_State\s*\*[^)]*\)'
-        wraps = list(re.finditer(wrap_pattern, content))
-
-        # Look for top-level module(L) blocks
-        module_pattern = r'(?:luabind::)?module\s*\(\s*L\s*\)\s*\['
-        modules = list(re.finditer(module_pattern, content))
-
-        if not wraps and not modules:
-            return
-
-        if VERBOSE:
-            if wraps:
-                print(f"\nFILE: {filepath.name} ({len(wraps)} wrapForLua)")
-            if modules and not wraps:
-                print(f"\nFILE: {filepath.name} ({len(modules)} direct module blocks)")
-
-        # Parse wrapForLua functions
-        for wrap in wraps:
-            self.parse_wrap_block(content, wrap.start())
-        
-        # Parse direct module(L) blocks (not inside wrapForLua)
-        if modules and not wraps:
-            for module_match in modules:
-                bracket_start = module_match.end() - 1
-                module_body = self.extract_bracket_block(content, bracket_start)
-                if module_body:
-                    if DEBUG:
-                        print(f"  Parsing module block, length: {len(module_body)}")
-                    self.parse_module(module_body)
-                elif DEBUG:
-                    print(f"  WARNING: Could not extract module block at position {bracket_start}")
-
-    # -------------------------------------------------------------
-
-    def parse_wrap_block(self, content: str, start_pos: int):
-        module_match = re.search(
-            r'(?:luabind::)?module\s*\(\s*L\s*\)',
-            content[start_pos:]
-        )
-
-        if not module_match:
-            return
-
-        module_start = start_pos + module_match.end()
-        bracket_start = content.find('[', module_start)
-
-        if bracket_start == -1:
-            return
-
-        module_body = self.extract_bracket_block(content, bracket_start)
-
-        if module_body:
-            self.parse_module(module_body)
-
-    # -------------------------------------------------------------
+        for m in re.finditer(r'(?:luabind::)?module\s*\(\s*L\s*\)\s*\[', clean_content):
+            body = self.extract_bracket_block(clean_content, m.end() - 1)
+            if body: self.parse_module(body)
 
     def extract_bracket_block(self, text: str, start: int):
-        depth = 0
-        in_string = False
-        escape = False
-
+        depth, in_string, escape = 0, False, False
         for i in range(start, len(text)):
             c = text[i]
-
-            if escape:
-                escape = False
-                continue
-
-            if c == '\\':
-                escape = True
-                continue
-
-            if c == '"':
-                in_string = not in_string
-                continue
-
-            if in_string:
-                continue
-
-            if c == '[':
-                depth += 1
+            if escape: { escape := False }; continue
+            if c == '\\': escape = True; continue
+            if c == '"': in_string = not in_string; continue
+            if in_string: continue
+            if c == '[': depth += 1
             elif c == ']':
                 depth -= 1
-                if depth == 0:
-                    return text[start + 1:i]
-
+                if depth == 0: return text[start + 1:i]
         return None
 
-    # -------------------------------------------------------------
-
     def parse_module(self, content: str):
-        content = re.sub(r'//.*', '', content)
-        content = re.sub(r'/\*.*?\*/', '', content, flags=re.S)
-
-        class_iter = re.finditer(r'class_<\s*([^,>]+)', content)
-
-        positions = [m.start() for m in class_iter]
-
-        for idx, pos in enumerate(positions):
-            end = positions[idx + 1] if idx + 1 < len(positions) else len(content)
-            self.parse_class_block(content[pos:end])
-
-    # -------------------------------------------------------------
+        class_chunks = re.split(r'(class_<\s*[\w:]+)', content)
+        for i in range(1, len(class_chunks), 2):
+            block = class_chunks[i] + class_chunks[i+1]
+            self.parse_class_block(block)
 
     def parse_class_block(self, block: str):
-        header = re.search(
-            r'class_<\s*([^,>]+)[^>]*>\s*(\(\s*"([^"]+)"\s*\))?',
-            block
-        )
-
-        if not header:
-            return
+        header = re.search(r'class_<\s*([\w:]+).*?>\s*(?:\(\s*"([^"]+)"\s*\))?', block, re.DOTALL)
+        if not header: return
 
         cpp_class = strip_namespace(header.group(1))
-        lua_name = header.group(3) or cpp_class
-
-        if VERBOSE:
-            print(f"  Class: {lua_name} (C++: {cpp_class})")
+        lua_name = header.group(2) or cpp_class
 
         cls = self.classes.setdefault(lua_name, {
-            "cpp_name": cpp_class,
-            "methods": defaultdict(list),  # name -> list of signatures
-            "static": defaultdict(list),
-            "constructors": [],
-            "enums": {}
+            "cpp_name": cpp_class, "methods": defaultdict(list), "static": defaultdict(list), "constructors": [],
         })
 
-        body = block[header.end():]
-
-        # Constructors
-        for ctor in re.finditer(r'\.def\s*\(\s*constructor\s*<([^>]*)>', body):
-            args = ctor.group(1).strip()
-            if args:
-                cls["constructors"].append(f"({args})")
-            else:
-                cls["constructors"].append("()")
-
-        # Instance methods - capture full .def() call
-        for m in re.finditer(r'\.def\s*\(\s*"([^"]+)"\s*,\s*([^)]+)\)', body):
-            method_name = m.group(1)
-            signature = m.group(2)
+        for m in re.finditer(r'\.def\s*\(\s*"([^"]+)"\s*,\s*([^,)]+)', block):
+            name, sig = m.group(1), m.group(2)
+            if name == "constructor": continue
             
-            args = extract_args_from_signature(signature)
-            cls["methods"][method_name].append(args)
+            args = self.extract_args(sig, cpp_class, name, lua_name)
+            
+            # Forced Static Check
+            is_static = False
+            if lua_name in MANUAL_OVERRIDES and name in MANUAL_OVERRIDES[lua_name]:
+                if MANUAL_OVERRIDES[lua_name][name].get("type") == "static":
+                    is_static = True
+            
+            if not is_static:
+                is_static = ".scope" in block and block.find(name) > block.find(".scope")
+            
+            if is_static:
+                cls["static"][name].append(args)
+            else:
+                cls["methods"][name].append(args)
 
-        # Static methods (.scope)
-        for scope in re.finditer(r'\.scope\s*\[', body):
-            scope_body = self.extract_bracket_block(body, scope.end() - 1)
-            if not scope_body:
-                continue
+    def apply_final_patches(self):
+        for target in FORCE_STATIC_CLASSES:
+            if target in self.classes:
+                c = self.classes[target]
+                c["static"].update(c["methods"])
+                c["methods"] = defaultdict(list)
 
-            for m in re.finditer(r'def\s*\(\s*"([^"]+)"\s*,\s*([^)]+)\)', scope_body):
-                method_name = m.group(1)
-                signature = m.group(2)
-                
-                args = extract_args_from_signature(signature)
-                cls["static"][method_name].append(args)
-
-        # Enums
-        for enum in re.finditer(r'\.enum_\s*\(\s*"([^"]+)"\s*\)\s*\[', body):
-            enum_name = enum.group(1)
-            enum_body = self.extract_bracket_block(body, enum.end() - 1)
-
-            if not enum_body:
-                continue
-
-            values = {}
-            for v in re.finditer(
-                r'value\s*\(\s*"([^"]+)"\s*,\s*([^)]+)\)',
-                enum_body
-            ):
-                values[v.group(1)] = v.group(2).strip()
-
-            if values:
-                cls["enums"][enum_name] = values
-
-    # -------------------------------------------------------------
+        new_classes = {}
+        for original, aliases in CLASS_ALIASES.items():
+            if original in self.classes:
+                for a in aliases:
+                    new_classes[a] = copy.deepcopy(self.classes[original])
+        self.classes.update(new_classes)
 
     def generate_xml(self, output_file: str):
         root = Element("LuaAPI")
-
         for name in sorted(self.classes):
-            cls = self.classes[name]
-
-            ce = SubElement(root, "class", {
-                "name": name,
-                "cpp_name": cls["cpp_name"]
-            })
-
-            # Constructors
-            if cls["constructors"]:
-                for ctor_args in cls["constructors"]:
-                    SubElement(ce, "constructor", {
-                        "args": ctor_args
-                    })
-
-            # Instance methods
-            if cls["methods"]:
-                me = SubElement(ce, "methods")
-                for method_name in sorted(cls["methods"]):
-                    signatures = cls["methods"][method_name]
-                    
-                    if len(signatures) == 1:
-                        # Single overload
-                        SubElement(me, "method", {
-                            "name": method_name,
-                            "type": "instance",
-                            "args": signatures[0] or ""
-                        })
-                    else:
-                        # Multiple overloads
-                        for idx, args in enumerate(signatures, 1):
-                            SubElement(me, "method", {
-                                "name": method_name,
-                                "type": "instance",
-                                "args": args or "",
-                                "overload": str(idx)
-                            })
-
-            # Static methods
-            if cls["static"]:
-                se = SubElement(ce, "static_methods")
-                for method_name in sorted(cls["static"]):
-                    signatures = cls["static"][method_name]
-                    
-                    if len(signatures) == 1:
-                        SubElement(se, "method", {
-                            "name": method_name,
-                            "type": "static",
-                            "args": signatures[0] or ""
-                        })
-                    else:
-                        for idx, args in enumerate(signatures, 1):
-                            SubElement(se, "method", {
-                                "name": method_name,
-                                "type": "static",
-                                "args": args or "",
-                                "overload": str(idx)
-                            })
-
-            # Enums
-            if cls["enums"]:
-                ee = SubElement(ce, "enums")
-                for ename, values in cls["enums"].items():
-                    e = SubElement(ee, "enum", {"name": ename})
-                    for vname, vval in values.items():
-                        SubElement(e, "value", {
-                            "name": vname,
-                            "value": vval
-                        })
-
+            c = self.classes[name]
+            ce = SubElement(root, "class", {"name": name, "cpp_name": c["cpp_name"]})
+            for sec_key, sec_tag, type_val in [("methods", "methods", "instance"), ("static", "static_methods", "static")]:
+                if c[sec_key]:
+                    node = SubElement(ce, sec_tag)
+                    for m_name, sigs in sorted(c[sec_key].items()):
+                        for i, args in enumerate(sigs, 1):
+                            attr = {"name": m_name, "type": type_val, "args": args}
+                            if len(sigs) > 1: attr["overload"] = str(i)
+                            SubElement(node, "method", attr)
         indent(root, space="  ")
-        ElementTree(root).write(
-            output_file,
-            encoding="utf-8",
-            xml_declaration=True
-        )
-
-        print("\nGenerated:", output_file)
-        print("Classes:", len(self.classes))
-
-
-# ================================================================
-
-def main():
-    if len(sys.argv) != 3:
-        print("Usage: python luabind_parser.py <source_dir> <output.xml>")
-        sys.exit(1)
-
-    source_dir = Path(sys.argv[1])
-    output_xml = sys.argv[2]
-
-    parser = LuabindParser()
-
-    # Optimized: filter files first
-    cpp_files = [f for f in sorted(source_dir.glob("**/*.cpp")) 
-                 if file_contains_lua_bindings(f)]
-
-    print(f"Found {len(cpp_files)} files with Lua bindings\n")
-
-    for f in cpp_files:
-        parser.parse_file(f)
-
-    parser.generate_xml(output_xml)
-
+        ElementTree(root).write(output_file, encoding="utf-8", xml_declaration=True)
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) != 3: sys.exit(1)
+    parser = LuabindParser()
+    path = Path(sys.argv[1])
+    parser.index_source_files(path)
+    cpp_files = [f for f in sorted(path.glob("**/*.cpp")) if file_contains_lua_bindings(f)]
+    for f in cpp_files: parser.parse_file(f)
+    parser.apply_final_patches()
+    parser.generate_xml(sys.argv[2])

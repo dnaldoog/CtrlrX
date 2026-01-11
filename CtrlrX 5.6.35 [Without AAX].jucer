@@ -1120,6 +1120,8 @@
     <FILE id="uHPOvQ" name="CtrlrMarkdownParser.h" compile="0" resource="0"
           file="Source/UIComponents/CtrlrMarkdownParser.h"/>
     <FILE id="ozTHcY" name="Expressions.md" compile="0" resource="1" file="Source/Resources/Doc/Expressions.md"/>
+    <FILE id="zGry7Q" name="lua_api_patcher.py" compile="0" resource="1"
+          file="lua_api_patcher.py"/>
     <FILE id="YUmIQK" name="LuaAPI.xml" compile="0" resource="1" file="Source/Resources/XML/LuaAPI.xml"/>
     <FILE id="UJjrip" name="luabind_parser.py" compile="0" resource="1"
           file="luabind_parser.py"/>
