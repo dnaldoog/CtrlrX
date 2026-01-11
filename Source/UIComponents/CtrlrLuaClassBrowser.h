@@ -68,13 +68,16 @@ public:
                 {
                     text += " " + method.args;
                 }
-
-                prefix = "[M] ";
-
-                if (method.isStatic)
-                    g.setColour(juce::Colour(0xffc00000)); // Red for static
-                else
-                    g.setColour(juce::Colours::darkblue); // Blue for instance methods
+                if (method.isStatic) {
+                prefix = "[ST] ";
+                g.setColour(juce::Colour(0xffc00000)); // Red for static
+                }
+                else {
+                prefix = "[ME] ";
+                g.setColour(juce::Colours::darkblue); // Blue for instance methods
+                }
+            
+                  
             }
             else
             {
