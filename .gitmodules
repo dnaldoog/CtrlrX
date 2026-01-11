@@ -1,3 +1,6 @@
 [submodule "Panels"]
 	path = Panels
 	url = https://github.com/RomanKubiak/Panels.git
+[submodule "/home/john/Documents/CtrlrX/DEMO"]
+	path = /home/john/Documents/CtrlrX/DEMO
+	url = https://github.com/dnaldoog/CtrlrDemoPanels.git
