@@ -18,14 +18,14 @@
       <method name="translated" type="instance" args="(float, float)" />
     </methods>
     <static_methods>
-      <method name="fromTargetPoints" type="static" args="(clientArea.getX()" />
-      <method name="rotation" type="static" args="(angle, r.getCentreX()" overload="1" />
-      <method name="rotation" type="static" args="(angle, r.getCentreX()" overload="2" />
-      <method name="scale" type="static" args="(w, h)" overload="1" />
-      <method name="scale" type="static" args="(w, h)" overload="2" />
-      <method name="scale" type="static" args="(w, h)" overload="3" />
+      <method name="fromTargetPoints" type="static" args="(p1, Point&lt;float&gt;()" />
+      <method name="rotation" type="static" args="((float)" overload="1" />
+      <method name="rotation" type="static" args="((float)" overload="2" />
+      <method name="scale" type="static" args="((float)" overload="1" />
+      <method name="scale" type="static" args="((float)" overload="2" />
+      <method name="scale" type="static" args="((float)" overload="3" />
       <method name="shear" type="static" args="(float, float)" />
-      <method name="translation" type="static" args="(x, y)" />
+      <method name="translation" type="static" args="(0.0f, 1.0f)" />
       <method name="verticalFlip" type="static" args="(float)" />
     </static_methods>
   </class>
@@ -46,15 +46,12 @@
       <method name="triggerAsyncUpdate" type="instance" args="()" />
     </methods>
   </class>
-  <class name="Attribute" cpp_name="Attribute" />
   <class name="AttributedString" cpp_name="AttributedString">
     <enums>
-      <enum name="ReadingDirection">
+      <enum name="">
         <value name="leftToRight" value="1" />
         <value name="natural" value="0" />
         <value name="rightToLeft" value="2" />
-      </enum>
-      <enum name="WordWrap">
         <value name="byChar" value="2" />
         <value name="byWord" value="1" />
         <value name="none" value="0" />
@@ -120,7 +117,7 @@
   </class>
   <class name="AudioPlayHead" cpp_name="AudioPlayHead">
     <enums>
-      <enum name="FrameRateType">
+      <enum name="">
         <value name="fps24" value="AudioPlayHead::fps24" />
         <value name="fps25" value="AudioPlayHead::fps25" />
         <value name="fps2997" value="AudioPlayHead::fps2997" />
@@ -226,7 +223,6 @@
       <method name="toString" type="instance" args="()" />
     </methods>
   </class>
-  <class name="BorderSize" cpp_name="BorderSize" />
   <class name="Button" cpp_name="Button">
     <methods>
       <method name="addListener" type="instance" args="(Listener)" />
@@ -249,7 +245,7 @@
       <method name="isOver" type="instance" args="()" />
       <method name="isRegisteredForShortcut" type="instance" args="(KeyPress)" />
       <method name="removeListener" type="instance" args="(Listener)" />
-      <method name="setButtonText" type="instance" args="()" />
+      <method name="setButtonText" type="instance" args="(String)" />
       <method name="setClickingTogglesState" type="instance" args="(bool)" />
       <method name="setCommandToTrigger" type="instance" args="()" />
       <method name="setConnectedEdges" type="instance" args="(int)" />
@@ -262,13 +258,11 @@
       <method name="triggerClick" type="instance" args="()" />
     </methods>
   </class>
-  <class name="ButtonState" cpp_name="ButtonState" />
   <class name="CharPointer_UTF8" cpp_name="CharPointer_UTF8">
     <methods>
       <method name="getAddress" type="instance" args="()" />
     </methods>
   </class>
-  <class name="CharType" cpp_name="CharType" />
   <class name="Colour" cpp_name="Colour">
     <methods>
       <method name="brighter" type="instance" args="(float)" />
@@ -301,12 +295,12 @@
     </methods>
     <static_methods>
       <method name="contrasting" type="static" args="(Colour, Colour)" />
-      <method name="fromFloatRGBA" type="static" args="(c.r, c.g, c.b, 1.0f)" />
-      <method name="fromHSV" type="static" args="(level, 1.0f, level, 1.0f)" />
+      <method name="fromFloatRGBA" type="static" args="(float, float, float, float)" />
+      <method name="fromHSV" type="static" args="(float, float, float, float)" />
       <method name="fromRGB" type="static" args="(uint8, uint8, uint8)" />
       <method name="fromRGBA" type="static" args="(uint8, uint8, uint8, uint8)" />
-      <method name="fromString" type="static" args="(toks[4].fromFirstOccurrenceOf, false, false)" />
-      <method name="greyLevel" type="static" args="(0.93f)" />
+      <method name="fromString" type="static" args="(x)" />
+      <method name="greyLevel" type="static" args="(float)" />
     </static_methods>
   </class>
   <class name="ColourGradient" cpp_name="ColourGradient">
@@ -328,11 +322,11 @@
     <methods>
       <method name="addItem" type="instance" args="(String, int)" />
       <method name="addItemList" type="instance" args="(StringArray, int)" />
-      <method name="addListener" type="instance" args="()" />
+      <method name="addListener" type="instance" args="(Listener)" />
       <method name="addSectionHeading" type="instance" args="(String)" />
       <method name="addSeparator" type="instance" args="()" />
       <method name="changeItemText" type="instance" args="(int, String)" />
-      <method name="clear" type="instance" args="(bool)" />
+      <method name="clear" type="instance" args="()" />
       <method name="getItemId" type="instance" args="(int)" />
       <method name="getItemText" type="instance" args="(int)" />
       <method name="getJustificationType" type="instance" args="()" />
@@ -361,15 +355,15 @@
   </class>
   <class name="Component" cpp_name="Component">
     <methods>
-      <method name="addAndMakeVisible" type="instance" args="(optionsButton)" overload="1" />
-      <method name="addAndMakeVisible" type="instance" args="(optionsButton)" overload="2" />
+      <method name="addAndMakeVisible" type="instance" args="(child, zOrder)" overload="1" />
+      <method name="addAndMakeVisible" type="instance" args="(child, zOrder)" overload="2" />
       <method name="addChildAndSetID" type="instance" args="(Component, String)" />
-      <method name="addChildComponent" type="instance" args="(resizableCorner.get()" overload="1" />
-      <method name="addChildComponent" type="instance" args="(resizableCorner.get()" overload="2" />
+      <method name="addChildComponent" type="instance" args="(child, zOrder)" overload="1" />
+      <method name="addChildComponent" type="instance" args="(child, zOrder)" overload="2" />
       <method name="addComponentListener" type="instance" args="()" />
-      <method name="addKeyListener" type="instance" args="(KeyListener)" />
+      <method name="addKeyListener" type="instance" args="()" />
       <method name="addMouseListener" type="instance" args="(MouseListener, bool)" />
-      <method name="addToDesktop" type="instance" args="(windowStyleFlags, nativeWindowToAttachTo)" />
+      <method name="addToDesktop" type="instance" args="(windowStyleFlags, nullptr)" />
       <method name="broughtToFront" type="instance" args="()" />
       <method name="canModalEventBeSentToComponent" type="instance" args="(Component)" />
       <method name="centreWithSize" type="instance" args="(int, int)" />
@@ -383,11 +377,11 @@
       <method name="deleteAllChildren" type="instance" args="()" />
       <method name="enablementChanged" type="instance" args="()" />
       <method name="enterModalState" type="instance" args="()" />
-      <method name="exitModalState" type="instance" args="()" />
+      <method name="exitModalState" type="instance" args="(int)" />
       <method name="findChildWithID" type="instance" args="(StringRef)" />
-      <method name="findColour" type="instance" args="()" />
-      <method name="focusGained" type="instance" args="(FocusChangeType)" />
-      <method name="focusLost" type="instance" args="(FocusChangeType)" />
+      <method name="findColour" type="instance" args="(textColourId)" />
+      <method name="focusGained" type="instance" args="(cause)" />
+      <method name="focusLost" type="instance" args="(cause)" />
       <method name="focusOfChildComponentChanged" type="instance" args="(FocusChangeType)" />
       <method name="getAlpha" type="instance" args="()" />
       <method name="getBottom" type="instance" args="()" />
@@ -452,7 +446,7 @@
       <method name="isShowing" type="instance" args="()" />
       <method name="isTransformed" type="instance" args="()" />
       <method name="isVisible" type="instance" args="()" />
-      <method name="keyPressed" type="instance" args="(key)" />
+      <method name="keyPressed" type="instance" args="(KeyPress)" />
       <method name="keyStateChanged" type="instance" args="(bool)" />
       <method name="localPointToGlobal" type="instance" args="(Point&lt;float&gt;)" />
       <method name="lookAndFeelChanged" type="instance" args="()" />
@@ -485,8 +479,8 @@
       <method name="removeFromDesktop" type="instance" args="()" />
       <method name="removeKeyListener" type="instance" args="(KeyListener)" />
       <method name="removeMouseListener" type="instance" args="(MouseListener)" />
-      <method name="repaint" type="instance" args="(Rectangle&lt;int&gt;)" overload="1" />
-      <method name="repaint" type="instance" args="(Rectangle&lt;int&gt;)" overload="2" />
+      <method name="repaint" type="instance" args="()" overload="1" />
+      <method name="repaint" type="instance" args="()" overload="2" />
       <method name="resized" type="instance" args="()" />
       <method name="sendLookAndFeelChange" type="instance" args="()" />
       <method name="setAlpha" type="instance" args="(float)" />
@@ -511,7 +505,7 @@
       <method name="setLookAndFeel" type="instance" args="(LookAndFeel)" />
       <method name="setMouseClickGrabsKeyboardFocus" type="instance" args="(bool)" />
       <method name="setMouseCursor" type="instance" args="(MouseCursor)" />
-      <method name="setName" type="instance" args="()" />
+      <method name="setName" type="instance" args="(owner.getPanelWindowTitle()" />
       <method name="setOpaque" type="instance" args="(bool)" />
       <method name="setPaintingIsUnclipped" type="instance" args="(bool)" />
       <method name="setPositioner" type="instance" args="(Positioner)" />
@@ -521,7 +515,7 @@
       <method name="setTopLeftPosition" type="instance" args="(Point&lt;int&gt;)" overload="2" />
       <method name="setTopRightPosition" type="instance" args="(int, int)" />
       <method name="setTransform" type="instance" args="(AffineTransform)" />
-      <method name="setVisible" type="instance" args="(getVisibility()" />
+      <method name="setVisible" type="instance" args="(shouldBeVisible)" />
       <method name="setWantsKeyboardFocus" type="instance" args="(bool)" />
       <method name="toBack" type="instance" args="()" />
       <method name="toBehind" type="instance" args="(Component)" />
@@ -531,7 +525,7 @@
       <method name="visibilityChanged" type="instance" args="()" />
     </methods>
     <static_methods>
-      <method name="beginDragAutoRepeat" type="static" args="()" />
+      <method name="beginDragAutoRepeat" type="static" args="(milisecondsBetweenCallbacks)" />
       <method name="getCurrentlyFocusedComponent" type="static" args="()" />
       <method name="getCurrentlyModalComponent" type="static" args="()" />
       <method name="getNumCurrentlyModalComponents" type="static" args="()" />
@@ -540,7 +534,7 @@
   </class>
   <class name="ComponentPeer" cpp_name="ComponentPeer">
     <enums>
-      <enum name="StyleFlags">
+      <enum name="">
         <value name="windowAppearsOnTaskbar" value="(1 &lt;&lt; 0" />
         <value name="windowHasCloseButton" value="(1 &lt;&lt; 7" />
         <value name="windowHasDropShadow" value="(1 &lt;&lt; 8" />
@@ -625,7 +619,6 @@
       <method name="setVisible" type="instance" args="()" />
     </methods>
   </class>
-  <class name="CtrlrCustomComponent" cpp_name="CtrlrCustomComponent" />
   <class name="CtrlrFileListBox" cpp_name="CtrlrFileListBox">
     <methods>
       <method name="deselectAllFiles" type="instance" args="()" />
@@ -847,10 +840,10 @@
       <method name="infoWindow" type="static" args="(String, String)" />
       <method name="openFileWindow" type="static" args="(String, File, String, bool)" />
       <method name="openMultipleFilesWindow" type="static" args="(String, File, String, bool, table)" />
-      <method name="packDsiData" type="static" args="(MemoryBlock data)" />
+      <method name="packDsiData" type="static" args="()" />
       <method name="questionWindow" type="static" args="(String, String, String, String)" />
       <method name="saveFileWindow" type="static" args="(String, File, String, bool)" />
-      <method name="unpackDsiData" type="static" args="(MemoryBlock data)" />
+      <method name="unpackDsiData" type="static" args="()" />
       <method name="warnWindow" type="static" args="(String, String)" />
     </static_methods>
   </class>
@@ -867,7 +860,7 @@
   </class>
   <class name="CtrlrMIDIDeviceManager" cpp_name="CtrlrMIDIDeviceManager">
     <enums>
-      <enum name="CtrlrMIDIDeviceType">
+      <enum name="">
         <value name="controllerDevice" value="controllerDevice" />
         <value name="hostInputDevice" value="hostInputDevice" />
         <value name="hostOutputDevice" value="hostOutputDevice" />
@@ -876,8 +869,6 @@
         <value name="oscOutputDevice" value="oscOutputDevice" />
         <value name="outputDevice" value="outputDevice" />
         <value name="serialDevice" value="serialDevice" />
-      </enum>
-      <enum name="DeviceState">
         <value name="closed" value="CtrlrMIDIDeviceManager::closed" />
         <value name="error" value="CtrlrMIDIDeviceManager::error" />
         <value name="opened" value="CtrlrMIDIDeviceManager::opened" />
@@ -895,7 +886,7 @@
   </class>
   <class name="CtrlrMidiMessage" cpp_name="CtrlrMidiMessage">
     <enums>
-      <enum name="CtrlrMidiMessageType">
+      <enum name="">
         <value name="Aftertouch" value="1" />
         <value name="CC" value="0" />
         <value name="ChannelPressure" value="2" />
@@ -937,7 +928,7 @@
   </class>
   <class name="CtrlrModulator" cpp_name="CtrlrModulator">
     <enums>
-      <enum name="CtrlrModulatorValue">
+      <enum name="">
         <value name="changeByUnknown" value="8" />
         <value name="changedByGUI" value="4" />
         <value name="changedByHost" value="1" />
@@ -999,7 +990,7 @@
   </class>
   <class name="CtrlrPanel" cpp_name="CtrlrPanel">
     <enums>
-      <enum name="CtrlrByteEncoding">
+      <enum name="">
         <value name="Encode16bitLsbFirst" value="Encode16bitLsbFirst" />
         <value name="Encode16bitMsbFirst" value="Encode16bitMsbFirst" />
         <value name="Encode4bitLsbFirst" value="EncodeNibbleLsbFirst" />
@@ -1015,28 +1006,20 @@
         <value name="EncodeNormal" value="EncodeNormal" />
         <value name="EncodeSignedNibbleLsbFirst" value="EncodeSignedNibbleLsbFirst" />
         <value name="EncodeSignedNibbleMsbFirst" value="EncodeSignedNibbleMsbFirst" />
-      </enum>
-      <enum name="CtrlrByteSplit">
         <value name="Split4Bits" value="(uint8" />
         <value name="Split7Bits" value="(uint8" />
         <value name="Split8Bits" value="(uint8" />
         <value name="SplitNone" value="(uint8" />
-      </enum>
-      <enum name="CtrlrInstance">
         <value name="InstanceMulti" value="(uint8" />
         <value name="InstanceMultiEngine" value="(uint8" />
         <value name="InstanceSingle" value="(uint8" />
         <value name="InstanceSingleEngine" value="(uint8" />
         <value name="InstanceSingleRestriced" value="(uint8" />
         <value name="InstanceSingleRestrictedEngine" value="(uint8" />
-      </enum>
-      <enum name="CtrlrNotificationType">
         <value name="NotifyFailure" value="(uint8" />
         <value name="NotifyInformation" value="(uint8" />
         <value name="NotifySuccess" value="(uint8" />
         <value name="NotifyWarning" value="(uint8" />
-      </enum>
-      <enum name="CtrlrPanelFileType">
         <value name="PanelFileBinary" value="2" />
         <value name="PanelFileBinaryCompressed" value="3" />
         <value name="PanelFileExport" value="4" />
@@ -1073,7 +1056,7 @@
       <method name="getListBoxComponent" type="instance" args="(String)" />
       <method name="getModulator" type="instance" args="(String)" />
       <method name="getModulatorByIndex" type="instance" args="(int)" />
-      <method name="getModulatorByName" type="instance" args="(String name)" />
+      <method name="getModulatorByName" type="instance" args="()" />
       <method name="getModulatorValuesAsData" type="instance" args="(ValueTree, String, CtrlrByteEncoding, int, bool)" overload="1" />
       <method name="getModulatorValuesAsData" type="instance" args="(ValueTree, String, CtrlrByteEncoding, int, bool)" overload="2" />
       <method name="getModulatorValuesAsData" type="instance" args="(ValueTree, String, CtrlrByteEncoding, int, bool)" overload="3" />
@@ -1099,11 +1082,6 @@
       <method name="setModulatorValuesFromData" type="instance" args="(MemoryBlock, String, CtrlrByteEncoding, int, int, bool)" />
       <method name="setProgramState" type="instance" args="(bool)" />
       <method name="setRestoreState" type="instance" args="(bool)" />
-      <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
-      <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
-      <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
-      <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
-      <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
       <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
       <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
       <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
@@ -1171,7 +1149,6 @@
       <method name="getOwnedSlider" type="instance" args="()" />
     </methods>
   </class>
-  <class name="CtrlrTabsComponent" cpp_name="CtrlrTabsComponent" />
   <class name="CtrlrToggleButton" cpp_name="CtrlrToggleButton">
     <methods>
       <method name="getToggleState" type="instance" args="()" />
@@ -1179,7 +1156,6 @@
       <method name="setToggleState" type="instance" args="(bool, bool)" />
     </methods>
   </class>
-  <class name="CtrlrValue" cpp_name="CtrlrValue" />
   <class name="CtrlrValueMap" cpp_name="CtrlrValueMap">
     <methods>
       <method name="addAdditionalData" type="instance" args="(int, String)" />
@@ -1233,7 +1209,6 @@
       <method name="setVerticalZoomFactor" type="instance" args="(float)" />
     </methods>
   </class>
-  <class name="CurrentPositionInfo" cpp_name="CurrentPositionInfo" />
   <class name="DragAndDropSourceDetails" cpp_name="DragAndDropSourceDetails">
     <methods>
       <method name="getDescription" type="instance" args="()" />
@@ -1253,10 +1228,10 @@
       <method name="setTransformToFit" type="instance" args="(Rectangle&lt;float&gt;, RectanglePlacement)" />
     </methods>
     <static_methods>
-      <method name="createFromImageData" type="static" args="(juce_icon_png, juce_icon_pngSize)" />
-      <method name="createFromImageDataStream" type="static" args="(svgFileStream)" />
-      <method name="createFromImageFile" type="static" args="(firstArgText)" />
-      <method name="createFromSVG" type="static" args="(parseXML)" />
+      <method name="createFromImageData" type="static" args="(svgData.toRawUTF8()" />
+      <method name="createFromImageDataStream" type="static" args="(stream)" />
+      <method name="createFromImageFile" type="static" args="(file)" />
+      <method name="createFromSVG" type="static" args="(svgElement)" />
       <method name="toDrawableComposite" type="static" args="()" />
     </static_methods>
   </class>
@@ -1302,7 +1277,7 @@
   </class>
   <class name="File" cpp_name="File">
     <enums>
-      <enum name="SpecialLocationType">
+      <enum name="">
         <value name="commonApplicationDataDirectory" value="7" />
         <value name="commonDocumentsDirectory" value="8" />
         <value name="currentApplicationFile" value="11" />
@@ -1321,8 +1296,6 @@
         <value name="userPicturesDirectory" value="5" />
         <value name="windowsLocalAppData" value="17" />
         <value name="windowsSystemDirectory" value="14" />
-      </enum>
-      <enum name="TypesOfFileToFind">
         <value name="findDirectories" value="1" />
         <value name="findFiles" value="2" />
         <value name="findFilesAndDirectories" value="3" />
@@ -1340,7 +1313,7 @@
       <method name="deleteRecursively" type="instance" args="(bool)" />
       <method name="exists" type="instance" args="()" />
       <method name="existsAsFile" type="instance" args="()" />
-      <method name="findChildFiles" type="instance" args="(Array&lt;File&gt;, int, bool, String)" />
+      <method name="findChildFiles" type="instance" args="(files, whatToLookFor, searchRecursively, wildcardPattern)" />
       <method name="getBytesFreeOnVolume" type="instance" args="()" />
       <method name="getChildFile" type="instance" args="(StringRef)" />
       <method name="getCreationTime" type="instance" args="()" />
@@ -1377,11 +1350,11 @@
       <method name="isOnRemovableDrive" type="instance" args="()" />
       <method name="isRoot" type="instance" args="()" />
       <method name="isValid" type="instance" args="()" />
-      <method name="loadFileAsData" type="instance" args="(MemoryBlock)" />
+      <method name="loadFileAsData" type="instance" args="(mb)" />
       <method name="loadFileAsString" type="instance" args="()" />
       <method name="moveFileTo" type="instance" args="(File)" />
       <method name="moveToTrash" type="instance" args="()" />
-      <method name="replaceWithData" type="instance" args="(void, size_t)" />
+      <method name="replaceWithData" type="instance" args="(data.getData()" />
       <method name="replaceWithText" type="instance" args="(String, bool, bool, char)" />
       <method name="revealToUser" type="instance" args="()" />
       <method name="setAsCurrentWorkingDirectory" type="instance" args="()" />
@@ -1393,17 +1366,17 @@
       <method name="withFileExtension" type="instance" args="(StringRef)" />
     </methods>
     <static_methods>
-      <method name="addTrailingSeparator" type="static" args="(directory.getFullPathName()" />
+      <method name="addTrailingSeparator" type="static" args="(String)" />
       <method name="areFileNamesCaseSensitive" type="static" args="()" />
-      <method name="createFileWithoutCheckingPath" type="static" args="(files[0])" />
-      <method name="createLegalFileName" type="static" args="(newName)" />
+      <method name="createFileWithoutCheckingPath" type="static" args="(path)" />
+      <method name="createLegalFileName" type="static" args="(owner.getInstanceName()" />
       <method name="createLegalPathName" type="static" args="(String)" />
-      <method name="createTempFile" type="static" args="(&quot;DialogsDemoSharingTest&quot;)" />
-      <method name="descriptionOfSizeInBytes" type="static" args="(getSpecialLocation)" />
-      <method name="findFileSystemRoots" type="static" args="(roots)" />
+      <method name="createTempFile" type="static" args="(StringRef)" />
+      <method name="descriptionOfSizeInBytes" type="static" args="(fontFile.getSize()" />
+      <method name="findFileSystemRoots" type="static" args="(files)" />
       <method name="getCurrentWorkingDirectory" type="static" args="()" />
-      <method name="getSpecialLocation" type="static" args="(currentExecutableFile)" />
-      <method name="isAbsolutePath" type="static" args="(path)" />
+      <method name="getSpecialLocation" type="static" args="(userDocumentsDirectory)" />
+      <method name="isAbsolutePath" type="static" args="(panelCertificateWinPath)" />
     </static_methods>
   </class>
   <class name="FillType" cpp_name="FillType">
@@ -1431,7 +1404,7 @@
   </class>
   <class name="Font" cpp_name="Font">
     <enums>
-      <enum name="FontStyleFlags">
+      <enum name="">
         <value name="bold" value="1" />
         <value name="italic" value="2" />
         <value name="plain" value="0" />
@@ -1446,11 +1419,11 @@
       <method name="getDescent" type="instance" args="()" />
       <method name="getDescentInPoints" type="instance" args="()" />
       <method name="getExtraKerningFactor" type="instance" args="()" />
-      <method name="getGlyphPositions" type="instance" args="()" />
+      <method name="getGlyphPositions" type="instance" args="(String, Array&lt;int&gt;, Array&lt;float&gt;)" />
       <method name="getHeight" type="instance" args="()" />
       <method name="getHeightInPoints" type="instance" args="()" />
       <method name="getHorizontalScale" type="instance" args="()" />
-      <method name="getStringWidth" type="instance" args="()" />
+      <method name="getStringWidth" type="instance" args="(String)" />
       <method name="getStringWidthFloat" type="instance" args="(String)" />
       <method name="getStyleFlags" type="instance" args="()" />
       <method name="getTypeface" type="instance" args="()" />
@@ -1481,12 +1454,12 @@
     <static_methods>
       <method name="findAllTypefaceNames" type="static" args="()" />
       <method name="findAllTypefaceStyles" type="static" args="(String)" />
-      <method name="fromString" type="static" args="(sourceValue.toString()" />
+      <method name="fromString" type="static" args="(String)" />
       <method name="getDefaultMonospacedFontName " type="static" args="()" />
       <method name="getDefaultSansSerifFontName" type="static" args="()" />
       <method name="getDefaultSerifFontName" type="static" args="()" />
       <method name="getDefaultStyle" type="static" args="()" />
-      <method name="getDefaultTypefaceForFont" type="static" args="(Font)" />
+      <method name="getDefaultTypefaceForFont" type="static" args="(f)" />
       <method name="getFallbackFontName" type="static" args="()" />
       <method name="getFallbackFontStyle" type="static" args="()" />
       <method name="setFallbackFontName" type="static" args="(String)" />
@@ -1522,7 +1495,7 @@
   </class>
   <class name="Graphics" cpp_name="Graphics">
     <enums>
-      <enum name="ResamplingQuality">
+      <enum name="">
         <value name="highResamplingQuality" value="2" />
         <value name="lowResamplingQuality" value="0" />
         <value name="mediumResamplingQuality" value="1" />
@@ -1610,7 +1583,7 @@
   </class>
   <class name="Image" cpp_name="Image">
     <enums>
-      <enum name="PixelFormat">
+      <enum name="">
         <value name="ARGB" value="Image::ARGB" />
         <value name="RGB" value="Image::RGB" />
         <value name="SingleChannel" value="Image::SingleChannel" />
@@ -1641,7 +1614,7 @@
     <methods>
       <method name="canUnderstand" type="instance" args="()" />
       <method name="getFormatName" type="instance" args="()" />
-      <method name="loadFrom" type="instance" args="(juceIconStream)" />
+      <method name="loadFrom" type="instance" args="(f)" />
     </methods>
   </class>
   <class name="ImageType" cpp_name="ImageType">
@@ -1661,97 +1634,9 @@
       <method name="setPosition" type="instance" args="()" />
     </methods>
   </class>
-  <class name="JAlertWindow" cpp_name="AlertWindow" />
-  <class name="JAudioFormatManager" cpp_name="AudioFormatManager" />
-  <class name="JMemoryBlock" cpp_name="MemoryBlock" />
-  <class name="JPopupMenu" cpp_name="PopupMenu" />
-  <class name="JRelativeCoordinate" cpp_name="RelativeCoordinate" />
-  <class name="JThread" cpp_name="Thread" />
-  <class name="JThreadWithProgressWindow" cpp_name="ThreadWithProgressWindow" />
-  <class name="JUCEBigInteger" cpp_name="BigInteger" />
   <class name="Justification" cpp_name="Justification">
     <enums>
-      <value name="bottom" value="16" />
-        <value name="bottomLeft" value="17" />
-        <value name="bottomRight" value="18" />
-        <value name="centred" value="36" />
-        <value name="centredBottom" value="20" />
-        <value name="centredLeft" value="33" />
-        <value name="centredRight" value="34" />
-        <value name="centredTop" value="12" />
-        <value name="horizontallyCentred" value="4" />
-        <value name="horizontallyJustified" value="64" />
-        <value name="left" value="1" />
-        <value name="right" value="2" />
-        <value name="top" value="8" />
-        <value name="topLeft" value="9" />
-        <value name="topRight" value="10" />
-        <value name="verticallyCentred" value="32" />
-        <enum name="">
-        <value name="bottom" value="16" />
-        <value name="bottomLeft" value="17" />
-        <value name="bottomRight" value="18" />
-        <value name="centred" value="36" />
-        <value name="centredBottom" value="20" />
-        <value name="centredLeft" value="33" />
-        <value name="centredRight" value="34" />
-        <value name="centredTop" value="12" />
-        <value name="horizontallyCentred" value="4" />
-        <value name="horizontallyJustified" value="64" />
-        <value name="left" value="1" />
-        <value name="right" value="2" />
-        <value name="top" value="8" />
-        <value name="topLeft" value="9" />
-        <value name="topRight" value="10" />
-        <value name="verticallyCentred" value="32" />
-        <value name="bottom" value="16" />
-        <value name="bottomLeft" value="17" />
-        <value name="bottomRight" value="18" />
-        <value name="centred" value="36" />
-        <value name="centredBottom" value="20" />
-        <value name="centredLeft" value="33" />
-        <value name="centredRight" value="34" />
-        <value name="centredTop" value="12" />
-        <value name="horizontallyCentred" value="4" />
-        <value name="horizontallyJustified" value="64" />
-        <value name="left" value="1" />
-        <value name="right" value="2" />
-        <value name="top" value="8" />
-        <value name="topLeft" value="9" />
-        <value name="topRight" value="10" />
-        <value name="verticallyCentred" value="32" />
-        <value name="bottom" value="16" />
-        <value name="bottomLeft" value="17" />
-        <value name="bottomRight" value="18" />
-        <value name="centred" value="36" />
-        <value name="centredBottom" value="20" />
-        <value name="centredLeft" value="33" />
-        <value name="centredRight" value="34" />
-        <value name="centredTop" value="12" />
-        <value name="horizontallyCentred" value="4" />
-        <value name="horizontallyJustified" value="64" />
-        <value name="left" value="1" />
-        <value name="right" value="2" />
-        <value name="top" value="8" />
-        <value name="topLeft" value="9" />
-        <value name="topRight" value="10" />
-        <value name="verticallyCentred" value="32" />
-        <value name="bottom" value="16" />
-        <value name="bottomLeft" value="17" />
-        <value name="bottomRight" value="18" />
-        <value name="centred" value="36" />
-        <value name="centredBottom" value="20" />
-        <value name="centredLeft" value="33" />
-        <value name="centredRight" value="34" />
-        <value name="centredTop" value="12" />
-        <value name="horizontallyCentred" value="4" />
-        <value name="horizontallyJustified" value="64" />
-        <value name="left" value="1" />
-        <value name="right" value="2" />
-        <value name="top" value="8" />
-        <value name="topLeft" value="9" />
-        <value name="topRight" value="10" />
-        <value name="verticallyCentred" value="32" />
+      <enum name="">
         <value name="bottom" value="16" />
         <value name="bottomLeft" value="17" />
         <value name="bottomRight" value="18" />
@@ -1804,193 +1689,20 @@
       <method name="isValid" type="instance" args="()" />
     </methods>
     <static_methods>
-      <method name="createFromDescription" type="static" args="(key])" />
-      <method name="isKeyCurrentlyDown" type="static" args="(returnKey)" />
+      <method name="createFromDescription" type="static" args="(map-&gt;getStringAttribute)" />
+      <method name="isKeyCurrentlyDown" type="static" args="()" />
     </static_methods>
-  </class>
-  <class name="LAlertWindow" cpp_name="LAlertWindow">
-    <enums>
-      <enum name="">
-        <value name="InfoIcon" value="3" />
-        <value name="NoIcon" value="0" />
-        <value name="QuestionIcon" value="1" />
-        <value name="WarningIcon" value="2" />
-      </enum>
-    </enums>
-    <methods>
-      <method name="addButton" type="instance" args="()" />
-      <method name="addComboBox" type="instance" args="()" />
-      <method name="addCustomComponent" type="instance" args="()" />
-      <method name="addProgressBarComponent" type="instance" args="()" />
-      <method name="addTextBlock" type="instance" args="()" />
-      <method name="addTextEditor" type="instance" args="()" />
-      <method name="containsAnyExtraComponents" type="instance" args="()" />
-      <method name="exitModalState" type="instance" args="()" />
-      <method name="getAlertType" type="instance" args="()" />
-      <method name="getComboBoxComponent" type="instance" args="()" />
-      <method name="getCustomComponent" type="instance" args="()" />
-      <method name="getNumButtons" type="instance" args="()" />
-      <method name="getNumCustomComponents" type="instance" args="()" />
-      <method name="getTextEditor" type="instance" args="()" />
-      <method name="getTextEditorContents" type="instance" args="()" />
-      <method name="removeCustomComponent" type="instance" args="()" />
-      <method name="runModalLoop" type="instance" args="()" />
-      <method name="setEscapeKeyCancels" type="instance" args="()" />
-      <method name="setMessage" type="instance" args="()" />
-      <method name="setModalHandler" type="instance" args="(table)" />
-      <method name="triggerButtonClick" type="instance" args="()" />
-    </methods>
-    <static_methods>
-      <method name="queryText" type="static" args="(AlertIconType, String, String, String, String, String, String, bool, table)" />
-      <method name="showMessageBox" type="static" args="(AlertIconType, String, String, String)" />
-      <method name="showMessageBoxAsync" type="static" args="(AlertIconType, String, String, String)" />
-      <method name="showNativeDialogBox" type="static" args="(String, String, bool)" />
-      <method name="showOkCancelBox" type="static" args="(AlertIconType, String, String, String, String)" />
-      <method name="showYesNoCancelBox" type="static" args="(AlertIconType, String, String, String, String, String)" />
-    </static_methods>
-  </class>
-  <class name="LAudioFormatManager" cpp_name="LAudioFormatManager">
-    <methods>
-      <method name="createReaderFor" type="instance" args="()" />
-      <method name="findFormatForFileExtension" type="instance" args="()" />
-      <method name="getDefaultFormat" type="instance" args="()" />
-      <method name="getKnownFormat" type="instance" args="()" />
-      <method name="getNumKnownFormats" type="instance" args="()" />
-      <method name="getWildcardForAllFormats" type="instance" args="()" />
-      <method name="registerBasicFormats" type="instance" args="()" />
-    </methods>
-  </class>
-  <class name="LBubbleMessageComponent" cpp_name="LBubbleMessageComponent">
-    <methods>
-      <method name="getContentSize" type="instance" args="(int, int)" />
-      <method name="showAt" type="instance" args="(Rectangle&lt;int&gt;, String, int, bool, bool)" overload="1" />
-      <method name="showAt" type="instance" args="(Rectangle&lt;int&gt;, String, int, bool, bool)" overload="2" />
-      <method name="showAt" type="instance" args="(Rectangle&lt;int&gt;, String, int, bool, bool)" overload="3" />
-      <method name="showAt" type="instance" args="(Rectangle&lt;int&gt;, String, int, bool, bool)" overload="4" />
-    </methods>
-  </class>
-  <class name="LComponent" cpp_name="LComponent" />
-  <class name="LFile" cpp_name="LFile" />
-  <class name="LFont" cpp_name="LFont" />
-  <class name="LMemoryBlock" cpp_name="LMemoryBlock">
-    <methods>
-      <method name="append" type="instance" args="(MemoryBlock)" />
-      <method name="compressGzip" type="instance" args="()" />
-      <method name="compressZlib" type="instance" args="()" />
-      <method name="createFromTable" type="instance" args="(table)" />
-      <method name="decompressGzip" type="instance" args="()" />
-      <method name="decompressZlib" type="instance" args="()" />
-      <method name="ensureSize" type="instance" args="()" />
-      <method name="fillWith" type="instance" args="()" />
-      <method name="fromBase64Encoding" type="instance" args="()" />
-      <method name="getBitRange" type="instance" args="(int, int)" />
-      <method name="getByte" type="instance" args="(int)" />
-      <method name="getData" type="instance" args="()" />
-      <method name="getRange" type="instance" args="(int, int)" />
-      <method name="getSize" type="instance" args="()" />
-      <method name="init" type="instance" args="(int)" />
-      <method name="insert" type="instance" args="(MemoryBlock, int, int)" overload="1" />
-      <method name="insert" type="instance" args="(MemoryBlock, int, int)" overload="2" />
-      <method name="insertIntoTable" type="instance" args="(table)" />
-      <method name="loadFromHexString" type="instance" args="(String hex)" />
-      <method name="pushLString" type="instance" args="()" />
-      <method name="removeSection" type="instance" args="(int, int)" />
-      <method name="replaceWith" type="instance" args="(MemoryBlock)" />
-      <method name="setBitRange" type="instance" args="(int, int, int)" />
-      <method name="setByte" type="instance" args="(int, uint8)" />
-      <method name="setSize" type="instance" args="()" />
-      <method name="swapWith" type="instance" args="()" />
-      <method name="toBase64Encoding" type="instance" args="()" />
-      <method name="toBinarySafeString" type="instance" args="()" />
-      <method name="toBinaryString" type="instance" args="(lua_State)" />
-      <method name="toHexString" type="instance" args="(int groupSize)" />
-      <method name="toLuaString" type="instance" args="()" />
-      <method name="toLuaTable" type="instance" args="(table)" />
-      <method name="toRawString" type="instance" args="()" />
-      <method name="toString" type="instance" args="()" />
-      <method name="toStringNoTerminator" type="instance" args="()" />
-      <method name="toStringWithNulls" type="instance" args="()" />
-    </methods>
-    <static_methods>
-      <method name="createWithSize" type="static" args="(int)" />
-      <method name="fromLuaBinaryString" type="static" args="(table)" />
-      <method name="fromLuaString" type="static" args="(table, String)" overload="1" />
-      <method name="fromLuaString" type="static" args="(table, String)" overload="2" />
-      <method name="fromLuaStringToAscii" type="static" args="(String)" overload="1" />
-      <method name="fromLuaStringToAscii" type="static" args="(String)" overload="2" />
-      <method name="fromLuaTable" type="static" args="(table)" />
-      <method name="copyFrom" type="static" args="(MemoryBlock source, int start, int size)" />
-      <method name="copyTo" type="static" args="(MemoryBlock dest, int start, int size)" />
-    </static_methods>
-    <constructor args="()" type="constructor" />
-    <constructor args="(String hexString)" type="constructor" />
-    <constructor args="({int} luaTable)" type="constructor" />
-  </class>
-  <class name="LPopupMenu" cpp_name="LPopupMenu">
-    <methods>
-      <method name="addColouredItem" type="instance" args="()" />
-      <method name="addColumnBreak" type="instance" args="()" />
-      <method name="addItem" type="instance" args="()" overload="1" />
-      <method name="addItem" type="instance" args="()" overload="2" />
-      <method name="addSectionHeader" type="instance" args="()" />
-      <method name="addSeparator" type="instance" args="()" />
-      <method name="addSubMenu" type="instance" args="(String, LPopupMenu, bool, Image, bool, int)" />
-      <method name="clear" type="instance" args="()" />
-      <method name="getNumItems" type="instance" args="()" />
-      <method name="show" type="instance" args="(int)" overload="1" />
-      <method name="show" type="instance" args="(int)" overload="2" />
-      <method name="showAt" type="instance" args="(Rectangle&lt;int&gt;, int)" overload="1" />
-      <method name="showAt" type="instance" args="(Rectangle&lt;int&gt;, int)" overload="2" />
-    </methods>
-  </class>
-  <class name="LRectangle" cpp_name="LRectangle" />
-  <class name="LRelativeCoordinate" cpp_name="LRelativeCoordinate">
-    <methods>
-      <method name="getExpression" type="instance" args="()" />
-      <method name="isDynamic" type="instance" args="()" />
-      <method name="isRecursive" type="instance" args="()" />
-      <method name="moveToAbsolute" type="instance" args="()" />
-      <method name="resolve" type="instance" args="()" />
-      <method name="toString" type="instance" args="()" />
-    </methods>
-  </class>
-  <class name="LSparseSet" cpp_name="LSparseSet">
-    <methods>
-      <method name="addRange" type="instance" args="()" />
-      <method name="clear" type="instance" args="()" />
-      <method name="contains" type="instance" args="()" />
-      <method name="containsRange" type="instance" args="()" />
-      <method name="get" type="instance" args="(int)" />
-      <method name="getNumRanges" type="instance" args="()" />
-      <method name="getRange" type="instance" args="()" />
-      <method name="getTotalRange" type="instance" args="()" />
-      <method name="invertRange" type="instance" args="()" />
-      <method name="isEmpty" type="instance" args="()" />
-      <method name="overlapsRange" type="instance" args="()" />
-      <method name="removeRange" type="instance" args="()" />
-      <method name="size" type="instance" args="()" />
-    </methods>
-  </class>
-  <class name="LStringArray" cpp_name="LStringArray" />
-  <class name="LThreadWithProgressWindow" cpp_name="LThreadWithProgressWindow">
-    <methods>
-      <method name="runThread" type="instance" args="()" />
-      <method name="setProgress" type="instance" args="(double)" />
-      <method name="setStatusMessage" type="instance" args="(String)" />
-      <method name="setThreadFunction" type="instance" args="(table)" />
-      <method name="wait" type="instance" args="()" />
-    </methods>
   </class>
   <class name="Label" cpp_name="Label">
     <enums>
-      <enum name="ColourIds">
+      <enum name="">
         <value name="backgroundColourId " value="0x1000280" />
         <value name="outlineColourId" value="0x1000282" />
         <value name="textColourId" value="0x1000281" />
       </enum>
     </enums>
     <methods>
-      <method name="addListener" type="instance" args="()" />
+      <method name="addListener" type="instance" args="(Listener)" />
       <method name="attachToComponent" type="instance" args="(Component, bool)" />
       <method name="doesLossOfFocusDiscardChanges" type="instance" args="()" />
       <method name="getAttachedComponent" type="instance" args="()" />
@@ -2011,7 +1723,7 @@
       <method name="setFont" type="instance" args="(Font)" />
       <method name="setJustificationType" type="instance" args="(Justification)" />
       <method name="setMinimumHorizontalScale" type="instance" args="(float)" />
-      <method name="setText" type="instance" args="()" />
+      <method name="setText" type="instance" args="(String, NotificationType)" />
       <method name="showEditor" type="instance" args="()" />
     </methods>
   </class>
@@ -2064,13 +1776,11 @@
       <method name="createToggleButton" type="static" args="()" />
     </static_methods>
   </class>
-  <class name="Ltime" cpp_name="LTime" />
   <class name="MachineIDUtilities" cpp_name="MachineIDUtilities">
     <static_methods>
       <method name="getLocalMachineIDs" type="static" args="()" />
     </static_methods>
   </class>
-  <class name="MemoryInputStream" cpp_name="MemoryInputStream" />
   <class name="MidiBuffer" cpp_name="MidiBuffer">
     <methods>
       <method name="addEvent" type="instance" args="(void, int, int)" />
@@ -2091,10 +1801,9 @@
       <method name="setNextSamplePosition" type="instance" args="(int)" />
     </methods>
   </class>
-  <class name="MidiKeyboardComponent" cpp_name="MidiKeyboardComponent" />
   <class name="MidiMessage" cpp_name="MidiMessage">
     <enums>
-      <enum name="MidiMachineControlCommand">
+      <enum name="">
         <value name="mmc_deferredplay" value="3" />
         <value name="mmc_fastforward" value="4" />
         <value name="mmc_pause" value="9" />
@@ -2103,8 +1812,6 @@
         <value name="mmc_recordStop" value="7" />
         <value name="mmc_rewind" value="5" />
         <value name="mmc_stop" value="1" />
-      </enum>
-      <enum name="SmpteTimecodeType">
         <value name="fps24" value="0" />
         <value name="fps25" value="1" />
         <value name="fps30" value="3" />
@@ -2179,20 +1886,20 @@
       <method name="setVelocity" type="instance" args="(float)" />
     </methods>
     <static_methods>
-      <method name="aftertouchChange" type="static" args="(midiChannel, midiNoteNumber, value.as7BitInt()" />
+      <method name="aftertouchChange" type="static" args="(ch, number, value)" />
       <method name="allControllersOff" type="static" args="(int)" />
       <method name="allNotesOff" type="static" args="(int)" />
       <method name="allSoundOff" type="static" args="(int)" />
-      <method name="channelPressureChange" type="static" args="(int, int)" />
-      <method name="controllerEvent" type="static" args="(int, int, int)" />
-      <method name="createSysExMessage" type="static" args="(void, int)" />
+      <method name="channelPressureChange" type="static" args="(ch, value)" />
+      <method name="controllerEvent" type="static" args="(ch, number, value)" />
+      <method name="createSysExMessage" type="static" args="(data.data()" />
       <method name="endOfTrack" type="static" args="()" />
-      <method name="getControllerName" type="static" args="(m.getControllerNumber()" />
+      <method name="getControllerName" type="static" args="(int)" />
       <method name="getGMInstrumentBankName" type="static" args="(int)" />
       <method name="getGMInstrumentName" type="static" args="(int)" />
-      <method name="getMessageLengthFromFirstByte" type="static" args="(uint8)" />
-      <method name="getMidiNoteInHertz" type="static" args="(midiNoteNumber)" />
-      <method name="getMidiNoteName" type="static" args="(m.getNoteNumber()" />
+      <method name="getMessageLengthFromFirstByte" type="static" args="(d[0])" />
+      <method name="getMidiNoteInHertz" type="static" args="(int, double)" />
+      <method name="getMidiNoteName" type="static" args="(midiNoteNumber, true, true, octaveNumForMiddleC)" />
       <method name="getRhythmInstrumentName" type="static" args="(int)" />
       <method name="masterVolume" type="static" args="(float)" />
       <method name="midiChannelMetaEvent" type="static" args="(int)" />
@@ -2200,12 +1907,12 @@
       <method name="midiContinue" type="static" args="()" />
       <method name="midiStart" type="static" args="()" />
       <method name="midiStop" type="static" args="()" />
-      <method name="noteOff" type="static" args="(15, 60, 1.0f)" overload="1" />
-      <method name="noteOff" type="static" args="(15, 60, 1.0f)" overload="2" />
-      <method name="noteOn" type="static" args="(15, 60, 1.0f)" overload="1" />
-      <method name="noteOn" type="static" args="(15, 60, 1.0f)" overload="2" />
-      <method name="pitchWheel" type="static" args="(int, int)" />
-      <method name="programChange" type="static" args="(int, int)" />
+      <method name="noteOff" type="static" args="(ch, number, (uint8)" overload="1" />
+      <method name="noteOff" type="static" args="(ch, number, (uint8)" overload="2" />
+      <method name="noteOn" type="static" args="(ch, number, (uint8)" overload="1" />
+      <method name="noteOn" type="static" args="(ch, number, (uint8)" overload="2" />
+      <method name="pitchWheel" type="static" args="(ch, jmin&lt;int&gt;(getValueInternal(value)" />
+      <method name="programChange" type="static" args="(ch, value)" />
       <method name="readVariableLengthVal" type="static" args="(copy.data()" />
       <method name="tempoMetaEvent" type="static" args="(int)" />
       <method name="timeSignatureMetaEvent" type="static" args="(int, int)" />
@@ -2213,7 +1920,7 @@
   </class>
   <class name="ModifierKeys" cpp_name="ModifierKeys">
     <enums>
-      <enum name="Flags">
+      <enum name="">
         <value name="allKeyboardModifiers" value="15" />
         <value name="allMouseButtonModifiers " value="112" />
         <value name="altModifier" value="4" />
@@ -2247,7 +1954,7 @@
   </class>
   <class name="MouseCursor" cpp_name="MouseCursor">
     <enums>
-      <enum name="StandardCursorType">
+      <enum name="">
         <value name="NoCursor" value="MouseCursor::NoCursor" />
         <value name="NormalCursor" value="MouseCursor::NormalCursor" />
         <value name="ParentCursor" value="MouseCursor::ParentCursor" />
@@ -2282,7 +1989,7 @@
   </class>
   <class name="MouseInputSource" cpp_name="MouseInputSource">
     <enums>
-      <enum name="MouseInputSource">
+      <enum name="">
         <value name="mouse" value="MouseInputSource::mouse" />
         <value name="pen" value="MouseInputSource::pen" />
         <value name="touch" value="MouseInputSource::touch" />
@@ -2292,7 +1999,6 @@
       <method name="setScreenPosition" type="instance" args="(Point&lt;float&gt;)" />
     </methods>
   </class>
-  <class name="NotificationType" cpp_name="NotificationType" />
   <class name="OggVorbisAudioFormat" cpp_name="OggVorbisAudioFormat">
     <methods>
       <method name="canDoMono" type="instance" args="()" />
@@ -2391,37 +2097,7 @@
   </class>
   <class name="PathStrokeType" cpp_name="LPathStrokeType">
     <enums>
-      <value name="butt" value="PathStrokeType::butt" />
-        <value name="rounded" value="PathStrokeType::rounded" />
-        <value name="square" value="PathStrokeType::square" />
-        <value name="beveled" value="PathStrokeType::beveled" />
-        <value name="curved" value="PathStrokeType::curved" />
-        <value name="mitered" value="PathStrokeType::mitered" />
-        <enum name="">
-        <value name="butt" value="PathStrokeType::butt" />
-        <value name="rounded" value="PathStrokeType::rounded" />
-        <value name="square" value="PathStrokeType::square" />
-        <value name="beveled" value="PathStrokeType::beveled" />
-        <value name="curved" value="PathStrokeType::curved" />
-        <value name="mitered" value="PathStrokeType::mitered" />
-        <value name="butt" value="PathStrokeType::butt" />
-        <value name="rounded" value="PathStrokeType::rounded" />
-        <value name="square" value="PathStrokeType::square" />
-        <value name="beveled" value="PathStrokeType::beveled" />
-        <value name="curved" value="PathStrokeType::curved" />
-        <value name="mitered" value="PathStrokeType::mitered" />
-        <value name="butt" value="PathStrokeType::butt" />
-        <value name="rounded" value="PathStrokeType::rounded" />
-        <value name="square" value="PathStrokeType::square" />
-        <value name="beveled" value="PathStrokeType::beveled" />
-        <value name="curved" value="PathStrokeType::curved" />
-        <value name="mitered" value="PathStrokeType::mitered" />
-        <value name="butt" value="PathStrokeType::butt" />
-        <value name="rounded" value="PathStrokeType::rounded" />
-        <value name="square" value="PathStrokeType::square" />
-        <value name="beveled" value="PathStrokeType::beveled" />
-        <value name="curved" value="PathStrokeType::curved" />
-        <value name="mitered" value="PathStrokeType::mitered" />
+      <enum name="">
         <value name="butt" value="PathStrokeType::butt" />
         <value name="rounded" value="PathStrokeType::rounded" />
         <value name="square" value="PathStrokeType::square" />
@@ -2431,7 +2107,7 @@
       </enum>
     </enums>
     <methods>
-      <method name="createDashedStroke" type="instance" args="(Path, Path, float, int, AffineTransform, float)" />
+      <method name="createDashedStroke" type="instance" args="(destPath, sourcePath, dashLengthsFloat.getRawDataPointer()" />
       <method name="createStrokeWithArrowheads" type="instance" args="(Path, Path, float, float, float, float, AffineTransform, float)" />
       <method name="createStrokedPath" type="instance" args="(Path, Path, AffineTransform, float)" />
       <method name="getEndStyle" type="instance" args="()" />
@@ -2658,7 +2334,7 @@
   </class>
   <class name="RectanglePlacement" cpp_name="RectanglePlacement">
     <enums>
-      <enum name="flags">
+      <enum name="">
         <value name="centred" value="36" />
         <value name="doNotResize" value="768" />
         <value name="fillDestination" value="128" />
@@ -2703,30 +2379,24 @@
   </class>
   <class name="Result" cpp_name="Result">
     <methods>
-      <method name="fail" type="instance" args="(&quot;Can't)" />
+      <method name="fail" type="instance" args="(&quot;Error:)" />
       <method name="failed" type="instance" args="()" />
       <method name="getErrorMessage" type="instance" args="()" />
       <method name="ok" type="instance" args="()" />
       <method name="wasOk" type="instance" args="()" />
     </methods>
   </class>
-  <class name="Scope" cpp_name="Scope" />
-  <class name="ScopedLock" cpp_name="ScopedLock" />
   <class name="ScopedTryLock" cpp_name="ScopedTryLock">
     <methods>
       <method name="isLocked" type="instance" args="()" />
     </methods>
   </class>
-  <class name="ScopedUnlock" cpp_name="ScopedUnlock" />
-  <class name="SettableTooltipClient" cpp_name="SettableTooltipClient" />
   <class name="Slider" cpp_name="Slider">
     <enums>
-      <enum name="DragMode">
+      <enum name="">
         <value name="absoluteDrag" value="Slider::absoluteDrag" />
         <value name="notDragging" value="Slider::notDragging" />
         <value name="velocityDrag" value="Slider::velocityDrag" />
-      </enum>
-      <enum name="SliderStyle">
         <value name="IncDecButtons" value="Slider::IncDecButtons" />
         <value name="LinearBar" value="Slider::LinearBar" />
         <value name="LinearBarVertical" value="Slider::LinearBarVertical" />
@@ -2740,8 +2410,6 @@
         <value name="ThreeValueVertical" value="Slider::ThreeValueVertical" />
         <value name="TwoValueHorizontal" value="Slider::TwoValueHorizontal" />
         <value name="TwoValueVertical" value="Slider::TwoValueVertical" />
-      </enum>
-      <enum name="TextEntryBoxPosition">
         <value name="NoTextBox" value="Slider::NoTextBox" />
         <value name="TextBoxAbove" value="Slider::TextBoxAbove" />
         <value name="TextBoxBelow" value="Slider::TextBoxBelow" />
@@ -2815,11 +2483,26 @@
       <method name="valueToProportionOfLength" type="instance" args="(double)" />
     </methods>
   </class>
-  <class name="SmpteTimecodeType" cpp_name="SmpteTimecodeType" />
-  <class name="SparseSet" cpp_name="SparseSet" />
+  <class name="SparseSet" cpp_name="SparseSet">
+    <methods>
+      <method name="addRange" type="instance" args="()" />
+      <method name="clear" type="instance" args="()" />
+      <method name="contains" type="instance" args="()" />
+      <method name="containsRange" type="instance" args="()" />
+      <method name="get" type="instance" args="(int)" />
+      <method name="getNumRanges" type="instance" args="()" />
+      <method name="getRange" type="instance" args="()" />
+      <method name="getTotalRange" type="instance" args="()" />
+      <method name="invertRange" type="instance" args="()" />
+      <method name="isEmpty" type="instance" args="()" />
+      <method name="overlapsRange" type="instance" args="()" />
+      <method name="removeRange" type="instance" args="()" />
+      <method name="size" type="instance" args="()" />
+    </methods>
+  </class>
   <class name="String" cpp_name="String">
     <methods>
-      <method name="append" type="instance" args="(char16, int32)" />
+      <method name="append" type="instance" args="(String, size_t)" />
       <method name="compare" type="instance" args="(wchar_t)" overload="1" />
       <method name="compare" type="instance" args="(wchar_t)" overload="2" />
       <method name="compareIgnoreCase" type="instance" args="(String)" overload="1" />
@@ -2865,8 +2548,8 @@
       <method name="paddedRight" type="instance" args="(juce_wchar, int)" />
       <method name="quoted" type="instance" args="(juce_wchar)" />
       <method name="removeCharacters" type="instance" args="(StringRef)" />
-      <method name="repeatedString" type="instance" args="(&quot;, indentLevel)" />
-      <method name="replace" type="instance" args="(char16, char16, bool, CompareMode)" />
+      <method name="repeatedString" type="instance" args="(StringRef, int)" />
+      <method name="replace" type="instance" args="(StringRef, StringRef, bool)" />
       <method name="replaceCharacters" type="instance" args="(StringRef, StringRef)" />
       <method name="replaceSection" type="instance" args="(int, int, StringRef)" />
       <method name="retainCharacters" type="instance" args="(StringRef)" />
@@ -2878,7 +2561,7 @@
       <method name="toLowerCase" type="instance" args="()" />
       <method name="toUTF8" type="instance" args="()" />
       <method name="toUpperCase" type="instance" args="()" />
-      <method name="trim" type="instance" args="(CharGroup)" />
+      <method name="trim" type="instance" args="()" />
       <method name="trimCharactersAtEnd" type="instance" args="(StringRef)" />
       <method name="trimCharactersAtStart" type="instance" args="(StringRef)" />
       <method name="trimEnd" type="instance" args="()" />
@@ -2937,8 +2620,6 @@
       <method name="length" type="instance" args="()" />
     </methods>
   </class>
-  <class name="Symbol" cpp_name="Symbol" />
-  <class name="TextButton" cpp_name="TextButton" />
   <class name="TextEditor" cpp_name="TextEditor">
     <methods>
       <method name="addListener" type="instance" args="(Listener)" />
@@ -2966,7 +2647,7 @@
       <method name="getTextValue" type="instance" args="()" />
       <method name="getTextWidth" type="instance" args="()" />
       <method name="getTotalNumChars" type="instance" args="()" />
-      <method name="insertTextAtCaret" type="instance" args="(String)" />
+      <method name="insertTextAtCaret" type="instance" args="(&quot;\n&quot;)" />
       <method name="isCaretVisible" type="instance" args="()" />
       <method name="isEmpty" type="instance" args="()" />
       <method name="isMultiLine" type="instance" args="()" />
@@ -3046,7 +2727,7 @@
       <method name="getMilliseconds" type="instance" args="()" />
       <method name="getMinutes" type="instance" args="()" />
       <method name="getMonth" type="instance" args="()" />
-      <method name="getMonthName" type="instance" args="(buildDate.getMonth()" />
+      <method name="getMonthName" type="instance" args="(int, bool)" />
       <method name="getSeconds" type="instance" args="()" />
       <method name="getTimeZone" type="instance" args="()" />
       <method name="getWeekdayName" type="instance" args="(int, bool)" />
@@ -3066,7 +2747,7 @@
       <method name="getMillisecondCounter" type="static" args="()" />
       <method name="getMillisecondCounterHiRes" type="static" args="()" />
       <method name="highResolutionTicksToSeconds" type="static" args="(int64)" />
-      <method name="secondsToHighResolutionTicks" type="static" args="(double)" />
+      <method name="secondsToHighResolutionTicks" type="static" args="(seconds)" />
       <method name="waitForMillisecondCounter" type="static" args="(eventTime)" />
     </static_methods>
   </class>
@@ -3101,16 +2782,15 @@
     </methods>
     <static_methods>
       <method name="clearTypefaceCache" type="static" args="()" />
-      <method name="createSystemTypefaceFor" type="static" args="(void, size_t)" overload="1" />
-      <method name="createSystemTypefaceFor" type="static" args="(void, size_t)" overload="2" />
+      <method name="createSystemTypefaceFor" type="static" args="(fontStream)" overload="1" />
+      <method name="createSystemTypefaceFor" type="static" args="(fontStream)" overload="2" />
       <method name="scanFolderForFonts" type="static" args="(File)" />
       <method name="setTypefaceCacheSize" type="static" args="(int)" />
     </static_methods>
   </class>
-  <class name="TypefacePtr" cpp_name="Ptr" />
   <class name="URL" cpp_name="URL">
     <methods>
-      <method name="addEscapeChars" type="instance" args="(data[key], true)" />
+      <method name="addEscapeChars" type="instance" args="(String, bool, bool)" />
       <method name="getDomain" type="instance" args="()" />
       <method name="getPostData" type="instance" args="()" />
       <method name="getScheme" type="instance" args="()" />
@@ -3130,14 +2810,13 @@
       <method name="withParameter" type="instance" args="(String, String)" />
     </methods>
   </class>
-  <class name="UnlockResult" cpp_name="UnlockResult" />
   <class name="Value" cpp_name="Value">
     <methods>
       <method name="addListener" type="instance" args="(Listener)" />
       <method name="getValue" type="instance" args="()" />
       <method name="getValueSource" type="instance" args="()" />
       <method name="referTo" type="instance" args="(Value)" />
-      <method name="refersToSameSourceAs" type="instance" args="()" />
+      <method name="refersToSameSourceAs" type="instance" args="(Value)" />
       <method name="removeListener" type="instance" args="(Listener)" />
       <method name="setValue" type="instance" args="(var)" />
       <method name="toString" type="instance" args="()" />
@@ -3258,7 +2937,6 @@
       <method name="createTextElement" type="static" args="(String)" />
     </static_methods>
   </class>
-  <class name="ZipEntry" cpp_name="ZipEntry" />
   <class name="ZipFile" cpp_name="ZipFile">
     <methods>
       <method name="createStreamForEntry" type="instance" args="(ZipEntry)" overload="1" />
@@ -3272,19 +2950,15 @@
       <method name="uncompressTo" type="instance" args="(File, bool)" />
     </methods>
   </class>
-  <class name="class_info_data" cpp_name="class_info" />
-  <class name="int64" cpp_name="int64" />
   <class name="juce" cpp_name="LGlobalFunctions">
     <static_methods>
       <method name="double_Pi" type="static" args="()" />
       <method name="float_Pi" type="static" args="()" />
     </static_methods>
   </class>
-  <class name="pair" cpp_name="pair" />
-  <class name="var" cpp_name="var" />
   <class name="panel" cpp_name="CtrlrPanel" alias_of="CtrlrPanel">
     <enums>
-      <enum name="CtrlrByteEncoding">
+      <enum name="">
         <value name="Encode16bitLsbFirst" value="Encode16bitLsbFirst" />
         <value name="Encode16bitMsbFirst" value="Encode16bitMsbFirst" />
         <value name="Encode4bitLsbFirst" value="EncodeNibbleLsbFirst" />
@@ -3300,34 +2974,64 @@
         <value name="EncodeNormal" value="EncodeNormal" />
         <value name="EncodeSignedNibbleLsbFirst" value="EncodeSignedNibbleLsbFirst" />
         <value name="EncodeSignedNibbleMsbFirst" value="EncodeSignedNibbleMsbFirst" />
-      </enum>
-      <enum name="CtrlrByteSplit">
         <value name="Split4Bits" value="(uint8" />
         <value name="Split7Bits" value="(uint8" />
         <value name="Split8Bits" value="(uint8" />
         <value name="SplitNone" value="(uint8" />
-      </enum>
-      <enum name="CtrlrInstance">
         <value name="InstanceMulti" value="(uint8" />
         <value name="InstanceMultiEngine" value="(uint8" />
         <value name="InstanceSingle" value="(uint8" />
         <value name="InstanceSingleEngine" value="(uint8" />
         <value name="InstanceSingleRestriced" value="(uint8" />
         <value name="InstanceSingleRestrictedEngine" value="(uint8" />
-      </enum>
-      <enum name="CtrlrNotificationType">
         <value name="NotifyFailure" value="(uint8" />
         <value name="NotifyInformation" value="(uint8" />
         <value name="NotifySuccess" value="(uint8" />
         <value name="NotifyWarning" value="(uint8" />
-      </enum>
-      <enum name="CtrlrPanelFileType">
         <value name="PanelFileBinary" value="2" />
         <value name="PanelFileBinaryCompressed" value="3" />
         <value name="PanelFileExport" value="4" />
         <value name="PanelFileXML" value="0" />
         <value name="PanelFileXMLCompressed" value="1" />
       </enum>
+      <enums>
+        <enum name="">
+          <value name="Encode16bitLsbFirst" value="Encode16bitLsbFirst" />
+          <value name="Encode16bitMsbFirst" value="Encode16bitMsbFirst" />
+          <value name="Encode4bitLsbFirst" value="EncodeNibbleLsbFirst" />
+          <value name="Encode4bitMsbFirst" value="EncodeNibbleMsbFirst" />
+          <value name="Encode7bitLSBFirst" value="EncodeLSBFirst" />
+          <value name="Encode7bitMSBFirst" value="EncodeMSBFirst" />
+          <value name="EncodeLSBFirst" value="EncodeLSBFirst" />
+          <value name="EncodeLsbFirst" value="EncodeNibbleLsbFirst" />
+          <value name="EncodeMSBFirst" value="EncodeMSBFirst" />
+          <value name="EncodeMsbFirst" value="EncodeNibbleMsbFirst" />
+          <value name="EncodeNibbleLsbFirst" value="EncodeNibbleLsbFirst" />
+          <value name="EncodeNibbleMsbFirst" value="EncodeNibbleMsbFirst" />
+          <value name="EncodeNormal" value="EncodeNormal" />
+          <value name="EncodeSignedNibbleLsbFirst" value="EncodeSignedNibbleLsbFirst" />
+          <value name="EncodeSignedNibbleMsbFirst" value="EncodeSignedNibbleMsbFirst" />
+          <value name="Split4Bits" value="(uint8" />
+          <value name="Split7Bits" value="(uint8" />
+          <value name="Split8Bits" value="(uint8" />
+          <value name="SplitNone" value="(uint8" />
+          <value name="InstanceMulti" value="(uint8" />
+          <value name="InstanceMultiEngine" value="(uint8" />
+          <value name="InstanceSingle" value="(uint8" />
+          <value name="InstanceSingleEngine" value="(uint8" />
+          <value name="InstanceSingleRestriced" value="(uint8" />
+          <value name="InstanceSingleRestrictedEngine" value="(uint8" />
+          <value name="NotifyFailure" value="(uint8" />
+          <value name="NotifyInformation" value="(uint8" />
+          <value name="NotifySuccess" value="(uint8" />
+          <value name="NotifyWarning" value="(uint8" />
+          <value name="PanelFileBinary" value="2" />
+          <value name="PanelFileBinaryCompressed" value="3" />
+          <value name="PanelFileExport" value="4" />
+          <value name="PanelFileXML" value="0" />
+          <value name="PanelFileXMLCompressed" value="1" />
+        </enum>
+      </enums>
     </enums>
     <methods>
       <method name="dumpDebugData" type="instance" args="()" />
@@ -3358,10 +3062,11 @@
       <method name="getListBoxComponent" type="instance" args="(String)" />
       <method name="getModulator" type="instance" args="(String)" />
       <method name="getModulatorByIndex" type="instance" args="(int)" />
-      <method name="getModulatorByName" type="instance" args="(String name)" />
+      <method name="getModulatorByName" type="instance" args="()" />
       <method name="getModulatorValuesAsData" type="instance" args="(ValueTree, String, CtrlrByteEncoding, int, bool)" overload="1" />
       <method name="getModulatorValuesAsData" type="instance" args="(ValueTree, String, CtrlrByteEncoding, int, bool)" overload="2" />
       <method name="getModulatorValuesAsData" type="instance" args="(ValueTree, String, CtrlrByteEncoding, int, bool)" overload="3" />
+      <method name="getModulatorWithProperty" type="instance" args="(String, int)" overload="2" />
       <method name="getModulatorsWildcard" type="instance" args="()" overload="1" />
       <method name="getModulatorsWildcard" type="instance" args="()" overload="2" />
       <method name="getModulatorsWithProperty" type="instance" args="(Identifier, var)" />
@@ -3384,20 +3089,73 @@
       <method name="setModulatorValuesFromData" type="instance" args="(MemoryBlock, String, CtrlrByteEncoding, int, int, bool)" />
       <method name="setProgramState" type="instance" args="(bool)" />
       <method name="setRestoreState" type="instance" args="(bool)" />
-      <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
       <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
       <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
-      <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
-      <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
-      <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
-      <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
-      <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
-      <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
+      <methods>
+        <method name="dumpDebugData" type="instance" args="()" />
+        <method name="getBootstrapState" type="instance" args="()" />
+        <method name="getButton" type="instance" args="()" />
+        <method name="getButtonComponent" type="instance" args="(String)" />
+        <method name="getCanvas" type="instance" args="()" />
+        <method name="getCombo" type="instance" args="()" />
+        <method name="getComboComponent" type="instance" args="(String)" />
+        <method name="getComponent" type="instance" args="(String)" />
+        <method name="getFileListBox" type="instance" args="()" />
+        <method name="getFileListBoxComponent" type="instance" args="(String)" />
+        <method name="getFixedImageSlider" type="instance" args="()" />
+        <method name="getFixedImageSliderComponent" type="instance" args="(String)" />
+        <method name="getFixedSlider" type="instance" args="()" />
+        <method name="getFixedSliderComponent" type="instance" args="(String)" />
+        <method name="getGlobalVariable" type="instance" args="(int)" />
+        <method name="getImageButton" type="instance" args="()" />
+        <method name="getImageButtonComponent" type="instance" args="(String)" />
+        <method name="getImageSlider" type="instance" args="()" />
+        <method name="getImageSliderComponent" type="instance" args="(String)" />
+        <method name="getInputComparator" type="instance" args="()" />
+        <method name="getLCDLabel" type="instance" args="()" />
+        <method name="getLCDLabelComponent" type="instance" args="(String)" />
+        <method name="getLabel" type="instance" args="()" />
+        <method name="getLabelComponent" type="instance" args="(String)" />
+        <method name="getListBox" type="instance" args="()" />
+        <method name="getListBoxComponent" type="instance" args="(String)" />
+        <method name="getModulator" type="instance" args="(String)" />
+        <method name="getModulatorByIndex" type="instance" args="(int)" />
+        <method name="getModulatorByName" type="instance" args="()" />
+        <method name="getModulatorValuesAsData" type="instance" args="(ValueTree, String, CtrlrByteEncoding, int, bool)" overload="1" />
+        <method name="getModulatorValuesAsData" type="instance" args="(ValueTree, String, CtrlrByteEncoding, int, bool)" overload="2" />
+        <method name="getModulatorValuesAsData" type="instance" args="(ValueTree, String, CtrlrByteEncoding, int, bool)" overload="3" />
+        <method name="getModulatorsWildcard" type="instance" args="()" overload="1" />
+        <method name="getModulatorsWildcard" type="instance" args="()" overload="2" />
+        <method name="getModulatorsWithProperty" type="instance" args="(Identifier, var)" />
+        <method name="getNumModulators" type="instance" args="()" />
+        <method name="getPanelEditor" type="instance" args="()" />
+        <method name="getProgramState" type="instance" args="()" />
+        <method name="getRestoreState" type="instance" args="()" />
+        <method name="getSlider" type="instance" args="()" />
+        <method name="getSliderComponent" type="instance" args="(String)" />
+        <method name="getToggleButton" type="instance" args="()" />
+        <method name="getToggleButtonComponent" type="instance" args="(String)" />
+        <method name="getWaveform" type="instance" args="()" />
+        <method name="getWaveformComponent" type="instance" args="(String)" />
+        <method name="isRestoring" type="instance" args="()" />
+        <method name="sendMidi" type="instance" args="(CtrlrMidiMessage, double)" overload="1" />
+        <method name="sendMidi" type="instance" args="(CtrlrMidiMessage, double)" overload="2" />
+        <method name="sendMidi" type="instance" args="(CtrlrMidiMessage, double)" overload="3" />
+        <method name="sendMidiMessageNow" type="instance" args="()" />
+        <method name="setGlobalVariable" type="instance" args="(int, int)" />
+        <method name="setModulatorValuesFromData" type="instance" args="(MemoryBlock, String, CtrlrByteEncoding, int, int, bool)" />
+        <method name="setProgramState" type="instance" args="(bool)" />
+        <method name="setRestoreState" type="instance" args="(bool)" />
+        <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
+        <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
+        <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
+        <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
+      </methods>
     </methods>
   </class>
   <class name="mod" cpp_name="CtrlrModulator" alias_of="CtrlrModulator">
     <enums>
-      <enum name="CtrlrModulatorValue">
+      <enum name="">
         <value name="changeByUnknown" value="8" />
         <value name="changedByGUI" value="4" />
         <value name="changedByHost" value="1" />
@@ -3408,6 +3166,19 @@
         <value name="changedByProgram" value="6" />
         <value name="initialValue" value="0" />
       </enum>
+      <enums>
+        <enum name="">
+          <value name="changeByUnknown" value="8" />
+          <value name="changedByGUI" value="4" />
+          <value name="changedByHost" value="1" />
+          <value name="changedByLink" value="7" />
+          <value name="changedByLua" value="5" />
+          <value name="changedByMidiController" value="3" />
+          <value name="changedByMidiIn" value="2" />
+          <value name="changedByProgram" value="6" />
+          <value name="initialValue" value="0" />
+        </enum>
+      </enums>
     </enums>
     <methods>
       <method name="getComponent" type="instance" args="()" />
@@ -3446,11 +3217,49 @@
       <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="1" />
       <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="2" />
       <method name="setValueNonMapped" type="instance" args="(int, bool, bool)" />
+      <methods>
+        <method name="getComponent" type="instance" args="()" />
+        <method name="getLuaName" type="instance" args="()" />
+        <method name="getMaxMapped" type="instance" args="()" />
+        <method name="getMaxMappedInt" type="instance" args="()" />
+        <method name="getMaxModulatorValue" type="instance" args="()" />
+        <method name="getMaxModulatorValueInt" type="instance" args="()" />
+        <method name="getMaxNonMapped" type="instance" args="()" />
+        <method name="getMaxNonMappedInt" type="instance" args="()" />
+        <method name="getMidiMessage" type="instance" args="()" overload="1" />
+        <method name="getMidiMessage" type="instance" args="()" overload="2" />
+        <method name="getMinMapped" type="instance" args="()" />
+        <method name="getMinMappedInt" type="instance" args="()" />
+        <method name="getMinModulatorValue" type="instance" args="()" />
+        <method name="getMinModulatorValueInt" type="instance" args="()" />
+        <method name="getMinNonMapped" type="instance" args="()" />
+        <method name="getMinNonMappedInt" type="instance" args="()" />
+        <method name="getModulatorName" type="instance" args="()" />
+        <method name="getModulatorValue" type="instance" args="()" />
+        <method name="getModulatorValueInt" type="instance" args="()" />
+        <method name="getName" type="instance" args="()" lua_wrap="L" />
+        <method name="getRestoreState" type="instance" args="()" />
+        <method name="getValue" type="instance" args="()" />
+        <method name="getValueInt" type="instance" args="()" />
+        <method name="getValueMapped" type="instance" args="()" />
+        <method name="getValueMappedInt" type="instance" args="()" />
+        <method name="getValueNonMapped" type="instance" args="()" />
+        <method name="getValueNonMappedInt" type="instance" args="()" />
+        <method name="getVstIndex" type="instance" args="()" />
+        <method name="isRestoring" type="instance" args="()" />
+        <method name="setModulatorValue" type="instance" args="(int, bool, bool, bool)" />
+        <method name="setRestoreState" type="instance" args="(bool)" />
+        <method name="setValue" type="instance" args="(int, bool, bool)" overload="1" />
+        <method name="setValue" type="instance" args="(int, bool, bool)" overload="2" />
+        <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="1" />
+        <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="2" />
+        <method name="setValueNonMapped" type="instance" args="(int, bool, bool)" />
+      </methods>
     </methods>
   </class>
   <class name="modulator" cpp_name="CtrlrModulator" alias_of="CtrlrModulator">
     <enums>
-      <enum name="CtrlrModulatorValue">
+      <enum name="">
         <value name="changeByUnknown" value="8" />
         <value name="changedByGUI" value="4" />
         <value name="changedByHost" value="1" />
@@ -3461,6 +3270,19 @@
         <value name="changedByProgram" value="6" />
         <value name="initialValue" value="0" />
       </enum>
+      <enums>
+        <enum name="">
+          <value name="changeByUnknown" value="8" />
+          <value name="changedByGUI" value="4" />
+          <value name="changedByHost" value="1" />
+          <value name="changedByLink" value="7" />
+          <value name="changedByLua" value="5" />
+          <value name="changedByMidiController" value="3" />
+          <value name="changedByMidiIn" value="2" />
+          <value name="changedByProgram" value="6" />
+          <value name="initialValue" value="0" />
+        </enum>
+      </enums>
     </enums>
     <methods>
       <method name="getComponent" type="instance" args="()" />
@@ -3499,13 +3321,78 @@
       <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="1" />
       <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="2" />
       <method name="setValueNonMapped" type="instance" args="(int, bool, bool)" />
+      <methods>
+        <method name="getComponent" type="instance" args="()" />
+        <method name="getLuaName" type="instance" args="()" />
+        <method name="getMaxMapped" type="instance" args="()" />
+        <method name="getMaxMappedInt" type="instance" args="()" />
+        <method name="getMaxModulatorValue" type="instance" args="()" />
+        <method name="getMaxModulatorValueInt" type="instance" args="()" />
+        <method name="getMaxNonMapped" type="instance" args="()" />
+        <method name="getMaxNonMappedInt" type="instance" args="()" />
+        <method name="getMidiMessage" type="instance" args="()" overload="1" />
+        <method name="getMidiMessage" type="instance" args="()" overload="2" />
+        <method name="getMinMapped" type="instance" args="()" />
+        <method name="getMinMappedInt" type="instance" args="()" />
+        <method name="getMinModulatorValue" type="instance" args="()" />
+        <method name="getMinModulatorValueInt" type="instance" args="()" />
+        <method name="getMinNonMapped" type="instance" args="()" />
+        <method name="getMinNonMappedInt" type="instance" args="()" />
+        <method name="getModulatorName" type="instance" args="()" />
+        <method name="getModulatorValue" type="instance" args="()" />
+        <method name="getModulatorValueInt" type="instance" args="()" />
+        <method name="getName" type="instance" args="()" lua_wrap="L" />
+        <method name="getRestoreState" type="instance" args="()" />
+        <method name="getValue" type="instance" args="()" />
+        <method name="getValueInt" type="instance" args="()" />
+        <method name="getValueMapped" type="instance" args="()" />
+        <method name="getValueMappedInt" type="instance" args="()" />
+        <method name="getValueNonMapped" type="instance" args="()" />
+        <method name="getValueNonMappedInt" type="instance" args="()" />
+        <method name="getVstIndex" type="instance" args="()" />
+        <method name="isRestoring" type="instance" args="()" />
+        <method name="setModulatorValue" type="instance" args="(int, bool, bool, bool)" />
+        <method name="setRestoreState" type="instance" args="(bool)" />
+        <method name="setValue" type="instance" args="(int, bool, bool)" overload="1" />
+        <method name="setValue" type="instance" args="(int, bool, bool)" overload="2" />
+        <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="1" />
+        <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="2" />
+        <method name="setValueNonMapped" type="instance" args="(int, bool, bool)" />
+      </methods>
     </methods>
   </class>
-  <class name="MemoryBlock" cpp_name="LMemoryBlock" alias_of="LMemoryBlock">
+  <class name="utils" cpp_name="CtrlrLuaUtils" alias_of="CtrlrLuaUtils">
+    <static_methods>
+      <method name="askForTextInputWindow" type="static" args="(String, String, String, String, bool, String, String)" />
+      <method name="base64_decode" type="static" args="(String)" />
+      <method name="base64_encode" type="static" args="(String)" />
+      <method name="get16bitSigned" type="static" args="()" />
+      <method name="get8bitSigned" type="static" args="()" />
+      <method name="getDirectoryWindow" type="static" args="(String, File)" />
+      <method name="getMidiInputDevices" type="static" args="()" />
+      <method name="getMidiOutputDevices" type="static" args="()" />
+      <method name="getPi" type="static" args="()" />
+      <method name="getVersionMajor" type="static" args="()" />
+      <method name="getVersionMinor" type="static" args="()" />
+      <method name="getVersionRevision" type="static" args="()" />
+      <method name="getVersionString" type="static" args="()" />
+      <method name="infoWindow" type="static" args="(String, String)" />
+      <method name="openFileWindow" type="static" args="(String, File, String, bool)" />
+      <method name="openMultipleFilesWindow" type="static" args="(String, File, String, bool, table)" />
+      <method name="packDsiData" type="static" args="()" />
+      <method name="questionWindow" type="static" args="(String, String, String, String)" />
+      <method name="saveFileWindow" type="static" args="(String, File, String, bool)" />
+      <method name="unpackDsiData" type="static" args="()" />
+      <method name="warnWindow" type="static" args="(String, String)" />
+    </static_methods>
+  </class>
+  <class name="MemoryBlock" cpp_name="LMemoryBlock">
     <methods>
       <method name="append" type="instance" args="(MemoryBlock)" />
       <method name="compressGzip" type="instance" args="()" />
       <method name="compressZlib" type="instance" args="()" />
+      <method name="copyFrom" type="instance" args="(MemoryBlock, int, int)" />
+      <method name="copyTo" type="instance" args="(MemoryBlock, int, int)" />
       <method name="createFromTable" type="instance" args="(table)" />
       <method name="decompressGzip" type="instance" args="()" />
       <method name="decompressZlib" type="instance" args="()" />
@@ -3521,7 +3408,7 @@
       <method name="insert" type="instance" args="(MemoryBlock, int, int)" overload="1" />
       <method name="insert" type="instance" args="(MemoryBlock, int, int)" overload="2" />
       <method name="insertIntoTable" type="instance" args="(table)" />
-      <method name="loadFromHexString" type="instance" args="(String hex)" />
+      <method name="loadFromHexString" type="instance" args="()" />
       <method name="pushLString" type="instance" args="()" />
       <method name="removeSection" type="instance" args="(int, int)" />
       <method name="replaceWith" type="instance" args="(MemoryBlock)" />
@@ -3532,7 +3419,7 @@
       <method name="toBase64Encoding" type="instance" args="()" />
       <method name="toBinarySafeString" type="instance" args="()" />
       <method name="toBinaryString" type="instance" args="(lua_State)" />
-      <method name="toHexString" type="instance" args="(int groupSize)" />
+      <method name="toHexString" type="instance" args="(int)" />
       <method name="toLuaString" type="instance" args="()" />
       <method name="toLuaTable" type="instance" args="(table)" />
       <method name="toRawString" type="instance" args="()" />
@@ -3548,14 +3435,9 @@
       <method name="fromLuaStringToAscii" type="static" args="(String)" overload="1" />
       <method name="fromLuaStringToAscii" type="static" args="(String)" overload="2" />
       <method name="fromLuaTable" type="static" args="(table)" />
-      <method name="copyFrom" type="static" args="(MemoryBlock source, int start, int size)" />
-      <method name="copyTo" type="static" args="(MemoryBlock dest, int start, int size)" />
     </static_methods>
-    <constructor args="()" type="constructor" />
-    <constructor args="(String hexString)" type="constructor" />
-    <constructor args="({int} luaTable)" type="constructor" />
   </class>
-  <class name="AlertWindow" cpp_name="LAlertWindow" alias_of="LAlertWindow">
+  <class name="AlertWindow" cpp_name="LAlertWindow">
     <enums>
       <enum name="">
         <value name="InfoIcon" value="3" />
@@ -3596,29 +3478,60 @@
       <method name="showYesNoCancelBox" type="static" args="(AlertIconType, String, String, String, String, String)" />
     </static_methods>
   </class>
-  <class name="utils" cpp_name="CtrlrLuaUtils" alias_of="CtrlrLuaUtils">
-    <static_methods>
-      <method name="askForTextInputWindow" type="static" args="(String, String, String, String, bool, String, String)" />
-      <method name="base64_decode" type="static" args="(String)" />
-      <method name="base64_encode" type="static" args="(String)" />
-      <method name="get16bitSigned" type="static" args="()" />
-      <method name="get8bitSigned" type="static" args="()" />
-      <method name="getDirectoryWindow" type="static" args="(String, File)" />
-      <method name="getMidiInputDevices" type="static" args="()" />
-      <method name="getMidiOutputDevices" type="static" args="()" />
-      <method name="getPi" type="static" args="()" />
-      <method name="getVersionMajor" type="static" args="()" />
-      <method name="getVersionMinor" type="static" args="()" />
-      <method name="getVersionRevision" type="static" args="()" />
-      <method name="getVersionString" type="static" args="()" />
-      <method name="infoWindow" type="static" args="(String, String)" />
-      <method name="openFileWindow" type="static" args="(String, File, String, bool)" />
-      <method name="openMultipleFilesWindow" type="static" args="(String, File, String, bool, table)" />
-      <method name="packDsiData" type="static" args="(MemoryBlock data)" />
-      <method name="questionWindow" type="static" args="(String, String, String, String)" />
-      <method name="saveFileWindow" type="static" args="(String, File, String, bool)" />
-      <method name="unpackDsiData" type="static" args="(MemoryBlock data)" />
-      <method name="warnWindow" type="static" args="(String, String)" />
-    </static_methods>
+  <class name="BubbleMessageComponent" cpp_name="LBubbleMessageComponent">
+    <methods>
+      <method name="getContentSize" type="instance" args="(int, int)" />
+      <method name="showAt" type="instance" args="(Rectangle&lt;int&gt;, String, int, bool, bool)" overload="1" />
+      <method name="showAt" type="instance" args="(Rectangle&lt;int&gt;, String, int, bool, bool)" overload="2" />
+      <method name="showAt" type="instance" args="(Rectangle&lt;int&gt;, String, int, bool, bool)" overload="3" />
+      <method name="showAt" type="instance" args="(Rectangle&lt;int&gt;, String, int, bool, bool)" overload="4" />
+    </methods>
+  </class>
+  <class name="AudioFormatManager" cpp_name="LAudioFormatManager">
+    <methods>
+      <method name="createReaderFor" type="instance" args="()" />
+      <method name="findFormatForFileExtension" type="instance" args="()" />
+      <method name="getDefaultFormat" type="instance" args="()" />
+      <method name="getKnownFormat" type="instance" args="()" />
+      <method name="getNumKnownFormats" type="instance" args="()" />
+      <method name="getWildcardForAllFormats" type="instance" args="()" />
+      <method name="registerBasicFormats" type="instance" args="()" />
+    </methods>
+  </class>
+  <class name="PopupMenu" cpp_name="LPopupMenu">
+    <methods>
+      <method name="addColouredItem" type="instance" args="()" />
+      <method name="addColumnBreak" type="instance" args="()" />
+      <method name="addItem" type="instance" args="()" overload="1" />
+      <method name="addItem" type="instance" args="()" overload="2" />
+      <method name="addSectionHeader" type="instance" args="()" />
+      <method name="addSeparator" type="instance" args="()" />
+      <method name="addSubMenu" type="instance" args="(String, LPopupMenu, bool, Image, bool, int)" />
+      <method name="clear" type="instance" args="()" />
+      <method name="getNumItems" type="instance" args="()" />
+      <method name="show" type="instance" args="(int)" overload="1" />
+      <method name="show" type="instance" args="(int)" overload="2" />
+      <method name="showAt" type="instance" args="(Rectangle&lt;int&gt;, int)" overload="1" />
+      <method name="showAt" type="instance" args="(Rectangle&lt;int&gt;, int)" overload="2" />
+    </methods>
+  </class>
+  <class name="RelativeCoordinate" cpp_name="LRelativeCoordinate">
+    <methods>
+      <method name="getExpression" type="instance" args="()" />
+      <method name="isDynamic" type="instance" args="()" />
+      <method name="isRecursive" type="instance" args="()" />
+      <method name="moveToAbsolute" type="instance" args="()" />
+      <method name="resolve" type="instance" args="()" />
+      <method name="toString" type="instance" args="()" />
+    </methods>
+  </class>
+  <class name="ThreadWithProgressWindow" cpp_name="LThreadWithProgressWindow">
+    <methods>
+      <method name="runThread" type="instance" args="()" />
+      <method name="setProgress" type="instance" args="(double)" />
+      <method name="setStatusMessage" type="instance" args="(String)" />
+      <method name="setThreadFunction" type="instance" args="(table)" />
+      <method name="wait" type="instance" args="()" />
+    </methods>
   </class>
 </LuaAPI>

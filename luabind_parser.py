@@ -15,8 +15,8 @@ VERBOSE = True
 STRIP_NAMESPACES = True
 
 FORCE_STATIC_CLASSES = ["CtrlrLuaUtils"]
-CLASS_ALIASES = {}
-MANUAL_OVERRIDES = {}
+# If we find "LClassName", we map its content to "ClassName"
+WRAPPER_PREFIXES = ["L", "J", "JUCE"] 
 
 def strip_namespace(name: str) -> str:
     if not STRIP_NAMESPACES or not name: return name.strip() if name else ""
@@ -52,9 +52,6 @@ class LuabindParser:
             except: continue
 
     def extract_args(self, signature_text: str, current_cpp_class: str, method_name: str, lua_name: str) -> str:
-        if lua_name in MANUAL_OVERRIDES and method_name in MANUAL_OVERRIDES[lua_name]:
-            if "args" in MANUAL_OVERRIDES[lua_name][method_name]:
-                return MANUAL_OVERRIDES[lua_name][method_name]["args"]
         cast_match = re.search(r'\([^)]*\)\s*\(([^)]*)\)', signature_text)
         if cast_match: return clean_cpp_args(cast_match.group(1))
         keys = [f"{current_cpp_class}::{method_name}", f"L{current_cpp_class}::{method_name}"]
@@ -66,7 +63,7 @@ class LuabindParser:
         depth, in_string, escape = 0, False, False
         for i in range(start, len(text)):
             c = text[i]
-            if escape: { escape := False }; continue
+            if escape: escape = False; continue
             if c == '\\': escape = True; continue
             if c == '"': in_string = not in_string; continue
             if in_string: continue
@@ -103,8 +100,6 @@ class LuabindParser:
             "cpp_name": cpp_class, "methods": defaultdict(list), "static": defaultdict(list), "enums": {}
         })
 
-        # 1. Instance Methods (.def)
-        # We stop at the first .scope we find to avoid mis-identifying static as instance
         scope_pos = block.find(".scope")
         instance_area = block[:scope_pos] if scope_pos != -1 else block
         
@@ -114,17 +109,14 @@ class LuabindParser:
             args = self.extract_args(sig, cpp_class, name, lua_name)
             cls["methods"][name].append(args)
 
-        # 2. Static Methods (Standalone def() inside .scope)
         if scope_pos != -1:
             scope_body = self.extract_bracket_block(block, scope_pos + len(".scope") - 1)
             if scope_body:
-                # Note the lack of a dot before def
                 for m in re.finditer(r'(?<!\.)def\s*\(\s*"([^"]+)"\s*,\s*([^,)]+)', scope_body):
                     name, sig = m.group(1), m.group(2)
                     args = self.extract_args(sig, cpp_class, name, lua_name)
                     cls["static"][name].append(args)
 
-        # 3. Enum Parsing
         for enm in re.finditer(r'\.enum_\s*\(\s*"([^"]+)"\s*\)\s*\[', block):
             e_name = enm.group(1)
             e_body = self.extract_bracket_block(block, enm.end() - 1)
@@ -132,7 +124,49 @@ class LuabindParser:
                 vals = dict(re.findall(r'value\s*\(\s*"([^"]+)"\s*,\s*([^)]+)\)', e_body))
                 cls["enums"][e_name] = {k: v.strip().split(',')[-1].strip().rstrip(')]') for k, v in vals.items()}
 
+    def prune_and_merge_classes(self):
+        """
+        Fixes the LMemoryBlock/MemoryBlock issue.
+        Merges content from prefixed wrappers into base classes and deletes empty classes.
+        """
+        all_names = list(self.classes.keys())
+        
+        # 1. Merging Logic
+        for name in all_names:
+            for pref in WRAPPER_PREFIXES:
+                if name.startswith(pref):
+                    base_name = name[len(pref):]
+                    if base_name in self.classes:
+                        # Move content from LClass to Class
+                        self.classes[base_name]["methods"].update(self.classes[name]["methods"])
+                        self.classes[base_name]["static"].update(self.classes[name]["static"])
+                        self.classes[base_name]["enums"].update(self.classes[name]["enums"])
+                        
+                        # Mark the wrapper for deletion
+                        self.classes[name]["_delete"] = True
+
+        # 2. Pruning Logic
+        final_classes = {}
+        for name, data in self.classes.items():
+            # Check if it has any actual content
+            has_content = (len(data["methods"]) > 0 or 
+                           len(data["static"]) > 0 or 
+                           len(data["enums"]) > 0)
+            
+            # Keep if it has content AND isn't a wrapper we just merged
+            if has_content and not data.get("_delete", False):
+                # Clean up metadata
+                data.pop("_delete", None)
+                final_classes[name] = data
+            elif VERBOSE and not has_content:
+                print(f"[-] Pruning empty class: {name}")
+
+        self.classes = final_classes
+
     def apply_final_patches(self):
+        # First merge wrappers like LMemoryBlock -> MemoryBlock
+        self.prune_and_merge_classes()
+
         for target in FORCE_STATIC_CLASSES:
             if target in self.classes:
                 c = self.classes[target]
@@ -169,14 +203,11 @@ if __name__ == "__main__":
     src_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_SRC
     out_file = Path(sys.argv[2]) if len(sys.argv) > 2 else DEFAULT_OUT
 
-    print("\n[*] Luabind Parser for CtrlrX")
-    print(f"[*] Scanning: {src_dir.absolute()}")
-    print("[*] Patch LuaAPI.xml file by editing and running lua_api_patcher.py")
-
     parser = LuabindParser()
     parser.index_source_files(src_dir)
     for f in src_dir.glob("**/*.cpp"):
         parser.parse_file(f)
+    
     parser.apply_final_patches()
     parser.generate_xml(str(out_file))
-    print(f"[*] Success: Found {len(parser.classes)} classes.")
+    print(f"[*] Success: Found {len(parser.classes)} classes after merging wrappers.")
