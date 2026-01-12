@@ -31,6 +31,7 @@ public:
         juce::String name;
         juce::String args;
         bool isStatic;
+        juce::String luaWrap;
     };
 
     // Nested class for displaying method details

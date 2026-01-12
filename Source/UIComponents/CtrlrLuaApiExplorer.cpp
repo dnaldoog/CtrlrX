@@ -200,7 +200,9 @@ void CtrlrLuaApiExplorer::resized()
     r.removeFromTop(4); // spacing
 
     // Details label below search (100% width)
-    detailsLabel.setBounds(r.removeFromTop(40));
+    detailsLabel.setBounds(r.removeFromTop(32));
+    detailsLabel.setMinimumHorizontalScale(1.0f); // Don't shrink text to fit on one line
+    //detailsLabel.setMultiLine(true); not in JUCE 6.08?
     r.removeFromTop(4); // spacing
 
     // Split the remaining space: classes | methods

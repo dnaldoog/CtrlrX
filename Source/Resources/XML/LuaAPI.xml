@@ -847,10 +847,10 @@
       <method name="infoWindow" type="static" args="(String, String)" />
       <method name="openFileWindow" type="static" args="(String, File, String, bool)" />
       <method name="openMultipleFilesWindow" type="static" args="(String, File, String, bool, table)" />
-      <method name="packDsiData" type="static" args="()" />
+      <method name="packDsiData" type="static" args="(MemoryBlock data)" />
       <method name="questionWindow" type="static" args="(String, String, String, String)" />
       <method name="saveFileWindow" type="static" args="(String, File, String, bool)" />
-      <method name="unpackDsiData" type="static" args="()" />
+      <method name="unpackDsiData" type="static" args="(MemoryBlock data)" />
       <method name="warnWindow" type="static" args="(String, String)" />
     </static_methods>
   </class>
@@ -931,6 +931,9 @@
       <method name="setValue" type="instance" args="(int)" />
       <method name="toString" type="instance" args="()" />
     </methods>
+    <constructor args="()" type="constructor" />
+    <constructor args="({int} midiData)" type="constructor" />
+    <constructor args="(String hexString)" type="constructor" />
   </class>
   <class name="CtrlrModulator" cpp_name="CtrlrModulator">
     <enums>
@@ -966,7 +969,7 @@
       <method name="getModulatorName" type="instance" args="()" />
       <method name="getModulatorValue" type="instance" args="()" />
       <method name="getModulatorValueInt" type="instance" args="()" />
-      <method name="getName" type="instance" args="()" />
+      <method name="getName" type="instance" args="()" lua_wrap="L" />
       <method name="getRestoreState" type="instance" args="()" />
       <method name="getValue" type="instance" args="()" />
       <method name="getValueInt" type="instance" args="()" />
@@ -1070,12 +1073,10 @@
       <method name="getListBoxComponent" type="instance" args="(String)" />
       <method name="getModulator" type="instance" args="(String)" />
       <method name="getModulatorByIndex" type="instance" args="(int)" />
-      <method name="getModulatorByName" type="instance" args="()" />
+      <method name="getModulatorByName" type="instance" args="(String name)" />
       <method name="getModulatorValuesAsData" type="instance" args="(ValueTree, String, CtrlrByteEncoding, int, bool)" overload="1" />
       <method name="getModulatorValuesAsData" type="instance" args="(ValueTree, String, CtrlrByteEncoding, int, bool)" overload="2" />
       <method name="getModulatorValuesAsData" type="instance" args="(ValueTree, String, CtrlrByteEncoding, int, bool)" overload="3" />
-      <method name="getModulatorWithProperty" type="instance" args="(String, int)" overload="1" />
-      <method name="getModulatorWithProperty" type="instance" args="(String, int)" overload="2" />
       <method name="getModulatorsWildcard" type="instance" args="()" overload="1" />
       <method name="getModulatorsWildcard" type="instance" args="()" overload="2" />
       <method name="getModulatorsWithProperty" type="instance" args="(Identifier, var)" />
@@ -1098,6 +1099,15 @@
       <method name="setModulatorValuesFromData" type="instance" args="(MemoryBlock, String, CtrlrByteEncoding, int, int, bool)" />
       <method name="setProgramState" type="instance" args="(bool)" />
       <method name="setRestoreState" type="instance" args="(bool)" />
+      <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
+      <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
+      <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
+      <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
+      <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
+      <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
+      <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
+      <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
+      <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
     </methods>
   </class>
   <class name="CtrlrPanelCanvas" cpp_name="CtrlrPanelCanvas">
@@ -1661,7 +1671,87 @@
   <class name="JUCEBigInteger" cpp_name="BigInteger" />
   <class name="Justification" cpp_name="Justification">
     <enums>
-      <enum name="Flags">
+      <value name="bottom" value="16" />
+        <value name="bottomLeft" value="17" />
+        <value name="bottomRight" value="18" />
+        <value name="centred" value="36" />
+        <value name="centredBottom" value="20" />
+        <value name="centredLeft" value="33" />
+        <value name="centredRight" value="34" />
+        <value name="centredTop" value="12" />
+        <value name="horizontallyCentred" value="4" />
+        <value name="horizontallyJustified" value="64" />
+        <value name="left" value="1" />
+        <value name="right" value="2" />
+        <value name="top" value="8" />
+        <value name="topLeft" value="9" />
+        <value name="topRight" value="10" />
+        <value name="verticallyCentred" value="32" />
+        <enum name="">
+        <value name="bottom" value="16" />
+        <value name="bottomLeft" value="17" />
+        <value name="bottomRight" value="18" />
+        <value name="centred" value="36" />
+        <value name="centredBottom" value="20" />
+        <value name="centredLeft" value="33" />
+        <value name="centredRight" value="34" />
+        <value name="centredTop" value="12" />
+        <value name="horizontallyCentred" value="4" />
+        <value name="horizontallyJustified" value="64" />
+        <value name="left" value="1" />
+        <value name="right" value="2" />
+        <value name="top" value="8" />
+        <value name="topLeft" value="9" />
+        <value name="topRight" value="10" />
+        <value name="verticallyCentred" value="32" />
+        <value name="bottom" value="16" />
+        <value name="bottomLeft" value="17" />
+        <value name="bottomRight" value="18" />
+        <value name="centred" value="36" />
+        <value name="centredBottom" value="20" />
+        <value name="centredLeft" value="33" />
+        <value name="centredRight" value="34" />
+        <value name="centredTop" value="12" />
+        <value name="horizontallyCentred" value="4" />
+        <value name="horizontallyJustified" value="64" />
+        <value name="left" value="1" />
+        <value name="right" value="2" />
+        <value name="top" value="8" />
+        <value name="topLeft" value="9" />
+        <value name="topRight" value="10" />
+        <value name="verticallyCentred" value="32" />
+        <value name="bottom" value="16" />
+        <value name="bottomLeft" value="17" />
+        <value name="bottomRight" value="18" />
+        <value name="centred" value="36" />
+        <value name="centredBottom" value="20" />
+        <value name="centredLeft" value="33" />
+        <value name="centredRight" value="34" />
+        <value name="centredTop" value="12" />
+        <value name="horizontallyCentred" value="4" />
+        <value name="horizontallyJustified" value="64" />
+        <value name="left" value="1" />
+        <value name="right" value="2" />
+        <value name="top" value="8" />
+        <value name="topLeft" value="9" />
+        <value name="topRight" value="10" />
+        <value name="verticallyCentred" value="32" />
+        <value name="bottom" value="16" />
+        <value name="bottomLeft" value="17" />
+        <value name="bottomRight" value="18" />
+        <value name="centred" value="36" />
+        <value name="centredBottom" value="20" />
+        <value name="centredLeft" value="33" />
+        <value name="centredRight" value="34" />
+        <value name="centredTop" value="12" />
+        <value name="horizontallyCentred" value="4" />
+        <value name="horizontallyJustified" value="64" />
+        <value name="left" value="1" />
+        <value name="right" value="2" />
+        <value name="top" value="8" />
+        <value name="topLeft" value="9" />
+        <value name="topRight" value="10" />
+        <value name="verticallyCentred" value="32" />
         <value name="bottom" value="16" />
         <value name="bottomLeft" value="17" />
         <value name="bottomRight" value="18" />
@@ -1689,7 +1779,7 @@
   </class>
   <class name="KeyPress" cpp_name="KeyPress">
     <enums>
-      <enum name="KeyCode">
+      <enum name="">
         <value name="backspaceKey" value="KeyPress::backspaceKey" />
         <value name="deleteKey" value="KeyPress::deleteKey" />
         <value name="downKey" value="KeyPress::downKey" />
@@ -1720,7 +1810,7 @@
   </class>
   <class name="LAlertWindow" cpp_name="LAlertWindow">
     <enums>
-      <enum name="AlertIconType">
+      <enum name="">
         <value name="InfoIcon" value="3" />
         <value name="NoIcon" value="0" />
         <value name="QuestionIcon" value="1" />
@@ -1787,8 +1877,6 @@
       <method name="append" type="instance" args="(MemoryBlock)" />
       <method name="compressGzip" type="instance" args="()" />
       <method name="compressZlib" type="instance" args="()" />
-      <method name="copyFrom" type="instance" args="(MemoryBlock, int, int)" />
-      <method name="copyTo" type="instance" args="(MemoryBlock, int, int)" />
       <method name="createFromTable" type="instance" args="(table)" />
       <method name="decompressGzip" type="instance" args="()" />
       <method name="decompressZlib" type="instance" args="()" />
@@ -1804,7 +1892,7 @@
       <method name="insert" type="instance" args="(MemoryBlock, int, int)" overload="1" />
       <method name="insert" type="instance" args="(MemoryBlock, int, int)" overload="2" />
       <method name="insertIntoTable" type="instance" args="(table)" />
-      <method name="loadFromHexString" type="instance" args="()" />
+      <method name="loadFromHexString" type="instance" args="(String hex)" />
       <method name="pushLString" type="instance" args="()" />
       <method name="removeSection" type="instance" args="(int, int)" />
       <method name="replaceWith" type="instance" args="(MemoryBlock)" />
@@ -1815,7 +1903,7 @@
       <method name="toBase64Encoding" type="instance" args="()" />
       <method name="toBinarySafeString" type="instance" args="()" />
       <method name="toBinaryString" type="instance" args="(lua_State)" />
-      <method name="toHexString" type="instance" args="(int)" />
+      <method name="toHexString" type="instance" args="(int groupSize)" />
       <method name="toLuaString" type="instance" args="()" />
       <method name="toLuaTable" type="instance" args="(table)" />
       <method name="toRawString" type="instance" args="()" />
@@ -1831,7 +1919,12 @@
       <method name="fromLuaStringToAscii" type="static" args="(String)" overload="1" />
       <method name="fromLuaStringToAscii" type="static" args="(String)" overload="2" />
       <method name="fromLuaTable" type="static" args="(table)" />
+      <method name="copyFrom" type="static" args="(MemoryBlock source, int start, int size)" />
+      <method name="copyTo" type="static" args="(MemoryBlock dest, int start, int size)" />
     </static_methods>
+    <constructor args="()" type="constructor" />
+    <constructor args="(String hexString)" type="constructor" />
+    <constructor args="({int} luaTable)" type="constructor" />
   </class>
   <class name="LPopupMenu" cpp_name="LPopupMenu">
     <methods>
@@ -2298,12 +2391,40 @@
   </class>
   <class name="PathStrokeType" cpp_name="LPathStrokeType">
     <enums>
-      <enum name="EndCapStyle">
+      <value name="butt" value="PathStrokeType::butt" />
+        <value name="rounded" value="PathStrokeType::rounded" />
+        <value name="square" value="PathStrokeType::square" />
+        <value name="beveled" value="PathStrokeType::beveled" />
+        <value name="curved" value="PathStrokeType::curved" />
+        <value name="mitered" value="PathStrokeType::mitered" />
+        <enum name="">
         <value name="butt" value="PathStrokeType::butt" />
         <value name="rounded" value="PathStrokeType::rounded" />
         <value name="square" value="PathStrokeType::square" />
-      </enum>
-      <enum name="JoinStyle">
+        <value name="beveled" value="PathStrokeType::beveled" />
+        <value name="curved" value="PathStrokeType::curved" />
+        <value name="mitered" value="PathStrokeType::mitered" />
+        <value name="butt" value="PathStrokeType::butt" />
+        <value name="rounded" value="PathStrokeType::rounded" />
+        <value name="square" value="PathStrokeType::square" />
+        <value name="beveled" value="PathStrokeType::beveled" />
+        <value name="curved" value="PathStrokeType::curved" />
+        <value name="mitered" value="PathStrokeType::mitered" />
+        <value name="butt" value="PathStrokeType::butt" />
+        <value name="rounded" value="PathStrokeType::rounded" />
+        <value name="square" value="PathStrokeType::square" />
+        <value name="beveled" value="PathStrokeType::beveled" />
+        <value name="curved" value="PathStrokeType::curved" />
+        <value name="mitered" value="PathStrokeType::mitered" />
+        <value name="butt" value="PathStrokeType::butt" />
+        <value name="rounded" value="PathStrokeType::rounded" />
+        <value name="square" value="PathStrokeType::square" />
+        <value name="beveled" value="PathStrokeType::beveled" />
+        <value name="curved" value="PathStrokeType::curved" />
+        <value name="mitered" value="PathStrokeType::mitered" />
+        <value name="butt" value="PathStrokeType::butt" />
+        <value name="rounded" value="PathStrokeType::rounded" />
+        <value name="square" value="PathStrokeType::square" />
         <value name="beveled" value="PathStrokeType::beveled" />
         <value name="curved" value="PathStrokeType::curved" />
         <value name="mitered" value="PathStrokeType::mitered" />
@@ -3161,4 +3282,343 @@
   </class>
   <class name="pair" cpp_name="pair" />
   <class name="var" cpp_name="var" />
+  <class name="panel" cpp_name="CtrlrPanel" alias_of="CtrlrPanel">
+    <enums>
+      <enum name="CtrlrByteEncoding">
+        <value name="Encode16bitLsbFirst" value="Encode16bitLsbFirst" />
+        <value name="Encode16bitMsbFirst" value="Encode16bitMsbFirst" />
+        <value name="Encode4bitLsbFirst" value="EncodeNibbleLsbFirst" />
+        <value name="Encode4bitMsbFirst" value="EncodeNibbleMsbFirst" />
+        <value name="Encode7bitLSBFirst" value="EncodeLSBFirst" />
+        <value name="Encode7bitMSBFirst" value="EncodeMSBFirst" />
+        <value name="EncodeLSBFirst" value="EncodeLSBFirst" />
+        <value name="EncodeLsbFirst" value="EncodeNibbleLsbFirst" />
+        <value name="EncodeMSBFirst" value="EncodeMSBFirst" />
+        <value name="EncodeMsbFirst" value="EncodeNibbleMsbFirst" />
+        <value name="EncodeNibbleLsbFirst" value="EncodeNibbleLsbFirst" />
+        <value name="EncodeNibbleMsbFirst" value="EncodeNibbleMsbFirst" />
+        <value name="EncodeNormal" value="EncodeNormal" />
+        <value name="EncodeSignedNibbleLsbFirst" value="EncodeSignedNibbleLsbFirst" />
+        <value name="EncodeSignedNibbleMsbFirst" value="EncodeSignedNibbleMsbFirst" />
+      </enum>
+      <enum name="CtrlrByteSplit">
+        <value name="Split4Bits" value="(uint8" />
+        <value name="Split7Bits" value="(uint8" />
+        <value name="Split8Bits" value="(uint8" />
+        <value name="SplitNone" value="(uint8" />
+      </enum>
+      <enum name="CtrlrInstance">
+        <value name="InstanceMulti" value="(uint8" />
+        <value name="InstanceMultiEngine" value="(uint8" />
+        <value name="InstanceSingle" value="(uint8" />
+        <value name="InstanceSingleEngine" value="(uint8" />
+        <value name="InstanceSingleRestriced" value="(uint8" />
+        <value name="InstanceSingleRestrictedEngine" value="(uint8" />
+      </enum>
+      <enum name="CtrlrNotificationType">
+        <value name="NotifyFailure" value="(uint8" />
+        <value name="NotifyInformation" value="(uint8" />
+        <value name="NotifySuccess" value="(uint8" />
+        <value name="NotifyWarning" value="(uint8" />
+      </enum>
+      <enum name="CtrlrPanelFileType">
+        <value name="PanelFileBinary" value="2" />
+        <value name="PanelFileBinaryCompressed" value="3" />
+        <value name="PanelFileExport" value="4" />
+        <value name="PanelFileXML" value="0" />
+        <value name="PanelFileXMLCompressed" value="1" />
+      </enum>
+    </enums>
+    <methods>
+      <method name="dumpDebugData" type="instance" args="()" />
+      <method name="getBootstrapState" type="instance" args="()" />
+      <method name="getButton" type="instance" args="()" />
+      <method name="getButtonComponent" type="instance" args="(String)" />
+      <method name="getCanvas" type="instance" args="()" />
+      <method name="getCombo" type="instance" args="()" />
+      <method name="getComboComponent" type="instance" args="(String)" />
+      <method name="getComponent" type="instance" args="(String)" />
+      <method name="getFileListBox" type="instance" args="()" />
+      <method name="getFileListBoxComponent" type="instance" args="(String)" />
+      <method name="getFixedImageSlider" type="instance" args="()" />
+      <method name="getFixedImageSliderComponent" type="instance" args="(String)" />
+      <method name="getFixedSlider" type="instance" args="()" />
+      <method name="getFixedSliderComponent" type="instance" args="(String)" />
+      <method name="getGlobalVariable" type="instance" args="(int)" />
+      <method name="getImageButton" type="instance" args="()" />
+      <method name="getImageButtonComponent" type="instance" args="(String)" />
+      <method name="getImageSlider" type="instance" args="()" />
+      <method name="getImageSliderComponent" type="instance" args="(String)" />
+      <method name="getInputComparator" type="instance" args="()" />
+      <method name="getLCDLabel" type="instance" args="()" />
+      <method name="getLCDLabelComponent" type="instance" args="(String)" />
+      <method name="getLabel" type="instance" args="()" />
+      <method name="getLabelComponent" type="instance" args="(String)" />
+      <method name="getListBox" type="instance" args="()" />
+      <method name="getListBoxComponent" type="instance" args="(String)" />
+      <method name="getModulator" type="instance" args="(String)" />
+      <method name="getModulatorByIndex" type="instance" args="(int)" />
+      <method name="getModulatorByName" type="instance" args="(String name)" />
+      <method name="getModulatorValuesAsData" type="instance" args="(ValueTree, String, CtrlrByteEncoding, int, bool)" overload="1" />
+      <method name="getModulatorValuesAsData" type="instance" args="(ValueTree, String, CtrlrByteEncoding, int, bool)" overload="2" />
+      <method name="getModulatorValuesAsData" type="instance" args="(ValueTree, String, CtrlrByteEncoding, int, bool)" overload="3" />
+      <method name="getModulatorsWildcard" type="instance" args="()" overload="1" />
+      <method name="getModulatorsWildcard" type="instance" args="()" overload="2" />
+      <method name="getModulatorsWithProperty" type="instance" args="(Identifier, var)" />
+      <method name="getNumModulators" type="instance" args="()" />
+      <method name="getPanelEditor" type="instance" args="()" />
+      <method name="getProgramState" type="instance" args="()" />
+      <method name="getRestoreState" type="instance" args="()" />
+      <method name="getSlider" type="instance" args="()" />
+      <method name="getSliderComponent" type="instance" args="(String)" />
+      <method name="getToggleButton" type="instance" args="()" />
+      <method name="getToggleButtonComponent" type="instance" args="(String)" />
+      <method name="getWaveform" type="instance" args="()" />
+      <method name="getWaveformComponent" type="instance" args="(String)" />
+      <method name="isRestoring" type="instance" args="()" />
+      <method name="sendMidi" type="instance" args="(CtrlrMidiMessage, double)" overload="1" />
+      <method name="sendMidi" type="instance" args="(CtrlrMidiMessage, double)" overload="2" />
+      <method name="sendMidi" type="instance" args="(CtrlrMidiMessage, double)" overload="3" />
+      <method name="sendMidiMessageNow" type="instance" args="()" />
+      <method name="setGlobalVariable" type="instance" args="(int, int)" />
+      <method name="setModulatorValuesFromData" type="instance" args="(MemoryBlock, String, CtrlrByteEncoding, int, int, bool)" />
+      <method name="setProgramState" type="instance" args="(bool)" />
+      <method name="setRestoreState" type="instance" args="(bool)" />
+      <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
+      <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
+      <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
+      <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
+      <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
+      <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
+      <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
+      <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
+      <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
+    </methods>
+  </class>
+  <class name="mod" cpp_name="CtrlrModulator" alias_of="CtrlrModulator">
+    <enums>
+      <enum name="CtrlrModulatorValue">
+        <value name="changeByUnknown" value="8" />
+        <value name="changedByGUI" value="4" />
+        <value name="changedByHost" value="1" />
+        <value name="changedByLink" value="7" />
+        <value name="changedByLua" value="5" />
+        <value name="changedByMidiController" value="3" />
+        <value name="changedByMidiIn" value="2" />
+        <value name="changedByProgram" value="6" />
+        <value name="initialValue" value="0" />
+      </enum>
+    </enums>
+    <methods>
+      <method name="getComponent" type="instance" args="()" />
+      <method name="getLuaName" type="instance" args="()" />
+      <method name="getMaxMapped" type="instance" args="()" />
+      <method name="getMaxMappedInt" type="instance" args="()" />
+      <method name="getMaxModulatorValue" type="instance" args="()" />
+      <method name="getMaxModulatorValueInt" type="instance" args="()" />
+      <method name="getMaxNonMapped" type="instance" args="()" />
+      <method name="getMaxNonMappedInt" type="instance" args="()" />
+      <method name="getMidiMessage" type="instance" args="()" overload="1" />
+      <method name="getMidiMessage" type="instance" args="()" overload="2" />
+      <method name="getMinMapped" type="instance" args="()" />
+      <method name="getMinMappedInt" type="instance" args="()" />
+      <method name="getMinModulatorValue" type="instance" args="()" />
+      <method name="getMinModulatorValueInt" type="instance" args="()" />
+      <method name="getMinNonMapped" type="instance" args="()" />
+      <method name="getMinNonMappedInt" type="instance" args="()" />
+      <method name="getModulatorName" type="instance" args="()" />
+      <method name="getModulatorValue" type="instance" args="()" />
+      <method name="getModulatorValueInt" type="instance" args="()" />
+      <method name="getName" type="instance" args="()" lua_wrap="L" />
+      <method name="getRestoreState" type="instance" args="()" />
+      <method name="getValue" type="instance" args="()" />
+      <method name="getValueInt" type="instance" args="()" />
+      <method name="getValueMapped" type="instance" args="()" />
+      <method name="getValueMappedInt" type="instance" args="()" />
+      <method name="getValueNonMapped" type="instance" args="()" />
+      <method name="getValueNonMappedInt" type="instance" args="()" />
+      <method name="getVstIndex" type="instance" args="()" />
+      <method name="isRestoring" type="instance" args="()" />
+      <method name="setModulatorValue" type="instance" args="(int, bool, bool, bool)" />
+      <method name="setRestoreState" type="instance" args="(bool)" />
+      <method name="setValue" type="instance" args="(int, bool, bool)" overload="1" />
+      <method name="setValue" type="instance" args="(int, bool, bool)" overload="2" />
+      <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="1" />
+      <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="2" />
+      <method name="setValueNonMapped" type="instance" args="(int, bool, bool)" />
+    </methods>
+  </class>
+  <class name="modulator" cpp_name="CtrlrModulator" alias_of="CtrlrModulator">
+    <enums>
+      <enum name="CtrlrModulatorValue">
+        <value name="changeByUnknown" value="8" />
+        <value name="changedByGUI" value="4" />
+        <value name="changedByHost" value="1" />
+        <value name="changedByLink" value="7" />
+        <value name="changedByLua" value="5" />
+        <value name="changedByMidiController" value="3" />
+        <value name="changedByMidiIn" value="2" />
+        <value name="changedByProgram" value="6" />
+        <value name="initialValue" value="0" />
+      </enum>
+    </enums>
+    <methods>
+      <method name="getComponent" type="instance" args="()" />
+      <method name="getLuaName" type="instance" args="()" />
+      <method name="getMaxMapped" type="instance" args="()" />
+      <method name="getMaxMappedInt" type="instance" args="()" />
+      <method name="getMaxModulatorValue" type="instance" args="()" />
+      <method name="getMaxModulatorValueInt" type="instance" args="()" />
+      <method name="getMaxNonMapped" type="instance" args="()" />
+      <method name="getMaxNonMappedInt" type="instance" args="()" />
+      <method name="getMidiMessage" type="instance" args="()" overload="1" />
+      <method name="getMidiMessage" type="instance" args="()" overload="2" />
+      <method name="getMinMapped" type="instance" args="()" />
+      <method name="getMinMappedInt" type="instance" args="()" />
+      <method name="getMinModulatorValue" type="instance" args="()" />
+      <method name="getMinModulatorValueInt" type="instance" args="()" />
+      <method name="getMinNonMapped" type="instance" args="()" />
+      <method name="getMinNonMappedInt" type="instance" args="()" />
+      <method name="getModulatorName" type="instance" args="()" />
+      <method name="getModulatorValue" type="instance" args="()" />
+      <method name="getModulatorValueInt" type="instance" args="()" />
+      <method name="getName" type="instance" args="()" lua_wrap="L" />
+      <method name="getRestoreState" type="instance" args="()" />
+      <method name="getValue" type="instance" args="()" />
+      <method name="getValueInt" type="instance" args="()" />
+      <method name="getValueMapped" type="instance" args="()" />
+      <method name="getValueMappedInt" type="instance" args="()" />
+      <method name="getValueNonMapped" type="instance" args="()" />
+      <method name="getValueNonMappedInt" type="instance" args="()" />
+      <method name="getVstIndex" type="instance" args="()" />
+      <method name="isRestoring" type="instance" args="()" />
+      <method name="setModulatorValue" type="instance" args="(int, bool, bool, bool)" />
+      <method name="setRestoreState" type="instance" args="(bool)" />
+      <method name="setValue" type="instance" args="(int, bool, bool)" overload="1" />
+      <method name="setValue" type="instance" args="(int, bool, bool)" overload="2" />
+      <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="1" />
+      <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="2" />
+      <method name="setValueNonMapped" type="instance" args="(int, bool, bool)" />
+    </methods>
+  </class>
+  <class name="MemoryBlock" cpp_name="LMemoryBlock" alias_of="LMemoryBlock">
+    <methods>
+      <method name="append" type="instance" args="(MemoryBlock)" />
+      <method name="compressGzip" type="instance" args="()" />
+      <method name="compressZlib" type="instance" args="()" />
+      <method name="createFromTable" type="instance" args="(table)" />
+      <method name="decompressGzip" type="instance" args="()" />
+      <method name="decompressZlib" type="instance" args="()" />
+      <method name="ensureSize" type="instance" args="()" />
+      <method name="fillWith" type="instance" args="()" />
+      <method name="fromBase64Encoding" type="instance" args="()" />
+      <method name="getBitRange" type="instance" args="(int, int)" />
+      <method name="getByte" type="instance" args="(int)" />
+      <method name="getData" type="instance" args="()" />
+      <method name="getRange" type="instance" args="(int, int)" />
+      <method name="getSize" type="instance" args="()" />
+      <method name="init" type="instance" args="(int)" />
+      <method name="insert" type="instance" args="(MemoryBlock, int, int)" overload="1" />
+      <method name="insert" type="instance" args="(MemoryBlock, int, int)" overload="2" />
+      <method name="insertIntoTable" type="instance" args="(table)" />
+      <method name="loadFromHexString" type="instance" args="(String hex)" />
+      <method name="pushLString" type="instance" args="()" />
+      <method name="removeSection" type="instance" args="(int, int)" />
+      <method name="replaceWith" type="instance" args="(MemoryBlock)" />
+      <method name="setBitRange" type="instance" args="(int, int, int)" />
+      <method name="setByte" type="instance" args="(int, uint8)" />
+      <method name="setSize" type="instance" args="()" />
+      <method name="swapWith" type="instance" args="()" />
+      <method name="toBase64Encoding" type="instance" args="()" />
+      <method name="toBinarySafeString" type="instance" args="()" />
+      <method name="toBinaryString" type="instance" args="(lua_State)" />
+      <method name="toHexString" type="instance" args="(int groupSize)" />
+      <method name="toLuaString" type="instance" args="()" />
+      <method name="toLuaTable" type="instance" args="(table)" />
+      <method name="toRawString" type="instance" args="()" />
+      <method name="toString" type="instance" args="()" />
+      <method name="toStringNoTerminator" type="instance" args="()" />
+      <method name="toStringWithNulls" type="instance" args="()" />
+    </methods>
+    <static_methods>
+      <method name="createWithSize" type="static" args="(int)" />
+      <method name="fromLuaBinaryString" type="static" args="(table)" />
+      <method name="fromLuaString" type="static" args="(table, String)" overload="1" />
+      <method name="fromLuaString" type="static" args="(table, String)" overload="2" />
+      <method name="fromLuaStringToAscii" type="static" args="(String)" overload="1" />
+      <method name="fromLuaStringToAscii" type="static" args="(String)" overload="2" />
+      <method name="fromLuaTable" type="static" args="(table)" />
+      <method name="copyFrom" type="static" args="(MemoryBlock source, int start, int size)" />
+      <method name="copyTo" type="static" args="(MemoryBlock dest, int start, int size)" />
+    </static_methods>
+    <constructor args="()" type="constructor" />
+    <constructor args="(String hexString)" type="constructor" />
+    <constructor args="({int} luaTable)" type="constructor" />
+  </class>
+  <class name="AlertWindow" cpp_name="LAlertWindow" alias_of="LAlertWindow">
+    <enums>
+      <enum name="">
+        <value name="InfoIcon" value="3" />
+        <value name="NoIcon" value="0" />
+        <value name="QuestionIcon" value="1" />
+        <value name="WarningIcon" value="2" />
+      </enum>
+    </enums>
+    <methods>
+      <method name="addButton" type="instance" args="()" />
+      <method name="addComboBox" type="instance" args="()" />
+      <method name="addCustomComponent" type="instance" args="()" />
+      <method name="addProgressBarComponent" type="instance" args="()" />
+      <method name="addTextBlock" type="instance" args="()" />
+      <method name="addTextEditor" type="instance" args="()" />
+      <method name="containsAnyExtraComponents" type="instance" args="()" />
+      <method name="exitModalState" type="instance" args="()" />
+      <method name="getAlertType" type="instance" args="()" />
+      <method name="getComboBoxComponent" type="instance" args="()" />
+      <method name="getCustomComponent" type="instance" args="()" />
+      <method name="getNumButtons" type="instance" args="()" />
+      <method name="getNumCustomComponents" type="instance" args="()" />
+      <method name="getTextEditor" type="instance" args="()" />
+      <method name="getTextEditorContents" type="instance" args="()" />
+      <method name="removeCustomComponent" type="instance" args="()" />
+      <method name="runModalLoop" type="instance" args="()" />
+      <method name="setEscapeKeyCancels" type="instance" args="()" />
+      <method name="setMessage" type="instance" args="()" />
+      <method name="setModalHandler" type="instance" args="(table)" />
+      <method name="triggerButtonClick" type="instance" args="()" />
+    </methods>
+    <static_methods>
+      <method name="queryText" type="static" args="(AlertIconType, String, String, String, String, String, String, bool, table)" />
+      <method name="showMessageBox" type="static" args="(AlertIconType, String, String, String)" />
+      <method name="showMessageBoxAsync" type="static" args="(AlertIconType, String, String, String)" />
+      <method name="showNativeDialogBox" type="static" args="(String, String, bool)" />
+      <method name="showOkCancelBox" type="static" args="(AlertIconType, String, String, String, String)" />
+      <method name="showYesNoCancelBox" type="static" args="(AlertIconType, String, String, String, String, String)" />
+    </static_methods>
+  </class>
+  <class name="utils" cpp_name="CtrlrLuaUtils" alias_of="CtrlrLuaUtils">
+    <static_methods>
+      <method name="askForTextInputWindow" type="static" args="(String, String, String, String, bool, String, String)" />
+      <method name="base64_decode" type="static" args="(String)" />
+      <method name="base64_encode" type="static" args="(String)" />
+      <method name="get16bitSigned" type="static" args="()" />
+      <method name="get8bitSigned" type="static" args="()" />
+      <method name="getDirectoryWindow" type="static" args="(String, File)" />
+      <method name="getMidiInputDevices" type="static" args="()" />
+      <method name="getMidiOutputDevices" type="static" args="()" />
+      <method name="getPi" type="static" args="()" />
+      <method name="getVersionMajor" type="static" args="()" />
+      <method name="getVersionMinor" type="static" args="()" />
+      <method name="getVersionRevision" type="static" args="()" />
+      <method name="getVersionString" type="static" args="()" />
+      <method name="infoWindow" type="static" args="(String, String)" />
+      <method name="openFileWindow" type="static" args="(String, File, String, bool)" />
+      <method name="openMultipleFilesWindow" type="static" args="(String, File, String, bool, table)" />
+      <method name="packDsiData" type="static" args="(MemoryBlock data)" />
+      <method name="questionWindow" type="static" args="(String, String, String, String)" />
+      <method name="saveFileWindow" type="static" args="(String, File, String, bool)" />
+      <method name="unpackDsiData" type="static" args="(MemoryBlock data)" />
+      <method name="warnWindow" type="static" args="(String, String)" />
+    </static_methods>
+  </class>
 </LuaAPI>

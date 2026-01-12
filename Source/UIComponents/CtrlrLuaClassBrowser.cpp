@@ -78,7 +78,7 @@ void CtrlrLuaClassBrowser::resized()
 {
     auto bounds = getLocalBounds();
     const int buttonHeight = 25;
-    const int infoHeight = 120;  // Increased from 60 to 120
+    const int infoHeight = 90;
     const int labelHeight = 25;
     const int margin = 5;
 
@@ -210,17 +210,35 @@ void CtrlrLuaClassBrowser::loadMethodsForClass(const juce::String& className)
             }
 
             // Get enums from <enums> container
-            if (auto* enumsElem = cls->getChildByName("enums"))
-            {
-                forEachXmlChildElementWithTagName(*enumsElem, e, "enum")
-                {
-                    juce::String enumName = e->getStringAttribute("name");
-                    forEachXmlChildElementWithTagName(*e, v, "value")
-                    {
-                        attributeList.add(enumName + "." + v->getStringAttribute("name"));
-                    }
-                }
+// Get enums from <enums> container
+if (auto* enumsElem = cls->getChildByName("enums"))
+{
+    // Handle values that are inside an <enum> tag group
+    forEachXmlChildElementWithTagName(*enumsElem, e, "enum")
+    {
+        juce::String enumName = e->getStringAttribute("name");
+        
+        forEachXmlChildElementWithTagName(*e, v, "value")
+        {
+            // Only add the prefix if the enum name is actually set
+            if (enumName.isNotEmpty()) {
+                attributeList.add(enumName + "." + v->getStringAttribute("name"));
+            } else {
+                attributeList.add(v->getStringAttribute("name"));
             }
+        }
+    }
+
+    // Handle "loose" values directly under <enums> (Truly Flattened)
+    // We only add these if they haven't been added by the loop above
+    forEachXmlChildElementWithTagName(*enumsElem, v, "value")
+    {
+        juce::String valName = v->getStringAttribute("name");
+        if (!attributeList.contains(valName)) {
+            attributeList.add(valName);
+        }
+    }
+}
 
             break;
         }
@@ -243,8 +261,8 @@ void CtrlrLuaClassBrowser::loadMethodsForClass(const juce::String& className)
     infoDisplay->setText("Class: " + className + "\n\n" +
         "Constructors: " + juce::String(constructorCount) + "\n" +
         "Methods: " + juce::String(methodList.size() - constructorCount) + "\n" +
-        "Enums: " + juce::String(attributeList.size()) + "\n\n" +
-        "Click on any method to see usage details.",
+        "Enums: " + juce::String(attributeList.size()) + "",
+        //"Click on any method to see usage details.",
         false);
 }
 
@@ -616,92 +634,6 @@ void CtrlrLuaClassBrowser::setLuaApiXml(const juce::XmlElement* xml)
     loadClassList();
 }
 
-juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& methodName)
-{
-    juce::String description;
-
-    // Keep the full name with overload markers to match exact method
-    juce::String cleanName = methodName.upToFirstOccurrenceOf(" [", false, false);
-    bool hasOverload = methodName.contains(" [");
-
-    description += "Class: " + currentClassName + "\n";
-    description += "Method: " + cleanName + "\n";
-
-    // Find method info - match the FULL name including overload markers
-    bool isStatic = false;
-    juce::String args;
-    bool found = false;
-    bool isConstructor = false;
-
-    for (const auto& method : methodList)
-    {
-        if (method.name == methodName)  // Exact match including [1], [2], etc.
-        {
-            isStatic = method.isStatic;
-            args = method.args;
-            found = true;
-            isConstructor = cleanName == currentClassName;
-            break;
-        }
-    }
-
-    if (found)
-    {
-        description += "\n=== Method Info ===\n";
-
-        if (isConstructor)
-        {
-            description += "Type: CONSTRUCTOR";
-            if (hasOverload)
-            {
-                juce::String overloadNum = methodName.fromFirstOccurrenceOf(" [", false, false)
-                    .upToFirstOccurrenceOf("]", false, false);
-                description += " [Overload " + overloadNum + "]";
-            }
-            description += "\n";
-        }
-        else
-        {
-            description += "Type: " + juce::String(isStatic ? "STATIC (use .)" : "INSTANCE (use :)");
-            if (hasOverload)
-            {
-                juce::String overloadNum = methodName.fromFirstOccurrenceOf(" [", false, false)
-                    .upToFirstOccurrenceOf("]", false, false);
-                description += " [Overload " + overloadNum + "]";
-            }
-            description += "\n";
-        }
-
-        if (args.isNotEmpty())
-            description += "Arguments: " + args + "\n";
-        else
-            description += "Arguments: ()\n";
-
-        description += "\n=== Usage ===\n";
-
-        if (isConstructor)
-        {
-            description += "local obj = " + currentClassName + args + "\n";
-        }
-        else if (isStatic)
-        {
-            description += currentClassName + "." + cleanName + args + "\n";
-        }
-        else
-        {
-            description += "obj:" + cleanName + args + "\n";
-        }
-    }
-    else
-    {
-        description += "\nType: Enum/Attribute\n";
-    }
-
-    description += "\nRight-click for more options.";
-
-    return description;
-}
-
 void CtrlrLuaClassBrowser::MethodListModel::listBoxItemClicked(int row, const juce::MouseEvent& e)
 {
     if (!ownerRef) return;
@@ -828,4 +760,47 @@ void CtrlrLuaClassBrowser::MethodListModel::listBoxItemClicked(int row, const ju
                 }
             });
     }
+}
+
+juce::String CtrlrLuaClassBrowser::getMethodDescription(const juce::String& methodName)
+{
+    // 1. Identify and find data
+    juce::String cleanName = methodName.upToFirstOccurrenceOf(" [", false, false);
+    const MethodInfo* info = nullptr;
+    for (const auto& m : methodList) {
+        if (m.name == methodName) { info = &m; break; }
+    }
+
+    // 2. Build the first line: Class and Method Identity
+    juce::String d;
+    d << "Class: " << currentClassName << " - "
+        << (info ? "Method: " : "Attribute: ") << cleanName << "\n";
+
+    if (info) {
+        // Prepare Metadata
+        bool isCtor = (cleanName == currentClassName);
+        juce::String args = info->args.isNotEmpty() ? info->args : "()";
+
+        // Prepare L() wrapper
+        juce::String openW = info->luaWrap.isNotEmpty() ? info->luaWrap + "(" : "";
+        juce::String closeW = openW.isNotEmpty() ? ")" : "";
+
+        // Determine Usage Syntax
+        juce::String usage;
+        if (isCtor) usage << "local obj = " << currentClassName << args;
+        else if (info->isStatic) usage << openW << currentClassName << "." << cleanName << args << closeW;
+        else usage << openW << "obj:" << cleanName << args << closeW;
+
+        // 3. Build the second line: Type and Usage
+        d << "Type: " << (isCtor ? "Constructor" : (info->isStatic ? "Static" : "Instance"));
+        if (methodName.contains("[")) d << " [" << methodName.fromFirstOccurrenceOf("[", false, false);
+        d << " - Usage: " << usage << "\n";
+    }
+    else {
+        // Line for Enums/Attributes
+        d << "Type: Enum/Attribute - Usage: " << currentClassName << "." << methodName << "\n";
+    }
+
+    d << "\n\nRight-click on a method for more options.";
+    return d;
 }
