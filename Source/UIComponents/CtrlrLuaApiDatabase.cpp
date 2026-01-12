@@ -1,8 +1,8 @@
 #include "CtrlrLuaApiDatabase.h"
+#include "BinaryData.h" // Ensure this is included to access the XML data
 
 CtrlrLuaApiDatabase::CtrlrLuaApiDatabase()
 {
-    // Optionally auto-load from default location
     loadFromDefaultLocation();
 }
 
@@ -11,56 +11,53 @@ CtrlrLuaApiDatabase::~CtrlrLuaApiDatabase()
     clear();
 }
 
-juce::File CtrlrLuaApiDatabase::getDefaultXmlPath()
-{
-    // Try multiple potential locations in order of preference
-    
-    // 1. Try relative to executable (for installed applications)
-    juce::File exeDir = juce::File::getSpecialLocation(juce::File::currentApplicationFile)
-                            .getParentDirectory();
-    
-    juce::File xmlFile = exeDir.getChildFile("Resources/XML/LuaAPI.xml");
-    if (xmlFile.existsAsFile())
-        return xmlFile;
-    
-    // 2. Try one level up (for macOS .app bundles)
-    xmlFile = exeDir.getParentDirectory().getChildFile("Resources/XML/LuaAPI.xml");
-    if (xmlFile.existsAsFile())
-        return xmlFile;
-    
-    // 3. Try application data directory
-    juce::File appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
-                                .getChildFile("Ctrlr");
-    
-    xmlFile = appDataDir.getChildFile("Resources/XML/LuaAPI.xml");
-    if (xmlFile.existsAsFile())
-        return xmlFile;
-    
-    // 4. Try current working directory (for development)
-    xmlFile = juce::File::getCurrentWorkingDirectory().getChildFile("Resources/XML/LuaAPI.xml");
-    if (xmlFile.existsAsFile())
-        return xmlFile;
-    
-    // 5. Try Source directory (for development builds)
-    xmlFile = juce::File::getCurrentWorkingDirectory().getChildFile("Source/Resources/XML/LuaAPI.xml");
-    if (xmlFile.existsAsFile())
-        return xmlFile;
-    
-    // 6. Return the preferred default path even if it doesn't exist yet
-    return exeDir.getChildFile("Resources/XML/LuaAPI.xml");
-}
-
 bool CtrlrLuaApiDatabase::loadFromDefaultLocation()
 {
-    juce::File xmlFile = getDefaultXmlPath();
-    
-    if (!xmlFile.existsAsFile())
+    // 1. PRIORITY: Load from BinaryData (Compiled into the EXE)
+    // This is the "Fail-safe" for GitHub builds and Linux
+    if (BinaryData::LuaAPI_xml != nullptr)
     {
-        DBG("LuaAPI.xml not found at: " + xmlFile.getFullPathName());
-        return false;
+        if (loadFromMemory(BinaryData::LuaAPI_xml, BinaryData::LuaAPI_xmlSize))
+        {
+            DBG("LuaAPI Database: Successfully loaded from BinaryData");
+            return true;
+        }
+    }
+
+    // 2. FALLBACK: Load from Physical File
+    // This allows developers to swap the XML without recompiling
+    juce::File xmlFile = getDefaultXmlPath();
+    if (xmlFile.existsAsFile())
+    {
+        if (loadFromFile(xmlFile))
+        {
+            DBG("LuaAPI Database: Successfully loaded from File: " + xmlFile.getFullPathName());
+            return true;
+        }
     }
     
-    return loadFromFile(xmlFile);
+    DBG("LuaAPI Database Error: Could not find API definitions in BinaryData or File System.");
+    return false;
+}
+
+bool CtrlrLuaApiDatabase::loadFromMemory(const char* data, int size)
+{
+    clear();
+
+    if (data == nullptr || size <= 0)
+        return false;
+
+    // Use CreateStringFromData to ensure null-termination/correct encoding
+    xmlRoot = juce::XmlDocument::parse(juce::String::createStringFromData(data, size));
+
+    if (xmlRoot == nullptr)
+    {
+        DBG("LuaAPI Database: Failed to parse XML from memory.");
+        return false;
+    }
+
+    loaded = parseXml(*xmlRoot);
+    return loaded;
 }
 
 bool CtrlrLuaApiDatabase::loadFromFile(const juce::File& xmlFile)
@@ -68,34 +65,23 @@ bool CtrlrLuaApiDatabase::loadFromFile(const juce::File& xmlFile)
     clear();
     
     if (!xmlFile.existsAsFile())
-    {
-        DBG("XML file does not exist: " + xmlFile.getFullPathName());
         return false;
-    }
     
     xmlRoot = juce::XmlDocument::parse(xmlFile);
     
     if (xmlRoot == nullptr)
-    {
-        DBG("Failed to parse XML file: " + xmlFile.getFullPathName());
         return false;
-    }
     
     loaded = parseXml(*xmlRoot);
-    
-    if (loaded)
-    {
-        DBG("Successfully loaded LuaAPI.xml: " + juce::String(classes.size()) + " classes");
-    }
-    
     return loaded;
 }
+
+// --- REST OF THE FILE REMAINS THE SAME ---
 
 bool CtrlrLuaApiDatabase::parseXml(const juce::XmlElement& root)
 {
     classes.clear();
     
-    // Iterate through all <class> elements
     for (auto* classNode : root.getChildWithTagNameIterator("class"))
     {
         Class classData;
@@ -103,7 +89,6 @@ bool CtrlrLuaApiDatabase::parseXml(const juce::XmlElement& root)
         classData.cppName = classNode->getStringAttribute("cpp_name");
         classData.alias = classNode->getStringAttribute("alias");
         
-        // Parse <methods> section
         if (auto* methodsNode = classNode->getChildByName("methods"))
         {
             for (auto* methodNode : methodsNode->getChildWithTagNameIterator("method"))
@@ -113,7 +98,6 @@ bool CtrlrLuaApiDatabase::parseXml(const juce::XmlElement& root)
                 method.type = methodNode->getStringAttribute("type");
                 method.args = methodNode->getStringAttribute("args");
                 
-                // Sort into instance or static methods
                 if (method.type == "static")
                     classData.staticMethods.add(method);
                 else
@@ -121,7 +105,6 @@ bool CtrlrLuaApiDatabase::parseXml(const juce::XmlElement& root)
             }
         }
         
-        // Parse <enums> section if present
         if (auto* enumsNode = classNode->getChildByName("enums"))
         {
             for (auto* enumNode : enumsNode->getChildWithTagNameIterator("enum"))
@@ -136,40 +119,41 @@ bool CtrlrLuaApiDatabase::parseXml(const juce::XmlElement& root)
                     enumValue.value = valueNode->getStringAttribute("value");
                     enumData.values.add(enumValue);
                 }
-                
                 classData.enums.add(enumData);
             }
         }
-        
         classes.add(classData);
     }
-    
     return classes.size() > 0;
+}
+
+// Helper locations for local development
+juce::File CtrlrLuaApiDatabase::getDefaultXmlPath()
+{
+    juce::File exeDir = juce::File::getSpecialLocation(juce::File::currentApplicationFile).getParentDirectory();
+    
+    // Relative to exe
+    juce::File xmlFile = exeDir.getChildFile("Resources/XML/LuaAPI.xml");
+    if (xmlFile.existsAsFile()) return xmlFile;
+    
+    // MacOS Bundle style
+    xmlFile = exeDir.getParentDirectory().getChildFile("Resources/XML/LuaAPI.xml");
+    if (xmlFile.existsAsFile()) return xmlFile;
+    
+    // Source dir (Dev)
+    xmlFile = juce::File::getCurrentWorkingDirectory().getChildFile("Source/Resources/XML/LuaAPI.xml");
+    if (xmlFile.existsAsFile()) return xmlFile;
+
+    return exeDir.getChildFile("Resources/XML/LuaAPI.xml");
 }
 
 const CtrlrLuaApiDatabase::Class* CtrlrLuaApiDatabase::getClass(const juce::String& className) const
 {
     for (const auto& c : classes)
-    {
-        if (c.name == className || c.cppName == className || c.alias == className)
-            return &c;
-    }
+        if (c.name == className || c.cppName == className || c.alias == className) return &c;
     return nullptr;
 }
 
-const juce::Array<CtrlrLuaApiDatabase::Class>& CtrlrLuaApiDatabase::getAllClasses() const
-{
-    return classes;
-}
-
-bool CtrlrLuaApiDatabase::isLoaded() const
-{
-    return loaded;
-}
-
-void CtrlrLuaApiDatabase::clear()
-{
-    classes.clear();
-    xmlRoot.reset();
-    loaded = false;
-}
+const juce::Array<CtrlrLuaApiDatabase::Class>& CtrlrLuaApiDatabase::getAllClasses() const { return classes; }
+bool CtrlrLuaApiDatabase::isLoaded() const { return loaded; }
+void CtrlrLuaApiDatabase::clear() { classes.clear(); xmlRoot.reset(); loaded = false; }
