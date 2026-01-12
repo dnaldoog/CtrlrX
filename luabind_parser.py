@@ -6,34 +6,20 @@ from xml.etree.ElementTree import Element, SubElement, ElementTree, indent
 from collections import defaultdict
 import copy
 
+# ================= DEFAULT PATHS =================
+DEFAULT_SRC = Path(".")
+DEFAULT_OUT = Path("Source/Resources/XML/LuaAPI.xml")
+
 # ================= CONFIG & MANUAL PATCHES =================
 VERBOSE = True
 STRIP_NAMESPACES = True
 
 FORCE_STATIC_CLASSES = ["CtrlrLuaUtils"]
-CLASS_ALIASES = {
-    "CtrlrPanel": ["panel"],
-    "CtrlrModulator": ["mod", "modulator"],
-    "LMemoryBlock": ["MemoryBlock"],
-    "CtrlrLuaUtils": ["utils"],
-}
-
-# Use this to fix methods the indexer misses or misidentifies
-MANUAL_OVERRIDES = {
-    "MemoryBlock": {
-        "copyFrom": {"type": "static", "args": "(MemoryBlock, int, int)"},
-        "copyTo": {"type": "static", "args": "(MemoryBlock, int, int)"},
-        "loadFromHexString": {"args": "(String)"},
-        "fromBase64Encoding": {"args": "(String)"},
-        "fillWith": {"args": "(int)"},
-        "ensureSize": {"args": "(int)"},
-        "getData": {"args": "()"},
-    }
-}
-# ==========================================================
+CLASS_ALIASES = {}
+MANUAL_OVERRIDES = {}
 
 def strip_namespace(name: str) -> str:
-    if not STRIP_NAMESPACES: return name.strip()
+    if not STRIP_NAMESPACES or not name: return name.strip() if name else ""
     return name.split("::")[-1].strip()
 
 def clean_cpp_args(args_raw: str) -> str:
@@ -42,20 +28,12 @@ def clean_cpp_args(args_raw: str) -> str:
     raw_parts = re.split(r',(?![^<]*>)', args_raw)
     for arg in raw_parts:
         arg = arg.strip().split('=')[0].strip()
-        arg = re.sub(r'\b(const|volatile)\b|[&*]', '', arg)
+        arg = re.sub(r'\b(const|volatile|inline|static)\b|[&*]', '', arg)
         arg = arg.replace("luabind::object", "table")
         type_only = arg.split()
         if type_only:
-            # Handle names like 'juce::String' -> 'String'
             parts.append(type_only[0].split('::')[-1])
     return f"({', '.join(parts)})"
-
-def file_contains_lua_bindings(filepath: Path) -> bool:
-    try:
-        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-            chunk = f.read(8192)
-            return any(x in chunk for x in ["wrapForLua", "module(L)", "class_<", "luabind::"])
-    except: return False
 
 class LuabindParser:
     def __init__(self):
@@ -63,11 +41,10 @@ class LuabindParser:
         self.cpp_definition_map = {}
 
     def index_source_files(self, source_dir: Path):
-        if VERBOSE: print("[*] Building C++ type index...")
+        print("[*] Building C++ type index... Please wait.")
         for f in source_dir.glob("**/*.[ch]*"):
             try:
                 content = f.read_text(encoding="utf-8", errors="ignore")
-                # Updated regex to be more aggressive in finding signatures
                 def_pattern = r'(?:\w+)?\s+([\w:]+)::(\w+)\s*\(([^)]*)\)'
                 for match in re.finditer(def_pattern, content):
                     cls, meth, args = match.groups()
@@ -75,34 +52,17 @@ class LuabindParser:
             except: continue
 
     def extract_args(self, signature_text: str, current_cpp_class: str, method_name: str, lua_name: str) -> str:
-        # Check Manual Overrides first
         if lua_name in MANUAL_OVERRIDES and method_name in MANUAL_OVERRIDES[lua_name]:
             if "args" in MANUAL_OVERRIDES[lua_name][method_name]:
                 return MANUAL_OVERRIDES[lua_name][method_name]["args"]
-
-        # Check for Luabind explicit cast
         cast_match = re.search(r'\([^)]*\)\s*\(([^)]*)\)', signature_text)
-        if cast_match:
-            return clean_cpp_args(cast_match.group(1))
-        
-        # Check C++ Index
+        if cast_match: return clean_cpp_args(cast_match.group(1))
         keys = [f"{current_cpp_class}::{method_name}", f"L{current_cpp_class}::{method_name}"]
         for k in keys:
-            if k in self.cpp_definition_map:
-                return clean_cpp_args(self.cpp_definition_map[k])
-            
+            if k in self.cpp_definition_map: return clean_cpp_args(self.cpp_definition_map[k])
         return "()"
 
-    def parse_file(self, filepath: Path):
-        content = filepath.read_text(encoding="utf-8", errors="ignore")
-        clean_content = re.sub(r'//.*', '', content)
-        clean_content = re.sub(r'/\*.*?\*/', '', clean_content, flags=re.S)
-
-        for m in re.finditer(r'(?:luabind::)?module\s*\(\s*L\s*\)\s*\[', clean_content):
-            body = self.extract_bracket_block(clean_content, m.end() - 1)
-            if body: self.parse_module(body)
-
-    def extract_bracket_block(self, text: str, start: int):
+    def extract_bracket_block(self, text: str, start: int, opener='[', closer=']'):
         depth, in_string, escape = 0, False, False
         for i in range(start, len(text)):
             c = text[i]
@@ -110,11 +70,22 @@ class LuabindParser:
             if c == '\\': escape = True; continue
             if c == '"': in_string = not in_string; continue
             if in_string: continue
-            if c == '[': depth += 1
-            elif c == ']':
+            if c == opener: depth += 1
+            elif c == closer:
                 depth -= 1
                 if depth == 0: return text[start + 1:i]
         return None
+
+    def parse_file(self, filepath: Path):
+        try:
+            content = filepath.read_text(encoding="utf-8", errors="ignore")
+        except: return
+        clean_content = re.sub(r'//.*', '', content)
+        clean_content = re.sub(r'/\*.*?\*/', '', clean_content, flags=re.S)
+
+        for m in re.finditer(r'(?:luabind::)?module\s*\(\s*\w+\s*\)\s*\[', clean_content):
+            body = self.extract_bracket_block(clean_content, m.end() - 1)
+            if body: self.parse_module(body)
 
     def parse_module(self, content: str):
         class_chunks = re.split(r'(class_<\s*[\w:]+)', content)
@@ -125,33 +96,33 @@ class LuabindParser:
     def parse_class_block(self, block: str):
         header = re.search(r'class_<\s*([\w:]+).*?>\s*(?:\(\s*"([^"]+)"\s*\))?', block, re.DOTALL)
         if not header: return
-
         cpp_class = strip_namespace(header.group(1))
         lua_name = header.group(2) or cpp_class
 
         cls = self.classes.setdefault(lua_name, {
-            "cpp_name": cpp_class, "methods": defaultdict(list), "static": defaultdict(list), "constructors": [],
+            "cpp_name": cpp_class, "methods": defaultdict(list), "static": defaultdict(list), "enums": {}
         })
 
+        # 1. Methods & Static Detection
+        scope_pos = block.find(".scope")
         for m in re.finditer(r'\.def\s*\(\s*"([^"]+)"\s*,\s*([^,)]+)', block):
             name, sig = m.group(1), m.group(2)
             if name == "constructor": continue
-            
             args = self.extract_args(sig, cpp_class, name, lua_name)
             
-            # Forced Static Check
             is_static = False
-            if lua_name in MANUAL_OVERRIDES and name in MANUAL_OVERRIDES[lua_name]:
-                if MANUAL_OVERRIDES[lua_name][name].get("type") == "static":
-                    is_static = True
+            if scope_pos != -1 and block.find(f'"{name}"') > scope_pos:
+                is_static = True
             
-            if not is_static:
-                is_static = ".scope" in block and block.find(name) > block.find(".scope")
-            
-            if is_static:
-                cls["static"][name].append(args)
-            else:
-                cls["methods"][name].append(args)
+            cls["static" if is_static else "methods"][name].append(args)
+
+        # 2. Enum Parsing (NEW)
+        for enm in re.finditer(r'\.enum_\s*\(\s*"([^"]+)"\s*\)\s*\[', block):
+            e_name = enm.group(1)
+            e_body = self.extract_bracket_block(block, enm.end() - 1)
+            if e_body:
+                vals = dict(re.findall(r'value\s*\(\s*"([^"]+)"\s*,\s*([^,)]+)\)', e_body))
+                cls["enums"][e_name] = {k: v.strip().rstrip(')]') for k, v in vals.items()}
 
     def apply_final_patches(self):
         for target in FORCE_STATIC_CLASSES:
@@ -160,18 +131,19 @@ class LuabindParser:
                 c["static"].update(c["methods"])
                 c["methods"] = defaultdict(list)
 
-        new_classes = {}
-        for original, aliases in CLASS_ALIASES.items():
-            if original in self.classes:
-                for a in aliases:
-                    new_classes[a] = copy.deepcopy(self.classes[original])
-        self.classes.update(new_classes)
-
     def generate_xml(self, output_file: str):
         root = Element("LuaAPI")
         for name in sorted(self.classes):
             c = self.classes[name]
             ce = SubElement(root, "class", {"name": name, "cpp_name": c["cpp_name"]})
+            
+            if c.get("enums"):
+                ee = SubElement(ce, "enums")
+                for e_name, vals in c["enums"].items():
+                    en = SubElement(ee, "enum", {"name": e_name})
+                    for k, v in vals.items():
+                        SubElement(en, "value", {"name": k, "value": v})
+
             for sec_key, sec_tag, type_val in [("methods", "methods", "instance"), ("static", "static_methods", "static")]:
                 if c[sec_key]:
                     node = SubElement(ce, sec_tag)
@@ -180,15 +152,26 @@ class LuabindParser:
                             attr = {"name": m_name, "type": type_val, "args": args}
                             if len(sigs) > 1: attr["overload"] = str(i)
                             SubElement(node, "method", attr)
+        
         indent(root, space="  ")
+        Path(output_file).parent.mkdir(parents=True, exist_ok=True)
         ElementTree(root).write(output_file, encoding="utf-8", xml_declaration=True)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3: sys.exit(1)
+    src_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_SRC
+    out_file = Path(sys.argv[2]) if len(sys.argv) > 2 else DEFAULT_OUT
+
+    print("\n[*] Luabind Parser for CtrlrX")
+    print(f"[*] Scanning: {src_dir.absolute()}")
+    print("[*] Patch LuaAPI.xml file by editing and running lua_api_patcher.py")
+
     parser = LuabindParser()
-    path = Path(sys.argv[1])
-    parser.index_source_files(path)
-    cpp_files = [f for f in sorted(path.glob("**/*.cpp")) if file_contains_lua_bindings(f)]
-    for f in cpp_files: parser.parse_file(f)
+    parser.index_source_files(src_dir)
+    
+    # Use the logic from the version that worked
+    for f in src_dir.glob("**/*.cpp"):
+        parser.parse_file(f)
+        
     parser.apply_final_patches()
-    parser.generate_xml(sys.argv[2])
+    parser.generate_xml(str(out_file))
+    print(f"[*] Success: Found {len(parser.classes)} classes.")
