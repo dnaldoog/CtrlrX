@@ -62,7 +62,7 @@ class LuabindParser:
             if k in self.cpp_definition_map: return clean_cpp_args(self.cpp_definition_map[k])
         return "()"
 
-    def extract_bracket_block(self, text: str, start: int, opener='[', closer=']'):
+    def extract_bracket_block(self, text: str, start: int):
         depth, in_string, escape = 0, False, False
         for i in range(start, len(text)):
             c = text[i]
@@ -70,8 +70,8 @@ class LuabindParser:
             if c == '\\': escape = True; continue
             if c == '"': in_string = not in_string; continue
             if in_string: continue
-            if c == opener: depth += 1
-            elif c == closer:
+            if c == '[': depth += 1
+            elif c == ']':
                 depth -= 1
                 if depth == 0: return text[start + 1:i]
         return None
@@ -81,7 +81,7 @@ class LuabindParser:
             content = filepath.read_text(encoding="utf-8", errors="ignore")
         except: return
         clean_content = re.sub(r'//.*', '', content)
-        clean_content = re.sub(r'/\*.*?\*/', '', clean_content, flags=re.S)
+        clean_content = re.sub(r'/\*.*?\*/', lambda m: ' ' * len(m.group()), clean_content, flags=re.S)
 
         for m in re.finditer(r'(?:luabind::)?module\s*\(\s*\w+\s*\)\s*\[', clean_content):
             body = self.extract_bracket_block(clean_content, m.end() - 1)
@@ -103,26 +103,34 @@ class LuabindParser:
             "cpp_name": cpp_class, "methods": defaultdict(list), "static": defaultdict(list), "enums": {}
         })
 
-        # 1. Methods & Static Detection
+        # 1. Instance Methods (.def)
+        # We stop at the first .scope we find to avoid mis-identifying static as instance
         scope_pos = block.find(".scope")
-        for m in re.finditer(r'\.def\s*\(\s*"([^"]+)"\s*,\s*([^,)]+)', block):
+        instance_area = block[:scope_pos] if scope_pos != -1 else block
+        
+        for m in re.finditer(r'\.def\s*\(\s*"([^"]+)"\s*,\s*([^,)]+)', instance_area):
             name, sig = m.group(1), m.group(2)
             if name == "constructor": continue
             args = self.extract_args(sig, cpp_class, name, lua_name)
-            
-            is_static = False
-            if scope_pos != -1 and block.find(f'"{name}"') > scope_pos:
-                is_static = True
-            
-            cls["static" if is_static else "methods"][name].append(args)
+            cls["methods"][name].append(args)
 
-        # 2. Enum Parsing (NEW)
+        # 2. Static Methods (Standalone def() inside .scope)
+        if scope_pos != -1:
+            scope_body = self.extract_bracket_block(block, scope_pos + len(".scope") - 1)
+            if scope_body:
+                # Note the lack of a dot before def
+                for m in re.finditer(r'(?<!\.)def\s*\(\s*"([^"]+)"\s*,\s*([^,)]+)', scope_body):
+                    name, sig = m.group(1), m.group(2)
+                    args = self.extract_args(sig, cpp_class, name, lua_name)
+                    cls["static"][name].append(args)
+
+        # 3. Enum Parsing
         for enm in re.finditer(r'\.enum_\s*\(\s*"([^"]+)"\s*\)\s*\[', block):
             e_name = enm.group(1)
             e_body = self.extract_bracket_block(block, enm.end() - 1)
             if e_body:
-                vals = dict(re.findall(r'value\s*\(\s*"([^"]+)"\s*,\s*([^,)]+)\)', e_body))
-                cls["enums"][e_name] = {k: v.strip().rstrip(')]') for k, v in vals.items()}
+                vals = dict(re.findall(r'value\s*\(\s*"([^"]+)"\s*,\s*([^)]+)\)', e_body))
+                cls["enums"][e_name] = {k: v.strip().split(',')[-1].strip().rstrip(')]') for k, v in vals.items()}
 
     def apply_final_patches(self):
         for target in FORCE_STATIC_CLASSES:
@@ -139,9 +147,9 @@ class LuabindParser:
             
             if c.get("enums"):
                 ee = SubElement(ce, "enums")
-                for e_name, vals in c["enums"].items():
+                for e_name, vals in sorted(c["enums"].items()):
                     en = SubElement(ee, "enum", {"name": e_name})
-                    for k, v in vals.items():
+                    for k, v in sorted(vals.items()):
                         SubElement(en, "value", {"name": k, "value": v})
 
             for sec_key, sec_tag, type_val in [("methods", "methods", "instance"), ("static", "static_methods", "static")]:
@@ -167,11 +175,8 @@ if __name__ == "__main__":
 
     parser = LuabindParser()
     parser.index_source_files(src_dir)
-    
-    # Use the logic from the version that worked
     for f in src_dir.glob("**/*.cpp"):
         parser.parse_file(f)
-        
     parser.apply_final_patches()
     parser.generate_xml(str(out_file))
     print(f"[*] Success: Found {len(parser.classes)} classes.")

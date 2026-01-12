@@ -17,6 +17,17 @@
       <method name="sheared" type="instance" args="(float, float)" />
       <method name="translated" type="instance" args="(float, float)" />
     </methods>
+    <static_methods>
+      <method name="fromTargetPoints" type="static" args="(clientArea.getX()" />
+      <method name="rotation" type="static" args="(angle, r.getCentreX()" overload="1" />
+      <method name="rotation" type="static" args="(angle, r.getCentreX()" overload="2" />
+      <method name="scale" type="static" args="(w, h)" overload="1" />
+      <method name="scale" type="static" args="(w, h)" overload="2" />
+      <method name="scale" type="static" args="(w, h)" overload="3" />
+      <method name="shear" type="static" args="(float, float)" />
+      <method name="translation" type="static" args="(x, y)" />
+      <method name="verticalFlip" type="static" args="(float)" />
+    </static_methods>
   </class>
   <class name="AiffAudioFormat" cpp_name="AiffAudioFormat">
     <methods>
@@ -38,15 +49,15 @@
   <class name="Attribute" cpp_name="Attribute" />
   <class name="AttributedString" cpp_name="AttributedString">
     <enums>
-      <enum name="WordWrap">
-        <value name="none" value="0" />
-        <value name="byWord" value="1" />
-        <value name="byChar" value="2" />
-      </enum>
       <enum name="ReadingDirection">
-        <value name="natural" value="0" />
         <value name="leftToRight" value="1" />
+        <value name="natural" value="0" />
         <value name="rightToLeft" value="2" />
+      </enum>
+      <enum name="WordWrap">
+        <value name="byChar" value="2" />
+        <value name="byWord" value="1" />
+        <value name="none" value="0" />
       </enum>
     </enums>
     <methods>
@@ -113,8 +124,8 @@
         <value name="fps24" value="AudioPlayHead::fps24" />
         <value name="fps25" value="AudioPlayHead::fps25" />
         <value name="fps2997" value="AudioPlayHead::fps2997" />
-        <value name="fps30" value="AudioPlayHead::fps30" />
         <value name="fps2997drop" value="AudioPlayHead::fps2997drop" />
+        <value name="fps30" value="AudioPlayHead::fps30" />
         <value name="fps30drop" value="AudioPlayHead::fps30drop" />
         <value name="fpsUnknown" value="AudioPlayHead::fpsUnknown" />
       </enum>
@@ -288,6 +299,15 @@
       <method name="withRotatedHue" type="instance" args="(float)" />
       <method name="withSaturation" type="instance" args="(float)" />
     </methods>
+    <static_methods>
+      <method name="contrasting" type="static" args="(Colour, Colour)" />
+      <method name="fromFloatRGBA" type="static" args="(c.r, c.g, c.b, 1.0f)" />
+      <method name="fromHSV" type="static" args="(level, 1.0f, level, 1.0f)" />
+      <method name="fromRGB" type="static" args="(uint8, uint8, uint8)" />
+      <method name="fromRGBA" type="static" args="(uint8, uint8, uint8, uint8)" />
+      <method name="fromString" type="static" args="(toks[4].fromFirstOccurrenceOf, false, false)" />
+      <method name="greyLevel" type="static" args="(0.93f)" />
+    </static_methods>
   </class>
   <class name="ColourGradient" cpp_name="ColourGradient">
     <methods>
@@ -510,22 +530,29 @@
       <method name="userTriedToCloseWindow" type="instance" args="()" />
       <method name="visibilityChanged" type="instance" args="()" />
     </methods>
+    <static_methods>
+      <method name="beginDragAutoRepeat" type="static" args="()" />
+      <method name="getCurrentlyFocusedComponent" type="static" args="()" />
+      <method name="getCurrentlyModalComponent" type="static" args="()" />
+      <method name="getNumCurrentlyModalComponents" type="static" args="()" />
+      <method name="isMouseButtonDownAnywhere" type="static" args="()" />
+    </static_methods>
   </class>
   <class name="ComponentPeer" cpp_name="ComponentPeer">
     <enums>
       <enum name="StyleFlags">
         <value name="windowAppearsOnTaskbar" value="(1 &lt;&lt; 0" />
-        <value name="windowIsTemporary" value="(1 &lt;&lt; 1" />
-        <value name="windowIgnoresMouseClicks" value="(1 &lt;&lt; 2" />
-        <value name="windowHasTitleBar" value="(1 &lt;&lt; 3" />
-        <value name="windowIsResizable" value="(1 &lt;&lt; 4" />
-        <value name="windowHasMinimiseButton" value="(1 &lt;&lt; 5" />
-        <value name="windowHasMaximiseButton" value="(1 &lt;&lt; 6" />
         <value name="windowHasCloseButton" value="(1 &lt;&lt; 7" />
         <value name="windowHasDropShadow" value="(1 &lt;&lt; 8" />
-        <value name="windowRepaintedExplictly" value="(1 &lt;&lt; 9" />
+        <value name="windowHasMaximiseButton" value="(1 &lt;&lt; 6" />
+        <value name="windowHasMinimiseButton" value="(1 &lt;&lt; 5" />
+        <value name="windowHasTitleBar" value="(1 &lt;&lt; 3" />
         <value name="windowIgnoresKeyPresses" value="(1 &lt;&lt; 10" />
+        <value name="windowIgnoresMouseClicks" value="(1 &lt;&lt; 2" />
+        <value name="windowIsResizable" value="(1 &lt;&lt; 4" />
         <value name="windowIsSemiTransparent" value="(1 &lt;&lt; 31" />
+        <value name="windowIsTemporary" value="(1 &lt;&lt; 1" />
+        <value name="windowRepaintedExplictly" value="(1 &lt;&lt; 9" />
       </enum>
     </enums>
   </class>
@@ -841,19 +868,19 @@
   <class name="CtrlrMIDIDeviceManager" cpp_name="CtrlrMIDIDeviceManager">
     <enums>
       <enum name="CtrlrMIDIDeviceType">
-        <value name="outputDevice" value="outputDevice" />
-        <value name="inputDevice" value="inputDevice" />
         <value name="controllerDevice" value="controllerDevice" />
         <value name="hostInputDevice" value="hostInputDevice" />
         <value name="hostOutputDevice" value="hostOutputDevice" />
+        <value name="inputDevice" value="inputDevice" />
         <value name="oscInputDevice" value="oscInputDevice" />
         <value name="oscOutputDevice" value="oscOutputDevice" />
+        <value name="outputDevice" value="outputDevice" />
         <value name="serialDevice" value="serialDevice" />
       </enum>
       <enum name="DeviceState">
         <value name="closed" value="CtrlrMIDIDeviceManager::closed" />
-        <value name="opened" value="CtrlrMIDIDeviceManager::opened" />
         <value name="error" value="CtrlrMIDIDeviceManager::error" />
+        <value name="opened" value="CtrlrMIDIDeviceManager::opened" />
       </enum>
     </enums>
     <methods>
@@ -869,20 +896,20 @@
   <class name="CtrlrMidiMessage" cpp_name="CtrlrMidiMessage">
     <enums>
       <enum name="CtrlrMidiMessageType">
-        <value name="CC" value="0" />
         <value name="Aftertouch" value="1" />
+        <value name="CC" value="0" />
         <value name="ChannelPressure" value="2" />
-        <value name="NoteOn" value="3" />
-        <value name="NoteOff" value="4" />
-        <value name="SysEx" value="5" />
-        <value name="Multi" value="6" />
-        <value name="ProgramChange" value="7" />
-        <value name="PitchWheel" value="8" />
-        <value name="None" value="9" />
         <value name="MidiClock" value="10" />
         <value name="MidiClockContinue" value="11" />
-        <value name="MidiClockStop" value="12" />
         <value name="MidiClockStart" value="13" />
+        <value name="MidiClockStop" value="12" />
+        <value name="Multi" value="6" />
+        <value name="None" value="9" />
+        <value name="NoteOff" value="4" />
+        <value name="NoteOn" value="3" />
+        <value name="PitchWheel" value="8" />
+        <value name="ProgramChange" value="7" />
+        <value name="SysEx" value="5" />
       </enum>
     </enums>
     <methods>
@@ -908,15 +935,15 @@
   <class name="CtrlrModulator" cpp_name="CtrlrModulator">
     <enums>
       <enum name="CtrlrModulatorValue">
-        <value name="initialValue" value="0" />
-        <value name="changedByHost" value="1" />
-        <value name="changedByMidiIn" value="2" />
-        <value name="changedByMidiController" value="3" />
-        <value name="changedByGUI" value="4" />
-        <value name="changedByLua" value="5" />
-        <value name="changedByProgram" value="6" />
-        <value name="changedByLink" value="7" />
         <value name="changeByUnknown" value="8" />
+        <value name="changedByGUI" value="4" />
+        <value name="changedByHost" value="1" />
+        <value name="changedByLink" value="7" />
+        <value name="changedByLua" value="5" />
+        <value name="changedByMidiController" value="3" />
+        <value name="changedByMidiIn" value="2" />
+        <value name="changedByProgram" value="6" />
+        <value name="initialValue" value="0" />
       </enum>
     </enums>
     <methods>
@@ -963,52 +990,55 @@
       <method name="sendKeyPressEvent" type="instance" args="()" overload="1" />
       <method name="sendKeyPressEvent" type="instance" args="()" overload="2" />
     </methods>
+    <static_methods>
+      <method name="getNativeObject" type="static" args="(owner.getCtrlrManagerOwner()" />
+    </static_methods>
   </class>
   <class name="CtrlrPanel" cpp_name="CtrlrPanel">
     <enums>
-      <enum name="CtrlrPanelFileType">
-        <value name="PanelFileXML" value="0" />
-        <value name="PanelFileXMLCompressed" value="1" />
-        <value name="PanelFileBinary" value="2" />
-        <value name="PanelFileBinaryCompressed" value="3" />
-        <value name="PanelFileExport" value="4" />
-      </enum>
-      <enum name="CtrlrNotificationType">
-        <value name="NotifySuccess" value="(uint8" />
-        <value name="NotifyFailure" value="(uint8" />
-        <value name="NotifyInformation" value="(uint8" />
-        <value name="NotifyWarning" value="(uint8" />
-      </enum>
       <enum name="CtrlrByteEncoding">
-        <value name="EncodeNormal" value="EncodeNormal" />
-        <value name="Encode7bitMSBFirst" value="EncodeMSBFirst" />
-        <value name="Encode7bitLSBFirst" value="EncodeLSBFirst" />
-        <value name="EncodeMSBFirst" value="EncodeMSBFirst" />
-        <value name="EncodeLSBFirst" value="EncodeLSBFirst" />
-        <value name="Encode4bitMsbFirst" value="EncodeNibbleMsbFirst" />
-        <value name="Encode4bitLsbFirst" value="EncodeNibbleLsbFirst" />
-        <value name="EncodeMsbFirst" value="EncodeNibbleMsbFirst" />
-        <value name="EncodeLsbFirst" value="EncodeNibbleLsbFirst" />
-        <value name="EncodeNibbleMsbFirst" value="EncodeNibbleMsbFirst" />
-        <value name="EncodeNibbleLsbFirst" value="EncodeNibbleLsbFirst" />
-        <value name="EncodeSignedNibbleMsbFirst" value="EncodeSignedNibbleMsbFirst" />
-        <value name="EncodeSignedNibbleLsbFirst" value="EncodeSignedNibbleLsbFirst" />
         <value name="Encode16bitLsbFirst" value="Encode16bitLsbFirst" />
         <value name="Encode16bitMsbFirst" value="Encode16bitMsbFirst" />
+        <value name="Encode4bitLsbFirst" value="EncodeNibbleLsbFirst" />
+        <value name="Encode4bitMsbFirst" value="EncodeNibbleMsbFirst" />
+        <value name="Encode7bitLSBFirst" value="EncodeLSBFirst" />
+        <value name="Encode7bitMSBFirst" value="EncodeMSBFirst" />
+        <value name="EncodeLSBFirst" value="EncodeLSBFirst" />
+        <value name="EncodeLsbFirst" value="EncodeNibbleLsbFirst" />
+        <value name="EncodeMSBFirst" value="EncodeMSBFirst" />
+        <value name="EncodeMsbFirst" value="EncodeNibbleMsbFirst" />
+        <value name="EncodeNibbleLsbFirst" value="EncodeNibbleLsbFirst" />
+        <value name="EncodeNibbleMsbFirst" value="EncodeNibbleMsbFirst" />
+        <value name="EncodeNormal" value="EncodeNormal" />
+        <value name="EncodeSignedNibbleLsbFirst" value="EncodeSignedNibbleLsbFirst" />
+        <value name="EncodeSignedNibbleMsbFirst" value="EncodeSignedNibbleMsbFirst" />
       </enum>
       <enum name="CtrlrByteSplit">
-        <value name="SplitNone" value="(uint8" />
         <value name="Split4Bits" value="(uint8" />
         <value name="Split7Bits" value="(uint8" />
         <value name="Split8Bits" value="(uint8" />
+        <value name="SplitNone" value="(uint8" />
       </enum>
       <enum name="CtrlrInstance">
-        <value name="InstanceSingle" value="(uint8" />
         <value name="InstanceMulti" value="(uint8" />
-        <value name="InstanceSingleRestriced" value="(uint8" />
-        <value name="InstanceSingleEngine" value="(uint8" />
         <value name="InstanceMultiEngine" value="(uint8" />
+        <value name="InstanceSingle" value="(uint8" />
+        <value name="InstanceSingleEngine" value="(uint8" />
+        <value name="InstanceSingleRestriced" value="(uint8" />
         <value name="InstanceSingleRestrictedEngine" value="(uint8" />
+      </enum>
+      <enum name="CtrlrNotificationType">
+        <value name="NotifyFailure" value="(uint8" />
+        <value name="NotifyInformation" value="(uint8" />
+        <value name="NotifySuccess" value="(uint8" />
+        <value name="NotifyWarning" value="(uint8" />
+      </enum>
+      <enum name="CtrlrPanelFileType">
+        <value name="PanelFileBinary" value="2" />
+        <value name="PanelFileBinaryCompressed" value="3" />
+        <value name="PanelFileExport" value="4" />
+        <value name="PanelFileXML" value="0" />
+        <value name="PanelFileXMLCompressed" value="1" />
       </enum>
     </enums>
     <methods>
@@ -1212,6 +1242,13 @@
       <method name="setOriginWithOriginalSize" type="instance" args="(Point&lt;float&gt;)" />
       <method name="setTransformToFit" type="instance" args="(Rectangle&lt;float&gt;, RectanglePlacement)" />
     </methods>
+    <static_methods>
+      <method name="createFromImageData" type="static" args="(juce_icon_png, juce_icon_pngSize)" />
+      <method name="createFromImageDataStream" type="static" args="(svgFileStream)" />
+      <method name="createFromImageFile" type="static" args="(firstArgText)" />
+      <method name="createFromSVG" type="static" args="(parseXML)" />
+      <method name="toDrawableComposite" type="static" args="()" />
+    </static_methods>
   </class>
   <class name="DrawableComposite" cpp_name="DrawableComposite">
     <methods>
@@ -1255,31 +1292,31 @@
   </class>
   <class name="File" cpp_name="File">
     <enums>
+      <enum name="SpecialLocationType">
+        <value name="commonApplicationDataDirectory" value="7" />
+        <value name="commonDocumentsDirectory" value="8" />
+        <value name="currentApplicationFile" value="11" />
+        <value name="currentExecutableFile" value="10" />
+        <value name="globalApplicationDirectoryX86" value="16" />
+        <value name="globalApplicationsDirectory" value="15" />
+        <value name="hostApplicationPath" value="13" />
+        <value name="invokedExecutableFile" value="12" />
+        <value name="tempDirectory" value="9" />
+        <value name="userApplicationDataDirectory" value="6" />
+        <value name="userDesktopDirectory" value="2" />
+        <value name="userDocumentsDirectory" value="1" />
+        <value name="userHomeDirectory" value="0" />
+        <value name="userMoviesDirectory" value="4" />
+        <value name="userMusicDirectory" value="3" />
+        <value name="userPicturesDirectory" value="5" />
+        <value name="windowsLocalAppData" value="17" />
+        <value name="windowsSystemDirectory" value="14" />
+      </enum>
       <enum name="TypesOfFileToFind">
         <value name="findDirectories" value="1" />
         <value name="findFiles" value="2" />
         <value name="findFilesAndDirectories" value="3" />
         <value name="ignoreHiddenFiles" value="4" />
-      </enum>
-      <enum name="SpecialLocationType">
-        <value name="userHomeDirectory" value="0" />
-        <value name="userDocumentsDirectory" value="1" />
-        <value name="userDesktopDirectory" value="2" />
-        <value name="userMusicDirectory" value="3" />
-        <value name="userMoviesDirectory" value="4" />
-        <value name="userPicturesDirectory" value="5" />
-        <value name="userApplicationDataDirectory" value="6" />
-        <value name="commonApplicationDataDirectory" value="7" />
-        <value name="commonDocumentsDirectory" value="8" />
-        <value name="tempDirectory" value="9" />
-        <value name="currentExecutableFile" value="10" />
-        <value name="currentApplicationFile" value="11" />
-        <value name="invokedExecutableFile" value="12" />
-        <value name="hostApplicationPath" value="13" />
-        <value name="windowsSystemDirectory" value="14" />
-        <value name="globalApplicationsDirectory" value="15" />
-        <value name="globalApplicationDirectoryX86" value="16" />
-        <value name="windowsLocalAppData" value="17" />
       </enum>
     </enums>
     <methods>
@@ -1345,6 +1382,19 @@
       <method name="startAsProcess" type="instance" args="(String)" />
       <method name="withFileExtension" type="instance" args="(StringRef)" />
     </methods>
+    <static_methods>
+      <method name="addTrailingSeparator" type="static" args="(directory.getFullPathName()" />
+      <method name="areFileNamesCaseSensitive" type="static" args="()" />
+      <method name="createFileWithoutCheckingPath" type="static" args="(files[0])" />
+      <method name="createLegalFileName" type="static" args="(newName)" />
+      <method name="createLegalPathName" type="static" args="(String)" />
+      <method name="createTempFile" type="static" args="(&quot;DialogsDemoSharingTest&quot;)" />
+      <method name="descriptionOfSizeInBytes" type="static" args="(getSpecialLocation)" />
+      <method name="findFileSystemRoots" type="static" args="(roots)" />
+      <method name="getCurrentWorkingDirectory" type="static" args="()" />
+      <method name="getSpecialLocation" type="static" args="(currentExecutableFile)" />
+      <method name="isAbsolutePath" type="static" args="(path)" />
+    </static_methods>
   </class>
   <class name="FillType" cpp_name="FillType">
     <methods>
@@ -1372,9 +1422,9 @@
   <class name="Font" cpp_name="Font">
     <enums>
       <enum name="FontStyleFlags">
-        <value name="plain" value="0" />
         <value name="bold" value="1" />
         <value name="italic" value="2" />
+        <value name="plain" value="0" />
         <value name="underlined" value="3" />
       </enum>
     </enums>
@@ -1418,8 +1468,26 @@
       <method name="withStyle" type="instance" args="(int)" />
       <method name="withTypefaceStyle" type="instance" args="(String)" />
     </methods>
+    <static_methods>
+      <method name="findAllTypefaceNames" type="static" args="()" />
+      <method name="findAllTypefaceStyles" type="static" args="(String)" />
+      <method name="fromString" type="static" args="(sourceValue.toString()" />
+      <method name="getDefaultMonospacedFontName " type="static" args="()" />
+      <method name="getDefaultSansSerifFontName" type="static" args="()" />
+      <method name="getDefaultSerifFontName" type="static" args="()" />
+      <method name="getDefaultStyle" type="static" args="()" />
+      <method name="getDefaultTypefaceForFont" type="static" args="(Font)" />
+      <method name="getFallbackFontName" type="static" args="()" />
+      <method name="getFallbackFontStyle" type="static" args="()" />
+      <method name="setFallbackFontName" type="static" args="(String)" />
+      <method name="setFallbackFontStyle" type="static" args="(String)" />
+    </static_methods>
   </class>
-  <class name="GZIPDecompressorInputStream" cpp_name="GZIPDecompressorInputStream" />
+  <class name="GZIPDecompressorInputStream" cpp_name="GZIPDecompressorInputStream">
+    <static_methods>
+      <method name="create" type="static" args="(InputStream, bool)" />
+    </static_methods>
+  </class>
   <class name="GlyphArrangement" cpp_name="GlyphArrangement">
     <methods>
       <method name="addCurtailedLineOfText" type="instance" args="(Font, String, float, float, float, bool)" />
@@ -1445,9 +1513,9 @@
   <class name="Graphics" cpp_name="Graphics">
     <enums>
       <enum name="ResamplingQuality">
+        <value name="highResamplingQuality" value="2" />
         <value name="lowResamplingQuality" value="0" />
         <value name="mediumResamplingQuality" value="1" />
-        <value name="highResamplingQuality" value="2" />
       </enum>
     </enums>
     <methods>
@@ -1526,14 +1594,17 @@
     <methods>
       <method name="toString" type="instance" args="()" />
     </methods>
+    <static_methods>
+      <method name="isValidIdentifier" type="static" args="(String)" />
+    </static_methods>
   </class>
   <class name="Image" cpp_name="Image">
     <enums>
       <enum name="PixelFormat">
-        <value name="UnknownFormat" value="Image::UnknownFormat" />
-        <value name="RGB" value="Image::RGB" />
         <value name="ARGB" value="Image::ARGB" />
+        <value name="RGB" value="Image::RGB" />
         <value name="SingleChannel" value="Image::SingleChannel" />
+        <value name="UnknownFormat" value="Image::UnknownFormat" />
       </enum>
     </enums>
     <methods>
@@ -1591,22 +1662,22 @@
   <class name="Justification" cpp_name="Justification">
     <enums>
       <enum name="Flags">
-        <value name="left" value="1" />
-        <value name="right" value="2" />
-        <value name="horizontallyCentred" value="4" />
-        <value name="top" value="8" />
         <value name="bottom" value="16" />
-        <value name="verticallyCentred" value="32" />
-        <value name="horizontallyJustified" value="64" />
+        <value name="bottomLeft" value="17" />
+        <value name="bottomRight" value="18" />
         <value name="centred" value="36" />
+        <value name="centredBottom" value="20" />
         <value name="centredLeft" value="33" />
         <value name="centredRight" value="34" />
         <value name="centredTop" value="12" />
-        <value name="centredBottom" value="20" />
+        <value name="horizontallyCentred" value="4" />
+        <value name="horizontallyJustified" value="64" />
+        <value name="left" value="1" />
+        <value name="right" value="2" />
+        <value name="top" value="8" />
         <value name="topLeft" value="9" />
         <value name="topRight" value="10" />
-        <value name="bottomLeft" value="17" />
-        <value name="bottomRight" value="18" />
+        <value name="verticallyCentred" value="32" />
       </enum>
     </enums>
     <methods>
@@ -1619,17 +1690,17 @@
   <class name="KeyPress" cpp_name="KeyPress">
     <enums>
       <enum name="KeyCode">
-        <value name="spaceKey" value="KeyPress::spaceKey" />
-        <value name="escapeKey" value="KeyPress::escapeKey" />
-        <value name="returnKey" value="KeyPress::returnKey" />
-        <value name="tabKey" value="KeyPress::tabKey" />
-        <value name="deleteKey" value="KeyPress::deleteKey" />
         <value name="backspaceKey" value="KeyPress::backspaceKey" />
-        <value name="insertKey" value="KeyPress::insertKey" />
-        <value name="upKey" value="KeyPress::upKey" />
+        <value name="deleteKey" value="KeyPress::deleteKey" />
         <value name="downKey" value="KeyPress::downKey" />
+        <value name="escapeKey" value="KeyPress::escapeKey" />
+        <value name="insertKey" value="KeyPress::insertKey" />
         <value name="leftKey" value="KeyPress::leftKey" />
+        <value name="returnKey" value="KeyPress::returnKey" />
         <value name="rightKey" value="KeyPress::rightKey" />
+        <value name="spaceKey" value="KeyPress::spaceKey" />
+        <value name="tabKey" value="KeyPress::tabKey" />
+        <value name="upKey" value="KeyPress::upKey" />
       </enum>
     </enums>
     <methods>
@@ -1642,14 +1713,18 @@
       <method name="isKeyCode" type="instance" args="()" />
       <method name="isValid" type="instance" args="()" />
     </methods>
+    <static_methods>
+      <method name="createFromDescription" type="static" args="(key])" />
+      <method name="isKeyCurrentlyDown" type="static" args="(returnKey)" />
+    </static_methods>
   </class>
   <class name="LAlertWindow" cpp_name="LAlertWindow">
     <enums>
       <enum name="AlertIconType">
+        <value name="InfoIcon" value="3" />
         <value name="NoIcon" value="0" />
         <value name="QuestionIcon" value="1" />
         <value name="WarningIcon" value="2" />
-        <value name="InfoIcon" value="3" />
       </enum>
     </enums>
     <methods>
@@ -1675,6 +1750,14 @@
       <method name="setModalHandler" type="instance" args="(table)" />
       <method name="triggerButtonClick" type="instance" args="()" />
     </methods>
+    <static_methods>
+      <method name="queryText" type="static" args="(AlertIconType, String, String, String, String, String, String, bool, table)" />
+      <method name="showMessageBox" type="static" args="(AlertIconType, String, String, String)" />
+      <method name="showMessageBoxAsync" type="static" args="(AlertIconType, String, String, String)" />
+      <method name="showNativeDialogBox" type="static" args="(String, String, bool)" />
+      <method name="showOkCancelBox" type="static" args="(AlertIconType, String, String, String, String)" />
+      <method name="showYesNoCancelBox" type="static" args="(AlertIconType, String, String, String, String, String)" />
+    </static_methods>
   </class>
   <class name="LAudioFormatManager" cpp_name="LAudioFormatManager">
     <methods>
@@ -1740,6 +1823,15 @@
       <method name="toStringNoTerminator" type="instance" args="()" />
       <method name="toStringWithNulls" type="instance" args="()" />
     </methods>
+    <static_methods>
+      <method name="createWithSize" type="static" args="(int)" />
+      <method name="fromLuaBinaryString" type="static" args="(table)" />
+      <method name="fromLuaString" type="static" args="(table, String)" overload="1" />
+      <method name="fromLuaString" type="static" args="(table, String)" overload="2" />
+      <method name="fromLuaStringToAscii" type="static" args="(String)" overload="1" />
+      <method name="fromLuaStringToAscii" type="static" args="(String)" overload="2" />
+      <method name="fromLuaTable" type="static" args="(table)" />
+    </static_methods>
   </class>
   <class name="LPopupMenu" cpp_name="LPopupMenu">
     <methods>
@@ -1800,8 +1892,8 @@
     <enums>
       <enum name="ColourIds">
         <value name="backgroundColourId " value="0x1000280" />
-        <value name="textColourId" value="0x1000281" />
         <value name="outlineColourId" value="0x1000282" />
+        <value name="textColourId" value="0x1000281" />
       </enum>
     </enums>
     <methods>
@@ -1865,9 +1957,26 @@
       <method name="setImplementation" type="instance" args="(table)" />
       <method name="setMethod" type="instance" args="(String, table)" />
     </methods>
+    <static_methods>
+      <method name="createDrawableComposite" type="static" args="()" />
+      <method name="createDrawableImage" type="static" args="()" />
+      <method name="createDrawablePath" type="static" args="()" />
+      <method name="createDrawableRectangle" type="static" args="()" />
+      <method name="createDrawableText" type="static" args="()" />
+      <method name="createDropShadowEffect" type="static" args="()" />
+      <method name="createGlowEffect" type="static" args="()" />
+      <method name="createImageButton" type="static" args="()" />
+      <method name="createLabel" type="static" args="()" />
+      <method name="createTextButton" type="static" args="()" />
+      <method name="createToggleButton" type="static" args="()" />
+    </static_methods>
   </class>
   <class name="Ltime" cpp_name="LTime" />
-  <class name="MachineIDUtilities" cpp_name="MachineIDUtilities" />
+  <class name="MachineIDUtilities" cpp_name="MachineIDUtilities">
+    <static_methods>
+      <method name="getLocalMachineIDs" type="static" args="()" />
+    </static_methods>
+  </class>
   <class name="MemoryInputStream" cpp_name="MemoryInputStream" />
   <class name="MidiBuffer" cpp_name="MidiBuffer">
     <methods>
@@ -1892,21 +2001,21 @@
   <class name="MidiKeyboardComponent" cpp_name="MidiKeyboardComponent" />
   <class name="MidiMessage" cpp_name="MidiMessage">
     <enums>
+      <enum name="MidiMachineControlCommand">
+        <value name="mmc_deferredplay" value="3" />
+        <value name="mmc_fastforward" value="4" />
+        <value name="mmc_pause" value="9" />
+        <value name="mmc_play" value="2" />
+        <value name="mmc_recordStart" value="6" />
+        <value name="mmc_recordStop" value="7" />
+        <value name="mmc_rewind" value="5" />
+        <value name="mmc_stop" value="1" />
+      </enum>
       <enum name="SmpteTimecodeType">
         <value name="fps24" value="0" />
         <value name="fps25" value="1" />
-        <value name="fps30drop" value="2" />
         <value name="fps30" value="3" />
-      </enum>
-      <enum name="MidiMachineControlCommand">
-        <value name="mmc_stop" value="1" />
-        <value name="mmc_play" value="2" />
-        <value name="mmc_deferredplay" value="3" />
-        <value name="mmc_fastforward" value="4" />
-        <value name="mmc_rewind" value="5" />
-        <value name="mmc_recordStart" value="6" />
-        <value name="mmc_recordStop" value="7" />
-        <value name="mmc_pause" value="9" />
+        <value name="fps30drop" value="2" />
       </enum>
     </enums>
     <methods>
@@ -1976,20 +2085,52 @@
       <method name="setTimeStamp" type="instance" args="()" />
       <method name="setVelocity" type="instance" args="(float)" />
     </methods>
+    <static_methods>
+      <method name="aftertouchChange" type="static" args="(midiChannel, midiNoteNumber, value.as7BitInt()" />
+      <method name="allControllersOff" type="static" args="(int)" />
+      <method name="allNotesOff" type="static" args="(int)" />
+      <method name="allSoundOff" type="static" args="(int)" />
+      <method name="channelPressureChange" type="static" args="(int, int)" />
+      <method name="controllerEvent" type="static" args="(int, int, int)" />
+      <method name="createSysExMessage" type="static" args="(void, int)" />
+      <method name="endOfTrack" type="static" args="()" />
+      <method name="getControllerName" type="static" args="(m.getControllerNumber()" />
+      <method name="getGMInstrumentBankName" type="static" args="(int)" />
+      <method name="getGMInstrumentName" type="static" args="(int)" />
+      <method name="getMessageLengthFromFirstByte" type="static" args="(uint8)" />
+      <method name="getMidiNoteInHertz" type="static" args="(midiNoteNumber)" />
+      <method name="getMidiNoteName" type="static" args="(m.getNoteNumber()" />
+      <method name="getRhythmInstrumentName" type="static" args="(int)" />
+      <method name="masterVolume" type="static" args="(float)" />
+      <method name="midiChannelMetaEvent" type="static" args="(int)" />
+      <method name="midiClock" type="static" args="()" />
+      <method name="midiContinue" type="static" args="()" />
+      <method name="midiStart" type="static" args="()" />
+      <method name="midiStop" type="static" args="()" />
+      <method name="noteOff" type="static" args="(15, 60, 1.0f)" overload="1" />
+      <method name="noteOff" type="static" args="(15, 60, 1.0f)" overload="2" />
+      <method name="noteOn" type="static" args="(15, 60, 1.0f)" overload="1" />
+      <method name="noteOn" type="static" args="(15, 60, 1.0f)" overload="2" />
+      <method name="pitchWheel" type="static" args="(int, int)" />
+      <method name="programChange" type="static" args="(int, int)" />
+      <method name="readVariableLengthVal" type="static" args="(copy.data()" />
+      <method name="tempoMetaEvent" type="static" args="(int)" />
+      <method name="timeSignatureMetaEvent" type="static" args="(int, int)" />
+    </static_methods>
   </class>
   <class name="ModifierKeys" cpp_name="ModifierKeys">
     <enums>
       <enum name="Flags">
-        <value name="shiftModifier" value="1" />
-        <value name="ctrlModifier" value="2" />
-        <value name="altModifier" value="4" />
-        <value name="leftButtonModifier" value="16" />
-        <value name="rightButtonModifier" value="32" />
-        <value name="middleButtonModifier" value="64" />
-        <value name="commandModifier" value="8" />
-        <value name="popupMenuClickModifier" value="34" />
         <value name="allKeyboardModifiers" value="15" />
         <value name="allMouseButtonModifiers " value="112" />
+        <value name="altModifier" value="4" />
+        <value name="commandModifier" value="8" />
+        <value name="ctrlModifier" value="2" />
+        <value name="leftButtonModifier" value="16" />
+        <value name="middleButtonModifier" value="64" />
+        <value name="popupMenuClickModifier" value="34" />
+        <value name="rightButtonModifier" value="32" />
+        <value name="shiftModifier" value="1" />
       </enum>
     </enums>
     <methods>
@@ -2006,16 +2147,24 @@
       <method name="isShiftDown" type="instance" args="()" />
       <method name="testFlags" type="instance" args="()" />
     </methods>
+    <static_methods>
+      <method name="getCurrentModifiers" type="static" args="()" />
+      <method name="getCurrentModifiersRealtime" type="static" args="()" />
+    </static_methods>
   </class>
   <class name="MouseCursor" cpp_name="MouseCursor">
     <enums>
       <enum name="StandardCursorType">
-        <value name="ParentCursor" value="MouseCursor::ParentCursor" />
         <value name="NoCursor" value="MouseCursor::NoCursor" />
         <value name="NormalCursor" value="MouseCursor::NormalCursor" />
+        <value name="ParentCursor" value="MouseCursor::ParentCursor" />
         <value name="WaitCursor" value="MouseCursor::WaitCursor" />
       </enum>
     </enums>
+    <static_methods>
+      <method name="hideWaitCursor" type="static" args="()" />
+      <method name="showWaitCursor" type="static" args="()" />
+    </static_methods>
   </class>
   <class name="MouseEvent" cpp_name="MouseEvent">
     <methods>
@@ -2042,8 +2191,8 @@
     <enums>
       <enum name="MouseInputSource">
         <value name="mouse" value="MouseInputSource::mouse" />
-        <value name="touch" value="MouseInputSource::touch" />
         <value name="pen" value="MouseInputSource::pen" />
+        <value name="touch" value="MouseInputSource::touch" />
       </enum>
     </enums>
     <methods>
@@ -2149,15 +2298,15 @@
   </class>
   <class name="PathStrokeType" cpp_name="LPathStrokeType">
     <enums>
-      <enum name="JoinStyle">
-        <value name="mitered" value="PathStrokeType::mitered" />
-        <value name="curved" value="PathStrokeType::curved" />
-        <value name="beveled" value="PathStrokeType::beveled" />
-      </enum>
       <enum name="EndCapStyle">
         <value name="butt" value="PathStrokeType::butt" />
-        <value name="square" value="PathStrokeType::square" />
         <value name="rounded" value="PathStrokeType::rounded" />
+        <value name="square" value="PathStrokeType::square" />
+      </enum>
+      <enum name="JoinStyle">
+        <value name="beveled" value="PathStrokeType::beveled" />
+        <value name="curved" value="PathStrokeType::curved" />
+        <value name="mitered" value="PathStrokeType::mitered" />
       </enum>
     </enums>
     <methods>
@@ -2201,7 +2350,12 @@
       <method name="toString" type="instance" args="()" />
     </methods>
   </class>
-  <class name="RSATools" cpp_name="LRSAKey" />
+  <class name="RSATools" cpp_name="LRSAKey">
+    <static_methods>
+      <method name="createKeyPair" type="static" args="()" />
+      <method name="getDummy" type="static" args="()" />
+    </static_methods>
+  </class>
   <class name="Random" cpp_name="Random">
     <methods>
       <method name="combineSeed" type="instance" args="()" />
@@ -2217,6 +2371,9 @@
       <method name="setSeed" type="instance" args="(int64)" />
       <method name="setSeedRandomly" type="instance" args="()" />
     </methods>
+    <static_methods>
+      <method name="getSystemRandom" type="static" args="()" />
+    </static_methods>
   </class>
   <class name="Range" cpp_name="Range">
     <methods>
@@ -2381,18 +2538,18 @@
   <class name="RectanglePlacement" cpp_name="RectanglePlacement">
     <enums>
       <enum name="flags">
+        <value name="centred" value="36" />
+        <value name="doNotResize" value="768" />
+        <value name="fillDestination" value="128" />
+        <value name="onlyIncreaseInSize" value="512" />
+        <value name="onlyReduceInSize" value="256" />
+        <value name="stretchToFit" value="64" />
         <value name="xLeft" value="1" />
-        <value name="xRight" value="2" />
         <value name="xMid" value="4" />
-        <value name="yTop" value="8" />
+        <value name="xRight" value="2" />
         <value name="yBottom" value="16" />
         <value name="yMid" value="32" />
-        <value name="stretchToFit" value="64" />
-        <value name="fillDestination" value="128" />
-        <value name="onlyReduceInSize" value="256" />
-        <value name="onlyIncreaseInSize" value="512" />
-        <value name="doNotResize" value="768" />
-        <value name="centred" value="36" />
+        <value name="yTop" value="8" />
       </enum>
     </enums>
     <methods>
@@ -2409,6 +2566,11 @@
       <method name="resolveFourCorners" type="instance" args="(Point&lt;float&gt;, Scope)" />
       <method name="resolveThreePoints" type="instance" args="(Point&lt;float&gt;, Scope)" />
     </methods>
+    <static_methods>
+      <method name="getBoundingBox" type="static" args="(Point&lt;float&gt;)" />
+      <method name="getInternalCoordForPoint" type="static" args="(Point&lt;float&gt;, Point&lt;float&gt;)" />
+      <method name="getPointForInternalCoord" type="static" args="(Point&lt;float&gt;, Point&lt;float&gt;)" />
+    </static_methods>
   </class>
   <class name="RelativePoint" cpp_name="RelativePoint">
     <methods>
@@ -2438,32 +2600,32 @@
   <class name="SettableTooltipClient" cpp_name="SettableTooltipClient" />
   <class name="Slider" cpp_name="Slider">
     <enums>
-      <enum name="TextEntryBoxPosition">
-        <value name="NoTextBox" value="Slider::NoTextBox" />
-        <value name="TextBoxLeft" value="Slider::TextBoxLeft" />
-        <value name="TextBoxRight" value="Slider::TextBoxRight" />
-        <value name="TextBoxAbove" value="Slider::TextBoxAbove" />
-        <value name="TextBoxBelow" value="Slider::TextBoxBelow" />
+      <enum name="DragMode">
+        <value name="absoluteDrag" value="Slider::absoluteDrag" />
+        <value name="notDragging" value="Slider::notDragging" />
+        <value name="velocityDrag" value="Slider::velocityDrag" />
       </enum>
       <enum name="SliderStyle">
-        <value name="LinearHorizontal" value="Slider::LinearHorizontal" />
-        <value name="LinearVertical" value="Slider::LinearVertical" />
+        <value name="IncDecButtons" value="Slider::IncDecButtons" />
         <value name="LinearBar" value="Slider::LinearBar" />
         <value name="LinearBarVertical" value="Slider::LinearBarVertical" />
+        <value name="LinearHorizontal" value="Slider::LinearHorizontal" />
+        <value name="LinearVertical" value="Slider::LinearVertical" />
         <value name="Rotary" value="Slider::Rotary" />
         <value name="RotaryHorizontalDrag" value="Slider::RotaryHorizontalDrag" />
-        <value name="RotaryVerticalDrag" value="Slider::RotaryVerticalDrag" />
         <value name="RotaryHorizontalVerticalDrag" value="Slider::RotaryHorizontalVerticalDrag" />
-        <value name="IncDecButtons" value="Slider::IncDecButtons" />
-        <value name="TwoValueHorizontal" value="Slider::TwoValueHorizontal" />
-        <value name="TwoValueVertical" value="Slider::TwoValueVertical" />
+        <value name="RotaryVerticalDrag" value="Slider::RotaryVerticalDrag" />
         <value name="ThreeValueHorizontal" value="Slider::ThreeValueHorizontal" />
         <value name="ThreeValueVertical" value="Slider::ThreeValueVertical" />
+        <value name="TwoValueHorizontal" value="Slider::TwoValueHorizontal" />
+        <value name="TwoValueVertical" value="Slider::TwoValueVertical" />
       </enum>
-      <enum name="DragMode">
-        <value name="notDragging" value="Slider::notDragging" />
-        <value name="absoluteDrag" value="Slider::absoluteDrag" />
-        <value name="velocityDrag" value="Slider::velocityDrag" />
+      <enum name="TextEntryBoxPosition">
+        <value name="NoTextBox" value="Slider::NoTextBox" />
+        <value name="TextBoxAbove" value="Slider::TextBoxAbove" />
+        <value name="TextBoxBelow" value="Slider::TextBoxBelow" />
+        <value name="TextBoxLeft" value="Slider::TextBoxLeft" />
+        <value name="TextBoxRight" value="Slider::TextBoxRight" />
       </enum>
     </enums>
     <methods>
@@ -2774,6 +2936,18 @@
       <method name="toMilliseconds" type="instance" args="()" />
       <method name="toString" type="instance" args="(bool, bool, bool, bool)" />
     </methods>
+    <static_methods>
+      <method name="currentTimeMillis" type="static" args="()" />
+      <method name="getApproximateMillisecondCounter" type="static" args="()" />
+      <method name="getCurrentTime" type="static" args="()" />
+      <method name="getHighResolutionTicks" type="static" args="()" />
+      <method name="getHighResolutionTicksPerSecond" type="static" args="()" />
+      <method name="getMillisecondCounter" type="static" args="()" />
+      <method name="getMillisecondCounterHiRes" type="static" args="()" />
+      <method name="highResolutionTicksToSeconds" type="static" args="(int64)" />
+      <method name="secondsToHighResolutionTicks" type="static" args="(double)" />
+      <method name="waitForMillisecondCounter" type="static" args="(eventTime)" />
+    </static_methods>
   </class>
   <class name="Timer" cpp_name="Timer">
     <methods>
@@ -2804,6 +2978,13 @@
       <method name="isHinted" type="instance" args="()" />
       <method name="isSuitableForFont" type="instance" args="()" />
     </methods>
+    <static_methods>
+      <method name="clearTypefaceCache" type="static" args="()" />
+      <method name="createSystemTypefaceFor" type="static" args="(void, size_t)" overload="1" />
+      <method name="createSystemTypefaceFor" type="static" args="(void, size_t)" overload="2" />
+      <method name="scanFolderForFonts" type="static" args="(File)" />
+      <method name="setTypefaceCacheSize" type="static" args="(int)" />
+    </static_methods>
   </class>
   <class name="TypefacePtr" cpp_name="Ptr" />
   <class name="URL" cpp_name="URL">
@@ -2895,6 +3076,10 @@
       <method name="setEmptyTextElementsIgnored" type="instance" args="(bool)" />
       <method name="setInputSource" type="instance" args="(InputSource)" />
     </methods>
+    <static_methods>
+      <method name="parseXML" type="static" args="()" overload="1" />
+      <method name="parseXML" type="static" args="()" overload="2" />
+    </static_methods>
   </class>
   <class name="XmlElement" cpp_name="XmlElement">
     <methods>
@@ -2948,6 +3133,9 @@
       <method name="writeToFile" type="instance" args="(File, StringRef, StringRef, int)" />
       <method name="writeToStream" type="instance" args="(OutputStream, StringRef, bool, bool, StringRef, int)" />
     </methods>
+    <static_methods>
+      <method name="createTextElement" type="static" args="(String)" />
+    </static_methods>
   </class>
   <class name="ZipEntry" cpp_name="ZipEntry" />
   <class name="ZipFile" cpp_name="ZipFile">
@@ -2965,7 +3153,12 @@
   </class>
   <class name="class_info_data" cpp_name="class_info" />
   <class name="int64" cpp_name="int64" />
-  <class name="juce" cpp_name="LGlobalFunctions" />
+  <class name="juce" cpp_name="LGlobalFunctions">
+    <static_methods>
+      <method name="double_Pi" type="static" args="()" />
+      <method name="float_Pi" type="static" args="()" />
+    </static_methods>
+  </class>
   <class name="pair" cpp_name="pair" />
   <class name="var" cpp_name="var" />
 </LuaAPI>
