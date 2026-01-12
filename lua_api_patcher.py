@@ -7,7 +7,6 @@ from xml.etree.ElementTree import parse, ElementTree, indent, Element, SubElemen
 # ==================== CONFIGURATION ====================
 XML_PATH = Path("Source/Resources/XML/LuaAPI.xml")
 
-# ALIASES: Original XML Class -> [New Friendly Names]
 CLASS_ALIASES = {
     "CtrlrPanel": ["panel"],
     "CtrlrModulator": ["mod", "modulator"],
@@ -15,9 +14,6 @@ CLASS_ALIASES = {
     "CtrlrLuaUtils": ["utils"],
 }
 
-# METHOD PATCHES: Class Name -> { MethodName: Args or [Overloads] }
-# TIP: If a method should be static but is in the wrong block, 
-# add "type": "static" in the dictionary format below.
 METHOD_PATCHES = {
     "LMemoryBlock": {
         "loadFromHexString": "(String hex)",
@@ -27,6 +23,7 @@ METHOD_PATCHES = {
         "toString": "()",
     },
     "CtrlrPanel": {
+        "getName": "()", # Args here, wrap handled below
         "getModulatorByName": "(String name)",
         "getModulatorWithProperty": [
             "(String propName, String propValue)",
@@ -39,10 +36,17 @@ METHOD_PATCHES = {
     }
 }
 
-# CONSTRUCTORS: Class Name -> [Arg Strings]
 CONSTRUCTORS = {
     "LMemoryBlock": ["()", "(String hexString)", "({int} luaTable)"],
     "CtrlrMidiMessage": ["()", "({int} midiData)", "(String hexString)"],
+}
+
+# Methods that need the L() wrapper flag
+L_WRAPPED_METHODS = {
+    "panel": ["getName"],
+    "modulator": ["getName"],
+    "CtrlrPanel": ["getName"],
+    "CtrlrModulator": ["getName"],
 }
 # =======================================================
 
@@ -70,27 +74,33 @@ class LuaAPIPatcher:
             cls_elems = self.root.findall(f".//class[@name='{cls_name}']")
             for cls_elem in cls_elems:
                 for m_name, data in patches.items():
-                    # Standardize data to a dict
                     m_args = data if isinstance(data, (str, list)) else data.get("args")
                     m_type = data.get("type") if isinstance(data, dict) else None
-                    
                     self._patch_single_method(cls_elem, m_name, m_args, m_type)
 
-        # 2. Add Constructors
+        # 2. Apply L() Wrapper Attribute
+        print("[*] Applying L() wrappers...")
+        for cls_name, methods in L_WRAPPED_METHODS.items():
+            for cls_elem in self.root.findall(f".//class[@name='{cls_name}']"):
+                for m_name in methods:
+                    method_elem, _ = self.find_method(cls_elem, m_name)
+                    if method_elem is not None:
+                        method_elem.set("lua_wrap", "L")
+
+        # 3. Add Constructors
         for cls_name, ctors in CONSTRUCTORS.items():
             for cls_elem in self.root.findall(f".//class[@name='{cls_name}']"):
-                # Clear existing if any, then add
                 for existing in cls_elem.findall("constructor"):
                     cls_elem.remove(existing)
                 for args in ctors:
                     SubElement(cls_elem, "constructor", {"args": args, "type": "constructor"})
 
-        # 3. Create Aliases (Inherits all patches applied above)
+        # 4. Create Aliases (Inherits all patches applied above)
+        print("[*] Creating aliases...")
         for original, aliases in CLASS_ALIASES.items():
             orig_elem = self.root.find(f".//class[@name='{original}']")
             if orig_elem is not None:
                 for alias in aliases:
-                    # Remove existing alias if it exists to avoid duplicates
                     existing = self.root.find(f".//class[@name='{alias}']")
                     if existing is not None: self.root.remove(existing)
                     
@@ -102,20 +112,19 @@ class LuaAPIPatcher:
     def _patch_single_method(self, cls_elem, m_name, args, force_type=None):
         method_elem, current_parent = self.find_method(cls_elem, m_name)
 
-        # Handle Overloads (List of arg strings)
         if isinstance(args, list):
-            if method_elem is not None: current_parent.remove(method_elem) # Clear old
+            if method_elem is not None: current_parent.remove(method_elem)
             target_parent = current_parent if current_parent is not None else cls_elem.find("methods")
+            if target_parent is None: target_parent = SubElement(cls_elem, "methods")
+            
             for i, arg_str in enumerate(args, 1):
                 SubElement(target_parent, "method", {
                     "name": m_name, "args": arg_str, "overload": str(i), 
                     "type": "instance" if target_parent.tag == "methods" else "static"
                 })
-        # Handle Single String
         else:
             if method_elem is not None:
                 method_elem.set("args", args)
-                # If we need to move it from instance to static (or vice versa)
                 if force_type == "static" and current_parent.tag == "methods":
                     current_parent.remove(method_elem)
                     static_block = cls_elem.find("static_methods")
