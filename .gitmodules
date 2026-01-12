@@ -4,3 +4,6 @@
 [submodule "/home/john/Documents/CtrlrX/DEMO"]
 	path = /home/john/Documents/CtrlrX/DEMO
 	url = https://github.com/dnaldoog/CtrlrDemoPanels.git
+[submodule "DEMO"]
+	path = DEMO
+	url = https://github.com/dnaldoog/CtrlrDemoPanels
