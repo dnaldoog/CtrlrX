@@ -21,47 +21,72 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
 
         if (root != nullptr && root->hasTagName("LuaAPI"))
         {
-            forEachXmlChildElement(*root, classXml)
+            forEachXmlChildElementWithTagName(*root, classXml, "class")
             {
-                if (classXml->hasTagName("class"))
+                LuaClass lc;
+                lc.name = classXml->getStringAttribute("name");
+                lc.parentClass = classXml->getStringAttribute("inherits");
+
+                // 1. Process Instance Methods
+                if (auto* mList = classXml->getChildByName("methods"))
                 {
-                    LuaClass lc;
-                    lc.name = classXml->getStringAttribute("name");
-                    lc.parentClass = classXml->getStringAttribute("inherits");
-
-                    // Process Instance Methods
-                    if (auto* mList = classXml->getChildByName("methods"))
+                    forEachXmlChildElementWithTagName(*mList, methodXml, "method")
                     {
-                        forEachXmlChildElement(*mList, methodXml)
-                        {
-                            LuaMethod lm;
-                            lm.name = methodXml->getStringAttribute("name");
-                            lm.parameters = methodXml->getStringAttribute("args");
-                            lm.isStatic = false;
-
-                            lc.methods.add(lm);
-                            allMethodNames.addIfNotAlreadyThere(lm.name);
-                        }
+                        LuaMethod lm;
+                        lm.name = methodXml->getStringAttribute("name");
+                        lm.parameters = methodXml->getStringAttribute("args");
+                        lm.isStatic = false;
+                        lc.methods.add(lm);
+                        allMethodNames.addIfNotAlreadyThere(lm.name);
                     }
-
-                    // Process Static Methods
-                    if (auto* sList = classXml->getChildByName("static_methods"))
-                    {
-                        forEachXmlChildElement(*sList, staticXml)
-                        {
-                            LuaMethod sm;
-                            sm.name = staticXml->getStringAttribute("name");
-                            sm.parameters = staticXml->getStringAttribute("args");
-                            sm.isStatic = true;
-
-                            lc.methods.add(sm);
-                            allMethodNames.addIfNotAlreadyThere(sm.name);
-                        }
-                    }
-
-                    classes.set(lc.name, lc);
-                    classNames.add(lc.name);
                 }
+
+                // 2. Process Static Methods
+                if (auto* sList = classXml->getChildByName("static_methods"))
+                {
+                    forEachXmlChildElementWithTagName(*sList, staticXml, "method")
+                    {
+                        LuaMethod sm;
+                        sm.name = staticXml->getStringAttribute("name");
+                        sm.parameters = staticXml->getStringAttribute("args");
+                        sm.isStatic = true;
+                        lc.methods.add(sm);
+                        allMethodNames.addIfNotAlreadyThere(sm.name);
+                    }
+                }
+
+                // 3. NEW: Process Enums (Treat them as Static attributes for autocomplete)
+                if (auto* eList = classXml->getChildByName("enums"))
+                {
+                    // Handle flattened values (what we just did in Python)
+                    forEachXmlChildElementWithTagName(*eList, valXml, "value")
+                    {
+                        LuaMethod em;
+                        em.name = valXml->getStringAttribute("name");
+                        em.parameters = ""; // Enums have no args
+                        em.isStatic = true; // Accessed via Class.name
+                        lc.methods.add(em);
+                        allMethodNames.addIfNotAlreadyThere(em.name);
+                    }
+
+                    // Handle nested enums (in case some aren't flattened)
+                    forEachXmlChildElementWithTagName(*eList, enumGroup, "enum")
+                    {
+                        juce::String prefix = enumGroup->getStringAttribute("name") + ".";
+                        forEachXmlChildElementWithTagName(*enumGroup, valXml, "value")
+                        {
+                            LuaMethod em;
+                            em.name = prefix + valXml->getStringAttribute("name");
+                            em.parameters = "";
+                            em.isStatic = true;
+                            lc.methods.add(em);
+                            allMethodNames.addIfNotAlreadyThere(em.name);
+                        }
+                    }
+                }
+
+                classes.set(lc.name, lc);
+                classNames.add(lc.name);
             }
         }
     }
@@ -190,6 +215,7 @@ juce::String CtrlrLuaMethodAutoCompleteManager::resolveClass(const juce::String&
 }
 juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const juce::String& varName, const juce::String& code)
 {
+    DBG("Attempting to resolve var: " + varName);
     // 1. Static/Global Shortcuts (Priority)
     if (varName == "panel" || varName == "pan")   return "panel";
     if (varName == "mod")                         return "mod";
