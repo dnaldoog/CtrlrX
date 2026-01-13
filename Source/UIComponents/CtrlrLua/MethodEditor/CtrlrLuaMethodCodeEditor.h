@@ -55,7 +55,7 @@ public:
     void toggleLineComment(); // --
     void toggleLongLineComment(); // --[[ --]]
     void showPopup(const std::vector<SuggestionItem>& matches, int insertIndex);
-   // Add method to handle shared value changes
+    // Add method to handle shared value changes
     void valueChanged(Value& value) override;
 
     // Add method to get the hidden toggle state

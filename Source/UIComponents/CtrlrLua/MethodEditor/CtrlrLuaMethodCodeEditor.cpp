@@ -492,64 +492,91 @@ void CtrlrLuaMethodCodeEditor::hideCallTip()
 }
 void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newText, int insertIndex)
 {
-    // EMERGENCY DEBUG - If this doesn't show, the listener is not attached
-    juce::Logger::writeToLog("!!! LISTENER WORKING - Inserted: " + newText);
-
-    // Block autocomplete if we are currently programmatically inserting text
-    if (isReplacingText) return;
-
+    document.newTransaction();
+    documentChanged(false);
     if (suggestionPopup == nullptr) return;
 
-    // 1. Context setup
+    // 1. Get current typing context
     int wordStart = 0;
     juce::String currentWord = getWordBeforeCaret(wordStart);
     juce::String allText = document.getAllContent();
 
-    // 2. Trigger Logic
+    // 2. DETECT METHOD CALLS (looking behind the current word)
     if (wordStart > 0)
     {
         juce::juce_wchar triggerChar = allText[wordStart - 1];
-        if (triggerChar == ':' || triggerChar == '.')
-        {
-            // Simple expression grab: look back from the trigger for the variable name
-            int end = wordStart - 1;
-            int start = end - 1;
-            while (start >= 0 && (juce::CharacterFunctions::isLetterOrDigit(allText[start]) || allText[start] == '_'))
-                start--;
+if (triggerChar == ':' || triggerChar == '.')
+{
+    int triggerPos = wordStart - 1;
+    int symbolStart = triggerPos - 1;
+    
+    // Go back through chain, including spaces and common type chars
+    while (symbolStart >= 0 &&
+           (juce::CharacterFunctions::isLetterOrDigit(allText[symbolStart]) ||
+            allText[symbolStart] == '_' ||
+            allText[symbolStart] == ')' ||
+            allText[symbolStart] == '(' ||
+            allText[symbolStart] == ':' ||
+            allText[symbolStart] == '.' ||
+            allText[symbolStart] == ' ' ||   // <-- ADD THIS
+            allText[symbolStart] == '&' ||   // <-- For references
+            allText[symbolStart] == '*' ||   // <-- For pointers
+            allText[symbolStart] == ','))    // <-- For multiple args
+    {
+        symbolStart--;
+    }
+    symbolStart++;
 
-            juce::String expression = allText.substring(start + 1, end).trim();
+            juce::String expression = allText.substring(symbolStart, triggerPos).trim();
 
-            if (expression.isNotEmpty())
+            DBG("expression: [" + expression + "]");
+
+            DBG("=== TRIGGER DEBUG ===");
+            DBG("triggerPos: " + juce::String(triggerPos));
+            DBG("symbolStart: " + juce::String(symbolStart));
+            DBG("expression: [" + expression + "]");
+
+            auto& manager = owner.getAutocompleteManager();
+            juce::String className = manager.getClassNameForVariable(expression, allText);
+
+            DBG("resolved className: " + (className.isEmpty() ? "EMPTY" : className));
+
+            if (className.isNotEmpty())
             {
-                auto& manager = owner.getAutocompleteManager();
-                juce::String className = manager.getClassNameForVariable(expression, allText);
+                LookupType type = (triggerChar == ':') ? LookupInstance : LookupStatic;
+                auto matches = manager.getMethodSuggestions(className, currentWord, type);
 
-                if (className.isNotEmpty())
+                DBG("matches found: " + juce::String((int)matches.size()));
+
+                if (!matches.empty())
                 {
-                    LookupType type = (triggerChar == ':') ? LookupInstance : LookupStatic;
-                    auto matches = manager.getMethodSuggestions(className, currentWord, type);
-
-                    if (!matches.empty())
-                    {
-                        showPopup(matches, insertIndex);
-                        return;
-                    }
+                    showPopup(matches, insertIndex);
+                    return;
                 }
             }
         }
     }
 
-    // 3. Global Fallback
+    // 3. FALLBACK: GLOBAL SUGGESTIONS
     if (currentWord.length() >= 2)
     {
-        auto matches = owner.getAutocompleteManager().getGlobalSuggestions(currentWord);
-        if (!matches.empty()) showPopup(matches, insertIndex);
+        auto& manager = owner.getAutocompleteManager();
+        std::vector<SuggestionItem> matches = manager.getGlobalSuggestions(currentWord);
+        if (!matches.empty())
+        {
+            showPopup(matches, insertIndex);
+        }
+        else
+        {
+            suggestionPopup->setVisible(false);
+        }
     }
     else
     {
-        if (suggestionPopup) suggestionPopup->setVisible(false);
+        suggestionPopup->setVisible(false);
     }
 }
+
 void CtrlrLuaMethodCodeEditor::codeDocumentTextDeleted(int startIndex, int endIndex)
 {
     // If we are programmatically replacing text, don't start new transactions
@@ -882,6 +909,71 @@ void CtrlrLuaMethodCodeEditor::findInAll(const String& search)
 
     owner.getMethodEditArea()->getLowerTabs()->setCurrentTabIndex(0, true);
 }
+
+
+//void CtrlrLuaMethodCodeEditor::findInAll(const String &search)
+//{
+//    // Validate search string first
+//    if (!isValidSearchString(search))
+//    {
+//        owner.getMethodEditArea()->insertOutput("\n\nInvalid search term: \"" + search +
+//            "\". Please enter a meaningful search term (at least 3 characters, not just whitespace or common single characters).\n",
+//            Colours::red);
+//        return;
+//    }
+//    owner.getMethodEditArea()->insertOutput("\n\nSearching for: \""+search+"\" in all methods (double click line to jump)\n", Colours::darkblue);
+//    StringArray names;
+//
+//    for (int i=0; i<owner.getMethodManager().getNumMethods(); i++)
+//    {
+//        CtrlrLuaMethod *m = owner.getMethodManager().getMethodByIndex (i);
+//
+//        if (m)
+//        {
+//            names.add (m->getName());
+//
+//            if (m->getCodeEditor())
+//            {
+//                /* it has an editor so it's open */
+//                CodeDocument &doc        = m->getCodeEditor()->getCodeDocument();
+//
+//                Array<Range<int> > results = searchForMatchesInDocument (doc, search);
+//
+//                for (int j=0; j<results.size(); j++)
+//                {
+//                    reportFoundMatch (doc, names[i], results[j]);
+//                }
+//            }
+//            else // Added 5.6.34 by goodweather. Search in not yet opened methods
+//            {
+//                /* Open method */
+//                owner.createNewTab(m);
+//                owner.setCurrentTab(m);
+//
+//                /* Perform search and report result */
+//                CodeDocument& doc = m->getCodeEditor()->getCodeDocument();
+//
+//                Array<Range<int> > results = searchForMatchesInDocument(doc, search);
+//
+//                for (int j = 0; j < results.size(); j++)
+//                {
+//                    reportFoundMatch(doc, names[i], results[j]);
+//                }
+//
+//                /* If no result then close method; if any result then keep method open */
+//                /*Dnaldoog disable this because I think it's better for ser to open file at bottom list,
+//                especially if the search results in dozens of hits therefore opening dozens of windows*/
+//                //if (results.size() == 0)
+//                //{
+//                    owner.closeCurrentTab();
+//                //}
+//            }
+//        }
+//    }
+//
+//    owner.getMethodEditArea()->getLowerTabs()->setCurrentTabIndex(0,true);
+//}
+
 const Array<Range<int> > CtrlrLuaMethodCodeEditor::searchForMatchesInDocument(CodeDocument& doc, const String& search)
 {
     Array<Range<int> > results;
@@ -1816,6 +1908,25 @@ void CtrlrLuaMethodCodeEditor::valueChanged(Value& value)
         // You can also trigger any additional UI updates here if needed
     }
 }
+juce::String CtrlrLuaMethodCodeEditor::getWordBeforeCaret(int& wordStart)
+{
+    int caretPos = editorComponent->getCaretPos().getPosition();
+    juce::String allText = document.getAllContent();
+    int pos = caretPos - 1;
+
+    // Skip the trigger if we are sitting right after it
+    if (pos >= 0 && (allText[pos] == ':' || allText[pos] == '.')) {
+        // We don't decrement pos here, because wordStart should be caretPos
+    }
+
+    while (pos >= 0 && (juce::CharacterFunctions::isLetterOrDigit(allText[pos]) || allText[pos] == '_'))
+    {
+        pos--;
+    }
+
+    wordStart = pos + 1;
+    return allText.substring(wordStart, caretPos);
+}
 
 bool CtrlrLuaMethodCodeEditor::isLuaObjectInstance(const juce::String& s, SuggestionType type)
 {
@@ -1832,6 +1943,20 @@ bool CtrlrLuaMethodCodeEditor::isLuaObjectInstance(const juce::String& s, Sugges
 
     return false;
 }
+void CtrlrLuaMethodCodeEditor::showPopup(const std::vector<SuggestionItem>& matches, int insertIndex)
+{
+    suggestionPopup->setSuggestions(matches);
+
+    juce::CodeDocument::Position pos(document, insertIndex);
+    juce::Rectangle<int> caretRect = editorComponent->getCharacterBounds(pos);
+    auto popupPos = getLocalPoint(editorComponent, caretRect.getBottomLeft());
+
+    suggestionPopup->setBounds(popupPos.getX(), popupPos.getY() + 2, 300,
+        juce::jmin(10, (int)matches.size()) * 22);
+    suggestionPopup->setVisible(true);
+    suggestionPopup->toFront(false);
+}
+
 void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion)
 {
     if (suggestion.isEmpty() || editorComponent == nullptr)
@@ -1932,76 +2057,59 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
 
     editorComponent->grabKeyboardFocus();
 }
-
-
-void CtrlrLuaMethodCodeEditor::showPopup(const std::vector<SuggestionItem>& matches, int insertIndex)
-{
-    suggestionPopup->setSuggestions(matches);
-    
-    auto caretRect = editorComponent->getCharacterBounds(editorComponent->getCaretPos());
-    auto popupPos = getLocalPoint(editorComponent, caretRect.getBottomLeft());
-    
-    // Ensure it doesn't go off screen
-    int x = popupPos.getX();
-    int y = popupPos.getY();
-    
-    if (x + suggestionPopup->getWidth() > getWidth())
-        x = getWidth() - suggestionPopup->getWidth() - 10;
-        
-    suggestionPopup->setTopLeftPosition(x, y);
-    suggestionPopup->setVisible(true);
-    suggestionPopup->toFront(false);
-}
-
 void CtrlrLuaMethodCodeEditor::handleSuggestionChosen(juce::String chosen)
 {
-    isReplacingText = true;
-    int wordStart = 0;
-    getWordBeforeCaret(wordStart); // Uses the fix from Step 1
-    int caretPos = editorComponent->getCaretPos().getPosition();
-
-    // Identify what we are inserting
-    auto item = suggestionPopup->getSelectedItem();
-    juce::String insertion = chosen;
-
-    // RULE: Only Methods and Utilities get brackets. Classes and Globals don't.
-    bool needsBrackets = (item.type == TypeMethod || item.type == TypeUtility);
-    
-    if (needsBrackets)
-        insertion += "()";
-
-    document.newTransaction();
-    document.deleteSection(wordStart, caretPos);
-    document.insertText(wordStart, insertion);
-
-    if (needsBrackets)
-    {
-        // Move caret inside the brackets: (wordStart + length of name + 1 for '(')
-        editorComponent->moveCaretTo(juce::CodeDocument::Position(document, wordStart + chosen.length() + 1), false);
-        
-        // Show the argument hint bubble
-        lastAutocompletedMethod = chosen;
-        updateCallTipHighlight();
-    }
-    
-    isReplacingText = false;
+    if (suggestionPopup == nullptr) return;
     suggestionPopup->setVisible(false);
-}
 
-
-juce::String CtrlrLuaMethodCodeEditor::getWordBeforeCaret(int& wordStart)
-{
+    int wordStart = 0;
+    juce::String currentWord = getWordBeforeCaret(wordStart);
     int caretPos = editorComponent->getCaretPos().getPosition();
-    int start = caretPos;
-    juce::String text = document.getAllContent();
+    juce::String allText = document.getAllContent();
 
-    // Move backwards ONLY through alphanumeric/underscore
-    // This ensures we STOP at '.' or ':'
-    while (start > 0 && (juce::CharacterFunctions::isLetterOrDigit(text[start - 1]) || text[start - 1] == '_'))
+    isReplacingText = true;
+
+    // Resolve class using FULL CHAIN extraction
+    juce::String resolvedClass = "";
+    if (wordStart > 0 && (allText[wordStart - 1] == ':' || allText[wordStart - 1] == '.'))
     {
-        start--;
+        int triggerPos = wordStart - 1;
+        int symbolStart = triggerPos - 1;
+        
+        // Same backward scan as codeDocumentTextInserted
+        while (symbolStart >= 0 &&
+               (juce::CharacterFunctions::isLetterOrDigit(allText[symbolStart]) ||
+                allText[symbolStart] == '_' ||
+                allText[symbolStart] == ')' ||
+                allText[symbolStart] == '(' ||
+                allText[symbolStart] == ':' ||
+                allText[symbolStart] == '.' ||
+                allText[symbolStart] == ' ' ||
+                allText[symbolStart] == '&' ||
+                allText[symbolStart] == '*' ||
+                allText[symbolStart] == ','))
+        {
+            symbolStart--;
+        }
+        symbolStart++;
+        
+        juce::String expression = allText.substring(symbolStart, triggerPos).trim();
+        resolvedClass = owner.getAutocompleteManager().getClassNameForVariable(expression, allText);
     }
 
-    wordStart = start;
-    return text.substring(start, caretPos);
+    // Get params from the resolved class
+    juce::String params = owner.getAutocompleteManager().getMethodParams(resolvedClass, chosen);
+    
+    // Delete and insert
+    document.deleteSection(wordStart, caretPos);
+    
+    if (params.isNotEmpty())
+        document.insertText(wordStart, chosen + "(" + params + ")");
+    else
+        document.insertText(wordStart, chosen + "()");
+    
+    editorComponent->moveCaretTo(juce::CodeDocument::Position(document, wordStart + chosen.length() + 1), false);
+
+    isReplacingText = false;
+    document.newTransaction();
 }

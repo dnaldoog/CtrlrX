@@ -21,70 +21,47 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
 
         if (root != nullptr && root->hasTagName("LuaAPI"))
         {
-            forEachXmlChildElementWithTagName(*root, classXml, "class")
+            forEachXmlChildElement(*root, classXml)
             {
-                LuaClass lc;
-                lc.name = classXml->getStringAttribute("name");
-                lc.parentClass = classXml->getStringAttribute("inherits");
-
-                // 1. Process Instance Methods
-                if (auto* mList = classXml->getChildByName("methods"))
+                if (classXml->hasTagName("class"))
                 {
-                    forEachXmlChildElementWithTagName(*mList, methodXml, "method")
-                    {
-                        LuaMethod lm;
-                        lm.name = methodXml->getStringAttribute("name");
-                        lm.parameters = methodXml->getStringAttribute("args");
-                        lm.isStatic = false;
-                        lc.methods.add(lm);
-                        allMethodNames.addIfNotAlreadyThere(lm.name);
-                    }
-                }
+                    LuaClass lc;
+                    lc.name = classXml->getStringAttribute("name");
+                    lc.parentClass = classXml->getStringAttribute("inherits");
 
-                // 2. Process Static Methods
-                if (auto* sList = classXml->getChildByName("static_methods"))
-                {
-                    forEachXmlChildElementWithTagName(*sList, staticXml, "method")
+                    // Process Instance Methods
+                    if (auto* mList = classXml->getChildByName("methods"))
                     {
-                        LuaMethod sm;
-                        sm.name = staticXml->getStringAttribute("name");
-                        sm.parameters = staticXml->getStringAttribute("args");
-                        sm.isStatic = true;
-                        lc.methods.add(sm);
-                        allMethodNames.addIfNotAlreadyThere(sm.name);
-                    }
-                }
-// 3. Process Enums (Flattened)
-if (auto* eList = classXml->getChildByName("enums"))
-{
-    // Handle the new flattened structure (values direct children of enums)
-    forEachXmlChildElementWithTagName(*eList, valXml, "value")
-    {
-        LuaMethod em;
-        em.name = valXml->getStringAttribute("name");
-        em.parameters = ""; 
-        em.isStatic = true; // MUST BE TRUE for '.' to work
-        lc.methods.add(em);
-        allMethodNames.addIfNotAlreadyThere(em.name);
-    }
-    // Keep the old nested loop for backward compatibility if needed
-                    forEachXmlChildElementWithTagName(*eList, enumGroup, "enum")
-                    {
-                        juce::String prefix = enumGroup->getStringAttribute("name") + ".";
-                        forEachXmlChildElementWithTagName(*enumGroup, valXml, "value")
+                        forEachXmlChildElement(*mList, methodXml)
                         {
-                            LuaMethod em;
-                            em.name = prefix + valXml->getStringAttribute("name");
-                            em.parameters = "";
-                            em.isStatic = true;
-                            lc.methods.add(em);
-                            allMethodNames.addIfNotAlreadyThere(em.name);
+                            LuaMethod lm;
+                            lm.name = methodXml->getStringAttribute("name");
+                            lm.parameters = methodXml->getStringAttribute("args");
+                            lm.isStatic = false;
+
+                            lc.methods.add(lm);
+                            allMethodNames.addIfNotAlreadyThere(lm.name);
                         }
                     }
-                }
 
-                classes.set(lc.name, lc);
-                classNames.add(lc.name);
+                    // Process Static Methods
+                    if (auto* sList = classXml->getChildByName("static_methods"))
+                    {
+                        forEachXmlChildElement(*sList, staticXml)
+                        {
+                            LuaMethod sm;
+                            sm.name = staticXml->getStringAttribute("name");
+                            sm.parameters = staticXml->getStringAttribute("args");
+                            sm.isStatic = true;
+
+                            lc.methods.add(sm);
+                            allMethodNames.addIfNotAlreadyThere(sm.name);
+                        }
+                    }
+
+                    classes.set(lc.name, lc);
+                    classNames.add(lc.name);
+                }
             }
         }
     }
@@ -106,27 +83,39 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggesti
     }
     return results;
 }
-std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggestions(const juce::String& className, const juce::String& partial, LookupType type)
+
+std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggestions(const juce::String& className,
+    const juce::String& prefix,
+    LookupType type)
 {
     std::vector<SuggestionItem> results;
-    
-    // 1. Handle Class-level lookups (Enums/Static)
-    // If we are looking at "Justification.", we want the constants, not methods.
-    if (type == LookupStatic) {
-        // Look for child constants/enums in your class map
-        // results = getStaticMembers(className, partial); 
+    juce::String currentClass = className;
+    juce::StringArray addedNames;
+
+    while (currentClass.isNotEmpty())
+    {
+        if (!classes.contains(currentClass)) break;
+
+        const auto& lc = classes.getReference(currentClass);
+
+        for (const auto& m : lc.methods)
+        {
+            if (addedNames.contains(m.name)) continue;
+            if (prefix.isNotEmpty() && !m.name.startsWithIgnoreCase(prefix)) continue;
+
+            bool match = false;
+            if (type == LookupInstance && !m.isStatic) match = true;
+            if (type == LookupStatic && m.isStatic) match = true;
+
+            if (match)
+            {
+                results.push_back({ m.name, TypeMethod });
+                addedNames.add(m.name);
+            }
+        }
+
+        currentClass = lc.parentClass;
     }
-
-    // 2. Fetch methods from your definitions
-    // Ensure className is normalized (e.g., "mod" -> "CtrlrModulator")
-    juce::String realClass = className;
-    if (className == "panel") realClass = "CtrlrPanel";
-    if (className == "mod")   realClass = "CtrlrModulator";
-
-    // ... Your existing loop that populates results ...
-    // IMPORTANT: Ensure you set the Type correctly:
-    // item.type = TypeMethod; or item.type = TypeClass;
-    
     return results;
 }
 
@@ -199,68 +188,75 @@ juce::String CtrlrLuaMethodAutoCompleteManager::resolveClass(const juce::String&
     }
     return "";
 }
-juce::String CtrlrLuaMethodAutoCompleteManager::resolveReturnType(const juce::String& className, const juce::String& methodName)
-{
-    // 1. Normalize shortcuts
-    juce::String c = className;
-    if (c == "panel") c = "CtrlrPanel";
-    if (c == "mod")   c = "CtrlrModulator";
-
-    // 2. Hardcoded logic for known Ctrlr returns
-    if (methodName.contains("getModulator")) return "mod";
-    if (methodName.contains("getComponent")) return "comp";
-    if (methodName == "getPanel")            return "panel";
-    if (methodName == "getMidiMessage")      return "CtrlrMidiMessage";
-    
-    // 3. Fallback: If you have an XML database of methods, look up the return type here
-    return ""; 
-}
 juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const juce::String& varName, const juce::String& code)
 {
-    juce::String v = varName.trim();
-    if (v.isEmpty()) return "";
+    // 1. Static/Global Shortcuts (Priority)
+    if (varName == "panel" || varName == "pan")   return "panel";
+    if (varName == "mod")                         return "mod";
+    if (varName == "comp")                        return "comp";
+    if (varName == "g")                           return "g";
+    if (varName == "utils")                       return "utils";
+    if (varName == "math")                        return "math";
+    if (varName == "table")                       return "table";
+    if (varName == "string")                      return "string";
+    if (varName == "MemoryBlock")                 return "MemoryBlock";
 
-    // 0. DIRECT CLASS HIT (e.g. "Justification" or "MemoryBlock")
-    if (classes.contains(v)) return v;
-
-    // 1. STATIC/GLOBAL SHORTCUTS
-    if (v == "panel" || v == "pan") return "panel";
-    if (v == "mod")                return "mod";
-    if (v == "comp")               return "comp";
-    if (v == "g")                  return "g";
-    if (v == "utils")              return "utils";
-
-    // 2. CHAIN RESOLUTION (e.g., panel:getModulatorByName("test"): )
-    if (v.contains(":") || v.contains("."))
+    // 2. CHAIN RESOLUTION (e.g., panel:getModulatorByName():)
+    if (varName.contains(":") || varName.contains("."))
     {
-        juce::String normalized = v.replace(".", ":");
+        DBG("=== CHAIN RESOLUTION ===");
+        DBG("varName: " + varName);
+
+        juce::String normalized = varName.replace(".", ":");
         juce::StringArray tokens;
         tokens.addTokens(normalized, ":", "");
+
+        DBG("tokens count: " + juce::String(tokens.size()));
 
         juce::String currentType = "";
         for (int i = 0; i < tokens.size(); ++i)
         {
-            // Extract method name, ignoring arguments/brackets
-            juce::String segment = tokens[i].trim().upToFirstOccurrenceOf("(", false, false);
-
-            if (i == 0) {
-                currentType = getClassNameForVariable(segment, code);
-            } else {
-                currentType = resolveReturnType(currentType, segment);
+            // Extract just the method name (remove parentheses and everything after)
+            juce::String segment = tokens[i].trim();
+            int parenPos = segment.indexOf("(");
+            if (parenPos > 0)
+            {
+                segment = segment.substring(0, parenPos);
             }
 
-            if (currentType.isEmpty()) break;
+            DBG("  [" + juce::String(i) + "] segment: " + segment);
+
+            if (i == 0)
+            {
+                currentType = getClassNameForVariable(segment, code);
+                DBG("      initial type: " + currentType);
+            }
+            else
+            {
+                juce::String returnType = resolveReturnType(currentType, segment);
+                DBG("      resolveReturnType(\"" + currentType + "\", \"" + segment + "\") = " + returnType);
+                currentType = returnType;
+            }
+
+            if (currentType.isEmpty())
+            {
+                DBG("      EMPTY! Breaking.");
+                break;
+            }
         }
+
+        DBG("final type: " + (currentType.isEmpty() ? "EMPTY" : currentType));
+
         if (currentType.isNotEmpty()) return currentType;
     }
 
     // 3. DYNAMIC LOOK-BACK (Assignments: mb = MemoryBlock())
-    int assignmentPos = code.lastIndexOf(v + " =");
-    if (assignmentPos == -1) assignmentPos = code.lastIndexOf(v + "=");
+    int assignmentPos = code.lastIndexOf(varName + " =");
+    if (assignmentPos == -1) assignmentPos = code.lastIndexOf(varName + "=");
 
     if (assignmentPos != -1)
     {
-        juce::String rhs = code.substring(assignmentPos + v.length()).trimStart();
+        juce::String rhs = code.substring(assignmentPos + varName.length()).trimStart();
         if (rhs.startsWith("=")) rhs = rhs.substring(1).trimStart();
 
         int endOfLine = rhs.indexOfAnyOf(";\n\r");
@@ -268,11 +264,78 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
 
         juce::String potentialClass = rhs.upToFirstOccurrenceOf("(", false, false).trim();
 
-        if (classes.contains(potentialClass))
+        if (classNames.contains(potentialClass) || potentialClass == "MemoryBlock")
+        {
             return potentialClass;
+        }
 
-        if (rhs != v && rhs.isNotEmpty())
+        if (rhs != varName && rhs.isNotEmpty())
+        {
             return getClassNameForVariable(rhs, code);
+        }
+    }
+
+    // 4. Static Fallbacks 
+    if (varName == "m" || varName == "mb" || varName == "mem") return "MemoryBlock";
+    if (varName == "f") return "File";
+
+    return "";
+}
+juce::String CtrlrLuaMethodAutoCompleteManager::resolveReturnType(const juce::String& className, const juce::String& methodName)
+{
+    // Helper lambda: Map cpp class names to their aliases (what's actually in the classes map)
+    auto mapToAlias = [](const juce::String& cppName) -> juce::String
+        {
+            if (cppName == "CtrlrModulator")    return "mod";
+            if (cppName == "CtrlrComponent")    return "comp";
+            if (cppName == "CtrlrPanel")        return "panel";
+            if (cppName == "Graphics")          return "g";
+            if (cppName == "MouseEvent")        return "event";
+            return cppName;  // Return as-is if no mapping
+        };
+
+    // 1. Context-Specific Return Type Mappings
+    // These take priority and are context-aware
+    if (className == "panel" || className == "CtrlrPanel")
+    {
+        if (methodName.contains("getModulator")) return "mod";
+        if (methodName == "getComponent") return "comp";
+    }
+
+    if (className == "mod" || className == "CtrlrModulator")
+    {
+        if (methodName == "getComponent") return "comp";
+        if (methodName == "getPanel") return "panel";
+    }
+
+    if (className == "comp" || className == "CtrlrComponent")
+    {
+        if (methodName == "getOwner") return "mod";
+    }
+
+    // 2. Global Method Name Mappings (Fallback)
+    // These work regardless of context, returns are mapped to aliases
+    juce::String returnType = "";
+
+    if (methodName == "getModulatorByName" || methodName == "getModulator" || methodName == "getModulatorByIndex")
+        returnType = "CtrlrModulator";
+    else if (methodName == "getComponent" || methodName == "getOwner" || methodName == "getControl")
+        returnType = "CtrlrComponent";
+    else if (methodName == "getPanel" || methodName == "getOwnerPanel")
+        returnType = "CtrlrPanel";
+    else if (methodName == "getMemoryBlock" || methodName == "getData")
+        returnType = "MemoryBlock";
+    else if (methodName == "getLuaManager")
+        returnType = "CtrlrLuaManager";
+    else if (methodName == "getCanvas")
+        returnType = "Graphics";
+    else if (methodName == "getGlobalTimer")
+        returnType = "Timer";
+
+    // Map the return type to its alias before returning
+    if (returnType.isNotEmpty())
+    {
+        return mapToAlias(returnType);
     }
 
     return "";
