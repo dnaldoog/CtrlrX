@@ -5,7 +5,9 @@ from pathlib import Path
 from xml.etree.ElementTree import parse, ElementTree, indent, Element, SubElement
 
 # ==================== CONFIGURATION ====================
-XML_PATH = Path("Source/Resources/XML/LuaAPI.xml")
+# __file__ is /Scripts/script.py, .parent is /Scripts, .parent.parent is /ProjectRoot
+ROOT = Path(__file__).resolve().parent.parent
+XML_PATH = ROOT / "Source" / "Resources" / "XML" / "LuaAPI.xml"
 
 # If True, any class containing <enums> will have them flattened automatically
 # so Justification.Flags.left becomes Justification.left

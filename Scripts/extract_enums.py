@@ -1,7 +1,16 @@
 import xml.etree.ElementTree as ET
+from pathlib import Path
 import os
 
-def get_classes_with_enums(xml_path):
+def get_classes_with_enums(xml_path=None):
+    # If no path is provided, calculate the default relative to this script
+    if xml_path is None:
+        ROOT = Path(__file__).resolve().parent.parent
+        xml_path = ROOT / "Source" / "Resources" / "XML" / "LuaAPI.xml"
+    
+    # Convert to string for os.path compatibility if needed
+    xml_path = str(xml_path)
+
     if not os.path.exists(xml_path):
         print(f"Error: File {xml_path} not found.")
         return

@@ -1,14 +1,12 @@
-#!/usr/bin/env python3
-import re
-import sys
-from pathlib import Path
-from xml.etree.ElementTree import Element, SubElement, ElementTree, indent
-from collections import defaultdict
-import copy
+# ================= DYNAMIC PATHS =================
+# This script is in /Scripts, so .parent is the Project Root
+ROOT = Path(__file__).resolve().parent.parent 
 
-# ================= DEFAULT PATHS =================
-DEFAULT_SRC = Path(".")
-DEFAULT_OUT = Path("Source/Resources/XML/LuaAPI.xml")
+# Source is Root/Source
+DEFAULT_SRC = ROOT / "Source" 
+
+# XML is Root/Source/Resources/XML/LuaAPI.xml
+DEFAULT_OUT = ROOT / "Source" / "Resources" / "XML" / "LuaAPI.xml"
 
 # ================= CONFIG & MANUAL PATCHES =================
 VERBOSE = True
