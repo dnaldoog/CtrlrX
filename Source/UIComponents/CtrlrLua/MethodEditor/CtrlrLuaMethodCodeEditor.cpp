@@ -1958,6 +1958,8 @@ bool CtrlrLuaMethodCodeEditor::isLuaObjectInstance(const juce::String& s, Sugges
 }
 void CtrlrLuaMethodCodeEditor::showPopup(const std::vector<SuggestionItem>& matches, int insertIndex)
 {
+    bool useHovering = owner.getOwner().getOwner().getProperty(Ids::autoCompleteHoverEnabled, true);
+    DBG("HOVER ENABLED: " + juce::String((int)useHovering)); 
     suggestionPopup->setSuggestions(matches);
 
     juce::CodeDocument::Position pos(document, insertIndex);

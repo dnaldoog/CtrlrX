@@ -165,6 +165,11 @@ public:
         static Value autoCompleteValue (var (false)); // default to false
         return autoCompleteValue;
     }
+    static Value& getAutoCompleteHoverValue()
+    {
+		static Value hoverValue(var(true)); // default to true Damien's xcode like autocomplete on hover
+        return hoverValue;
+    }
     static const String& getSearchTabsLabel()
     {
         static const String label ("Keep methods opened after a match");
@@ -173,6 +178,11 @@ public:
     static const String& getAutoCompleteLabel()
     {
         static const String label ("Autocomplete lua methods");
+        return label;
+    }
+    static const String& getAutoCompleteHoverLabel()
+    {
+        static const String label ("xcode like auto complete");
         return label;
     }
 };

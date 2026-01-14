@@ -90,6 +90,7 @@ private:
     ToggleButton* fontItalic;
     ToggleButton* openSearchTabs;
     ToggleButton* autoCompleteButton;
+    ToggleButton* hoverToggle;
     TextButton* applyButton;
     TextButton* cancelButton;
     TextButton* resetButton;
