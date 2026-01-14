@@ -304,62 +304,83 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
 
     return "";
 }
+//juce::String CtrlrLuaMethodAutoCompleteManager::resolveReturnType(const juce::String& className, const juce::String& methodName)
+//{
+//    // Helper lambda: Map cpp class names to their aliases (what's actually in the classes map)
+//    auto mapToAlias = [](const juce::String& cppName) -> juce::String
+//        {
+//            if (cppName == "CtrlrModulator")    return "mod";
+//            if (cppName == "CtrlrComponent")    return "comp";
+//            if (cppName == "CtrlrPanel")        return "panel";
+//            if (cppName == "Graphics")          return "g";
+//            if (cppName == "MouseEvent")        return "event";
+//            return cppName;  // Return as-is if no mapping
+//        };
+//
+//    // 1. Context-Specific Return Type Mappings
+//    // These take priority and are context-aware
+//    if (className == "panel" || className == "CtrlrPanel")
+//    {
+//        if (methodName.contains("getModulator")) return "mod";
+//        if (methodName == "getComponent") return "comp";
+//    }
+//
+//    if (className == "mod" || className == "CtrlrModulator")
+//    {
+//        if (methodName == "getComponent") return "comp";
+//        if (methodName == "getPanel") return "panel";
+//    }
+//
+//    if (className == "comp" || className == "CtrlrComponent")
+//    {
+//        if (methodName == "getOwner") return "mod";
+//    }
+//
+//    // 2. Global Method Name Mappings (Fallback)
+//    // These work regardless of context, returns are mapped to aliases
+//    juce::String returnType = "";
+//
+//    if (methodName == "getModulatorByName" || methodName == "getModulator" || methodName == "getModulatorByIndex")
+//        returnType = "CtrlrModulator";
+//    else if (methodName == "getComponent" || methodName == "getOwner" || methodName == "getControl")
+//        returnType = "CtrlrComponent";
+//    else if (methodName == "getPanel" || methodName == "getOwnerPanel")
+//        returnType = "CtrlrPanel";
+//    else if (methodName == "getMemoryBlock" || methodName == "getData")
+//        returnType = "MemoryBlock";
+//    else if (methodName == "getLuaManager")
+//        returnType = "CtrlrLuaManager";
+//    else if (methodName == "getCanvas")
+//        returnType = "Graphics";
+//    else if (methodName == "getGlobalTimer")
+//        returnType = "Timer";
+//
+//    // Map the return type to its alias before returning
+//    if (returnType.isNotEmpty())
+//    {
+//        return mapToAlias(returnType);
+//    }
+//
+//    return "";
+//}
 juce::String CtrlrLuaMethodAutoCompleteManager::resolveReturnType(const juce::String& className, const juce::String& methodName)
 {
-    // Helper lambda: Map cpp class names to their aliases (what's actually in the classes map)
-    auto mapToAlias = [](const juce::String& cppName) -> juce::String
-        {
-            if (cppName == "CtrlrModulator")    return "mod";
-            if (cppName == "CtrlrComponent")    return "comp";
-            if (cppName == "CtrlrPanel")        return "panel";
-            if (cppName == "Graphics")          return "g";
-            if (cppName == "MouseEvent")        return "event";
-            return cppName;  // Return as-is if no mapping
+    // Map internal names to our searchable aliases
+    auto mapToAlias = [](const juce::String& name) -> juce::String {
+        if (name.contains("Modulator")) return "mod";
+        if (name.contains("Component")) return "comp";
+        if (name.contains("Panel"))     return "panel";
+        return name;
         };
 
-    // 1. Context-Specific Return Type Mappings
-    // These take priority and are context-aware
-    if (className == "panel" || className == "CtrlrPanel")
+    // 1. Context-Specific
+    if (className == "panel" || className == "mod")
     {
+        // If it looks like it returns a modulator, tell the manager it's a 'mod'
         if (methodName.contains("getModulator")) return "mod";
-        if (methodName == "getComponent") return "comp";
+        if (methodName.contains("getComponent")) return "comp";
     }
 
-    if (className == "mod" || className == "CtrlrModulator")
-    {
-        if (methodName == "getComponent") return "comp";
-        if (methodName == "getPanel") return "panel";
-    }
-
-    if (className == "comp" || className == "CtrlrComponent")
-    {
-        if (methodName == "getOwner") return "mod";
-    }
-
-    // 2. Global Method Name Mappings (Fallback)
-    // These work regardless of context, returns are mapped to aliases
-    juce::String returnType = "";
-
-    if (methodName == "getModulatorByName" || methodName == "getModulator" || methodName == "getModulatorByIndex")
-        returnType = "CtrlrModulator";
-    else if (methodName == "getComponent" || methodName == "getOwner" || methodName == "getControl")
-        returnType = "CtrlrComponent";
-    else if (methodName == "getPanel" || methodName == "getOwnerPanel")
-        returnType = "CtrlrPanel";
-    else if (methodName == "getMemoryBlock" || methodName == "getData")
-        returnType = "MemoryBlock";
-    else if (methodName == "getLuaManager")
-        returnType = "CtrlrLuaManager";
-    else if (methodName == "getCanvas")
-        returnType = "Graphics";
-    else if (methodName == "getGlobalTimer")
-        returnType = "Timer";
-
-    // Map the return type to its alias before returning
-    if (returnType.isNotEmpty())
-    {
-        return mapToAlias(returnType);
-    }
-
-    return "";
+    // 2. Fallback: If we can't find a specific rule, check the method name itself
+    return mapToAlias(methodName);
 }
