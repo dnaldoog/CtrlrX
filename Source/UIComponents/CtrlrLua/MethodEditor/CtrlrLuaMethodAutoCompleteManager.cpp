@@ -120,12 +120,29 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggesti
             if (prefix.isNotEmpty() && !m.name.startsWithIgnoreCase(prefix)) continue;
 
             bool match = false;
-            if (type == LookupInstance && !m.isStatic) match = true;
-            if (type == LookupStatic && m.isStatic) match = true;
+            SuggestionType st = TypeMethod; // Default to 'M'
+
+            if (type == LookupInstance && !m.isStatic)
+            {
+                match = true;
+                st = TypeMethod; // Icon 'M'
+            }
+            else if (type == LookupStatic && m.isStatic)
+            {
+                match = true;
+
+                // --- Logic to differentiate Static Method vs Enum ---
+                // In our XML, Enums have no arguments, whereas static methods 
+                // usually have "()" or "(args)".
+                if (m.parameters.isEmpty() || m.parameters == "()")
+                    st = TypeEnum;          // Icon 'E'
+                else
+                    st = TypeStaticMethod;  // Icon 'S'
+            }
 
             if (match)
             {
-                results.push_back({ m.name, TypeMethod });
+                results.push_back({ m.name, st });
                 addedNames.add(m.name);
             }
         }

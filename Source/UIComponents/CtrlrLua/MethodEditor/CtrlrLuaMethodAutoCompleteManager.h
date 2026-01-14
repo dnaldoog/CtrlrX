@@ -13,7 +13,15 @@ struct LuaClass {
     juce::Array<LuaMethod> methods;
 };
 
-enum SuggestionType { TypeClass, TypeMethod, TypeGlobal, TypeUtility };
+enum SuggestionType {
+    TypeClass,
+    TypeMethod,       // Instance Method
+    TypeStaticMethod, // Static Method (S)
+    TypeEnum,         // Enum/Value (E)
+    TypeGlobal,       // Variable/Global
+    TypeUtility
+};
+
 enum LookupType { LookupInstance, LookupStatic };
 
 struct SuggestionItem {

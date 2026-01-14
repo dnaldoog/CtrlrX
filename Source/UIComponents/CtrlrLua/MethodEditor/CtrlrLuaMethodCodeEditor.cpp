@@ -57,53 +57,53 @@ public:
 
     int getNumRows() override { return (int)activeItems.size(); }
     
-	void paintListBoxItem (int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected) override
-	{
-		if (rowNumber >= (int)activeItems.size()) return;
-		
-		auto highlightBg = getLookAndFeel().findColour(juce::TextEditor::highlightColourId);
-		auto mainText = getLookAndFeel().findColour(juce::TextEditor::textColourId);
-		auto highlightText = getLookAndFeel().findColour(juce::TextEditor::highlightedTextColourId);
-		
-		if (rowIsSelected) {
-			g.setColour(highlightBg.withAlpha(0.4f)); // Slightly softer highlight
-			g.fillRect(0, 0, width, height);
-		}
-		
-		auto& item = activeItems[rowNumber];
-		
-		// Icon Area (float for precision)
-		auto iconArea = juce::Rectangle<float> (6.0f, 4.0f, (float)height - 8.0f, (float)height - 8.0f);
-		
-		juce::Colour iconColor;
-		juce::String iconLetter;
-		
-		switch (item.type) {
-			case TypeClass:   iconColor = juce::Colours::darkorange; iconLetter = "C"; break;
-			case TypeMethod:  iconColor = juce::Colours::darkcyan;   iconLetter = "M"; break;
-			case TypeGlobal:  iconColor = juce::Colours::darkgreen;  iconLetter = "V"; break;
-			case TypeUtility: iconColor = juce::Colours::purple; iconLetter = "f"; break;
-			default:          iconColor = mainText.withAlpha(0.6f); iconLetter = "?"; break;
-		}
-		
-		// --- DRAW THE OUTLINE ---
-		g.setColour(iconColor.withAlpha(0.8f)); // Border slightly transparent
-		g.drawRoundedRectangle(iconArea, 3.0f, 1.2f); // 3.0f radius, 1.2f line thickness
-		
-		// --- DRAW THE LETTER (Matching Icon Color) ---
-		g.setColour(iconColor);
-		g.setFont(juce::Font(height * 0.5f, juce::Font::bold));
-		g.drawText(iconLetter, iconArea.getSmallestIntegerContainer(), juce::Justification::centred);
-		
-		// --- DRAW THE MAIN TEXT LABEL ---
-		g.setColour(rowIsSelected ? highlightText : mainText);
-		g.setFont(height * 0.65f);
-		
-		// Offset the text label slightly to the right of the icon
-		g.drawText(item.text, (int)iconArea.getRight() + 8, 0,
-				   width - (int)iconArea.getRight() - 10, height,
-				   juce::Justification::centredLeft);
-	}
+    void paintListBoxItem(int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected) override
+    {
+        if (rowNumber >= (int)activeItems.size()) return;
+
+        auto highlightBg = getLookAndFeel().findColour(juce::TextEditor::highlightColourId);
+        auto mainText = getLookAndFeel().findColour(juce::TextEditor::textColourId);
+        auto highlightText = getLookAndFeel().findColour(juce::TextEditor::highlightedTextColourId);
+
+        if (rowIsSelected) {
+            g.setColour(highlightBg.withAlpha(0.4f));
+            g.fillRect(0, 0, width, height);
+        }
+
+        auto& item = activeItems[rowNumber];
+
+        // --- ICON CONFIGURATION ---
+        juce::Colour iconColor;
+        juce::String iconLetter;
+
+        switch (item.type) {
+        case TypeClass:        iconColor = juce::Colours::darkorange; iconLetter = "C"; break;
+        case TypeMethod:       iconColor = juce::Colours::cornflowerblue;  iconLetter = "M"; break;
+        case TypeStaticMethod: iconColor = juce::Colours::indianred;   iconLetter = "S"; break;
+        case TypeEnum:         iconColor = juce::Colours::mediumseagreen; iconLetter = "E"; break;
+        case TypeGlobal:       iconColor = juce::Colours::darkgreen;   iconLetter = "V"; break;
+        case TypeUtility:      iconColor = juce::Colours::purple;      iconLetter = "f"; break;
+        default:               iconColor = mainText.withAlpha(0.6f);   iconLetter = "?"; break;
+        }
+
+        // Draw Icon Circle/Box
+        auto iconArea = juce::Rectangle<float>(6.0f, 4.0f, (float)height - 8.0f, (float)height - 8.0f);
+        g.setColour(iconColor);
+        g.fillRoundedRectangle(iconArea, 4.0f); // Small rounded corners
+
+        // Draw Icon Letter
+        g.setColour(juce::Colours::white);
+        g.setFont(juce::Font(height * 0.5f, juce::Font::bold));
+        g.drawText(iconLetter, iconArea, juce::Justification::centred);
+
+        // Draw Text Label
+        g.setColour(rowIsSelected ? highlightText : mainText);
+        g.setFont(juce::Font((float)height * 0.7f));
+        g.drawText(item.text,
+            (int)iconArea.getRight() + 8, 0,
+            width - (int)iconArea.getRight() - 12, height,
+            juce::Justification::centredLeft);
+    }
 
     void listBoxItemClicked(int row, const juce::MouseEvent&) override { commit(row); }
     void moveSelection(int delta) {
