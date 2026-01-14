@@ -587,16 +587,27 @@ int CtrlrLuaClassBrowser::getNumRows()
 void CtrlrLuaClassBrowser::paintListBoxItem(int rowNumber, juce::Graphics& g,
     int width, int height, bool rowIsSelected)
 {
+    // Background logic
     if (rowIsSelected)
-        g.fillAll(juce::Colours::lightblue);
+        g.fillAll(juce::Colours::lightblue.withAlpha(0.5f));
     else
-        g.fillAll(rowNumber % 2 == 0 ? juce::Colours::white : juce::Colour(0xfff0f0f0));
-
-    g.setColour(juce::Colours::black);
+        g.fillAll(rowNumber % 2 == 0 ? juce::Colours::white : juce::Colour(0xfff5f5f5));
 
     if (rowNumber < classList.size())
     {
-        g.drawText(classList[rowNumber], 5, 0, width - 10, height,
+        // 1. Draw the "C" (Class) Icon
+        auto iconArea = juce::Rectangle<float>(4.0f, 4.0f, (float)height - 8.0f, (float)height - 8.0f);
+        g.setColour(juce::Colours::darkorange);
+        g.fillRoundedRectangle(iconArea, 3.0f);
+
+        g.setColour(juce::Colours::white);
+        g.setFont(juce::Font((float)height * 0.55f, juce::Font::bold));
+        g.drawText("C", iconArea, juce::Justification::centred);
+
+        // 2. Draw the Class Name
+        g.setColour(juce::Colours::black);
+        g.setFont(juce::Font((float)height * 0.7f));
+        g.drawText(classList[rowNumber], (int)iconArea.getRight() + 8, 0, width - (int)iconArea.getRight() - 12, height,
             juce::Justification::centredLeft, true);
     }
 }

@@ -85,7 +85,7 @@ private:
     juce::String pendingSuggestion;
     bool isReplacingText = false;
 
-    void handleSuggestionChosen(juce::String chosen);
+    void handleSuggestionChosen(const SuggestionItem& item);
     juce::String getWordBeforeCaret(int& startOfWord);
     void performReplacement(const juce::String& suggestion);
     

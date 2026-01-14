@@ -11,7 +11,8 @@
 class LuaSuggestionPopup : public juce::Component, public juce::ListBoxModel
 {
 public:
-    LuaSuggestionPopup(std::function<void(juce::String)> onChosen) : onSelection(onChosen)
+    LuaSuggestionPopup(std::function<void(const SuggestionItem&)> onChosen)
+        : onSelection(onChosen)
     {
         setAlwaysOnTop(true);
         setWantsKeyboardFocus(false);
@@ -105,7 +106,14 @@ public:
             juce::Justification::centredLeft);
     }
 
-    void listBoxItemClicked(int row, const juce::MouseEvent&) override { commit(row); }
+    void listBoxItemClicked(int row, const juce::MouseEvent&) override
+    {
+        if (onSelection && row >= 0 && row < (int)activeItems.size())
+        {
+            onSelection(activeItems[row]);
+        }
+    }
+
     void moveSelection(int delta) {
         int nextRow = juce::jlimit(0, (int)activeItems.size() - 1, listBox.getSelectedRow() + delta);
         listBox.selectRow(nextRow);
@@ -116,11 +124,16 @@ public:
 private:
     void commit(int row) {
         if (row >= 0 && row < (int)activeItems.size())
-            onSelection(activeItems[row].text);
+        {
+            // Pass the whole SuggestionItem object, not just the string!
+            if (onSelection)
+                onSelection(activeItems[row]);
+        }
     }
     juce::ListBox listBox;
     std::vector<SuggestionItem> activeItems;
-    std::function<void(juce::String)> onSelection;
+    std::function<void(const SuggestionItem&)> onSelection;
+    //std::function<void(juce::String)> onSelection;
 };
 
 
@@ -184,9 +197,9 @@ CtrlrLuaMethodCodeEditor::CtrlrLuaMethodCodeEditor(CtrlrLuaMethodEditor& _owner,
     callTip = std::make_unique<LuaCallTip>();
     addChildComponent(callTip.get());
 
-    suggestionPopup = std::make_unique<LuaSuggestionPopup>([this](juce::String chosen) {
-        handleSuggestionChosen(chosen);
-    });
+    suggestionPopup = std::make_unique<LuaSuggestionPopup>([this](const SuggestionItem& item) {
+        handleSuggestionChosen(item);
+        });
     addChildComponent(suggestionPopup.get());
 
     // 3. Search Tabs Logic
@@ -2057,7 +2070,7 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
 
     editorComponent->grabKeyboardFocus();
 }
-void CtrlrLuaMethodCodeEditor::handleSuggestionChosen(juce::String chosen)
+void CtrlrLuaMethodCodeEditor::handleSuggestionChosen(const SuggestionItem& item)
 {
     if (suggestionPopup == nullptr) return;
     suggestionPopup->setVisible(false);
@@ -2069,46 +2082,59 @@ void CtrlrLuaMethodCodeEditor::handleSuggestionChosen(juce::String chosen)
 
     isReplacingText = true;
 
-    // Resolve class using FULL CHAIN extraction
-    juce::String resolvedClass = "";
-    if (wordStart > 0 && (allText[wordStart - 1] == ':' || allText[wordStart - 1] == '.'))
+    // 1. Identify the insertion text and suffix
+    juce::String chosen = item.text;
+    juce::String suffix = "";
+    int cursorOffset = 0;
+
+    // Only add parentheses for Methods and Utilities
+    if (item.type == TypeMethod || item.type == TypeStaticMethod || item.type == TypeUtility)
     {
-        int triggerPos = wordStart - 1;
-        int symbolStart = triggerPos - 1;
-        
-        // Same backward scan as codeDocumentTextInserted
-        while (symbolStart >= 0 &&
-               (juce::CharacterFunctions::isLetterOrDigit(allText[symbolStart]) ||
-                allText[symbolStart] == '_' ||
-                allText[symbolStart] == ')' ||
-                allText[symbolStart] == '(' ||
-                allText[symbolStart] == ':' ||
-                allText[symbolStart] == '.' ||
-                allText[symbolStart] == ' ' ||
-                allText[symbolStart] == '&' ||
-                allText[symbolStart] == '*' ||
-                allText[symbolStart] == ','))
+        // Check if there are known parameters to help the user
+        juce::String resolvedClass = "";
+        if (wordStart > 0 && (allText[wordStart - 1] == ':' || allText[wordStart - 1] == '.'))
         {
-            symbolStart--;
+            int triggerPos = wordStart - 1;
+            int symbolStart = triggerPos - 1;
+
+            // Backward scan to resolve the chain (same logic as before)
+            while (symbolStart >= 0 && (juce::CharacterFunctions::isLetterOrDigit(allText[symbolStart]) ||
+                juce::String("_():. &*,").containsChar(allText[symbolStart])))
+            {
+                symbolStart--;
+            }
+            symbolStart++;
+
+            juce::String expression = allText.substring(symbolStart, triggerPos).trim();
+            resolvedClass = owner.getAutocompleteManager().getClassNameForVariable(expression, allText);
         }
-        symbolStart++;
-        
-        juce::String expression = allText.substring(symbolStart, triggerPos).trim();
-        resolvedClass = owner.getAutocompleteManager().getClassNameForVariable(expression, allText);
+
+        juce::String params = owner.getAutocompleteManager().getMethodParams(resolvedClass, chosen);
+
+        if (params.isNotEmpty()) {
+            suffix = "(" + params + ")";
+            cursorOffset = 1; // Put cursor inside the brackets
+        }
+        else {
+            suffix = "()";
+            cursorOffset = 1; // Put cursor inside ()
+        }
+    }
+    else
+    {
+        // For Enums, Classes, and Globals: No brackets, cursor stays at the end
+        suffix = "";
+        cursorOffset = 0;
     }
 
-    // Get params from the resolved class
-    juce::String params = owner.getAutocompleteManager().getMethodParams(resolvedClass, chosen);
-    
-    // Delete and insert
+    // 2. Perform the edit
     document.deleteSection(wordStart, caretPos);
-    
-    if (params.isNotEmpty())
-        document.insertText(wordStart, chosen + "(" + params + ")");
-    else
-        document.insertText(wordStart, chosen + "()");
-    
-    editorComponent->moveCaretTo(juce::CodeDocument::Position(document, wordStart + chosen.length() + 1), false);
+    document.insertText(wordStart, chosen + suffix);
+
+    // 3. Position the caret
+    // If offset is 0, goes to end. If offset is 1, goes inside ( )
+    int newCaretPos = wordStart + chosen.length() + cursorOffset;
+    editorComponent->moveCaretTo(juce::CodeDocument::Position(document, newCaretPos), false);
 
     isReplacingText = false;
     document.newTransaction();

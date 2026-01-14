@@ -50,44 +50,69 @@ public:
         {
             if (!ownerRef) return;
 
+            // 1. Background
             if (rowIsSelected)
-                g.fillAll(juce::Colours::lightblue);
+                g.fillAll(juce::Colours::lightblue.withAlpha(0.5f));
             else
-                g.fillAll(rowNumber % 2 == 0 ? juce::Colours::white : juce::Colour(0xfff0f0f0));
+                g.fillAll(rowNumber % 2 == 0 ? juce::Colours::white : juce::Colour(0xfff5f5f5));
 
             juce::String text;
-            juce::String prefix;
+            juce::Colour iconColor;
+            juce::String iconLetter;
 
+            // 2. Determine Type and Data
             if (rowNumber < ownerRef->methodList.size())
             {
                 const auto& method = ownerRef->methodList[rowNumber];
                 text = method.name;
 
-                // Show args for overloads and constructors
+                // Add args for overloads and constructors to the display text
                 if (method.args.isNotEmpty() &&
                     (method.name.contains("[") || method.name == ownerRef->currentClassName))
                 {
                     text += " " + method.args;
                 }
+
                 if (method.isStatic) {
-                prefix = "[ST] ";
-                g.setColour(juce::Colour(0xffc00000)); // Red for static
+                    // Check if it's a constructor
+                    if (method.name == ownerRef->currentClassName) {
+                        iconColor = juce::Colours::darkorange;
+                        iconLetter = "C";
+                    }
+                    else {
+                        iconColor = juce::Colours::indianred;
+                        iconLetter = "S";
+                    }
                 }
                 else {
-                prefix = "[ME] ";
-                g.setColour(juce::Colours::darkblue); // Blue for instance methods
+                    iconColor = juce::Colours::cornflowerblue;
+                    iconLetter = "M";
                 }
-            
-                  
             }
             else
             {
-                text = ownerRef->attributeList[rowNumber - ownerRef->methodList.size()];
-                prefix = "[A] ";
-                g.setColour(juce::Colours::darkgreen); // Green for attributes
+                // Attribute/Enum logic
+                int attrIndex = rowNumber - ownerRef->methodList.size();
+                if (attrIndex < ownerRef->attributeList.size()) {
+                    text = ownerRef->attributeList[attrIndex];
+                    iconColor = juce::Colours::mediumseagreen;
+                    iconLetter = "E";
+                }
             }
 
-            g.drawText(prefix + text, 5, 0, width - 10, height,
+            // 3. Draw the Icon Tag
+            auto iconArea = juce::Rectangle<float>(4.0f, 4.0f, (float)height - 8.0f, (float)height - 8.0f);
+            g.setColour(iconColor);
+            g.fillRoundedRectangle(iconArea, 3.0f);
+
+            g.setColour(juce::Colours::white);
+            g.setFont(juce::Font((float)height * 0.55f, juce::Font::bold));
+            g.drawText(iconLetter, iconArea, juce::Justification::centred);
+
+            // 4. Draw the Text (offset to the right of the icon)
+            g.setColour(juce::Colours::black);
+            g.setFont(juce::Font((float)height * 0.7f));
+            g.drawText(text, (int)iconArea.getRight() + 8, 0, width - (int)iconArea.getRight() - 12, height,
                 juce::Justification::centredLeft, true);
         }
 
