@@ -1082,6 +1082,7 @@
       <method name="setModulatorValuesFromData" type="instance" args="(MemoryBlock, String, CtrlrByteEncoding, int, int, bool)" />
       <method name="setProgramState" type="instance" args="(bool)" />
       <method name="setRestoreState" type="instance" args="(bool)" />
+      <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
       <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
       <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
       <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
@@ -2958,7 +2959,79 @@
   </class>
   <class name="panel" cpp_name="CtrlrPanel" alias_of="CtrlrPanel">
     <enums>
+      <enums>
+        <enum name="">
+          <value name="Encode16bitLsbFirst" value="Encode16bitLsbFirst" />
+        <value name="Encode16bitMsbFirst" value="Encode16bitMsbFirst" />
+        <value name="Encode4bitLsbFirst" value="EncodeNibbleLsbFirst" />
+        <value name="Encode4bitMsbFirst" value="EncodeNibbleMsbFirst" />
+        <value name="Encode7bitLSBFirst" value="EncodeLSBFirst" />
+        <value name="Encode7bitMSBFirst" value="EncodeMSBFirst" />
+        <value name="EncodeLSBFirst" value="EncodeLSBFirst" />
+        <value name="EncodeLsbFirst" value="EncodeNibbleLsbFirst" />
+        <value name="EncodeMSBFirst" value="EncodeMSBFirst" />
+        <value name="EncodeMsbFirst" value="EncodeNibbleMsbFirst" />
+        <value name="EncodeNibbleLsbFirst" value="EncodeNibbleLsbFirst" />
+        <value name="EncodeNibbleMsbFirst" value="EncodeNibbleMsbFirst" />
+        <value name="EncodeNormal" value="EncodeNormal" />
+        <value name="EncodeSignedNibbleLsbFirst" value="EncodeSignedNibbleLsbFirst" />
+        <value name="EncodeSignedNibbleMsbFirst" value="EncodeSignedNibbleMsbFirst" />
+        <value name="Split4Bits" value="(uint8" />
+        <value name="Split7Bits" value="(uint8" />
+        <value name="Split8Bits" value="(uint8" />
+        <value name="SplitNone" value="(uint8" />
+        <value name="InstanceMulti" value="(uint8" />
+        <value name="InstanceMultiEngine" value="(uint8" />
+        <value name="InstanceSingle" value="(uint8" />
+        <value name="InstanceSingleEngine" value="(uint8" />
+        <value name="InstanceSingleRestriced" value="(uint8" />
+        <value name="InstanceSingleRestrictedEngine" value="(uint8" />
+        <value name="NotifyFailure" value="(uint8" />
+        <value name="NotifyInformation" value="(uint8" />
+        <value name="NotifySuccess" value="(uint8" />
+        <value name="NotifyWarning" value="(uint8" />
+        <value name="PanelFileBinary" value="2" />
+        <value name="PanelFileBinaryCompressed" value="3" />
+        <value name="PanelFileExport" value="4" />
+        <value name="PanelFileXML" value="0" />
+        <value name="PanelFileXMLCompressed" value="1" />
+      </enum>
+      </enums>
       <enum name="">
+        <value name="Encode16bitLsbFirst" value="Encode16bitLsbFirst" />
+        <value name="Encode16bitMsbFirst" value="Encode16bitMsbFirst" />
+        <value name="Encode4bitLsbFirst" value="EncodeNibbleLsbFirst" />
+        <value name="Encode4bitMsbFirst" value="EncodeNibbleMsbFirst" />
+        <value name="Encode7bitLSBFirst" value="EncodeLSBFirst" />
+        <value name="Encode7bitMSBFirst" value="EncodeMSBFirst" />
+        <value name="EncodeLSBFirst" value="EncodeLSBFirst" />
+        <value name="EncodeLsbFirst" value="EncodeNibbleLsbFirst" />
+        <value name="EncodeMSBFirst" value="EncodeMSBFirst" />
+        <value name="EncodeMsbFirst" value="EncodeNibbleMsbFirst" />
+        <value name="EncodeNibbleLsbFirst" value="EncodeNibbleLsbFirst" />
+        <value name="EncodeNibbleMsbFirst" value="EncodeNibbleMsbFirst" />
+        <value name="EncodeNormal" value="EncodeNormal" />
+        <value name="EncodeSignedNibbleLsbFirst" value="EncodeSignedNibbleLsbFirst" />
+        <value name="EncodeSignedNibbleMsbFirst" value="EncodeSignedNibbleMsbFirst" />
+        <value name="Split4Bits" value="(uint8" />
+        <value name="Split7Bits" value="(uint8" />
+        <value name="Split8Bits" value="(uint8" />
+        <value name="SplitNone" value="(uint8" />
+        <value name="InstanceMulti" value="(uint8" />
+        <value name="InstanceMultiEngine" value="(uint8" />
+        <value name="InstanceSingle" value="(uint8" />
+        <value name="InstanceSingleEngine" value="(uint8" />
+        <value name="InstanceSingleRestriced" value="(uint8" />
+        <value name="InstanceSingleRestrictedEngine" value="(uint8" />
+        <value name="NotifyFailure" value="(uint8" />
+        <value name="NotifyInformation" value="(uint8" />
+        <value name="NotifySuccess" value="(uint8" />
+        <value name="NotifyWarning" value="(uint8" />
+        <value name="PanelFileBinary" value="2" />
+        <value name="PanelFileBinaryCompressed" value="3" />
+        <value name="PanelFileExport" value="4" />
+        <value name="PanelFileXML" value="0" />
+        <value name="PanelFileXMLCompressed" value="1" />
         <value name="Encode16bitLsbFirst" value="Encode16bitLsbFirst" />
         <value name="Encode16bitMsbFirst" value="Encode16bitMsbFirst" />
         <value name="Encode4bitLsbFirst" value="EncodeNibbleLsbFirst" />
@@ -3151,11 +3224,94 @@
         <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
         <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
       </methods>
+      <methods>
+        <method name="dumpDebugData" type="instance" args="()" />
+        <method name="getBootstrapState" type="instance" args="()" />
+        <method name="getButton" type="instance" args="()" />
+        <method name="getButtonComponent" type="instance" args="(String)" />
+        <method name="getCanvas" type="instance" args="()" />
+        <method name="getCombo" type="instance" args="()" />
+        <method name="getComboComponent" type="instance" args="(String)" />
+        <method name="getComponent" type="instance" args="(String)" />
+        <method name="getFileListBox" type="instance" args="()" />
+        <method name="getFileListBoxComponent" type="instance" args="(String)" />
+        <method name="getFixedImageSlider" type="instance" args="()" />
+        <method name="getFixedImageSliderComponent" type="instance" args="(String)" />
+        <method name="getFixedSlider" type="instance" args="()" />
+        <method name="getFixedSliderComponent" type="instance" args="(String)" />
+        <method name="getGlobalVariable" type="instance" args="(int)" />
+        <method name="getImageButton" type="instance" args="()" />
+        <method name="getImageButtonComponent" type="instance" args="(String)" />
+        <method name="getImageSlider" type="instance" args="()" />
+        <method name="getImageSliderComponent" type="instance" args="(String)" />
+        <method name="getInputComparator" type="instance" args="()" />
+        <method name="getLCDLabel" type="instance" args="()" />
+        <method name="getLCDLabelComponent" type="instance" args="(String)" />
+        <method name="getLabel" type="instance" args="()" />
+        <method name="getLabelComponent" type="instance" args="(String)" />
+        <method name="getListBox" type="instance" args="()" />
+        <method name="getListBoxComponent" type="instance" args="(String)" />
+        <method name="getModulator" type="instance" args="(String)" />
+        <method name="getModulatorByIndex" type="instance" args="(int)" />
+        <method name="getModulatorByName" type="instance" args="()" />
+        <method name="getModulatorValuesAsData" type="instance" args="(ValueTree, String, CtrlrByteEncoding, int, bool)" overload="1" />
+        <method name="getModulatorValuesAsData" type="instance" args="(ValueTree, String, CtrlrByteEncoding, int, bool)" overload="2" />
+        <method name="getModulatorValuesAsData" type="instance" args="(ValueTree, String, CtrlrByteEncoding, int, bool)" overload="3" />
+        <method name="getModulatorsWildcard" type="instance" args="()" overload="1" />
+        <method name="getModulatorsWildcard" type="instance" args="()" overload="2" />
+        <method name="getModulatorsWithProperty" type="instance" args="(Identifier, var)" />
+        <method name="getNumModulators" type="instance" args="()" />
+        <method name="getPanelEditor" type="instance" args="()" />
+        <method name="getProgramState" type="instance" args="()" />
+        <method name="getRestoreState" type="instance" args="()" />
+        <method name="getSlider" type="instance" args="()" />
+        <method name="getSliderComponent" type="instance" args="(String)" />
+        <method name="getToggleButton" type="instance" args="()" />
+        <method name="getToggleButtonComponent" type="instance" args="(String)" />
+        <method name="getWaveform" type="instance" args="()" />
+        <method name="getWaveformComponent" type="instance" args="(String)" />
+        <method name="isRestoring" type="instance" args="()" />
+        <method name="sendMidi" type="instance" args="(CtrlrMidiMessage, double)" overload="1" />
+        <method name="sendMidi" type="instance" args="(CtrlrMidiMessage, double)" overload="2" />
+        <method name="sendMidi" type="instance" args="(CtrlrMidiMessage, double)" overload="3" />
+        <method name="sendMidiMessageNow" type="instance" args="()" />
+        <method name="setGlobalVariable" type="instance" args="(int, int)" />
+        <method name="setModulatorValuesFromData" type="instance" args="(MemoryBlock, String, CtrlrByteEncoding, int, int, bool)" />
+        <method name="setProgramState" type="instance" args="(bool)" />
+        <method name="setRestoreState" type="instance" args="(bool)" />
+        <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
+        <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
+        <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
+        <method name="getModulatorWithProperty" args="(String propName, String propValue)" overload="1" type="instance" />
+        <method name="getModulatorWithProperty" args="(String propName, int propValue)" overload="2" type="instance" />
+      </methods>
     </methods>
   </class>
   <class name="mod" cpp_name="CtrlrModulator" alias_of="CtrlrModulator">
     <enums>
+      <enums>
+        <enum name="">
+          <value name="changeByUnknown" value="8" />
+        <value name="changedByGUI" value="4" />
+        <value name="changedByHost" value="1" />
+        <value name="changedByLink" value="7" />
+        <value name="changedByLua" value="5" />
+        <value name="changedByMidiController" value="3" />
+        <value name="changedByMidiIn" value="2" />
+        <value name="changedByProgram" value="6" />
+        <value name="initialValue" value="0" />
+      </enum>
+      </enums>
       <enum name="">
+        <value name="changeByUnknown" value="8" />
+        <value name="changedByGUI" value="4" />
+        <value name="changedByHost" value="1" />
+        <value name="changedByLink" value="7" />
+        <value name="changedByLua" value="5" />
+        <value name="changedByMidiController" value="3" />
+        <value name="changedByMidiIn" value="2" />
+        <value name="changedByProgram" value="6" />
+        <value name="initialValue" value="0" />
         <value name="changeByUnknown" value="8" />
         <value name="changedByGUI" value="4" />
         <value name="changedByHost" value="1" />
@@ -3255,11 +3411,71 @@
         <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="2" />
         <method name="setValueNonMapped" type="instance" args="(int, bool, bool)" />
       </methods>
+      <methods>
+        <method name="getComponent" type="instance" args="()" />
+        <method name="getLuaName" type="instance" args="()" />
+        <method name="getMaxMapped" type="instance" args="()" />
+        <method name="getMaxMappedInt" type="instance" args="()" />
+        <method name="getMaxModulatorValue" type="instance" args="()" />
+        <method name="getMaxModulatorValueInt" type="instance" args="()" />
+        <method name="getMaxNonMapped" type="instance" args="()" />
+        <method name="getMaxNonMappedInt" type="instance" args="()" />
+        <method name="getMidiMessage" type="instance" args="()" overload="1" />
+        <method name="getMidiMessage" type="instance" args="()" overload="2" />
+        <method name="getMinMapped" type="instance" args="()" />
+        <method name="getMinMappedInt" type="instance" args="()" />
+        <method name="getMinModulatorValue" type="instance" args="()" />
+        <method name="getMinModulatorValueInt" type="instance" args="()" />
+        <method name="getMinNonMapped" type="instance" args="()" />
+        <method name="getMinNonMappedInt" type="instance" args="()" />
+        <method name="getModulatorName" type="instance" args="()" />
+        <method name="getModulatorValue" type="instance" args="()" />
+        <method name="getModulatorValueInt" type="instance" args="()" />
+        <method name="getName" type="instance" args="()" lua_wrap="L" />
+        <method name="getRestoreState" type="instance" args="()" />
+        <method name="getValue" type="instance" args="()" />
+        <method name="getValueInt" type="instance" args="()" />
+        <method name="getValueMapped" type="instance" args="()" />
+        <method name="getValueMappedInt" type="instance" args="()" />
+        <method name="getValueNonMapped" type="instance" args="()" />
+        <method name="getValueNonMappedInt" type="instance" args="()" />
+        <method name="getVstIndex" type="instance" args="()" />
+        <method name="isRestoring" type="instance" args="()" />
+        <method name="setModulatorValue" type="instance" args="(int, bool, bool, bool)" />
+        <method name="setRestoreState" type="instance" args="(bool)" />
+        <method name="setValue" type="instance" args="(int, bool, bool)" overload="1" />
+        <method name="setValue" type="instance" args="(int, bool, bool)" overload="2" />
+        <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="1" />
+        <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="2" />
+        <method name="setValueNonMapped" type="instance" args="(int, bool, bool)" />
+      </methods>
     </methods>
   </class>
   <class name="modulator" cpp_name="CtrlrModulator" alias_of="CtrlrModulator">
     <enums>
+      <enums>
+        <enum name="">
+          <value name="changeByUnknown" value="8" />
+        <value name="changedByGUI" value="4" />
+        <value name="changedByHost" value="1" />
+        <value name="changedByLink" value="7" />
+        <value name="changedByLua" value="5" />
+        <value name="changedByMidiController" value="3" />
+        <value name="changedByMidiIn" value="2" />
+        <value name="changedByProgram" value="6" />
+        <value name="initialValue" value="0" />
+      </enum>
+      </enums>
       <enum name="">
+        <value name="changeByUnknown" value="8" />
+        <value name="changedByGUI" value="4" />
+        <value name="changedByHost" value="1" />
+        <value name="changedByLink" value="7" />
+        <value name="changedByLua" value="5" />
+        <value name="changedByMidiController" value="3" />
+        <value name="changedByMidiIn" value="2" />
+        <value name="changedByProgram" value="6" />
+        <value name="initialValue" value="0" />
         <value name="changeByUnknown" value="8" />
         <value name="changedByGUI" value="4" />
         <value name="changedByHost" value="1" />
@@ -3321,6 +3537,44 @@
       <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="1" />
       <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="2" />
       <method name="setValueNonMapped" type="instance" args="(int, bool, bool)" />
+      <methods>
+        <method name="getComponent" type="instance" args="()" />
+        <method name="getLuaName" type="instance" args="()" />
+        <method name="getMaxMapped" type="instance" args="()" />
+        <method name="getMaxMappedInt" type="instance" args="()" />
+        <method name="getMaxModulatorValue" type="instance" args="()" />
+        <method name="getMaxModulatorValueInt" type="instance" args="()" />
+        <method name="getMaxNonMapped" type="instance" args="()" />
+        <method name="getMaxNonMappedInt" type="instance" args="()" />
+        <method name="getMidiMessage" type="instance" args="()" overload="1" />
+        <method name="getMidiMessage" type="instance" args="()" overload="2" />
+        <method name="getMinMapped" type="instance" args="()" />
+        <method name="getMinMappedInt" type="instance" args="()" />
+        <method name="getMinModulatorValue" type="instance" args="()" />
+        <method name="getMinModulatorValueInt" type="instance" args="()" />
+        <method name="getMinNonMapped" type="instance" args="()" />
+        <method name="getMinNonMappedInt" type="instance" args="()" />
+        <method name="getModulatorName" type="instance" args="()" />
+        <method name="getModulatorValue" type="instance" args="()" />
+        <method name="getModulatorValueInt" type="instance" args="()" />
+        <method name="getName" type="instance" args="()" lua_wrap="L" />
+        <method name="getRestoreState" type="instance" args="()" />
+        <method name="getValue" type="instance" args="()" />
+        <method name="getValueInt" type="instance" args="()" />
+        <method name="getValueMapped" type="instance" args="()" />
+        <method name="getValueMappedInt" type="instance" args="()" />
+        <method name="getValueNonMapped" type="instance" args="()" />
+        <method name="getValueNonMappedInt" type="instance" args="()" />
+        <method name="getVstIndex" type="instance" args="()" />
+        <method name="isRestoring" type="instance" args="()" />
+        <method name="setModulatorValue" type="instance" args="(int, bool, bool, bool)" />
+        <method name="setRestoreState" type="instance" args="(bool)" />
+        <method name="setValue" type="instance" args="(int, bool, bool)" overload="1" />
+        <method name="setValue" type="instance" args="(int, bool, bool)" overload="2" />
+        <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="1" />
+        <method name="setValueMapped" type="instance" args="(int, bool, bool)" overload="2" />
+        <method name="setValueNonMapped" type="instance" args="(int, bool, bool)" />
+      </methods>
       <methods>
         <method name="getComponent" type="instance" args="()" />
         <method name="getLuaName" type="instance" args="()" />
@@ -3391,8 +3645,6 @@
       <method name="append" type="instance" args="(MemoryBlock)" />
       <method name="compressGzip" type="instance" args="()" />
       <method name="compressZlib" type="instance" args="()" />
-      <method name="copyFrom" type="instance" args="(MemoryBlock, int, int)" />
-      <method name="copyTo" type="instance" args="(MemoryBlock, int, int)" />
       <method name="createFromTable" type="instance" args="(table)" />
       <method name="decompressGzip" type="instance" args="()" />
       <method name="decompressZlib" type="instance" args="()" />
@@ -3408,7 +3660,7 @@
       <method name="insert" type="instance" args="(MemoryBlock, int, int)" overload="1" />
       <method name="insert" type="instance" args="(MemoryBlock, int, int)" overload="2" />
       <method name="insertIntoTable" type="instance" args="(table)" />
-      <method name="loadFromHexString" type="instance" args="()" />
+      <method name="loadFromHexString" type="instance" args="(String hex)" />
       <method name="pushLString" type="instance" args="()" />
       <method name="removeSection" type="instance" args="(int, int)" />
       <method name="replaceWith" type="instance" args="(MemoryBlock)" />
@@ -3419,7 +3671,7 @@
       <method name="toBase64Encoding" type="instance" args="()" />
       <method name="toBinarySafeString" type="instance" args="()" />
       <method name="toBinaryString" type="instance" args="(lua_State)" />
-      <method name="toHexString" type="instance" args="(int)" />
+      <method name="toHexString" type="instance" args="(int groupSize)" />
       <method name="toLuaString" type="instance" args="()" />
       <method name="toLuaTable" type="instance" args="(table)" />
       <method name="toRawString" type="instance" args="()" />
@@ -3435,7 +3687,12 @@
       <method name="fromLuaStringToAscii" type="static" args="(String)" overload="1" />
       <method name="fromLuaStringToAscii" type="static" args="(String)" overload="2" />
       <method name="fromLuaTable" type="static" args="(table)" />
+      <method name="copyFrom" type="static" args="(MemoryBlock source, int start, int size)" />
+      <method name="copyTo" type="static" args="(MemoryBlock dest, int start, int size)" />
     </static_methods>
+    <constructor args="()" type="constructor" />
+    <constructor args="(String hexString)" type="constructor" />
+    <constructor args="({int} luaTable)" type="constructor" />
   </class>
   <class name="AlertWindow" cpp_name="LAlertWindow">
     <enums>

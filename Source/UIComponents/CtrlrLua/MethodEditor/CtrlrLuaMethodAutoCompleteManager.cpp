@@ -43,7 +43,23 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
                             allMethodNames.addIfNotAlreadyThere(lm.name);
                         }
                     }
+                    // Process Enums (Add them as static methods so they show up with .)
+                    if (auto* eList = classXml->getChildByName("enums"))
+                    {
+                        forEachXmlChildElement(*eList, enumGroupXml)
+                        {
+                            forEachXmlChildElement(*enumGroupXml, valueXml)
+                            {
+                                LuaMethod em;
+                                em.name = valueXml->getStringAttribute("name");
+                                em.parameters = ""; // Enums have no params
+                                em.isStatic = true; // Essential for dot-lookup
 
+                                lc.methods.add(em);
+                                allMethodNames.addIfNotAlreadyThere(em.name);
+                            }
+                        }
+                    }
                     // Process Static Methods
                     if (auto* sList = classXml->getChildByName("static_methods"))
                     {
@@ -190,6 +206,9 @@ juce::String CtrlrLuaMethodAutoCompleteManager::resolveClass(const juce::String&
 }
 juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const juce::String& varName, const juce::String& code)
 {
+        // NEW: If the varName is actually a Class name (like Justification), return it immediately
+        if (classNames.contains(varName))
+            return varName;
     // 1. Static/Global Shortcuts (Priority)
     if (varName == "panel" || varName == "pan")   return "panel";
     if (varName == "mod")                         return "mod";
@@ -218,6 +237,10 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
         {
             // Extract just the method name (remove parentheses and everything after)
             juce::String segment = tokens[i].trim();
+            if (segment.contains("("))
+                segment = segment.upToFirstOccurrenceOf("(", false, false).trim();
+
+            DBG("  [" + juce::String(i) + "] segment: " + segment);
             int parenPos = segment.indexOf("(");
             if (parenPos > 0)
             {
