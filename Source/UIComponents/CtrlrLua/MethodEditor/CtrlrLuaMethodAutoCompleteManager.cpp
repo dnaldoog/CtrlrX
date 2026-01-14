@@ -204,165 +204,84 @@ juce::String CtrlrLuaMethodAutoCompleteManager::resolveClass(const juce::String&
     }
     return "";
 }
+
 juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const juce::String& varName, const juce::String& code)
 {
-        // NEW: If the varName is actually a Class name (like Justification), return it immediately
-        if (classNames.contains(varName))
-            return varName;
-    // 1. Static/Global Shortcuts (Priority)
-    if (varName == "panel" || varName == "pan")   return "panel";
-    if (varName == "mod")                         return "mod";
-    if (varName == "comp")                        return "comp";
-    if (varName == "g")                           return "g";
-    if (varName == "utils")                       return "utils";
-    if (varName == "math")                        return "math";
-    if (varName == "table")                       return "table";
-    if (varName == "string")                      return "string";
-    if (varName == "MemoryBlock")                 return "MemoryBlock";
+    const juce::String v = varName.trim();
+    if (v.isEmpty()) return "";
 
-    // 2. CHAIN RESOLUTION (e.g., panel:getModulatorByName():)
-    if (varName.contains(":") || varName.contains("."))
+    // 1. DIRECT CLASS HIT
+    // If user types 'Justification' or 'CtrlrModulator', return it immediately
+    if (classNames.contains(v)) return v;
+
+    // 2. SHORTHAND TRANSLATION
+    // Maps your Lua convenience variables to the actual XML class keys
+    if (v == "panel" || v == "pan") return "CtrlrPanel";
+    if (v == "mod")                 return "CtrlrModulator";
+    if (v == "comp")                return "CtrlrComponent";
+    if (v == "g")                   return "Graphics";
+    if (v == "utils")               return "CtrlrLuaUtils";
+    if (v == "math" || v == "table" || v == "string") return v;
+
+    // 3. CHAIN RESOLUTION (e.g., panel:getModulatorByName("x"): )
+    if (v.contains(":") || v.contains("."))
     {
-        DBG("=== CHAIN RESOLUTION ===");
-        DBG("varName: " + varName);
-
-        juce::String normalized = varName.replace(".", ":");
         juce::StringArray tokens;
-        tokens.addTokens(normalized, ":", "");
-
-        DBG("tokens count: " + juce::String(tokens.size()));
+        // Replace dots with colons so we can split everything at once
+        tokens.addTokens(v.replace(".", ":"), ":", "");
 
         juce::String currentType = "";
+
         for (int i = 0; i < tokens.size(); ++i)
         {
-            // Extract just the method name (remove parentheses and everything after)
-            juce::String segment = tokens[i].trim();
-            if (segment.contains("("))
-                segment = segment.upToFirstOccurrenceOf("(", false, false).trim();
+            // Clean the segment: remove whitespace and everything from "(" onwards
+            juce::String segment = tokens[i].upToFirstOccurrenceOf("(", false, false).trim();
+            if (segment.isEmpty()) break;
 
-            DBG("  [" + juce::String(i) + "] segment: " + segment);
-            int parenPos = segment.indexOf("(");
-            if (parenPos > 0)
-            {
-                segment = segment.substring(0, parenPos);
-            }
-
-            DBG("  [" + juce::String(i) + "] segment: " + segment);
-
-            if (i == 0)
-            {
+            if (i == 0) {
+                // Recursively find the start of the chain
                 currentType = getClassNameForVariable(segment, code);
-                DBG("      initial type: " + currentType);
             }
-            else
-            {
-                juce::String returnType = resolveReturnType(currentType, segment);
-                DBG("      resolveReturnType(\"" + currentType + "\", \"" + segment + "\") = " + returnType);
-                currentType = returnType;
+            else {
+                // Follow the return types defined in your resolveReturnType function
+                currentType = resolveReturnType(currentType, segment);
             }
 
-            if (currentType.isEmpty())
-            {
-                DBG("      EMPTY! Breaking.");
-                break;
-            }
+            if (currentType.isEmpty()) break;
         }
-
-        DBG("final type: " + (currentType.isEmpty() ? "EMPTY" : currentType));
 
         if (currentType.isNotEmpty()) return currentType;
     }
 
-    // 3. DYNAMIC LOOK-BACK (Assignments: mb = MemoryBlock())
-    int assignmentPos = code.lastIndexOf(varName + " =");
-    if (assignmentPos == -1) assignmentPos = code.lastIndexOf(varName + "=");
+    // 4. DYNAMIC ASSIGNMENT LOOK-BACK (e.g., myMod = panel:getModulator("x"))
+    // Look for where this variable was last assigned in the code
+    int assignPos = code.lastIndexOf(v + "=");
+    if (assignPos == -1) assignPos = code.lastIndexOf(v + " =");
 
-    if (assignmentPos != -1)
+    if (assignPos != -1)
     {
-        juce::String rhs = code.substring(assignmentPos + varName.length()).trimStart();
+        juce::String rhs = code.substring(assignPos + v.length()).trimStart();
         if (rhs.startsWith("=")) rhs = rhs.substring(1).trimStart();
 
+        // Extract the expression on the right side of the equals sign
         int endOfLine = rhs.indexOfAnyOf(";\n\r");
         if (endOfLine != -1) rhs = rhs.substring(0, endOfLine).trim();
 
+        // If it's a constructor: myMod = CtrlrModulator()
         juce::String potentialClass = rhs.upToFirstOccurrenceOf("(", false, false).trim();
+        if (classNames.contains(potentialClass)) return potentialClass;
 
-        if (classNames.contains(potentialClass) || potentialClass == "MemoryBlock")
-        {
-            return potentialClass;
-        }
-
-        if (rhs != varName && rhs.isNotEmpty())
-        {
-            return getClassNameForVariable(rhs, code);
-        }
+        // If it's a result of another call: myMod = otherVar:getSomething()
+        if (rhs != v && rhs.isNotEmpty()) return getClassNameForVariable(rhs, code);
     }
 
-    // 4. Static Fallbacks 
-    if (varName == "m" || varName == "mb" || varName == "mem") return "MemoryBlock";
-    if (varName == "f") return "File";
+    // 5. HARDCODED FALLBACKS
+    if (v == "m" || v == "mb" || v == "mem" || v == "MemoryBlock") return "MemoryBlock";
+    if (v == "f" || v == "File") return "File";
 
     return "";
 }
-//juce::String CtrlrLuaMethodAutoCompleteManager::resolveReturnType(const juce::String& className, const juce::String& methodName)
-//{
-//    // Helper lambda: Map cpp class names to their aliases (what's actually in the classes map)
-//    auto mapToAlias = [](const juce::String& cppName) -> juce::String
-//        {
-//            if (cppName == "CtrlrModulator")    return "mod";
-//            if (cppName == "CtrlrComponent")    return "comp";
-//            if (cppName == "CtrlrPanel")        return "panel";
-//            if (cppName == "Graphics")          return "g";
-//            if (cppName == "MouseEvent")        return "event";
-//            return cppName;  // Return as-is if no mapping
-//        };
-//
-//    // 1. Context-Specific Return Type Mappings
-//    // These take priority and are context-aware
-//    if (className == "panel" || className == "CtrlrPanel")
-//    {
-//        if (methodName.contains("getModulator")) return "mod";
-//        if (methodName == "getComponent") return "comp";
-//    }
-//
-//    if (className == "mod" || className == "CtrlrModulator")
-//    {
-//        if (methodName == "getComponent") return "comp";
-//        if (methodName == "getPanel") return "panel";
-//    }
-//
-//    if (className == "comp" || className == "CtrlrComponent")
-//    {
-//        if (methodName == "getOwner") return "mod";
-//    }
-//
-//    // 2. Global Method Name Mappings (Fallback)
-//    // These work regardless of context, returns are mapped to aliases
-//    juce::String returnType = "";
-//
-//    if (methodName == "getModulatorByName" || methodName == "getModulator" || methodName == "getModulatorByIndex")
-//        returnType = "CtrlrModulator";
-//    else if (methodName == "getComponent" || methodName == "getOwner" || methodName == "getControl")
-//        returnType = "CtrlrComponent";
-//    else if (methodName == "getPanel" || methodName == "getOwnerPanel")
-//        returnType = "CtrlrPanel";
-//    else if (methodName == "getMemoryBlock" || methodName == "getData")
-//        returnType = "MemoryBlock";
-//    else if (methodName == "getLuaManager")
-//        returnType = "CtrlrLuaManager";
-//    else if (methodName == "getCanvas")
-//        returnType = "Graphics";
-//    else if (methodName == "getGlobalTimer")
-//        returnType = "Timer";
-//
-//    // Map the return type to its alias before returning
-//    if (returnType.isNotEmpty())
-//    {
-//        return mapToAlias(returnType);
-//    }
-//
-//    return "";
-//}
+
 juce::String CtrlrLuaMethodAutoCompleteManager::resolveReturnType(const juce::String& className, const juce::String& methodName)
 {
     // Map internal names to our searchable aliases
