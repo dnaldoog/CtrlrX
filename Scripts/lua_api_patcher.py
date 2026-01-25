@@ -29,7 +29,7 @@ CLASS_ALIASES = {
 }
 
 METHOD_PATCHES = {
-    "MemoryBlock": {
+    "LMemoryBlock": {
         "loadFromHexString": "(String hex)",
         "copyFrom": {"args": "(MemoryBlock source, int start, int size)", "type": "static"},
         "copyTo": {"args": "(MemoryBlock dest, int start, int size)", "type": "static"},
