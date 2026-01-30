@@ -23,6 +23,7 @@ class CtrlrMIDIMon  : public CtrlrChildWindowContent,
 		StringArray getMenuBarNames();
 		PopupMenu getMenuForIndex(int topLevelMenuIndex, const String &menuName);
 		void menuItemSelected(int menuItemID, int topLevelMenuIndex);
+		bool shouldFilterMessage(const MidiMessage& m, int filterMask);
 
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrMIDIMon)
 
