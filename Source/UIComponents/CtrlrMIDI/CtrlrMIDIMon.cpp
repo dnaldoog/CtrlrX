@@ -4,133 +4,181 @@
 #include "CtrlrProcessor.h"
 #include "CtrlrMIDIMon.h"
 
-CtrlrMIDIMon::CtrlrMIDIMon (CtrlrManager &_owner)
+CtrlrMIDIMon::CtrlrMIDIMon(CtrlrManager& _owner)
     : owner(_owner), logIn(false), logOut(false),
-      resizer (0),
-      outMon (0),
-      inMon (0)
+    resizer(0),
+    outMon(0),
+    inMon(0)
 {
-    addAndMakeVisible (resizer = new StretchableLayoutResizerBar (&layoutManager, 1, false));
+    addAndMakeVisible(resizer = new StretchableLayoutResizerBar(&layoutManager, 1, false));
 
-    addAndMakeVisible (outMon = new CodeEditorComponent (outputDocument, 0));
-    outMon->setName (L"outMon");
+    addAndMakeVisible(outMon = new CodeEditorComponent(outputDocument, 0));
+    outMon->setName(L"outMon");
 
-    addAndMakeVisible (inMon = new CodeEditorComponent (inputDocument, 0));
-    inMon->setName (L"inMon");
+    addAndMakeVisible(inMon = new CodeEditorComponent(inputDocument, 0));
+    inMon->setName(L"inMon");
 
-	layoutManager.setItemLayout (0, -0.001, -1.0, -0.49);
- 	layoutManager.setItemLayout (1, -0.001, -0.01, -0.01);
- 	layoutManager.setItemLayout (2, -0.001, -1.0, -0.49);
+    layoutManager.setItemLayout(0, -0.001, -1.0, -0.49);
+    layoutManager.setItemLayout(1, -0.001, -0.01, -0.01);
+    layoutManager.setItemLayout(2, -0.001, -1.0, -0.49);
 
-	owner.getCtrlrLog().addListener (this);
+    owner.getCtrlrLog().addListener(this);
 
-	inMon->setFont ( Font(owner.getFontManager().getDefaultMonoFontName(), 12, Font::plain) );
-	inMon->setColour (CodeEditorComponent::backgroundColourId, Colour(0xffb3ffac));
-	outMon->setFont ( Font(owner.getFontManager().getDefaultMonoFontName(), 12, Font::plain) );
-	outMon->setColour (CodeEditorComponent::backgroundColourId, Colour(0xffffacac));
+    inMon->setFont(Font(owner.getFontManager().getDefaultMonoFontName(), 12, Font::plain));
+    inMon->setColour(CodeEditorComponent::backgroundColourId, Colour(0xffb3ffac));
+    outMon->setFont(Font(owner.getFontManager().getDefaultMonoFontName(), 12, Font::plain));
+    outMon->setColour(CodeEditorComponent::backgroundColourId, Colour(0xffffacac));
 
-    setSize (500, 400);
+    setSize(500, 400);
 }
 
 CtrlrMIDIMon::~CtrlrMIDIMon()
 {
-	owner.getCtrlrLog().removeListener (this);
-    deleteAndZero (resizer);
-    deleteAndZero (outMon);
-    deleteAndZero (inMon);
+    owner.getCtrlrLog().removeListener(this);
+    deleteAndZero(resizer);
+    deleteAndZero(outMon);
+    deleteAndZero(inMon);
 }
 
-void CtrlrMIDIMon::paint (Graphics& g)
+void CtrlrMIDIMon::paint(Graphics& g)
 {
 }
 
 void CtrlrMIDIMon::resized()
 {
-    resizer->setBounds (0, proportionOfHeight (0.4900f), getWidth() - 0, proportionOfHeight (0.0100f));
-    outMon->setBounds (0, 0, getWidth() - 0, proportionOfHeight (0.4900f));
-    inMon->setBounds (0, proportionOfHeight (0.5000f), getWidth() - 0, proportionOfHeight (0.4900f));
-	Component* comps[] = { outMon, resizer, inMon  };
- 	layoutManager.layOutComponents (comps, 3, 0, 0, getWidth(), getHeight(), true, true);
+    resizer->setBounds(0, proportionOfHeight(0.4900f), getWidth() - 0, proportionOfHeight(0.0100f));
+    outMon->setBounds(0, 0, getWidth() - 0, proportionOfHeight(0.4900f));
+    inMon->setBounds(0, proportionOfHeight(0.5000f), getWidth() - 0, proportionOfHeight(0.4900f));
+    Component* comps[] = { outMon, resizer, inMon };
+    layoutManager.layOutComponents(comps, 3, 0, 0, getWidth(), getHeight(), true, true);
 }
 
-void CtrlrMIDIMon::messageLogged (CtrlrLog::CtrlrLogMessage _message)
+void CtrlrMIDIMon::messageLogged(CtrlrLog::CtrlrLogMessage _message)
 {
-	if (!isVisible())
-		return;
+    if (!isVisible())
+        return;
 
-	CtrlrLog::CtrlrLogMessage message = _message;
+    int filters = (int)owner.getProperty(Ids::ctrlrMidiFilters);
 
-	if (message.level == CtrlrLog::MidiIn)
-	{
-		if (inputDocument.getAllContent().length() > (int)owner.getProperty(Ids::ctrlrMidiMonInputBufferSize))
-			inputDocument.replaceAllContent("");
+    // Only filter if we have actual MIDI data
+    if (_message.hasMidiData && (_message.level == CtrlrLog::MidiIn || _message.level == CtrlrLog::MidiOut))
+    {
+        if (shouldFilterMessage(_message.midiData, filters))
+        {
+            DBG("Message filtered out!");
+            return;
+        }
+    }
 
-		inMon->insertTextAtCaret (CtrlrLog::formatMessage(message, false, true) + "\n");
-	}
+    if (_message.level == CtrlrLog::MidiIn)
+    {
+        inMon->insertTextAtCaret(_message.message + "\n");
+    }
+    else if (_message.level == CtrlrLog::MidiOut)
+    {
+        outMon->insertTextAtCaret(_message.message + "\n");
+    }
+}
+bool CtrlrMIDIMon::shouldFilterMessage(const MidiMessage& m, int filterMask)
+{
+    DBG("Checking message against filter mask: " + String(filterMask));
+    if (filterMask == 0) return false;
 
-	if (message.level == CtrlrLog::MidiOut)
-	{
-		if (outputDocument.getAllContent().length() > (int)owner.getProperty(Ids::ctrlrMidiMonOutputBufferSize))
-			outputDocument.replaceAllContent("");
+    if ((filterMask & Filter_NoteOn) && m.isNoteOn())           return true;
+    if ((filterMask & Filter_NoteOff) && m.isNoteOff())         return true;
+    if ((filterMask & Filter_AftertouchPoly) && m.isAftertouch()) return true;
+    if ((filterMask & Filter_Control) && m.isController())      return true;
+    if ((filterMask & Filter_Program) && m.isProgramChange())   return true;
+    if ((filterMask & Filter_Sysex) && m.isSysEx())             return true;
+    if ((filterMask & Filter_ChannelPressure) && m.isChannelPressure()) return true;
+    if ((filterMask & Filter_PitchWheel) && m.isPitchWheel())   return true;
+    if ((filterMask & Filter_ActiveSense) && m.isActiveSense()) return true;
 
-		outMon->insertTextAtCaret (CtrlrLog::formatMessage(message, false, true) + "\n");
-	}
+    return false;
 }
 
 StringArray CtrlrMIDIMon::getMenuBarNames()
 {
-	// const char* const names[] = { "File", "View", "Filter", nullptr };
+    const char* const names[] = { "File", "View", "Filter", nullptr };
     // const char* const names[] = { "View", "Filter", nullptr };
-    const char* const names[] = { "View", nullptr }; // Added v5.6.31
-	return StringArray (names);
+    //const char* const names[] = { "View", nullptr }; // Added v5.6.31
+    return StringArray(names);
 }
 
-PopupMenu CtrlrMIDIMon::getMenuForIndex(int topLevelMenuIndex, const String &menuName)
+PopupMenu CtrlrMIDIMon::getMenuForIndex(int topLevelMenuIndex, const String& menuName)
 {
-	PopupMenu menu;
+    PopupMenu menu;
 
-    int opts = (int)owner.getProperty (Ids::ctrlrLogOptions);
-    
-//    if (topLevelMenuIndex == 0)
-//    {
-//        menu.addItem (1, "Close", false); // Updated v5.6.31
-//    }
-	if (topLevelMenuIndex == 0) // Updated v5.6.31. From 1 to 0
-	{
-		menu.addItem (10+2, "Show name", true, getBitOption(opts,midiLogName));
-		menu.addItem (10+4, "Show channel", true, getBitOption(opts,midiLogChannel));
-		menu.addItem (10+8, "Show number", true, getBitOption(opts,midiLogNumber));
-		menu.addItem (10+16, "Show value", true, getBitOption(opts,midiLogValue));
-		menu.addItem (10+32, "Show RAW data", true, getBitOption(opts,midiLogRawData));
-		menu.addItem (10+64, "Show timestamp", true, getBitOption(opts,midiLogTimestamp));
-		menu.addItem (10+128, "RAW data in decimal", true, getBitOption(opts,midiLogRawDecimal));
-		menu.addItem (10+1024, "Show device name", true, getBitOption(opts,midiLogDevice));
-		menu.addItem (10+4096, "Show RAW data size", true, getBitOption(opts,midiLogDataSize));
-		menu.addSeparator();
-		menu.addColouredItem (10+256, "Monitor input", Colour(0xff21c630), true, getBitOption(opts,midiLogInput));
-		menu.addColouredItem (10+512, "Monitor output", Colour(0xffc62121), true, getBitOption(opts,midiLogOutput));
-	}
-	else if (topLevelMenuIndex == 1) // Updated v5.6.31. From 2 to 1
-	{
-		menu.addItem (8192, "Create new");
-		menu.addSectionHeader ("Active filters");
-	}
+    int opts = (int)owner.getProperty(Ids::ctrlrLogOptions);
+    int filters = (int)owner.getProperty(Ids::ctrlrMidiFilters);
 
-	return (menu);
+    if (topLevelMenuIndex == 0)
+    {
+        menu.addItem(1, "Close");
+    }
+    else if (topLevelMenuIndex == 1)
+    {
+        // Existing log options...
+        menu.addItem(10 + 2, "Show name", true, getBitOption(opts, midiLogName));
+        menu.addItem(10 + 4, "Show channel", true, getBitOption(opts, midiLogChannel));
+        menu.addItem(10 + 8, "Show number", true, getBitOption(opts, midiLogNumber));
+        menu.addItem(10 + 16, "Show value", true, getBitOption(opts, midiLogValue));
+        menu.addItem(10 + 32, "Show RAW data", true, getBitOption(opts, midiLogRawData));
+        menu.addItem(10 + 64, "Show timestamp", true, getBitOption(opts, midiLogTimestamp));
+        menu.addItem(10 + 128, "RAW data in decimal", true, getBitOption(opts, midiLogRawDecimal));
+        menu.addItem(10 + 1024, "Show device name", true, getBitOption(opts, midiLogDevice));
+        menu.addItem(10 + 4096, "Show RAW data size", true, getBitOption(opts, midiLogDataSize));
+        menu.addSeparator();
+        menu.addColouredItem(10 + 256, "Monitor input", Colour(0xff21c630), true, getBitOption(opts, midiLogInput));
+        menu.addColouredItem(10 + 512, "Monitor output", Colour(0xffc62121), true, getBitOption(opts, midiLogOutput));
+    }
+    else if (topLevelMenuIndex == 2)
+    {
+        menu.addItem(8192, "Create new");
+        menu.addSectionHeader("Active filters");
+
+        // We add 10000 to the enum value to create a unique Menu ID
+        menu.addItem(10000 + Filter_NoteOn, "Note On", true, getBitOption(filters, Filter_NoteOn));
+        menu.addItem(10000 + Filter_NoteOff, "Note Off", true, getBitOption(filters, Filter_NoteOff));
+        menu.addItem(10000 + Filter_AftertouchPoly, "Aftertouch (Poly)", true, getBitOption(filters, Filter_AftertouchPoly));
+        menu.addItem(10000 + Filter_Control, "Control", true, getBitOption(filters, Filter_Control));
+        menu.addItem(10000 + Filter_Program, "Program", true, getBitOption(filters, Filter_Program));
+        menu.addItem(10000 + Filter_Sysex, "Sysex", true, getBitOption(filters, Filter_Sysex));
+        menu.addItem(10000 + Filter_ChannelPressure, "Channel Pressure", true, getBitOption(filters, Filter_ChannelPressure));
+        menu.addItem(10000 + Filter_PitchWheel, "Pitch Wheel", true, getBitOption(filters, Filter_PitchWheel));
+        menu.addItem(10000 + Filter_ActiveSense, "Active Sense", true, getBitOption(filters, Filter_ActiveSense));
+    }
+
+    return menu;
 }
 
 void CtrlrMIDIMon::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 {
-	if (topLevelMenuIndex == 0) // Updated v5.6.31. From 1 to 0
-	{
-		int opts = (int)owner.getProperty (Ids::ctrlrLogOptions);
+    if (topLevelMenuIndex == 0) // File menu
+    {
+        if (menuItemID == 1)
+        {
+            // Handle close
+        }
+    }
+    else if (topLevelMenuIndex == 1) // View menu
+    {
+        int opts = (int)owner.getProperty(Ids::ctrlrLogOptions);
+        int bitToFlip = menuItemID - 10;
+        setBitOption(opts, bitToFlip, !getBitOption(opts, bitToFlip));
+        owner.setProperty(Ids::ctrlrLogOptions, opts);
+    }
+    else if (topLevelMenuIndex == 2) // Filter menu - FIXED
+    {
+        int filters = (int)owner.getProperty(Ids::ctrlrMidiFilters);
+        int bitToToggle = menuItemID - 10000; // This gives us the enum value (1, 2, 4, 8, etc.)
 
-		setBitOption (opts, menuItemID-10, !getBitOption(opts, menuItemID-10));
+        // Toggle the bit using XOR
+        filters ^= bitToToggle;
 
-		owner.setProperty (Ids::ctrlrLogOptions, opts);
-	}
-	if (topLevelMenuIndex == 0 && menuItemID==1)
-	{
-		// close handle
-	}
+        owner.setProperty(Ids::ctrlrMidiFilters, filters);
+
+        // Debug output to verify
+        DBG("Filter toggled. New filter mask: " + String(filters));
+    }
 }

@@ -158,6 +158,18 @@ enum CtrlrMidiLogOptions
 	midiLogDevAttach=2048,
 	midiLogDataSize=4096
 };
+enum CtrlrMIDIMessageType
+{
+	Filter_NoteOn = 1,
+	Filter_NoteOff = 2,
+	Filter_AftertouchPoly = 4,
+	Filter_Control = 8,
+	Filter_Program = 16,
+	Filter_Sysex = 32,
+	Filter_ChannelPressure = 64,
+	Filter_PitchWheel = 128,
+	Filter_ActiveSense = 256
+};
 
 enum CtrlrFontProperties
 {

@@ -793,6 +793,7 @@ namespace Ids
     DECLARE_ID (ctrlrVersionCompressed);
     DECLARE_ID (ctrlrMidiMonInputBufferSize);
     DECLARE_ID (ctrlrMidiMonOutputBufferSize);
+	DECLARE_ID (ctrlrMidiFilters);
     DECLARE_ID (ctrlrLogMidiInput);
     DECLARE_ID (ctrlrLogMidiOutput);
     DECLARE_ID (ctrlrLogOptions);
