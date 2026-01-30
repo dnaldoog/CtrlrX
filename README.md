@@ -501,6 +501,7 @@ Tuturial coming soon.
 * **FIXED** Highlight Background & Text for FileListBox Component. Thanks to [Dominique Bonptemps](https://github.com/dobo365) `CtrlrFileListBox.cpp`
 * **UPDATED** CtrlrLuaMethodEditor with IDE-like autocomplete on typing. `CtrlrLuaMethodAutoCompleteManager.cpp` & `.h`, `CtrlrLuaMethodCodeEditor.cpp` & `.h`, `CtrlrLuaMethodEditor.h`
 * **UPDATED** sendMidiMessageNow() compatibility with the old syntax and support table content as message. `CtrlrLuaMethodAutoCompleteManager.cpp` & `.h`
+* **ADDED** MIDI Monitor Message Type filtering (Note On, Note Off, Aftertouch, Clock, SYSEX, etc). Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrIDs.h`, `CtrlrLog.cpp` & `.h`, `CtrlrMacros.h`, `CtrlrMIDIMon.cpp` & `.h`
 
 #### Version 5.6.34 | 2025.11.07
 
