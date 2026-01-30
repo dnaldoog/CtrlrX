@@ -93,6 +93,7 @@ bool CtrlrMIDIMon::shouldFilterMessage(const MidiMessage& m, int filterMask)
     if ((filterMask & Filter_ChannelPressure) && m.isChannelPressure()) return true;
     if ((filterMask & Filter_PitchWheel) && m.isPitchWheel())   return true;
     if ((filterMask & Filter_ActiveSense) && m.isActiveSense()) return true;
+    if ((filterMask & Filter_Clock) && m.isMidiClock()) return true;
 
     return false;
 }
@@ -146,6 +147,7 @@ PopupMenu CtrlrMIDIMon::getMenuForIndex(int topLevelMenuIndex, const String& men
         menu.addItem(10000 + Filter_ChannelPressure, "Channel Pressure", true, getBitOption(filters, Filter_ChannelPressure));
         menu.addItem(10000 + Filter_PitchWheel, "Pitch Wheel", true, getBitOption(filters, Filter_PitchWheel));
         menu.addItem(10000 + Filter_ActiveSense, "Active Sense", true, getBitOption(filters, Filter_ActiveSense));
+        menu.addItem(10000 + Filter_Clock, "MIDI Clock", true, getBitOption(filters, Filter_Clock));
     }
 
     return menu;

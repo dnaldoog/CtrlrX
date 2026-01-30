@@ -168,7 +168,8 @@ enum CtrlrMIDIMessageType
 	Filter_Sysex = 32,
 	Filter_ChannelPressure = 64,
 	Filter_PitchWheel = 128,
-	Filter_ActiveSense = 256
+	Filter_ActiveSense = 256,
+	Filter_Clock = 512
 };
 
 enum CtrlrFontProperties
