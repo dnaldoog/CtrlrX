@@ -134,8 +134,7 @@ PopupMenu CtrlrMIDIMon::getMenuForIndex(int topLevelMenuIndex, const String& men
     }
     else if (topLevelMenuIndex == 2)
     {
-        menu.addItem(8192, "Create new");
-        menu.addSectionHeader("Active filters");
+       menu.addSectionHeader("Active filters");
 
         // We add 10000 to the enum value to create a unique Menu ID
         menu.addItem(10000 + Filter_NoteOn, "Note On", true, getBitOption(filters, Filter_NoteOn));
