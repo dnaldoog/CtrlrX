@@ -8,7 +8,9 @@ CtrlrMIDIMon::CtrlrMIDIMon(CtrlrManager& _owner)
     : owner(_owner), logIn(false), logOut(false),
     resizer(0),
     outMon(0),
-    inMon(0)
+    inMon(0),
+    outLabel(0),
+    inLabel(0)
 {
     addAndMakeVisible(resizer = new StretchableLayoutResizerBar(&layoutManager, 1, false));
 
@@ -17,6 +19,18 @@ CtrlrMIDIMon::CtrlrMIDIMon(CtrlrManager& _owner)
 
     addAndMakeVisible(inMon = new CodeEditorComponent(inputDocument, 0));
     inMon->setName(L"inMon");
+
+    addAndMakeVisible(outLabel = new Label("outLabel", "MIDI OUT"));
+    outLabel->setFont(Font(14, Font::bold));
+    outLabel->setJustificationType(Justification::centred);
+    outLabel->setColour(Label::backgroundColourId, Colour(0xffffacac).darker(0.1f));
+    outLabel->setColour(Label::textColourId, Colours::black);
+
+    addAndMakeVisible(inLabel = new Label("inLabel", "MIDI IN"));
+    inLabel->setFont(Font(14, Font::bold));
+    inLabel->setJustificationType(Justification::centred);
+    inLabel->setColour(Label::backgroundColourId, Colour(0xffb3ffac).darker(0.1f));
+    inLabel->setColour(Label::textColourId, Colours::black);
 
     layoutManager.setItemLayout(0, -0.001, -1.0, -0.49);
     layoutManager.setItemLayout(1, -0.001, -0.01, -0.01);
@@ -38,6 +52,8 @@ CtrlrMIDIMon::~CtrlrMIDIMon()
     deleteAndZero(resizer);
     deleteAndZero(outMon);
     deleteAndZero(inMon);
+    deleteAndZero(outLabel);
+    deleteAndZero(inLabel);
 }
 
 void CtrlrMIDIMon::paint(Graphics& g)
@@ -46,11 +62,27 @@ void CtrlrMIDIMon::paint(Graphics& g)
 
 void CtrlrMIDIMon::resized()
 {
-    resizer->setBounds(0, proportionOfHeight(0.4900f), getWidth() - 0, proportionOfHeight(0.0100f));
-    outMon->setBounds(0, 0, getWidth() - 0, proportionOfHeight(0.4900f));
-    inMon->setBounds(0, proportionOfHeight(0.5000f), getWidth() - 0, proportionOfHeight(0.4900f));
-    Component* comps[] = { outMon, resizer, inMon };
-    layoutManager.layOutComponents(comps, 3, 0, 0, getWidth(), getHeight(), true, true);
+    const int labelHeight = 20;  // Height for the labels
+
+    // Calculate the available height for each monitor (accounting for labels)
+    int topSectionHeight = proportionOfHeight(0.4900f);
+    int bottomSectionHeight = proportionOfHeight(0.4900f);
+
+    // Position the "MIDI OUT" label at the top
+    outLabel->setBounds(0, 0, getWidth(), labelHeight);
+
+    // Position the output monitor below the label
+    outMon->setBounds(0, labelHeight, getWidth(), topSectionHeight - labelHeight);
+
+    // Position the resizer bar
+    resizer->setBounds(0, topSectionHeight, getWidth(), proportionOfHeight(0.0100f));
+
+    // Position the "MIDI IN" label
+    int inMonStartY = proportionOfHeight(0.5000f);
+    inLabel->setBounds(0, inMonStartY, getWidth(), labelHeight);
+
+    // Position the input monitor below its label
+    inMon->setBounds(0, inMonStartY + labelHeight, getWidth(), bottomSectionHeight - labelHeight);
 }
 
 void CtrlrMIDIMon::messageLogged(CtrlrLog::CtrlrLogMessage _message) // Updated v5.6.35. MIDI filters Support. Thanks to @dnaldoog
