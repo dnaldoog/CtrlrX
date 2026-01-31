@@ -64,27 +64,74 @@ void CtrlrMIDIMon::resized()
 {
     const int labelHeight = 20;  // Height for the labels
 
-    // Calculate the available height for each monitor (accounting for labels)
-    int topSectionHeight = proportionOfHeight(0.4900f);
-    int bottomSectionHeight = proportionOfHeight(0.4900f);
+    // Get the current MIDI log options
+    int opts = (int)owner.getProperty(Ids::ctrlrLogOptions);
+    bool showInput = getBitOption(opts, midiLogInput);
+    bool showOutput = getBitOption(opts, midiLogOutput);
 
-    // Position the "MIDI OUT" label at the top
-    outLabel->setBounds(0, 0, getWidth(), labelHeight);
+    // Show/hide components based on options
+    outLabel->setVisible(showOutput);
+    outMon->setVisible(showOutput);
+    inLabel->setVisible(showInput);
+    inMon->setVisible(showInput);
 
-    // Position the output monitor below the label
-    outMon->setBounds(0, labelHeight, getWidth(), topSectionHeight - labelHeight);
+    // If both are shown, use the split layout
+    if (showInput && showOutput)
+    {
+        resizer->setVisible(true);
 
-    // Position the resizer bar
-    resizer->setBounds(0, topSectionHeight, getWidth(), proportionOfHeight(0.0100f));
+        int topSectionHeight = proportionOfHeight(0.4900f);
+        int bottomSectionHeight = proportionOfHeight(0.4900f);
 
-    // Position the "MIDI IN" label
-    int inMonStartY = proportionOfHeight(0.5000f);
-    inLabel->setBounds(0, inMonStartY, getWidth(), labelHeight);
+        outLabel->setBounds(0, 0, getWidth(), labelHeight);
+        outMon->setBounds(0, labelHeight, getWidth(), topSectionHeight - labelHeight);
 
-    // Position the input monitor below its label
-    inMon->setBounds(0, inMonStartY + labelHeight, getWidth(), bottomSectionHeight - labelHeight);
+        resizer->setBounds(0, topSectionHeight, getWidth(), proportionOfHeight(0.0100f));
+
+        int inMonStartY = proportionOfHeight(0.5000f);
+        inLabel->setBounds(0, inMonStartY, getWidth(), labelHeight);
+        inMon->setBounds(0, inMonStartY + labelHeight, getWidth(), bottomSectionHeight - labelHeight);
+    }
+    // If only output is shown
+    else if (showOutput && !showInput)
+    {
+        resizer->setVisible(false);
+
+        outLabel->setBounds(0, 0, getWidth(), labelHeight);
+        outMon->setBounds(0, labelHeight, getWidth(), getHeight() - labelHeight);
+    }
+    // If only input is shown
+    else if (showInput && !showOutput)
+    {
+        resizer->setVisible(false);
+
+        inLabel->setBounds(0, 0, getWidth(), labelHeight);
+        inMon->setBounds(0, labelHeight, getWidth(), getHeight() - labelHeight);
+    }
+    // If neither is shown (fallback - show both grayed out)
+    else
+    {
+        resizer->setVisible(true);
+
+        int topSectionHeight = proportionOfHeight(0.4900f);
+        int bottomSectionHeight = proportionOfHeight(0.4900f);
+
+        outLabel->setBounds(0, 0, getWidth(), labelHeight);
+        outMon->setBounds(0, labelHeight, getWidth(), topSectionHeight - labelHeight);
+
+        resizer->setBounds(0, topSectionHeight, getWidth(), proportionOfHeight(0.0100f));
+
+        int inMonStartY = proportionOfHeight(0.5000f);
+        inLabel->setBounds(0, inMonStartY, getWidth(), labelHeight);
+        inMon->setBounds(0, inMonStartY + labelHeight, getWidth(), bottomSectionHeight - labelHeight);
+
+        // Force them visible for the fallback case
+        outLabel->setVisible(true);
+        outMon->setVisible(true);
+        inLabel->setVisible(true);
+        inMon->setVisible(true);
+    }
 }
-
 void CtrlrMIDIMon::messageLogged(CtrlrLog::CtrlrLogMessage _message) // Updated v5.6.35. MIDI filters Support. Thanks to @dnaldoog
 {
     if (!isVisible())
@@ -168,6 +215,8 @@ PopupMenu CtrlrMIDIMon::getMenuForIndex(int topLevelMenuIndex, const String& men
         menu.addSeparator();
         menu.addColouredItem(10 + 256, "Monitor input", Colour(0xff21c630), true, getBitOption(opts, midiLogInput));
         menu.addColouredItem(10 + 512, "Monitor output", Colour(0xffc62121), true, getBitOption(opts, midiLogOutput));
+
+
     }
     else if (topLevelMenuIndex == 2)
     {
@@ -217,6 +266,8 @@ void CtrlrMIDIMon::menuItemSelected(int menuItemID, int topLevelMenuIndex)
         int bitToFlip = menuItemID - 10;
         setBitOption(opts, bitToFlip, !getBitOption(opts, bitToFlip));
         owner.setProperty(Ids::ctrlrLogOptions, opts);
+    resized();
+    //repaint();
     }
     else if (topLevelMenuIndex == 2) // Filter menu - FIXED
     {
