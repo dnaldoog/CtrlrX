@@ -253,7 +253,7 @@ jobs:
       # -----------------------------------------------------------------
       - name: Signed Packaging and Notarization (macOS)
         if: ${{ matrix.name == 'macOS' && env.HAVE_MACOS_SIGNING_SECRETS == 'true' }}
-        timeout-minutes: 5
+        timeout-minutes: 30
         run: |
           pkgbuild --identifier "${{ env.BUNDLE_ID }}.au.pkg" --version $VERSION --component "${{ env.AU_PATH }}" --install-location "/Library/Audio/Plug-Ins/Components"  "Packaging/${{ env.PRODUCT_NAME }}.au.pkg"
           pkgbuild --identifier "${{ env.BUNDLE_ID }}.vst3.pkg" --version $VERSION --component "${{ env.VST3_PATH }}" --install-location "/Library/Audio/Plug-Ins/VST3" "Packaging/${{ env.PRODUCT_NAME }}.vst3.pkg"
@@ -278,7 +278,7 @@ jobs:
       # -----------------------------------------------------------------
       - name: Unsigned Packaging (macOS)
         if: ${{ matrix.name == 'macOS' && env.HAVE_MACOS_SIGNING_SECRETS != 'true' }}
-        timeout-minutes: 5
+        timeout-minutes: 30
         run: |
           echo "WARNING: Codesigning secrets not found. Building unsigned package only."
           pkgbuild --identifier "${{ env.BUNDLE_ID }}.au.pkg" --version $VERSION --component "${{ env.AU_PATH }}" --install-location "/Library/Audio/Plug-Ins/Components"  "Packaging/${{ env.PRODUCT_NAME }}.au.pkg"
