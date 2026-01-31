@@ -53,7 +53,7 @@ void CtrlrMIDIMon::resized()
     layoutManager.layOutComponents(comps, 3, 0, 0, getWidth(), getHeight(), true, true);
 }
 
-void CtrlrMIDIMon::messageLogged(CtrlrLog::CtrlrLogMessage _message)
+void CtrlrMIDIMon::messageLogged(CtrlrLog::CtrlrLogMessage _message) // Updated v5.6.35. MIDI filters Support. Thanks to @dnaldoog
 {
     if (!isVisible())
         return;
@@ -73,13 +73,16 @@ void CtrlrMIDIMon::messageLogged(CtrlrLog::CtrlrLogMessage _message)
     if (_message.level == CtrlrLog::MidiIn)
     {
         inMon->insertTextAtCaret(_message.message + "\n");
+        inMon->scrollToKeepCaretOnScreen(); // Keep the new data in view
     }
     else if (_message.level == CtrlrLog::MidiOut)
     {
         outMon->insertTextAtCaret(_message.message + "\n");
+        outMon->scrollToKeepCaretOnScreen(); // Keep the new data in view
     }
 }
-bool CtrlrMIDIMon::shouldFilterMessage(const MidiMessage& m, int filterMask)
+
+bool CtrlrMIDIMon::shouldFilterMessage(const MidiMessage& m, int filterMask) // Added v5.6.35. MIDI filters Support. Thanks to @dnaldoog
 {
     DBG("Checking message against filter mask: " + String(filterMask));
     if (filterMask == 0) return false;
@@ -100,9 +103,7 @@ bool CtrlrMIDIMon::shouldFilterMessage(const MidiMessage& m, int filterMask)
 
 StringArray CtrlrMIDIMon::getMenuBarNames()
 {
-    const char* const names[] = { "File", "View", "Filter", nullptr };
-    // const char* const names[] = { "View", "Filter", nullptr };
-    //const char* const names[] = { "View", nullptr }; // Added v5.6.31
+    const char* const names[] = { "Window", "View", "Filter", nullptr }; // Updated v5.6.35. MIDI Message Type Filters Support. Thanks to @dnaldoog
     return StringArray(names);
 }
 
@@ -115,6 +116,9 @@ PopupMenu CtrlrMIDIMon::getMenuForIndex(int topLevelMenuIndex, const String& men
 
     if (topLevelMenuIndex == 0)
     {
+        menu.addItem(2, "Clear Input");
+        menu.addItem(3, "Clear Output");
+        menu.addSeparator();
         menu.addItem(1, "Close");
     }
     else if (topLevelMenuIndex == 1)
@@ -135,7 +139,7 @@ PopupMenu CtrlrMIDIMon::getMenuForIndex(int topLevelMenuIndex, const String& men
     }
     else if (topLevelMenuIndex == 2)
     {
-       menu.addSectionHeader("Active filters");
+        menu.addSectionHeader("Active filters");
 
         // We add 10000 to the enum value to create a unique Menu ID
         menu.addItem(10000 + Filter_NoteOn, "Note On", true, getBitOption(filters, Filter_NoteOn));
@@ -155,11 +159,24 @@ PopupMenu CtrlrMIDIMon::getMenuForIndex(int topLevelMenuIndex, const String& men
 
 void CtrlrMIDIMon::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 {
-    if (topLevelMenuIndex == 0) // File menu
+    if (topLevelMenuIndex == 0) // Updated v5.6.31. From 1 to 0
     {
         if (menuItemID == 1)
         {
             // Handle close
+            // Access the window manager through the owner (CtrlrManager)
+            // and tell it to hide the MIDI Monitor window.
+            owner.getWindowManager().hide(CtrlrManagerWindowManager::MidiMonWindow);
+        }
+        if (menuItemID == 2)
+        {
+            // Handle clear input log
+            inputDocument.replaceAllContent("");
+        }
+        if (menuItemID == 3)
+        {
+            // Handle clear output log
+            outputDocument.replaceAllContent("");
         }
     }
     else if (topLevelMenuIndex == 1) // View menu
