@@ -220,6 +220,7 @@ PopupMenu CtrlrMIDIMon::getMenuForIndex(int topLevelMenuIndex, const String& men
     }
     else if (topLevelMenuIndex == 2)
     {
+
         menu.addSectionHeader("Active filters");
 
         // We add 10000 to the enum value to create a unique Menu ID
@@ -233,6 +234,8 @@ PopupMenu CtrlrMIDIMon::getMenuForIndex(int topLevelMenuIndex, const String& men
         menu.addItem(10000 + Filter_PitchWheel, "Pitch Wheel", true, getBitOption(filters, Filter_PitchWheel));
         menu.addItem(10000 + Filter_ActiveSense, "Active Sense", true, getBitOption(filters, Filter_ActiveSense));
         menu.addItem(10000 + Filter_Clock, "MIDI Clock", true, getBitOption(filters, Filter_Clock));
+		menu.addSeparator();
+        menu.addItem(20000, "Clear All");
     }
 
     return menu;
@@ -267,19 +270,27 @@ void CtrlrMIDIMon::menuItemSelected(int menuItemID, int topLevelMenuIndex)
         setBitOption(opts, bitToFlip, !getBitOption(opts, bitToFlip));
         owner.setProperty(Ids::ctrlrLogOptions, opts);
     resized();
-    //repaint();
     }
     else if (topLevelMenuIndex == 2) // Filter menu - FIXED
     {
-        int filters = (int)owner.getProperty(Ids::ctrlrMidiFilters);
-        int bitToToggle = menuItemID - 10000; // This gives us the enum value (1, 2, 4, 8, etc.)
+        if (menuItemID == 20000) // Clear All Filters
+        {
+            owner.setProperty(Ids::ctrlrMidiFilters, 0);
+      
+        }
 
-        // Toggle the bit using XOR
-        filters ^= bitToToggle;
+        else // Individual filter toggle
+        {
+            int filters = (int)owner.getProperty(Ids::ctrlrMidiFilters);
+            int bitToToggle = menuItemID - 10000; // This gives us the enum value (1, 2, 4, 8, etc.)
+            DBG("Filter toggled. New filter mask: " + String(filters));
+            // Toggle the bit using XOR
+            filters ^= bitToToggle;
 
-        owner.setProperty(Ids::ctrlrMidiFilters, filters);
+            owner.setProperty(Ids::ctrlrMidiFilters, filters);
 
-        // Debug output to verify
-        DBG("Filter toggled. New filter mask: " + String(filters));
+            // Debug output to verify
+            DBG("Filter toggled. New filter mask: " + String(filters));
+        }
     }
 }
