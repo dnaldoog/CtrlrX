@@ -164,6 +164,9 @@ void CtrlrMIDIMon::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 		if (menuItemID == 1)
 		{
 			// Handle close
+			// Access the window manager through the owner (CtrlrManager)
+			// and tell it to hide the MIDI Monitor window.
+			owner.getWindowManager().hide(CtrlrManagerWindowManager::MidiMonWindow);
 		}
 		if (menuItemID == 2)
 		{
