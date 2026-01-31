@@ -36,6 +36,8 @@ class CtrlrMIDIMon  : public CtrlrChildWindowContent,
 		StretchableLayoutResizerBar* resizer;
 		CodeEditorComponent* outMon;
 		CodeEditorComponent* inMon;
+		Label* outLabel;
+		Label* inLabel;
 };
 
 
