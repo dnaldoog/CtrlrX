@@ -210,47 +210,45 @@ PopupMenu CtrlrMIDIMon::getMenuForIndex(int topLevelMenuIndex, const String& men
 
     if (topLevelMenuIndex == 0)
     {
-        menu.addItem(2, "Clear Input");
-        menu.addItem(3, "Clear Output");
+        menu.addItem(ClearInputLog, "Clear Input");
+        menu.addItem(ClearOutputLog, "Clear Output");
         menu.addSeparator();
-        menu.addItem(1, "Close");
+        menu.addItem(CloseWindow, "Close");
     }
     else if (topLevelMenuIndex == 1)
     {
-        // Existing log options...
-        menu.addItem(10 + 2, "Show name", true, getBitOption(opts, midiLogName));
-        menu.addItem(10 + 4, "Show channel", true, getBitOption(opts, midiLogChannel));
-        menu.addItem(10 + 8, "Show number", true, getBitOption(opts, midiLogNumber));
-        menu.addItem(10 + 16, "Show value", true, getBitOption(opts, midiLogValue));
-        menu.addItem(10 + 32, "Show RAW data", true, getBitOption(opts, midiLogRawData));
-        menu.addItem(10 + 64, "Show timestamp", true, getBitOption(opts, midiLogTimestamp));
-        menu.addItem(10 + 128, "RAW data in decimal", true, getBitOption(opts, midiLogRawDecimal));
-        menu.addItem(10 + 1024, "Show device name", true, getBitOption(opts, midiLogDevice));
-        menu.addItem(10 + 4096, "Show RAW data size", true, getBitOption(opts, midiLogDataSize));
+        // Use ViewMenuBase directly with the option values
+        menu.addItem(ViewMenuBase + midiLogName, "Show name", true, getBitOption(opts, midiLogName));
+        menu.addItem(ViewMenuBase + midiLogChannel, "Show channel", true, getBitOption(opts, midiLogChannel));
+        menu.addItem(ViewMenuBase + midiLogNumber, "Show number", true, getBitOption(opts, midiLogNumber));
+        menu.addItem(ViewMenuBase + midiLogValue, "Show value", true, getBitOption(opts, midiLogValue));
+        menu.addItem(ViewMenuBase + midiLogRawData, "Show RAW data", true, getBitOption(opts, midiLogRawData));
+        menu.addItem(ViewMenuBase + midiLogTimestamp, "Show timestamp", true, getBitOption(opts, midiLogTimestamp));
+        menu.addItem(ViewMenuBase + midiLogRawDecimal, "RAW data in decimal", true, getBitOption(opts, midiLogRawDecimal));
+        menu.addItem(ViewMenuBase + midiLogDevice, "Show device name", true, getBitOption(opts, midiLogDevice));
+        menu.addItem(ViewMenuBase + midiLogDataSize, "Show RAW data size", true, getBitOption(opts, midiLogDataSize));
         menu.addSeparator();
-        menu.addColouredItem(10 + 256, "Monitor input", Colour(0xff21c630), true, getBitOption(opts, midiLogInput));
-        menu.addColouredItem(10 + 512, "Monitor output", Colour(0xffc62121), true, getBitOption(opts, midiLogOutput));
-
-
+        menu.addColouredItem(ViewMenuBase + midiLogInput, "Monitor input", Colour(0xff21c630), true, getBitOption(opts, midiLogInput));
+        menu.addColouredItem(ViewMenuBase + midiLogOutput, "Monitor output", Colour(0xffc62121), true, getBitOption(opts, midiLogOutput));
     }
     else if (topLevelMenuIndex == 2)
     {
 
         menu.addSectionHeader("Active filters");
 
-        // We add 10000 to the enum value to create a unique Menu ID
-        menu.addItem(10000 + Filter_NoteOn, "Note On", true, getBitOption(filters, Filter_NoteOn));
-        menu.addItem(10000 + Filter_NoteOff, "Note Off", true, getBitOption(filters, Filter_NoteOff));
-        menu.addItem(10000 + Filter_AftertouchPoly, "Aftertouch (Poly)", true, getBitOption(filters, Filter_AftertouchPoly));
-        menu.addItem(10000 + Filter_Control, "Control", true, getBitOption(filters, Filter_Control));
-        menu.addItem(10000 + Filter_Program, "Program", true, getBitOption(filters, Filter_Program));
-        menu.addItem(10000 + Filter_Sysex, "Sysex", true, getBitOption(filters, Filter_Sysex));
-        menu.addItem(10000 + Filter_ChannelPressure, "Channel Pressure", true, getBitOption(filters, Filter_ChannelPressure));
-        menu.addItem(10000 + Filter_PitchWheel, "Pitch Wheel", true, getBitOption(filters, Filter_PitchWheel));
-        menu.addItem(10000 + Filter_ActiveSense, "Active Sense", true, getBitOption(filters, Filter_ActiveSense));
-        menu.addItem(10000 + Filter_Clock, "MIDI Clock", true, getBitOption(filters, Filter_Clock));
-		menu.addSeparator();
-        menu.addItem(20000, "Clear All");
+        // We add 10000 to the enum value to create a unique Menu ID Just add !getBitOption to fulfill Martin's request
+        menu.addItem(FilterMenuBase + Filter_NoteOn, "Note On", true, !getBitOption(filters, Filter_NoteOn));
+        menu.addItem(FilterMenuBase + Filter_NoteOff, "Note Off", true, !getBitOption(filters, Filter_NoteOff));
+        menu.addItem(FilterMenuBase + Filter_AftertouchPoly, "Aftertouch (Poly)", true, !getBitOption(filters, Filter_AftertouchPoly));
+        menu.addItem(FilterMenuBase + Filter_Control, "Control", true, !getBitOption(filters, Filter_Control));
+        menu.addItem(FilterMenuBase + Filter_Program, "Program", true, !getBitOption(filters, Filter_Program));
+        menu.addItem(FilterMenuBase + Filter_Sysex, "Sysex", true, !getBitOption(filters, Filter_Sysex));
+        menu.addItem(FilterMenuBase + Filter_ChannelPressure, "Channel Pressure", true, !getBitOption(filters, Filter_ChannelPressure));
+        menu.addItem(FilterMenuBase + Filter_PitchWheel, "Pitch Wheel", true, !getBitOption(filters, Filter_PitchWheel));
+        menu.addItem(FilterMenuBase + Filter_ActiveSense, "Active Sense", true, !getBitOption(filters, Filter_ActiveSense));
+        menu.addItem(FilterMenuBase + Filter_Clock, "MIDI Clock", true, !getBitOption(filters, Filter_Clock));
+        menu.addSeparator();
+        menu.addItem(SelectAllFilters, "Select All", true, false);  // Changed from "Clear All"
     }
 
     return menu;
@@ -260,19 +258,19 @@ void CtrlrMIDIMon::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 {
     if (topLevelMenuIndex == 0) // Updated v5.6.31. From 1 to 0
     {
-        if (menuItemID == 1)
+        if (menuItemID == CloseWindow)
         {
             // Handle close
             // Access the window manager through the owner (CtrlrManager)
             // and tell it to hide the MIDI Monitor window.
             owner.getWindowManager().hide(CtrlrManagerWindowManager::MidiMonWindow);
         }
-        if (menuItemID == 2)
+        if (menuItemID == ClearInputLog)
         {
             // Handle clear input log
             inputDocument.replaceAllContent("");
         }
-        if (menuItemID == 3)
+        if (menuItemID == ClearOutputLog)
         {
             // Handle clear output log
             outputDocument.replaceAllContent("");
@@ -281,23 +279,24 @@ void CtrlrMIDIMon::menuItemSelected(int menuItemID, int topLevelMenuIndex)
     else if (topLevelMenuIndex == 1) // View menu
     {
         int opts = (int)owner.getProperty(Ids::ctrlrLogOptions);
-        int bitToFlip = menuItemID - 10;
+        int bitToFlip = menuItemID - ViewMenuBase;  // Changed from - 10
         setBitOption(opts, bitToFlip, !getBitOption(opts, bitToFlip));
         owner.setProperty(Ids::ctrlrLogOptions, opts);
-    resized();
+        resized();
     }
     else if (topLevelMenuIndex == 2) // Filter menu - FIXED
     {
-        if (menuItemID == 20000) // Clear All Filters
+        if (menuItemID == SelectAllFilters) // Select All Filters
         {
             owner.setProperty(Ids::ctrlrMidiFilters, 0);
+            DBG("*** SELECT ALL EXECUTED *** Filter mask set to: 0");
       
         }
 
         else // Individual filter toggle
         {
             int filters = (int)owner.getProperty(Ids::ctrlrMidiFilters);
-            int bitToToggle = menuItemID - 10000; // This gives us the enum value (1, 2, 4, 8, etc.)
+            int bitToToggle = menuItemID - FilterMenuBase; // This gives us the enum value (1, 2, 4, 8, etc.)
             DBG("Filter toggled. New filter mask: " + String(filters));
             // Toggle the bit using XOR
             filters ^= bitToToggle;
@@ -305,7 +304,7 @@ void CtrlrMIDIMon::menuItemSelected(int menuItemID, int topLevelMenuIndex)
             owner.setProperty(Ids::ctrlrMidiFilters, filters);
 
             // Debug output to verify
-            DBG("Filter toggled. New filter mask: " + String(filters));
+            DBG("Filter toggled. Bit: " + String(bitToToggle) + " New mask: " + String(filters));
         }
     }
 }
