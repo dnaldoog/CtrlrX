@@ -39,13 +39,13 @@ CtrlrMIDIMon::CtrlrMIDIMon(CtrlrManager& _owner)
     owner.getCtrlrLog().addListener(this);
 
     // For the input monitor (green background)
-    inMon->setFont(Font(owner.getFontManager().getDefaultMonoFontName(), 12, Font::plain));
+    inMon->setFont(Font(owner.getFontManager().getDefaultMonoFontName(), 12, Font::bold));
     inMon->setColour(CodeEditorComponent::backgroundColourId, Colour(0xffb3ffac));
     inMon->setColour(CodeEditorComponent::lineNumberBackgroundId, Colour(0xffb3ffac).darker());  // Darker green for gutter
     inMon->setColour(CodeEditorComponent::lineNumberTextId, Colours::white);  // White line numbers
 
     // For the output monitor (red background)
-    outMon->setFont(Font(owner.getFontManager().getDefaultMonoFontName(), 12, Font::plain));
+    outMon->setFont(Font(owner.getFontManager().getDefaultMonoFontName(), 12, Font::bold));
     outMon->setColour(CodeEditorComponent::backgroundColourId, Colour(0xffffacac));
     outMon->setColour(CodeEditorComponent::lineNumberBackgroundId, Colour(0xffffacac).darker());  // Darker red for gutter
     outMon->setColour(CodeEditorComponent::lineNumberTextId, Colours::white);  // White line numbers
