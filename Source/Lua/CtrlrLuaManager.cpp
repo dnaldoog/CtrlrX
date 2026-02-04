@@ -1299,6 +1299,30 @@ void CtrlrPanel::setModulatorValuesFromData(const MemoryBlock& dataSource,
 	}
 }
 
+// Helper to allow Lua to send raw hex strings directly. Added v5.6.35.
+void sendMidiMessageNow_String(CtrlrPanel* panel, std::string hexData)
+{
+    if (panel)
+    {
+        // 1. Convert std::string to juce::String
+        String juceHex(hexData);
+
+        // 2. Create the MIDI message object using the String constructor
+        CtrlrMidiMessage msg(juceHex);
+        
+        // 3. Pass the object to the panel
+        panel->sendMidiNow(msg);
+    }
+}
+
+std::string CtrlrMidiMessage_toString(CtrlrMidiMessage* msg) // Added v5.6.35.
+{
+    if (msg) {
+        return msg->toString().toStdString();
+    }
+    return std::string();
+}
+
 void CtrlrPanel::wrapForLua(lua_State* L)
 {
 	using namespace luabind;
@@ -1310,7 +1334,8 @@ void CtrlrPanel::wrapForLua(lua_State* L)
 				.def("getModulator", &CtrlrPanel::getModulator)
 				.def("getModulatorByIndex", &CtrlrPanel::getModulatorByIndex)
 				.def("getNumModulators", &CtrlrPanel::getNumModulators)
-				.def("sendMidiMessageNow", (void (CtrlrPanel::*)(CtrlrMidiMessage&)) & CtrlrPanel::sendMidiNow)
+				.def("sendMidiMessageNow", (void (CtrlrPanel::*)(CtrlrMidiMessage&)) & CtrlrPanel::sendMidiNow) // 1. The Original (Object-based)
+				.def("sendMidiMessageNow", &::sendMidiMessageNow_String) // 2. Add String Support (For "B0 0C 40" style)
 				.def("sendMidi", (void (CtrlrPanel::*)(CtrlrMidiMessage&, double)) & CtrlrPanel::sendMidi)
 				.def("sendMidi", (void (CtrlrPanel::*)(const MidiMessage&, double)) & CtrlrPanel::sendMidi)
 				.def("sendMidi", (void (CtrlrPanel::*)(const MidiBuffer&, double)) & CtrlrPanel::sendMidi)
