@@ -120,6 +120,9 @@ class CtrlrPanel:	public ValueTree::Listener,
 		void changeListenerCallback (ChangeBroadcaster* source);
 		void editorDeleted();
 
+		void sendMidiMessageNow_String(CtrlrPanel* panel, std::string hexData); // Added v5.6.35
+		std::string CtrlrMidiMessage_toString(CtrlrMidiMessage* msg); // Added v5.6.35
+	
 		void sendMidi (const MidiBuffer &buffer, double millisecondCounterToStartAt=0);
 		void sendMidi (const MidiMessage &message, double millisecondCounterToStartAt=0);
 		void sendMidi (CtrlrMidiMessage &m, double millisecondCounterToStartAt=0);

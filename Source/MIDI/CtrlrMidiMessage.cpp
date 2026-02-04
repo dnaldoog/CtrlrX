@@ -7,6 +7,7 @@
 #include "CtrlrLuaObjectWrapper.h"
 #include "CtrlrManager/CtrlrManager.h"
 #include "JuceClasses/LMemoryBlock.h"
+#include <string> // Added v5.6.35. To convert object to actual MIDI Message
 
 CtrlrMidiMessage::CtrlrMidiMessage()
 	:	messageType(None), midiTree(Ids::midi), multiMasterValue(1),
@@ -18,48 +19,55 @@ CtrlrMidiMessage::CtrlrMidiMessage()
 
 CtrlrMidiMessage::CtrlrMidiMessage (const String& hexData)
     :   messageType(None), midiTree(Ids::midi), multiMasterValue(1),
-        multiMasterNumber(1), messagePattern(0,true),
+        multiMasterNumber(1), messagePattern(0,true), restoring(false),
         initializationResult(Result::ok())
 {
     initializeEmptyMessage();
 
-    // 1. Strip everything that isn't a Hex character
-    String sanitizedHex = hexData.replaceCharacter(' ', 0).replaceCharacter('\t', 0);
+    String sanitizedHex = hexData.removeCharacters(" \t\r\n");
+    _DBG("CTOR HEX 1: Processing [" + sanitizedHex + "]");
 
-    if (!stringIsHexadecimal (sanitizedHex))
+    if (stringIsHexadecimal (sanitizedHex))
     {
-        _WRN("CtrlrMidiMessage::ctor invalid HEX: " + hexData);
-        initializationResult = Result::fail("Invalid HEX");
-    }
-    else
-    {
-        // 2. Convert Hex string to a temporary MemoryBlock FIRST
         MemoryBlock rawData;
         rawData.loadFromHexString(sanitizedHex);
         
         if (rawData.getSize() > 0)
         {
-            const uint8* d = (const uint8*)rawData.getData();
-            const int size = (int)rawData.getSize();
-
-            // 3. PRE-VALIDATE for the JUCE Assert
-            // This mirrors the logic on line 137 to prevent the pause
-            bool isSystem = (d[0] >= 0xf0);
-            int expectedLength = isSystem ? size : MidiMessage::getMessageLengthFromFirstByte(d[0]);
-
-            if (size > 3 || isSystem || expectedLength == size)
-            {
-                // Now it is safe to create the message; JUCE won't assert
-                MidiMessage m(d, size);
-                initializationResult = fillMessagePropertiesFromData(rawData);
-
-                if (messageType == SysEx)
-                    messageArray.add(m);
+            const uint8* data = (const uint8*)rawData.getData();
+            
+            if (data[0] < 0x80) {
+                initializationResult = Result::fail("Invalid MIDI Status Byte");
+                return;
             }
-            else
+
+            MidiMessage m(rawData.getData(), (int)rawData.getSize());
+            
+            if (m.getRawDataSize() > 0)
             {
-                _WRN("CtrlrMidiMessage: Byte count mismatch for Status Byte " + String::toHexString(d[0]));
-                initializationResult = Result::fail("MIDI Byte count mismatch");
+                // 1. Set the Type immediately
+                if (m.isSysEx()) messageType = (CtrlrMidiMessageType)1;
+                else if (m.isController()) messageType = (CtrlrMidiMessageType)2;
+                
+                // 2. Sync properties (This might try to clear things, so we do it first)
+                initializationResult = fillMessagePropertiesFromJuceMidi(m);
+
+                // 3. Clear and Force the Array - This is what getData() reads
+                messageArray.clear();
+                messageArray.add(m);
+
+                // 4. Manual Pattern Sync
+                messagePattern.replaceWith(rawData.getData(), rawData.getSize());
+
+                // 5. Only run the engine for CC, skip for SysEx
+                if (!m.isSysEx())
+                {
+                    patternChanged();
+                }
+
+                _DBG("CTOR HEX 5a: Final Pattern Size: " + String(messagePattern.getSize()));
+                _DBG("CTOR HEX 5b: Array Count: " + String(messageArray.size()));
+                _DBG("CTOR HEX 5c: toString Check: [" + toString() + "]");
             }
         }
     }
@@ -920,7 +928,8 @@ Array <CtrlrMidiMessageEx> &CtrlrMidiMessage::getMidiMessageArray()
 
 const String CtrlrMidiMessage::toString() const
 {
-	return (String::toHexString (getData().getData(), getData().getSize()));
+	_DBG("toString() called. Buffer Size: " + String(getData().getSize()) + " Pattern Size: " + String(messagePattern.getSize()));
+    return (String::toHexString (getData().getData(), getData().getSize()));
 }
 
 int CtrlrMidiMessage::getSize() const
@@ -978,7 +987,10 @@ void CtrlrMidiMessage::wrapForLua(lua_State *L)
             .def("setType", &CtrlrMidiMessage::setMidiMessageType) // Added v5.6.33
 			.def("getMidiMessageType", &CtrlrMidiMessage::getMidiMessageType)
             .def("setMidiMessageType", &CtrlrMidiMessage::setMidiMessageType) // Added v5.6.33
-			.def("toString", &CtrlrMidiMessage::toString)
+			// .def("toString", &CtrlrMidiMessage::toString)
+			.def("toString", +[](const CtrlrMidiMessage& self) -> std::string { // Updated v5.6.35. Using Lambda here is safer
+				return self.toString().toStdString();
+			})
 			.def("getInitializationResult", &CtrlrMidiMessage::getInitializationResult)
             .def("getProperty", (const var &(CtrlrMidiMessage::*)(const Identifier &) const) &CtrlrMidiMessage::getProperty) // Added v5.6.31
             .def("setProperty", (void (CtrlrMidiMessage::*)(const Identifier &, const var &, const bool))&CtrlrMidiMessage::setProperty) // Added v5.6.33
