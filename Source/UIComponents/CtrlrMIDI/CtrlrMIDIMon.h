@@ -28,6 +28,20 @@ class CtrlrMIDIMon  : public CtrlrChildWindowContent,
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrMIDIMon)
 
 	private:
+		enum MenuItemIDs
+		{
+			// File menu
+			CloseWindow = 1,
+			ClearInputLog = 2,
+			ClearOutputLog = 3,
+
+			// View menu base
+			ViewMenuBase = 10,
+
+			// Filter menu
+			FilterMenuBase = 10000,
+			SelectAllFilters = 99999
+		};
 		CtrlrManager &owner;
 		CodeDocument docOut, docIn;
 		StretchableLayoutManager layoutManager;
