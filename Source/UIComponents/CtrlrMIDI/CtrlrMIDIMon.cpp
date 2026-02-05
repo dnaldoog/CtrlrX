@@ -230,6 +230,9 @@ PopupMenu CtrlrMIDIMon::getMenuForIndex(int topLevelMenuIndex, const String& men
         menu.addSeparator();
         menu.addColouredItem(ViewMenuBase + midiLogInput, "Monitor input", Colour(0xff21c630), true, getBitOption(opts, midiLogInput));
         menu.addColouredItem(ViewMenuBase + midiLogOutput, "Monitor output", Colour(0xffc62121), true, getBitOption(opts, midiLogOutput));
+        menu.addSeparator();
+        menu.addColouredItem(RawOnly, "RAW Only", Colours::darkgrey, true, false);
+
     }
     else if (topLevelMenuIndex == 2)
     {
@@ -278,7 +281,18 @@ void CtrlrMIDIMon::menuItemSelected(int menuItemID, int topLevelMenuIndex)
     }
     else if (topLevelMenuIndex == 1) // View menu
     {
+
+         if (menuItemID == RawOnly) // Select Raw Data only
+        {
+            int opts= midiLogRawData;  // Set only the Raw Data bit
+            DBG("*** RAW ONLY EXECUTED *** Log options set to: " + String(opts));  
+
+            owner.setProperty(Ids::ctrlrLogOptions, opts);
+             return; // Important! Exit early so we don't do the normal toggle below    
+      
+        }
         int opts = (int)owner.getProperty(Ids::ctrlrLogOptions);
+        DBG("*** (int)owner.getProperty(Ids::ctrlrLogOptions) " + String(opts));
         int bitToFlip = menuItemID - ViewMenuBase;  // Changed from - 10
         setBitOption(opts, bitToFlip, !getBitOption(opts, bitToFlip));
         owner.setProperty(Ids::ctrlrLogOptions, opts);

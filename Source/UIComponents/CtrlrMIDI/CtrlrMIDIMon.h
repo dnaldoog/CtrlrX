@@ -24,6 +24,7 @@ class CtrlrMIDIMon  : public CtrlrChildWindowContent,
 		PopupMenu getMenuForIndex(int topLevelMenuIndex, const String &menuName);
 		void menuItemSelected(int menuItemID, int topLevelMenuIndex);
 		bool shouldFilterMessage(const MidiMessage& m, int filterMask);
+		
 
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrMIDIMon)
 
@@ -34,12 +35,15 @@ class CtrlrMIDIMon  : public CtrlrChildWindowContent,
 			CloseWindow = 1,
 			ClearInputLog = 2,
 			ClearOutputLog = 3,
-
+	
 			// View menu base
 			ViewMenuBase = 10,
 
 			// Filter menu
 			FilterMenuBase = 10000,
+			// File menu
+			RawOnly = 88888,
+			// Filter menu
 			SelectAllFilters = 99999
 		};
 		CtrlrManager &owner;
