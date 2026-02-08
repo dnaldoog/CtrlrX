@@ -273,7 +273,7 @@ namespace BinaryData
     const int            CtrlrLuaClassTemplates_xmlSize = 110;
 
     extern const char*   CtrlrLuaMethodTemplates_xml;
-    const int            CtrlrLuaMethodTemplates_xmlSize = 20902;
+    const int            CtrlrLuaMethodTemplates_xmlSize = 21805;
 
     extern const char*   CtrlrMidiMultiTemplate_xml;
     const int            CtrlrMidiMultiTemplate_xmlSize = 912;
