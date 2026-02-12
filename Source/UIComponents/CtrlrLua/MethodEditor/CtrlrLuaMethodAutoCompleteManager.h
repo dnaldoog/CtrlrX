@@ -15,7 +15,8 @@ enum SuggestionType {
     TypeMethod,     // Icon "M"
     TypeProperty,   // Icon "P" (New: for .x, .width, etc)
     TypeGlobal,     // Icon "V"
-    TypeUtility     // Icon "f"
+    TypeUtility,    // Icon "f"
+	TypeStatic      // Icon "S"
 };
 
 struct SuggestionItem {

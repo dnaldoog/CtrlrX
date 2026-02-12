@@ -90,7 +90,7 @@ private:
 
 	void handleSuggestionChosen(const SuggestionItem& item);
     juce::String getWordBeforeCaret (int& startOfWord, int offset = 0);
-	void performReplacement(const juce::String& suggestion, bool triggerMethods);
+	void performReplacement (const juce::String& suggestion, bool triggerMethods, SuggestionType type = TypeGlobal);
     
     // Helper to determine if we should append a colon ':'
 	bool isLuaObjectInstance(const juce::String& s, SuggestionType type);
@@ -101,9 +101,10 @@ private:
     juce::String lastAutocompletedMethod;
 	juce::String lastAutocompletedClass;
 	
-	bool triggerSuggestionsAfterReplacement = false;
-	
 	int nextTabJumpPosition = -1; // -1 means no jump active
+	
+	bool triggerSuggestionsAfterReplacement = false;
+    juce::String forcedSeparator;
 };
 //==============================================================================
 class GenericCodeEditorComponent : public CodeEditorComponent
