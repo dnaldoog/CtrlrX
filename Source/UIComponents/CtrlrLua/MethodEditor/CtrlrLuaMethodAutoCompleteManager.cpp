@@ -60,11 +60,23 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
                             }
 
                             if (!alreadyExists) {
-                                LuaMethod lm; lm.name = name; lm.parameters = args; lm.isStatic = false;
+                                LuaMethod lm;
+								lm.name = name;
+								lm.parameters = args;
+								lm.isStatic = false;
+								
+								// If the class is CtrlrLuaUtils, also treat these as static
+								// so they show up after a dot (utils.)
+								if (lc.name == "CtrlrLuaUtils") {
+									lm.isStatic = true;
+									lc.staticMethods.add(lm);
+								}
+								
                                 lc.methods.add(lm);
                                 
                                 // FIX: We no longer manually insert a "()" version here.
                                 // The UI now handles displaying the real signature.
+								
                                 
                                 if (name != "string" && name != "math" && name != "table")
                                     allMethodNames.add(name);
@@ -241,45 +253,85 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
     }
 
     // 4. Detailed Library Definitions
-    if (!classes.contains("string")) {
-        LuaClass strLib; strLib.name = "string";
-        juce::StringArray strMethods = {
-            "byte(s, i, j)", "char(...)", "dump(function)", "find(s, pattern, init, plain)",
-            "format(formatstring, ...)", "gmatch(s, pattern)", "gsub(s, pattern, repl, n)",
-            "len(s)", "lower(s)", "match(s, pattern, init)", "rep(s, n)",
-            "reverse(s)", "sub(s, i, j)", "upper(s)"
-        };
-        for (auto& mEntry : strMethods) {
-            LuaMethod lm;
-            lm.name = mEntry.contains("(") ? mEntry.upToFirstOccurrenceOf("(", false, false) : mEntry;
-            lm.parameters = mEntry.contains("(") ? "(" + mEntry.fromFirstOccurrenceOf("(", false, false) : "()";
-            lm.isStatic = true;
-            strLib.staticMethods.add(lm);
-            strLib.methods.add(lm);
-        }
-        classes.set("string", strLib);
-        classNames.add("string");
-    }
-
-    if (!classes.contains("math")) {
-        LuaClass mathLib; mathLib.name = "math";
-        juce::StringArray mathMethods = {
-            "abs(x)", "acos(x)", "asin(x)", "atan(x)", "ceil(x)", "cos(x)",
-            "deg(x)", "exp(x)", "floor(x)", "fmod(x, y)", "huge", "log(x)",
-            "max(x, ...)", "min(x, ...)", "modf(x)", "pi", "pow(x, y)",
-            "rad(x)", "random(m, n)", "randomseed(x)", "sin(x)", "sqrt(x)", "tan(x)"
-        };
-        for (auto& mEntry : mathMethods) {
-            LuaMethod lm;
-            lm.name = mEntry.contains("(") ? mEntry.upToFirstOccurrenceOf("(", false, false) : mEntry;
-            lm.parameters = mEntry.contains("(") ? "(" + mEntry.fromFirstOccurrenceOf("(", false, false) : "";
-            lm.isStatic = true;
-            mathLib.staticMethods.add(lm);
-            mathLib.methods.add(lm);
-        }
-        classes.set("math", mathLib);
-        classNames.add("math");
-    }
+	if (true) {
+		// We use "luaString" internally as a key to avoid JUCE String conflicts
+		// but we will alias it to "string"
+		LuaClass strLib;
+		strLib.name = "string"; // The name remains lowercase
+		
+		juce::StringArray strMethods = {
+			"byte(s, i, j)", "char(...)", "dump(function)", "find(s, pattern, init, plain)",
+			"format(formatstring, ...)", "gmatch(s, pattern)", "gsub(s, pattern, repl, n)",
+			"len(s)", "lower(s)", "match(s, pattern, init)", "rep(s, n)",
+			"reverse(s)", "sub(s, i, j)", "upper(s)"
+		};
+		
+		for (auto& mEntry : strMethods) {
+			LuaMethod lm;
+			lm.name = mEntry.upToFirstOccurrenceOf("(", false, false).trim();
+			lm.parameters = mEntry.substring(mEntry.indexOf("(")).trim();
+			lm.isStatic = true;
+			strLib.staticMethods.add(lm);
+			strLib.methods.add(lm); // Keep both for safety
+		}
+		
+		// FORCE both keys to point to our Lua library
+		classes.set("string", strLib);
+		classes.set("String", strLib);
+		
+		if (!classNames.contains("string")) classNames.add("string");
+	}
+	
+	if (!classes.contains("math")) {
+		LuaClass mathLib;
+		mathLib.name = "math";
+		juce::StringArray mathMethods = {
+			"abs(x)", "acos(x)", "asin(x)", "atan(x)", "ceil(x)", "cos(x)",
+			"deg(x)", "exp(x)", "floor(x)", "fmod(x, y)", "huge", "log(x)",
+			"max(x, ...)", "min(x, ...)", "modf(x)", "pi", "pow(x, y)",
+			"rad(x)", "random(m, n)", "randomseed(x)", "sin(x)", "sqrt(x)", "tan(x)"
+		};
+		
+		for (auto& mEntry : mathMethods) {
+			if (mEntry == "pi" || mEntry == "huge") {
+				// Add directly to the local mathLib object we are building
+				mathLib.properties.add(mEntry);
+				continue;
+			}
+			
+			LuaMethod lm;
+			if (mEntry.contains("(")) {
+				lm.name = mEntry.upToFirstOccurrenceOf("(", false, false).trim();
+				// This captures from the first '(' to the end, e.g., "(x, y)"
+				lm.parameters = mEntry.substring(mEntry.indexOf("(")).trim();
+			} else {
+				lm.name = mEntry.trim();
+				lm.parameters = "()";
+			}
+			
+			lm.isStatic = true;
+			mathLib.staticMethods.add(lm);
+			mathLib.methods.add(lm);
+		}
+		
+		// Now store the completed class in the map
+		classes.set("math", mathLib);
+		if (!classNames.contains("math")) classNames.add("math");
+	}
+	
+	if (classes.contains("LMemoryBlock") && !classes.contains("MemoryBlock")) {
+		classes.set("MemoryBlock", classes["LMemoryBlock"]);
+	}
+	
+	// Force CtrlrLuaUtils instance methods to act as statics so 'utils.' works
+	if (classes.contains("CtrlrLuaUtils")) {
+		auto& utilsClass = classes.getReference("CtrlrLuaUtils");
+		if (utilsClass.staticMethods.isEmpty()) {
+			for (auto& m : utilsClass.methods) {
+				utilsClass.staticMethods.add(m);
+			}
+		}
+	}
 
     // 5. Inject Common Libs (Final pass to ensure presence)
     auto injectStaticLib = [this](juce::String libName, juce::StringArray methods) {
@@ -482,15 +534,16 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggesti
         }
 
         // 3. Properties
-        if (includeProperties) {
-            for (auto& p : lc.properties) {
-                if ((prefix.isEmpty() || p.startsWithIgnoreCase(prefix)) && !addedExactSignatures.contains(p)) {
-                    suggestions.push_back({ p, TypeProperty });
-                    addedExactSignatures.add(p);
-                    classMatches++;
-                }
-            }
-        }
+		if (includeProperties) {
+			for (auto& prop : lc.properties) {
+				if (prefix.isEmpty() || prop.startsWithIgnoreCase(prefix)) {
+					SuggestionItem item;
+					item.text = prop;
+					item.type = TypeProperty; // This triggers your "P" icon logic
+					suggestions.push_back(item);
+				}
+			}
+		}
 
         _DBG("    Found " + juce::String(classMatches) + " matches in [" + matchedKey + "]");
         
@@ -701,11 +754,11 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
     if (varName == "mod")                         return "CtrlrModulator";
     if (varName == "comp")                        return "CtrlrComponent";
     if (varName == "g")                           return "Graphics";
-    if (varName == "utils")                       return "utils";
+	if (varName == "utils")                       return "CtrlrLuaUtils"; // Updated v5.6.35 12.02.26. Fixed: Points to actual class
     if (varName == "math")                        return "math";
     if (varName == "table")                       return "table";
     if (varName == "string")                      return "string";
-    if (varName == "MemoryBlock")                 return "MemoryBlock";
+	if (varName == "MemoryBlock" || varName == "memoryBlock" || varName == "mb") return "LMemoryBlock"; //  // Updated v5.6.35 12.02.26. Redirect everything to the one with the methods
     if (varName == "CtrlrMidiMessage") return "CtrlrMidiMessage";
     
     // 2. CHAIN RESOLUTION (e.g., mb:someMethod():)
@@ -747,7 +800,7 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
         juce::String potentialClass = rhs.upToFirstOccurrenceOf("(", false, false).trim();
         
         // Check if the RHS is a known class name directly
-        if (classNames.contains(potentialClass) || potentialClass == "MemoryBlock")
+		if (classNames.contains(potentialClass) || potentialClass == "MemoryBlock" || potentialClass == "LMemoryBlock") // Updated v5.6.35 12.02.26
         {
             return potentialClass;
         }
@@ -760,7 +813,7 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
     }
     
     // 4. Static Fallbacks (If no assignment found, guess by name)
-    if (varName == "m" || varName == "mb" || varName == "mem") return "MemoryBlock";
+	if (varName == "m" || varName == "mb" || varName == "mem" || varName == "memoryBlock") return "LMemoryBlock"; // Updated v5.6.35 12.02.26
     if (varName == "f") return "File";
     
     return "";

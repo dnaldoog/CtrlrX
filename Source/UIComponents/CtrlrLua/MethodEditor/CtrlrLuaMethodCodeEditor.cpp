@@ -94,6 +94,7 @@ public:
 			case TypeStatic:  iconColor = juce::Colours::darkblue;   iconLetter = "S"; break;
 			case TypeGlobal:  iconColor = juce::Colours::darkgreen; iconLetter = "V"; break;
 			case TypeUtility: iconColor = juce::Colours::purple;   iconLetter = "f"; break;
+			case TypeProperty: iconColor = juce::Colours::darkgoldenrod; iconLetter = "P"; break;
 			default:          iconColor = mainText.withAlpha(0.5f); iconLetter = "?"; break;
 		}
 		
