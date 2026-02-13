@@ -143,6 +143,18 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
         classes.set("MemoryBlock", mbClass);
         classNames.add("MemoryBlock");
     }
+	
+	if (!classes.contains("Listener")) {
+        LuaClass l; l.name = "Listener";
+        classes.set("Listener", l);
+        classNames.addIfNotAlreadyThere("Listener");
+    }
+
+    if (!classes.contains("Timer")) {
+        LuaClass t; t.name = "Timer";
+        classes.set("Timer", t);
+        classNames.addIfNotAlreadyThere("Timer");
+    }
     
     if (!classes.contains("Component")) {
         LuaClass comp; comp.name = "Component";
@@ -180,24 +192,22 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
     }
 	
 	if (!classes.contains("CtrlrMidiMessage")) {
-        LuaClass mid;
-        mid.name = "CtrlrMidiMessage";
-        
-        // Add the three constructors for the bubble suggestions
-        mid.constructors.add("(String hexData)");
-        mid.constructors.add("({byteTable})");
-        mid.constructors.add("(MemoryBlock data)");
-        
-        // Basic common methods for MIDI objects
-        juce::StringArray methods = { "getSize", "getData", "getType", "getChannel", "getTimestamp", "setTimestamp" };
-        for (auto& n : methods) {
-            LuaMethod lm; lm.name = n; lm.parameters = "()";
-            mid.methods.add(lm);
-            allMethodNames.add(n);
-        }
-
-        classes.set("CtrlrMidiMessage", mid);
-        classNames.add("CtrlrMidiMessage");
+		LuaClass m; m.name = "CtrlrMidiMessage";
+		classes.set("CtrlrMidiMessage", m);
+		classNames.addIfNotAlreadyThere("CtrlrMidiMessage");
+	}
+	auto& mid = classes.getReference("CtrlrMidiMessage");
+	mid.constructors.clear();
+	mid.methods.clear();
+	mid.constructors.add("(String hexData)");
+	mid.constructors.add("({byteTable})");
+	mid.constructors.add("(MemoryBlock data)");
+	
+	juce::StringArray midiMethods = { "getSize", "getData", "getType", "getChannel", "getTimeStamp", "setTimeStamp" };
+	for (auto& n : midiMethods) {
+		LuaMethod lm; lm.name = n; lm.parameters = "()";
+		mid.methods.add(lm);
+		allMethodNames.addIfNotAlreadyThere(n);
 	}
 	
 	// Setup Justification
