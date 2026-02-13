@@ -200,58 +200,40 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
         classNames.add("CtrlrMidiMessage");
 	}
 	
-	// --- Path Class Fix ---
-	if (!classes.contains("Path")) {
-		LuaClass pc; pc.name = "Path";
-		
-		// Add constructors
-		pc.constructors.add("()");
-		
-		// Define the methods
-		juce::StringArray pathMethods = { "startNewSubPath", "lineTo", "quadraticTo", "closeSubPath", "getBounds", "addArrow" };
-		
-		// Add the specific complex one he mentioned
-		LuaMethod mq;
-		mq.name = "addQuadrilateral";
-		mq.parameters = "(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4)";
-		pc.methods.add(mq);
-		
-		for (auto& name : pathMethods) {
-			LuaMethod pm;
-			pm.name = name;
-			pm.parameters = "()";
-			pm.isStatic = true; // Just to be safe
-			pc.methods.add(pm);
-		}
-		
-		// IMPORTANT: Path often acts as its own library in some Lua bindings.
-		// We copy instance methods to static so Path.addArrow works too.
-		pc.staticMethods = pc.methods; // Copy instance methods to static list
-		classes.set("Path", pc);
-		classNames.add("Path");
-	}
-	
-	// --- Justification Class Fix (Enums) ---
-	// 1. Get a reference to the class (it likely exists from the XML)
+	// Setup Justification
 	if (!classes.contains("Justification")) {
-		LuaClass j;
-		j.name = "Justification";
-		classes.set("Justification", j);
-		classNames.add("Justification");
+		LuaClass jClass; jClass.name = "Justification";
+		classes.set("Justification", jClass);
+		classNames.addIfNotAlreadyThere("Justification");
 	}
 	
 	auto& j = classes.getReference("Justification");
-	juce::StringArray enums = { "left", "right", "horizontallyCentred", "top", "bottom", "verticallyCentred", "centred" };
-	
-	// 2. Clear existing statics to prevent duplicates if loadDefinitions is called twice
 	j.staticMethods.clear();
 	
-	for (auto& e : enums) {
+	juce::StringArray jEnums = { "left", "right", "horizontallyCentred", "top", "bottom", "verticallyCentred", "centred" };
+	for (auto& e : jEnums) {
 		LuaMethod m;
 		m.name = e;
-		m.parameters = ""; // Essential for "P" icon and no brackets
+		m.parameters = ""; // No brackets, Icon "P"
 		m.isStatic = true;
 		j.staticMethods.add(m);
+	}
+	
+	// Setup Path
+	if (!classes.contains("Path")) {
+		LuaClass pClass; pClass.name = "Path";
+		classes.set("Path", pClass);
+		classNames.addIfNotAlreadyThere("Path");
+	}
+	
+	auto& pc = classes.getReference("Path");
+	// Mirror instance methods to static so Path.something works without crashing
+	if (pc.staticMethods.isEmpty() && !pc.methods.isEmpty()) {
+		for (auto& m : pc.methods) {
+			LuaMethod sm = m;
+			sm.isStatic = true;
+			pc.staticMethods.add(sm);
+		}
 	}
 	
 	// 3. HARD-FIX SPECIFIC INSTANCES
