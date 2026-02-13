@@ -196,8 +196,50 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
 
         classes.set("CtrlrMidiMessage", mid);
         classNames.add("CtrlrMidiMessage");
-    }
-
+	}
+	
+	if (!classes.contains("Justification")) {
+		LuaClass j; j.name = "Justification";
+		juce::StringArray enums = { "left", "right", "horizontallyCentred", "top", "bottom", "verticallyCentred", "centred" };
+		
+		for (auto& e : enums) {
+			LuaMethod m;
+			m.name = e;
+			m.parameters = ""; // No brackets for enums
+			m.isStatic = true;
+			
+			j.staticMethods.add(m); // This is for Justification.left
+			j.methods.add(m);       // Backup for the search logic
+		}
+		
+		// Add the constructor so Justification() works
+		j.constructors.add("()");
+		
+		classes.set("Justification", j);
+		classNames.add("Justification");
+	}
+	
+	if (!classes.contains("Path")) {
+		LuaClass pc; pc.name = "Path";
+		
+		// 1. Add the specific method he was missing with its full parameters
+		LuaMethod m;
+		m.name = "addQuadrilateral";
+		m.parameters = "(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4)";
+		m.isStatic = false;
+		pc.methods.add(m);
+		
+		// 2. Add other common Path methods so the : autocomplete is useful
+		juce::StringArray pathMethods = { "startNewSubPath", "lineTo", "quadraticTo", "closeSubPath", "getBounds" };
+		for (auto& name : pathMethods) {
+			LuaMethod pm; pm.name = name; pm.parameters = "()"; // Or add real params if known
+			pc.methods.add(pm);
+		}
+		
+		classes.set("Path", pc);
+		classNames.add("Path");
+	}
+	
     // 3. HARD-FIX SPECIFIC INSTANCES
     if (classes.contains("CtrlrPanel")) {
         auto& panel = classes.getReference("CtrlrPanel");
