@@ -217,40 +217,45 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
 		pc.methods.add(mq);
 		
 		for (auto& name : pathMethods) {
-			LuaMethod pm; pm.name = name; pm.parameters = "()";
+			LuaMethod pm;
+			pm.name = name;
+			pm.parameters = "()";
+			pm.isStatic = true; // Just to be safe
 			pc.methods.add(pm);
 		}
 		
 		// IMPORTANT: Path often acts as its own library in some Lua bindings.
 		// We copy instance methods to static so Path.addArrow works too.
-		pc.staticMethods = pc.methods;
-		
+		pc.staticMethods = pc.methods; // Copy instance methods to static list
 		classes.set("Path", pc);
 		classNames.add("Path");
 	}
 	
 	// --- Justification Class Fix (Enums) ---
+	// 1. Get a reference to the class (it likely exists from the XML)
 	if (!classes.contains("Justification")) {
-		LuaClass j; j.name = "Justification";
-		juce::StringArray enums = { "left", "right", "horizontallyCentred", "top", "bottom", "verticallyCentred", "centred" };
-		
-		for (auto& e : enums) {
-			LuaMethod m;
-			m.name = e;
-			m.parameters = ""; // EMPTY string = No brackets inserted, shows "P" icon
-			m.isStatic = true;
-			
-			j.staticMethods.add(m);
-			j.methods.add(m); // Added to both to ensure visibility
-			allMethodNames.addIfNotAlreadyThere(e);
-		}
-		
+		LuaClass j;
+		j.name = "Justification";
 		classes.set("Justification", j);
 		classNames.add("Justification");
 	}
 	
+	auto& j = classes.getReference("Justification");
+	juce::StringArray enums = { "left", "right", "horizontallyCentred", "top", "bottom", "verticallyCentred", "centred" };
+	
+	// 2. Clear existing statics to prevent duplicates if loadDefinitions is called twice
+	j.staticMethods.clear();
+	
+	for (auto& e : enums) {
+		LuaMethod m;
+		m.name = e;
+		m.parameters = ""; // Essential for "P" icon and no brackets
+		m.isStatic = true;
+		j.staticMethods.add(m);
+	}
+	
 	// 3. HARD-FIX SPECIFIC INSTANCES
-    if (classes.contains("CtrlrPanel")) {
+	if (classes.contains("CtrlrPanel")) {
         auto& panel = classes.getReference("CtrlrPanel");
         panel.parentClass = "Component";
         juce::StringArray missing = {
@@ -514,98 +519,96 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggesti
     const juce::String& className, const juce::String& prefix,
     bool includeInstance, bool includeStatic, bool includeProperties)
 {
-    // 1. Thread Safety: Block any background loading while we are reading
     const juce::ScopedLock sl (lock);
 
     std::vector<SuggestionItem> suggestions;
     juce::StringArray addedExactSignatures;
     juce::String currentClass = className;
 
-    _DBG("--- START SEARCH: [" + prefix + "] in Class: [" + className + "] (Static: " + (includeStatic ? "YES" : "NO") + ") ---");
+    _DBG("--- START SEARCH: [" + prefix + "] in Class: [" + className + "] ---");
 
     while (currentClass.isNotEmpty())
     {
-        juce::String matchedKey = "";
-        
-        // Safety: iterating over classNames while it's being cleared is risky without the lock above
+        // --- CASE INSENSITIVE LOOKUP FIX ---
+        juce::String actualKey = "";
         for (auto& name : classNames) {
             if (name.equalsIgnoreCase(currentClass)) {
-                matchedKey = name;
+                actualKey = name;
                 break;
             }
         }
-        
-        if (matchedKey.isEmpty() || !classes.contains(matchedKey)) {
-            _DBG("    ! Class [" + currentClass + "] not found in definitions.");
-            break;
+
+        // If we can't find the class in our definitions, stop searching the hierarchy
+        if (actualKey.isEmpty() || !classes.contains(actualKey)) {
+             _DBG("    ! Class [" + currentClass + "] not found in definitions.");
+             break;
         }
         
-        // 2. Memory Safety: Get a COPY of the LuaClass, not a Reference.
-        // If loadDefinitions() runs, 'lc' stays valid here locally.
-        const LuaClass lc = classes[matchedKey];
+        const LuaClass lc = classes[actualKey];
         int classMatches = 0;
         
-        // 1. Static Methods & Constructors (Triggered by '.')
+        // --- 1. Static & Enums (The '.' trigger) ---
         if (includeStatic) {
-            _DBG("        Checking Static Methods for [" + matchedKey + "]:");
-            
+            _DBG("        Checking Static/Enums for [" + actualKey + "]");
             for (auto& m : lc.staticMethods) {
-                juce::String fullSignature = m.name + " " + m.parameters;
-                bool match = (prefix.isEmpty() || m.name.startsWithIgnoreCase(prefix));
-                bool unique = !addedExactSignatures.contains(fullSignature);
-                
-                if (match && unique) {
-                    _DBG("          + Found Static: " + m.name);
-                    suggestions.push_back({ fullSignature, TypeStatic });
-                    addedExactSignatures.add(fullSignature);
-                    classMatches++;
-                }
-            }
-            
-            for (auto& cParams : lc.constructors) {
-                juce::String fullSignature = lc.name + " " + cParams;
-                bool match = (prefix.isEmpty() || lc.name.startsWithIgnoreCase(prefix));
-                bool unique = !addedExactSignatures.contains(fullSignature);
-                
-                if (match && unique) {
-                    _DBG("          + Found Constructor: " + lc.name);
-                    suggestions.push_back({ fullSignature, TypeMethod });
-                    addedExactSignatures.add(fullSignature);
-                    classMatches++;
-                }
-            }
-        }
+                if (prefix.isNotEmpty() && !m.name.startsWithIgnoreCase(prefix)) continue;
 
-        // 2. Instance Methods (Triggered by ':')
-        if (includeInstance) {
-            for (auto& m : lc.methods) {
-                juce::String fullSignature = m.name + " " + m.parameters;
-                if ((prefix.isEmpty() || m.name.startsWithIgnoreCase(prefix)) && !addedExactSignatures.contains(fullSignature)) {
-                    suggestions.push_back({ fullSignature, TypeMethod });
-                    addedExactSignatures.add(fullSignature);
+                SuggestionItem item;
+                // Polish: No parameters = Enum/Constant style (Icon P)
+                if (m.parameters.isEmpty() || m.parameters == " ") {
+                    item.text = m.name;
+                    item.type = TypeProperty;
+                } else {
+                    item.text = m.name + " " + m.parameters;
+                    item.type = TypeStatic;
+                }
+
+                if (!addedExactSignatures.contains(item.text)) {
+                    suggestions.push_back(item);
+                    addedExactSignatures.add(item.text);
                     classMatches++;
                 }
             }
-        }
-
-        // 3. Properties
-		if (includeProperties) {
-			for (auto& prop : lc.properties) {
-				if (prefix.isEmpty() || prop.startsWithIgnoreCase(prefix)) {
-					SuggestionItem item;
-					item.text = prop;
-					item.type = TypeProperty; // This triggers your "P" icon logic
-					suggestions.push_back(item);
+			
+			// Constructors for Path.Path() style access
+			for (auto& cParams : lc.constructors) {
+				// If the prefix is empty, or the user started typing the class name as a method
+				if (prefix.isNotEmpty() && !lc.name.startsWithIgnoreCase(prefix)) continue;
+				
+				// Change 'lc.name' to 'new' or just format it so it's clearly a constructor
+				// Or, if you want it to behave like a standard static call:
+				juce::String sig = lc.name + " " + (cParams.isEmpty() ? "()" : cParams);
+				
+				if (!addedExactSignatures.contains(sig)) {
+					suggestions.push_back({ sig, TypeMethod });
+					addedExactSignatures.add(sig);
+					classMatches++;
 				}
 			}
 		}
+		
+		// --- 2. Instance Methods (The ':' trigger) ---
+        if (includeInstance) {
+            _DBG("        Checking Instance Methods for [" + actualKey + "]");
+            for (auto& m : lc.methods) {
+                if (prefix.isNotEmpty() && !m.name.startsWithIgnoreCase(prefix)) continue;
+                
+                juce::String sig = m.name + " " + m.parameters;
+                if (!addedExactSignatures.contains(sig)) {
+                    suggestions.push_back({ sig, TypeMethod });
+                    addedExactSignatures.add(sig);
+                    classMatches++;
+                }
+            }
+        }
 
-        _DBG("    Found " + juce::String(classMatches) + " matches in [" + matchedKey + "]");
-        
-        // Move to parent
+        _DBG("    Found " + juce::String(classMatches) + " matches in [" + actualKey + "]");
+
+        // Move to parent class for inheritance support
         currentClass = lc.parentClass;
         
-        if (currentClass == lc.name || currentClass.isEmpty()) break;
+        // Safety: prevent infinite loops if a class points to itself as a parent
+        if (currentClass.equalsIgnoreCase(actualKey) || currentClass.isEmpty()) break;
     }
 
     _DBG("--- SEARCH COMPLETE: Total " + juce::String(suggestions.size()) + " matches ---");
