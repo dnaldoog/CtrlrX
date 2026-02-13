@@ -307,8 +307,8 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
         midiClass.constructors.add("({table bytes})");
         midiClass.constructors.add("(MemoryBlock data)");
     }
-
-    // 4. Detailed Library Definitions
+	
+	// 4. Detailed Library Definitions
 	if (true) {
 		// We use "luaString" internally as a key to avoid JUCE String conflicts
 		// but we will alias it to "string"
@@ -857,10 +857,12 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
         juce::String potentialClass = rhs.upToFirstOccurrenceOf("(", false, false).trim();
         
         // Check if the RHS is a known class name directly
-		if (classNames.contains(potentialClass) || potentialClass == "MemoryBlock" || potentialClass == "LMemoryBlock") // Updated v5.6.35 12.02.26
-        {
-            return potentialClass;
-        }
+		// if (classNames.contains(potentialClass) || potentialClass == "MemoryBlock" || potentialClass == "LMemoryBlock") // Updated v5.6.35 12.02.26
+		// We use true for the second parameter of contains() to make it case-insensitive
+		if (classNames.contains(potentialClass, true))
+		{
+			return potentialClass;
+		}
 
         // --- RECURSIVE ALIAS/CHAIN RESOLUTION ---
         if (rhs != varName && rhs.isNotEmpty())
