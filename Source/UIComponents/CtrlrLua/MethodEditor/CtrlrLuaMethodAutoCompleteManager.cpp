@@ -807,16 +807,17 @@ juce::StringArray CtrlrLuaMethodAutoCompleteManager::getClassNames() const
 juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const juce::String& varName, const juce::String& code)
 {
     // 1. Static/Global Shortcuts (Priority)
-    if (varName == "panel")                      return "CtrlrPanel";
+    if (varName == "panel")                       return "CtrlrPanel";
     if (varName == "mod")                         return "CtrlrModulator";
     if (varName == "comp")                        return "CtrlrComponent";
     if (varName == "g")                           return "Graphics";
-	if (varName == "utils")                       return "CtrlrLuaUtils"; // Updated v5.6.35 12.02.26. Fixed: Points to actual class
+    if (varName == "utils")                       return "CtrlrLuaUtils"; // Updated v5.6.35 12.02.26. Fixed: Points to actual class
     if (varName == "math")                        return "math";
     if (varName == "table")                       return "table";
     if (varName == "string")                      return "string";
-	if (varName == "MemoryBlock" || varName == "memoryBlock" || varName == "mb") return "LMemoryBlock"; //  // Updated v5.6.35 12.02.26. Redirect everything to the one with the methods
-    if (varName == "CtrlrMidiMessage") return "CtrlrMidiMessage";
+    if (varName == "MemoryBlock" || varName == "memoryBlock" || varName == "mb") return "LMemoryBlock"; //  // Updated v5.6.35 12.02.26. Redirect everything to the one with the methods
+    if (varName == "CtrlrMidiMessage")            return "CtrlrMidiMessage";
+    if (varName.equalsIgnoreCase("Path"))         return "Path";
     
     // 2. CHAIN RESOLUTION (e.g., mb:someMethod():)
     if (varName.contains(":") || varName.contains("."))
