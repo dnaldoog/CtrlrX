@@ -137,12 +137,23 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
         }
     }
 
-    // 2. Manual Injection of Base Classes
-    if (!classes.contains("MemoryBlock")) {
-        LuaClass mbClass; mbClass.name = "MemoryBlock";
-        classes.set("MemoryBlock", mbClass);
-        classNames.add("MemoryBlock");
-    }
+	// 2. Manual Injection of Base Classes
+	if (!classes.contains("LMemoryBlock")) {
+		LuaClass mbClass;
+		mbClass.name = "MemoryBlock";
+		
+		// Add essential methods here if they aren't in your XML
+		LuaMethod initM; initM.name = "init"; initM.parameters = "()";
+		mbClass.methods.add(initM);
+		
+		// Map BOTH keys to this definition
+		classes.set("LMemoryBlock", mbClass);
+		classes.set("MemoryBlock", mbClass);
+		
+		// Add BOTH to the searchable list so inheritance/lookup loops find them
+		classNames.addIfNotAlreadyThere("MemoryBlock");
+		classNames.addIfNotAlreadyThere("LMemoryBlock");
+	}
 	
 	if (!classes.contains("Listener")) {
         LuaClass l; l.name = "Listener";
@@ -844,26 +855,41 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
         
         int endOfLine = rhs.indexOfAnyOf(";\n\r");
         if (endOfLine != -1) rhs = rhs.substring(0, endOfLine).trim();
-
-        // --- CONSTRUCTOR DETECTION (FIXED) ---
-        // Strip everything after the first '(' to handle MemoryBlock(1024)
-        juce::String potentialClass = rhs.upToFirstOccurrenceOf("(", false, false).trim();
-        
-        // Check if the RHS is a known class name directly
-		// if (classNames.contains(potentialClass) || potentialClass == "MemoryBlock" || potentialClass == "LMemoryBlock") // Updated v5.6.35 12.02.26
-		// We use true for the second parameter of contains() to make it case-insensitive
-		if (classNames.contains(potentialClass, true))
-		{
-			return potentialClass;
+		
+		// --- CONSTRUCTOR DETECTION (FIXED) ---
+		// Strip everything after the first '(' to handle MemoryBlock(1024)
+		juce::String potentialClass = rhs.upToFirstOccurrenceOf("(", false, false).trim();
+		
+		// 1. Check classNames case-insensitively
+		for (auto& name : classNames) {
+			if (name.equalsIgnoreCase(potentialClass)) {
+				// Redirection logic: ensure we always return the key that has the methods
+				if (name.equalsIgnoreCase("MemoryBlock") || name.equalsIgnoreCase("LMemoryBlock"))
+					return "LMemoryBlock";
+				
+				return name;
+			}
 		}
-
-        // --- RECURSIVE ALIAS/CHAIN RESOLUTION ---
-        if (rhs != varName && rhs.isNotEmpty())
-        {
-            return getClassNameForVariable(rhs, code);
-        }
+		
+		// 2. Explicit check for manual aliases
+		if (potentialClass.equalsIgnoreCase("MemoryBlock") || potentialClass.equalsIgnoreCase("LMemoryBlock"))
+			return "LMemoryBlock";
+		
+		// 3. RECURSIVE ALIAS/CHAIN RESOLUTION
+		// Only run this if we didn't find a direct class match above
+		if (rhs != varName && rhs.isNotEmpty())
+		{
+			// Handle Path.Path() style statics
+			if (rhs.contains(".")) {
+				juce::String base = rhs.upToFirstOccurrenceOf(".", false, false).trim();
+				for (auto& name : classNames) {
+					if (name.equalsIgnoreCase(base)) return name;
+				}
+			}
+			return getClassNameForVariable(rhs, code);
+		}
     }
-    
+	
     // 4. Static Fallbacks (If no assignment found, guess by name)
 	if (varName == "m" || varName == "mb" || varName == "mem" || varName == "memoryBlock") return "LMemoryBlock"; // Updated v5.6.35 12.02.26
     if (varName == "f") return "File";
