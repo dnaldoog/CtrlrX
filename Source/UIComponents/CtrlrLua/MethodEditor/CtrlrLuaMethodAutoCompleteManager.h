@@ -70,6 +70,7 @@ private:
     juce::StringArray classNames;
     juce::StringArray allMethodNames;
     juce::StringArray utilityMethodNames;
+	juce::CriticalSection lock; // The master lock for all definition data
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrLuaMethodAutoCompleteManager)
 };

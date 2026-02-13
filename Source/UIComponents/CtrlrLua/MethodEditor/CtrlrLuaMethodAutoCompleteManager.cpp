@@ -13,7 +13,9 @@ CtrlrLuaMethodAutoCompleteManager::CtrlrLuaMethodAutoCompleteManager()
 
 void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
 {
-    classes.clear();
+    const juce::ScopedLock sl (lock); // Lock while we clear and rebuild
+	
+	classes.clear();
     classNames.clear();
     allMethodNames.clear();
     utilityMethodNames.clear();
@@ -134,125 +136,149 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
             }
         }
     }
-
-    // 2. Manual Injection of Base Classes
-    if (!classes.contains("MemoryBlock")) {
-        LuaClass mbClass; mbClass.name = "MemoryBlock";
-        classes.set("MemoryBlock", mbClass);
-        classNames.add("MemoryBlock");
-    }
-    
-    if (!classes.contains("Component")) {
-        LuaClass comp; comp.name = "Component";
-        juce::StringArray ui = { "setBounds", "setSize", "setVisible", "getX", "getY", "getWidth", "getHeight", "repaint", "setHeight", "setWidth" };
-        for (auto& n : ui) {
-            LuaMethod m; m.name = n;
-            if (n == "setBounds") m.parameters = "(int x, int y, int width, int height)";
-            else if (n == "setSize") m.parameters = "(int width, int height)";
-            else if (n == "setHeight") m.parameters = "(int height)";
-            else if (n == "setWidth") m.parameters = "(int width)";
-            else if (n == "setVisible") m.parameters = "(bool shouldBeVisible)";
-            else m.parameters = "()";
-
-            comp.methods.add(m);
-            // FIX: Removed duplicate empty () injection that was overriding the real signatures.
-            allMethodNames.add(n);
-        }
-        classes.set(comp.name, comp);
-        classNames.add(comp.name);
-    }
-
-    if (!classes.contains("CtrlrObject")) {
-        LuaClass obj; obj.name = "CtrlrObject";
-        obj.parentClass = "Component";
-        juce::StringArray om = { "getProperty", "setProperty", "getPropertyInt", "getPropertyString" };
-        for (auto& n : om) {
-            LuaMethod m; m.name = n;
-            m.parameters = (n == "setProperty") ? "(String name, var value)" : "(String name)";
-            obj.methods.add(m);
-            // FIX: Removed duplicate empty () injection.
-            allMethodNames.add(n);
-        }
-        classes.set(obj.name, obj);
-        classNames.add(obj.name);
-    }
 	
+	// 2. Manual Injection of Base Classes
+	// --- 1. BASE CLASSES (Foundational) ---
+	if (!classes.contains("MemoryBlock")) {
+		LuaClass mbClass; mbClass.name = "MemoryBlock";
+		classes.set("MemoryBlock", mbClass);
+		classNames.addIfNotAlreadyThere("MemoryBlock");
+	}
+	
+	if (!classes.contains("Listener")) {
+		LuaClass l; l.name = "Listener";
+		classes.set("Listener", l);
+		classNames.addIfNotAlreadyThere("Listener");
+	}
+	
+	if (!classes.contains("Timer")) {
+		LuaClass t; t.name = "Timer";
+		classes.set("Timer", t);
+		classNames.addIfNotAlreadyThere("Timer");
+	}
+	
+	// --- 2. UI & OBJECT HIERARCHY ---
+	if (!classes.contains("Component")) {
+		LuaClass comp; comp.name = "Component";
+		juce::StringArray ui = { "setBounds", "setSize", "setVisible", "getX", "getY", "getWidth", "getHeight", "repaint" };
+		for (auto& n : ui) {
+			LuaMethod m; m.name = n;
+			if (n == "setBounds") m.parameters = "(int x, int y, int width, int height)";
+			else if (n == "setSize") m.parameters = "(int width, int height)";
+			else if (n == "setVisible") m.parameters = "(bool shouldBeVisible)";
+			else m.parameters = "()";
+			comp.methods.add(m);
+			allMethodNames.addIfNotAlreadyThere(n);
+		}
+		classes.set("Component", comp);
+		classNames.addIfNotAlreadyThere("Component");
+	}
+	
+	if (!classes.contains("CtrlrObject")) {
+		LuaClass obj; obj.name = "CtrlrObject";
+		obj.parentClass = "Component";
+		juce::StringArray om = { "getProperty", "setProperty", "getPropertyInt", "getPropertyString" };
+		for (auto& n : om) {
+			LuaMethod m; m.name = n;
+			m.parameters = (n == "setProperty") ? "(String name, var value)" : "(String name)";
+			obj.methods.add(m);
+			allMethodNames.addIfNotAlreadyThere(n);
+		}
+		classes.set("CtrlrObject", obj);
+		classNames.addIfNotAlreadyThere("CtrlrObject");
+	}
+	
+	// --- 3. MIDI MESSAGE (The "Fixed" Version) ---
 	if (!classes.contains("CtrlrMidiMessage")) {
-        LuaClass mid;
-        mid.name = "CtrlrMidiMessage";
-        
-        // Add the three constructors for the bubble suggestions
-        mid.constructors.add("(String hexData)");
-        mid.constructors.add("({byteTable})");
-        mid.constructors.add("(MemoryBlock data)");
-        
-        // Basic common methods for MIDI objects
-        juce::StringArray methods = { "getSize", "getData", "getType", "getChannel", "getTimestamp", "setTimestamp" };
-        for (auto& n : methods) {
-            LuaMethod lm; lm.name = n; lm.parameters = "()";
-            mid.methods.add(lm);
-            allMethodNames.add(n);
-        }
-
-        classes.set("CtrlrMidiMessage", mid);
-        classNames.add("CtrlrMidiMessage");
-    }
-
-    // 3. HARD-FIX SPECIFIC INSTANCES
-    if (classes.contains("CtrlrPanel")) {
-        auto& panel = classes.getReference("CtrlrPanel");
-        panel.parentClass = "Component";
-        juce::StringArray missing = {
-            "getModulatorByName", "getModulator", "getModulatorByIndex", "getNumModulators",
-            "sendMidiMessageNow", "getCanvas", "getPanelEditor", "getGlobalVariable", "setGlobalVariable"
-        };
-        
-        for (auto& mName : missing) {
-            // --- FIX: FORCE OVERRIDE ---
-            // Explicitly remove any existing versions (from XML) first.
-            // This prevents the empty-param version from blocking our high-quality fix.
-            for (int i = panel.methods.size(); --i >= 0;) {
-                if (panel.methods.getReference(i).name == mName) {
-                    panel.methods.remove(i);
-                }
-            }
-            
-            // Now add the correct version with parameters
-            LuaMethod lm;
-            lm.name = mName;
-            
-            if (mName == "sendMidiMessageNow") {
-                // These names appear inside the bubble when the user opens the bracket '('
-                lm.parameters = "(MidiMessage) | (hexString) | ({table})"; // If the bubble is just single line
-            }
-            else if (mName.contains("ByName")) {
-                lm.parameters = "(String name)";
-            }
-            else if (mName.contains("ByIndex")) {
-                lm.parameters = "(int index)";
-            }
-            else if (mName == "setGlobalVariable") {
-                lm.parameters = "(int index, int value)";
-            }
-            else {
-                lm.parameters = "()";
-            }
-            panel.methods.add(lm);
-        }
-    }
-    
-    if (classes.contains("CtrlrMidiMessage")) {
-        auto& midiClass = classes.getReference("CtrlrMidiMessage");
-        // Clear old constructors if any
-        midiClass.constructors.clear();
-        
-        // Add the new overloads
-        midiClass.constructors.add("(String hexData)");
-        midiClass.constructors.add("({table bytes})");
-        midiClass.constructors.add("(MemoryBlock data)");
-    }
-
-    // 4. Detailed Library Definitions
+		LuaClass m; m.name = "CtrlrMidiMessage";
+		classes.set("CtrlrMidiMessage", m);
+		classNames.addIfNotAlreadyThere("CtrlrMidiMessage");
+	}
+	auto& mid = classes.getReference("CtrlrMidiMessage");
+	mid.constructors.clear();
+	mid.methods.clear();
+	mid.constructors.add("(String hexData)");
+	mid.constructors.add("({byteTable})");
+	mid.constructors.add("(MemoryBlock data)");
+	
+	juce::StringArray midiMethods = { "getSize", "getData", "getType", "getChannel", "getTimeStamp", "setTimeStamp" };
+	for (auto& n : midiMethods) {
+		LuaMethod lm; lm.name = n; lm.parameters = "()";
+		mid.methods.add(lm);
+		allMethodNames.addIfNotAlreadyThere(n);
+	}
+	
+	// --- 4. UTILITIES (Justification & Path) ---
+	if (!classes.contains("Justification")) {
+		LuaClass jc; jc.name = "Justification";
+		classes.set("Justification", jc);
+		classNames.addIfNotAlreadyThere("Justification");
+	}
+	auto& j = classes.getReference("Justification");
+	j.staticMethods.clear();
+	juce::StringArray jEnums = { "left", "right", "horizontallyCentred", "top", "bottom", "verticallyCentred", "centred" };
+	for (auto& e : jEnums) {
+		LuaMethod m; m.name = e; m.parameters = ""; m.isStatic = true;
+		j.staticMethods.add(m);
+	}
+	
+	if (!classes.contains("Path")) {
+		LuaClass p; p.name = "Path";
+		classes.set("Path", p);
+		classNames.addIfNotAlreadyThere("Path");
+	}
+	auto& pc = classes.getReference("Path");
+	if (pc.staticMethods.isEmpty() && !pc.methods.isEmpty()) {
+		for (auto& m : pc.methods) {
+			LuaMethod sm = m; sm.isStatic = true;
+			pc.staticMethods.add(sm);
+		}
+	}
+	
+	// 3. HARD-FIX SPECIFIC INSTANCES
+	if (classes.contains("CtrlrPanel")) {
+		auto& panel = classes.getReference("CtrlrPanel");
+		panel.parentClass = "Component";
+		juce::StringArray missing = {
+			"getModulatorByName", "getModulator", "getModulatorByIndex", "getNumModulators",
+			"sendMidiMessageNow", "getCanvas", "getPanelEditor", "getGlobalVariable", "setGlobalVariable"
+		};
+		
+		for (auto& mName : missing) {
+			// --- FIX: FORCE OVERRIDE ---
+			// Explicitly remove any existing versions (from XML) first.
+			// This prevents the empty-param version from blocking our high-quality fix.
+			for (int i = panel.methods.size(); --i >= 0;) {
+				if (panel.methods.getReference(i).name == mName) {
+					panel.methods.remove(i);
+				}
+			}
+			
+			// Now add the correct version with parameters
+			LuaMethod lm;
+			lm.name = mName;
+			
+			if (mName == "sendMidiMessageNow") {
+				// These names appear inside the bubble when the user opens the bracket '('
+				lm.parameters = "(MidiMessage) | (hexString) | ({table})"; // If the bubble is just single line
+			}
+			else if (mName.contains("ByName")) {
+				lm.parameters = "(String name)";
+			}
+			else if (mName.contains("ByIndex")) {
+				lm.parameters = "(int index)";
+			}
+			else if (mName == "setGlobalVariable") {
+				lm.parameters = "(int index, int value)";
+			}
+			else {
+				lm.parameters = "()";
+			}
+			panel.methods.add(lm);
+		}
+	}
+	
+	// 4. Detailed Library Definitions
 	if (true) {
 		// We use "luaString" internally as a key to avoid JUCE String conflicts
 		// but we will alias it to "string"
@@ -463,95 +489,114 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggesti
     const juce::String& className, const juce::String& prefix,
     bool includeInstance, bool includeStatic, bool includeProperties)
 {
+    const juce::ScopedLock sl (lock);
+
     std::vector<SuggestionItem> suggestions;
     juce::StringArray addedExactSignatures;
     juce::String currentClass = className;
+	
+	juce::StringArray visitedClasses;
 
-    _DBG("--- START SEARCH: [" + prefix + "] in Class: [" + className + "] (Static: " + (includeStatic ? "YES" : "NO") + ") ---");
+    _DBG("--- START SEARCH: [" + prefix + "] in Class: [" + className + "] ---");
+
+    // --- START OF CRASH PROTECTOR ---
+    if (!classes.contains(className))
+    {
+        _DBG("        SKIPPING: Class [" + className + "] not found in definitions.");
+        return suggestions;
+    }
+    // --- END OF CRASH PROTECTOR ---
+
+    auto& selectedClass = classes.getReference(className);
 
     while (currentClass.isNotEmpty())
     {
-        juce::String matchedKey = "";
+		if (visitedClasses.contains(currentClass)) break;
+        visitedClasses.add(currentClass);
+
+        // --- CASE INSENSITIVE LOOKUP FIX ---
+        juce::String actualKey = "";
         for (auto& name : classNames) {
             if (name.equalsIgnoreCase(currentClass)) {
-                matchedKey = name;
+                actualKey = name;
                 break;
             }
         }
-        
-        if (matchedKey.isEmpty() || !classes.contains(matchedKey)) {
-            _DBG("    ! Class [" + currentClass + "] not found in definitions.");
-            break;
+
+        // If we can't find the class in our definitions, stop searching the hierarchy
+        if (actualKey.isEmpty() || !classes.contains(actualKey)) {
+             _DBG("    ! Class [" + currentClass + "] not found in definitions.");
+             break;
         }
         
-        const auto& lc = classes.getReference(matchedKey);
+        const LuaClass lc = classes[actualKey];
         int classMatches = 0;
-		
-		// 1. Static Methods & Constructors (Triggered by '.')
-		if (includeStatic) {
-			_DBG("        Checking Static Methods for [" + matchedKey + "]:");
-			
-			for (auto& m : lc.staticMethods) {
-				juce::String fullSignature = m.name + " " + m.parameters;
-				bool match = (prefix.isEmpty() || m.name.startsWithIgnoreCase(prefix));
-				bool unique = !addedExactSignatures.contains(fullSignature);
-				
-				if (match && unique) {
-					_DBG("          + Found Static: " + m.name);
-					suggestions.push_back({ fullSignature, TypeStatic });
-					addedExactSignatures.add(fullSignature);
-					classMatches++;
-				} else if (!match) {
-					_DBG("          - Skipping " + m.name + " (doesn't match prefix '" + prefix + "')");
-				}
-			}
-			
-			// Include Constructors in the static list for class-level access
-			for (auto& cParams : lc.constructors) {
-				juce::String fullSignature = lc.name + " " + cParams;
-				bool match = (prefix.isEmpty() || lc.name.startsWithIgnoreCase(prefix));
-				bool unique = !addedExactSignatures.contains(fullSignature);
-				
-				if (match && unique) {
-					_DBG("          + Found Constructor: " + lc.name);
-					suggestions.push_back({ fullSignature, TypeMethod });
-					addedExactSignatures.add(fullSignature);
-					classMatches++;
-				}
-			}
-		}
+        
+        // --- 1. Static & Enums (The '.' trigger) ---
+        if (includeStatic) {
+            _DBG("        Checking Static/Enums for [" + actualKey + "]");
+            for (auto& m : lc.staticMethods) {
+                if (prefix.isNotEmpty() && !m.name.startsWithIgnoreCase(prefix)) continue;
 
-        // 2. Instance Methods (Triggered by ':')
+                SuggestionItem item;
+                // Polish: No parameters = Enum/Constant style (Icon P)
+                if (m.parameters.isEmpty() || m.parameters == " ") {
+                    item.text = m.name;
+                    item.type = TypeProperty;
+                } else {
+                    item.text = m.name + " " + m.parameters;
+                    item.type = TypeStatic;
+                }
+
+                if (!addedExactSignatures.contains(item.text)) {
+                    suggestions.push_back(item);
+                    addedExactSignatures.add(item.text);
+                    classMatches++;
+                }
+            }
+
+            // Constructors for Path.Path() style access
+			for (auto& cParams : lc.constructors) {
+				
+				if (lc.name == "Justification") continue; // Enums don't need constructors shown
+				
+				// If the prefix is empty, or the user started typing the class name as a method
+				if (prefix.isNotEmpty() && !lc.name.startsWithIgnoreCase(prefix)) continue;
+				
+				// Change 'lc.name' to 'new' or just format it so it's clearly a constructor
+				// Or, if you want it to behave like a standard static call:
+				juce::String sig = lc.name + " " + (cParams.isEmpty() ? "()" : cParams);
+				
+				if (!addedExactSignatures.contains(sig)) {
+					suggestions.push_back({ sig, TypeMethod });
+					addedExactSignatures.add(sig);
+					classMatches++;
+				}
+			}
+        }
+
+        // --- 2. Instance Methods (The ':' trigger) ---
         if (includeInstance) {
+            _DBG("        Checking Instance Methods for [" + actualKey + "]");
             for (auto& m : lc.methods) {
-                juce::String fullSignature = m.name + " " + m.parameters;
-                if ((prefix.isEmpty() || m.name.startsWithIgnoreCase(prefix)) && !addedExactSignatures.contains(fullSignature)) {
-                    suggestions.push_back({ fullSignature, TypeMethod });
-                    addedExactSignatures.add(fullSignature);
+                if (prefix.isNotEmpty() && !m.name.startsWithIgnoreCase(prefix)) continue;
+                
+                juce::String sig = m.name + " " + m.parameters;
+                if (!addedExactSignatures.contains(sig)) {
+                    suggestions.push_back({ sig, TypeMethod });
+                    addedExactSignatures.add(sig);
                     classMatches++;
                 }
             }
         }
 
-        // 3. Properties
-		if (includeProperties) {
-			for (auto& prop : lc.properties) {
-				if (prefix.isEmpty() || prop.startsWithIgnoreCase(prefix)) {
-					SuggestionItem item;
-					item.text = prop;
-					item.type = TypeProperty; // This triggers your "P" icon logic
-					suggestions.push_back(item);
-				}
-			}
-		}
+        _DBG("    Found " + juce::String(classMatches) + " matches in [" + actualKey + "]");
 
-        _DBG("    Found " + juce::String(classMatches) + " matches in [" + matchedKey + "]");
-        
-        // Move to parent
+        // Move to parent class for inheritance support
         currentClass = lc.parentClass;
         
-        // Safety: If the class is its own parent, stop (prevents infinite loop)
-        if (currentClass == lc.name) break;
+        // Safety: prevent infinite loops if a class points to itself as a parent
+        if (currentClass.equalsIgnoreCase(actualKey) || currentClass.isEmpty()) break;
     }
 
     _DBG("--- SEARCH COMPLETE: Total " + juce::String(suggestions.size()) + " matches ---");
@@ -760,6 +805,7 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
     if (varName == "string")                      return "string";
 	if (varName == "MemoryBlock" || varName == "memoryBlock" || varName == "mb") return "LMemoryBlock"; //  // Updated v5.6.35 12.02.26. Redirect everything to the one with the methods
     if (varName == "CtrlrMidiMessage") return "CtrlrMidiMessage";
+	if (varName.equalsIgnoreCase("Path"))         return "Path";
     
     // 2. CHAIN RESOLUTION (e.g., mb:someMethod():)
     if (varName.contains(":") || varName.contains("."))
@@ -800,13 +846,14 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
         juce::String potentialClass = rhs.upToFirstOccurrenceOf("(", false, false).trim();
         
         // Check if the RHS is a known class name directly
-		if (classNames.contains(potentialClass) || potentialClass == "MemoryBlock" || potentialClass == "LMemoryBlock") // Updated v5.6.35 12.02.26
-        {
-            return potentialClass;
-        }
+		// We use true for the second parameter of contains() to make it case-insensitive
+		if (classNames.contains(potentialClass, true))
+		{
+			return potentialClass;
+		}
 
         // --- RECURSIVE ALIAS/CHAIN RESOLUTION ---
-        if (rhs != varName && rhs.isNotEmpty())
+        if (rhs != varName && rhs.isNotEmpty() && !rhs.equalsIgnoreCase("Path") && !rhs.equalsIgnoreCase("path"))
         {
             return getClassNameForVariable(rhs, code);
         }
