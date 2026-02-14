@@ -454,17 +454,32 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
 std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggestions(const juce::String& prefix) {
     std::vector<SuggestionItem> results;
     juce::StringArray added;
-    
-    // 1. MANDATORY LIBRARIES / CLASSES (The "C" Icon)
-    juce::StringArray libraries = { "math", "table", "string", "utils", "MemoryBlock" };
-    for (auto& lib : libraries) {
+	
+	// 1. THE "VIP" SECTION for MemoryBlock ---
+	if (juce::String("MemoryBlock").startsWithIgnoreCase(prefix))
+	{
+		// 1. This provides the "M" icon and will insert MemoryBlock()
+		results.push_back({ "MemoryBlock", TypeMethod });
+		
+		// 2. This provides the "S" icon and will insert MemoryBlock.
+		results.push_back({ "MemoryBlock.", TypeStatic });
+		
+		// 3. This tells the manager to SKIP the default "C" (Class) suggestion
+		// so you don't end up with 3 items in the list.
+		added.add("memoryblock");
+		added.add("lmemoryblock");
+	}
+	
+	// 2. MANDATORY LIBRARIES / CLASSES (The "C" Icon)
+	juce::StringArray libraries = { "math", "table", "string", "utils", "MemoryBlock" };
+	for (auto& lib : libraries) {
         if (lib.startsWithIgnoreCase(prefix)) {
             results.push_back({ lib, TypeClass });
             added.add(lib.toLowerCase());
         }
     }
 
-    // 2. GLOBALS / KEYWORDS
+    // 3. GLOBALS / KEYWORDS
     juce::StringArray globals = { "local", "function", "if", "then", "else", "elseif", "end", "for", "while", "do", "return", "break", "nil", "true", "false", "panel", "mod", "value", "source", "comp", "event", "canvas", "g", "midi", "console" };
     for (auto& g : globals) {
         if (g.startsWithIgnoreCase(prefix) && !added.contains(g.toLowerCase())) {
@@ -473,33 +488,35 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggesti
         }
     }
 
-    // 3. CLASSES (Version 44 Dual-Suggestion Logic)
+	// 4. CLASSES
 	for (auto& c : classNames)
 	{
+		// --- ADD THIS LINE TO PREVENT THE 3RD SUGGESTION ---
+		if (added.contains(c.toLowerCase()))
+			continue;
+		// --------------------------------------------------
+		
 		if (c.startsWithIgnoreCase(prefix))
 		{
-			// Get the specific class data
 			const auto& lc = classes.getReference(c);
 			
 			// SUGGESTION 1: THE CONSTRUCTOR (Icon "C")
-			// If the class has any constructors defined in XML
 			if (!lc.constructors.isEmpty())
 			{
-				results.push_back({ c + "()", TypeClass }); // e.g., "CtrlrMidiMessage()"
+				results.push_back({ c + "()", TypeClass });
 			}
 			
 			// SUGGESTION 2: THE STATIC ACCESS (Icon "S")
-			// If the class has static methods (like fromHex), suggest the "." access
 			if (!lc.staticMethods.isEmpty())
 			{
-				results.push_back({ c + ".", TypeStatic }); // e.g., "CtrlrMidiMessage."
+				results.push_back({ c + ".", TypeStatic });
 			}
 			
 			added.add(c.toLowerCase());
 		}
 	}
 
-    // 4. METHODS (The "M" Icon)
+    // 5. METHODS (The "M" Icon)
     for (auto& m : allMethodNames) {
         if (m.startsWithIgnoreCase(prefix)) {
             juce::String lowerM = m.toLowerCase();

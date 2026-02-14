@@ -2213,22 +2213,48 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
             caretOffsetFromEnd = firstParamIsString ? (suffix.length() - 2) : (suffix.length() - 1);
         }
 		else
-		{
-			// FALLBACK / EMPTY XML ARGS:
-			textToInsert += "()";
-			
-			// Smart Caret Placement:
-			// 1. If it's a known getter with no args in XML, caret at end: getCurrentTime()|
-			// 2. If it's a static creator or setter, caret inside: fromFloatRGBA(|)
-			if (cleanSuggestion.startsWithIgnoreCase("get") && !cleanSuggestion.containsIgnoreCase("ByName"))
-			{
-				caretOffsetFromEnd = 0;
-			}
-			else
-			{
-				caretOffsetFromEnd = 1; // Stay inside so the user can type the missing args
-			}
-		}
+        {
+            // FALLBACK / EMPTY XML ARGS:
+            textToInsert += "()";
+            
+            // --- STANDARDIZED CARET PLACEMENT ---
+            
+            // 1. Check if it's a "Getter"
+            bool isGetter = cleanSuggestion.startsWithIgnoreCase("get") && !cleanSuggestion.containsIgnoreCase("ByName");
+            
+            // 2. Check if the suggestion is actually a Class Name (Constructor)
+            bool isConstructor = false;
+            
+            // 3. Check if the method has an empty overload "()" in the API
+            bool hasEmptyOverload = false;
+
+            auto& autocompleteManager = owner.getAutocompleteManager();
+            
+            // Check Constructor
+            if (autocompleteManager.getClassNames().contains(cleanSuggestion, true))
+            {
+                isConstructor = true;
+            }
+            
+            // Check for Empty Overload (e.g., repaint, addBubble)
+            // We use the last resolved class name to look up this specific method's params
+            juce::String params = autocompleteManager.getMethodParams(lastAutocompletedClass, cleanSuggestion);
+            if (params.contains("()") || params.isEmpty())
+            {
+                hasEmptyOverload = true;
+            }
+
+            // If it's a getter, a constructor, or has a no-arg version: caret at end ()|
+            if (isGetter || isConstructor || hasEmptyOverload)
+            {
+                caretOffsetFromEnd = 0;
+            }
+            else
+            {
+                // It's a method that REQUIRES arguments: caret inside (|)
+                caretOffsetFromEnd = 1;
+            }
+        }
 	}
     // --- HANDLE DOTS ---
     else if (shouldAddDot)
