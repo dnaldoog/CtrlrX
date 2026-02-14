@@ -835,7 +835,7 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
     if (varName == "math")                        return "math";
     if (varName == "table")                       return "table";
     if (varName == "string")                      return "string";
-    if (varName == "MemoryBlock" || varName == "memoryBlock" || varName == "mb") return "LMemoryBlock"; //  // Updated v5.6.35 12.02.26. Redirect everything to the one with the methods
+    if (varName == "MemoryBlock" || varName == "memoryBlock") return "LMemoryBlock"; //  // Updated v5.6.35 12.02.26. Redirect everything to the one with the methods
     if (varName == "CtrlrMidiMessage")            return "CtrlrMidiMessage";
     if (varName.equalsIgnoreCase("Path"))         return "Path";
     
