@@ -2248,6 +2248,10 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
             if (isGetter || isConstructor || hasEmptyOverload)
             {
                 caretOffsetFromEnd = 0;
+				
+				// IMPORTANT: If this is a class that also has static methods,
+                // we must EXPLICITLY disable the automatic dot trigger here.
+                this->triggerSuggestionsAfterReplacement = false;
             }
             else
             {
@@ -2281,33 +2285,62 @@ void CtrlrLuaMethodCodeEditor::performReplacement(const juce::String& suggestion
 
     if (validParamCount > 0) nextTabJumpPosition = finalPos;
 
-    // 5. TRIGGERING (Auto-inserting . or :)
-    if (this->triggerSuggestionsAfterReplacement && forcedSeparator.isNotEmpty())
+	// 5. TRIGGERING (Auto-inserting . or :)
+	if (this->triggerSuggestionsAfterReplacement && forcedSeparator.isNotEmpty())
+	{
+		// FIX: Use the 'type' parameter from the function signature,
+		// not 'suggestion.type' (since suggestion is a String).
+		if (type == TypeClass)
+		{
+			forcedSeparator = "";
+			this->triggerSuggestionsAfterReplacement = false;
+		}
+		
+		if (this->triggerSuggestionsAfterReplacement && forcedSeparator.isNotEmpty())
+		{
+			juce::Timer::callAfterDelay(100, [this, forcedSeparator]() {
+				this->triggerSuggestionsAfterReplacement = false;
+				int caretPos = editorComponent->getCaretPos().getPosition();
+				if (caretPos > 0 && document.getAllContent().substring(caretPos - 1, caretPos) != forcedSeparator)
+				{
+					this->isReplacingText = true;
+					this->document.insertText(caretPos, forcedSeparator);
+					editorComponent->moveCaretTo(juce::CodeDocument::Position(document, caretPos + 1), false);
+					this->isReplacingText = false;
+					this->codeDocumentTextInserted(forcedSeparator, caretPos);
+				} else {
+					this->isReplacingText = false;
+				}
+			});
+		}
+		else
+		{
+			isReplacingText = false;
+		}
+	}
+	else
+	{
+		isReplacingText = false;
+	}
+	
+	// 6. CALLTIP / CONTEXT SYNC
+    if (type == TypeClass)
     {
-        juce::Timer::callAfterDelay(100, [this, forcedSeparator]() { // 150ms is a bit long
-            this->triggerSuggestionsAfterReplacement = false;
-            int caretPos = editorComponent->getCaretPos().getPosition();
-            if (caretPos > 0 && document.getAllContent().substring(caretPos - 1, caretPos) != forcedSeparator)
-            {
-                this->isReplacingText = true;
-                this->document.insertText(caretPos, forcedSeparator);
-                editorComponent->moveCaretTo(juce::CodeDocument::Position(document, caretPos + 1), false);
-                this->isReplacingText = false;
-                this->codeDocumentTextInserted(forcedSeparator, caretPos);
-            } else {
-                this->isReplacingText = false;
-            }
-        });
-    } else {
-        isReplacingText = false;
+        // For Constructors: Store the class name so the next ":" works
+        lastAutocompletedClass = cleanSuggestion;
+        lastAutocompletedMethod = ""; // Clear method since we just made an object
     }
-
-    // 6. CALLTIP
-    if (methodParams.trim().isNotEmpty() && methodParams.trim() != "()") {
+    else if (methodParams.trim().isNotEmpty() && methodParams.trim() != "()")
+    {
+        // For Methods with arguments: show the yellow call-tip box
         lastAutocompletedMethod = cleanSuggestion;
         lastAutocompletedClass = className.isEmpty() ? cleanSuggestion : className;
+        
         juce::MessageManager::callAsync([this]() {
-            if (callTip) { updateCallTipHighlight(); callTip->setVisible(true); }
+            if (callTip) {
+                updateCallTipHighlight();
+                callTip->setVisible(true);
+            }
         });
     }
 }
