@@ -502,6 +502,7 @@ Tuturial coming soon.
 * **UPDATED** CtrlrLuaMethodEditor with IDE-like autocomplete on typing. `CtrlrLuaMethodAutoCompleteManager.cpp` & `.h`, `CtrlrLuaMethodCodeEditor.cpp` & `.h`, `CtrlrLuaMethodEditor.h`
 * **UPDATED** sendMidiMessageNow() compatibility with the old syntax and support table content as message. `CtrlrLuaMethodAutoCompleteManager.cpp` & `.h`
 * **ADDED** MIDI Monitor Message Type filtering (Note On, Note Off, Aftertouch, Clock, SYSEX, etc). Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrIDs.h`, `CtrlrLog.cpp` & `.h`, `CtrlrMacros.h`, `CtrlrMIDIMon.cpp` & `.h`
+* **FIXED** AudioUnit type is set to "Virtual Instrument" not "Audio FX" anymore. Thanks to [Chuck Zwicky](https://github.com/zmixnyc) `cmakelists.txt`
 
 #### Version 5.6.34 | 2025.11.07
 
