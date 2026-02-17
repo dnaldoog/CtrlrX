@@ -8,8 +8,12 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include (PamplejuceVersion)
 
-# Modern concise way to add dependencies to your project
-include (CPM)
+# CPM is only needed for optional targets (tests/benchmarks) and should not
+# be required for normal local/package builds that rely on system libs.
+option(CTRLRX_ENABLE_CPM "Enable CPM-based optional dependencies" OFF)
+if(CTRLRX_ENABLE_CPM)
+    include (CPM)
+endif()
 
 # Configures universal binaries and decides which version of macOS to support
 include(PamplejuceMacOS)
@@ -48,6 +52,7 @@ set(BUNDLE_ID "com.${BASE_ID_NAME}.${PROJECT_NAME}")
 # Change me! Set the plugin formats you want built
 # Valid choices: AAX Unity VST VST3 AU AUv3 Standalone
 set(FORMATS Standalone AU VST3)
+option(CTRLRX_COPY_PLUGIN_AFTER_BUILD "Copy plugin artefacts to user/system plugin folders after build" OFF)
 
 # For simplicity, the name of the CMake project is also the name of the target
 # CURRENT_VERSION is from the VERSION file and shall contain non-negative integer components,
@@ -92,8 +97,9 @@ juce_add_plugin("${PROJECT_NAME}"
     COMPANY_NAME "${COMPANY_NAME}"
     BUNDLE_ID "${BUNDLE_ID}"
 
-    # On MacOS, plugin is copied to /Users/yourname/Library/Audio/Plug-Ins/
-    COPY_PLUGIN_AFTER_BUILD TRUE
+    # Keep builds hermetic by default (important for CI/sandboxed/local package builds).
+    # Enable with -DCTRLRX_COPY_PLUGIN_AFTER_BUILD=ON when you want host plugin folders updated.
+    COPY_PLUGIN_AFTER_BUILD ${CTRLRX_COPY_PLUGIN_AFTER_BUILD}
 
     # Change me!
     # A four-character plugin id
