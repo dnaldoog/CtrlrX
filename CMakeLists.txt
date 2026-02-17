@@ -122,6 +122,9 @@ juce_add_plugin("${PROJECT_NAME}"
     PRODUCT_NAME "${PRODUCT_NAME}"
 )
 
+
+# ---------------------------------------------------
+
 # --- VST3 Dynamic Name/Manufacturer Override ---
 # This block is essential for controlling the final VST3 plugin name
 # (which includes the trailing space from PLUGIN_DISPLAY_NAME) and manufacturer.
@@ -134,6 +137,23 @@ if ("VST3" IN_LIST FORMATS)
         JUCE_COMPANY_NAME "CtrlrX Project                  "
     )
 endif()
+
+# ---------------------------------------------------
+
+# --- Audio Unit (AU) Specific Overrides to match Projucer ---
+if ("AU" IN_LIST FORMATS)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        # Forces the AU to be a Synth (MusicDevice) instead of an FX
+        JUCE_AU_MAIN_TYPE kAudioUnitType_MusicDevice
+        
+        # Matches the exact name with trailing spaces from your .jucer file
+        JUCE_PLUGIN_NAME "CtrlrX                          "
+        
+        # Matches the Manufacturer name from your .jucer file
+        JUCE_COMPANY_NAME "CtrlrX Project                  "
+    )
+endif()
+
 # ---------------------------------------------------
 
 # If you had any *other* necessary, non-category format overrides here, they should 
