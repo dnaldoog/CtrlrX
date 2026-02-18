@@ -226,7 +226,7 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
             break;
 
 		case doSave:
-			result.setInfo ("Save panel", "Save panel to a file", panelCategory, 0);
+			result.setInfo ("Save Panel", "Save panel to a file", panelCategory, 0);
             if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
             {
                  result.addDefaultKeypress ('s', ModifierKeys::commandModifier);
@@ -240,7 +240,7 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 			break;
 
 		case doSaveAs:
-			result.setInfo ("Save panel as", "Save panel as a new file", panelCategory, 0);
+			result.setInfo ("Save Panel As...", "Save panel as a new file", panelCategory, 0);
             if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
             {
                 result.addDefaultKeypress ('s', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
@@ -249,7 +249,7 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 			break;
 
 		case doSaveVersioned:
-			result.setInfo ("Save versioned panel", "Save panel to a new versioned file", panelCategory, 0);
+			result.setInfo ("Save Versioned Panel", "Save panel to a new versioned file", panelCategory, 0);
             if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
             {
                 result.addDefaultKeypress ('s', ModifierKeys::altModifier | ModifierKeys::shiftModifier);
