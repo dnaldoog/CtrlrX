@@ -110,7 +110,7 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 	switch (commandID)
 	{
 		case doSaveState:
-			result.setInfo ("Save CTRLR state", "Saves the CTRLR state to disk", globalCategory, 0);
+			result.setInfo ("Save CTRLR State", "Saves the CTRLR state to disk", globalCategory, 0);
             if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
             {
                 result.addDefaultKeypress ('s', ModifierKeys::commandModifier | ModifierKeys::altModifier);
