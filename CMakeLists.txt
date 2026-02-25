@@ -8,8 +8,13 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include (PamplejuceVersion)
 
-# Modern concise way to add dependencies to your project
-include (CPM)
+# CPM is only needed for optional targets (tests/benchmarks) and should not
+# be required for normal local/package builds that rely on system libs.
+option(CTRLRX_ENABLE_CPM "Enable CPM-based optional dependencies" OFF)
+option(CTRLRX_USE_SYSTEM_JUCE "Use system-installed JUCE instead of vendored JUCE submodule" OFF)
+if(CTRLRX_ENABLE_CPM)
+    include (CPM)
+endif()
 
 # Configures universal binaries and decides which version of macOS to support
 include(PamplejuceMacOS)
@@ -48,17 +53,26 @@ set(BUNDLE_ID "com.${BASE_ID_NAME}.${PROJECT_NAME}")
 # Change me! Set the plugin formats you want built
 # Valid choices: AAX Unity VST VST3 AU AUv3 Standalone
 set(FORMATS Standalone AU VST3)
+option(CTRLRX_COPY_PLUGIN_AFTER_BUILD "Copy plugin artefacts to user/system plugin folders after build" OFF)
 
 # For simplicity, the name of the CMake project is also the name of the target
 # CURRENT_VERSION is from the VERSION file and shall contain non-negative integer components,
 # i.e. <major>[.<minor>[.<patch>[.<tweak>]]]
 project(${PROJECT_NAME} VERSION ${CURRENT_VERSION})
 
-# JUCE is setup as a submodule in the /JUCE folder
-# Locally, you must run `git submodule update --init --recursive` once
-# and later `git submodule update --remote --merge` to keep it up to date
-# On Github Actions, this is done as a part of actions/checkout
-add_subdirectory(JUCE)
+# JUCE defaults to the vendored submodule for reproducible builds.
+# Enable CTRLRX_USE_SYSTEM_JUCE to resolve JUCE from the OS/package manager.
+if(CTRLRX_USE_SYSTEM_JUCE)
+    find_package(JUCE CONFIG REQUIRED)
+    message(STATUS "Using system JUCE package")
+else()
+    # JUCE is setup as a submodule in the /JUCE folder
+    # Locally, you must run `git submodule update --init --recursive` once
+    # and later `git submodule update --remote --merge` to keep it up to date
+    # On Github Actions, this is done as a part of actions/checkout
+    add_subdirectory(JUCE)
+    message(STATUS "Using vendored JUCE submodule")
+endif()
 
 # ---------------------------------------------------
 if ("VST" IN_LIST FORMATS)
@@ -92,8 +106,9 @@ juce_add_plugin("${PROJECT_NAME}"
     COMPANY_NAME "${COMPANY_NAME}"
     BUNDLE_ID "${BUNDLE_ID}"
 
-    # On MacOS, plugin is copied to /Users/yourname/Library/Audio/Plug-Ins/
-    COPY_PLUGIN_AFTER_BUILD TRUE
+    # Keep builds hermetic by default (important for CI/sandboxed/local package builds).
+    # Enable with -DCTRLRX_COPY_PLUGIN_AFTER_BUILD=ON when you want host plugin folders updated.
+    COPY_PLUGIN_AFTER_BUILD ${CTRLRX_COPY_PLUGIN_AFTER_BUILD}
 
     # Change me!
     # A four-character plugin id
@@ -208,6 +223,12 @@ if (NOT LINUX)
 endif()
 # -----------------------------------------------------------------------
 
+# Keep luabind integration limited to library sources, not local sample/build trees.
+list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Misc/luabind/(examples|build[^/]*|test|tests)/.*")
+# Deprecated Lua wrapper no longer participates in runtime bindings and fails
+# against JUCE packages that mark juce::File as final.
+list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Lua/Deprecated/CtrlrLuaFile\\.cpp$")
+
 
 #list(FILTER SourceFiles EXCLUDE REGEX "exclude_regex")
 
@@ -238,6 +259,11 @@ target_compile_options(SharedCode INTERFACE
     -w -Wno-implicit-fallthrough -Wno-maybe-uninitialized -Wno-missing-field-initializers -Wno-free-nonheap-object)
 endif()
 
+if(LINUX)
+    # Block legacy libstdc++ compatibility types (e.g. std::auto_ptr).
+    target_compile_definitions(SharedCode INTERFACE _GLIBCXX_USE_DEPRECATED=0)
+endif()
+
 # Adds a BinaryData target for embedding assets into the binary
 include(Assets)
 
@@ -253,6 +279,7 @@ target_compile_definitions(SharedCode
     JUCE_USE_CURL=0 # If you set this to 1, add `NEEDS_CURL TRUE` to the `juce_add_plugin` call
     JUCE_VST3_CAN_REPLACE_VST2=0
     JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1
+    JUCE_MODAL_LOOPS_PERMITTED=1
 
     # Uncomment if you are paying for a an Indie/Pro license or releasing under GPLv3
     JUCE_DISPLAY_SPLASH_SCREEN=0
@@ -300,6 +327,13 @@ if(LINUX)
     pkg_check_modules(libudev REQUIRED libudev)
     pkg_check_modules(x11 REQUIRED x11)
     pkg_check_modules(zlib REQUIRED zlib)
+    if(CTRLRX_USE_SYSTEM_JUCE)
+        pkg_check_modules(flac QUIET flac)
+        pkg_check_modules(vorbisfile QUIET vorbisfile)
+        pkg_check_modules(vorbisenc QUIET vorbisenc)
+        pkg_check_modules(vorbis QUIET vorbis)
+        pkg_check_modules(ogg QUIET ogg)
+    endif()
 
     message(STATUS "libudev version: ${libudev_VERSION}")
     message(STATUS "libX11 version: ${x11_VERSION}")
@@ -311,6 +345,27 @@ if(LINUX)
         ${zlib_LIBRARIES}
         ${x11_LIBRARIES}
     )
+
+    if(CTRLRX_USE_SYSTEM_JUCE)
+        if(flac_FOUND AND vorbisfile_FOUND AND vorbisenc_FOUND AND vorbis_FOUND AND ogg_FOUND)
+            message(STATUS "Using system FLAC/Vorbis/Ogg codec libs with system JUCE")
+            target_link_libraries(SharedCode
+                INTERFACE
+                ${flac_LIBRARIES}
+                ${vorbisfile_LIBRARIES}
+                ${vorbisenc_LIBRARIES}
+                ${vorbis_LIBRARIES}
+                ${ogg_LIBRARIES}
+            )
+        else()
+            message(WARNING "System JUCE selected, but FLAC/Vorbis/Ogg libs were not all found. Disabling OGG/FLAC support.")
+            target_compile_definitions(SharedCode
+                INTERFACE
+                JUCE_USE_FLAC=0
+                JUCE_USE_OGGVORBIS=0
+            )
+        endif()
+    endif()
 endif()
 
 # Link the JUCE plugin targets our SharedCode target
