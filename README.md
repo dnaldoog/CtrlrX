@@ -501,7 +501,7 @@ Tuturial coming soon.
 * **UPDATED** sendMidiMessageNow() compatibility with the old syntax and support table content as message. `CtrlrLuaMethodAutoCompleteManager.cpp` & `.h`
 * **ADDED** MIDI Monitor Message Type filtering (Note On, Note Off, Aftertouch, Clock, SYSEX, etc). Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrIDs.h`, `CtrlrLog.cpp` & `.h`, `CtrlrMacros.h`, `CtrlrMIDIMon.cpp` & `.h`
 * **FIXED** AudioUnit type is set to "Virtual Instrument" not "Audio FX" anymore. Thanks to [Chuck Zwicky](https://github.com/zmixnyc) `cmakelists.txt`
-* **UPDATED** JUCE from v6.0.8 to v7.0.12. Thanks to [Andrej Radović](https://github.com/randrej)
+* **UPDATED** JUCE from v6.0.8 to v8.0.12. Thanks to [Andrej Radović](https://github.com/randrej)
 
 #### Version 5.6.34 | 2025.11.07
 

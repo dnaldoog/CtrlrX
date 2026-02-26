@@ -339,12 +339,49 @@ void CtrlrModulatorProcessor::setValueFromMIDI(CtrlrMidiMessage &m, const CtrlrM
 	}
 }
 
-void CtrlrModulatorProcessor::setParameterNotifyingHost() // CtrlrX->VST Host
+//void CtrlrModulatorProcessor::setParameterNotifyingHost() // CtrlrX->VST Host
+//{
+//	if (owner.getVstIndex() >= 0 && owner.isExportedToVst())
+//	{
+//		getProcessor()->setParameterNotifyingHost (owner.getVstIndex(), normalizeValue (currentValue.value, minValue, maxValue));
+//	}
+//}
+
+void CtrlrModulatorProcessor::setParameterNotifyingHost() // CtrlrX->VST Host Updated v5.6.35. JUCE 7+
 {
-	if (owner.getVstIndex() >= 0 && owner.isExportedToVst())
-	{
-		getProcessor()->setParameterNotifyingHost (owner.getVstIndex(), normalizeValue (currentValue.value, minValue, maxValue));
-	}
+    // 1. Basic sanity check for export status and index
+    if (owner.getVstIndex() >= 0 && owner.isExportedToVst())
+    {
+        // 2. Get the list of parameters currently registered with the AudioProcessor
+        auto& params = getProcessor()->getParameters();
+        const int index = owner.getVstIndex();
+
+        // 3. Safety: Ensure the index actually exists in the processor
+        if (index < params.size())
+        {
+            // 4. Get the parameter object (modern JUCE 8 approach)
+            if (auto* param = params[index])
+            {
+                // 5. Signal the beginning of a "gesture" (important for DAW automation/undo)
+                param->beginChangeGesture();
+
+                // 6. Normalize the value and send it to the host
+                float normalizedValue = normalizeValue (currentValue.value, minValue, maxValue);
+                param->setValueNotifyingHost (normalizedValue);
+
+                // 7. Signal the end of the gesture
+                param->endChangeGesture();
+            }
+        }
+        else
+        {
+            // Optional: Log an error if the index is out of bounds
+            // This helps debug if your modulators have VST indices higher than the param count
+            _DBG("CtrlrModulatorProcessor::setParameterNotifyingHost: VST Index "
+                 + String(index) + " is out of bounds (Param count: "
+                 + String(params.size()) + ")");
+        }
+    }
 }
 
 int CtrlrModulatorProcessor::getValueFromMidiMessage(const CtrlrMIDIDeviceType source)
