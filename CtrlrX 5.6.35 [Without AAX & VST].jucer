@@ -363,6 +363,9 @@
         <FILE id="aqCiCL" name="CtrlrUtilitiesGUI.h" compile="0" resource="0"
               file="Source/Core/CtrlrUtilitiesGUI.h"/>
         <FILE id="JkOYOs" name="dxtrans.h" compile="0" resource="0" file="Source/Core/dxtrans.h"/>
+        <FILE id="LrNumy" name="LinuxDpiScale.cpp" compile="1" resource="0"
+              file="Source/Core/LinuxDpiScale.cpp"/>
+        <FILE id="D8r1oC" name="LinuxDpiScale.h" compile="0" resource="0" file="Source/Core/LinuxDpiScale.h"/>
         <FILE id="dX0sDc" name="stdafx.cpp" compile="1" resource="0" file="Source/Core/stdafx.cpp"/>
         <FILE id="GtidCe" name="stdafx.h" compile="0" resource="0" file="Source/Core/stdafx.h"/>
         <FILE id="fLlFE1" name="stdafx_luabind.cpp" compile="1" resource="0"
