@@ -440,76 +440,87 @@ class CtrlrModulatorListProperty :	public CtrlrPropertyChild,
 		bool numeric;
 };
 
-class MultiMidiAlert : public AlertWindow // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog . Updated by dam for juce 8
+class MultiMidiAlert : public AlertWindow // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog . Updated by dam for juce 6 & Juce 8
 {
-    public:
-        MultiMidiAlert()
-            : AlertWindow("Add Custom MIDI Message",
-                          String(), // Empty message to avoid JUCE 8 squashing
-                          AlertWindow::QuestionIcon)
-        {
-            const String helpText =
-                "Enter a Raw MIDI message:\n\n"
-                "Examples:\n"
-                "Bn,-2,-1     (CC using component number & value)\n"
-                "Cn,-1     (Program change using component value)\n"
-                "SysEx,F0 00 xx F7     (SysEx with tokens)\n\n"
-                "B4 03 67     (Raw MIDI hex bytes)\n\n"
-                "Tokens: \n"
-                "-2=component number, -1=component value, xx etc = SysEx tokens";
+public:
+    MultiMidiAlert()
+        : AlertWindow("Add Custom MIDI Message",
+#if JUCE_MAJOR_VERSION >= 8
+						String(), // JUCE 8: Empty to allow custom label layout
+					  #else
+						getHelpText(), // JUCE 6: Standard text area
+					  #endif
+					  AlertWindow::QuestionIcon)
+	{
+#if JUCE_MAJOR_VERSION >= 8
+		// --- JUCE 8: Custom Layout ---
+		messageLabel.setText(getHelpText(), dontSendNotification);
+		messageLabel.setFont(Font(15.0f));
+		messageLabel.setColour(Label::textColourId, findColour(AlertWindow::textColourId));
+		messageLabel.setSize(460, 200);
+		
+		addCustomComponent(&messageLabel);
+		addTextEditor("customMidi", "F0 00 xx F7", "MIDI Message", false);
+		
+		addButton("OK", 1, KeyPress(KeyPress::returnKey, 0, 0));
+		addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
+		setSize(560, 400);
 
-            // Configure the label - No "message" name to avoid stray text
-            messageLabel.setText(helpText, dontSendNotification);
-            messageLabel.setFont(Font(15.0f));
-            messageLabel.setColour(Label::textColourId, findColour(AlertWindow::textColourId));
-            
-            // Matches your successful 460px width
-            messageLabel.setSize(460, 200);
-            
-            // Add components
-            addCustomComponent(&messageLabel);
-            
-            // Add the text editor below the label
-            addTextEditor("customMidi", "F0 00 xx F7", "MIDI Message", false);
-            
-            addButton("OK", 1, KeyPress(KeyPress::returnKey, 0, 0));
-            addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
+		if (auto* okBtn = getButton("OK"))
+		{
+			if (auto* cancelBtn = getButton("Cancel"))
+			{
+				const int bW = 80, bH = 40, gap = 20;
+				const int totalWidth = (bW * 2) + gap;
+				const int startX = (getWidth() - totalWidth) / 2;
+				const int yPos = getHeight() - bH - 30;
+				okBtn->setBounds(startX, yPos, bW, bH);
+				cancelBtn->setBounds(startX + bW + gap, yPos, bW, bH);
+			}
+		}
+#else
+		// --- JUCE 6: Standard Layout ---
+		addTextEditor("customMidi", "F0 00 xx F7", "MIDI Message", false);
+		addButton("OK", 1);
+		addButton("Cancel", 0);
+#endif
+	}
 
-            // Set window size (Wide for the label, tall enough for Editor + Buttons)
-            setSize(560, 400);
+	// Static helper to keep the string unified in one place
+	static const String getHelpText()
+	{
+		return "Enter a Raw MIDI message:\n\n"
+			   "Examples:\n"
+			   "  Bn,-2,-1           (CC using component number & value)\n"
+			   "  Cn,-1              (Program change using component value)\n"
+			   "  SysEx,F0 00 xx F7  (SysEx with tokens)\n\n"
+			   "  B4 03 67           (Raw MIDI hex bytes)\n\n"
+			   "Tokens: -2=component number, -1=component value, xx etc = SysEx tokens";
+	}
 
-            // Manual Button Centering for OK and Cancel
-            auto* okBtn = getButton("OK");
-            auto* cancelBtn = getButton("Cancel");
+#if JUCE_MAJOR_VERSION < 8
+	void buttonClicked(Button* button)
+	{
+		exitModalState(button->getCommandID());
+	}
+#endif
 
-            if (okBtn && cancelBtn)
-            {
-                const int bW = 80;
-                const int bH = 40;
-                const int gap = 20;
-                const int totalWidth = (bW * 2) + gap;
-                const int startX = (getWidth() - totalWidth) / 2;
-                const int yPos = getHeight() - bH - 30; // Padding 30px
+	const String getValue()
+	{
+		if (auto* ed = getTextEditor("customMidi"))
+		{
+			String userInput = ed->getText().trim();
+			if (userInput.isNotEmpty())
+				return "Custom," + userInput;
+		}
+		return String();
+	}
 
-                okBtn->setBounds(startX, yPos, bW, bH);
-                cancelBtn->setBounds(startX + bW + gap, yPos, bW, bH);
-            }
-        }
-
-        const String getValue()
-        {
-            if (auto* ed = getTextEditor("customMidi"))
-            {
-                String userInput = ed->getText().trim();
-                if (userInput.isNotEmpty())
-                    return "Custom," + userInput;
-            }
-            return String();
-        }
-
-    private:
-        Label messageLabel;
-        Slider valueSlider, numberSlider;
+private:
+#if JUCE_MAJOR_VERSION >= 8
+	Label messageLabel;
+#endif
+	Slider valueSlider, numberSlider;
 };
 
 class CtrlrMultiMidiPropertyComponent  : public Component,
