@@ -802,7 +802,6 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 						break;
 
 					case EncodeMSBFirst:
-					case EncodeDSI:
 						if (bytesPerValue == 2)
 						{
 							uint8 msb = (modulatorValue >> 7) & 0x7F;
@@ -877,6 +876,40 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 						else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
+                    
+					case Encode16bitLsbFirst:
+						if (bytesPerValue == 4)
+						{
+							uint8 nibble0 = modulatorValue & 0x0F;           // bits 0-3
+							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;    // bits 4-7
+							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;    // bits 8-11
+							uint8 nibble3 = (modulatorValue >> 12) & 0x0F;   // bits 12-15
+							
+							modulatorData[index * 4] = nibble0;
+							modulatorData[index * 4 + 1] = nibble1;
+							modulatorData[index * 4 + 2] = nibble2;
+							modulatorData[index * 4 + 3] = nibble3;
+						}
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+					
+					case Encode16bitMsbFirst:
+						if (bytesPerValue == 4)
+						{
+							uint8 nibble3 = (modulatorValue >> 12) & 0x0F;   // bits 12-15
+							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;    // bits 8-11
+							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;    // bits 4-7
+							uint8 nibble0 = modulatorValue & 0x0F;           // bits 0-3
+							
+							modulatorData[index * 4] = nibble3;
+							modulatorData[index * 4 + 1] = nibble2;
+							modulatorData[index * 4 + 2] = nibble1;
+							modulatorData[index * 4 + 3] = nibble0;
+						}
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
 					}
 				}
 			}
@@ -928,7 +961,6 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 						break;
 
 					case EncodeMSBFirst:
-					case EncodeDSI:
 						if (bytesPerValue == 2)
 						{
 							uint8 msb = (modulatorValue >> 7) & 0x7F;
@@ -1003,6 +1035,40 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 						else
 							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
+					
+					case Encode16bitLsbFirst:
+						if (bytesPerValue == 4)
+						{
+							uint8 nibble0 = modulatorValue & 0x0F;           // bits 0-3
+							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;    // bits 4-7
+							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;    // bits 8-11
+							uint8 nibble3 = (modulatorValue >> 12) & 0x0F;   // bits 12-15
+							
+							modulatorData[index * 4] = nibble0;
+							modulatorData[index * 4 + 1] = nibble1;
+							modulatorData[index * 4 + 2] = nibble2;
+							modulatorData[index * 4 + 3] = nibble3;
+						}
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+						
+					case Encode16bitMsbFirst:
+						if (bytesPerValue == 4)
+						{
+							uint8 nibble3 = (modulatorValue >> 12) & 0x0F;   // bits 12-15
+							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;    // bits 8-11
+							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;    // bits 4-7
+							uint8 nibble0 = modulatorValue & 0x0F;           // bits 0-3
+							
+							modulatorData[index * 4] = nibble3;
+							modulatorData[index * 4 + 1] = nibble2;
+							modulatorData[index * 4 + 2] = nibble1;
+							modulatorData[index * 4 + 3] = nibble0;
+						}
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
 					}
 				}
 			}
@@ -1072,7 +1138,6 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const ValueTree& programTree,
 						break;
 
 					case EncodeMSBFirst:
-					case EncodeDSI:
 						if (bytesPerValue == 2)
 						{
 							uint8 msb = (modulatorValue >> 7) & 0x7F;
@@ -1143,6 +1208,40 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const ValueTree& programTree,
 							uint8 lsbNibble = unsignedByte & 0x0F;
 							modulatorData[index * 2] = lsbNibble;
 							modulatorData[index * 2 + 1] = msbNibble;
+						}
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+							
+					case Encode16bitLsbFirst:
+						if (bytesPerValue == 4)
+						{
+							uint8 nibble0 = modulatorValue & 0x0F;           // bits 0-3
+							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;    // bits 4-7
+							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;    // bits 8-11
+							uint8 nibble3 = (modulatorValue >> 12) & 0x0F;   // bits 12-15
+							
+							modulatorData[index * 4] = nibble0;
+							modulatorData[index * 4 + 1] = nibble1;
+							modulatorData[index * 4 + 2] = nibble2;
+							modulatorData[index * 4 + 3] = nibble3;
+						}
+						else
+							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						break;
+						
+					case Encode16bitMsbFirst:
+						if (bytesPerValue == 4)
+						{
+							uint8 nibble3 = (modulatorValue >> 12) & 0x0F;   // bits 12-15
+							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;    // bits 8-11
+							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;    // bits 4-7
+							uint8 nibble0 = modulatorValue & 0x0F;           // bits 0-3
+							
+							modulatorData[index * 4] = nibble3;
+							modulatorData[index * 4 + 1] = nibble2;
+							modulatorData[index * 4 + 2] = nibble1;
+							modulatorData[index * 4 + 3] = nibble0;
 						}
 						else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
@@ -1219,7 +1318,6 @@ void CtrlrPanel::setModulatorValuesFromData(const MemoryBlock& dataSource,
 				break;
 
 			case EncodeMSBFirst:
-			case EncodeDSI:
 				if (bytesPerValue == 2)
 				{
 					uint8 msb = dataSource[dataIndex];
@@ -1284,6 +1382,32 @@ void CtrlrPanel::setModulatorValuesFromData(const MemoryBlock& dataSource,
 					uint8 unsignedByte = ((msbNibble & 0x0F) << 4) | (lsbNibble & 0x0F);
 					int8 signedValue = (int8)unsignedByte;
 					decodedValue = (int)signedValue;
+				}
+				else
+					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
+				break;
+					
+			case Encode16bitMsbFirst:
+				if (bytesPerValue == 4)
+				{
+					uint8 nibble3 = dataSource[dataIndex];
+					uint8 nibble2 = dataSource[dataIndex + 1];
+					uint8 nibble1 = dataSource[dataIndex + 2];
+					uint8 nibble0 = dataSource[dataIndex + 3];
+					decodedValue = ((nibble3 & 0x0F) << 12) | ((nibble2 & 0x0F) << 8) | ((nibble1 & 0x0F) << 4) | (nibble0 & 0x0F);
+				}
+				else
+					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
+				break;
+				
+			case Encode16bitLsbFirst:
+				if (bytesPerValue == 4)
+				{
+					uint8 nibble0 = dataSource[dataIndex];
+					uint8 nibble1 = dataSource[dataIndex + 1];
+					uint8 nibble2 = dataSource[dataIndex + 2];
+					uint8 nibble3 = dataSource[dataIndex + 3];
+					decodedValue = ((nibble3 & 0x0F) << 12) | ((nibble2 & 0x0F) << 8) | ((nibble1 & 0x0F) << 4) | (nibble0 & 0x0F);
 				}
 				else
 					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
@@ -1416,7 +1540,8 @@ void CtrlrPanel::wrapForLua(lua_State* L)
 					value("EncodeNibbleLsbFirst", EncodeNibbleLsbFirst),
 					value("EncodeSignedNibbleMsbFirst", EncodeSignedNibbleMsbFirst),
 					value("EncodeSignedNibbleLsbFirst", EncodeSignedNibbleLsbFirst),
-					value("EncodeDSI", EncodeDSI)
+					value("Encode16bitLsbFirst", Encode16bitLsbFirst),
+					value("Encode16bitMsbFirst", Encode16bitMsbFirst)
 				]
 			.enum_("CtrlrByteSplit")
 				[
