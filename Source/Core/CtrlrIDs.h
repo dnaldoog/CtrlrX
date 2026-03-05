@@ -547,7 +547,7 @@ namespace Ids
     DECLARE_ID (uiArrowHeadHeight);
     DECLARE_ID (uiArrowOrientation);
     DECLARE_ID (uiArrowRotation);
-    DECLARE_ID (uiArrowStokeThickness);
+    DECLARE_ID (uiArrowStrokeThickness); // Updated v5.6.35. TYPO
     
     DECLARE_ID (uiCustomResizedCallback);
     DECLARE_ID (uiCustomPaintCallback);
@@ -724,6 +724,7 @@ namespace Ids
     
     DECLARE_ID (modulatorReference);
     DECLARE_ID (midiMessageCtrlrNumber);
+    DECLARE_ID (midiMessageCtrlrNumberSize); // Added v5.6.35. Thanks to @dnaldoog
     DECLARE_ID (midiMessageChannel);
     DECLARE_ID (midiMessageCtrlrValue);
     DECLARE_ID (midiMessageType);
@@ -845,7 +846,8 @@ namespace Ids
     DECLARE_ID (luaMethodEditorBgColour);
     DECLARE_ID (luaMethodEditorLineNumbersBgColour); // Added v5.6.31
     DECLARE_ID (luaMethodEditorLineNumbersColour); // Added v5.6.31
-	DECLARE_ID (luaMethodEditorFontColour); // Added v5.6.34. Editor font colour
+    DECLARE_ID (luaMethodEditorFontColour); // Added v5.6.34. Editor font colour
+    DECLARE_ID (luaMethodEditorAutoComplete); // Added v5.6.35.
     DECLARE_ID (luaMethodGroup);
     DECLARE_ID (luaMethodCode);
     DECLARE_ID (luaMethodSource);

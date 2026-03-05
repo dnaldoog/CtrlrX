@@ -21,7 +21,7 @@ class CtrlrPropertyChild: public ChangeBroadcaster
 		virtual void refresh()=0;
 };
 
-class CtrlrPropertyComponent  : public PropertyComponent
+class CtrlrPropertyComponent  : public PropertyComponent, public ValueTree::Listener
 {
 	public:
 		CtrlrPropertyComponent (const Identifier &_propertyName,
@@ -42,6 +42,13 @@ class CtrlrPropertyComponent  : public PropertyComponent
 		const String getVisibleText();
 		const String getElementSubType();
 		const String getElementType();
+    
+		// Added v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
+		void valueTreePropertyChanged(ValueTree& treeWhosePropertyHasChanged, const Identifier& property); // NO override
+		void valueTreeChildAdded(ValueTree& parentTree, ValueTree& childWhichHasBeenAdded) {} // NO override
+		void valueTreeChildRemoved(ValueTree& parentTree, ValueTree& childWhichHasBeenRemoved, int indexFromWhichChildWasRemoved) {} // NO override
+		void valueTreeChildOrderChanged(ValueTree& parentTreeWhoseChildrenHaveMoved, int oldIndex, int newIndex) {} // NO override
+		void valueTreeParentChanged(ValueTree& treeWhoseParentHasChanged) {} // NO override
 
 	private:
 	    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrPropertyComponent);
@@ -62,6 +69,7 @@ class CtrlrPropertyComponent  : public PropertyComponent
 class CtrlrBooleanPropertyComponent : public Component, public Button::Listener, public CtrlrPropertyChild
 {
 	public:
+		CtrlrBooleanPropertyComponent(const Value& _valueToControl, const String& _trueText, const String& _falseText);
 		CtrlrBooleanPropertyComponent (const Value& _valueToControl, const String& _stateText);
 		~CtrlrBooleanPropertyComponent();
 		void paint (Graphics& g);
@@ -75,6 +83,7 @@ class CtrlrBooleanPropertyComponent : public Component, public Button::Listener,
 		Value valueToControl;
 		ToggleButton button;
 		String onText,offText;
+		String trueText,falseText; // Added v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
 		String stateText;
 };
 
@@ -431,57 +440,76 @@ class CtrlrModulatorListProperty :	public CtrlrPropertyChild,
 		bool numeric;
 };
 
-class MultiMidiAlert : public AlertWindow
+class MultiMidiAlert : public AlertWindow // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog . Updated by dam for juce 8
 {
-	public:
-		MultiMidiAlert ()
-			:	AlertWindow ("", "Add a new message to the multi list\n[-1 for parent value setting, -2 for parent number setting. For SysEx message the formula is the same as in the SysEx editor.]", AlertWindow::QuestionIcon, 0),
-				valueSlider("Controller Value"), numberSlider("Controller Number")
-		{
-			const char *types[] = { "CC", "Aftertouch", "ChannelPressure", "NoteOn", "NoteOff", "SysEx", "--", "ProgramChange", "PitchWheel", 0 };
-			const char *v[] = { "Direct", "LSB7bit", "MSB7bit", "LSB4bit", "MSB4bit", 0};
-			addComboBox ("messageType", StringArray(types), "Midi message type");
-			addComboBox ("value", StringArray(v), "Value mapping");
-			addComboBox ("number", StringArray(v), "Number mapping");
-			addTextEditor ("sysexFormula", "F0 00 F7", "SysEx Formula", false);
-			valueSlider.setSize (300,32);
-			valueSlider.setSliderStyle (Slider::LinearBar);
-			valueSlider.setRange (-2,127,1);
-			valueSlider.setValue (-1);
+    public:
+        MultiMidiAlert()
+            : AlertWindow("Add Custom MIDI Message",
+                          String(), // Empty message to avoid JUCE 8 squashing
+                          AlertWindow::QuestionIcon)
+        {
+            const String helpText =
+                "Enter a Raw MIDI message:\n\n"
+                "Examples:\n"
+                "Bn,-2,-1     (CC using component number & value)\n"
+                "Cn,-1     (Program change using component value)\n"
+                "SysEx,F0 00 xx F7     (SysEx with tokens)\n\n"
+                "B4 03 67     (Raw MIDI hex bytes)\n\n"
+                "Tokens: \n"
+                "-2=component number, -1=component value, xx etc = SysEx tokens";
 
-			numberSlider.setSize (300,32);
-			numberSlider.setSliderStyle (Slider::LinearBar);
-			numberSlider.setRange (-2,127,1);
-			numberSlider.setValue (-1);
+            // Configure the label - No "message" name to avoid stray text
+            messageLabel.setText(helpText, dontSendNotification);
+            messageLabel.setFont(Font(15.0f));
+            messageLabel.setColour(Label::textColourId, findColour(AlertWindow::textColourId));
+            
+            // Matches your successful 460px width
+            messageLabel.setSize(460, 200);
+            
+            // Add components
+            addCustomComponent(&messageLabel);
+            
+            // Add the text editor below the label
+            addTextEditor("customMidi", "F0 00 xx F7", "MIDI Message", false);
+            
+            addButton("OK", 1, KeyPress(KeyPress::returnKey, 0, 0));
+            addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
 
-			addCustomComponent (&numberSlider);
-			addCustomComponent (&valueSlider);
+            // Set window size (Wide for the label, tall enough for Editor + Buttons)
+            setSize(560, 400);
 
-			addButton ("OK", 1);
-			getComboBoxComponent("messageType")->setSelectedId (1, dontSendNotification);
-			getComboBoxComponent("value")->setSelectedId (1, dontSendNotification);
-			getComboBoxComponent("number")->setSelectedId (1, dontSendNotification);
-		}
+            // Manual Button Centering for OK and Cancel
+            auto* okBtn = getButton("OK");
+            auto* cancelBtn = getButton("Cancel");
 
-		void buttonClicked (Button* button)
-		{
-			getParentComponent()->exitModalState(1);
-		}
+            if (okBtn && cancelBtn)
+            {
+                const int bW = 80;
+                const int bH = 40;
+                const int gap = 20;
+                const int totalWidth = (bW * 2) + gap;
+                const int startX = (getWidth() - totalWidth) / 2;
+                const int yPos = getHeight() - bH - 30; // Padding 30px
 
-		const String getValue()
-		{
-			String ret;
-			ret << getComboBoxComponent("messageType")->getText() + ",";
-			ret << getComboBoxComponent("number")->getText() + ",";
-			ret << getComboBoxComponent("value")->getText() + ",";
-			ret << String (((Slider*)getCustomComponent(0))->getValue()) + ",";
-			ret << String (((Slider*)getCustomComponent(1))->getValue()) + ",";
-			ret << getTextEditor ("sysexFormula")->getText();
-			return (ret);
-		}
+                okBtn->setBounds(startX, yPos, bW, bH);
+                cancelBtn->setBounds(startX + bW + gap, yPos, bW, bH);
+            }
+        }
 
-	private:
-		Slider valueSlider, numberSlider;
+        const String getValue()
+        {
+            if (auto* ed = getTextEditor("customMidi"))
+            {
+                String userInput = ed->getText().trim();
+                if (userInput.isNotEmpty())
+                    return "Custom," + userInput;
+            }
+            return String();
+        }
+
+    private:
+        Label messageLabel;
+        Slider valueSlider, numberSlider;
 };
 
 class CtrlrMultiMidiPropertyComponent  : public Component,
@@ -504,19 +532,23 @@ class CtrlrMultiMidiPropertyComponent  : public Component,
 		void buttonClicked (Button* buttonThatWasClicked);
 		void mouseDown (const MouseEvent& e);
 		void mouseDoubleClick (const MouseEvent& e);
+		void lookAndFeelChanged() override; // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
 
 	private:
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrMultiMidiPropertyComponent)
+		
+		void updateButtonIcons(); // Updated v5.6.35. Helper function for Multi MIDI Message. Thanks to @dnaldoog
+	
 		MultiMidiAlert questionWindow;
 		StringArray values;
 		Value valueToControl;
 		StringPairArray templates;
-        DrawableButton* add;
-        DrawableButton* remove;
-		ListBox* list;
+        DrawableButton* addMulti; // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
+        DrawableButton* removeMulti; // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
+		ListBox* listMulti; // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
 		DrawableButton* copy;
         DrawableButton* paste;
-        DrawableButton* insert;
+        DrawableButton* helpMmidi; // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
 };
 
 class CtrlrSliderPropertyComponent   : public Component, private Slider::Listener, public CtrlrPropertyChild
@@ -564,6 +596,8 @@ class CtrlrSysExEditor  : public Component,
 		void sliderValueChanged (Slider* sliderThatWasMoved);
 		void labelTextChanged (Label* labelThatHasChanged);
 		void mouseDown (const MouseEvent& e);
+		void showTokenMenuForLabel(Label* l); // Added v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
+		void updateLabelHighlights(Label* focusedLabel); // Added v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
 
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrSysExEditor)
 
@@ -576,6 +610,8 @@ class CtrlrSysExEditor  : public Component,
 		int currentMessageLength;
 		Slider* messageLength;
 		Label* label;
+		TextButton* addTokenButton = nullptr; // Added v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
+		Label* lastFocusedLabel = nullptr; // Added v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
 
 };
 
@@ -643,6 +679,8 @@ class CtrlrSysExPropertyComponent  : public Component,
 		Identifier propertyName;
 		CtrlrPanel *owner;
 };
+
+//==============================================================================
 
 class CtrlrTextPropertyComponent : public Component, public CtrlrPropertyChild
 {
