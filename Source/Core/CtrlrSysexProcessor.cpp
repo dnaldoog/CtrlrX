@@ -568,7 +568,7 @@ void CtrlrSysexProcessor::checksumXor(const CtrlrSysexToken token, MidiMessage& 
     *(ptr + token.getPosition()) = chTotal & 0x7f;
 }
 
-String CtrlrSysexProcessor::openAdvancedMessageEditor() // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog . Updated by dam for juce 8
+String CtrlrSysexProcessor::openAdvancedMessageEditor() // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog . Updated by dam for juce 6 & Juce 8
 {
     MultiMidiAlert alert;
     
@@ -586,7 +586,7 @@ String CtrlrSysexProcessor::openAdvancedMessageEditor() // Updated v5.6.35. For 
     return String();
 }
 
-void CtrlrSysexProcessor::showMidiHelp() // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog . Updated by dam for juce 8
+void CtrlrSysexProcessor::showMidiHelp()
 {
     const String helpText =
         "MIDI Message Conventions:\n\n"
@@ -597,38 +597,49 @@ void CtrlrSysexProcessor::showMidiHelp() // Updated v5.6.35. For Multi MIDI Mess
         "Use the Custom ... option to add custom MIDI.\n\n"
         "NRPN/RPN templates are pre-defined for common controller mappings.";
 
-    // 1. Pass empty strings to constructor to keep the 'standard' areas clean
-    auto* alert = new AlertWindow ("MIDI Message Help", String(), AlertWindow::InfoIcon);
+#if JUCE_MAJOR_VERSION >= 8
+    // --- JUCE 8 Logic (Custom Layout) ---
+    auto* alert = new AlertWindow("MIDI Message Help", String(), AlertWindow::InfoIcon);
 
-    // 2. The Label: 460px width, and we use an empty name to avoid the stray "message" text
-    auto* messageLabel = new Label (String(), helpText);
-    messageLabel->setFont (Font (15.0f));
-    messageLabel->setColour (Label::textColourId, alert->findColour (AlertWindow::textColourId));
+    auto* messageLabel = new Label(String(), helpText);
+    messageLabel->setFont(Font(15.0f));
+    messageLabel->setColour(Label::textColourId, alert->findColour(AlertWindow::textColourId));
+    messageLabel->setSize(460, 180);
     
-    // Set text to 460px wide as requested
-    messageLabel->setSize (460, 180);
-    
-    alert->addCustomComponent (messageLabel);
-    alert->addButton ("OK", 1, KeyPress (KeyPress::returnKey, 0, 0));
+    alert->addCustomComponent(messageLabel);
+    alert->addButton("OK", 1, KeyPress(KeyPress::returnKey, 0, 0));
+    alert->setSize(560, 330);
 
-    // 3. The Window: Width adjusted for the 460px content + icon/padding (~530px)
-    alert->setSize (560, 330);
-
-    // 4. Centering the button
-    if (auto* okButton = alert->getButton ("OK"))
+    // This is the part that fails in JUCE 6
+    if (auto* okButton = alert->getButton("OK"))
     {
         const int bW = 80;
         const int bH = 40;
-        okButton->setBounds ((alert->getWidth() - bW) / 2,
-                             alert->getHeight() - bH - 30, // Padding 30px
+        okButton->setBounds((alert->getWidth() - bW) / 2,
+                             alert->getHeight() - bH - 30,
                              bW, bH);
     }
 
+#else
+    // --- JUCE 6 Logic (Standard Layout) ---
+    #if JUCE_LINUX
+        auto* alert = new AlertWindow("MIDI Message Help", helpText, AlertWindow::InfoIcon);
+        alert->addButton("OK", 1);
+    #else
+        // Use a stack-based or pointer-based window for Windows/macOS modal loop
+        auto* alert = new AlertWindow("MIDI Message Help", helpText, AlertWindow::InfoIcon);
+        alert->addButton("OK", 1);
+    #endif
+#endif
+
+    // --- Unified Execution/Cleanup ---
 #if JUCE_LINUX
-    alert->enterModalState (true, ModalCallbackFunction::create ([alert] (int) {
+    // Always async on Linux to avoid window manager deadlocks
+    alert->enterModalState(true, ModalCallbackFunction::create([alert](int) {
         delete alert;
     }), true);
 #else
+    // For Windows/macOS
     alert->runModalLoop();
     delete alert;
 #endif
