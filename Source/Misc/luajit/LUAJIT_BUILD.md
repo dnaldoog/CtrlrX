@@ -77,7 +77,7 @@ console(String(jit.version()))  -- should print e.g. "LuaJIT 2.1.0-beta3"
 
 ````cd Source/Misc/luajit/src````<br>
 ```make clean```<br>
-Run ```make -j$(nproc) XCFLAGS="-fPIC"``` <br>
+```make -j$(nproc) XCFLAGS="-fPIC"``` <br>
 ```cd ../../../../```<br>
 ```./autobuild_ninja```<br>
 
