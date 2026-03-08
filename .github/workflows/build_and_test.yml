@@ -124,12 +124,13 @@ jobs:
 
           echo "--- Building x86_64 ---"
           make clean
-          # Explicitly set the compiler and the target system to prevent 'smushing'
+          # We pass the architecture via TARGET_FLAGS to keep CC clean
           make -j$(sysctl -n hw.ncpu) \
-               CC="clang -arch x86_64" \
-               CROSS="clang -arch x86_64" \
+               CC="clang" \
+               TARGET_STRIP="strip" \
+               TARGET_SYS="Darwin" \
                TARGET_FLAGS="-arch x86_64" \
-               TARGET_SYS=Darwin
+               CROSS="clang -arch x86_64"
           
           if [ ! -f libluajit.a ]; then echo "x86_64 build failed"; exit 1; fi
           mv libluajit.a libluajit_x86.a
@@ -137,10 +138,11 @@ jobs:
           echo "--- Building arm64 ---"
           make clean
           make -j$(sysctl -n hw.ncpu) \
-               CC="clang -arch arm64" \
-               CROSS="clang -arch arm64" \
+               CC="clang" \
+               TARGET_STRIP="strip" \
+               TARGET_SYS="Darwin" \
                TARGET_FLAGS="-arch arm64" \
-               TARGET_SYS=Darwin
+               CROSS="clang -arch arm64"
           
           if [ ! -f libluajit.a ]; then echo "arm64 build failed"; exit 1; fi
           mv libluajit.a libluajit_arm.a
