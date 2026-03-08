@@ -5,10 +5,10 @@
 #include "CtrlrPanel/CtrlrPanel.h"
 #include "CtrlrInlineUtilitiesGUI.h"
 extern "C" {
-#include "../Misc/luajit/src/lua.h"
-#include "../Misc/luajit/src/lualib.h"
-#include "../Misc/luajit/src/lauxlib.h"
-#include "../Misc/luajit/src/luajit.h"
+#include "lua.h"
+#include "lualib.h"
+#include "lauxlib.h"
+#include "luajit.h"
 }
 
 CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
