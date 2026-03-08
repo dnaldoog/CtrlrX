@@ -102,8 +102,10 @@ jobs:
         if: ${{ matrix.name == 'macOS' }}
         run: |
           brew install osxutils luajit
-          # Make sure pkg-config can find luajit
+          # Apple Silicon homebrew is in /opt/homebrew, add lib path for linker
           echo "PKG_CONFIG_PATH=$(brew --prefix luajit)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+          echo "LDFLAGS=-L$(brew --prefix luajit)/lib" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I$(brew --prefix luajit)/include/luajit-2.1" >> $GITHUB_ENV
 
       # This block can be removed once 15.1 is default (JUCE requires it when building on macOS 14)
       - name: Use latest Xcode on system (macOS)
