@@ -9,7 +9,10 @@ on:
         required: false
         default: false
   push:
-  pull_request:
+    branches:
+      - '**' 
+    tags:
+      - v*
 
 concurrency:
   group: ${{ github.ref }}
@@ -132,7 +135,7 @@ jobs:
       - name: Extract Version
         run: |
           echo "0.0.0" > VERSION
-          JUCER=$(find . -name "Ctrlr*.jucer" -type f | head -n 1)
+          JUCER=$(find . -name "*.jucer" -type f | head -n 1)
           if [ -n "$JUCER" ]; then
             sed -n 's/.*version="\([^"]*\)".*/\1/p' "$JUCER" | head -n 1 > VERSION
           fi
@@ -140,8 +143,20 @@ jobs:
 
       - name: Configure CMake
         run: |
+          LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
+          echo "Found LuaJIT at: $LUAJIT_SRC"
+          
+          # Logic to pick the right library file per OS
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            LUA_LIB="$LUAJIT_SRC/lua51.lib"
+          else
+            LUA_LIB="$LUAJIT_SRC/libluajit.a"
+          fi
+
           cmake -B ${{ env.BUILD_DIR }} \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+                -DLUAJIT_INCLUDE_DIR="$LUAJIT_SRC" \
+                -DLUAJIT_LIBRARIES="$LUA_LIB" \
                 ${{ matrix.extra-flags }}
 
       - name: Build Project
@@ -149,10 +164,12 @@ jobs:
 
       - name: Prepare and Zip Artifacts
         run: |
-          NAME="${PRODUCT_NAME}-${VERSION_TAG}-LuaJIT-${{ matrix.name }}"
+          NAME="${{ env.PRODUCT_NAME }}-${{ env.VERSION_TAG }}-LuaJIT-${{ matrix.name }}"
           echo "ZIP_NAME=$NAME" >> $GITHUB_ENV
           mkdir -p staging
+          # Copy build products (adjust path if your JUCE artefacts are elsewhere)
           cp -r ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/* staging/ || true
+          
           if [ "${{ runner.os }}" == "Windows" ]; then
             7z a "${NAME}.zip" ./staging/*
           else
@@ -162,8 +179,8 @@ jobs:
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: "${{ env.ZIP_NAME }}"
-          path: "${{ env.ZIP_NAME }}.zip"
+          name: ${{ env.ZIP_NAME }}
+          path: ${{ env.ZIP_NAME }}.zip
 
   release:
     name: Create GitHub Release
@@ -182,3 +199,4 @@ jobs:
           files: ./artifacts/**/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                
