@@ -1,0 +1,13 @@
+name: Sanity Check
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  test_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Say Hello
+        run: echo "The workflow is finally alive!"
