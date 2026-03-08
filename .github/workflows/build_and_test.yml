@@ -9,10 +9,6 @@ on:
         required: false
         default: false
   push:
-    branches:
-      - main
-    tags:
-      - v*
   pull_request:
 
 concurrency:
