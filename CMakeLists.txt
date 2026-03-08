@@ -307,6 +307,11 @@ if(WIN32)
         SharedCode
         "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/lua51.lib"
     )
+elseif(APPLE)
+    target_link_libraries("${PROJECT_NAME}" PRIVATE
+        SharedCode
+        "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/libluajit.a"
+    )
 else()
     target_link_libraries("${PROJECT_NAME}" PRIVATE
         SharedCode
