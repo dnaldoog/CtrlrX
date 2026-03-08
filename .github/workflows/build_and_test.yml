@@ -108,6 +108,36 @@ jobs:
         with:
           submodules: recursive
 
+      # -----------------------------------------------------------------
+      # LUAJIT BUILD STEP (Required before CMake Configure)
+      # -----------------------------------------------------------------
+      - name: Build LuaJIT (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          cd Source\Misc\luajit\src
+          msvcbuild.bat static
+
+      - name: Build LuaJIT (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cd Source/Misc/luajit/src
+          make clean
+          make -j$(nproc) XCFLAGS="-fPIC"
+
+      - name: Build LuaJIT (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cd Source/Misc/luajit/src
+          make clean
+          # Build for the host architecture (GitHub runners are usually ARM64 now)
+          MACOS_DEPLOYMENT_TARGET=10.15 make -j$(sysctl -n hw.ncpu)
+      # -----------------------------------------------------------------
+
+      - name: Install CtrlrX Deps
+        run: |
+          # ... (Keep your existing Install CtrlrX Deps code here)
+
       - name: Install CtrlrX Deps
         run: |
           echo "OS: $RUNNER_OS"
