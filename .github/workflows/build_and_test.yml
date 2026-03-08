@@ -92,12 +92,16 @@ jobs:
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          for /f "delims=" %%i in ('dir /s /b /ad luajit ^| findstr /e "src"') do (
-            cd /d "%%i"
-            call msvcbuild.bat static
-            exit /b 0
+          @echo off
+          for /d /r %%i in (*luajit) do (
+            if exist "%%i\src\msvcbuild.bat" (
+              pushd "%%i\src"
+              call msvcbuild.bat static
+              popd
+              exit /b 0
+            )
           )
-          echo ERROR: LuaJIT src folder not found.
+          echo ERROR: LuaJIT msvcbuild.bat not found.
           exit /b 1
 
       - name: Build LuaJIT (Linux)
@@ -116,17 +120,26 @@ jobs:
           if [ -z "$LUAJIT_SRC" ]; then echo "LuaJIT not found"; exit 1; fi
           cd "$LUAJIT_SRC"
           
-          # Build x86_64
+          # Crucial: Export the deployment target for the Makefile
+          export MACOSX_DEPLOYMENT_TARGET=10.15
+          
+          echo "--- Building x86_64 ---"
           make clean
-          make -j$(sysctl -n hw.ncpu) CC="clang -arch x86_64" CROSS="clang -arch x86_64" TARGET_FLAGS="-arch x86_64" MACOS_DEPLOYMENT_TARGET=10.15
+          make -j$(sysctl -n hw.ncpu) CC="clang -arch x86_64" \
+                                      CROSS="clang -arch x86_64" \
+                                      TARGET_FLAGS="-arch x86_64"
+          if [ ! -f libluajit.a ]; then echo "x86_64 build failed"; exit 1; fi
           mv libluajit.a libluajit_x86.a
           
-          # Build arm64
+          echo "--- Building arm64 ---"
           make clean
-          make -j$(sysctl -n hw.ncpu) CC="clang -arch arm64" CROSS="clang -arch arm64" TARGET_FLAGS="-arch arm64" MACOS_DEPLOYMENT_TARGET=10.15
+          make -j$(sysctl -n hw.ncpu) CC="clang -arch arm64" \
+                                      CROSS="clang -arch arm64" \
+                                      TARGET_FLAGS="-arch arm64"
+          if [ ! -f libluajit.a ]; then echo "arm64 build failed"; exit 1; fi
           mv libluajit.a libluajit_arm.a
           
-          # Merge
+          echo "--- Creating Universal Binary ---"
           lipo -create libluajit_x86.a libluajit_arm.a -output libluajit.a
           lipo -info libluajit.a
 
@@ -144,7 +157,12 @@ jobs:
 
       - name: Extract Version
         run: |
-          if [ -f VERSION ]; then
-            while IFS= read -r -d $'\0' JUCER_FILE <&3; do
-              if [ "$JUCER_FILE" -nt "VERSION" -a -n "`grep -h 'version=.\+Ctrlr' \"$JUCER_FILE\"`" ]; then
-                grep -h 'version=
+          if [ -f "VERSION" ]; then
+            # Find the first Jucer file and extract the version string
+            JUCER=$(find . -name "Ctrlr*.jucer" -type f | head -n 1)
+            if [ -n "$JUCER" ]; then
+              echo "Extracting version from $JUCER"
+              sed -n 's/.*version="\([^"]*\)".*/\1/p' "$JUCER" | head -n 1 > VERSION
+            fi
+          fi
+          echo "Build Version: $(cat VERSION)"
