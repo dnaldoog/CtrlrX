@@ -256,7 +256,9 @@ target_link_libraries(SharedCode INTERFACE
     juce::juce_recommended_lto_flags
     juce::juce_recommended_warning_flags
 )
-
+target_include_directories("${PROJECT_NAME}" PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src"
+)
 # -----------------------------------------------------------------------
 # Linux-only system libraries
 # -----------------------------------------------------------------------
