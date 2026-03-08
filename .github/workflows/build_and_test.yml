@@ -85,34 +85,47 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
 
       # --- LUAJIT BUILD SECTION ---
       - name: Build LuaJIT (Windows)
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          cd Source\Misc\luajit\src
-          msvcbuild.bat static
+          for /f "delims=" %%i in ('dir /s /b /ad luajit ^| findstr /e "src"') do (
+            cd /d "%%i"
+            call msvcbuild.bat static
+            exit /b 0
+          )
+          echo ERROR: LuaJIT src folder not found.
+          exit /b 1
 
       - name: Build LuaJIT (Linux)
         if: runner.os == 'Linux'
         run: |
-          cd Source/Misc/luajit/src
+          LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
+          if [ -z "$LUAJIT_SRC" ]; then echo "LuaJIT not found"; exit 1; fi
+          cd "$LUAJIT_SRC"
           make clean
           make -j$(nproc) XCFLAGS="-fPIC"
 
       - name: Build Universal LuaJIT (macOS)
         if: matrix.name == 'macOS'
         run: |
-          cd Source/Misc/luajit/src
+          LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
+          if [ -z "$LUAJIT_SRC" ]; then echo "LuaJIT not found"; exit 1; fi
+          cd "$LUAJIT_SRC"
+          
           # Build x86_64
           make clean
           make -j$(sysctl -n hw.ncpu) CC="clang -arch x86_64" CROSS="clang -arch x86_64" TARGET_FLAGS="-arch x86_64" MACOS_DEPLOYMENT_TARGET=10.15
           mv libluajit.a libluajit_x86.a
+          
           # Build arm64
           make clean
           make -j$(sysctl -n hw.ncpu) CC="clang -arch arm64" CROSS="clang -arch arm64" TARGET_FLAGS="-arch arm64" MACOS_DEPLOYMENT_TARGET=10.15
           mv libluajit.a libluajit_arm.a
+          
           # Merge
           lipo -create libluajit_x86.a libluajit_arm.a -output libluajit.a
           lipo -info libluajit.a
