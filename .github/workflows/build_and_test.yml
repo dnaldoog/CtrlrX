@@ -9,6 +9,10 @@ on:
         required: false
         default: false
   push:
+    branches:
+      - main
+    tags:
+      - 'v*'
   pull_request:
 
 concurrency:
@@ -18,6 +22,8 @@ concurrency:
 env:
   BUILD_TYPE: Release
   BUILD_DIR: build
+  PRODUCT_NAME: Ctrlr
+  PROJECT_NAME: Ctrlr
   DISPLAY: :0
   HOMEBREW_NO_INSTALL_CLEANUP: 1
   SCCACHE_GHA_ENABLED: true
@@ -55,6 +61,7 @@ jobs:
 
     steps:
       - name: Setup MSVC (Windows)
+        if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Set up Clang (Linux)
@@ -78,7 +85,6 @@ jobs:
         if: matrix.name == 'macOS'
         run: |
           brew install osxutils boost
-          # Use latest Xcode
           sudo xcode-select -s /Applications/Xcode.app
 
       - name: Checkout code
@@ -87,7 +93,6 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      # --- LUAJIT BUILD SECTION ---
       - name: Build LuaJIT (Windows)
         if: runner.os == 'Windows'
         shell: cmd
@@ -119,41 +124,24 @@ jobs:
           LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
           if [ -z "$LUAJIT_SRC" ]; then echo "LuaJIT not found"; exit 1; fi
           cd "$LUAJIT_SRC"
-          
           export MACOSX_DEPLOYMENT_TARGET=10.15
-
           echo "--- Building x86_64 ---"
           make clean
-          # We use environment variables to bypass the Makefile's string parsing
-          CC=clang \
-          TARGET_SYS=Darwin \
-          TARGET_FLAGS="-arch x86_64" \
-          make -j$(sysctl -n hw.ncpu)
-          
-          if [ ! -f libluajit.a ]; then echo "x86_64 build failed"; exit 1; fi
+          CC=clang TARGET_SYS=Darwin TARGET_FLAGS="-arch x86_64" make -j$(sysctl -n hw.ncpu)
           mv libluajit.a libluajit_x86.a
-          
           echo "--- Building arm64 ---"
           make clean
-          CC=clang \
-          TARGET_SYS=Darwin \
-          TARGET_FLAGS="-arch arm64" \
-          make -j$(sysctl -n hw.ncpu)
-          
-          if [ ! -f libluajit.a ]; then echo "arm64 build failed"; exit 1; fi
+          CC=clang TARGET_SYS=Darwin TARGET_FLAGS="-arch arm64" make -j$(sysctl -n hw.ncpu)
           mv libluajit.a libluajit_arm.a
-          
-          echo "--- Creating Universal Binary ---"
           lipo -create libluajit_x86.a libluajit_arm.a -output libluajit.a
           lipo -info libluajit.a
-          
-      # --- CTRLR SPECIFIC DEPS (Boost Unzip) ---
+
       - name: Unzip Boost for CtrlrX
         if: runner.os != 'Linux'
         run: |
-          if [ "$RUNNER_OS" == "Windows" ] || [ "$RUNNER_OS" == "macOS" ]; then
-            cd Source/Misc/
-            unzip -o boost/boost.zip
+          BOOST_ZIP=$(find . -name "boost.zip" | head -n 1)
+          if [ -n "$BOOST_ZIP" ]; then
+            unzip -o "$BOOST_ZIP" -d $(dirname "$BOOST_ZIP")
           fi
 
       - name: Cache with sccache
@@ -161,20 +149,46 @@ jobs:
 
       - name: Extract Version
         run: |
-          if [ -f "VERSION" ]; then
-            # Find the first Jucer file and extract the version string
-            JUCER=$(find . -name "Ctrlr*.jucer" -type f | head -n 1)
-            if [ -n "$JUCER" ]; then
-              echo "Extracting version from $JUCER"
-              sed -n 's/.*version="\([^"]*\)".*/\1/p' "$JUCER" | head -n 1 > VERSION
-            fi
+          echo "0.0.0" > VERSION
+          JUCER=$(find . -name "Ctrlr*.jucer" -type f | head -n 1)
+          if [ -n "$JUCER" ]; then
+            sed -n 's/.*version="\([^"]*\)".*/\1/p' "$JUCER" | head -n 1 > VERSION
           fi
-          echo "Build Version: $(cat VERSION)"
+          echo "VERSION_TAG=$(cat VERSION)" >> $GITHUB_ENV
 
-      release:
+      - name: Configure CMake
+        run: |
+          cmake -B ${{ env.BUILD_DIR }} \
+                -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+                ${{ matrix.extra-flags }}
+
+      - name: Build Project
+        run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }}
+
+      - name: Prepare and Zip Artifacts
+        run: |
+          NAME="${{ env.PRODUCT_NAME }}-${{ env.VERSION_TAG }}-LuaJIT-${{ matrix.name }}"
+          echo "ZIP_NAME=$NAME" >> $GITHUB_ENV
+          mkdir -p staging
+          # Path adjustment for JUCE/Pamplejuce artefact folder structure
+          cp -r ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/* staging/ || true
+          cd staging
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            7z a "../${NAME}.zip" .
+          else
+            zip -r "../${NAME}.zip" .
+          fi
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ZIP_NAME }}
+          path: ./${{ env.ZIP_NAME }}.zip
+
+  release:
     name: Create GitHub Release
-    needs: [build] # This ensures it only runs if the builds pass
-    if: startsWith(github.ref, 'refs/tags/v') # Only runs when you push a version tag (e.g., v1.0.0)
+    needs: [build_and_test]
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -186,11 +200,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           draft: true
-          prerelease: false
-          files: |
-            ./artifacts/**/*.vst3
-            ./artifacts/**/*.component
-            ./artifacts/**/*.exe
-            ./artifacts/**/*.pkg
+          files: ./artifacts/**/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
