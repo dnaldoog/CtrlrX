@@ -179,7 +179,7 @@ jobs:
 
           mkdir -p staging
 
-          # Path adjustment for JUCE/Pamplejuce artefact folder structure
+          # Path adjustment for JUCE/Pamplejuce artefact folder structure.
 
           cp -r ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/* staging/ || true
 
