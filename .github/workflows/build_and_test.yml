@@ -39,10 +39,6 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    env:
-      HAVE_MACOS_SIGNING_SECRETS: ${{ secrets.DEV_ID_COMBO_CERT != '' && secrets.DEV_ID_COMBO_PASSWORD != '' && secrets.DEVELOPER_ID_APPLICATION != '' && secrets.DEVELOPER_ID_INSTALLER != '' && secrets.NOTARIZATION_USERNAME != '' && secrets.NOTARIZATION_PASSWORD != '' && secrets.TEAM_ID != '' }}
-      HAVE_AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET != '' }}
-      HAVE_GPG_KEY: ${{ secrets.GPG_SIGNING_KEY != '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -106,14 +102,11 @@ jobs:
               exit /b 0
             )
           )
-          echo ERROR: LuaJIT msvcbuild.bat not found.
-          exit /b 1
 
       - name: Build LuaJIT (Linux)
         if: runner.os == 'Linux'
         run: |
           LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
-          if [ -z "$LUAJIT_SRC" ]; then echo "LuaJIT not found"; exit 1; fi
           cd "$LUAJIT_SRC"
           make clean
           make -j$(nproc) XCFLAGS="-fPIC"
@@ -122,10 +115,74 @@ jobs:
         if: matrix.name == 'macOS'
         run: |
           LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
-          if [ -z "$LUAJIT_SRC" ]; then echo "LuaJIT not found"; exit 1; fi
           cd "$LUAJIT_SRC"
           export MACOSX_DEPLOYMENT_TARGET=10.15
-          echo "--- Building x86_64 ---"
           make clean
           CC=clang TARGET_SYS=Darwin TARGET_FLAGS="-arch x86_64" make -j$(sysctl -n hw.ncpu)
-          mv libluajit.a liblu
+          mv libluajit.a libluajit_x86.a
+          make clean
+          CC=clang TARGET_SYS=Darwin TARGET_FLAGS="-arch arm64" make -j$(sysctl -n hw.ncpu)
+          mv libluajit.a libluajit_arm.a
+          lipo -create libluajit_x86.a libluajit_arm.a -output libluajit.a
+
+      - name: Unzip Boost for CtrlrX
+        if: runner.os != 'Linux'
+        run: |
+          BOOST_ZIP=$(find . -name "boost.zip" | head -n 1)
+          if [ -n "$BOOST_ZIP" ]; then
+            unzip -o "$BOOST_ZIP" -d $(dirname "$BOOST_ZIP")
+          fi
+
+      - name: Extract Version
+        run: |
+          echo "0.0.0" > VERSION
+          JUCER=$(find . -name "Ctrlr*.jucer" -type f | head -n 1)
+          if [ -n "$JUCER" ]; then
+            sed -n 's/.*version="\([^"]*\)".*/\1/p' "$JUCER" | head -n 1 > VERSION
+          fi
+          echo "VERSION_TAG=$(cat VERSION)" >> $GITHUB_ENV
+
+      - name: Configure CMake
+        run: |
+          cmake -B ${{ env.BUILD_DIR }} \
+                -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+                ${{ matrix.extra-flags }}
+
+      - name: Build Project
+        run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }}
+
+      - name: Prepare and Zip Artifacts
+        run: |
+          NAME="${PRODUCT_NAME}-${VERSION_TAG}-LuaJIT-${{ matrix.name }}"
+          echo "ZIP_NAME=$NAME" >> $GITHUB_ENV
+          mkdir -p staging
+          cp -r ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/* staging/ || true
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            7z a "${NAME}.zip" ./staging/*
+          else
+            cd staging && zip -r "../${NAME}.zip" .
+          fi
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: "${{ env.ZIP_NAME }}"
+          path: "${{ env.ZIP_NAME }}.zip"
+
+  release:
+    name: Create GitHub Release
+    needs: [build_and_test]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          files: ./artifacts/**/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
