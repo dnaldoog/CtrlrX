@@ -60,156 +60,153 @@ jobs:
           - name: Windows
             os: windows-2022
             pluginval-binary: ./pluginval.exe
-    steps:
-      - name: Setup MSVC (Windows)
-        if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
-      - name: Set up Clang (Linux)
-        if: runner.os == 'Linux'
-        uses: egor-tensin/setup-clang@v1
-      - name: Install Linux System Deps
-        if: runner.os == 'Linux'
-        run: >
-          sudo apt-get update
+steps:
+  - name: Setup MSVC (Windows)
+    if: runner.os == 'Windows'
+    uses: ilammy/msvc-dev-cmd@v1
+  - name: Set up Clang (Linux)
+    if: runner.os == 'Linux'
+    uses: egor-tensin/setup-clang@v1
+  - name: Install Linux System Deps
+    if: runner.os == 'Linux'
+    run: >
+      sudo apt-get update
 
-          sudo apt install -y libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype6-dev libglu1-mesa-dev xvfb ninja-build binutils-dev libboost-dev libcurl4-gnutls-dev libgl1-mesa-dev libglapi-mesa libiberty-dev libsframe1 libudev-dev libxcursor-dev libxrandr-dev xorg-dev
+      sudo apt install -y libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype6-dev libglu1-mesa-dev xvfb ninja-build binutils-dev libboost-dev libcurl4-gnutls-dev libgl1-mesa-dev libglapi-mesa libiberty-dev libsframe1 libudev-dev libxcursor-dev libxrandr-dev xorg-dev
 
-          sudo /usr/bin/Xvfb $DISPLAY &
-      - name: Install Windows System Deps
-        if: runner.os == 'Windows'
-        run: |
-          nuget install intelipp.static.win-x64 -Version 2022.2.0.575
-          choco install ninja
-      - name: Install macOS System Deps
-        if: matrix.name == 'macOS'
-        run: |
-          brew install osxutils boost
-          sudo xcode-select -s /Applications/Xcode.app
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0
-      - name: Build LuaJIT (Windows)
-        if: runner.os == 'Windows'
-        shell: cmd
-        run: |
-          @echo off
-          for /d /r %%i in (*luajit) do (
-            if exist "%%i\src\msvcbuild.bat" (
-              pushd "%%i\src"
-              call msvcbuild.bat static
-              popd
-              exit /b 0
-            )
-          )
-          echo ERROR: LuaJIT msvcbuild.bat not found.
-          exit /b 1
-      - name: Build LuaJIT (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
-          if [ -z "$LUAJIT_SRC" ]; then echo "LuaJIT not found"; exit 1; fi
-          cd "$LUAJIT_SRC"
-          make clean
-          make -j$(nproc) XCFLAGS="-fPIC"
-      - name: Build Universal LuaJIT (macOS)
-        if: matrix.name == 'macOS'
-        run: >
-          LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
+      sudo /usr/bin/Xvfb $DISPLAY &
+  - name: Install Windows System Deps
+    if: runner.os == 'Windows'
+    run: |
+      nuget install intelipp.static.win-x64 -Version 2022.2.0.575
+      choco install ninja
+  - name: Install macOS System Deps
+    if: matrix.name == 'macOS'
+    run: |
+      brew install osxutils boost
+      sudo xcode-select -s /Applications/Xcode.app
+  - name: Checkout code
+    uses: actions/checkout@v4
+    with:
+      submodules: recursive
+      fetch-depth: 0
+  - name: Build LuaJIT (Windows)
+    if: runner.os == 'Windows'
+    shell: cmd
+    run: |
+      @echo off
+      for /d /r %%i in (*luajit) do (
+        if exist "%%i\src\msvcbuild.bat" (
+          pushd "%%i\src"
+          call msvcbuild.bat static
+          popd
+          exit /b 0
+        )
+      )
+      echo ERROR: LuaJIT msvcbuild.bat not found.
+      exit /b 1
+  - name: Build LuaJIT (Linux)
+    if: runner.os == 'Linux'
+    run: |
+      LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
+      if [ -z "$LUAJIT_SRC" ]; then echo "LuaJIT not found"; exit 1; fi
+      cd "$LUAJIT_SRC"
+      make clean
+      make -j$(nproc) XCFLAGS="-fPIC"
+  - name: Build Universal LuaJIT (macOS)
+    if: matrix.name == 'macOS'
+    run: >
+      LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
 
-          if [ -z "$LUAJIT_SRC" ]; then echo "LuaJIT not found"; exit 1; fi
+      if [ -z "$LUAJIT_SRC" ]; then echo "LuaJIT not found"; exit 1; fi
 
-          cd "$LUAJIT_SRC"
+      cd "$LUAJIT_SRC"
 
-          export MACOSX_DEPLOYMENT_TARGET=10.15
+      export MACOSX_DEPLOYMENT_TARGET=10.15
 
-          echo "--- Building x86_64 ---"
+      echo "--- Building x86_64 ---"
 
-          make clean
+      make clean
 
-          CC=clang TARGET_SYS=Darwin TARGET_FLAGS="-arch x86_64" make -j$(sysctl -n hw.ncpu)
+      CC=clang TARGET_SYS=Darwin TARGET_FLAGS="-arch x86_64" make -j$(sysctl -n hw.ncpu)
 
-          mv libluajit.a libluajit_x86.a
+      mv libluajit.a libluajit_x86.a
 
-          echo "--- Building arm64 ---"
+      echo "--- Building arm64 ---"
 
-          make clean
+      make clean
 
-          CC=clang TARGET_SYS=Darwin TARGET_FLAGS="-arch arm64" make -j$(sysctl -n hw.ncpu)
+      CC=clang TARGET_SYS=Darwin TARGET_FLAGS="-arch arm64" make -j$(sysctl -n hw.ncpu)
 
-          mv libluajit.a libluajit_arm.a
+      mv libluajit.a libluajit_arm.a
 
-          lipo -create libluajit_x86.a libluajit_arm.a -output libluajit.a
+      lipo -create libluajit_x86.a libluajit_arm.a -output libluajit.a
 
-          lipo -info libluajit.a
-      - name: Unzip Boost for CtrlrX
-        if: runner.os != 'Linux'
-        run: |
-          BOOST_ZIP=$(find . -name "boost.zip" | head -n 1)
-          if [ -n "$BOOST_ZIP" ]; then
-            unzip -o "$BOOST_ZIP" -d $(dirname "$BOOST_ZIP")
-          fi
-      - name: Cache with sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
-      - name: Extract Version
-        run: >
-          echo "0.0.0" > VERSION
+      lipo -info libluajit.a
+  - name: Unzip Boost for CtrlrX
+    if: runner.os != 'Linux'
+    run: |
+      BOOST_ZIP=$(find . -name "boost.zip" | head -n 1)
+      if [ -n "$BOOST_ZIP" ]; then
+        unzip -o "$BOOST_ZIP" -d $(dirname "$BOOST_ZIP")
+      fi
+  - name: Cache with sccache
+    uses: mozilla-actions/sccache-action@v0.0.9
+  - name: Extract Version
+    run: |
+      echo "0.0.0" > VERSION
+      JUCER=$(find . -name "Ctrlr*.jucer" -type f | head -n 1)
+      if [ -n "$JUCER" ]; then
+        sed -n 's/.*version="\([^"]*\)".*/\1/p' "$JUCER" | head -n 1 > VERSION
+      fi
+      echo "VERSION_TAG=$(cat VERSION)" >> $GITHUB_ENV
+  - name: Configure CMake
+    run: |
+      cmake -B ${{ env.BUILD_DIR }} \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            ${{ matrix.extra-flags }}
+  - name: Build Project
+    run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }}
+  - name: Prepare and Zip Artifacts
+    run: >
+      NAME="${{ env.PRODUCT_NAME }}-${{ env.VERSION_TAG }}-LuaJIT-${{ matrix.name
+      }}"
 
-          JUCER=$(find . -name "Ctrlr*.jucer" -type f | head -n 1)
+      echo "ZIP_NAME=$NAME" >> $GITHUB_ENV
 
-          if [ -n "$JUCER" ]; then
-            sed -n 's/.*version="\([^"]*\)".*/\1/p' "$JUCER" | head -n 1 > VERSION
-          fi
+      mkdir -p staging
 
-          echo "VERSION_TAG=$(cat VERSION)" >> $GITHUB_ENV
-      - name: Configure CMake
-        run: |
-          cmake -B ${{ env.BUILD_DIR }} \
-                -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-                ${{ matrix.extra-flags }}
-      - name: Build Project
-        run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }}
-      - name: Prepare and Zip Artifacts
-        run: >
-          NAME="${{ env.PRODUCT_NAME }}-${{ env.VERSION_TAG }}-LuaJIT-${{ matrix.name
-          }}"
+      # Path adjustment for JUCE/Pamplejuce artefact folder structure.
 
-          echo "ZIP_NAME=$NAME" >> $GITHUB_ENV
+      cp -r ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/* staging/ || true
 
-          mkdir -p staging
+      cd staging
 
-          # Path adjustment for JUCE/Pamplejuce artefact folder structure.
-
-          cp -r ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/* staging/ || true
-
-          cd staging
-
-          if [ "${{ runner.os }}" == "Windows" ]; then
-            7z a "../${NAME}.zip" .
-          else
-            zip -r "../${NAME}.zip" .
-          fi
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.ZIP_NAME }}
-          path: ./${{ env.ZIP_NAME }}.zip
-  release:
-    name: Create GitHub Release
-    needs:
-      - build_and_test
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./artifacts
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          draft: true
-          files: ./artifacts/**/*.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      if [ "${{ runner.os }}" == "Windows" ]; then
+        7z a "../${NAME}.zip" .
+      else
+        zip -r "../${NAME}.zip" .
+      fi
+  - name: Upload Build Artifact
+    uses: actions/upload-artifact@v4
+    with:
+      name: ${{ env.ZIP_NAME }}
+      path: ./${{ env.ZIP_NAME }}.zip
+release:
+  name: Create GitHub Release
+  needs:
+    - build_and_test
+  if: startsWith(github.ref, 'refs/tags/v')
+  runs-on: ubuntu-latest
+  steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        draft: true
+        files: ./artifacts/**/*.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
