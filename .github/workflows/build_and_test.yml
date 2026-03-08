@@ -150,17 +150,39 @@ jobs:
 
       - name: Configure CMake
         run: |
+          # 1. Locate the LuaJIT we just built manually
           LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
-          
+          LUA_DIR=$(python3 -c "import os; print(os.path.abspath('$LUAJIT_SRC'))")
+          echo "Using LuaJIT absolute path: $LUA_DIR"
+
+          # 2. Create the fake pkg-config folder and file
+          mkdir -p $(pwd)/pkgconfig
+          cat <<EOF > $(pwd)/pkgconfig/luajit.pc
+          prefix=$LUA_DIR
+          libdir=\$prefix
+          includedir=\$prefix
+          Name: luajit
+          Description: Manual LuaJIT build for Ctrlr
+          Version: 2.1.0
+          Libs: -L\$libdir -lluajit
+          Cflags: -I\$includedir
+          EOF
+
+          # 3. Inject our fake config into the system search path
+          export PKG_CONFIG_PATH="$(pwd)/pkgconfig:$PKG_CONFIG_PATH"
+          echo "PKG_CONFIG_PATH is set to: $PKG_CONFIG_PATH"
+
+          # 4. Define the library file based on OS for the CMake backup flags
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            LUA_LIB="$LUAJIT_SRC/lua51.lib"
+            LUA_LIB="$LUA_DIR/lua51.lib"
           else
-            LUA_LIB="$LUAJIT_SRC/libluajit.a"
+            LUA_LIB="$LUA_DIR/libluajit.a"
           fi
 
+          # 5. Run the actual Configuration
           cmake -B ${{ env.BUILD_DIR }} \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-                -DLUAJIT_INCLUDE_DIR="$LUAJIT_SRC" \
+                -DLUAJIT_INCLUDE_DIR="$LUA_DIR" \
                 -DLUAJIT_LIBRARIES="$LUA_LIB" \
                 -DCTRLR_LUAJIT_SYSTEM=OFF \
                 ${{ matrix.extra-flags }}
