@@ -120,30 +120,36 @@ jobs:
           if [ -z "$LUAJIT_SRC" ]; then echo "LuaJIT not found"; exit 1; fi
           cd "$LUAJIT_SRC"
           
-          # Crucial: Export the deployment target for the Makefile
+          # Set common deployment target
           export MACOSX_DEPLOYMENT_TARGET=10.15
-          
+
           echo "--- Building x86_64 ---"
           make clean
-          make -j$(sysctl -n hw.ncpu) CC="clang -arch x86_64" \
-                                      CROSS="clang -arch x86_64" \
-                                      TARGET_FLAGS="-arch x86_64"
+          # Use env vars for cleaner injection
+          export CC="clang -arch x86_64"
+          export CROSS="clang -arch x86_64"
+          export TARGET_FLAGS="-arch x86_64"
+          make -j$(sysctl -n hw.ncpu)
+          
           if [ ! -f libluajit.a ]; then echo "x86_64 build failed"; exit 1; fi
           mv libluajit.a libluajit_x86.a
           
           echo "--- Building arm64 ---"
           make clean
-          make -j$(sysctl -n hw.ncpu) CC="clang -arch arm64" \
-                                      CROSS="clang -arch arm64" \
-                                      TARGET_FLAGS="-arch arm64"
+          # Switch env vars to arm64
+          export CC="clang -arch arm64"
+          export CROSS="clang -arch arm64"
+          export TARGET_FLAGS="-arch arm64"
+          make -j$(sysctl -n hw.ncpu)
+          
           if [ ! -f libluajit.a ]; then echo "arm64 build failed"; exit 1; fi
           mv libluajit.a libluajit_arm.a
           
           echo "--- Creating Universal Binary ---"
           lipo -create libluajit_x86.a libluajit_arm.a -output libluajit.a
           lipo -info libluajit.a
-
-      # --- CTRLRE SPECIFIC DEPS (Boost Unzip) ---
+          
+      # --- CTRLR SPECIFIC DEPS (Boost Unzip) ---
       - name: Unzip Boost for CtrlrX
         if: runner.os != 'Linux'
         run: |
