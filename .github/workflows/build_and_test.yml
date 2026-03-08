@@ -124,23 +124,21 @@ jobs:
 
           echo "--- Building x86_64 ---"
           make clean
-          # CC must stay "clean" (just 'clang') to avoid smushing
-          make -j$(sysctl -n hw.ncpu) \
-               CC="clang" \
-               TARGET_SYS="Darwin" \
-               TARGET_FLAGS="-arch x86_64" \
-               CROSS="clang -arch x86_64"
+          # We use environment variables to bypass the Makefile's string parsing
+          CC=clang \
+          TARGET_SYS=Darwin \
+          TARGET_FLAGS="-arch x86_64" \
+          make -j$(sysctl -n hw.ncpu)
           
           if [ ! -f libluajit.a ]; then echo "x86_64 build failed"; exit 1; fi
           mv libluajit.a libluajit_x86.a
           
           echo "--- Building arm64 ---"
           make clean
-          make -j$(sysctl -n hw.ncpu) \
-               CC="clang" \
-               TARGET_SYS="Darwin" \
-               TARGET_FLAGS="-arch arm64" \
-               CROSS="clang -arch arm64"
+          CC=clang \
+          TARGET_SYS=Darwin \
+          TARGET_FLAGS="-arch arm64" \
+          make -j$(sysctl -n hw.ncpu)
           
           if [ ! -f libluajit.a ]; then echo "arm64 build failed"; exit 1; fi
           mv libluajit.a libluajit_arm.a
