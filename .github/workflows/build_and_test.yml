@@ -124,10 +124,9 @@ jobs:
 
           echo "--- Building x86_64 ---"
           make clean
-          # We pass the architecture via TARGET_FLAGS to keep CC clean
+          # CC must stay "clean" (just 'clang') to avoid smushing
           make -j$(sysctl -n hw.ncpu) \
                CC="clang" \
-               TARGET_STRIP="strip" \
                TARGET_SYS="Darwin" \
                TARGET_FLAGS="-arch x86_64" \
                CROSS="clang -arch x86_64"
@@ -139,7 +138,6 @@ jobs:
           make clean
           make -j$(sysctl -n hw.ncpu) \
                CC="clang" \
-               TARGET_STRIP="strip" \
                TARGET_SYS="Darwin" \
                TARGET_FLAGS="-arch arm64" \
                CROSS="clang -arch arm64"
