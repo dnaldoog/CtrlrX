@@ -234,6 +234,17 @@ String CtrlrProcessor::getParameterID(int index) // Added v5.6.33. Will pass vst
     
     //logger.log("getParameterID() called with index: " + String(index));
 
+    // Check if we are currently running as an AudioUnit
+    if (wrapperType == AudioProcessor::wrapperType_AudioUnit)
+    {
+        // For AU: Return the index as a string to force sequential IDs
+        // This stops Logic from "shuffling" your parameters based on hashes
+        
+        // Adding 1 ensures we stay away from the '0' ID which can be reserved
+            return String(index + 1);
+    }
+    
+    // For VST3 / Others: Keep your descriptive IDs
     if (CtrlrModulator* m = ctrlrManager->getModulatorByVstIndex (index))
     {
         int vstIndex = m->getVstIndex();
@@ -262,7 +273,8 @@ const String CtrlrProcessor::getParameterName (int index)
     }
     else
     {
-        return ("undefined_"+String(index));
+        // return ("undefined_"+String(index)); // Updated v5.6.35. SEE: https://github.com/damiensellier/CtrlrX/issues/228#issuecomment-4030969898
+        return " "; // For the Mackie Controllers with LCD, a space looks better than "undefined_XX"
     }
 }
 
