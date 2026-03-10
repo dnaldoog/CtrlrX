@@ -94,3 +94,22 @@ See example panel in luajit folder [Check LuaJIT_1_0.bpanelz](./Check%20LuaJIT_1
 If this errors or returns nil, LuaJIT's `jit` library is not being opened at startup.
 
 The CtrlrX About window also displays the Lua/LuaJIT version if LuaJIT is enabled.
+
+## 32-bit Builds (Legacy Support)
+
+Occasionally requested for old systems (Windows 7, Snow Leopard era DAWs).
+
+To build LuaJIT as x86:
+1. Open **x86 Native Tools Command Prompt for VS 2022** (or regular CMD)
+2. Run `msvcbuild.bat static` — defaults to x86
+3. Verify: `dumpbin /headers lua51.lib | findstr machine` should say `14C machine (x86)`
+4. In CMakeLists.txt change `-A x64` to `-A Win32`
+
+Note: Most modern DAWs (post-2015) are 64-bit only and will not load 32-bit VST3 plugins.
+32-bit builds are only recommended for specific legacy support requests.
+```
+
+Also worth updating the build bat file to store both libs separately if you ever need to support both:
+```
+lua51_x64.lib  ← standard build
+lua51_x86.lib  ← legacy build
