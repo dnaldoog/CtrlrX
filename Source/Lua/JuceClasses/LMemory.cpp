@@ -429,6 +429,8 @@ void LMemoryBlock::wrapForLua (lua_State *L)
 				.def("createFromTable", &LMemoryBlock::createFromTable)
 				.def("getByte", &LMemoryBlock::getByte)
 				.def("setByte", &LMemoryBlock::setByte)
+			    .def("getRawAddress", &LMemoryBlock::getRawAddress) // Expose raw pointer for advanced users (use with caution in Lua)
+				//.def("getDataAsString", &LMemoryBlock::toBinaryString, luabind::raw(_2)) // Binary-safe string conversion for Lua
 				.def("getRange", &LMemoryBlock::getRange)
 				.def("toHexString", &LMemoryBlock::toHexString)
 				.def("getData", (void* (LMemoryBlock::*) (void)) &MemoryBlock::getData)
