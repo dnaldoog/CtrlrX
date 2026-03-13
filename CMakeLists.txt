@@ -236,6 +236,7 @@ target_sources(SharedCode INTERFACE ${SourceFiles})
 target_include_directories(SharedCode INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/Source"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/rapidfuzz"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/lua/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind"
