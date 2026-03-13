@@ -486,7 +486,7 @@ Tuturial coming soon.
 
 ## Changelog
 
-#### Version 5.6.35 | 2026.01.04
+#### Version 5.6.35 | 2026.03.17
 
 * **UPDATED** ctrlrAutoSave & ctrlrAutoSaveInterval properties in Preferences only if isStandaloneApp. `CtrlrManager.cpp`, `CtrlrManagerInstance.cpp`, `CtrlrSettings.cpp`
 * **UPDATED** flag IS_MIDI_EFFECT FALSE. `CMakeLists.txt`
@@ -503,6 +503,9 @@ Tuturial coming soon.
 * **UPDATED** sendMidiMessageNow() compatibility with the old syntax and support table content as message. `CtrlrLuaMethodAutoCompleteManager.cpp` & `.h`
 * **ADDED** MIDI Monitor Message Type filtering (Note On, Note Off, Aftertouch, Clock, SYSEX, etc). Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrIDs.h`, `CtrlrLog.cpp` & `.h`, `CtrlrMacros.h`, `CtrlrMIDIMon.cpp` & `.h`
 * **FIXED** AudioUnit type is set to "Virtual Instrument" not "Audio FX" anymore. Thanks to [Chuck Zwicky](https://github.com/zmixnyc) `cmakelists.txt`
+* **UPDATED** X11 scaling for HiDPI in Linux. Thanks to [Andrej Radović](https://github.com/randrej)
+* **FIXED** parameter index to host interface for AudioUnit. Thanks to [Chuck Zwicky](https://github.com/zmixnyc) `CtrlrProcessor.cpp`
+* **UPDATED** comboBox Fuzzy Search with [RapidFuzz CPP](https://github.com/rapidfuzz/rapidfuzz-cpp). `CtrlrCombo.cpp` & `.h`, `CtrlrIDs.xml` & `.h`, `Source/Misc/rapidfuzz`, `CMakeLists.txt`
 
 #### Version 5.6.34 | 2025.11.07
 
