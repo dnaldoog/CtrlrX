@@ -304,6 +304,10 @@
   <id name="uiImageResource" text="Image resource" type="VarText"/>
     
   <!-- Combo box -->
+  <id name="uiComboSearch" text="Combo search item" type="Bool" defaults="enabled/Disabled"/>
+  <id name="uiComboSearchFont" text="Combo search text" type="Font"/>
+  <id name="uiComboSearchTextColour" text="Combo search text colour" type="Colour"/>
+  <id name="uiComboSearchBgColour" text="Combo search background colour" type="Colour"/>
   <id name="uiComboArrowColour" text="Arrow colour" type="Colour"/>
   <id name="uiComboOutlineColour" text="Outline colour" type="Colour"/>
   <id name="uiComboTextColour" text="Text colour" type="Colour"/>
@@ -311,12 +315,12 @@
   <id name="uiComboButtonColour" text="Button colour" type="Colour"/>
   <id name="uiComboBgColour" text="Background colour" type="Colour"/>
   <id name="uiComboContent" text="Combo contents" type="MultiLine"/>
-  <id name="uiComboFont" text="Combo font" type="Font"/>
+  <id name="uiComboFont" text="Combo text" type="Font"/>
   <id name="uiComboMenuFont" text="Combo menu font" type="Font"/>
   <id name="uiComboMenuBackgroundColour" text="Combo menu background colour" type="Colour"/>
-  <id name="uiComboMenuFontColour" text="Combo menu font colour" type="Colour"/>
-  <id name="uiComboMenuFontHighlightedColour" text="Combo menu highlighted font colour" type="Colour"/>
-  <id name="uiComboMenuHighlightColour" text="Combo menu highlight colour" type="Colour"/>
+  <id name="uiComboMenuFontColour" text="Combo menu text colour" type="Colour"/>
+  <id name="uiComboMenuFontHighlightedColour" text="Combo menu highlighted text colour" type="Colour"/>
+  <id name="uiComboMenuHighlightColour" text="Combo menu highlight background colour" type="Colour"/>
   <id name="uiComboMenuBackgroundRibbed" text="Combo menu background has ribs" type="Bool"/>
   <id name="uiComboDynamicContent" text="Instead of contents display dynamic values" type="VarNumeric" defaults="@dynamicContent"/>
   <id name="uiComboButtonGradient" text="Use a gradient for the button" type="Bool"/>

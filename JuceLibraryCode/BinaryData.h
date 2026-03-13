@@ -270,7 +270,7 @@ namespace BinaryData
     const int            LuaAPI_xmlSize = 243434;
 
     extern const char*   CtrlrIDs_xml;
-    const int            CtrlrIDs_xmlSize = 92363;
+    const int            CtrlrIDs_xmlSize = 92716;
 
     extern const char*   CtrlrLuaClassTemplates_xml;
     const int            CtrlrLuaClassTemplates_xmlSize = 110;

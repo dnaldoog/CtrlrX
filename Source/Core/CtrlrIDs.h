@@ -355,7 +355,11 @@ namespace Ids
     DECLARE_ID (uiImageSliderResourceFrameWidth);
     DECLARE_ID (uiImageSliderResourceFrameHeight);
     DECLARE_ID (uiImageResource);
-    
+
+    DECLARE_ID (uiComboSearch);
+    DECLARE_ID (uiComboSearchFont);
+    DECLARE_ID (uiComboSearchTextColour);
+    DECLARE_ID (uiComboSearchBgColour);
     DECLARE_ID (uiComboArrowColour);
     DECLARE_ID (uiComboOutlineColour);
     DECLARE_ID (uiComboTextColour);
