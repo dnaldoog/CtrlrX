@@ -188,28 +188,32 @@ int CtrlrPanelLayerList::getNumRows()
 	return (owner.getEditor()->getCanvas()->getNumLayers());
 }
 
-void CtrlrPanelLayerList::paintListBoxItem (int rowNumber, Graphics& g, int width, int height, bool rowIsSelected)
+void CtrlrPanelLayerList::paintListBoxItem(int rowNumber, Graphics& g, int width, int height, bool rowIsSelected)
 {
-    if (rowIsSelected)
-    {
-		// gui::drawSelectionRectangle (g, width, height); // Update v5.6.34. Won't highlight the selected list item
-    }
+	if (rowIsSelected)
+	{
+		g.setColour(juce::Colours::steelblue.withAlpha(0.4f));
+		g.fillRect(0, 0, width, height);
+
+		g.setColour(juce::Colours::steelblue);
+		g.drawRect(0, 0, width, height, 1);
+	}
 }
 
-Component* CtrlrPanelLayerList::refreshComponentForRow (int rowNumber, bool isRowSelected, Component* existingComponentToUpdate)
+Component* CtrlrPanelLayerList::refreshComponentForRow(int rowNumber, bool isRowSelected, Component* existingComponentToUpdate)
 {
-	CtrlrPanelLayerListItem* itemInfo = (CtrlrPanelLayerListItem*) existingComponentToUpdate;
+	CtrlrPanelLayerListItem* itemInfo = (CtrlrPanelLayerListItem*)existingComponentToUpdate;
 
 	if (itemInfo == 0)
-		itemInfo = new CtrlrPanelLayerListItem (*this);
+		itemInfo = new CtrlrPanelLayerListItem(*this);
 
-	// Calculate the actual layer index (reverse the order)
 	int totalLayers = owner.getEditor()->getCanvas()->getNumLayers();
-	int actualLayerIndex = totalLayers - 1 - rowNumber;  // Reverse the index
+	int actualLayerIndex = totalLayers - 1 - rowNumber;
 
-	itemInfo->setRow(actualLayerIndex);  // Use the actual layer index for the row
+	itemInfo->setRow(actualLayerIndex);
 	itemInfo->setLayer(owner.getEditor()->getCanvas()->getLayerFromArray(actualLayerIndex));
-	
+	itemInfo->setSelected(isRowSelected);  // <-- add this
+
 	return itemInfo;
 }
 
