@@ -162,9 +162,9 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings (CtrlrLuaMeth
         owner.getComponentTree().setProperty(Ids::luaMethodEditorAutoComplete, true, nullptr);
 
     addAndMakeVisible(autoCompleteButton = new ToggleButton(""));
-     autoCompleteButton->setButtonText(SharedValues::getAutoCompleteLabel());
+    autoCompleteButton->setButtonText(SharedValues::getAutoCompleteLabel());
 
-    // Bind directly to the ValueTree property â€” this is what persists across sessions
+    // Bind directly to the ValueTree property — this is what persists across sessions
     autoCompleteButton->getToggleStateValue().referTo(
         owner.getComponentTree().getPropertyAsValue(Ids::luaMethodEditorAutoComplete, nullptr)
     );
@@ -455,8 +455,8 @@ void CtrlrLuaMethodCodeEditorSettings::comboBoxChanged(ComboBox* comboBoxThatHas
 
 void CtrlrLuaMethodCodeEditorSettings::buttonClicked(Button* buttonThatWasClicked)
 {
-	if (buttonThatWasClicked == resetToPreviousButton)
-	{
+    if (buttonThatWasClicked == resetToPreviousButton)
+    {
 		_DBG("Resetting to previous font settings");
 		_DBG(String("Current font: ") + fontTypeface->getText());
 		_DBG(String("Previous font to restore: ") + previousFont.getTypefaceName());
@@ -482,68 +482,65 @@ void CtrlrLuaMethodCodeEditorSettings::buttonClicked(Button* buttonThatWasClicke
 			
 			changeListenerCallback(nullptr);
 		}
-	}
-	else if (buttonThatWasClicked == applyButton)
-	{
-		applySettings();
-		closeWindow(); // Added to apply and close settings window
-	}
-	else if (buttonThatWasClicked == resetButton)
-	{
-		int result = AlertWindow::showOkCancelBox(AlertWindow::QuestionIcon,
+    }
+    else if (buttonThatWasClicked == applyButton)
+    {
+        applySettings();
+        closeWindow();
+    }
+    else if (buttonThatWasClicked == resetButton)
+    {
+        int result = AlertWindow::showOkCancelBox(AlertWindow::QuestionIcon,
             "Reset Editor", "Reset Editor to default?");
-		
-		if (result == 1)
-		{
-			// Reset to defaults
-			// fontTypeface->setText(getDefaultFont(), dontSendNotification);
-			fontTypeface->setText("<Monospaced>", dontSendNotification); // "Courrier New" ???
-			fontBold->setToggleState(false, dontSendNotification);
-			fontItalic->setToggleState(false, dontSendNotification);
-			openSearchTabs->setToggleState(false, dontSendNotification);
-            		autoCompleteButton->setToggleState(false, dontSendNotification);
-			fontSize->setValue(14.0f, dontSendNotification);
-			bgColour->setSelectedId(findColourIndex(Colours::white), dontSendNotification);
-			lineNumbersBgColour->setSelectedId(findColourIndex(Colours::cornflowerblue), dontSendNotification);
-			lineNumbersColour->setSelectedId(findColourIndex(Colours::black), dontSendNotification);
-			
-			customSyntaxColors.clear();
-			clearSyntaxColorSettings();
-			String currentToken = getCurrentSelectedTokenType();
-			updateTokenColorDisplay(currentToken);
-			updateSyntaxColors();
-			
-			previousFont = getFont();
-			resetToPreviousButton->setEnabled(true);
-			changeListenerCallback(nullptr);
-			closeWindow(); // Added to apply and close settings window
-		}
-		else if (buttonThatWasClicked == fontBold || buttonThatWasClicked == fontItalic)
-		{
-			// For style changes, also enable reset and store previous
-			if (!resetToPreviousButton->isEnabled())
-			{
-				previousFont = getFont(); // Store current before style change
-				resetToPreviousButton->setEnabled(true);
-			}
-		}
-		else if (buttonThatWasClicked == openSearchTabs)
-		{
+
+        if (result == 1)
+        {
+            fontTypeface->setText("<Monospaced>", dontSendNotification);
+            fontBold->setToggleState(false, dontSendNotification);
+            fontItalic->setToggleState(false, dontSendNotification);
+            openSearchTabs->setToggleState(false, dontSendNotification);
+            autoCompleteButton->setToggleState(false, dontSendNotification);
+            fontSize->setValue(14.0f, dontSendNotification);
+            bgColour->setSelectedId(findColourIndex(Colours::white), dontSendNotification);
+            lineNumbersBgColour->setSelectedId(findColourIndex(Colours::cornflowerblue), dontSendNotification);
+            lineNumbersColour->setSelectedId(findColourIndex(Colours::black), dontSendNotification);
+
+            customSyntaxColors.clear();
+            clearSyntaxColorSettings();
+            String currentToken = getCurrentSelectedTokenType();
+            updateTokenColorDisplay(currentToken);
+            updateSyntaxColors();
+
+            previousFont = getFont();
+            resetToPreviousButton->setEnabled(true);
+            changeListenerCallback(nullptr);
+            closeWindow();
+        }
+    }
+    else if (buttonThatWasClicked == fontBold || buttonThatWasClicked == fontItalic)
+    {
+        if (!resetToPreviousButton->isEnabled())
+        {
+            previousFont = getFont();
+            resetToPreviousButton->setEnabled(true);
+        }
+    }
+    else if (buttonThatWasClicked == openSearchTabs)
+    {
         // referTo() already updated SharedValues; nothing extra needed here
 			//bool currentState = openSearchTabs->getToggleState();
 			//owner.setOpenSearchTabsEnabled(currentState);
 			//owner.getComponentTree().setProperty(Ids::openSearchTabsState, currentState, nullptr);
 		}
-        else if (buttonThatWasClicked == autoCompleteButton)
-        {
+    else if (buttonThatWasClicked == autoCompleteButton)
+    {
         // referTo() already updated the ValueTree property; nothing extra needed here
             //bool currentState = autoCompleteButton->getToggleState();
            // owner.getComponentTree().setProperty(Ids::luaMethodEditorAutoComplete, currentState, nullptr);
-	}
-	
-	changeListenerCallback(nullptr);
-}
+        }
 
+    changeListenerCallback(nullptr);
+}
 void CtrlrLuaMethodCodeEditorSettings::sliderValueChanged (Slider* sliderThatWasMoved)
 {
     if (sliderThatWasMoved == fontSize)

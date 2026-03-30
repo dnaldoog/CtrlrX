@@ -577,21 +577,24 @@ void CtrlrLuaMethodCodeEditor::hideCallTip()
 }
 void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newText, int insertIndex)
 {
-
+        // Use _DBG not DBG — only _DBG routes to DebugView in this project
         const bool autoCompleteEnabled = ((int)owner.getComponentTree()
             .getProperty(Ids::luaMethodEditorAutoComplete, 1)) != 0;
 
+        _DBG("AUTOCOMPLETE CHECK: property value = " + owner.getComponentTree()
+            .getProperty(Ids::luaMethodEditorAutoComplete, -99).toString());
+
         if (!autoCompleteEnabled)
             return;
-    
-    // --- 1. AGGRESSIVE GUARD ---
-    if (isReplacingText)
-    {
-        if (newText != ":" && newText != ".")
-            return;
 
-        _DBG("AUTOCOMPLETE: Bypassing lock for manual flow re-trigger [" + newText + "]");
-    }
+        // --- 1. AGGRESSIVE GUARD --- (keep only this one, delete the duplicate below)
+        if (isReplacingText)
+        {
+            if (newText != ":" && newText != ".")
+                return;
+            _DBG("AUTOCOMPLETE: Bypassing lock for manual flow re-trigger [" + newText + "]");
+        }
+        // ... rest of function unchanged
 
     if (callTip && nextTabJumpPosition == -1)
         callTip->setVisible(false);
@@ -694,12 +697,12 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
     {
         if (separator != ':' && separator != '.')
         {
-            // If separator is = ( or , we are definitely on the RHS  skip the LHS check
+            // If separator is = ( or , we are definitely on the RHS — skip the LHS check
             bool definitelyRhs = (separator == '=' || separator == '(' || separator == ',');
 
             if (!definitelyRhs)
             {
-                // Look back along the line if no bare = before the caret, we're on the LHS
+                // Look back along the line — if no bare = before the caret, we're on the LHS
                 juce::String lineUpToCaret = document.getLine(
                     editorComponent->getCaretPos().getLineNumber())
                     .substring(0, editorComponent->getCaretPos().getIndexInLine());
@@ -736,7 +739,6 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
             _DBG("AUTOCOMPLETE: Class context matched 0 results. Suppressing global fallback.");
         }
     }
-    
     // --- 5. UI DISPLAY ---
     if (!matches.empty())
     {

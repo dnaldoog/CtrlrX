@@ -165,7 +165,7 @@ public:
         static const String label("Keep methods opened after a match");
         return label;
     }
-    //static Value& getAutoCompleteValue() No longer used we access Ids::luaMethodEditorAutoComplete directly
+    //static Value& getAutoCompleteValue()
     //{
     //    static Value autoCompleteValue(var(true)); // default to true
     //    return autoCompleteValue;

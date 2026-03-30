@@ -451,87 +451,73 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
     _DBG("AUTOCOMPLETE: Definition Loading Complete.");
 }
 
-std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggestions(const juce::String& prefix) {
+std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggestions(const juce::String& prefix)
+{
     std::vector<SuggestionItem> results;
     juce::StringArray added;
-	
-	// 1. THE "VIP" SECTION for MemoryBlock ---
-	if (juce::String("MemoryBlock").startsWithIgnoreCase(prefix))
-	{
-		// 1. This provides the "M" icon and will insert MemoryBlock()
-		results.push_back({ "MemoryBlock", TypeMethod });
-		
-		// 2. This provides the "S" icon and will insert MemoryBlock.
-		results.push_back({ "MemoryBlock.", TypeStatic });
-		
-		// 3. This tells the manager to SKIP the default "C" (Class) suggestion
-		// so you don't end up with 3 items in the list.
-		added.add("memoryblock");
-		added.add("lmemoryblock");
-	}
-	
-	// 2. MANDATORY LIBRARIES / CLASSES (The "C" Icon)
-	juce::StringArray libraries = { "math", "table", "string", "utils", "MemoryBlock" };
-	for (auto& lib : libraries) {
-        if (lib.startsWithIgnoreCase(prefix)) {
-            results.push_back({ lib, TypeClass });
-            added.add(lib.toLowerCase());
-        }
-    }
 
-    // 3. GLOBALS / KEYWORDS
-    juce::StringArray globals = { "local", "function", "if", "then", "else", "elseif", "end", "for", "while", "do", "return", "break", "nil", "true", "false", "panel", "mod", "value", "source", "comp", "event", "canvas", "g", "midi", "console" };
-    for (auto& g : globals) {
-        if (g.startsWithIgnoreCase(prefix) && !added.contains(g.toLowerCase())) {
-            results.push_back({ g, TypeGlobal });
-            added.add(g.toLowerCase());
-        }
-    }
-
-	// 4. CLASSES
-	for (auto& c : classNames)
-	{
-		// --- ADD THIS LINE TO PREVENT THE 3RD SUGGESTION ---
-		if (added.contains(c.toLowerCase()))
-			continue;
-		// --------------------------------------------------
-		
-		if (c.startsWithIgnoreCase(prefix))
-		{
-			const auto& lc = classes.getReference(c);
-			
-			// SUGGESTION 1: THE CONSTRUCTOR (Icon "C")
-			if (!lc.constructors.isEmpty())
-			{
-				results.push_back({ c + "()", TypeClass });
-			}
-			
-			// SUGGESTION 2: THE STATIC ACCESS (Icon "S")
-			if (!lc.staticMethods.isEmpty())
-			{
-				results.push_back({ c + ".", TypeStatic });
-			}
-			
-			added.add(c.toLowerCase());
-		}
-	}
-
-    // 5. METHODS (The "M" Icon)
-    for (auto& m : allMethodNames) {
-        if (m.startsWithIgnoreCase(prefix)) {
-            juce::String lowerM = m.toLowerCase();
-            
-            // Skip if we already handled this as a Class/Static entry above
-            if (libraries.contains(lowerM) || added.contains(lowerM)) continue;
-
-            if (!added.contains(lowerM)) {
-                SuggestionType type = utilityMethodNames.contains(m) ? TypeUtility : TypeMethod;
-                results.push_back({ m, type });
-                added.add(lowerM);
+    auto tryAdd = [&](const juce::String& key, const juce::String& text, SuggestionType type)
+        {
+            juce::String lower = key.toLowerCase();
+            if (!added.contains(lower))
+            {
+                results.push_back({ text, type });
+                added.add(lower);
             }
+        };
+
+    // 1. MemoryBlock VIP — explicit Method + Static entries, suppress default Class entry
+    if (juce::String("MemoryBlock").startsWithIgnoreCase(prefix))
+    {
+        tryAdd("MemoryBlock", "MemoryBlock", TypeMethod);
+        tryAdd("MemoryBlock.", "MemoryBlock.", TypeStatic);
+        added.addIfNotAlreadyThere("lmemoryblock");
+    }
+
+    // 2. Built-in libraries (C icon)
+    static const juce::StringArray libraries{ "math", "table", "string", "utils", "MemoryBlock" };
+    for (auto& lib : libraries)
+        if (lib.startsWithIgnoreCase(prefix))
+            tryAdd(lib, lib, TypeClass);
+
+    // 3. Lua keywords and well-known globals (V icon)
+    static const juce::StringArray globals{
+        "local", "function", "if", "then", "else", "elseif", "end",
+        "for", "while", "do", "return", "break", "nil", "true", "false",
+        "panel", "mod", "value", "source", "comp", "event", "canvas",
+        "g", "midi", "console"
+    };
+    for (auto& g : globals)
+        if (g.startsWithIgnoreCase(prefix))
+            tryAdd(g, g, TypeGlobal);
+
+    // 4. Classes — constructor (C icon) and static access (S icon)
+    for (auto& c : classNames)
+    {
+        if (!c.startsWithIgnoreCase(prefix) || added.contains(c.toLowerCase()))
+            continue;
+
+        const auto& lc = classes.getReference(c);
+
+        if (!lc.constructors.isEmpty())
+            tryAdd(c, c + "()", TypeClass);
+
+        if (!lc.staticMethods.isEmpty())
+            tryAdd(c + ".", c + ".", TypeStatic);
+
+        added.addIfNotAlreadyThere(c.toLowerCase());
+    }
+
+    // 5. Individual method names (M or f icon)
+    for (auto& m : allMethodNames)
+    {
+        if (m.startsWithIgnoreCase(prefix))
+        {
+            SuggestionType type = utilityMethodNames.contains(m) ? TypeUtility : TypeMethod;
+            tryAdd(m, m, type);
         }
     }
-    
+
     return results;
 }
 
