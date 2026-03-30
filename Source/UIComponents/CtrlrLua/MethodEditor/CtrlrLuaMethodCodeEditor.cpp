@@ -1894,7 +1894,7 @@ void CtrlrLuaMethodCodeEditor::duplicateCurrentLine()
 }
 
 
-void CtrlrLuaMethodCodeEditor::toggleLineComment() // Updated v5.6.34
+void CtrlrLuaMethodCodeEditor::toggleLineComment()
 {
     if (!editorComponent)
         return;
@@ -1903,72 +1903,67 @@ void CtrlrLuaMethodCodeEditor::toggleLineComment() // Updated v5.6.34
     CodeDocument::Position startPos(document, selection.getStart());
     CodeDocument::Position endPos(document, selection.getEnd());
 
-    // If there is no selection, use the current line
-    if (selection.isEmpty())
-    {
-        startPos = CodeDocument::Position(document, startPos.getLineNumber(), 0);
-        endPos = CodeDocument::Position(document, startPos.getLineNumber() + 1, 0);
-    }
-    else
-    {
-        // Adjust selection to span full lines
-        startPos = CodeDocument::Position(document, startPos.getLineNumber(), 0);
-        
-        // Correctly get the start position of the line after the selection ends
-        endPos = CodeDocument::Position(document, endPos.getLineNumber(), 0);
-        if (endPos.getIndexInLine() != 0)
-        {
-            endPos = CodeDocument::Position(document, endPos.getLineNumber() + 1, 0);
-        }
-    }
-    
     int startLine = startPos.getLineNumber();
     int endLine = endPos.getLineNumber();
 
+    // If the selection ends exactly at the start of a new line, 
+    // don't include that extra line in the operation.
+    if (endLine > startLine && endPos.getIndexInLine() == 0)
+    {
+        endLine--;
+    }
+
     document.newTransaction();
 
-    // Check if we should comment or uncomment
+    // --- Decision Logic ---
     bool allLinesCommented = true;
     for (int lineNum = startLine; lineNum <= endLine; ++lineNum)
     {
         String line = document.getLine(lineNum);
-        if (line.trimStart().isEmpty() || !line.trimStart().startsWith("--"))
+        if (line.trim().isEmpty())
+            continue;
+
+        if (!line.trimStart().startsWith("--"))
         {
             allLinesCommented = false;
             break;
         }
     }
 
-    // Comment or uncomment
+    // --- Transformation Logic ---
     for (int lineNum = startLine; lineNum <= endLine; ++lineNum)
     {
         CodeDocument::Position lineStart(document, lineNum, 0);
         String line = document.getLine(lineNum);
-        
+
         if (allLinesCommented)
         {
-            // Uncomment: Find and remove the first "--"
-            int commentPos = line.trimStart().indexOf("--");
-            if (commentPos >= 0)
+            int actualCommentPos = line.indexOf("--");
+            if (actualCommentPos >= 0)
             {
-                int actualCommentPos = line.indexOf("--");
                 document.deleteSection(lineStart.getPosition() + actualCommentPos,
-                                      lineStart.getPosition() + actualCommentPos + 2);
+                    lineStart.getPosition() + actualCommentPos + 2);
             }
         }
         else
         {
-            // Comment: Find the first non-whitespace character and insert "--"
-            int firstNonWhitespace = 0;
-            while (firstNonWhitespace < line.length() && iswspace (line[firstNonWhitespace]))
-                ++firstNonWhitespace;
-                
-            document.insertText(lineStart.getPosition() + firstNonWhitespace, "--");
+            // Only comment non-empty lines
+            if (line.trim().isNotEmpty())
+            {
+                int firstNonWhitespace = 0;
+                while (firstNonWhitespace < line.length() && iswspace(line[firstNonWhitespace]))
+                    ++firstNonWhitespace;
+
+                document.insertText(lineStart.getPosition() + firstNonWhitespace, "--");
+            }
         }
     }
 
-    // Restore caret position and selection
-    editorComponent->setHighlightedRegion(Range<int>(startPos.getPosition(), endPos.getPosition()));
+    // Restore the selection - using the calculated line boundaries
+    CodeDocument::Position newStart(document, startLine, 0);
+    CodeDocument::Position newEnd(document, endLine + 1, 0);
+    editorComponent->setHighlightedRegion(Range<int>(newStart.getPosition(), newEnd.getPosition()));
+
     documentChanged(false, false);
 }
 
