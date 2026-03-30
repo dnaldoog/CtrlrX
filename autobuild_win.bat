@@ -1,15 +1,17 @@
-
-
 @echo off
 setlocal enabledelayedexpansion
+
+set "BUILD_DIR=%USERPROFILE%\Documents\CtrlrX\build"
+set "PROCESSORS=%NUMBER_OF_PROCESSORS%"
+
+::==============================================================================
 :: Bootstrap VS environment if cl.exe isn't already available
+::==============================================================================
 where cl >nul 2>&1
 if errorlevel 1 (
     echo Initialising Visual Studio environment...
     call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
 )
-set "BUILD_DIR=%USERPROFILE%\Documents\CtrlrX\build"
-set "PROCESSORS=%NUMBER_OF_PROCESSORS%"
 
 ::==============================================================================
 :: Verify Ninja is available
@@ -20,7 +22,7 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
-:: Install Ninja > winget install Ninja-build.Ninja
+
 ::==============================================================================
 :: Prompt: Build Type
 ::==============================================================================
@@ -44,7 +46,7 @@ if "%CONFIG_CHOICE%"=="1" (
 ::==============================================================================
 echo.
 echo  [1] Full Build     - Wipe build dir, run CMake, build
-echo  [2] Clean Build    - Keep CMake cache, wipe objects, build
+echo  [2] Clean Build    - Keep CMake cache and Ninja files, wipe objects only
 echo  [3] Quick Build    - Incremental, no clean
 echo.
 set /p MODE_CHOICE="Build mode [1-3]: "
@@ -65,7 +67,7 @@ if exist "%BUILD_DIR%" rd /s /q "%BUILD_DIR%"
 mkdir "%BUILD_DIR%"
 cd /d "%BUILD_DIR%" || exit /b 1
 
-echo Running CMake configure ^(Ninja^)...
+echo Running CMake configure (Ninja)...
 cmake -G "Ninja" ^
   -DCMAKE_C_COMPILER=cl ^
   -DCMAKE_CXX_COMPILER=cl ^
@@ -73,7 +75,7 @@ cmake -G "Ninja" ^
   -DCMAKE_EXE_LINKER_FLAGS="/incremental" ^
   -DCMAKE_SHARED_LINKER_FLAGS="/incremental" ^
   .. || goto ERROR
-  
+
 echo Building...
 cmake --build . --parallel %PROCESSORS% || goto ERROR
 goto END
@@ -94,7 +96,6 @@ if exist "%BUILD_DIR%\CMakeFiles"  rd /s /q "%BUILD_DIR%\CMakeFiles"
 del /s /q "%BUILD_DIR%\*.obj"     2>nul
 del /s /q "%BUILD_DIR%\*.ilk"     2>nul
 del /s /q "%BUILD_DIR%\*.pdb"     2>nul
-del /s /q "%BUILD_DIR%\*.ninja"   2>nul
 
 echo Building...
 cmake --build . --parallel %PROCESSORS% || goto ERROR

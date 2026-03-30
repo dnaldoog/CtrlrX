@@ -577,8 +577,12 @@ void CtrlrLuaMethodCodeEditor::hideCallTip()
 }
 void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newText, int insertIndex)
 {
-    if (!SharedValues::getAutoCompleteValue().getValue())
-        return; // if disabled in preferences bail out
+
+        const bool autoCompleteEnabled = ((int)owner.getComponentTree()
+            .getProperty(Ids::luaMethodEditorAutoComplete, 1)) != 0;
+
+        if (!autoCompleteEnabled)
+            return;
     
     // --- 1. AGGRESSIVE GUARD ---
     if (isReplacingText)
@@ -690,6 +694,39 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
     {
         if (separator != ':' && separator != '.')
         {
+            // If separator is = ( or , we are definitely on the RHS  skip the LHS check
+            bool definitelyRhs = (separator == '=' || separator == '(' || separator == ',');
+
+            if (!definitelyRhs)
+            {
+                // Look back along the line if no bare = before the caret, we're on the LHS
+                juce::String lineUpToCaret = document.getLine(
+                    editorComponent->getCaretPos().getLineNumber())
+                    .substring(0, editorComponent->getCaretPos().getIndexInLine());
+
+                bool hasAssignment = false;
+                for (int i = 0; i < lineUpToCaret.length(); ++i)
+                {
+                    juce::juce_wchar c = lineUpToCaret[i];
+                    if (c == '=')
+                    {
+                        juce::juce_wchar prev = i > 0 ? lineUpToCaret[i - 1] : 0;
+                        juce::juce_wchar next = i < lineUpToCaret.length() - 1 ? lineUpToCaret[i + 1] : 0;
+                        if (prev != '~' && prev != '<' && prev != '>' && prev != '=' && next != '=')
+                        {
+                            hasAssignment = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!hasAssignment)
+                {
+                    if (suggestionPopup) suggestionPopup->setVisible(false);
+                    return;
+                }
+            }
+
             _DBG("AUTOCOMPLETE: Fetching Global Suggestions for [" + currentWord + "]");
             matches = manager.getGlobalSuggestions(currentWord);
             _DBG("AUTOCOMPLETE: Found " + juce::String((int)matches.size()) + " global matches.");

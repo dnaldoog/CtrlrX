@@ -677,7 +677,10 @@ void CtrlrLuaMethodEditor::saveSettings()
         }
         settings << openedMethod.joinIntoString(":");
         componentTree.setProperty (Ids::luaMethodEditor, settings, nullptr);
+        componentTree.setProperty(Ids::luaMethodEditorAutoComplete,
+        componentTree.getProperty(Ids::luaMethodEditorAutoComplete, true), nullptr);
     }
+
 }
 
 // Value tree GUI stuff

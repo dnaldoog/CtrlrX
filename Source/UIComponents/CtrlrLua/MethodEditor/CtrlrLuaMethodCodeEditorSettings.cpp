@@ -158,13 +158,18 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings (CtrlrLuaMeth
 
     addAndMakeVisible (fontTest = new CodeEditorComponent (codeDocument, &luaTokeniser));
 
+    if (!owner.getComponentTree().hasProperty(Ids::luaMethodEditorAutoComplete))
+        owner.getComponentTree().setProperty(Ids::luaMethodEditorAutoComplete, true, nullptr);
+
     addAndMakeVisible(autoCompleteButton = new ToggleButton(""));
-    autoCompleteButton->getToggleStateValue().referTo(SharedValues::getAutoCompleteValue());
-    autoCompleteButton->setButtonText(SharedValues::getAutoCompleteLabel());
-    autoCompleteButton->getToggleStateValue().referTo(SharedValues::getAutoCompleteValue());
+     autoCompleteButton->setButtonText(SharedValues::getAutoCompleteLabel());
+
+    // Bind directly to the ValueTree property — this is what persists across sessions
+    autoCompleteButton->getToggleStateValue().referTo(
+        owner.getComponentTree().getPropertyAsValue(Ids::luaMethodEditorAutoComplete, nullptr)
+    );
     
     addAndMakeVisible(openSearchTabs = new ToggleButton(""));
-    openSearchTabs->getToggleStateValue().referTo(SharedValues::getSearchTabsValue());
     openSearchTabs->setButtonText(SharedValues::getSearchTabsLabel());
     openSearchTabs->getToggleStateValue().referTo(SharedValues::getSearchTabsValue());
 	
@@ -486,9 +491,7 @@ void CtrlrLuaMethodCodeEditorSettings::buttonClicked(Button* buttonThatWasClicke
 	else if (buttonThatWasClicked == resetButton)
 	{
 		int result = AlertWindow::showOkCancelBox(AlertWindow::QuestionIcon,
-												  "Reset Editor",
-												  "Reset Editor to default?"
-												  );
+            "Reset Editor", "Reset Editor to default?");
 		
 		if (result == 1)
 		{
@@ -498,7 +501,7 @@ void CtrlrLuaMethodCodeEditorSettings::buttonClicked(Button* buttonThatWasClicke
 			fontBold->setToggleState(false, dontSendNotification);
 			fontItalic->setToggleState(false, dontSendNotification);
 			openSearchTabs->setToggleState(false, dontSendNotification);
-            autoCompleteButton->setToggleState(false, dontSendNotification);
+            		autoCompleteButton->setToggleState(false, dontSendNotification);
 			fontSize->setValue(14.0f, dontSendNotification);
 			bgColour->setSelectedId(findColourIndex(Colours::white), dontSendNotification);
 			lineNumbersBgColour->setSelectedId(findColourIndex(Colours::cornflowerblue), dontSendNotification);
@@ -526,16 +529,16 @@ void CtrlrLuaMethodCodeEditorSettings::buttonClicked(Button* buttonThatWasClicke
 		}
 		else if (buttonThatWasClicked == openSearchTabs)
 		{
-			bool currentState = openSearchTabs->getToggleState();
-			owner.setOpenSearchTabsEnabled(currentState);
-			owner.getComponentTree().setProperty(Ids::openSearchTabsState, currentState, nullptr);
+        // referTo() already updated SharedValues; nothing extra needed here
+			//bool currentState = openSearchTabs->getToggleState();
+			//owner.setOpenSearchTabsEnabled(currentState);
+			//owner.getComponentTree().setProperty(Ids::openSearchTabsState, currentState, nullptr);
 		}
         else if (buttonThatWasClicked == autoCompleteButton)
         {
-            bool currentState = autoCompleteButton->getToggleState();
-            owner.getComponentTree().setProperty(Ids::luaMethodEditorAutoComplete, currentState, nullptr);
-        }
-		
+        // referTo() already updated the ValueTree property; nothing extra needed here
+            //bool currentState = autoCompleteButton->getToggleState();
+           // owner.getComponentTree().setProperty(Ids::luaMethodEditorAutoComplete, currentState, nullptr);
 	}
 	
 	changeListenerCallback(nullptr);
