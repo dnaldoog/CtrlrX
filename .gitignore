@@ -44,6 +44,18 @@ obj/                      # Object files directory
 *.ilk                     # Incremental Linker File
 *.exp                     # Export files
 *.idb                     # Intermediate Debugging Information
+# JUCE / Projucer Specific
+JuceLibraryCode/
+Intermediate/
+*.xcworkspace/
+*.xcodeproj/
+
+# Projucer auto-generated build artifacts
+*build/
+*/Builds/
+ipch/
+*.sdf
+*.opensdf
 
 # Audio Plugin & Application Formats (Built output, ignore these)
 *.aaxplugin/              # Avid AAX plugin bundles (macOS directory/bundle)
