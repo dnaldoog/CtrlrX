@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.25)
 #To build with LuaJIT: cmake -B build -DCTRLRX_USE_LUAJIT=ON
 #To build without (default): cmake -B build
+#Check whther you have Ninja installed and available in PATH, as it will speed up the build significantly. 
+#If not, you can install it via your system package manager or from https://ninja-build.org/. 
+#On Windows, you can also install it via winget:
+#ninja --version
+#winget install -e --id Ninja-build.Ninja
+#cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCTRLRX_USE_LUAJIT=ON ..
+#cmake --build build
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.31.0") 
   cmake_policy(SET CMP0175 NEW)
 endif()
@@ -118,8 +125,11 @@ if (NOT LINUX)
 endif()
 
 # <-- NEW: Exclude luajit sources from glob — always linked as lib, never compiled directly
-list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Misc/luajit/.*")
-list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Misc/lua/src/.*")
+# Only exclude lua/src when using LuaJIT — standard Lua needs these files compiled directly
+if(CTRLRX_USE_LUAJIT)
+    list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Misc/luajit/.*")
+    list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Misc/lua/src/.*")
+endif()
 list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Misc/luabind/(examples|build[^/]*|test|tests)/.*")
 list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Lua/Deprecated/CtrlrLuaFile\\.cpp$")
 

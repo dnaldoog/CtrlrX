@@ -1,0 +1,212 @@
+# LuaJIT Build Guide for CtrlrX
+
+LuaJIT is an **optional** high-performance replacement for the standard Lua 5.1 interpreter included with CtrlrX. It is not required to build CtrlrX — the standard Lua build works out of the box.
+
+Benchmark results show LuaJIT is dramatically faster than standard Lua 5.1 for most operations:
+
+| Test | Lua 5.1 | LuaJIT | Speedup |
+|---|---|---|---|
+| Arithmetic | 0.0240s | ~0.000s | **∞ (effectively)** |
+| String concat | 0.0730s | ~0.000s | **∞** |
+| Table insert/read | 0.1360s | 0.0530s | **~2.5x** |
+| Function calls | 0.0390s | ~0.000s | **∞** |
+| String format | 0.0230s | ~0.000s | **∞** |
+
+---
+
+## Verifying LuaJIT is Active at Runtime
+
+In the CtrlrX Lua console:
+```lua
+print = console
+print(jit.version)   -- "LuaJIT 2.1.ROLLING"
+print(jit.status())  -- true = JIT active
+```
+
+The CtrlrX About window also displays the Lua/LuaJIT version in the library version string.
+
+---
+
+## CMake Build Flag
+
+LuaJIT is enabled via a CMake option. By default it is **OFF**.
+
+```bash
+# Build WITH LuaJIT
+cmake -B build -DCTRLRX_USE_LUAJIT=ON
+
+# Build WITHOUT LuaJIT (default — standard Lua)
+cmake -B build
+```
+
+---
+
+## Windows
+
+### ⚠️ Critical Warning: You MUST use the x64 Native Tools Command Prompt
+
+**Do NOT run `msvcbuild.bat` from:**
+- Regular CMD (`cmd.exe`)
+- PowerShell
+- Windows Terminal (unless configured for x64)
+- Visual Studio Developer Command Prompt
+
+These shells have no MSVC environment set up, and `msvcbuild.bat` will silently produce an **x86 library** without any warning. This will cause dozens of `LNK2001 unresolved external symbol` linker errors when building CtrlrX, even though `lua51.lib` appears to exist and be valid.
+
+**You MUST run `msvcbuild.bat` from:**
+
+> **Start Menu → Visual Studio 2022 → x64 Native Tools Command Prompt for VS 2022**
+
+---
+
+### Build Steps (Windows)
+
+1. Open **x64 Native Tools Command Prompt for VS 2022** from the Start Menu
+
+2. Navigate to the LuaJIT source directory:
+    ```cmd
+    cd C:\path\to\CtrlrX\Source\Misc\luajit\src
+    ```
+
+3. Build the static library:
+    ```cmd
+    msvcbuild.bat static
+    ```
+
+4. Verify the output is x64 (not x86):
+    ```cmd
+    dumpbin /headers lua51.lib | findstr machine
+    ```
+    You should see:
+    ```
+    8664 machine (x64)
+    ```
+    If you see `14C machine (x86)` you used the wrong shell — start over from step 1.
+
+5. Commit the new `lua51.lib` to the repository:
+    ```cmd
+    git add Source\Misc\luajit\src\lua51.lib
+    git commit -m "Rebuild LuaJIT lua51.lib as x64"
+    ```
+
+---
+
+### Using autobuild_win.bat (Windows)
+
+The `autobuild_win.bat` script handles LuaJIT automatically:
+
+- If `Source\Misc\luajit\src\msvcbuild.bat` is found → LuaJIT is built and `-DCTRLRX_USE_LUAJIT=ON` is passed to CMake
+- If the luajit folder is absent (non-LuaJIT branch) → LuaJIT is silently skipped, standard Lua is used
+
+No manual steps needed — just run the bat file.
+
+---
+
+### Using CMake Directly (Windows)
+
+From the **x64 Native Tools Command Prompt**:
+
+```cmd
+cd C:\path\to\CtrlrX\Source\Misc\luajit\src
+msvcbuild.bat static
+
+cd C:\path\to\CtrlrX
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCTRLRX_USE_LUAJIT=ON
+cmake --build build
+```
+
+---
+
+### 32-bit Builds (Legacy Support)
+
+Occasionally requested for old systems (Windows 7, Snow Leopard era DAWs).
+
+To build LuaJIT as x86:
+1. Open **x86 Native Tools Command Prompt for VS 2022** (or regular CMD — it defaults to x86)
+2. Run `msvcbuild.bat static`
+3. Verify: `dumpbin /headers lua51.lib | findstr machine` should say `14C machine (x86)`
+4. Pass `-A Win32` to CMake instead of the default x64
+
+**Note:** Most modern DAWs (post-2015) are 64-bit only and will not load 32-bit VST3 plugins. 32-bit builds are only recommended for specific legacy support requests.
+
+---
+
+## Linux
+
+LuaJIT on Linux is provided by the system package manager. No manual build required.
+
+### Install LuaJIT (Ubuntu/Debian)
+```bash
+sudo apt install libluajit-5.1-dev
+```
+
+### Install LuaJIT (Fedora)
+```bash
+sudo dnf install luajit-devel
+```
+
+Then build CtrlrX with the flag:
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DCTRLRX_USE_LUAJIT=ON
+cmake --build build
+```
+
+CMake finds LuaJIT automatically via `pkg-config`.
+
+---
+
+## macOS
+
+LuaJIT on macOS is built from source as a universal binary (arm64 + x86_64). The GitHub Actions CI workflow handles this automatically.
+
+### Build Steps (macOS — manual)
+
+```bash
+cd Source/Misc/luajit
+
+export MACOSX_DEPLOYMENT_TARGET=10.15
+
+# Build x86_64
+make clean
+CFLAGS="-arch x86_64" LDFLAGS="-arch x86_64" make -j$(sysctl -n hw.ncpu)
+cp src/libluajit.a src/libluajit_x86.a
+
+# Build arm64
+make clean
+CFLAGS="-arch arm64" LDFLAGS="-arch arm64" make -j$(sysctl -n hw.ncpu)
+cp src/libluajit.a src/libluajit_arm.a
+
+# Combine into universal binary
+lipo -create src/libluajit_x86.a src/libluajit_arm.a -output src/libluajit.a
+
+# Verify
+lipo -info src/libluajit.a
+```
+
+Then build CtrlrX:
+```bash
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCTRLRX_USE_LUAJIT=ON
+cmake --build build
+```
+
+---
+
+## After Rebuilding (all platforms)
+
+After rebuilding `lua51.lib` or `libluajit.a`, do a full clean build to ensure CMake picks up the new library:
+
+- **Windows (bat file):** Run option 1 (Full Build)
+- **Windows (manual):** Delete the `build` folder and re-run cmake
+- **Linux/macOS:** `rm -rf build && cmake -B build ... && cmake --build build`
+
+---
+
+## GitHub Actions CI
+
+The CI workflow (`.github/workflows/build_and_test.yml`) builds LuaJIT automatically on all platforms:
+
+- **Windows** — runs `msvcbuild.bat static` using the MSVC x64 environment set up by `ilammy/msvc-dev-cmd@v1`
+- **Linux** — installs `libluajit-5.1-dev` via apt
+- **macOS** — builds a universal binary using `lipo`
+
+No manual steps are needed for CI builds.

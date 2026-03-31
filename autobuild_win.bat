@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 :: #To build with LuaJIT: cmake -B build -DCTRLRX_USE_LUAJIT=ON
 :: #To build without (default): cmake -B build
-:: #Check whther you have Ninja installed and available in PATH, as it will speed up the build significantly. 
+:: #Check whether you have Ninja installed and available in PATH, as it will speed up the build significantly. 
 :: #If not, you can install it via your system package manager or from https://ninja-build.org/. 
 :: #On Windows, you can also install it via winget:
 :: #ninja --version
@@ -30,17 +30,30 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
-if not exist "%~dp0Source\Misc\luajit\src\lua51.lib" (
-    echo Building LuaJIT...
-    pushd "%~dp0Source\Misc\luajit\src"
-    call msvcbuild.bat static
-    popd
+
+::==============================================================================
+:: Build LuaJIT if source exists but lib is missing
+:: If luajit source is not present (non-LuaJIT branch) this is silently skipped
+::==============================================================================
+set "LUAJIT_FLAG="
+if exist "%~dp0Source\Misc\luajit\src\msvcbuild.bat" (
+    set "LUAJIT_FLAG=-DCTRLRX_USE_LUAJIT=ON"
     if not exist "%~dp0Source\Misc\luajit\src\lua51.lib" (
-        echo ERROR: LuaJIT build failed - lua51.lib not found.
-        pause
-        exit /b 1
+        echo Building LuaJIT...
+        pushd "%~dp0Source\Misc\luajit\src"
+        call msvcbuild.bat static
+        popd
+        if not exist "%~dp0Source\Misc\luajit\src\lua51.lib" (
+            echo ERROR: LuaJIT build failed - lua51.lib not found.
+            pause
+            exit /b 1
+        )
+        echo LuaJIT built successfully.
+    ) else (
+        echo LuaJIT lua51.lib already exists - skipping build.
     )
-    echo LuaJIT built successfully.
+) else (
+    echo LuaJIT source not found - building without LuaJIT.
 )
 
 ::==============================================================================
@@ -82,6 +95,11 @@ exit /b 1
 ::==============================================================================
 echo.
 echo [FULL BUILD] Config: %CONFIG%
+if defined LUAJIT_FLAG (
+    echo LuaJIT: ENABLED
+) else (
+    echo LuaJIT: DISABLED
+)
 echo Wiping build directory...
 if exist "%BUILD_DIR%" rd /s /q "%BUILD_DIR%"
 mkdir "%BUILD_DIR%"
@@ -92,7 +110,7 @@ cmake -G "Ninja" ^
   -DCMAKE_C_COMPILER=cl ^
   -DCMAKE_CXX_COMPILER=cl ^
   -DCMAKE_BUILD_TYPE=%CONFIG% ^
-  -DCTRLRX_USE_LUAJIT=ON ^
+  %LUAJIT_FLAG% ^
   -DCMAKE_EXE_LINKER_FLAGS_DEBUG="/incremental" ^
   -DCMAKE_SHARED_LINKER_FLAGS_DEBUG="/incremental" ^
   -DCMAKE_EXE_LINKER_FLAGS_RELEASE="/LTCG" ^
