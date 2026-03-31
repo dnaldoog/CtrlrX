@@ -90,6 +90,7 @@ private:
     ToggleButton* fontItalic;
     ToggleButton* openSearchTabs;
     ToggleButton* autoCompleteButton;
+    ToggleButton* autoCompleteOptionsButton;
     TextButton* applyButton;
     TextButton* cancelButton;
     TextButton* resetButton;
@@ -112,6 +113,7 @@ private:
     HashMap<String, Colour> originalSyntaxColors;
     bool originalOpenSearchTabs;
     bool originalAutoComplete;
+    bool originalAutoCompleteOpt;
 
 
     juce::Value& sharedSearchTabsValue;

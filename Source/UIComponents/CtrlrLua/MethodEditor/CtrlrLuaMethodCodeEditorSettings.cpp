@@ -99,7 +99,6 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings (CtrlrLuaMeth
     : owner(_owner), sharedSearchTabsValue(sharedSearchTabsValue_),
       fontTypeface (0),
       fontBold (0),
-      // fontUnderline (0),
       fontItalic (0),
       fontSize (0),
       bgColour (0), // Added v5.6.31
@@ -108,7 +107,8 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings (CtrlrLuaMeth
       fontTest (0),
       resetButton (0), // added JG
       openSearchTabs (0), // added JG
-      autoCompleteButton (0) // added DAM
+      autoCompleteButton (0), // added DAM
+      autoCompleteOptionsButton (0) // added JG
 {
     addAndMakeVisible(label0 = new Label("new label", TRANS("Font:"))); // Added v.5.6.31
     label0->setFont(Font(14.00f)); // Added v.5.6.31
@@ -158,13 +158,28 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings (CtrlrLuaMeth
 
     addAndMakeVisible (fontTest = new CodeEditorComponent (codeDocument, &luaTokeniser));
 
+    if (!owner.getComponentTree().hasProperty(Ids::luaMethodEditorAutoComplete))
+        owner.getComponentTree().setProperty(Ids::luaMethodEditorAutoComplete, true, nullptr);
+
     addAndMakeVisible(autoCompleteButton = new ToggleButton(""));
-    autoCompleteButton->getToggleStateValue().referTo(SharedValues::getAutoCompleteValue());
     autoCompleteButton->setButtonText(SharedValues::getAutoCompleteLabel());
-    autoCompleteButton->getToggleStateValue().referTo(SharedValues::getAutoCompleteValue());
+
+    // Bind directly to the ValueTree property this is what persists across sessions
+    autoCompleteButton->getToggleStateValue().referTo(
+        owner.getComponentTree().getPropertyAsValue(Ids::luaMethodEditorAutoComplete, nullptr)
+    );
     
+    addAndMakeVisible(autoCompleteOptionsButton = new ToggleButton(""));
+    autoCompleteOptionsButton->setButtonText(SharedValues::getAutoCompleteOptionsLabel());
+
+    // Bind directly to the ValueTree property this is what persists across sessions
+    autoCompleteOptionsButton->getToggleStateValue().referTo(
+        owner.getComponentTree().getPropertyAsValue(Ids::luaMethodEditorAutoCompleteOpt, nullptr)
+    );
+
+
+
     addAndMakeVisible(openSearchTabs = new ToggleButton(""));
-    openSearchTabs->getToggleStateValue().referTo(SharedValues::getSearchTabsValue());
     openSearchTabs->setButtonText(SharedValues::getSearchTabsLabel());
     openSearchTabs->getToggleStateValue().referTo(SharedValues::getSearchTabsValue());
 	
@@ -209,10 +224,6 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings (CtrlrLuaMeth
     resetButton->setColour(TextButton::buttonOnColourId, findColour(TextButton::buttonOnColourId)); // Will follow the main LnF
     resetButton->setColour(TextButton::textColourOffId, findColour(TextButton::textColourOffId)); // Will follow the main LnF
     resetButton->setColour(TextButton::textColourOnId, findColour(TextButton::textColourOnId)); // Will follow the main LnF
-
-	//    addAndMakeVisible(cancelButton = new TextButton("CANCEL"));
-	//    cancelButton->addListener(this);
-	//    cancelButton->setColour(TextButton::buttonColourId, findColour(TextButton::buttonColourId));
 
     addAndMakeVisible(applyButton = new TextButton("Apply"));
     applyButton->addListener(this);
@@ -288,8 +299,9 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings (CtrlrLuaMeth
     originalLineNumbersColour = getLineNumbersColour();
     originalOpenSearchTabs = openSearchTabs->getToggleState();
     originalAutoComplete = autoCompleteButton->getToggleState();
+    originalAutoCompleteOpt = autoCompleteOptionsButton->getToggleState();
     
-    setSize(334, 615);
+    setSize(334, 640);
     updateSyntaxColors();
 }
 
@@ -307,6 +319,11 @@ CtrlrLuaMethodCodeEditorSettings::~CtrlrLuaMethodCodeEditorSettings()
     {
         autoCompleteButton->getToggleStateValue().referTo(juce::Value());
     }
+
+    if (autoCompleteOptionsButton)
+    {
+        autoCompleteOptionsButton->getToggleStateValue().referTo(juce::Value());
+    }
     
     // Now it's safe to delete the components.
     deleteAndZero(fontTest);
@@ -316,13 +333,6 @@ CtrlrLuaMethodCodeEditorSettings::~CtrlrLuaMethodCodeEditorSettings()
     deleteAndZero(fontItalic);
     deleteAndZero(resetToPreviousButton);
     deleteAndZero(fontSize);
-    
-	// Useless for labels since the scopedPointer handles it.
-	// deleteAndZero(label0);
-    // deleteAndZero(label1);
-	// deleteAndZero(label2);
-    // deleteAndZero(label3);
-	// deleteAndZero(syntaxLabel);
 	
     deleteAndZero(bgColour);
     deleteAndZero(lineNumbersBgColour);
@@ -333,6 +343,7 @@ CtrlrLuaMethodCodeEditorSettings::~CtrlrLuaMethodCodeEditorSettings()
     
     deleteAndZero(openSearchTabs);
     deleteAndZero(autoCompleteButton);
+    deleteAndZero(autoCompleteOptionsButton);
     deleteAndZero(resetButton);
     deleteAndZero(applyButton);
 }
@@ -391,8 +402,11 @@ void CtrlrLuaMethodCodeEditorSettings::resized()
 	// Autocomplete toggle
 	autoCompleteButton->setBounds(marginLeft + 0, syntaxY + 88, sampleWidth, 24);
 
+	// Autocomplete toggle
+	autoCompleteOptionsButton->setBounds(marginLeft + 0, syntaxY + 112, sampleWidth, 24);
+
     // Add horizontal line above buttons
-    int buttonY = syntaxY + 128;
+    int buttonY = syntaxY + 128+24;
 
     // Position the three buttons in a row: RESET  APPLY  CANCEL
     int buttonWidth = (sampleWidth - 16) / 2; // Account for spacing between buttons
@@ -887,6 +901,9 @@ void CtrlrLuaMethodCodeEditorSettings::applySettings()
     owner.getComponentTree().setProperty(Ids::luaMethodEditorAutoComplete,
         autoCompleteButton->getToggleState(), nullptr);
 
+    owner.getComponentTree().setProperty(Ids::luaMethodEditorAutoCompleteOpt,
+        autoCompleteOptionsButton->getToggleState(), nullptr);
+
     // Save syntax colors
     saveSyntaxColorsToSettings();
 
@@ -917,3 +934,4 @@ void CtrlrLuaMethodCodeEditorSettings::closeWindow()
         parentWindow->closeButtonPressed();
     }
 }
+

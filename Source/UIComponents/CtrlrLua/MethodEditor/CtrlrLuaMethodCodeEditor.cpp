@@ -577,9 +577,14 @@ void CtrlrLuaMethodCodeEditor::hideCallTip()
 }
 void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newText, int insertIndex)
 {
-    if (!SharedValues::getAutoCompleteValue().getValue())
-        return; // if disabled in preferences bail out
-    
+    const bool autoCompleteEnabled = ((int)owner.getComponentTree()
+        .getProperty(Ids::luaMethodEditorAutoComplete, 1)) != 0;
+    const bool autoCompleteOpts = ((int)owner.getComponentTree()
+        .getProperty(Ids::luaMethodEditorAutoCompleteOpt, 1)) != 0;
+
+    if (!autoCompleteEnabled)
+        return;
+
     // --- 1. AGGRESSIVE GUARD ---
     if (isReplacingText)
     {
@@ -690,10 +695,44 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
     {
         if (separator != ':' && separator != '.')
         {
-            _DBG("AUTOCOMPLETE: Fetching Global Suggestions for [" + currentWord + "]");
-            matches = manager.getGlobalSuggestions(currentWord);
-            _DBG("AUTOCOMPLETE: Found " + juce::String((int)matches.size()) + " global matches.");
-        }
+			if (!autoCompleteOpts){
+				// If separator is = ( or , we are definitely on the RHS  skip the LHS check
+				bool definitelyRhs = (separator == '=' || separator == '(' || separator == ',');
+				
+				if (!definitelyRhs)
+				{
+					// Look back along the line if no bare = before the caret, we're on the LHS
+					juce::String lineUpToCaret = document.getLine(
+																  editorComponent->getCaretPos().getLineNumber())
+					.substring(0, editorComponent->getCaretPos().getIndexInLine());
+					
+					bool hasAssignment = false;
+					for (int i = 0; i < lineUpToCaret.length(); ++i)
+					{
+						juce::juce_wchar c = lineUpToCaret[i];
+						if (c == '=')
+						{
+							juce::juce_wchar prev = i > 0 ? lineUpToCaret[i - 1] : 0;
+							juce::juce_wchar next = i < lineUpToCaret.length() - 1 ? lineUpToCaret[i + 1] : 0;
+							if (prev != '~' && prev != '<' && prev != '>' && prev != '=' && next != '=')
+							{
+								hasAssignment = true;
+								break;
+							}
+						}
+					}
+					
+					if (!hasAssignment)
+					{
+						if (suggestionPopup) suggestionPopup->setVisible(false);
+						return;
+					}
+				}
+			}
+			_DBG("AUTOCOMPLETE: Fetching Global Suggestions for [" + currentWord + "]");
+			matches = manager.getGlobalSuggestions(currentWord);
+			_DBG("AUTOCOMPLETE: Found " + juce::String((int)matches.size()) + " global matches.");
+		}
         else if (contextResolved)
         {
             _DBG("AUTOCOMPLETE: Class context matched 0 results. Suppressing global fallback.");
@@ -1053,70 +1092,6 @@ void CtrlrLuaMethodCodeEditor::findInAll(const String& search)
     owner.getMethodEditArea()->getLowerTabs()->setCurrentTabIndex(0, true);
 }
 
-
-//void CtrlrLuaMethodCodeEditor::findInAll(const String &search)
-//{
-//    // Validate search string first
-//    if (!isValidSearchString(search))
-//    {
-//        owner.getMethodEditArea()->insertOutput("\n\nInvalid search term: \"" + search +
-//            "\". Please enter a meaningful search term (at least 3 characters, not just whitespace or common single characters).\n",
-//            Colours::red);
-//        return;
-//    }
-//    owner.getMethodEditArea()->insertOutput("\n\nSearching for: \""+search+"\" in all methods (double click line to jump)\n", Colours::darkblue);
-//    StringArray names;
-//
-//    for (int i=0; i<owner.getMethodManager().getNumMethods(); i++)
-//    {
-//        CtrlrLuaMethod *m = owner.getMethodManager().getMethodByIndex (i);
-//
-//        if (m)
-//        {
-//            names.add (m->getName());
-//
-//            if (m->getCodeEditor())
-//            {
-//                /* it has an editor so it's open */
-//                CodeDocument &doc        = m->getCodeEditor()->getCodeDocument();
-//
-//                Array<Range<int> > results = searchForMatchesInDocument (doc, search);
-//
-//                for (int j=0; j<results.size(); j++)
-//                {
-//                    reportFoundMatch (doc, names[i], results[j]);
-//                }
-//            }
-//            else // Added 5.6.34 by goodweather. Search in not yet opened methods
-//            {
-//                /* Open method */
-//                owner.createNewTab(m);
-//                owner.setCurrentTab(m);
-//
-//                /* Perform search and report result */
-//                CodeDocument& doc = m->getCodeEditor()->getCodeDocument();
-//
-//                Array<Range<int> > results = searchForMatchesInDocument(doc, search);
-//
-//                for (int j = 0; j < results.size(); j++)
-//                {
-//                    reportFoundMatch(doc, names[i], results[j]);
-//                }
-//
-//                /* If no result then close method; if any result then keep method open */
-//                /*Dnaldoog disable this because I think it's better for ser to open file at bottom list,
-//                especially if the search results in dozens of hits therefore opening dozens of windows*/
-//                //if (results.size() == 0)
-//                //{
-//                    owner.closeCurrentTab();
-//                //}
-//            }
-//        }
-//    }
-//
-//    owner.getMethodEditArea()->getLowerTabs()->setCurrentTabIndex(0,true);
-//}
-
 const Array<Range<int> > CtrlrLuaMethodCodeEditor::searchForMatchesInDocument(CodeDocument& doc, const String& search)
 {
     Array<Range<int> > results;
@@ -1301,12 +1276,7 @@ public:
         searchInComboBox.setSelectedItemIndex(0, dontSendNotification);
         searchInComboBox.addListener(this);
         searchInComboBox.setEnabled(false);
-        //addAndMakeVisible(searchInComboBox);
 
-        //addAndMakeVisible (caseButton);
-        //caseButton.setColour (ToggleButton::textColourId, Colours::white);
-        //caseButton.setToggleState (false, dontSendNotification);
-        //caseButton.addListener (this);
         addAndMakeVisible(caseButton);
         caseButton.setColour(juce::ToggleButton::textColourId, juce::Colours::yellow);
         caseButton.setColour(juce::ToggleButton::tickColourId, juce::Colours::yellow);
@@ -1412,9 +1382,7 @@ public:
             replaceAllButton->setBounds(replaceButton->getRight(), y, 20, 24);
             y += 30;
         }
-        //caseButton.setBounds (0, y, 75, 22);
-        //searchInComboBox.setBounds(caseButton.getRight(), y, 70, 24);
-        //lookInComboBox.setBounds(searchInComboBox.getRight() + 5, y, 70, 24);
+
         caseButton.setBounds(5, y, 75, 22);
         lookInComboBox.setBounds(searchInComboBox.getRight() + 75, y, 90, 24);
         findPrev.setBounds(lookInComboBox.getRight(), y, 15, 24);
@@ -1864,27 +1832,15 @@ void CtrlrLuaMethodCodeEditor::toggleLineComment() // Updated v5.6.34
     CodeDocument::Position startPos(document, selection.getStart());
     CodeDocument::Position endPos(document, selection.getEnd());
 
-    // If there is no selection, use the current line
-    if (selection.isEmpty())
-    {
-        startPos = CodeDocument::Position(document, startPos.getLineNumber(), 0);
-        endPos = CodeDocument::Position(document, startPos.getLineNumber() + 1, 0);
-    }
-    else
-    {
-        // Adjust selection to span full lines
-        startPos = CodeDocument::Position(document, startPos.getLineNumber(), 0);
-        
-        // Correctly get the start position of the line after the selection ends
-        endPos = CodeDocument::Position(document, endPos.getLineNumber(), 0);
-        if (endPos.getIndexInLine() != 0)
-        {
-            endPos = CodeDocument::Position(document, endPos.getLineNumber() + 1, 0);
-        }
-    }
-    
     int startLine = startPos.getLineNumber();
     int endLine = endPos.getLineNumber();
+
+    // If the selection ends exactly at the start of a new line, 
+    // don't include that extra line in the operation.
+    if (endLine > startLine && endPos.getIndexInLine() == 0) // fix comments -- including subsequent line
+    {
+        endLine--;
+    }
 
     document.newTransaction();
 
