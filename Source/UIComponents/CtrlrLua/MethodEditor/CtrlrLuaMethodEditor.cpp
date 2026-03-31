@@ -161,6 +161,11 @@ bool CtrlrLuaMethodEditor::keyPressed (const KeyPress& key, Component* originati
             _DBG("Attempting to map Cmd+F to editSearch.");
             commandID = LuaMethodEditorCommandIDs::editSearch;
         }
+        else if (key.getKeyCode() == 'R' && !modifiers.isShiftDown())
+        {
+            _DBG("Attempting to map Cmd+R to editFindAndReplace.");
+            commandID = LuaMethodEditorCommandIDs::editFindAndReplace;
+        }
         else if (key.getKeyCode() == 'F' && modifiers.isShiftDown())
         {
             _DBG("Attempting to map Cmd+Shift+F to editFindAndReplace.");

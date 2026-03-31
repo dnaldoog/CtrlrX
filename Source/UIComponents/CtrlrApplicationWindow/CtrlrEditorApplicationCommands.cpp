@@ -575,7 +575,7 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
             
         case LuaMethodEditorCommandIDs::editFindAndReplace:
             result.setInfo("Find and Replace", "Finds and replaces text in the editor", luaCategory, 0);
-            result.addDefaultKeypress('h', ModifierKeys::commandModifier); // Not a good idea since cmd+h is to hide the app for macOS cmd+r would be better
+            result.addDefaultKeypress('r', ModifierKeys::commandModifier); // Not a good idea since cmd+h is to hide the app for macOS cmd+r would be better
             result.setActive(isPanelActive());
             break;
             
