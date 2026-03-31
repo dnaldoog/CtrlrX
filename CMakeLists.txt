@@ -260,7 +260,7 @@ target_compile_definitions(SharedCode
     JUCE_USE_CURL=0 # If you set this to 1, add `NEEDS_CURL TRUE` to the `juce_add_plugin` call
     JUCE_VST3_CAN_REPLACE_VST2=0
     JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1
-
+    CTRLRX_USE_LUAJIT=1
     # Uncomment if you are paying for a an Indie/Pro license or releasing under GPLv3
     JUCE_DISPLAY_SPLASH_SCREEN=0
 
