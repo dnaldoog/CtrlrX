@@ -165,14 +165,14 @@ public:
         static const String label("Keep methods opened after a match");
         return label;
     }
-    static Value& getAutoCompleteValue()
-    {
-        static Value autoCompleteValue(var(true)); // default to true
-        return autoCompleteValue;
-    }
     static const String& getAutoCompleteLabel()
     {
         static const String label("Autocomplete lua methods");
+        return label;
+    }
+    static const String& getAutoCompleteOptionsLabel()
+    {
+        static const String label("Autocomplete Full (on)/Light (off)");
         return label;
     }
 };
