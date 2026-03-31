@@ -1,0 +1,425 @@
+#include "stdafx.h"
+#include "CtrlrPanelLayerListItem.h"
+#include "CtrlrPropertyEditors/CtrlrPropertyComponent.h"
+#include "CtrlrPanelCanvasLayer.h"
+#include "CtrlrPanelLayerList.h"
+#include "CtrlrInlineUtilitiesGUI.h"
+
+CtrlrPanelLayerListItem::CtrlrPanelLayerListItem (CtrlrPanelLayerList &_owner)
+    : layer(0), owner(_owner),
+      layerName (0),
+      layerColour (0),
+      layerIndex (0),
+      isolateButton(0),
+      restoreButton(0),
+      dragStartedFromIcon(false),
+      dragIcon(0),
+      isDragging(false)
+{
+    SvgIconManager::initialise(); // Added v5.6.34. Thanks to @dnaldoog
+	
+    // Layer Index
+    addAndMakeVisible (layerIndex = new Label (L"layerIndex", L"2"));
+    layerIndex->setFont (Font (12.0000f, Font::plain));
+    layerIndex->setJustificationType (Justification::centred);
+    layerIndex->setEditable (false, false, false);
+    layerIndex->setColour (TextEditor::textColourId, Colours::black);
+    layerIndex->setColour (TextEditor::backgroundColourId, Colour (0x0));
+	
+    // Drag Icon
+    addAndMakeVisible(dragIcon = new DragIconComponent(this));
+	
+    // Layer visibility (checkBox replaced by SVG Eye Icon)
+    layerVisibility = std::make_unique<ToggleIconComponent>(IconType::EyeSlash, IconType::Eye);
+    addAndMakeVisible(layerVisibility.get());
+    layerVisibility->addListener (this);
+	layerVisibility->setMouseCursor (MouseCursor::PointingHandCursor);
+	
+    // Layer Name
+    addAndMakeVisible (layerName = new Label ("", L"Layer Name"));
+    layerName->setFont (Font (12.0000f, Font::plain));
+    layerName->setJustificationType (Justification::centredLeft);
+    layerName->setEditable (true, true, false);
+    layerName->setColour (TextEditor::textColourId, Colours::black);
+    layerName->setColour (TextEditor::backgroundColourId, Colour (0x0));
+    layerName->addListener (this);
+
+    // Layer Colour
+    addAndMakeVisible (layerColour = new CtrlrColourEditorComponent (this));
+    
+    // isolate Button
+    addAndMakeVisible(isolateButton = new TextButton("Edit"));
+    isolateButton->setButtonText("Edit");
+    isolateButton->addListener(this);
+    isolateButton->setColour(TextButton::buttonColourId, findColour(juce::TextButton::buttonOnColourId));
+    isolateButton->setColour(TextButton::textColourOffId, findColour(juce::TextButton::textColourOffId));
+
+    // Restore Button
+    addAndMakeVisible(restoreButton = new TextButton("Restore"));
+    restoreButton->setButtonText("Restore");
+    restoreButton->addListener(this);
+    restoreButton->setColour(TextButton::buttonColourId, Colours::green);
+    restoreButton->setColour(TextButton::textColourOffId, Colours::white);
+    restoreButton->setVisible(false);
+
+    // Add mouse listeners for existing components
+    layerIndex->addMouseListener (this, true);
+    layerVisibility->addMouseListener (this, true);
+    layerName->addMouseListener (this, true);
+
+    setSize (355, 40);
+
+}
+
+CtrlrPanelLayerListItem::~CtrlrPanelLayerListItem()
+{
+    deleteAndZero (layerName);
+    deleteAndZero (layerColour);
+    deleteAndZero (layerIndex);
+	deleteAndZero (isolateButton);
+    deleteAndZero (restoreButton);
+    deleteAndZero (dragIcon);
+}
+
+//==============================================================================
+void CtrlrPanelLayerListItem::paint(juce::Graphics& g)
+{
+    if (isSelected)
+    {
+        _DBG("paint: drawing selection highlight");
+        g.setColour(juce::Colours::steelblue.withAlpha(0.4f));
+        g.fillRoundedRectangle(getLocalBounds().toFloat().reduced(1.0f), 3.0f);
+
+        g.setColour(juce::Colours::steelblue);
+        g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(1.0f), 3.0f, 1.0f);
+    }
+    else
+    {
+        g.setColour(findColour(juce::ListBox::backgroundColourId));
+        g.fillAll();
+    }
+}
+void CtrlrPanelLayerListItem::setSelected(bool shouldBeSelected)
+{
+    isSelected = shouldBeSelected;
+    _DBG("setSelected called: " + String(shouldBeSelected ? "true" : "false"));
+    repaint();
+}
+
+
+void CtrlrPanelLayerListItem::resized()
+{
+    const int padding = 10;
+    const int componentHeight = getHeight() - (padding * 2);
+	const int totalHeight = getHeight();
+
+    // These proportions are taken directly from the header to ensure alignment
+    const float layerIndexProportion = 0.07f;
+    const float dragIconProportion = 0.07f;
+    const float visibilityProportion = 0.07f;
+    const float layerNameProportion = 0.33f;
+    const float layerColourProportion = 0.23f;
+    const float buttonProportion = 0.23f;
+
+    const float totalWidth = getWidth();
+    float x = 0.0f; // Start at 0, no padding
+
+    // 1. Layer Index
+    float layerIndexWidth = totalWidth * layerIndexProportion;
+    layerIndex->setBounds(x, (getHeight() - componentHeight) / 2, layerIndexWidth, componentHeight);
+    x += layerIndexWidth;
+
+    // 2. Drag Icon (Reorder)
+    float dragIconWidth = totalWidth * dragIconProportion;
+    if (dragIcon) {
+        dragIcon->setBounds(x, (getHeight() - componentHeight) / 2, dragIconWidth, componentHeight);
+        x += dragIconWidth;
+    }
+
+	// 3. Visibility Toggle
+	float visibilityWidth = totalWidth * visibilityProportion;
+	int checkboxSize = 24; // Change this value to reduce the size of the Eye Icon
+	float checkboxX = x + (visibilityWidth - checkboxSize) / 2.0f;
+	float checkboxY = (totalHeight - checkboxSize) / 2.0f;
+	layerVisibility->setBounds((int)checkboxX, (int)checkboxY, (int)checkboxSize, (int)checkboxSize);
+	x += visibilityWidth;
+
+    // 4. Layer Name (with padding)
+    const int layerNamePadding = 5;
+    float layerNameWidth = totalWidth * layerNameProportion;
+    layerName->setBounds(x + layerNamePadding, (totalHeight - componentHeight) / 2, layerNameWidth - layerNamePadding, componentHeight);
+    x += layerNameWidth;
+
+	// 5. Layer Colour Chooser (with padding)
+    float colourChooserWidth = totalWidth * layerColourProportion;
+    const int colourPadding = 5;
+    float paddedColourWidth = colourChooserWidth - (2 * colourPadding);
+    float paddedColourX = x + colourPadding;
+    layerColour->setBounds((int)paddedColourX, (totalHeight - componentHeight) / 2, (int)paddedColourWidth, componentHeight);
+    x += colourChooserWidth;
+
+    // 6. Action Buttons (occupying the same position with padding)
+    float buttonColumnWidth = totalWidth * buttonProportion;
+    if (isolateButton && restoreButton) {
+        const int buttonPadding = 5;
+        float paddedButtonWidth = buttonColumnWidth - (2 * buttonPadding);
+        float paddedButtonX = x + buttonPadding;
+        const int buttonTop = (totalHeight - componentHeight) / 2;
+        
+        // Both buttons are given the exact same bounds
+        isolateButton->setBounds((int)paddedButtonX, buttonTop, (int)paddedButtonWidth, componentHeight);
+        restoreButton->setBounds((int)paddedButtonX, buttonTop, (int)paddedButtonWidth, componentHeight);
+    }
+    x += buttonColumnWidth;
+}
+
+void CtrlrPanelLayerListItem::labelTextChanged (Label* labelThatHasChanged)
+{
+    if (labelThatHasChanged == layerName)
+    {
+		if (layer)
+		{
+			layer->setProperty (Ids::uiPanelCanvasLayerName, layerName->getText());
+		}
+    }
+}
+
+void CtrlrPanelLayerListItem::buttonClicked (Button* buttonThatWasClicked)
+{
+    // if (buttonThatWasClicked == layerVisibility)
+    if (buttonThatWasClicked == layerVisibility.get()) // Updated v5.6.34. Thanks to @dnaldoog
+    {
+        if (layer)
+        {
+            layer->setProperty(Ids::uiPanelCanvasLayerVisibility, layerVisibility->getToggleState());
+        }
+    }
+    else if (buttonThatWasClicked == isolateButton)
+    {
+        if (layer)
+        {
+            // When Edit is clicked, turn it red briefly, then isolate
+            owner.restoreLayerVisibility(); // remember layer visibility before isolating
+            layer->setProperty(Ids::uiPanelCanvasLayerIsIsolated, true, 0); // toggle isolation property: see restoreButton
+            isolateButton->setColour(TextButton::buttonColourId, Colours::red);
+            isolateButton->setColour(TextButton::textColourOffId, Colours::white);
+
+            // Perform the isolation
+            owner.isolateLayer(rowIndex);
+
+            // Update button states (this will hide Edit and show Restore)
+            updateButtonStates();
+        }
+    }
+    else if (buttonThatWasClicked == restoreButton)
+    {
+        // Restore visibility and update button states
+        layer->setProperty(Ids::uiPanelCanvasLayerIsIsolated, false, 0); // toggle isolation property: see isolateButton
+        owner.restoreLayerVisibility();
+        updateButtonStates();
+    }
+}
+
+void CtrlrPanelLayerListItem::updateButtonStates()
+{
+ 
+    if (!layer)
+        return;
+    
+    // Check if THIS specific layer is the one that was isolated
+    bool isThisLayerIsolated = layer->getProperty(Ids::uiPanelCanvasLayerIsIsolated);
+
+    if (isThisLayerIsolated)
+    {
+        // Only THIS layer shows Restore button
+        isolateButton->setVisible(false);
+        restoreButton->setVisible(true);
+    }
+    else
+    {
+        // All other layers show Edit button (light blue)
+        isolateButton->setVisible(true);
+        isolateButton->setButtonText("Edit");
+        isolateButton->setColour(TextButton::buttonColourId, Colours::lightblue);
+        isolateButton->setColour(TextButton::textColourOffId, Colours::black);
+        restoreButton->setVisible(false);
+    }
+}
+
+void CtrlrPanelLayerListItem::mouseDown(const MouseEvent& e)
+{
+    if (layer)
+    {
+        // Only handle selection if NOT clicking on drag icon
+        // (drag icon handles its own events now)
+        if (!dragIcon || !dragIcon->getBounds().contains(e.getPosition()))
+        {
+            int totalLayers = owner.getNumRows();
+            int visualRow = totalLayers - 1 - rowIndex;
+            owner.setSelectedRow(visualRow);
+        }
+
+        // Reset drag flags for non-drag-icon interactions
+        dragStartedFromIcon = false;
+    }
+}
+
+void CtrlrPanelLayerListItem::setLayer (CtrlrPanelCanvasLayer *_layer)
+{
+    if (_layer == nullptr)
+        return;
+
+    layer = _layer;
+
+    layerName->setText (layer->getProperty(Ids::uiPanelCanvasLayerName), dontSendNotification);
+    layerVisibility->setToggleState (layer->getProperty(Ids::uiPanelCanvasLayerVisibility), sendNotification);
+    
+    // Set the colour, and then call updateLabel() to apply it visually.
+    // Set the colour on the component. The 'false' parameter prevents it from
+    // sending a change message, which is correct for an initialization step.
+    layerColour->setColour (VAR2COLOUR(layer->getProperty(Ids::uiPanelCanvasLayerColour)), false);
+    
+    // This is the crucial line to ensure the component's internal UI is updated
+    // with the color from the layer when the list item is first created or assigned.
+    layerColour->updateLabel();
+    
+    layerIndex->setText (layer->getProperty(Ids::uiPanelCanvasLayerIndex).toString(), dontSendNotification);
+    
+    // Update button states when layer is set
+    updateButtonStates();
+}
+
+void CtrlrPanelLayerListItem::changeListenerCallback (juce::ChangeBroadcaster* source)
+{
+    // First, check that the change message came from the colour editor
+    if (source == layerColour)
+    {
+        if (layer)
+        {
+            // 1. Get the new color from the component and set it in the layer's property.
+            layer->setProperty (Ids::uiPanelCanvasLayerColour, layerColour->getColour().toString());
+
+            // 2. Tell the colour editor component to update its internal text box
+            //    with the new color value and background.
+            layerColour->updateLabel();
+            
+            // 3. Force the parent list item to repaint, which ensures all children
+            //    (including the colour editor) are redrawn correctly.
+            repaint();
+        }
+    }
+}
+
+void CtrlrPanelLayerListItem::setRow(const int _rowIndex)
+{
+	rowIndex = _rowIndex;
+}
+
+void CtrlrPanelLayerListItem::mouseUp(const MouseEvent& e)
+{
+    isDragging = false;
+    dragStartedFromIcon = false;  // Reset the flag
+}
+
+void CtrlrPanelLayerListItem::handleDragIconMouseDown(const MouseEvent& e)
+{
+    if (layer)
+    {
+        // Convert actual layer index to visual row for selection
+        int totalLayers = owner.getNumRows();
+        int visualRow = totalLayers - 1 - rowIndex;
+        owner.setSelectedRow(visualRow);
+
+        // Set up for dragging
+        dragStartPosition = e.getPosition();
+        isDragging = false;
+        dragStartedFromIcon = true;
+    }
+}
+
+void CtrlrPanelLayerListItem::handleDragIconMouseDrag(const MouseEvent& e)
+{
+    if (!layer || !dragStartedFromIcon)
+        return;
+
+    // Start dragging if we've moved far enough from the initial click
+    if (!isDragging && e.getDistanceFromDragStart() > 5)
+    {
+        isDragging = true;
+
+        // Create a drag image of this component
+        Image dragImage = createComponentSnapshot(getLocalBounds());
+
+        // Use the visual row index for drag description
+        int totalLayers = owner.getNumRows();
+        int visualRow = totalLayers - 1 - rowIndex;
+
+        String dragDescription = "layer_item_" + String(visualRow);
+
+        // Find the drag container
+        DragAndDropContainer* dragContainer = DragAndDropContainer::findParentDragContainerFor(this);
+        if (dragContainer)
+        {
+            // Correct the startDragging call with the hotspot parameter
+            // The hotspot is the top-left corner of the drag image,
+            // which will align to the mouse cursor's position.
+            Point<int> hotspot(0, 0); // Not sure if it's working, I don't notice any change with positive values.
+            dragContainer->startDragging(dragDescription, this, dragImage, true, &hotspot, nullptr);
+        }
+    }
+}
+
+void CtrlrPanelLayerListItem::handleDragIconMouseUp(const MouseEvent& e)
+{
+    isDragging = false;
+    dragStartedFromIcon = false;
+}
+
+// DragIconComponent implementation
+DragIconComponent::DragIconComponent(CtrlrPanelLayerListItem* parentItem)
+    : parent(parentItem)
+{
+    setMouseCursor(juce::MouseCursor::DraggingHandCursor);
+    dragDropIcon = SvgIconManager::getSvgString(IconType::DragDropThin);
+}
+
+void DragIconComponent::paint(juce::Graphics& g)
+{
+    if (!dragDropIcon.isEmpty())
+    {
+        auto drawable = SvgIconManager::getDrawable(IconType::DragDropThin, *this);
+        if (drawable)
+        {
+            drawable->drawWithin(g, getLocalBounds().toFloat(), juce::RectanglePlacement::centred, 1.0f);
+        }
+    }
+}
+
+void DragIconComponent::mouseEnter(const MouseEvent&)
+{
+    setMouseCursor(MouseCursor::DraggingHandCursor);
+}
+
+void DragIconComponent::mouseDown(const MouseEvent& e)
+{
+    if (parent)
+    {
+        parent->handleDragIconMouseDown(e.getEventRelativeTo(parent));
+    }
+}
+
+void DragIconComponent::mouseDrag(const MouseEvent& e)
+{
+    if (parent)
+    {
+        parent->handleDragIconMouseDrag(e.getEventRelativeTo(parent));
+    }
+}
+
+void DragIconComponent::mouseUp(const MouseEvent& e)
+{
+    if (parent)
+    {
+        parent->handleDragIconMouseUp(e.getEventRelativeTo(parent));
+    }
+}
