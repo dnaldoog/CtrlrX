@@ -577,10 +577,20 @@ void CtrlrLuaMethodCodeEditor::hideCallTip()
 }
 void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newText, int insertIndex)
 {
-    if (!SharedValues::getAutoCompleteValue().getValue())
-        return; // if disabled in preferences bail out
-    
-    // --- 1. AGGRESSIVE GUARD ---
+    // Use _DBG not DBG  only _DBG routes to DebugView in this project
+    const bool autoCompleteEnabled = ((int)owner.getComponentTree()
+        .getProperty(Ids::luaMethodEditorAutoComplete, 1)) != 0;
+    const bool autoCompleteOpts = ((int)owner.getComponentTree()
+        .getProperty(Ids::luaMethodEditorAutoCompleteOpt, 1)) != 0;
+
+    //_DBG("AUTOCOMPLETE CHECK: property value = " + owner.getComponentTree()
+    //    .getProperty(Ids::luaMethodEditorAutoComplete, -99).toString());
+    //    .getProperty(Ids::luaMethodEditorAutoCompleteOpt, -99).toString());
+
+    if (!autoCompleteEnabled)
+        return;
+
+        // --- 1. AGGRESSIVE GUARD --- (keep only this one, delete the duplicate below)
     if (isReplacingText)
     {
         if (newText != ":" && newText != ".")
@@ -690,6 +700,40 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
     {
         if (separator != ':' && separator != '.')
         {
+    if (!autoCompleteOpts){
+            // If separator is = ( or , we are definitely on the RHS  skip the LHS check
+            bool definitelyRhs = (separator == '=' || separator == '(' || separator == ',');
+
+            if (!definitelyRhs)
+            {
+                // Look back along the line if no bare = before the caret, we're on the LHS
+                juce::String lineUpToCaret = document.getLine(
+                    editorComponent->getCaretPos().getLineNumber())
+                    .substring(0, editorComponent->getCaretPos().getIndexInLine());
+
+                bool hasAssignment = false;
+                for (int i = 0; i < lineUpToCaret.length(); ++i)
+                {
+                    juce::juce_wchar c = lineUpToCaret[i];
+                    if (c == '=')
+                    {
+                        juce::juce_wchar prev = i > 0 ? lineUpToCaret[i - 1] : 0;
+                        juce::juce_wchar next = i < lineUpToCaret.length() - 1 ? lineUpToCaret[i + 1] : 0;
+                        if (prev != '~' && prev != '<' && prev != '>' && prev != '=' && next != '=')
+                        {
+                            hasAssignment = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!hasAssignment)
+                {
+                    if (suggestionPopup) suggestionPopup->setVisible(false);
+                    return;
+                }
+            }
+}
             _DBG("AUTOCOMPLETE: Fetching Global Suggestions for [" + currentWord + "]");
             matches = manager.getGlobalSuggestions(currentWord);
             _DBG("AUTOCOMPLETE: Found " + juce::String((int)matches.size()) + " global matches.");
@@ -1864,27 +1908,15 @@ void CtrlrLuaMethodCodeEditor::toggleLineComment() // Updated v5.6.34
     CodeDocument::Position startPos(document, selection.getStart());
     CodeDocument::Position endPos(document, selection.getEnd());
 
-    // If there is no selection, use the current line
-    if (selection.isEmpty())
-    {
-        startPos = CodeDocument::Position(document, startPos.getLineNumber(), 0);
-        endPos = CodeDocument::Position(document, startPos.getLineNumber() + 1, 0);
-    }
-    else
-    {
-        // Adjust selection to span full lines
-        startPos = CodeDocument::Position(document, startPos.getLineNumber(), 0);
-        
-        // Correctly get the start position of the line after the selection ends
-        endPos = CodeDocument::Position(document, endPos.getLineNumber(), 0);
-        if (endPos.getIndexInLine() != 0)
-        {
-            endPos = CodeDocument::Position(document, endPos.getLineNumber() + 1, 0);
-        }
-    }
-    
     int startLine = startPos.getLineNumber();
     int endLine = endPos.getLineNumber();
+
+    // If the selection ends exactly at the start of a new line, 
+    // don't include that extra line in the operation.
+    if (endLine > startLine && endPos.getIndexInLine() == 0) // fix comments -- including subsequent line
+    {
+        endLine--;
+    }
 
     document.newTransaction();
 

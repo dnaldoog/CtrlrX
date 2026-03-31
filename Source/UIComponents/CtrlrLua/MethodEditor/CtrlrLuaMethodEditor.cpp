@@ -40,7 +40,7 @@ CtrlrLuaMethodEditor::CtrlrLuaMethodEditor (CtrlrPanel &_owner)
 
     addKeyListener (this);
     componentTree.addListener (this);
-    setSize (900, 600); // Update v5.6.31. Note : follows container size 800x500
+    setSize (900, 700); // Update v5.6.31. Note : follows container size 800x500
 }
 
 CtrlrLuaMethodEditor::~CtrlrLuaMethodEditor()
