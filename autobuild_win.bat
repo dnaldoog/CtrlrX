@@ -36,6 +36,7 @@ if errorlevel 1 (
 :: If luajit source is not present (non-LuaJIT branch) this is silently skipped
 ::==============================================================================
 set "LUAJIT_FLAG="
+echo PATH CHECK: "%~dp0Source\Misc\luajit\src\msvcbuild.bat"
 if exist "%~dp0Source\Misc\luajit\src\msvcbuild.bat" (
     set "LUAJIT_FLAG=-DCTRLRX_USE_LUAJIT=ON"
     if not exist "%~dp0Source\Misc\luajit\src\lua51.lib" (
