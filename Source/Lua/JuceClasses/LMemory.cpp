@@ -53,8 +53,8 @@ void LBigInteger::wrapForLua (lua_State *L)
 				.def("toInteger", &BigInteger::toInteger)
 				.def("clear", &BigInteger::clear)
 				.def("clearBit", &BigInteger::clearBit)
-				.def("setBit", (void (BigInteger::*)(int))&BigInteger::setBit)
-				.def("setBit", (void (BigInteger::*)(int,bool))&BigInteger::setBit)
+				.def("setBit", (BigInteger & (BigInteger::*)(int)) & BigInteger::setBit)
+				.def("setBit", (BigInteger & (BigInteger::*)(int, bool)) & BigInteger::setBit)
 				.def("setRange", &BigInteger::setRange)
 				.def("insertBit", &BigInteger::insertBit)
 				.def("getBitRange", &BigInteger::getBitRange)
@@ -542,7 +542,32 @@ void LThread::startThread()
 
 void LThread::startThread(int priority)
 {
-	Thread::startThread(priority);
+#if JUCE_MAJOR_VERSION >= 8
+    auto p = Thread::Priority::normal;
+    if      (priority <= 1) p = Thread::Priority::background;
+    else if (priority <= 3) p = Thread::Priority::low;
+    else if (priority <= 5) p = Thread::Priority::normal;
+    else if (priority <= 8) p = Thread::Priority::high;
+    else                    p = Thread::Priority::highest;
+    Thread::startThread(p);
+#else
+    Thread::startThread(priority);
+#endif
+}
+
+bool LThread::setPriority(int priority)
+{
+#if JUCE_MAJOR_VERSION >= 8
+    auto p = Thread::Priority::normal;
+    if      (priority <= 1) p = Thread::Priority::background;
+    else if (priority <= 3) p = Thread::Priority::low;
+    else if (priority <= 5) p = Thread::Priority::normal;
+    else if (priority <= 8) p = Thread::Priority::high;
+    else                    p = Thread::Priority::highest;
+    return Thread::setPriority(p);
+#else
+    return Thread::setPriority(priority);
+#endif
 }
 
 bool LThread::isThreadRunning()
@@ -565,11 +590,6 @@ bool LThread::waitForThreadToExit(int timeOutMilliseconds) const
 	return (Thread::waitForThreadToExit(timeOutMilliseconds));
 }
 
-bool LThread::setPriority(int priority)
-{
-	return (Thread::setPriority(priority));
-}
-
 void LThread::setAffinityMask(int affMask)
 {
 	Thread::setAffinityMask(affMask);
@@ -585,11 +605,15 @@ void LThread::notify() const
 	Thread::notify();
 }
 
-int LThread::getThreadId() const noexcept
-{
-    int *id = static_cast<int*>(Thread::getThreadId());
+// int LThread::getThreadId() const noexcept
+// {
+    // int *id = static_cast<int*>(Thread::getThreadId());
 
-	return (*id);
+	// return (*id);
+// }
+int LThread::getThreadId() const noexcept // JUCE 8
+{
+    return (int)(intptr_t)Thread::getThreadId();
 }
 
 const String &LThread::getThreadName() const
@@ -612,7 +636,7 @@ void LThread::wrapForLua (lua_State *L)
 			.def("signalThreadShouldExit", &LThread::signalThreadShouldExit)
 			.def("threadShoudExit", &LThread::threadShoudExit)
 			.def("waitForThreadToExit", &LThread::waitForThreadToExit)
-			.def("setPriority", (void (LThread::*)(int))&LThread::setPriority)
+			.def("setPriority", (bool (LThread::*)(int))&LThread::setPriority)
 			.def("setAffinityMask", &LThread::setAffinityMask)
 			.def("wait", &LThread::wait)
 			.def("notify", &LThread::notify)
