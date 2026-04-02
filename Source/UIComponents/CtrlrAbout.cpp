@@ -4,6 +4,14 @@
 #include "CtrlrRevision.h"
 #include "CtrlrPanel/CtrlrPanel.h"
 #include "CtrlrInlineUtilitiesGUI.h"
+extern "C" {
+#include "lua.h"
+#include "lualib.h"
+#include "lauxlib.h"
+#ifdef CTRLRX_USE_LUAJIT
+#include "luajit.h"
+#endif
+}
 
 CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
     : owner(_owner)
@@ -44,7 +52,12 @@ CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
     
     // CtrlrX libs version Label
     String juceVersion = SystemStats::getJUCEVersion().fromLastOccurrenceOf("JUCE v", false, true);
-    String luaVersion = LUA_RELEASE;
+    #ifdef LUAJIT_VERSION
+    String luaVersion = String(LUAJIT_VERSION);  // e.g. "LuaJIT 2.1.0-beta3"
+    #else
+    String luaVersion = LUA_RELEASE;             // fallback to standard Lua
+    #endif
+
     String luabindVersion = _STR(LUABIND_VERSION / 1000) + "." + _STR(LUABIND_VERSION / 100 % 100) + "." + _STR(LUABIND_VERSION % 100);
     String boostVersion = _STR(BOOST_VERSION / 100000) + "." + _STR((BOOST_VERSION / 100) % 1000) + "." + _STR(BOOST_VERSION % 100);
     String buildDetails = "JUCE " + juceVersion + " | " + luaVersion + " | LuaBind " + luabindVersion + " | Boost " + boostVersion;

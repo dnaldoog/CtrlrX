@@ -37,7 +37,7 @@ class LMemoryBlock : public MemoryBlock
 		double getSize() const noexcept;
 		void toLuaTable (luabind::object tableToWriteTo);
 		static LMemoryBlock fromLuaTable (luabind::object const& table);
-		static LMemoryBlock createWithSize(int size); // Added v5.6.35. Thanks to @dnaldoog
+		//static LMemoryBlock createWithSize(int size); // Added v5.6.35. Thanks to @dnaldoog
 		static void wrapForLua (lua_State *L);
 		LMemoryBlock compressZlib();
 		LMemoryBlock decompressZlib();
@@ -48,6 +48,9 @@ class LMemoryBlock : public MemoryBlock
 		static LMemoryBlock fromLuaString(luabind::object const& self, const juce::String& strData);
 		static LMemoryBlock fromLuaBinaryString(luabind::object const& luaString);
 		static LMemoryBlock fromLuaStringToAscii(const juce::String& strData);
+		uintptr_t getRawAddress() const noexcept { // LuaJit
+			return reinterpret_cast<uintptr_t>(MemoryBlock::getData());
+		}
 };
 
 #endif
