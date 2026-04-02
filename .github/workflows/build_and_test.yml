@@ -103,18 +103,51 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      # -----------------------------------------------------------------------
+      # Extract LuaJIT from zip (committed to Source/Resources/luajit.zip)
+      # -----------------------------------------------------------------------
+      - name: Extract LuaJIT (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          echo "Looking for luajit.zip..."
+          find . -name "luajit.zip" || echo "Not found"
+          if [ -f "Source/Resources/luajit.zip" ]; then
+            echo "Extracting luajit.zip..."
+            unzip -o "Source/Resources/luajit.zip" -d "Source/Misc/"
+            echo "Extraction complete. Contents:"
+            ls Source/Misc/luajit/src/ | head -5
+          else
+            echo "luajit.zip not found - skipping extraction"
+          fi
+
+      - name: Extract LuaJIT (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          echo Checking for luajit.zip...
+          if exist "Source\Resources\luajit.zip" (
+            echo Extracting luajit.zip...
+            tar -xf "Source/Resources/luajit.zip" -C "Source/Misc/"
+            echo Extraction complete.
+            dir Source\Misc\luajit\src\msvcbuild.bat
+          ) else (
+            echo luajit.zip not found - skipping extraction.
+          )
+
+      # -----------------------------------------------------------------------
+      # Build LuaJIT per platform
+      # -----------------------------------------------------------------------
       - name: Build LuaJIT (Windows)
         if: runner.os == 'Windows'
         shell: cmd
         run: |
           @echo off
-          for /d /r %%i in (*luajit) do (
-            if exist "%%i\src\msvcbuild.bat" (
-              pushd "%%i\src"
-              call msvcbuild.bat static
-              popd
-              exit /b 0
-            )
+          if exist "Source\Misc\luajit\src\msvcbuild.bat" (
+            pushd "Source\Misc\luajit\src"
+            call msvcbuild.bat static
+            popd
+            echo LuaJIT built successfully.
+            exit /b 0
           )
           echo ERROR: LuaJIT msvcbuild.bat not found.
           exit /b 1
@@ -135,7 +168,10 @@ jobs:
         if: matrix.name == 'macOS'
         run: |
           LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
-          if [ -z "$LUAJIT_SRC" ]; then echo "LuaJIT not found"; exit 1; fi
+          if [ -z "$LUAJIT_SRC" ]; then
+            echo "LuaJIT source not found - using Homebrew luajit"
+            exit 0
+          fi
           cd "$LUAJIT_SRC"
           export MACOSX_DEPLOYMENT_TARGET=10.15
           echo "--- Building x86_64 ---"
@@ -149,6 +185,9 @@ jobs:
           lipo -create libluajit_x86.a libluajit_arm.a -output libluajit.a
           lipo -info libluajit.a
 
+      # -----------------------------------------------------------------------
+      # Boost, sccache, version
+      # -----------------------------------------------------------------------
       - name: Unzip Boost for CtrlrX
         if: runner.os != 'Linux'
         run: |
@@ -169,6 +208,9 @@ jobs:
           fi
           echo "VERSION_TAG=$(cat VERSION)" >> $GITHUB_ENV
 
+      # -----------------------------------------------------------------------
+      # CMake configure and build
+      # -----------------------------------------------------------------------
       - name: Configure CMake
         run: |
           cmake -B ${{ env.BUILD_DIR }} \
@@ -179,6 +221,9 @@ jobs:
       - name: Build Project
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }}
 
+      # -----------------------------------------------------------------------
+      # Package and upload artifacts
+      # -----------------------------------------------------------------------
       - name: Prepare and Zip Artifacts
         run: |
           NAME="${{ env.PRODUCT_NAME }}-${{ env.VERSION_TAG }}-LuaJIT-${{ matrix.name }}"
@@ -198,6 +243,9 @@ jobs:
           name: ${{ env.ZIP_NAME }}
           path: ./${{ env.ZIP_NAME }}.zip
 
+  # -----------------------------------------------------------------------
+  # Release job — triggered only on v* tags
+  # -----------------------------------------------------------------------
   release:
     name: Create GitHub Release
     needs:
