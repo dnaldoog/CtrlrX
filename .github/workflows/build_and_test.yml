@@ -102,7 +102,13 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-
+      - name: Debug - Find luajit.zip
+        run: |
+          find . -name "luajit.zip" 2>/dev/null
+          echo "---"
+          ls Source/Resources/ 2>/dev/null || echo "Resources folder not found"
+          echo "---"
+          ls Source/ 2>/dev/null
       # -----------------------------------------------------------------------
       # Extract LuaJIT from zip (committed to Source/Resources/luajit.zip)
       # -----------------------------------------------------------------------
