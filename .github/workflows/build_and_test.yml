@@ -123,7 +123,10 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
-          if [ -z "$LUAJIT_SRC" ]; then echo "LuaJIT not found, using system"; exit 0; fi
+          if [ -z "$LUAJIT_SRC" ]; then
+            echo "LuaJIT source not found - using system libluajit-5.1-dev"
+            exit 0
+          fi
           cd "$LUAJIT_SRC"
           make clean
           make -j$(nproc) XCFLAGS="-fPIC"
