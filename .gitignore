@@ -104,3 +104,7 @@ Source/Misc/vst2sdk/
 Builds/MacOSX/build/Release/libCtrlrX.a
 Builds/MacOSX/CtrlrX.xcodeproj/project.xcworkspace/xcuserdata/DYREC.xcuserdatad/UserInterfaceState.xcuserstate
 Source/Core/CtrlrRevision.h
+build/
+Builds/
+out/
+.vs/
