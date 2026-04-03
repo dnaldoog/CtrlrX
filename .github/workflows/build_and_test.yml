@@ -10,7 +10,7 @@ on:
         default: false
   push:
     branches:
-      - '**'
+      - main
     tags:
       - v*
   pull_request: null
@@ -72,7 +72,7 @@ jobs:
         run: >
           sudo apt-get update
 
-          sudo apt install -y libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype6-dev libglu1-mesa-dev xvfb ninja-build binutils-dev libboost-dev libcurl4-gnutls-dev libgl1-mesa-dev libglapi-mesa libiberty-dev libsframe1 libudev-dev libxcursor-dev libxrandr-dev xorg-dev
+          sudo apt install -y libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype6-dev libglu1-mesa-dev xvfb libgtk-3-dev libwebkit2gtk-4.1-dev ninja-build binutils-dev libboost-dev libcurl4-gnutls-dev libgl1-mesa-dev libglapi-mesa libiberty-dev libsframe1 libudev-dev libxcursor-dev libxrandr-dev xorg-dev
 
           sudo /usr/bin/Xvfb $DISPLAY &
       - name: Install Windows System Deps
@@ -90,17 +90,6 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-      - name: Extract LuaJIT (Windows)
-        if: runner.os == 'Windows'
-        shell: cmd
-        run: |
-          if exist "Source\Resources\luajit.zip" (
-            tar -xf "Source/Resources/luajit.zip" -C "Source/Misc/"
-            echo LuaJIT extracted successfully.
-          ) else (
-            echo luajit.zip not found - skipping extraction.
-          )
-
       - name: Build LuaJIT (Windows)
         if: runner.os == 'Windows'
         shell: cmd
@@ -116,30 +105,6 @@ jobs:
           )
           echo ERROR: LuaJIT msvcbuild.bat not found.
           exit /b 1
-      - name: Build LuaJIT (Windows)
-        if: runner.os == 'Windows'
-        shell: cmd
-        run: |
-          @echo off
-          for /d /r %%i in (*luajit) do (
-            if exist "%%i\src\msvcbuild.bat" (
-              pushd "%%i\src"
-              call msvcbuild.bat static
-              popd
-              exit /b 0
-            )
-          )
-          echo ERROR: LuaJIT msvcbuild.bat not found.
-          exit /b 1
-      - name: Extract LuaJIT (Linux/macOS)
-        if: runner.os != 'Windows'
-        run: |
-          if [ -f "Source/Resources/luajit.zip" ]; then
-            unzip -o "Source/Resources/luajit.zip" -d "Source/Misc/"
-            echo "LuaJIT extracted successfully."
-          else
-            echo "luajit.zip not found - skipping extraction."
-          fi
       - name: Build LuaJIT (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -200,9 +165,13 @@ jobs:
           echo "VERSION_TAG=$(cat VERSION)" >> $GITHUB_ENV
       - name: Configure CMake
         run: |
+        # If on macOS, we point directly to the luajit we just built
+          if [ "${{ matrix.name }}" == "macOS" ]; then
+            LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
+            EXTRA_OPTS="-DCTRLRX_USE_LUAJIT=ON -DLUAJIT_LIBRARY=$PWD/$LUAJIT_SRC/libluajit.a -DLUAJIT_INCLUDE_DIR=$PWD/$LUAJIT_SRC"
+          fi
           cmake -B ${{ env.BUILD_DIR }} \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-                -DCTRLRX_USE_LUAJIT=ON \
                 ${{ matrix.extra-flags }}
       - name: Build Project
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }}
