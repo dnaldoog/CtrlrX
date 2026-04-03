@@ -10,7 +10,7 @@ on:
         default: false
   push:
     branches:
-      - main
+      - '**'
     tags:
       - v*
   pull_request: null
@@ -202,6 +202,7 @@ jobs:
         run: |
           cmake -B ${{ env.BUILD_DIR }} \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+                -DCTRLRX_USE_LUAJIT=ON \
                 ${{ matrix.extra-flags }}
       - name: Build Project
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }}
