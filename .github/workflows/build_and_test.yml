@@ -161,11 +161,9 @@ jobs:
           if [ -n "$JUCER" ]; then
             sed -n 's/.*version="\([^"]*\)".*/\1/p' "$JUCER" | head -n 1 > VERSION
           fi
-
           echo "VERSION_TAG=$(cat VERSION)" >> $GITHUB_ENV
       - name: Configure CMake
         run: |
-        # If on macOS, we point directly to the luajit we just built
           if [ "${{ matrix.name }}" == "macOS" ]; then
             LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
             EXTRA_OPTS="-DCTRLRX_USE_LUAJIT=ON -DLUAJIT_LIBRARY=$PWD/$LUAJIT_SRC/libluajit.a -DLUAJIT_INCLUDE_DIR=$PWD/$LUAJIT_SRC"
