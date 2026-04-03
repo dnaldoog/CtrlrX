@@ -1,42 +1,34 @@
 cmake_minimum_required(VERSION 3.25)
 #To build with LuaJIT: cmake -B build -DCTRLRX_USE_LUAJIT=ON
 #To build without (default): cmake -B build
-#Check whther you have Ninja installed and available in PATH, as it will speed up the build significantly. 
-#If not, you can install it via your system package manager or from https://ninja-build.org/. 
-#On Windows, you can also install it via winget:
-#ninja --version
-#winget install -e --id Ninja-build.Ninja
-#cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCTRLRX_USE_LUAJIT=ON ..
-#cmake --build build
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.31.0") 
   cmake_policy(SET CMP0175 NEW)
 endif()
 
-# This tells cmake we have goodies in the /cmake folder
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-include (PamplejuceVersion)
+include(PamplejuceVersion)
 
-# CPM is only needed for optional targets (tests/benchmarks) and should not
-# be required for normal local/package builds that rely on system libs.
 option(CTRLRX_ENABLE_CPM "Enable CPM-based optional dependencies" OFF)
-option(CTRLRX_USE_LUAJIT "Build with LuaJIT instead of standard Lua" OFF)  # <-- NEW
+option(CTRLRX_USE_LUAJIT "Build with LuaJIT instead of standard Lua" OFF)
+option(CTRLRX_COPY_PLUGIN_AFTER_BUILD "Copy plugin artefacts to user/system plugin folders after build" OFF)
+
 if(CTRLRX_ENABLE_CPM)
-    include (CPM)
+    include(CPM)
 endif()
 
-# Configures universal binaries and decides which version of macOS to support
 include(PamplejuceMacOS)
-
-# Couple tweaks that IMO should be JUCE defaults
 include(JUCEDefaults)
 
 if(UNIX AND NOT APPLE)
     set(LINUX TRUE)
 endif()
 
+# -----------------------------------------------------------------------
+# Project identity
+# -----------------------------------------------------------------------
 set(BASE_ID_NAME "CtrlrX")
 set(PROJECT_NAME "${BASE_ID_NAME}")
-set(CMAKE_CXX_STANDARD 14) # the lua bindings prevent newer C++ standard usage.
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(PLUGIN_DISPLAY_NAME "CtrlrX")
@@ -44,28 +36,58 @@ set(PRODUCT_NAME "CtrlrX")
 set(COMPANY_NAME "CtrlrX Project")
 set(BUNDLE_ID "com.${BASE_ID_NAME}.${PROJECT_NAME}")
 set(FORMATS Standalone AU VST3)
-option(CTRLRX_COPY_PLUGIN_AFTER_BUILD "Copy plugin artefacts to user/system plugin folders after build" OFF)
 
 project(${PROJECT_NAME} VERSION ${CURRENT_VERSION})
 
-# JUCE is setup as a submodule in the /JUCE folder
+# -----------------------------------------------------------------------
+# Linux: find system packages early so JUCE can see them
+# -----------------------------------------------------------------------
+if(LINUX)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(libudev REQUIRED libudev)
+    pkg_check_modules(x11 REQUIRED x11)
+    pkg_check_modules(zlib REQUIRED zlib)
+    pkg_check_modules(gtk3 REQUIRED gtk+-x11-3.0)
+    pkg_check_modules(webkit REQUIRED webkit2gtk-4.1)
+
+    message(STATUS "libudev version: ${libudev_VERSION}")
+    message(STATUS "libX11 version: ${x11_VERSION}")
+    message(STATUS "libz version: ${zlib_VERSION}")
+
+    include_directories(SYSTEM
+        ${gtk3_INCLUDE_DIRS}
+        ${webkit_INCLUDE_DIRS}
+        ${x11_INCLUDE_DIRS}
+    )
+    set(JUCE_USE_WEBKIT_4_1 ON CACHE INTERNAL "")
+endif()
+
+# -----------------------------------------------------------------------
+# JUCE subdirectory
+# -----------------------------------------------------------------------
 add_subdirectory(JUCE)
 
-# <-- NEW: Only add LuaJIT subdirectory if requested
+# -----------------------------------------------------------------------
+# LuaJIT subdirectory (only if requested)
+# -----------------------------------------------------------------------
 if(CTRLRX_USE_LUAJIT)
     add_subdirectory(Source/Misc/luajit)
 endif()
 
-# ---------------------------------------------------
-if ("VST" IN_LIST FORMATS)
+# -----------------------------------------------------------------------
+# Optional SDK paths
+# -----------------------------------------------------------------------
+if("VST" IN_LIST FORMATS)
     juce_set_vst2_sdk_path("${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/vst2sdk")
 endif()
 
-if ("AAX" IN_LIST FORMATS)
+if("AAX" IN_LIST FORMATS)
     juce_set_aax_sdk_path("${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/aax-sdk-2-8-1")
 endif()
-# ---------------------------------------------------
 
+# -----------------------------------------------------------------------
+# JUCE plugin target
+# -----------------------------------------------------------------------
 juce_add_plugin("${PROJECT_NAME}"
     ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resources/Icons/ctrlrx_logo.svg"
     PLUGIN_NAME "${PLUGIN_DISPLAY_NAME}"
@@ -83,14 +105,17 @@ juce_add_plugin("${PROJECT_NAME}"
     PRODUCT_NAME "${PRODUCT_NAME}"
 )
 
-if ("VST3" IN_LIST FORMATS)
+# -----------------------------------------------------------------------
+# Format-specific overrides
+# -----------------------------------------------------------------------
+if("VST3" IN_LIST FORMATS)
     set_target_properties(${PROJECT_NAME} PROPERTIES
         JUCE_PLUGIN_NAME "CtrlrX                          "
         JUCE_COMPANY_NAME "CtrlrX Project                  "
     )
 endif()
 
-if ("AU" IN_LIST FORMATS)
+if("AU" IN_LIST FORMATS)
     set_target_properties(${PROJECT_NAME} PROPERTIES
         JUCE_AU_MAIN_TYPE kAudioUnitType_MusicDevice
         JUCE_PLUGIN_NAME "CtrlrX                          "
@@ -98,34 +123,52 @@ if ("AU" IN_LIST FORMATS)
     )
 endif()
 
+# -----------------------------------------------------------------------
+# SharedCode interface library
+# -----------------------------------------------------------------------
 add_library(SharedCode INTERFACE)
 include(SharedCodeDefaults)
 
+# FIX: Disable optimization for the crashing LuaBind file in Release builds
 set_source_files_properties(
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind/src/object_rep.cpp"
     PROPERTIES COMPILE_FLAGS "-O0"
 )
 
+# -----------------------------------------------------------------------
+# Source files
+# -----------------------------------------------------------------------
 file(GLOB_RECURSE SourceFiles CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind/*.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind/*.c" "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/libusb/src/*.c" "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/libusb/src/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/*.c*" "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/*.h*"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Lua/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/Source/Lua/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/MIDI/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/Source/MIDI/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Native/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/Source/Native/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Plugin/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/Source/Plugin/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/UIComponents/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/Source/UIComponents/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind/*.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind/*.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/libusb/src/*.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/libusb/src/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/*.c*"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/*.h*"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Lua/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Lua/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/MIDI/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/MIDI/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Native/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Native/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Plugin/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Plugin/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/UIComponents/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/UIComponents/*.h"
 )
 
-if (NOT LINUX)
+# Exclude Linux-only files on non-Linux platforms
+if(NOT LINUX)
     list(FILTER SourceFiles EXCLUDE REGEX "CtrlrLinux\\.cpp$")
     list(FILTER SourceFiles EXCLUDE REGEX "CtrlrLinux\\.h$")
 endif()
 
-# <-- NEW: Exclude luajit sources from glob — always linked as lib, never compiled directly
-# Only exclude lua/src when using LuaJIT — standard Lua needs these files compiled directly
+# When using LuaJIT: exclude luajit sources (linked as lib) and old lua/src
+# When NOT using LuaJIT: lua/src is compiled directly as before
 if(CTRLRX_USE_LUAJIT)
     list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Misc/luajit/.*")
     list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Misc/lua/src/.*")
@@ -133,10 +176,13 @@ endif()
 list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Misc/luabind/(examples|build[^/]*|test|tests)/.*")
 list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Lua/Deprecated/CtrlrLuaFile\\.cpp$")
 
+# -----------------------------------------------------------------------
+# SharedCode: sources, includes, compile options, definitions
+# -----------------------------------------------------------------------
 target_sources(SharedCode INTERFACE ${SourceFiles})
 
 target_include_directories(SharedCode INTERFACE
-    # <-- NEW: LuaJIT MUST come before lua/include so its headers win when enabled
+    # LuaJIT MUST come before lua/include so its headers win when enabled
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc"
@@ -160,31 +206,36 @@ target_include_directories(SharedCode INTERFACE
 )
 
 if(UNIX)
-target_compile_options(SharedCode INTERFACE
-    -w -Wno-implicit-fallthrough -Wno-maybe-uninitialized -Wno-missing-field-initializers -Wno-free-nonheap-object)
+    target_compile_options(SharedCode INTERFACE
+        -w -Wno-implicit-fallthrough -Wno-maybe-uninitialized
+        -Wno-missing-field-initializers -Wno-free-nonheap-object)
 endif()
 
-include(Assets)
-include(XcodePrettify)
-
-target_compile_definitions(SharedCode
-    INTERFACE
+target_compile_definitions(SharedCode INTERFACE
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_VST3_CAN_REPLACE_VST2=0
     JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1
+    JUCE_MODAL_LOOPS_PERMITTED=1
     JUCE_DISPLAY_SPLASH_SCREEN=0
     BOOST_BIND_GLOBAL_PLACEHOLDERS=1
-    JUCE_MODAL_LOOPS_PERMITTED=1
     CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
     VERSION="${CURRENT_VERSION}"
+    $<$<PLATFORM_ID:Linux>:_GLIBCXX_USE_DEPRECATED=1>
     $<$<CXX_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>
-    # <-- NEW: Tell the code whether LuaJIT is active
     $<$<BOOL:${CTRLRX_USE_LUAJIT}>:CTRLRX_USE_LUAJIT=1>
 )
 
-target_link_libraries(SharedCode
-    INTERFACE
+# -----------------------------------------------------------------------
+# Assets + Xcode prettify
+# -----------------------------------------------------------------------
+include(Assets)
+include(XcodePrettify)
+
+# -----------------------------------------------------------------------
+# SharedCode: link JUCE libraries (all platforms)
+# -----------------------------------------------------------------------
+target_link_libraries(SharedCode INTERFACE
     Assets
     juce_audio_basics
     juce_audio_devices
@@ -202,27 +253,30 @@ target_link_libraries(SharedCode
     juce_product_unlocking
     juce::juce_recommended_config_flags
     juce::juce_recommended_lto_flags
-    juce::juce_recommended_warning_flags)
+    juce::juce_recommended_warning_flags
+)
 
+# -----------------------------------------------------------------------
+# Linux-only system libraries
+# -----------------------------------------------------------------------
 if(LINUX)
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(libudev REQUIRED libudev)
-    pkg_check_modules(x11 REQUIRED x11)
-    pkg_check_modules(zlib REQUIRED zlib)
-
-    message(STATUS "libudev version: ${libudev_VERSION}")
-    message(STATUS "libX11 version: ${x11_VERSION}")
-    message(STATUS "libz version: ${zlib_VERSION}")
-
-    target_link_libraries(SharedCode
-        INTERFACE
+    target_link_libraries(SharedCode INTERFACE
         ${libudev_LIBRARIES}
         ${zlib_LIBRARIES}
         ${x11_LIBRARIES}
+        ${gtk3_LIBRARIES}
+        ${webkit_LIBRARIES}
+        dl
     )
 endif()
 
-# <-- NEW: Link LuaJIT if enabled, otherwise link SharedCode only as before
+# -----------------------------------------------------------------------
+# Final plugin target linking
+# LuaJIT linked by platform-specific method.
+# Linux uses system libluajit via pkg-config (found in Source/Misc/luajit/CMakeLists.txt)
+# macOS uses locally built universal binary
+# Windows uses pre-built lua51.lib — see LUAJIT_BUILD.md
+# -----------------------------------------------------------------------
 if(CTRLRX_USE_LUAJIT)
     if(WIN32)
         target_link_libraries("${PROJECT_NAME}" PRIVATE
@@ -235,6 +289,7 @@ if(CTRLRX_USE_LUAJIT)
             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/libluajit.a"
         )
     else()
+        # Linux: libluajit provided by Source/Misc/luajit/CMakeLists.txt via pkg-config
         target_link_libraries("${PROJECT_NAME}" PRIVATE
             SharedCode
             libluajit
@@ -244,6 +299,9 @@ else()
     target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
 endif()
 
+# -----------------------------------------------------------------------
+# IPP support (comment out to disable)
+# -----------------------------------------------------------------------
 include(PamplejuceIPP)
 
 #include(Tests)
