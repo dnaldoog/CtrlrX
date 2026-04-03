@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
-#To build with LuaJIT: cmake -B build -DCTRLRX_USE_LUAJIT=ON
-#To build without (default): cmake -B build
+
+# To build with LuaJIT: cmake -B build -DCTRLRX_USE_LUAJIT=ON
+# To build without (default): cmake -B build
+
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.31.0") 
   cmake_policy(SET CMP0175 NEW)
 endif()
@@ -71,7 +73,10 @@ add_subdirectory(JUCE)
 # LuaJIT subdirectory (only if requested)
 # -----------------------------------------------------------------------
 if(CTRLRX_USE_LUAJIT)
-    add_subdirectory(Source/Misc/luajit)
+    # Note: We only add this if we aren't providing a manual library path
+    if(NOT LUAJIT_LIBRARY)
+        add_subdirectory(Source/Misc/luajit)
+    endif()
 endif()
 
 # -----------------------------------------------------------------------
@@ -110,16 +115,16 @@ juce_add_plugin("${PROJECT_NAME}"
 # -----------------------------------------------------------------------
 if("VST3" IN_LIST FORMATS)
     set_target_properties(${PROJECT_NAME} PROPERTIES
-        JUCE_PLUGIN_NAME "CtrlrX                          "
-        JUCE_COMPANY_NAME "CtrlrX Project                  "
+        JUCE_PLUGIN_NAME "CtrlrX                           "
+        JUCE_COMPANY_NAME "CtrlrX Project                   "
     )
 endif()
 
 if("AU" IN_LIST FORMATS)
     set_target_properties(${PROJECT_NAME} PROPERTIES
         JUCE_AU_MAIN_TYPE kAudioUnitType_MusicDevice
-        JUCE_PLUGIN_NAME "CtrlrX                          "
-        JUCE_COMPANY_NAME "CtrlrX Project                  "
+        JUCE_PLUGIN_NAME "CtrlrX                           "
+        JUCE_COMPANY_NAME "CtrlrX Project                   "
     )
 endif()
 
@@ -168,7 +173,6 @@ if(NOT LINUX)
 endif()
 
 # When using LuaJIT: exclude luajit sources (linked as lib) and old lua/src
-# When NOT using LuaJIT: lua/src is compiled directly as before
 if(CTRLRX_USE_LUAJIT)
     list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Misc/luajit/.*")
     list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Misc/lua/src/.*")
@@ -182,7 +186,8 @@ list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Lua/Deprecated/CtrlrLuaFile\\.c
 target_sources(SharedCode INTERFACE ${SourceFiles})
 
 target_include_directories(SharedCode INTERFACE
-    # LuaJIT MUST come before lua/include so its headers win when enabled
+    # Manual Include Dir from GitHub Actions if available
+    "${LUAJIT_INCLUDE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc"
@@ -272,39 +277,41 @@ endif()
 
 # -----------------------------------------------------------------------
 # Final plugin target linking
-# LuaJIT linked by platform-specific method.
-# Linux uses system libluajit via pkg-config (found in Source/Misc/luajit/CMakeLists.txt)
-# macOS uses locally built universal binary
-# Windows uses pre-built lua51.lib — see LUAJIT_BUILD.md
 # -----------------------------------------------------------------------
 if(CTRLRX_USE_LUAJIT)
-    if(WIN32)
+    # Priority 1: GitHub Actions manual path
+    if(LUAJIT_LIBRARY)
+        message(STATUS "Linking LuaJIT via GitHub Action path: ${LUAJIT_LIBRARY}")
+        target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode "${LUAJIT_LIBRARY}")
+    
+    # Priority 2: Windows default
+    elseif(WIN32)
         target_link_libraries("${PROJECT_NAME}" PRIVATE
             SharedCode
             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/lua51.lib"
         )
+    
+    # Priority 3: macOS default
     elseif(APPLE)
         target_link_libraries("${PROJECT_NAME}" PRIVATE
             SharedCode
             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/libluajit.a"
         )
+    
+    # Priority 4: Linux system (using pkg-config)
     else()
-        # Linux: libluajit provided by Source/Misc/luajit/CMakeLists.txt via pkg-config
-        target_link_libraries("${PROJECT_NAME}" PRIVATE
-            SharedCode
-            libluajit
-        )
+        find_package(PkgConfig REQUIRED)
+        pkg_check_modules(luajit REQUIRED luajit)
+        target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode ${luajit_LIBRARIES})
+        target_include_directories(SharedCode INTERFACE ${luajit_INCLUDE_DIRS})
     endif()
 else()
     target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
 endif()
 
 # -----------------------------------------------------------------------
-# IPP support (comment out to disable)
+# IPP support
 # -----------------------------------------------------------------------
 include(PamplejuceIPP)
-
-#include(Tests)
-#include(Benchmarks)
 
 include(GitHubENV)
