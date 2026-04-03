@@ -108,11 +108,14 @@ jobs:
       - name: Build LuaJIT (Linux)
         if: runner.os == 'Linux'
         run: |
-          LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
-          if [ -z "$LUAJIT_SRC" ]; then echo "LuaJIT not found"; exit 1; fi
-          cd "$LUAJIT_SRC"
-          make clean
-          make -j$(nproc) XCFLAGS="-fPIC"
+         LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
+         if [ -z "$LUAJIT_SRC" ]; then
+          echo "LuaJIT not found"
+          exit 1
+         fi
+         cd "$LUAJIT_SRC"
+         make clean
+         make -j$(nproc) XCFLAGS="-fPIC"
       - name: Build Universal LuaJIT (macOS)
         if: matrix.name == 'macOS'
         run: >
