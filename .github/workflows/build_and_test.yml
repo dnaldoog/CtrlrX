@@ -82,7 +82,7 @@ jobs:
             binutils-dev libboost-dev libcurl4-gnutls-dev libgl1-mesa-dev \
             libglapi-mesa libiberty-dev libsframe1 libudev-dev \
             libxcursor-dev libxrandr-dev xorg-dev \
-            libgtk-3-dev libwebkit2gtk-4.1-dev libluajit-5.1-dev
+            libgtk-3-dev libwebkit2gtk-4.1-dev libluajit-5.1-dev unzip
           sudo /usr/bin/Xvfb $DISPLAY &
 
       - name: Install Windows System Deps
@@ -102,25 +102,18 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-      - name: Debug - Find luajit.zip
-        run: |
-          find . -name "luajit.zip" 2>/dev/null
-          echo "---"
-          ls Source/Resources/ 2>/dev/null || echo "Resources folder not found"
-          echo "---"
-          ls Source/ 2>/dev/null
+
       # -----------------------------------------------------------------------
       # Extract LuaJIT from zip (committed to Source/Resources/luajit.zip)
       # -----------------------------------------------------------------------
       - name: Extract LuaJIT (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
-          echo "Looking for luajit.zip..."
-          find . -name "luajit.zip" || echo "Not found"
-          if [ -f "Source/Resources/luajit.zip" ]; then
-            echo "Extracting luajit.zip..."
-            unzip -o "Source/Resources/luajit.zip" -d "Source/Misc/"
-            echo "Extraction complete. Contents:"
+          ZIP=$(find . -name "luajit.zip" | head -n 1)
+          if [ -n "$ZIP" ]; then
+            echo "Found zip at: $ZIP"
+            unzip -o "$ZIP" -d "Source/Misc/"
+            echo "Extraction complete."
             ls Source/Misc/luajit/src/ | head -5
           else
             echo "luajit.zip not found - skipping extraction"
@@ -128,17 +121,23 @@ jobs:
 
       - name: Extract LuaJIT (Windows)
         if: runner.os == 'Windows'
-        shell: cmd
+        shell: pwsh
         run: |
-          echo Checking for luajit.zip...
-          if exist "Source\Resources\luajit.zip" (
-            echo Extracting luajit.zip...
-            tar -xf "Source/Resources/luajit.zip" -C "Source/Misc/"
-            echo Extraction complete.
-            dir Source\Misc\luajit\src\msvcbuild.bat
-          ) else (
-            echo luajit.zip not found - skipping extraction.
-          )
+          $zip = Get-ChildItem -Recurse -Filter "luajit.zip" | Select-Object -First 1
+          if ($zip) {
+            Write-Host "Found zip at: $($zip.FullName)"
+            Expand-Archive -Path $zip.FullName -DestinationPath "Source/Misc/" -Force
+            Write-Host "Extraction complete."
+            if (Test-Path "Source/Misc/luajit/src/msvcbuild.bat") {
+              Write-Host "msvcbuild.bat found - ready to build"
+            } else {
+              Write-Host "WARNING: msvcbuild.bat not found after extraction"
+              exit 1
+            }
+          } else {
+            Write-Host "luajit.zip not found - cannot build LuaJIT"
+            exit 1
+          }
 
       # -----------------------------------------------------------------------
       # Build LuaJIT per platform
