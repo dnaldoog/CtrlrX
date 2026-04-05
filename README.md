@@ -1,4 +1,4 @@
-![alt text](/Source/Resources/Icons/CtrlrX-README-250x315.png?raw=true "CtrlrX")
+![alt text](/Source/Resources/Icons/CtrlrX-README-250x315-02.png?raw=true "CtrlrX")
 
 
 
@@ -60,7 +60,7 @@ Ctrlr allows you to control any MIDI-enabled hardware: synthesizers, drum machin
 
 Development and maintenance of [CtrlrX](https://github.com/damiensellier/CtrlrX) are supported by the community. If you find this project useful and would like to support [Damien Sellier](https://github.com/DamienSellier/), the main person behind [CtrlrX](https://github.com/damiensellier/CtrlrX), any donations are greatly appreciated.
 
-You can donate via PayPal using this link: **[paypal.me/damiensellier/10](https://paypal.me/damiensellier/10)**
+You can donate via PayPal using this link: **[https://ko-fi.com/damiensellier](https://ko-fi.com/damiensellier)**
 
 ---
 
@@ -486,7 +486,7 @@ Tuturial coming soon.
 
 ## Changelog
 
-#### Version 5.6.35 | 2026.03.17
+#### Version 5.6.35 | 2026.04.05
 
 * **UPDATED** ctrlrAutoSave & ctrlrAutoSaveInterval properties in Preferences only if isStandaloneApp. `CtrlrManager.cpp`, `CtrlrManagerInstance.cpp`, `CtrlrSettings.cpp`
 * **UPDATED** flag IS_MIDI_EFFECT FALSE. `CMakeLists.txt`
