@@ -634,6 +634,7 @@
           <FILE id="OOpHQ2" name="FONT_ZX81.ttf" compile="0" resource="1" file="Source/Resources/Fonts/FONT_ZX81.ttf"/>
         </GROUP>
         <GROUP id="{57CA4634-99B0-23FB-F19C-154181EAAE85}" name="Icons">
+          <FILE id="d8Ox7r" name="kofi.svg" compile="0" resource="1" file="Source/Resources/Icons/kofi.svg"/>
           <FILE id="hvQjEJ" name="github_line.svg" compile="0" resource="1" file="Source/Resources/Icons/github_line.svg"/>
           <FILE id="tsirkk" name="paypal_colour.svg" compile="0" resource="1"
                 file="Source/Resources/Icons/paypal_colour.svg"/>
