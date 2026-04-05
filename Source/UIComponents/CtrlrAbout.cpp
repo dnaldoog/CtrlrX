@@ -5,6 +5,15 @@
 #include "CtrlrPanel/CtrlrPanel.h"
 #include "CtrlrInlineUtilitiesGUI.h"
 
+extern "C" {
+// #include "lua.h" // Already included via stdafx.h
+// #include "lualib.h" // Useless for LUA version macro
+// #include "lauxlib.h" // Useless for LUA version macro
+#ifdef CTRLRX_USE_LUAJIT
+#include "luajit.h"
+#endif
+}
+
 CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
     : owner(_owner)
 {
@@ -44,7 +53,12 @@ CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
     
     // CtrlrX libs version Label
     String juceVersion = SystemStats::getJUCEVersion().fromLastOccurrenceOf("JUCE v", false, true);
+#ifdef LUAJIT_VERSION
+    String luaVersion = String(LUAJIT_VERSION);  // e.g. "LuaJIT 2.1.0-beta3"
+#else
     String luaVersion = LUA_RELEASE;
+#endif
+
     String luabindVersion = _STR(LUABIND_VERSION / 1000) + "." + _STR(LUABIND_VERSION / 100 % 100) + "." + _STR(LUABIND_VERSION % 100);
     String boostVersion = _STR(BOOST_VERSION / 100000) + "." + _STR((BOOST_VERSION / 100) % 1000) + "." + _STR(BOOST_VERSION % 100);
     String buildDetails = "JUCE " + juceVersion + " | " + luaVersion + " | LuaBind " + luabindVersion + " | Boost " + boostVersion;
@@ -90,14 +104,14 @@ CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
     ctrlrxUrl->setJustificationType(Justification::topLeft);
     ctrlrxUrl->setColour (HyperlinkButton::textColourId, Colour(getLookAndFeel().findColour (PopupMenu::highlightedBackgroundColourId)));
     
-    // PayPal LOGO SVG
-    addAndMakeVisible (paypalLogo = gui::createDrawableButton("PayPal Logo", BIN2STR(paypal_colour_svg))); // Updated v5.6.31. It required to drag drop SVG file in the projucer in the icon folder to be embedded
-    paypalLogo->addListener (this);
-    paypalLogo->setTooltip (TRANS("Donate to the CtrlrX project"));
-    paypalLogo->setMouseCursor(MouseCursor::PointingHandCursor);
+    // Donation LOGO SVG
+    addAndMakeVisible (donateLogo = gui::createDrawableButton("Donation Logo", BIN2STR(kofi_svg))); // Updated v5.6.35. It required to drag drop SVG file in the projucer in the icon folder to be embedded
+    donateLogo->addListener (this);
+    donateLogo->setTooltip (TRANS("Donate to the CtrlrX project"));
+    donateLogo->setMouseCursor(MouseCursor::PointingHandCursor);
     
-    // PayPal link
-    addAndMakeVisible (ctrlrxDonateUrl = new HyperlinkButton ("Donate to the CtrlrX project", URL ("https://paypal.me/damiensellier"))); // Updated v5.6.31b
+    // Donation link
+    addAndMakeVisible (ctrlrxDonateUrl = new HyperlinkButton ("Donate to the CtrlrX project", URL ("https://ko-fi.com/damiensellier"))); // Updated v5.6.35
     ctrlrxDonateUrl->setTooltip (TRANS("Donate to the CtrlrX project"));
     ctrlrxDonateUrl->setFont(14.00f, Font::plain);
     ctrlrxDonateUrl->setJustificationType(Justification::topLeft);
@@ -360,7 +374,7 @@ CtrlrAbout::~CtrlrAbout()
     
 	if (ctrlrLogo)         ctrlrLogo->removeListener(this);
 	if (githubLogo)        githubLogo->removeListener(this);
-	if (paypalLogo)        paypalLogo->removeListener(this);
+	if (donateLogo)        donateLogo->removeListener(this);
 	if (vst3AuJuceLogo)    vst3AuJuceLogo->removeListener(this);
     
     ctrlrName = nullptr;
@@ -450,7 +464,7 @@ void CtrlrAbout::resized()
     
     int ctrlrxDonateUrlHeight = 18;
     heightPosition += ( ctrlrxUrlHeight );
-    paypalLogo->setBounds (ctrlrLogoSize + paddingSize*3, heightPosition -1, ctrlrxUrlHeight +2, ctrlrxDonateUrlHeight +2);
+    donateLogo->setBounds (ctrlrLogoSize + paddingSize*3, heightPosition -1, ctrlrxUrlHeight +2, ctrlrxDonateUrlHeight +2);
     ctrlrxDonateUrl->setBounds (ctrlrLogoSize + paddingSize*5 +4, heightPosition, rightColumnWidth, ctrlrxDonateUrlHeight);
     
     
@@ -507,14 +521,23 @@ void CtrlrAbout::resized()
     instanceDescription->setBounds (proportionOfWidth (0.0200f), height, proportionOfWidth (0.9600f), 80); // Instance Description Frame
 }
 
-void CtrlrAbout::buttonClicked (Button* buttonThatWasClicked)
+void CtrlrAbout::buttonClicked (Button* buttonThatWasClicked) // Updated v5.6.35
 {
-    if (buttonThatWasClicked == ctrlrLogo || vst3AuJuceLogo )
+    if (buttonThatWasClicked == ctrlrLogo || buttonThatWasClicked == vst3AuJuceLogo)
     {
-        //[UserButtonCode_ctrlrLogo] -- add your button handler code here..
-        URL url("https://github.com/RomanKubiak/ctrlr/discussions");
-        url.launchInDefaultBrowser();
-        //[/UserButtonCode_ctrlrLogo]
+        URL("https://github.com/RomanKubiak/ctrlr/discussions").launchInDefaultBrowser();
+    }
+    else if (buttonThatWasClicked == donateLogo)
+    {
+        URL("https://ko-fi.com/damiensellier").launchInDefaultBrowser();
+    }
+	else if (buttonThatWasClicked == githubLogo)
+    {
+        URL("https://github.com/damiensellier/CtrlrX").launchInDefaultBrowser();
+    }
+	else
+	{
+        URL("https://github.com/damiensellier/CtrlrX").launchInDefaultBrowser();
     }
 }
 
