@@ -110,9 +110,22 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
     }
     else
     {
-        File panelFilePath = panelToWrite->getProperty(Ids::panelFilePath).toString();
-        targetDir = panelFilePath.exists() ? panelFilePath.getParentDirectory() 
-                                           : File::getSpecialLocation(File::userDocumentsDirectory);
+        // First time run logic:
+        if (fileExtension.equalsIgnoreCase(".vst3") || fileExtension.equalsIgnoreCase(".dll"))
+        {
+            // JUCE doesn't have a direct "Common Files" enum, so we build it from Program Files
+            targetDir = File::getSpecialLocation(File::globalApplicationsDirectory)
+                            .getChildFile("Common Files")
+                            .getChildFile("VST3");
+            
+            // Fallback if the path is inaccessible or doesn't exist
+            if (!targetDir.exists())
+                targetDir = File::getSpecialLocation(File::userDocumentsDirectory);
+        }
+        else
+        {
+            targetDir = File::getSpecialLocation(File::userDocumentsDirectory);
+        }
     }
 
     // 3. File Chooser
@@ -147,7 +160,7 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
         return Result::fail("User cancelled export.");
     }
 
-    // 4. Update Win32 Resources (Injecting the Panel)
+    // 4. Update Win32 Resources (Panel Injection)
     HANDLE hResource = BeginUpdateResource(newMe.getFullPathName().toUTF8(), FALSE);
     if (hResource)
     {
@@ -186,7 +199,7 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
     
     if (newMe.existsAsFile()) 
     {
-        if (fileExtension == ".vst3" || fileExtension == ".dll") 
+        if (fileExtension.equalsIgnoreCase(".vst3") || fileExtension.equalsIgnoreCase(".dll")) 
         {
             const bool replaceVst3PluginIds = panelToWrite->getProperty(Ids::panelReplaceVst3PluginIds);
 
@@ -197,15 +210,15 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
                 {
                     logger.log("Modifying VST3/DLL Identifiers...");
 
-                    // Prepare all the Hex blocks...
-                    MemoryBlock pName, pCode, mName, mCode, vMaj, vMin, pType;
+                    // Replacement blocks
+                    MemoryBlock pName, pCode, mName, mCode, pType;
                     hexStringToBytes(panelToWrite->getProperty(Ids::name).toString(), 32, pName);
                     hexStringToBytes(panelToWrite->getProperty(Ids::panelInstanceUID).toString(), 4, pCode);
                     hexStringToBytes(panelToWrite->getProperty(Ids::panelAuthorName).toString(), 16, mName);
                     hexStringToBytes(panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString(), 4, mCode);
                     hexStringToBytes(panelToWrite->getProperty(Ids::panelPlugType).toString(), 16, pType);
 
-                    // Search patterns
+                    // Patterns
                     MemoryBlock sName, sCode, sMName, sMCode, sType;
                     hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20", sName);
                     hexStringToBytes("63 54 72 58", sCode);
@@ -214,9 +227,9 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
                     hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73", sType);
 
                     replaceAllOccurrences(executableData, sName, pName);
-                    replaceAllOccurrences(sCode, sCode, pCode);
+                    replaceAllOccurrences(executableData, sCode, pCode);
                     replaceAllOccurrences(executableData, sMName, mName);
-                    replaceAllOccurrences(sMCode, sMCode, mCode);
+                    replaceAllOccurrences(executableData, sMCode, mCode);
                     replaceAllOccurrences(executableData, sType, pType);
 
                     newMe.replaceWithData(executableData.getData(), executableData.getSize());
