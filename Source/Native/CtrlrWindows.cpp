@@ -143,6 +143,11 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, cons
         
         // Save sticky path
         manager.setProperty("lastExportPath", newMe.getParentDirectory().getFullPathName());
+		// This forces Ctrlr to write the new path to the actual settings file on disk
+
+		// Optional: Persist this to the global XML settings file on disk
+        // Disable the following line if you prefer session-only memory.
+        manager.saveState();
 
         if (!newMe.hasFileExtension(fileExtension))
             newMe = newMe.withFileExtension(fileExtension);
