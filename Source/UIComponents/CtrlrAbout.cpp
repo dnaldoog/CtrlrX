@@ -522,12 +522,17 @@ void CtrlrAbout::resized()
 
 void CtrlrAbout::buttonClicked (Button* buttonThatWasClicked)
 {
-    if (buttonThatWasClicked == ctrlrLogo || vst3AuJuceLogo )
+    if (buttonThatWasClicked == ctrlrLogo || buttonThatWasClicked == vst3AuJuceLogo)
     {
-        //[UserButtonCode_ctrlrLogo] -- add your button handler code here..
-        URL url("https://github.com/RomanKubiak/ctrlr/discussions");
-        url.launchInDefaultBrowser();
-        //[/UserButtonCode_ctrlrLogo]
+        URL("https://github.com/RomanKubiak/ctrlr/discussions").launchInDefaultBrowser();
+    }
+    else if (buttonThatWasClicked == githubLogo)
+    {
+        URL("https://github.com/damiensellier/CtrlrX").launchInDefaultBrowser();
+    }
+    else if (buttonThatWasClicked == paypalLogo)
+    {
+        URL("https://paypal.me/damiensellier").launchInDefaultBrowser();
     }
 }
 

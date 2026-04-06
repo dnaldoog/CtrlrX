@@ -85,254 +85,183 @@ const Result CtrlrWindows::readResource (void *handle, const LPSTR resourceId, c
 	}
 }
 
-const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel*  panelToWrite, const bool isRestricted, const bool signPanel)
+const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite, const bool isRestricted, const bool signPanel)
 {
-	if (panelToWrite == nullptr)
-	{
-		return (Result::fail("Windows Native: exportWithDefaultPanel got nullptr for panel"));
-	}
+    if (panelToWrite == nullptr)
+        return (Result::fail("Windows Native: exportWithDefaultPanel got nullptr for panel"));
 
-	File	me = File::getSpecialLocation(File::currentExecutableFile);
-	File	newMe;
-	HANDLE	hResource;
-	MemoryBlock panelExportData,panelResourcesData;
-	PluginLogger logger(me); // Create logger instance
-	String error;
-	logger.log("Starting exportWithDefaultPanel");
-	String fileExtension = me.getFileExtension();
-	logger.log("CtrlrX source fileExtension is :" + fileExtension);
-	//MemoryBlock iconData(BinaryData::ico_midi_png, BinaryData::ico_midi_pngSize);
+    // 1. Setup Variables & Logger
+    CtrlrManager& manager = panelToWrite->getOwner();
+    File me = File::getSpecialLocation(File::currentExecutableFile);
+    PluginLogger logger(me); 
+    String fileExtension = me.getFileExtension();
+    File newMe;
+    MemoryBlock panelExportData, panelResourcesData;
 
-	if (panelToWrite == nullptr)
-	{
-		logger.log("Error: panelToWrite is nullptr");
-		return (Result::fail("Windows Native: exportWithDefaultPanel got nullptr for panel"));
-	}
+    logger.log("Starting exportWithDefaultPanel. Source extension: " + fileExtension);
+    
+    // 2. Determine Initial Directory (Sticky Logic)
+    String lastPath = manager.getProperty("lastExportPath").toString();
+    File targetDir;
 
-	FileChooser exportFc(CTRLR_NEW_INSTANCE_DIALOG_TITLE,
-		me.getParentDirectory().getChildFile(File::createLegalFileName(panelToWrite->getProperty(Ids::name))).withFileExtension(me.getFileExtension()),
-		"*" + me.getFileExtension(),
-		panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs));
+    if (lastPath.isNotEmpty() && File(lastPath).isDirectory())
+    {
+        targetDir = File(lastPath);
+    }
+    else
+    {
+        // First time run logic:
+        if (fileExtension.equalsIgnoreCase(".vst3") || fileExtension.equalsIgnoreCase(".dll"))
+        {
+            // JUCE doesn't have a direct "Common Files" enum, so we build it from Program Files
+            targetDir = File::getSpecialLocation(File::globalApplicationsDirectory)
+                            .getChildFile("Common Files")
+                            .getChildFile("VST3");
+            
+            // Fallback if the path is inaccessible or doesn't exist
+            if (!targetDir.exists())
+                targetDir = File::getSpecialLocation(File::userDocumentsDirectory);
+        }
+        else
+        {
+            targetDir = File::getSpecialLocation(File::userDocumentsDirectory);
+        }
+    }
 
-	if (exportFc.browseForFileToSave(true))
-	{
-		newMe = exportFc.getResult();
-		logger.log("File selected: " + newMe.getFullPathName());
+    // 3. File Chooser
+    String defaultFileName = File::createLegalFileName(panelToWrite->getProperty(Ids::name));
+    File defaultFile = targetDir.getChildFile(defaultFileName).withFileExtension(fileExtension);
 
-		if (!newMe.hasFileExtension(me.getFileExtension()))
-		{
-			newMe = newMe.withFileExtension(me.getFileExtension());
-		}
+    FileChooser exportFc (CTRLR_NEW_INSTANCE_DIALOG_TITLE,
+                         defaultFile,
+                         "*" + fileExtension,
+                         manager.getProperty(Ids::ctrlrNativeFileDialogs));
 
-		if (!me.copyFileTo(newMe))
-		{
-			logger.log("Error: Failed to copy executable");
-			return (Result::fail("Windows Native: exportMeWithNewResource can't copy \"" + me.getFullPathName() + "\" to \"" + newMe.getFullPathName() + "\""));
-		}
-		logger.log("Executable copied successfully.");
-	}
-	else
-	{
-		logger.log("Error: File selection dialog failed");
-		return (Result::fail("Windows Native: exportMeWithNewResource \"Save file\" dialog failed"));
-	}
+    if (exportFc.browseForFileToSave(true))
+    {
+        newMe = exportFc.getResult();
+        
+        // Save sticky path
+        manager.setProperty("lastExportPath", newMe.getParentDirectory().getFullPathName());
+		// This forces Ctrlr to write the new path to the actual settings file on disk
 
-	// Export panel data and resources
-	hResource = BeginUpdateResource(newMe.getFullPathName().toUTF8(), FALSE);
-	if (hResource)
-	{
-		if ((error = CtrlrPanel::exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData, isRestricted)) == "")
-		{
-			// Encrypt panel data and resources using JUCE BlowFish directly on copies
-			//String keyString = "yourkey"; // Replace with your actual key (security!).
-			//juce::BlowFish blowfish(keyString.toUTF8(), keyString.getNumBytesAsUTF8());
-			//
-			//if (panelExportData.getSize() > 0)
-			//{
-			//	MemoryBlock encryptedPanelData = panelExportData;
-			//	blowfish.encrypt(encryptedPanelData);
-			//	panelExportData = encryptedPanelData;
-			//	logger.log("Panel data encrypted.");
-			//}
-			//else
-			//{
-			//	logger.log("Error: panelExportData is empty");
-			//	return Result::fail("Error: panelExportData is empty");
-			//}
-			//
-			//if (panelResourcesData.getSize() > 0)
-			//{
-			//	MemoryBlock encryptedResourcesData = panelResourcesData;
-			//	blowfish.encrypt(encryptedResourcesData);
-			//	panelResourcesData = encryptedResourcesData;
-			//	logger.log("Panel resources encrypted.");
-			//}
-			//else
-			//{
-			//	logger.log("Error: panelResourcesData is empty");
-			//	return Result::fail("Error: panelResourcesData is empty");
-			//}
+		// Optional: Persist this to the global XML settings file on disk
+        // Disable the following line if you prefer session-only memory.
+        manager.saveState();
 
-			if (writeResource(hResource, MAKEINTRESOURCE(CTRLR_INTERNAL_PANEL_RESID), RT_RCDATA, panelExportData)
-				&& writeResource(hResource, MAKEINTRESOURCE(CTRLR_INTERNAL_RESOURCES_RESID), RT_RCDATA, panelResourcesData))
-			{
-				EndUpdateResource(hResource, FALSE);
-			}
-			else
-			{
-				return (Result::fail("Windows Native: exportMeWithNewResource writeResource[panel] failed"));
-			}
-		}
-		else
-		{
-			return (Result::fail("Windows Native: exportMeWithNewResource exportPanel error: \"" + error + "\""));
-		}
+        if (!newMe.hasFileExtension(fileExtension))
+            newMe = newMe.withFileExtension(fileExtension);
 
-		// Maybe place the closing curlies and else statement at the end of the function
-		// return (Result::ok());
-	}
-	else
-	{
-		return (Result::fail("Windows Native: exportMeWithNewResource BeginUpdateResource failed"));
-	} // End if (hResource)
+        if (!me.copyFileTo(newMe))
+        {
+            logger.log("Error: Failed to copy executable to " + newMe.getFullPathName());
+            return Result::fail("Windows Native: Can't copy binary.");
+        }
+        logger.log("Executable copied successfully to: " + newMe.getFullPathName());
+    }
+    else
+    {
+        logger.log("User cancelled the export dialog.");
+        return Result::fail("User cancelled export.");
+    }
 
+    // 4. Update Win32 Resources (Panel Injection)
+    HANDLE hResource = BeginUpdateResource(newMe.getFullPathName().toUTF8(), FALSE);
+    if (hResource)
+    {
+        String error = CtrlrPanel::exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData, isRestricted);
+        
+        if (error.isEmpty())
+        {
+            if (writeResource(hResource, MAKEINTRESOURCE(CTRLR_INTERNAL_PANEL_RESID), RT_RCDATA, panelExportData)
+                && writeResource(hResource, MAKEINTRESOURCE(CTRLR_INTERNAL_RESOURCES_RESID), RT_RCDATA, panelResourcesData))
+            {
+                EndUpdateResource(hResource, FALSE);
+                logger.log("Resources updated successfully.");
+            }
+            else
+            {
+                EndUpdateResource(hResource, TRUE);
+                logger.log("Error: writeResource failed.");
+                return Result::fail("Windows Native: writeResource failed");
+            }
+        }
+        else
+        {
+            EndUpdateResource(hResource, TRUE);
+            logger.log("Error: exportPanel returned: " + error);
+            return Result::fail("Export Error: " + error);
+        }
+    }
+    else
+    {
+        logger.log("Error: BeginUpdateResource failed. File might be locked.");
+        return Result::fail("Windows Native: BeginUpdateResource failed");
+    }
 
+    // 5. Binary String Replacement (Rebranding)
+    juce::Thread::sleep(500); 
+    
+    if (newMe.existsAsFile()) 
+    {
+        if (fileExtension.equalsIgnoreCase(".vst3") || fileExtension.equalsIgnoreCase(".dll")) 
+        {
+            const bool replaceVst3PluginIds = panelToWrite->getProperty(Ids::panelReplaceVst3PluginIds);
 
-	// Introduce a delay before modifying the executable
-	logger.log("Thread sleep to delay binary modification task.");
-	juce::Thread::sleep(500); // milliseconds (250ms should be ok, adjust as needed)
-	logger.log("Thread restarted for binary modification task.");
+            if (replaceVst3PluginIds) 
+            {
+                MemoryBlock executableData;
+                if (newMe.loadFileAsData(executableData))
+                {
+                    logger.log("Modifying VST3/DLL Identifiers...");
 
-	// Now, modify executable (string replacement)
-	File executableFile = newMe; // Assuming the newMe file is the executable
-	if (executableFile.existsAsFile()) {
+                    // Replacement blocks
+                    MemoryBlock pName, pCode, mName, mCode, pType;
+                    hexStringToBytes(panelToWrite->getProperty(Ids::name).toString(), 32, pName);
+                    hexStringToBytes(panelToWrite->getProperty(Ids::panelInstanceUID).toString(), 4, pCode);
+                    hexStringToBytes(panelToWrite->getProperty(Ids::panelAuthorName).toString(), 16, mName);
+                    hexStringToBytes(panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString(), 4, mCode);
+                    hexStringToBytes(panelToWrite->getProperty(Ids::panelPlugType).toString(), 16, pType);
 
-		if (fileExtension == ".vst3" || fileExtension == ".dll") { // Updated v5.6.33. Added .vst to identify vst2 instances in Cubase for macOS.(fileExtension == ".vst3" || ".vst") was wrong. FIXED on 2025.04.29
-			logger.log("fileExtension is : " + fileExtension);
+                    // Patterns
+                    MemoryBlock sName, sCode, sMName, sMCode, sType;
+                    hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20", sName);
+                    hexStringToBytes("63 54 72 58", sCode);
+                    hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20", sMName);
+                    hexStringToBytes("63 54 72 6C", sMCode);
+                    hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73", sType);
 
-			// Replace the stock VST3 plugin identifiers with the panel to export ones.
-			const bool replaceVst3PluginIds = panelToWrite->getProperty(Ids::panelReplaceVst3PluginIds);
+                    replaceAllOccurrences(executableData, sName, pName);
+                    replaceAllOccurrences(executableData, sCode, pCode);
+                    replaceAllOccurrences(executableData, sMName, mName);
+                    replaceAllOccurrences(executableData, sMCode, mCode);
+                    replaceAllOccurrences(executableData, sType, pType);
 
-			if (replaceVst3PluginIds) {
-				logger.log("Replace the VST3 plugin identifiers with the panel ones : " + replaceVst3PluginIds);
+                    newMe.replaceWithData(executableData.getData(), executableData.getSize());
+                    logger.log("Binary identifiers replaced.");
+                }
+            }
+        }
 
-				MemoryBlock executableData;
-				if (executableFile.loadFileAsData(executableData))
-				{
-					logger.log("Executable loaded into memory for modification.");
-
-					String pluginName = panelToWrite->getProperty(Ids::name).toString();
-					String pluginCode = panelToWrite->getProperty(Ids::panelInstanceUID).toString();
-					String manufacturerName = panelToWrite->getProperty(Ids::panelAuthorName).toString();
-					String manufacturerCode = panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString();
-					String versionMajor = panelToWrite->getProperty(Ids::panelVersionMajor).toString();
-					String versionMinor = panelToWrite->getProperty(Ids::panelVersionMinor).toString();
-					String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
-
-					logger.log("Plugin name: " + pluginName);
-					logger.log("Plugin code: " + pluginCode);
-					logger.log("Manufacturer name: " + manufacturerName);
-					logger.log("Manufacturer code: " + manufacturerCode);
-					logger.log("Version major: " + versionMajor);
-					logger.log("Version minor: " + versionMinor);
-					logger.log("Plug type: " + plugType);
-
-					MemoryBlock pluginNameHex, pluginCodeHex, manufacturerNameHex, manufacturerCodeHex, versionMajorHex, versionMinorHex, plugTypeHex;
-
-					hexStringToBytes(pluginName, 32, pluginNameHex);
-					hexStringToBytes(pluginCode, 4, pluginCodeHex);
-					hexStringToBytes(manufacturerName, 16, manufacturerNameHex);
-					hexStringToBytes(manufacturerCode, 4, manufacturerCodeHex);
-					hexStringToBytes(versionMajor, 2, versionMajorHex);
-					hexStringToBytes(versionMinor, 2, versionMinorHex);
-					hexStringToBytes(plugType, 16, plugTypeHex);
-
-					MemoryBlock searchPluginNameHex, searchPluginCodeHex, searchManufacturerNameHex, searchManufacturerCodeHex, searchPlugTypeHex;
-
-					// Replace CtrlrX plugin name "CtrlrX          "
-					hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20", searchPluginNameHex);
-					// Replace CtrlrX plugin manufacturer code "cTrX"
-					hexStringToBytes("63 54 72 58", searchPluginCodeHex);
-					// Replace "CtrlrX Project  "
-					hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20", searchManufacturerNameHex);
-					// Replace CtrlrX plugin code "cTrl"
-					hexStringToBytes("63 54 72 6C", searchManufacturerCodeHex);
-					
-					// Replace plugType "Instrument|Tools"
-					hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHex);
-					
-					// Replace plugType "Instrument|Synth"
-					// hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 53 79 6E 74 68", searchPlugTypeHex);
-
-					logger.log("Starting string replacement process...");
-
-					replaceAllOccurrences(executableData, searchPluginNameHex, pluginNameHex);
-					replaceAllOccurrences(executableData, searchPluginCodeHex, pluginCodeHex);
-					replaceAllOccurrences(executableData, searchManufacturerNameHex, manufacturerNameHex);
-					replaceAllOccurrences(executableData, searchManufacturerCodeHex, manufacturerCodeHex);
-					replaceAllOccurrences(executableData, searchPlugTypeHex, plugTypeHex);
-
-					logger.log("String replacement process completed.");
-
-					if (!executableFile.replaceWithData(executableData.getData(), executableData.getSize()))
-					{
-						logger.log("Error: Failed to write modified executable data");
-						return (Result::fail("Windows Native: Failed to write modified executable data"));
-					}
-					logger.log("Modified executable data written.");
-				}
-				else
-				{
-					logger.log("Error: Failed to load executable into memory.");
-					return Result::fail("Windows Native: Failed to load executable into memory.");
-				}
-			} // End if replaceVst3PluginIds
-			else {
-				logger.log("replaceVst3PluginIds set to false, Vst3 IDs replacement skipped.");
-			}
-		}
-		else {
-			logger.log("Exported file is not vst3.");
-		} // End if file extension vst3
-		
-
-		// Introduce a delay before codesigning
-		logger.log("Thread sleep to delay codesigning task.");
-		juce::Thread::sleep(500); // milliseconds (250ms should be ok, adjust as needed)
-		logger.log("Thread restarted for codesigning task.");
-
-
-		// Now, codesign the newMe file and return result. Valid for .exe, vst & vst3
-		juce::String panelCertificateWinPath = panelToWrite->getProperty(Ids::panelCertificateWinPath).toString();
-		juce::String panelCertificateWinPassCode = panelToWrite->getProperty(Ids::panelCertificateWinPassCode).toString();
-		logger.log("Windows Certificate Path: " + panelCertificateWinPath);
-		logger.log("Windows Certificate PassCode: " + panelCertificateWinPassCode);
-			
-		if (panelCertificateWinPath.isNotEmpty() && juce::File::isAbsolutePath(panelCertificateWinPath) && juce::File(panelCertificateWinPath).existsAsFile() && panelCertificateWinPassCode.isNotEmpty())
-		{
-			const Result codesignResult = codesignFileWindows(newMe, panelCertificateWinPath, panelCertificateWinPassCode); // Call codesignFileWindows function
-			if (!codesignResult.wasOk()) {
-				logger.logResult(codesignResult);
-				return (codesignResult);
-			}
-			logger.log("Codesigning successful.");
-			logger.logResult(codesignResult); // Added Logger for successful codesign.
-			}
-		else {
-			logger.log("Codesigning failed because either CertificatePath or CertificatePassCode were wrong.");
-			// return (Result::fail("Windows Native: Codesigning failed because either CertificatePath or CertificatePassCode were wrong."));
-			return (Result::ok()); // bypass the fail notification but export won't be codesigned
-		} // End if CertificatePath & PassCode OK
-	}
-	else
-	{
-		logger.log("Error: Executable file does not exist.");
-		return (Result::fail("Windows Native: Executable file does not exist"));
-	} // End if file does not exist
-	
-    return (Result::ok()); // Should be removed v5.6.32 ? all other elements already return ok() or fail() anyway.
-
-} // end result() overall function
+        // 6. Codesigning
+        juce::Thread::sleep(500);
+        String certPath = panelToWrite->getProperty(Ids::panelCertificateWinPath).toString();
+        String certPass = panelToWrite->getProperty(Ids::panelCertificateWinPassCode).toString();
+            
+        if (certPath.isNotEmpty() && File(certPath).existsAsFile() && certPass.isNotEmpty())
+        {
+            const Result codesignResult = codesignFileWindows(newMe, certPath, certPass);
+            if (!codesignResult.wasOk()) 
+            {
+                logger.log("Codesigning failed: " + codesignResult.getErrorMessage());
+                return codesignResult;
+            }
+            logger.log("Codesigning successful.");
+        }
+    }
+    
+    return Result::ok();
+}
 
 
 // Codesign the exported binary
