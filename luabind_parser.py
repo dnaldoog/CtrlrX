@@ -1,13 +1,12 @@
 import re, os, sys, html
+from pathlib import Path
 
 class LuabindHighVelocityV66:
     def __init__(self):
-        self.signatures = {} 
-        self.lua_api = {}    
+        self.signatures = {}
+        self.lua_api = {}
         self.inheritance_map = {}
-        # Only deep-scan these for overloads to save 90% of processing time
-        self.priority_folders = ['Source', 'JuceLibraryCode', 'ctrlr'] 
-        # Folders to ignore entirely to prevent "forever" hangs
+        self.priority_folders = ['Source', 'JuceLibraryCode', 'ctrlr']
         self.ignore_folders = ['boost', 'asiosdk', 'vstsdk', 'stk', 'libs']
 
     def is_junk_signature(self, args):
@@ -19,30 +18,34 @@ class LuabindHighVelocityV66:
 
     def clean_args(self, args):
         if not args or args.strip().lower() in ["void", "nullptr"]: return "()"
-        a = re.sub(r'=[^,)]+', '', args) 
+        a = re.sub(r'=[^,)]+', '', args)
         a = re.sub(r'juce::|std::|const|&|\*|override|final|virtual|inline|noexcept', '', a)
         clean = ' '.join(a.split()).strip().strip(',')
         return f"({html.escape(clean)})"
 
+    def sanitize_name(self, name):
+        """Strip template parameters and whitespace. Returns empty string if result is invalid."""
+        clean = re.sub(r'<.*', '', name).strip()
+        # Must be a valid identifier: starts with a letter, contains only letters/digits/underscores
+        if not re.match(r'^[A-Za-z][A-Za-z0-9_]*$', clean):
+            return ''
+        return clean
+
     def run(self, source_dir, output_xml):
         print(f"[*] Version 66: High-Velocity Scan starting...")
-        
+
         # Phase 1: Targeted Signature Collection (Fast)
         for root, _, files in os.walk(source_dir):
-            # Optimization: Only scan priority folders for signatures
             if not any(p in root for p in self.priority_folders): continue
             if any(i in root.lower() for i in self.ignore_folders): continue
-            
             for file in files:
                 if file.endswith(('.h', '.hpp')):
                     try:
                         with open(os.path.join(root, file), 'r', encoding='utf-8', errors='ignore') as f:
                             content = f.read()
-                            # Inheritance tracking
                             for im in re.finditer(r'class\s+([A-Za-z0-9_]+)\s*:\s*(?:public|protected|private)\s+([A-Za-z0-9_:]+)', content):
                                 child, parent = im.groups()
                                 self.inheritance_map[child] = parent.split("::")[-1].strip()
-                            # Signature collection
                             for sm in re.finditer(r'([A-Za-z0-9_]+)\s*\(([^;{]*)\)\s*(?:const|override|final|inline)?\s*[;{]', content):
                                 name, args = sm.groups()
                                 if name not in ["if", "while", "for", "switch", "return"] and not self.is_junk_signature(args):
@@ -61,10 +64,15 @@ class LuabindHighVelocityV66:
                             content = f.read()
                             parts = re.split(r'class_\s*<', content)
                             for part in parts[1:]:
-                                name_match = re.match(r'\s*([^,> ]+)[^>]*>\s*(?:\(\s*"([^"]+)"\s*\))?', part)
+                                # Strip bases<...> before matching so it doesn't interfere
+                                part_clean = re.sub(r',\s*bases\s*<[^>]*>', '', part)
+                                name_match = re.match(r'\s*([^,> ]+)[^>]*>\s*(?:\(\s*"([^"]+)"\s*\))?', part_clean)
                                 if not name_match: continue
-                                cpp_name = name_match.group(1).split("::")[-1].strip()
-                                lua_name = name_match.group(2) or cpp_name
+                                cpp_name = self.sanitize_name(name_match.group(1).split("::")[-1])
+                                raw_lua  = name_match.group(2) if name_match.group(2) else name_match.group(1).split("::")[-1]
+                                lua_name = self.sanitize_name(raw_lua)
+                                # Skip anything that didn't sanitize to a valid identifier
+                                if not lua_name or not cpp_name: continue
                                 if lua_name not in self.lua_api:
                                     self.lua_api[lua_name] = {"cpp": cpp_name, "methods": set(), "static": set(), "constructors": set()}
                                 block = part[:part.find(';')] if ';' in part else part
@@ -78,13 +86,22 @@ class LuabindHighVelocityV66:
                                     if m_name not in self.lua_api[lua_name]["static"] and m_name not in self.lua_api[lua_name]["constructors"]:
                                         self.lua_api[lua_name]["methods"].add(m_name)
                     except: continue
+
+        # Phase 3: Hard cleanup — remove any entry whose name contains template fragments
+        self.lua_api = {
+            k: v for k, v in self.lua_api.items()
+            if re.match(r'^[A-Za-z][A-Za-z0-9_]*$', k)
+        }
+        print(f"[*] {len(self.lua_api)} classes after cleanup.")
+
         self.generate_xml(output_xml)
 
     def generate_xml(self, output_file):
         xml = ['<?xml version="1.0" encoding="UTF-8" ?>', '<LuaAPI>']
         for name in sorted(self.lua_api.keys()):
             d = self.lua_api[name]
-            cpp = d["cpp"]; parent = f' inherits="{self.inheritance_map[cpp]}"' if cpp in self.inheritance_map else ""
+            cpp = re.sub(r'<.*', '', d["cpp"]).strip()  # sanitize cpp_name too
+            parent = f' inherits="{self.inheritance_map[cpp]}"' if cpp in self.inheritance_map else ""
             xml.append(f'  <class name="{name}" cpp_name="{cpp}"{parent}>')
             def write_lines(names, m_type):
                 for m in sorted(names):
@@ -95,9 +112,10 @@ class LuabindHighVelocityV66:
             if d["static"] or d["constructors"]:
                 xml.append('    <static_methods>')
                 write_lines(d["static"], "static")
-                for m in sorted(d["constructors"]):
-                    for s in self.signatures.get(cpp, ["()"]):
-                        xml.append(f'      <method name="{m}" args="{s}" type="constructor"/>')
+                if d["constructors"] and not d["static"]:
+                    for m in sorted(d["constructors"]):
+                        for s in self.signatures.get(cpp, ["()"]):
+                            xml.append(f'      <method name="{m}" args="{s}" type="constructor"/>')
                 xml.append('    </static_methods>')
             if d["constructors"]:
                 xml.append('    <constructors>')
@@ -111,4 +129,10 @@ class LuabindHighVelocityV66:
         print(f"[+] Version 66 complete.")
 
 if __name__ == "__main__":
-    LuabindHighVelocityV66().run(sys.argv[1], sys.argv[2])
+    if len(sys.argv) >= 3:
+        LuabindHighVelocityV66().run(sys.argv[1], sys.argv[2])
+    else:
+        base = Path(__file__).parent
+        source_dir = base
+        output_xml = base / "Source" / "Resources" / "XML" / "luaAPI.xml"
+        LuabindHighVelocityV66().run(str(source_dir), str(output_xml))

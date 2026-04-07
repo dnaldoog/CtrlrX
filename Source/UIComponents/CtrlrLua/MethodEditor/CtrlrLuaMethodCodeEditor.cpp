@@ -582,16 +582,15 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
     const bool autoCompleteOpts = ((int)owner.getComponentTree()
         .getProperty(Ids::luaMethodEditorAutoCompleteOpt, 1)) != 0;
 
-    if (!autoCompleteEnabled)
+    if (!autoCompleteEnabled || !suggestionPopup)
         return;
 
-    // --- 1. AGGRESSIVE GUARD ---
+    // --- 1. GUARD & STATE ---
     if (isReplacingText)
     {
+        // Allow the colon or dot to re-trigger even during a replacement flow
         if (newText != ":" && newText != ".")
             return;
-
-        _DBG("AUTOCOMPLETE: Bypassing lock for manual flow re-trigger [" + newText + "]");
     }
 
     if (callTip && nextTabJumpPosition == -1)
@@ -600,40 +599,49 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
     document.newTransaction();
     documentChanged(false);
 
-    if (!suggestionPopup) return;
-
     auto& manager = owner.getAutocompleteManager();
     std::vector<SuggestionItem> matches;
 
-    // --- 2. WORD AND SEPARATOR RESOLUTION ---
+    // --- 2. POSITIONING ---
     int caretPosInt = editorComponent->getCaretPos().getPosition();
     int wordStart = 0;
     juce::String currentWord = getWordBeforeCaret(wordStart);
 
+    // --- 3. SEPARATOR IDENTIFICATION ---
+    // This is the critical fix: If we just typed the separator, 
+    // wordStart might be at the caret, so we look immediately behind it.
     juce::juce_wchar separator = ' ';
-    if (wordStart > 0)
+    bool justTypedSeparator = (newText == ":" || newText == ".");
+    
+    if (justTypedSeparator)
     {
+        separator = newText[0];
+    }
+    else if (wordStart > 0)
+    {
+        // If we are typing a word (e.g. p:add), check the char before the word
         separator = juce::CodeDocument::Position(document, wordStart - 1).getCharacter();
     }
-    
-    if (newText == ":" || newText == ".")
-        separator = newText[0];
 
     _DBG("AUTOCOMPLETE: Triggered. Word: [" + currentWord + "] | Separator: [" + juce::String::charToString(separator) + "]");
-    
+
     bool contextResolved = false;
 
-    // --- 3. CONTEXTUAL SEARCH (Triggered by : or .) ---
+    // --- 4. CONTEXTUAL SEARCH (Triggered by : or .) ---
     if (separator == ':' || separator == '.')
     {
         bool isInstance = (separator == ':');
         juce::String className = "";
-        juce::String expressionToResolve = "";
-
-        int searchOrigin = wordStart > 0 ? wordStart - 1 : caretPosInt - 1;
+        
+        // Define where we start looking BACKWARDS for the object name (p, panel, etc.)
+        // If we just typed ':', look back from before the colon.
+        // If we typed 'p:ad', wordStart is at 'a', so wordStart - 1 is the colon.
+        int searchOrigin = justTypedSeparator ? caretPosInt - 1 : wordStart - 1;
+        
         int bracketStack = 0;
         int searchPos = searchOrigin;
 
+        // Scan backwards to find the start of the expression
         while (searchPos > 0)
         {
             juce::juce_wchar c = juce::CodeDocument::Position(document, searchPos - 1).getCharacter();
@@ -643,119 +651,80 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
 
             if (bracketStack == 0)
             {
+                // Stop at any character that isn't part of a variable/method chain
                 if (juce::CharacterFunctions::isWhitespace(c) || c == '=' || c == ',' || c == ';' || c == '\n' || c == '\r')
                     break;
             }
             searchPos--;
         }
 
-        expressionToResolve = document.getTextBetween(juce::CodeDocument::Position(document, searchPos),
-                                                     juce::CodeDocument::Position(document, searchOrigin)).trim();
+        juce::String expressionToResolve = document.getTextBetween(
+            juce::CodeDocument::Position(document, searchPos),
+            juce::CodeDocument::Position(document, searchOrigin)).trim();
 
-        _DBG("AUTOCOMPLETE: Expression found to resolve: [" + expressionToResolve + "]");
+        _DBG("AUTOCOMPLETE: Expression to resolve: [" + expressionToResolve + "]");
 
         if (expressionToResolve.isNotEmpty())
         {
-            // Resolve variable to Class (e.g., "myVar" -> "AffineTransform")
+            // Ask manager to turn "p" into "Path"
             className = manager.getClassNameForVariable(expressionToResolve, document.getAllContent());
 
-            // --- UPDATED: Class Name Check ---
-            // If it's not a variable, check if the expression IS the class name (e.g., "AffineTransform.")
+            // If manager failed, check if the expression itself is a Class name (Static check)
             if (className.isEmpty() && manager.getClassNames().contains(expressionToResolve, true))
             {
                 className = expressionToResolve;
             }
 
-            // Fallback for hardcoded shortcuts
+            // Global Hardcoded Fallbacks
             if (className.isEmpty())
             {
-                if (expressionToResolve.equalsIgnoreCase("panel") || expressionToResolve == "pan") className = "CtrlrPanel";
+                if (expressionToResolve.equalsIgnoreCase("panel")) className = "CtrlrPanel";
                 else if (expressionToResolve.startsWithIgnoreCase("mod")) className = "CtrlrModulator";
-                else if (expressionToResolve == "utils") className = "utils";
+                else if (expressionToResolve == "utils") className = "CtrlrLuaUtils";
             }
         }
 
         if (className.isNotEmpty())
         {
             contextResolved = true;
-            _DBG("AUTOCOMPLETE: Context Resolved: [" + expressionToResolve + "] -> [" + className + "]");
+            _DBG("AUTOCOMPLETE: Context Resolved: [" + className + "]");
 
-            // Logic: ':' is for instances, '.' is for static methods/constructors
-            bool includeInstance   = isInstance;
-            bool includeStatic     = !isInstance;
-            bool includeProperties = !isInstance;
-            
-            matches = manager.getMethodSuggestionsForClass(className, currentWord, includeInstance, includeStatic, includeProperties);
-            _DBG("AUTOCOMPLETE: Found " + juce::String((int)matches.size()) + " class-specific matches.");
+            // Instance methods for ':', Static/Properties for '.'
+            matches = manager.getMethodSuggestionsForClass(className, currentWord, isInstance, !isInstance, !isInstance);
         }
     }
 
-    // --- 4. GLOBAL FALLBACK ---
-    if (matches.empty() && currentWord.length() >= 1)
+    // --- 5. GLOBAL FALLBACK ---
+    // Only search globals if we aren't mid-colon/dot access, 
+    // OR if we are in a colon access but couldn't resolve the class.
+    if (matches.empty() && separator != ':' && separator != '.')
     {
-        if (separator != ':' && separator != '.')
+        if (currentWord.length() >= 1)
         {
-			if (!autoCompleteOpts){
-				// If separator is = ( or , we are definitely on the RHS  skip the LHS check
-				bool definitelyRhs = (separator == '=' || separator == '(' || separator == ',');
-				
-				if (!definitelyRhs)
-				{
-					// Look back along the line if no bare = before the caret, we're on the LHS
-					juce::String lineUpToCaret = document.getLine(
-																  editorComponent->getCaretPos().getLineNumber())
-					.substring(0, editorComponent->getCaretPos().getIndexInLine());
-					
-					bool hasAssignment = false;
-					for (int i = 0; i < lineUpToCaret.length(); ++i)
-					{
-						juce::juce_wchar c = lineUpToCaret[i];
-						if (c == '=')
-						{
-							juce::juce_wchar prev = i > 0 ? lineUpToCaret[i - 1] : 0;
-							juce::juce_wchar next = i < lineUpToCaret.length() - 1 ? lineUpToCaret[i + 1] : 0;
-							if (prev != '~' && prev != '<' && prev != '>' && prev != '=' && next != '=')
-							{
-								hasAssignment = true;
-								break;
-							}
-						}
-					}
-					
-					if (!hasAssignment)
-					{
-						if (suggestionPopup) suggestionPopup->setVisible(false);
-						return;
-					}
-				}
-			}
-			_DBG("AUTOCOMPLETE: Fetching Global Suggestions for [" + currentWord + "]");
-			matches = manager.getGlobalSuggestions(currentWord);
-			_DBG("AUTOCOMPLETE: Found " + juce::String((int)matches.size()) + " global matches.");
-		}
-        else if (contextResolved)
-        {
-            _DBG("AUTOCOMPLETE: Class context matched 0 results. Suppressing global fallback.");
+            // Optional: Your existing logic to check if we are on the RHS of an '='
+            matches = manager.getGlobalSuggestions(currentWord);
         }
     }
     
-    // --- 5. UI DISPLAY ---
+    // --- 6. UI DISPLAY ---
     if (!matches.empty())
     {
         suggestionPopup->setSuggestions(matches);
+        
         juce::Rectangle<int> caretRect = editorComponent->getCharacterBounds(editorComponent->getCaretPos());
         auto popupPos = getLocalPoint(editorComponent, caretRect.getBottomLeft());
         
         int rowHeight = 22;
         int displayCount = juce::jmin(10, (int)matches.size());
-        suggestionPopup->setBounds(popupPos.getX(), popupPos.getY() + 2, 350, displayCount * rowHeight);
         
+        // Position popup 2 pixels below the caret
+        suggestionPopup->setBounds(popupPos.getX(), popupPos.getY() + 2, 400, displayCount * rowHeight);
         suggestionPopup->setVisible(true);
         suggestionPopup->toFront(false);
     }
-    else if (suggestionPopup)
+    else
     {
-        suggestionPopup->setVisible(false);
+        if (suggestionPopup) suggestionPopup->setVisible(false);
     }
 }
 
