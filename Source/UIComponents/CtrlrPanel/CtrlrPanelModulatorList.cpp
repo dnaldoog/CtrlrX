@@ -175,8 +175,17 @@ const bool CtrlrPanelModulatorList::isComponentOffPanel(const int indexInModulat
 
 void CtrlrPanelModulatorList::refresh()
 {
-	copyModulatorList();
-	modulatorList->updateContent();
+    copyModulatorList();
+    modulatorList->updateContent();
+        // JUCE 6 quirk: updateContent() alone doesn't force the internal Viewport
+    // to recalculate row positions after a deletion, causing rows to visually
+    // overlap. A 1px bounds nudge triggers resized() and fixes the layout.
+    // Force the internal ListBox to fully recalculate its layout
+    modulatorList->setModel(nullptr);
+    modulatorList->setModel(this);
+    modulatorList->updateContent();
+    
+    modulatorList->repaint();
 }
 
 const Identifier CtrlrPanelModulatorList::getColumnCtrlrId(const int columnId)
@@ -484,29 +493,36 @@ void CtrlrPanelModulatorList::exportListItem(const int format)
 
 void CtrlrPanelModulatorList::deleteSelected()
 {
-	if (owner.getEditor())
-	{
-		if (owner.getEditor()->getCanvas() && owner.getEditor()->getSelection())
-		{
-			owner.getEditor()->getSelection()->deselectAll();
+    if (!owner.getEditor()) return;
+    if (!owner.getEditor()->getCanvas() || !owner.getEditor()->getSelection()) return;
 
-			SparseSet<int> selected = modulatorList->getSelectedRows();
+    SparseSet<int> selected = modulatorList->getSelectedRows();
+    if (selected.size() <= 0) return;
 
-			for (int range=selected.getNumRanges()-1; range>=0; range--)
-			{
-				for (int modulator=selected.getRange(range).getEnd()-1; modulator>=selected.getRange(range).getStart(); modulator--)
-				{
-					if (!copyOfModulatorList[modulator].wasObjectDeleted() && copyOfModulatorList[modulator]->getComponent())
-					{
-						owner.getEditor()->getCanvas()->removeComponent(copyOfModulatorList[modulator]->getComponent(), false);
-					}
-				}
-			}
+    // Stop the timer during deletion to prevent race conditions
+    stopTimer();
 
-			modulatorList->deselectAllRows();
-			refresh();
-		}
-	}
+    owner.getEditor()->getSelection()->deselectAll();
+
+    for (int range = selected.getNumRanges() - 1; range >= 0; --range)
+    {
+        for (int modulator = selected.getRange(range).getEnd() - 1;
+             modulator >= selected.getRange(range).getStart(); --modulator)
+        {
+            if (!copyOfModulatorList[modulator].wasObjectDeleted()
+                && copyOfModulatorList[modulator]->getComponent())
+            {
+                owner.getEditor()->getCanvas()->removeComponent(
+                    copyOfModulatorList[modulator]->getComponent(), false);
+            }
+        }
+    }
+
+    modulatorList->deselectAllRows();
+    refresh(); // copyModulatorList + updateContent + repaint
+
+    // Restart the timer after everything has settled
+    startTimer(200);
 }
 
 void CtrlrPanelModulatorList::restoreColumns(const String &columnState)
@@ -660,44 +676,34 @@ void CtrlrPanelModulatorList::handleSortSelection(const int itemId)
 
 void CtrlrPanelModulatorList::timerCallback()
 {
-    // 1. Check if the editor and canvas exist
     if (owner.getEditor() == nullptr) return;
-    
+
     CtrlrPanelCanvas* canvas = owner.getEditor()->getCanvas();
     if (canvas == nullptr) return;
 
-    // 2. Get the current selection from the Canvas
     SelectedItemSet<CtrlrComponent*>& selection = canvas->getSelection();
-    
-    // 3. Compare with current list selection to avoid unnecessary updates
     juce::SparseSet<int> newSelection;
 
     for (int i = 0; i < copyOfModulatorList.size(); ++i)
     {
-        // Use .get() because copyOfModulatorList contains WeakReferences
-        if (CtrlrModulator* m = copyOfModulatorList[i].get())
+        CtrlrModulator* m = copyOfModulatorList[i].get();
+        if (m == nullptr) continue; // Skip deleted/stale entries safely
+
+        if (m->getComponent() != nullptr && selection.isSelected(m->getComponent()))
         {
-            if (m->getComponent() != nullptr && selection.isSelected(m->getComponent()))
-            {
-                newSelection.addRange (juce::Range<int>(i, i + 1));
-            }
+            newSelection.addRange(juce::Range<int>(i, i + 1));
         }
     }
 
-    // 4. Update the TableListBox if selection has changed
     if (newSelection != modulatorList->getSelectedRows())
     {
-        modulatorList->setSelectedRows (newSelection, juce::dontSendNotification);
+        modulatorList->setSelectedRows(newSelection, juce::dontSendNotification);
 
         if (newSelection.size() > 0)
         {
-            const int firstSelectedRow = newSelection.getRange(0).getStart();
-            
-            // In JUCE 6.0.8, selectRow handles the internal scroll-to-view
-            modulatorList->selectRow (firstSelectedRow, true, true);
+            modulatorList->selectRow(newSelection.getRange(0).getStart(), true, true);
         }
-        
-        // Force redraw to show the SteelBlue color
+
         modulatorList->repaint();
     }
 }
