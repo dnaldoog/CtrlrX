@@ -619,11 +619,27 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
     if (newText == ":" || newText == ".")
         separator = newText[0];
 
+    // --- CRASH GUARD: LUA OPERATORS ---
+    if (separator == '.')
+    {
+        if (wordStart > 1)
+        {
+            juce::juce_wchar prevChar = juce::CodeDocument::Position(document, wordStart - 2).getCharacter();
+            // Guard against .. (concat) or ... (varargs)
+            if (prevChar == '.')
+            {
+                _DBG("AUTOCOMPLETE: Aborting - Operator detected (..)");
+                if (suggestionPopup) suggestionPopup->setVisible(false);
+                return;
+            }
+        }
+    }
+
     _DBG("AUTOCOMPLETE: Triggered. Word: [" + currentWord + "] | Separator: [" + juce::String::charToString(separator) + "]");
     
     bool contextResolved = false;
 
-    // --- 3. CONTEXTUAL SEARCH (Triggered by : or .) ---
+    // --- 3. CONTEXTUAL SEARCH ---
     if (separator == ':' || separator == '.')
     {
         bool isInstance = (separator == ':');
@@ -634,6 +650,11 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
         int bracketStack = 0;
         int searchPos = searchOrigin;
 
+        // --- CRASH GUARD: Ensure searchOrigin is valid ---
+        if (searchOrigin < 0) return;
+
+        _DBG("AUTOCOMPLETE: Starting expression loop at pos: " + juce::String(searchPos));
+
         while (searchPos > 0)
         {
             juce::juce_wchar c = juce::CodeDocument::Position(document, searchPos - 1).getCharacter();
@@ -643,7 +664,8 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
 
             if (bracketStack == 0)
             {
-                if (juce::CharacterFunctions::isWhitespace(c) || c == '=' || c == ',' || c == ';' || c == '\n' || c == '\r')
+                // Break on typical Lua delimiters
+                if (juce::CharacterFunctions::isWhitespace(c) || c == '=' || c == ',' || c == ';' || c == '\n' || c == '\r' || c == '[' || c == '{')
                     break;
             }
             searchPos--;
@@ -654,10 +676,12 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
 
         _DBG("AUTOCOMPLETE: Expression found to resolve: [" + expressionToResolve + "]");
 
-        if (expressionToResolve.isNotEmpty())
+        // CRITICAL GUARD: Don't try to resolve single punctuation or empty strings
+        if (expressionToResolve.isNotEmpty() && expressionToResolve != "." && expressionToResolve != ":")
         {
-            // Resolve variable to Class (e.g., "myVar" -> "AffineTransform")
+            _DBG("AUTOCOMPLETE: Calling getClassNameForVariable...");
             className = manager.getClassNameForVariable(expressionToResolve, document.getAllContent());
+            _DBG("AUTOCOMPLETE: Class resolved: [" + className + "]");
 
             // --- UPDATED: Class Name Check ---
             // If it's not a variable, check if the expression IS the class name (e.g., "AffineTransform.")
@@ -678,11 +702,8 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
         if (className.isNotEmpty())
         {
             contextResolved = true;
-            _DBG("AUTOCOMPLETE: Context Resolved: [" + expressionToResolve + "] -> [" + className + "]");
-
-            // Logic: ':' is for instances, '.' is for static methods/constructors
-            bool includeInstance   = isInstance;
-            bool includeStatic     = !isInstance;
+            bool includeInstance = isInstance;
+            bool includeStatic = !isInstance;
             bool includeProperties = !isInstance;
             
             matches = manager.getMethodSuggestionsForClass(className, currentWord, includeInstance, includeStatic, includeProperties);
@@ -695,47 +716,44 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
     {
         if (separator != ':' && separator != '.')
         {
-			if (!autoCompleteOpts){
-				// If separator is = ( or , we are definitely on the RHS  skip the LHS check
-				bool definitelyRhs = (separator == '=' || separator == '(' || separator == ',');
-				
-				if (!definitelyRhs)
-				{
-					// Look back along the line if no bare = before the caret, we're on the LHS
-					juce::String lineUpToCaret = document.getLine(
-																  editorComponent->getCaretPos().getLineNumber())
-					.substring(0, editorComponent->getCaretPos().getIndexInLine());
-					
-					bool hasAssignment = false;
-					for (int i = 0; i < lineUpToCaret.length(); ++i)
-					{
-						juce::juce_wchar c = lineUpToCaret[i];
-						if (c == '=')
-						{
-							juce::juce_wchar prev = i > 0 ? lineUpToCaret[i - 1] : 0;
-							juce::juce_wchar next = i < lineUpToCaret.length() - 1 ? lineUpToCaret[i + 1] : 0;
-							if (prev != '~' && prev != '<' && prev != '>' && prev != '=' && next != '=')
-							{
-								hasAssignment = true;
-								break;
-							}
-						}
-					}
-					
-					if (!hasAssignment)
-					{
-						if (suggestionPopup) suggestionPopup->setVisible(false);
-						return;
-					}
-				}
-			}
-			_DBG("AUTOCOMPLETE: Fetching Global Suggestions for [" + currentWord + "]");
-			matches = manager.getGlobalSuggestions(currentWord);
-			_DBG("AUTOCOMPLETE: Found " + juce::String((int)matches.size()) + " global matches.");
-		}
+            if (!autoCompleteOpts)
+            {
+                bool definitelyRhs = (separator == '=' || separator == '(' || separator == ',');
+                
+                if (!definitelyRhs)
+                {
+                    juce::String lineUpToCaret = document.getLine(editorComponent->getCaretPos().getLineNumber())
+                        .substring(0, editorComponent->getCaretPos().getIndexInLine());
+                    
+                    bool hasAssignment = false;
+                    for (int i = 0; i < lineUpToCaret.length(); ++i)
+                    {
+                        juce::juce_wchar c = lineUpToCaret[i];
+                        if (c == '=')
+                        {
+                            juce::juce_wchar prev = i > 0 ? lineUpToCaret[i - 1] : 0;
+                            juce::juce_wchar next = i < lineUpToCaret.length() - 1 ? lineUpToCaret[i + 1] : 0;
+                            if (prev != '~' && prev != '<' && prev != '>' && prev != '=' && next != '=')
+                            {
+                                hasAssignment = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (!hasAssignment)
+                    {
+                        if (suggestionPopup) suggestionPopup->setVisible(false);
+                        return;
+                    }
+                }
+            }
+            _DBG("AUTOCOMPLETE: Fetching Global Suggestions for [" + currentWord + "]");
+            matches = manager.getGlobalSuggestions(currentWord);
+        }
         else if (contextResolved)
         {
-            _DBG("AUTOCOMPLETE: Class context matched 0 results. Suppressing global fallback.");
+             _DBG("AUTOCOMPLETE: Class context matched 0 results. Suppressing global fallback.");
         }
     }
     

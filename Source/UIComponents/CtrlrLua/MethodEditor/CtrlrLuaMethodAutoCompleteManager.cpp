@@ -831,11 +831,11 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
     if (varName == "mod")                         return "CtrlrModulator";
     if (varName == "comp")                        return "CtrlrComponent";
     if (varName == "g")                           return "Graphics";
-    if (varName == "utils")                       return "CtrlrLuaUtils"; // Updated v5.6.35 12.02.26. Fixed: Points to actual class
+    if (varName == "utils")                       return "CtrlrLuaUtils";
     if (varName == "math")                        return "math";
     if (varName == "table")                       return "table";
     if (varName == "string")                      return "string";
-    if (varName == "MemoryBlock" || varName == "memoryBlock") return "LMemoryBlock"; //  // Updated v5.6.35 12.02.26. Redirect everything to the one with the methods
+    if (varName == "MemoryBlock" || varName == "memoryBlock") return "LMemoryBlock";
     if (varName == "CtrlrMidiMessage")            return "CtrlrMidiMessage";
     if (varName.equalsIgnoreCase("Path"))         return "Path";
     
@@ -861,9 +861,46 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
     }
 
     // 3. DYNAMIC LOOK-BACK (Assignments: mb = MemoryBlock())
-    // We look for the variable name followed by an equals sign, ignoring spaces
-    int assignmentPos = code.lastIndexOf(varName + " =");
-    if (assignmentPos == -1) assignmentPos = code.lastIndexOf(varName + "=");
+    // We use a manual backwards scan to find the REAL assignment, skipping self-references.
+    int assignmentPos = -1;
+    int varLen = varName.length();
+    int searchStartIdx = code.length() - varLen;
+
+    while (searchStartIdx >= 0)
+    {
+        int foundIdx = code.indexOf(searchStartIdx, varName);
+        
+        if (foundIdx != -1 && foundIdx <= searchStartIdx)
+        {
+            // Check for assignment sign '='
+            int nextCharPos = foundIdx + varLen;
+            while (nextCharPos < code.length() && juce::CharacterFunctions::isWhitespace(code[nextCharPos]))
+                nextCharPos++;
+
+            if (nextCharPos < code.length() && code[nextCharPos] == '=')
+            {
+                // Ensure it's not a comparison '=='
+                if (!(nextCharPos + 1 < code.length() && code[nextCharPos + 1] == '='))
+                {
+                    // --- SELF-REFERENCE GUARD ---
+                    // Peek at the Right-Hand Side (RHS) to see if it's just a concatenation of itself
+                    juce::String rhsCheck = code.substring(nextCharPos + 1).upToFirstOccurrenceOf("\n", false, false).trim();
+                    
+                    // If the line is "var = var.", skip it and look further back for the original source
+                    if (rhsCheck.containsWholeWord(varName))
+                    {
+                        searchStartIdx = foundIdx - 1;
+                        continue;
+                    }
+
+                    assignmentPos = foundIdx;
+                    break;
+                }
+            }
+            searchStartIdx = foundIdx - 1;
+        }
+        else { searchStartIdx--; }
+    }
 
     if (assignmentPos != -1)
     {
@@ -872,43 +909,36 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
         
         int endOfLine = rhs.indexOfAnyOf(";\n\r");
         if (endOfLine != -1) rhs = rhs.substring(0, endOfLine).trim();
-		
-		// --- CONSTRUCTOR DETECTION (FIXED) ---
-		// Strip everything after the first '(' to handle MemoryBlock(1024)
-		juce::String potentialClass = rhs.upToFirstOccurrenceOf("(", false, false).trim();
-		
-		// 1. Check classNames case-insensitively
-		for (auto& name : classNames) {
-			if (name.equalsIgnoreCase(potentialClass)) {
-				// Redirection logic: ensure we always return the key that has the methods
-				if (name.equalsIgnoreCase("MemoryBlock") || name.equalsIgnoreCase("LMemoryBlock"))
-					return "LMemoryBlock";
-				
-				return name;
-			}
-		}
-		
-		// 2. Explicit check for manual aliases
-		if (potentialClass.equalsIgnoreCase("MemoryBlock") || potentialClass.equalsIgnoreCase("LMemoryBlock"))
-			return "LMemoryBlock";
-		
-		// 3. RECURSIVE ALIAS/CHAIN RESOLUTION
-		// Only run this if we didn't find a direct class match above
-		if (rhs != varName && rhs.isNotEmpty())
-		{
-			// Handle Path.Path() style statics
-			if (rhs.contains(".")) {
-				juce::String base = rhs.upToFirstOccurrenceOf(".", false, false).trim();
-				for (auto& name : classNames) {
-					if (name.equalsIgnoreCase(base)) return name;
-				}
-			}
-			return getClassNameForVariable(rhs, code);
-		}
+        
+        // --- CONSTRUCTOR DETECTION ---
+        juce::String potentialClass = rhs.upToFirstOccurrenceOf("(", false, false).trim();
+        
+        for (auto& name : classNames) {
+            if (name.equalsIgnoreCase(potentialClass)) {
+                if (name.equalsIgnoreCase("MemoryBlock") || name.equalsIgnoreCase("LMemoryBlock"))
+                    return "LMemoryBlock";
+                return name;
+            }
+        }
+        
+        if (potentialClass.equalsIgnoreCase("MemoryBlock") || potentialClass.equalsIgnoreCase("LMemoryBlock"))
+            return "LMemoryBlock";
+        
+        // RECURSIVE ALIAS/CHAIN RESOLUTION
+        if (rhs != varName && rhs.isNotEmpty())
+        {
+            if (rhs.contains(".")) {
+                juce::String base = rhs.upToFirstOccurrenceOf(".", false, false).trim();
+                for (auto& name : classNames) {
+                    if (name.equalsIgnoreCase(base)) return name;
+                }
+            }
+            return getClassNameForVariable(rhs, code);
+        }
     }
-	
+    
     // 4. Static Fallbacks (If no assignment found, guess by name)
-	if (varName == "m" || varName == "mb" || varName == "mem" || varName == "memoryBlock") return "LMemoryBlock"; // Updated v5.6.35 12.02.26
+    if (varName == "m" || varName == "mb" || varName == "mem" || varName == "memoryBlock") return "LMemoryBlock";
     if (varName == "f") return "File";
     
     return "";

@@ -60,7 +60,7 @@ Ctrlr allows you to control any MIDI-enabled hardware: synthesizers, drum machin
 
 Development and maintenance of [CtrlrX](https://github.com/damiensellier/CtrlrX) are supported by the community. If you find this project useful and would like to support [Damien Sellier](https://github.com/DamienSellier/), the main person behind [CtrlrX](https://github.com/damiensellier/CtrlrX), any donations are greatly appreciated.
 
-You can donate via PayPal using this link: **[https://ko-fi.com/damiensellier](https://ko-fi.com/damiensellier)**
+You can donate via ko-fi using this link: **[https://ko-fi.com/damiensellier](https://ko-fi.com/damiensellier)**
 
 ---
 
@@ -486,7 +486,7 @@ Tuturial coming soon.
 
 ## Changelog
 
-#### Version 5.6.35 | 2026.04.05
+#### Version 5.6.35 | 2026.04.11
 
 * **UPDATED** ctrlrAutoSave & ctrlrAutoSaveInterval properties in Preferences only if isStandaloneApp. `CtrlrManager.cpp`, `CtrlrManagerInstance.cpp`, `CtrlrSettings.cpp`
 * **UPDATED** flag IS_MIDI_EFFECT FALSE. `CMakeLists.txt`
@@ -506,6 +506,13 @@ Tuturial coming soon.
 * **UPDATED** X11 scaling for HiDPI in Linux. Thanks to [Andrej Radović](https://github.com/randrej)
 * **FIXED** parameter index to host interface for AudioUnit. Thanks to [Chuck Zwicky](https://github.com/zmixnyc) `CtrlrProcessor.cpp`
 * **UPDATED** comboBox Fuzzy Search with [RapidFuzz CPP](https://github.com/rapidfuzz/rapidfuzz-cpp). `CtrlrCombo.cpp` & `.h`, `CtrlrIDs.xml` & `.h`, `Source/Misc/rapidfuzz`, `CMakeLists.txt`
+* **UPDATED** CtrlrPanelLayerList & selected item highlight. Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrPanelLayerList.cpp`, `CtrlrPanelLayerListItem.cpp` & `.h`
+* **UPDATED** CtrlrAbout Window with new donation links & resources to ko-fi. `CtrlrAbout.cpp` & `.h`
+* **UPDATED** Windows export panel fileChooser default target folders. `CtrlrWindows.cpp`
+* **ADDED** Windows script for faster compilation via NINJA. Thanks to [John Goodland](https://github.com/dnaldoog). `autobuild_win.bat`
+* **UPDATED** CtrlrTabsComponents.cpp saving uiSlider positions on uiTabs. `CtrlrTabsComponent.cpp`
+* **FIXED** CtrlrLuaMethodAutoCompleteManager crash when self-referencing a custom variable followed with LUA concatenation dot dot. (i.e. myVariable = myVvariable.."abc"). `CtrlrLuaMethodAutoCompleteManager.cpp`, `CtrlrLuaMethodCodeEditor.cpp`
+
 
 #### Version 5.6.34 | 2025.11.07
 
