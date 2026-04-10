@@ -10,31 +10,36 @@
 /* ********************************************************************************** */
 CtrlrPanelModulatorList::CtrlrPanelModulatorList (CtrlrPanel &_owner)
     : owner(_owner),
-      modulatorList (0),
-	  modulatorListTree(owner)
+      modulatorList (nullptr), 
+      modulatorListTree(owner)
 {
-	addAndMakeVisible (&modulatorListTree);
-	modulatorListTree.setVisible (false);
+    addAndMakeVisible (&modulatorListTree);
+    modulatorListTree.setVisible (false);
 
-	owner.setProperty (Ids::uiPanelModulatorListViewTree, false);
+    owner.setProperty (Ids::uiPanelModulatorListViewTree, false);
 
     addAndMakeVisible (modulatorList = new TableListBox ("Modulator List", this));
-    modulatorList->setName (L"modulatorList");
-	modulatorList->getHeader().setStretchToFitActive(true);
-	modulatorList->setMultipleSelectionEnabled (true);
-	modulatorList->setHeaderHeight (20);
+    modulatorList->setName ("modulatorList");
+    modulatorList->getHeader().setStretchToFitActive(true);
+    modulatorList->setMultipleSelectionEnabled (true);
+    modulatorList->setHeaderHeight (20);
 
-	if (owner.getProperty (Ids::panelModulatorListColumns).toString() != COMBO_ITEM_NONE)
-	{
-		restoreColumns (owner.getProperty (Ids::panelModulatorListColumns));
-	}
-	else
-	{
-		resetToDefaults();
-	}
-	owner.addPanelListener (this);
+    if (owner.getProperty (Ids::panelModulatorListColumns).toString() != COMBO_ITEM_NONE)
+    {
+        restoreColumns (owner.getProperty (Ids::panelModulatorListColumns));
+    }
+    else
+    {
+        resetToDefaults();
+    }
+    
+    owner.addPanelListener (this);
+
+    // Start the timer to poll for selection changes every 200ms
+    startTimer (200); 
+
     setSize (600, 400);
-	refresh();
+    refresh();
 }
 
 CtrlrPanelModulatorList::~CtrlrPanelModulatorList()
@@ -101,6 +106,37 @@ void CtrlrPanelModulatorList::copyModulatorList()
 
 void CtrlrPanelModulatorList::modulatorChanged (CtrlrModulator *modulatorThatChanged)
 {
+	_DBG("modulatorChanged fired for: " + (modulatorThatChanged ? modulatorThatChanged->getName() : "null"));
+	    if (owner.getEditor() && owner.getEditor()->getCanvas())
+    {
+        // Get the current selection from the canvas
+        SelectedItemSet<CtrlrComponent*>& selection = owner.getEditor()->getCanvas()->getSelection();
+        SparseSet<int> rowsToSelect;
+
+        for (int i = 0; i < copyOfModulatorList.size(); ++i)
+        {
+            if (CtrlrModulator* m = copyOfModulatorList[i])
+            {
+                if (m->getComponent() && selection.isSelected(m->getComponent()))
+                {
+                    rowsToSelect.addRange(Range<int>(i, i + 1));
+                }
+            }
+        }
+
+        // Set the selection without triggering a callback loop
+        modulatorList->setSelectedRows(rowsToSelect, dontSendNotification);
+
+        // Logic to scroll: TableListBox doesn't always expose scroll methods directly,
+        // so we access the internal ListBox if the selection isn't empty.
+        if (rowsToSelect.size() > 0)
+        {
+            int firstRow = rowsToSelect.getRange(0).getStart();
+            
+            // This is the most compatible way to force a scroll in JUCE 6 TableListBox:
+            modulatorList->selectRow(firstRow, true, true);
+        }
+    }
 }
 
 void CtrlrPanelModulatorList::modulatorAdded (CtrlrModulator *modulatorThatWasAdded)
@@ -204,11 +240,14 @@ int CtrlrPanelModulatorList::getNumRows()
 
 void CtrlrPanelModulatorList::paintRowBackground (Graphics& g, int rowNumber, int width, int height, bool rowIsSelected)
 {
-	if (rowIsSelected)
-	{
-		gui::drawSelectionRectangle (g, width, height);
-		g.fillAll(Component::findColour(TextButton::buttonOnColourId).brighter(0.6f)); // Updated v5.6.34. Was (Colours::red)
-	}
+    if (rowIsSelected)
+    {
+        // Fill the background with SteelBlue
+        g.fillAll (Colours::steelblue); 
+
+        // Optional: Keep the Ctrlr-specific selection outline
+        gui::drawSelectionRectangle (g, width, height);
+    }
 }
 
 Component* CtrlrPanelModulatorList::refreshComponentForCell (int rowNumber, int columnId, bool isRowSelected, Component* existingComponentToUpdate)
@@ -617,4 +656,48 @@ void CtrlrPanelModulatorList::handleSortSelection(const int itemId)
 		owner.setProperty (Ids::panelModulatorListSortOption, false);
 
 	modulatorList->updateContent();
+}
+
+void CtrlrPanelModulatorList::timerCallback()
+{
+    // 1. Check if the editor and canvas exist
+    if (owner.getEditor() == nullptr) return;
+    
+    CtrlrPanelCanvas* canvas = owner.getEditor()->getCanvas();
+    if (canvas == nullptr) return;
+
+    // 2. Get the current selection from the Canvas
+    SelectedItemSet<CtrlrComponent*>& selection = canvas->getSelection();
+    
+    // 3. Compare with current list selection to avoid unnecessary updates
+    juce::SparseSet<int> newSelection;
+
+    for (int i = 0; i < copyOfModulatorList.size(); ++i)
+    {
+        // Use .get() because copyOfModulatorList contains WeakReferences
+        if (CtrlrModulator* m = copyOfModulatorList[i].get())
+        {
+            if (m->getComponent() != nullptr && selection.isSelected(m->getComponent()))
+            {
+                newSelection.addRange (juce::Range<int>(i, i + 1));
+            }
+        }
+    }
+
+    // 4. Update the TableListBox if selection has changed
+    if (newSelection != modulatorList->getSelectedRows())
+    {
+        modulatorList->setSelectedRows (newSelection, juce::dontSendNotification);
+
+        if (newSelection.size() > 0)
+        {
+            const int firstSelectedRow = newSelection.getRange(0).getStart();
+            
+            // In JUCE 6.0.8, selectRow handles the internal scroll-to-view
+            modulatorList->selectRow (firstSelectedRow, true, true);
+        }
+        
+        // Force redraw to show the SteelBlue color
+        modulatorList->repaint();
+    }
 }
