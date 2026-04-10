@@ -458,20 +458,24 @@ bool CtrlrTabsComponent::isOwned(CtrlrComponent *componentToCheck)
 
 void CtrlrTabsComponent::setOwned (CtrlrComponent *componentToOwn, const int subIndexInGroup, const bool shouldOwnThisComponent)
 {
-	if (componentToOwn == nullptr)
-		return;
+    if (componentToOwn == nullptr)
+        return;
 
-	if (shouldOwnThisComponent)
-	{
-		componentToOwn->setProperty (Ids::componentTabName, owner.getName(), true);
-		componentToOwn->setProperty (Ids::componentTabId, subIndexInGroup, true);
-		componentToOwn->setProperty (Ids::componentGroupped, true, true);
-		componentToOwn->setProperty(Ids::componentGroupName, "", true);
-		componentToOwn->setProperty(Ids::componentGroupName, "", true); // Added v5.6.35. Thanks to @dnaldoog. Clear group name when assigning to tab
+    if (shouldOwnThisComponent)
+    {
+        componentToOwn->setProperty (Ids::componentTabName, owner.getName(), true);
+        componentToOwn->setProperty (Ids::componentTabId, subIndexInGroup, true);
+        componentToOwn->setProperty (Ids::componentGroupped, true, true);
 
-		if (ctrlrTabs->getTabContentComponent(subIndexInGroup))
-			ctrlrTabs->getTabContentComponent(subIndexInGroup)->addAndMakeVisible (componentToOwn);
-	}
+        // SAFEGUARD: Only clear the group name if we aren't currently loading the panel
+        if (!CtrlrComponent::restoreStateInProgress)
+        {
+            componentToOwn->setProperty(Ids::componentGroupName, "", true);
+        }
+
+        if (ctrlrTabs->getTabContentComponent(subIndexInGroup))
+            ctrlrTabs->getTabContentComponent(subIndexInGroup)->addAndMakeVisible (componentToOwn);
+    }
 	else
 	{
 		owner.getOwnerPanel().getEditor()->getCanvas()->addAndMakeVisibleNg (componentToOwn);
