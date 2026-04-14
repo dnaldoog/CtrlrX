@@ -77,7 +77,7 @@ private:
     ScopedPointer<DrawableButton> ctrlrLogo;
     ScopedPointer<DrawableButton> vst3AuJuceLogo;
     ScopedPointer<DrawableButton> githubLogo;
-    ScopedPointer<DrawableButton> donateLogo;
+    ScopedPointer<DrawableButton> paypalLogo;
         
     ScopedPointer<HyperlinkButton> ctrlrxUrl;
     ScopedPointer<HyperlinkButton> ctrlrxDonateUrl;

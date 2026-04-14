@@ -4,11 +4,10 @@
 #include "CtrlrRevision.h"
 #include "CtrlrPanel/CtrlrPanel.h"
 #include "CtrlrInlineUtilitiesGUI.h"
-
 extern "C" {
-// #include "lua.h" // Already included via stdafx.h
-// #include "lualib.h" // Useless for LUA version macro
-// #include "lauxlib.h" // Useless for LUA version macro
+#include "lua.h"
+#include "lualib.h"
+#include "lauxlib.h"
 #ifdef CTRLRX_USE_LUAJIT
 #include "luajit.h"
 #endif
@@ -53,11 +52,11 @@ CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
     
     // CtrlrX libs version Label
     String juceVersion = SystemStats::getJUCEVersion().fromLastOccurrenceOf("JUCE v", false, true);
-#ifdef LUAJIT_VERSION
+    #ifdef LUAJIT_VERSION
     String luaVersion = String(LUAJIT_VERSION);  // e.g. "LuaJIT 2.1.0-beta3"
-#else
-    String luaVersion = LUA_RELEASE;
-#endif
+    #else
+    String luaVersion = LUA_RELEASE;             // fallback to standard Lua
+    #endif
 
     String luabindVersion = _STR(LUABIND_VERSION / 1000) + "." + _STR(LUABIND_VERSION / 100 % 100) + "." + _STR(LUABIND_VERSION % 100);
     String boostVersion = _STR(BOOST_VERSION / 100000) + "." + _STR((BOOST_VERSION / 100) % 1000) + "." + _STR(BOOST_VERSION % 100);
@@ -104,14 +103,14 @@ CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
     ctrlrxUrl->setJustificationType(Justification::topLeft);
     ctrlrxUrl->setColour (HyperlinkButton::textColourId, Colour(getLookAndFeel().findColour (PopupMenu::highlightedBackgroundColourId)));
     
-    // Donation LOGO SVG
-    addAndMakeVisible (donateLogo = gui::createDrawableButton("Donation Logo", BIN2STR(kofi_svg))); // Updated v5.6.35. It required to drag drop SVG file in the projucer in the icon folder to be embedded
-    donateLogo->addListener (this);
-    donateLogo->setTooltip (TRANS("Donate to the CtrlrX project"));
-    donateLogo->setMouseCursor(MouseCursor::PointingHandCursor);
+    // PayPal LOGO SVG
+    addAndMakeVisible (paypalLogo = gui::createDrawableButton("PayPal Logo", BIN2STR(paypal_colour_svg))); // Updated v5.6.31. It required to drag drop SVG file in the projucer in the icon folder to be embedded
+    paypalLogo->addListener (this);
+    paypalLogo->setTooltip (TRANS("Donate to the CtrlrX project"));
+    paypalLogo->setMouseCursor(MouseCursor::PointingHandCursor);
     
-    // Donation link
-    addAndMakeVisible (ctrlrxDonateUrl = new HyperlinkButton ("Donate to the CtrlrX project", URL ("https://ko-fi.com/damiensellier"))); // Updated v5.6.35
+    // PayPal link
+    addAndMakeVisible (ctrlrxDonateUrl = new HyperlinkButton ("Donate to the CtrlrX project", URL ("https://paypal.me/damiensellier"))); // Updated v5.6.31b
     ctrlrxDonateUrl->setTooltip (TRANS("Donate to the CtrlrX project"));
     ctrlrxDonateUrl->setFont(14.00f, Font::plain);
     ctrlrxDonateUrl->setJustificationType(Justification::topLeft);
@@ -208,9 +207,6 @@ CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
     
     
     // PANEL EXTRA LABELS
-	// We cache the pointer here to prevent crashes if the user opens "About" without a panel loaded.
-    auto* activePanel = owner.getActivePanel();
-	
     // Instance Name Label
     addAndMakeVisible (label = new Label ("new label", TRANS("Instance name")));
     label->setFont (Font (14.00f, Font::plain));
@@ -238,7 +234,7 @@ CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
     
     // Author Email Label
     String authorEmail;
-    if (activePanel) authorEmail = activePanel->getProperty(Ids::panelAuthorEmail);
+    if(owner.getActivePanel()) authorEmail = owner.getActivePanel()->getProperty(Ids::panelAuthorEmail);
         else authorEmail = "";
     
     if (!authorEmail.isEmpty())
@@ -261,7 +257,7 @@ CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
     
     // Author Donate Label
     String authorDonateUrl;
-    if (activePanel) authorDonateUrl = activePanel->getProperty(Ids::panelAuthorDonateUrl);
+    if(owner.getActivePanel()) authorDonateUrl = owner.getActivePanel()->getProperty(Ids::panelAuthorDonateUrl);
         else authorDonateUrl = "";
     
 	if (!authorDonateUrl.isEmpty())
@@ -337,20 +333,19 @@ CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
     instanceDescription->setText ("");
     
 
-    // Overall Data Assignment using the safe activePanel pointer
-    if (activePanel)
+    // Overall Height declaration
+    if (owner.getActivePanel())
     {
-        instanceName->setText (activePanel->getProperty(Ids::name).toString(), dontSendNotification);
-        instanceVersion->setText (activePanel->getVersionString(false, false, "."), dontSendNotification);
-        instanceAuthor->setText (activePanel->getProperty(Ids::panelAuthorName).toString(), dontSendNotification);
-        instanceUrl->setButtonText (activePanel->getProperty(Ids::panelAuthorUrl));
+        instanceName->setText (owner.getActivePanel()->getProperty(Ids::name).toString(), dontSendNotification);
+        instanceVersion->setText (owner.getActivePanel()->getVersionString(false, false, "."), dontSendNotification);
+        instanceAuthor->setText (owner.getActivePanel()->getProperty(Ids::panelAuthorName).toString(), dontSendNotification);
+        instanceUrl->setButtonText (owner.getActivePanel()->getProperty(Ids::panelAuthorUrl));
         #if ! JUCE_LINUX
-        instanceUrl->setURL(URL(activePanel->getProperty(Ids::panelAuthorUrl))); // Updated 5.6.34. Added condition for LINUX to prevent crash from the About window.
+        instanceUrl->setURL(URL(owner.getActivePanel()->getProperty(Ids::panelAuthorUrl))); // Updated 5.6.34. Added condition for LINUX to prevent crash from the About window.
         #endif
-        instanceDescription->setText (activePanel->getProperty(Ids::panelAuthorDesc).toString(), dontSendNotification);
+        instanceDescription->setText (owner.getActivePanel()->getProperty(Ids::panelAuthorDesc).toString(), dontSendNotification);
     }
     
-	// Sizing Logic
 	if (owner.isSingleInstance())
 	{
         int singleInstanceHeight = 580;
@@ -375,15 +370,39 @@ CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
 
 CtrlrAbout::~CtrlrAbout()
 {
-    // 1. ALWAYS remove listeners first.
-    // This ensures the buttons don't try to send messages to a dying object.
-    if (ctrlrLogo)         ctrlrLogo->removeListener(this);
-    if (githubLogo)        githubLogo->removeListener(this);
-    if (donateLogo)        donateLogo->removeListener(this);
-    if (vst3AuJuceLogo)    vst3AuJuceLogo->removeListener(this);
     
-    // 2. That's it.
-    // All ScopedPointers will clean themselves up automatically now.
+	if (ctrlrLogo)         ctrlrLogo->removeListener(this);
+	if (githubLogo)        githubLogo->removeListener(this);
+	if (paypalLogo)        paypalLogo->removeListener(this);
+	if (vst3AuJuceLogo)    vst3AuJuceLogo->removeListener(this);
+    
+    ctrlrName = nullptr;
+    ctrlrLogo = nullptr;
+    vst3AuJuceLogo = nullptr;
+    versionInfoLabel = nullptr;
+    ctrlrxLibsVersionLabel = nullptr;
+    creditsLabel = nullptr;
+    ctrlrxVersionLabel = nullptr;
+    ctrlrxReleaseDateLabel = nullptr;
+    ctrlrxUrl = nullptr;
+    ctrlrxDonateUrl = nullptr;
+    descriptionLabel = nullptr;
+    copyrightLabel = nullptr;
+    
+    label = nullptr;
+    label2 = nullptr;
+    label3 = nullptr;
+    label4 = nullptr;
+    labelDonate = nullptr;
+    labelAuthorEmail = nullptr;
+    
+    instanceUrl = nullptr;
+    instanceAuthorDonateUrl = nullptr;
+    instanceAuthorEmail = nullptr;
+    instanceVersion = nullptr;
+    instanceAuthor = nullptr;
+    instanceName = nullptr;
+    instanceDescription = nullptr;
 }
 
 //==============================================================================
@@ -411,8 +430,7 @@ void CtrlrAbout::resized()
     // Left Side
     
     int ctrlrLogoSize = 170; // 150
-    if (ctrlrLogo)
-        ctrlrLogo->setBounds ( paddingSize, paddingSize, ctrlrLogoSize, ctrlrLogoSize );
+    ctrlrLogo->setBounds ( paddingSize, paddingSize, ctrlrLogoSize, ctrlrLogoSize );
     
     
     // Right side
@@ -420,59 +438,46 @@ void CtrlrAbout::resized()
     
     int ctrlrNameHeight = 32;
     heightPosition += 0; // 8
-    if (ctrlrName)
-        ctrlrName->setBounds (ctrlrLogoSize + paddingSize*3, heightPosition, rightColumnWidth, ctrlrNameHeight);
+    ctrlrName->setBounds (ctrlrLogoSize + paddingSize*3, heightPosition, rightColumnWidth, ctrlrNameHeight);
     
     int ctrlrxVersionLabelheight = 18;
     heightPosition += ( ctrlrNameHeight + paddingSize );
-    if (ctrlrxVersionLabel)
-        ctrlrxVersionLabel->setBounds (ctrlrLogoSize + paddingSize*3, heightPosition, rightColumnWidth, ctrlrxVersionLabelheight);
+    ctrlrxVersionLabel->setBounds (ctrlrLogoSize + paddingSize*3, heightPosition, rightColumnWidth, ctrlrxVersionLabelheight);
     
     int ctrlrxReleaseDateLabelheight = 18;
     heightPosition += ( ctrlrxVersionLabelheight );
-    if (ctrlrxReleaseDateLabel)
-        ctrlrxReleaseDateLabel->setBounds (ctrlrLogoSize + paddingSize*3, heightPosition, rightColumnWidth, ctrlrxReleaseDateLabelheight);
+    ctrlrxReleaseDateLabel->setBounds (ctrlrLogoSize + paddingSize*3, heightPosition, rightColumnWidth, ctrlrxReleaseDateLabelheight);
     
     int ctrlrxLibsVersionLabelheight = 18;
     heightPosition += ( ctrlrxReleaseDateLabelheight );
-    if (ctrlrxLibsVersionLabel)
-        ctrlrxLibsVersionLabel->setBounds (ctrlrLogoSize + paddingSize*3, heightPosition, rightColumnWidth, ctrlrxLibsVersionLabelheight);
+    ctrlrxLibsVersionLabel->setBounds (ctrlrLogoSize + paddingSize*3, heightPosition, rightColumnWidth, ctrlrxLibsVersionLabelheight);
     
     int creditsLabelheight = 32;
     heightPosition += ( ctrlrxLibsVersionLabelheight + paddingSize );
-    if (creditsLabel)
-        creditsLabel->setBounds (ctrlrLogoSize + paddingSize*3 + 4, heightPosition, rightColumnWidth, creditsLabelheight);
-
+    creditsLabel->setBounds (ctrlrLogoSize + paddingSize*3 + 4, heightPosition, rightColumnWidth, creditsLabelheight);
+        
     int ctrlrxUrlHeight = 18;
     heightPosition += ( creditsLabelheight + paddingSize );
-    if (githubLogo && ctrlrxUrl)
-    {
-        githubLogo->setBounds (ctrlrLogoSize + paddingSize*3, heightPosition -1, ctrlrxUrlHeight +2, ctrlrxUrlHeight +2);
-        ctrlrxUrl->setBounds (ctrlrLogoSize + paddingSize*5 +4, heightPosition, rightColumnWidth, ctrlrxUrlHeight);
-    }
+    githubLogo->setBounds (ctrlrLogoSize + paddingSize*3, heightPosition -1, ctrlrxUrlHeight +2, ctrlrxUrlHeight +2);
+    ctrlrxUrl->setBounds (ctrlrLogoSize + paddingSize*5 +4, heightPosition, rightColumnWidth, ctrlrxUrlHeight);
     
     int ctrlrxDonateUrlHeight = 18;
     heightPosition += ( ctrlrxUrlHeight );
-    if (donateLogo && ctrlrxDonateUrl)
-    {
-        donateLogo->setBounds (ctrlrLogoSize + paddingSize*3, heightPosition -1, ctrlrxUrlHeight +2, ctrlrxDonateUrlHeight +2);
-        ctrlrxDonateUrl->setBounds (ctrlrLogoSize + paddingSize*5 +4, heightPosition, rightColumnWidth, ctrlrxDonateUrlHeight);
-    }
+    paypalLogo->setBounds (ctrlrLogoSize + paddingSize*3, heightPosition -1, ctrlrxUrlHeight +2, ctrlrxDonateUrlHeight +2);
+    ctrlrxDonateUrl->setBounds (ctrlrLogoSize + paddingSize*5 +4, heightPosition, rightColumnWidth, ctrlrxDonateUrlHeight);
+    
     
     // Centered
     int descriptionLabelheight = 48;
     heightPosition = ( ctrlrLogoSize + paddingSize*4 );
-    if (descriptionLabel)
-        descriptionLabel->setBounds (paddingSize, heightPosition, getWidth() - paddingSize*2, descriptionLabelheight);
+    descriptionLabel->setBounds (paddingSize, heightPosition, getWidth() - paddingSize*2, descriptionLabelheight);
     
     
     int copyrightLabelheight = 48;
     heightPosition += ( descriptionLabelheight + paddingSize*2 );
-    if (vst3AuJuceLogo && copyrightLabel)
-    {
-        vst3AuJuceLogo->setBounds (paddingSize, heightPosition, ctrlrLogoSize, copyrightLabelheight);
-        copyrightLabel->setBounds (ctrlrLogoSize + paddingSize*3 +4, heightPosition, rightColumnWidth, copyrightLabelheight);
-    }
+    vst3AuJuceLogo->setBounds (paddingSize, heightPosition, ctrlrLogoSize, copyrightLabelheight);
+    copyrightLabel->setBounds (ctrlrLogoSize + paddingSize*3 +4, heightPosition, rightColumnWidth, copyrightLabelheight);
+    
     
     // int versionInfoLabelHeight = 56;
     heightPosition += ( descriptionLabelheight + paddingSize*2 );
@@ -482,70 +487,52 @@ void CtrlrAbout::resized()
     // Panel Infos
     int height = 360;
     int labelHeight = 18;
-    if (label && instanceName)
-    {
-        label->setBounds (paddingSize, height, ctrlrLogoSize, labelHeight); // Instance Name .y was 120
-        instanceName->setBounds(ctrlrLogoSize + paddingSize*3, height, rightColumnWidth, labelHeight); // Instance Field
-    }
+    label->setBounds (paddingSize, height, ctrlrLogoSize, labelHeight); // Instance Name .y was 120
+    instanceName->setBounds(ctrlrLogoSize + paddingSize*3, height, rightColumnWidth, labelHeight); // Instance Field
+           
+    height += ( labelHeight + paddingSize );
+    label3->setBounds (paddingSize, height, ctrlrLogoSize, labelHeight); // Instance Version Label
+    instanceVersion->setBounds(ctrlrLogoSize + paddingSize*3, height, rightColumnWidth, labelHeight); // Instance Version Field
     
     height += ( labelHeight + paddingSize );
-    if (label3 && instanceVersion)
-    {
-        label3->setBounds (paddingSize, height, ctrlrLogoSize, labelHeight); // Instance Version Label
-        instanceVersion->setBounds(ctrlrLogoSize + paddingSize*3, height, rightColumnWidth, labelHeight); // Instance Version Field
-    }
+    label4->setBounds (paddingSize, height, ctrlrLogoSize, labelHeight); // Instance URL Label
+    instanceUrl->setBounds (ctrlrLogoSize + paddingSize*3, height, rightColumnWidth, labelHeight); // Instance URL Field
     
     height += ( labelHeight + paddingSize );
-    if (label4 && instanceUrl)
-    {
-        label4->setBounds (paddingSize, height, ctrlrLogoSize, labelHeight); // Instance URL Label
-        instanceUrl->setBounds (ctrlrLogoSize + paddingSize*3, height, rightColumnWidth, labelHeight); // Instance URL Field
-    }
+    label2->setBounds (paddingSize, height, ctrlrLogoSize, labelHeight); // Instance Author Label
+    instanceAuthor->setBounds(ctrlrLogoSize + paddingSize*3, height, rightColumnWidth, labelHeight); // Instance Author Field
+    	
+    if (labelAuthorEmail)
+	{
+		height += ( labelHeight + paddingSize );
+		labelAuthorEmail->setBounds(paddingSize, height, ctrlrLogoSize, labelHeight); // Instance Author Email Label
+		instanceAuthorEmail->setBounds(ctrlrLogoSize + paddingSize*3, height, rightColumnWidth, labelHeight); // Instance Author Email Field
+	}
     
-    height += ( labelHeight + paddingSize );
-    if (label2 && instanceAuthor)
-    {
-        label2->setBounds (paddingSize, height, ctrlrLogoSize, labelHeight); // Instance Author Label
-        instanceAuthor->setBounds(ctrlrLogoSize + paddingSize*3, height, rightColumnWidth, labelHeight); // Instance Author Field
-    }
-    
-    // Conditional Fields (These are the most common crash points)
-    if (labelAuthorEmail && instanceAuthorEmail)
-    {
-        height += ( labelHeight + paddingSize );
-        labelAuthorEmail->setBounds(paddingSize, height, ctrlrLogoSize, labelHeight); // Instance Author Email Label
-        instanceAuthorEmail->setBounds(ctrlrLogoSize + paddingSize*3, height, rightColumnWidth, labelHeight); // Instance Author Email Field
-    }
-    
-    if (labelDonate && instanceAuthorDonateUrl)
+    if (labelDonate)
     {
         height += ( labelHeight + paddingSize );
         labelDonate->setBounds(paddingSize, height, ctrlrLogoSize, labelHeight); // Instance Author Donate Label
         instanceAuthorDonateUrl->setBounds(ctrlrLogoSize + paddingSize*3, height, rightColumnWidth, labelHeight); // Instance Author Donate Field
     }
-    
+	
     height += 48;
-    if (instanceDescription)
-        instanceDescription->setBounds (proportionOfWidth (0.0200f), height, proportionOfWidth (0.9600f), 80); // Instance Description Frame
+    instanceDescription->setBounds (proportionOfWidth (0.0200f), height, proportionOfWidth (0.9600f), 80); // Instance Description Frame
 }
 
-void CtrlrAbout::buttonClicked (Button* buttonThatWasClicked) // Updated v5.6.35
+void CtrlrAbout::buttonClicked (Button* buttonThatWasClicked)
 {
     if (buttonThatWasClicked == ctrlrLogo || buttonThatWasClicked == vst3AuJuceLogo)
     {
         URL("https://github.com/RomanKubiak/ctrlr/discussions").launchInDefaultBrowser();
     }
-    else if (buttonThatWasClicked == donateLogo)
-    {
-        URL("https://ko-fi.com/damiensellier").launchInDefaultBrowser();
-    }
-	else if (buttonThatWasClicked == githubLogo)
+    else if (buttonThatWasClicked == githubLogo)
     {
         URL("https://github.com/damiensellier/CtrlrX").launchInDefaultBrowser();
     }
-	else
-	{
-        URL("https://github.com/damiensellier/CtrlrX").launchInDefaultBrowser();
+    else if (buttonThatWasClicked == paypalLogo)
+    {
+        URL("https://paypal.me/damiensellier").launchInDefaultBrowser();
     }
 }
 
