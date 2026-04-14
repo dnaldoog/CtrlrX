@@ -104,10 +104,10 @@ CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
     ctrlrxUrl->setColour (HyperlinkButton::textColourId, Colour(getLookAndFeel().findColour (PopupMenu::highlightedBackgroundColourId)));
     
     // PayPal LOGO SVG
-    addAndMakeVisible (paypalLogo = gui::createDrawableButton("PayPal Logo", BIN2STR(paypal_colour_svg))); // Updated v5.6.31. It required to drag drop SVG file in the projucer in the icon folder to be embedded
-    paypalLogo->addListener (this);
-    paypalLogo->setTooltip (TRANS("Donate to the CtrlrX project"));
-    paypalLogo->setMouseCursor(MouseCursor::PointingHandCursor);
+    addAndMakeVisible (donateLogo = gui::createDrawableButton("PayPal Logo", BIN2STR(paypal_colour_svg))); // Updated v5.6.31. It required to drag drop SVG file in the projucer in the icon folder to be embedded
+    donateLogo->addListener (this);
+    donateLogo->setTooltip (TRANS("Donate to the CtrlrX project"));
+    donateLogo->setMouseCursor(MouseCursor::PointingHandCursor);
     
     // PayPal link
     addAndMakeVisible (ctrlrxDonateUrl = new HyperlinkButton ("Donate to the CtrlrX project", URL ("https://paypal.me/damiensellier"))); // Updated v5.6.31b
@@ -373,7 +373,7 @@ CtrlrAbout::~CtrlrAbout()
     
 	if (ctrlrLogo)         ctrlrLogo->removeListener(this);
 	if (githubLogo)        githubLogo->removeListener(this);
-	if (paypalLogo)        paypalLogo->removeListener(this);
+	if (donateLogo)        donateLogo->removeListener(this);
 	if (vst3AuJuceLogo)    vst3AuJuceLogo->removeListener(this);
     
     ctrlrName = nullptr;
@@ -463,7 +463,7 @@ void CtrlrAbout::resized()
     
     int ctrlrxDonateUrlHeight = 18;
     heightPosition += ( ctrlrxUrlHeight );
-    paypalLogo->setBounds (ctrlrLogoSize + paddingSize*3, heightPosition -1, ctrlrxUrlHeight +2, ctrlrxDonateUrlHeight +2);
+    donateLogo->setBounds (ctrlrLogoSize + paddingSize*3, heightPosition -1, ctrlrxUrlHeight +2, ctrlrxDonateUrlHeight +2);
     ctrlrxDonateUrl->setBounds (ctrlrLogoSize + paddingSize*5 +4, heightPosition, rightColumnWidth, ctrlrxDonateUrlHeight);
     
     
@@ -522,18 +522,33 @@ void CtrlrAbout::resized()
 
 void CtrlrAbout::buttonClicked (Button* buttonThatWasClicked)
 {
-    if (buttonThatWasClicked == ctrlrLogo || buttonThatWasClicked == vst3AuJuceLogo)
+    // 1. Split the first condition into two separate, explicit checks
+    if (buttonThatWasClicked == ctrlrLogo)
     {
-        URL("https://github.com/RomanKubiak/ctrlr/discussions").launchInDefaultBrowser();
+        URL url ("https://github.com/RomanKubiak/ctrlr/discussions");
+        url.launchInDefaultBrowser();
+    }
+    else if (buttonThatWasClicked == vst3AuJuceLogo)
+    {
+        URL url ("https://github.com/RomanKubiak/ctrlr/discussions");
+        url.launchInDefaultBrowser();
+    }
+    // 2. Continue with the rest of your buttons
+    else if (buttonThatWasClicked == donateLogo)
+    {
+        URL url ("https://ko-fi.com/damiensellier");
+        url.launchInDefaultBrowser();
     }
     else if (buttonThatWasClicked == githubLogo)
     {
-        URL("https://github.com/damiensellier/CtrlrX").launchInDefaultBrowser();
+        URL url ("https://github.com/damiensellier/CtrlrX");
+        url.launchInDefaultBrowser();
     }
-    else if (buttonThatWasClicked == paypalLogo)
-    {
-        URL("https://paypal.me/damiensellier").launchInDefaultBrowser();
-    }
+    
+    /* Note: I have removed the final 'else' block. 
+       If buttonThatWasClicked doesn't match your buttons, 
+       the function should simply do nothing. 
+    */
 }
 
 
