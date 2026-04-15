@@ -234,10 +234,17 @@ bool CtrlrCombo::keyPressed (const KeyPress& key) // Updated v5.6.35. Combined m
 
 void CtrlrCombo::visibilityChanged()
 {
+    // TRACE: Check UI state at the moment visibility is triggered
+    if (ctrlrCombo)
+    {
+        _DBG("GUI_TRACE [" + owner.getName() + "] visibilityChanged ENTER | isVisible: " + String((int)isVisible())
+             + " | UI Index: " + String(ctrlrCombo->getSelectedItemIndex())
+             + " | UI Text: '" + ctrlrCombo->getText() + "'");
+    }
+
     if (isVisible() && (bool)getProperty(Ids::uiComboSearch))
     {
         _DBG("LIFECYCLE: Component visible. Starting 250ms safety timer...");
-        // This is now a valid call
         startTimer(250);
     }
 }
@@ -260,6 +267,13 @@ void CtrlrCombo::focusLost (FocusChangeType cause)
 
 void CtrlrCombo::lookAndFeelChanged()
 {
+    // TRACE: Capture state before any JUCE reconstruction happens
+    if (ctrlrCombo)
+    {
+        _DBG("GUI_TRACE [" + owner.getName() + "] lookAndFeelChanged ENTER | Current Index: "
+             + String(ctrlrCombo->getSelectedItemIndex()) + " | Text: '" + ctrlrCombo->getText() + "'");
+    }
+
     // Call the base class first
     CtrlrComponent::lookAndFeelChanged();
 
@@ -272,20 +286,50 @@ void CtrlrCombo::lookAndFeelChanged()
         // Use the safe class timer instead of callAfterDelay
         startTimer(100);
     }
+    
+    // TRACE: Capture state after the base class call.
+    // Added Text trace here to see if the GUI wiped while the Index stayed.
+    if (ctrlrCombo)
+    {
+        _DBG("GUI_TRACE [" + owner.getName() + "] lookAndFeelChanged EXIT | Current Index: "
+             + String(ctrlrCombo->getSelectedItemIndex()) + " | Text: '" + ctrlrCombo->getText() + "'");
+    }
 }
 
 void CtrlrCombo::parentHierarchyChanged()
 {
+    // TRACE: Capture the state at the exact moment of attachment
+    if (ctrlrCombo)
+    {
+        _DBG("GUI_TRACE [" + owner.getName() + "] parentHierarchyChanged ENTER | UI Index: "
+             + String(ctrlrCombo->getSelectedItemIndex()) + " | UI Text: '" + ctrlrCombo->getText() + "'");
+    }
+
     if (getParentComponent() != nullptr)
     {
         _DBG("LIFECYCLE: Component attached to parent. Refreshing Search state.");
         triggerAsyncUpdate();
+    }
+
+    // TRACE: See if the act of attaching triggered a JUCE internal reset
+    if (ctrlrCombo)
+    {
+        _DBG("GUI_TRACE [" + owner.getName() + "] parentHierarchyChanged EXIT | UI Index: "
+             + String(ctrlrCombo->getSelectedItemIndex()) + " | UI Text: '" + ctrlrCombo->getText() + "'");
     }
 }
 
 void CtrlrCombo::timerCallback()
 {
     stopTimer();
+
+    // TRACE: Check state when the timer wakes up
+    if (ctrlrCombo)
+    {
+        _DBG("GUI_TRACE [" + owner.getName() + "] timerCallback FIRED | UI Index: "
+             + String(ctrlrCombo->getSelectedItemIndex()) + " | UI Text: '" + ctrlrCombo->getText() + "'");
+    }
+
     const bool isInEditMode = owner.getOwnerPanel().getEditMode();
     
     if (isInEditMode)
@@ -320,8 +364,36 @@ void CtrlrCombo::timerCallback()
             
             // Ensure the list is fresh
             if (valueMap != nullptr)
+            {
+                _DBG("GUI_TRACE [" + owner.getName() + "] timerCallback | Refilling Combo list");
                 valueMap->fillCombo(*ctrlrCombo, true);
+            }
+
+            // UPDATE: Capture both Index AND Text here.
+            // If Index is valid but Text is empty, the UI "wipe" happened right here.
+            _DBG("GUI_TRACE [" + owner.getName() + "] timerCallback | Post-Refill Index: "
+                 + String(ctrlrCombo->getSelectedItemIndex()) + " | Text: '" + ctrlrCombo->getText() + "'");
         }
+    }
+
+    // --- FINAL SYNC ---
+    // This overcomes the late property restoration (where uiComboSelectedId was set to -1).
+    // It forces the UI to match the actual processor value after all layout/styles are settled.
+    if (ctrlrCombo != nullptr && !isInEditMode)
+    {
+        const double modulatorValue = owner.getProcessor().getValue();
+        
+        _DBG("GUI_SYNC [" + owner.getName() + "] Re-applying processor value: " + String(modulatorValue));
+        
+        // Use dontSendNotification to prevent feedback loops back to the processor
+        ctrlrCombo->setSelectedId (modulatorValue + 1, dontSendNotification);
+    }
+
+    // FINAL TRACE
+    if (ctrlrCombo)
+    {
+        _DBG("GUI_TRACE [" + owner.getName() + "] timerCallback EXIT | Final UI Index: "
+             + String(ctrlrCombo->getSelectedItemIndex()) + " | Final UI Text: '" + ctrlrCombo->getText() + "'");
     }
 }
 
@@ -362,12 +434,31 @@ const String CtrlrCombo::getComponentText()
 
 void CtrlrCombo::setComponentValue (const double newValue, const bool sendChangeMessage)
 {
-	ctrlrCombo->setSelectedId (newValue+1, sendChangeMessage ? sendNotificationSync : dontSendNotification);
-
-	if (sendChangeMessage)
+    // TRACE START
+	_DBG("GUI_TRACE [" + owner.getName() + "] setComponentValue START | newValue: " + String(newValue));
+	
+	if (ctrlrCombo)
 	{
-		owner.getProcessor().setValueGeneric (CtrlrModulatorValue(newValue,CtrlrModulatorValue::changedByGUI), sendChangeMessage);
+		// ADD THIS: Check if the list is actually populated yet
+		_DBG("   -> Current Item Count in List: " + String(ctrlrCombo->getNumItems()));
+		
+		ctrlrCombo->setSelectedId (newValue + 1, sendChangeMessage ? sendNotificationSync : dontSendNotification);
+		
+		_DBG("GUI_TRACE [" + owner.getName() + "] Post-Selection | UI Index: " + String(ctrlrCombo->getSelectedItemIndex())
+			 + " | UI Text: '" + ctrlrCombo->getText() + "'");
+		
+		if (ctrlrCombo->getSelectedItemIndex() == -1 && newValue != -1)
+		{
+			_DBG("GUI_TRACE [" + owner.getName() + "] !! WARNING: ComboBox rejected Value " + String(newValue));
+		}
 	}
+
+    if (sendChangeMessage)
+    {
+        owner.getProcessor().setValueGeneric (CtrlrModulatorValue(newValue,CtrlrModulatorValue::changedByGUI), sendChangeMessage);
+    }
+    
+    _DBG("GUI_TRACE [" + owner.getName() + "] setComponentValue END");
 }
 
 void CtrlrCombo::comboContentChanged()
@@ -383,6 +474,13 @@ void CtrlrCombo::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChange
 {
 	// Log EVERY property change during load
     _DBG("PROP CHANGE: " + property.toString() + " = " + getProperty(property).toString());
+	
+	// ADD THIS: Detect if a property change is forcing a blank state
+	if (property == Ids::uiComboSelectedIndex || property == Ids::uiComboSelectedId)
+	{
+		_DBG("GUI_TRACE [" + owner.getName() + "] ValueTree Property Change: " + property.toString()
+			 + " is now: " + treeWhosePropertyHasChanged.getProperty(property).toString());
+	}
 	
 	if (property == Ids::uiComboContent)
 	{
