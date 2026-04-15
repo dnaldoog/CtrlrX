@@ -29,9 +29,21 @@ void CtrlrSysexProcessor::sysExProcessToken (const CtrlrSysexToken token, uint8 
         _DBG("Processing token type=" + String(token.getType()) + " position=" + String(token.getPosition()) + " value=" + String(value));
     }
     BigInteger bi;
-
+	_DBG("Processing token type=" + String(token.getType()) + " position=" + String(token.getPosition()) + " value=" + String(value) + " channel=" + String(channel));
     switch (token.getType())
     {
+    case CCCoarseMSB:
+        // This is math.floor(value / 2)
+        // Shifts the 8-bit value right to fit in 7-bit CC
+        _DBG("CCCoarseMSB: input=" + String(value) + " output=" + String(value >> 1));
+            *byte = (uint8)(value >> 1);
+            break;
+
+        case CCFineLSB:
+        // This is (value % 2) * 64
+        // Takes the remainder (bit 0) and moves it to MIDI value 64
+            *byte = (uint8)((value & 1) << 6);
+            break;
         case ByteValue:
             *byte = (uint8)value;
             break;
@@ -466,6 +478,14 @@ CtrlrSysExFormulaToken CtrlrSysexProcessor::sysExIdentifyToken(const String &s)
     {
         return (GlobalVariable);
     }
+    if (s == "nm")
+    {
+        return (CCCoarseMSB);
+    }
+    if (s == "nl")
+    {
+        return (CCFineLSB);
+    }
     return (NoToken);
 }
 
@@ -515,7 +535,6 @@ void CtrlrSysexProcessor::checksumTechnics(const CtrlrSysexToken token, MidiMess
 
 void CtrlrSysexProcessor::checksumRolandJp8080(const CtrlrSysexToken token, MidiMessage &m) // Update v5.6.34. Thanks to @dnaldoog
 {
-	_DBG("I am Roland");
 	const int startByte = token.getPosition() - token.getAdditionalData();
 	uint8 chTotal		= 0;
 	uint8 *ptr	= (uint8 *)m.getRawData();

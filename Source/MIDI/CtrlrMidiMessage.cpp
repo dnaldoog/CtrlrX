@@ -554,7 +554,15 @@ void CtrlrMidiMessage::setValueToSingle(const int index, const int value)
 	else
 	{
 		if (messageArray.size() > index)
-			messageArray.getReference(index).setValue (value);
+		{
+			auto& mex = messageArray.getReference(index);
+			if (mex.indirectValueFlag == CCCoarseMSB)
+				mex.setValue(value >> 1);
+			else if (mex.indirectValueFlag == CCFineLSB)
+				mex.setValue((value & 1) << 6);
+			else
+				mex.setValue(value);
+		}
 	}
 }
 
@@ -892,18 +900,25 @@ void CtrlrMidiMessage::setNumber(const int number)
 	}
 }
 
-void CtrlrMidiMessage::setNumberToSingle (const int index, const int number)
+void CtrlrMidiMessage::setNumberToSingle(const int index, const int number)
 {
 	if (index >= messageArray.size())
 		return;
 
 	if (messageArray.getReference(index).overrideValue == -2)
 	{
-		messageArray.getReference(index).setValue (number);
+		messageArray.getReference(index).setValue(number);
 	}
 	else
 	{
-		messageArray.getReference(index).setNumber (number);
+		auto& mex = messageArray.getReference(index);
+		_DBG("setNumberToSingle index=" + String(index)
+			+ " flag=" + String(mex.indirectValueFlag)
+			+ " number=" + String(number));
+		if (mex.indirectValueFlag == CCFineLSB)
+			mex.setNumber(number + 32);  // preserve the +32 offset
+		else
+			mex.setNumber(number);       // normal path
 	}
 }
 
@@ -1136,10 +1151,9 @@ void CtrlrMidiMessage::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
     {
         setMultiMessageFromString (getProperty(Ids::midiMessageMultiList));
         
-        setNumber ((int)getProperty(Ids::midiMessageCtrlrNumber));
-        
-        // Ensure the value is re-applied to the new message type to prevent resetting to 0
-        setValue ((int)getProperty(Ids::midiMessageCtrlrValue));
+		if (!getProperty(Ids::midiMessageMultiList).toString().containsIgnoreCase("ByteValue"))
+			setNumber((int)getProperty(Ids::midiMessageCtrlrNumber));
+		setValue((int)getProperty(Ids::midiMessageCtrlrValue));
     }
     
     patternChanged();
