@@ -1510,7 +1510,7 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button* buttonThatWasClicked
 			{ "NRPN (Korg)",     "CC,ByteValue,MSB7bitValue,99,-2:CC,ByteValue,LSB7bitValue,98,-2:CC,ByteValue,MSB7bitValue,6,-1" },
 			{ "RPN",             "CC,ByteValue,MSB7bitValue,101,-2:CC,ByteValue,LSB7bitValue,100,-2:CC,ByteValue,MSB7bitValue,6,-1:CC,ByteValue,LSB7bitValue,38,-1" },
 			{ "NRPN Null",       "CC,ByteValue,LSB7bitValue,101,127:CC,ByteValue,LSB7bitValue,100,127" },
-			{ "CC 8-bit Pair", "CC,ByteValue,CCCoarseMSB,-2:CC,ByteValue,CCFineLSB,-2" }// as used by Novation etc. for 8-bit MIDI values. Coarse is the MSB, fine is the LSB.
+			{ "Novation 8-bit",  "CC,ByteValue,CCCoarseMSB,-2:CC,ByteValue,CCFineLSB,-2" }// as used by Novation etc. for 8-bit MIDI values. Coarse is the MSB, fine is the LSB.
 
 		};
 
