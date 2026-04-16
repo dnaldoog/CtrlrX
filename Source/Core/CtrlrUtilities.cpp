@@ -232,15 +232,23 @@ const CtrlrMidiMessageEx midiMessageExfromString(const String& str, const int ch
 
 		_DBG("midiMessageExfromString tokens[2]='" + tokens[2] + "' size=" + String(tokens.size()));
 
-		if (tokens[2] == "CCCoarseMSB") {
-			finalValue = (value >> 1);
-			_DBG("CCCoarseMSB: input=" + String(value) + " output=" + String(finalValue));
-		}
-		else if (tokens[2] == "CCFineLSB") {
-			finalNumber = number + 32;
-			finalValue = (value & 1) << 6;
-			_DBG("CCFineLSB: input=" + String(value) + " output=" + String(finalValue));
-		}
+	if (tokens[2] == "CCCoarseMSB") {
+    finalValue = (value >> 1);
+    _DBG("CCCoarseMSB: input=" + String(value) + " output=" + String(finalValue));
+	}
+	else if (tokens[2] == "CCFineLSB") {
+    if (number > 31)
+    {
+        // CC 8-bit pairing is only valid for CC 0-31 (coarse) / CC 32-63 (fine)
+        // If the user has set a CC number above 31, the fine message would land
+        // outside the paired range (32-63), so we skip it entirely.
+        _WRN("CCFineLSB: coarse CC number " + String(number) + " is out of range (must be 0-31). Fine message suppressed.");
+        return CtrlrMidiMessageEx(); // return empty, caller should discard
+    }
+    finalNumber = number + 32;
+    finalValue = (value & 1) << 6;
+    _DBG("CCFineLSB: coarse=" + String(number) + " fine=" + String(finalNumber) + " input=" + String(value) + " output=" + String(finalValue));
+}
 		else if (ret.overrideValue != -1) {
 			finalValue = ret.overrideValue;
 		}

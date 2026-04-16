@@ -915,10 +915,20 @@ void CtrlrMidiMessage::setNumberToSingle(const int index, const int number)
 		_DBG("setNumberToSingle index=" + String(index)
 			+ " flag=" + String(mex.indirectValueFlag)
 			+ " number=" + String(number));
-		if (mex.indirectValueFlag == CCFineLSB)
-			mex.setNumber(number + 32);  // preserve the +32 offset
-		else
-			mex.setNumber(number);       // normal path
+if (mex.indirectValueFlag == CCFineLSB)
+{
+    if (number > 31)
+    {
+        _WRN("CCFineLSB: coarse CC " + String(number) + " out of range, fine offset suppressed");
+        mex.setNumber(number); // fall back to same number rather than corrupt value
+    }
+    else
+    {
+        mex.setNumber(number + 32);
+    }
+}
+else
+    mex.setNumber(number);
 	}
 }
 
