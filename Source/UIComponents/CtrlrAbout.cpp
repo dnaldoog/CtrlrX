@@ -4,7 +4,6 @@
 #include "CtrlrRevision.h"
 #include "CtrlrPanel/CtrlrPanel.h"
 #include "CtrlrInlineUtilitiesGUI.h"
-
 extern "C" {
 #include "lua.h"
 #include "lualib.h"
@@ -104,14 +103,14 @@ CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
     ctrlrxUrl->setJustificationType(Justification::topLeft);
     ctrlrxUrl->setColour (HyperlinkButton::textColourId, Colour(getLookAndFeel().findColour (PopupMenu::highlightedBackgroundColourId)));
     
-    // Donation LOGO SVG
-    addAndMakeVisible (donateLogo = gui::createDrawableButton("Donation Logo", BIN2STR(kofi_svg))); // Updated v5.6.35. It required to drag drop SVG file in the projucer in the icon folder to be embedded
-    donateLogo->addListener (this);
-    donateLogo->setTooltip (TRANS("Donate to the CtrlrX project"));
-    donateLogo->setMouseCursor(MouseCursor::PointingHandCursor);
+    // PayPal LOGO SVG
+    addAndMakeVisible (paypalLogo = gui::createDrawableButton("PayPal Logo", BIN2STR(paypal_colour_svg))); // Updated v5.6.31. It required to drag drop SVG file in the projucer in the icon folder to be embedded
+    paypalLogo->addListener (this);
+    paypalLogo->setTooltip (TRANS("Donate to the CtrlrX project"));
+    paypalLogo->setMouseCursor(MouseCursor::PointingHandCursor);
     
-    // Donation link
-    addAndMakeVisible (ctrlrxDonateUrl = new HyperlinkButton ("Donate to the CtrlrX project", URL ("https://ko-fi.com/damiensellier"))); // Updated v5.6.35
+    // PayPal link
+    addAndMakeVisible (ctrlrxDonateUrl = new HyperlinkButton ("Donate to the CtrlrX project", URL ("https://paypal.me/damiensellier"))); // Updated v5.6.31b
     ctrlrxDonateUrl->setTooltip (TRANS("Donate to the CtrlrX project"));
     ctrlrxDonateUrl->setFont(14.00f, Font::plain);
     ctrlrxDonateUrl->setJustificationType(Justification::topLeft);
@@ -347,7 +346,6 @@ CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
         instanceDescription->setText (owner.getActivePanel()->getProperty(Ids::panelAuthorDesc).toString(), dontSendNotification);
     }
     
-	// Sizing Logic
 	if (owner.isSingleInstance())
 	{
         int singleInstanceHeight = 580;
@@ -375,16 +373,12 @@ CtrlrAbout::~CtrlrAbout()
     
 	if (ctrlrLogo)         ctrlrLogo->removeListener(this);
 	if (githubLogo)        githubLogo->removeListener(this);
-	if (donateLogo)        donateLogo->removeListener(this);
+	if (paypalLogo)        paypalLogo->removeListener(this);
 	if (vst3AuJuceLogo)    vst3AuJuceLogo->removeListener(this);
-        
+    
     ctrlrName = nullptr;
-    
     ctrlrLogo = nullptr;
-    githubLogo = nullptr;
-    donateLogo = nullptr;
     vst3AuJuceLogo = nullptr;
-    
     versionInfoLabel = nullptr;
     ctrlrxLibsVersionLabel = nullptr;
     creditsLabel = nullptr;
@@ -469,7 +463,7 @@ void CtrlrAbout::resized()
     
     int ctrlrxDonateUrlHeight = 18;
     heightPosition += ( ctrlrxUrlHeight );
-    donateLogo->setBounds (ctrlrLogoSize + paddingSize*3, heightPosition -1, ctrlrxUrlHeight +2, ctrlrxDonateUrlHeight +2);
+    paypalLogo->setBounds (ctrlrLogoSize + paddingSize*3, heightPosition -1, ctrlrxUrlHeight +2, ctrlrxDonateUrlHeight +2);
     ctrlrxDonateUrl->setBounds (ctrlrLogoSize + paddingSize*5 +4, heightPosition, rightColumnWidth, ctrlrxDonateUrlHeight);
     
     
@@ -528,33 +522,18 @@ void CtrlrAbout::resized()
 
 void CtrlrAbout::buttonClicked (Button* buttonThatWasClicked)
 {
-    // 1. Split the first condition into two separate, explicit checks
-    if (buttonThatWasClicked == ctrlrLogo)
+    if (buttonThatWasClicked == ctrlrLogo || buttonThatWasClicked == vst3AuJuceLogo)
     {
-        URL url ("https://github.com/RomanKubiak/ctrlr/discussions");
-        url.launchInDefaultBrowser();
-    }
-    else if (buttonThatWasClicked == vst3AuJuceLogo)
-    {
-        URL url ("https://github.com/RomanKubiak/ctrlr/discussions");
-        url.launchInDefaultBrowser();
-    }
-    // 2. Continue with the rest of your buttons
-    else if (buttonThatWasClicked == donateLogo)
-    {
-        URL url ("https://ko-fi.com/damiensellier");
-        url.launchInDefaultBrowser();
+        URL("https://github.com/RomanKubiak/ctrlr/discussions").launchInDefaultBrowser();
     }
     else if (buttonThatWasClicked == githubLogo)
     {
-        URL url ("https://github.com/damiensellier/CtrlrX");
-        url.launchInDefaultBrowser();
+        URL("https://github.com/damiensellier/CtrlrX").launchInDefaultBrowser();
     }
-    
-    /* Note: I have removed the final 'else' block. 
-       If buttonThatWasClicked doesn't match your buttons, 
-       the function should simply do nothing. 
-    */
+    else if (buttonThatWasClicked == paypalLogo)
+    {
+        URL("https://paypal.me/damiensellier").launchInDefaultBrowser();
+    }
 }
 
 
