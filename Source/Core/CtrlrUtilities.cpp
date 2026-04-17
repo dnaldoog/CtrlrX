@@ -12,50 +12,50 @@
 #pragma warning(disable:4706)
 #endif // _WIN32
 
-static const char *asciiSpecials[]	= {"[NUL]", "[SOH]", "[STX]", "[ETX]", "[EOT]", "[ENQ]", "[ACK]", "[BEL]", "[BS]", "[HT]", "[LF]", "[VT]", "[FF]", "[CR]", "[SO]", "[SI]", "[DLE]", "[DC1]", "[DC2]", "[DC3]", "[DC4]", "[NAK]", "[SYN]", "[ETB]", "[CAN]", "[EM]", "[SUB]", "[ESC]", "[FS]", "[GS]", "[RS]", "[US]", 0};
+static const char* asciiSpecials[] = { "[NUL]", "[SOH]", "[STX]", "[ETX]", "[EOT]", "[ENQ]", "[ACK]", "[BEL]", "[BS]", "[HT]", "[LF]", "[VT]", "[FF]", "[CR]", "[SO]", "[SI]", "[DLE]", "[DC1]", "[DC2]", "[DC3]", "[DC4]", "[NAK]", "[SYN]", "[ETB]", "[CAN]", "[EM]", "[SUB]", "[ESC]", "[FS]", "[GS]", "[RS]", "[US]", 0 };
 static const uint8 vendors_id[] = { 1,2,3,4,5,6,7,8,9,0x0A,0x0B,0x0C,0x0D,0x0E,0x10,0x11,0x12,0x13,0x14,0x1B,0x15,0x16,0x17,0x18,0x20,0x21,0x23,0x24,0x25,0x26,0x27,0x28,0x29,0x2F,0x36,0x3E,0x40,0x41,0x42,0x43,0x44,0x45 };
 static const uint8 midiByteMask = 0xff;
 
-const String midiMessageTypeToString (const CtrlrMidiMessageType messageType)
+const String midiMessageTypeToString(const CtrlrMidiMessageType messageType)
 {
 	switch (messageType)
 	{
-		case CC:
-			return ("CC");
-		case Aftertouch:
-			return ("Aftertouch");
-		case ChannelPressure:
-			return ("ChannelPressure");
-		case SysEx:
-			return ("SysEx");
-		case NoteOn:
-			return ("NoteOn");
-		case NoteOff:
-			return ("NoteOff");
-		case PitchWheel:
-			return ("PitchWheel");
-		case ProgramChange:
-			return ("ProgramChange");
-		case Multi:
-			return ("Multi");
-		case MidiClock:
-			return ("MidiClock");
-		case MidiClockContinue:
-			return ("MidiContinue");
-		case MidiClockStop:
-			return ("MidiStop");
-		case MidiClockStart:
-			return ("MidiStart");
-		case ActiveSense:
-			return ("ActiveSense");
-		case kMidiMessageType:
-		case None:
-			return ("None");
+	case CC:
+		return ("CC");
+	case Aftertouch:
+		return ("Aftertouch");
+	case ChannelPressure:
+		return ("ChannelPressure");
+	case SysEx:
+		return ("SysEx");
+	case NoteOn:
+		return ("NoteOn");
+	case NoteOff:
+		return ("NoteOff");
+	case PitchWheel:
+		return ("PitchWheel");
+	case ProgramChange:
+		return ("ProgramChange");
+	case Multi:
+		return ("Multi");
+	case MidiClock:
+		return ("MidiClock");
+	case MidiClockContinue:
+		return ("MidiContinue");
+	case MidiClockStop:
+		return ("MidiStop");
+	case MidiClockStart:
+		return ("MidiStart");
+	case ActiveSense:
+		return ("ActiveSense");
+	case kMidiMessageType:
+	case None:
+		return ("None");
 	}
 	return ("None");
 }
 
-CtrlrMidiMessageType midiMessageStringToType (const String &messageType)
+CtrlrMidiMessageType midiMessageStringToType(const String& messageType)
 {
 	if (messageType == "CC")
 	{
@@ -119,7 +119,7 @@ CtrlrMidiMessageType midiMessageStringToType (const String &messageType)
 	}
 }
 
-CtrlrMidiMessageType midiMessageToType (const MidiMessage &midiMessage)
+CtrlrMidiMessageType midiMessageToType(const MidiMessage& midiMessage)
 {
 	if (midiMessage.isController())
 	{
@@ -176,7 +176,7 @@ CtrlrMidiMessageType midiMessageToType (const MidiMessage &midiMessage)
 	return (SysEx);
 }
 
-CtrlrSysExFormulaToken indirectFromString (const String &str)
+CtrlrSysExFormulaToken indirectFromString(const String& str)
 {
 	if (str == "ByteValue")
 		return (ByteValue);
@@ -194,53 +194,91 @@ CtrlrSysExFormulaToken indirectFromString (const String &str)
 		return (LUAToken);
 	if (str == "Formula")
 		return (FormulaToken);
+	if (str == "CCCoarseMSB")       
+		return (CCCoarseMSB);
+	if (str == "CCFineLSB")       
+		return (CCFineLSB);
 	return (ByteValue);
 }
 
-const CtrlrMidiMessageEx midiMessageExfromString (const String &str, const int ch, const int number, const int value)
+const CtrlrMidiMessageEx midiMessageExfromString(const String& str, const int ch, const int number, const int value)
 {
 	CtrlrMidiMessageEx ret;
 	StringArray tokens;
 
-	tokens.addTokens (str, ",", "\"\'");
+	tokens.addTokens(str.trim(), ",", "\"\'");
 
-	if (tokens.size() >= 5)
+	if (tokens.size() >= 3)
 	{
-		ret.indirectNumberFlag	= indirectFromString (tokens[1]);
-		ret.indirectValueFlag	= indirectFromString (tokens[2]);
-		ret.overrideNumber		= tokens[3].getIntValue();
-		ret.overrideValue		= tokens[4].getIntValue();
+		ret.indirectNumberFlag = indirectFromString(tokens[1]);
+		ret.indirectValueFlag = indirectFromString(tokens[2]);
 
-		if (tokens[0] == "CC")
-			ret.m				= MidiMessage::controllerEvent (ch,number,value);
-		if (tokens[0] == "Aftertouch")
-			ret.m				= MidiMessage::aftertouchChange (ch,number,value);
-		if (tokens[0] == "NoteOn")
-			ret.m				= MidiMessage::noteOn (ch,number,(uint8)value);
-		if (tokens[0] == "NoteOff")
-			ret.m				= MidiMessage::noteOff (ch,number,(uint8)value);
-		if (tokens[0] == "ChannelPressure")
-			ret.m				= MidiMessage::channelPressureChange (ch,value);
-		if (tokens[0] == "ProgramChange")
-			ret.m				= MidiMessage::programChange(ch,value);
+		// Safety check for tokens 3 and 4 before accessing getIntValue
+		ret.overrideNumber = (tokens.size() > 3) ? tokens[3].getIntValue() : -2;
+		ret.overrideValue = (tokens.size() > 4) ? tokens[4].getIntValue() : -1;
 
-		if (tokens[0] == "SysEx")
-		{
-			return (CtrlrSysexProcessor::sysexMessageFromString(tokens[5], value, ch));
+		int finalNumber = number;
+		int finalValue = value;
+
+		// 1. Resolve the Number (-2) logic
+		if (tokens.size() >= 4) {
+			if (tokens[3].contains("-2-32")) {
+				finalNumber = number - 32;
+			}
+			else if (tokens[3].getIntValue() != -2) {
+				finalNumber = tokens[3].getIntValue();
+			}
 		}
 
-		ret.setNumber(number);
-		ret.setValue(value);
+		_DBG("midiMessageExfromString tokens[2]='" + tokens[2] + "' size=" + String(tokens.size()));
+
+	if (tokens[2] == "CCCoarseMSB") {
+    finalValue = (value >> 1);
+    _DBG("CCCoarseMSB: input=" + String(value) + " output=" + String(finalValue));
+	}
+	else if (tokens[2] == "CCFineLSB") {
+    if (number > 31)
+    {
+        // CC 8-bit pairing is only valid for CC 0-31 (coarse) / CC 32-63 (fine)
+        // If the user has set a CC number above 31, the fine message would land
+        // outside the paired range (32-63), so we skip it entirely.
+        _WRN("CCFineLSB: coarse CC number " + String(number) + " is out of range (must be 0-31). Fine message suppressed.");
+        return CtrlrMidiMessageEx(); // return empty, caller should discard
+    }
+    finalNumber = number + 32;
+    finalValue = (value & 1) << 6;
+    _DBG("CCFineLSB: coarse=" + String(number) + " fine=" + String(finalNumber) + " input=" + String(value) + " output=" + String(finalValue));
+}
+		else if (ret.overrideValue != -1) {
+			finalValue = ret.overrideValue;
+		}
+
+		// 3. Create the MIDI message using the FINAL values
+		if (tokens[0] == "CC")
+			ret.m = MidiMessage::controllerEvent(ch, finalNumber, finalValue);
+		else if (tokens[0] == "Aftertouch")
+			ret.m = MidiMessage::aftertouchChange(ch, finalNumber, finalValue);
+		else if (tokens[0] == "NoteOn")
+			ret.m = MidiMessage::noteOn(ch, finalNumber, (uint8)finalValue);
+		else if (tokens[0] == "NoteOff")
+			ret.m = MidiMessage::noteOff(ch, finalNumber, (uint8)finalValue);
+		else if (tokens[0] == "ChannelPressure")
+			ret.m = MidiMessage::channelPressureChange(ch, finalValue);
+		else if (tokens[0] == "ProgramChange")
+			ret.m = MidiMessage::programChange(ch, finalValue);
+		else if (tokens[0] == "SysEx")
+			return (CtrlrSysexProcessor::sysexMessageFromString(tokens[5], finalValue, ch));
+
+		ret.setNumber(finalNumber);
+		ret.setValue(finalValue);
 		return (ret);
 	}
-	else
-	{
-	    jassertfalse; // Looks like there is not enough tokens to create a CtrlrMidiMessageEx object
-		return (CtrlrMidiMessageEx());
-	}
+
+	return (CtrlrMidiMessageEx());
 }
 
-const String extractVendorId (const CtrlrMidiMessage &message)
+
+const String extractVendorId(const CtrlrMidiMessage& message)
 {
 	MemoryBlock bl = message.getData();
 	uint8 byte1 = 0xf7, byte2 = 0x00, byte3 = 0x00;
@@ -255,22 +293,22 @@ const String extractVendorId (const CtrlrMidiMessage &message)
 			byte3 = bl[7];
 		}
 
-		return (String::formatted ("%02x%02x%02x", byte1, byte2, byte3).toUpperCase());
+		return (String::formatted("%02x%02x%02x", byte1, byte2, byte3).toUpperCase());
 	}
 
-	return (String::formatted ("%02x", byte1).toUpperCase());
+	return (String::formatted("%02x", byte1).toUpperCase());
 }
 
-const String removeInvalidChars(const String &dataToValidate, const bool showSpecials, const char characterToReplace)
+const String removeInvalidChars(const String& dataToValidate, const bool showSpecials, const char characterToReplace)
 {
 	String ret;
 	StringArray specials(asciiSpecials);
 
-	for (int i=0; i<dataToValidate.length(); i++)
+	for (int i = 0; i < dataToValidate.length(); i++)
 	{
 		juce_wchar c = dataToValidate[i];
 
-		if (c < 0x20 && c != 0xd && c != 0x0b && c != 0x09 && c != 0x0a )
+		if (c < 0x20 && c != 0xd && c != 0x0b && c != 0x09 && c != 0x0a)
 		{
 			if (showSpecials)
 			{
@@ -290,14 +328,14 @@ const String removeInvalidChars(const String &dataToValidate, const bool showSpe
 	return (ret);
 }
 
-ValueTree valueTreeFromXml (const String &dumpedXmlAsString)
+ValueTree valueTreeFromXml(const String& dumpedXmlAsString)
 {
 	XmlDocument doc(dumpedXmlAsString);
 	ScopedPointer <XmlElement> xml(doc.getDocumentElement().release());
 
 	if (xml)
 	{
-		return (ValueTree::fromXml (*xml));
+		return (ValueTree::fromXml(*xml));
 	}
 	else
 	{
@@ -305,15 +343,15 @@ ValueTree valueTreeFromXml (const String &dumpedXmlAsString)
 	}
 }
 
-const MidiMessage createFromHexData (const String &hexData)
+const MidiMessage createFromHexData(const String& hexData)
 {
 	MemoryBlock bl;
 	bl.loadFromHexString(hexData);
 
-	return (MidiMessage ((uint8*)bl.getData(), (int)bl.getSize()));
+	return (MidiMessage((uint8*)bl.getData(), (int)bl.getSize()));
 }
 
-const String generateRandomUnique(const String &additionalRandomData)
+const String generateRandomUnique(const String& additionalRandomData)
 {
 	Time t = Time::getCurrentTime();
 	Random r(t.getHighResolutionTicks());
@@ -333,183 +371,183 @@ const String generateRandomUnique(const String &additionalRandomData)
 
 const String generateRandomUniquePluginId()
 {
-    String ret;
+	String ret;
 
-    static const char alphanum[] =
-        "0123456789"
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz";
+	static const char alphanum[] =
+		"0123456789"
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+		"abcdefghijklmnopqrstuvwxyz";
 
-    for (int i = 0; i < 4; ++i)
-    {
-        ret << alphanum[rand() % (sizeof(alphanum) - 1)];
-    }
+	for (int i = 0; i < 4; ++i)
+	{
+		ret << alphanum[rand() % (sizeof(alphanum) - 1)];
+	}
 
-    return (ret);
+	return (ret);
 }
 
-int getMidiNumberFromModulator(CtrlrModulator *m, const CtrlrMIDIDeviceType source)
+int getMidiNumberFromModulator(CtrlrModulator* m, const CtrlrMIDIDeviceType source)
 {
 	if (m == 0 || m->getMidiMessagePtr(source) == 0)
 		return (-1);
 
 	if (m->getMidiMessage(source).getMidiMessageArray().size() == 1)
 	{
-		return (getMidiNumberFromMidiMessage (m->getMidiMessage(source).getReference(0).m));
+		return (getMidiNumberFromMidiMessage(m->getMidiMessage(source).getReference(0).m));
 	}
 	return (-1);
 }
 
-CtrlrMidiMessageType getMidiTypeFromModulator(CtrlrModulator *m, const int index, const CtrlrMIDIDeviceType source)
+CtrlrMidiMessageType getMidiTypeFromModulator(CtrlrModulator* m, const int index, const CtrlrMIDIDeviceType source)
 {
 	if (m == 0)
 		return (None);
 
-    if (m->getMidiMessagePtr(source) == 0)
-        return (None);
+	if (m->getMidiMessagePtr(source) == 0)
+		return (None);
 
 	if (index <= 0)
 		return (m->getMidiMessage(source).getMidiMessageType());
 	else
-    {
-        if (m->getMidiMessagePtr(source))
-            return (midiMessageToType(m->getMidiMessagePtr(source)->getReference(index).m));
-        else
-            return (None);
-    }
+	{
+		if (m->getMidiMessagePtr(source))
+			return (midiMessageToType(m->getMidiMessagePtr(source)->getReference(index).m));
+		else
+			return (None);
+	}
 }
 
-int getMidiNumberFromMidiMessage (const MidiMessage &m)
+int getMidiNumberFromMidiMessage(const MidiMessage& m)
 {
 	switch (midiMessageToType(m))
 	{
-		case CC:
-			return (m.getControllerNumber());
-			break;
+	case CC:
+		return (m.getControllerNumber());
+		break;
 
-		case NoteOn:
-		case NoteOff:
-		case Aftertouch:
-			return (m.getNoteNumber());
-			break;
+	case NoteOn:
+	case NoteOff:
+	case Aftertouch:
+		return (m.getNoteNumber());
+		break;
 
-		case PitchWheel:
-		case ProgramChange:
-		case ChannelPressure:
-		case SysEx:
-		default:
-			break;
+	case PitchWheel:
+	case ProgramChange:
+	case ChannelPressure:
+	case SysEx:
+	default:
+		break;
 	}
 	return (-1);
 }
 
-void addCtrlrMidiMessageToBuffer (MidiBuffer &bufferToAddTo, CtrlrMidiMessage &m)
+void addCtrlrMidiMessageToBuffer(MidiBuffer& bufferToAddTo, CtrlrMidiMessage& m)
 {
-	for (int i=0; i<m.getNumMessages(); i++)
+	for (int i = 0; i < m.getNumMessages(); i++)
 	{
-		bufferToAddTo.addEvent (m.getReference(i).m, 1);
+		bufferToAddTo.addEvent(m.getReference(i).m, 1);
 	}
 }
 
-const String getMidiChannel(const MidiMessage &m)
+const String getMidiChannel(const MidiMessage& m)
 {
 	if (m.getChannel() > 0)
 	{
-		return (String::formatted (" Ch:[%2d]", m.getChannel()));
+		return (String::formatted(" Ch:[%2d]", m.getChannel()));
 	}
 
 	return (" Ch:[--]");
 }
 
-const String getMidiValue(const MidiMessage &m)
+const String getMidiValue(const MidiMessage& m)
 {
 	if (m.isAftertouch())
 	{
-		return (String::formatted (" Val:[%4d]", m.getAfterTouchValue()));
+		return (String::formatted(" Val:[%4d]", m.getAfterTouchValue()));
 	}
 
 	if (m.isController())
 	{
-		return (String::formatted (" Val:[%4d]", m.getControllerValue()));
+		return (String::formatted(" Val:[%4d]", m.getControllerValue()));
 	}
 
 	if (m.isNoteOnOrOff())
 	{
-		return (String::formatted (" Val:[%4d]", m.getVelocity()));
+		return (String::formatted(" Val:[%4d]", m.getVelocity()));
 	}
 
 	if (m.isPitchWheel())
 	{
-		return (String::formatted (" Val:[%4d]", m.getPitchWheelValue()));
+		return (String::formatted(" Val:[%4d]", m.getPitchWheelValue()));
 	}
 
 	if (m.isChannelPressure())
 	{
-		return (String::formatted (" Val:[%4d]", m.getChannelPressureValue()));
+		return (String::formatted(" Val:[%4d]", m.getChannelPressureValue()));
 	}
 
 	return (" Val:[----]");
 }
 
-const String getRawDataSize(const MidiMessage &m)
+const String getRawDataSize(const MidiMessage& m)
 {
-	return (String::formatted (" Size:[%6d]", m.getRawDataSize()));
+	return (String::formatted(" Size:[%6d]", m.getRawDataSize()));
 }
 
-const String getMidiNumber(const MidiMessage &m)
+const String getMidiNumber(const MidiMessage& m)
 {
 	if (m.isAftertouch())
 	{
-		return (String::formatted (" No:[%4d]", m.getNoteNumber()));
+		return (String::formatted(" No:[%4d]", m.getNoteNumber()));
 	}
 
 	if (m.isController())
 	{
-		return (String::formatted (" No:[%4d]", m.getControllerNumber()));
+		return (String::formatted(" No:[%4d]", m.getControllerNumber()));
 	}
 
 	if (m.isNoteOnOrOff())
 	{
-		return (String::formatted (" No:[%4d]", m.getNoteNumber()));
+		return (String::formatted(" No:[%4d]", m.getNoteNumber()));
 	}
 
 	if (m.isProgramChange())
 	{
-		return (String::formatted (" No:[%4d]", m.getProgramChangeNumber()));
+		return (String::formatted(" No:[%4d]", m.getProgramChangeNumber()));
 	}
 	return (" No:[----]");
 }
 
-const String getRawData(const MidiMessage &m, const bool rawInDecimal)
+const String getRawData(const MidiMessage& m, const bool rawInDecimal)
 {
 	if (rawInDecimal)
 	{
 		String ret;
-		uint8 *ptr = (uint8 *)m.getRawData();
-		for (int i=0; i<m.getRawDataSize(); i++)
+		uint8* ptr = (uint8*)m.getRawData();
+		for (int i = 0; i < m.getRawDataSize(); i++)
 		{
-			ret << String::formatted ("%.3d", (int)*(ptr+i));
+			ret << String::formatted("%.3d", (int)*(ptr + i));
 			ret << " ";
 		}
-		return (" RAW:["+ret.trim()+"]");
+		return (" RAW:[" + ret.trim() + "]");
 	}
 	else
 	{
-		return (" RAW:["+String::toHexString (m.getRawData(), m.getRawDataSize())+"]");
+		return (" RAW:[" + String::toHexString(m.getRawData(), m.getRawDataSize()) + "]");
 	}
 }
 
-const String getTimestamp(const MidiMessage &m)
+const String getTimestamp(const MidiMessage& m)
 {
-	return (String::formatted (" Time(%.6f)", m.getTimeStamp()));
+	return (String::formatted(" Time(%.6f)", m.getTimeStamp()));
 }
 
 const String getTimestamp(const double t)
 {
-	return (String::formatted (" Time(%.6d)", t));
+	return (String::formatted(" Time(%.6d)", t));
 }
 
-const String getName(const MidiMessage &m)
+const String getName(const MidiMessage& m)
 {
 	if (m.isActiveSense())
 	{
@@ -604,18 +642,18 @@ const String getName(const MidiMessage &m)
 	return (" [Yet unknown]");
 }
 
-const String getMidiMessageAsLogString (const MidiMessage &m, const double customTimestamp, const bool name, const bool channel, const bool number, const bool value, const bool timestamp, const bool rawData, const bool rawInDecimal, const bool rawDataSize)
+const String getMidiMessageAsLogString(const MidiMessage& m, const double customTimestamp, const bool name, const bool channel, const bool number, const bool value, const bool timestamp, const bool rawData, const bool rawInDecimal, const bool rawDataSize)
 {
 	return ((timestamp ? (customTimestamp >= 0 ? getTimestamp(customTimestamp) : getTimestamp(m)) : "")
-				+ (rawDataSize ? getRawDataSize(m) : "")
-				+ (name ? getName(m) : "")
-				+ (channel ? getMidiChannel(m) : "")
-				+ (number ? getMidiNumber(m) : "")
-				+ (value ? getMidiValue(m) : "")
-				+ (rawData ? getRawData(m,rawInDecimal) : ""));
+		+ (rawDataSize ? getRawDataSize(m) : "")
+		+ (name ? getName(m) : "")
+		+ (channel ? getMidiChannel(m) : "")
+		+ (number ? getMidiNumber(m) : "")
+		+ (value ? getMidiValue(m) : "")
+		+ (rawData ? getRawData(m, rawInDecimal) : ""));
 }
 
-void setBitOption (int &storage, const int optionToSet, const bool isSet)
+void setBitOption(int& storage, const int optionToSet, const bool isSet)
 {
 	if (isSet)
 	{
@@ -627,12 +665,12 @@ void setBitOption (int &storage, const int optionToSet, const bool isSet)
 	}
 }
 
-bool getBitOption (const int &storage, const int &optionToGet)
+bool getBitOption(const int& storage, const int& optionToGet)
 {
 	return ((storage & optionToGet) != 0);
 }
 
-const String dumpTree (const ValueTree &tree)
+const String dumpTree(const ValueTree& tree)
 {
 	ScopedPointer <XmlElement> xml(tree.createXml().release());
 	if (xml)
@@ -643,36 +681,36 @@ const String dumpTree (const ValueTree &tree)
 	return ("dumpTree: INVALID TREE");
 }
 
-const String dataPrefix (const CtrlrMidiMessage &data, const int prefixLength)
+const String dataPrefix(const CtrlrMidiMessage& data, const int prefixLength)
 {
-	return (dataPrefix (data.getData(), prefixLength));
+	return (dataPrefix(data.getData(), prefixLength));
 }
 
-const String dataPrefix (const MemoryBlock &data, const int prefixLength)
+const String dataPrefix(const MemoryBlock& data, const int prefixLength)
 {
-    return ("("+STR((int)data.getSize())+")"+String::toHexString (data.getData(), ( (prefixLength < (int)data.getSize()) ? prefixLength : (int)data.getSize() ) ));
+	return ("(" + STR((int)data.getSize()) + ")" + String::toHexString(data.getData(), ((prefixLength < (int)data.getSize()) ? prefixLength : (int)data.getSize())));
 }
 
-const String labelFromProperty (CtrlrModulator *modulator, const String &formatText)
+const String labelFromProperty(CtrlrModulator* modulator, const String& formatText)
 {
 	if (modulator == nullptr)
 		return ("");
 
-	String ret = formatText.replace ("%n", modulator->getName());
+	String ret = formatText.replace("%n", modulator->getName());
 	if (modulator->getComponent())
 	{
-		ret = ret.replace ("%N", modulator->getComponent()->getProperty(Ids::componentVisibleName).toString());
-		ret = ret.replace ("%s", modulator->getComponent()->getComponentText());
+		ret = ret.replace("%N", modulator->getComponent()->getProperty(Ids::componentVisibleName).toString());
+		ret = ret.replace("%s", modulator->getComponent()->getComponentText());
 	}
-	ret = ret.replace ("%v", String(modulator->getModulatorValue()));
-	ret = ret.replace ("%h", String::formatted ("%x", modulator->getModulatorValue()));
-	ret = ret.replace ("%x", modulator->getMidiMessage().toString());
-	ret = ret.replace ("%g", modulator->getGroupName());
+	ret = ret.replace("%v", String(modulator->getModulatorValue()));
+	ret = ret.replace("%h", String::formatted("%x", modulator->getModulatorValue()));
+	ret = ret.replace("%x", modulator->getMidiMessage().toString());
+	ret = ret.replace("%g", modulator->getGroupName());
 
 	return (ret);
 }
 
-const void mergeMidiData(const CtrlrMidiMessage &source, CtrlrMidiMessage &destination)
+const void mergeMidiData(const CtrlrMidiMessage& source, CtrlrMidiMessage& destination)
 {
 	if (source.getNumMessages() != destination.getNumMessages())
 	{
@@ -680,12 +718,12 @@ const void mergeMidiData(const CtrlrMidiMessage &source, CtrlrMidiMessage &desti
 		return;
 	}
 
-	for (int i = 0; i<source.getNumMessages(); i++)
+	for (int i = 0; i < source.getNumMessages(); i++)
 	{
-		const uint8 *sourcePtr = source.getReference(i).m.getRawData();
-		uint8 *destPtr = (uint8 *)destination.getReference(i).m.getRawData();
+		const uint8* sourcePtr = source.getReference(i).m.getRawData();
+		uint8* destPtr = (uint8*)destination.getReference(i).m.getRawData();
 
-		for (int j = 0; j<source.getReference(i).m.getRawDataSize(); j++)
+		for (int j = 0; j < source.getReference(i).m.getRawDataSize(); j++)
 		{
 			if (destPtr + j != nullptr && sourcePtr + j != nullptr)
 				*(destPtr + j) = *(sourcePtr + j);
@@ -701,7 +739,7 @@ int	indirectOperation(const int inValue, const CtrlrSysExFormulaToken op)
 	}
 	else if (op == MSB7bitValue)
 	{
-        return ((inValue & 0x3fff) >> 7);  // Added v5.6.31 from dnaldoog
+		return ((inValue & 0x3fff) >> 7);  // Added v5.6.31 from dnaldoog
 	}
 	else if (op == LSB4bitValue)
 	{
@@ -775,7 +813,7 @@ const BigInteger getValueAsBigInteger(const int inValue, const CtrlrSysExFormula
 	}
 }
 
-const MemoryBlock midiMessagePattern(const CtrlrMidiMessageEx &mEx, const Array<CtrlrSysexToken> tokens, const Array <int, CriticalSection> &globalVariables)
+const MemoryBlock midiMessagePattern(const CtrlrMidiMessageEx& mEx, const Array<CtrlrSysexToken> tokens, const Array <int, CriticalSection>& globalVariables)
 {
 	if (mEx.m.isNoteOff() || mEx.m.isNoteOn())
 	{
@@ -811,7 +849,7 @@ const MemoryBlock midiMessagePattern(const CtrlrMidiMessageEx &mEx, const Array<
 	{
 		MemoryBlock bl(mEx.m.getRawData(), mEx.m.getRawDataSize());
 
-		for (int i = 0; i<tokens.size(); i++)
+		for (int i = 0; i < tokens.size(); i++)
 		{
 			if (tokens[i].getType() == GlobalVariable)
 			{
@@ -835,12 +873,12 @@ const MemoryBlock midiMessagePattern(const CtrlrMidiMessageEx &mEx, const Array<
 	return (MemoryBlock());
 }
 
-bool compareMemory(const MemoryBlock &haystack, const MemoryBlock &needle)
+bool compareMemory(const MemoryBlock& haystack, const MemoryBlock& needle)
 {
 	if (haystack.getSize() != needle.getSize())
 		return (false);
 
-	for (size_t i = 0; i<needle.getSize(); i++)
+	for (size_t i = 0; i < needle.getSize(); i++)
 	{
 		if ((uint8)haystack[i] == midiByteMask)
 		{
@@ -854,14 +892,14 @@ bool compareMemory(const MemoryBlock &haystack, const MemoryBlock &needle)
 	return (true);
 }
 
-const BigInteger memoryToBits(const MemoryBlock &mb)
+const BigInteger memoryToBits(const MemoryBlock& mb)
 {
 	BigInteger bi;
 	bi.loadFromMemoryBlock(mb);
 	return (bi);
 }
 
-void channelizeBuffer(MidiBuffer &inputBuffer, MidiBuffer &outputBuffer, const int channel, const bool channelizeAllowed)
+void channelizeBuffer(MidiBuffer& inputBuffer, MidiBuffer& outputBuffer, const int channel, const bool channelizeAllowed)
 {
 	if (channelizeAllowed == false)
 	{
@@ -882,11 +920,11 @@ void channelizeBuffer(MidiBuffer &inputBuffer, MidiBuffer &outputBuffer, const i
 
 float normalizeValue(const double& value, const double& minValue, const double& maxValue) // Updated v5.6.33
 {
-    if (maxValue > minValue)
-    {
-        return ((float)((value - minValue) / (maxValue - minValue)));
-    }
-    return 0.0f; // Or some other appropriate default value
+	if (maxValue > minValue)
+	{
+		return ((float)((value - minValue) / (maxValue - minValue)));
+	}
+	return 0.0f; // Or some other appropriate default value
 }
 
 double denormalizeValue(const float& normalized, const double& minValue, const double& maxValue)
@@ -895,10 +933,10 @@ double denormalizeValue(const float& normalized, const double& minValue, const d
 	// jassert(maxValue > minValue);
 
 	return roundFloatToInt(minValue + normalized * (maxValue - minValue));
-    // return minValue + normalized * (maxValue - minValue); // Updated v5.6.33. Won't round the value
+	// return minValue + normalized * (maxValue - minValue); // Updated v5.6.33. Won't round the value
 }
 
-void restoreProperties(const ValueTree &sourceTree, ValueTree &destinationTree, UndoManager *undoManager, const String &propertyPrefix)
+void restoreProperties(const ValueTree& sourceTree, ValueTree& destinationTree, UndoManager* undoManager, const String& propertyPrefix)
 {
 	if (propertyPrefix == "")
 	{
@@ -953,7 +991,7 @@ int add_file_and_line(lua_State* L)
 	}
 }
 
-bool isInvalidMethodName(const String &name)
+bool isInvalidMethodName(const String& name)
 {
 	if (name.isEmpty() || name == COMBO_NONE_ITEM)
 		return (true);
@@ -961,7 +999,7 @@ bool isInvalidMethodName(const String &name)
 	return (false);
 }
 
-const MemoryBlock luaArrayTomemoryBlock(const CtrlrLuaObjectWrapper &luaArray)
+const MemoryBlock luaArrayTomemoryBlock(const CtrlrLuaObjectWrapper& luaArray)
 {
 	MemoryBlock bl;
 	if (luaArray.getObject().is_valid() && luabind::type(luaArray.getObject()) == LUA_TTABLE)
@@ -976,7 +1014,7 @@ const MemoryBlock luaArrayTomemoryBlock(const CtrlrLuaObjectWrapper &luaArray)
 	return (bl);
 }
 
-Array<float> luaArrayToFloat(const CtrlrLuaObjectWrapper&luaArray)
+Array<float> luaArrayToFloat(const CtrlrLuaObjectWrapper& luaArray)
 {
 	Array<float> data;
 
@@ -991,12 +1029,12 @@ Array<float> luaArrayToFloat(const CtrlrLuaObjectWrapper&luaArray)
 	return (data);
 }
 
-const String memoryBlockToString(const MemoryBlock &data)
+const String memoryBlockToString(const MemoryBlock& data)
 {
 	return (String::toHexString(data.getData(), (int)data.getSize(), 1));
 }
 
-bool stringIsHexadecimal(const String &hexData)
+bool stringIsHexadecimal(const String& hexData)
 {
 	return hexData.isNotEmpty() && hexData.containsOnly("abcdefABCDEF0123456789 ");
 }

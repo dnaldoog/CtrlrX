@@ -554,7 +554,15 @@ void CtrlrMidiMessage::setValueToSingle(const int index, const int value)
 	else
 	{
 		if (messageArray.size() > index)
-			messageArray.getReference(index).setValue (value);
+		{
+			auto& mex = messageArray.getReference(index);
+			if (mex.indirectValueFlag == CCCoarseMSB)
+				mex.setValue(value >> 1);
+			else if (mex.indirectValueFlag == CCFineLSB)
+				mex.setValue((value & 1) << 6);
+			else
+				mex.setValue(value);
+		}
 	}
 }
 
@@ -892,18 +900,35 @@ void CtrlrMidiMessage::setNumber(const int number)
 	}
 }
 
-void CtrlrMidiMessage::setNumberToSingle (const int index, const int number)
+void CtrlrMidiMessage::setNumberToSingle(const int index, const int number)
 {
 	if (index >= messageArray.size())
 		return;
 
 	if (messageArray.getReference(index).overrideValue == -2)
 	{
-		messageArray.getReference(index).setValue (number);
+		messageArray.getReference(index).setValue(number);
 	}
 	else
 	{
-		messageArray.getReference(index).setNumber (number);
+		auto& mex = messageArray.getReference(index);
+		_DBG("setNumberToSingle index=" + String(index)
+			+ " flag=" + String(mex.indirectValueFlag)
+			+ " number=" + String(number));
+if (mex.indirectValueFlag == CCFineLSB)
+{
+    if (number > 31)
+    {
+        _WRN("CCFineLSB: coarse CC " + String(number) + " out of range, fine offset suppressed");
+        mex.setNumber(number); // fall back to same number rather than corrupt value
+    }
+    else
+    {
+        mex.setNumber(number + 32);
+    }
+}
+else
+    mex.setNumber(number);
 	}
 }
 
@@ -1061,54 +1086,87 @@ void CtrlrMidiMessage::setMidiMessageType (const CtrlrMidiMessageType newType)
 
 void CtrlrMidiMessage::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
 {
-	if (property == Ids::midiMessageType)
-	{
-		setMidiMessageType ((CtrlrMidiMessageType)(int)getProperty(Ids::midiMessageType));
-		setNumber ((int)getProperty(Ids::midiMessageCtrlrNumber));
-		patternChanged();
-	}
-	else if(property == Ids::midiMessageSysExFormula)
-	{
-		if (restoring == false && (int)getProperty(Ids::midiMessageType) == SysEx)
-		{
-			if (getProperty(property).toString().length() >= 1)
-			{
-				if (getSysexProcessor())
-				{
-					CtrlrSysexProcessor::setSysExFormula (*this, getProperty(Ids::midiMessageSysExFormula));
-				}
-				setValue ((int)getProperty(Ids::midiMessageCtrlrValue));
-				patternChanged();
-			}
-		}
-	}
-	else if (property == Ids::midiMessageChannel)
-	{
-		setChannel (getProperty(Ids::midiMessageChannel));
-	}
-	else if (property == Ids::midiMessageCtrlrValue)
-	{
-		int newVal = (int)getProperty(Ids::midiMessageCtrlrValue);
-		_DBG("CtrlrMidiMessage::valueTreePropertyChanged midiMessageCtrlrValue=" + String(newVal) + " messageArraySize=" + String((int)messageArray.size()));
-		if (messageArray.size() > 0)
-			_DBG("CtrlrMidiMessage BEFORE raw=" + String::toHexString(messageArray.getReference(0).m.getRawData(), messageArray.getReference(0).m.getRawDataSize()));
-		setValue (newVal);
-		if (messageArray.size() > 0)
-			_DBG("CtrlrMidiMessage AFTER raw=" + String::toHexString(messageArray.getReference(0).m.getRawData(), messageArray.getReference(0).m.getRawDataSize()));
-		return;
-	}
-	else if (property == Ids::midiMessageCtrlrNumber)
-	{
-		setNumber ((int)getProperty(Ids::midiMessageCtrlrNumber));
-	}
-	else if (property == Ids::midiMessageMultiList)
-	{
-		setMultiMessageFromString (getProperty(Ids::midiMessageMultiList));
-		
-		setNumber ((int)getProperty(Ids::midiMessageCtrlrNumber));
-	}
-
-	patternChanged();
+    // Get the value that was *just set* (which is now stored in the tree).
+    // This value might be 5.0 if JUCE promoted it to a double.
+    juce::var currentValue = getProperty(property);
+    
+    // Convert it to an integer. This truncates any decimal part (e.g., 5.0 -> 5).
+    int intValueToStore = static_cast<int>(currentValue);
+    
+    // IMPORTANT: Only re-set the property if the integer version is different from
+    //            what's currently stored as a 'raw' var, or if its type implies
+    //            it's currently a double when it should be an int.
+    //            This prevents an infinite loop of property change notifications
+    //            if the ValueTree somehow sees setting 5 as different from 5.0.
+    //
+    // A robust check: if the var is currently a double, or if it's an int but
+    //                 the stored int isn't what we expect (shouldn't happen with this logic).
+    if (currentValue.isDouble() || (currentValue.isInt() && static_cast<int>(currentValue) != intValueToStore))
+    {
+        // Set the property back, explicitly providing an int to juce::var.
+        // Pass nullptr for the UndoManager if you're not using one here.
+        // If you are using an UndoManager, pass it: getUndoManager() or your specific manager.
+        setProperty(property, juce::var(intValueToStore), false);
+        
+        /* Early return here because setProperty will trigger this method again
+         immediately with the correct integer type. */
+        return;
+    }
+    
+    if (property == Ids::midiMessageType)
+    {
+        setMidiMessageType ((CtrlrMidiMessageType)(int)getProperty(Ids::midiMessageType));
+        setNumber ((int)getProperty(Ids::midiMessageCtrlrNumber));
+        
+        // Ensure the value is re-applied to the new message type to prevent resetting to 0
+        setValue ((int)getProperty(Ids::midiMessageCtrlrValue));
+        
+        patternChanged();
+    }
+    else if(property == Ids::midiMessageSysExFormula)
+    {
+        if (restoring == false && (int)getProperty(Ids::midiMessageType) == SysEx)
+        {
+            if (getProperty(property).toString().length() >= 1)
+            {
+                if (getSysexProcessor())
+                {
+                    CtrlrSysexProcessor::setSysExFormula (*this, getProperty(Ids::midiMessageSysExFormula));
+                }
+                setValue ((int)getProperty(Ids::midiMessageCtrlrValue));
+                patternChanged();
+            }
+        }
+    }
+    else if (property == Ids::midiMessageChannel)
+    {
+        setChannel (getProperty(Ids::midiMessageChannel));
+    }
+    else if (property == Ids::midiMessageCtrlrValue)
+    {
+        int newVal = (int)getProperty(Ids::midiMessageCtrlrValue);
+        _DBG("CtrlrMidiMessage::valueTreePropertyChanged midiMessageCtrlrValue=" + String(newVal) + " messageArraySize=" + String((int)messageArray.size()));
+        if (messageArray.size() > 0)
+            _DBG("CtrlrMidiMessage BEFORE raw=" + String::toHexString(messageArray.getReference(0).m.getRawData(), messageArray.getReference(0).m.getRawDataSize()));
+        setValue (newVal);
+        if (messageArray.size() > 0)
+            _DBG("CtrlrMidiMessage AFTER raw=" + String::toHexString(messageArray.getReference(0).m.getRawData(), messageArray.getReference(0).m.getRawDataSize()));
+        return;
+    }
+    else if (property == Ids::midiMessageCtrlrNumber)
+    {
+        setNumber ((int)getProperty(Ids::midiMessageCtrlrNumber));
+    }
+    else if (property == Ids::midiMessageMultiList)
+    {
+        setMultiMessageFromString (getProperty(Ids::midiMessageMultiList));
+        
+		if (!getProperty(Ids::midiMessageMultiList).toString().containsIgnoreCase("ByteValue"))
+			setNumber((int)getProperty(Ids::midiMessageCtrlrNumber));
+		setValue((int)getProperty(Ids::midiMessageCtrlrValue));
+    }
+    
+    patternChanged();
 }
 
 MidiBuffer CtrlrMidiMessage::getMidiBuffer(const int startSample)

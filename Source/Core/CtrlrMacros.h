@@ -93,6 +93,8 @@ enum CtrlrSysExFormulaToken
 	MSB4bitValue,
 	GlobalVariable,
 	ChecksumRolandJP8080,
+	CCCoarseMSB,
+	CCFineLSB,
 	RolandSplitByte1,
 	RolandSplitByte2,
 	RolandSplitByte3,
