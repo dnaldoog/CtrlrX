@@ -249,9 +249,15 @@ const CtrlrMidiMessageEx midiMessageExfromString(const String& str, const int ch
     finalValue = (value & 1) << 6;
     _DBG("CCFineLSB: coarse=" + String(number) + " fine=" + String(finalNumber) + " input=" + String(value) + " output=" + String(finalValue));
 }
-		else if (ret.overrideValue != -1) {
-			finalValue = ret.overrideValue;
-		}
+else if (ret.overrideValue == -2) {
+    finalValue = number;   // -2 means "use component MIDI number"
+}
+else if (ret.overrideValue == -1) {
+    finalValue = value;    // -1 means "use component value" (default)
+}
+else {
+    finalValue = ret.overrideValue;  // literal override
+}
 
 		// 3. Create the MIDI message using the FINAL values
 		if (tokens[0] == "CC")
