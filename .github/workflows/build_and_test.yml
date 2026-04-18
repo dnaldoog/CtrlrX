@@ -4,8 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
-      - 5.6.35-Maintenance-LuaJIT
+      - '**'
     tags:
       - v*
   pull_request:
