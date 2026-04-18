@@ -63,6 +63,7 @@ if exist "%~dp0Source\Misc\luajit\src\msvcbuild.bat" (
 echo.
 echo  [1] Release
 echo  [2] Debug
+echo  [3] RelWithDebInfo  - Release speed, no LTO optimisation (fast compile, works in DAW)
 echo.
 set /p CONFIG_CHOICE="Build configuration [1-2]: "
 
@@ -70,6 +71,8 @@ if "%CONFIG_CHOICE%"=="1" (
     set "CONFIG=Release"
 ) else if "%CONFIG_CHOICE%"=="2" (
     set "CONFIG=Debug"
+) else if "%CONFIG_CHOICE%"=="3" (
+    set "CONFIG=RelWithDebInfo"
 ) else (
     echo Invalid selection. Exiting.
     exit /b 1
@@ -115,6 +118,8 @@ cmake -G "Ninja" ^
   -DCMAKE_EXE_LINKER_FLAGS_DEBUG="/incremental" ^
   -DCMAKE_SHARED_LINKER_FLAGS_DEBUG="/incremental" ^
   -DCMAKE_EXE_LINKER_FLAGS_RELEASE="/LTCG" ^
+  -DCMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO="" ^
+  -DCMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO="" ^
   -DCMAKE_SHARED_LINKER_FLAGS_RELEASE="/LTCG" ^
   .. || goto ERROR
 

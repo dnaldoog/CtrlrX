@@ -339,12 +339,30 @@ void CtrlrModulatorProcessor::setValueFromMIDI(CtrlrMidiMessage &m, const CtrlrM
 	}
 }
 
-void CtrlrModulatorProcessor::setParameterNotifyingHost() // CtrlrX->VST Host
+//void CtrlrModulatorProcessor::setParameterNotifyingHost() // CtrlrX->VST Host
+//{
+//	if (owner.getVstIndex() >= 0 && owner.isExportedToVst())
+//	{
+//		getProcessor()->setParameterNotifyingHost (owner.getVstIndex(), normalizeValue (currentValue.value, minValue, maxValue));
+//	}
+//}
+
+void CtrlrModulatorProcessor::setParameterNotifyingHost()
 {
-	if (owner.getVstIndex() >= 0 && owner.isExportedToVst())
-	{
-		getProcessor()->setParameterNotifyingHost (owner.getVstIndex(), normalizeValue (currentValue.value, minValue, maxValue));
-	}
+    if (owner.getVstIndex() >= 0 && owner.isExportedToVst())
+    {
+#if JUCE_VERSION >= 0x080000
+        auto& params  = getProcessor()->getParameters();
+        const int idx = owner.getVstIndex();
+        if (idx < params.size())
+            params[idx]->setValueNotifyingHost(
+                normalizeValue(currentValue.value, minValue, maxValue));
+#else
+        getProcessor()->setParameterNotifyingHost(
+            owner.getVstIndex(),
+            normalizeValue(currentValue.value, minValue, maxValue));
+#endif
+    }
 }
 
 int CtrlrModulatorProcessor::getValueFromMidiMessage(const CtrlrMIDIDeviceType source)
