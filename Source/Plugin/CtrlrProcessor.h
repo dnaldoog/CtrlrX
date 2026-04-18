@@ -10,7 +10,7 @@
 #include "CtrlrLog.h"
 
 #include <fstream> // Added v5.6.33. Required for vst3 logger
-
+static const int CTRLR_MAX_PARAMETER_SLOTS = 512;
 class CtrlrLog;
 class CtrlrManager;
 class CtrlrMidiMessage;
@@ -147,6 +147,7 @@ class CtrlrProcessor : public AudioProcessor, public ChangeBroadcaster
 		void activePanelChanged();
     
 	private:
+    friend class CtrlrParameter;
         ::PluginHostType host;
 		MidiBuffer leftoverBuffer;
 		CtrlrLog *ctrlrLog;
@@ -207,5 +208,19 @@ private:
     juce::File logFile;
 };
 
+class CtrlrParameter : public AudioProcessorParameter
+{
+public:
+    CtrlrParameter (CtrlrProcessor& p, int idx);
+    float getValue()                          const override;
+    void  setValue (float newValue)                 override;
+    float getDefaultValue()                   const override;
+    String getLabel()                         const override;
+    String getName (int maxLen)               const override;
+    float getValueForText (const String& t)   const override;
 
+private:
+    CtrlrProcessor& owner;
+    int paramIndex;
+};
 #endif
