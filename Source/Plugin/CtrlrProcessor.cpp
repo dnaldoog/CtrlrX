@@ -35,7 +35,7 @@ CtrlrProcessor::CtrlrProcessor() :
 	currentExec		= File::getSpecialLocation(File::currentApplicationFile);
 	overridesFile	= currentExec.withFileExtension("overrides");
 
-	overridesTree.setProperty (Ids::ctrlrMaxExportedVstParameters, 64, 0);
+	overridesTree.setProperty (Ids::ctrlrMaxExportedVstParameters, CTRLR_MAX_PARAMETER_SLOTS, 0);
 	overridesTree.setProperty (Ids::ctrlrShutdownDelay, 512, 0);
 
 	if (overridesFile.existsAsFile())
@@ -46,6 +46,11 @@ CtrlrProcessor::CtrlrProcessor() :
 			overridesTree = ValueTree::fromXml (*xml);
 		}
 	}
+const int numParamSlots = jmax(CTRLR_MAX_PARAMETER_SLOTS, (int) overridesTree.getProperty (
+    Ids::ctrlrMaxExportedVstParameters, CTRLR_MAX_PARAMETER_SLOTS));
+
+for (int i = 0; i < numParamSlots; i++)
+    addParameter (new CtrlrParameter (*this, i));
 
     #if JUCE_DEBUG // Added v5.6.34. Will show the debug log. Was set to (false) by default from the CtrlrManager property ctrlrLogToFile.
     // If we are in a Debug build, force logging ON
@@ -692,4 +697,38 @@ AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     _DBG("createPluginFilter");
     return new CtrlrProcessor();
+}
+
+CtrlrParameter::CtrlrParameter (CtrlrProcessor& p, int idx)
+    : owner(p), paramIndex(idx) {}
+
+float CtrlrParameter::getValue() const
+{
+    if (owner.ctrlrManager)
+        if (auto* m = owner.ctrlrManager->getModulatorByVstIndex (paramIndex))
+            return m->getProcessor().getValueForHost();
+    return 0.0f;
+}
+
+void CtrlrParameter::setValue (float newValue)
+{
+    if (owner.ctrlrManager)
+        if (auto* m = owner.ctrlrManager->getModulatorByVstIndex (paramIndex))
+            m->getProcessor().setValueFromHost (newValue);
+}
+
+float  CtrlrParameter::getDefaultValue()                 const { return 0.0f; }
+String CtrlrParameter::getLabel()                        const { return {}; }
+
+String CtrlrParameter::getName (int maxLen) const
+{
+    if (owner.ctrlrManager)
+        if (auto* m = owner.ctrlrManager->getModulatorByVstIndex (paramIndex))
+            return m->getNameForHost().substring (0, maxLen);
+    return " ";
+}
+
+float CtrlrParameter::getValueForText (const String& t) const
+{
+    return t.getFloatValue();
 }
