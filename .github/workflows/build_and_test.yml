@@ -235,6 +235,8 @@ jobs:
                 \( -name "*.vst3" -o -name "*.vst" -o -name "*.component" -o -name "*.aaxplugin" \
                 -o -name "*.exe" -o -name "${{ env.PRODUCT_NAME }}" \) \
                 -not -name "*.pdb" \
+                | xargs -I{} cp -r {} staging/ || true
+                
           cd staging
           if [ "${{ runner.os }}" == "Windows" ]; then
             7z a "../${NAME}.zip" .
