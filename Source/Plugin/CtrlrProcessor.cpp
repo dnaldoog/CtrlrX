@@ -49,8 +49,13 @@ CtrlrProcessor::CtrlrProcessor() :
 const int numParamSlots = jmax(CTRLR_MAX_PARAMETER_SLOTS, (int) overridesTree.getProperty (
     Ids::ctrlrMaxExportedVstParameters, CTRLR_MAX_PARAMETER_SLOTS));
 
-for (int i = 0; i < numParamSlots; i++)
-    addParameter (new CtrlrParameter (*this, i));
+#if JUCE_VERSION >= 0x080000
+    const int numParamSlots = jmax(CTRLR_MAX_PARAMETER_SLOTS, (int)
+        overridesTree.getProperty(Ids::ctrlrMaxExportedVstParameters,
+        CTRLR_MAX_PARAMETER_SLOTS));
+    for (int i = 0; i < numParamSlots; i++)
+        addParameter (new CtrlrParameter (*this, i));
+#endif
 
     #if JUCE_DEBUG // Added v5.6.34. Will show the debug log. Was set to (false) by default from the CtrlrManager property ctrlrLogToFile.
     // If we are in a Debug build, force logging ON

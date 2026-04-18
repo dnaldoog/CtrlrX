@@ -351,23 +351,17 @@ void CtrlrModulatorProcessor::setParameterNotifyingHost()
 {
     if (owner.getVstIndex() >= 0 && owner.isExportedToVst())
     {
-        auto& params = getProcessor()->getParameters();
-
-        const int vstIdx = owner.getVstIndex();
-
-        if (vstIdx < params.size())
-        {
-            params[vstIdx]->setValueNotifyingHost(
-                normalizeValue(currentValue.value, minValue, maxValue)
-            );
-        }
-        else
-        {
-            // _ERR("CtrlrModulatorProcessor::setParameterNotifyingHost: "
-            //      "VST Index " + String(vstIdx) +
-            //      " out of range, Param count: " + String(params.size()));
-				 // else: silently ignore — VST index exceeds registered parameter slots
-        }
+#if JUCE_VERSION >= 0x080000
+        auto& params  = getProcessor()->getParameters();
+        const int idx = owner.getVstIndex();
+        if (idx < params.size())
+            params[idx]->setValueNotifyingHost(
+                normalizeValue(currentValue.value, minValue, maxValue));
+#else
+        getProcessor()->setParameterNotifyingHost(
+            owner.getVstIndex(),
+            normalizeValue(currentValue.value, minValue, maxValue));
+#endif
     }
 }
 
