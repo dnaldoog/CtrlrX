@@ -10,31 +10,33 @@ on:
         default: false
   push:
     branches:
-      - main
+      - '**'
     tags:
       - v*
   pull_request: null
+
 concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
+
 env:
   BUILD_TYPE: Release
   BUILD_DIR: build
-  PRODUCT_NAME: Ctrlr
-  PROJECT_NAME: Ctrlr
+  PRODUCT_NAME: CtrlrX
+  PROJECT_NAME: CtrlrX
   DISPLAY: :0
   HOMEBREW_NO_INSTALL_CLEANUP: 1
   SCCACHE_GHA_ENABLED: true
   SCCACHE_CACHE_MULTIARCH: 1
   IPP_DIR: C:\Program Files (x86)\Intel\oneAPI\ipp\latest\lib\cmake\ipp
+
 defaults:
   run:
     shell: bash
+
 jobs:
   build_and_test:
-    if: github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name !=
-      github.event.pull_request.base.repo.full_name
+    if: "github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name"
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     env:
@@ -60,89 +62,134 @@ jobs:
           - name: Windows
             os: windows-2022
             pluginval-binary: ./pluginval.exe
+
     steps:
       - name: Setup MSVC (Windows)
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
+
       - name: Set up Clang (Linux)
         if: runner.os == 'Linux'
         uses: egor-tensin/setup-clang@v1
+
       - name: Install Linux System Deps
         if: runner.os == 'Linux'
-        run: >
+        run: |
           sudo apt-get update
-
-          sudo apt install -y libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype6-dev libglu1-mesa-dev xvfb libgtk-3-dev libwebkit2gtk-4.1-dev ninja-build binutils-dev libboost-dev libcurl4-gnutls-dev libgl1-mesa-dev libglapi-mesa libiberty-dev libsframe1 libudev-dev libxcursor-dev libxrandr-dev xorg-dev
-
+          sudo apt install -y \
+            libasound2-dev libx11-dev libxinerama-dev libxext-dev \
+            libfreetype6-dev libglu1-mesa-dev xvfb ninja-build \
+            binutils-dev libboost-dev libcurl4-gnutls-dev libgl1-mesa-dev \
+            libglapi-mesa libiberty-dev libsframe1 libudev-dev \
+            libxcursor-dev libxrandr-dev xorg-dev \
+            libgtk-3-dev libwebkit2gtk-4.1-dev libluajit-5.1-dev unzip
+          # Alias webkit 4.1 to 4.0 so CMake finds it
+          sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc \
+                      /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc
           sudo /usr/bin/Xvfb $DISPLAY &
+
       - name: Install Windows System Deps
         if: runner.os == 'Windows'
         run: |
           nuget install intelipp.static.win-x64 -Version 2022.2.0.575
           choco install ninja
+
       - name: Install macOS System Deps
         if: matrix.name == 'macOS'
         run: |
-          brew install osxutils boost
+          brew install osxutils boost luajit
+          echo "PKG_CONFIG_PATH=$(brew --prefix luajit)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
           sudo xcode-select -s /Applications/Xcode.app
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
+
+      # -----------------------------------------------------------------------
+      # Extract LuaJIT from Source/Resources/luajit.zip
+      # -----------------------------------------------------------------------
+      - name: Extract LuaJIT (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          ZIP=$(find . -name "luajit.zip" | head -n 1)
+          if [ -n "$ZIP" ]; then
+            echo "Found zip at: $ZIP"
+            unzip -o "$ZIP" -d "Source/Misc/"
+            echo "Extraction complete."
+          else
+            echo "luajit.zip not found - skipping extraction"
+          fi
+
+      - name: Extract LuaJIT (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $zip = Get-ChildItem -Path "Source" -Recurse -Filter "luajit.zip" | Select-Object -First 1
+          if ($zip) {
+            Write-Host "Found zip at: $($zip.FullName)"
+            Expand-Archive -Path $zip.FullName -DestinationPath "Source/Misc/" -Force
+            Write-Host "Extraction complete."
+          } else {
+            Write-Host "luajit.zip not found"
+            exit 1
+          }
+
+      # -----------------------------------------------------------------------
+      # Build LuaJIT per platform
+      # -----------------------------------------------------------------------
       - name: Build LuaJIT (Windows)
         if: runner.os == 'Windows'
         shell: cmd
         run: |
           @echo off
-          for /d /r %%i in (*luajit) do (
-            if exist "%%i\src\msvcbuild.bat" (
-              pushd "%%i\src"
-              call msvcbuild.bat static
-              popd
-              exit /b 0
-            )
+          if exist "Source\Misc\luajit\src\msvcbuild.bat" (
+            pushd "Source\Misc\luajit\src"
+            call msvcbuild.bat static
+            popd
+            echo LuaJIT built successfully.
+            exit /b 0
           )
           echo ERROR: LuaJIT msvcbuild.bat not found.
           exit /b 1
+
       - name: Build LuaJIT (Linux)
         if: runner.os == 'Linux'
         run: |
           LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
-          if [ -z "$LUAJIT_SRC" ]; then echo "LuaJIT not found"; exit 1; fi
+          if [ -z "$LUAJIT_SRC" ]; then
+            echo "LuaJIT source not found - using system libluajit-5.1-dev"
+            exit 0
+          fi
           cd "$LUAJIT_SRC"
           make clean
           make -j$(nproc) XCFLAGS="-fPIC"
+
       - name: Build Universal LuaJIT (macOS)
         if: matrix.name == 'macOS'
-        run: >
+        run: |
           LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
-
-          if [ -z "$LUAJIT_SRC" ]; then echo "LuaJIT not found"; exit 1; fi
-
+          if [ -z "$LUAJIT_SRC" ]; then
+            echo "LuaJIT source not found - using Homebrew luajit"
+            exit 0
+          fi
           cd "$LUAJIT_SRC"
-
           export MACOSX_DEPLOYMENT_TARGET=10.15
-
           echo "--- Building x86_64 ---"
-
           make clean
-
           CC=clang TARGET_SYS=Darwin TARGET_FLAGS="-arch x86_64" make -j$(sysctl -n hw.ncpu)
-
           mv libluajit.a libluajit_x86.a
-
           echo "--- Building arm64 ---"
-
           make clean
-
           CC=clang TARGET_SYS=Darwin TARGET_FLAGS="-arch arm64" make -j$(sysctl -n hw.ncpu)
-
           mv libluajit.a libluajit_arm.a
-
           lipo -create libluajit_x86.a libluajit_arm.a -output libluajit.a
-
           lipo -info libluajit.a
+
+      # -----------------------------------------------------------------------
+      # Boost, sccache, version
+      # -----------------------------------------------------------------------
       - name: Unzip Boost for CtrlrX
         if: runner.os != 'Linux'
         run: |
@@ -150,54 +197,60 @@ jobs:
           if [ -n "$BOOST_ZIP" ]; then
             unzip -o "$BOOST_ZIP" -d $(dirname "$BOOST_ZIP")
           fi
+
       - name: Cache with sccache
         uses: mozilla-actions/sccache-action@v0.0.9
+
       - name: Extract Version
-        run: >
+        run: |
           echo "0.0.0" > VERSION
-
           JUCER=$(find . -name "Ctrlr*.jucer" -type f | head -n 1)
-
           if [ -n "$JUCER" ]; then
             sed -n 's/.*version="\([^"]*\)".*/\1/p' "$JUCER" | head -n 1 > VERSION
           fi
           echo "VERSION_TAG=$(cat VERSION)" >> $GITHUB_ENV
+
+      # -----------------------------------------------------------------------
+      # CMake configure and build
+      # -----------------------------------------------------------------------
       - name: Configure CMake
         run: |
-          if [ "${{ matrix.name }}" == "macOS" ]; then
-            LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
-            EXTRA_OPTS="-DCTRLRX_USE_LUAJIT=ON -DLUAJIT_LIBRARY=$PWD/$LUAJIT_SRC/libluajit.a -DLUAJIT_INCLUDE_DIR=$PWD/$LUAJIT_SRC"
-          fi
           cmake -B ${{ env.BUILD_DIR }} \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+                -DCTRLRX_USE_LUAJIT=ON \
                 ${{ matrix.extra-flags }}
+
       - name: Build Project
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }}
+
+      # -----------------------------------------------------------------------
+      # Package and upload artifacts
+      # -----------------------------------------------------------------------
       - name: Prepare and Zip Artifacts
-        run: >
-          NAME="${{ env.PRODUCT_NAME }}-${{ env.VERSION_TAG }}-LuaJIT-${{ matrix.name
-          }}"
-
+        run: |
+          NAME="${{ env.PRODUCT_NAME }}-${{ env.VERSION_TAG }}-LuaJIT-${{ matrix.name }}"
           echo "ZIP_NAME=$NAME" >> $GITHUB_ENV
-
           mkdir -p staging
-
-          # Path adjustment for JUCE/Pamplejuce artefact folder structure
-
-          cp -r ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/* staging/ || true
-
+          find ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }} \
+                \( -name "*.vst3" -o -name "*.vst" -o -name "*.component" -o -name "*.aaxplugin" \) \
+                -o -name "*.exe" -o -name "${{ env.PRODUCT_NAME }}" -not -name "*.pdb" \)
+                | xargs -I{} cp -r {} staging/ || true
           cd staging
-
           if [ "${{ runner.os }}" == "Windows" ]; then
             7z a "../${NAME}.zip" .
           else
             zip -r "../${NAME}.zip" .
           fi
+
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ZIP_NAME }}
           path: ./${{ env.ZIP_NAME }}.zip
+
+  # -----------------------------------------------------------------------
+  # Release job — triggered only on v* tags
+  # -----------------------------------------------------------------------
   release:
     name: Create GitHub Release
     needs:
