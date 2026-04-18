@@ -46,8 +46,6 @@ CtrlrProcessor::CtrlrProcessor() :
 			overridesTree = ValueTree::fromXml (*xml);
 		}
 	}
-const int numParamSlots = jmax(CTRLR_MAX_PARAMETER_SLOTS, (int) overridesTree.getProperty (
-    Ids::ctrlrMaxExportedVstParameters, CTRLR_MAX_PARAMETER_SLOTS));
 
 #if JUCE_VERSION >= 0x080000
     const int numParamSlots = jmax(CTRLR_MAX_PARAMETER_SLOTS, (int)
