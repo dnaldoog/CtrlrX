@@ -1507,7 +1507,7 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button* buttonThatWasClicked
 			{ "Program Change",  "ProgramChange,-1" },
 			{ "SysEx",           "SysEx,F0 00 xx F7" },
 			{ "NRPN",            "CC,ByteValue,MSB7bitValue,99,-2:CC,ByteValue,LSB7bitValue,98,-2:CC,ByteValue,MSB7bitValue,6,-1:CC,ByteValue,LSB7bitValue,38,-1" },
-			{ "NRPN (Korg)",     "CC,ByteValue,MSB7bitValue,99,-2:CC,ByteValue,LSB7bitValue,98,-2:CC,ByteValue,MSB7bitValue,6,-1" },
+			{ "NRPN (Korg)", "CC,ByteValue,MSB7bitValue,99,-2:CC,ByteValue,LSB7bitValue,98,-2:CC,ByteValue,LSB7bitValue,6,-1" },
 			{ "RPN",             "CC,ByteValue,MSB7bitValue,101,-2:CC,ByteValue,LSB7bitValue,100,-2:CC,ByteValue,MSB7bitValue,6,-1:CC,ByteValue,LSB7bitValue,38,-1" },
 			{ "NRPN Null",       "CC,ByteValue,LSB7bitValue,101,127:CC,ByteValue,LSB7bitValue,100,127" },
 			{ "Novation 8-bit",  "CC,ByteValue,CCCoarseMSB,-2:CC,ByteValue,CCFineLSB,-2" }// as used by Novation etc. for 8-bit MIDI values. Coarse is the MSB, fine is the LSB.
