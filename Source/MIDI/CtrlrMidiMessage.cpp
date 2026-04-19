@@ -554,7 +554,15 @@ void CtrlrMidiMessage::setValueToSingle(const int index, const int value)
 	else
 	{
 		if (messageArray.size() > index)
-			messageArray.getReference(index).setValue (value);
+		{
+			auto& mex = messageArray.getReference(index);
+			if (mex.indirectValueFlag == CCCoarseMSB)
+				mex.setValue(value >> 1);
+			else if (mex.indirectValueFlag == CCFineLSB)
+				mex.setValue((value & 1) << 6);
+			else
+				mex.setValue(value);
+		}
 	}
 }
 
@@ -903,7 +911,26 @@ void CtrlrMidiMessage::setNumberToSingle (const int index, const int number)
 	}
 	else
 	{
-		messageArray.getReference(index).setNumber (number);
+		// Add guard for Novation 8 bit system where MSB (Coarse) Number has 32 added to it for LSB Fine - This could go out of bounds, so protected.
+		// Presuming that Coarse is sent first followed by fine 00/64 value
+		auto& mex = messageArray.getReference(index); // Added v5.6.35. SafeGuards for Novation CC coarse/fine. Thanks to @dnaldoog
+		_DBG("setNumberToSingle index=" + String(index)
+			 + " flag=" + String(mex.indirectValueFlag)
+			 + " number=" + String(number));
+		if (mex.indirectValueFlag == CCFineLSB)
+		{
+			if (number > 31)
+			{
+				_WRN("CCFineLSB: coarse CC " + String(number) + " out of range, fine offset suppressed");
+				mex.setNumber(number); // fall back to same number rather than corrupt value
+			}
+			else
+			{
+				mex.setNumber(number + 32);
+			}
+		}
+		else
+			mex.setNumber(number);
 	}
 }
 
@@ -1136,10 +1163,9 @@ void CtrlrMidiMessage::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
     {
         setMultiMessageFromString (getProperty(Ids::midiMessageMultiList));
         
-        setNumber ((int)getProperty(Ids::midiMessageCtrlrNumber));
-        
-        // Ensure the value is re-applied to the new message type to prevent resetting to 0
-        setValue ((int)getProperty(Ids::midiMessageCtrlrValue));
+		if (!getProperty(Ids::midiMessageMultiList).toString().containsIgnoreCase("ByteValue")) // Updated v5.6.35. Thanks to @dnaldoog
+			setNumber((int)getProperty(Ids::midiMessageCtrlrNumber));
+		setValue((int)getProperty(Ids::midiMessageCtrlrValue));
     }
     
     patternChanged();

@@ -26,12 +26,25 @@ void CtrlrSysexProcessor::sysExProcessToken (const CtrlrSysexToken token, uint8 
         return;
     if (token.getType() >= Nibble16bitLsb0 && token.getType() <= Nibble16bitMsb3)
     {
-        _DBG("Processing token type=" + String(token.getType()) + " position=" + String(token.getPosition()) + " value=" + String(value));
+        _DBG("Processing token type=" + String(token.getType()) + " position=" + String(token.getPosition()) + " value=" + String(value) + " channel=" + String(channel));
     }
     BigInteger bi;
 
     switch (token.getType())
     {
+        case CCCoarseMSB:
+        // This is math.floor(value / 2)
+        // Shifts the 8-bit value right to fit in 7-bit CC
+        _DBG("CCCoarseMSB: input=" + String(value) + " output=" + String(value >> 1));
+            *byte = (uint8)(value >> 1);
+            break;
+
+        case CCFineLSB:
+        // This is (value % 2) * 64
+        // Takes the remainder (bit 0) and moves it to MIDI value 64
+            *byte = (uint8)((value & 1) << 6);
+            break;
+		
         case ByteValue:
             *byte = (uint8)value;
             break;
@@ -465,6 +478,14 @@ CtrlrSysExFormulaToken CtrlrSysexProcessor::sysExIdentifyToken(const String &s)
     if (s.startsWith("k") || s.startsWith("p") || s.startsWith("n") || s.startsWith("o"))
     {
         return (GlobalVariable);
+    }
+	if (s == "nm")
+    {
+        return (CCCoarseMSB);
+    }
+    if (s == "nl")
+    {
+        return (CCFineLSB);
     }
     return (NoToken);
 }
