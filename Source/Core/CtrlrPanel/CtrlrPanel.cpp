@@ -220,8 +220,8 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
     owner.addChangeListener (this);
     midiMessageCollector.reset (SAMPLERATE);
 
-    midiInputThread.startThread (juce::Thread::Priority::normal);
-    midiControllerInputThread.startThread (juce::Thread::Priority::normal);
+    midiInputThread.startThread(5);
+    midiControllerInputThread.startThread(5);
 }
 
 CtrlrPanel::~CtrlrPanel()
@@ -1707,87 +1707,25 @@ void CtrlrPanel::sendMidi (const MidiMessage &message, double millisecondCounter
 		queueMessageForHostOutput (message);
 }
 
-void CtrlrPanel::sendMidi(CtrlrMidiMessage& m, double millisecondCounterToStartAt)
+void CtrlrPanel::sendMidi (CtrlrMidiMessage &m, double millisecondCounterToStartAt)
 {
 	if (isMidiOutPaused())
 		return;
 
-	if (!outputDevicePtr)
-		return;
-
-	const double sendTime = globalMidiDelay + millisecondCounterToStartAt;
-	const bool latchEnabled = (bool)m.getProperty(Ids::midiMessageLatchAndStream);
-	if (m.getMidiMessageType() == Multi && latchEnabled)
+	if (outputDevicePtr)
 	{
-const int    incomingNumber  = m.getNumber();
-const String incomingFormula = m.getProperty(Ids::midiMessageMultiList).toString();
+		outputDevicePtr->sendMidiBuffer (m.getMidiBuffer(), globalMidiDelay + millisecondCounterToStartAt);
+	}
 
-// Reset latch when parameter number OR formula type changes
-if (incomingNumber != nrpnLatchedNumber || incomingFormula != nrpnLatchedFormula)
-{
-    _DBG("NRPN latch: reset - number=" + String(incomingNumber)
-        + " formula=" + incomingFormula);
-    nrpnHeaderLatched = false;
-    nrpnLatchedNumber  = incomingNumber;
-    nrpnLatchedFormula = incomingFormula;
+	queueMessageForHostOutput (m);
 }
 
-		auto& messages = m.getMidiMessageArray();
-		_DBG("NRPN latch: arraySize=" + String(messages.size())
-			+ " latched=" + String((int)nrpnHeaderLatched)
-			+ " number=" + String(incomingNumber));
-
-		MidiBuffer filtered;
-		int sample = 0;
-
-		for (int i = 0; i < messages.size(); i++)
-		{
-			const MidiMessage& msg = messages.getReference(i).m;
-			const int cc = msg.getControllerNumber();
-
-			const bool isHeader = msg.isController()
-				&& (cc == 99 || cc == 98   // NRPN MSB/LSB
-					|| cc == 101 || cc == 100); // RPN MSB/LSB
-
-			if (isHeader && nrpnHeaderLatched)
-			{
-				_DBG("NRPN latch: skipping header CC" + String(cc));
-				continue;
-			}
-
-			filtered.addEvent(msg, sample++);
-		}
-
-		nrpnHeaderLatched = true;
-		outputDevicePtr->sendMidiBuffer(filtered, sendTime);
-		queueMessagesForHostOutput(filtered);
-	}
-	else
-	{
-		outputDevicePtr->sendMidiBuffer(m.getMidiBuffer(), sendTime);
-		queueMessageForHostOutput(m);
-	}
-}
-
-//void CtrlrPanel::sendMidi (CtrlrMidiMessage &m, double millisecondCounterToStartAt)
-//{
-//	if (isMidiOutPaused())
-//		return;
-//
-//	if (outputDevicePtr)
-//	{
-//		outputDevicePtr->sendMidiBuffer (m.getMidiBuffer(), globalMidiDelay + millisecondCounterToStartAt);
-//	}
-//
-//	queueMessageForHostOutput (m);
-//}
-
-bool CtrlrPanel::isMidiOutPaused() const
+bool CtrlrPanel::isMidiOutPaused()
 {
 	return (getProperty (Ids::panelMidiPauseOut));
 }
 
-bool CtrlrPanel::isMidiInPaused() const
+bool CtrlrPanel::isMidiInPaused()
 {
 	return (getProperty (Ids::panelMidiPauseIn));
 }

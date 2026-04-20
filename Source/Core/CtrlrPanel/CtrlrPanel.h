@@ -128,8 +128,8 @@ class CtrlrPanel:	public ValueTree::Listener,
 		void sendMidi(CtrlrMidiMessage& m, double millisecondCounterToStartAt = 0);
 
 		void sendMidiNow (CtrlrMidiMessage &midiMessage);
-		bool isMidiOutPaused() const;
-		bool isMidiInPaused() const;
+		bool isMidiOutPaused();
+		bool isMidiInPaused();
 
 		void queueMessageForHostOutput(const CtrlrMidiMessage &m);
 		void queueMessageForHostOutput(const MidiMessage &message);
