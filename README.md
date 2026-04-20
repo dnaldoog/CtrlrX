@@ -486,7 +486,7 @@ Tuturial coming soon.
 
 ## Changelog
 
-#### Version 5.6.35 | 2026.04.19
+#### Version 5.6.35 | 2026.04.20
 
 * **UPDATED** ctrlrAutoSave & ctrlrAutoSaveInterval properties in Preferences only if isStandaloneApp. `CtrlrManager.cpp`, `CtrlrManagerInstance.cpp`, `CtrlrSettings.cpp`
 * **UPDATED** flag IS_MIDI_EFFECT FALSE. `CMakeLists.txt`
@@ -513,7 +513,7 @@ Tuturial coming soon.
 * **UPDATED** CtrlrTabsComponents.cpp saving uiSlider positions on uiTabs. `CtrlrTabsComponent.cpp`
 * **FIXED** CtrlrLuaMethodAutoCompleteManager crash when self-referencing a custom variable followed with LUA concatenation dot dot. (i.e. myVariable = myVvariable.."abc"). `CtrlrLuaMethodAutoCompleteManager.cpp`, `CtrlrLuaMethodCodeEditor.cpp`
 * **ADDED** MIDI Message tokens for Novation Bass Station II with 8-bit Values over 2 CCs. Thanks to [John Goodland](https://github.com/dnaldoog).
-
+* **ADDED** MIDI Message Latch & Stream option to MIDI messages to allow NRPN header just being sent once only when MIDI data changes. Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrPanel.cpp` & `.h` , `CtrlrMidiMessage.cpp`, `CtrlrIDs.xml`, `CtrlrIDs.h` , `CtrlrSysexProcessor.cpp` 
 
 #### Version 5.6.34 | 2025.11.07
 

@@ -1712,12 +1712,62 @@ void CtrlrPanel::sendMidi (CtrlrMidiMessage &m, double millisecondCounterToStart
 	if (isMidiOutPaused())
 		return;
 
-	if (outputDevicePtr)
+	if (!outputDevicePtr)
+		return;
+	
+	const double sendTime = globalMidiDelay + millisecondCounterToStartAt;
+	const bool latchEnabled = (bool)m.getProperty(Ids::midiMessageLatchAndStream);
+	
+	if (m.getMidiMessageType() == Multi && latchEnabled)
 	{
-		outputDevicePtr->sendMidiBuffer (m.getMidiBuffer(), globalMidiDelay + millisecondCounterToStartAt);
+		const int    incomingNumber  = m.getNumber();
+		const String incomingFormula = m.getProperty(Ids::midiMessageMultiList).toString();
+		
+		// Reset latch when parameter number OR formula type changes
+		if (incomingNumber != nrpnLatchedNumber || incomingFormula != nrpnLatchedFormula)
+		{
+			_DBG("NRPN latch: reset - number=" + String(incomingNumber)
+				 + " formula=" + incomingFormula);
+			nrpnHeaderLatched = false;
+			nrpnLatchedNumber  = incomingNumber;
+			nrpnLatchedFormula = incomingFormula;
+		}
+		
+		auto& messages = m.getMidiMessageArray();
+		_DBG("NRPN latch: arraySize=" + String(messages.size())
+			 + " latched=" + String((int)nrpnHeaderLatched)
+			 + " number=" + String(incomingNumber));
+		
+		MidiBuffer filtered;
+		int sample = 0;
+		
+		for (int i = 0; i < messages.size(); i++)
+		{
+			const MidiMessage& msg = messages.getReference(i).m;
+			const int cc = msg.getControllerNumber();
+			
+			const bool isHeader = msg.isController()
+			&& (cc == 99 || cc == 98   // NRPN MSB/LSB
+				|| cc == 101 || cc == 100); // RPN MSB/LSB
+			
+			if (isHeader && nrpnHeaderLatched)
+			{
+				_DBG("NRPN latch: skipping header CC" + String(cc));
+				continue;
+			}
+			
+			filtered.addEvent(msg, sample++);
+		}
+		
+		nrpnHeaderLatched = true;
+		outputDevicePtr->sendMidiBuffer(filtered, sendTime);
+		queueMessagesForHostOutput(filtered);
 	}
-
-	queueMessageForHostOutput (m);
+	else
+	{
+		outputDevicePtr->sendMidiBuffer(m.getMidiBuffer(), sendTime);
+		queueMessageForHostOutput(m);
+	}
 }
 
 bool CtrlrPanel::isMidiOutPaused()

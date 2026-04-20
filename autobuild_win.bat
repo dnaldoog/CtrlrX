@@ -63,6 +63,7 @@ if exist "%~dp0Source\Misc\luajit\src\msvcbuild.bat" (
 echo.
 echo  [1] Release
 echo  [2] Debug
+echo  [3] RelWithDebInfo  - Release speed, no LTO optimisation (fast compile, works in DAW)
 echo.
 set /p CONFIG_CHOICE="Build configuration [1-2]: "
 
@@ -70,6 +71,8 @@ if "%CONFIG_CHOICE%"=="1" (
     set "CONFIG=Release"
 ) else if "%CONFIG_CHOICE%"=="2" (
     set "CONFIG=Debug"
+) else if "%CONFIG_CHOICE%"=="3" (
+    set "CONFIG=RelWithDebInfo"
 ) else (
     echo Invalid selection. Exiting.
     exit /b 1
@@ -79,12 +82,13 @@ if "%CONFIG_CHOICE%"=="1" (
 :: Prompt: Build Mode
 ::==============================================================================
 echo.
+
 echo  [1] Full Build     - Wipe build dir, run CMake, build
 echo  [2] Clean Build    - Keep CMake cache and Ninja files, wipe objects only
 echo  [3] Quick Build    - Incremental, no clean
 echo.
 set /p MODE_CHOICE="Build mode [1-3]: "
-
+taskkill /f /im CtrlrX.exe 2>nul
 if "%MODE_CHOICE%"=="1" goto FULL
 if "%MODE_CHOICE%"=="2" goto CLEAN
 if "%MODE_CHOICE%"=="3" goto QUICK
@@ -94,6 +98,7 @@ exit /b 1
 ::==============================================================================
 :FULL
 ::==============================================================================
+
 echo.
 echo [FULL BUILD] Config: %CONFIG%
 if defined LUAJIT_FLAG (
@@ -103,6 +108,12 @@ if defined LUAJIT_FLAG (
 )
 echo Wiping build directory...
 if exist "%BUILD_DIR%" rd /s /q "%BUILD_DIR%"
+:WAIT_DELETE
+if exist "%BUILD_DIR%" (
+    echo Waiting for directory release...
+    timeout /t 1 /nobreak >nul
+    goto WAIT_DELETE
+)
 mkdir "%BUILD_DIR%"
 cd /d "%BUILD_DIR%" || exit /b 1
 
@@ -115,6 +126,8 @@ cmake -G "Ninja" ^
   -DCMAKE_EXE_LINKER_FLAGS_DEBUG="/incremental" ^
   -DCMAKE_SHARED_LINKER_FLAGS_DEBUG="/incremental" ^
   -DCMAKE_EXE_LINKER_FLAGS_RELEASE="/LTCG" ^
+  -DCMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO="" ^
+  -DCMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO="" ^
   -DCMAKE_SHARED_LINKER_FLAGS_RELEASE="/LTCG" ^
   .. || goto ERROR
 
