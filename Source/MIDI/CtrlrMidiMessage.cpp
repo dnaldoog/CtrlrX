@@ -228,6 +228,7 @@ void CtrlrMidiMessage::initializeEmptyMessage()
 	setProperty (Ids::midiMessageCtrlrNumber, 1);
 	setProperty (Ids::midiMessageCtrlrValue, 0);
 	setProperty (Ids::midiMessageCtrlrNumberSize, 0); // Added v5.6.35. For Multi MIDI Message. Added by DAM
+	//setProperty (Ids::midiMessageLatchAndStream, 0); 
 	setProperty (Ids::midiMessageMultiList, "");
 	setProperty (Ids::midiMessageSysExFormula, "");
 
@@ -474,6 +475,7 @@ Result CtrlrMidiMessage::fillMessagePropertiesFromData()
 		setProperty (Ids::midiMessageCtrlrNumber, 1);
 		setProperty (Ids::midiMessageCtrlrValue, 0);
 		setProperty (Ids::midiMessageCtrlrNumberSize, 0); // Added v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
+		//setProperty (Ids::midiMessageLatchAndStream, 0); // Added v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
 		setProperty (Ids::midiMessageMultiList, "");
 		setProperty (Ids::midiMessageSysExFormula, "");
 

@@ -118,17 +118,18 @@ class CtrlrPanel:	public ValueTree::Listener,
 		CtrlrImageSlider *getImageSliderComponent (const String &componentName);
 
 		void changeListenerCallback (ChangeBroadcaster* source);
-		void editorDeleted();
+		//void editorDeleted();
 
-		void sendMidiMessageNow_String(CtrlrPanel* panel, std::string hexData); // Added v5.6.35
-		std::string CtrlrMidiMessage_toString(CtrlrMidiMessage* msg); // Added v5.6.35
+		//void sendMidiMessageNow_String(CtrlrPanel* panel, std::string hexData); // Added v5.6.35
+		//std::string CtrlrMidiMessage_toString(CtrlrMidiMessage* msg); // Added v5.6.35
 	
-		void sendMidi (const MidiBuffer &buffer, double millisecondCounterToStartAt=0);
-		void sendMidi (const MidiMessage &message, double millisecondCounterToStartAt=0);
-		void sendMidi (CtrlrMidiMessage &m, double millisecondCounterToStartAt=0);
+		void sendMidi(const MidiBuffer& buffer, double millisecondCounterToStartAt = 0);
+		void sendMidi(const MidiMessage& message, double millisecondCounterToStartAt = 0);
+		void sendMidi(CtrlrMidiMessage& m, double millisecondCounterToStartAt = 0);
+
 		void sendMidiNow (CtrlrMidiMessage &midiMessage);
-		bool isMidiOutPaused();
-		bool isMidiInPaused();
+		bool isMidiOutPaused() const;
+		bool isMidiInPaused() const;
 
 		void queueMessageForHostOutput(const CtrlrMidiMessage &m);
 		void queueMessageForHostOutput(const MidiMessage &message);
@@ -396,4 +397,13 @@ class CtrlrPanel:	public ValueTree::Listener,
 		Array<MemoryBlock,CriticalSection> partialMidiQueue;
 		int currentActionIndex, indexOfSavedState;
         String getCodeSigningIdentityFromPopup(); // Added v5.6.32
+		bool nrpnLatchEnabled = true; 
+		// allows MIDI controllers that send NRPN messages to use the NRPN number as an index for modulators, 
+		//the value will be latched until the next NRPN message is received, 
+		// then the modulator with the corresponding index will be updated with the value of the message. 
+		// This allows a single MIDI controller to control multiple modulators without having to change the 
+		// MIDI channel or use CC messages.
+		bool nrpnHeaderLatched = false;
+		int  nrpnLatchedNumber = -1;
+		String  nrpnLatchedFormula;  // tracks which formula type is active
 };
