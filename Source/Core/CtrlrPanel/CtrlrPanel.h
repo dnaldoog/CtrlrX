@@ -397,7 +397,7 @@ class CtrlrPanel:	public ValueTree::Listener,
 		Array<MemoryBlock,CriticalSection> partialMidiQueue;
 		int currentActionIndex, indexOfSavedState;
         String getCodeSigningIdentityFromPopup(); // Added v5.6.32
-		bool nrpnLatchEnabled = true; 
+		bool nrpnLatchEnabled = false; 
 		// allows MIDI controllers that send NRPN messages to use the NRPN number as an index for modulators, 
 		//the value will be latched until the next NRPN message is received, 
 		// then the modulator with the corresponding index will be updated with the value of the message. 

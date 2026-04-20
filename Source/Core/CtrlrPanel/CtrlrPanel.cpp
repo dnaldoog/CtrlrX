@@ -1716,21 +1716,21 @@ void CtrlrPanel::sendMidi(CtrlrMidiMessage& m, double millisecondCounterToStartA
 		return;
 
 	const double sendTime = globalMidiDelay + millisecondCounterToStartAt;
-
-	if (m.getMidiMessageType() == Multi && nrpnLatchEnabled)
+	const bool latchEnabled = (bool)m.getProperty(Ids::midiMessageLatchAndStream);
+	if (m.getMidiMessageType() == Multi && latchEnabled)
 	{
-		const int    incomingNumber = m.getNumber();
-		const String incomingFormula = m.getProperty(Ids::midiMessageMultiList).toString();
+const int    incomingNumber  = m.getNumber();
+const String incomingFormula = m.getProperty(Ids::midiMessageMultiList).toString();
 
-		// Reset latch when parameter number OR formula type changes
-		if (incomingNumber != nrpnLatchedNumber || incomingFormula != nrpnLatchedFormula)
-		{
-			_DBG("NRPN latch: reset - number=" + String(incomingNumber)
-				+ " formula=" + incomingFormula);
-			nrpnHeaderLatched = false;
-			nrpnLatchedNumber = incomingNumber;
-			nrpnLatchedFormula = incomingFormula;
-		}
+// Reset latch when parameter number OR formula type changes
+if (incomingNumber != nrpnLatchedNumber || incomingFormula != nrpnLatchedFormula)
+{
+    _DBG("NRPN latch: reset - number=" + String(incomingNumber)
+        + " formula=" + incomingFormula);
+    nrpnHeaderLatched = false;
+    nrpnLatchedNumber  = incomingNumber;
+    nrpnLatchedFormula = incomingFormula;
+}
 
 		auto& messages = m.getMidiMessageArray();
 		_DBG("NRPN latch: arraySize=" + String(messages.size())
