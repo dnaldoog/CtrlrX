@@ -699,6 +699,7 @@
   <id name="midiMessageCtrlrNumber" text="MIDI Controller number" type="Numeric" min="0" max="16383" /> <!-- 127 is a limit for CC messages but NRPN can go to 16383 -->
   <id name="midiMessageChannel" text="MIDI Channel" type="Numeric" min="1" max="16"/>
   <id name="midiMessageCtrlrNumberSize" text="Controller Resolution" type="Bool" defaults="14-bit/7-bit" /> <!-- Added v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog. Does this do anything? midiMessageCtrlrValue -->
+  <id name="midiMessageLatchAndStream" text="Latch &amp; Stream" type="Bool" defaults="On/Off" />
   <id name="midiMessageCtrlrValue" text="MIDI Controller value" type="Numeric" min="0" max="127" />
   <id name="midiMessageType" text="MIDI message type" type="VarNumeric"  defaults="CC=0,Aftertouch=1,ChannelPressure=2,NoteOn=3,NoteOff=4,SysEx=5,Multi=6,ProgramChange=7,PitchWheel=8,None=9"/>
   <id name="midiMessageSysExFormula" text="SysEx Formula" type="SysEx"/>
