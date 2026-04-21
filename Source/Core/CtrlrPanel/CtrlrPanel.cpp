@@ -1782,12 +1782,12 @@ if (incomingNumber != nrpnLatchedNumber || incomingFormula != nrpnLatchedFormula
 //	queueMessageForHostOutput (m);
 //}
 
-bool CtrlrPanel::isMidiOutPaused() const
+bool CtrlrPanel::isMidiOutPaused()
 {
 	return (getProperty (Ids::panelMidiPauseOut));
 }
 
-bool CtrlrPanel::isMidiInPaused() const
+bool CtrlrPanel::isMidiInPaused()
 {
 	return (getProperty (Ids::panelMidiPauseIn));
 }
