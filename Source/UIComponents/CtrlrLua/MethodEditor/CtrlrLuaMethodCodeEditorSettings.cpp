@@ -158,8 +158,8 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings (CtrlrLuaMeth
 
     addAndMakeVisible (fontTest = new CodeEditorComponent (codeDocument, &luaTokeniser));
 
-    if (!owner.getComponentTree().hasProperty(Ids::luaMethodEditorAutoComplete))
-        owner.getComponentTree().setProperty(Ids::luaMethodEditorAutoComplete, true, nullptr);
+   // if (!owner.getComponentTree().hasProperty(Ids::luaMethodEditorAutoComplete))
+        owner.getComponentTree().setProperty(Ids::luaMethodEditorAutoComplete, false, nullptr);
 
     addAndMakeVisible(autoCompleteButton = new ToggleButton(""));
     autoCompleteButton->setButtonText(SharedValues::getAutoCompleteLabel());
@@ -301,7 +301,8 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings (CtrlrLuaMeth
     originalAutoComplete = autoCompleteButton->getToggleState();
     originalAutoCompleteOpt = autoCompleteOptionsButton->getToggleState();
     
-    setSize(334, 640);
+   // setSize(334, 640);
+     setSize(334, 580);
     updateSyntaxColors();
 }
 
@@ -400,14 +401,14 @@ void CtrlrLuaMethodCodeEditorSettings::resized()
 	openSearchTabs->setBounds(marginLeft + 0, syntaxY + 64, sampleWidth, 24);
 	
 	// Autocomplete toggle
-	autoCompleteButton->setBounds(marginLeft + 0, syntaxY + 88, sampleWidth, 24);
+	//autoCompleteButton->setBounds(marginLeft + 0, syntaxY + 88, sampleWidth, 24);
 
 	// Autocomplete toggle
-	autoCompleteOptionsButton->setBounds(marginLeft + 0, syntaxY + 112, sampleWidth, 24);
+	//autoCompleteOptionsButton->setBounds(marginLeft + 0, syntaxY + 112, sampleWidth, 24);
 
     // Add horizontal line above buttons
-    int buttonY = syntaxY + 128+24;
-
+    //int buttonY = syntaxY + 128+24;
+    int buttonY = syntaxY + 75+24;
     // Position the three buttons in a row: RESET  APPLY  CANCEL
     int buttonWidth = (sampleWidth - 16) / 2; // Account for spacing between buttons
     resetButton->setBounds(marginLeft, buttonY, (sampleWidth - 8) / 2, 42); // 42px high is the default JUCE buttons height

@@ -582,7 +582,7 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newT
     const bool autoCompleteOpts = ((int)owner.getComponentTree()
         .getProperty(Ids::luaMethodEditorAutoCompleteOpt, 1)) != 0;
 
-    if (!autoCompleteEnabled)
+    if (!autoCompleteEnabled || autoCompleteEnabled)
         return;
 
     // --- 1. AGGRESSIVE GUARD ---
