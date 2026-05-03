@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Exit immediately if a command fails
+set -e
+
+# 1. Configure the project
+# -G Ninja explicitly sets the generator
+cmake -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCTRLRX_USE_LUAJIT=ON
+
+# 2. Build the project
+# The --parallel flag (or -j) is the modern way to tell CMake 
+# to use all available cores regardless of the generator.
+cmake --build build --parallel $(nproc)
