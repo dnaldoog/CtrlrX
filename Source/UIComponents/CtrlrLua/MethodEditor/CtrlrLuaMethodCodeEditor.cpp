@@ -505,6 +505,11 @@ void CtrlrLuaMethodCodeEditor::hideCallTip()
 }
 void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String& newText, int insertIndex)
 {
+    bool isEnabled = owner.getComponentTree().getProperty(Ids::autoCompleteEnabled, true);
+    // John's original autocomplete Ids::autoCompleteEnabled was being overridden by the global setting, so I added this check to ensure it respects the editor-level setting.
+    if (!isEnabled)
+        return;
+
     document.newTransaction();
     documentChanged(false);
     if (suggestionPopup == nullptr) return;

@@ -159,11 +159,12 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings (CtrlrLuaMeth
 
     addAndMakeVisible(autoCompleteButton = new ToggleButton(""));
     // Load saved state
-    bool savedAutoComplete = owner.getComponentTree().getProperty(Ids::autoCompleteEnabled, false);
-    autoCompleteButton->setToggleState(savedAutoComplete, dontSendNotification);
-    autoCompleteButton->getToggleStateValue().referTo(SharedValues::getAutoCompleteValue());
-    autoCompleteButton->setButtonText(SharedValues::getAutoCompleteLabel());
-    SharedValues::getAutoCompleteValue().setValue(savedAutoComplete);
+// 1. Link the Shared Value to the Tree Property (The source of truth)
+SharedValues::getAutoCompleteValue().referTo(owner.getComponentTree().getPropertyAsValue(Ids::autoCompleteEnabled, nullptr));
+// 2. Link the Button to the Shared Value
+autoCompleteButton->getToggleStateValue().referTo(SharedValues::getAutoCompleteValue());
+// 3. Set the text
+autoCompleteButton->setButtonText(SharedValues::getAutoCompleteLabel());
 
     addAndMakeVisible(openSearchTabs = new ToggleButton(""));
     //openSearchTabs->setButtonText("Open Search Tabs"); // Corrected to use a string literal
@@ -499,7 +500,7 @@ void CtrlrLuaMethodCodeEditorSettings::buttonClicked(Button* buttonThatWasClicke
 			bgColour->setSelectedId(findColourIndex(Colours::white), dontSendNotification);
 			lineNumbersBgColour->setSelectedId(findColourIndex(Colours::cornflowerblue), dontSendNotification);
 			lineNumbersColour->setSelectedId(findColourIndex(Colours::black), dontSendNotification);
-            autoCompleteButton->setToggleState(false, dontSendNotification);
+            //autoCompleteButton->setToggleState(false, dontSendNotification);
             //bool savedAutoComplete = owner.getComponentTree().getProperty(Ids::autoCompleteEnabled, false);
             //SharedValues::getAutoCompleteValue().setValue(savedAutoComplete);
             owner.getComponentTree().setProperty(Ids::autoCompleteEnabled, false, nullptr);
