@@ -1739,27 +1739,15 @@ void CtrlrLuaMethodCodeEditor::toggleLineComment() // Updated v5.6.34
     CodeDocument::Position startPos(document, selection.getStart());
     CodeDocument::Position endPos(document, selection.getEnd());
 
-    // If there is no selection, use the current line
-    if (selection.isEmpty())
-    {
-        startPos = CodeDocument::Position(document, startPos.getLineNumber(), 0);
-        endPos = CodeDocument::Position(document, startPos.getLineNumber() + 1, 0);
-    }
-    else
-    {
-        // Adjust selection to span full lines
-        startPos = CodeDocument::Position(document, startPos.getLineNumber(), 0);
-        
-        // Correctly get the start position of the line after the selection ends
-        endPos = CodeDocument::Position(document, endPos.getLineNumber(), 0);
-        if (endPos.getIndexInLine() != 0)
-        {
-            endPos = CodeDocument::Position(document, endPos.getLineNumber() + 1, 0);
-        }
-    }
-    
     int startLine = startPos.getLineNumber();
     int endLine = endPos.getLineNumber();
+
+    // If the selection ends exactly at the start of a new line, 
+    // don't include that extra line in the operation.
+    if (endLine > startLine && endPos.getIndexInLine() == 0) // fix comments -- including subsequent line
+    {
+        endLine--;
+    }
 
     document.newTransaction();
 
