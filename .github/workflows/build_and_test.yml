@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+#cmake_minimum_required(VERSION 3.25)
 
 # To build with LuaJIT: cmake -B build -DCTRLRX_USE_LUAJIT=ON
 # To build without (default): cmake -B build
