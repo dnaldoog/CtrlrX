@@ -933,70 +933,6 @@ void CtrlrLuaMethodCodeEditor::findInAll(const String& search)
     owner.getMethodEditArea()->getLowerTabs()->setCurrentTabIndex(0, true);
 }
 
-
-//void CtrlrLuaMethodCodeEditor::findInAll(const String &search)
-//{
-//    // Validate search string first
-//    if (!isValidSearchString(search))
-//    {
-//        owner.getMethodEditArea()->insertOutput("\n\nInvalid search term: \"" + search +
-//            "\". Please enter a meaningful search term (at least 3 characters, not just whitespace or common single characters).\n",
-//            Colours::red);
-//        return;
-//    }
-//    owner.getMethodEditArea()->insertOutput("\n\nSearching for: \""+search+"\" in all methods (double click line to jump)\n", Colours::darkblue);
-//    StringArray names;
-//
-//    for (int i=0; i<owner.getMethodManager().getNumMethods(); i++)
-//    {
-//        CtrlrLuaMethod *m = owner.getMethodManager().getMethodByIndex (i);
-//
-//        if (m)
-//        {
-//            names.add (m->getName());
-//
-//            if (m->getCodeEditor())
-//            {
-//                /* it has an editor so it's open */
-//                CodeDocument &doc        = m->getCodeEditor()->getCodeDocument();
-//
-//                Array<Range<int> > results = searchForMatchesInDocument (doc, search);
-//
-//                for (int j=0; j<results.size(); j++)
-//                {
-//                    reportFoundMatch (doc, names[i], results[j]);
-//                }
-//            }
-//            else // Added 5.6.34 by goodweather. Search in not yet opened methods
-//            {
-//                /* Open method */
-//                owner.createNewTab(m);
-//                owner.setCurrentTab(m);
-//
-//                /* Perform search and report result */
-//                CodeDocument& doc = m->getCodeEditor()->getCodeDocument();
-//
-//                Array<Range<int> > results = searchForMatchesInDocument(doc, search);
-//
-//                for (int j = 0; j < results.size(); j++)
-//                {
-//                    reportFoundMatch(doc, names[i], results[j]);
-//                }
-//
-//                /* If no result then close method; if any result then keep method open */
-//                /*Dnaldoog disable this because I think it's better for ser to open file at bottom list,
-//                especially if the search results in dozens of hits therefore opening dozens of windows*/
-//                //if (results.size() == 0)
-//                //{
-//                    owner.closeCurrentTab();
-//                //}
-//            }
-//        }
-//    }
-//
-//    owner.getMethodEditArea()->getLowerTabs()->setCurrentTabIndex(0,true);
-//}
-
 const Array<Range<int> > CtrlrLuaMethodCodeEditor::searchForMatchesInDocument(CodeDocument& doc, const String& search)
 {
     Array<Range<int> > results;
@@ -1181,12 +1117,7 @@ public:
         searchInComboBox.setSelectedItemIndex(0, dontSendNotification);
         searchInComboBox.addListener(this);
         searchInComboBox.setEnabled(false);
-        //addAndMakeVisible(searchInComboBox);
 
-        //addAndMakeVisible (caseButton);
-        //caseButton.setColour (ToggleButton::textColourId, Colours::white);
-        //caseButton.setToggleState (false, dontSendNotification);
-        //caseButton.addListener (this);
         addAndMakeVisible(caseButton);
         caseButton.setColour(juce::ToggleButton::textColourId, juce::Colours::yellow);
         caseButton.setColour(juce::ToggleButton::tickColourId, juce::Colours::yellow);
@@ -1292,9 +1223,7 @@ public:
             replaceAllButton->setBounds(replaceButton->getRight(), y, 20, 24);
             y += 30;
         }
-        //caseButton.setBounds (0, y, 75, 22);
-        //searchInComboBox.setBounds(caseButton.getRight(), y, 70, 24);
-        //lookInComboBox.setBounds(searchInComboBox.getRight() + 5, y, 70, 24);
+
         caseButton.setBounds(5, y, 75, 22);
         lookInComboBox.setBounds(searchInComboBox.getRight() + 75, y, 90, 24);
         findPrev.setBounds(lookInComboBox.getRight(), y, 15, 24);

@@ -186,7 +186,7 @@ target_link_libraries(SharedCode INTERFACE
 )
 
 if(LINUX)
-    target_link_libraries(SharedCode INTERFACE ${libudev_LIBRARIES} ${zlib_LIBRARIES} ${x11_LIBRARIES} ${gtk3_LIBRARIES} ${webkit_LIBRARIES} dl)
+    target_link_libraries(SharedCode INTERFACE ${libudev_LIBRARIES} ${zlib_LIBRARIES} ${x11_LIBRARIES} ${gtk4_LIBRARIES} ${webkit_LIBRARIES} dl)
 endif()
 
 include(PamplejuceIPP)
