@@ -2,11 +2,15 @@
 #define __JUCER_HEADER_CTRLRCOMBO_CTRLRCOMBO_380F4A09__
 
 #include "CtrlrComponents/CtrlrComponent.h"
+#include <rapidfuzz/fuzz.hpp> // Added v5.6.35. Support for rapidfuzz
+
 class CtrlrValueMap;
 
 class CtrlrCombo  : public CtrlrComponent,
-                    public KeyListener,
-					public ComboBox::Listener
+                    // public KeyListener, // Removed v5.6.35. Combined keyPressed() method
+					public ComboBox::Listener,
+					public juce::AsyncUpdater,
+					public juce::Timer
 {
 public:
     //==============================================================================
@@ -28,7 +32,7 @@ public:
     void valueTreeChildRemoved (ValueTree& parentTree, ValueTree& childWhichHasBeenRemoved, int){}
 	void valueTreeChildOrderChanged (ValueTree& parentTreeWhoseChildrenHaveMoved, int, int){}
 	void comboContentChanged();
-	bool keyPressed (const KeyPress& key, Component* originatingComponent);
+	// bool keyPressed (const KeyPress& key, Component* originatingComponent);
     static LookAndFeel* getLookAndFeelFromComponentProperty(const String &lookAndFeelComponentProperty);
     void resetLookAndFeelOverrides();
     void updatePropertiesPanel();
@@ -48,6 +52,10 @@ public:
 			void drawComboBox (Graphics& g, int width, int height, bool isButtonDown, int buttonX, int buttonY, int buttonW, int buttonH, ComboBox& box);
 			const Colour createBaseColour (const Colour& buttonColour, const bool hasKeyboardFocus, const bool isMouseOverButton, const bool isButtonDown);
 			void positionComboBoxText (ComboBox& box, Label& label);
+
+			void fillLabelTextEditorBackground (Graphics& g, TextEditor& editor);
+			Font getLabelFont (Label& label);
+		
 		private:
 			CtrlrCombo &owner;
 	};
@@ -72,16 +80,42 @@ public:
     void mouseDown (const MouseEvent& e);
     bool keyPressed (const KeyPress& key);
 
+    //==============================================================================
+    // 2. Fuzzy Search Methods
+    //==============================================================================
+    void updateFuzzySearch(const String& searchText);
 
-
+	// 3. The SearchListener struct (Updated to Label::Listener)
+	struct SearchListener : public juce::Label::Listener {
+		SearchListener(CtrlrCombo& o) : owner(o) {}
+		void labelTextChanged (juce::Label* label) override {
+			// Direct call is safer for focus management in JUCE 6
+			owner.updateFuzzySearch(label->getText());
+		}
+		CtrlrCombo& owner;
+	};
+	void parentHierarchyChanged() override;
+	void visibilityChanged() override;
+	void timerCallback() override;
+	void lookAndFeelChanged() override;
+	void focusLost (FocusChangeType cause) override;
     //==============================================================================
     juce_UseDebuggingNewOperator
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
+    void findAndAttach (juce::ComboBox* combo); // Method must be declared here
+    void handleAsyncUpdate() override; // Handles the safe UI transition
+	void updateInternalComponentStyles();
+	
+    std::unique_ptr<SearchListener> searchListener;
+    
 	Array <var> values;
 	CtrlrComboLF lf;
 	ScopedPointer<CtrlrValueMap> valueMap;
+    bool isSearching = false;
+    bool isUpdating = false;
+    String lastSearchText;
     //[/UserVariables]
 
     //==============================================================================

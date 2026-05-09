@@ -26,12 +26,25 @@ void CtrlrSysexProcessor::sysExProcessToken (const CtrlrSysexToken token, uint8 
 		return;
 	if (token.getType() >= Nibble16bitLsb0 && token.getType() <= Nibble16bitMsb3)
 	{
-		_DBG("Processing token type=" + String(token.getType()) + " position=" + String(token.getPosition()) + " value=" + String(value));
+        _DBG("Processing token type=" + String(token.getType()) + " position=" + String(token.getPosition()) + " value=" + String(value) + " channel=" + String(channel));
 	}
 	BigInteger bi;
 
 	switch (token.getType())
 	{
+        case CCCoarseMSB:
+        // This is math.floor(value / 2)
+        // Shifts the 8-bit value right to fit in 7-bit CC
+        _DBG("CCCoarseMSB: input=" + String(value) + " output=" + String(value >> 1));
+            *byte = (uint8)(value >> 1);
+            break;
+
+        case CCFineLSB:
+        // This is (value % 2) * 64
+        // Takes the remainder (bit 0) and moves it to MIDI value 64
+            *byte = (uint8)((value & 1) << 6);
+            break;
+		
 		case ByteValue:
 			*byte = (uint8)value;
 			break;
@@ -466,6 +479,14 @@ CtrlrSysExFormulaToken CtrlrSysexProcessor::sysExIdentifyToken(const String &s)
 	{
 		return (GlobalVariable);
 	}
+	if (s == "nm")
+    {
+        return (CCCoarseMSB);
+    }
+    if (s == "nl")
+    {
+        return (CCFineLSB);
+    }
 	return (NoToken);
 }
 
@@ -566,9 +587,14 @@ void CtrlrSysexProcessor::checksumXor(const CtrlrSysexToken token, MidiMessage& 
 	}
 	*(ptr + token.getPosition()) = chTotal & 0x7f;
 }
-String CtrlrSysexProcessor::openAdvancedMessageEditor()
+
+String CtrlrSysexProcessor::openAdvancedMessageEditor() // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog . Updated by dam for juce 6 & Juce 8
 {
 	MultiMidiAlert alert;
+    
+    // Optional: Center it relative to the main editor if available,
+    // or just center on screen.
+    alert.centreAroundComponent(nullptr, alert.getWidth(), alert.getHeight());
 
 	if (alert.runModalLoop() == 1)
 	{
@@ -579,30 +605,63 @@ String CtrlrSysexProcessor::openAdvancedMessageEditor()
 
 	return String();
 }
+
 void CtrlrSysexProcessor::showMidiHelp()
 {
-	// Construct the text you want to show
 	const String helpText =
 		"MIDI Message Conventions:\n\n"
-		//"Direct          = UI component's current value\n"
 		"-1              = Parent component value\n"
-		"-2              = Parent component number\n"
-		"\nSysEx Messages:\n"
-		"Use the same formula as in the SysEx editor (F0 .. F7)\n"
-		"\nUse the Custom ... option to add custom MIDI.\n"
-		"NRPN/RPN templates are pre-defined for common controller mappings.";
+        "-2       = Parent component number\n\n"
+        "SysEx Messages:\n"
+        "Use the same formula as in the SysEx editor (F0 .. F7)\n\n"
+        "Use the Custom ... option to add custom MIDI.\n\n"
+        "Use Latch & Stream to send Header once followed by data(NRPN/RPN).";
 
+#if JUCE_MAJOR_VERSION >= 8
+    // --- JUCE 8 Logic (Custom Layout) ---
+    auto* alert = new AlertWindow("MIDI Message Help", String(), AlertWindow::InfoIcon);
+
+    auto* messageLabel = new Label(String(), helpText);
+    messageLabel->setFont(Font(15.0f));
+    messageLabel->setColour(Label::textColourId, alert->findColour(AlertWindow::textColourId));
+    messageLabel->setSize(460, 180);
+    
+    alert->addCustomComponent(messageLabel);
+    alert->addButton("OK", 1, KeyPress(KeyPress::returnKey, 0, 0));
+    alert->setSize(560, 330);
+
+    // This is the part that fails in JUCE 6
+    if (auto* okButton = alert->getButton("OK"))
+    {
+        const int bW = 80;
+        const int bH = 40;
+        okButton->setBounds((alert->getWidth() - bW) / 2,
+                             alert->getHeight() - bH - 30,
+                             bW, bH);
+    }
+
+#else
+    // --- JUCE 6 Logic (Standard Layout) ---
 #if JUCE_LINUX
 	auto* alert = new AlertWindow("MIDI Message Help", helpText, AlertWindow::InfoIcon);
 	alert->addButton("OK", 1);
+    #else
+        // Use a stack-based or pointer-based window for Windows/macOS modal loop
+        auto* alert = new AlertWindow("MIDI Message Help", helpText, AlertWindow::InfoIcon);
+        alert->addButton("OK", 1);
+    #endif
+#endif
 
-	alert->enterModalState(true, ModalCallbackFunction::create([alert](int /*result*/) {
+    // --- Unified Execution/Cleanup ---
+#if JUCE_LINUX
+    // Always async on Linux to avoid window manager deadlocks
+    alert->enterModalState(true, ModalCallbackFunction::create([alert](int) {
 		delete alert;
 		}), true);
 #else
-	AlertWindow questionWindow("MIDI Message Help", helpText, AlertWindow::InfoIcon);
-	questionWindow.addButton("OK", 1);
-	questionWindow.runModalLoop();
+    // For Windows/macOS
+    alert->runModalLoop();
+    delete alert;
 #endif
 }
 

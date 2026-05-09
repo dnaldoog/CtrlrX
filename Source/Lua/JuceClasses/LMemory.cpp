@@ -408,15 +408,6 @@ LMemoryBlock LMemoryBlock::fromLuaStringToAscii(const juce::String& strData)
 	return LMemoryBlock(mb);
 }
 
-void LMemoryBlock::init(int size)
-{
-	setSize((size_t)size, true);  // true = fill with zeros
-}
-
-LMemoryBlock LMemoryBlock::createWithSize(int size)
-{
-	return LMemoryBlock((size_t)size, true);
-}
 /************************************************************************************************/
 
 void LMemoryBlock::wrapForLua(lua_State* L)
@@ -430,11 +421,10 @@ void LMemoryBlock::wrapForLua(lua_State* L)
 				class_<LMemoryBlock, bases<MemoryBlock> >("MemoryBlock")
 				.def(constructor<>())
 				.def(constructor<const size_t, bool>())
-				//.def(constructor<const int>())
+				// .def(constructor<const int>()) // Useless and returns size x2. SEE: https://github.com/damiensellier/CtrlrX/issues/196#issuecomment-3555426383
 				.def(constructor<const MemoryBlock&>())
 				.def(constructor<luabind::object const&>())
 				.def(constructor<const String&>())
-				.def("init", &LMemoryBlock::init) // replaces .def(constructor<const int>())
 				.def("insertIntoTable", &LMemoryBlock::insertIntoTable)
 				.def("createFromTable", &LMemoryBlock::createFromTable)
 				.def("getByte", &LMemoryBlock::getByte)
@@ -479,8 +469,7 @@ void LMemoryBlock::wrapForLua(lua_State* L)
 					def("fromLuaString", (LMemoryBlock(*)(luabind::object const&, const juce::String&)) & LMemoryBlock::fromLuaString),
 					def("fromLuaStringToAscii", (LMemoryBlock(*)(const juce::String&)) & LMemoryBlock::fromLuaStringToAscii),
 					def("fromLuaStringToAscii", (LMemoryBlock(*)(luabind::object const&, const juce::String&)) & LMemoryBlock::fromLuaStringToAscii),
-					def("fromLuaBinaryString", &LMemoryBlock::fromLuaBinaryString),
-					def("createWithSize", &LMemoryBlock::createWithSize) // static way to initialize MemoryBlock (see init() instance method)
+					def("fromLuaBinaryString", &LMemoryBlock::fromLuaBinaryString)
 
 				]
 		];

@@ -137,7 +137,7 @@ public:
 	void clear();
 	virtual void patternChanged();
 	void memoryMerge(const CtrlrMidiMessage& otherMessage);
-	void buildMidiMessagesFromMulti();
+		void buildMidiMessagesFromMulti(); // Added v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
 	const MemoryBlock& getMidiPattern()	const;
 	const LMemoryBlock getData() const;
 	int getSize() const;
@@ -217,21 +217,4 @@ private:
 		bool isSysEx() const noexcept { return midiType.equalsIgnoreCase("SysEx"); }
 	};
 	Array<MultiMessage> multiMessages;
-
-	//int CtrlrMidiMessage::getSplitValue(const int value, const String& splitType)
-	//{
-	//	// Handle MSB (Shift right by 7)
-	//	if (splitType.equalsIgnoreCase("MS") || splitType.equalsIgnoreCase("MSB") || splitType.equalsIgnoreCase("MSB7bitValue"))
-	//	{
-	//		return ((value >> 7) & 0x7F);
-	//	}
-	//	// Handle LSB (Mask 7 bits)
-	//	if (splitType.equalsIgnoreCase("LS") || splitType.equalsIgnoreCase("LSB") || splitType.equalsIgnoreCase("LSB7bitValue"))
-	//	{
-	//		return (value & 0x7F);
-	//	}
-	//	// Default 7-bit clamp
-	//	return (jlimit(0, 127, value));
-	//}
-
 };

@@ -18,6 +18,7 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner)
 		: owner(_owner),
 		panelTree(Ids::panel),
 		panelWindowManager(*this),
+		globalVariables({}),
 		ctrlrSysexProcessor(*this),
 		processor(*this),
 		snapshot(*this),
@@ -402,7 +403,7 @@ void CtrlrPanel::bootstrapPanel(const bool setInitialProgram)
 
 	sendSnapshotOnLoad();
 
-	// Synchronously dispatch any pending change message in each modulator to prevent Lua Callback functions being called on startup
+	// Synchronously dispatch any pending change message in each modulator to prevent Lua Callback functions beeing called on startup
 	for (int i = 0; i<ctrlrModulators.size(); i++)
 	{
 		ctrlrModulators[i]->getProcessor().handleUpdateNowIfNeeded();
@@ -871,8 +872,8 @@ void CtrlrPanel::removeModulator (CtrlrModulator *modulatorToDelete)
 
 		listeners.call (&CtrlrPanel::Listener::modulatorRemoved, modulatorToDelete);
 
-		ctrlrModulators.removeObject (modulatorToDelete);
 		panelTree.removeChild (modulatorToDelete->getModulatorTree(), 0);
+		ctrlrModulators.removeObject (modulatorToDelete);
 	}
 }
 
@@ -1321,9 +1322,9 @@ void CtrlrPanel::panelReceivedMidi(const MidiBuffer &buffer, const CtrlrMIDIDevi
 {
 	MidiBuffer::Iterator i(buffer);
 	MidiMessage m;
-	int time;
+	int samplePosition;
 
-	while (i.getNextEvent(m,time))
+	while (i.getNextEvent(m, samplePosition))
 	{
 		midiMessageCollector.addMessageToQueue (m);
 	}
@@ -1711,12 +1712,62 @@ void CtrlrPanel::sendMidi (CtrlrMidiMessage &m, double millisecondCounterToStart
 	if (isMidiOutPaused())
 		return;
 
-	if (outputDevicePtr)
+	if (!outputDevicePtr)
+		return;
+	
+	const double sendTime = globalMidiDelay + millisecondCounterToStartAt;
+	const bool latchEnabled = (bool)m.getProperty(Ids::midiMessageLatchAndStream);
+	
+	if (m.getMidiMessageType() == Multi && latchEnabled)
 	{
-		outputDevicePtr->sendMidiBuffer (m.getMidiBuffer(), globalMidiDelay + millisecondCounterToStartAt);
+		const int    incomingNumber  = m.getNumber();
+		const String incomingFormula = m.getProperty(Ids::midiMessageMultiList).toString();
+		
+		// Reset latch when parameter number OR formula type changes
+		if (incomingNumber != nrpnLatchedNumber || incomingFormula != nrpnLatchedFormula)
+		{
+			_DBG("NRPN latch: reset - number=" + String(incomingNumber)
+				 + " formula=" + incomingFormula);
+			nrpnHeaderLatched = false;
+			nrpnLatchedNumber  = incomingNumber;
+			nrpnLatchedFormula = incomingFormula;
 	}
 
+		auto& messages = m.getMidiMessageArray();
+		_DBG("NRPN latch: arraySize=" + String(messages.size())
+			 + " latched=" + String((int)nrpnHeaderLatched)
+			 + " number=" + String(incomingNumber));
+		
+		MidiBuffer filtered;
+		int sample = 0;
+		
+		for (int i = 0; i < messages.size(); i++)
+		{
+			const MidiMessage& msg = messages.getReference(i).m;
+			const int cc = msg.getControllerNumber();
+			
+			const bool isHeader = msg.isController()
+			&& (cc == 99 || cc == 98   // NRPN MSB/LSB
+				|| cc == 101 || cc == 100); // RPN MSB/LSB
+			
+			if (isHeader && nrpnHeaderLatched)
+			{
+				_DBG("NRPN latch: skipping header CC" + String(cc));
+				continue;
+			}
+			
+			filtered.addEvent(msg, sample++);
+		}
+		
+		nrpnHeaderLatched = true;
+		outputDevicePtr->sendMidiBuffer(filtered, sendTime);
+		queueMessagesForHostOutput(filtered);
+	}
+	else
+	{
+		outputDevicePtr->sendMidiBuffer(m.getMidiBuffer(), sendTime);
 	queueMessageForHostOutput (m);
+	}
 }
 
 bool CtrlrPanel::isMidiOutPaused()

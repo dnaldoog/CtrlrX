@@ -16,7 +16,7 @@ CtrlrArrow::CtrlrArrow (CtrlrModulator &owner)
 	setProperty (Ids::uiArrowHeadHeight, 16);
 	setProperty (Ids::uiArrowOrientation, 0);
 	setProperty (Ids::uiArrowRotation, 0);
-	setProperty (Ids::uiArrowStrokeThickness, 1);
+	setProperty (Ids::uiArrowStrokeThickness, 1); // Updated v5.6.35. Typo. Thanks to @dnaldoog
 
 	componentTree.addListener (this);
     //[/UserPreSize]

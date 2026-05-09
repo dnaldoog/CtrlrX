@@ -466,7 +466,19 @@ void CtrlrTabsComponent::setOwned (CtrlrComponent *componentToOwn, const int sub
 		componentToOwn->setProperty (Ids::componentTabName, owner.getName(), true);
 		componentToOwn->setProperty (Ids::componentTabId, subIndexInGroup, true);
 		componentToOwn->setProperty (Ids::componentGroupped, true, true);
-		componentToOwn->setProperty(Ids::componentGroupName, "", true); // Clear group name when assigning to tab
+		
+		// NEW FIX: If the component is being dragged by the user,
+		// we clear the Group property so the Tab becomes the primary owner.
+		if (auto* dragContainer = DragAndDropContainer::findParentDragContainerFor(this)) // Updated v5.6.36
+		{
+			if (dragContainer->isDragAndDropActive())
+			{
+				if (componentToOwn->getProperty(Ids::componentGroupName).toString().isNotEmpty())
+				{
+					componentToOwn->setProperty(Ids::componentGroupName, String(), true);
+				}
+			}
+		}
 
 		if (ctrlrTabs->getTabContentComponent(subIndexInGroup))
 			ctrlrTabs->getTabContentComponent(subIndexInGroup)->addAndMakeVisible (componentToOwn);

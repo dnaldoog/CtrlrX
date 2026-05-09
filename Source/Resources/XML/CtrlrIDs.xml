@@ -257,7 +257,7 @@
   <id name="uiSliderDecimalPlaces"          text="Decimal place"    type="Numeric" min="0" max="4" />
   <id name="uiSliderValueSuffix"            text="Value suffix"     type="Text" />
   
-  <id name="uiSliderDoubleClickValue" 		text="The value to set when double clicked" type="Numeric" min="-2147483648" max="2147483647" int="0.000000001" />
+  <id name="uiSliderDoubleClickValue" 		text="The value to set when double clicked" type="Numeric" min="-32768" max="65535" int="0.0001" />
   <id name="uiSliderDoubleClickEnabled" 	text="Double clicked setting" type="Bool" defaults="Enabled/Disabled"/>
   <id name="uiSliderValuePosition" 			text="Value position" type="VarNumeric" defaults="NoTextBox=0,TextBoxLeft=1,TextBoxRight=2,TextBoxAbove=3,TextBoxBelow=4"/>
   <id name="uiSliderValueHeight" 			text="Value height" type="Text"/>
@@ -304,6 +304,10 @@
   <id name="uiImageResource" text="Image resource" type="VarText"/>
     
   <!-- Combo box -->
+  <id name="uiComboSearch" text="Combo search item" type="Bool" defaults="enabled/Disabled"/>
+  <id name="uiComboSearchFont" text="Combo search text" type="Font"/>
+  <id name="uiComboSearchTextColour" text="Combo search text colour" type="Colour"/>
+  <id name="uiComboSearchBgColour" text="Combo search background colour" type="Colour"/>
   <id name="uiComboArrowColour" text="Arrow colour" type="Colour"/>
   <id name="uiComboOutlineColour" text="Outline colour" type="Colour"/>
   <id name="uiComboTextColour" text="Text colour" type="Colour"/>
@@ -311,12 +315,12 @@
   <id name="uiComboButtonColour" text="Button colour" type="Colour"/>
   <id name="uiComboBgColour" text="Background colour" type="Colour"/>
   <id name="uiComboContent" text="Combo contents" type="MultiLine"/>
-  <id name="uiComboFont" text="Combo font" type="Font"/>
+  <id name="uiComboFont" text="Combo text" type="Font"/>
   <id name="uiComboMenuFont" text="Combo menu font" type="Font"/>
   <id name="uiComboMenuBackgroundColour" text="Combo menu background colour" type="Colour"/>
-  <id name="uiComboMenuFontColour" text="Combo menu font colour" type="Colour"/>
-  <id name="uiComboMenuFontHighlightedColour" text="Combo menu highlighted font colour" type="Colour"/>
-  <id name="uiComboMenuHighlightColour" text="Combo menu highlight colour" type="Colour"/>
+  <id name="uiComboMenuFontColour" text="Combo menu text colour" type="Colour"/>
+  <id name="uiComboMenuFontHighlightedColour" text="Combo menu highlighted text colour" type="Colour"/>
+  <id name="uiComboMenuHighlightColour" text="Combo menu highlight background colour" type="Colour"/>
   <id name="uiComboMenuBackgroundRibbed" text="Combo menu background has ribs" type="Bool"/>
   <id name="uiComboDynamicContent" text="Instead of contents display dynamic values" type="VarNumeric" defaults="@dynamicContent"/>
   <id name="uiComboButtonGradient" text="Use a gradient for the button" type="Bool"/>
@@ -692,11 +696,11 @@
   <id name="uiXYSurface" text="A XY modulator surface" type="Text"/>
 
   <!-- MIDI message properties -->
-  <id name="midiMessageCtrlrNumber" text="MIDI Controller number" type="Numeric" min="0" max="16383" />
+  <id name="midiMessageCtrlrNumber" text="MIDI Controller number" type="Numeric" min="0" max="16383" /> <!-- 127 is a limit for CC messages but NRPN can go to 16383 -->
   <id name="midiMessageChannel" text="MIDI Channel" type="Numeric" min="1" max="16"/>
-	<id name="midiMessageCtrlrNumberSize" text="Controller Resolution" type="Bool" defaults="false" />
-	<!-- does this do anything? midiMessageCtrlrValue -->
-  <id name="midiMessageCtrlrValue" text="MIDI Controller value" type="Numeric" min="-8192" max="8191" /> 
+  <id name="midiMessageCtrlrNumberSize" text="Controller Resolution" type="Bool" defaults="14-bit/7-bit" /> <!-- Added v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog. Does this do anything? midiMessageCtrlrValue -->
+  <id name="midiMessageLatchAndStream" text="Latch &amp; Stream" type="Bool" defaults="On/Off" />
+  <id name="midiMessageCtrlrValue" text="MIDI Controller value" type="Numeric" min="0" max="127" />
   <id name="midiMessageType" text="MIDI message type" type="VarNumeric"  defaults="CC=0,Aftertouch=1,ChannelPressure=2,NoteOn=3,NoteOff=4,SysEx=5,Multi=6,ProgramChange=7,PitchWheel=8,None=9"/>
   <id name="midiMessageSysExFormula" text="SysEx Formula" type="SysEx"/>
   <id name="midiMessageChannelOverride" text="Override panel MIDI channel" type="Bool" defaults="Yes/No"/>

@@ -1,6 +1,7 @@
 #include "stdafx.h"
-#ifdef __linux__
+#ifdef __linux__ // Updated v5.6.35. Thanks to @dnaldoog. SEE: https://github.com/damiensellier/CtrlrX/pull/193#issuecomment-3561230356
 #define PACKAGE "Ctrlr"
+
 #include "CtrlrMacros.h"
 #include "CtrlrLinux.h"
 #include "CtrlrPanel/CtrlrPanel.h"

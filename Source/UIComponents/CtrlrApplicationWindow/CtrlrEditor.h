@@ -54,8 +54,7 @@ class CtrlrEditor  : public AudioProcessorEditor,
 			showLogViewer				= 0x2006,
 			showMidiCalculator          = 0x2007,
 			showAboutDialog             = 0x2008,
-            showKeyboardMappingDialog   = 0x2009,
-
+			showKeyboardMappingDialog	= 0x200a,
 
 			/* Panel commands */
 
@@ -128,11 +127,8 @@ class CtrlrEditor  : public AudioProcessorEditor,
 		};
 
 		void activeCtrlrChanged();
-		//const WeakReference<CtrlrEditor>::SharedRef& getWeakReference();
-		CtrlrManager &getOwner()
-		{ 
-			return (owner); 
-		}
+		const WeakReference<CtrlrEditor>::SharedRef& getWeakReference();
+		CtrlrManager &getOwner()											{ return (owner); }
 		
         // WeakReference<CtrlrEditor>::Master masterReference;
 		

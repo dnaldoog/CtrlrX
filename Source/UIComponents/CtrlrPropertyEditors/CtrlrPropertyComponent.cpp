@@ -22,15 +22,20 @@ CtrlrPropertyComponent::CtrlrPropertyComponent(const Identifier& _propertyName,
     possibleChoices(_possibleChoices),
     possibleValues(_possibleValues)
 {
-    if (propertyName == Ids::midiMessageCtrlrValue)
+
+//    if (propertyName == Ids::midiMessageCtrlrValue) // ADDED v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
+//    {
+//        setVisible(false); // this hides the midi message ctrlr value slider because @dnaldoog doesn't think it does anything
+//        visibleText = identifierDefinition.isValid() ? identifierDefinition.getProperty("text").toString()
+//        : propertyName.toString();
+//        visibleText.clear();
+//        propertyType = CtrlrIDManager::Numeric;
+//        return;
+//    }
+
+    if (propertyName == Ids::midiMessageCtrlrNumber)
     {
-        setVisible(false);
-        // this hides the midi message ctrlr value slider becasue I don't think it does anything
-        visibleText = identifierDefinition.isValid() ? identifierDefinition.getProperty("text").toString()
-            : propertyName.toString();
-        visibleText.clear();
-        propertyType = CtrlrIDManager::Numeric;
-        return;
+        propertyElement.addListener(this);
     }
 
     if (!identifierDefinition.isValid())
@@ -105,8 +110,7 @@ void CtrlrPropertyComponent::refresh()
 		}
 	}
 }
-void CtrlrPropertyComponent::valueTreePropertyChanged(ValueTree& treeWhosePropertyHasChanged,
-    const Identifier& property)
+void CtrlrPropertyComponent::valueTreePropertyChanged(ValueTree& treeWhosePropertyHasChanged, const Identifier& property) // ADDED v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
 {
     // When midiMessageCtrlrNumberSize changes, refresh the midiMessageCtrlrNumber slider
     if (propertyName == Ids::midiMessageCtrlrNumber &&

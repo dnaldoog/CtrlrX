@@ -93,6 +93,8 @@ enum CtrlrSysExFormulaToken
 	MSB4bitValue,
 	GlobalVariable,
 	ChecksumRolandJP8080,
+	CCCoarseMSB,
+	CCFineLSB,
 	RolandSplitByte1,
 	RolandSplitByte2,
 	RolandSplitByte3,
@@ -157,6 +159,20 @@ enum CtrlrMidiLogOptions
 	midiLogDevice=1024,
 	midiLogDevAttach=2048,
 	midiLogDataSize=4096
+};
+
+enum CtrlrMIDIMessageType // Added v5.6.35. MIDI Monitor MIDI Filters Support. Thanks to @dnaldoog
+{
+	Filter_NoteOn = 1,
+	Filter_NoteOff = 2,
+	Filter_AftertouchPoly = 4,
+	Filter_Control = 8,
+	Filter_Program = 16,
+	Filter_Sysex = 32,
+	Filter_ChannelPressure = 64,
+	Filter_PitchWheel = 128,
+	Filter_ActiveSense = 256,
+	Filter_Clock = 512
 };
 
 enum CtrlrFontProperties

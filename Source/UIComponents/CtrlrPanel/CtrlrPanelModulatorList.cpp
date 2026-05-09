@@ -10,31 +10,36 @@
 /* ********************************************************************************** */
 CtrlrPanelModulatorList::CtrlrPanelModulatorList (CtrlrPanel &_owner)
     : owner(_owner),
-      modulatorList (0),
-	  modulatorListTree(owner)
+      modulatorList (nullptr), 
+      modulatorListTree(owner)
 {
-	addAndMakeVisible (&modulatorListTree);
-	modulatorListTree.setVisible (false);
+    addAndMakeVisible (&modulatorListTree);
+    modulatorListTree.setVisible (false);
 
-	owner.setProperty (Ids::uiPanelModulatorListViewTree, false);
+    owner.setProperty (Ids::uiPanelModulatorListViewTree, false);
 
     addAndMakeVisible (modulatorList = new TableListBox ("Modulator List", this));
-    modulatorList->setName (L"modulatorList");
-	modulatorList->getHeader().setStretchToFitActive(true);
-	modulatorList->setMultipleSelectionEnabled (true);
-	modulatorList->setHeaderHeight (20);
+    modulatorList->setName ("modulatorList");
+    modulatorList->getHeader().setStretchToFitActive(true);
+    modulatorList->setMultipleSelectionEnabled (true);
+    modulatorList->setHeaderHeight (20);
 
-	if (owner.getProperty (Ids::panelModulatorListColumns).toString() != COMBO_ITEM_NONE)
-	{
-		restoreColumns (owner.getProperty (Ids::panelModulatorListColumns));
-	}
-	else
-	{
-		resetToDefaults();
-	}
-	owner.addPanelListener (this);
+    if (owner.getProperty (Ids::panelModulatorListColumns).toString() != COMBO_ITEM_NONE)
+    {
+        restoreColumns (owner.getProperty (Ids::panelModulatorListColumns));
+    }
+    else
+    {
+        resetToDefaults();
+    }
+    
+    owner.addPanelListener (this);
+
+    // Start the timer to poll for selection changes every 200ms
+    startTimer (200); 
+
     setSize (600, 400);
-	refresh();
+    refresh();
 }
 
 CtrlrPanelModulatorList::~CtrlrPanelModulatorList()
@@ -101,6 +106,37 @@ void CtrlrPanelModulatorList::copyModulatorList()
 
 void CtrlrPanelModulatorList::modulatorChanged (CtrlrModulator *modulatorThatChanged)
 {
+	_DBG("modulatorChanged fired for: " + (modulatorThatChanged ? modulatorThatChanged->getName() : "null"));
+	    if (owner.getEditor() && owner.getEditor()->getCanvas())
+    {
+        // Get the current selection from the canvas
+        SelectedItemSet<CtrlrComponent*>& selection = owner.getEditor()->getCanvas()->getSelection();
+        SparseSet<int> rowsToSelect;
+
+        for (int i = 0; i < copyOfModulatorList.size(); ++i)
+        {
+            if (CtrlrModulator* m = copyOfModulatorList[i])
+            {
+                if (m->getComponent() && selection.isSelected(m->getComponent()))
+                {
+                    rowsToSelect.addRange(Range<int>(i, i + 1));
+                }
+            }
+        }
+
+        // Set the selection without triggering a callback loop
+        modulatorList->setSelectedRows(rowsToSelect, dontSendNotification);
+
+        // Logic to scroll: TableListBox doesn't always expose scroll methods directly,
+        // so we access the internal ListBox if the selection isn't empty.
+        if (rowsToSelect.size() > 0)
+        {
+            int firstRow = rowsToSelect.getRange(0).getStart();
+            
+            // This is the most compatible way to force a scroll in JUCE 6 TableListBox:
+            modulatorList->selectRow(firstRow, true, true);
+        }
+    }
 }
 
 void CtrlrPanelModulatorList::modulatorAdded (CtrlrModulator *modulatorThatWasAdded)
@@ -139,8 +175,17 @@ const bool CtrlrPanelModulatorList::isComponentOffPanel(const int indexInModulat
 
 void CtrlrPanelModulatorList::refresh()
 {
-	copyModulatorList();
-	modulatorList->updateContent();
+    copyModulatorList();
+    modulatorList->updateContent();
+        // JUCE 6 quirk: updateContent() alone doesn't force the internal Viewport
+    // to recalculate row positions after a deletion, causing rows to visually
+    // overlap. A 1px bounds nudge triggers resized() and fixes the layout.
+    // Force the internal ListBox to fully recalculate its layout
+    modulatorList->setModel(nullptr);
+    modulatorList->setModel(this);
+    modulatorList->updateContent();
+    
+    modulatorList->repaint();
 }
 
 const Identifier CtrlrPanelModulatorList::getColumnCtrlrId(const int columnId)
@@ -204,11 +249,14 @@ int CtrlrPanelModulatorList::getNumRows()
 
 void CtrlrPanelModulatorList::paintRowBackground (Graphics& g, int rowNumber, int width, int height, bool rowIsSelected)
 {
-	if (rowIsSelected)
-	{
-		gui::drawSelectionRectangle (g, width, height);
-		g.fillAll(Component::findColour(TextButton::buttonOnColourId).brighter(0.6f)); // Updated v5.6.34. Was (Colours::red)
-	}
+    if (rowIsSelected)
+    {
+        // Fill the background with SteelBlue
+        g.fillAll (Colours::steelblue); 
+
+        // Optional: Keep the Ctrlr-specific selection outline
+        gui::drawSelectionRectangle (g, width, height);
+    }
 }
 
 Component* CtrlrPanelModulatorList::refreshComponentForCell (int rowNumber, int columnId, bool isRowSelected, Component* existingComponentToUpdate)
@@ -445,29 +493,36 @@ void CtrlrPanelModulatorList::exportListItem(const int format)
 
 void CtrlrPanelModulatorList::deleteSelected()
 {
-	if (owner.getEditor())
-	{
-		if (owner.getEditor()->getCanvas() && owner.getEditor()->getSelection())
-		{
-			owner.getEditor()->getSelection()->deselectAll();
+    if (!owner.getEditor()) return;
+    if (!owner.getEditor()->getCanvas() || !owner.getEditor()->getSelection()) return;
 
-			SparseSet<int> selected = modulatorList->getSelectedRows();
+    SparseSet<int> selected = modulatorList->getSelectedRows();
+    if (selected.size() <= 0) return;
 
-			for (int range=selected.getNumRanges()-1; range>=0; range--)
-			{
-				for (int modulator=selected.getRange(range).getEnd()-1; modulator>=selected.getRange(range).getStart(); modulator--)
-				{
-					if (!copyOfModulatorList[modulator].wasObjectDeleted() && copyOfModulatorList[modulator]->getComponent())
-					{
-						owner.getEditor()->getCanvas()->removeComponent(copyOfModulatorList[modulator]->getComponent(), false);
-					}
-				}
-			}
+    // Stop the timer during deletion to prevent race conditions
+    stopTimer();
 
-			modulatorList->deselectAllRows();
-			refresh();
-		}
-	}
+    owner.getEditor()->getSelection()->deselectAll();
+
+    for (int range = selected.getNumRanges() - 1; range >= 0; --range)
+    {
+        for (int modulator = selected.getRange(range).getEnd() - 1;
+             modulator >= selected.getRange(range).getStart(); --modulator)
+        {
+            if (!copyOfModulatorList[modulator].wasObjectDeleted()
+                && copyOfModulatorList[modulator]->getComponent())
+            {
+                owner.getEditor()->getCanvas()->removeComponent(
+                    copyOfModulatorList[modulator]->getComponent(), false);
+            }
+        }
+    }
+
+    modulatorList->deselectAllRows();
+    refresh(); // copyModulatorList + updateContent + repaint
+
+    // Restart the timer after everything has settled
+    startTimer(200);
 }
 
 void CtrlrPanelModulatorList::restoreColumns(const String &columnState)
@@ -520,53 +575,36 @@ StringArray CtrlrPanelModulatorList::getMenuBarNames()
 	return StringArray (names);
 }
 
-PopupMenu CtrlrPanelModulatorList::getMenuForIndex(int topLevelMenuIndex, const String& menuName)
+PopupMenu CtrlrPanelModulatorList::getMenuForIndex(int topLevelMenuIndex, const String &menuName)
 {
 	PopupMenu menu;
 	if (topLevelMenuIndex == 0)
 	{
-		menu.addItem(1, "Close");
-		menu.addSectionHeader("Export list");
-		menu.addItem(10, "Export as HTML");
-		menu.addItem(11, "Export as CSV");
-		menu.addItem(12, "Export as XML");
+		menu.addItem (1, "Close");
+		menu.addSectionHeader ("Export list");
+		menu.addItem (10, "Export as HTML");
+		menu.addItem (11, "Export as CSV");
+		menu.addItem (12, "Export as XML");
 	}
 	else if (topLevelMenuIndex == 1) /* Edit */
 	{
-		menu.addItem(2, "Delete selected");
-		menu.addItem(7, "Make selected visible on canvas");
+		menu.addItem (2, "Delete selected");
+		menu.addItem (7, "Make selected visible on canvas");
 	}
 	else if (topLevelMenuIndex == 2) /* View */
 	{
-		menu.addItem(4, "Refresh view");
-		menu.addItem(5, "Sort using lexicographical algorithm", true, (bool)owner.getProperty(Ids::panelModulatorListSortOption));
-		menu.addItem(6, "Sort using simple numeric comparison", true, !(bool)owner.getProperty(Ids::panelModulatorListSortOption));
+		menu.addItem (4, "Refresh view");
+		menu.addItem (5, "Sort using lexicographical algorithm", true, (bool)owner.getProperty (Ids::panelModulatorListSortOption));
+		menu.addItem (6, "Sort using simple numeric comparison", true, !(bool)owner.getProperty (Ids::panelModulatorListSortOption));
 		menu.addSeparator();
-		menu.addItem(3, (bool)owner.getProperty(Ids::uiPanelModulatorListViewTree) ? "Switch to List" : "Switch to Tree", true);
-
-		// Original "Visible columns" submenu
-		PopupMenu visibleColumnsMenu;
-		for (int i = 0; i < getIdTree().getNumChildren(); i++)
+		menu.addItem (3, (bool)owner.getProperty (Ids::uiPanelModulatorListViewTree) ? "Switch to List" : "Switch to Tree", true);
+		PopupMenu m;
+		for (int i=0; i<getIdTree().getNumChildren(); i++)
 		{
-			String propName = getIdTree().getChild(i).getProperty(Ids::name);
-			visibleColumnsMenu.addItem(8192 + i, propName, true, modulatorList->getHeader().isColumnVisible(i + 1));
+			m.addItem (8192+i, getIdTree().getChild(i).getProperty(Ids::name), true, modulatorList->getHeader().isColumnVisible(i+1));
 		}
-		menu.addSubMenu("Visible columns", visibleColumnsMenu);
-
-		// NEW: "Copy Lua Usage" submenu with colored items
-		PopupMenu luaCopyMenu;
-		for (int i = 0; i < getIdTree().getNumChildren(); i++)
-		{
-			String propName = getIdTree().getChild(i).getProperty(Ids::name);
-			String category = getPropertyCategory(propName);
-			Colour colour = getCategoryColour(category);
-
-			// Use ID range 16384+ for Lua copy items (different from visibility toggle items)
-			luaCopyMenu.addColouredItem(16384 + i, propName, colour);
-		}
-		//menu.addSubMenu("Copy Lua Usage", luaCopyMenu); now using CtrlrLuaApi instead
-
-		menu.addItem(13, "Reset columns to default");
+		menu.addSubMenu ("Visible columns", m);
+		menu.addItem (13, "Reset columns to default");
 	}
 	return (menu);
 }
@@ -576,47 +614,16 @@ void CtrlrPanelModulatorList::menuItemSelected(int menuItemID, int topLevelMenuI
 {
 	if (menuItemID == 1)
 	{
-		owner.getWindowManager().toggle(CtrlrPanelWindowManager::ModulatorList, false);
+        // close handle
+        owner.getWindowManager().toggle (CtrlrPanelWindowManager::ModulatorList, false);
 	}
-	else if (menuItemID == 2)
+	if (menuItemID == 2)
 	{
 		deleteSelected();
 	}
 	else if (menuItemID == 3)
 	{
 		switchView();
-	}
-	else if (menuItemID >= 16384) // NEW: Handle Lua copy items
-	{
-		int index = menuItemID - 16384;
-		String propName = getIdTree().getChild(index).getProperty(Ids::name);
-
-		// Generate both getter and setter
-		String luaCode = generateLuaUsage(propName, true, true);
-
-		// Copy to clipboard
-		SystemClipboard::copyTextToClipboard(luaCode);
-		AlertWindow::showMessageBoxAsync(
-			AlertWindow::InfoIcon,
-			"Lua Usage Copied",
-			"Copied to clipboard.\n\n"
-			"Paste into the Lua editor.\n"
-			"Guide only � please double-check syntax."
-		);
-	//	 Optional: Show a message to user
-		//String category = getPropertyCategory(propName);
-		//owner.getCtrlrManagerOwner().getCtrlrLog().logMessage(
-		//	"Copied Lua usage for '" + propName + "' (" + category + ") to clipboard"
-		//);
-
-		//SystemClipboard::copyTextToClipboard(luaCode);
-
-		//showClipboardBubble(
-		//	"Copied to clipboard\n"
-		//	"Paste into Lua editor\n"
-		//	"Guide only � double-check syntax"
-		//);
-
 	}
 	else if (menuItemID >= 8192)
 	{
@@ -628,7 +635,7 @@ void CtrlrPanelModulatorList::menuItemSelected(int menuItemID, int topLevelMenuI
 	}
 	else if (menuItemID == 5 || menuItemID == 6)
 	{
-		handleSortSelection(menuItemID);
+		handleSortSelection (menuItemID);
 	}
 	else if (menuItemID == 7)
 	{
@@ -643,6 +650,7 @@ void CtrlrPanelModulatorList::menuItemSelected(int menuItemID, int topLevelMenuI
 		resetToDefaults();
 	}
 }
+
 void CtrlrPanelModulatorList::handleColumnSelection(const int itemId)
 {
 	if (modulatorList->getHeader().isColumnVisible ((itemId - 8192) + 1))
@@ -666,94 +674,37 @@ void CtrlrPanelModulatorList::handleSortSelection(const int itemId)
 
 	modulatorList->updateContent();
 }
-const String CtrlrPanelModulatorList::getPropertyCategory(const String& propertyName)
+
+void CtrlrPanelModulatorList::timerCallback()
 {
-	if (propertyName.startsWith("modulator"))
-		return "modulator";
-	else if (propertyName.startsWith("component") || propertyName.startsWith("ui"))
-		return "component";
-	else if (propertyName.startsWith("midi") || propertyName.startsWith("panelMidi"))
-		return "midi";
-	else if (propertyName.startsWith("panel") || propertyName.startsWith("uiPanel"))
-		return "panel";
-	else if (propertyName.startsWith("lua"))
-		return "lua";
-	else
-		return "other";
-}
+    if (owner.getEditor() == nullptr) return;
 
-const Colour CtrlrPanelModulatorList::getCategoryColour(const String& category)
-{
-	if (category == "modulator")
-		return Colours::blue;
-	else if (category == "component")
-		return Colours::green;
-	else if (category == "midi")
-		return Colours::red;
-	else if (category == "panel")
-		return Colours::orange;
-	else if (category == "lua")
-		return Colours::purple;
-	else
-		return Colours::grey;
-}
+    CtrlrPanelCanvas* canvas = owner.getEditor()->getCanvas();
+    if (canvas == nullptr) return;
 
-const String CtrlrPanelModulatorList::generateLuaUsage(const String& propertyName, bool includeGetter, bool includeSetter)
-{
-	String category = getPropertyCategory(propertyName);
-	String result = "";
-	String modName = "modulatorName";
+    SelectedItemSet<CtrlrComponent*>& selection = canvas->getSelection();
+    juce::SparseSet<int> newSelection;
 
-	if (category == "modulator")
-	{
-		if (includeGetter)
-			result += "-- Getter\nlocal value = panel:getModulatorByName(\"" + modName + "\"):getProperty(\"" + propertyName + "\")\n\n";
-		if (includeSetter)
-			result += "-- Setter\npanel:getModulatorByName(\"" + modName + "\"):setProperty(\"" + propertyName + "\", value, bool)\n";
-	}
-	else if (category == "component")
-	{
-		if (includeGetter)
-			result += "-- Getter\nlocal value = panel:getModulatorByName(\"" + modName + "\"):getComponent():getProperty(\"" + propertyName + "\")\n\n";
-		if (includeSetter)
-			result += "-- Setter\npanel:getModulatorByName(\"" + modName + "\"):getComponent():setProperty(\"" + propertyName + "\", value, bool)\n";
-	}
-	else if (category == "midi")
-	{
-		if (includeGetter)
-			result += "-- Getter\nlocal value = panel:getModulatorByName(\"" + modName + "\"):getMidiMessage():getProperty(\"" + propertyName + "\")\n\n";
-		if (includeSetter)
-			result += "-- Setter\npanel:getModulatorByName(\"" + modName + "\"):getMidiMessage():setProperty(\"" + propertyName + "\", value, bool)\n";
-	}
-	else if (category == "panel")
-	{
-		if (includeGetter)
-			result += "-- Getter\nlocal value = panel:getProperty(\"" + propertyName + "\")\n\n";
-		if (includeSetter)
-			result += "-- Setter\npanel:setProperty(\"" + propertyName + "\", value, bool)\n";
-	}
-	else
-	{
-		result = "-- Unknown category for property: " + propertyName + "\n";
-	}
+    for (int i = 0; i < copyOfModulatorList.size(); ++i)
+    {
+        CtrlrModulator* m = copyOfModulatorList[i].get();
+        if (m == nullptr) continue; // Skip deleted/stale entries safely
 
-	return result;
-}
-void CtrlrPanelModulatorList::showClipboardBubble(const String& text)
-{
-	auto* bubble = new BubbleMessageComponent();
+        if (m->getComponent() != nullptr && selection.isSelected(m->getComponent()))
+        {
+            newSelection.addRange(juce::Range<int>(i, i + 1));
+        }
+    }
 
-	bubble->setAllowedPlacement(BubbleComponent::above
-		| BubbleComponent::below
-		| BubbleComponent::left
-		| BubbleComponent::right);
+    if (newSelection != modulatorList->getSelectedRows())
+    {
+        modulatorList->setSelectedRows(newSelection, juce::dontSendNotification);
 
-	bubble->showAt(
-		getScreenBounds(),   // anchor near the list
-		AttributedString(text),
-		3000                 // milliseconds visible
-	);
+        if (newSelection.size() > 0)
+        {
+            modulatorList->selectRow(newSelection.getRange(0).getStart(), true, true);
+        }
 
-	// Bubble deletes itself after timeout
-	Desktop::getInstance().addGlobalMouseListener(bubble);
+        modulatorList->repaint();
+    }
 }

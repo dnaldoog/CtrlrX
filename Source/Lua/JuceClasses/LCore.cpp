@@ -972,6 +972,7 @@ Luabind attempts to create a wrapper that copies the
 return value of the function into a Lua-managed object. 
 Since it can't copy a unique_ptr, the compiler throws an error.
 		*/
+	
 	return doc->getDocumentElement(onlyReadOuter).release();
 }
 void LXmlElement::wrapForLua (lua_State *L)

@@ -72,21 +72,29 @@ private:
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrLuaManager);
 
 	CtrlrLuaMethodManager* methodManager;
-	CtrlrLuaDebugger* ctrlrLuaDebugger;
+		String lastError;
+		ValueTree luaManagerTree;
+		File scriptsDir;
+		File importersDir;
+		CtrlrPanel &owner;
+		lua_State* luaState, *luaStateAudio;
 	CtrlrLuaUtils* utils;
 	CtrlrLuaMultiTimer* multiTimer;
 	CtrlrLuaAudioConverter* audioConverter;
+		CtrlrLuaDebugger *ctrlrLuaDebugger;
 	LAudioFormatManager* luaAudioFormatManager;
-	CtrlrPanel& owner;
-	ValueTree luaManagerTree;
+	/*
+	COMMENTED OUT JG 5/8/2026
+	--CtrlrPanel& owner;
+	--ValueTree luaManagerTree;
 
-	lua_State* luaState;
-	lua_State* luaStateAudio;
+	--lua_State* luaState;
+	--lua_State* luaStateAudio;
 
-	String lastError;
-	File scriptsDir;
-	File importersDir;
-
+	--String lastError;
+	--File scriptsDir;
+	--File importersDir;
+*/
 	// Lua API database for class browser
 	CtrlrLuaApiDatabase luaApi;
 };

@@ -7,74 +7,82 @@
 #include "CtrlrLuaObjectWrapper.h"
 #include "CtrlrManager/CtrlrManager.h"
 #include "JuceClasses/LMemoryBlock.h"
+#include <string> // Added v5.6.35. To convert object to actual MIDI Message
 
 CtrlrMidiMessage::CtrlrMidiMessage()
-	: messageType(None), midiTree(Ids::midi), multiMasterValue(1),
-	multiMasterNumber(1), messagePattern(0, true), restoring(false),
-	initializationResult(Result::ok())
+	:	messageType(None), midiTree(Ids::midi), multiMasterValue(1),
+		multiMasterNumber(1), messagePattern(0,true), restoring(false),
+		initializationResult(Result::ok())
 {
 	initializeEmptyMessage();
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage(const String& hexData)
-	: messageType(None), midiTree(Ids::midi), multiMasterValue(1),
-	multiMasterNumber(1), messagePattern(0, true),
-	initializationResult(Result::ok())
+CtrlrMidiMessage::CtrlrMidiMessage (const String& hexData)  // Updated v5.6.35. Improved sanitization
+    :   messageType(None), midiTree(Ids::midi), multiMasterValue(1),
+        multiMasterNumber(1), messagePattern(0,true), restoring(false),
+        initializationResult(Result::ok())
 {
-	initializeEmptyMessage();
+    initializeEmptyMessage();
 
-	// 1. Strip everything that isn't a Hex character
-	String sanitizedHex = hexData.replaceCharacter(' ', 0).replaceCharacter('\t', 0);
+    String sanitizedHex = hexData.removeCharacters(" \t\r\n");
+    _DBG("CTOR HEX 1: Processing [" + sanitizedHex + "]");
 
-	if (!stringIsHexadecimal(sanitizedHex))
-	{
-		_WRN("CtrlrMidiMessage::ctor invalid HEX: " + hexData);
-		initializationResult = Result::fail("Invalid HEX");
-	}
-	else
-	{
-		// 2. Convert Hex string to a temporary MemoryBlock FIRST
-		MemoryBlock rawData;
-		rawData.loadFromHexString(sanitizedHex);
+    if (stringIsHexadecimal (sanitizedHex))
+    {
+        MemoryBlock rawData;
+        rawData.loadFromHexString(sanitizedHex);
+        
+        if (rawData.getSize() > 0)
+        {
+            const uint8* data = (const uint8*)rawData.getData();
+            
+            if (data[0] < 0x80) {
+                initializationResult = Result::fail("Invalid MIDI Status Byte");
+                return;
+            }
 
-		if (rawData.getSize() > 0)
-		{
-			const uint8* d = (const uint8*)rawData.getData();
-			const int size = (int)rawData.getSize();
+            MidiMessage m(rawData.getData(), (int)rawData.getSize());
+            
+            if (m.getRawDataSize() > 0)
+            {
+                // 1. Set the Type immediately
+                if (m.isSysEx()) messageType = (CtrlrMidiMessageType)1;
+                else if (m.isController()) messageType = (CtrlrMidiMessageType)2;
+                
+                // 2. Sync properties (This might try to clear things, so we do it first)
+                initializationResult = fillMessagePropertiesFromJuceMidi(m);
 
-			// 3. PRE-VALIDATE for the JUCE Assert
-			// This mirrors the logic on line 137 to prevent the pause
-			bool isSystem = (d[0] >= 0xf0);
-			int expectedLength = isSystem ? size : MidiMessage::getMessageLengthFromFirstByte(d[0]);
+                // 3. Clear and Force the Array - This is what getData() reads
+                messageArray.clear();
+                messageArray.add(m);
 
-			if (size > 3 || isSystem || expectedLength == size)
-			{
-				// Now it is safe to create the message; JUCE won't assert
-				MidiMessage m(d, size);
-				initializationResult = fillMessagePropertiesFromData(rawData);
+                // 4. Manual Pattern Sync
+                messagePattern.replaceWith(rawData.getData(), rawData.getSize());
 
-				if (messageType == SysEx)
-					messageArray.add(m);
-			}
-			else
-			{
-				_WRN("CtrlrMidiMessage: Byte count mismatch for Status Byte " + String::toHexString(d[0]));
-				initializationResult = Result::fail("MIDI Byte count mismatch");
-			}
-		}
-	}
+                // 5. Only run the engine for CC, skip for SysEx
+                if (!m.isSysEx())
+                {
+                    patternChanged();
+                }
+
+                _DBG("CTOR HEX 5a: Final Pattern Size: " + String(messagePattern.getSize()));
+                _DBG("CTOR HEX 5b: Array Count: " + String(messageArray.size()));
+                _DBG("CTOR HEX 5c: toString Check: [" + toString() + "]");
+            }
+        }
+    }
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage(const MidiMessage& other)
-	: messageType(None), midiTree(Ids::midi), messagePattern(0, true),
-	initializationResult(Result::ok())
+CtrlrMidiMessage::CtrlrMidiMessage (const MidiMessage& other)
+	:	messageType(None), midiTree(Ids::midi), messagePattern(0,true),
+		initializationResult(Result::ok())
 {
 	initializeEmptyMessage();
 
 	/* Copy the passed in midi message
 		initialize properties based on that message*/
 
-	initializationResult = fillMessagePropertiesFromJuceMidi(other);
+	initializationResult = fillMessagePropertiesFromJuceMidi (other);
 
 	if (!initializationResult.wasOk())
 	{
@@ -82,12 +90,12 @@ CtrlrMidiMessage::CtrlrMidiMessage(const MidiMessage& other)
 	}
 	else if (messageType == SysEx)
 	{
-		messageArray.add(other);
+		messageArray.add (other);
 	}
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage(MemoryBlock& other)
-	: messageType(None), midiTree(Ids::midi), messagePattern(0, true), initializationResult(Result::ok())
+CtrlrMidiMessage::CtrlrMidiMessage (MemoryBlock& other)
+	:	messageType(None), midiTree(Ids::midi), messagePattern(0,true), initializationResult(Result::ok())
 {
 	initializeEmptyMessage();
 
@@ -96,7 +104,7 @@ CtrlrMidiMessage::CtrlrMidiMessage(MemoryBlock& other)
 
 	MidiMessage m = MidiMessage(other.getData(), (int)other.getSize());
 
-	initializationResult = fillMessagePropertiesFromJuceMidi(m);
+	initializationResult = fillMessagePropertiesFromJuceMidi (m);
 
 	if (!initializationResult.wasOk())
 	{
@@ -107,15 +115,15 @@ CtrlrMidiMessage::CtrlrMidiMessage(MemoryBlock& other)
 		// Sysex is not added automagicly (since we need a valid formula), do it now
 		if (messageType == SysEx)
 		{
-			messageArray.add(m);
+			messageArray.add (m);
 		}
 	}
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage(const luabind::object& tableData)
-	: messageType(None), midiTree(Ids::midi), multiMasterValue(1),
-	multiMasterNumber(1), messagePattern(0, true),
-	initializationResult(Result::ok())
+CtrlrMidiMessage::CtrlrMidiMessage (const luabind::object& tableData) // Added v5.6.35. Handle table to MIDI message from LUA
+	:	messageType(None), midiTree(Ids::midi), multiMasterValue(1),
+		multiMasterNumber(1), messagePattern(0,true),
+		initializationResult(Result::ok())
 {
 	initializeEmptyMessage();
 	MemoryBlock mb;
@@ -127,7 +135,7 @@ CtrlrMidiMessage::CtrlrMidiMessage(const luabind::object& tableData)
 			for (luabind::iterator i(tableData), end; i != end; ++i)
 			{
 				uint8 b = (uint8)luabind::object_cast<int>(*i);
-				mb.append(&b, 1);
+				mb.append (&b, 1);
 			}
 
 			if (mb.getSize() > 0)
@@ -141,7 +149,7 @@ CtrlrMidiMessage::CtrlrMidiMessage(const luabind::object& tableData)
 					// but passing it to MidiMessage is what causes the JUCE assertion.
 				}
 				initializationResult = fillMessagePropertiesFromData(mb);
-
+				
 				if (messageType == SysEx)
 				{
 					messageArray.add(MidiMessage(mb.getData(), (int)mb.getSize()));
@@ -156,10 +164,10 @@ CtrlrMidiMessage::CtrlrMidiMessage(const luabind::object& tableData)
 	}
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage(const CtrlrLuaObjectWrapper& luaArray)
-	: messageType(None), midiTree(Ids::midi), multiMasterValue(1),
-	multiMasterNumber(1), messagePattern(0, true),
-	initializationResult(Result::ok())
+CtrlrMidiMessage::CtrlrMidiMessage (const CtrlrLuaObjectWrapper &luaArray)
+	:	messageType(None), midiTree(Ids::midi), multiMasterValue(1),
+		multiMasterNumber(1), messagePattern(0,true),
+		initializationResult(Result::ok())
 {
 	initializeEmptyMessage();
 
@@ -192,17 +200,17 @@ CtrlrMidiMessage::CtrlrMidiMessage(const CtrlrLuaObjectWrapper& luaArray)
 	}
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage(const CtrlrMidiMessage& other)
+CtrlrMidiMessage::CtrlrMidiMessage (const CtrlrMidiMessage &other)
 	: messageType(None), midiTree(other.midiTree), initializationResult(Result::ok()),
-	messageArray(other.messageArray)
+		messageArray(other.messageArray)
 {
 
 	fillMessagePropertiesFromData();
 
 }
 
-CtrlrMidiMessage::CtrlrMidiMessage(const Identifier& treeType)
-	: messageType(None), midiTree(treeType), messagePattern(0, true), initializationResult(Result::ok())
+CtrlrMidiMessage::CtrlrMidiMessage (const Identifier &treeType)
+    : messageType(None), midiTree(treeType), messagePattern(0,true), initializationResult(Result::ok())
 {
     initializeEmptyMessage();
 }
@@ -214,13 +222,15 @@ CtrlrMidiMessage::~CtrlrMidiMessage()
 
 void CtrlrMidiMessage::initializeEmptyMessage()
 {
-	setProperty(Ids::midiMessageType, None);
-	setProperty(Ids::midiMessageChannelOverride, false);
-	setProperty(Ids::midiMessageChannel, 1);
-	setProperty(Ids::midiMessageCtrlrNumber, 1);
-	setProperty(Ids::midiMessageCtrlrValue, 0);
-	setProperty(Ids::midiMessageMultiList, "");
-	setProperty(Ids::midiMessageSysExFormula, "");
+	setProperty (Ids::midiMessageType, None);
+	setProperty (Ids::midiMessageChannelOverride, false);
+	setProperty (Ids::midiMessageChannel, 1);
+	setProperty (Ids::midiMessageCtrlrNumber, 1);
+	setProperty (Ids::midiMessageCtrlrValue, 0);
+	setProperty (Ids::midiMessageCtrlrNumberSize, 0); // Added v5.6.35. For Multi MIDI Message. Added by DAM
+	setProperty (Ids::midiMessageLatchAndStream, false); // Added v5.6.35. Thanks to @dnaldoog
+	setProperty (Ids::midiMessageMultiList, "");
+	setProperty (Ids::midiMessageSysExFormula, "");
 
 	midiTree.addListener (this);
 }
@@ -464,7 +474,8 @@ Result CtrlrMidiMessage::fillMessagePropertiesFromData()
 		setProperty (Ids::midiMessageChannel, 1);
 		setProperty (Ids::midiMessageCtrlrNumber, 1);
 		setProperty (Ids::midiMessageCtrlrValue, 0);
-		setProperty(Ids::midiMessageCtrlrNumberSize, false);
+		setProperty (Ids::midiMessageCtrlrNumberSize, 0); // Added v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
+		setProperty (Ids::midiMessageLatchAndStream, false); // Added v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
 		setProperty (Ids::midiMessageMultiList, "");
 		setProperty (Ids::midiMessageSysExFormula, "");
 
@@ -545,15 +556,23 @@ void CtrlrMidiMessage::setValueToSingle(const int index, const int value)
 	else
 	{
 		if (messageArray.size() > index)
-			messageArray.getReference(index).setValue (value);
+		{
+			auto& mex = messageArray.getReference(index);
+			if (mex.indirectValueFlag == CCCoarseMSB)
+				mex.setValue(value >> 1);
+			else if (mex.indirectValueFlag == CCFineLSB)
+				mex.setValue((value & 1) << 6);
+			else
+				mex.setValue(value);
+		}
 	}
 }
 
-void CtrlrMidiMessage::setValueToMulti(const int value)
+void CtrlrMidiMessage::setValueToMulti (const int value)
 {
-	for (int i = 0; i < messageArray.size(); i++)
+	for (int i=0; i<messageArray.size(); i++)
 	{
-		setValueToSingle(i, value);
+		setValueToSingle (i, value);
 	}
 }
 
@@ -570,14 +589,14 @@ int CtrlrMidiMessage::getValue()
 	{
 		BigInteger value(0);
 
-		for (int i = 0; i < messageArray.size(); i++)
+		for (int i=0; i<messageArray.size(); i++)
 		{
 			if (messageArray.getReference(i).overrideValue == -2)
 				continue;
 
 			value |= messageArray.getReference(i).getBitValue();
 		}
-		return (value.getBitRangeAsInt(0, 14));
+		return (value.getBitRangeAsInt(0,14));
 	}
 	else if (messageType == SysEx)
 	{
@@ -585,11 +604,11 @@ int CtrlrMidiMessage::getValue()
 		{
 			if (getSysexProcessor())
 			{
-				return (getSysexProcessor()->getValueFromSysExData(messageArray.getReference(0).getTokenArray(), messageArray.getReference(0)));
+				return (getSysexProcessor()->getValueFromSysExData (messageArray.getReference(0).getTokenArray(), messageArray.getReference(0)));
 			}
 			else
 			{
-				return (CtrlrSysexProcessor::getValue(messageArray.getReference(0).getTokenArray(), messageArray.getReference(0)));
+				return (CtrlrSysexProcessor::getValue (messageArray.getReference(0).getTokenArray(), messageArray.getReference(0)));
 			}
 		}
 	}
@@ -599,255 +618,256 @@ int CtrlrMidiMessage::getValue()
 
 void CtrlrMidiMessage::setMultiMessageFromString(const String& savedState)
 {
-	// Clear old
-	multiMessages.clear();
-	messageArray.clear();
+    // Clear old
+    multiMessages.clear();
+    messageArray.clear();
 
-	const String s = savedState.trim();
-	if (s.isEmpty())
-		return;
+    const String s = savedState.trim();
+    if (s.isEmpty())
+        return;
 
-	// --- NEW/UPDATED REDIRECTION LOGIC ---
-	// If the saved string contains the old NRPN/RPN tokens OR if it contains the new
-	// split tokens (which we want to abandon), redirect the whole string to the 
-	// static CtrlrSysexProcessor::setMultiMessageFromString handler.
-	if (s.containsIgnoreCase("ByteValue") || s.containsIgnoreCase("MSB7bitValue") || s.containsIgnoreCase("LSB7bitValue"))
-	{
-		// Your legacy handler needs the original full string to parse all colon-separated parts.
+    // --- NEW/UPDATED REDIRECTION LOGIC ---
+    // If the saved string contains the old NRPN/RPN tokens OR if it contains the new
+    // split tokens (which we want to abandon), redirect the whole string to the
+    // static CtrlrSysexProcessor::setMultiMessageFromString handler.
+    if (s.containsIgnoreCase("ByteValue") || s.containsIgnoreCase("MSB7bitValue") || s.containsIgnoreCase("LSB7bitValue"))
+    {
+        // Your legacy handler needs the original full string to parse all colon-separated parts.
 
-		// This static function is assumed to populate messageArray or another internal structure.
-		// **IMPORTANT:** Ensure the function signature is correct for your codebase!
-		CtrlrSysexProcessor::setMultiMessageFromString(*this, s);
+        // This static function is assumed to populate messageArray or another internal structure.
+        // **IMPORTANT:** Ensure the function signature is correct for your codebase!
+        CtrlrSysexProcessor::setMultiMessageFromString(*this, s);
 
-		return; // Skip the rest of the new parser
-	}
+        return; // Skip the rest of the new parser
+    }
 
-	// helper to interpret token (handles "Direct"/"Default" etc. as -1)
-	auto tokenToInt = [](const String& tok) -> int {
-		const String t = tok.trim();
-		if (t.isEmpty()) return -1;
-		if (t.equalsIgnoreCase("Direct") || t.equalsIgnoreCase("Default") || t.equalsIgnoreCase("Value"))
-			return -1;
-		if (t.equalsIgnoreCase("Number") || t.equalsIgnoreCase("CtrlNumber") || t.equalsIgnoreCase("ByteValue"))
-			return -2;
-		if (t.startsWithChar('-')) return t.getIntValue();
-		if (t.containsOnly("0123456789")) return t.getIntValue();
-		if (t.containsOnly("0123456789ABCDEFabcdef ") && t.length() <= 2)
-			return t.getHexValue32();
-		return -1;
-		};
+    // helper to interpret token (handles "Direct"/"Default" etc. as -1)
+    auto tokenToInt = [](const String& tok) -> int {
+        const String t = tok.trim();
+        if (t.isEmpty()) return -1;
+        if (t.equalsIgnoreCase("Direct") || t.equalsIgnoreCase("Default") || t.equalsIgnoreCase("Value"))
+            return -1;
+        if (t.equalsIgnoreCase("Number") || t.equalsIgnoreCase("CtrlNumber") || t.equalsIgnoreCase("ByteValue"))
+            return -2;
+        if (t.startsWithChar('-')) return t.getIntValue();
+        if (t.containsOnly("0123456789")) return t.getIntValue();
+        if (t.containsOnly("0123456789ABCDEFabcdef ") && t.length() <= 2)
+            return t.getHexValue32();
+        return -1;
+        };
 
-	// Split colon-separated messages (new multi-message)
-	StringArray msgs;
-	msgs.addTokens(s, ":", "\"\'");
-	msgs.trim();
-	msgs.removeEmptyStrings();
+    // Split colon-separated messages (new multi-message)
+    StringArray msgs;
+    msgs.addTokens(s, ":", "\"\'");
+    msgs.trim();
+    msgs.removeEmptyStrings();
 
-	for (int i = 0; i < msgs.size(); ++i)
-	{
-		String msgStr = msgs[i].trim();
-		if (msgStr.isEmpty()) continue;
+    for (int i = 0; i < msgs.size(); ++i)
+    {
+        String msgStr = msgs[i].trim();
+        if (msgStr.isEmpty()) continue;
 
-		// split on commas
-		StringArray parts;
-		parts.addTokens(msgStr, ",", "\"\'");
-		parts.trim();
-		parts.removeEmptyStrings();
+        // split on commas
+        StringArray parts;
+        parts.addTokens(msgStr, ",", "\"\'");
+        parts.trim();
+        parts.removeEmptyStrings();
 
-		MultiMessage mm;
-		mm.midiType = parts[0].trim();
+        MultiMessage mm;
+        mm.midiType = parts[0].trim();
 
-		// Legacy 6-field format
-		if (parts.size() == 6)
-		{
-			mm.numberToken = parts[3].getIntValue();
-			mm.valueToken = parts[4].getIntValue();
-			if (mm.midiType.equalsIgnoreCase("SysEx"))
-				mm.sysexData = parts[5].trim();
-			multiMessages.add(mm);
-			continue;
-		}
+        // Legacy 6-field format
+        if (parts.size() == 6)
+        {
+            mm.numberToken = parts[3].getIntValue();
+            mm.valueToken = parts[4].getIntValue();
+            if (mm.midiType.equalsIgnoreCase("SysEx"))
+                mm.sysexData = parts[5].trim();
+            multiMessages.add(mm);
+            continue;
+        }
 
-		// SysEx / Custom / Other new-style
-		if (mm.midiType.equalsIgnoreCase("SysEx") || mm.midiType.equalsIgnoreCase("Custom"))
-		{
-			if (parts.size() >= 2)
-			{
-				String raw;
-				for (int p = 1; p < parts.size(); ++p)
-				{
-					if (raw.isNotEmpty()) raw += " ";
-					raw += parts[p].trim();
-				}
-				mm.sysexData = raw;
-			}
-			multiMessages.add(mm);
-			continue;
-		}
+        // SysEx / Custom / Other new-style
+        if (mm.midiType.equalsIgnoreCase("SysEx") || mm.midiType.equalsIgnoreCase("Custom"))
+        {
+            if (parts.size() >= 2)
+            {
+                String raw;
+                for (int p = 1; p < parts.size(); ++p)
+                {
+                    if (raw.isNotEmpty()) raw += " ";
+                    raw += parts[p].trim();
+                }
+                mm.sysexData = raw;
+            }
+            multiMessages.add(mm);
+            continue;
+        }
 
-		// Standard messages
-		if (mm.midiType.equalsIgnoreCase("CC") ||
-			mm.midiType.equalsIgnoreCase("Aftertouch") ||
-			mm.midiType.equalsIgnoreCase("ChannelPressure") ||
-			mm.midiType.equalsIgnoreCase("NoteOn") ||
-			mm.midiType.equalsIgnoreCase("NoteOff") ||
-			mm.midiType.equalsIgnoreCase("PitchWheel"))
-		{
-			mm.numberToken = (parts.size() > 1) ? tokenToInt(parts[1]) : -1;
-			mm.valueToken = (parts.size() > 2) ? tokenToInt(parts[2]) : -1;
-			multiMessages.add(mm);
-			continue;
-		}
+        // Standard messages
+        if (mm.midiType.equalsIgnoreCase("CC") ||
+            mm.midiType.equalsIgnoreCase("Aftertouch") ||
+            mm.midiType.equalsIgnoreCase("ChannelPressure") ||
+            mm.midiType.equalsIgnoreCase("NoteOn") ||
+            mm.midiType.equalsIgnoreCase("NoteOff") ||
+            mm.midiType.equalsIgnoreCase("PitchWheel"))
+        {
+            mm.numberToken = (parts.size() > 1) ? tokenToInt(parts[1]) : -1;
+            mm.valueToken = (parts.size() > 2) ? tokenToInt(parts[2]) : -1;
+            multiMessages.add(mm);
+            continue;
+        }
 
-		// ProgramChange (single param)
-		if (mm.midiType.equalsIgnoreCase("ProgramChange") || mm.midiType.equalsIgnoreCase("Program"))
-		{
-			mm.numberToken = (parts.size() > 1) ? tokenToInt(parts[1]) : -1;
-			mm.valueToken = -1;
-			multiMessages.add(mm);
-			continue;
-		}
+        // ProgramChange (single param)
+        if (mm.midiType.equalsIgnoreCase("ProgramChange") || mm.midiType.equalsIgnoreCase("Program"))
+        {
+            mm.numberToken = (parts.size() > 1) ? tokenToInt(parts[1]) : -1;
+            mm.valueToken = -1;
+            multiMessages.add(mm);
+            continue;
+        }
 
-		// Unknown / generic numeric
-		mm.numberToken = (parts.size() > 1) ? tokenToInt(parts[1]) : -1;
-		mm.valueToken = (parts.size() > 2) ? tokenToInt(parts[2]) : -1;
-		multiMessages.add(mm);
-	}
+        // Unknown / generic numeric
+        mm.numberToken = (parts.size() > 1) ? tokenToInt(parts[1]) : -1;
+        mm.valueToken = (parts.size() > 2) ? tokenToInt(parts[2]) : -1;
+        multiMessages.add(mm);
+    }
 
-	// Build actual MIDI messages
-	buildMidiMessagesFromMulti();
+    // Build actual MIDI messages
+    buildMidiMessagesFromMulti();
 }
+
 void CtrlrMidiMessage::buildMidiMessagesFromMulti()
 {
-	// Get panel/global info
-	const bool channelOverride = getProperty(Ids::midiMessageChannelOverride);
-	const int localChannel = getProperty(Ids::midiMessageChannel);
-	const int globalChannel = getChannel(); // panel/global channel
+    // Get panel/global info
+    const bool channelOverride = getProperty(Ids::midiMessageChannelOverride);
+    const int localChannel = getProperty(Ids::midiMessageChannel);
+    const int globalChannel = getChannel(); // panel/global channel
 
-	const int componentNumber = getNumber();
-	const int componentValue = getValue();
+    const int componentNumber = getNumber();
+    const int componentValue = getValue();
 
-	messageArray.clear();
+    messageArray.clear();
 
-	// Helper to resolve tokens (-1 / -2 / numbers)
-	auto resolveToken = [&](int token, int defaultValue) -> int {
-		if (token == -2) return componentNumber;
-		if (token == -1) return componentValue;
-		if (token >= 0) return token;
-		return defaultValue;
-		};
+    // Helper to resolve tokens (-1 / -2 / numbers)
+    auto resolveToken = [&](int token, int defaultValue) -> int {
+        if (token == -2) return componentNumber;
+        if (token == -1) return componentValue;
+        if (token >= 0) return token;
+        return defaultValue;
+        };
 
-	// Helper to determine channel per message
-	auto getChannelForMultiMessage = [&](const MultiMessage& mm, const String& midiData = String()) -> int
-		{
-			// 1?? Hard-coded channel in first byte of Custom message
-			if (midiData.isNotEmpty())
-			{
-				StringArray bytes;
-				bytes.addTokens(midiData, " ", "");
-				bytes.trim();
-				bytes.removeEmptyStrings();
+    // Helper to determine channel per message
+    auto getChannelForMultiMessage = [&](const MultiMessage& mm, const String& midiData = String()) -> int
+        {
+            // 1?? Hard-coded channel in first byte of Custom message
+            if (midiData.isNotEmpty())
+            {
+                StringArray bytes;
+                bytes.addTokens(midiData, " ", "");
+                bytes.trim();
+                bytes.removeEmptyStrings();
 
-				if (bytes.size() > 0)
-				{
-					String firstByte = bytes[0].trim();
-					if (firstByte.length() == 2)
-					{
-						int statusByte = firstByte.getHexValue32();
-						if (statusByte >= 0x80 && statusByte <= 0xEF)
-						{
-							int hardCodedChannel = (statusByte & 0x0F) + 1;
-							return hardCodedChannel;
-						}
-					}
-				}
-			}
+                if (bytes.size() > 0)
+                {
+                    String firstByte = bytes[0].trim();
+                    if (firstByte.length() == 2)
+                    {
+                        int statusByte = firstByte.getHexValue32();
+                        if (statusByte >= 0x80 && statusByte <= 0xEF)
+                        {
+                            int hardCodedChannel = (statusByte & 0x0F) + 1;
+                            return hardCodedChannel;
+                        }
+                    }
+                }
+            }
 
-			// 2?? Channel override requested ? use local channel
-			if (channelOverride || mm.numberToken == -2 || mm.valueToken == -2)
-				return jmax(localChannel, 1);
+            // 2?? Channel override requested ? use local channel
+            if (channelOverride || mm.numberToken == -2 || mm.valueToken == -2)
+                return jmax(localChannel, 1);
 
-			// 3?? Otherwise ? global/panel channel
-			return jmax(globalChannel, 1);
-		};
+            // 3?? Otherwise ? global/panel channel
+            return jmax(globalChannel, 1);
+        };
 
-	// Build each message
-	for (const auto& mm : multiMessages)
-	{
-		CtrlrMidiMessageEx mex;
+    // Build each message
+    for (const auto& mm : multiMessages)
+    {
+        CtrlrMidiMessageEx mex;
 
-		if (mm.midiType.equalsIgnoreCase("CC"))
-		{
-			int ccNum = resolveToken(mm.numberToken, componentNumber);
-			int ccVal = resolveToken(mm.valueToken, componentValue);
-			int channel = getChannelForMultiMessage(mm);
-			mex.m = MidiMessage::controllerEvent(channel, jmin(ccNum, 127), jmin(ccVal, 127));
-			mex.overrideValue = mm.valueToken;
-		}
-		else if (mm.midiType.equalsIgnoreCase("ProgramChange"))
-		{
-			int program = resolveToken(mm.numberToken, componentValue);
-			int channel = getChannelForMultiMessage(mm);
-			mex.m = MidiMessage::programChange(channel, jmin(program, 127));
-			mex.overrideValue = mm.numberToken;
-		}
-		else if (mm.midiType.equalsIgnoreCase("Aftertouch"))
-		{
-			int note = resolveToken(mm.numberToken, componentNumber);
-			int pressure = resolveToken(mm.valueToken, componentValue);
-			int channel = getChannelForMultiMessage(mm);
-			mex.m = MidiMessage::aftertouchChange(channel, jmin(note, 127), jmin(pressure, 127));
-			mex.overrideValue = mm.valueToken;
-		}
-		else if (mm.midiType.equalsIgnoreCase("ChannelPressure"))
-		{
-			int pressure = resolveToken(mm.numberToken, componentValue);
-			int channel = getChannelForMultiMessage(mm);
-			mex.m = MidiMessage::channelPressureChange(channel, jmin(pressure, 127));
-			mex.overrideValue = mm.numberToken;
-		}
-		else if (mm.midiType.equalsIgnoreCase("NoteOn"))
-		{
-			int note = resolveToken(mm.numberToken, componentNumber);
-			int velocity = resolveToken(mm.valueToken, componentValue);
-			int channel = getChannelForMultiMessage(mm);
-			mex.m = MidiMessage::noteOn(channel, jmin(note, 127), (uint8)jmin(velocity, 127));
-			mex.overrideValue = mm.valueToken;
-		}
-		else if (mm.midiType.equalsIgnoreCase("NoteOff"))
-		{
-			int note = resolveToken(mm.numberToken, componentNumber);
-			int velocity = resolveToken(mm.valueToken, componentValue);
-			int channel = getChannelForMultiMessage(mm);
-			mex.m = MidiMessage::noteOff(channel, jmin(note, 127), (uint8)jmin(velocity, 127));
-			mex.overrideValue = mm.valueToken;
-		}
-		else if (mm.midiType.equalsIgnoreCase("PitchWheel"))
-		{
-			int val = resolveToken(mm.numberToken, componentValue);
-			int channel = getChannelForMultiMessage(mm);
-			mex.m = MidiMessage::pitchWheel(channel, jmin(val, 16383));
-			mex.overrideValue = mm.numberToken;
-		}
-		else if (mm.midiType.equalsIgnoreCase("SysEx") || mm.midiType.equalsIgnoreCase("Custom"))
-		{
-			if (mm.sysexData.isNotEmpty())
-			{
-				int channel = getChannelForMultiMessage(mm, mm.sysexData);
-				//mex.m = midiMessageExfromString(mm.sysexData, channel, componentNumber, componentValue).m; // don't use this -> needs the old 6 value csv
-				mex = CtrlrSysexProcessor::sysexMessageFromString(mm.sysexData, componentValue, channel);
-			}
-		}
+        if (mm.midiType.equalsIgnoreCase("CC"))
+        {
+            int ccNum = resolveToken(mm.numberToken, componentNumber);
+            int ccVal = resolveToken(mm.valueToken, componentValue);
+            int channel = getChannelForMultiMessage(mm);
+            mex.m = MidiMessage::controllerEvent(channel, jmin(ccNum, 127), jmin(ccVal, 127));
+            mex.overrideValue = mm.valueToken;
+        }
+        else if (mm.midiType.equalsIgnoreCase("ProgramChange"))
+        {
+            int program = resolveToken(mm.numberToken, componentValue);
+            int channel = getChannelForMultiMessage(mm);
+            mex.m = MidiMessage::programChange(channel, jmin(program, 127));
+            mex.overrideValue = mm.numberToken;
+        }
+        else if (mm.midiType.equalsIgnoreCase("Aftertouch"))
+        {
+            int note = resolveToken(mm.numberToken, componentNumber);
+            int pressure = resolveToken(mm.valueToken, componentValue);
+            int channel = getChannelForMultiMessage(mm);
+            mex.m = MidiMessage::aftertouchChange(channel, jmin(note, 127), jmin(pressure, 127));
+            mex.overrideValue = mm.valueToken;
+        }
+        else if (mm.midiType.equalsIgnoreCase("ChannelPressure"))
+        {
+            int pressure = resolveToken(mm.numberToken, componentValue);
+            int channel = getChannelForMultiMessage(mm);
+            mex.m = MidiMessage::channelPressureChange(channel, jmin(pressure, 127));
+            mex.overrideValue = mm.numberToken;
+        }
+        else if (mm.midiType.equalsIgnoreCase("NoteOn"))
+        {
+            int note = resolveToken(mm.numberToken, componentNumber);
+            int velocity = resolveToken(mm.valueToken, componentValue);
+            int channel = getChannelForMultiMessage(mm);
+            mex.m = MidiMessage::noteOn(channel, jmin(note, 127), (uint8)jmin(velocity, 127));
+            mex.overrideValue = mm.valueToken;
+        }
+        else if (mm.midiType.equalsIgnoreCase("NoteOff"))
+        {
+            int note = resolveToken(mm.numberToken, componentNumber);
+            int velocity = resolveToken(mm.valueToken, componentValue);
+            int channel = getChannelForMultiMessage(mm);
+            mex.m = MidiMessage::noteOff(channel, jmin(note, 127), (uint8)jmin(velocity, 127));
+            mex.overrideValue = mm.valueToken;
+        }
+        else if (mm.midiType.equalsIgnoreCase("PitchWheel"))
+        {
+            int val = resolveToken(mm.numberToken, componentValue);
+            int channel = getChannelForMultiMessage(mm);
+            mex.m = MidiMessage::pitchWheel(channel, jmin(val, 16383));
+            mex.overrideValue = mm.numberToken;
+        }
+        else if (mm.midiType.equalsIgnoreCase("SysEx") || mm.midiType.equalsIgnoreCase("Custom"))
+        {
+            if (mm.sysexData.isNotEmpty())
+            {
+                int channel = getChannelForMultiMessage(mm, mm.sysexData);
+                //mex.m = midiMessageExfromString(mm.sysexData, channel, componentNumber, componentValue).m; // don't use this -> needs the old 6 value csv
+                mex = CtrlrSysexProcessor::sysexMessageFromString(mm.sysexData, componentValue, channel);
+            }
+        }
 
-		messageArray.add(mex);
-	}
-	if (messageArray.size() > 1)
-	{
-		messageType = Multi;
-		setProperty(Ids::midiMessageType, Multi);
-	}
+        messageArray.add(mex);
+    }
+    if (messageArray.size() > 1)
+    {
+        messageType = Multi;
+        setProperty(Ids::midiMessageType, Multi);
+    }
 
-	patternChanged();
+    patternChanged();
 }
 
 void CtrlrMidiMessage::setNumber(const int number)
@@ -856,52 +876,71 @@ void CtrlrMidiMessage::setNumber(const int number)
 
 	switch (messageType)
 	{
-	case CC:
-	case Aftertouch:
-	case ChannelPressure:
-	case NoteOn:
-	case NoteOff:
-	case PitchWheel:
-	case ProgramChange:
-		setNumberToSingle(0, number);
-		break;
+		case CC:
+		case Aftertouch:
+		case ChannelPressure:
+		case NoteOn:
+		case NoteOff:
+		case PitchWheel:
+		case ProgramChange:
+			setNumberToSingle (0, number);
+			break;
 
-	case Multi:
-		setNumberToMulti(number);
-		break;
+		case Multi:
+			setNumberToMulti (number);
+			break;
 
-	case SysEx:
-	case None:
-	case MidiClock:
-	case MidiClockContinue:
-	case MidiClockStop:
-	case kMidiMessageType:
-	case ActiveSense:
-	case MidiClockStart:
-		break;
+		case SysEx:
+		case None:
+		case MidiClock:
+		case MidiClockContinue:
+		case MidiClockStop:
+		case kMidiMessageType:
+		case ActiveSense:
+		case MidiClockStart:
+			break;
 	}
 }
 
-void CtrlrMidiMessage::setNumberToSingle(const int index, const int number)
+void CtrlrMidiMessage::setNumberToSingle (const int index, const int number)
 {
 	if (index >= messageArray.size())
 		return;
 
 	if (messageArray.getReference(index).overrideValue == -2)
 	{
-		messageArray.getReference(index).setValue(number);
+		messageArray.getReference(index).setValue (number);
 	}
 	else
 	{
-		messageArray.getReference(index).setNumber(number);
+		// Add guard for Novation 8 bit system where MSB (Coarse) Number has 32 added to it for LSB Fine - This could go out of bounds, so protected.
+		// Presuming that Coarse is sent first followed by fine 00/64 value
+		auto& mex = messageArray.getReference(index); // Added v5.6.35. SafeGuards for Novation CC coarse/fine. Thanks to @dnaldoog
+		_DBG("setNumberToSingle index=" + String(index)
+			 + " flag=" + String(mex.indirectValueFlag)
+			 + " number=" + String(number));
+		if (mex.indirectValueFlag == CCFineLSB)
+		{
+			if (number > 31)
+			{
+				_WRN("CCFineLSB: coarse CC " + String(number) + " out of range, fine offset suppressed");
+				mex.setNumber(number); // fall back to same number rather than corrupt value
+			}
+			else
+			{
+				mex.setNumber(number + 32);
+			}
+		}
+		else
+			mex.setNumber(number);
 	}
 }
 
-void CtrlrMidiMessage::setNumberToMulti(const int number)
+void CtrlrMidiMessage::setNumberToMulti (const int number)
 {
-	for (int i = 0; i < messageArray.size(); i++)
+	for (int i=0; i<messageArray.size(); i++)
 	{
-		setNumberToSingle(i, number);
+		setNumberToSingle (i, number);
 	}
 }
 
@@ -935,35 +974,35 @@ int CtrlrMidiMessage::getChannel() const
 	{
 		if (!messageArray.getReference(0).m.isSysEx())
 		{
-			return (jmax <int>(messageArray.getReference(0).m.getChannel(), 1));
+			return (jmax <int>(messageArray.getReference(0).m.getChannel(),1));
 		}
 		else
 		{
-			return (jmax <int>(getProperty(Ids::midiMessageChannel), 1));
+			return (jmax <int>(getProperty(Ids::midiMessageChannel),1));
 		}
 	}
 
-	return (jmax <int>(getProperty(Ids::midiMessageChannel), 1));
+	return (jmax <int>(getProperty(Ids::midiMessageChannel),1));
 }
 
 void CtrlrMidiMessage::setChannel(const int midiChannel)
 {
-	for (int i = 0; i < messageArray.size(); i++)
+	for (int i=0; i<messageArray.size(); i++)
 	{
-		messageArray.getReference(i).setChannel(jmax<int>(midiChannel, 1));
+		messageArray.getReference(i).setChannel (jmax<int>(midiChannel,1));
 	}
 }
 
-void CtrlrMidiMessage::setMidiMessageType(const CtrlrMidiMessageType newType)
+void CtrlrMidiMessage::setMidiMessageType (const CtrlrMidiMessageType newType)
 {
 	const int ch = getChannel();
 
 	switch (newType)
 	{
-	case CC:
-		messageArray.clear();
-		messageArray.add(MidiMessage::controllerEvent(ch, jmin<int>(getNumber(), 127), jmin<int>(getValue(), 127)));
-		break;
+		case CC:
+			messageArray.clear();
+			messageArray.add (MidiMessage::controllerEvent(ch, jmin<int>(getNumber(),127), jmin<int>(getValue(),127)));
+			break;
 
 		case Aftertouch:
 			messageArray.clear();
@@ -997,15 +1036,15 @@ void CtrlrMidiMessage::setMidiMessageType(const CtrlrMidiMessageType newType)
 			break;
 
 		case Multi:
-			//CtrlrSysexProcessor::setMultiMessageFromString (*this, getProperty(Ids::midiMessageMultiList));
-			setMultiMessageFromString(getProperty(Ids::midiMessageMultiList).toString());
-			break;
+			// CtrlrSysexProcessor::setMultiMessageFromString (*this, getProperty(Ids::midiMessageMultiList));
+			setMultiMessageFromString(getProperty(Ids::midiMessageMultiList).toString()); // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
+            break;
 
 		case PitchWheel:
 			messageArray.clear();
-			//messageArray.add (MidiMessage::pitchWheel (ch, (uint8)jmin<int>(getValue(),16383)));
-			// remove the cast to uint8 - pitchWheel needs the full 14-bit value
-			messageArray.add(MidiMessage::pitchWheel(ch, jmin<int>(getValue(), 16383)));
+			// messageArray.add (MidiMessage::pitchWheel (ch, (uint8)jmin<int>(getValue(),16383)));
+            // remove the cast to uint8 - pitchWheel needs the full 14-bit value
+			messageArray.add(MidiMessage::pitchWheel(ch, jmin<int>(getValue(), 16383))); // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
 			break;
 
 		case ProgramChange:
@@ -1051,48 +1090,87 @@ void CtrlrMidiMessage::setMidiMessageType(const CtrlrMidiMessageType newType)
 
 void CtrlrMidiMessage::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
 {
-	if (property == Ids::midiMessageType)
-	{
-		setMidiMessageType ((CtrlrMidiMessageType)(int)getProperty(Ids::midiMessageType));
-		setNumber ((int)getProperty(Ids::midiMessageCtrlrNumber));
-		patternChanged();
-	}
-	else if(property == Ids::midiMessageSysExFormula)
-	{
-		if (restoring == false && (int)getProperty(Ids::midiMessageType) == SysEx)
-		{
-			if (getProperty(property).toString().length() >= 1)
-			{
-				if (getSysexProcessor())
-				{
-					CtrlrSysexProcessor::setSysExFormula (*this, getProperty(Ids::midiMessageSysExFormula));
-				}
-				setValue ((int)getProperty(Ids::midiMessageCtrlrValue));
-				patternChanged();
-			}
-		}
-	}
-	else if (property == Ids::midiMessageChannel)
-	{
-		setChannel (getProperty(Ids::midiMessageChannel));
-	}
-	else if (property == Ids::midiMessageCtrlrValue)
-	{
+    // Get the value that was *just set* (which is now stored in the tree).
+    // This value might be 5.0 if JUCE promoted it to a double.
+    juce::var currentValue = getProperty(property);
+    
+    // Convert it to an integer. This truncates any decimal part (e.g., 5.0 -> 5).
+    int intValueToStore = static_cast<int>(currentValue);
+    
+    // IMPORTANT: Only re-set the property if the integer version is different from
+    //            what's currently stored as a 'raw' var, or if its type implies
+    //            it's currently a double when it should be an int.
+    //            This prevents an infinite loop of property change notifications
+    //            if the ValueTree somehow sees setting 5 as different from 5.0.
+    //
+    // A robust check: if the var is currently a double, or if it's an int but
+    //                 the stored int isn't what we expect (shouldn't happen with this logic).
+    if (currentValue.isDouble() || (currentValue.isInt() && static_cast<int>(currentValue) != intValueToStore))
+    {
+        // Set the property back, explicitly providing an int to juce::var.
+        // Pass nullptr for the UndoManager if you're not using one here.
+        // If you are using an UndoManager, pass it: getUndoManager() or your specific manager.
+        setProperty(property, juce::var(intValueToStore), false);
+        
+        /* Early return here because setProperty will trigger this method again
+         immediately with the correct integer type. */
+        return;
+    }
+    
+    if (property == Ids::midiMessageType)
+    {
+        setMidiMessageType ((CtrlrMidiMessageType)(int)getProperty(Ids::midiMessageType));
+        setNumber ((int)getProperty(Ids::midiMessageCtrlrNumber));
+        
+        // Ensure the value is re-applied to the new message type to prevent resetting to 0
+        setValue ((int)getProperty(Ids::midiMessageCtrlrValue));
+        
+        patternChanged();
+    }
+    else if(property == Ids::midiMessageSysExFormula)
+    {
+        if (restoring == false && (int)getProperty(Ids::midiMessageType) == SysEx)
+        {
+            if (getProperty(property).toString().length() >= 1)
+            {
+                if (getSysexProcessor())
+                {
+                    CtrlrSysexProcessor::setSysExFormula (*this, getProperty(Ids::midiMessageSysExFormula));
+                }
+                setValue ((int)getProperty(Ids::midiMessageCtrlrValue));
+                patternChanged();
+            }
+        }
+    }
+    else if (property == Ids::midiMessageChannel)
+    {
+        setChannel (getProperty(Ids::midiMessageChannel));
+    }
+    else if (property == Ids::midiMessageCtrlrValue)
+    {
+        int newVal = (int)getProperty(Ids::midiMessageCtrlrValue);
+        _DBG("CtrlrMidiMessage::valueTreePropertyChanged midiMessageCtrlrValue=" + String(newVal) + " messageArraySize=" + String((int)messageArray.size()));
+        if (messageArray.size() > 0)
+            _DBG("CtrlrMidiMessage BEFORE raw=" + String::toHexString(messageArray.getReference(0).m.getRawData(), messageArray.getReference(0).m.getRawDataSize()));
+        setValue (newVal);
+        if (messageArray.size() > 0)
+            _DBG("CtrlrMidiMessage AFTER raw=" + String::toHexString(messageArray.getReference(0).m.getRawData(), messageArray.getReference(0).m.getRawDataSize()));
+        return;
+    }
+    else if (property == Ids::midiMessageCtrlrNumber)
+    {
+        setNumber ((int)getProperty(Ids::midiMessageCtrlrNumber));
+    }
+    else if (property == Ids::midiMessageMultiList)
+    {
+        setMultiMessageFromString (getProperty(Ids::midiMessageMultiList));
+        
+		if (!getProperty(Ids::midiMessageMultiList).toString().containsIgnoreCase("ByteValue")) // Updated v5.6.35. Thanks to @dnaldoog
+			setNumber((int)getProperty(Ids::midiMessageCtrlrNumber));
 		setValue((int)getProperty(Ids::midiMessageCtrlrValue));
-		return;
-	}
-	else if (property == Ids::midiMessageCtrlrNumber)
-	{
-		setNumber ((int)getProperty(Ids::midiMessageCtrlrNumber));
-	}
-	else if (property == Ids::midiMessageMultiList)
-	{
-		setMultiMessageFromString (getProperty(Ids::midiMessageMultiList));
-
-		setNumber ((int)getProperty(Ids::midiMessageCtrlrNumber));
-	}
-
-	patternChanged();
+    }
+    
+    patternChanged();
 }
 
 MidiBuffer CtrlrMidiMessage::getMidiBuffer(const int startSample)
@@ -1177,7 +1255,8 @@ Array <CtrlrMidiMessageEx> &CtrlrMidiMessage::getMidiMessageArray()
 
 const String CtrlrMidiMessage::toString() const
 {
-	return (String::toHexString (getData().getData(), getData().getSize()));
+	_DBG("toString() called. Buffer Size: " + String(getData().getSize()) + " Pattern Size: " + String(messagePattern.getSize()));
+    return (String::toHexString (getData().getData(), getData().getSize()));
 }
 
 int CtrlrMidiMessage::getSize() const
@@ -1190,55 +1269,57 @@ void CtrlrMidiMessage::wrapForLua(lua_State *L)
 	using namespace luabind;
 
 	module(L)
-		[
-			class_<CtrlrMidiMessage>("CtrlrMidiMessage")
-				// Ensure this is present - it allows CtrlrMidiMessage("F0 01 F7")
-				.def(constructor<const String&>())
-
-				// This handles the old way where a Lua table might have been passed
-				.def(constructor<const CtrlrLuaObjectWrapper&>())
-
-				.def(constructor<const MidiMessage&>())
-
-				.def(constructor<const luabind::object&>()) // Added v5.6.35. Direct Table support
-
-				// This handles the new JUCE 6 way: CtrlrMidiMessage(MemoryBlock(...))
-				.def(constructor<MemoryBlock&>())
-
-				.enum_("CtrlrMidiMessageType")
-				[
-					value("CC", 0),
-					value("Aftertouch", 1),
-					value("ChannelPressure", 2),
-					value("NoteOn", 3),
-					value("NoteOff", 4),
-					value("SysEx", 5),
-					value("Multi", 6),
-					value("ProgramChange", 7),
-					value("PitchWheel", 8),
-					value("None", 9),
-					value("MidiClock", 10),
-					value("MidiClockContinue", 11),
-					value("MidiClockStop", 12),
-					value("MidiClockStart", 13)
-				]
+    [
+		class_<CtrlrMidiMessage>("CtrlrMidiMessage")
+			// Ensure this is present - it allows CtrlrMidiMessage("F0 01 F7")
+			.def(constructor<const String&>())
+			
+			// This handles the old way where a Lua table might have been passed
+			.def(constructor<const CtrlrLuaObjectWrapper&>())
+			
+			.def(constructor<const MidiMessage&>())
+	 
+			.def(constructor<const luabind::object&>()) // Added v5.6.35. Direct Table support
+			
+			// This handles the new JUCE 6 way: CtrlrMidiMessage(MemoryBlock(...))
+			.def(constructor<MemoryBlock&>())
+			
+			.enum_("CtrlrMidiMessageType")
+			[
+	            value("CC",				0),
+				value("Aftertouch",		1),
+				value("ChannelPressure",2),
+				value("NoteOn",			3),
+				value("NoteOff",		4),
+				value("SysEx",			5),
+				value("Multi",			6),
+				value("ProgramChange",	7),
+				value("PitchWheel",		8),
+				value("None",			9),
+				value("MidiClock",		10),
+				value("MidiClockContinue", 11),
+				value("MidiClockStop", 12),
+				value("MidiClockStart", 13)
+			]
 			.def("setChannel", &CtrlrMidiMessage::setChannel)
-				.def("getChannel", &CtrlrMidiMessage::getChannel)
-				.def("setNumber", &CtrlrMidiMessage::setNumber)
-				.def("getNumber", &CtrlrMidiMessage::getNumber)
-				.def("setValue", &CtrlrMidiMessage::setValue)
-				.def("getValue", &CtrlrMidiMessage::getValue)
-				.def("getSize", &CtrlrMidiMessage::getSize)
-				.def("getData", &CtrlrMidiMessage::getData)
-				.def("getLuaData", &CtrlrMidiMessage::getData)
-				.def("getType", &CtrlrMidiMessage::getMidiMessageType)
-				.def("setType", &CtrlrMidiMessage::setMidiMessageType) // Added v5.6.33
-				.def("getMidiMessageType", &CtrlrMidiMessage::getMidiMessageType)
-				.def("setMidiMessageType", &CtrlrMidiMessage::setMidiMessageType) // Added v5.6.33
-				.def("toString", &CtrlrMidiMessage::toString)
-				.def("getInitializationResult", &CtrlrMidiMessage::getInitializationResult)
-				.def("getProperty", (const var & (CtrlrMidiMessage::*)(const Identifier&) const) & CtrlrMidiMessage::getProperty) // Added v5.6.31
-				.def("setProperty", (void (CtrlrMidiMessage::*)(const Identifier&, const var&, const bool)) & CtrlrMidiMessage::setProperty) // Added v5.6.33
-		];
+			.def("getChannel", &CtrlrMidiMessage::getChannel)
+			.def("setNumber", &CtrlrMidiMessage::setNumber)
+			.def("getNumber", &CtrlrMidiMessage::getNumber)
+			.def("setValue", &CtrlrMidiMessage::setValue)
+			.def("getValue", &CtrlrMidiMessage::getValue)
+			.def("getSize", &CtrlrMidiMessage::getSize)
+			.def("getData", &CtrlrMidiMessage::getData)
+			.def("getLuaData", &CtrlrMidiMessage::getData)
+			.def("getType", &CtrlrMidiMessage::getMidiMessageType)
+            .def("setType", &CtrlrMidiMessage::setMidiMessageType) // Added v5.6.33
+			.def("getMidiMessageType", &CtrlrMidiMessage::getMidiMessageType)
+            .def("setMidiMessageType", &CtrlrMidiMessage::setMidiMessageType) // Added v5.6.33
+			// .def("toString", &CtrlrMidiMessage::toString)
+			.def("toString", +[](const CtrlrMidiMessage& self) -> std::string { // Updated v5.6.35. Using Lambda here is safer
+				return self.toString().toStdString();
+			})
+			.def("getInitializationResult", &CtrlrMidiMessage::getInitializationResult)
+            .def("getProperty", (const var &(CtrlrMidiMessage::*)(const Identifier &) const) &CtrlrMidiMessage::getProperty) // Added v5.6.31
+            .def("setProperty", (void (CtrlrMidiMessage::*)(const Identifier &, const var &, const bool))&CtrlrMidiMessage::setProperty) // Added v5.6.33
+	];
 }
-
