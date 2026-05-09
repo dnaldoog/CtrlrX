@@ -11,13 +11,18 @@
 class LuaSuggestionPopup : public juce::Component, public juce::ListBoxModel
 {
 public:
-    LuaSuggestionPopup(std::function<void(const SuggestionItem&)> onChosen)
-        : onSelection(onChosen)
+    // Updated the function signature to pass the whole SuggestionItem
+    LuaSuggestionPopup(std::function<void(const SuggestionItem&)> onChosen) : onSelection(onChosen)
     {
         setAlwaysOnTop(true);
         setWantsKeyboardFocus(false);
         listBox.setColour(juce::ListBox::backgroundColourId, juce::Colours::transparentBlack);
         listBox.setOutlineThickness(0);
+		// API CORRECT: Makes the list react to mouse moves by selecting the row
+        listBox.setMouseMoveSelectsRows(true);
+        
+        // API CORRECT: Ensure clicking selects immediately
+        listBox.setRowSelectedOnMouseDown(true);
         addAndMakeVisible(listBox);
         listBox.setModel(this);
         listBox.setRowHeight(22);
@@ -31,7 +36,7 @@ public:
         if (activeItems.size() > 0) listBox.selectRow(0);
         
         int totalHeight = juce::jmin(10, (int)activeItems.size()) * 22;
-        setSize(300, totalHeight);
+        setSize(400, totalHeight); // was 300
         repaint();
     }
 
