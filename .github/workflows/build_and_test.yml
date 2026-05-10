@@ -1,199 +1,268 @@
-#cmake_minimum_required(VERSION 3.25)
+---
+name: Pamplejuce
+on:
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: Run with tmate debugging
+        required: false
+        default: false
+  push:
+    branches:
+      - '**'
+    tags:
+      - v*
+  pull_request: null
 
-# To build with LuaJIT: cmake -B build -DCTRLRX_USE_LUAJIT=ON
-# To build without (default): cmake -B build
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
 
-if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.31.0") 
-  cmake_policy(SET CMP0175 NEW)
-endif()
+env:
+  BUILD_TYPE: Release
+  BUILD_DIR: build
+  PRODUCT_NAME: CtrlrX
+  PROJECT_NAME: CtrlrX
+  DISPLAY: :0
+  HOMEBREW_NO_INSTALL_CLEANUP: 1
+  SCCACHE_GHA_ENABLED: true
+  SCCACHE_CACHE_MULTIARCH: 1
+  IPP_DIR: C:\Program Files (x86)\Intel\oneAPI\ipp\latest\lib\cmake\ipp
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-include(PamplejuceVersion)
+defaults:
+  run:
+    shell: bash
 
-option(CTRLRX_ENABLE_CPM "Enable CPM-based optional dependencies" OFF)
-option(CTRLRX_USE_LUAJIT "Build with LuaJIT instead of standard Lua" OFF)
-option(CTRLRX_COPY_PLUGIN_AFTER_BUILD "Copy plugin artefacts to user/system plugin folders after build" OFF)
+jobs:
+  build_and_test:
+    if: "github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name"
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    env:
+      HAVE_MACOS_SIGNING_SECRETS: ${{ secrets.DEV_ID_COMBO_CERT != '' &&
+        secrets.DEV_ID_COMBO_PASSWORD != '' && secrets.DEVELOPER_ID_APPLICATION
+        != '' && secrets.DEVELOPER_ID_INSTALLER != '' &&
+        secrets.NOTARIZATION_USERNAME != '' && secrets.NOTARIZATION_PASSWORD !=
+        '' && secrets.TEAM_ID != '' }}
+      HAVE_AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET != '' }}
+      HAVE_GPG_KEY: ${{ secrets.GPG_SIGNING_KEY != '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-24.04
+            pluginval-binary: ./pluginval
+            extra-flags: -G Ninja -DJUCE_LINUX=1
+          - name: macOS
+            os: macos-14
+            pluginval-binary: pluginval.app/Contents/MacOS/pluginval
+            extra-flags: -G Ninja -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          - name: Windows
+            os: windows-2022
+            pluginval-binary: ./pluginval.exe
 
-if(CTRLRX_ENABLE_CPM)
-    include(CPM)
-endif()
+    steps:
+      - name: Setup MSVC (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
 
-include(PamplejuceMacOS)
-include(JUCEDefaults)
+      - name: Set up Clang (Linux)
+        if: runner.os == 'Linux'
+        uses: egor-tensin/setup-clang@v1
 
-if(UNIX AND NOT APPLE)
-    set(LINUX TRUE)
-endif()
+      - name: Install Linux System Deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt install -y \
+            libasound2-dev libx11-dev libxinerama-dev libxext-dev \
+            libfreetype6-dev libglu1-mesa-dev xvfb ninja-build \
+            binutils-dev libboost-dev libcurl4-gnutls-dev libgl1-mesa-dev \
+            libglapi-mesa libiberty-dev libsframe1 libudev-dev \
+            libxcursor-dev libxrandr-dev xorg-dev \
+            libgtk-3-dev libwebkit2gtk-4.1-dev libluajit-5.1-dev unzip
+          # Alias webkit 4.1 to 4.0 so CMake finds it
+          sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc \
+                      /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc
+          sudo /usr/bin/Xvfb $DISPLAY &
 
-# -----------------------------------------------------------------------
-# Project identity
-# -----------------------------------------------------------------------
-set(BASE_ID_NAME "CtrlrX")
-set(PROJECT_NAME "${BASE_ID_NAME}")
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+      - name: Install Windows System Deps
+        if: runner.os == 'Windows'
+        run: |
+          nuget install intelipp.static.win-x64 -Version 2022.2.0.575
+          choco install ninja
 
-set(PLUGIN_DISPLAY_NAME "CtrlrX")
-set(PRODUCT_NAME "CtrlrX")
-set(COMPANY_NAME "CtrlrX Project")
-set(BUNDLE_ID "com.${BASE_ID_NAME}.${PROJECT_NAME}")
-set(FORMATS Standalone AU VST3)
+      - name: Install macOS System Deps
+        if: matrix.name == 'macOS'
+        run: |
+          brew install osxutils boost luajit
+          echo "PKG_CONFIG_PATH=$(brew --prefix luajit)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+          sudo xcode-select -s /Applications/Xcode.app
 
-project(${PROJECT_NAME} VERSION ${CURRENT_VERSION})
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
 
-# -----------------------------------------------------------------------
-# Linux: find system packages early
-# -----------------------------------------------------------------------
-if(LINUX)
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(libudev REQUIRED libudev)
-    pkg_check_modules(x11 REQUIRED x11)
-    pkg_check_modules(zlib REQUIRED zlib)
-    pkg_check_modules(gtk3 REQUIRED gtk+-x11-3.0)
-    pkg_check_modules(webkit REQUIRED webkit2gtk-4.1)
+      # -----------------------------------------------------------------------
+      # Extract LuaJIT from Source/Resources/luajit.zip
+      # -----------------------------------------------------------------------
+      - name: Extract LuaJIT (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          ZIP=$(find . -name "luajit.zip" | head -n 1)
+          if [ -n "$ZIP" ]; then
+            echo "Found zip at: $ZIP"
+            unzip -o "$ZIP" -d "Source/Misc/"
+            echo "Extraction complete."
+          else
+            echo "luajit.zip not found - skipping extraction"
+          fi
 
-    include_directories(SYSTEM
-        ${gtk3_INCLUDE_DIRS}
-        ${webkit_INCLUDE_DIRS}
-        ${x11_INCLUDE_DIRS}
-    )
-    set(JUCE_USE_WEBKIT_4_1 ON CACHE INTERNAL "")
-endif()
+      - name: Extract LuaJIT (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $zip = Get-ChildItem -Path "Source" -Recurse -Filter "luajit.zip" | Select-Object -First 1
+          if ($zip) {
+            Write-Host "Found zip at: $($zip.FullName)"
+            Expand-Archive -Path $zip.FullName -DestinationPath "Source/Misc/" -Force
+            Write-Host "Extraction complete."
+          } else {
+            Write-Host "luajit.zip not found"
+            exit 1
+          }
 
-# -----------------------------------------------------------------------
-# Subdirectories (JUCE + LuaJIT)
-# -----------------------------------------------------------------------
-add_subdirectory(JUCE)
+      # -----------------------------------------------------------------------
+      # Build LuaJIT per platform
+      # -----------------------------------------------------------------------
+      - name: Build LuaJIT (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          @echo off
+          if exist "Source\Misc\luajit\src\msvcbuild.bat" (
+            pushd "Source\Misc\luajit\src"
+            call msvcbuild.bat static
+            popd
+            echo LuaJIT built successfully.
+            exit /b 0
+          )
+          echo ERROR: LuaJIT msvcbuild.bat not found.
+          exit /b 1
 
-if(CTRLRX_USE_LUAJIT)
-    # Only add local LuaJIT build if we aren't using a manual path (GitHub) or Linux system pkg
-    if(NOT LUAJIT_LIBRARY AND NOT LINUX)
-        add_subdirectory(Source/Misc/luajit)
-    endif()
-endif()
+      - name: Build LuaJIT (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
+          if [ -z "$LUAJIT_SRC" ]; then
+            echo "LuaJIT source not found - using system libluajit-5.1-dev"
+            exit 0
+          fi
+          cd "$LUAJIT_SRC"
+          make clean
+          make -j$(nproc) XCFLAGS="-fPIC"
 
-# -----------------------------------------------------------------------
-# JUCE plugin target
-# -----------------------------------------------------------------------
-juce_add_plugin("${PROJECT_NAME}"
-    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resources/Icons/ctrlrx_logo.svg"
-    PLUGIN_NAME "${PLUGIN_DISPLAY_NAME}"
-    COMPANY_NAME "${COMPANY_NAME}"
-    BUNDLE_ID "${BUNDLE_ID}"
-    COPY_PLUGIN_AFTER_BUILD ${CTRLRX_COPY_PLUGIN_AFTER_BUILD}
-    PLUGIN_MANUFACTURER_CODE cTrX
-    PLUGIN_CODE cTrl
-    FORMATS "${FORMATS}"
-    IS_SYNTH TRUE
-    IS_MIDI_EFFECT FALSE
-    NEEDS_MIDI_INPUT TRUE
-    NEEDS_MIDI_OUTPUT TRUE
-    EDITOR_WANTS_KEYBOARD_FOCUS TRUE
-    PRODUCT_NAME "${PRODUCT_NAME}"
-)
+      - name: Build Universal LuaJIT (macOS)
+        if: matrix.name == 'macOS'
+        run: |
+          LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
+          if [ -z "$LUAJIT_SRC" ]; then
+            echo "LuaJIT source not found - using Homebrew luajit"
+            exit 0
+          fi
+          cd "$LUAJIT_SRC"
+          export MACOSX_DEPLOYMENT_TARGET=10.15
+          echo "--- Building x86_64 ---"
+          make clean
+          CC=clang TARGET_SYS=Darwin TARGET_FLAGS="-arch x86_64" make -j$(sysctl -n hw.ncpu)
+          mv libluajit.a libluajit_x86.a
+          echo "--- Building arm64 ---"
+          make clean
+          CC=clang TARGET_SYS=Darwin TARGET_FLAGS="-arch arm64" make -j$(sysctl -n hw.ncpu)
+          mv libluajit.a libluajit_arm.a
+          lipo -create libluajit_x86.a libluajit_arm.a -output libluajit.a
+          lipo -info libluajit.a
 
-# -----------------------------------------------------------------------
-# SharedCode interface library
-# -----------------------------------------------------------------------
-add_library(SharedCode INTERFACE)
-include(SharedCodeDefaults)
+      # -----------------------------------------------------------------------
+      # Boost, sccache, version
+      # -----------------------------------------------------------------------
+      - name: Unzip Boost for CtrlrX
+        if: runner.os != 'Linux'
+        run: |
+          BOOST_ZIP=$(find . -name "boost.zip" | head -n 1)
+          if [ -n "$BOOST_ZIP" ]; then
+            unzip -o "$BOOST_ZIP" -d $(dirname "$BOOST_ZIP")
+          fi
 
-# -----------------------------------------------------------------------
-# Source files & Filtering
-# -----------------------------------------------------------------------
-file(GLOB_RECURSE SourceFiles CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind/*.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind/*.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/libusb/src/*.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/libusb/src/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/*.c*"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/*.h*"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Lua/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Lua/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/MIDI/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/MIDI/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Native/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Native/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Plugin/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Plugin/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/UIComponents/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/UIComponents/*.h"
-)
+      - name: Cache with sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
 
-# CRITICAL FILTERS
-list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Misc/luajit/.*")
-if(CTRLRX_USE_LUAJIT)
-    list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Misc/lua/src/.*")
-    list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Misc/lua/include/.*")
-endif()
-if(NOT LINUX)
-    list(FILTER SourceFiles EXCLUDE REGEX "CtrlrLinux\\.cpp$")
-    list(FILTER SourceFiles EXCLUDE REGEX "CtrlrLinux\\.h$")
-endif()
-list(FILTER SourceFiles EXCLUDE REGEX ".*/Source/Misc/luabind/(examples|build[^/]*|test|tests)/.*")
+      - name: Extract Version
+        run: |
+          echo "0.0.0" > VERSION
+          JUCER=$(find . -name "Ctrlr*.jucer" -type f | head -n 1)
+          if [ -n "$JUCER" ]; then
+            sed -n 's/.*version="\([^"]*\)".*/\1/p' "$JUCER" | head -n 1 > VERSION
+          fi
+          echo "VERSION_TAG=$(cat VERSION)" >> $GITHUB_ENV
 
-# -----------------------------------------------------------------------
-# Target configuration
-# -----------------------------------------------------------------------
-target_sources(SharedCode INTERFACE ${SourceFiles})
+      # -----------------------------------------------------------------------
+      # CMake configure and build
+      # -----------------------------------------------------------------------
+      - name: Configure CMake
+        run: |
+          cmake -B ${{ env.BUILD_DIR }} \
+                -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+                -DCTRLRX_USE_LUAJIT=ON \
+                ${{ matrix.extra-flags }}
 
-target_include_directories(SharedCode INTERFACE
-    "${LUAJIT_INCLUDE_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/lua/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/boost"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/rapidfuzz"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/MIDI"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/CtrlrManager"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/CtrlrModulator"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/CtrlrPanel"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Native"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Plugin"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/UIComponents"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Lua"
-    "${CMAKE_CURRENT_SOURCE_DIR}/JuceLibraryCode"
-)
+      - name: Build Project
+        run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }}
 
-target_compile_definitions(SharedCode INTERFACE
-    JUCE_MODAL_LOOPS_PERMITTED=1
-    $<$<BOOL:${CTRLRX_USE_LUAJIT}>:CTRLRX_USE_LUAJIT=1>
-)
+      # -----------------------------------------------------------------------
+      # Package and upload artifacts
+      # -----------------------------------------------------------------------
+      - name: Prepare and Zip Artifacts
+        run: |
+          NAME="${{ env.PRODUCT_NAME }}-${{ env.VERSION_TAG }}-LuaJIT-${{ matrix.name }}"
+          echo "ZIP_NAME=$NAME" >> $GITHUB_ENV
+          mkdir -p staging
+          cp -r ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/* staging/ || true
+          cd staging
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            7z a "../${NAME}.zip" .
+          else
+            zip -r "../${NAME}.zip" .
+          fi
 
-# -----------------------------------------------------------------------
-# Final Linking logic
-# -----------------------------------------------------------------------
-if(CTRLRX_USE_LUAJIT)
-    # Priority 1: GitHub Action / Manual variable
-    if(LUAJIT_LIBRARY)
-        message(STATUS "Linking LuaJIT via provided path: ${LUAJIT_LIBRARY}")
-        target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode "${LUAJIT_LIBRARY}")
-    
-    # Priority 2: Windows
-    elseif(WIN32)
-        target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/lua51.lib")
-    
-    # Priority 3: Linux (System Package)
-    elseif(LINUX)
-        # Re-verify we have it
-        pkg_check_modules(luajit REQUIRED luajit)
-        target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode ${luajit_LIBRARIES})
-        target_include_directories(SharedCode INTERFACE ${luajit_INCLUDE_DIRS})
-    
-    # Priority 4: macOS / Others (Fallback to local build output)
-    else()
-        # If we reached here, it means LUAJIT_LIBRARY wasn't set. 
-        # We assume add_subdirectory(Source/Misc/luajit) was called.
-        target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode libluajit)
-    endif()
-else()
-    target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
-endif()
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ZIP_NAME }}
+          path: ./${{ env.ZIP_NAME }}.zip
+
+  # -----------------------------------------------------------------------
+  # Release job — triggered only on v* tags
+  # -----------------------------------------------------------------------
+  release:
+    name: Create GitHub Release
+    needs:
+      - build_and_test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          files: ./artifacts/**/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
