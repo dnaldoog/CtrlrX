@@ -230,26 +230,44 @@ jobs:
         run: |
           NAME="${{ env.PRODUCT_NAME }}-${{ env.VERSION_TAG }}-LuaJIT-${{ matrix.name }}"
           echo "ZIP_NAME=$NAME" >> $GITHUB_ENV
-          
-          # 1. Create a clean, empty staging area
+
           rm -rf staging
           mkdir -p staging
-          
-          # 2. Only copy the actual plugin artefacts (VST3, AU, Standalone)
-          # We exclude the .lib / .a / .pch files which are the "SharedCode" bulk
+
+          # JUCE CMake puts each format in its own subdirectory:
+          #   build/CtrlrX_artefacts/Release/VST3/CtrlrX.vst3
+          #   build/CtrlrX_artefacts/Release/AU/CtrlrX.component   (macOS only)
+          #   build/CtrlrX_artefacts/Release/Standalone/CtrlrX.app (macOS)
+          #   build/CtrlrX_artefacts/Release/Standalone/CtrlrX     (Linux binary)
+          #   build/CtrlrX_artefacts/Release/Standalone/CtrlrX.exe (Windows)
+          ARTEFACTS="${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}"
+
           if [ "${{ runner.os }}" == "Windows" ]; then
-            # Copy .vst3 folder and the .exe (Standalone)
-            cp -r ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/VST3 staging/ || true
-            cp ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/Standalone/*.exe staging/ || true
+            cp -r "$ARTEFACTS/VST3" staging/                              || true
+            find "$ARTEFACTS/Standalone" -name "*.exe" \
+              -exec cp {} staging/ \;                                      || true
+
+          elif [ "${{ runner.os }}" == "macOS" ]; then
+            # VST3 is a bundle directory
+            cp -r "$ARTEFACTS/VST3/"*.vst3       staging/                 || true
+            # AU component
+            cp -r "$ARTEFACTS/AU/"*.component    staging/                 || true
+            # Standalone on macOS is a .app bundle
+            cp -r "$ARTEFACTS/Standalone/"*.app  staging/                 || true
+
           else
-            # macOS/Linux: Copy VST3, AU (.component), and Standalone
-            cp -r ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/*.vst3 staging/ || true
-            cp -r ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/*.component staging/ || true
-            cp ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/Standalone/${{ env.PROJECT_NAME }} staging/ || true
+            # Linux
+            cp -r "$ARTEFACTS/VST3/"*.vst3 staging/                       || true
+            # Standalone is a plain ELF binary
+            cp    "$ARTEFACTS/Standalone/${{ env.PROJECT_NAME }}" staging/ || true
           fi
 
-          # 3. Zip the CONTENTS of the staging folder, not the folder itself
-          # This prevents the "Zip inside a Zip" folder nesting
+          # Bail out early with a clear message if nothing was collected
+          if [ -z "$(ls -A staging)" ]; then
+            echo "::error::staging/ is empty — no artefacts were found. Check the paths above."
+            exit 1
+          fi
+
           cd staging
           if [ "${{ runner.os }}" == "Windows" ]; then
             7z a "../${NAME}.zip" *
@@ -257,6 +275,13 @@ jobs:
             zip -r "../${NAME}.zip" .
           fi
           cd ..
+
+      # This was the missing step — without it the zip never leaves the runner
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ZIP_NAME }}
+          path: ${{ env.ZIP_NAME }}.zip
 
   # -----------------------------------------------------------------------
   # Release job — triggered only on v* tags
