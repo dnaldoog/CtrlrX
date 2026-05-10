@@ -11,39 +11,39 @@ void LAsyncUpdater::handleAsyncUpdate()
 {
 }
 
-void LAsyncUpdater::wrapForLua(lua_State* L)
+void LAsyncUpdater::wrapForLua (lua_State *L)
 {
 	using namespace luabind;
 
 	module(L)
-		[
-			class_<LAsyncUpdater>("AsyncUpdater")
-				.def("triggerAsyncUpdate", &AsyncUpdater::triggerAsyncUpdate)
-				.def("cancelPendingUpdate", &AsyncUpdater::cancelPendingUpdate)
-				.def("handleUpdateNowIfNeeded", &AsyncUpdater::handleUpdateNowIfNeeded)
-				.def("isUpdatePending", &AsyncUpdater::isUpdatePending)
-				.def("handleAsyncUpdate", &LAsyncUpdater::handleAsyncUpdate)
-		];
+    [
+		class_<LAsyncUpdater>("AsyncUpdater")
+            .def("triggerAsyncUpdate", &AsyncUpdater::triggerAsyncUpdate)
+            .def("cancelPendingUpdate", &AsyncUpdater::cancelPendingUpdate)
+            .def("handleUpdateNowIfNeeded", &AsyncUpdater::handleUpdateNowIfNeeded)
+            .def("isUpdatePending", &AsyncUpdater::isUpdatePending)
+            .def("handleAsyncUpdate", &LAsyncUpdater::handleAsyncUpdate)
+	];
 }
 
-void LBigInteger::wrapForLua(lua_State* L)
+void LBigInteger::wrapForLua (lua_State *L)
 {
 	using namespace luabind;
 
 	module(L)
-		[
+    [
 			class_<BigInteger>("JUCEBigInteger")
-				,
-				class_<LBigInteger, BigInteger>("BigInteger")
+		,
+			class_<LBigInteger,BigInteger>("BigInteger")
 				.def(constructor<>())
 				.def(constructor<int>())
-				.def(const_self + BigInteger())
-				.def(const_self - BigInteger())
-				.def(const_self * BigInteger())
-				.def(const_self / BigInteger())
-				.def(const_self < BigInteger())
-				.def(const_self <= BigInteger())
-				.def(const_self == BigInteger())
+				.def(const_self + BigInteger ())
+				.def(const_self - BigInteger ())
+				.def(const_self * BigInteger ())
+				.def(const_self / BigInteger ())
+				.def(const_self < BigInteger ())
+				.def(const_self <= BigInteger ())
+				.def(const_self == BigInteger ())
 				//.def("xor", &LBigInteger::xor)
 				//.def("and", &LBigInteger::and)
 				//.def("or", &LBigInteger::or)
@@ -53,8 +53,16 @@ void LBigInteger::wrapForLua(lua_State* L)
 				.def("toInteger", &BigInteger::toInteger)
 				.def("clear", &BigInteger::clear)
 				.def("clearBit", &BigInteger::clearBit)
-				.def("setBit", (void (BigInteger::*)(int)) & BigInteger::setBit)
-				.def("setBit", (void (BigInteger::*)(int, bool)) & BigInteger::setBit)
+				//.def("setBit", (BigInteger & (BigInteger::*)(int)) & BigInteger::setBit)
+				//.def("setBit", (BigInteger & (BigInteger::*)(int, bool)) & BigInteger::setBit)
+				// 1. The error is due to ambiguous overloads of BigInteger::setBit.
+				// 2. The correct way is to cast to the exact signature, but luabind cannot bind non-const reference return types well.
+				// 3. BigInteger::setBit has two overloads: setBit(int) and setBit(int, bool).
+				// 4. The return type is BigInteger&, which is problematic for luabind. Instead, wrap these in LBigInteger as void-returning methods.
+				// 5. Add two wrapper methods in LBigInteger: setBit1(int) and setBit2(int, bool).
+				// 6. Bind these wrappers in wrapForLua as "setBit" with the correct signatures.
+				.def("setBit", &LBigInteger::setBit1)
+				.def("setBit", &LBigInteger::setBit2)
 				.def("setRange", &BigInteger::setRange)
 				.def("insertBit", &BigInteger::insertBit)
 				.def("getBitRange", &BigInteger::getBitRange)
@@ -78,66 +86,66 @@ void LBigInteger::wrapForLua(lua_State* L)
 				.def("parseString", &BigInteger::parseString)
 				.def("toMemoryBlock", &BigInteger::toMemoryBlock)
 				.def("loadFromMemoryBlock", &BigInteger::loadFromMemoryBlock)
-		];
+	];
 }
 
-LMemoryBlock::LMemoryBlock(const String& hexData)
+LMemoryBlock::LMemoryBlock(const String &hexData)
 {
-	MemoryBlock::loadFromHexString(hexData);
+	MemoryBlock::loadFromHexString (hexData);
 }
 
 LMemoryBlock::LMemoryBlock(luabind::object const& table)
 	: MemoryBlock(luaArrayTomemoryBlock(table))
 {
 }
-LMemoryBlock LMemoryBlock::fromLuaTable(luabind::object const& table)
+LMemoryBlock LMemoryBlock::fromLuaTable (luabind::object const& table)
 {
 	return (luaArrayTomemoryBlock(table));
 }
 
-LMemoryBlock::LMemoryBlock(const void* dataToInitialiseFrom, size_t sizeInBytes)
-	: MemoryBlock(dataToInitialiseFrom, sizeInBytes)
+LMemoryBlock::LMemoryBlock (const void *dataToInitialiseFrom, size_t sizeInBytes)
+	: MemoryBlock (dataToInitialiseFrom, sizeInBytes)
 {
 }
 
 char LMemoryBlock::operator [] (const int offset) const noexcept
 {
-	return (*((uint8*)getData() + offset));
+	return (*((uint8 *)getData()+offset));
 }
 
 void LMemoryBlock::insertIntoTable(luabind::object const& table)
 {
 	if (luabind::type(table) == LUA_TTABLE)
 	{
-		uint8* ptr = (uint8*)MemoryBlock::getData();
+		uint8 *ptr = (uint8 *)MemoryBlock::getData();
 
-		for (unsigned int i = 0; i < MemoryBlock::getSize(); i++)
+		for (unsigned int i=0; i<MemoryBlock::getSize(); i++)
 		{
-			table[i + 1] = (uint8) * (ptr + i);
+			table[i+1] = (uint8)*(ptr+i);
 		}
 	}
 }
 
-void LMemoryBlock::createFromTable(luabind::object const& table)
+void LMemoryBlock::createFromTable(luabind::object const &table)
 {
-	for (luabind::iterator i(table), end; i != end; i++)
+	for(luabind::iterator i(table), end; i != end; i++)
 	{
 		const uint8 v = luabind::object_cast<uint8>(*i);
-		MemoryBlock::append(&v, 1);
+		MemoryBlock::append (&v, 1);
 	}
 }
 
 void LMemoryBlock::toLuaTable(luabind::object tableToWriteTo)
 {
-	for (int i = 0; i < getSize(); i++)
+	for (int i=0; i<getSize(); i++)
 	{
-		tableToWriteTo[i + 1] = getByte(i);
+		tableToWriteTo[i+1] = getByte(i);
 	}
 }
 
 uint8 LMemoryBlock::getByte(const int position) const
 {
-	uint8* ptr = (uint8*)getData();
+	uint8 *ptr = (uint8 *)getData();
 
 	if (getSize() >= position)
 		return (*(ptr + position));
@@ -151,7 +159,7 @@ LMemoryBlock LMemoryBlock::getRange(const int startingPosition, const int numByt
 
 	if (getSize() >= (startingPosition + numBytes))
 	{
-		bl.append((uint8*)getData() + startingPosition, numBytes);
+		bl.append ((uint8 *)getData() + startingPosition, numBytes);
 	}
 	return (bl);
 }
@@ -161,41 +169,41 @@ String LMemoryBlock::toHexString(const int groupSize)
 	return (String::toHexString(getData(), getSize(), groupSize));
 }
 
-void LMemoryBlock::insert(MemoryBlock& dataToInsert, int insertPosition)
+void LMemoryBlock::insert (MemoryBlock &dataToInsert, int insertPosition)
 {
-	MemoryBlock::insert(dataToInsert.getData(), dataToInsert.getSize(), insertPosition);
+	MemoryBlock::insert (dataToInsert.getData(), dataToInsert.getSize(), insertPosition);
 }
 
-void LMemoryBlock::insert(MemoryBlock& dataToInsert, int dataSize, int insertPosition)
+void LMemoryBlock::insert (MemoryBlock &dataToInsert, int dataSize, int insertPosition)
 {
-	MemoryBlock::insert(dataToInsert.getData(), dataSize, insertPosition);
+	MemoryBlock::insert (dataToInsert.getData(), dataSize, insertPosition);
 }
 
-void LMemoryBlock::append(MemoryBlock& dataToAppend)
+void LMemoryBlock::append (MemoryBlock &dataToAppend)
 {
-	MemoryBlock::append(dataToAppend.getData(), dataToAppend.getSize());
+	MemoryBlock::append (dataToAppend.getData(), dataToAppend.getSize());
 }
 
-void LMemoryBlock::copyFrom(MemoryBlock& dataToCopy, int destinationOffset, int numBytes)
+void LMemoryBlock::copyFrom(MemoryBlock &dataToCopy, int destinationOffset, int numBytes)
 {
 	MemoryBlock::copyFrom(dataToCopy.getData(), destinationOffset, numBytes);
 }
 
-void LMemoryBlock::copyTo(MemoryBlock& dataToCopy, int sourceOffset, int numBytes)
+void LMemoryBlock::copyTo(MemoryBlock &dataToCopy, int sourceOffset, int numBytes)
 {
 	MemoryBlock::copyTo(dataToCopy.getData(), sourceOffset, numBytes);
 }
 
-void LMemoryBlock::replaceWith(MemoryBlock& dataToReplace)
+void LMemoryBlock::replaceWith(MemoryBlock &dataToReplace)
 {
-	MemoryBlock::replaceWith(dataToReplace.getData(), dataToReplace.getSize());
+	MemoryBlock::replaceWith (dataToReplace.getData(), dataToReplace.getSize());
 }
 
-void LMemoryBlock::setByte(const int bytePosition, const uint8 byteValue)
+void LMemoryBlock::setByte (const int bytePosition, const uint8 byteValue)
 {
 	if (getSize() >= bytePosition)
 	{
-		*((uint8*)getData() + bytePosition) = byteValue;
+		*((uint8 *)getData() + bytePosition) = byteValue;
 	}
 }
 
@@ -206,17 +214,17 @@ double LMemoryBlock::getSize() const noexcept
 
 void LMemoryBlock::removeSection(const int startByte, const int dataSize)
 {
-	MemoryBlock::removeSection(startByte, dataSize);
+    MemoryBlock::removeSection (startByte, dataSize);
 }
 
-int LMemoryBlock::getBitRange(int bitRangeStart, int numBits)
+int LMemoryBlock::getBitRange (int bitRangeStart, int numBits)
 {
-	return (MemoryBlock::getBitRange(bitRangeStart, numBits));
+    return (MemoryBlock::getBitRange(bitRangeStart, numBits));
 }
 
 void LMemoryBlock::setBitRange(int bitRangeStart, int numBits, int binaryNumberToApply)
 {
-	return (MemoryBlock::setBitRange(bitRangeStart, numBits, binaryNumberToApply));
+    return (MemoryBlock::setBitRange(bitRangeStart, numBits, binaryNumberToApply));
 }
 
 /************************************************************************************************/
@@ -234,7 +242,7 @@ LMemoryBlock LMemoryBlock::compressZlib()
 		juce::MemoryOutputStream outputStream(outputBlock, false);
 
 		// Create ZLIB compressor (false = Zlib format)
-		juce::GZIPCompressorOutputStream gzipStream(&outputStream, 9, false, 0);
+		juce::GZIPCompressorOutputStream gzipStream(&outputStream, 9, false,0);
 
 		gzipStream.write(getData(), getSize()); // Accesses data via member functions
 	}
@@ -410,15 +418,15 @@ LMemoryBlock LMemoryBlock::fromLuaStringToAscii(const juce::String& strData)
 
 /************************************************************************************************/
 
-void LMemoryBlock::wrapForLua(lua_State* L)
+void LMemoryBlock::wrapForLua (lua_State *L)
 {
 	using namespace luabind;
 
 	module(L)
-		[
-			class_<MemoryBlock>("JMemoryBlock")
-				,
-				class_<LMemoryBlock, bases<MemoryBlock> >("MemoryBlock")
+    [
+		class_<MemoryBlock>("JMemoryBlock")
+		,
+		class_<LMemoryBlock,bases<MemoryBlock> >("MemoryBlock")
 				.def(constructor<>())
 				.def(constructor<const size_t, bool>())
 				// .def(constructor<const int>()) // Useless and returns size x2. SEE: https://github.com/damiensellier/CtrlrX/issues/196#issuecomment-3555426383
@@ -429,17 +437,18 @@ void LMemoryBlock::wrapForLua(lua_State* L)
 				.def("createFromTable", &LMemoryBlock::createFromTable)
 				.def("getByte", &LMemoryBlock::getByte)
 				.def("setByte", &LMemoryBlock::setByte)
+				.def("getRawAddress", &LMemoryBlock::getRawAddress) // Expose raw pointer for FFI LuaJIT (use with caution in Lua)
 				.def("getRange", &LMemoryBlock::getRange)
 				.def("toHexString", &LMemoryBlock::toHexString)
-				.def("getData", (void* (LMemoryBlock::*) (void)) & MemoryBlock::getData)
+				.def("getData", (void* (LMemoryBlock::*) (void)) &MemoryBlock::getData)
 				.def("getSize", &LMemoryBlock::getSize)
 				.def("setSize", &MemoryBlock::setSize)
 				.def("ensureSize", &MemoryBlock::ensureSize)
 				.def("fillWith", &MemoryBlock::fillWith)
 				.def("append", &LMemoryBlock::append)
 				.def("replaceWith", &LMemoryBlock::replaceWith)
-				.def("insert", (void (LMemoryBlock::*) (MemoryBlock&, int)) & LMemoryBlock::insert)
-				.def("insert", (void (LMemoryBlock::*) (MemoryBlock&, int, int)) & LMemoryBlock::insert)
+				.def("insert", (void (LMemoryBlock::*) (MemoryBlock &, int)) &LMemoryBlock::insert)
+				.def("insert", (void (LMemoryBlock::*) (MemoryBlock &, int, int)) &LMemoryBlock::insert)
 				.def("removeSection", &LMemoryBlock::removeSection)
 				.def("copyFrom", &LMemoryBlock::copyFrom)
 				.def("copyTo", &LMemoryBlock::copyTo)
@@ -472,33 +481,33 @@ void LMemoryBlock::wrapForLua(lua_State* L)
 					def("fromLuaBinaryString", &LMemoryBlock::fromLuaBinaryString)
 
 				]
-		];
+	];
 }
 
-void LMemoryInputStream::wrapForLua(lua_State* L)
+void LMemoryInputStream::wrapForLua (lua_State *L)
 {
 	using namespace luabind;
 
 	module(L)
-		[
-			class_<MemoryInputStream>("MemoryInputStream")
-		];
+    [
+		class_<MemoryInputStream>("MemoryInputStream")
+	];
 }
 int LSparseSet::get(int index)
 {
-	SparseSet<int>* s = dynamic_cast <SparseSet<int> *>(this);
+	SparseSet<int> *s = dynamic_cast <SparseSet<int> *>(this);
 	return ((*s)[index]);
 }
 
-void LSparseSet::wrapForLua(lua_State* L)
+void LSparseSet::wrapForLua (lua_State *L)
 {
 	using namespace luabind;
 
 	module(L)
-		[
-			class_<SparseSet<int> >("JSparseSet")
-				,
-				class_<LSparseSet, bases<SparseSet<int> > >("SparseSet")
+    [
+		class_<SparseSet<int> >("JSparseSet")
+		,
+		class_<LSparseSet, bases<SparseSet<int> > >("SparseSet")
 				.def(constructor<const SparseSet<int> &>())
 				.def(constructor<>())
 				.def("clear", &SparseSet<int>::clear)
@@ -514,10 +523,10 @@ void LSparseSet::wrapForLua(lua_State* L)
 				.def("overlapsRange", &SparseSet<int>::overlapsRange)
 				.def("containsRange", &SparseSet<int>::containsRange)
 				.def("get", &LSparseSet::get)
-		];
+	];
 }
 
-LThread::LThread(const String& threadName) : Thread(threadName)
+LThread::LThread(const String &threadName) : Thread(threadName)
 {
 }
 
@@ -541,7 +550,32 @@ void LThread::startThread()
 
 void LThread::startThread(int priority)
 {
-	Thread::startThread(priority);
+#if JUCE_MAJOR_VERSION >= 8
+    auto p = Thread::Priority::normal;
+    if      (priority <= 1) p = Thread::Priority::background;
+    else if (priority <= 3) p = Thread::Priority::low;
+    else if (priority <= 5) p = Thread::Priority::normal;
+    else if (priority <= 8) p = Thread::Priority::high;
+    else                    p = Thread::Priority::highest;
+    Thread::startThread(p);
+#else
+    Thread::startThread(priority);
+#endif
+}
+
+bool LThread::setPriority(int priority)
+{
+#if JUCE_MAJOR_VERSION >= 8
+    auto p = Thread::Priority::normal;
+    if      (priority <= 1) p = Thread::Priority::background;
+    else if (priority <= 3) p = Thread::Priority::low;
+    else if (priority <= 5) p = Thread::Priority::normal;
+    else if (priority <= 8) p = Thread::Priority::high;
+    else                    p = Thread::Priority::highest;
+    return Thread::setPriority(p);
+#else
+    return Thread::setPriority(priority);
+#endif
 }
 
 bool LThread::isThreadRunning()
@@ -564,11 +598,6 @@ bool LThread::waitForThreadToExit(int timeOutMilliseconds) const
 	return (Thread::waitForThreadToExit(timeOutMilliseconds));
 }
 
-bool LThread::setPriority(int priority)
-{
-	return (Thread::setPriority(priority));
-}
-
 void LThread::setAffinityMask(int affMask)
 {
 	Thread::setAffinityMask(affMask);
@@ -584,59 +613,63 @@ void LThread::notify() const
 	Thread::notify();
 }
 
-int LThread::getThreadId() const noexcept
-{
-	int* id = static_cast<int*>(Thread::getThreadId());
+// int LThread::getThreadId() const noexcept
+// {
+    // int *id = static_cast<int*>(Thread::getThreadId());
 
-	return (*id);
+	// return (*id);
+// }
+int LThread::getThreadId() const noexcept // JUCE 8
+{
+    return (int)(intptr_t)Thread::getThreadId();
 }
 
-const String& LThread::getThreadName() const
+const String &LThread::getThreadName() const
 {
 	return (Thread::getThreadName());
 }
 
-void LThread::wrapForLua(lua_State* L)
+void LThread::wrapForLua (lua_State *L)
 {
 	using namespace luabind;
 
 	module(L)
-		[
-			class_<LThread>("Thread")
-				.def(constructor<const String&>())
-				.def("setThreadFunction", &LThread::setThreadFunction)
-				.def("startThread", (void (LThread::*)(void)) & LThread::startThread)
-				.def("startThread", (void (LThread::*)(int)) & LThread::startThread)
-				.def("isThreadRunning", &LThread::isThreadRunning)
-				.def("signalThreadShouldExit", &LThread::signalThreadShouldExit)
-				.def("threadShoudExit", &LThread::threadShoudExit)
-				.def("waitForThreadToExit", &LThread::waitForThreadToExit)
-				.def("setPriority", (void (LThread::*)(int)) & LThread::setPriority)
-				.def("setAffinityMask", &LThread::setAffinityMask)
-				.def("wait", &LThread::wait)
-				.def("notify", &LThread::notify)
-				.def("getThreadId", &LThread::getThreadId)
-				.def("getThreadName", &LThread::getThreadName)
-				,
-				class_<CriticalSection>("CriticalSection")
-				.def(constructor<>())
-				.def("enter", &CriticalSection::enter)
-				.def("tryEnter", &CriticalSection::tryEnter)
-				.def("exit", &CriticalSection::exit)
-				,
-				class_<ScopedLock>("ScopedLock")
-				.def(constructor<CriticalSection&>())
-				,
-				class_<ScopedUnlock>("ScopedUnlock")
-				.def(constructor<CriticalSection&>())
-				,
-				class_<ScopedTryLock>("ScopedTryLock")
-				.def(constructor<CriticalSection&>())
-				.def("isLocked", &ScopedTryLock::isLocked)
-		];
+    [
+		class_<LThread>("Thread")
+			.def(constructor<const String &>())
+			.def("setThreadFunction", &LThread::setThreadFunction)
+			.def("startThread", (void (LThread::*)(void))&LThread::startThread)
+			.def("startThread", (void (LThread::*)(int))&LThread::startThread)
+			.def("isThreadRunning", &LThread::isThreadRunning)
+			.def("signalThreadShouldExit", &LThread::signalThreadShouldExit)
+			.def("threadShoudExit", &LThread::threadShoudExit)
+			.def("waitForThreadToExit", &LThread::waitForThreadToExit)
+			.def("setPriority", (bool (LThread::*)(int))&LThread::setPriority)
+			.def("setAffinityMask", &LThread::setAffinityMask)
+			.def("wait", &LThread::wait)
+			.def("notify", &LThread::notify)
+			.def("getThreadId", &LThread::getThreadId)
+			.def("getThreadName", &LThread::getThreadName)
+		,
+		class_<CriticalSection>("CriticalSection")
+			.def(constructor<>())
+			.def("enter", &CriticalSection::enter)
+			.def("tryEnter", &CriticalSection::tryEnter)
+			.def("exit", &CriticalSection::exit)
+		,
+		class_<ScopedLock>("ScopedLock")
+			.def(constructor<CriticalSection &>())
+		,
+		class_<ScopedUnlock>("ScopedUnlock")
+			.def(constructor<CriticalSection &>())
+		,
+		class_<ScopedTryLock>("ScopedTryLock")
+			.def(constructor<CriticalSection &>())
+			.def("isLocked", &ScopedTryLock::isLocked)
+	];
 }
 
-LThreadWithProgressWindow::LThreadWithProgressWindow(const String& windowTitle, bool hasProgressBar, bool hasCancelButton, int timeOutMsWhenCancelling, const String& cancelButtonText)
+LThreadWithProgressWindow::LThreadWithProgressWindow(const String &windowTitle, bool hasProgressBar, bool hasCancelButton, int timeOutMsWhenCancelling, const String &cancelButtonText)
 	: ThreadWithProgressWindow(windowTitle, hasProgressBar, hasCancelButton, timeOutMsWhenCancelling, cancelButtonText, nullptr)
 {
 }
@@ -656,7 +689,7 @@ void LThreadWithProgressWindow::run()
 	}
 	catch (luabind::error& e)
 	{
-		_ERR("ThreadWithProgressWindow function set to run inside thread causes problems [" + STR(e.what()) + "]");
+		_ERR("ThreadWithProgressWindow function set to run inside thread causes problems ["+STR(e.what())+"]");
 	}
 }
 
@@ -670,27 +703,27 @@ void LThreadWithProgressWindow::setProgress(double newProgress)
 	ThreadWithProgressWindow::setProgress(newProgress);
 }
 
-void LThreadWithProgressWindow::setStatusMessage(const String& newStatusMessage)
+void LThreadWithProgressWindow::setStatusMessage(const String &newStatusMessage)
 {
 	ThreadWithProgressWindow::setStatusMessage(newStatusMessage);
 }
 
-void LThreadWithProgressWindow::wrapForLua(lua_State* L)
+void LThreadWithProgressWindow::wrapForLua (lua_State *L)
 {
 	using namespace luabind;
 
 	module(L)
-		[
-			class_<ThreadWithProgressWindow>("JThreadWithProgressWindow")
-				,
-				class_<Thread>("JThread")
-				,
-				class_<LThreadWithProgressWindow, bases<Thread, ThreadWithProgressWindow> >("ThreadWithProgressWindow")
-				.def(constructor<const String&, bool, bool, int, const String&>())
-				.def("runThread", &ThreadWithProgressWindow::runThread)
-				.def("setThreadFunction", &LThreadWithProgressWindow::setThreadFunction)
-				.def("wait", &Thread::wait)
-				.def("setProgress", &LThreadWithProgressWindow::setProgress)
-				.def("setStatusMessage", &LThreadWithProgressWindow::setStatusMessage)
-		];
+    [
+		class_<ThreadWithProgressWindow> ("JThreadWithProgressWindow")
+		,
+		class_<Thread>("JThread")
+		,
+		class_<LThreadWithProgressWindow,bases<Thread,ThreadWithProgressWindow> >("ThreadWithProgressWindow")
+			.def(constructor<const String &, bool, bool, int, const String &>())
+			.def("runThread", &ThreadWithProgressWindow::runThread)
+			.def("setThreadFunction", &LThreadWithProgressWindow::setThreadFunction)
+			.def("wait", &Thread::wait)
+			.def("setProgress", &LThreadWithProgressWindow::setProgress)
+			.def("setStatusMessage", &LThreadWithProgressWindow::setStatusMessage)
+	];
 }
