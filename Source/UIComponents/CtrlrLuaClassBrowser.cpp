@@ -115,7 +115,17 @@ void CtrlrLuaClassBrowser::loadClassList()
         infoDisplay->setText("XML data not available.\nLua API browser cannot load classes.", false);
         return;
     }
-
+auto* rootTag = luaApiXml->hasTagName("LuaAPI") ? luaApiXml : luaApiXml->getChildByName("LuaAPI");
+    
+    if (rootTag)
+    {
+        forEachXmlChildElementWithTagName(*rootTag, cls, "class")
+        {
+            juce::String className = cls->getStringAttribute("name");
+            if (className.isNotEmpty())
+                classList.add(className);
+        }
+    }
     // Load classes directly from XML (includes aliases!)
     forEachXmlChildElementWithTagName(*luaApiXml, cls, "class")
     {

@@ -43,6 +43,5 @@ def get_classes_with_enums(xml_path=None):
         print(f"Error parsing XML: {e}")
 
 if __name__ == "__main__":
-    # Update this path to where your XML is located
-    xml_file_path = "Source/Resources/XML/LuaAPI.xml"
-    get_classes_with_enums(xml_file_path)
+    # Passing None tells the function to use the ROOT calculation logic
+    get_classes_with_enums(None)

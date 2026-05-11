@@ -201,8 +201,8 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 			break;
 
 		case showMenuLuaClassBrowser:
-			result.setInfo("Browse class API", "Select lua class API", globalCategory, 0);
-			result.addDefaultKeypress('c', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
+			// result.setInfo("Browse class API", "Select lua class API", globalCategory, 0);
+			// result.addDefaultKeypress('c', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
 			break;
 
 		case doViewPropertyDisplayIDs:

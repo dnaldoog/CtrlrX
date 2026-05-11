@@ -1,3 +1,12 @@
+import re
+import sys
+from pathlib import Path
+from collections import defaultdict
+from xml.etree.ElementTree import Element, SubElement, ElementTree, indent
+# ================= DYNAMIC PATHS =================
+# This script is in /Scripts, so .parent is the Project Root
+ROOT = Path(__file__).resolve().parent.parent 
+# ... rest of your script ...
 # ================= DYNAMIC PATHS =================
 # This script is in /Scripts, so .parent is the Project Root
 ROOT = Path(__file__).resolve().parent.parent 

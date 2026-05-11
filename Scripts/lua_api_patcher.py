@@ -14,8 +14,9 @@ XML_PATH = ROOT / "Source" / "Resources" / "XML" / "LuaAPI.xml"
 AUTO_FLATTEN_ALL_ENUMS = True 
 
 # Manual overrides or specific classes to target if AUTO_FLATTEN is False
-FLATTEN_ENUMS = ["AttributedString", "AudioPlayHead", "ComponentPeer", "CtrlrMIDIDeviceManager", "CtrlrMidiMessage", "CtrlrModulator", "CtrlrPanel", "File", "Font", "Graphics", "Image", "Justification", "KeyPress", "LAlertWindow", "Label", "MidiMessage", "ModifierKeys", "MouseCursor", "MouseInputSource", "PathStrokeType", "RectanglePlacement", "Slider"]
-# The classes you want to consolidate
+
+FLATTEN_ENUMS = ["AlertWindow", "AttributedString", "AudioPlayHead", "ComponentPeer", "CtrlrMIDIDeviceManager", "CtrlrMidiMessage", "CtrlrModulator", "CtrlrPanel", "File", "Font", "Graphics", "Image", "Justification", "KeyPress", "Label", "MidiMessage", "ModifierKeys", "MouseCursor", "MouseInputSource", "PathStrokeType", "RectanglePlacement", "Slider", "mod", "modulator", "panel"]
+
 CLASS_ALIASES = {
     "LMemoryBlock": ["MemoryBlock"],
     "LAlertWindow": ["AlertWindow"],
