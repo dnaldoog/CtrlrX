@@ -157,6 +157,8 @@ void CtrlrMIDIDevice::handleIncomingMidiMessage (MidiInput* /*source*/, const Mi
 	}
 	else
 	{
+#if 0
+		/* This is the original code*/
         lastMessageWasSysex = false;
 
 		for (int i=0; i<deviceListeners.size(); i++)
@@ -166,6 +168,25 @@ void CtrlrMIDIDevice::handleIncomingMidiMessage (MidiInput* /*source*/, const Mi
 			if (ch == message.getChannel() || ch == 0 || message.getChannel() == 0)
 			{
 				deviceListeners.getListeners() [i]->handleMIDIFromDevice (message);
+			}
+		}
+		/*
+		If you ever want to 	
+		allow users to toggle any option in this file, you access the ValueTree with:
+		const bool isOverrideActive = (bool)owner.getOwner().getProperty(Ids::valuetreeoption);	
+		*/
+#endif
+		lastMessageWasSysex = false;
+		const bool isOverrideActive = true;
+
+		for (int i = 0; i < deviceListeners.size(); i++)
+		{
+			auto *listener = deviceListeners.getListeners()[i];
+			const int listenerCh = listener->getListenerInputMidiChannel();
+			const int incomingCh = message.getChannel();
+			if (listenerCh == 0 || incomingCh == 0 || listenerCh == incomingCh || isOverrideActive)
+			{
+				listener->handleMIDIFromDevice(message);
 			}
 		}
 	}
