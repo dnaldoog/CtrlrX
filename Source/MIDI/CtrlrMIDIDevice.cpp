@@ -173,7 +173,7 @@ void CtrlrMIDIDevice::handleIncomingMidiMessage (MidiInput* /*source*/, const Mi
 		/*
 		If you ever want to 	
 		allow users to toggle any option in this file, you access the ValueTree with:
-		(bool)owner.getProperty(Ids::valuetreeoption);	
+		const bool isOverrideActive = (bool)owner.getOwner().getProperty(Ids::valuetreeoption);	
 		*/
 #endif
 		lastMessageWasSysex = false;
