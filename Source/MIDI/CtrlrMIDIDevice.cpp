@@ -158,6 +158,7 @@ void CtrlrMIDIDevice::handleIncomingMidiMessage (MidiInput* /*source*/, const Mi
 	else
 	{
 #if 0
+		/* This is the original code*/
         lastMessageWasSysex = false;
 
 		for (int i=0; i<deviceListeners.size(); i++)
