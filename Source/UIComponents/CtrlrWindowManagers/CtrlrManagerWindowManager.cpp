@@ -19,8 +19,13 @@ CtrlrManagerWindowManager::CtrlrManagerWindowManager(CtrlrManager &_owner)
 
 CtrlrManagerWindowManager::~CtrlrManagerWindowManager()
 {
+    // 1. Forcefully close and destroy every hidden/active window frame right now
+    windows.clear(true); 
+    
+    // 2. Ensure the internal ValueTree tracking definitions are unlinked
+    managerTree.removeAllProperties(nullptr);
+    managerTree.removeAllChildren(nullptr);
 }
-
 CtrlrManager &CtrlrManagerWindowManager::getOwner()
 {
 	return (owner);

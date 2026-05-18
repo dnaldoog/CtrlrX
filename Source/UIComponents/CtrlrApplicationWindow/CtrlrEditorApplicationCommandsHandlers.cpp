@@ -268,16 +268,8 @@ case CtrlrEditor::showGlobalSettingsDialog:
     break;
 
 case CtrlrEditor::showAboutDialog:
-    #if JUCE_LINUX
-        // Use toggle() on all Linux to avoid Wayland/compositor issues
-        owner.getWindowManager().toggle(CtrlrManagerWindowManager::AboutWindow, true);
-    #else
-        // Non-modal dialog on Windows/macOS
-        {
-            CtrlrAbout* aboutWindow = new CtrlrAbout(owner);
-            owner.getWindowManager().showModalDialog ("CtrlrX/About", aboutWindow, false, this);
-        }
-    #endif
+    // Route all platforms through the OwnedArray tracker to guarantee destruction on exit
+    owner.getWindowManager().toggle(CtrlrManagerWindowManager::AboutWindow, true);
     break;
 
     case showDumpByLuaHelp:

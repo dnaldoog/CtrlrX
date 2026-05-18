@@ -33,10 +33,15 @@ CtrlrPanelComponentProperties::~CtrlrPanelComponentProperties()
     //[Destructor_pre]. You can add your own custom destruction code here..
     if (owner.getSelection())
         owner.getSelection()->removeChangeListener (this);
+        
+    // Explicitly clear all dynamic sections/ComboBoxes from the panel first!
+    if (propertyPanel != nullptr)
+    {
+        propertyPanel->clear();
+    }
     //[/Destructor_pre]
 
     propertyPanel = nullptr;
-
 
     //[Destructor]. You can add your own custom destruction code here..
     //[/Destructor]
@@ -76,6 +81,12 @@ CtrlrIDManager &CtrlrPanelComponentProperties::getIDManager()
 
 void CtrlrPanelComponentProperties::setTree (const ValueTree &_treeToEdit, const bool force)
 {
+
+	if (propertyPanel != nullptr)
+    {
+        propertyPanel->clear();
+    }
+	
 	if (_treeToEdit == treeToEdit && force == false)
 	{
 		return;

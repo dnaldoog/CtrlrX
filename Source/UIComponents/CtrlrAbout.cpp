@@ -370,45 +370,45 @@ CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
 	}
 }
 
+    
 CtrlrAbout::~CtrlrAbout()
 {
+    // 1. Unregister listeners first
+    if (ctrlrLogo)         ctrlrLogo->removeListener(this);
+    if (githubLogo)        githubLogo->removeListener(this);
+    if (donateLogo)        donateLogo->removeListener(this);
+    if (vst3AuJuceLogo)    vst3AuJuceLogo->removeListener(this);
     
-	if (ctrlrLogo)         ctrlrLogo->removeListener(this);
-	if (githubLogo)        githubLogo->removeListener(this);
-	if (donateLogo)        donateLogo->removeListener(this);
-	if (vst3AuJuceLogo)    vst3AuJuceLogo->removeListener(this);
-    
-    ctrlrName = nullptr;
-    
-    ctrlrLogo = nullptr;
-    githubLogo = nullptr;
-    donateLogo = nullptr;
-    vst3AuJuceLogo = nullptr;
-    
-    versionInfoLabel = nullptr;
-    ctrlrxLibsVersionLabel = nullptr;
-    creditsLabel = nullptr;
-    ctrlrxVersionLabel = nullptr;
-    ctrlrxReleaseDateLabel = nullptr;
-    ctrlrxUrl = nullptr;
-    ctrlrxDonateUrl = nullptr;
-    descriptionLabel = nullptr;
-    copyrightLabel = nullptr;
-    
-    label = nullptr;
-    label2 = nullptr;
-    label3 = nullptr;
-    label4 = nullptr;
-    labelDonate = nullptr;
-    labelAuthorEmail = nullptr;
-    
-    instanceUrl = nullptr;
-    instanceAuthorDonateUrl = nullptr;
-    instanceAuthorEmail = nullptr;
-    instanceVersion = nullptr;
-    instanceAuthor = nullptr;
-    instanceName = nullptr;
-    instanceDescription = nullptr;
+    // 2. Clear out TextEditors and Buttons explicitly
+    removeChildComponent(versionInfoLabel);  versionInfoLabel = nullptr;
+    removeChildComponent(creditsLabel);      creditsLabel = nullptr;
+    removeChildComponent(descriptionLabel);  descriptionLabel = nullptr;
+    removeChildComponent(copyrightLabel);    copyrightLabel = nullptr;
+    removeChildComponent(instanceDescription); instanceDescription = nullptr;
+    removeChildComponent(ctrlrxUrl);         ctrlrxUrl = nullptr;
+    removeChildComponent(ctrlrxDonateUrl);   ctrlrxDonateUrl = nullptr;
+    removeChildComponent(instanceUrl);       instanceUrl = nullptr;
+    removeChildComponent(instanceAuthorDonateUrl); instanceAuthorDonateUrl = nullptr;
+    removeChildComponent(instanceAuthorEmail); instanceAuthorEmail = nullptr;
+    removeChildComponent(ctrlrLogo);         ctrlrLogo = nullptr;
+    removeChildComponent(githubLogo);        githubLogo = nullptr;
+    removeChildComponent(donateLogo);        donateLogo = nullptr;
+    removeChildComponent(vst3AuJuceLogo);    vst3AuJuceLogo = nullptr;
+
+    // 3. THE LABELS: Safely remove them from the component hierarchy, THEN nullify the ScopedPointer
+    removeChildComponent(ctrlrName);              ctrlrName = nullptr;
+    removeChildComponent(ctrlrxVersionLabel);     ctrlrxVersionLabel = nullptr;
+    removeChildComponent(ctrlrxReleaseDateLabel); ctrlrxReleaseDateLabel = nullptr;
+    removeChildComponent(ctrlrxLibsVersionLabel); ctrlrxLibsVersionLabel = nullptr;
+    removeChildComponent(label);                  label = nullptr;
+    removeChildComponent(label2);                 label2 = nullptr;
+    removeChildComponent(label3);                 label3 = nullptr;
+    removeChildComponent(label4);                 label4 = nullptr;
+    removeChildComponent(labelDonate);            labelDonate = nullptr;
+    removeChildComponent(labelAuthorEmail);       labelAuthorEmail = nullptr;
+    removeChildComponent(instanceVersion);        instanceVersion = nullptr;
+    removeChildComponent(instanceAuthor);         instanceAuthor = nullptr;
+    removeChildComponent(instanceName);           instanceName = nullptr;
 }
 
 //==============================================================================
