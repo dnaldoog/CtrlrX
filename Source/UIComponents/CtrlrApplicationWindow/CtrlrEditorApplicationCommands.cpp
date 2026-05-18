@@ -668,6 +668,12 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
         default:
             break;
 	}
+	// added to fix crash on disable luaClassBrowser menu item. It seems that if a commandID is not handled here, the app crashes when trying to show it in the menu. This way, we at least show it as a disabled item instead of crashing.
+	if (result.shortName.isEmpty())
+    {
+        result.setInfo ("Placeholder Action", "Internal fallback", globalCategory, 0);
+        result.setActive (false);
+    }
 }
 
 ApplicationCommandTarget* CtrlrEditor::getNextCommandTarget() // Added v5.6.34. Required for the LUA method manager combo shortcuts

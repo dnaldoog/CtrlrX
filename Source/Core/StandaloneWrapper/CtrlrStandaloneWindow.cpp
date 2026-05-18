@@ -70,7 +70,13 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow (const String& title, const Colour&
                     _DBG("uiPanelEditor isValid");
                     ValueTree ed = ctrlrProcessor->getManager().getInstanceTree().getChildWithName(Ids::uiPanelEditor);
                     Rectangle<int> r = VAR2RECT(ed.getProperty(Ids::uiPanelCanvasRectangle, "0 0 800 600"));
-                    centreWithSize (r.getWidth(), r.getHeight() + ((bool)ed.getProperty(Ids::uiPanelMenuBarVisible) ? (int)ctrlrProcessor->getManager().getProperty(Ids::ctrlrMenuBarHeight) : 0));
+                    int menuBarHeight = (int)ctrlrProcessor->getManager().getProperty(Ids::ctrlrMenuBarHeight);
+    if (menuBarHeight <= 0) menuBarHeight = 24; 
+    
+    bool menuBarVisible = ed.getProperty(Ids::uiPanelMenuBarVisible, true); // default to true if missing
+    centreWithSize (r.getWidth() <= 0 ? 800 : r.getWidth(), 
+                    (r.getHeight() <= 0 ? 600 : r.getHeight()) + (menuBarVisible ? menuBarHeight : 0));
+                   // centreWithSize (r.getWidth(), r.getHeight() + ((bool)ed.getProperty(Ids::uiPanelMenuBarVisible) ? (int)ctrlrProcessor->getManager().getProperty(Ids::ctrlrMenuBarHeight) : 0));
                 }
             }
 
