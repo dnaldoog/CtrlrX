@@ -294,13 +294,13 @@ namespace BinaryData
     const int            BulkReadWriteDump_mdSize = 3901;
 
     extern const char*   lua_api_patcher_py;
-    const int            lua_api_patcher_pySize = 9397;
+    const int            lua_api_patcher_pySize = 9390;
 
     extern const char*   LuaAPI_xml;
-    const int            LuaAPI_xmlSize = 259339;
+    const int            LuaAPI_xmlSize = 210624;
 
     extern const char*   luabind_parser_py;
-    const int            luabind_parser_pySize = 9507;
+    const int            luabind_parser_pySize = 9863;
 
     extern const char*   LuaFileOperations_md;
     const int            LuaFileOperations_mdSize = 3521;

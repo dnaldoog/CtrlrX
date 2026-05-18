@@ -33,16 +33,31 @@ public:
 	void reloadResources(Array <CtrlrPanelResource*> resourcesThatChanged);
 	void setResource();
 	static void wrapForLua(lua_State *L);
+#ifdef CTLRX_DISABLE_DYNAMIC_LNF
+// ============================================================================
+// 2. LIGHTWEIGHT 5.3 FORK PATHWAY (DROP ENTIRE 5.3 FILE HERE)
+// ====
+	void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr) {}
+
+#else
+// ============================================================================
+// 3. UPSTREAM CTRLRX PATHWAY (DROP ENTIRE NEW FILE HERE)
+// ============================================================================
     void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr) {};
     static LookAndFeel* getLookAndFeelFromComponentProperty(const String &lookAndFeelComponentProperty);
     void resetLookAndFeelOverrides();
     void updatePropertiesPanel();
+
+
+#endif
+
     //[/UserMethods]
 
     void paint (Graphics& g);
     void resized();
     void sliderValueChanged (Slider* sliderThatWasMoved);
     void mouseUp (const MouseEvent& e);
+
 
     //==============================================================================
     juce_UseDebuggingNewOperator
