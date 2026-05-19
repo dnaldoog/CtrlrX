@@ -1,0 +1,15 @@
+git add Source/UIComponents/CtrlrAbout.cpp
+git add Source/UIComponents/CtrlrApplicationWindow/CtrlrEditorApplicationCommandsHandlers.cpp
+git add Source/UIComponents/CtrlrPanel/CtrlrPanelComponentProperties.cpp
+git add Source/UIComponents/CtrlrWindowManagers/CtrlrManagerWindowManager.cpp
+git add Source/UIComponents/CtrlrPanel/CtrlrPanelModulatorList.cpp
+git add Source/UIComponents/CtrlrPanel/CtrlrPanelModulatorList.h
+git add Source/UIComponents/CtrlrWindowManagers/CtrlrChildWindowContainer.cpp
+git add Source/Core/CtrlrManager/CtrlrManager.cpp
+git add Source/Core/StandaloneWrapper/CtrlrStandaloneWindow.cpp
+git add Source/Core/StandaloneWrapper/CtrlrStandaloneWindow.h
+git add Source/UIComponents/CtrlrMIDI/CtrlrMIDIMon.cpp
+git add Source/UIComponents/CtrlrWindowManagers/CtrlrManagerWindowManager.cpp
+git add Source/UIComponents/CtrlrWindowManagers/CtrlrManagerWindowManager.h
+
+        modified:   JUCE/extras/Projucer/Source/Application/jucer_MainWindow.cpp
