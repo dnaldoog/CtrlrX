@@ -71,12 +71,35 @@ CtrlrWindowManager &CtrlrChildWindowContainer::getOwner()
 	return (owner);
 }
 
+// void CtrlrChildWindowContainer::closeWindow()
+// {
+// 	if (getParentComponent())
+// 	{
+// 		delete getParentComponent();
+// 	}
+// }
+
 void CtrlrChildWindowContainer::closeWindow()
 {
-	if (getParentComponent())
-	{
-		delete getParentComponent();
-	}
+    // FIX: Never use 'delete getParentComponent()' inside a child view.
+    // Instead, find the top-level window wrapper and let it shut down gracefully.
+    if (auto* parentWindow = findParentComponentOfClass<juce::DocumentWindow>())
+    {
+        parentWindow->closeButtonPressed();
+    }
+    else if (auto* topComponent = getParentComponent())
+    {
+        // Fallback: Use JUCE's safe asynchronous execution queue 
+        // to delete the window on the next frame loop, preventing object suicide!
+        juce::MessageManager::callAsync ([topComponent]()
+        {
+            // Double check it wasn't already freed in the last few milliseconds
+            if (topComponent != nullptr) 
+            {
+                delete topComponent;
+            }
+        });
+    }
 }
 
 StringArray CtrlrChildWindowContainer::getMenuBarNames()
