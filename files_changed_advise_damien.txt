@@ -11,5 +11,34 @@ git add Source/Core/StandaloneWrapper/CtrlrStandaloneWindow.h
 git add Source/UIComponents/CtrlrMIDI/CtrlrMIDIMon.cpp
 git add Source/UIComponents/CtrlrWindowManagers/CtrlrManagerWindowManager.cpp
 git add Source/UIComponents/CtrlrWindowManagers/CtrlrManagerWindowManager.h
+git add  JUCE/modules/juce_audio_processors/processors/juce_AudioProcessorEditor.cpp
+git add  JUCE/modules/juce_gui_basics/windows/juce_ResizableWindow.cpp
+git add  Source/Plugin/CtrlrProcessor.cpp
+git add  JUCE/extras/Projucer/Source/Application/jucer_MainWindow.cpp
+git add  JUCE/extras/Projucer/Source/Application/jucer_Application.cpp
+git add  JUCE/extras/Projucer/Source/Application/jucer_MainWindow.cpp
+git add  Source/Plugin/CtrlrProcessor.cpp		
+		
+		
+		Yes, these errors have almost certainly always existed in Ctrlr, likely stretching back over a decade across various forks and releases.
 
-        modified:   JUCE/extras/Projucer/Source/Application/jucer_MainWindow.cpp
+You’ve just unmasked a classic architectural bug that has plagued many older JUCE-based applications when they try to wrap complex sub-frameworks.
+
+The dead giveaway is that memory pointer: 0xdddddddddddddddd.
+In the Microsoft Visual C++ compiler (MSVC) debug runtime, 0xDDDDDDDD is the specific memory pattern used to fill released/freed heap memory.
+
+The Historical Context: Why This Always Happened
+The humorous JUCE comments in that destructor tell you exactly what the original JUCE author anticipated:
+
+"Have you been adding your own components directly to this window..? tut tut tut."
+"You may have deleted them accidentally by careless use of deleteAllChildren()..?"
+
+Ctrlr’s architecture was designed during an older era of JUCE. It heavily customizes the window management layer, mixing standard JUCE window life cycles with its own CtrlrManager lifecycle.
+
+The bug has always been there because of a fatal mismatch in how the app shuts down:
+
+The Core Deletes the UI's Children: When you close Ctrlr, the core application manager (CtrlrManager) triggers a massive cascade deletion. To clean up its panels, it walks down the UI tree and aggressively deletes child components—which, in Ctrlr's custom setup, inadvertently targets components that actually belonged to the underlying juce::ResizableWindow.
+
+Double Deletion / Dangling Pointers: By the time the execution flow finally drops down to the native ~ResizableWindow() destructor, the resizableCorner component has already been deleted and freed by Ctrlr's cleanup routines. Its raw memory has been overwritten with the 0xDDDD pattern.
+
+The Silent Failure: In normal release builds, this bug usually just causes a silent memory leak or a hidden background crash during the final millisecond of the application's life (which users never notice because the window is already gone). But in a debugger with a leak detector active, it triggers a catastrophic assertion stop and orphans dozens of internal strings, layouts, and juce::Label components.

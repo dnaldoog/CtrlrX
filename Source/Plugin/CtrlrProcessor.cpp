@@ -75,6 +75,21 @@ CtrlrProcessor::CtrlrProcessor() :
 
 CtrlrProcessor::~CtrlrProcessor() // Updated v5.6.34. Prevents AAX from crashing when deleting the plugin from the instrument track insert slot.
 {
+
+    // 1. DISARM THE AUDIO PROCESSING THREAD
+    // Force the processing parameters to completely neutral, safe states 
+    // before the base class drops away.
+    rawVolume = 0.0;
+    
+    // Clear out the position info struct so background threads don't read garbage
+    lastPosInfo.bpm = 120.0;
+    lastPosInfo.timeSigNumerator = 4;
+    lastPosInfo.timeSigDenominator = 4;
+
+    // 2. DISCONNECT FROM JUCE HOST
+    // Tell the host/wrapper that we are no longer ready to process audio blocks
+    suspendProcessing(true);
+    // 3. CLEAN UP INTERNAL COMPONENTS SAFELY
     // ***** CRITICAL AAX-SPECIFIC WORKAROUND *****
     // This entire block is excluded for AAX builds because:
     // 1. The MessageManager::runDispatchLoopUntil() call causes crashes on AAX plugin removal.

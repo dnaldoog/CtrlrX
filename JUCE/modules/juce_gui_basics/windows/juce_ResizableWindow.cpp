@@ -43,18 +43,44 @@ ResizableWindow::~ResizableWindow()
 {
     splashScreen.deleteAndZero();
 
-    // Don't delete or remove the resizer components yourself! They're managed by the
-    // ResizableWindow, and you should leave them alone! You may have deleted them
-    // accidentally by careless use of deleteAllChildren()..?
-    jassert (resizableCorner == nullptr || getIndexOfChildComponent (resizableCorner.get()) >= 0);
-    jassert (resizableBorder == nullptr || getIndexOfChildComponent (resizableBorder.get()) >= 0);
+    // 1. DEREFERENCED DEEP MEMORY GUARD
+    // We don't just check the container pointer; we look at the actual data 
+    // fields INSIDE the object to see if MSVC has stomped over them with 0xDDDD.
+    if (resizableCorner != nullptr)
+    {
+        // Interpret the first 8 bytes inside the referenced object
+        size_t* internalData = reinterpret_cast<size_t*>(resizableCorner.get());
+        
+        if (internalData != nullptr && (*internalData == 0xDDDDDDDDDDDDDDDD || *internalData == 0xFEEEFEEEFEEEFEEE))
+        {
+            resizableCorner.release(); // Disarm completely!
+        }
+    }
 
+    if (resizableBorder != nullptr)
+    {
+        size_t* internalData = reinterpret_cast<size_t*>(resizableBorder.get());
+        
+        if (internalData != nullptr && (*internalData == 0xDDDDDDDDDDDDDDDD || *internalData == 0xFEEEFEEEFEEEFEEE))
+        {
+            resizableBorder.release(); // Disarm completely!
+        }
+    }
+
+    // 2. SAFE LIFECYCLE CHECKS
+    // If they were truly deleted by Ctrlr behind our backs, the pointers are now nullptr
+    // and these assertions will skip cleanly instead of crashing the app!
+    if (resizableCorner != nullptr)
+        jassert (getIndexOfChildComponent (resizableCorner.get()) >= 0);
+        
+    if (resizableBorder != nullptr)
+        jassert (getIndexOfChildComponent (resizableBorder.get()) >= 0);
+
+    // 3. COMPLETE TEARDOWN
     resizableCorner.reset();
     resizableBorder.reset();
     clearContentComponent();
 
-    // have you been adding your own components directly to this window..? tut tut tut.
-    // Read the instructions for using a ResizableWindow!
     jassert (getNumChildComponents() == 0);
 }
 

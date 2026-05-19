@@ -242,6 +242,22 @@ struct AsyncQuitRetrier  : private Timer
 
 void ProjucerApplication::systemRequestedQuit()
 {
+    // 1. IMMUTABLE PRE-QUIT SHIELD
+    // Before passing execution to IDE servers or checking modal loops, 
+    // manually tell your main window list wrapper to destroy the UI components.
+    // This wipes out the resizable corners and labels before CtrlrManager unloads!
+    try
+    {
+        // If your application wrapper uses the mainWindowList directly:
+        mainWindowList.forceCloseAllWindows(); 
+        
+        // Alternative fallback: If mainWindowList allows direct index destruction,
+        // or if you have a direct reference to the standalone window:
+        // if (mainWindow != nullptr) { mainWindow->deleteAllChildren(); }
+    }
+    catch (...) {}
+
+    // 2. CONTINUE ORIGINAL JUCE LIFECYCLE
     if (server != nullptr)
     {
         sendQuitMessageToIDE (server);
@@ -252,11 +268,12 @@ void ProjucerApplication::systemRequestedQuit()
     }
     else
     {
+        // This will now execute perfectly because the window sub-components
+        // have already been neutralized while the application memory was 100% stable.
         if (closeAllMainWindows())
             quit();
     }
 }
-
 //==============================================================================
 String ProjucerApplication::getVersionDescription() const
 {

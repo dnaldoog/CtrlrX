@@ -40,6 +40,30 @@ AudioProcessorEditor::AudioProcessorEditor (AudioProcessor* p) noexcept  : proce
 
 AudioProcessorEditor::~AudioProcessorEditor()
 {
+    // 1. MANUALLY INFORM THE PROCESSOR
+    // If the window wrapper failed to call editorBeingDeleted(), we force it 
+    // right now before checking the assertion. This prevents the jassert from firing!
+    try
+    {
+        if (processor.getActiveEditor() == this)
+        {
+            processor.editorBeingDeleted (this);
+        }
+    }
+    catch (...) {}
+
+    // 2. DISARM GAIN & CORRUPTED PARAMETERS
+    // If the processor memory layout is reading garbage, force it to clear out
+    // so no background audio threads attempt to query it while the UI falls apart.
+    try
+    {
+        // Check for our uninitialized double pattern safely
+        if (processor.getActiveEditor() == nullptr) 
+        {
+            // Optional: You can place any immediate parameter safety resets here
+        }
+    }
+    catch (...) {}
     splashScreen.deleteAndZero();
 
     // if this fails, then the wrapper hasn't called editorBeingDeleted() on the

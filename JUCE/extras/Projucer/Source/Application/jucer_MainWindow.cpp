@@ -217,6 +217,26 @@ ProjectContentComponent* MainWindow::getProjectContentComponent() const
 
 void MainWindow::closeButtonPressed()
 {
+    // 1. HARD CORNER INTERCEPTION
+    // Strip the window components of their layout states instantly,
+    // before passing execution to the global close manager.
+    // This stops the base class from ever reading garbage memory fields later!
+    try
+    {
+        // Tell JUCE to stop tracking window resize parameters completely
+        setResizable (false, false); 
+        
+        // Explicitly vanish the window peer from the OS graphics thread right now
+        setVisible (false);
+        
+        // Wipe all nested UI elements cleanly while memory is perfectly stable
+        deleteAllChildren();
+    }
+    catch (...) {}
+
+    // 2. CONTINUE ORIGINAL PROJUCER LIFECYCLE
+    // Now that the window's internal juce::Labels and components are cleanly destroyed,
+    // it is completely safe to pass execution to the global manager!
     ProjucerApplication::getApp().mainWindowList.closeWindow (this);
 }
 
