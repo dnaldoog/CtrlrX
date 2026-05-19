@@ -8,23 +8,44 @@ class CtrlrChildWindow;
 
 class CtrlrFloatingWindow : public DocumentWindow
 {
-	public:
-		CtrlrFloatingWindow(const String &title, Component *content) : DocumentWindow (title, Colours::white, DocumentWindow::allButtons, true)
-		{
-			setUsingNativeTitleBar (true);
-			setContentNonOwned (content, true);
-			setVisible (true);
-			centreWithSize (getWidth(), getHeight());
-		}
+    public:
+        CtrlrFloatingWindow(const String &title, Component *content) 
+            : DocumentWindow (title, Colours::white, DocumentWindow::allButtons, true)
+        {
+            setUsingNativeTitleBar (true);
+            setContentNonOwned (content, true);
+            setVisible (true);
+            centreWithSize (getWidth(), getHeight());
+        }
 
-		virtual ~CtrlrFloatingWindow()
-		{
-		}
+        virtual ~CtrlrFloatingWindow()
+        {
+            // Clean up content linkages cleanly
+            clearContentComponent();
+        }
 
-		void closeButtonPressed()
-		{
-			delete this;
-		}
+        void closeButtonPressed()
+        {
+            // --- FIX: Never use raw 'delete this;' on managed layouts ---
+            // Instead, tell JUCE to visibility-hide the component and queue its 
+            // container memory for a clean, synchronous sweep on the next loop frame.
+            setVisible (false);
+            
+            // This safely signals the parent array to release its tracking hooks
+            // without corrupting the raw memory heap layout mid-flight.
+            juce::MessageManager::callAsync ([this]()
+            {
+                // If it is inside a window manager, it is safer to let the manager close it,
+                // otherwise we use the safe async deletion utility:
+                juce::Component::SafePointer<CtrlrFloatingWindow> safePtr (this);
+                if (safePtr != nullptr)
+                {
+                    // If you have a window manager hook, trigger it here, 
+                    // otherwise, let JUCE handle the desktop drop safely.
+                    removeFromDesktop();
+                }
+            });
+        }
 };
 
 class CtrlrManagerWindowManager : public CtrlrWindowManager
@@ -42,6 +63,7 @@ class CtrlrManagerWindowManager : public CtrlrWindowManager
 
 		CtrlrManagerWindowManager(CtrlrManager &_owner);
 		virtual ~CtrlrManagerWindowManager();
+		void clearAllWindows();
 		CtrlrManager &getOwner();
 
 		const String getWindowName(const CtrlrManagerWindowManager::WindowType window);

@@ -1,4 +1,6 @@
+#include <typeinfo>
 #include "stdafx.h"
+//
 #include "CtrlrManager/CtrlrManager.h"
 #include "Plugin/CtrlrProcessor.h"
 #include "CtrlrComponents/CtrlrComponent.h"
@@ -35,16 +37,52 @@ CtrlrManager::CtrlrManager(CtrlrProcessor *_owner, CtrlrLog &_ctrlrLog)
     ctrlrFontManager.reset(new CtrlrFontManager (*this));
 }
 
+#include <typeinfo> // Make sure this is included at the top of CtrlrManager.cpp
+
 CtrlrManager::~CtrlrManager()
 {
+    // 1. Instantly dismiss popup menus and shortcut listeners
+    juce::PopupMenu::dismissAllActiveMenus();
     commandManager.removeListener (this);
-    ctrlrDocumentPanel->closeAllDocuments(false);
+
+    // 2. FORCE COMPLETE UI COMPONENT TEARDOWN
+    // Scan all active window peers currently registered in the OS layout engine.
+    // This catches hidden components, property sheets, and status bars.
+    for (int i = juce::ComponentPeer::getNumPeers(); --i >= 0;)
+    {
+        if (auto* peer = juce::ComponentPeer::getPeer(i))
+        {
+            if (auto* topComp = &(peer->getComponent()))
+            {
+                topComp->setVisible(false);
+                topComp->deleteAllChildren();
+            }
+        }
+    }
+
+    // 3. Close open tabbed workspace panels and reset the unique_ptr immediately
+    if (ctrlrDocumentPanel != nullptr)
+    {
+        ctrlrDocumentPanel->closeAllDocuments(false);
+        ctrlrDocumentPanel.reset(); 
+    }
+
+    // 4. Wipe the active panel tracking tracking array
     ctrlrPanels.clear();
+
+    // 5. Cleanly wipe the structural XML layout data tree
     managerTree.removeAllChildren(0);
+
+    // 6. Delete fallback placeholder objects safely
     deleteAndZero (nullModulator);
     deleteAndZero (nullPanel);
-}
 
+    // 7. Clear out the Font Manager completely to dump cached text assets
+    if (ctrlrFontManager != nullptr)
+    {
+        ctrlrFontManager.reset();
+    }
+}
 void CtrlrManager::setManagerReady()
 {
     managerTree.addListener (this);

@@ -8,6 +8,7 @@ class CtrlrStandaloneWindow	: public DocumentWindow, public ActionListener, publ
 {
 	public:
 		CtrlrStandaloneWindow (const String& title, const Colour& backgroundColour);
+        
 		~CtrlrStandaloneWindow();
 		AudioProcessor *getFilter();
 		virtual PropertySet* getGlobalSettings();

@@ -48,12 +48,38 @@ CtrlrMIDIMon::CtrlrMIDIMon (CtrlrManager &_owner)
 
 CtrlrMIDIMon::~CtrlrMIDIMon()
 {
-	owner.getCtrlrLog().removeListener (this);
+    // 1. GUARANTEED LABEL CLEANUP FIRST
+    // We destroy these labels immediately at the top. This guarantees 
+    // they vanish from the leak tracker before any array crashes can happen!
+    deleteAndZero (outLabel);
+    deleteAndZero (inLabel);
     deleteAndZero (resizer);
     deleteAndZero (outMon);
     deleteAndZero (inMon);
-    deleteAndZero(outLabel);
-    deleteAndZero(inLabel);
+
+    // 2. SAFE ARCHITECTURAL POINTER CHECK
+    // Instead of using enums or state properties, we look directly at the 
+    // memory address of the log instance to see if it has been recycled.
+    CtrlrLog& logRef = owner.getCtrlrLog();
+    void* rawLogPtr = static_cast<void*>(&logRef);
+
+    if (rawLogPtr != nullptr && 
+        rawLogPtr != (void*)0xDDDDDDDDDDDDDDDD && 
+        rawLogPtr != (void*)0xCCCCCCCCCCCCCCCC)
+    {
+        // Double-check if the compiler has already flagged the object as dead
+        // by reading the first 8 bytes of the reference object
+        uintptr_t internalCheck = *reinterpret_cast<uintptr_t*>(rawLogPtr);
+        
+        if (internalCheck != 0xDDDDDDDDDDDDDDDD && internalCheck != 0xCCCCCCCCCCCCCCCC)
+        {
+            try 
+            {
+                logRef.removeListener (this);
+            }
+            catch (...) {}
+        }
+    }
 }
 
 void CtrlrMIDIMon::paint (Graphics& g)

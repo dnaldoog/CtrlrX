@@ -15,17 +15,31 @@
 CtrlrManagerWindowManager::CtrlrManagerWindowManager(CtrlrManager &_owner)
     : owner(_owner), managerTree(Ids::uiWindowManager), CtrlrWindowManager(_owner)
 {
+
 }
 
 CtrlrManagerWindowManager::~CtrlrManagerWindowManager()
 {
-    // 1. Forcefully close and destroy every hidden/active window frame right now
-    windows.clear(true); 
-    
-    // 2. Ensure the internal ValueTree tracking definitions are unlinked
-    managerTree.removeAllProperties(nullptr);
-    managerTree.removeAllChildren(nullptr);
+    // 1. Force all active popup tracking menus to drop instantly
+    juce::PopupMenu::dismissAllActiveMenus();
+
+    // 2. Loop through all background windows in the array and explicitly 
+    // rip them off the desktop. This forces them to break their native 
+    // OS window and label attachments synchronously.
+    for (int i = windows.size(); --i >= 0;)
+    {
+        if (auto* w = windows.getUnchecked(i))
+        {
+            w->setVisible (false);
+            w->removeFromDesktop();
+        }
+    }
+
+    // 3. Now that everything is safely unlinked from the desktop layout,
+    // tell the OwnedArray to completely destroy the window objects.
+    windows.clear();
 }
+
 CtrlrManager &CtrlrManagerWindowManager::getOwner()
 {
 	return (owner);
@@ -263,4 +277,20 @@ void CtrlrManagerWindowManager::create(const CtrlrManagerWindowManager::WindowTy
 			w->getContent()->restoreState (managerTree.getChildWithProperty (Ids::uiChildWindowName, getWindowName(window)).getChildWithName(Ids::uiChildWindowContentState));
 		}
 	}
+}
+// Inside CtrlrManagerWindowManager.cpp
+void CtrlrManagerWindowManager::clearAllWindows()
+{
+    // Loop through background windows and strip them from the OS layout
+    for (int i = windows.size(); --i >= 0;)
+    {
+        if (auto* w = windows.getUnchecked(i))
+        {
+            w->setVisible (false);
+            w->removeFromDesktop();
+        }
+    }
+    
+    // Completely obliterate the windows and their internal Labels safely!
+    windows.clear();
 }

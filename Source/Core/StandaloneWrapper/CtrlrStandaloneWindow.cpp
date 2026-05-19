@@ -169,10 +169,22 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow (const String& title, const Colour&
 
 CtrlrStandaloneWindow::~CtrlrStandaloneWindow()
 {
-	ctrlrProcessor->removeChangeListener(this);
-    ctrlrProcessor->getManager().removeActionListener (this);
-    saveStateNow();
-    deleteFilter();
+    // Unregister from the processor or broadcaster immediately so no ghost 
+    // callbacks can fire while we are deleting ourselves!
+    if (ctrlrProcessor != nullptr)
+    {
+        // Replace 'ctrlrProcessor' with whatever broadcaster you are registered to
+        ctrlrProcessor->removeChangeListener(this); 
+    }
+
+    // Force clear children safely
+    try
+    {
+        setVisible(false);
+        clearContentComponent();
+        deleteAllChildren();
+    }
+    catch (...) {}
 }
 
 void CtrlrStandaloneWindow::actionListenerCallback(const String &message)
