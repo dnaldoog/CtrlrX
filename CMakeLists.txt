@@ -72,6 +72,15 @@ endif()
 
 add_subdirectory(Source/Misc/luajit)
 
+# Locate the static LuaJIT binary manually based on OS
+if(WIN32)
+    set(LUAJIT_STATIC_LIB "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/lua51.lib")
+elseif(APPLE)
+    set(LUAJIT_STATIC_LIB "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/libluajit.a")
+else()
+    set(LUAJIT_STATIC_LIB "libluajit") # Fallback to system package tracking for Linux
+endif()
+
 # -----------------------------------------------------------------------
 # SDK Paths
 # -----------------------------------------------------------------------
@@ -154,7 +163,7 @@ target_include_directories(SharedCode INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/Source"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/lua/include"
+    #"${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/lua/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/libusb/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/boost"
@@ -195,6 +204,7 @@ include(XcodePrettify)
 # -----------------------------------------------------------------------
 target_link_libraries(SharedCode INTERFACE
     Assets  # This target provides BinaryData::LuaAPI_xml
+    libluajit
     juce_audio_basics
     juce_audio_devices
     juce_audio_formats
@@ -215,25 +225,11 @@ target_link_libraries(SharedCode INTERFACE
 )
 
 # Final Plugin Target Linking
-if(WIN32)
-    target_link_libraries("${PROJECT_NAME}" PRIVATE
-        SharedCode
-        Assets # Link explicitly here too just to be safe
-        "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/lua51.lib"
-    )
-elseif(APPLE)
-    target_link_libraries("${PROJECT_NAME}" PRIVATE
-        SharedCode
-        Assets
-        "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/libluajit.a"
-    )
-else()
-    target_link_libraries("${PROJECT_NAME}" PRIVATE
-        SharedCode
-        Assets
-        libluajit
-    )
-endif()
+# Final Plugin Target Linking (Clean & Streamlined)
+target_link_libraries("${PROJECT_NAME}" PRIVATE
+    SharedCode
+    Assets 
+)
 
 include(PamplejuceIPP)
 include(GitHubENV)

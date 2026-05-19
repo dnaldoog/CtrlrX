@@ -15,6 +15,316 @@
               pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn,pluginProducesMidiOut,pluginEditorRequiresKeys"
               pluginAAXCategory="2048">
   <MAINGROUP id="SRLsFb" name="CtrlrX">
+    <GROUP id="{E0F241C8-AB77-DA9C-B386-46B2CCEDFBC9}" name="luajit">
+      <GROUP id="{05FFA5F3-6FAA-9C17-DCBD-14336C968751}" name="doc">
+        <GROUP id="{F4120641-8CCE-3AE3-430F-06F9E0A22CA9}" name="img">
+          <FILE id="rP17kT" name="contact.png" compile="0" resource="1" file="Source/Misc/luajit/doc/img/contact.png"/>
+        </GROUP>
+        <FILE id="SshXzG" name="bluequad-print.css" compile="0" resource="1"
+              file="Source/Misc/luajit/doc/bluequad-print.css"/>
+        <FILE id="wIIgW2" name="bluequad.css" compile="0" resource="1" file="Source/Misc/luajit/doc/bluequad.css"/>
+        <FILE id="yo1FjB" name="contact.html" compile="0" resource="1" file="Source/Misc/luajit/doc/contact.html"/>
+        <FILE id="XvPLa3" name="ext_buffer.html" compile="0" resource="1" file="Source/Misc/luajit/doc/ext_buffer.html"/>
+        <FILE id="l2wTZT" name="ext_c_api.html" compile="0" resource="1" file="Source/Misc/luajit/doc/ext_c_api.html"/>
+        <FILE id="KXDbro" name="ext_ffi.html" compile="0" resource="1" file="Source/Misc/luajit/doc/ext_ffi.html"/>
+        <FILE id="LesoMu" name="ext_ffi_api.html" compile="0" resource="1"
+              file="Source/Misc/luajit/doc/ext_ffi_api.html"/>
+        <FILE id="Accg2G" name="ext_ffi_semantics.html" compile="0" resource="1"
+              file="Source/Misc/luajit/doc/ext_ffi_semantics.html"/>
+        <FILE id="bQVfiE" name="ext_ffi_tutorial.html" compile="0" resource="1"
+              file="Source/Misc/luajit/doc/ext_ffi_tutorial.html"/>
+        <FILE id="CWlcRl" name="ext_jit.html" compile="0" resource="1" file="Source/Misc/luajit/doc/ext_jit.html"/>
+        <FILE id="huukEO" name="ext_profiler.html" compile="0" resource="1"
+              file="Source/Misc/luajit/doc/ext_profiler.html"/>
+        <FILE id="qQjo58" name="extensions.html" compile="0" resource="1" file="Source/Misc/luajit/doc/extensions.html"/>
+        <FILE id="iOghnj" name="install.html" compile="0" resource="1" file="Source/Misc/luajit/doc/install.html"/>
+        <FILE id="iZSRP2" name="luajit.html" compile="0" resource="1" file="Source/Misc/luajit/doc/luajit.html"/>
+        <FILE id="mbWtTC" name="running.html" compile="0" resource="1" file="Source/Misc/luajit/doc/running.html"/>
+      </GROUP>
+      <GROUP id="{F80DFA3C-1733-BC8E-6DD8-B85CA4FD278F}" name="dynasm">
+        <GROUP id="{02A656EF-3087-B9B5-E03F-82487FD53AA4}" name="Examples">
+          <FILE id="MPcp5c" name="run.sh" compile="0" resource="1" file="Source/Misc/luajit/dynasm/Examples/run.sh"/>
+          <FILE id="kPfAOt" name="test_z_inst.c" compile="1" resource="0" file="Source/Misc/luajit/dynasm/Examples/test_z_inst.c"/>
+        </GROUP>
+        <FILE id="q6aX0k" name="dasm_arm.h" compile="0" resource="0" file="Source/Misc/luajit/dynasm/dasm_arm.h"/>
+        <FILE id="lXsRuF" name="dasm_arm.lua" compile="0" resource="1" file="Source/Misc/luajit/dynasm/dasm_arm.lua"/>
+        <FILE id="VmAiUq" name="dasm_arm64.h" compile="0" resource="0" file="Source/Misc/luajit/dynasm/dasm_arm64.h"/>
+        <FILE id="E6p3WA" name="dasm_arm64.lua" compile="0" resource="1" file="Source/Misc/luajit/dynasm/dasm_arm64.lua"/>
+        <FILE id="an7L1x" name="dasm_mips.h" compile="0" resource="0" file="Source/Misc/luajit/dynasm/dasm_mips.h"/>
+        <FILE id="x9Kt3C" name="dasm_mips.lua" compile="0" resource="1" file="Source/Misc/luajit/dynasm/dasm_mips.lua"/>
+        <FILE id="yqmDKY" name="dasm_mips64.lua" compile="0" resource="1" file="Source/Misc/luajit/dynasm/dasm_mips64.lua"/>
+        <FILE id="vN5rEO" name="dasm_ppc.h" compile="0" resource="0" file="Source/Misc/luajit/dynasm/dasm_ppc.h"/>
+        <FILE id="RPnhoP" name="dasm_ppc.lua" compile="0" resource="1" file="Source/Misc/luajit/dynasm/dasm_ppc.lua"/>
+        <FILE id="M7Mysh" name="dasm_proto.h" compile="0" resource="0" file="Source/Misc/luajit/dynasm/dasm_proto.h"/>
+        <FILE id="whiBnr" name="dasm_s390x.h" compile="0" resource="0" file="Source/Misc/luajit/dynasm/dasm_s390x.h"/>
+        <FILE id="SCG95P" name="dasm_s390x.lua" compile="0" resource="1" file="Source/Misc/luajit/dynasm/dasm_s390x.lua"/>
+        <FILE id="b20mSL" name="dasm_x64.lua" compile="0" resource="1" file="Source/Misc/luajit/dynasm/dasm_x64.lua"/>
+        <FILE id="jdrkNH" name="dasm_x86.h" compile="0" resource="0" file="Source/Misc/luajit/dynasm/dasm_x86.h"/>
+        <FILE id="YVTvIK" name="dasm_x86.lua" compile="0" resource="1" file="Source/Misc/luajit/dynasm/dasm_x86.lua"/>
+        <FILE id="Q6CUTL" name="dynasm.lua" compile="0" resource="1" file="Source/Misc/luajit/dynasm/dynasm.lua"/>
+      </GROUP>
+      <GROUP id="{91E36014-28D5-F7A9-3C86-E9CCC1BF9EC3}" name="etc">
+        <FILE id="KSy0el" name="luajit.1" compile="0" resource="1" file="Source/Misc/luajit/etc/luajit.1"/>
+        <FILE id="ZJsM8y" name="luajit.pc" compile="0" resource="1" file="Source/Misc/luajit/etc/luajit.pc"/>
+      </GROUP>
+      <GROUP id="{3DEC0AC9-5B56-F7BD-7896-971AA181D225}" name="src">
+        <GROUP id="{07D80044-9E73-DDC0-076A-B10EAE32A5E8}" name="host">
+          <FILE id="kjBR9T" name="buildvm.c" compile="1" resource="0" file="Source/Misc/luajit/src/host/buildvm.c"/>
+          <FILE id="gTIkE8" name="buildvm.h" compile="0" resource="0" file="Source/Misc/luajit/src/host/buildvm.h"/>
+          <FILE id="NQ4W9G" name="buildvm_asm.c" compile="1" resource="0" file="Source/Misc/luajit/src/host/buildvm_asm.c"/>
+          <FILE id="JIZa0I" name="buildvm_fold.c" compile="1" resource="0" file="Source/Misc/luajit/src/host/buildvm_fold.c"/>
+          <FILE id="szpSU3" name="buildvm_lib.c" compile="1" resource="0" file="Source/Misc/luajit/src/host/buildvm_lib.c"/>
+          <FILE id="OJUVTi" name="buildvm_libbc.h" compile="0" resource="0" file="Source/Misc/luajit/src/host/buildvm_libbc.h"/>
+          <FILE id="CUj25G" name="buildvm_peobj.c" compile="1" resource="0" file="Source/Misc/luajit/src/host/buildvm_peobj.c"/>
+          <FILE id="S3DCIZ" name="genlibbc.lua" compile="0" resource="1" file="Source/Misc/luajit/src/host/genlibbc.lua"/>
+          <FILE id="H18ru5" name="genminilua.lua" compile="0" resource="1" file="Source/Misc/luajit/src/host/genminilua.lua"/>
+          <FILE id="xjtBRB" name="genversion.lua" compile="0" resource="1" file="Source/Misc/luajit/src/host/genversion.lua"/>
+          <FILE id="p7oaWC" name="minilua.c" compile="1" resource="0" file="Source/Misc/luajit/src/host/minilua.c"/>
+          <FILE id="tQMmac" name="README" compile="0" resource="1" file="Source/Misc/luajit/src/host/README"/>
+        </GROUP>
+        <GROUP id="{AFA5B304-C843-FD70-DB1A-F299F425AE81}" name="jit">
+          <FILE id="JUw3Rm" name="bc.lua" compile="0" resource="1" file="Source/Misc/luajit/src/jit/bc.lua"/>
+          <FILE id="ynYS9W" name="bcsave.lua" compile="0" resource="1" file="Source/Misc/luajit/src/jit/bcsave.lua"/>
+          <FILE id="CylLx9" name="dis_arm.lua" compile="0" resource="1" file="Source/Misc/luajit/src/jit/dis_arm.lua"/>
+          <FILE id="jQt0BQ" name="dis_arm64.lua" compile="0" resource="1" file="Source/Misc/luajit/src/jit/dis_arm64.lua"/>
+          <FILE id="o2sYuq" name="dis_arm64be.lua" compile="0" resource="1" file="Source/Misc/luajit/src/jit/dis_arm64be.lua"/>
+          <FILE id="C3LMdI" name="dis_mips.lua" compile="0" resource="1" file="Source/Misc/luajit/src/jit/dis_mips.lua"/>
+          <FILE id="DJeISj" name="dis_mips64.lua" compile="0" resource="1" file="Source/Misc/luajit/src/jit/dis_mips64.lua"/>
+          <FILE id="cloooY" name="dis_mips64el.lua" compile="0" resource="1"
+                file="Source/Misc/luajit/src/jit/dis_mips64el.lua"/>
+          <FILE id="JBGz8f" name="dis_mips64r6.lua" compile="0" resource="1"
+                file="Source/Misc/luajit/src/jit/dis_mips64r6.lua"/>
+          <FILE id="r6xEJ5" name="dis_mips64r6el.lua" compile="0" resource="1"
+                file="Source/Misc/luajit/src/jit/dis_mips64r6el.lua"/>
+          <FILE id="F21qRp" name="dis_mipsel.lua" compile="0" resource="1" file="Source/Misc/luajit/src/jit/dis_mipsel.lua"/>
+          <FILE id="YM4mXJ" name="dis_ppc.lua" compile="0" resource="1" file="Source/Misc/luajit/src/jit/dis_ppc.lua"/>
+          <FILE id="vKsqzw" name="dis_s390x.lua" compile="0" resource="1" file="Source/Misc/luajit/src/jit/dis_s390x.lua"/>
+          <FILE id="m9bEKd" name="dis_x64.lua" compile="0" resource="1" file="Source/Misc/luajit/src/jit/dis_x64.lua"/>
+          <FILE id="QAPDe0" name="dis_x86.lua" compile="0" resource="1" file="Source/Misc/luajit/src/jit/dis_x86.lua"/>
+          <FILE id="gAD7tt" name="dump.lua" compile="0" resource="1" file="Source/Misc/luajit/src/jit/dump.lua"/>
+          <FILE id="NX2ByU" name="p.lua" compile="0" resource="1" file="Source/Misc/luajit/src/jit/p.lua"/>
+          <FILE id="Y0IIPu" name="v.lua" compile="0" resource="1" file="Source/Misc/luajit/src/jit/v.lua"/>
+          <FILE id="onMYMJ" name="vmdef.lua" compile="0" resource="1" file="Source/Misc/luajit/src/jit/vmdef.lua"/>
+          <FILE id="IQlXXQ" name="zone.lua" compile="0" resource="1" file="Source/Misc/luajit/src/jit/zone.lua"/>
+        </GROUP>
+        <GROUP id="{F09D8503-42B4-12AE-2C3D-0802B35F53B1}" name="x64">
+          <GROUP id="{63C8BAD8-DE68-42A1-EE2C-00AA06E92907}" name="test">
+            <FILE id="AJtfZl" name="benchmark.cxx" compile="1" resource="0" file="Source/Misc/luajit/src/x64/test/benchmark.cxx"/>
+            <FILE id="pEJKXG" name="Makefile" compile="0" resource="1" file="Source/Misc/luajit/src/x64/test/Makefile"/>
+            <FILE id="nd50fL" name="test.cpp" compile="1" resource="0" file="Source/Misc/luajit/src/x64/test/test.cpp"/>
+            <FILE id="ezxPzj" name="test_str_comp.lua" compile="0" resource="1"
+                  file="Source/Misc/luajit/src/x64/test/test_str_comp.lua"/>
+            <FILE id="fxH4l8" name="test_util.cxx" compile="1" resource="0" file="Source/Misc/luajit/src/x64/test/test_util.cxx"/>
+            <FILE id="m5fbIo" name="test_util.d" compile="0" resource="1" file="Source/Misc/luajit/src/x64/test/test_util.d"/>
+            <FILE id="PsNwPU" name="test_util.hpp" compile="0" resource="0" file="Source/Misc/luajit/src/x64/test/test_util.hpp"/>
+          </GROUP>
+          <FILE id="aR1uBa" name="Makefile" compile="0" resource="1" file="Source/Misc/luajit/src/x64/Makefile"/>
+        </GROUP>
+        <FILE id="LITOco" name="buildvm.exp" compile="0" resource="1" file="Source/Misc/luajit/src/buildvm.exp"/>
+        <FILE id="KRF8tr" name="buildvm.lib" compile="0" resource="1" file="Source/Misc/luajit/src/buildvm.lib"/>
+        <FILE id="DTvZRn" name="lauxlib.h" compile="0" resource="0" file="Source/Misc/luajit/src/lauxlib.h"/>
+        <FILE id="dRVhZw" name="lib_aux.c" compile="1" resource="0" file="Source/Misc/luajit/src/lib_aux.c"/>
+        <FILE id="b0hGko" name="lib_base.c" compile="1" resource="0" file="Source/Misc/luajit/src/lib_base.c"/>
+        <FILE id="EEpejE" name="lib_bit.c" compile="1" resource="0" file="Source/Misc/luajit/src/lib_bit.c"/>
+        <FILE id="SIwgbO" name="lib_buffer.c" compile="1" resource="0" file="Source/Misc/luajit/src/lib_buffer.c"/>
+        <FILE id="UmTCxk" name="lib_debug.c" compile="1" resource="0" file="Source/Misc/luajit/src/lib_debug.c"/>
+        <FILE id="CdRiMt" name="lib_ffi.c" compile="1" resource="0" file="Source/Misc/luajit/src/lib_ffi.c"/>
+        <FILE id="J0n0jO" name="lib_init.c" compile="1" resource="0" file="Source/Misc/luajit/src/lib_init.c"/>
+        <FILE id="jW00XW" name="lib_io.c" compile="1" resource="0" file="Source/Misc/luajit/src/lib_io.c"/>
+        <FILE id="bg6LQ7" name="lib_jit.c" compile="1" resource="0" file="Source/Misc/luajit/src/lib_jit.c"/>
+        <FILE id="ljyC5Z" name="lib_math.c" compile="1" resource="0" file="Source/Misc/luajit/src/lib_math.c"/>
+        <FILE id="zh4uRB" name="lib_os.c" compile="1" resource="0" file="Source/Misc/luajit/src/lib_os.c"/>
+        <FILE id="Z499Zz" name="lib_package.c" compile="1" resource="0" file="Source/Misc/luajit/src/lib_package.c"/>
+        <FILE id="Cq1IXb" name="lib_string.c" compile="1" resource="0" file="Source/Misc/luajit/src/lib_string.c"/>
+        <FILE id="atXBsp" name="lib_table.c" compile="1" resource="0" file="Source/Misc/luajit/src/lib_table.c"/>
+        <FILE id="d7mWb8" name="lj_alloc.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_alloc.c"/>
+        <FILE id="ICb2vV" name="lj_alloc.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_alloc.h"/>
+        <FILE id="QFnHAT" name="lj_api.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_api.c"/>
+        <FILE id="M055tI" name="lj_arch.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_arch.h"/>
+        <FILE id="tLM9mX" name="lj_asm.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_asm.c"/>
+        <FILE id="RoAfsl" name="lj_asm.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_asm.h"/>
+        <FILE id="bipRtZ" name="lj_asm_arm.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_asm_arm.h"/>
+        <FILE id="XOEBsZ" name="lj_asm_arm64.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_asm_arm64.h"/>
+        <FILE id="vVUlHq" name="lj_asm_mips.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_asm_mips.h"/>
+        <FILE id="ynqtoF" name="lj_asm_ppc.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_asm_ppc.h"/>
+        <FILE id="tWXnuH" name="lj_asm_x86.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_asm_x86.h"/>
+        <FILE id="q4JyI7" name="lj_assert.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_assert.c"/>
+        <FILE id="jFioLw" name="lj_bc.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_bc.c"/>
+        <FILE id="SSQ96k" name="lj_bc.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_bc.h"/>
+        <FILE id="eDitW2" name="lj_bcdump.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_bcdump.h"/>
+        <FILE id="nWTLlW" name="lj_bcread.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_bcread.c"/>
+        <FILE id="iRgTcl" name="lj_bcwrite.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_bcwrite.c"/>
+        <FILE id="TKoirg" name="lj_buf.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_buf.c"/>
+        <FILE id="f4ByEq" name="lj_buf.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_buf.h"/>
+        <FILE id="jUXia4" name="lj_carith.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_carith.c"/>
+        <FILE id="QiHgs2" name="lj_carith.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_carith.h"/>
+        <FILE id="yrkB75" name="lj_ccall.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_ccall.c"/>
+        <FILE id="qMkaDS" name="lj_ccall.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_ccall.h"/>
+        <FILE id="gXdYVV" name="lj_ccallback.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_ccallback.c"/>
+        <FILE id="pxG3Z8" name="lj_ccallback.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_ccallback.h"/>
+        <FILE id="mKrri7" name="lj_cconv.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_cconv.c"/>
+        <FILE id="HmZvCe" name="lj_cconv.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_cconv.h"/>
+        <FILE id="hgUETT" name="lj_cdata.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_cdata.c"/>
+        <FILE id="FSej21" name="lj_cdata.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_cdata.h"/>
+        <FILE id="rZMNmd" name="lj_char.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_char.c"/>
+        <FILE id="Hgekur" name="lj_char.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_char.h"/>
+        <FILE id="XsB4pb" name="lj_clib.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_clib.c"/>
+        <FILE id="ALML76" name="lj_clib.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_clib.h"/>
+        <FILE id="dT1CXg" name="lj_cparse.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_cparse.c"/>
+        <FILE id="UiyhKl" name="lj_cparse.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_cparse.h"/>
+        <FILE id="xLgEvH" name="lj_crecord.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_crecord.c"/>
+        <FILE id="XAeFvS" name="lj_crecord.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_crecord.h"/>
+        <FILE id="EsyNDz" name="lj_ctype.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_ctype.c"/>
+        <FILE id="BLeOos" name="lj_ctype.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_ctype.h"/>
+        <FILE id="UNCH1b" name="lj_debug.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_debug.c"/>
+        <FILE id="eEHfMc" name="lj_debug.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_debug.h"/>
+        <FILE id="EmxmOT" name="lj_def.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_def.h"/>
+        <FILE id="UbNQ7b" name="lj_dispatch.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_dispatch.c"/>
+        <FILE id="dM7Syw" name="lj_dispatch.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_dispatch.h"/>
+        <FILE id="owgdaB" name="lj_emit_arm.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_emit_arm.h"/>
+        <FILE id="R2kuDw" name="lj_emit_arm64.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_emit_arm64.h"/>
+        <FILE id="xBY7ad" name="lj_emit_mips.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_emit_mips.h"/>
+        <FILE id="WcQJxr" name="lj_emit_ppc.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_emit_ppc.h"/>
+        <FILE id="QLDDg3" name="lj_emit_x86.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_emit_x86.h"/>
+        <FILE id="AX0jgM" name="lj_err.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_err.c"/>
+        <FILE id="HVh7tB" name="lj_err.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_err.h"/>
+        <FILE id="kfFdNV" name="lj_errmsg.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_errmsg.h"/>
+        <FILE id="vI8fHk" name="lj_ff.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_ff.h"/>
+        <FILE id="Un468l" name="lj_ffrecord.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_ffrecord.c"/>
+        <FILE id="DPyM16" name="lj_ffrecord.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_ffrecord.h"/>
+        <FILE id="nfgmqJ" name="lj_frame.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_frame.h"/>
+        <FILE id="FqLxXt" name="lj_func.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_func.c"/>
+        <FILE id="FMLGOH" name="lj_func.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_func.h"/>
+        <FILE id="qyQiLp" name="lj_gc.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_gc.c"/>
+        <FILE id="ALl7IZ" name="lj_gc.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_gc.h"/>
+        <FILE id="FSuSuW" name="lj_gdbjit.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_gdbjit.c"/>
+        <FILE id="AwX0sc" name="lj_gdbjit.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_gdbjit.h"/>
+        <FILE id="UtbFE1" name="lj_init.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_init.c"/>
+        <FILE id="K7TR77" name="lj_ir.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_ir.c"/>
+        <FILE id="Wzva3A" name="lj_ir.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_ir.h"/>
+        <FILE id="VBAJGi" name="lj_ircall.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_ircall.h"/>
+        <FILE id="JMd9OW" name="lj_iropt.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_iropt.h"/>
+        <FILE id="Vga5Q9" name="lj_jit.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_jit.h"/>
+        <FILE id="tivZHb" name="lj_lex.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_lex.c"/>
+        <FILE id="ho4klc" name="lj_lex.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_lex.h"/>
+        <FILE id="pukVxz" name="lj_lib.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_lib.c"/>
+        <FILE id="GDevS8" name="lj_lib.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_lib.h"/>
+        <FILE id="VIuvSU" name="lj_load.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_load.c"/>
+        <FILE id="uG6W5Z" name="lj_mcode.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_mcode.c"/>
+        <FILE id="kqQ12v" name="lj_mcode.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_mcode.h"/>
+        <FILE id="k2KPu1" name="lj_meta.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_meta.c"/>
+        <FILE id="gDgwxS" name="lj_meta.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_meta.h"/>
+        <FILE id="FoPE4C" name="lj_obj.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_obj.c"/>
+        <FILE id="kjNUjt" name="lj_obj.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_obj.h"/>
+        <FILE id="GiDMG9" name="lj_opt_dce.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_opt_dce.c"/>
+        <FILE id="OvWzt2" name="lj_opt_fold.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_opt_fold.c"/>
+        <FILE id="cZBK43" name="lj_opt_loop.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_opt_loop.c"/>
+        <FILE id="h2MHVq" name="lj_opt_mem.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_opt_mem.c"/>
+        <FILE id="hmwZXN" name="lj_opt_narrow.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_opt_narrow.c"/>
+        <FILE id="FRWOFu" name="lj_opt_sink.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_opt_sink.c"/>
+        <FILE id="gHhB4u" name="lj_opt_split.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_opt_split.c"/>
+        <FILE id="kgifv1" name="lj_parse.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_parse.c"/>
+        <FILE id="ahtfmu" name="lj_parse.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_parse.h"/>
+        <FILE id="cuuy3t" name="lj_prng.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_prng.c"/>
+        <FILE id="j5t8Bm" name="lj_prng.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_prng.h"/>
+        <FILE id="DGlHzx" name="lj_profile.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_profile.c"/>
+        <FILE id="d7LqA1" name="lj_profile.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_profile.h"/>
+        <FILE id="huyVSi" name="lj_record.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_record.c"/>
+        <FILE id="s1347G" name="lj_record.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_record.h"/>
+        <FILE id="B3QzNh" name="lj_serialize.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_serialize.c"/>
+        <FILE id="j6JqI6" name="lj_serialize.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_serialize.h"/>
+        <FILE id="ushbE0" name="lj_snap.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_snap.c"/>
+        <FILE id="JNQetH" name="lj_snap.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_snap.h"/>
+        <FILE id="T90hhf" name="lj_state.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_state.c"/>
+        <FILE id="DZUYSZ" name="lj_state.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_state.h"/>
+        <FILE id="x5HzV1" name="lj_str.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_str.c"/>
+        <FILE id="iwmH6b" name="lj_str.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_str.h"/>
+        <FILE id="vlZ2WA" name="lj_str_hash.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_str_hash.c"/>
+        <FILE id="Hoc434" name="lj_strfmt.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_strfmt.c"/>
+        <FILE id="ONL8bM" name="lj_strfmt.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_strfmt.h"/>
+        <FILE id="zZrWkr" name="lj_strfmt_num.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_strfmt_num.c"/>
+        <FILE id="Oh1r3K" name="lj_strscan.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_strscan.c"/>
+        <FILE id="n5CEez" name="lj_strscan.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_strscan.h"/>
+        <FILE id="HWXk3V" name="lj_tab.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_tab.c"/>
+        <FILE id="Gi4kNU" name="lj_tab.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_tab.h"/>
+        <FILE id="EXuRIh" name="lj_target.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_target.h"/>
+        <FILE id="sXfVX0" name="lj_target_arm.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_target_arm.h"/>
+        <FILE id="uUC34U" name="lj_target_arm64.h" compile="0" resource="0"
+              file="Source/Misc/luajit/src/lj_target_arm64.h"/>
+        <FILE id="R8VOWG" name="lj_target_mips.h" compile="0" resource="0"
+              file="Source/Misc/luajit/src/lj_target_mips.h"/>
+        <FILE id="vbIFIM" name="lj_target_ppc.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_target_ppc.h"/>
+        <FILE id="BHKcMW" name="lj_target_s390x.h" compile="0" resource="0"
+              file="Source/Misc/luajit/src/lj_target_s390x.h"/>
+        <FILE id="Kt3hzq" name="lj_target_x86.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_target_x86.h"/>
+        <FILE id="ZqjgLu" name="lj_trace.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_trace.c"/>
+        <FILE id="yM1d2x" name="lj_trace.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_trace.h"/>
+        <FILE id="ZSmK9J" name="lj_traceerr.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_traceerr.h"/>
+        <FILE id="cowRpT" name="lj_udata.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_udata.c"/>
+        <FILE id="STtmfc" name="lj_udata.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_udata.h"/>
+        <FILE id="o7HRHA" name="lj_vm.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_vm.h"/>
+        <FILE id="Mvw60V" name="lj_vmevent.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_vmevent.c"/>
+        <FILE id="WsuDg3" name="lj_vmevent.h" compile="0" resource="0" file="Source/Misc/luajit/src/lj_vmevent.h"/>
+        <FILE id="z3uSFj" name="lj_vmmath.c" compile="1" resource="0" file="Source/Misc/luajit/src/lj_vmmath.c"/>
+        <FILE id="e4QVF0" name="ljamalg.c" compile="1" resource="0" file="Source/Misc/luajit/src/ljamalg.c"/>
+        <FILE id="l0AxKM" name="lua.h" compile="0" resource="0" file="Source/Misc/luajit/src/lua.h"/>
+        <FILE id="uMnRsf" name="lua.hpp" compile="0" resource="0" file="Source/Misc/luajit/src/lua.hpp"/>
+        <FILE id="MIs8D7" name="lua51.dll" compile="0" resource="1" file="Source/Misc/luajit/src/lua51.dll"/>
+        <FILE id="NrIv8B" name="lua51.exp" compile="0" resource="1" file="Source/Misc/luajit/src/lua51.exp"/>
+        <FILE id="eVXRtJ" name="lua51.lib" compile="0" resource="1" file="Source/Misc/luajit/src/lua51.lib"/>
+        <FILE id="yxoxF0" name="lua51.pdb" compile="0" resource="1" file="Source/Misc/luajit/src/lua51.pdb"/>
+        <FILE id="iLYIUL" name="luaconf.h" compile="0" resource="0" file="Source/Misc/luajit/src/luaconf.h"/>
+        <FILE id="kqXNH6" name="luajit.c" compile="1" resource="0" file="Source/Misc/luajit/src/luajit.c"/>
+        <FILE id="DHMeli" name="luajit.exe" compile="0" resource="1" file="Source/Misc/luajit/src/luajit.exe"/>
+        <FILE id="Lk10Gw" name="luajit.exp" compile="0" resource="1" file="Source/Misc/luajit/src/luajit.exp"/>
+        <FILE id="gZn47e" name="luajit.h" compile="0" resource="0" file="Source/Misc/luajit/src/luajit.h"/>
+        <FILE id="rUtllg" name="luajit.lib" compile="0" resource="1" file="Source/Misc/luajit/src/luajit.lib"/>
+        <FILE id="BjmrL0" name="luajit.pdb" compile="0" resource="1" file="Source/Misc/luajit/src/luajit.pdb"/>
+        <FILE id="kNCaxq" name="luajit_relver.txt" compile="0" resource="1"
+              file="Source/Misc/luajit/src/luajit_relver.txt"/>
+        <FILE id="eTrA2I" name="luajit_rolling.h" compile="0" resource="0"
+              file="Source/Misc/luajit/src/luajit_rolling.h"/>
+        <FILE id="lx4xux" name="lualib.h" compile="0" resource="0" file="Source/Misc/luajit/src/lualib.h"/>
+        <FILE id="EE0p5C" name="Makefile" compile="0" resource="1" file="Source/Misc/luajit/src/Makefile"/>
+        <FILE id="dPkp8B" name="Makefile.dep" compile="0" resource="1" file="Source/Misc/luajit/src/Makefile.dep"/>
+        <FILE id="OtAlUc" name="minilua.exp" compile="0" resource="1" file="Source/Misc/luajit/src/minilua.exp"/>
+        <FILE id="shJSq5" name="minilua.lib" compile="0" resource="1" file="Source/Misc/luajit/src/minilua.lib"/>
+        <FILE id="ZAFUe3" name="msvcbuild.bat" compile="0" resource="1" file="Source/Misc/luajit/src/msvcbuild.bat"/>
+        <FILE id="YOHRyY" name="nxbuild.bat" compile="0" resource="1" file="Source/Misc/luajit/src/nxbuild.bat"/>
+        <FILE id="VVqdBC" name="ps4build.bat" compile="0" resource="1" file="Source/Misc/luajit/src/ps4build.bat"/>
+        <FILE id="XLPd3y" name="ps5build.bat" compile="0" resource="1" file="Source/Misc/luajit/src/ps5build.bat"/>
+        <FILE id="izT88R" name="psvitabuild.bat" compile="0" resource="1" file="Source/Misc/luajit/src/psvitabuild.bat"/>
+        <FILE id="HeZWcv" name="vc140.pdb" compile="0" resource="1" file="Source/Misc/luajit/src/vc140.pdb"/>
+        <FILE id="cpB3Cc" name="vm_arm.dasc" compile="0" resource="1" file="Source/Misc/luajit/src/vm_arm.dasc"/>
+        <FILE id="F7XwiY" name="vm_arm64.dasc" compile="0" resource="1" file="Source/Misc/luajit/src/vm_arm64.dasc"/>
+        <FILE id="rHkqvZ" name="vm_mips.dasc" compile="0" resource="1" file="Source/Misc/luajit/src/vm_mips.dasc"/>
+        <FILE id="KD1Vm8" name="vm_mips64.dasc" compile="0" resource="1" file="Source/Misc/luajit/src/vm_mips64.dasc"/>
+        <FILE id="sIJUND" name="vm_ppc.dasc" compile="0" resource="1" file="Source/Misc/luajit/src/vm_ppc.dasc"/>
+        <FILE id="lOA5cS" name="vm_s390x.dasc" compile="0" resource="1" file="Source/Misc/luajit/src/vm_s390x.dasc"/>
+        <FILE id="jMGc8B" name="vm_x64.dasc" compile="0" resource="1" file="Source/Misc/luajit/src/vm_x64.dasc"/>
+        <FILE id="bKKRpC" name="vm_x86.dasc" compile="0" resource="1" file="Source/Misc/luajit/src/vm_x86.dasc"/>
+        <FILE id="ge1wTX" name="xb1build.bat" compile="0" resource="1" file="Source/Misc/luajit/src/xb1build.bat"/>
+        <FILE id="QVTTUo" name="xedkbuild.bat" compile="0" resource="1" file="Source/Misc/luajit/src/xedkbuild.bat"/>
+      </GROUP>
+      <GROUP id="{E3273618-782B-0B18-F970-049832F0EA91}" name="t">
+        <FILE id="DaUkxU" name="exdata.t" compile="0" resource="1" file="Source/Misc/luajit/t/exdata.t"/>
+        <FILE id="JcQOCk" name="exdata2.t" compile="0" resource="1" file="Source/Misc/luajit/t/exdata2.t"/>
+        <FILE id="cSKCHI" name="isarr-interp.t" compile="0" resource="1" file="Source/Misc/luajit/t/isarr-interp.t"/>
+        <FILE id="KZermW" name="isarr-jit.t" compile="0" resource="1" file="Source/Misc/luajit/t/isarr-jit.t"/>
+        <FILE id="mCZP55" name="isempty.t" compile="0" resource="1" file="Source/Misc/luajit/t/isempty.t"/>
+        <FILE id="CWQACF" name="iter.t" compile="0" resource="1" file="Source/Misc/luajit/t/iter.t"/>
+        <FILE id="wFal9c" name="nkeys.t" compile="0" resource="1" file="Source/Misc/luajit/t/nkeys.t"/>
+        <FILE id="I6V4Yv" name="prngstate.t" compile="0" resource="1" file="Source/Misc/luajit/t/prngstate.t"/>
+        <FILE id="vZ0es8" name="table-clone.t" compile="0" resource="1" file="Source/Misc/luajit/t/table-clone.t"/>
+        <FILE id="TT4LYz" name="TestLJ.pm" compile="0" resource="1" file="Source/Misc/luajit/t/TestLJ.pm"/>
+      </GROUP>
+      <FILE id="w24Hc2" name="build.yaml.txt" compile="0" resource="1" file="Source/Misc/luajit/build.yaml.txt"/>
+      <FILE id="MMiJs9" name="CMakeLists.txt" compile="0" resource="1" file="Source/Misc/luajit/CMakeLists.txt"/>
+      <FILE id="Wg7qzj" name="COPYRIGHT" compile="0" resource="1" file="Source/Misc/luajit/COPYRIGHT"/>
+      <FILE id="opd2I3" name="Makefile" compile="0" resource="1" file="Source/Misc/luajit/Makefile"/>
+      <FILE id="r7gava" name="README" compile="0" resource="1" file="Source/Misc/luajit/README"/>
+      <FILE id="XMlHn2" name="README.md" compile="0" resource="1" file="Source/Misc/luajit/README.md"/>
+    </GROUP>
     <GROUP id="{BE407432-92DD-AEAB-3C70-AAE03FCD0B1D}" name="Source">
       <GROUP id="{F4D7C0F1-7F03-CB3F-30C6-F728F0E39FE2}" name="Misc">
         <GROUP id="{E0E4DD68-0D44-4709-7B14-B00F9E7420BF}" name="luabind">
@@ -1120,13 +1430,16 @@
     <FILE id="GexC0X" name="CtrlrMarkdownParser.h" compile="0" resource="0"
           file="Source/UIComponents/CtrlrMarkdownParser.h"/>
     <FILE id="DahwIi" name="Expressions.md" compile="0" resource="1" file="Source/Resources/Doc/Expressions.md"/>
-    <FILE id="Yx6vaN" name="lua_api_patcher.py" compile="0" resource="1"
-          file="lua_api_patcher.py"/>
+    <FILE id="NsTtOA" name="extract_enums.py" compile="0" resource="1"
+          file="Scripts/extract_enums.py"/>
+    <FILE id="do77WC" name="lua_api_patcher.py" compile="0" resource="1"
+          file="Scripts/lua_api_patcher.py"/>
     <FILE id="ZR3dF7" name="LuaAPI.xml" compile="0" resource="1" file="Source/Resources/XML/LuaAPI.xml"/>
-    <FILE id="VQmJn4" name="luabind_parser.py" compile="0" resource="1"
-          file="luabind_parser.py"/>
+    <FILE id="xWtetw" name="luabind_parser.py" compile="0" resource="1"
+          file="Scripts/luabind_parser.py"/>
     <FILE id="Ur9pgw" name="LuaFileOperations.md" compile="0" resource="1"
           file="Source/Resources/Doc/LuaFileOperations.md"/>
+    <FILE id="Qroh3E" name="luajit.zip" compile="0" resource="1" file="Source/Resources/luajit.zip"/>
     <FILE id="Il28No" name="LuaUsefulCommands.md" compile="0" resource="1"
           file="Source/Resources/Doc/LuaUsefulCommands.md"/>
     <FILE id="URDeof" name="MidiProgramming.md" compile="0" resource="1"
@@ -1190,7 +1503,7 @@
       </MODULEPATHS>
     </VS2019>
     <VS2022 targetFolder="Builds/VisualStudio2022" vstLegacyFolder="Source/Misc/vst2sdk"
-            extraDefs="JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1 BOOST_BIND_GLOBAL_PLACEHOLDERS=1"
+            extraDefs="JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1 BOOST_BIND_GLOBAL_PLACEHOLDERS=1  CTLRX_DISABLE_DYNAMIC_LNF=1"
             extraCompilerFlags="/bigobj /Fpstadfx.h" smallIcon="eqFQC1" bigIcon="eqFQC1">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/Misc&#10;../../Source/Misc/include&#10;../../Source/Misc/lua/include&#10;../../Source/Misc/luabind&#10;../../Source/Misc/boost&#10;../../Source/MIDI&#10;../../Source/Core&#10;../../Source/Native&#10;../../Source/Plugin&#10;../../Source/UIComponents&#10;../../Source/Lua"/>

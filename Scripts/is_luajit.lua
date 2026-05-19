@@ -1,0 +1,1 @@
+console(jit and "Engine: LuaJIT (" .. jit.version .. ")" or "Engine: Standard Lua")
