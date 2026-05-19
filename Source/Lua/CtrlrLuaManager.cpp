@@ -1665,6 +1665,29 @@ CtrlrLuaMultiTimer::CtrlrLuaMultiTimer()
 
 CtrlrLuaMultiTimer::~CtrlrLuaMultiTimer()
 {
+    // 1. CLEAR ALL ACTIVE RUNNING TIMERS
+    // We iterate through our internal map keys and notify JUCE's underlying 
+    // MultiTimer base class to remove these scheduled tasks from the event queue.
+    try
+    {
+        HashMap<int, LuaTimerCallback>::Iterator it (callbacks);
+        
+        while (it.next())
+        {
+            const int activeTimerId = it.getKey();
+            MultiTimer::stopTimer (activeTimerId);
+        }
+    }
+    catch (...) {}
+
+    // 2. DISMISS LUA LUABIND OBJECT REFERENCE COUNTS
+    // Force the map to wipe itself cleanly, breaking any remaining 
+    // Luabind reference counts to Lua functions before memory unloads.
+    try
+    {
+        callbacks.clear();
+    }
+    catch (...) {}
 }
 
 void CtrlrLuaMultiTimer::wrapForLua(lua_State* L)

@@ -4,6 +4,7 @@
 #include "CtrlrStandaloneWindow.h"
 #include "LinuxDpiScale.h"
 
+
 #if JUCE_LINUX
  #include <cmath>
 #endif
@@ -73,13 +74,13 @@ class CtrlrApplication : public JUCEApplication
                 {
 					Logger::writeToLog("CTRLR:initialise params \""+commandLineParameters+"\"");
 
-#if JUCE_LINUX
+			#if JUCE_LINUX
 					const double linuxScale = ctrlrx_get_linux_scale_factor();
 					if (std::abs(linuxScale - 1.0) > 0.001)
 						Desktop::getInstance().setGlobalScaleFactor((float)linuxScale);
 
 					Logger::writeToLog("CTRLR:linux scale factor \"" + String(linuxScale, 3) + "\"");
-#endif
+			#endif
 
 					{
 						bool setcrashhandler = true;
@@ -125,13 +126,40 @@ class CtrlrApplication : public JUCEApplication
 						filterWindow->openFileFromCli (File(commandLineParameters.unquoted()));
                 }
 
-                void shutdown()
-                {
-					if (filterWindow)
-					{
-                        deleteAndZero (filterWindow);
-					}
-                }
+void shutdown()
+{
+    if (filterWindow)
+    {
+        // 1. DISARM PANELS & COMPONENT HIERARCHY
+        // Forcefully unbind all child panels and widgets from the window frame 
+        // while the memory addresses are 100% active and healthy.
+        try 
+        { 
+            filterWindow->clearContentComponent(); 
+        } 
+        catch (...) {}
+        
+        try 
+        { 
+            filterWindow->deleteAllChildren(); 
+        } 
+        catch (...) {}
+
+        // 2. TEAR DOWN THE MAIN WINDOW FRAME
+        // Native JUCE utility to delete the raw pointer and zero it out.
+        deleteAndZero (filterWindow);
+    }
+
+    // 3. CORRECT JUCE GRAPHICS & TEXT PURGE
+    // Now that the components holding the image handles are completely destroyed,
+    // we tell JUCE to instantly dump the background RAM caches.
+    try
+    {
+        juce::ImageCache::releaseUnusedImages();
+        juce::LookAndFeel::setDefaultLookAndFeel (nullptr);
+    }
+    catch (...) {}
+}
 
                 const String getApplicationName()
                 {

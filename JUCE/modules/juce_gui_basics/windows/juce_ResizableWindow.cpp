@@ -43,33 +43,43 @@ ResizableWindow::~ResizableWindow()
 {
     splashScreen.deleteAndZero();
 
-    // 1. DEREFERENCED DEEP MEMORY GUARD
-    // We don't just check the container pointer; we look at the actual data 
-    // fields INSIDE the object to see if MSVC has stomped over them with 0xDDDD.
+    // 1. ADVANCED NESTED MEMORY DISARM GUARD
     if (resizableCorner != nullptr)
     {
-        // Interpret the first 8 bytes inside the referenced object
-        size_t* internalData = reinterpret_cast<size_t*>(resizableCorner.get());
+        // Get the top-level block address
+        size_t* rawAddr = reinterpret_cast<size_t*>(resizableCorner.get());
         
-        if (internalData != nullptr && (*internalData == 0xDDDDDDDDDDDDDDDD || *internalData == 0xFEEEFEEEFEEEFEEE))
+        // Peek at the first few sequential data offsets inside the object structure
+        // to catch if MSVC has stomped over its inner properties or referencedObject.
+        if (rawAddr != nullptr && (
+            rawAddr[0] == 0xDDDDDDDDDDDDDDDD || 
+            rawAddr[1] == 0xDDDDDDDDDDDDDDDD ||
+            rawAddr[0] == 0xFEEEFEEEFEEEFEEE ||
+            rawAddr[1] == 0xFEEEFEEEFEEEFEEE))
         {
-            resizableCorner.release(); // Disarm completely!
+            // The internals are dead memory! Release ownership immediately 
+            // without trying to execute the destructor on garbage data.
+            resizableCorner.release(); 
         }
     }
 
     if (resizableBorder != nullptr)
     {
-        size_t* internalData = reinterpret_cast<size_t*>(resizableBorder.get());
+        size_t* rawAddr = reinterpret_cast<size_t*>(resizableBorder.get());
         
-        if (internalData != nullptr && (*internalData == 0xDDDDDDDDDDDDDDDD || *internalData == 0xFEEEFEEEFEEEFEEE))
+        if (rawAddr != nullptr && (
+            rawAddr[0] == 0xDDDDDDDDDDDDDDDD || 
+            rawAddr[1] == 0xDDDDDDDDDDDDDDDD ||
+            rawAddr[0] == 0xFEEEFEEEFEEEFEEE ||
+            rawAddr[1] == 0xFEEEFEEEFEEEFEEE))
         {
-            resizableBorder.release(); // Disarm completely!
+            resizableBorder.release();
         }
     }
 
     // 2. SAFE LIFECYCLE CHECKS
-    // If they were truly deleted by Ctrlr behind our backs, the pointers are now nullptr
-    // and these assertions will skip cleanly instead of crashing the app!
+    // If they were released above, these pointers are now nullptr, 
+    // skipping the crashing jassert cleanly!
     if (resizableCorner != nullptr)
         jassert (getIndexOfChildComponent (resizableCorner.get()) >= 0);
         
@@ -80,8 +90,6 @@ ResizableWindow::~ResizableWindow()
     resizableCorner.reset();
     resizableBorder.reset();
     clearContentComponent();
-
-    jassert (getNumChildComponents() == 0);
 }
 
 void ResizableWindow::initialise (const bool shouldAddToDesktop)

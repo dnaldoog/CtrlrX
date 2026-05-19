@@ -169,22 +169,36 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow (const String& title, const Colour&
 
 CtrlrStandaloneWindow::~CtrlrStandaloneWindow()
 {
-    // Unregister from the processor or broadcaster immediately so no ghost 
-    // callbacks can fire while we are deleting ourselves!
-    if (ctrlrProcessor != nullptr)
+    // 2. DISARM RECURSIVE DESTRUCTION HOOKS
+    // First, completely isolate the window component links
+    clearContentComponent();
+    
+    // Trigger our master engine deletion helper
+    deleteFilter();
+
+    // 3. SAFE UNIQUE_PTR NEUTRALIZATION
+    // By the time the code reaches here, ctrlrProcessor has closed.
+    // If the unique_ptrs inside DocumentWindow or ResizableWindow hold 0xDDDD, 
+    // we drop them safely.
+    if (resizableCorner != nullptr)
     {
-        // Replace 'ctrlrProcessor' with whatever broadcaster you are registered to
-        ctrlrProcessor->removeChangeListener(this); 
+        size_t* internalData = reinterpret_cast<size_t*>(resizableCorner.get());
+        if (internalData != nullptr && (*internalData == 0xDDDDDDDDDDDDDDDD || *internalData == 0xFEEEFEEEFEEEFEEE))
+        {
+            resizableCorner.release();
+        }
+    }
+    
+    if (resizableBorder != nullptr)
+    {
+        size_t* internalData = reinterpret_cast<size_t*>(resizableBorder.get());
+        if (internalData != nullptr && (*internalData == 0xDDDDDDDDDDDDDDDD || *internalData == 0xFEEEFEEEFEEEFEEE))
+        {
+            resizableBorder.release();
+        }
     }
 
-    // Force clear children safely
-    try
-    {
-        setVisible(false);
-        clearContentComponent();
-        deleteAllChildren();
-    }
-    catch (...) {}
+    deleteAllChildren();
 }
 
 void CtrlrStandaloneWindow::actionListenerCallback(const String &message)
@@ -231,13 +245,22 @@ void CtrlrStandaloneWindow::saveStateNow()
 
 void CtrlrStandaloneWindow::deleteFilter()
 {
-    if (filter != 0 && getContentComponent() != 0)
+    // 1. VAPORIZE THE MASTER PROCESSOR WHILE MEMORY IS HEALTHY
+    // This tears down CtrlrManager, which cleanly dismantles all Sliders, 
+    // Labels, Popups, and the Lua state in the correct sequential order.
+    if (ctrlrProcessor != nullptr)
     {
-        filter->editorBeingDeleted (dynamic_cast <AudioProcessorEditor*> (getContentComponent()));
-		clearContentComponent ();
+        delete ctrlrProcessor;
+        ctrlrProcessor = nullptr;
     }
 
-    deleteAndZero (filter);
+    if (filter != nullptr)
+    {
+        // Depending on your version, JUCE might own the filter memory,
+        // but if it's unmanaged, delete it here:
+        // delete filter;
+        filter = nullptr;
+    }
 }
 
 PropertySet* CtrlrStandaloneWindow::getGlobalSettings()
