@@ -1,0 +1,43 @@
+#!/bin/bash
+# If you get complaints, sudo dnf install ninja-build
+# 1. Path to your project root and build directory
+PROJECT_ROOT="$HOME/Documents/CtrlrX"
+BUILD_DIR="$PROJECT_ROOT/build"
+
+echo "Select build type (Using Ninja):"
+echo "1) Full Release (Clean + Configure + Build)"
+echo "2) Full Debug (Clean + Configure + Build)"
+echo "3) Full RelWithDebInfo (Clean + Configure + Build)"
+echo "4) Clean Rebuild (Ninja Clean + Build)"
+echo "5) Quick Build (Ninja Only)"
+read -p "Enter choice [1-5]: " choice
+
+case $choice in
+    1|2|3)
+        # Determine build type
+        BUILD_TYPE="Release"
+        [ "$choice" == "2" ] && BUILD_TYPE="Debug"
+        [ "$choice" == "3" ] && BUILD_TYPE="RelWithDebInfo"
+        echo "--- Starting Full $BUILD_TYPE Build ---"
+        rm -rf "$BUILD_DIR"
+        cmake -S "$PROJECT_ROOT" -B "$BUILD_DIR" -G Ninja -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+        cmake --build "$BUILD_DIR" -j$(nproc)
+        ;;
+    4)
+        # Incremental Clean
+        if [ ! -d "$BUILD_DIR" ]; then echo "Run 1, 2, or 3 first."; exit 1; fi
+        echo "--- Cleaning and Rebuilding ---"
+        cmake --build "$BUILD_DIR" --target clean
+        cmake --build "$BUILD_DIR" -j$(nproc)
+        ;;
+    5)
+        # Quick Rebuild
+        if [ ! -d "$BUILD_DIR" ]; then echo "Run 1, 2, or 3 first."; exit 1; fi
+        echo "--- Fast Incremental Build ---"
+        cmake --build "$BUILD_DIR" -j$(nproc)
+        ;;
+    *)
+        echo "Invalid selection. Exiting."
+        exit 1
+        ;;
+esac
