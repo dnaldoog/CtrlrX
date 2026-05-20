@@ -18,6 +18,7 @@ class CtrlrModulatorListSorter
 class CtrlrPanelModulatorList  : public CtrlrChildWindowContent,
                                  public TableListBoxModel,
 								 public CtrlrPanel::Listener,
+								 public TableHeaderComponent::Listener,
 								 public juce::Timer
 {
 	public:
@@ -78,7 +79,14 @@ class CtrlrPanelModulatorList  : public CtrlrChildWindowContent,
 		static const String getPropertyCategory(const String& propertyName);
 		static const Colour getCategoryColour(const String& category);
 		static const String generateLuaUsage(const String& propertyName, bool includeGetter, bool includeSetter);
-		void showClipboardBubble(const String& text);
+		void showClipboardBubble (const String& text);
+
+		void tableColumnsChanged (TableHeaderComponent*) override;
+		void tableColumnsResized (TableHeaderComponent*) override;
+		void tableSortOrderChanged (TableHeaderComponent*) override;
+		void tableColumnDraggingChanged (TableHeaderComponent*, int) override;
+
+		void saveColumnState();
 
 		JUCE_LEAK_DETECTOR(CtrlrPanelModulatorList)
 

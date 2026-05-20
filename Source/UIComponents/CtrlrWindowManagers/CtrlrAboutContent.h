@@ -12,6 +12,7 @@ public:
         about = new CtrlrAbout(owner);
         addAndMakeVisible(about);
         setSize(about->getWidth(), about->getHeight());
+        
     }
 
     ~CtrlrAboutContent()

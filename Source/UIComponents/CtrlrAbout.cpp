@@ -350,7 +350,7 @@ CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
 	// Sizing Logic
 	if (owner.isSingleInstance())
 	{
-        int singleInstanceHeight = 580;
+        int singleInstanceHeight = 680;
         
 		if (!authorEmail.isEmpty())
 		{

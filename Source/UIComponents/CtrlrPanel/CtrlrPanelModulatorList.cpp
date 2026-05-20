@@ -13,16 +13,18 @@ CtrlrPanelModulatorList::CtrlrPanelModulatorList (CtrlrPanel &_owner)
       modulatorList (nullptr), 
       modulatorListTree(owner)
 {
-    addAndMakeVisible (&modulatorListTree);
-    modulatorListTree.setVisible (false);
+	addAndMakeVisible (modulatorList = new TableListBox ("Modulator List", this));
+	modulatorList->getHeader().addListener (this);
+	addAndMakeVisible (&modulatorListTree);
+	modulatorListTree.setVisible (false);
 
-    owner.setProperty (Ids::uiPanelModulatorListViewTree, false);
+	owner.setProperty (Ids::uiPanelModulatorListViewTree, false);
 
     addAndMakeVisible (modulatorList = new TableListBox ("Modulator List", this));
-    modulatorList->setName ("modulatorList");
-    modulatorList->getHeader().setStretchToFitActive(true);
-    modulatorList->setMultipleSelectionEnabled (true);
-    modulatorList->setHeaderHeight (20);
+    modulatorList->setName (L"modulatorList");
+	modulatorList->getHeader().setStretchToFitActive(true);
+	modulatorList->setMultipleSelectionEnabled (true);
+	modulatorList->setHeaderHeight (20);
 
     if (owner.getProperty (Ids::panelModulatorListColumns).toString() != COMBO_ITEM_NONE)
     {
@@ -44,7 +46,13 @@ CtrlrPanelModulatorList::CtrlrPanelModulatorList (CtrlrPanel &_owner)
 
 CtrlrPanelModulatorList::~CtrlrPanelModulatorList()
 {
-	owner.removePanelListener (this);
+    saveColumnState();
+
+    owner.removePanelListener (this);
+
+    if (modulatorList != nullptr)
+        modulatorList->getHeader().removeListener (this);
+
     deleteAndZero (modulatorList);
 }
 
@@ -68,12 +76,13 @@ void CtrlrPanelModulatorList::resetToDefaults()
 	modulatorList->getHeader().addColumn ("componentRectangle", getColumnIdForIdentifier("componentRectangle")+1, 80);
 	modulatorList->getHeader().addColumn ("componentGroupName", getColumnIdForIdentifier("componentGroupName")+1, 60);
 	modulatorList->getHeader().addColumn ("componentTabName", getColumnIdForIdentifier("componentTabName")+1, 60);
-	modulatorList->getHeader().addColumn ("componentRadioGroupId", getColumnIdForIdentifier("componentRadioGroupId")+1, 60);
+	//modulatorList->getHeader().addColumn ("componentRadioGroupId", getColumnIdForIdentifier("componentRadioGroupId")+1, 60);
 	modulatorList->getHeader().addColumn ("midiMessageType", getColumnIdForIdentifier("midiMessageType")+1, 60);
 	modulatorList->getHeader().addColumn ("midiMessageCtrlrNumber", getColumnIdForIdentifier("midiMessageCtrlrNumber")+1, 60);
 	modulatorList->getHeader().addColumn ("midiMessageSysExFormula", getColumnIdForIdentifier("midiMessageSysExFormula")+1, 100);
 	modulatorList->getHeader().addColumn ("modulatorCustomIndex", getColumnIdForIdentifier("modulatorCustomIndex")+1, 60);
-	modulatorList->getHeader().addColumn ("modulatorCustomIndexGroup", getColumnIdForIdentifier("modulatorCustomIndexGroup")+1, 60);
+	//modulatorList->getHeader().addColumn ("modulatorCustomIndexGroup", getColumnIdForIdentifier("modulatorCustomIndexGroup")+1, 60);
+	saveColumnState();
 }
 
 void CtrlrPanelModulatorList::visibilityChanged()
@@ -177,17 +186,28 @@ void CtrlrPanelModulatorList::refresh()
 {
     copyModulatorList();
     modulatorList->updateContent();
-        // JUCE 6 quirk: updateContent() alone doesn't force the internal Viewport
+
+    // JUCE 6 quirk: updateContent() alone doesn't force the internal Viewport
+    // to recalculate row positions after a deletion, causing rows to visually
+    // overlap. A 1px bounds nudge triggers resized() and fixes the layout.
+    Rectangle<int> bounds = modulatorList->getBounds();
+    modulatorList->setBounds(bounds.withWidth(bounds.getWidth() + 1));
+    modulatorList->setBounds(bounds);
+
+    modulatorList->repaint();
+}
+/*
+void CtrlrPanelModulatorList::refresh()
+{
+    // JUCE 6 quirk: updateContent() alone doesn't force the internal Viewport
     // to recalculate row positions after a deletion, causing rows to visually
     // overlap. A 1px bounds nudge triggers resized() and fixes the layout.
     // Force the internal ListBox to fully recalculate its layout
     modulatorList->setModel(nullptr);
     modulatorList->setModel(this);
     modulatorList->updateContent();
-    
-    modulatorList->repaint();
 }
-
+*/
 const Identifier CtrlrPanelModulatorList::getColumnCtrlrId(const int columnId)
 {
 	return (owner.getCtrlrManagerOwner().getIDManager().getObjectTree().getChild(columnId).getProperty(Ids::name).toString());
@@ -524,31 +544,49 @@ void CtrlrPanelModulatorList::deleteSelected()
     // Restart the timer after everything has settled
     startTimer(200);
 }
-
-void CtrlrPanelModulatorList::restoreColumns(const String &columnState)
+void CtrlrPanelModulatorList::restoreColumns (const String &columnState)
 {
-	XmlDocument doc(columnState);
-	ScopedPointer <XmlElement> xml(doc.getDocumentElement().release());
-	if (xml)
-	{
-		if (xml->hasTagName ("TABLELAYOUT"))
-		{
-			const int sortedColumn = xml->getIntAttribute("sortedCol");
-			const bool isForwards  = xml->getBoolAttribute("sortForwards");
-			forEachXmlChildElement (*xml, child)
-			{
-				if (child->hasTagName ("COLUMN"))
-				{
-					const int columnId	= child->getIntAttribute("id");
-					const int width		= child->getIntAttribute("width");
 
-					modulatorList->getHeader().addColumn (getColumnCtrlrId (columnId-1).toString(), columnId, width);
-				}
+	_DBG("Restoring column state:");
+	_DBG(columnState);
 
-				modulatorList->getHeader().setSortColumnId (sortedColumn, isForwards);
-			}
-		}
-	}
+    modulatorList->getHeader().removeAllColumns();
+
+    XmlDocument doc (columnState);
+    ScopedPointer<XmlElement> xml (doc.getDocumentElement().release());
+
+    if (xml == nullptr)
+    {
+        resetToDefaults();
+        return;
+    }
+
+    if (! xml->hasTagName ("TABLELAYOUT"))
+    {
+        resetToDefaults();
+        return;
+    }
+
+    const int sortedColumn = xml->getIntAttribute ("sortedCol");
+    const bool isForwards  = xml->getBoolAttribute ("sortForwards");
+
+    forEachXmlChildElement (*xml, child)
+    {
+        if (child->hasTagName ("COLUMN"))
+        {
+            const int columnId = child->getIntAttribute ("id");
+            const int width    = child->getIntAttribute ("width");
+
+            modulatorList->getHeader().addColumn (
+                getColumnCtrlrId (columnId - 1).toString(),
+                columnId,
+                width);
+        }
+    }
+
+    modulatorList->getHeader().setSortColumnId (
+        sortedColumn,
+        isForwards);
 }
 
 void CtrlrPanelModulatorList::switchView()
@@ -662,7 +700,8 @@ void CtrlrPanelModulatorList::handleColumnSelection(const int itemId)
 		modulatorList->getHeader().addColumn (getColumnCtrlrId(itemId - 8192).toString(), (itemId - 8192) + 1, 60);
 	}
 
-	owner.setProperty (Ids::panelModulatorListColumns, modulatorList->getHeader().toString());
+	// owner.setProperty (Ids::panelModulatorListColumns, modulatorList->getHeader().toString());
+	saveColumnState();
 }
 
 void CtrlrPanelModulatorList::handleSortSelection(const int itemId)
@@ -707,4 +746,41 @@ void CtrlrPanelModulatorList::timerCallback()
 
         modulatorList->repaint();
     }
+}
+
+void CtrlrPanelModulatorList::tableColumnsChanged (TableHeaderComponent*)
+{
+    saveColumnState();
+}
+
+void CtrlrPanelModulatorList::tableColumnsResized (TableHeaderComponent*t)
+{
+    saveColumnState();
+}
+
+void CtrlrPanelModulatorList::tableSortOrderChanged (TableHeaderComponent*)
+{
+    saveColumnState();
+}
+
+
+void CtrlrPanelModulatorList::tableColumnDraggingChanged(
+    TableHeaderComponent*,
+    int)
+{
+    saveColumnState();
+}
+
+
+void CtrlrPanelModulatorList::saveColumnState()
+{
+    const String state = modulatorList->getHeader().toString();
+
+    _DBG("Saving column state:");
+    _DBG(state);
+
+    owner.setProperty(
+        Ids::panelModulatorListColumns,
+        state
+    );
 }
