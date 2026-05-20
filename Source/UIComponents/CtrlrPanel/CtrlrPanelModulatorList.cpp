@@ -186,28 +186,15 @@ void CtrlrPanelModulatorList::refresh()
 {
     copyModulatorList();
     modulatorList->updateContent();
-
-    // JUCE 6 quirk: updateContent() alone doesn't force the internal Viewport
-    // to recalculate row positions after a deletion, causing rows to visually
-    // overlap. A 1px bounds nudge triggers resized() and fixes the layout.
-    Rectangle<int> bounds = modulatorList->getBounds();
-    modulatorList->setBounds(bounds.withWidth(bounds.getWidth() + 1));
-    modulatorList->setBounds(bounds);
-
-    modulatorList->repaint();
-}
-/*
-void CtrlrPanelModulatorList::refresh()
-{
-    // JUCE 6 quirk: updateContent() alone doesn't force the internal Viewport
-    // to recalculate row positions after a deletion, causing rows to visually
-    // overlap. A 1px bounds nudge triggers resized() and fixes the layout.
+    
     // Force the internal ListBox to fully recalculate its layout
     modulatorList->setModel(nullptr);
     modulatorList->setModel(this);
     modulatorList->updateContent();
+    
+    modulatorList->repaint();
 }
-*/
+
 const Identifier CtrlrPanelModulatorList::getColumnCtrlrId(const int columnId)
 {
 	return (owner.getCtrlrManagerOwner().getIDManager().getObjectTree().getChild(columnId).getProperty(Ids::name).toString());
