@@ -138,7 +138,19 @@ bool CtrlrModulatorTreeViewItem::canBeSelected () const
 {
 	return (true);
 }
+#ifndef JUCE_LINUX
+juce::Component* CtrlrModulatorTreeViewItem::createItemComponent() override
+{
+    CtrlrModulatorTreeLabel* l = new CtrlrModulatorTreeLabel (*this, itemToAttach);
+    l->addMouseListener (this, true);
+    l->addLabelListener (this);
 
+    itemLabel = l;
+
+    // Return the raw pointer directly
+    return l; 
+}
+#else
 juce::Component* CtrlrModulatorTreeViewItem::createItemComponent()
 {
     CtrlrModulatorTreeLabel* l = new CtrlrModulatorTreeLabel (*this, itemToAttach);
@@ -150,6 +162,10 @@ juce::Component* CtrlrModulatorTreeViewItem::createItemComponent()
     // Return the raw pointer directly
     return l; 
 }
+
+#endif
+
+
 
 void CtrlrModulatorTreeViewItem::itemOpennessChanged (bool isNowOpen)
 {
