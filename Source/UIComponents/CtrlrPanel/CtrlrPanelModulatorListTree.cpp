@@ -139,15 +139,16 @@ bool CtrlrModulatorTreeViewItem::canBeSelected () const
 	return (true);
 }
 
-std::unique_ptr<Component> CtrlrModulatorTreeViewItem::createItemComponent ()
+juce::Component* CtrlrModulatorTreeViewItem::createItemComponent()
 {
-	CtrlrModulatorTreeLabel *l = new CtrlrModulatorTreeLabel(*this, itemToAttach);
-	l->addMouseListener (this, true);
-	l->addLabelListener (this);
+    CtrlrModulatorTreeLabel* l = new CtrlrModulatorTreeLabel (*this, itemToAttach);
+    l->addMouseListener (this, true);
+    l->addLabelListener (this);
 
-	itemLabel = l;
+    itemLabel = l;
 
-	return std::unique_ptr<Component> (l);
+    // Return the raw pointer directly
+    return l; 
 }
 
 void CtrlrModulatorTreeViewItem::itemOpennessChanged (bool isNowOpen)
