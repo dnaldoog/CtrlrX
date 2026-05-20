@@ -14,6 +14,7 @@ include(PamplejuceVersion)
 option(CTRLRX_ENABLE_CPM "Enable CPM-based optional dependencies" OFF)
 option(CTRLRX_USE_SYSTEM_JUCE "Use system-installed JUCE instead of vendored JUCE submodule" OFF)
 option(CTRLRX_COPY_PLUGIN_AFTER_BUILD "Copy plugin artefacts to user/system plugin folders after build" OFF)
+option(CTRLRX_USE_LUAJIT "Use LuaJIT instead of standard Lua" ON)
 
 if(CTRLRX_ENABLE_CPM)
     include(CPM)
@@ -50,7 +51,7 @@ if(LINUX)
     pkg_check_modules(libudev REQUIRED libudev)
     pkg_check_modules(x11 REQUIRED x11)
     pkg_check_modules(zlib REQUIRED zlib)
-    pkg_check_modules(gtk3 REQUIRED gtk+-x11-3.0)
+    pkg_check_modules(gtk3 REQUIRED gtk+-3.0) # Fixed target name
     pkg_check_modules(webkit REQUIRED webkit2gtk-4.1)
 
     include_directories(SYSTEM
@@ -62,7 +63,7 @@ if(LINUX)
 endif()
 
 # -----------------------------------------------------------------------
-# Subdirectories (JUCE + LuaJIT)
+# Subdirectories (JUCE + Lua Engine)
 # -----------------------------------------------------------------------
 if(CTRLRX_USE_SYSTEM_JUCE)
     find_package(JUCE CONFIG REQUIRED)
@@ -70,15 +71,20 @@ else()
     add_subdirectory(JUCE)
 endif()
 
-add_subdirectory(Source/Misc/luajit)
-
-# Locate the static LuaJIT binary manually based on OS
-if(WIN32)
-    set(LUAJIT_STATIC_LIB "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/lua51.lib")
-elseif(APPLE)
-    set(LUAJIT_STATIC_LIB "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/libluajit.a")
+if(CTRLRX_USE_LUAJIT)
+    add_subdirectory(Source/Misc/luajit)
+    
+    # Locate the static LuaJIT library manually based on OS
+    if(WIN32)
+        set(LUAJIT_STATIC_LIB "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/lua51.lib")
+    elseif(APPLE)
+        set(LUAJIT_STATIC_LIB "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/libluajit.a")
+    else()
+        # Fixed: Fallback onto the target built by the subdirectory instead of a magic string
+        set(LUAJIT_STATIC_LIB "libluajit") 
+    endif()
 else()
-    set(LUAJIT_STATIC_LIB "libluajit") # Fallback to system package tracking for Linux
+    # Add your standard Lua fallback path here if needed
 endif()
 
 # -----------------------------------------------------------------------
@@ -163,7 +169,6 @@ target_include_directories(SharedCode INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/Source"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/include"
-    #"${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/lua/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/libusb/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/boost"
@@ -192,10 +197,18 @@ target_compile_definitions(SharedCode INTERFACE
     $<$<CXX_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>
 )
 
+# Missing Compile Options Fix
+target_compile_options(SharedCode INTERFACE
+    $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:-msse2 -fPIC>
+)
+
+if(CTRLRX_USE_LUAJIT)
+    target_compile_definitions(SharedCode INTERFACE CTRLRX_USE_LUAJIT=1)
+endif()
+
 # -----------------------------------------------------------------------
 # ASSETS & BINARY DATA (The Important Part)
 # -----------------------------------------------------------------------
-# This includes the logic to wrap everything in Source/Resources/ into 'Assets'
 include(Assets)
 include(XcodePrettify)
 
@@ -203,8 +216,7 @@ include(XcodePrettify)
 # Linking
 # -----------------------------------------------------------------------
 target_link_libraries(SharedCode INTERFACE
-    Assets  # This target provides BinaryData::LuaAPI_xml
-    libluajit
+    Assets  
     juce_audio_basics
     juce_audio_devices
     juce_audio_formats
@@ -224,8 +236,22 @@ target_link_libraries(SharedCode INTERFACE
     juce::juce_recommended_warning_flags
 )
 
+if(CTRLRX_USE_LUAJIT)
+    target_link_libraries(SharedCode INTERFACE ${LUAJIT_STATIC_LIB})
+endif()
+
+# Linux specific library linking to resolve XSendEvent and graphics dependencies
+if(LINUX)
+    target_link_libraries(SharedCode INTERFACE
+        ${x11_LIBRARIES}
+        ${gtk3_LIBRARIES}
+        ${webkit_LIBRARIES}
+        ${libudev_LIBRARIES}
+        ${zlib_LIBRARIES}
+    )
+endif()
+
 # Final Plugin Target Linking
-# Final Plugin Target Linking (Clean & Streamlined)
 target_link_libraries("${PROJECT_NAME}" PRIVATE
     SharedCode
     Assets 
