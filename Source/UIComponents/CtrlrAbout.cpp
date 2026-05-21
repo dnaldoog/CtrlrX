@@ -366,8 +366,9 @@ CtrlrAbout::CtrlrAbout (CtrlrManager &_owner)
 	}
 	else
 	{
-        setSize (600, 340); // if not exported instance 340
-	}
+        setSize (600, 340); // if not exported instance 340 
+        // not sure this has any effect in Linux, since the about window is resizable and the content is in a scrollable viewport)
+    }
 }
 
 CtrlrAbout::~CtrlrAbout()
