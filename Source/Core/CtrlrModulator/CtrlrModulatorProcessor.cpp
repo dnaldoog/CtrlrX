@@ -341,10 +341,16 @@ void CtrlrModulatorProcessor::setValueFromMIDI(CtrlrMidiMessage &m, const CtrlrM
 
 void CtrlrModulatorProcessor::setParameterNotifyingHost() // CtrlrX->VST Host
 {
-	if (owner.getVstIndex() >= 0 && owner.isExportedToVst())
-	{
-		getProcessor()->setParameterNotifyingHost (owner.getVstIndex(), normalizeValue (currentValue.value, minValue, maxValue));
-	}
+    // Check if we are actually running inside a DAW plugin container
+    if (JUCEApplication::isStandaloneApp())
+    {
+        return; // It's standalone mode! Skip this entirely to prevent cross-talk.
+    }
+
+    if (owner.getVstIndex() >= 0 && owner.isExportedToVst())
+    {
+        getProcessor()->setParameterNotifyingHost (owner.getVstIndex(), normalizeValue (currentValue.value, minValue, maxValue));
+    }
 }
 
 int CtrlrModulatorProcessor::getValueFromMidiMessage(const CtrlrMIDIDeviceType source)

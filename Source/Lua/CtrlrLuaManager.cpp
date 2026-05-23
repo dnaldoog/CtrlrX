@@ -36,7 +36,6 @@
 #include "CtrlrLuaMultiTimer.h"
 #include "CtrlrLuaAudioConverter.h"
 #include "CtrlrLuaDebugger.h"
-#include "CtrlrLuaApiDatabase.h"
 
 // Deprecated classes
 #include "Deprecated/CtrlrLuaBigInteger.h"
@@ -91,103 +90,8 @@ CtrlrLuaManager::CtrlrLuaManager(CtrlrPanel& _owner)
 	ctrlrLuaDebugger = new CtrlrLuaDebugger(*this);
 
 	luaManagerTree.addChild(methodManager->getManagerTree(), -1, 0);
-	//==============================================================================
-	// Load Lua API XML database (for class browser / help popup)
-	//==============================================================================
-	{
-		juce::Array<juce::File> searchLocations;
-
-		// Location 1: Relative to executable (most common for deployed builds)
-		searchLocations.add(
-			juce::File::getSpecialLocation(juce::File::currentExecutableFile)
-			.getSiblingFile("Resources")
-			.getChildFile("XML")
-			.getChildFile("LuaAPI.xml")
-		);
-
-		// Location 2: Resources next to executable parent
-		searchLocations.add(
-			juce::File::getSpecialLocation(juce::File::currentExecutableFile)
-			.getParentDirectory()
-			.getChildFile("Resources")
-			.getChildFile("XML")
-			.getChildFile("LuaAPI.xml")
-		);
-
-		// Location 3: Source directory (for development - works on all platforms)
-		searchLocations.add(
-			juce::File::getSpecialLocation(juce::File::currentExecutableFile)
-			.getParentDirectory()
-			.getParentDirectory()
-			.getParentDirectory()
-			.getParentDirectory()
-			.getParentDirectory()
-			.getParentDirectory()
-			.getChildFile("Source")
-			.getChildFile("Resources")
-			.getChildFile("XML")
-			.getChildFile("LuaAPI.xml")
-		);
-
-		// Location 4: Try current working directory
-		searchLocations.add(
-			juce::File::getCurrentWorkingDirectory()
-			.getChildFile("Resources")
-			.getChildFile("XML")
-			.getChildFile("LuaAPI.xml")
-		);
-
-		// Location 5: Source relative to current working directory
-		searchLocations.add(
-			juce::File::getCurrentWorkingDirectory()
-			.getChildFile("Source")
-			.getChildFile("Resources")
-			.getChildFile("XML")
-			.getChildFile("LuaAPI.xml")
-		);
-
-		juce::File xmlFile;
-		bool found = false;
-
-		for (const auto& location : searchLocations)
-		{
-			if (location.existsAsFile())
-			{
-				xmlFile = location;
-				found = true;
-				break;
-			}
-		}
-
-		if (found)
-		{
-			const bool loaded = luaApi.loadFromFile(xmlFile);
-
-#if JUCE_DEBUG
-			if (loaded)
-			{
-				_DBG("Lua API XML loaded from: " + xmlFile.getFullPathName());
-				_DBG("Found " + juce::String(luaApi.getXmlRoot() ? luaApi.getXmlRoot()->getNumChildElements() : 0) + " classes");
-			}
-			else
-			{
-				_WRN("Failed to parse Lua API XML from: " + xmlFile.getFullPathName());
-			}
-#endif
-		}
-		else
-		{
-#if JUCE_DEBUG
-			_WRN("Lua API XML (LuaAPI.xml) not found. Class browser will be unavailable.");
-			_WRN("Searched locations:");
-			for (const auto& location : searchLocations)
-			{
-				_WRN("  - " + location.getFullPathName());
-			}
-#endif
-		}
-	}
 }
+
 CtrlrLuaManager::~CtrlrLuaManager()
 {
 	deleteAndZero(methodManager);
@@ -973,6 +877,7 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 						else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
+                    
 					case Encode16bitLsbFirst:
 						if (bytesPerValue == 4)
 						{
@@ -980,7 +885,7 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;    // bits 4-7
 							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;    // bits 8-11
 							uint8 nibble3 = (modulatorValue >> 12) & 0x0F;   // bits 12-15
-
+							
 							modulatorData[index * 4] = nibble0;
 							modulatorData[index * 4 + 1] = nibble1;
 							modulatorData[index * 4 + 2] = nibble2;
@@ -989,6 +894,7 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 						else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
+					
 					case Encode16bitMsbFirst:
 						if (bytesPerValue == 4)
 						{
@@ -996,7 +902,7 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;    // bits 8-11
 							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;    // bits 4-7
 							uint8 nibble0 = modulatorValue & 0x0F;           // bits 0-3
-
+							
 							modulatorData[index * 4] = nibble3;
 							modulatorData[index * 4 + 1] = nibble2;
 							modulatorData[index * 4 + 2] = nibble1;
@@ -1006,7 +912,6 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
 					}
-
 				}
 			}
 		}
@@ -1057,7 +962,6 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 						break;
 
 					case EncodeMSBFirst:
-					//case EncodeDSI:
 						if (bytesPerValue == 2)
 						{
 							uint8 msb = (modulatorValue >> 7) & 0x7F;
@@ -1132,6 +1036,7 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 						else
 							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
+					
 					case Encode16bitLsbFirst:
 						if (bytesPerValue == 4)
 						{
@@ -1139,7 +1044,7 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;    // bits 4-7
 							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;    // bits 8-11
 							uint8 nibble3 = (modulatorValue >> 12) & 0x0F;   // bits 12-15
-
+							
 							modulatorData[index * 4] = nibble0;
 							modulatorData[index * 4 + 1] = nibble1;
 							modulatorData[index * 4 + 2] = nibble2;
@@ -1148,6 +1053,7 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 						else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
+						
 					case Encode16bitMsbFirst:
 						if (bytesPerValue == 4)
 						{
@@ -1155,7 +1061,7 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;    // bits 8-11
 							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;    // bits 4-7
 							uint8 nibble0 = modulatorValue & 0x0F;           // bits 0-3
-
+							
 							modulatorData[index * 4] = nibble3;
 							modulatorData[index * 4 + 1] = nibble2;
 							modulatorData[index * 4 + 2] = nibble1;
@@ -1233,7 +1139,6 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const ValueTree& programTree,
 						break;
 
 					case EncodeMSBFirst:
-					//case EncodeDSI:
 						if (bytesPerValue == 2)
 						{
 							uint8 msb = (modulatorValue >> 7) & 0x7F;
@@ -1308,6 +1213,7 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const ValueTree& programTree,
 						else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
+							
 					case Encode16bitLsbFirst:
 						if (bytesPerValue == 4)
 						{
@@ -1315,7 +1221,7 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const ValueTree& programTree,
 							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;    // bits 4-7
 							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;    // bits 8-11
 							uint8 nibble3 = (modulatorValue >> 12) & 0x0F;   // bits 12-15
-
+							
 							modulatorData[index * 4] = nibble0;
 							modulatorData[index * 4 + 1] = nibble1;
 							modulatorData[index * 4 + 2] = nibble2;
@@ -1324,6 +1230,7 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const ValueTree& programTree,
 						else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
+						
 					case Encode16bitMsbFirst:
 						if (bytesPerValue == 4)
 						{
@@ -1331,7 +1238,7 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const ValueTree& programTree,
 							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;    // bits 8-11
 							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;    // bits 4-7
 							uint8 nibble0 = modulatorValue & 0x0F;           // bits 0-3
-
+							
 							modulatorData[index * 4] = nibble3;
 							modulatorData[index * 4 + 1] = nibble2;
 							modulatorData[index * 4 + 2] = nibble1;
@@ -1412,7 +1319,6 @@ void CtrlrPanel::setModulatorValuesFromData(const MemoryBlock& dataSource,
 				break;
 
 			case EncodeMSBFirst:
-			//case EncodeDSI:
 				if (bytesPerValue == 2)
 				{
 					uint8 msb = dataSource[dataIndex];
@@ -1481,6 +1387,7 @@ void CtrlrPanel::setModulatorValuesFromData(const MemoryBlock& dataSource,
 				else
 					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
 				break;
+					
 			case Encode16bitMsbFirst:
 				if (bytesPerValue == 4)
 				{
@@ -1493,7 +1400,7 @@ void CtrlrPanel::setModulatorValuesFromData(const MemoryBlock& dataSource,
 				else
 					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
 				break;
-
+				
 			case Encode16bitLsbFirst:
 				if (bytesPerValue == 4)
 				{
@@ -1547,8 +1454,8 @@ void CtrlrPanel::wrapForLua(lua_State* L)
 	module(L)
 		[
 			class_<CtrlrPanel, CtrlrLuaObject>("CtrlrPanel")
-				.def("getModulatorByName", &CtrlrPanel::getModulator)
-				.def("getModulator", &CtrlrPanel::getModulator)
+				.def("getModulatorByName", (CtrlrModulator * (CtrlrPanel::*)(const String&) const) & CtrlrPanel::getModulator)
+				.def("getModulator", (CtrlrModulator * (CtrlrPanel::*)(const String&) const) & CtrlrPanel::getModulator)
 				.def("getModulatorByIndex", &CtrlrPanel::getModulatorByIndex)
 				.def("getNumModulators", &CtrlrPanel::getNumModulators)
 				.def("sendMidiMessageNow", (void (CtrlrPanel::*)(CtrlrMidiMessage&)) & CtrlrPanel::sendMidiNow) // 1. The Original (Object-based)

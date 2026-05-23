@@ -133,17 +133,9 @@ void CtrlrManager::removeModulator(CtrlrModulator *modulatorToDelete)
 	ctrlrModulators.removeAllInstancesOf (modulatorToDelete);
 }
 
-bool CtrlrManager::containsCtrlrComponent (CtrlrComponent *componentToLookFor)
+CtrlrModulator* CtrlrManager::getModulator(const String& name) const
 {
-	if (componentToLookFor == 0)
-		return (false);
-
-	return (ctrlrModulators.contains(&componentToLookFor->getOwner()));
-}
-
-CtrlrModulator* CtrlrManager::getModulator (const String& name) const
-{
-	for (int i=0; i<ctrlrModulators.size(); ++i)
+	for (int i = 0; i < ctrlrModulators.size(); ++i)
 	{
 		if (ctrlrModulators[i]->getName() == name)
 		{
@@ -194,25 +186,59 @@ void CtrlrManager::allPanelsInitialized()
 
 CtrlrPanel *CtrlrManager::addPanel(const ValueTree &savedState, const bool showUI)
 {
-	CtrlrPanel *panel = new CtrlrPanel(*this, getUniquePanelName("Ctrlr Panel"), ctrlrPanels.size());
+    CtrlrPanel *panel = new CtrlrPanel(*this, getUniquePanelName("Ctrlr Panel"), ctrlrPanels.size());
 
-	ctrlrPanels.add (panel);
-	panel->restoreState (savedState);
-	managerTree.addChild (panel->getPanelTree(), -1, 0);
+    ctrlrPanels.add (panel);
+    
+    // ADDED DEEP COPY HERE: Breaks the shared memory link for standard panels
+    panel->restoreState (savedState.createCopy()); 
+    
+    managerTree.addChild (panel->getPanelTree(), -1, 0);
 
-	if (showUI)
-	{
-		addPanel (panel->getEditor(true));
-	}
+    if (showUI)
+    {
+        addPanel (panel->getEditor(true));
+    }
 
-	organizePanels();
+    organizePanels();
 
-	return (panel);
+    return (panel);
 }
 
 void CtrlrManager::addPanel (CtrlrPanelEditor *panelToAdd)
 {
-	ctrlrDocumentPanel->addDocument ((Component *)panelToAdd, Colours::lightgrey, true);
+    // This override handles visual UI window docking, no change needed here
+    ctrlrDocumentPanel->addDocument ((Component *)panelToAdd, Colours::lightgrey, true);
+}
+
+Result CtrlrManager::addInstancePanel()
+{
+    if (ctrlrPlayerInstanceTree.isValid())
+    {
+        CtrlrPanel *panel = new CtrlrPanel(*this, getInstanceName(), ctrlrPanels.size());
+        ctrlrPanels.add (panel);
+
+        // ADDED DEEP COPY HERE: Breaks the shared memory link for standalone player instances
+        Result restoreResult = panel->restoreState (ctrlrPlayerInstanceTree.createCopy());
+
+        if (!restoreResult.wasOk())
+        {
+            WARN("AddInstancePanel failed to restore the state of the panel");
+            ctrlrPanels.clear (true);
+            return (restoreResult);
+        }
+
+        managerTree.addChild (panel->getPanelTree(), -1, 0);
+        addPanel (panel->getEditor(true));
+
+        organizePanels();
+
+        return (Result::ok());
+    }
+    else
+    {
+        return (Result::fail("AddInstancePanel failed, the decoded instance tree is invalid"));
+    }
 }
 
 void CtrlrManager::restoreState (const ValueTree &savedTree)
@@ -225,12 +251,12 @@ void CtrlrManager::restoreState (const ValueTree &savedTree)
 		// Any UI-touching code below MUST be marshalled to the Message Thread via callAsync.
 		_DBG("CtrlrManager::restoreState: MessageManagerLock skipped (AAX build).");
     #else
-        // This lock is often necessary for thread safety in other plugin formats (VST/AU/Standalone)
-        // when setStateInformation might involve direct UI updates or MessageManager interactions.
-        // It's REMOVED for AAX builds because AAX calls setStateInformation on a host thread
-        // where acquiring this lock directly can cause deadlocks in newer JUCE versions (v4+).
-        MessageManagerLock mmlock;
-        _DBG("CtrlrManager::restoreState: MessageManagerLock acquired (non-AAX build).");
+		// This lock is often necessary for thread safety in other plugin formats (VST/AU/Standalone)
+		// when setStateInformation might involve direct UI updates or MessageManager interactions.
+		// It's REMOVED for AAX builds because AAX calls setStateInformation on a host thread
+		// where acquiring this lock directly can cause deadlocks in newer JUCE versions (v4+).
+		MessageManagerLock mmlock;
+		_DBG("CtrlrManager::restoreState: MessageManagerLock acquired (non-AAX build).");
     #endif
     // --- End: Conditional MessageManagerLock ---
 
@@ -501,19 +527,29 @@ void CtrlrManager::setEditor (CtrlrEditor *editorToSet)
 
 	restoreEditorState();
 }
-
-int CtrlrManager::getModulatorVstIndexByName(const String &modulatorName)
+//https://github.com/damiensellier/CtrlrX/issues/259
+// Inside CtrlrManager.cpp
+int CtrlrManager::getModulatorVstIndexByName(const String& modulatorName, CtrlrPanel* sourcePanel)
 {
-	CtrlrModulator *m = getModulator(modulatorName);
+	// 1. If no panel context was passed, fall back to whatever panel is active
+	if (sourcePanel == nullptr)
+	{
+		sourcePanel = getActivePanel();
+	}
 
-	if (m)
+	// 2. Ask the specific panel to find the modulator inside itself (NOT globally via 'this')
+	if (sourcePanel != nullptr)
 	{
-		return (m->getVstIndex());
+		// We call getModulator on the sourcePanel object, passing the 'true' boolean 
+		// to satisfy the CtrlrPanel function signature we just verified in CtrlrPanel.h!
+		CtrlrModulator* m = sourcePanel->getModulator(modulatorName, true);
+		if (m)
+		{
+			return (m->getVstIndex());
+		}
 	}
-	else
-	{
-		return (-1);
-	}
+
+	return (-1);
 }
 
 int CtrlrManager::compareElements (CtrlrModulator *first, CtrlrModulator *second)
