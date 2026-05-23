@@ -223,8 +223,10 @@ class CtrlrPanel:	public ValueTree::Listener,
 		bool checkRadioGroup(CtrlrComponent *c, const bool componentToggleState);
 		CtrlrModulator* getModulatorByIndex (const int index);
 		CtrlrModulator* getModulatorByVstIndex (const int vstIndex);
-		CtrlrModulator* getModulatorByCustomIndex (const int customIndex);
-		CtrlrModulator* getModulator (const String& name) const;
+		CtrlrModulator* getModulatorByCustomIndex(const int customIndex);
+		// We give getModulator a default fallback value to prevent "too few arguments" errors.
+		CtrlrModulator* getModulator(const String& name) const;
+		CtrlrModulator* getModulator(const String& name, bool forwardToComponents) const;
 		int getNumModulators();
 		void bootstrapPanel(const bool setInitialProgram=true);
 		int cleanBogusProperties();

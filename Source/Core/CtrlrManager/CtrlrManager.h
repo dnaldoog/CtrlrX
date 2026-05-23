@@ -139,12 +139,11 @@ class CtrlrManager :    public ValueTree::Listener,
 		*/
 		bool containsCtrlrComponent(CtrlrComponent *componentToLookFor);
 
-		/** Get a pointer to a Modulator using it's name.
+		/** Get a pointer to a Modulator using its name.
 
 			@param name							The name of the Modulator
 		*/
-		CtrlrModulator* getModulator (const String& name) const;
-
+		CtrlrModulator* getModulator(const String& name) const;
 		/** This is called when all panels are finished loading, if you add a Listener
 			to the Manager you will be informed about this.
 
@@ -239,7 +238,7 @@ class CtrlrManager :    public ValueTree::Listener,
 		void applicationCommandInvoked(const ApplicationCommandTarget::InvocationInfo &info);
 		void applicationCommandListChanged();
 		int getNextVstIndex();
-		int getModulatorVstIndexByName(const String &modulatorName);
+		int getModulatorVstIndexByName(const String &modulatorName, CtrlrPanel* sourcePanel);
 		CtrlrProperties &getCtrlrProperties();
 		ApplicationProperties *getApplicationProperties();
 		CtrlrProcessor *getProcessorOwner()																				{ return (owner); }
