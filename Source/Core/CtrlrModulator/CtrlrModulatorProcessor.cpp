@@ -33,6 +33,15 @@ CtrlrModulatorProcessor::~CtrlrModulatorProcessor()
 
 void CtrlrModulatorProcessor::handleAsyncUpdate()
 {
+	        /* update the GUI and the ValueTree from the value provided by the HOST or
+         the MIDI subsystem */
+	if (owner.isStatic() && 
+       (currentValue.lastChangeSource == CtrlrModulatorValue::changedByMidiIn || 
+        currentValue.lastChangeSource == CtrlrModulatorValue::changedByHost))
+    {
+        return; 
+    }
+
     {
         /* update the GUI and the ValueTree from the value provided by the HOST or
          the MIDI subsystem */
