@@ -87,7 +87,8 @@ class CtrlrPanelModulatorList  : public CtrlrChildWindowContent,
 		void tableColumnDraggingChanged (TableHeaderComponent*, int) override;
 
 		void saveColumnState();
-
+		void centerRowInView (int rowNumber);
+		
 		JUCE_LEAK_DETECTOR(CtrlrPanelModulatorList)
 
 	private:
