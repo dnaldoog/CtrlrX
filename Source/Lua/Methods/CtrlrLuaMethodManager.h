@@ -133,6 +133,7 @@ class CtrlrLuaMethodManager : public ValueTree::Listener
 		XmlElement *utilityMethods;
 		CtrlrLuaMethod emptyMethod;
 		CriticalSection methodManagerCriticalSection;
+		bool isMethodValid(CtrlrLuaMethod *o);
 		WeakReference <CtrlrLuaMethodEditor> currentMethodEditor;
 };
 
