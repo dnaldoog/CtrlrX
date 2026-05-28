@@ -395,7 +395,7 @@ bool CtrlrPanel::isLoading()
         if (currentTime - bootstrapStartTime > 400)
         {
             const_cast<CtrlrPanel*>(this)->isBootstrapTimerActive = false;
-			juce::Logger::writeToLog("[CtrlrX Engine] >>> 400ms Cooldown Passed. GATE IS OPEN! <<<");
+			//juce::Logger::writeToLog("[CtrlrX Engine] >>> 400ms Cooldown Passed. GATE IS OPEN! <<<");
             return false;
         }
         

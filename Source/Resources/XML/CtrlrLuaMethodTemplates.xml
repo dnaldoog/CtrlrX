@@ -17,7 +17,7 @@
     -- * changed by Link = 7
     -- * change by Unknown = 8
 
-myMethod = function(--[[ CtrlrModulator --]] mod, --[[ number --]] value, --[[ number --]] source)
+__method_name = function(--[[ CtrlrModulator --]] mod, --[[ number --]] value, --[[ number --]] source)
     -- Safety Check: Prevents methods firing during boot, DAW load, or preset changes.
     -- Combines getBootstrapState(), getRestoreState(), and getProgramState().
     -- (Optionally delete this line if this function must run during initialization)
