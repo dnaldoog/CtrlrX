@@ -8,6 +8,8 @@
 #include "CtrlrLog.h"
 #include "CtrlrLuaObjectWrapper.h"
 #include "CtrlrWindowManagers/CtrlrManagerWindowManager.h"
+#include "luabind/object.hpp" // added to check if method has a certain property in isMethodValid, which is used to disable methods that have thrown an error during execution. This is needed to prevent the same error from happening repeatedly and crashing Ctrlr.
+// #include "luabind/types.hpp"
 
 CtrlrLuaMethodManager::CtrlrLuaMethodManager(CtrlrLuaManager &_owner)
 	: managerTree(Ids::luaManagerMethods),
@@ -485,7 +487,12 @@ const String CtrlrLuaMethodManager::getDefaultMethodCode(const String &methodNam
 {
 	if (linkedToProperty.isEmpty() || linkedToProperty == COMBO_NONE_ITEM)
 	{
-		return ("function "+methodName+"()\n\t-- Your method code here\nend");
+        return ("function " + methodName + "()\n"
+				"\t-- Safety Check: Prevents methods firing during boot, DAW load, or preset changes.\n"
+                "\t-- Combines panel:getBootstrapState() panel:getRestoreState()  panel:getProgramState().\n"
+                "\t-- (Optionally delete this line if this function must run during initialization)\n"
+				"\tif panel:isLoading() then return end\n\n"
+                "end");
 	}
 	else
 	{
@@ -628,4 +635,54 @@ void CtrlrLuaMethodManager::wrapUtilities()
 			addMethod (getGroupByName("Built-In"), getUtilityName(i), getUtilityCode(i).trim(), "", getUtilityUuid(i), getUtilityAlwaysUpdate(i));
 		}
 	}
+}
+
+bool CtrlrLuaMethodManager::isMethodValid(CtrlrLuaMethod *o)
+{
+    // 1. Structural Null Check
+    if (o == nullptr) 
+    {
+        return false;
+    }
+
+    try 
+    {
+        // 2. Check Ctrlr's own native tracking flag
+        if (!o->isValid()) 
+        {
+            return false;
+        }
+    }
+    catch (...) 
+    {
+        // Catches wild dangling pointer memory violations safely
+        return false;
+    }
+
+    // 3. Ensure the Lua State is alive
+    lua_State* L = owner.getLuaState();
+    if (!L) 
+    {
+        return false;
+    }
+
+    try 
+    {
+        // 4. Fetch the internal Luabind object
+        luabind::object methodObj = o->getObject();
+        
+        // 5. Native Luabind validity check:
+        // Luabind objects override the bool operator or expose a member .is_valid()
+        // We can also explicitly verify that it isn't an uninitialized nil reference.
+        if (luabind::type(methodObj) != LUA_TNIL)
+        {
+            return true;
+        }
+    }
+    catch (...) 
+    {
+        // Insulates against Luabind evaluation exceptions
+    }
+
+    return false;
 }

@@ -370,6 +370,40 @@ void CtrlrPanel::sendSnapshotOnLoad()
 	}
 }
 
+bool CtrlrPanel::isLoading()
+{
+    const ScopedReadLock lock (panelLock);
+
+    // 1. Structural Gates: Immediate block if loading a DAW project or preset bank
+    if (restoreStateStatus || programState)
+    {
+        return true;
+    }
+
+    // 2. Core Bootstrap Gate: If C++ is actively inside bootstrapPanel(), ALWAYS block
+    if (boostrapStateStatus)
+    {
+        return true;
+    }
+
+    // 3. The Asynchronous Cooldown Gate (Your Timer Rule)
+    if (isBootstrapTimerActive)
+    {
+        uint32 currentTime = juce::Time::getMillisecondCounter();
+        
+        // Use a tight 300ms to 500ms cooldown window AFTER boostrapStateStatus drops to false
+        if (currentTime - bootstrapStartTime > 400)
+        {
+            const_cast<CtrlrPanel*>(this)->isBootstrapTimerActive = false;
+			//juce::Logger::writeToLog("[CtrlrX Engine] >>> 400ms Cooldown Passed. GATE IS OPEN! <<<");
+            return false;
+        }
+        
+        return true;
+    }
+
+    return false;
+}
 void CtrlrPanel::bootstrapPanel(const bool setInitialProgram)
 {
     _DBG("CtrlrPanel::bootstrapPanel");
@@ -377,7 +411,9 @@ void CtrlrPanel::bootstrapPanel(const bool setInitialProgram)
 		return;
 
 	boostrapStateStatus = true;
-
+// Capture the exact system time when boot started
+    bootstrapStartTime = juce::Time::getMillisecondCounter();
+    isBootstrapTimerActive = true;
 	for (int i=0; i<ctrlrModulators.size(); i++)
 	{
 		ctrlrModulators[i]->allModulatorsInitialized();
@@ -410,6 +446,8 @@ void CtrlrPanel::bootstrapPanel(const bool setInitialProgram)
 	}
 
 	boostrapStateStatus = false;
+	bootstrapStartTime = juce::Time::getMillisecondCounter();
+    isBootstrapTimerActive = true;
 }
 
 CtrlrPanelEditor *CtrlrPanel::getEditor(const bool createNewEditorIfNeeded)
