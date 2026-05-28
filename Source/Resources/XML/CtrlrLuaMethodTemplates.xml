@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <methods>
-  <luaMethod name="luaModulatorValueChange">
+<luaMethod name="luaModulatorValueChange">
     --
     -- Called when a modulator value changes
-    -- @mod   http://ctrlr.org/api/class_ctrlr_modulator.html
-    -- @value    new numeric value of the modulator
-    --
     -- get name of modulator with L(mod:getName())
-    --
+    -- @value    new numeric value of the modulator
     -- @source indicates what caused the change
     --
     -- * initial value = 0
@@ -20,11 +17,16 @@
     -- * changed by Link = 7
     -- * change by Unknown = 8
 
-    __method_name = function(--[[ CtrlrModulator --]] mod, --[[ number --]] value, --[[ number --]] source)
-    end
-  </luaMethod>
+myMethod = function(--[[ CtrlrModulator --]] mod, --[[ number --]] value, --[[ number --]] source)
+    -- Safety Check: Prevents methods firing during boot, DAW load, or preset changes.
+    -- Combines getBootstrapState(), getRestoreState(), and getProgramState().
+    -- (Optionally delete this line if this function must run during initialization)
+    if panel:isLoading() then return end
 
-  <luaMethod name="componentLuaMouseMoved">
+    
+end
+</luaMethod>
+<luaMethod name="componentLuaMouseMoved">
     --
     -- Called when the mouse moves over a component
     --
@@ -108,10 +110,7 @@
   <luaMethod name="uiCustomPaintCallback">
     --
     -- Called when a component needs repainting
-    -- @comp
-    -- @g    http://ctrlr.org/api/class_ctrlr_lua_graphics.html
-    --              see also http://www.rawmaterialsoftware.com/juce/api/classGraphics.html
-    --
+
 
     __method_name = function(--[[ CtrlrComponent --]] comp, --[[ CtrlrComponent --]] g)
     end
@@ -120,10 +119,8 @@
   <luaMethod name="uiCustomPaintOverChildrenCallback">
     --
     -- Called when you want to paint over all other elements of the component
-    -- @comp
-    -- @g    http://ctrlr.org/api/class_ctrlr_lua_graphics.html
-    --              see also http://www.rawmaterialsoftware.com/juce/api/classGraphics.html
-    --
+  
+
 
     __method_name = function(--[[ CtrlrComponent --]] comp, --[[ Graphics --]] g)
     end
@@ -132,9 +129,7 @@
   <luaMethod name="uiCustomMouseDownCallback">
     --
     -- Called when a mouse DOWN (any mouse button) event happens on a component
-    -- @comp
-    -- @event   http://www.rawmaterialsoftware.com/juce/api/classMouseEvent.html
-    --
+
 
     __method_name = function(--[[ CtrlrComponent --]] comp, --[[ MouseEvent --]] event)
     end
@@ -321,9 +316,7 @@
     --
     -- Called when the panel is saved
     -- @saveType         A number that indicates the type of file being saved http://ctrlr.org/api/class_ctrlr_panel.html
-    -- @destinationFile  A file object http://ctrlr.org/api/class_ctrlr_lua_file.html
-    --                      see more http://www.rawmaterialsoftware.com/juce/api/classFile.html
-    --
+
 
     __method_name = function(--[[ number --]] saveType, --[[ File --]] destinationFile)
     end

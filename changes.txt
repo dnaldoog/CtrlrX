@@ -1,0 +1,5 @@
+        modified:   Source/Core/CtrlrPanel/CtrlrPanel.cpp
+        modified:   Source/Core/CtrlrPanel/CtrlrPanel.h
+        modified:   Source/Lua/CtrlrLuaManager.cpp
+        modified:   Source/Lua/Methods/CtrlrLuaMethodManager.cpp
+        modified:   Source/Resources/XML/CtrlrLuaMethodTemplates.xml

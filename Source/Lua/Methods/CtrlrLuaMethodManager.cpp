@@ -483,16 +483,20 @@ const StringArray CtrlrLuaMethodManager::getTemplateList()
 
 const String CtrlrLuaMethodManager::getDefaultMethodCode(const String &methodName, const String &linkedToProperty)
 {
-	if (linkedToProperty.isEmpty() || linkedToProperty == COMBO_NONE_ITEM)
-	{
-		return ("function "+methodName+"()\n\t-- Your method code here\nend");
-	}
-	else
-	{
-		return (getTemplateForProperty(methodName, linkedToProperty));
-	}
+    if (linkedToProperty.isEmpty() || linkedToProperty == COMBO_NONE_ITEM)
+    {
+        return ("function " + methodName + "()\n"
+				"\t-- Safety Check: Prevents methods firing during boot, DAW load, or preset changes.\n"
+                "\t-- Combines panel:getBootstrapState() panel:getRestoreState()  panel:getProgramState().\n"
+                "\t-- (Optionally delete this line if this function must run during initialization)\n"
+				"\tif panel:isLoading() then return end\n\n"
+                "end");
+    }
+    else
+    {
+        return (getTemplateForProperty(methodName, linkedToProperty));
+    }
 }
-
 ValueTree CtrlrLuaMethodManager::getDefaultMethodTree(const String &methodName, const String &methodCode, const String &methodProperty, const Uuid methodUuid)
 {
 	ValueTree methodTree (Ids::luaMethod);
