@@ -672,8 +672,7 @@ bool CtrlrLuaMethodManager::isMethodValid(CtrlrLuaMethod *o)
 
     try 
     {
-        luabind::object methodObj = o->getObject();
-        
+        luabind::object methodObj = o->getObject().getLuabindObject();
         // 4. FINAL LUA STATE CHECK: Verify it is an actively callable function inside Lua
         if (methodObj && luabind::type(methodObj) == LUA_TFUNCTION)
         {

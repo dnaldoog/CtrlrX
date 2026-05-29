@@ -33,7 +33,7 @@ enum CtrlrMidiMessageType
 	kMidiMessageType,
 };
 
-class TimestampComparator
+class TimestampComparator 
 {
 public:
 	int compareElements(CtrlrMidiMessageEx first, CtrlrMidiMessageEx second)
