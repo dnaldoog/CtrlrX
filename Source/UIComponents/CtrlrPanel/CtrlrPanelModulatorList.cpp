@@ -722,13 +722,19 @@ void CtrlrPanelModulatorList::timerCallback()
         }
     }
 
-    if (newSelection != modulatorList->getSelectedRows())
+if (newSelection != modulatorList->getSelectedRows())
     {
         modulatorList->setSelectedRows(newSelection, juce::dontSendNotification);
 
         if (newSelection.size() > 0)
         {
-            modulatorList->selectRow(newSelection.getRange(0).getStart(), true, true);
+            int firstRow = newSelection.getRange(0).getStart();
+            
+            // 1. Select the row normally
+            modulatorList->selectRow(firstRow, true, false); // changed last param to false so it doesn't fight our manual scroll
+            
+            // 2. Center it beautifully!
+            centerRowInView (firstRow);
         }
 
         modulatorList->repaint();
@@ -770,4 +776,33 @@ void CtrlrPanelModulatorList::saveColumnState()
         Ids::panelModulatorListColumns,
         state
     );
+}
+
+void CtrlrPanelModulatorList::centerRowInView (int rowNumber)
+{
+    if (modulatorList == nullptr || rowNumber < 0 || rowNumber >= getNumRows())
+        return;
+
+    // 1. Safely access the table's internal Viewport container
+    if (auto* viewport = modulatorList->getViewport())
+    {
+        const int rowHeight = modulatorList->getRowHeight();
+        const int visibleHeight = modulatorList->getHeight();
+        
+        if (rowHeight <= 0 || visibleHeight <= 0) return;
+
+        // 2. Calculate where the selected row sits in absolute pixels
+        const int rowTopY = rowNumber * rowHeight;
+
+        // 3. Find the scroll position to keep the row perfectly balanced in the center
+        int idealScrollY = rowTopY - (visibleHeight / 2) + (rowHeight / 2);
+
+        // 4. Bound the calculation within valid vertical limits
+        if (idealScrollY < 0) 
+            idealScrollY = 0;
+
+        // 5. Use the standard Viewport API to set the exact position
+        // Parameters: (horizontalScrollPosition, verticalScrollPosition)
+        viewport->setViewPosition (viewport->getViewPositionX(), idealScrollY);
+    }
 }
