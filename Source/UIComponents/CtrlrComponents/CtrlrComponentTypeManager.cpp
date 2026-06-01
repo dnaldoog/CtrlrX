@@ -172,7 +172,6 @@ bool CtrlrComponentTypeManager::isGroupingComponent(CtrlrComponent *componentToC
 		return (false);
 	}
 }
-//https://github.com/damiensellier/CtrlrX/issues/259
 CtrlrComponent *CtrlrComponentTypeManager::getParentIfGroupped(CtrlrComponent *childComponent)
 {
 	if (childComponent->getOwner().getOwnerPanel().getModulator (childComponent->getComponentGroup()))
