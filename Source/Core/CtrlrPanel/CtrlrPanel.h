@@ -226,7 +226,6 @@ class CtrlrPanel:	public ValueTree::Listener,
 		CtrlrModulator* getModulatorByCustomIndex(const int customIndex);
 		// We give getModulator a default fallback value to prevent "too few arguments" errors.
 		CtrlrModulator* getModulator(const String& name) const;
-		CtrlrModulator* getModulator(const String& name, bool forwardToComponents) const;
 		int getNumModulators();
 		void bootstrapPanel(const bool setInitialProgram=true);
 		int cleanBogusProperties();

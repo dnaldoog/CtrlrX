@@ -1050,7 +1050,7 @@ const String CtrlrPanel::getUniqueModulatorName(const String &proposedName)
 		nameToLookFor	= basename + "-" + String(marker);
 	}
 
-	while (getModulator(nameToLookFor,true))
+	while (getModulator(nameToLookFor))
 	{
 		nameToLookFor = basename + "-" + String(++marker);
 	}
@@ -1196,7 +1196,7 @@ void CtrlrPanel::setProgram(ValueTree programTree, const bool sendSnapshotNow)
 		{
 			if (program.getChild(i).hasType(Ids::value))
 			{
-				CtrlrModulator *m = getModulator (program.getChild(i).getProperty(Ids::name),true);
+				CtrlrModulator *m = getModulator (program.getChild(i).getProperty(Ids::name));
 				if (m)
 				{
 					m->setRestoreState (true);
@@ -1891,17 +1891,13 @@ const Array<int,CriticalSection> CtrlrPanel::globalsFromString(const String &glo
 
 	return (ar);
 }
-CtrlrModulator* CtrlrPanel::getModulator(const String& name) const
-{
-	return getModulator(name, true);
-} // this is the default version of the method, as found probably in nearly every panel. We don't want to break it!
 
-// Update this line to match the header signature (minus the default "= true")
-CtrlrModulator* CtrlrPanel::getModulator(const String& name, bool forwardToComponents) const
+CtrlrModulator* CtrlrPanel::getModulator (const String& name) const
 {
-	for (int i = 0; i < ctrlrModulators.size(); i++)
+	// return (modulatorsByName[name]);
+	for (int i=0; i<ctrlrModulators.size(); i++)
 	{
-		if (ctrlrModulators[i]->getProperty(Ids::name) == name)
+		if (ctrlrModulators[i]->getProperty (Ids::name) == name)
 		{
 			return (ctrlrModulators[i]);
 		}

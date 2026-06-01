@@ -542,7 +542,7 @@ int CtrlrManager::getModulatorVstIndexByName(const String& modulatorName, CtrlrP
 	{
 		// We call getModulator on the sourcePanel object, passing the 'true' boolean 
 		// to satisfy the CtrlrPanel function signature we just verified in CtrlrPanel.h!
-		CtrlrModulator* m = sourcePanel->getModulator(modulatorName, true);
+		CtrlrModulator* m = sourcePanel->getModulator(modulatorName);
 		if (m)
 		{
 			return (m->getVstIndex());

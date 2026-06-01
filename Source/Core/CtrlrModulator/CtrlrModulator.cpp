@@ -455,7 +455,7 @@ void CtrlrModulator::setReference (const String &modulatorToReference)
 	}
 	else if (modulatorToReference != getName())
 	{
-		CtrlrModulator *m = owner.getModulator (modulatorToReference,true);
+		CtrlrModulator *m = owner.getModulator (modulatorToReference);
 		if (m == nullptr)
 		{
 			_WRN("CtrlrModulator::setReference ["+getName()+"] can't find modulator with name \""+modulatorToReference+"\" link won't work");
