@@ -638,42 +638,45 @@ void CtrlrLuaMethodManager::wrapUtilities()
 
 bool CtrlrLuaMethodManager::isMethodValid(CtrlrLuaMethod *o)
 {
-    // 1. Strict Null Pointer Check (Catches flat missing methods)
     if (o == nullptr) 
     {
         return false;
     }
 
-    // 2. Wrap the property inspection in a structural safety net.
-    // If 'o' is a dangling pointer pointing to random, unallocated garbage memory,
-    // reading o->isValid() will throw a memory fault. We catch it here to prevent a crash.
+    // Global Thread Safety Guard: Immediately decline execution if the application or
+    // UI engine Message Manager is in a state of teardown or exit processing.
+    if (juce::MessageManager::getInstanceWithoutCreating() == nullptr || 
+        juce::MessageManager::getInstance()->hasStopMessageBeenSent())
+    {
+        return false;
+    }
+
     try 
     {
+        // Check structural flag validity cleanly
         if (!o->isValid()) 
         {
             return false;
         }
         
-        // Ensure the internal Luabind object reference is populated
-        if (o->getObject().getObject() == nullptr)
+        // Safety intercept: Ensure the wrapped luaObject tracking wrapper exists 
+        if (&(o->getObject()) == nullptr)
         {
             return false;
         }
     }
     catch (...) 
     {
-        juce::Logger::writeToLog("[CtrlrX Warning]: Access violation caught on an invalid method pointer address.");
+        // Quietly swallow the structural exception if 'o' is a wild/dangling pointer
         return false;
     }
 
-    // 3. Fetch the active Lua state from the owner
     lua_State* L = owner.getLuaState();
     if (!L) return false;
 
     try 
     {
         luabind::object methodObj = o->getObject().getLuabindObject();
-        // 4. FINAL LUA STATE CHECK: Verify it is an actively callable function inside Lua
         if (methodObj && luabind::type(methodObj) == LUA_TFUNCTION)
         {
             return true;
@@ -681,6 +684,5 @@ bool CtrlrLuaMethodManager::isMethodValid(CtrlrLuaMethod *o)
     }
     catch (...) {}
 
-    juce::Logger::writeToLog("[CtrlrX Warning]: Method pointer is okay, but function is missing from the Lua state registry.");
     return false;
 }

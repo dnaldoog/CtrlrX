@@ -142,8 +142,22 @@ void CtrlrFixedImageSlider::setComponentValue (const double newValue, const bool
 
 void CtrlrFixedImageSlider::sliderContentChanged()
 {
-	valueMap->copyFrom (owner.getProcessor().setValueMap (getProperty(Ids::uiFixedSliderContent)));
-	ctrlrSlider->setRange (valueMap->getNonMappedMin(), valueMap->getNonMappedMax(), 1);
+    // Fix multi-parse duplication from legacy copy-paste line
+    valueMap->copyFrom(owner.getProcessor().setValueMap(getProperty(Ids::uiFixedSliderContent)));
+
+    double min = valueMap->getNonMappedMin();
+    double max = valueMap->getNonMappedMax();
+    const double interval = 1.0;
+
+    // Strict JUCE Guard: Ensure range width is at least 1 full step wide
+    if (max <= min) {
+        max = min + interval;
+    }
+    if ((max - min) < interval) {
+        max = min + interval;
+    }
+
+    ctrlrSlider->setRange(min, max, interval);
 }
 
 
@@ -474,8 +488,22 @@ void CtrlrFixedImageSlider::setComponentValue (const double newValue, const bool
 
 void CtrlrFixedImageSlider::sliderContentChanged()
 {
-    valueMap->copyFrom (owner.getProcessor().setValueMap (getProperty(Ids::uiFixedSliderContent)));
-    ctrlrSlider->setRange (valueMap->getNonMappedMin(), valueMap->getNonMappedMax(), 1);
+    // Fix multi-parse duplication from legacy copy-paste line
+    valueMap->copyFrom(owner.getProcessor().setValueMap(getProperty(Ids::uiFixedSliderContent)));
+
+    double min = valueMap->getNonMappedMin();
+    double max = valueMap->getNonMappedMax();
+    const double interval = 1.0;
+
+    // Strict JUCE Guard: Ensure range width is at least 1 full step wide
+    if (max <= min) {
+        max = min + interval;
+    }
+    if ((max - min) < interval) {
+        max = min + interval;
+    }
+
+    ctrlrSlider->setRange(min, max, interval);
 }
 
 
