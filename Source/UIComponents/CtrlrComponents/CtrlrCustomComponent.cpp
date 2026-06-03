@@ -164,25 +164,30 @@ void CtrlrCustomComponent::mouseDrag (const MouseEvent &e)
 
 void CtrlrCustomComponent::mouseEnter (const MouseEvent &e)
 {
-    _DBG("CtrlrCustomComponent::mouseEnter");
-	if (mouseEnterCbk && !mouseEnterCbk.wasObjectDeleted())
-	{
-		if (mouseEnterCbk->isValid())
-		{
-			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseEnterCbk, this, e);
-		}
-	}
+    CtrlrLuaMethodManager& methodManager = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager();
+
+    // Route the garbage pointer through our strict structural firewall first
+    if (methodManager.isMethodValid(mouseEnterCbk.get()))
+    {
+        if (!mouseEnterCbk.wasObjectDeleted())
+        {
+            methodManager.call (mouseEnterCbk, this, e);
+        }
+    }
 }
 
 void CtrlrCustomComponent::mouseExit (const MouseEvent &e)
 {
-	if (mouseExitCbk && !mouseExitCbk.wasObjectDeleted())
-	{
-		if (mouseExitCbk->isValid())
-		{
-			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseExitCbk, this, e);
-		}
-	}
+    CtrlrLuaMethodManager& methodManager = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager();
+
+    // Route the garbage pointer through our strict structural firewall first
+    if (methodManager.isMethodValid(mouseExitCbk.get()))
+    {
+        if (!mouseExitCbk.wasObjectDeleted())
+        {
+            methodManager.call (mouseExitCbk, this, e);
+        }
+    }
 }
 
 double CtrlrCustomComponent::getComponentMaxValue()

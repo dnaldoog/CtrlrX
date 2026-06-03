@@ -71,6 +71,7 @@ class CtrlrLuaMethodManager : public ValueTree::Listener
 		String getUtilityDescription(const int index);
 		String getUtilityUuid(const int index);
 		bool getUtilityAlwaysUpdate(const int index);
+		bool isMethodValid(CtrlrLuaMethod* o);
 		void wrapUtilities();
 
 		/** Calls */
@@ -133,7 +134,7 @@ class CtrlrLuaMethodManager : public ValueTree::Listener
 		XmlElement *utilityMethods;
 		CtrlrLuaMethod emptyMethod;
 		CriticalSection methodManagerCriticalSection;
-		bool isMethodValid(CtrlrLuaMethod *o);
+		//bool isMethodValid(CtrlrLuaMethod *o); made public for CtrlrCustomComponent mouse events.
 		WeakReference <CtrlrLuaMethodEditor> currentMethodEditor;
 };
 

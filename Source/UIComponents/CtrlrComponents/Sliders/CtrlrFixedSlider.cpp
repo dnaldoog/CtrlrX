@@ -138,12 +138,14 @@ void CtrlrFixedSlider::sliderContentChanged()
 		double max       =  valueMap->getNonMappedMax();
 		const double min = valueMap->getNonMappedMin();
 		// For JUCE MAX must be >= min
+        _DBG("LOADING SLIDER: " + owner.getProperty(Ids::name).toString() + " Min: " + String(min) + " Max: " + String(max));
 		if (max <= min) {
 			// samething between 0.5 and 1 times the interval
 			// to avoid rounding errors
 			max = min + 0.66;
 		}
-		ctrlrSlider->setRange (min, max, 1);
+    double interval = 1.0;
+    ctrlrSlider->setRange(min, max, interval);
 	}
 }
 
@@ -509,7 +511,8 @@ void CtrlrFixedSlider::sliderContentChanged()
             // to avoid rounding errors
             max = min + 0.66;
         }
-        ctrlrSlider->setRange (min, max, 1);
+    double interval = 1.0;
+    ctrlrSlider->setRange(min, max, interval);
     }
 }
 

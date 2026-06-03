@@ -181,15 +181,24 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
         double max       = getProperty (Ids::uiSliderMax);
         const double min = getProperty (Ids::uiSliderMin);
         double interval  = getProperty (Ids::uiSliderInterval);
-        if (interval == 0)
-            interval = std::abs(max-min) + 1;
+
+        if (interval <= 0)
+            interval = std::abs(max - min) + 1.0;
+
+        // Strict JUCE Guard: Ensure the max bound expands by a minimum of 1 full step 
         if (max <= min) {
-            max = min + interval * 0.66;
+            max = min + interval;
         }
+        
+        // Final sanity catch if the interval width is wider than the range window
+        if ((max - min) < interval) {
+            max = min + interval;
+        }
+
         ctrlrSlider.setRange ( min, max, interval  );
         owner.setProperty (Ids::modulatorMax, ctrlrSlider.getMaximum());
         owner.setProperty (Ids::modulatorMin, ctrlrSlider.getMinimum());
-    }
+       }
     else if (property == Ids::uiSliderValuePosition || property == Ids::uiSliderValueHeight || property == Ids::uiSliderValueWidth)
     {
         ctrlrSlider.setTextBoxStyle (
@@ -520,18 +529,7 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
     }
     else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin)
     {
-        double max = getProperty (Ids::uiSliderMax);  
-        double min = getProperty (Ids::uiSliderMin);  
-        double interval = getProperty (Ids::uiSliderInterval); 
-        if (interval == 0)
-            interval = std::abs(max-min) + 1;
-        if (max <= min) {
-            max = min + interval * 0.66;
-        }
-        ctrlrSlider.setRange ( min, max, interval );
-        owner.setProperty (Ids::modulatorMin, ctrlrSlider.getMinimum());
-        owner.setProperty (Ids::modulatorMax, ctrlrSlider.getMaximum());
-        lookAndFeelChanged();
+    double max       = getProperty (Ids::uiSliderMax);
     }
     else if (property == Ids::uiSliderDecimalPlaces) 
     {
