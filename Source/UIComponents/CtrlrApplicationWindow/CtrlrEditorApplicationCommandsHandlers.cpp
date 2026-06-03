@@ -544,9 +544,7 @@ MessageManager::callAsync([this]
     {
         _DBG("KBMap: second async (next frame)");
 
-        // 3) Third defer: final safety — tiny delay to let compositor settle.
-        // Use callAsync or a tiny timer; timer is slightly more deterministic on some Wayland setups.
-        const int extraDelayMs = 20; // tweak 10-40ms if needed
+        const int extraDelayMs = 20;
 
         Timer::callAfterDelay(extraDelayMs, [this]()
         {
@@ -561,24 +559,51 @@ MessageManager::callAsync([this]
             options.content.setOwned(keys);
             options.dialogTitle = "Keyboard mapping";
             options.resizable = true;
-
-            // CRUCIAL: use JUCE titlebar on Linux to avoid native/GTK transient issues
             options.useNativeTitleBar = false;
-
             options.dialogBackgroundColour = Colours::lightgrey;
             options.escapeKeyTriggersCloseButton = true;
 
-            // don't set componentToCentreAround (or set to nullptr) if centering causes issues
-            // options.componentToCentreAround = this;
+            // Launch the window asynchronously
+            auto* dialog = options.launchAsync();
 
-            options.launchAsync();
-
-            // Save mappings when changed
-            if (auto xml = owner.getCommandManager()
-                            .getKeyMappings()->createXml(true))
+            if (dialog != nullptr)
             {
-                owner.setProperty(Ids::ctrlrKeyboardMapping,
-                                  xml->createDocument(""));
+                // Create a SafePointer that automatically turns null when the window is destroyed
+                Component::SafePointer<Component> safeDialog(dialog);
+
+                // Check periodically if the window has been closed by the user
+                // Using a lambda timer lambda capture to monitor the safe pointer
+                struct SaveTimer : public Timer
+                {
+                    Component::SafePointer<Component> targetDialog;
+                    decltype(owner)& ownerRef; // Automatically infers the exact class type of 'owner'
+
+                    SaveTimer(Component* d, decltype(owner)& o) 
+                        : targetDialog(d), ownerRef(o) 
+                    {
+                        startTimer(200); // Check every 200ms
+                    }
+
+                    void timerCallback() override
+                    {
+                        // If the window is gone, it means the user closed it!
+                        if (targetDialog == nullptr)
+                        {
+                            stopTimer();
+                            _DBG("KBMap: Dialog closed by user. Saving configuration mappings to XML properties...");
+                            
+                            if (auto xml = ownerRef.getCommandManager().getKeyMappings()->createXml(true))
+                            {
+                                ownerRef.setProperty(Ids::ctrlrKeyboardMapping, xml->createDocument(""));
+                            }
+                            
+                            delete this; // Safely self-destruct the tracker timer
+                        }
+                    }
+                };
+
+                // Instantiate the tracker
+                new SaveTimer(dialog, owner);
             }
         }); // end Timer::callAfterDelay
     }); // end second callAsync
