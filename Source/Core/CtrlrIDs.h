@@ -278,6 +278,7 @@ namespace Ids
     DECLARE_ID (componentEffectOffsetX);
     DECLARE_ID (componentEffectOffsetY);
     DECLARE_ID (componentLabelPosition);
+    DECLARE_ID (componentBubbleHelpTrigger);
     DECLARE_ID (componentBubbleHelpEnabled);
     DECLARE_ID (componentBubbleHelpTitle);
     DECLARE_ID (componentBubbleHelpText);

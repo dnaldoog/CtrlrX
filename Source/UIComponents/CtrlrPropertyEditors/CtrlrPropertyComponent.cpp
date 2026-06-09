@@ -169,15 +169,20 @@ Component *CtrlrPropertyComponent::getPropertyComponent()
         }
     }
     _DBG("CtrlrPropertyComponent::getPropertyComponent [POST] propertyType==" + String((int)propertyType) + " visibleText==" + visibleText);
+    int propertyLineheightBaseValue = 36; // Declare the variable outside the if-else block. Mandatory for Preference window property lines.
+    bool propertyLineImprovedLegibility = false; // Declare the variable outside the if-else block. Mandatory for Preference window property lines.
     
-    // END of addon
-    // Look for your componentLayerUid block and add this right below it:
-if (propertyName == Ids::componentBubbleHelpTrigger)
+    if (panel) // Added v5.5.33. Accessing to managerTree directly will crashes CtrlrX from Preferences window, checking panel will prevent that.
+    {
+        propertyLineheightBaseValue = panel->getOwner().getManagerTree().getProperty(Ids::ctrlrPropertyLineheightBaseValue, 36); // Added v5.6.33.
+        propertyLineImprovedLegibility = panel->getOwner().getManagerTree().getProperty(Ids::ctrlrPropertyLineImprovedLegibility, false); // Added v5.6.34.
+    }
+    if (propertyName == Ids::componentBubbleHelpTrigger)
 {
     possibleChoices = new StringArray();
     possibleValues = new Array<var>();
 
-    // Parse the tokens out of the XML defaults attribute automatically
+    // Automatically parse the "defaults" attribute from the XML line
     String defaultsString = identifierDefinition.getProperty("defaults").toString();
     StringArray pairs;
     pairs.addTokens(defaultsString, ",", "");
@@ -193,15 +198,6 @@ if (propertyName == Ids::componentBubbleHelpTrigger)
         }
     }
 }
-    int propertyLineheightBaseValue = 36; // Declare the variable outside the if-else block. Mandatory for Preference window property lines.
-    bool propertyLineImprovedLegibility = false; // Declare the variable outside the if-else block. Mandatory for Preference window property lines.
-    
-    if (panel) // Added v5.5.33. Accessing to managerTree directly will crashes CtrlrX from Preferences window, checking panel will prevent that.
-    {
-        propertyLineheightBaseValue = panel->getOwner().getManagerTree().getProperty(Ids::ctrlrPropertyLineheightBaseValue, 36); // Added v5.6.33.
-        propertyLineImprovedLegibility = panel->getOwner().getManagerTree().getProperty(Ids::ctrlrPropertyLineImprovedLegibility, false); // Added v5.6.34.
-    }
-    
     switch (propertyType)
 	{
 		case CtrlrIDManager::ReadOnly:

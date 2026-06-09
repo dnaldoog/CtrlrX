@@ -94,10 +94,10 @@ class CtrlrComponent : public Component,
         const String getComponentGroup();
         virtual void mouseDoubleClick(const MouseEvent &e);
         virtual void mouseUp(const MouseEvent &e);
-        virtual void mouseDown(const MouseEvent &e);
+        virtual void mouseDown(const MouseEvent &e) override; // override added for BubbleComponent
         virtual void mouseMove (const MouseEvent &e);
         virtual void mouseDrag (const MouseEvent &e);
-        virtual void mouseEnter (const MouseEvent &e);
+        virtual void mouseEnter (const MouseEvent &e) override; // override added for BubbleComponent
         virtual void mouseExit (const MouseEvent &e);
         void focusGained (FocusChangeType cause) override; // Added v5.6.34
         void focusLost (FocusChangeType cause) override; // Added v5.6.34
@@ -121,7 +121,8 @@ class CtrlrComponent : public Component,
         virtual void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr) = 0;
         bool isInternal();
         JUCE_LEAK_DETECTOR(CtrlrComponent)
-
+    private:
+   // void triggerBubbleHelp (const MouseEvent& e, int requiredTrigger);
     protected:
         bool restoreStateInProgress;
         bool isSelected;
