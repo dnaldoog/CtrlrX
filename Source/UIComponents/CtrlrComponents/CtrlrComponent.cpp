@@ -194,60 +194,7 @@ void CtrlrComponent::mouseDoubleClick(const MouseEvent &e)
     }
 }
 
-void CtrlrComponent::mouseDown (const MouseEvent& e)
-{
-    Component::mouseDown (e);
 
-    // 2. Read native Bubble Help properties from the Modulator ValueTree
-    if ((bool)owner.getModulatorTree().getProperty (Ids::componentBubbleHelpEnabled) == true)
-    {
-        String title = owner.getModulatorTree().getProperty (Ids::componentBubbleHelpTitle).toString();
-        String body  = owner.getModulatorTree().getProperty (Ids::componentBubbleHelpText).toString();
-        int timeout  = owner.getModulatorTree().getProperty (Ids::componentBubbleHelpTimeout, 5000);
-
-        if (body.isNotEmpty())
-        {
-            String completeMessage = title.isNotEmpty() ? (title + "\n\n" + body) : body;
-
-            AttributedString attrStr (completeMessage);
-            attrStr.setJustification (Justification::centred);
-            
-            // OPTIONAL POLISH: Look up the font type already saved in the XML!
-            if (owner.getModulatorTree().hasProperty(Ids::componentBubbleNameFont))
-            {
-                String fontString = owner.getModulatorTree().getProperty(Ids::componentBubbleNameFont).toString();
-                attrStr.setFont (Font::fromString (fontString));
-            }
-            else
-            {
-                attrStr.setFont (Font (14.0f));
-            }
-
-            // Look up the text color from the existing XML definition if available
-            if (owner.getModulatorTree().hasProperty(Ids::componentBubbleNameColour))
-            {
-                Colour customColor = Colour::fromString(owner.getModulatorTree().getProperty(Ids::componentBubbleNameColour).toString());
-                attrStr.setColour (customColor);
-            }
-            else
-            {
-                attrStr.setColour (findColour (Label::textColourId));
-            }
-
-            auto* bubble = new BubbleMessageComponent();
-            bubble->showAt (this, attrStr, timeout, true, true);
-        }
-    }
-    
-    // 3. Fire your custom Lua callback if one exists
-    if (mouseDownCbk && !mouseDownCbk.wasObjectDeleted())
-    {
-        if (mouseDownCbk->isValid())
-        {
-            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseDownCbk, this, e);
-        }
-    }
-}
 void CtrlrComponent::mouseUp(const MouseEvent &e)
 {
     if (mouseUpCbk && !mouseUpCbk.wasObjectDeleted())
@@ -259,8 +206,43 @@ void CtrlrComponent::mouseUp(const MouseEvent &e)
     }
 }
 
+void CtrlrComponent::mouseDown (const MouseEvent& e)
+{
+    Component::mouseDown (e);
+
+    // Evaluate standard click conditions or modifier setups
+    if (e.mods.isCtrlDown())
+    {
+        triggerBubbleHelp (e, 2); // 2 = Ctrl + Click
+    }
+    else if (e.mods.isShiftDown())
+    {
+        triggerBubbleHelp (e, 3); // 3 = Shift + Click
+    }
+    else
+    {
+        triggerBubbleHelp (e, 0); // 0 = Standard Mouse Down
+    }
+
+    // Fire Lua Callbacks...
+    if (mouseDownCbk && !mouseDownCbk.wasObjectDeleted() && mouseDownCbk->isValid())
+    {
+        owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseDownCbk, this, e);
+    }
+}
+
 void CtrlrComponent::mouseEnter (const MouseEvent &e)
 {
+    Component::mouseEnter (e);
+
+    // Instantly fires if the user selected "Mouse Hover" (Condition 1)
+    triggerBubbleHelp (e, 1); 
+
+    // Fire standard Lua mouse enter callbacks if they exist
+    if (mouseEnterCbk && !mouseEnterCbk.wasObjectDeleted() && mouseEnterCbk->isValid())
+    {
+        owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseEnterCbk, this, e);
+    }
     if (mouseEnterCbk && !mouseEnterCbk.wasObjectDeleted())
     {
         if (mouseEnterCbk->isValid())
@@ -591,6 +573,36 @@ void CtrlrComponent::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasCh
     {
         repaint();
         resized();
+    }
+}
+
+void CtrlrComponent::triggerBubbleHelp (const MouseEvent& e, int requiredTrigger)
+{
+    // Fetch the current setting chosen by the designer
+    int currentTriggerSetting = owner.getModulatorTree().getProperty (Ids::componentBubbleHelpTrigger, 0);
+    
+    // If this specific event doesn't match the user's chosen trigger condition, abort immediately!
+    if (currentTriggerSetting != requiredTrigger)
+        return;
+
+    // Read properties
+    if ((bool)owner.getModulatorTree().getProperty (Ids::componentBubbleHelpEnabled) == true)
+    {
+        String title = owner.getModulatorTree().getProperty (Ids::componentBubbleHelpTitle).toString();
+        String body  = owner.getModulatorTree().getProperty (Ids::componentBubbleHelpText).toString();
+        int timeout  = owner.getModulatorTree().getProperty (Ids::componentBubbleHelpTimeout, 5000);
+
+        if (body.isNotEmpty())
+        {
+            String completeMessage = title.isNotEmpty() ? (title + "\n\n" + body) : body;
+            AttributedString attrStr (completeMessage);
+            attrStr.setJustification (Justification::centred);
+            attrStr.setFont (Font (14.0f));
+            attrStr.setColour (findColour (Label::textColourId));
+
+            auto* bubble = new BubbleMessageComponent();
+            bubble->showAt (this, attrStr, timeout, true, true);
+        }
     }
 }
 

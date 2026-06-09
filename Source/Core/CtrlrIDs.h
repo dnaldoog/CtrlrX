@@ -278,6 +278,12 @@ namespace Ids
     DECLARE_ID (componentEffectOffsetX);
     DECLARE_ID (componentEffectOffsetY);
     DECLARE_ID (componentLabelPosition);
+    DECLARE_ID (componentBubbleHelpEnabled);
+    DECLARE_ID (componentBubbleHelpTitle);
+    DECLARE_ID (componentBubbleHelpText);
+    DECLARE_ID (componentBubbleHelpTimeout);
+    DECLARE_ID (componentBubbleNameFont);// not using for now
+    DECLARE_ID (componentBubbleNameColour); // not using for now
     DECLARE_ID (componentLabelJustification);
     DECLARE_ID (componentLabelHeight);
     DECLARE_ID (componentLabelWidth);
@@ -298,10 +304,7 @@ namespace Ids
     DECLARE_ID (componentInternalFunction);
     DECLARE_ID (componentLookAndFeel);
     DECLARE_ID (componentLookAndFeelIsCustom);
-    DECLARE_ID (componentBubbleHelpEnabled);
-    DECLARE_ID (componentBubbleHelpTitle);
-    DECLARE_ID (componentBubbleHelpText);
-    DECLARE_ID (componentBubbleHelpTimeout);
+
     
     DECLARE_ID (uiSliderLookAndFeel);
     DECLARE_ID (uiSliderLookAndFeelIsCustom);

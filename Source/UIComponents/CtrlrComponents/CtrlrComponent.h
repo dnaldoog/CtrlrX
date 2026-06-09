@@ -77,6 +77,7 @@ class CtrlrComponent : public Component,
         virtual void allModulatorsInitialized()                                                                { }
         virtual void panelEditModeChanged(const bool isInEditMode=false);
         virtual void reloadResources(Array <CtrlrPanelResource*>) {}
+        void triggerBubbleHelp (const MouseEvent& e, int requiredTrigger);
         void componentMovedOrResized (Component &component, bool wasMoved, bool wasResized);
         void addAndMakeVisible (Component *child, int zOrder=-1);
         CtrlrModulator &getOwner() const                                                            { return (owner); }

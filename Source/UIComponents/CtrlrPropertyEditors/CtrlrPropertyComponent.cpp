@@ -171,7 +171,28 @@ Component *CtrlrPropertyComponent::getPropertyComponent()
     _DBG("CtrlrPropertyComponent::getPropertyComponent [POST] propertyType==" + String((int)propertyType) + " visibleText==" + visibleText);
     
     // END of addon
-    
+    // Look for your componentLayerUid block and add this right below it:
+if (propertyName == Ids::componentBubbleHelpTrigger)
+{
+    possibleChoices = new StringArray();
+    possibleValues = new Array<var>();
+
+    // Parse the tokens out of the XML defaults attribute automatically
+    String defaultsString = identifierDefinition.getProperty("defaults").toString();
+    StringArray pairs;
+    pairs.addTokens(defaultsString, ",", "");
+
+    for (int i = 0; i < pairs.size(); ++i)
+    {
+        StringArray kv;
+        kv.addTokens(pairs[i], "=", "");
+        if (kv.size() == 2)
+        {
+            possibleChoices->add(kv[0].trim());
+            possibleValues->add(kv[1].trim().getIntValue());
+        }
+    }
+}
     int propertyLineheightBaseValue = 36; // Declare the variable outside the if-else block. Mandatory for Preference window property lines.
     bool propertyLineImprovedLegibility = false; // Declare the variable outside the if-else block. Mandatory for Preference window property lines.
     
