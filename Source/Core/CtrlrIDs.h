@@ -298,6 +298,10 @@ namespace Ids
     DECLARE_ID (componentInternalFunction);
     DECLARE_ID (componentLookAndFeel);
     DECLARE_ID (componentLookAndFeelIsCustom);
+    DECLARE_ID (componentBubbleHelpEnabled);
+    DECLARE_ID (componentBubbleHelpTitle);
+    DECLARE_ID (componentBubbleHelpText);
+    DECLARE_ID (componentBubbleHelpTimeout);
     
     DECLARE_ID (uiSliderLookAndFeel);
     DECLARE_ID (uiSliderLookAndFeelIsCustom);

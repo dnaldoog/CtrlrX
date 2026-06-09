@@ -194,8 +194,52 @@ void CtrlrComponent::mouseDoubleClick(const MouseEvent &e)
     }
 }
 
-void CtrlrComponent::mouseDown(const MouseEvent &e)
+void CtrlrComponent::mouseDown (const MouseEvent& e)
 {
+    Component::mouseDown (e);
+
+    // 2. Read native Bubble Help properties from the Modulator ValueTree
+    if ((bool)owner.getModulatorTree().getProperty (Ids::componentBubbleHelpEnabled) == true)
+    {
+        String title = owner.getModulatorTree().getProperty (Ids::componentBubbleHelpTitle).toString();
+        String body  = owner.getModulatorTree().getProperty (Ids::componentBubbleHelpText).toString();
+        int timeout  = owner.getModulatorTree().getProperty (Ids::componentBubbleHelpTimeout, 5000);
+
+        if (body.isNotEmpty())
+        {
+            String completeMessage = title.isNotEmpty() ? (title + "\n\n" + body) : body;
+
+            AttributedString attrStr (completeMessage);
+            attrStr.setJustification (Justification::centred);
+            
+            // OPTIONAL POLISH: Look up the font type already saved in the XML!
+            if (owner.getModulatorTree().hasProperty(Ids::componentBubbleNameFont))
+            {
+                String fontString = owner.getModulatorTree().getProperty(Ids::componentBubbleNameFont).toString();
+                attrStr.setFont (Font::fromString (fontString));
+            }
+            else
+            {
+                attrStr.setFont (Font (14.0f));
+            }
+
+            // Look up the text color from the existing XML definition if available
+            if (owner.getModulatorTree().hasProperty(Ids::componentBubbleNameColour))
+            {
+                Colour customColor = Colour::fromString(owner.getModulatorTree().getProperty(Ids::componentBubbleNameColour).toString());
+                attrStr.setColour (customColor);
+            }
+            else
+            {
+                attrStr.setColour (findColour (Label::textColourId));
+            }
+
+            auto* bubble = new BubbleMessageComponent();
+            bubble->showAt (this, attrStr, timeout, true, true);
+        }
+    }
+    
+    // 3. Fire your custom Lua callback if one exists
     if (mouseDownCbk && !mouseDownCbk.wasObjectDeleted())
     {
         if (mouseDownCbk->isValid())
@@ -204,7 +248,6 @@ void CtrlrComponent::mouseDown(const MouseEvent &e)
         }
     }
 }
-
 void CtrlrComponent::mouseUp(const MouseEvent &e)
 {
     if (mouseUpCbk && !mouseUpCbk.wasObjectDeleted())

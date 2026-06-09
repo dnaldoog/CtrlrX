@@ -228,7 +228,10 @@
   <id name="componentBubbleNameColour"            text="Bubble: Name text colour" type="Colour" />
   <id name="componentBubbleNameFont"              text="Bubble: Name text font" type="Font" />
   <id name="componentBubbleNameJustification"     text="Bubble: Nam text justification" type="VarText" defaults="@justification" />
-  
+  <id name="componentBubbleHelpEnabled" text="Enable Bubble Help Tooltips" type="Bool" />
+  <id name="componentBubbleHelpTitle"   text="Bubble Help Header/Title"   type="String" />
+  <id name="componentBubbleHelpText"    text="Bubble Help Text Description" type="String" />
+  <id name="componentBubbleHelpTimeout" text="Display timeout duration [ms]" type="Numeric" min="500" max="30000" />
   <id name="componentLookAndFeel"                 text="Component LookAndFeel type" type="VarText" defaults="@componentlookandfeel" />
   <id name="componentLookAndFeelIsCustom"         text="Component LookAndFeel is customized" type="Bool" defaults="Custom Colours/Default Colours" />
   
