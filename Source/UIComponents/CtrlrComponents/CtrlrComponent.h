@@ -93,7 +93,7 @@ class CtrlrComponent : public Component,
         const WeakReference<CtrlrComponent>::SharedRef& getWeakReference();
         const String getComponentGroup();
         virtual void mouseDoubleClick(const MouseEvent &e);
-        virtual void mouseUp(const MouseEvent &e);
+        virtual void mouseUp(const MouseEvent &e) override;
         virtual void mouseDown(const MouseEvent &e) override; // override added for BubbleComponent
         virtual void mouseMove (const MouseEvent &e);
         virtual void mouseDrag (const MouseEvent &e);
@@ -122,7 +122,44 @@ class CtrlrComponent : public Component,
         bool isInternal();
         JUCE_LEAK_DETECTOR(CtrlrComponent)
     private:
-   // void triggerBubbleHelp (const MouseEvent& e, int requiredTrigger);
+    class BubbleHelpMouseSpy : public juce::MouseListener
+    {
+    public:
+        BubbleHelpMouseSpy (CtrlrComponent& ownerComp) : owner (ownerComp) {}
+        
+void mouseEnter (const juce::MouseEvent& e) override
+        {
+            auto& tree = owner.getComponentTree();
+            // Use the raw string literal directly
+            if ((bool)tree.getProperty ("componentBubbleHelpEnabled") == true)
+            {
+                int trigger = tree.getProperty ("componentBubbleHelpTrigger").toString().getIntValue();
+                if (trigger == 1 || trigger == 0) 
+                {
+                    owner.triggerBubbleHelp (e, 1);
+                }
+            }
+        }
+
+        void mouseUp (const juce::MouseEvent& e) override
+        {
+            auto& tree = owner.getComponentTree();
+            if ((bool)tree.getProperty ("componentBubbleHelpEnabled") == true)
+            {
+                int trigger = tree.getProperty ("componentBubbleHelpTrigger").toString().getIntValue();
+                if (trigger == 0) trigger = 1;
+
+                if (e.mods.isCtrlDown() && trigger == 2)       owner.triggerBubbleHelp (e, 2);
+                else if (e.mods.isShiftDown() && trigger == 3) owner.triggerBubbleHelp (e, 3);
+                else if (e.mods.isAltDown() && trigger == 4)   owner.triggerBubbleHelp (e, 4);
+            }
+        }
+    private:
+        CtrlrComponent& owner;
+    };
+
+    // Instantiate the spy instance
+    std::unique_ptr<BubbleHelpMouseSpy> bubbleSpy;
     protected:
         bool restoreStateInProgress;
         bool isSelected;

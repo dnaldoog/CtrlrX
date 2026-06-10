@@ -118,8 +118,15 @@ CtrlrComponent::CtrlrComponent(CtrlrModulator &_owner)
     setProperty (Ids::componentBubbleHelpText, "");
     setProperty (Ids::componentBubbleHelpTimeout, 5000);
     setProperty (Ids::componentBubbleHelpTrigger, 0);
-    // Force this component to receive mouse events natively
-    setInterceptsMouseClicks (true, true);
+
+
+setInterceptsMouseClicks (false, true); 
+
+    // Instantiate and bind the tracking helper directly to the sub-component graphics tree
+    bubbleSpy = std::make_unique<BubbleHelpMouseSpy> (*this);
+    addMouseListener (bubbleSpy.get(), true);
+
+
 }
 
 CtrlrComponent::~CtrlrComponent()
@@ -204,6 +211,16 @@ void CtrlrComponent::mouseDoubleClick(const MouseEvent &e)
     }
 }
 
+void CtrlrComponent::mouseDown(const MouseEvent &e)
+{
+    if (mouseDownCbk && !mouseDownCbk.wasObjectDeleted())
+    {
+        if (mouseDownCbk->isValid())
+        {
+            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseDownCbk, this, e);
+        }
+    }
+}
 
 void CtrlrComponent::mouseUp(const MouseEvent &e)
 {
@@ -216,41 +233,14 @@ void CtrlrComponent::mouseUp(const MouseEvent &e)
     }
 }
 
-void CtrlrComponent::mouseDown (const MouseEvent& e)
-{
-    Component::mouseDown (e);
-
-    // Filter clicks based on modifier states matching your dropdown indices
-    if (e.mods.isCtrlDown())
-    {
-        triggerBubbleHelp (e, 2); // Index 2: Ctrl + Click
-    }
-    else if (e.mods.isShiftDown())
-    {
-        triggerBubbleHelp (e, 3); // Index 3: Shift + Click
-    }
-    else
-    {
-        triggerBubbleHelp (e, 0); // Index 0: Standard Mouse Down
-    }
-
-    // Existing Lua triggers...
-    if (mouseDownCbk && !mouseDownCbk.wasObjectDeleted() && mouseDownCbk->isValid())
-    {
-        owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseDownCbk, this, e);
-    }
-}
 void CtrlrComponent::mouseEnter (const MouseEvent& e)
 {
-    Component::mouseEnter (e);
-
-    // Fires if your dropdown is set to "Mouse Hover" (Index 1)
-    triggerBubbleHelp (e, 1);
-
-    // Existing standard Lua mouse enter callbacks
-    if (mouseEnterCbk && !mouseEnterCbk.wasObjectDeleted() && mouseEnterCbk->isValid())
+    if (mouseEnterCbk && !mouseEnterCbk.wasObjectDeleted())
+    {
+        if (mouseEnterCbk->isValid())
     {
         owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseEnterCbk, this, e);
+        }
     }
 }
 
@@ -884,63 +874,68 @@ void CtrlrComponent::triggerBubbleHelp (const MouseEvent& e, int requiredTrigger
 {
     _DBG("triggerBubbleHelp called with trigger index: " + String(requiredTrigger));
 
-    if ((bool)componentTree.getProperty (Ids::componentBubbleHelpEnabled) == false)
-        return;
+}
+// void CtrlrComponent::triggerBubbleHelp (const MouseEvent& e, int requiredTrigger)
+// {
+//     _DBG("triggerBubbleHelp called with trigger index: " + String(requiredTrigger));
 
-    int currentTriggerSetting = componentTree.getProperty (Ids::componentBubbleHelpTrigger, 0);
-    if (currentTriggerSetting != requiredTrigger)
-        return;
+//     if ((bool)componentTree.getProperty (Ids::componentBubbleHelpEnabled) == false)
+//         return;
 
-    String title = componentTree.getProperty (Ids::componentBubbleHelpTitle).toString();
-    String body  = componentTree.getProperty (Ids::componentBubbleHelpText).toString();
-    int timeout  = componentTree.getProperty (Ids::componentBubbleHelpTimeout, 5000);
+//     int currentTriggerSetting = componentTree.getProperty (Ids::componentBubbleHelpTrigger, 0);
+//     if (currentTriggerSetting != requiredTrigger)
+//         return;
 
-    if (body.isNotEmpty())
-    {
-        String completeMessage = title.isNotEmpty() ? (title + "\n\n" + body) : body;
-        _DBG("Displaying bubble: " + completeMessage);
+//     String title = componentTree.getProperty (Ids::componentBubbleHelpTitle).toString();
+//     String body  = componentTree.getProperty (Ids::componentBubbleHelpText).toString();
+//     int timeout  = componentTree.getProperty (Ids::componentBubbleHelpTimeout, 5000);
 
-        AttributedString attrStr (completeMessage);
-        attrStr.setJustification (Justification::centred);
-        attrStr.setFont (Font (14.0f));
+//     if (body.isNotEmpty())
+//     {
+//         String completeMessage = title.isNotEmpty() ? (title + "\n\n" + body) : body;
+//         _DBG("Displaying bubble: " + completeMessage);
+
+//         AttributedString attrStr (completeMessage);
+//         attrStr.setJustification (Justification::centred);
+//         attrStr.setFont (Font (14.0f));
         
-        // Safety: ensure text color is completely visible (e.g., solid Black or White)
-        // rather than potentially matching a transparent/hidden background ID color.
-        attrStr.setColour (Colours::black); 
+//         // Safety: ensure text color is completely visible (e.g., solid Black or White)
+//         // rather than potentially matching a transparent/hidden background ID color.
+//         attrStr.setColour (Colours::black); 
 
-// 1. Create the bubble on the heap
-auto* bubble = new BubbleMessageComponent();
+// // 1. Create the bubble on the heap
+// auto* bubble = new BubbleMessageComponent();
         
        
-        // 2. FIXED: Find the absolute top-level window of the Ctrlr application itself
-        if (auto* topLevelAppWindow = getTopLevelComponent())
-        {
-            // Add the bubble inside the application hierarchy, NOT the OS desktop
+//         // 2. FIXED: Find the absolute top-level window of the Ctrlr application itself
+//         if (auto* topLevelAppWindow = getTopLevelComponent())
+//         {
+//             // Add the bubble inside the application hierarchy, NOT the OS desktop
 
-            Colour dynamicTextColor = topLevelAppWindow->getLookAndFeel()
-                                               .findColour (TextEditor::textColourId);
-                                              // .findColour (TooltipWindow::textColourId);
+//             Colour dynamicTextColor = topLevelAppWindow->getLookAndFeel()
+//                                                .findColour (TextEditor::textColourId);
+//                                               // .findColour (TooltipWindow::textColourId);
     
-            // Pass dynamic L & F colour directly to your AttributedString
-            attrStr.setColour (dynamicTextColor);
-            topLevelAppWindow->addChildComponent(bubble);
-            bubble->setAlwaysOnTop(true);
-            bubble->setVisible(true);
+//             // Pass dynamic L & F colour directly to your AttributedString
+//             attrStr.setColour (dynamicTextColor);
+//             topLevelAppWindow->addChildComponent(bubble);
+//             bubble->setAlwaysOnTop(true);
+//             bubble->setVisible(true);
 
-            // 3. MAP LOCAL TO APPWINDOW COORDINATES: 
-            // Instead of screen bounds, we find where the knob sits relative to the main app window
-            Rectangle<int> localToAppBounds = topLevelAppWindow->getLocalArea(this, getLocalBounds());
+//             // 3. MAP LOCAL TO APPWINDOW COORDINATES: 
+//             // Instead of screen bounds, we find where the knob sits relative to the main app window
+//             Rectangle<int> localToAppBounds = topLevelAppWindow->getLocalArea(this, getLocalBounds());
 
-            // 4. Trigger the bubble cleanly. 
-            // Setting the last parameter to 'true' tells JUCE to automatically 
-            // delete the 'bubble' pointer from the heap when it finishes fading out!
-            bubble->showAt(localToAppBounds, attrStr, timeout, true, true);
-        }
-        else
-        {
-            // Fallback safety net: If for some reason top-level fails, use the old screen space
-            bubble->addToDesktop(ComponentPeer::windowIsTemporary);
-            bubble->showAt(this->getScreenBounds(), attrStr, timeout, true, false);
-        }
-        }
-}
+//             // 4. Trigger the bubble cleanly. 
+//             // Setting the last parameter to 'true' tells JUCE to automatically 
+//             // delete the 'bubble' pointer from the heap when it finishes fading out!
+//             bubble->showAt(localToAppBounds, attrStr, timeout, true, true);
+//         }
+//         else
+//         {
+//             // Fallback safety net: If for some reason top-level fails, use the old screen space
+//             bubble->addToDesktop(ComponentPeer::windowIsTemporary);
+//             bubble->showAt(this->getScreenBounds(), attrStr, timeout, true, true);
+//         }
+//         }
+// }
