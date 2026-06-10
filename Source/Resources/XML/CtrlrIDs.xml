@@ -228,14 +228,19 @@
   <id name="componentBubbleNameColour"            text="Bubble: Name text colour" type="Colour" />
   <id name="componentBubbleNameFont"              text="Bubble: Name text font" type="Font" />
   <id name="componentBubbleNameJustification"     text="Bubble: Nam text justification" type="VarText" defaults="@justification" />
-  <id name="componentBubbleHelpEnabled" text="Bubble Help: Enable Tooltips" type="Bool" />
-  <id name="componentBubbleHelpTitle"   text="Bubble Help: Header/Title"   type="Text" />
-  <id name="componentBubbleHelpText"    text="Bubble Help: Description"    type="MultiLineSmall" />
-  <id name="componentBubbleHelpTimeout" text="Bubble Help: Timeout [ms]"   type="Numeric" min="500" max="30000" />
+
+  <id name="componentXBubbleHelpEnabled" text="XBubble Help Enabled" type="none" />
+  <id name="componentXBubbleHelpTitle"   text="XBubble Help Title"   type="none" />
+  <id name="componentXBubbleHelpText"    text="XBubble Help Text"    type="none" />
+  <id name="componentXBubbleHelpTimeout" text="XBubble Help Timeout" type="none" />
+  
   <id name="componentBubbleHelpTrigger" text="Bubble Help: Trigger Condition" type="VarNumeric" defaults="Mouse Down=0,Mouse Hover=1,Ctrl + Click=2,Shift + Click=3" />
+  <id name="componentBubbleHelpConfigure" text="Bubble Help: Content Manager" type="ActionButton" />
+
   <id name="componentLookAndFeel"                 text="Component LookAndFeel type" type="VarText" defaults="@componentlookandfeel" />
   <id name="componentLookAndFeelIsCustom"         text="Component LookAndFeel is customized" type="Bool" defaults="Custom Colours/Default Colours" />
   
+
   <id name="componentValueDecimalPlaces"          text="Decimal places to print if using floating point numbers" type="Numeric" min="0" max="10" int="1" />
   
   <id name="componentLuaMouseMoved"               text="Called when a mouse is moved over this component" type="LuaMethod" />

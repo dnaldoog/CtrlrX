@@ -7,6 +7,102 @@
 using namespace juce;
 
 
+class BubbleHelpAlert : public AlertWindow
+{
+public:
+    BubbleHelpAlert (const String& initialTitle, const String& initialText, int initialTimeout)
+        : AlertWindow ("Bubble Help Configuration",
+                       "Customize the popup documentation parameters below:",
+                       AlertWindow::NoIcon)
+    {
+        // 1. Core structural inputs
+        addTextEditor ("bubbleTitle", initialTitle, "Header / Title (Optional):", false);
+        addTextEditor ("bubbleBody", initialText, "Description / Help Body Text:", true); // Multi-line text field
+        addTextEditor ("bubbleTimeout", String(initialTimeout), "Display Duration (Milliseconds):", false);
+
+        // 2. Formatting constraints for numeric limits
+        if (auto* timeoutEd = getTextEditor ("bubbleTimeout"))
+            timeoutEd->setInputRestrictions (6, "0123456789");
+
+        // 3. UI Actions
+        addButton ("Save Changes", 1, KeyPress (KeyPress::returnKey, 0, 0));
+        addButton ("Cancel", 0, KeyPress (KeyPress::escapeKey, 0, 0));
+    }
+
+    ~BubbleHelpAlert() override {}
+
+    String getBubbleTitle()   { return getTextEditorContents ("bubbleTitle").trim(); }
+    String getBubbleBody()    { return getTextEditorContents ("bubbleBody").trim(); }
+    int getBubbleTimeout()    { return getTextEditorContents ("bubbleTimeout").getIntValue(); }
+};
+
+
+class CtrlrBubbleSetupPropertyComponent : public PropertyComponent,
+                                          public Button::Listener
+{
+public:
+    CtrlrBubbleSetupPropertyComponent (const String& name, ValueTree& _element, CtrlrPanel* _panel)
+        : PropertyComponent (name), propertyElement (_element), panel (_panel)
+    {
+        setupButton = new TextButton ("Open Bubble Text Editor...");
+        setupButton->addListener (this);
+        juce::Component::addAndMakeVisible (setupButton);
+    }
+
+    ~CtrlrBubbleSetupPropertyComponent() override
+    {
+        if (setupButton != nullptr)
+        {
+            setupButton->removeListener (this);
+            deleteAndZero (setupButton);
+        }
+    }
+
+    void refresh() override 
+    {
+        if (setupButton != nullptr)
+        {
+            // Position the button on the right side of the row layout matching standard look-and-feel
+            setupButton->setBounds (getWidth() / 2, 2, (getWidth() / 2) - 4, getHeight() - 4);
+        }
+    }
+
+void buttonClicked (Button* b) override
+    {
+        if (b == setupButton)
+        {
+            // 1. Fetch current background values safely using the NEW unique IDs
+            String currentTitle = propertyElement.getProperty (Ids::componentXBubbleHelpTitle).toString();
+            String currentText  = propertyElement.getProperty (Ids::componentXBubbleHelpText).toString();
+            
+            // Set a proper default time of 5000ms if it hasn't been initialized yet
+            int currentTimeout  = propertyElement.getProperty (Ids::componentXBubbleHelpTimeout, 5000);
+
+            BubbleHelpAlert dial (currentTitle, currentText, currentTimeout);
+            
+            if (dial.runModalLoop() == 1)
+            {
+                String newTitle   = dial.getBubbleTitle();
+                String newBody    = dial.getBubbleBody();
+                int newTimeout    = dial.getBubbleTimeout();
+                if (newTimeout < 500) newTimeout = 500;
+
+                // 2. Commit settings directly to our custom background memory slots
+                propertyElement.setProperty (Ids::componentXBubbleHelpTitle, newTitle, panel ? panel->getUndoManager() : nullptr);
+                propertyElement.setProperty (Ids::componentXBubbleHelpText, newBody, panel ? panel->getUndoManager() : nullptr);
+                propertyElement.setProperty (Ids::componentXBubbleHelpTimeout, newTimeout, panel ? panel->getUndoManager() : nullptr);
+                
+                // Toggle active state automatically based on presence of help strings
+                propertyElement.setProperty (Ids::componentXBubbleHelpEnabled, newBody.isNotEmpty(), panel ? panel->getUndoManager() : nullptr);
+            }
+        }
+    }
+
+private:
+    TextButton* setupButton; 
+    ValueTree propertyElement;
+    CtrlrPanel* panel;
+};
 
 CtrlrPropertyComponent::CtrlrPropertyComponent(const Identifier& _propertyName,
     const ValueTree& _propertyElement,
@@ -125,30 +221,32 @@ void CtrlrPropertyComponent::valueTreePropertyChanged(ValueTree& treeWhoseProper
         repaint();
     }
 }
-Component *CtrlrPropertyComponent::getPropertyComponent()
-{
-	Value valueToControl = propertyElement.getPropertyAsValue (propertyName, panel ? panel->getUndoManager() : nullptr);
 
-	if (panel)
-	{
-		if ((bool)panel->getProperty(Ids::panelPropertyDisplayIDs) == false)
-		{
+Component* CtrlrPropertyComponent::getPropertyComponent ()
+{
+    // 1. LET CTRLR INITIALIZE THE BASIC HANDLES FIRST
+    Value valueToControl = propertyElement.getPropertyAsValue (propertyName, panel ? panel->getUndoManager() : nullptr);
+
+    if (panel)
+    {
+        if ((bool)panel->getProperty(Ids::panelPropertyDisplayIDs) == false)
+        {
             visibleText = identifierDefinition.getProperty ("text").toString();
-		}
-		else
-		{
+        }
+        else
+        {
             visibleText = propertyName.toString();
-		}
-	}
-	else
-	{
+        }
+    }
+    else
+    {
         visibleText = identifierDefinition.getProperty ("text").toString();
-	}
+    }
     
-	propertyType = CtrlrIDManager::stringToType(identifierDefinition.getProperty("type"));
+    propertyType = CtrlrIDManager::stringToType(identifierDefinition.getProperty("type"));
     
-    // Added v5.6.34. Thanks to @dnaldoog
     _DBG("Property Name: " + propertyName.toString() + " | XML Type: " + identifierDefinition.getProperty("type").toString() + " | Mapped Type: " + String(propertyType));
+    
     if (propertyName == Ids::componentLayerUid)
     {
         possibleChoices = new StringArray();
@@ -168,36 +266,49 @@ Component *CtrlrPropertyComponent::getPropertyComponent()
             }
         }
     }
-    _DBG("CtrlrPropertyComponent::getPropertyComponent [POST] propertyType==" + String((int)propertyType) + " visibleText==" + visibleText);
-    int propertyLineheightBaseValue = 36; // Declare the variable outside the if-else block. Mandatory for Preference window property lines.
-    bool propertyLineImprovedLegibility = false; // Declare the variable outside the if-else block. Mandatory for Preference window property lines.
     
-    if (panel) // Added v5.5.33. Accessing to managerTree directly will crashes CtrlrX from Preferences window, checking panel will prevent that.
+    _DBG("CtrlrPropertyComponent::getPropertyComponent [POST] propertyType==" + String((int)propertyType) + " visibleText==" + visibleText);
+    
+    int propertyLineheightBaseValue = 36; 
+    bool propertyLineImprovedLegibility = false; 
+    
+    if (panel) 
     {
-        propertyLineheightBaseValue = panel->getOwner().getManagerTree().getProperty(Ids::ctrlrPropertyLineheightBaseValue, 36); // Added v5.6.33.
-        propertyLineImprovedLegibility = panel->getOwner().getManagerTree().getProperty(Ids::ctrlrPropertyLineImprovedLegibility, false); // Added v5.6.34.
+        propertyLineheightBaseValue = panel->getOwner().getManagerTree().getProperty(Ids::ctrlrPropertyLineheightBaseValue, 36); 
+        propertyLineImprovedLegibility = panel->getOwner().getManagerTree().getProperty(Ids::ctrlrPropertyLineImprovedLegibility, false); 
     }
+    
     if (propertyName == Ids::componentBubbleHelpTrigger)
-{
-    possibleChoices = new StringArray();
-    possibleValues = new Array<var>();
-
-    // Automatically parse the "defaults" attribute from the XML line
-    String defaultsString = identifierDefinition.getProperty("defaults").toString();
-    StringArray pairs;
-    pairs.addTokens(defaultsString, ",", "");
-
-    for (int i = 0; i < pairs.size(); ++i)
     {
-        StringArray kv;
-        kv.addTokens(pairs[i], "=", "");
-        if (kv.size() == 2)
+        possibleChoices = new StringArray();
+        possibleValues = new Array<var>();
+
+        String defaultsString = identifierDefinition.getProperty("defaults").toString();
+        StringArray pairs;
+        pairs.addTokens(defaultsString, ",", "");
+
+        for (int i = 0; i < pairs.size(); ++i)
         {
-            possibleChoices->add(kv[0].trim());
-            possibleValues->add(kv[1].trim().getIntValue());
+            StringArray kv;
+            kv.addTokens(pairs[i], "=", "");
+            if (kv.size() == 2)
+            {
+                possibleChoices->add(kv[0].trim());
+                possibleValues->add(kv[1].trim().getIntValue());
+            }
         }
     }
-}
+
+    // =========================================================================
+    // INSULATED INTERCEPT POINT: Move it HERE!
+    // Now visibleText is completely populated, and we step out before the switch block
+    // =========================================================================
+    if (propertyName == Ids::componentBubbleHelpConfigure)
+    {
+        return new CtrlrBubbleSetupPropertyComponent (visibleText, propertyElement, panel);
+    }
+
+    // --- The rest of your factory switch(propertyType) statements start right here ---
     switch (propertyType)
 	{
 		case CtrlrIDManager::ReadOnly:

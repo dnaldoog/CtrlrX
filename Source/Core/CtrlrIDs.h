@@ -285,6 +285,11 @@ namespace Ids
     DECLARE_ID (componentBubbleHelpTimeout);
     DECLARE_ID (componentBubbleNameFont);// not using for now
     DECLARE_ID (componentBubbleNameColour); // not using for now
+    DECLARE_ID (componentBubbleHelpConfigure);
+    DECLARE_ID (componentXBubbleHelpEnabled);
+    DECLARE_ID (componentXBubbleHelpTitle);
+    DECLARE_ID (componentXBubbleHelpText);
+    DECLARE_ID (componentXBubbleHelpTimeout);
     DECLARE_ID (componentLabelJustification);
     DECLARE_ID (componentLabelHeight);
     DECLARE_ID (componentLabelWidth);
