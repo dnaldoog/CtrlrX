@@ -909,12 +909,20 @@ void CtrlrComponent::triggerBubbleHelp (const MouseEvent& e, int requiredTrigger
         attrStr.setColour (Colours::black); 
 
 // 1. Create the bubble on the heap
-        auto* bubble = new BubbleMessageComponent();
+auto* bubble = new BubbleMessageComponent();
         
+       
         // 2. FIXED: Find the absolute top-level window of the Ctrlr application itself
         if (auto* topLevelAppWindow = getTopLevelComponent())
         {
             // Add the bubble inside the application hierarchy, NOT the OS desktop
+
+            Colour dynamicTextColor = topLevelAppWindow->getLookAndFeel()
+                                               .findColour (TextEditor::textColourId);
+                                              // .findColour (TooltipWindow::textColourId);
+    
+            // Pass dynamic L & F colour directly to your AttributedString
+            attrStr.setColour (dynamicTextColor);
             topLevelAppWindow->addChildComponent(bubble);
             bubble->setAlwaysOnTop(true);
             bubble->setVisible(true);
