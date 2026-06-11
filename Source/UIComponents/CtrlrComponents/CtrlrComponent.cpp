@@ -24,7 +24,6 @@ CtrlrComponentResizableBorder::CtrlrComponentResizableBorder(CtrlrComponent *_ow
 CtrlrComponentResizableBorder::~CtrlrComponentResizableBorder()
 {
     setLookAndFeel (nullptr);
-    
 }
 
 void CtrlrComponentResizableBorder::paint (Graphics &g)
@@ -112,20 +111,16 @@ CtrlrComponent::CtrlrComponent(CtrlrModulator &_owner)
     setProperty (Ids::componentLuaMouseEnter, COMBO_ITEM_NONE);
     setProperty (Ids::componentLuaMouseExit, COMBO_ITEM_NONE);
 
-
-    // --- Bubble Help Properties Initialization ---
-    // setProperty (Ids::componentBubbleHelpEnabled, false);
-    // setProperty (Ids::componentBubbleHelpTitle, "");
-    // setProperty (Ids::componentBubbleHelpText, "");
-    // setProperty (Ids::componentBubbleHelpTimeout, 5000);
-    // setProperty (Ids::componentBubbleHelpTrigger, 0);
-    // Force this component to receive mouse events natively
-    // setInterceptsMouseClicks (true, true);
+    setProperty (Ids::componentBubbleHelpEnabled, false);
+    setProperty (Ids::componentBubbleHelpTitle, "");
+    setProperty (Ids::componentBubbleHelpText, "");
+    setProperty (Ids::componentBubbleHelpTimeout, 5000);
+    setProperty (Ids::componentBubbleHelpTrigger, 0);
 }
 
 CtrlrComponent::~CtrlrComponent()
 {
-        if (bubbleMessage != nullptr)
+    if (bubbleMessage != nullptr)
     {
         bubbleMessage->setVisible(false);
         if (auto* p = bubbleMessage->getParentComponent())
@@ -133,13 +128,16 @@ CtrlrComponent::~CtrlrComponent()
         bubbleMessage.reset();
     }
     if (shadowEffect)
+    {
         delete (shadowEffect.release());
+    }
     if (glowEffect)
+    {
         delete (glowEffect.release());
+    }
     if (selectionBorder.get())
         delete selectionBorder.release();
-
-    componentTree.removeListener(this);
+    componentTree.removeListener (this);
     masterReference.clear();
 }
 
@@ -198,77 +196,75 @@ void CtrlrComponent::resized()
     }
 }
 
-// void CtrlrComponent::mouseDoubleClick(const MouseEvent &e)
-// {
-//     if (mouseDoubleClickCbk && !mouseDoubleClickCbk.wasObjectDeleted())
-//     {
-//         if (mouseDoubleClickCbk->isValid())
-//         {
-//             owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseDoubleClickCbk, this, e);
-//         }
-//     }
-// }
+void CtrlrComponent::mouseDoubleClick(const MouseEvent &e)
+{
+    if (mouseDoubleClickCbk && !mouseDoubleClickCbk.wasObjectDeleted())
+    {
+        if (mouseDoubleClickCbk->isValid())
+        {
+            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseDoubleClickCbk, this, e);
+        }
+    }
+}
 
 
-// void CtrlrComponent::mouseUp(const MouseEvent &e)
-// {
-//     if (mouseUpCbk && !mouseUpCbk.wasObjectDeleted())
-//     {
-//         if (mouseUpCbk->isValid())
-//         {
-//             owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseUpCbk, this, e);
-//         }
-//     }
-// }
+void CtrlrComponent::mouseUp(const MouseEvent &e)
+{
+    if (mouseUpCbk && !mouseUpCbk.wasObjectDeleted())
+    {
+        if (mouseUpCbk->isValid())
+        {
+            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseUpCbk, this, e);
+        }
+    }
+}
 
-// void CtrlrComponent::mouseDown (const MouseEvent& e)
-// {
-//     Component::mouseDown (e);
+void CtrlrComponent::mouseDown(const MouseEvent &e)
+{
+    _DBG("CtrlrComponent::mouseDown fired, cbk=" + String(mouseDownCbk ? 1 : 0));
+    
+    if (mouseDownCbk && !mouseDownCbk.wasObjectDeleted())
+    {
+        _DBG("cbk not deleted, isValid=" + String(mouseDownCbk->isValid() ? 1 : 0));
+        if (mouseDownCbk->isValid())
+        {
+            _DBG("calling Lua method");
+            owner.getOwnerPanel().getCtrlrLuaManager()
+                 .getMethodManager().call(mouseDownCbk, this, e);
+        }
+    }
+    if (e.mods.isAltDown())
+        triggerBubbleHelp(e, 4); // Alt check goes first since on some platforms Alt+Click can also register as a plain click depending on event ordering.
+    if (e.mods.isCtrlDown())
+        triggerBubbleHelp(e, 2);
+    else if (e.mods.isShiftDown())
+        triggerBubbleHelp(e, 3);
+    else
+        triggerBubbleHelp(e, 0);
+}
 
-//     // Filter clicks based on modifier states matching your dropdown indices
-//     if (e.mods.isCtrlDown())
-//     {
-//         triggerBubbleHelp (e, 2); // Index 2: Ctrl + Click
-//     }
-//     else if (e.mods.isShiftDown())
-//     {
-//         triggerBubbleHelp (e, 3); // Index 3: Shift + Click
-//     }
-//     else
-//     {
-//         triggerBubbleHelp (e, 0); // Index 0: Standard Mouse Down
-//     }
+void CtrlrComponent::mouseEnter(const MouseEvent &e)
+{
+    if (mouseEnterCbk && !mouseEnterCbk.wasObjectDeleted())
+    {
+        if (mouseEnterCbk->isValid())
+        {
+            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseEnterCbk, this, e);
+        }
+    }
+    triggerBubbleHelp(e, 1);
+}
 
-//     // Existing Lua triggers...
-//     if (mouseDownCbk && !mouseDownCbk.wasObjectDeleted() && mouseDownCbk->isValid())
-//     {
-//         owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseDownCbk, this, e);
-//     }
-// }
-// void CtrlrComponent::mouseEnter (const MouseEvent& e)
-// {
-//     Component::mouseEnter (e);
-
-//     // Fires if your dropdown is set to "Mouse Hover" (Index 1)
-//     triggerBubbleHelp (e, 1);
-
-//     // Existing standard Lua mouse enter callbacks
-//     if (mouseEnterCbk && !mouseEnterCbk.wasObjectDeleted() && mouseEnterCbk->isValid())
-//     {
-//         owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseEnterCbk, this, e);
-//     }
-// }
-
-// void CtrlrComponent::mouseExit (const MouseEvent &e)
-// {
-//     if (mouseExitCbk && !mouseExitCbk.wasObjectDeleted())
-//     {
-//         if (mouseExitCbk->isValid())
-//         {
-//             owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseExitCbk, this, e);
-//         }
-//     }
-// }
+void CtrlrComponent::mouseExit (const MouseEvent &e)
+{
+    if (mouseExitCbk && !mouseExitCbk.wasObjectDeleted())
+    {
+        if (mouseExitCbk->isValid())
+        {
+            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseExitCbk, this, e);
+        }
+    }
+}
 
 void CtrlrComponent::focusGained (FocusChangeType cause) // Added v5.6.34
 {
@@ -884,22 +880,20 @@ void CtrlrComponent::wrapForLua (lua_State *L)
             .def("getLuaBounds", &CtrlrComponent::getLuaBounds)
     ];
 }
-
 void CtrlrComponent::triggerBubbleHelp(const MouseEvent& e, int requiredTrigger)
 {
-    // Guard 1: feature enabled?
-    if (!(bool)componentTree.getProperty(Ids::componentBubbleHelpEnabled))
+    // Don't re-trigger if bubble is already visible
+if (bubbleMessage != nullptr && bubbleMessage->isVisible())
+    return;
+    if (!(bool)componentTree.getProperty(Ids::componentBubbleHelpEnabled, false))
         return;
 
-    // Guard 2: correct trigger?
     if ((int)componentTree.getProperty(Ids::componentBubbleHelpTrigger, 0) != requiredTrigger)
         return;
 
-    // Guard 3: not during restore
     if (restoreStateInProgress)
         return;
 
-    // Guard 4: panel and editor must exist
     CtrlrPanelEditor* editor = owner.getOwnerPanel().getEditor();
     if (editor == nullptr)
         return;
@@ -911,7 +905,6 @@ void CtrlrComponent::triggerBubbleHelp(const MouseEvent& e, int requiredTrigger)
     if (body.isEmpty())
         return;
 
-    // Tear down any existing bubble cleanly
     if (bubbleMessage != nullptr)
     {
         bubbleMessage->setVisible(false);
@@ -925,8 +918,7 @@ void CtrlrComponent::triggerBubbleHelp(const MouseEvent& e, int requiredTrigger)
     AttributedString attrStr(completeMessage);
     attrStr.setJustification(Justification::centred);
     attrStr.setFont(Font(14.0f));
-    attrStr.setColour(editor->getLookAndFeel()
-                             .findColour(TextEditor::textColourId));
+    attrStr.setColour(editor->getLookAndFeel().findColour(TextEditor::textColourId));
 
     bubbleMessage.reset(new BubbleMessageComponent(200));
     editor->addChildComponent(bubbleMessage.get());
@@ -935,87 +927,4 @@ void CtrlrComponent::triggerBubbleHelp(const MouseEvent& e, int requiredTrigger)
 
     Rectangle<int> boundsInEditor = editor->getLocalArea(this, getLocalBounds());
     bubbleMessage->showAt(boundsInEditor, attrStr, timeout, true, false);
-}
-
-void CtrlrComponent::mouseDown(const MouseEvent &e)
-{
-    if (mouseDownCbk && !mouseDownCbk.wasObjectDeleted())
-    {
-        if (mouseDownCbk->isValid())
-        {
-            owner.getOwnerPanel().getCtrlrLuaManager()
-                 .getMethodManager().call(mouseDownCbk, this, e);
-        }
-    }
-
-    if (e.mods.isCtrlDown())
-        triggerBubbleHelp(e, 2);
-    else if (e.mods.isShiftDown())
-        triggerBubbleHelp(e, 3);
-    else
-        triggerBubbleHelp(e, 0);
-}
-
-void CtrlrComponent::mouseEnter(const MouseEvent &e)
-{
-    if (mouseEnterCbk && !mouseEnterCbk.wasObjectDeleted())
-    {
-        if (mouseEnterCbk->isValid())
-        {
-            owner.getOwnerPanel().getCtrlrLuaManager()
-                 .getMethodManager().call(mouseEnterCbk, this, e);
-        }
-    }
-
-    triggerBubbleHelp(e, 1);
-}
-void CtrlrComponent::mouseDoubleClick(const MouseEvent &e)
-{
-    if (mouseDoubleClickCbk && !mouseDoubleClickCbk.wasObjectDeleted())
-    {
-        if (mouseDoubleClickCbk->isValid())
-        {
-            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseDoubleClickCbk, this, e);
-        }
-    }
-}
-// void CtrlrComponent::mouseDown(const MouseEvent &e)
-// {
-//     if (mouseDownCbk && !mouseDownCbk.wasObjectDeleted())
-//     {
-//         if (mouseDownCbk->isValid())
-//         {
-//             owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseDownCbk, this, e);
-//         }
-//     }
-// }
-void CtrlrComponent::mouseUp(const MouseEvent &e)
-{
-    if (mouseUpCbk && !mouseUpCbk.wasObjectDeleted())
-    {
-        if (mouseUpCbk->isValid())
-        {
-            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseUpCbk, this, e);
-        }
-    }
-}
-// void CtrlrComponent::mouseEnter (const MouseEvent &e)
-// {
-//     if (mouseEnterCbk && !mouseEnterCbk.wasObjectDeleted())
-//     {
-//         if (mouseEnterCbk->isValid())
-//         {
-//             owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseEnterCbk, this, e);
-//         }
-//     }
-// }
-void CtrlrComponent::mouseExit (const MouseEvent &e)
-{
-    if (mouseExitCbk && !mouseExitCbk.wasObjectDeleted())
-    {
-        if (mouseExitCbk->isValid())
-        {
-            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseExitCbk, this, e);
-        }
-    }
 }

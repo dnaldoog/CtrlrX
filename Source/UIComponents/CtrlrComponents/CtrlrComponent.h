@@ -77,7 +77,6 @@ class CtrlrComponent : public Component,
         virtual void allModulatorsInitialized()                                                                { }
         virtual void panelEditModeChanged(const bool isInEditMode=false);
         virtual void reloadResources(Array <CtrlrPanelResource*>) {}
-        void triggerBubbleHelp (const MouseEvent& e, int requiredTrigger);
         void componentMovedOrResized (Component &component, bool wasMoved, bool wasResized);
         void addAndMakeVisible (Component *child, int zOrder=-1);
         CtrlrModulator &getOwner() const                                                            { return (owner); }
@@ -94,10 +93,10 @@ class CtrlrComponent : public Component,
         const String getComponentGroup();
         virtual void mouseDoubleClick(const MouseEvent &e);
         virtual void mouseUp(const MouseEvent &e);
-        virtual void mouseDown(const MouseEvent &e) override; // override added for BubbleComponent
+        virtual void mouseDown(const MouseEvent &e);
         virtual void mouseMove (const MouseEvent &e);
         virtual void mouseDrag (const MouseEvent &e);
-        virtual void mouseEnter (const MouseEvent &e) override; // override added for BubbleComponent
+        virtual void mouseEnter (const MouseEvent &e);
         virtual void mouseExit (const MouseEvent &e);
         void focusGained (FocusChangeType cause) override; // Added v5.6.34
         void focusLost (FocusChangeType cause) override; // Added v5.6.34
@@ -120,11 +119,10 @@ class CtrlrComponent : public Component,
         void setCustomLookAndFeel (LookAndFeelBase *customLookAndFeel);
         virtual void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr) = 0;
         bool isInternal();
-
+        void triggerBubbleHelp(const MouseEvent& e, int requiredTrigger);
+        std::unique_ptr<BubbleMessageComponent> bubbleMessage;
         JUCE_LEAK_DETECTOR(CtrlrComponent)
-    private:
-   // void triggerBubbleHelp (const MouseEvent& e, int requiredTrigger);
-           std::unique_ptr<BubbleMessageComponent> bubbleMessage;
+
     protected:
         bool restoreStateInProgress;
         bool isSelected;

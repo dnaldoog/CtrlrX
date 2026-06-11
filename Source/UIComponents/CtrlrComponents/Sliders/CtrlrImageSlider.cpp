@@ -163,12 +163,31 @@ void CtrlrImageSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
 	{
 		lf->setOrientation((bool)getProperty(Ids::resourceImageOrientation));
 	}
-	else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin)
-	{
-		ctrlrSlider->setRange ( getProperty (Ids::uiSliderMin), getProperty (Ids::uiSliderMax), getProperty (Ids::uiSliderInterval) );
-		owner.setProperty (Ids::modulatorMax, ctrlrSlider->getMaximum());
-		owner.setProperty (Ids::modulatorMin, ctrlrSlider->getMinimum());
-	}
+else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin)
+    {
+        double max       = getProperty (Ids::uiSliderMax);
+        const double min = getProperty (Ids::uiSliderMin);
+        double interval  = getProperty (Ids::uiSliderInterval);
+
+        // Guard 1: JUCE NormalisableRange strictly forbids an interval of 0 
+        // unless the start and end of the range are perfectly identical.
+        if (interval <= 0)
+            interval = std::abs(max - min) + 1.0;
+
+        // Guard 2: Max must be greater than or equal to min
+        if (max <= min) {
+            max = min + interval;
+        }
+        
+        // Guard 3: Ensure the step interval isn't wider than the entire range window
+        if ((max - min) < interval) {
+            max = min + interval;
+        }
+
+        ctrlrSlider->setRange ( min, max, interval  );
+        owner.setProperty (Ids::modulatorMax, ctrlrSlider->getMaximum());
+        owner.setProperty (Ids::modulatorMin, ctrlrSlider->getMinimum());
+    }
 	else if (property == Ids::uiSliderValueTextColour)
 	{
 		ctrlrSlider->setColour (Slider::textBoxTextColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueTextColour)) );
@@ -482,12 +501,30 @@ void CtrlrImageSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
     {
         lf->setOrientation((bool)getProperty(Ids::resourceImageOrientation));
     }
-    else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin)
+else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin)
     {
-        ctrlrSlider->setRange ( (double) getProperty (Ids::uiSliderMin), (double) getProperty (Ids::uiSliderMax), (double) getProperty (Ids::uiSliderInterval) );  // v5.6.32 Updated back to double instead of float
+        double max       = getProperty (Ids::uiSliderMax);
+        const double min = getProperty (Ids::uiSliderMin);
+        double interval  = getProperty (Ids::uiSliderInterval);
+
+        // Guard 1: JUCE NormalisableRange strictly forbids an interval of 0 
+        // unless the start and end of the range are perfectly identical.
+        if (interval <= 0)
+            interval = std::abs(max - min) + 1.0;
+
+        // Guard 2: Max must be greater than or equal to min
+        if (max <= min) {
+            max = min + interval;
+        }
+        
+        // Guard 3: Ensure the step interval isn't wider than the entire range window
+        if ((max - min) < interval) {
+            max = min + interval;
+        }
+
+        ctrlrSlider->setRange ( min, max, interval  );
         owner.setProperty (Ids::modulatorMax, ctrlrSlider->getMaximum());
         owner.setProperty (Ids::modulatorMin, ctrlrSlider->getMinimum());
-        lookAndFeelChanged();
     }
     else if (property == Ids::uiSliderDecimalPlaces) // Added v5.6.32
     {

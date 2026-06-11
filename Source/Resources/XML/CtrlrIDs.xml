@@ -232,7 +232,7 @@
   <id name="componentBubbleHelpTitle"   text="Bubble Help: Header/Title"   type="Text" />
   <id name="componentBubbleHelpText"    text="Bubble Help: Description"    type="MultiLineSmall" />
   <id name="componentBubbleHelpTimeout" text="Bubble Help: Timeout [ms]"   type="Numeric" min="500" max="30000" />
-  <id name="componentBubbleHelpTrigger" text="Bubble Help: Trigger Condition" type="VarNumeric" defaults="Mouse Down=0,Mouse Hover=1,Ctrl + Click=2,Shift + Click=3" />
+  <id name="componentBubbleHelpTrigger" text="Bubble Help: Trigger Condition" type="VarNumeric" defaults="Mouse Down=0,Mouse Hover=1,Ctrl + Click=2,Shift + Click=3,Alt + Click=4" />
   <id name="componentLookAndFeel"                 text="Component LookAndFeel type" type="VarText" defaults="@componentlookandfeel" />
   <id name="componentLookAndFeelIsCustom"         text="Component LookAndFeel is customized" type="Bool" defaults="Custom Colours/Default Colours" />
   
