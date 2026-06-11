@@ -471,6 +471,16 @@ void CtrlrComponent::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasCh
             owner.getOwnerPanel().getCanvas()->assignToLayer(this, newLayer);
         }
     }
+    else if (property == Ids::componentBubbleHelpEnabled)
+{
+    if (!(bool)getProperty(property) && bubbleMessage != nullptr)
+    {
+        bubbleMessage->setVisible(false);
+        if (auto* p = bubbleMessage->getParentComponent())
+            p->removeChildComponent(bubbleMessage.get());
+        bubbleMessage.reset();
+    }
+}
     else if (property == Ids::componentRectangle)
     {
         setBounds (VAR2RECT(getProperty(property)));
