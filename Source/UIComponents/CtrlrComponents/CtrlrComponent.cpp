@@ -116,6 +116,7 @@ CtrlrComponent::CtrlrComponent(CtrlrModulator &_owner)
     setProperty (Ids::componentBubbleHelpText, "");
     setProperty (Ids::componentBubbleHelpTimeout, 5000);
     setProperty (Ids::componentBubbleHelpTrigger, 0);
+    setProperty(Ids::componentBubbleHelpDismissOnExit, false);
 }
 
 CtrlrComponent::~CtrlrComponent()
@@ -255,13 +256,25 @@ void CtrlrComponent::mouseEnter(const MouseEvent &e)
     triggerBubbleHelp(e, 1);
 }
 
-void CtrlrComponent::mouseExit (const MouseEvent &e)
+void CtrlrComponent::mouseExit(const MouseEvent &e)
 {
     if (mouseExitCbk && !mouseExitCbk.wasObjectDeleted())
     {
         if (mouseExitCbk->isValid())
         {
-            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseExitCbk, this, e);
+            owner.getOwnerPanel().getCtrlrLuaManager()
+                 .getMethodManager().call(mouseExitCbk, this, e);
+        }
+    }
+
+    if ((bool)componentTree.getProperty(Ids::componentBubbleHelpDismissOnExit, false))
+    {
+        if (bubbleMessage != nullptr)
+        {
+            bubbleMessage->setVisible(false);
+            if (auto* p = bubbleMessage->getParentComponent())
+                p->removeChildComponent(bubbleMessage.get());
+            bubbleMessage.reset();
         }
     }
 }
