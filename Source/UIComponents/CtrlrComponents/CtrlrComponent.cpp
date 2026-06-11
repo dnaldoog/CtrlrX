@@ -24,6 +24,7 @@ CtrlrComponentResizableBorder::CtrlrComponentResizableBorder(CtrlrComponent *_ow
 CtrlrComponentResizableBorder::~CtrlrComponentResizableBorder()
 {
     setLookAndFeel (nullptr);
+    
 }
 
 void CtrlrComponentResizableBorder::paint (Graphics &g)
@@ -113,28 +114,32 @@ CtrlrComponent::CtrlrComponent(CtrlrModulator &_owner)
 
 
     // --- Bubble Help Properties Initialization ---
-    setProperty (Ids::componentBubbleHelpEnabled, false);
-    setProperty (Ids::componentBubbleHelpTitle, "");
-    setProperty (Ids::componentBubbleHelpText, "");
-    setProperty (Ids::componentBubbleHelpTimeout, 5000);
-    setProperty (Ids::componentBubbleHelpTrigger, 0);
+    // setProperty (Ids::componentBubbleHelpEnabled, false);
+    // setProperty (Ids::componentBubbleHelpTitle, "");
+    // setProperty (Ids::componentBubbleHelpText, "");
+    // setProperty (Ids::componentBubbleHelpTimeout, 5000);
+    // setProperty (Ids::componentBubbleHelpTrigger, 0);
     // Force this component to receive mouse events natively
-    setInterceptsMouseClicks (true, true);
+    // setInterceptsMouseClicks (true, true);
 }
 
 CtrlrComponent::~CtrlrComponent()
 {
+        if (bubbleMessage != nullptr)
+    {
+        bubbleMessage->setVisible(false);
+        if (auto* p = bubbleMessage->getParentComponent())
+            p->removeChildComponent(bubbleMessage.get());
+        bubbleMessage.reset();
+    }
     if (shadowEffect)
-    {
         delete (shadowEffect.release());
-    }
     if (glowEffect)
-    {
         delete (glowEffect.release());
-    }
     if (selectionBorder.get())
         delete selectionBorder.release();
-    componentTree.removeListener (this);
+
+    componentTree.removeListener(this);
     masterReference.clear();
 }
 
@@ -193,77 +198,77 @@ void CtrlrComponent::resized()
     }
 }
 
-void CtrlrComponent::mouseDoubleClick(const MouseEvent &e)
-{
-    if (mouseDoubleClickCbk && !mouseDoubleClickCbk.wasObjectDeleted())
-    {
-        if (mouseDoubleClickCbk->isValid())
-        {
-            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseDoubleClickCbk, this, e);
-        }
-    }
-}
+// void CtrlrComponent::mouseDoubleClick(const MouseEvent &e)
+// {
+//     if (mouseDoubleClickCbk && !mouseDoubleClickCbk.wasObjectDeleted())
+//     {
+//         if (mouseDoubleClickCbk->isValid())
+//         {
+//             owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseDoubleClickCbk, this, e);
+//         }
+//     }
+// }
 
 
-void CtrlrComponent::mouseUp(const MouseEvent &e)
-{
-    if (mouseUpCbk && !mouseUpCbk.wasObjectDeleted())
-    {
-        if (mouseUpCbk->isValid())
-        {
-            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseUpCbk, this, e);
-        }
-    }
-}
+// void CtrlrComponent::mouseUp(const MouseEvent &e)
+// {
+//     if (mouseUpCbk && !mouseUpCbk.wasObjectDeleted())
+//     {
+//         if (mouseUpCbk->isValid())
+//         {
+//             owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseUpCbk, this, e);
+//         }
+//     }
+// }
 
-void CtrlrComponent::mouseDown (const MouseEvent& e)
-{
-    Component::mouseDown (e);
+// void CtrlrComponent::mouseDown (const MouseEvent& e)
+// {
+//     Component::mouseDown (e);
 
-    // Filter clicks based on modifier states matching your dropdown indices
-    if (e.mods.isCtrlDown())
-    {
-        triggerBubbleHelp (e, 2); // Index 2: Ctrl + Click
-    }
-    else if (e.mods.isShiftDown())
-    {
-        triggerBubbleHelp (e, 3); // Index 3: Shift + Click
-    }
-    else
-    {
-        triggerBubbleHelp (e, 0); // Index 0: Standard Mouse Down
-    }
+//     // Filter clicks based on modifier states matching your dropdown indices
+//     if (e.mods.isCtrlDown())
+//     {
+//         triggerBubbleHelp (e, 2); // Index 2: Ctrl + Click
+//     }
+//     else if (e.mods.isShiftDown())
+//     {
+//         triggerBubbleHelp (e, 3); // Index 3: Shift + Click
+//     }
+//     else
+//     {
+//         triggerBubbleHelp (e, 0); // Index 0: Standard Mouse Down
+//     }
 
-    // Existing Lua triggers...
-    if (mouseDownCbk && !mouseDownCbk.wasObjectDeleted() && mouseDownCbk->isValid())
-    {
-        owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseDownCbk, this, e);
-    }
-}
-void CtrlrComponent::mouseEnter (const MouseEvent& e)
-{
-    Component::mouseEnter (e);
+//     // Existing Lua triggers...
+//     if (mouseDownCbk && !mouseDownCbk.wasObjectDeleted() && mouseDownCbk->isValid())
+//     {
+//         owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseDownCbk, this, e);
+//     }
+// }
+// void CtrlrComponent::mouseEnter (const MouseEvent& e)
+// {
+//     Component::mouseEnter (e);
 
-    // Fires if your dropdown is set to "Mouse Hover" (Index 1)
-    triggerBubbleHelp (e, 1);
+//     // Fires if your dropdown is set to "Mouse Hover" (Index 1)
+//     triggerBubbleHelp (e, 1);
 
-    // Existing standard Lua mouse enter callbacks
-    if (mouseEnterCbk && !mouseEnterCbk.wasObjectDeleted() && mouseEnterCbk->isValid())
-    {
-        owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseEnterCbk, this, e);
-    }
-}
+//     // Existing standard Lua mouse enter callbacks
+//     if (mouseEnterCbk && !mouseEnterCbk.wasObjectDeleted() && mouseEnterCbk->isValid())
+//     {
+//         owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseEnterCbk, this, e);
+//     }
+// }
 
-void CtrlrComponent::mouseExit (const MouseEvent &e)
-{
-    if (mouseExitCbk && !mouseExitCbk.wasObjectDeleted())
-    {
-        if (mouseExitCbk->isValid())
-        {
-            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseExitCbk, this, e);
-        }
-    }
-}
+// void CtrlrComponent::mouseExit (const MouseEvent &e)
+// {
+//     if (mouseExitCbk && !mouseExitCbk.wasObjectDeleted())
+//     {
+//         if (mouseExitCbk->isValid())
+//         {
+//             owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseExitCbk, this, e);
+//         }
+//     }
+// }
 
 void CtrlrComponent::focusGained (FocusChangeType cause) // Added v5.6.34
 {
@@ -880,67 +885,137 @@ void CtrlrComponent::wrapForLua (lua_State *L)
     ];
 }
 
-void CtrlrComponent::triggerBubbleHelp (const MouseEvent& e, int requiredTrigger)
+void CtrlrComponent::triggerBubbleHelp(const MouseEvent& e, int requiredTrigger)
 {
-    _DBG("triggerBubbleHelp called with trigger index: " + String(requiredTrigger));
-
-    if ((bool)componentTree.getProperty (Ids::componentBubbleHelpEnabled) == false)
+    // Guard 1: feature enabled?
+    if (!(bool)componentTree.getProperty(Ids::componentBubbleHelpEnabled))
         return;
 
-    int currentTriggerSetting = componentTree.getProperty (Ids::componentBubbleHelpTrigger, 0);
-    if (currentTriggerSetting != requiredTrigger)
+    // Guard 2: correct trigger?
+    if ((int)componentTree.getProperty(Ids::componentBubbleHelpTrigger, 0) != requiredTrigger)
         return;
 
-    String title = componentTree.getProperty (Ids::componentBubbleHelpTitle).toString();
-    String body  = componentTree.getProperty (Ids::componentBubbleHelpText).toString();
-    int timeout  = componentTree.getProperty (Ids::componentBubbleHelpTimeout, 5000);
+    // Guard 3: not during restore
+    if (restoreStateInProgress)
+        return;
 
-    if (body.isNotEmpty())
+    // Guard 4: panel and editor must exist
+    CtrlrPanelEditor* editor = owner.getOwnerPanel().getEditor();
+    if (editor == nullptr)
+        return;
+
+    String title   = componentTree.getProperty(Ids::componentBubbleHelpTitle).toString();
+    String body    = componentTree.getProperty(Ids::componentBubbleHelpText).toString();
+    int    timeout = componentTree.getProperty(Ids::componentBubbleHelpTimeout, 5000);
+
+    if (body.isEmpty())
+        return;
+
+    // Tear down any existing bubble cleanly
+    if (bubbleMessage != nullptr)
     {
-        String completeMessage = title.isNotEmpty() ? (title + "\n\n" + body) : body;
-        _DBG("Displaying bubble: " + completeMessage);
+        bubbleMessage->setVisible(false);
+        if (auto* p = bubbleMessage->getParentComponent())
+            p->removeChildComponent(bubbleMessage.get());
+        bubbleMessage.reset();
+    }
 
-        AttributedString attrStr (completeMessage);
-        attrStr.setJustification (Justification::centred);
-        attrStr.setFont (Font (14.0f));
-        
-        // Safety: ensure text color is completely visible (e.g., solid Black or White)
-        // rather than potentially matching a transparent/hidden background ID color.
-        attrStr.setColour (Colours::black); 
+    String completeMessage = title.isNotEmpty() ? (title + "\n\n" + body) : body;
 
-// 1. Create the bubble on the heap
-auto* bubble = new BubbleMessageComponent();
-        
-       
-        // 2. FIXED: Find the absolute top-level window of the Ctrlr application itself
-        if (auto* topLevelAppWindow = getTopLevelComponent())
+    AttributedString attrStr(completeMessage);
+    attrStr.setJustification(Justification::centred);
+    attrStr.setFont(Font(14.0f));
+    attrStr.setColour(editor->getLookAndFeel()
+                             .findColour(TextEditor::textColourId));
+
+    bubbleMessage.reset(new BubbleMessageComponent(200));
+    editor->addChildComponent(bubbleMessage.get());
+    bubbleMessage->setAlwaysOnTop(true);
+    bubbleMessage->setVisible(true);
+
+    Rectangle<int> boundsInEditor = editor->getLocalArea(this, getLocalBounds());
+    bubbleMessage->showAt(boundsInEditor, attrStr, timeout, true, false);
+}
+
+void CtrlrComponent::mouseDown(const MouseEvent &e)
+{
+    if (mouseDownCbk && !mouseDownCbk.wasObjectDeleted())
+    {
+        if (mouseDownCbk->isValid())
         {
-            // Add the bubble inside the application hierarchy, NOT the OS desktop
-
-            Colour dynamicTextColor = topLevelAppWindow->getLookAndFeel()
-                                               .findColour (TextEditor::textColourId);
-                                              // .findColour (TooltipWindow::textColourId);
-    
-            // Pass dynamic L & F colour directly to your AttributedString
-            attrStr.setColour (dynamicTextColor);
-            topLevelAppWindow->addChildComponent(bubble);
-            bubble->setAlwaysOnTop(true);
-            bubble->setVisible(true);
-
-            // 3. MAP LOCAL TO APPWINDOW COORDINATES: 
-            // Instead of screen bounds, we find where the knob sits relative to the main app window
-            Rectangle<int> localToAppBounds = topLevelAppWindow->getLocalArea(this, getLocalBounds());
-
-            // 4. Trigger the bubble cleanly. 
-            // Setting the last parameter to 'true' tells JUCE to automatically 
-            // delete the 'bubble' pointer from the heap when it finishes fading out!
-            bubble->showAt(localToAppBounds, attrStr, timeout, true, true);
+            owner.getOwnerPanel().getCtrlrLuaManager()
+                 .getMethodManager().call(mouseDownCbk, this, e);
         }
-        else
+    }
+
+    if (e.mods.isCtrlDown())
+        triggerBubbleHelp(e, 2);
+    else if (e.mods.isShiftDown())
+        triggerBubbleHelp(e, 3);
+    else
+        triggerBubbleHelp(e, 0);
+}
+
+void CtrlrComponent::mouseEnter(const MouseEvent &e)
+{
+    if (mouseEnterCbk && !mouseEnterCbk.wasObjectDeleted())
+    {
+        if (mouseEnterCbk->isValid())
         {
-            // Fallback safety net: If for some reason top-level fails, use the old screen space
-            bubble->addToDesktop(ComponentPeer::windowIsTemporary);
-            bubble->showAt(this->getScreenBounds(), attrStr, timeout, true, false);
+            owner.getOwnerPanel().getCtrlrLuaManager()
+                 .getMethodManager().call(mouseEnterCbk, this, e);
         }
+    }
+
+    triggerBubbleHelp(e, 1);
+}
+void CtrlrComponent::mouseDoubleClick(const MouseEvent &e)
+{
+    if (mouseDoubleClickCbk && !mouseDoubleClickCbk.wasObjectDeleted())
+    {
+        if (mouseDoubleClickCbk->isValid())
+        {
+            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseDoubleClickCbk, this, e);
         }
+    }
+}
+// void CtrlrComponent::mouseDown(const MouseEvent &e)
+// {
+//     if (mouseDownCbk && !mouseDownCbk.wasObjectDeleted())
+//     {
+//         if (mouseDownCbk->isValid())
+//         {
+//             owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseDownCbk, this, e);
+//         }
+//     }
+// }
+void CtrlrComponent::mouseUp(const MouseEvent &e)
+{
+    if (mouseUpCbk && !mouseUpCbk.wasObjectDeleted())
+    {
+        if (mouseUpCbk->isValid())
+        {
+            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseUpCbk, this, e);
+        }
+    }
+}
+// void CtrlrComponent::mouseEnter (const MouseEvent &e)
+// {
+//     if (mouseEnterCbk && !mouseEnterCbk.wasObjectDeleted())
+//     {
+//         if (mouseEnterCbk->isValid())
+//         {
+//             owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseEnterCbk, this, e);
+//         }
+//     }
+// }
+void CtrlrComponent::mouseExit (const MouseEvent &e)
+{
+    if (mouseExitCbk && !mouseExitCbk.wasObjectDeleted())
+    {
+        if (mouseExitCbk->isValid())
+        {
+            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseExitCbk, this, e);
+        }
+    }
 }
