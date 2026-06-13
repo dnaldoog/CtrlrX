@@ -63,4 +63,5 @@ class CtrlrPanelResource : public ValueTree::Listener
 		AudioFormatReader *audioFormatReader;
 		CtrlrPanelResourceType resourceType;
 		CtrlrPanelResourceManager &owner;
+		int64 computeContentHash (const File &f);
 };
