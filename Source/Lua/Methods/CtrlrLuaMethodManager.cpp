@@ -637,52 +637,53 @@ void CtrlrLuaMethodManager::wrapUtilities()
 	}
 }
 
-bool CtrlrLuaMethodManager::isMethodValid(CtrlrLuaMethod *o)
+bool CtrlrLuaMethodManager::isMethodValid(CtrlrLuaMethod *o) // Updated 5.6.36. Thanks to @dnaldoog. SEE : https://github.com/damiensellier/CtrlrX/pull/277
 {
-    // 1. Structural Null Check
-    if (o == nullptr) 
-    {
-        return false;
-    }
-
-    try 
-    {
-        // 2. Check Ctrlr's own native tracking flag
-        if (!o->isValid()) 
-        {
-            return false;
-        }
-    }
-    catch (...) 
-    {
-        // Catches wild dangling pointer memory violations safely
-        return false;
-    }
-
-    // 3. Ensure the Lua State is alive
-    lua_State* L = owner.getLuaState();
-    if (!L) 
-    {
-        return false;
-    }
-
-    try 
-    {
-        // 4. Fetch the internal Luabind object
-        luabind::object methodObj = o->getObject();
-        
-        // 5. Native Luabind validity check:
-        // Luabind objects override the bool operator or expose a member .is_valid()
-        // We can also explicitly verify that it isn't an uninitialized nil reference.
-        if (luabind::type(methodObj) != LUA_TNIL)
-        {
-            return true;
-        }
-    }
-    catch (...) 
-    {
-        // Insulates against Luabind evaluation exceptions
-    }
-
-    return false;
+	if (o == nullptr)
+	{
+		return false;
+	}
+	
+	// Global Thread Safety Guard: Immediately decline execution if the application or
+	// UI engine Message Manager is in a state of teardown or exit processing.
+	if (juce::MessageManager::getInstanceWithoutCreating() == nullptr ||
+		juce::MessageManager::getInstance()->hasStopMessageBeenSent())
+	{
+		return false;
+	}
+	
+	try
+	{
+		// Check structural flag validity cleanly
+		if (!o->isValid())
+		{
+			return false;
+		}
+		
+		// Safety intercept: Ensure the wrapped luaObject tracking wrapper exists
+		if (&(o->getObject()) == nullptr)
+		{
+			return false;
+		}
+	}
+	catch (...)
+	{
+		// Quietly swallow the structural exception if 'o' is a wild/dangling pointer
+		return false;
+	}
+	
+	lua_State* L = owner.getLuaState();
+	if (!L) return false;
+	
+	try
+	{
+		luabind::object methodObj = o->getObject().getLuabindObject();
+		if (methodObj && luabind::type(methodObj) == LUA_TFUNCTION)
+		{
+			return true;
+		}
+	}
+	catch (...) {}
+	
+	return false;
 }
