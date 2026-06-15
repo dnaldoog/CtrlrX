@@ -224,7 +224,9 @@ class CtrlrPanel:	public ValueTree::Listener,
 		CtrlrModulator* getModulatorByIndex (const int index);
 		CtrlrModulator* getModulatorByVstIndex (const int vstIndex);
 		CtrlrModulator* getModulatorByCustomIndex (const int customIndex);
+		// We give getModulator a default fallback value to prevent "too few arguments" errors.
 		CtrlrModulator* getModulator (const String& name) const;
+		CtrlrModulator* getModulator(const String& name, bool forwardToComponents) const;
 		int getNumModulators();
 		void bootstrapPanel(const bool setInitialProgram=true);
 		int cleanBogusProperties();
@@ -234,7 +236,7 @@ class CtrlrPanel:	public ValueTree::Listener,
 		void panelReceivedMidi(const MidiBuffer &buffer, const CtrlrMIDIDeviceType source = inputDevice);
 		void handleAsyncUpdate();
 		void sendSnapshotOnLoad();
-		bool isLoading(); //
+		bool isLoading();
 		bool getRestoreState();
 		bool getProgramState();
 		bool getBootstrapState();

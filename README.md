@@ -488,9 +488,16 @@ Tuturial coming soon.
 
 ## Changelog
 
-#### Version 5.6.36 | 2026.05.02
+#### Version 5.6.36 | 2026.06.17
 
 * **FIXED** CtrlrTabsComponents.cpp and CtrlrGroup.cpp keep component owner group on uiTabs. `CtrlrTabsComponent.cpp`, `CtrlrGroup.cpp`
+* **FIXED** Doubling of menu item causing potential crash. `CtrlrEditor.cpp`, Thanks to [John Goodland](https://github.com/dnaldoog) `CtrlrEditorApplicationCommandsHandlers.cpp`
+* **FIXED** Slider double click interval definition (uiSliderDoubleClickValue). `CtrlrIDs.xml`
+* **FIXED** Custom Keyboard mappings not being saved on panel close due to the Wayland fix options. Thanks to [John Goodland](https://github.com/dnaldoog) `CtrlrEditorApplicationCommandsHandlers.cpp`
+* **FIXED** WIN doRegisterExtension menu item removed from unrelated OS. Thanks to [John Goodland](https://github.com/dnaldoog) `CtrlrEditorApplicationCommandsMenus.cpp`
+* **FIXED** FIXED Slider not reacting on Midi channel different than 1. Thanks to [John Goodland](https://github.com/dnaldoog) `CtrlrMIDIDevice.cpp`
+* **FIXED** MIDI IN leakage between multiple panels. Thanks to [John Goodland](https://github.com/dnaldoog) and [Holger Dehnhardt](https://github.com/dehnhardt)
+
 
 #### Version 5.6.35 | 2026.04.20
 
