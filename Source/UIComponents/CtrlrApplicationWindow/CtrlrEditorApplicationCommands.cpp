@@ -19,6 +19,7 @@ void CtrlrEditor::getAllCommands (Array< CommandID > &commands)
 								doViewPropertyDisplayIDs,
 								doZoomIn,
 								doZoomOut,
+								doZoomZero,
 								doCopy,
 								doCut,
 								doPaste,
@@ -214,6 +215,7 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 		case doZoomIn:
 			result.setInfo ("Zoom In", "Zoom in the panel", panelCategory, 0);
 			result.addDefaultKeypress ('+', ModifierKeys::commandModifier);
+			result.addDefaultKeypress ('=', ModifierKeys::commandModifier);
 			result.setActive (isPanelActive());
 			break;
 
@@ -222,6 +224,12 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 			result.addDefaultKeypress ('-', ModifierKeys::commandModifier);
 			result.setActive (isPanelActive());
 			break;
+		
+		case doZoomZero:
+            result.setInfo ("Zoom 100%", "Reset panel zoom to baseline", panelCategory, 0);
+            result.addDefaultKeypress ('0', ModifierKeys::commandModifier); // Maps Ctrl + 0 (or Cmd + 0 on Mac)
+            result.setActive (isPanelActive());
+            break;
 
 		case doCopy:
 			result.setInfo ("Copy", "Copy selected components to clipboard", panelCategory, 0);

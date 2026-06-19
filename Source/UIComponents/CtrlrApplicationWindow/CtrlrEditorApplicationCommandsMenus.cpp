@@ -162,6 +162,7 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 	{
 		menu.addCommandItem (commandManager, doZoomIn);
 		menu.addCommandItem (commandManager, doZoomOut);
+		menu.addCommandItem (commandManager, doZoomZero);
 		menu.addSeparator();
 		if (!isRestricted()) menu.addCommandItem (commandManager, doRefreshPropertyLists);
 		if (!isRestricted()) menu.addCommandItem (commandManager, doViewPropertyDisplayIDs);

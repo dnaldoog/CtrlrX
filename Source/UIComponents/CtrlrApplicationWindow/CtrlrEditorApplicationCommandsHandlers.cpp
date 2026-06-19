@@ -353,6 +353,15 @@ case CtrlrEditor::showAboutDialog:
             }
             break;
 
+        case CtrlrEditor::doZoomZero:
+            if (getActivePanelEditor())
+            {
+                double newZoomFactor = 1.0; // Reset to 100% zoom
+                _DBG("Resetting zoom factor to: " + String(newZoomFactor));
+                getActivePanelEditor()->setProperty(Ids::uiPanelZoom, newZoomFactor);
+            }
+            break;
+
         case CtrlrEditor::doCopy:
             getActivePanel()->getCanvas()->copy();
             break;
