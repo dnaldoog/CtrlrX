@@ -219,17 +219,10 @@ void CtrlrEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo &r
 			result.setActive (isPanelActive());
 			break;
 
-case doZoomOut:
+		case doZoomOut:
             result.setInfo ("Zoom Out", "Zoom out the panel", panelCategory, 0);
             result.addDefaultKeypress ('-', ModifierKeys::commandModifier);
             result.addDefaultKeypress (juce::KeyPress::numberPadSubtract, ModifierKeys::commandModifier);
-            result.addDefaultKeypress (82, ModifierKeys::commandModifier); 
-
-if (result.defaultKeypresses.size() > 0)
-            {
-                _DBG("Registered ZoomOut key description: " + result.defaultKeypresses[0].getTextDescription());
-            }
-            
             result.setActive (isPanelActive());
             break;
 		

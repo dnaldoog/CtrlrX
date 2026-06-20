@@ -343,7 +343,7 @@ case CtrlrEditor::showAboutDialog:
             }
             break;
 
-case CtrlrEditor::doZoomOut:
+        case CtrlrEditor::doZoomOut:
             if (getActivePanelEditor())
             {
                 // FIX: Get the property, but default to 1.0 if it doesn't exist yet
