@@ -4,7 +4,7 @@
 #include "../CtrlrComponent.h"
 #include "CtrlrSliderInternal.h"
 
-#ifdef CTLRX_DISABLE_DYNAMIC_LNF
+#if CTLRX_DISABLE_DYNAMIC_LNF
 // ============================================================================
 // LIGHTWEIGHT 5.3 FORK PATHWAY
 // ============================================================================

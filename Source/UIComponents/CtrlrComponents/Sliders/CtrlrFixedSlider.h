@@ -36,7 +36,7 @@ public:
 	CtrlrValueMap &getValueMap() { return (*valueMap); }
     void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr) {}; // trailing ; unnecessary
 
-#ifndef CTLRX_DISABLE_DYNAMIC_LNF
+#if !CTLRX_DISABLE_DYNAMIC_LNF
     static LookAndFeel* getLookAndFeelFromComponentProperty(const String &lookAndFeelComponentProperty);
     void resetLookAndFeelOverrides();
     void updatePropertiesPanel();
@@ -55,7 +55,7 @@ public:
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 
-#ifndef CTLRX_DISABLE_DYNAMIC_LNF
+#if !CTLRX_DISABLE_DYNAMIC_LNF
     CtrlrSliderLookAndFeel_V2 lf;
     CtrlrSliderLookAndFeel_V2 lfV2;
     CtrlrSliderLookAndFeel_V3 lfV3;

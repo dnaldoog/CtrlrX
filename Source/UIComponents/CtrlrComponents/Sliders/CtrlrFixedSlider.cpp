@@ -2,7 +2,7 @@
 #include "CtrlrFixedSlider.h"
 #include "CtrlrLuaManager.h"
 #include "CtrlrPanel/CtrlrPanelEditor.h"
-#ifdef CTLRX_DISABLE_DYNAMIC_LNF
+#if CTLRX_DISABLE_DYNAMIC_LNF
 // ============================================================================
 // 2. LIGHTWEIGHT 5.3 FORK PATHWAY (DROP ENTIRE 5.3 FILE HERE)
 // ====

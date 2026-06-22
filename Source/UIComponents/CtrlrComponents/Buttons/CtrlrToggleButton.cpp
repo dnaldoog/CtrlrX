@@ -6,7 +6,7 @@
 #include "CtrlrIDs.h"
 #include "CtrlrPanel/CtrlrPanel.h"
 
-#ifdef CTLRX_DISABLE_DYNAMIC_LNF
+#if CTLRX_DISABLE_DYNAMIC_LNF
 // ============================================================================
 // 2. LIGHTWEIGHT 5.3 FORK PATHWAY (DROP ENTIRE 5.3 FILE HERE)
 // ====

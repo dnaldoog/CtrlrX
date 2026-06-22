@@ -44,7 +44,7 @@ public:
     void paint (Graphics& g);
     void resized();
     void mouseUp (const MouseEvent& e);
-#ifndef CTLRX_DISABLE_DYNAMIC_LNF
+#if !CTLRX_DISABLE_DYNAMIC_LNF
     static LookAndFeel* getLookAndFeelFromComponentProperty(const String &lookAndFeelComponentProperty);
     void resetLookAndFeelOverrides();
     void updatePropertiesPanel();
