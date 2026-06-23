@@ -105,7 +105,7 @@ class CtrlrPanelEditor  :	public Component,
 		void reloadResources (Array <CtrlrPanelResource*> resourcesThatChanged);
         // void showComponentRuntimeConfig(CtrlrComponent *componentToConfigure); // Useless. Related to the WIN crash on LnF switch
 		void searchForProperty();
-        static LookAndFeel* getLookAndFeelFromDescription(const String &lookAndFeelDesc);
+        LookAndFeel* getLookAndFeelFromDescription(const String &lookAndFeelDesc); // removed static keyword JG
         void editModeChanged(const bool isEditMode);
     
         bool luaEditorExistsAndIsFocused(); // Added v5.6.34. Required to pass keypress to the LUA method manager for menu items. Handles the focus gain/loss.

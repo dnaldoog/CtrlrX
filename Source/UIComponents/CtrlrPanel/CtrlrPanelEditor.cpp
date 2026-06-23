@@ -97,7 +97,6 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 {
     ctrlrComponentSelection.reset(new CtrlrComponentSelection(*this));
     
-    // Corrected to use the proper syntax for ScopedPointers
     ctrlrPanelViewport = new CtrlrPanelViewport(*this);
     ctrlrPanelProperties = new CtrlrPanelProperties(*this);
     spacerComponent = new juce::StretchableLayoutResizerBar(&layoutManager, 1, true);
@@ -106,15 +105,52 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
     addAndMakeVisible(ctrlrPanelProperties);
     addAndMakeVisible(spacerComponent);
     
-	// Added back v5.6.31 for file management bottom notification bar
     addAndMakeVisible(ctrlrPanelNotifier = new CtrlrPanelNotifier(*this));
-	
-    ctrlrPanelNotifier->setAlwaysOnTop (true);  // Added back v5.6.31 for file management bottom notification bar
-    ctrlrPanelNotifier->setVisible (false);  // Added back v5.6.31 for file management bottom notification bar
-    //componentAnimator.addChangeListener (this); // Added back v5.6.31 not working
+    ctrlrPanelNotifier->setAlwaysOnTop (true);
+    ctrlrPanelNotifier->setVisible (false);
     
     spacerComponent->setName(L"spacerComponent");
     
+    // --- STEP 1: PRE-DETERMINE AND ALLOCATE LOOK AND FEEL FIRST ---
+    // We figure out the theme and seat it BEFORE listeners or properties can trigger updates
+    ValueTree ed = owner.getCtrlrManagerOwner().getManagerTree();
+    juce::String lookAndFeelDesc = "V4 Light"; // Safe default fallback
+
+    if (ed.getProperty(Ids::ctrlrLegacyMode) == "1"
+        || ed.getProperty(Ids::ctrlrLookAndFeel) == "V3"
+        || ed.getProperty(Ids::ctrlrLookAndFeel) == "V2"
+        || ed.getProperty(Ids::ctrlrLookAndFeel) == "V1")
+    {
+        panelEditorTree.setProperty(Ids::uiPanelLegacyMode, "1", nullptr);
+        panelEditorTree.setProperty(Ids::uiPanelLookAndFeel, "V3", nullptr);
+        lookAndFeelDesc = "V3";
+    }
+    else
+    {
+        panelEditorTree.setProperty(Ids::uiPanelLegacyMode, false, nullptr);
+        
+        juce::String schemeName = ed.getProperty (Ids::ctrlrColourScheme).toString();
+        if (schemeName.isEmpty())  schemeName = "Light";
+        
+        if (schemeName.startsWith ("V4 "))
+            lookAndFeelDesc = schemeName;
+        else
+            lookAndFeelDesc = "V4 " + schemeName;
+            
+        panelEditorTree.setProperty (Ids::uiPanelLookAndFeel, lookAndFeelDesc, nullptr);
+    }
+
+    // Allocate it immediately so it is active for all subsequent child setups
+    lookAndFeel = std::unique_ptr<juce::LookAndFeel>(getLookAndFeelFromDescription(lookAndFeelDesc));
+    if (lookAndFeel != nullptr)
+    {
+        setLookAndFeel(lookAndFeel.get());
+        if (getCanvas()) getCanvas()->setLookAndFeel(lookAndFeel.get());
+        juce::LookAndFeel::setDefaultLookAndFeel(lookAndFeel.get());
+    }
+    // ----------------------------------------------------------------
+
+    // --- STEP 2: NOW SAFELY ATTACH LISTENERS AND ASSIGN PROPERTIES ---
     getPanelEditorTree().addListener(this);
     
     layoutManager.setItemLayout(0, -0.001, -1.0, -0.7);
@@ -124,9 +160,9 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
     editorComponentsInEditMode[0] = ctrlrPanelViewport;
     editorComponentsInEditMode[1] = spacerComponent;
     editorComponentsInEditMode[2] = ctrlrPanelProperties;
-    
     editorComponents[0] = ctrlrPanelViewport;
     
+    // Triggers like Ids::name will now safely execute against our already established lookAndFeel pointer!
     setProperty(Ids::name, panelName);
     setProperty(Ids::uiPanelEditMode, true);
     setProperty(Ids::uiPanelLock, false);
@@ -154,11 +190,11 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
     setProperty(Ids::uiViewPortFixedAspectRatio, 1.5);
     setProperty(Ids::uiPanelZoom, 1.0);
     
-    setProperty(Ids::uiPanelViewPortBackgroundColour, (String) Component::findColour (ResizableWindow::backgroundColourId).withAlpha(0.7f).toString());  // ViewPort background color. was "transparentblack"
-    setProperty(Ids::uiPanelBackgroundColour, (String) Component::findColour (ResizableWindow::backgroundColourId).toString()); // Canvas Colour 0xffffffff
-    setProperty(Ids::uiPanelBackgroundColour1, (String) Component::findColour (ResizableWindow::backgroundColourId).toString()); // Canvas Colour1 if gradient
-    setProperty(Ids::uiPanelBackgroundColour2, (String) Component::findColour (ResizableWindow::backgroundColourId).darker(0.2f).toString()); // Canvas Colour2 if gradient
-    setProperty(Ids::uiPanelBackgroundGradientType, 0); // Default set to SolidColor [No background gradient]
+    setProperty(Ids::uiPanelViewPortBackgroundColour, (String) Component::findColour (ResizableWindow::backgroundColourId).withAlpha(0.7f).toString());
+    setProperty(Ids::uiPanelBackgroundColour, (String) Component::findColour (ResizableWindow::backgroundColourId).toString());
+    setProperty(Ids::uiPanelBackgroundColour1, (String) Component::findColour (ResizableWindow::backgroundColourId).toString());
+    setProperty(Ids::uiPanelBackgroundColour2, (String) Component::findColour (ResizableWindow::backgroundColourId).darker(0.2f).toString());
+    setProperty(Ids::uiPanelBackgroundGradientType, 0);
     setProperty(Ids::uiPanelImageResource, COMBO_ITEM_NONE);
     setProperty(Ids::uiPanelImageAlpha, 255);
     setProperty(Ids::uiPanelImageLayout, 64);
@@ -178,86 +214,57 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
     
     setProperty(Ids::uiPanelTooltipPlacement, BubbleComponent::below);
     setProperty(Ids::uiPanelTooltipFont, Font(12.0f, Font::plain).toString());
-    setProperty(Ids::uiPanelTooltipColour, (String) Component::findColour (Label::textColourId).toString()); // 0xff000000
-    setProperty(Ids::uiPanelTooltipBackgroundColour, (String) Component::findColour (BubbleComponent::backgroundColourId).toString()); // 0xffeeeebb
-    setProperty(Ids::uiPanelTooltipOutlineColour, (String) Component::findColour (BubbleComponent::outlineColourId).toString()); // 0xff000000
+    setProperty(Ids::uiPanelTooltipColour, (String) Component::findColour (Label::textColourId).toString());
+    setProperty(Ids::uiPanelTooltipBackgroundColour, (String) Component::findColour (BubbleComponent::backgroundColourId).toString());
+    setProperty(Ids::uiPanelTooltipOutlineColour, (String) Component::findColour (BubbleComponent::outlineColourId).toString());
     setProperty(Ids::uiPanelTooltipCornerRound, 1.0);
 
-    
-    ValueTree ed = owner.getCtrlrManagerOwner().getManagerTree();
-    
-    if (ed.getProperty(Ids::ctrlrLegacyMode) == "1"
-        || ed.getProperty(Ids::ctrlrLookAndFeel) == "V3"
-        || ed.getProperty(Ids::ctrlrLookAndFeel) == "V2"
-        || ed.getProperty(Ids::ctrlrLookAndFeel) == "V1")
-    {
-        setProperty(Ids::uiPanelLegacyMode, "1");
-        setProperty(Ids::uiPanelLookAndFeel, "V3");
-    }
-    else
-    {
-        setProperty(Ids::uiPanelLegacyMode, false);
-        setProperty(Ids::uiPanelLookAndFeel, "V4");
-        
-        // Requires passing the colourScheme to the property uiPanelLookAndFeel from ctrlrColourScheme
-        // Updated v5.6.34. For a generic method schemeName Property--> schemeName. Get the current colour scheme name from the property
-        juce::String schemeName = ed.getProperty (Ids::ctrlrColourScheme).toString();
-        
-        // <fallback for empty instances without any colourscheme yet defined
-        if (schemeName.isEmpty())
-        {
-            schemeName = "Light";
-        }
-        
-        // Determine the LookAndFeel description string
-        juce::String lookAndFeelDesc;
-        
-        if (schemeName.startsWith ("V4 "))
-        {
-            // If it already has "V4 ", use it as is
-            lookAndFeelDesc = schemeName;
-        }
-        else
-        {
-            // Otherwise, prepend "V4 " (e.g., "Light" becomes "V4 Light")
-            lookAndFeelDesc = "V4 " + schemeName;
-        }
-        
-        // Set the uiPanelLookAndFeel property with the determined string
-        setProperty (Ids::uiPanelLookAndFeel, lookAndFeelDesc);
-    }
-    
-    //setProperty(Ids::uiPanelLegacyMode, false);
-    //setProperty(Ids::uiPanelLookAndFeel, "V4 Light");
-    
-//    /** displays the current LookAndFeel colourScheme UIColours */
-//    LookAndFeel_V4::setColourScheme(getLightColourScheme());
-//
-//    setProperty(Ids::uiPanelUIColourWindowBackground, (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::windowBackground).toString());
-//    setProperty(Ids::uiPanelUIColourWidgetBackground, (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::widgetBackground).toString());
-//    setProperty(Ids::uiPanelUIColourMenuBackground, (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::menuBackground).toString());
-//    setProperty(Ids::uiPanelUIColourOutline, (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::outline).toString());
-//    setProperty(Ids::uiPanelUIColourDefaultText, (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::defaultText).toString());
-//    setProperty(Ids::uiPanelUIColourDefaultFill, (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::defaultFill).toString());
-//    setProperty(Ids::uiPanelUIColourHighlightedText, (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::highlightedText).toString());
-//    setProperty(Ids::uiPanelUIColourHighlightedFill, (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::highlightedFill).toString());
-//    setProperty(Ids::uiPanelUIColourMenuText, (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::menuText).toString());
-    
     ctrlrComponentSelection->addChangeListener(ctrlrPanelProperties);
-    
     setSize(600, 400);
-    
     ctrlrComponentSelection->sendChangeMessage();
 }
-
 CtrlrPanelEditor::~CtrlrPanelEditor()
 {
+    // --- STEP 1: SAFETY RESET GLOBAL & LOCAL LOOK AND FEELS ---
+    // This instantly releases that 1 lingering LookAndFeel_V4 instance!
+    if (getCanvas())
+    {
+        getCanvas()->setLookAndFeel(nullptr);
+    }
+    setLookAndFeel(nullptr);
+    juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
+    
+    // Explicitly drop our unique_ptr ownership now
+    lookAndFeel.reset();
+    // -----------------------------------------------------------
+
     // Check if the component selection object is valid before trying to use it
     if (ctrlrComponentSelection)
     {
         // Remove the listener before the objects are destroyed
         ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
     }
+
+    // --- CLEAN UP THE CANVAS BEFORE WE MUTATE THE VALUE TREES ---
+    if (auto* canvas = getCanvas())
+    {
+        // 1. Clear the canvas from the panel editor tree listener list right now
+        getPanelEditorTree().removeListener(canvas);
+
+        // 2. Run the modulator removal loop cleanly here while 'owner' is fully intact
+        for (int i = 0; i < owner.getModulators().size(); ++i)
+        {
+            if (auto* mod = owner.getModulators()[i])
+            {
+                if (auto* c = mod->getComponent())
+                {
+                    canvas->removeComponent(c, false);
+                }
+            }
+        }
+    }
+
+    // -----------------------------------------------------------------
 
     getPanelEditorTree().removeListener(this);
     owner.getPanelTree().removeListener(this);
@@ -274,13 +281,45 @@ CtrlrPanelEditor::~CtrlrPanelEditor()
     // This is important: JUCE's default look and feel can also be a source of leaks if not managed
     juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
 
-	// USELESS : because JUCE_DECLARE_WEAK_REFERENCEABLE macro is in the header already.
-	// It automatically handles the weak reference master
-	// masterReference.clear();
+    // USELESS : because JUCE_DECLARE_WEAK_REFERENCEABLE macro is in the header already.
+    // It automatically handles the weak reference master
+    // masterReference.clear();
     
     // The ScopedPointers will now automatically delete the components they own
     // (ctrlrPanelViewport, ctrlrPanelProperties, spacerComponent, ctrlrPanelNotifier).
 }
+
+// CtrlrPanelEditor::~CtrlrPanelEditor()
+// {
+//     // Check if the component selection object is valid before trying to use it
+//     if (ctrlrComponentSelection)
+//     {
+//         // Remove the listener before the objects are destroyed
+//         ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
+//     }
+
+//     getPanelEditorTree().removeListener(this);
+//     owner.getPanelTree().removeListener(this);
+//     owner.getPanelTree().removeChild(getPanelEditorTree(), 0);
+
+//     componentAnimator.removeChangeListener(this);
+    
+//     // Set look and feel to null to clean up
+//     setLookAndFeel(nullptr);
+//     if (getCanvas())
+//     {
+//         getCanvas()->setLookAndFeel(nullptr);
+//     }
+//     // This is important: JUCE's default look and feel can also be a source of leaks if not managed
+//     juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
+
+// 	// USELESS : because JUCE_DECLARE_WEAK_REFERENCEABLE macro is in the header already.
+// 	// It automatically handles the weak reference master
+// 	// masterReference.clear();
+    
+//     // The ScopedPointers will now automatically delete the components they own
+//     // (ctrlrPanelViewport, ctrlrPanelProperties, spacerComponent, ctrlrPanelNotifier).
+// }
 
 void CtrlrPanelEditor::visibilityChanged()
 {

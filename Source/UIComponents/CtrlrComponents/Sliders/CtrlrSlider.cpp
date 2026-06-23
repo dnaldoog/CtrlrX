@@ -278,15 +278,32 @@ void CtrlrSlider::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel)
 // ============================================================================
 #include "CtrlrPanel/CtrlrPanelProperties.h"
 #include "CtrlrPanel/CtrlrPanelComponentProperties.h"
+// A single shared null shield for all slider instances
+struct SliderNullShield : public juce::LookAndFeel_V4 {};
+static SliderNullShield globalSliderNullShield;
+CtrlrSlider::CtrlrSlider(CtrlrModulator & owner)
+        : CtrlrComponent(owner),
+        ctrlrSlider(*this)
+        {
+        // Use the static global shield immediately
+        ctrlrSlider.setLookAndFeel(&globalSliderNullShield);
 
-CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
-    :    CtrlrComponent(owner),
-        lfV4(*this, componentTree), 
-        lfV3(*this, componentTree), 
-        lfV2(*this, componentTree), 
-        lf(*this, componentTree), 
-        ctrlrSlider (*this)
-{
+       // 2. Now safely determine and allocate your actual dynamic style
+        juce::String initialLnf = getProperty(Ids::uiSliderLookAndFeel).toString();
+
+        if (initialLnf == "V2")
+            sliderCustomLnf = std::make_unique<CtrlrSliderLookAndFeel_V2>(*this, componentTree);
+        else if (initialLnf == "V3")
+            sliderCustomLnf = std::make_unique<CtrlrSliderLookAndFeel_V3>(*this, componentTree);
+        else
+            sliderCustomLnf = std::make_unique<CtrlrSliderLookAndFeel_V4>(*this, componentTree);
+
+        // Apply it to the slider component
+        if (sliderCustomLnf != nullptr)
+        {
+            ctrlrSlider.setLookAndFeel(sliderCustomLnf.get());
+        }
+
     setColour (TooltipWindow::textColourId, findColour(Label::textColourId));
     setColour (TooltipWindow::backgroundColourId, findColour(TooltipWindow::backgroundColourId));
     setColour (TooltipWindow::outlineColourId, findColour(TooltipWindow::outlineColourId));
@@ -389,10 +406,20 @@ CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
     setProperty (Ids::uiSliderLookAndFeelIsCustom, false);
 }
 
+// CtrlrSlider::~CtrlrSlider()
+// {
+//     componentTree.removeListener (this);
+//     ctrlrSlider.setLookAndFeel (nullptr);
+// }
 CtrlrSlider::~CtrlrSlider()
 {
-    componentTree.removeListener (this);
-    ctrlrSlider.setLookAndFeel (nullptr);
+    // Clear back to the shared static shield cleanly
+    ctrlrSlider.setLookAndFeel(&globalSliderNullShield);
+    
+    sliderCustomLnf.reset();
+    
+    // Safely drop the raw reference completely 
+    ctrlrSlider.setLookAndFeel(nullptr);
 }
 
 void CtrlrSlider::resized()
@@ -556,22 +583,33 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
         ctrlrSlider.setChangeNotificationOnlyOnRelease((bool)getProperty(Ids::uiSliderSetNotificationOnlyOnRelease));
     }
     else if (property == Ids::uiSliderIncDecButtonColour
-             || property == Ids::uiSliderIncDecTextColour
-             || property == Ids::uiSliderValueFont
-             || property == Ids::uiSliderValueTextJustification)
+        || property == Ids::uiSliderIncDecTextColour
+        || property == Ids::uiSliderValueFont
+        || property == Ids::uiSliderValueTextJustification)
     {
-        if ( getProperty(Ids::uiSliderLookAndFeel) == "V3"
-            || getProperty(Ids::uiSliderLookAndFeel) == "V2"
-            || getProperty(Ids::uiSliderLookAndFeel) == "V1" )
+        // 1. Unlink the slider temporarily so it cleans its internal caches
+        ctrlrSlider.setLookAndFeel(nullptr);
+
+        // 2. Safely apply the properties to whatever active LookAndFeel is inside your unique_ptr
+        if (sliderCustomLnf != nullptr)
         {
-            ctrlrSlider.setLookAndFeel (nullptr); 
-            ctrlrSlider.setLookAndFeel (&lf); 
+            // Re-apply the pointer to the slider component
+            ctrlrSlider.setLookAndFeel(sliderCustomLnf.get());
         }
         else
         {
-            ctrlrSlider.setLookAndFeel (nullptr); 
-            ctrlrSlider.setLookAndFeel (&lfV4); 
+            // Fallback: If for some reason the unique_ptr wasn't allocated yet, 
+            // you can initialize it on the fly based on the property string
+            juce::String currentLnfType = getProperty(Ids::uiSliderLookAndFeel).toString();
+
+            if (currentLnfType == "V3" || currentLnfType == "V2" || currentLnfType == "V1")
+                sliderCustomLnf = std::make_unique<juce::LookAndFeel_V3>(); // Or V2/V1 depending on preference
+            else
+                sliderCustomLnf = std::make_unique<juce::LookAndFeel_V4>();
+
+            ctrlrSlider.setLookAndFeel(sliderCustomLnf.get());
         }
+    
         setProperty(Ids::uiSliderLookAndFeelIsCustom, true); 
         ctrlrSlider.lookAndFeelChanged(); 
     }
@@ -623,26 +661,47 @@ const String CtrlrSlider::getComponentText()
     return (String(getComponentValue()));
 }
 
-void CtrlrSlider::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel) 
+void CtrlrSlider::customLookAndFeelChanged(LookAndFeelBase* customLookAndFeel)
 {
+    // 1. Always safely sever the existing relationship first to clear caches
+    ctrlrSlider.setLookAndFeel(nullptr);
+
     if (customLookAndFeel == nullptr)
     {
-        ctrlrSlider.setLookAndFeel (nullptr);
-        
-        if ( getProperty(Ids::uiSliderLookAndFeel) == "V3"
-            || getProperty(Ids::uiSliderLookAndFeel) == "V2"
-            || getProperty(Ids::uiSliderLookAndFeel) == "V1" )
+        juce::String currentLnfType = getProperty(Ids::uiSliderLookAndFeel).toString();
+
+        // 2. Check if our unique_ptr matches what the component property currently demands.
+        // If the pointer is null, or if the type shifted, re-allocate the specific subclass.
+        if (currentLnfType == "V2")
         {
-            ctrlrSlider.setLookAndFeel (&lf); 
+            if (sliderCustomLnf == nullptr || dynamic_cast<CtrlrSliderLookAndFeel_V2*>(sliderCustomLnf.get()) == nullptr)
+                sliderCustomLnf = std::make_unique<CtrlrSliderLookAndFeel_V2>(*this, componentTree);
         }
-        else
+        else if (currentLnfType == "V3" || currentLnfType == "V1")
         {
-            ctrlrSlider.setLookAndFeel (&lfV4); 
+            if (sliderCustomLnf == nullptr || dynamic_cast<CtrlrSliderLookAndFeel_V3*>(sliderCustomLnf.get()) == nullptr)
+                sliderCustomLnf = std::make_unique<CtrlrSliderLookAndFeel_V3>(*this, componentTree);
+        }
+        else // Fallback or explicit "V4"
+        {
+            if (sliderCustomLnf == nullptr || dynamic_cast<CtrlrSliderLookAndFeel_V4*>(sliderCustomLnf.get()) == nullptr)
+                sliderCustomLnf = std::make_unique<CtrlrSliderLookAndFeel_V4>(*this, componentTree);
+        }
+
+        // 3. Re-seat the slider against our safely managed heap instance
+        if (sliderCustomLnf != nullptr)
+        {
+            ctrlrSlider.setLookAndFeel(sliderCustomLnf.get());
         }
     }
     else
     {
-        ctrlrSlider.setLookAndFeel (customLookAndFeel);
+        // If an external look-and-feel pointer was passed explicitly, honor it.
+        // Note: We cast it down to a regular juce::LookAndFeel since setLookAndFeel expects that.
+        if (auto* lnf = dynamic_cast<juce::LookAndFeel*> (customLookAndFeel))
+        {
+            ctrlrSlider.setLookAndFeel(lnf);
+        }
     }
 }
 
