@@ -169,10 +169,10 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow (const String& title, const Colour&
 
 CtrlrStandaloneWindow::~CtrlrStandaloneWindow()
 {
-	ctrlrProcessor->removeChangeListener(this);
+    ctrlrProcessor->removeChangeListener(this);
     ctrlrProcessor->getManager().removeActionListener (this);
-    saveStateNow();
-    deleteFilter();
+    saveStateNow(); // Save safely while objects are alive
+    deleteFilter(); // Destroy objects second
 }
 
 void CtrlrStandaloneWindow::actionListenerCallback(const String &message)

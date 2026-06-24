@@ -7,7 +7,7 @@
 #if JUCE_LINUX
  #include <cmath>
 #endif
-
+static std::unique_ptr<juce::LookAndFeel_V4> safeAppLnfFallback;
 class CtrlrApplication : public JUCEApplication
 {
         public:
@@ -71,15 +71,17 @@ class CtrlrApplication : public JUCEApplication
 
                 void initialise(const String& commandLineParameters)
                 {
+					safeAppLnfFallback = std::make_unique<juce::LookAndFeel_V4>();
+    				juce::LookAndFeel::setDefaultLookAndFeel (safeAppLnfFallback.get());
 					Logger::writeToLog("CTRLR:initialise params \""+commandLineParameters+"\"");
 
-#if JUCE_LINUX
+				#if JUCE_LINUX
 					const double linuxScale = ctrlrx_get_linux_scale_factor();
 					if (std::abs(linuxScale - 1.0) > 0.001)
 						Desktop::getInstance().setGlobalScaleFactor((float)linuxScale);
 
 					Logger::writeToLog("CTRLR:linux scale factor \"" + String(linuxScale, 3) + "\"");
-#endif
+				#endif
 
 					{
 						bool setcrashhandler = true;
@@ -120,19 +122,36 @@ class CtrlrApplication : public JUCEApplication
 
 
 					filterWindow = new CtrlrStandaloneWindow (ProjectInfo::projectName + String("/") + ProjectInfo::versionString, Colours::lightgrey);
-
+					// 3. Bind the window and ALL its child sliders exclusively to our tracking instance!
+   					 filterWindow->setLookAndFeel(safeAppLnfFallback.get());
 					if (File::isAbsolutePath(commandLineParameters.unquoted()))
 						filterWindow->openFileFromCli (File(commandLineParameters.unquoted()));
                 }
 
-                void shutdown()
-                {
-					if (filterWindow)
-					{
-                        deleteAndZero (filterWindow);
-					}
-                }
+void shutdown() override
+{
+    _DBG("CtrlrApplication::shutdown");
+    
+    if (filterWindow)
+    {
+        // 1. Tell the window to let go of the skin pointer before it dies
+        filterWindow->setLookAndFeel(nullptr);
 
+        // 2. Safely dismantle the window panels, saving state natively
+        deleteAndZero (filterWindow);
+    }
+
+    // 3. Now that the window is dead, wipe out our tracking wrapper.
+    // Because the sliders were bound directly to this instance, their 
+    // cached paths are completely destroyed right here!
+    if (safeAppLnfFallback != nullptr)
+    {
+        safeAppLnfFallback.reset();
+    }
+
+    // 4. Clean out the raster image cache pool
+    juce::ImageCache::releaseUnusedImages();
+}
                 const String getApplicationName()
                 {
                         return (ProjectInfo::projectName);

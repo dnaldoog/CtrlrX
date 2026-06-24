@@ -34,11 +34,21 @@ class CtrlrSliderLookAndFeel_V2 : public LookAndFeel_V2
 		Button *createSliderButton (Slider&, bool isIncrement)
 		{
 			TextButton *tb = new TextButton (isIncrement ? "+" : "-", "");
-			tb->setLookAndFeel (&LookAndFeel::getDefaultLookAndFeel());
+    // Removed: tb->setLookAndFeel(&LookAndFeel::getDefaultLookAndFeel());
+    // This button should inherit its LookAndFeel from its parent component,
+    // not be explicitly wired to whatever JUCE's static default happens to be
+    // at construction time — that line was pulling in a lazily-created JUCE
+    // singleton LookAndFeel_V4 unrelated to anything CtrlrX manages.
 			tb->setColour (TextButton::buttonColourId, VAR2COLOUR(ownerTree.getProperty(Ids::uiSliderIncDecButtonColour)));
 			tb->setColour (TextButton::textColourOffId, VAR2COLOUR(ownerTree.getProperty(Ids::uiSliderIncDecTextColour)));
 			return (tb);
 		}
+
+        ~CtrlrSliderLookAndFeel_V2() override
+    {
+
+        juce::ImageCache::releaseUnusedImages();
+    }
 
 		Label* createSliderTextBox (Slider& slider)
 		{
@@ -96,10 +106,20 @@ public:
     Button *createSliderButton (Slider&, bool isIncrement)
     {
         TextButton *tb = new TextButton (isIncrement ? "+" : "-", "");
-        tb->setLookAndFeel (&LookAndFeel::getDefaultLookAndFeel());
+    // Removed: tb->setLookAndFeel(&LookAndFeel::getDefaultLookAndFeel());
+    // This button should inherit its LookAndFeel from its parent component,
+    // not be explicitly wired to whatever JUCE's static default happens to be
+    // at construction time — that line was pulling in a lazily-created JUCE
+    // singleton LookAndFeel_V4 unrelated to anything CtrlrX manages.
         tb->setColour (TextButton::buttonColourId, VAR2COLOUR(ownerTree.getProperty(Ids::uiSliderIncDecButtonColour)));
         tb->setColour (TextButton::textColourOffId, VAR2COLOUR(ownerTree.getProperty(Ids::uiSliderIncDecTextColour)));
         return (tb);
+    }
+~CtrlrSliderLookAndFeel_V3() override
+    {
+        // Force JUCE to drop any cached vector path data built by this skin
+        // before the memory address is unmapped!
+       juce::ImageCache::releaseUnusedImages();
     }
 
     Label* createSliderTextBox (Slider& slider)
@@ -158,12 +178,21 @@ public:
     Button *createSliderButton (Slider&, bool isIncrement)
     {
         TextButton *tb = new TextButton (isIncrement ? "+" : "-", "");
-        tb->setLookAndFeel (&LookAndFeel::getDefaultLookAndFeel());
+    // Removed: tb->setLookAndFeel(&LookAndFeel::getDefaultLookAndFeel());
+    // This button should inherit its LookAndFeel from its parent component,
+    // not be explicitly wired to whatever JUCE's static default happens to be
+    // at construction time — that line was pulling in a lazily-created JUCE
+    // singleton LookAndFeel_V4 unrelated to anything CtrlrX manages.
         tb->setColour (TextButton::buttonColourId, VAR2COLOUR(ownerTree.getProperty(Ids::uiSliderIncDecButtonColour)));
         tb->setColour (TextButton::textColourOffId, VAR2COLOUR(ownerTree.getProperty(Ids::uiSliderIncDecTextColour)));
         return (tb);
     }
-
+        ~CtrlrSliderLookAndFeel_V4() override
+            {
+                // Force JUCE to drop any cached vector path data built by this skin
+                // before the memory address is unmapped!
+                juce::ImageCache::releaseUnusedImages();
+            }
     Label* createSliderTextBox (Slider& slider)
     {
         Label* const l = new Label();

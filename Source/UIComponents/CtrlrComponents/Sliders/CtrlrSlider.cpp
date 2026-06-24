@@ -7,6 +7,7 @@
 #include "CtrlrModulator/CtrlrModulator.h"
 #include "Lua/JuceClasses/LLookAndFeel.h"
 
+
 #if CTLRX_DISABLE_DYNAMIC_LNF
 // ============================================================================
 // LIGHTWEIGHT 5.3 FORK PATHWAY
@@ -279,14 +280,16 @@ void CtrlrSlider::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel)
 #include "CtrlrPanel/CtrlrPanelProperties.h"
 #include "CtrlrPanel/CtrlrPanelComponentProperties.h"
 // A single shared null shield for all slider instances
-struct SliderNullShield : public juce::LookAndFeel_V4 {};
-static SliderNullShield globalSliderNullShield;
+// Inherit from V2 to avoid the V4 vector composite caching subsystem
+struct SliderDestructionShield : public juce::LookAndFeel_V2 {};
+static SliderDestructionShield globalDestructionShield;
+
 CtrlrSlider::CtrlrSlider(CtrlrModulator & owner)
         : CtrlrComponent(owner),
         ctrlrSlider(*this)
         {
         // Use the static global shield immediately
-        ctrlrSlider.setLookAndFeel(&globalSliderNullShield);
+        ctrlrSlider.setLookAndFeel(&globalDestructionShield);
 
        // 2. Now safely determine and allocate your actual dynamic style
         juce::String initialLnf = getProperty(Ids::uiSliderLookAndFeel).toString();
@@ -406,20 +409,24 @@ CtrlrSlider::CtrlrSlider(CtrlrModulator & owner)
     setProperty (Ids::uiSliderLookAndFeelIsCustom, false);
 }
 
-// CtrlrSlider::~CtrlrSlider()
-// {
-//     componentTree.removeListener (this);
-//     ctrlrSlider.setLookAndFeel (nullptr);
-// }
 CtrlrSlider::~CtrlrSlider()
 {
-    // Clear back to the shared static shield cleanly
-    ctrlrSlider.setLookAndFeel(&globalSliderNullShield);
+    // 1. Create a local, sterile LookAndFeel instance right on the stack.
+    // LookAndFeel_V2 uses basic rendering with zero shared vector caches.
+    juce::LookAndFeel_V2 temporaryShield;
     
+    // 2. Temporarily point the internal slider to this local stack instance.
+    // This safely breaks the link to your custom heap-allocated LookAndFeel.
+    ctrlrSlider.setLookAndFeel (&temporaryShield);
+    
+    // 3. Force the slider to flush its internal geometry layout right now
+    ctrlrSlider.lookAndFeelChanged();
+    
+    // 4. Safely delete your custom heap instance while the component is decoupled
     sliderCustomLnf.reset();
     
-    // Safely drop the raw reference completely 
-    ctrlrSlider.setLookAndFeel(nullptr);
+    // 5. Explicitly clear the pointer before the temporaryShield goes out of scope.
+    ctrlrSlider.setLookAndFeel (nullptr);
 }
 
 void CtrlrSlider::resized()
