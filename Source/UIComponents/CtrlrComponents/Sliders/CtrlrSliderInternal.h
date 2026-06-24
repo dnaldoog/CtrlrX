@@ -44,11 +44,11 @@ class CtrlrSliderLookAndFeel_V2 : public LookAndFeel_V2
 			return (tb);
 		}
 
-        ~CtrlrSliderLookAndFeel_V2() override
-    {
+                //     ~CtrlrSliderLookAndFeel_V2() override
+                // {
 
-        juce::ImageCache::releaseUnusedImages();
-    }
+                //     juce::ImageCache::releaseUnusedImages();
+                // }
 
 		Label* createSliderTextBox (Slider& slider)
 		{
@@ -115,12 +115,12 @@ public:
         tb->setColour (TextButton::textColourOffId, VAR2COLOUR(ownerTree.getProperty(Ids::uiSliderIncDecTextColour)));
         return (tb);
     }
-~CtrlrSliderLookAndFeel_V3() override
-    {
-        // Force JUCE to drop any cached vector path data built by this skin
-        // before the memory address is unmapped!
-       juce::ImageCache::releaseUnusedImages();
-    }
+            // ~CtrlrSliderLookAndFeel_V3() override
+            //     {
+            //         // Force JUCE to drop any cached vector path data built by this skin
+            //         // before the memory address is unmapped!
+            //        juce::ImageCache::releaseUnusedImages();
+            //     }
 
     Label* createSliderTextBox (Slider& slider)
     {
@@ -187,13 +187,13 @@ public:
         tb->setColour (TextButton::textColourOffId, VAR2COLOUR(ownerTree.getProperty(Ids::uiSliderIncDecTextColour)));
         return (tb);
     }
-        ~CtrlrSliderLookAndFeel_V4() override
-            {
-                // Force JUCE to drop any cached vector path data built by this skin
-                // before the memory address is unmapped!
-                juce::ImageCache::releaseUnusedImages();
-            }
-    Label* createSliderTextBox (Slider& slider)
+                //     ~CtrlrSliderLookAndFeel_V4() override
+                //         {
+                //             // Force JUCE to drop any cached vector path data built by this skin
+                //             // before the memory address is unmapped!
+                //             juce::ImageCache::releaseUnusedImages();
+                //         }
+     Label* createSliderTextBox (Slider& slider)
     {
         Label* const l = new Label();
         l->setFont(owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString (ownerTree.getProperty(Ids::uiSliderValueFont)));

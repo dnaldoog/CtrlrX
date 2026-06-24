@@ -128,30 +128,22 @@ class CtrlrApplication : public JUCEApplication
 						filterWindow->openFileFromCli (File(commandLineParameters.unquoted()));
                 }
 
-void shutdown() override
-{
-    _DBG("CtrlrApplication::shutdown");
-    
-    if (filterWindow)
-    {
-        // 1. Tell the window to let go of the skin pointer before it dies
-        filterWindow->setLookAndFeel(nullptr);
+				void shutdown() override
+				{
+					_DBG("CtrlrApplication::shutdown");
+					
+					if (filterWindow)
+					{
+						deleteAndZero (filterWindow);
+					}
 
-        // 2. Safely dismantle the window panels, saving state natively
-        deleteAndZero (filterWindow);
-    }
+					// 1. Completely break any global LookAndFeel associations
+					juce::LookAndFeel::setDefaultLookAndFeel (nullptr);
 
-    // 3. Now that the window is dead, wipe out our tracking wrapper.
-    // Because the sliders were bound directly to this instance, their 
-    // cached paths are completely destroyed right here!
-    if (safeAppLnfFallback != nullptr)
-    {
-        safeAppLnfFallback.reset();
-    }
-
-    // 4. Clean out the raster image cache pool
-    juce::ImageCache::releaseUnusedImages();
-}
+					// 2. Force-empty the standard raster and asset cache pools
+					juce::ImageCache::releaseUnusedImages();
+				}
+				
                 const String getApplicationName()
                 {
                         return (ProjectInfo::projectName);

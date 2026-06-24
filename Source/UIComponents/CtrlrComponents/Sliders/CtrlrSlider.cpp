@@ -349,19 +349,25 @@ CtrlrSlider::CtrlrSlider(CtrlrModulator & owner)
     bool LegacyMode = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLegacyMode);  
     String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
     
-    if (LegacyMode || panelLnF == "V3") 
+    // If the panel requests a legacy LookAndFeel, allocate it into sliderCustomLnf
+    // and install the pointer. This avoids leaking an unmanaged 'new' LF instance.
+    if (LegacyMode || panelLnF == "V3")
     {
-        setLookAndFeel(new LookAndFeel_V3());
+        sliderCustomLnf = std::make_unique<CtrlrSliderLookAndFeel_V3>(*this, componentTree);
+        setLookAndFeel(sliderCustomLnf.get());
         setProperty(Ids::uiSliderLookAndFeel, "V3");
     }
-    else if (panelLnF == "V2") 
+    else if (panelLnF == "V2")
     {
-        setLookAndFeel(new LookAndFeel_V2());
+        sliderCustomLnf = std::make_unique<CtrlrSliderLookAndFeel_V2>(*this, componentTree);
+        setLookAndFeel(sliderCustomLnf.get());
         setProperty(Ids::uiSliderLookAndFeel, "V2");
     }
-    else if (panelLnF == "V1") 
+    else if (panelLnF == "V1")
     {
-        setLookAndFeel(new LookAndFeel_V1());
+        // If you still need V1 semantics, provide a proper class or fallback to V2/V3 implementation.
+        sliderCustomLnf = std::make_unique<CtrlrSliderLookAndFeel_V3>(*this, componentTree);
+        setLookAndFeel(sliderCustomLnf.get());
         setProperty(Ids::uiSliderLookAndFeel, "V1");
     }
     
@@ -670,32 +676,36 @@ const String CtrlrSlider::getComponentText()
 
 void CtrlrSlider::customLookAndFeelChanged(LookAndFeelBase* customLookAndFeel)
 {
-    // 1. Always safely sever the existing relationship first to clear caches
+    // 1. Completely sever the relationship first
     ctrlrSlider.setLookAndFeel(nullptr);
 
     if (customLookAndFeel == nullptr)
     {
         juce::String currentLnfType = getProperty(Ids::uiSliderLookAndFeel).toString();
 
-        // 2. Check if our unique_ptr matches what the component property currently demands.
-        // If the pointer is null, or if the type shifted, re-allocate the specific subclass.
+        // 2. EXPLICITLY RESET THE ACTIVE SMART POINTER FIRST
+        // This forces the old skin class destructor to execute immediately 
+        // while the slider is safely set to nullptr!
+        sliderCustomLnf = nullptr;
+
+        // 3. Flush the image/asset cache immediately after destruction
+        juce::ImageCache::releaseUnusedImages();
+
+        // 4. Now safely allocate the fresh subclass
         if (currentLnfType == "V2")
         {
-            if (sliderCustomLnf == nullptr || dynamic_cast<CtrlrSliderLookAndFeel_V2*>(sliderCustomLnf.get()) == nullptr)
-                sliderCustomLnf = std::make_unique<CtrlrSliderLookAndFeel_V2>(*this, componentTree);
+            sliderCustomLnf = std::make_unique<CtrlrSliderLookAndFeel_V2>(*this, componentTree);
         }
         else if (currentLnfType == "V3" || currentLnfType == "V1")
         {
-            if (sliderCustomLnf == nullptr || dynamic_cast<CtrlrSliderLookAndFeel_V3*>(sliderCustomLnf.get()) == nullptr)
-                sliderCustomLnf = std::make_unique<CtrlrSliderLookAndFeel_V3>(*this, componentTree);
+            sliderCustomLnf = std::make_unique<CtrlrSliderLookAndFeel_V3>(*this, componentTree);
         }
-        else // Fallback or explicit "V4"
+        else 
         {
-            if (sliderCustomLnf == nullptr || dynamic_cast<CtrlrSliderLookAndFeel_V4*>(sliderCustomLnf.get()) == nullptr)
-                sliderCustomLnf = std::make_unique<CtrlrSliderLookAndFeel_V4>(*this, componentTree);
+            sliderCustomLnf = std::make_unique<CtrlrSliderLookAndFeel_V4>(*this, componentTree);
         }
 
-        // 3. Re-seat the slider against our safely managed heap instance
+        // 5. Re-apply the brand new skin cleanly
         if (sliderCustomLnf != nullptr)
         {
             ctrlrSlider.setLookAndFeel(sliderCustomLnf.get());
@@ -703,8 +713,6 @@ void CtrlrSlider::customLookAndFeelChanged(LookAndFeelBase* customLookAndFeel)
     }
     else
     {
-        // If an external look-and-feel pointer was passed explicitly, honor it.
-        // Note: We cast it down to a regular juce::LookAndFeel since setLookAndFeel expects that.
         if (auto* lnf = dynamic_cast<juce::LookAndFeel*> (customLookAndFeel))
         {
             ctrlrSlider.setLookAndFeel(lnf);
