@@ -5,6 +5,7 @@
 #include "CtrlrWindowManagers/CtrlrChildWindowContainer.h"
 #include "CtrlrSettings.h"
 #include "CtrlrHelpWindow.h"
+#include <memory>
 
 class CtrlrManager;
 class CtrlrProcessor;
@@ -181,8 +182,8 @@ class CtrlrEditor  : public AudioProcessorEditor,
 		juce::ScopedPointer<juce::MenuBarComponent> menuBar;
 		// MenuBarComponent *menuBar; // Updated v5.6.34. ScopedPointed will handle its destruction properly
 		
-		// Use a ScopedPointer to manage the current LookAndFeel object
-		ScopedPointer<LookAndFeel> currentLookAndFeel; // Updated v5.6.34. ScopedPointed will handle its destruction properly
+		// Use a std::unique_ptr to manage the current LookAndFeel object (modern replacement)
+		std::unique_ptr<LookAndFeel> currentLookAndFeel; // Updated v5.6.34. unique_ptr will handle its destruction properly
     
 		bool menuHandlerCalled;
 		TooltipWindow tooltipWindow;
