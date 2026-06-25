@@ -472,21 +472,38 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
     {
         ctrlrSlider.setSliderStyle ((Slider::SliderStyle)CtrlrComponentTypeManager::sliderStringToStyle (getProperty (Ids::uiSliderStyle)));
     }
-    else if (property == Ids::uiSliderLookAndFeel)
-    {
-        String LookAndFeelType = getProperty(property);
-        setLookAndFeel(CtrlrSlider::getLookAndFeelFromComponentProperty(LookAndFeelType)); 
+    // else if (property == Ids::uiSliderLookAndFeel)
+    // /*LookAndFeel changed here from property*/
+    // {
+    //     String LookAndFeelType = getProperty(property);
+    //     setLookAndFeel(CtrlrSlider::getLookAndFeelFromComponentProperty(LookAndFeelType)); 
+    //     /*Ctrlr Coponent's own set and feel inherited on *this
+    //     getLookAndFeelFromComponentProperty() passed directly in, with no capture anywhere.
+    //     */
+    //     if (LookAndFeelType == "Default")
+    //     {
+    //         setProperty(Ids::uiSliderLookAndFeelIsCustom, false); 
+    //     }
         
-        if (LookAndFeelType == "Default")
-        {
-            setProperty(Ids::uiSliderLookAndFeelIsCustom, false); 
-        }
-        
-        if (!getProperty(Ids::uiSliderLookAndFeelIsCustom))
-        {
-            CtrlrSlider::resetLookAndFeelOverrides(); 
-        }
-    }
+    //     if (!getProperty(Ids::uiSliderLookAndFeelIsCustom))
+    //     {
+    //         CtrlrSlider::resetLookAndFeelOverrides(); 
+    //     }
+    // }
+    // in CtrlrSlider.cpp, valueTreePropertyChanged():
+else if (property == Ids::uiSliderLookAndFeel)
+{
+    String LookAndFeelType = getProperty(property);
+
+    defaultLookAndFeel.reset(CtrlrSlider::getLookAndFeelFromComponentProperty(LookAndFeelType));
+    setLookAndFeel(defaultLookAndFeel.get());
+
+    if (LookAndFeelType == "Default")
+        setProperty(Ids::uiSliderLookAndFeelIsCustom, false);
+
+    if (!getProperty(Ids::uiSliderLookAndFeelIsCustom))
+        CtrlrSlider::resetLookAndFeelOverrides();
+}
     else if (property == Ids::uiSliderRotaryFillColour)
     {
         ctrlrSlider.setColour (Slider::rotarySliderFillColourId, VAR2COLOUR(getProperty (Ids::uiSliderRotaryFillColour)) );

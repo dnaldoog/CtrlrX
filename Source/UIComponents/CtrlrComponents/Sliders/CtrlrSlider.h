@@ -85,6 +85,7 @@ public:
     JUCE_LEAK_DETECTOR(CtrlrSlider)
 
 private:
+std::unique_ptr<LookAndFeel> defaultLookAndFeel;   // owns whatever uiSliderLookAndFeel produces
     CtrlrSliderLookAndFeel_V2 lf;
     CtrlrSliderLookAndFeel_V2 lfV2;
     CtrlrSliderLookAndFeel_V3 lfV3;
