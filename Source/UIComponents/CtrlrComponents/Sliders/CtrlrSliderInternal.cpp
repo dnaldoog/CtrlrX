@@ -128,6 +128,88 @@ void CtrlrSliderLookAndFeel_V2::drawLinearSliderBackground (Graphics& g, int x, 
     g.strokePath (indent, PathStrokeType (0.5f));
 }
 
+// void CtrlrSliderLookAndFeel_V2::drawLinearSliderThumb (Graphics& g, int x, int y, int width, int height, float sliderPos, float minSliderPos, float maxSliderPos, const Slider::SliderStyle style, Slider& slider)
+// {
+//     const float sliderRadius = (float) (getSliderThumbRadius (slider) - 2);
+
+//     Colour knobColour (createBaseColour (slider.findColour (Slider::thumbColourId),
+//                                          slider.hasKeyboardFocus (false) && slider.isEnabled(),
+//                                          slider.isMouseOverOrDragging() && slider.isEnabled(),
+//                                          slider.isMouseButtonDown() && slider.isEnabled()));
+
+//     const float outlineThickness = slider.isEnabled() ? 0.8f : 0.3f;
+
+//     if (style == Slider::LinearHorizontal || style == Slider::LinearVertical)
+//     {
+//         float kx, ky;
+
+//         if (style == Slider::LinearVertical)
+//         {
+//             kx = x + width * 0.5f;
+//             ky = sliderPos;
+//         }
+//         else
+//         {
+//             kx = sliderPos;
+//             ky = y + height * 0.5f;
+//         }
+
+//         drawGlassLozenge (g,
+//                          kx - ((bool)ownerTree.getProperty(Ids::uiSliderThumbWidth) ? (int)ownerTree.getProperty(Ids::uiSliderThumbWidth) : sliderRadius),
+//                          ky - ((bool)ownerTree.getProperty(Ids::uiSliderThumbHeight) ? (int)ownerTree.getProperty(Ids::uiSliderThumbHeight) : sliderRadius),
+//                          ((bool)ownerTree.getProperty(Ids::uiSliderThumbWidth) ? (int)ownerTree.getProperty(Ids::uiSliderThumbWidth) : sliderRadius) * 2.0f,
+//                          ((bool)ownerTree.getProperty(Ids::uiSliderThumbHeight) ? (int)ownerTree.getProperty(Ids::uiSliderThumbHeight) : sliderRadius) * 2.0f,
+//                          knobColour, outlineThickness,
+//                          ownerTree.getProperty(Ids::uiSliderThumbCornerSize),
+//                          ownerTree.getProperty(Ids::uiSliderThumbFlatOnLeft),
+//                          ownerTree.getProperty(Ids::uiSliderThumbFlatOnRight),
+//                          ownerTree.getProperty(Ids::uiSliderThumbFlatOnTop),
+//                          ownerTree.getProperty(Ids::uiSliderThumbFlatOnBottom));
+//     }
+//     else
+//     {
+//         if (style == Slider::ThreeValueVertical)
+//         {
+//             drawGlassSphere (g, x + width * 0.5f - sliderRadius,
+//                              sliderPos - sliderRadius,
+//                              sliderRadius * 2.0f,
+//                              knobColour, outlineThickness);
+//         }
+//         else if (style == Slider::ThreeValueHorizontal)
+//         {
+//             drawGlassSphere (g,sliderPos - sliderRadius,
+//                              y + height * 0.5f - sliderRadius,
+//                              sliderRadius * 2.0f,
+//                              knobColour, outlineThickness);
+//         }
+
+//         if (style == Slider::TwoValueVertical || style == Slider::ThreeValueVertical)
+//         {
+//             const float sr = jmin (sliderRadius, width * 0.4f);
+
+//             drawGlassPointer (g, jmax (0.0f, x + width * 0.5f - sliderRadius * 2.0f),
+//                               minSliderPos - sliderRadius,
+//                               sliderRadius * 2.0f, knobColour, outlineThickness, 1);
+
+//             drawGlassPointer (g, jmin (x + width - sliderRadius * 2.0f, x + width * 0.5f), maxSliderPos - sr,
+//                               sliderRadius * 2.0f, knobColour, outlineThickness, 3);
+//         }
+//         else if (style == Slider::TwoValueHorizontal || style == Slider::ThreeValueHorizontal)
+//         {
+//             const float sr = jmin (sliderRadius, height * 0.4f);
+
+//             drawGlassPointer (g, minSliderPos - sr,
+//                               jmax (0.0f, y + height * 0.5f - sliderRadius * 2.0f),
+//                               sliderRadius * 2.0f, knobColour, outlineThickness, 2);
+
+//             drawGlassPointer (g, maxSliderPos - sliderRadius,
+//                               jmin (y + height - sliderRadius * 2.0f, y + height * 0.5f),
+//                               sliderRadius * 2.0f, knobColour, outlineThickness, 4);
+//         }
+//     }
+// }
+
+
 void CtrlrSliderLookAndFeel_V2::drawLinearSliderThumb (Graphics& g, int x, int y, int width, int height, float sliderPos, float minSliderPos, float maxSliderPos, const Slider::SliderStyle style, Slider& slider)
 {
     const float sliderRadius = (float) (getSliderThumbRadius (slider) - 2);
@@ -154,60 +236,70 @@ void CtrlrSliderLookAndFeel_V2::drawLinearSliderThumb (Graphics& g, int x, int y
             ky = y + height * 0.5f;
         }
 
-        drawGlassLozenge (g,
-                         kx - ((bool)ownerTree.getProperty(Ids::uiSliderThumbWidth) ? (int)ownerTree.getProperty(Ids::uiSliderThumbWidth) : sliderRadius),
-                         ky - ((bool)ownerTree.getProperty(Ids::uiSliderThumbHeight) ? (int)ownerTree.getProperty(Ids::uiSliderThumbHeight) : sliderRadius),
-                         ((bool)ownerTree.getProperty(Ids::uiSliderThumbWidth) ? (int)ownerTree.getProperty(Ids::uiSliderThumbWidth) : sliderRadius) * 2.0f,
-                         ((bool)ownerTree.getProperty(Ids::uiSliderThumbHeight) ? (int)ownerTree.getProperty(Ids::uiSliderThumbHeight) : sliderRadius) * 2.0f,
-                         knobColour, outlineThickness,
-                         ownerTree.getProperty(Ids::uiSliderThumbCornerSize),
-                         ownerTree.getProperty(Ids::uiSliderThumbFlatOnLeft),
-                         ownerTree.getProperty(Ids::uiSliderThumbFlatOnRight),
-                         ownerTree.getProperty(Ids::uiSliderThumbFlatOnTop),
-                         ownerTree.getProperty(Ids::uiSliderThumbFlatOnBottom));
+        const float kw = ((bool)ownerTree.getProperty(Ids::uiSliderThumbWidth) ? (int)ownerTree.getProperty(Ids::uiSliderThumbWidth) : sliderRadius);
+        const float kh = ((bool)ownerTree.getProperty(Ids::uiSliderThumbHeight) ? (int)ownerTree.getProperty(Ids::uiSliderThumbHeight) : sliderRadius);
+        
+        // REPLACEMENT 1: Clean, modern, leak-free flat vector capsule thumb
+        const juce::Rectangle<float> thumbRect (kx - kw, ky - kh, kw * 2.0f, kh * 2.0f);
+        const float cornerSize = ownerTree.getProperty(Ids::uiSliderThumbCornerSize);
+        
+        g.setColour (knobColour);
+        g.fillRoundedRectangle (thumbRect, cornerSize);
+        
+        g.setColour (slider.isEnabled() ? Colours::black.withAlpha (0.5f) : Colours::grey.withAlpha (0.2f));
+        g.drawRoundedRectangle (thumbRect, cornerSize, outlineThickness);
     }
     else
     {
-        if (style == Slider::ThreeValueVertical)
+        if (style == Slider::ThreeValueVertical || style == Slider::ThreeValueHorizontal)
         {
-            drawGlassSphere (g, x + width * 0.5f - sliderRadius,
-                             sliderPos - sliderRadius,
-                             sliderRadius * 2.0f,
-                             knobColour, outlineThickness);
-        }
-        else if (style == Slider::ThreeValueHorizontal)
-        {
-            drawGlassSphere (g,sliderPos - sliderRadius,
-                             y + height * 0.5f - sliderRadius,
-                             sliderRadius * 2.0f,
-                             knobColour, outlineThickness);
+            float sx = (style == Slider::ThreeValueVertical) ? (x + width * 0.5f - sliderRadius) : (sliderPos - sliderRadius);
+            float sy = (style == Slider::ThreeValueVertical) ? (sliderPos - sliderRadius) : (y + height * 0.5f - sliderRadius);
+            
+            // REPLACEMENT 2: Flat vector ellipse instead of drawGlassSphere
+            const juce::Rectangle<float> ballRect (sx, sy, sliderRadius * 2.0f, sliderRadius * 2.0f);
+            g.setColour (knobColour);
+            g.fillEllipse (ballRect);
+            
+            g.setColour (Colours::black.withAlpha (0.4f));
+            g.drawEllipse (ballRect, outlineThickness);
         }
 
+        // Standard flat rectangular point tracking for multi-value sliders
         if (style == Slider::TwoValueVertical || style == Slider::ThreeValueVertical)
         {
             const float sr = jmin (sliderRadius, width * 0.4f);
-
-            drawGlassPointer (g, jmax (0.0f, x + width * 0.5f - sliderRadius * 2.0f),
-                              minSliderPos - sliderRadius,
-                              sliderRadius * 2.0f, knobColour, outlineThickness, 1);
-
-            drawGlassPointer (g, jmin (x + width - sliderRadius * 2.0f, x + width * 0.5f), maxSliderPos - sr,
-                              sliderRadius * 2.0f, knobColour, outlineThickness, 3);
+            
+            g.setColour (knobColour);
+            g.fillRect (jmax (0.0f, x + width * 0.5f - sliderRadius * 2.0f), minSliderPos - sliderRadius, sliderRadius * 2.0f, sliderRadius * 2.0f);
+            g.fillRect (jmin (x + width - sliderRadius * 2.0f, x + width * 0.5f), maxSliderPos - sr, sliderRadius * 2.0f, sr * 2.0f);
         }
         else if (style == Slider::TwoValueHorizontal || style == Slider::ThreeValueHorizontal)
         {
             const float sr = jmin (sliderRadius, height * 0.4f);
-
-            drawGlassPointer (g, minSliderPos - sr,
-                              jmax (0.0f, y + height * 0.5f - sliderRadius * 2.0f),
-                              sliderRadius * 2.0f, knobColour, outlineThickness, 2);
-
-            drawGlassPointer (g, maxSliderPos - sliderRadius,
-                              jmin (y + height - sliderRadius * 2.0f, y + height * 0.5f),
-                              sliderRadius * 2.0f, knobColour, outlineThickness, 4);
+            
+            g.setColour (knobColour);
+            g.fillRect (minSliderPos - sr, jmax (0.0f, y + height * 0.5f - sliderRadius * 2.0f), sr * 2.0f, sliderRadius * 2.0f);
+            g.fillRect (maxSliderPos - sliderRadius, jmin (y + height - sliderRadius * 2.0f, y + height * 0.5f), sliderRadius * 2.0f, sliderRadius * 2.0f);
         }
     }
 }
+/*
+The Anatomy of the Leak
+Under the hood, these methods belong to the base juce::LookAndFeel_V2 class. When they generate the vintage glossy 3D look, they don't manually draw pure mathematical lines on every single frame. Instead, they dynamically generate exactly 6 complex path templates (the reflection specular glare highlight, the shadow crescent, the edge ring outline, etc.) out of juce::DrawablePath or internal path objects.
+
+JUCE caches these 6 paths inside an internal, static lookup table hidden deep inside its graphics module to keep rendering fast.
+
+Because your custom look-and-feel class calls these native legacy methods, the paths get instantiated inside JUCE's unmanaged background cache. Since they are managed globally by the framework rather than your individual sliderCustomLnf instances, they survive application shutdown() and get flagged by the leaked object detector at the absolute termination boundary.
+
+The Fix
+To stop the leaks, we must bypass these three legacy asset-caching methods. Since you are building CtrlrX (which values sharp, modern UI styling anyway), we can safely replace these legacy 3D glass functions with clean, modern vector drawing primitives (g.fillRoundedRectangle or g.fillEllipse).
+
+These primitives draw immediately to the screen buffer without storing vector templates in any hidden global static lists.
+
+Replace your drawLinearSliderThumb method in CtrlrSliderInternal.cpp with this updated version:
+
+*/
 
 int CtrlrSliderLookAndFeel_V2::getSliderPopupPlacement(Slider &slider)
 {

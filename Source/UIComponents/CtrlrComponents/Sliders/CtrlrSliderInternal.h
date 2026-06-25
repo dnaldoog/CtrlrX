@@ -33,7 +33,8 @@ class CtrlrSliderLookAndFeel_V2 : public LookAndFeel_V2
 
 		Button *createSliderButton (Slider&, bool isIncrement)
 		{
-			TextButton *tb = new TextButton (isIncrement ? "+" : "-", "");
+            auto* tb = new juce::TextButton (isIncrement ? "+" : "-", "");
+			//TextButton *tb = new TextButton (isIncrement ? "+" : "-", "");
     // Removed: tb->setLookAndFeel(&LookAndFeel::getDefaultLookAndFeel());
     // This button should inherit its LookAndFeel from its parent component,
     // not be explicitly wired to whatever JUCE's static default happens to be

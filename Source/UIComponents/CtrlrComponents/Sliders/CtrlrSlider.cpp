@@ -72,6 +72,7 @@ CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
 
 CtrlrSlider::~CtrlrSlider()
 {
+    _DBG("XXX CtrlrSlider::~CtrlrSlider");
     componentTree.removeListener (this);
 }
 
