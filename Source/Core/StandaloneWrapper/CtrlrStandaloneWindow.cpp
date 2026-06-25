@@ -80,7 +80,7 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow (const String& title, const Colour&
                 }
             }
 
-            setContentOwned (editor, false);
+            setContentOwned (editor, true);
         }
         else
         {
@@ -169,10 +169,23 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow (const String& title, const Colour&
 
 CtrlrStandaloneWindow::~CtrlrStandaloneWindow()
 {
-    ctrlrProcessor->removeChangeListener(this);
-    ctrlrProcessor->getManager().removeActionListener (this);
-    saveStateNow(); // Save safely while objects are alive
-    deleteFilter(); // Destroy objects second
+    // 1. Unlink listeners immediately so no messages fly around during teardown
+    if (ctrlrProcessor != nullptr)
+    {
+        ctrlrProcessor->removeChangeListener(this);
+        ctrlrProcessor->getManager().removeActionListener (this);
+    }
+    
+    // 2. Save the application state safely while everything is functional
+    saveStateNow(); 
+    
+    // 3. FLATTEN THE UI CANVAS FIRST
+    // This safely fires ~CtrlrPanel(), ~CtrlrSlider(), and unlinks look-and-feels
+    deleteEditor(); 
+    
+    // 4. TERMINATE THE BACKEND LAST
+    // Once no UI components exist to poll memory, drop the filter engine safely
+    deleteProcessor();
 }
 
 void CtrlrStandaloneWindow::actionListenerCallback(const String &message)
@@ -217,16 +230,63 @@ void CtrlrStandaloneWindow::saveStateNow()
 	}
 }
 
+// void CtrlrStandaloneWindow::deleteFilter()
+// {
+//     if (filter != 0 && getContentComponent() != 0)
+//     {
+//         filter->editorBeingDeleted (dynamic_cast <AudioProcessorEditor*> (getContentComponent()));
+// 		clearContentComponent ();
+//     }
+
+//     deleteAndZero (filter);
+// }
 void CtrlrStandaloneWindow::deleteFilter()
 {
-    if (filter != 0 && getContentComponent() != 0)
+    if (filter != nullptr && getContentComponent() != nullptr)
     {
-        filter->editorBeingDeleted (dynamic_cast <AudioProcessorEditor*> (getContentComponent()));
-		clearContentComponent ();
+        auto* editor = dynamic_cast <AudioProcessorEditor*> (getContentComponent());
+        
+        filter->editorBeingDeleted (editor);
+        
+        // Sever the relationship so the window forgets the component
+        clearContentComponent();
+        
+        // Delete the UI layout cleanly
+        delete editor;
     }
 
     deleteAndZero (filter);
 }
+
+void CtrlrStandaloneWindow::deleteEditor()
+{
+    if (getContentComponent() != nullptr)
+    {
+        auto* editor = dynamic_cast<juce::AudioProcessorEditor*> (getContentComponent());
+        
+        // 1. Tell the filter backend the editor is going away
+        if (filter != nullptr && editor != nullptr)
+        {
+            filter->editorBeingDeleted (editor);
+        }
+        
+        // 2. Clear the component. Because we set 'deleteWhenRemoved' to true 
+        // in the constructor, this single call will now cleanly and safely 
+        // trigger the entire UI destruction tree (including your lightweight ~CtrlrSlider)!
+        clearContentComponent();
+    }
+}
+
+
+void CtrlrStandaloneWindow::deleteProcessor()
+{
+    // Destroy the audio filter processor completely
+    if (filter != nullptr)
+    {
+        deleteAndZero (filter);
+    }
+}
+
 
 PropertySet* CtrlrStandaloneWindow::getGlobalSettings()
 {

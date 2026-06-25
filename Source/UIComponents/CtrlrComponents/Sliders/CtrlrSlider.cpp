@@ -7,7 +7,9 @@
 #include "CtrlrModulator/CtrlrModulator.h"
 #include "Lua/JuceClasses/LLookAndFeel.h"
 
-
+#ifdef CTLRX_DISABLE_DYNAMIC_LNF
+  #define CTLRX_DISABLE_DYNAMIC_LNF 0
+#endif
 #if CTLRX_DISABLE_DYNAMIC_LNF
 // ============================================================================
 // LIGHTWEIGHT 5.3 FORK PATHWAY
@@ -18,6 +20,7 @@ CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
         lf(*this, componentTree), // Ensure this matches your 5.3 header variable name & constructor signature
         ctrlrSlider (*this)
 {
+    _DBG("Create LIGHTWEIGHT CtrlrSlider::CtrlrSlider");
     setColour (TooltipWindow::textColourId, Colours::red);
     addAndMakeVisible (&ctrlrSlider);
 
@@ -72,7 +75,17 @@ CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
 
 CtrlrSlider::~CtrlrSlider()
 {
-    _DBG("XXX CtrlrSlider::~CtrlrSlider");
+    _DBG("LIGHTWEIGHT DTOR CtrlrSlider::~CtrlrSlider");
+    
+    // 1. Forcefully break the LookAndFeel binding immediately!
+    ctrlrSlider.setLookAndFeel(nullptr);
+    
+    // 2. Clear out your smart pointer manually to ensure it drops the object
+    // 2. Only reset the unique_ptr if it actually exists in this build configuration
+    #if CTLRX_DISABLE_DYNAMIC_LNF <= 0  // or whatever your macro syntax is for "enabled"
+    sliderCustomLnf = nullptr;
+    #endif
+
     componentTree.removeListener (this);
 }
 
@@ -418,6 +431,7 @@ CtrlrSlider::CtrlrSlider(CtrlrModulator & owner)
 
 CtrlrSlider::~CtrlrSlider()
 {
+    _DBG("EXPERIMENTAL DTOR CtrlrSlider::~CtrlrSlider");
     // 1. Create a local, sterile LookAndFeel instance right on the stack.
     // LookAndFeel_V2 uses basic rendering with zero shared vector caches.
     juce::LookAndFeel_V2 temporaryShield;

@@ -49,6 +49,8 @@ class CtrlrStandaloneWindow	: public DocumentWindow, public ActionListener, publ
 		AudioProcessor *filter;
 		CtrlrProcessor *ctrlrProcessor;
 		ApplicationProperties *appProperties;
+        void deleteProcessor();
+        void deleteEditor();
 		void deleteFilter();
 };
 

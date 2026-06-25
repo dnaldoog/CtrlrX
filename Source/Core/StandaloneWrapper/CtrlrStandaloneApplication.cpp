@@ -128,22 +128,45 @@ class CtrlrApplication : public JUCEApplication
 						filterWindow->openFileFromCli (File(commandLineParameters.unquoted()));
                 }
 
-				void shutdown() override
-				{
-					_DBG("CtrlrApplication::shutdown");
-					
-					if (filterWindow)
-					{
-						deleteAndZero (filterWindow);
-					}
+void shutdown() override
+{
+    _DBG("CtrlrApplication::shutdown");
+    
+    // 1. Fully destroy the main window frame and editor component trees
+    if (filterWindow != nullptr)
+    {
+        deleteAndZero (filterWindow);
+    }
 
-					// 1. Completely break any global LookAndFeel associations
-					juce::LookAndFeel::setDefaultLookAndFeel (nullptr);
+    // 2. Sever all active look-and-feel associations
+    juce::LookAndFeel::setDefaultLookAndFeel (nullptr);
+    
+    if (juce::MessageManager::getInstanceWithoutCreating() != nullptr)
+    {
+        juce::Desktop::getInstance().setDefaultLookAndFeel (nullptr);
+    }
 
-					// 2. Force-empty the standard raster and asset cache pools
-					juce::ImageCache::releaseUnusedImages();
-				}
-				
+    // 3. Clear core unmanaged graphics memory pools
+    juce::ImageCache::releaseUnusedImages();
+    
+    // 4. THE DEEP CLEAN FLUSH FOR THE BUBBLE COMPONENT:
+    // Sometimes a single event loop tick isn't enough if a component uses 
+    // asynchronous 'safe-deletion' (Component::safeDelete). Running the loop 
+    // for a few consecutive iterations guarantees that the BubbleComponent 
+    // gets cleared from the native Desktop window pool.
+    if (auto* mm = juce::MessageManager::getInstanceWithoutCreating())
+    {
+        for (int i = 0; i < 5; ++i)
+        {
+            mm->runDispatchLoopUntil (1); // Give it 1ms per iteration to flush pending deletions
+        }
+    }
+
+    // 5. Final safety sweep for singletons
+    juce::DeletedAtShutdown::deleteAll();
+	// Set the default look and feel to an empty structure or null out the reference cache
+	juce::LookAndFeel::setDefaultLookAndFeel (nullptr);
+}
                 const String getApplicationName()
                 {
                         return (ProjectInfo::projectName);

@@ -128,88 +128,6 @@ void CtrlrSliderLookAndFeel_V2::drawLinearSliderBackground (Graphics& g, int x, 
     g.strokePath (indent, PathStrokeType (0.5f));
 }
 
-// void CtrlrSliderLookAndFeel_V2::drawLinearSliderThumb (Graphics& g, int x, int y, int width, int height, float sliderPos, float minSliderPos, float maxSliderPos, const Slider::SliderStyle style, Slider& slider)
-// {
-//     const float sliderRadius = (float) (getSliderThumbRadius (slider) - 2);
-
-//     Colour knobColour (createBaseColour (slider.findColour (Slider::thumbColourId),
-//                                          slider.hasKeyboardFocus (false) && slider.isEnabled(),
-//                                          slider.isMouseOverOrDragging() && slider.isEnabled(),
-//                                          slider.isMouseButtonDown() && slider.isEnabled()));
-
-//     const float outlineThickness = slider.isEnabled() ? 0.8f : 0.3f;
-
-//     if (style == Slider::LinearHorizontal || style == Slider::LinearVertical)
-//     {
-//         float kx, ky;
-
-//         if (style == Slider::LinearVertical)
-//         {
-//             kx = x + width * 0.5f;
-//             ky = sliderPos;
-//         }
-//         else
-//         {
-//             kx = sliderPos;
-//             ky = y + height * 0.5f;
-//         }
-
-//         drawGlassLozenge (g,
-//                          kx - ((bool)ownerTree.getProperty(Ids::uiSliderThumbWidth) ? (int)ownerTree.getProperty(Ids::uiSliderThumbWidth) : sliderRadius),
-//                          ky - ((bool)ownerTree.getProperty(Ids::uiSliderThumbHeight) ? (int)ownerTree.getProperty(Ids::uiSliderThumbHeight) : sliderRadius),
-//                          ((bool)ownerTree.getProperty(Ids::uiSliderThumbWidth) ? (int)ownerTree.getProperty(Ids::uiSliderThumbWidth) : sliderRadius) * 2.0f,
-//                          ((bool)ownerTree.getProperty(Ids::uiSliderThumbHeight) ? (int)ownerTree.getProperty(Ids::uiSliderThumbHeight) : sliderRadius) * 2.0f,
-//                          knobColour, outlineThickness,
-//                          ownerTree.getProperty(Ids::uiSliderThumbCornerSize),
-//                          ownerTree.getProperty(Ids::uiSliderThumbFlatOnLeft),
-//                          ownerTree.getProperty(Ids::uiSliderThumbFlatOnRight),
-//                          ownerTree.getProperty(Ids::uiSliderThumbFlatOnTop),
-//                          ownerTree.getProperty(Ids::uiSliderThumbFlatOnBottom));
-//     }
-//     else
-//     {
-//         if (style == Slider::ThreeValueVertical)
-//         {
-//             drawGlassSphere (g, x + width * 0.5f - sliderRadius,
-//                              sliderPos - sliderRadius,
-//                              sliderRadius * 2.0f,
-//                              knobColour, outlineThickness);
-//         }
-//         else if (style == Slider::ThreeValueHorizontal)
-//         {
-//             drawGlassSphere (g,sliderPos - sliderRadius,
-//                              y + height * 0.5f - sliderRadius,
-//                              sliderRadius * 2.0f,
-//                              knobColour, outlineThickness);
-//         }
-
-//         if (style == Slider::TwoValueVertical || style == Slider::ThreeValueVertical)
-//         {
-//             const float sr = jmin (sliderRadius, width * 0.4f);
-
-//             drawGlassPointer (g, jmax (0.0f, x + width * 0.5f - sliderRadius * 2.0f),
-//                               minSliderPos - sliderRadius,
-//                               sliderRadius * 2.0f, knobColour, outlineThickness, 1);
-
-//             drawGlassPointer (g, jmin (x + width - sliderRadius * 2.0f, x + width * 0.5f), maxSliderPos - sr,
-//                               sliderRadius * 2.0f, knobColour, outlineThickness, 3);
-//         }
-//         else if (style == Slider::TwoValueHorizontal || style == Slider::ThreeValueHorizontal)
-//         {
-//             const float sr = jmin (sliderRadius, height * 0.4f);
-
-//             drawGlassPointer (g, minSliderPos - sr,
-//                               jmax (0.0f, y + height * 0.5f - sliderRadius * 2.0f),
-//                               sliderRadius * 2.0f, knobColour, outlineThickness, 2);
-
-//             drawGlassPointer (g, maxSliderPos - sliderRadius,
-//                               jmin (y + height - sliderRadius * 2.0f, y + height * 0.5f),
-//                               sliderRadius * 2.0f, knobColour, outlineThickness, 4);
-//         }
-//     }
-// }
-
-
 void CtrlrSliderLookAndFeel_V2::drawLinearSliderThumb (Graphics& g, int x, int y, int width, int height, float sliderPos, float minSliderPos, float maxSliderPos, const Slider::SliderStyle style, Slider& slider)
 {
     const float sliderRadius = (float) (getSliderThumbRadius (slider) - 2);
@@ -375,31 +293,31 @@ void CtrlrSliderLookAndFeel_V3::drawLinearSliderBackground (Graphics& g, int x, 
 
 void CtrlrSliderLookAndFeel_V3::drawLinearSliderThumb (Graphics& g, int x, int y, int width, int height, float sliderPos, float minSliderPos, float maxSliderPos, const Slider::SliderStyle style, Slider& slider)
 {
-    // Removed unused variables to prevent Visual Studio warnings
     Colour knobColour (createBaseColour (slider.findColour (Slider::thumbColourId),
                                          slider.hasKeyboardFocus (false) && slider.isEnabled(),
                                          slider.isMouseOverOrDragging() && slider.isEnabled(),
                                          slider.isMouseButtonDown() && slider.isEnabled()));
 
-    // Removed: const float sliderRadius = (float) (getSliderThumbRadius (slider) - 2);
-    // Removed: const float outlineThickness = slider.isEnabled() ? 0.8f : 0.3f;
+    const float sliderRadius = (float) (getSliderThumbRadius (slider) - 2);
+    const float outlineThickness = slider.isEnabled() ? 0.8f : 0.3f;
 
     if (style == Slider::LinearHorizontal || style == Slider::LinearVertical)
     {
-        float kx, ky;
+        float kx = (style == Slider::LinearVertical) ? (x + width * 0.5f) : sliderPos;
+        float ky = (style == Slider::LinearVertical) ? sliderPos : (y + height * 0.5f);
 
-        if (style == Slider::LinearVertical)
-        {
-            kx = x + width * 0.5f;
-            ky = sliderPos;
-        }
-        else
-        {
-            kx = sliderPos;
-            ky = y + height * 0.5f;
-        }
+        const float kw = ((bool)ownerTree.getProperty(Ids::uiSliderThumbWidth) ? (int)ownerTree.getProperty(Ids::uiSliderThumbWidth) : sliderRadius);
+        const float kh = ((bool)ownerTree.getProperty(Ids::uiSliderThumbHeight) ? (int)ownerTree.getProperty(Ids::uiSliderThumbHeight) : sliderRadius);
+        
+        const juce::Rectangle<float> thumbRect (kx - kw, ky - kh, kw * 2.0f, kh * 2.0f);
+        const float cornerSize = ownerTree.getProperty(Ids::uiSliderThumbCornerSize);
+        
+        g.setColour (knobColour);
+        g.fillRoundedRectangle (thumbRect, cornerSize);
+        
+        g.setColour (slider.isEnabled() ? Colours::black.withAlpha (0.5f) : Colours::grey.withAlpha (0.2f));
+        g.drawRoundedRectangle (thumbRect, cornerSize, outlineThickness);
     }
-    // No custom thumb drawing logic intended here, so no other code added.
 }
 
 int CtrlrSliderLookAndFeel_V3::getSliderPopupPlacement(Slider &slider)
@@ -476,33 +394,32 @@ void CtrlrSliderLookAndFeel_V4::drawLinearSliderBackground (Graphics& g, int x, 
 
 void CtrlrSliderLookAndFeel_V4::drawLinearSliderThumb (Graphics& g, int x, int y, int width, int height, float sliderPos, float minSliderPos, float maxSliderPos, const Slider::SliderStyle style, Slider& slider)
 {
-    // Removed unused variables to prevent Visual Studio warnings
     Colour knobColour (createBaseColour (slider.findColour (Slider::thumbColourId),
                                          slider.hasKeyboardFocus (false) && slider.isEnabled(),
                                          slider.isMouseOverOrDragging() && slider.isEnabled(),
                                          slider.isMouseButtonDown() && slider.isEnabled()));
 
-    // Removed: const float sliderRadius = (float) (getSliderThumbRadius (slider) - 2);
-    // Removed: const float outlineThickness = slider.isEnabled() ? 0.8f : 0.3f;
+    const float sliderRadius = (float) (getSliderThumbRadius (slider) - 2);
+    const float outlineThickness = slider.isEnabled() ? 0.8f : 0.3f;
 
     if (style == Slider::LinearHorizontal || style == Slider::LinearVertical)
     {
-        float kx, ky;
+        float kx = (style == Slider::LinearVertical) ? (x + width * 0.5f) : sliderPos;
+        float ky = (style == Slider::LinearVertical) ? sliderPos : (y + height * 0.5f);
 
-        if (style == Slider::LinearVertical)
-        {
-            kx = x + width * 0.5f;
-            ky = sliderPos;
-        }
-        else
-        {
-            kx = sliderPos;
-            ky = y + height * 0.5f;
-        }
+        const float kw = ((bool)ownerTree.getProperty(Ids::uiSliderThumbWidth) ? (int)ownerTree.getProperty(Ids::uiSliderThumbWidth) : sliderRadius);
+        const float kh = ((bool)ownerTree.getProperty(Ids::uiSliderThumbHeight) ? (int)ownerTree.getProperty(Ids::uiSliderThumbHeight) : sliderRadius);
+        
+        const juce::Rectangle<float> thumbRect (kx - kw, ky - kh, kw * 2.0f, kh * 2.0f);
+        const float cornerSize = ownerTree.getProperty(Ids::uiSliderThumbCornerSize);
+        
+        g.setColour (knobColour);
+        g.fillRoundedRectangle (thumbRect, cornerSize);
+        
+        g.setColour (slider.isEnabled() ? Colours::black.withAlpha (0.5f) : Colours::grey.withAlpha (0.2f));
+        g.drawRoundedRectangle (thumbRect, cornerSize, outlineThickness);
     }
-    // No custom thumb drawing logic intended here, so no other code added.
 }
-
 int CtrlrSliderLookAndFeel_V4::getSliderPopupPlacement(Slider &slider)
 {
     /* TO FIX
