@@ -331,19 +331,23 @@ CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
     
     if (LegacyMode || panelLnF == "V3") 
     {
-        setLookAndFeel(new LookAndFeel_V3());
-        setProperty(Ids::uiSliderLookAndFeel, "V3");
+    legacyLookAndFeel = std::make_unique<LookAndFeel_V3>();
+    setLookAndFeel(legacyLookAndFeel.get());
+    setProperty(Ids::uiSliderLookAndFeel, "V3");
     }
     else if (panelLnF == "V2") 
     {
-        setLookAndFeel(new LookAndFeel_V2());
-        setProperty(Ids::uiSliderLookAndFeel, "V2");
+    legacyLookAndFeel = std::make_unique<LookAndFeel_V2>();
+    setLookAndFeel(legacyLookAndFeel.get());
+    setProperty(Ids::uiSliderLookAndFeel, "V2");;
     }
     else if (panelLnF == "V1") 
     {
-        setLookAndFeel(new LookAndFeel_V1());
-        setProperty(Ids::uiSliderLookAndFeel, "V1");
+    legacyLookAndFeel = std::make_unique<LookAndFeel_V1>();
+    setLookAndFeel(legacyLookAndFeel.get());
+    setProperty(Ids::uiSliderLookAndFeel, "V1");
     }
+
     
     if ( panelLnF == "V3" || panelLnF == "V2" || panelLnF == "V1" )
     {
@@ -474,8 +478,9 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
     }
     else if (property == Ids::uiSliderLookAndFeel)
     {
-        String LookAndFeelType = getProperty(property);
-        setLookAndFeel(CtrlrSlider::getLookAndFeelFromComponentProperty(LookAndFeelType)); 
+    String LookAndFeelType = getProperty(property);
+    legacyLookAndFeel.reset(CtrlrSlider::getLookAndFeelFromComponentProperty(LookAndFeelType));
+    setLookAndFeel(legacyLookAndFeel.get());
         
         if (LookAndFeelType == "Default")
         {

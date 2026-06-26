@@ -90,6 +90,7 @@ private:
     CtrlrSliderLookAndFeel_V3 lfV3;
     CtrlrSliderLookAndFeel_V4 lfV4;
     CtrlrSliderInternal ctrlrSlider;
+    std::unique_ptr<LookAndFeel> legacyLookAndFeel;
 };
 
 #endif // CTLRX_DISABLE_DYNAMIC_LNF

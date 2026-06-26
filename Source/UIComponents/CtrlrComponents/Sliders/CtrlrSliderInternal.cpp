@@ -87,7 +87,7 @@ void CtrlrSliderInternal::mouseWheelMove (const MouseEvent &e, const MouseWheelD
 
 
 /* Visual styles for Sliders */
-
+#if 0
 void CtrlrSliderLookAndFeel_V2::drawLinearSliderBackground (Graphics& g, int x, int y, int width, int height, float /*sliderPos*/, float /*minSliderPos*/, float /*maxSliderPos*/, const Slider::SliderStyle /*style*/, Slider& slider)
 {
     const float sliderRadius = (float) (getSliderThumbRadius (slider) - 2);
@@ -439,3 +439,4 @@ Colour CtrlrSliderLookAndFeel_V4::findColour (int colourId) const noexcept
 {
     return (LookAndFeel::findColour (colourId));
 }
+#endif

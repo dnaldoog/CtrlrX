@@ -59,6 +59,9 @@ namespace BinaryData
     extern const char*   FONT_ZX81_ttf;
     const int            FONT_ZX81_ttfSize = 17176;
 
+    extern const char*   kofi_svg;
+    const int            kofi_svgSize = 2391;
+
     extern const char*   github_line_svg;
     const int            github_line_svgSize = 1633;
 
@@ -284,17 +287,20 @@ namespace BinaryData
     extern const char*   CtrlrMIDIVendors_xml;
     const int            CtrlrMIDIVendors_xmlSize = 15061;
 
-    extern const char*   BulkReadWriteDump_md;
-    const int            BulkReadWriteDump_mdSize = 3901;
-
     extern const char*   Expressions_md;
     const int            Expressions_mdSize = 2908;
+
+    extern const char*   BulkReadWriteDump_md;
+    const int            BulkReadWriteDump_mdSize = 3901;
 
     extern const char*   lua_api_patcher_py;
     const int            lua_api_patcher_pySize = 9390;
 
     extern const char*   LuaAPI_xml;
     const int            LuaAPI_xmlSize = 210624;
+
+    extern const char*   luabind_parser_py;
+    const int            luabind_parser_pySize = 9863;
 
     extern const char*   LuaFileOperations_md;
     const int            LuaFileOperations_mdSize = 3521;
@@ -306,7 +312,7 @@ namespace BinaryData
     const int            MidiProgramming_mdSize = 9678;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 99;
+    const int namedResourceListSize = 101;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];
