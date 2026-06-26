@@ -329,22 +329,26 @@ CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
     bool LegacyMode = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLegacyMode);  
     String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
     
+
     if (LegacyMode || panelLnF == "V3") 
-    {
-        setLookAndFeel(new LookAndFeel_V3());
-        setProperty(Ids::uiSliderLookAndFeel, "V3");
-    }
-    else if (panelLnF == "V2") 
-    {
-        setLookAndFeel(new LookAndFeel_V2());
-        setProperty(Ids::uiSliderLookAndFeel, "V2");
-    }
-    else if (panelLnF == "V1") 
-    {
-        setLookAndFeel(new LookAndFeel_V1());
-        setProperty(Ids::uiSliderLookAndFeel, "V1");
-    }
-    
+{
+    defaultLookAndFeel = std::make_unique<LookAndFeel_V3>();
+    setLookAndFeel(defaultLookAndFeel.get());
+    setProperty(Ids::uiSliderLookAndFeel, "V3");
+}
+else if (panelLnF == "V2") 
+{
+    defaultLookAndFeel = std::make_unique<LookAndFeel_V2>();
+    setLookAndFeel(defaultLookAndFeel.get());
+    setProperty(Ids::uiSliderLookAndFeel, "V2");
+}
+else if (panelLnF == "V1") 
+{
+    defaultLookAndFeel = std::make_unique<LookAndFeel_V1>();
+    setLookAndFeel(defaultLookAndFeel.get());
+    setProperty(Ids::uiSliderLookAndFeel, "V1");
+}
+
     if ( panelLnF == "V3" || panelLnF == "V2" || panelLnF == "V1" )
     {
         setSize (64, 64);
@@ -472,25 +476,6 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
     {
         ctrlrSlider.setSliderStyle ((Slider::SliderStyle)CtrlrComponentTypeManager::sliderStringToStyle (getProperty (Ids::uiSliderStyle)));
     }
-    // else if (property == Ids::uiSliderLookAndFeel)
-    // /*LookAndFeel changed here from property*/
-    // {
-    //     String LookAndFeelType = getProperty(property);
-    //     setLookAndFeel(CtrlrSlider::getLookAndFeelFromComponentProperty(LookAndFeelType)); 
-    //     /*Ctrlr Coponent's own set and feel inherited on *this
-    //     getLookAndFeelFromComponentProperty() passed directly in, with no capture anywhere.
-    //     */
-    //     if (LookAndFeelType == "Default")
-    //     {
-    //         setProperty(Ids::uiSliderLookAndFeelIsCustom, false); 
-    //     }
-        
-    //     if (!getProperty(Ids::uiSliderLookAndFeelIsCustom))
-    //     {
-    //         CtrlrSlider::resetLookAndFeelOverrides(); 
-    //     }
-    // }
-    // in CtrlrSlider.cpp, valueTreePropertyChanged():
 else if (property == Ids::uiSliderLookAndFeel)
 {
     String LookAndFeelType = getProperty(property);

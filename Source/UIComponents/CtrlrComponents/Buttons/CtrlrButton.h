@@ -60,6 +60,7 @@ private:
 
     //==============================================================================
     TextButton* ctrlrButton;
+	std::unique_ptr<juce::LookAndFeel> defaultLookAndFeel;
 
     //==============================================================================
     // (prevent copy constructor and operator= being generated..)

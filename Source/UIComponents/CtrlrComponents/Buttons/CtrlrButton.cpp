@@ -303,23 +303,24 @@ CtrlrButton::CtrlrButton (CtrlrModulator &owner)
     bool LegacyMode = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLegacyMode); // Legacy mode flag for version before 5.6.29
     String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
     
-    if (LegacyMode || panelLnF == "V3") // Added v5.6.34. Not really good because it will create a new LnF but won't destroy it so it will lead to memory leaks
-    {
-        setLookAndFeel(new LookAndFeel_V3());
-        setProperty(Ids::uiButtonLookAndFeel, "V3");
-    }
-    
-    else if (panelLnF == "V2") // Added v5.6.34. Not really good because it will create a new LnF but won't destroy it so it will lead to memory leaks
-    {
-        setLookAndFeel(new LookAndFeel_V2());
-        setProperty(Ids::uiButtonLookAndFeel, "V2");
-    }
-    
-    else if (panelLnF == "V1") // Added v5.6.34. Not really good because it will create a new LnF but won't destroy it so it will lead to memory leaks
-    {
-        setLookAndFeel(new LookAndFeel_V1());
-        setProperty(Ids::uiButtonLookAndFeel, "V1");
-    }
+if (LegacyMode || panelLnF == "V3")
+{
+    defaultLookAndFeel = std::make_unique<LookAndFeel_V3>();
+    setLookAndFeel(defaultLookAndFeel.get());
+    setProperty(Ids::uiButtonLookAndFeel, "V3");
+}
+else if (panelLnF == "V2")
+{
+    defaultLookAndFeel = std::make_unique<LookAndFeel_V2>();
+    setLookAndFeel(defaultLookAndFeel.get());
+    setProperty(Ids::uiButtonLookAndFeel, "V2");
+}
+else if (panelLnF == "V1")
+{
+    defaultLookAndFeel = std::make_unique<LookAndFeel_V1>();
+    setLookAndFeel(defaultLookAndFeel.get());
+    setProperty(Ids::uiButtonLookAndFeel, "V1");
+}
     
     if ( panelLnF == "V3"
         || panelLnF == "V2"
@@ -351,9 +352,11 @@ CtrlrButton::CtrlrButton (CtrlrModulator &owner)
 
 CtrlrButton::~CtrlrButton()
 {
+    componentTree.removeListener(this);   // if not already present elsewhere
+    if (ctrlrButton != nullptr)
+        ctrlrButton->setLookAndFeel(nullptr);
     deleteAndZero (ctrlrButton);
 }
-
 //==============================================================================
 void CtrlrButton::paint (Graphics& g)
 {

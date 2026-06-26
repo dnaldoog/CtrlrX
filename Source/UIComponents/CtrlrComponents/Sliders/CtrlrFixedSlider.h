@@ -65,6 +65,7 @@ private:
 
 #endif;
 	ScopedPointer<CtrlrValueMap> valueMap;
+    	std::unique_ptr<juce::LookAndFeel> defaultLookAndFeel;
     //[/UserVariables]
 
     //==============================================================================

@@ -351,23 +351,24 @@ CtrlrFixedSlider::CtrlrFixedSlider (CtrlrModulator &owner)
     bool LegacyMode = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLegacyMode);  // Legacy mode flag for version before 5.6.29
 	String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
 	
-	if (LegacyMode || panelLnF == "V3") // Added v5.6.34. Not really good because it will create a new LnF but won't destroy it so it will lead to memory leaks
-	{
-		setLookAndFeel(new LookAndFeel_V3());
-		setProperty(Ids::uiSliderLookAndFeel, "V3");
-	}
-	
-	else if (panelLnF == "V2") // Added v5.6.34. Not really good because it will create a new LnF but won't destroy it so it will lead to memory leaks
-	{
-		setLookAndFeel(new LookAndFeel_V2());
-		setProperty(Ids::uiSliderLookAndFeel, "V2");
-	}
-	
-	else if (panelLnF == "V1") // Added v5.6.34. Not really good because it will create a new LnF but won't destroy it so it will lead to memory leaks
-	{
-		setLookAndFeel(new LookAndFeel_V1());
-		setProperty(Ids::uiSliderLookAndFeel, "V1");
-	}
+if (LegacyMode || panelLnF == "V3")
+{
+    defaultLookAndFeel = std::make_unique<LookAndFeel_V3>();
+    setLookAndFeel(defaultLookAndFeel.get());
+    setProperty(Ids::uiButtonLookAndFeel, "V3");
+}
+else if (panelLnF == "V2")
+{
+    defaultLookAndFeel = std::make_unique<LookAndFeel_V2>();
+    setLookAndFeel(defaultLookAndFeel.get());
+    setProperty(Ids::uiButtonLookAndFeel, "V2");
+}
+else if (panelLnF == "V1")
+{
+    defaultLookAndFeel = std::make_unique<LookAndFeel_V1>();
+    setLookAndFeel(defaultLookAndFeel.get());
+    setProperty(Ids::uiButtonLookAndFeel, "V1");
+}
 	
 	if ( panelLnF == "V3"
 		|| panelLnF == "V2"
@@ -422,13 +423,10 @@ CtrlrFixedSlider::CtrlrFixedSlider (CtrlrModulator &owner)
 
 CtrlrFixedSlider::~CtrlrFixedSlider()
 {
-    //[Destructor_pre]. You can add your own custom destruction code here..
-    //[/Destructor_pre]
-
+    componentTree.removeListener(this);   // if not already present elsewhere
+    if (ctrlrSlider != nullptr)
+        ctrlrSlider->setLookAndFeel(nullptr);
     deleteAndZero (ctrlrSlider);
-
-    //[Destructor]. You can add your own custom destruction code here..
-    //[/Destructor]
 }
 
 //==============================================================================

@@ -550,27 +550,39 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
                 owner.getCtrlrManagerOwner().getEditor()->activeCtrlrChanged();
             }
         }
-        else if (property == Ids::uiPanelLookAndFeel)
-        {
-            // 1. Create a single new LookAndFeel object and give ownership to a unique_ptr.
-            //    This is the only place we call the function that allocates a new object.
-            auto newLookAndFeel = std::unique_ptr<juce::LookAndFeel>(getLookAndFeelFromDescription(getProperty(property)));
+       else if (property == Ids::uiPanelLookAndFeel)
+{
+    // 1. Create a single new LookAndFeel object and give ownership to a unique_ptr.
+    //    This is the only place we call the function that allocates a new object.
+    auto newLookAndFeel = std::unique_ptr<juce::LookAndFeel>(getLookAndFeelFromDescription(getProperty(property)));
 
-            // 2. Safely check if the pointer is valid. If not, do nothing.
-            if (newLookAndFeel.get() == nullptr)
-                return;
+    // 2. Safely check if the pointer is valid. If not, do nothing.
+    if (newLookAndFeel.get() == nullptr)
+        return;
 
-            // 3. Now, set all the necessary LookAndFeel pointers using this ONE new object.
-            //    The .get() method returns the raw pointer without transferring ownership.
-            getCanvas()->setLookAndFeel(newLookAndFeel.get());
-            setLookAndFeel(newLookAndFeel.get());
-            LookAndFeel::setDefaultLookAndFeel(newLookAndFeel.get());
+    // 3. Now, set all the necessary LookAndFeel pointers using this ONE new object.
+    //    The .get() method returns the raw pointer without transferring ownership.
+    getCanvas()->setLookAndFeel(newLookAndFeel.get());
+    setLookAndFeel(newLookAndFeel.get());
 
-            // 4. Finally, assign the new unique_ptr to the class member.
-            //    This safely manages the lifetime of the new object.
-            lookAndFeel = std::move(newLookAndFeel);
+    // Guard: if the panel's CURRENT lookAndFeel (about to be destroyed by the
+    // std::move below) is still wired in as the desktop default, clear that
+    // first — otherwise JUCE's LookAndFeel destructor assertion fires
+    // (juce_LookAndFeel.cpp:73) once `lookAndFeel` is reassigned.
+    if (lookAndFeel != nullptr
+        && &Desktop::getInstance().getDefaultLookAndFeel() == lookAndFeel.get())
+    {
+        Desktop::getInstance().setDefaultLookAndFeel(nullptr);
+    }
 
-            // lookAndFeelChanged(); // Useless ???
+    LookAndFeel::setDefaultLookAndFeel(newLookAndFeel.get());
+
+    // 4. Finally, assign the new unique_ptr to the class member.
+    //    This safely manages the lifetime of the new object.
+    lookAndFeel = std::move(newLookAndFeel);
+
+    // lookAndFeelChanged(); // Useless ???
+  
             
             if (!getProperty(Ids::uiPanelLegacyMode)) // Added v5.6.30. Protects Legacy panels' BKG Colours when being assigned LnF V3
             {

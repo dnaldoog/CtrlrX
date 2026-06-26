@@ -26,26 +26,29 @@
 namespace juce
 {
 
-DrawableComposite::DrawableComposite()
-    : bounds ({ 0.0f, 0.0f, 100.0f, 100.0f })
-{
-    setContentArea ({ 0.0f, 0.0f, 100.0f, 100.0f });
-}
+    DrawableComposite::DrawableComposite()
+        : bounds({ 0.0f, 0.0f, 100.0f, 100.0f })
+    {
+        DBG("DrawableComposite CTOR " << juce::String::toHexString((juce::pointer_sized_int)this));   // <-- add here
+        setContentArea({ 0.0f, 0.0f, 100.0f, 100.0f });
+    }
 
-DrawableComposite::DrawableComposite (const DrawableComposite& other)
-    : Drawable (other),
-      bounds (other.bounds),
-      contentArea (other.contentArea)
-{
-    for (auto* c : other.getChildren())
-        if (auto* d = dynamic_cast<const Drawable*> (c))
-            addAndMakeVisible (d->createCopy().release());
-}
+    DrawableComposite::DrawableComposite(const DrawableComposite& other)
+        : Drawable(other),
+        bounds(other.bounds),
+        contentArea(other.contentArea)
+    {
+        DBG("DrawableComposite CTOR " << juce::String::toHexString((juce::pointer_sized_int)this));   // <-- already here, keep
+        for (auto* c : other.getChildren())
+            if (auto* d = dynamic_cast<const Drawable*> (c))
+                addAndMakeVisible(d->createCopy().release());
+    }
 
-DrawableComposite::~DrawableComposite()
-{
-    deleteAllChildren();
-}
+    DrawableComposite::~DrawableComposite()
+    {
+        DBG("DrawableComposite DTOR " << juce::String::toHexString((juce::pointer_sized_int)this));   // <-- already here, keep
+        deleteAllChildren();
+    }
 
 std::unique_ptr<Drawable> DrawableComposite::createCopy() const
 {
