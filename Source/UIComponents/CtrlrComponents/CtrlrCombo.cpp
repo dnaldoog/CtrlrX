@@ -13,7 +13,7 @@
 
 CtrlrCombo::CtrlrCombo (CtrlrModulator &owner)
     : CtrlrComponent(owner),
-      lf(*this),
+      //lf(*this),
       ctrlrCombo (nullptr),
       isUpdating (false),
       isSearching (false)
@@ -28,7 +28,12 @@ CtrlrCombo::CtrlrCombo (CtrlrModulator &owner)
     ctrlrCombo->setJustificationType (Justification::centred);
     
     ctrlrCombo->addListener (this);
-	ctrlrCombo->setLookAndFeel (&lf);
+	// ctrlrCombo->setLookAndFeel (&lf);
+    String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
+    applyCentralLookAndFeel (ctrlrCombo, panelLnF);
+        repaint();
+
+
 	componentTree.addListener (this);
 
 	setProperty (Ids::uiComboSearch, false);
@@ -122,30 +127,27 @@ CtrlrCombo::CtrlrCombo (CtrlrModulator &owner)
 
 CtrlrCombo::~CtrlrCombo()
 {
-    // 1. IMPORTANT: Reach into the combo and kill the callback
-    // before 'this' becomes invalid.
     if (ctrlrCombo != nullptr)
     {
-        // Reach in and kill the lambda before 'this' disappears
+        // Unlink from the shared look and feel pipeline before tearing down components
+        ctrlrCombo->setLookAndFeel(nullptr);
+
         for (int i = 0; i < ctrlrCombo->getNumChildComponents(); ++i)
         {
             if (auto* lb = dynamic_cast<juce::Label*> (ctrlrCombo->getChildComponent(i)))
             {
-                lb->onEditorShow = nullptr; // <--- CRITICAL
+                lb->onEditorShow = nullptr; 
                 if (searchListener != nullptr)
                     lb->removeListener (searchListener.get());
             }
         }
     }
 
-    // 2. Existing cleanup
     if (searchListener != nullptr)
     {
         searchListener.reset();
     }
     
-    // 3. Delete the UI component and null the pointer.
-    // deleteAndZero is a JUCE macro that calls 'delete' and sets the pointer to nullptr.
     deleteAndZero (ctrlrCombo);
 }
 
@@ -509,20 +511,10 @@ void CtrlrCombo::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChange
 			updateInternalComponentStyles();
 		}
 	}
-	else if (property == Ids::uiButtonLookAndFeel)
-	{
-		String LookAndFeelType = getProperty(property);
-        setLookAndFeel(getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
-        
-        if (LookAndFeelType == "Default")
-        {
-            setProperty(Ids::uiButtonLookAndFeelIsCustom, false); // Resets the Customized Flag to False to allow Global L&F to apply
-        }
-        
-        if (!getProperty(Ids::uiButtonLookAndFeelIsCustom))
-        {
-            resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
-        }
+else if (property == Ids::uiButtonLookAndFeel || property == Ids::uiSliderLookAndFeel)
+    {
+    applyCentralLookAndFeel (ctrlrCombo, getProperty(property));
+        repaint();
     }
 	else if (property == Ids::uiComboBgColour)
 	{
@@ -588,10 +580,16 @@ void CtrlrCombo::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChange
              || property == Ids::uiComboButtonGradientColour1 // Added v5.6.35. Not sure if needed?
              || property == Ids::uiComboButtonGradientColour2 // Added v5.6.35. Not sure if needed?
              )
-	{
-		ctrlrCombo->setLookAndFeel(0);
-		ctrlrCombo->setLookAndFeel(&lf);
+    {
+        ctrlrCombo->setLookAndFeel(nullptr);
+
+    // 2. Query what look-and-feel style string the panel currently demands
+    String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
+        applyCentralLookAndFeel (ctrlrCombo, getProperty(property));
+        repaint();
         setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        ctrlrCombo->lookAndFeelChanged();
+        repaint();
 	}
 	else if (property == Ids::uiComboDynamicContent)
 	{
@@ -811,12 +809,25 @@ void CtrlrCombo::setText(const String &text, const bool dontNotify)
 	return (ctrlrCombo->setText(text, dontNotify ? dontSendNotification : sendNotificationSync));
 }
 
-void CtrlrCombo::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel)
+void CtrlrCombo::customLookAndFeelChanged(LookAndFeelBase* customLookAndFeel)
 {
     if (customLookAndFeel == nullptr)
-        ctrlrCombo->setLookAndFeel (&lf);
+    {
+        // Clear previous assignment
+        ctrlrCombo->setLookAndFeel(nullptr);
+
+        // Find the current active style from the editor panel
+        String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
+        
+        // FIXED: Pass 'panelLnF' as the second argument instead of 'getProperty(property)'
+        applyCentralLookAndFeel (ctrlrCombo, panelLnF);
+        
+        repaint();
+    }
     else
-        ctrlrCombo->setLookAndFeel (customLookAndFeel);
+    {
+        ctrlrCombo->setLookAndFeel(customLookAndFeel);
+    }
 }
 
 LookAndFeel *CtrlrCombo::getLookAndFeelFromComponentProperty(const String &lookAndFeelComponentProperty) // Updated v5.6.34

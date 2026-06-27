@@ -1014,7 +1014,7 @@
         <value name="InstanceMultiEngine" value="(uint8" />
         <value name="InstanceSingle" value="(uint8" />
         <value name="InstanceSingleEngine" value="(uint8" />
-        <value name="InstanceSingleRestriced" value="(uint8" />
+        <value name="InstanceSingleRestricted" value="(uint8" />
         <value name="InstanceSingleRestrictedEngine" value="(uint8" />
         <value name="NotifyFailure" value="(uint8" />
         <value name="NotifyInformation" value="(uint8" />
@@ -3134,7 +3134,7 @@
         <value name="InstanceMultiEngine" value="(uint8" />
         <value name="InstanceSingle" value="(uint8" />
         <value name="InstanceSingleEngine" value="(uint8" />
-        <value name="InstanceSingleRestriced" value="(uint8" />
+        <value name="InstanceSingleRestricted" value="(uint8" />
         <value name="InstanceSingleRestrictedEngine" value="(uint8" />
         <value name="NotifyFailure" value="(uint8" />
         <value name="NotifyInformation" value="(uint8" />
@@ -3171,7 +3171,7 @@
           <value name="InstanceMultiEngine" value="(uint8" />
           <value name="InstanceSingle" value="(uint8" />
           <value name="InstanceSingleEngine" value="(uint8" />
-          <value name="InstanceSingleRestriced" value="(uint8" />
+          <value name="InstanceSingleRestricted" value="(uint8" />
           <value name="InstanceSingleRestrictedEngine" value="(uint8" />
           <value name="NotifyFailure" value="(uint8" />
           <value name="NotifyInformation" value="(uint8" />

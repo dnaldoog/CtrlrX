@@ -56,10 +56,10 @@ private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 
 #if !CTLRX_DISABLE_DYNAMIC_LNF
-    CtrlrSliderLookAndFeel_V2 lf;
-    CtrlrSliderLookAndFeel_V2 lfV2;
-    CtrlrSliderLookAndFeel_V3 lfV3;
-   CtrlrSliderLookAndFeel_V4 lfV4;
+    // CtrlrSliderLookAndFeel_V2 lf;
+    // CtrlrSliderLookAndFeel_V2 lfV2;
+    // CtrlrSliderLookAndFeel_V3 lfV3;
+  // CtrlrSliderLookAndFeel_V4 lfV4;
 #else
 	ScopedPointer<CtrlrSliderLookAndFeel_V2> lf;
 

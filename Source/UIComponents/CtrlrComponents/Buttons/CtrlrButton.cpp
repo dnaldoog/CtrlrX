@@ -5,283 +5,283 @@
 
 #include "CtrlrModulator/CtrlrModulator.h"
 #include "CtrlrPanel/CtrlrPanel.h"
-#if CTLRX_DISABLE_DYNAMIC_LNF
-// ============================================================================
-// 2. LIGHTWEIGHT 5.3 FORK PATHWAY (DROP ENTIRE 5.3 FILE HERE)
-// ====
-CtrlrButton::CtrlrButton (CtrlrModulator &owner)
-    : CtrlrComponent(owner),
-      ctrlrButton (0)
-{
-	valueMap = new CtrlrValueMap();
-    addAndMakeVisible (ctrlrButton = new TextButton ("ctrlrButton"));
-    ctrlrButton->addListener (this);
+// #if CTLRX_DISABLE_DYNAMIC_LNF
+// // ============================================================================
+// // 2. LIGHTWEIGHT 5.3 FORK PATHWAY (DROP ENTIRE 5.3 FILE HERE)
+// // ====
+// CtrlrButton::CtrlrButton (CtrlrModulator &owner)
+//     : CtrlrComponent(owner),
+//       ctrlrButton (0)
+// {
+// 	valueMap = new CtrlrValueMap();
+//     addAndMakeVisible (ctrlrButton = new TextButton ("ctrlrButton"));
+//     ctrlrButton->addListener (this);
 
-    //[UserPreSize]
-    ctrlrButton->addMouseListener(this, true);
-	ctrlrButton->setBufferedToImage (true);
-	setProperty (Ids::uiButtonTrueValue, 1);
-	setProperty (Ids::uiButtonFalseValue, 0);
-	setProperty (Ids::uiButtonIsToggle, false);;
-	setProperty (Ids::uiButtonColourOn, "0xff0000ff");
-	setProperty (Ids::uiButtonColourOff, "0xff4364ff");
-	setProperty (Ids::uiButtonTextColourOn, "0xff000000");
-	setProperty (Ids::uiButtonTextColourOff, "0xff454545");
-	setProperty (Ids::uiButtonContent, "False\nTrue");
-	setProperty (Ids::uiButtonConnectedLeft, false);
-	setProperty (Ids::uiButtonConnectedRight, false);
-	setProperty (Ids::uiButtonConnectedTop, false);
-	setProperty (Ids::uiButtonConnectedBottom, false);
-	setProperty (Ids::uiButtonRepeat, false);
-	setProperty (Ids::uiButtonRepeatRate, 100);
-	setProperty (Ids::uiButtonTriggerOnMouseDown, false);
-	setProperty (Ids::componentInternalFunction, COMBO_ITEM_NONE);
-    //[/UserPreSize]
+//     //[UserPreSize]
+//     ctrlrButton->addMouseListener(this, true);
+// 	ctrlrButton->setBufferedToImage (true);
+// 	setProperty (Ids::uiButtonTrueValue, 1);
+// 	setProperty (Ids::uiButtonFalseValue, 0);
+// 	setProperty (Ids::uiButtonIsToggle, false);;
+// 	setProperty (Ids::uiButtonColourOn, "0xff0000ff");
+// 	setProperty (Ids::uiButtonColourOff, "0xff4364ff");
+// 	setProperty (Ids::uiButtonTextColourOn, "0xff000000");
+// 	setProperty (Ids::uiButtonTextColourOff, "0xff454545");
+// 	setProperty (Ids::uiButtonContent, "False\nTrue");
+// 	setProperty (Ids::uiButtonConnectedLeft, false);
+// 	setProperty (Ids::uiButtonConnectedRight, false);
+// 	setProperty (Ids::uiButtonConnectedTop, false);
+// 	setProperty (Ids::uiButtonConnectedBottom, false);
+// 	setProperty (Ids::uiButtonRepeat, false);
+// 	setProperty (Ids::uiButtonRepeatRate, 100);
+// 	setProperty (Ids::uiButtonTriggerOnMouseDown, false);
+// 	setProperty (Ids::componentInternalFunction, COMBO_ITEM_NONE);
+//     //[/UserPreSize]
 
-    setSize (88, 32);
+//     setSize (88, 32);
 
-    //[Constructor] You can add your own custom stuff here..
-    //[/Constructor]
-}
+//     //[Constructor] You can add your own custom stuff here..
+//     //[/Constructor]
+// }
 
-CtrlrButton::~CtrlrButton()
-{
-    //[Destructor_pre]. You can add your own custom destruction code here..
-    //[/Destructor_pre]
+// CtrlrButton::~CtrlrButton()
+// {
+//     //[Destructor_pre]. You can add your own custom destruction code here..
+//     //[/Destructor_pre]
 
-    deleteAndZero (ctrlrButton);
+//     deleteAndZero (ctrlrButton);
 
-    //[Destructor]. You can add your own custom destruction code here..
-    //[/Destructor]
-}
+//     //[Destructor]. You can add your own custom destruction code here..
+//     //[/Destructor]
+// }
 
-//==============================================================================
-void CtrlrButton::paint (Graphics& g)
-{
-    //[UserPrePaint] Add your own custom painting code here..
-    //[/UserPrePaint]
+// //==============================================================================
+// void CtrlrButton::paint (Graphics& g)
+// {
+//     //[UserPrePaint] Add your own custom painting code here..
+//     //[/UserPrePaint]
 
-    //[UserPaint] Add your own custom painting code here..
-    //[/UserPaint]
-}
+//     //[UserPaint] Add your own custom painting code here..
+//     //[/UserPaint]
+// }
 
-void CtrlrButton::resized()
-{
-	ctrlrButton->setBounds (getUsableRect());
-}
+// void CtrlrButton::resized()
+// {
+// 	ctrlrButton->setBounds (getUsableRect());
+// }
 
-void CtrlrButton::buttonClicked (Button* buttonThatWasClicked)
-{
-    //[UserbuttonClicked_Pre]
-    if (isInternal())
-	{
-		owner.getOwnerPanel().performInternalComponentFunction(this);
-		return;
-	}
+// void CtrlrButton::buttonClicked (Button* buttonThatWasClicked)
+// {
+//     //[UserbuttonClicked_Pre]
+//     if (isInternal())
+// 	{
+// 		owner.getOwnerPanel().performInternalComponentFunction(this);
+// 		return;
+// 	}
 
-	if (!owner.getOwnerPanel().checkRadioGroup(this, buttonThatWasClicked->getToggleState()))
-		return;
-    //[/UserbuttonClicked_Pre]
+// 	if (!owner.getOwnerPanel().checkRadioGroup(this, buttonThatWasClicked->getToggleState()))
+// 		return;
+//     //[/UserbuttonClicked_Pre]
 
-    if (buttonThatWasClicked == ctrlrButton)
-    {
-        //[UserButtonCode_ctrlrButton] -- add your button handler code here..
-		valueMap->increment();
-		ctrlrButton->setButtonText (valueMap->getCurrentText());
-		setComponentValue (valueMap->getCurrentNonMappedValue(), true);
-        //[/UserButtonCode_ctrlrButton]
-    }
+//     if (buttonThatWasClicked == ctrlrButton)
+//     {
+//         //[UserButtonCode_ctrlrButton] -- add your button handler code here..
+// 		valueMap->increment();
+// 		ctrlrButton->setButtonText (valueMap->getCurrentText());
+// 		setComponentValue (valueMap->getCurrentNonMappedValue(), true);
+//         //[/UserButtonCode_ctrlrButton]
+//     }
 
-    //[UserbuttonClicked_Post]
-    //[/UserbuttonClicked_Post]
-}
+//     //[UserbuttonClicked_Post]
+//     //[/UserbuttonClicked_Post]
+// }
 
-void CtrlrButton::mouseDown (const MouseEvent& e)
-{
-    //[UserCode_mouseDown] -- Add your code here...
-    if ((bool)getProperty(Ids::uiButtonTriggerOnMouseDown) == true)
-    {
-        if (e.eventComponent == ctrlrButton)
-        {
-            if (!isTimerRunning() && (bool)getProperty(Ids::uiButtonRepeat))
-            {
-                startTimer ((int)getProperty(Ids::uiButtonRepeatRate));
-            }
+// void CtrlrButton::mouseDown (const MouseEvent& e)
+// {
+//     //[UserCode_mouseDown] -- Add your code here...
+//     if ((bool)getProperty(Ids::uiButtonTriggerOnMouseDown) == true)
+//     {
+//         if (e.eventComponent == ctrlrButton)
+//         {
+//             if (!isTimerRunning() && (bool)getProperty(Ids::uiButtonRepeat))
+//             {
+//                 startTimer ((int)getProperty(Ids::uiButtonRepeatRate));
+//             }
 
-            if (getProperty(Ids::uiButtonTriggerOnMouseDown))
-            {
-                ctrlrButton->triggerClick();
-            }
-        }
-    }
-	CtrlrComponent::mouseDown(e);
-    //[/UserCode_mouseDown]
-}
-
-
-
-//[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
-void CtrlrButton::timerCallback()
-{
-	if (ctrlrButton->isMouseButtonDown())
-	{
-		ctrlrButton->triggerClick();
-	}
-	else
-	{
-		stopTimer();
-	}
-}
-
-void CtrlrButton::setComponentValue (const double newValue, const bool sendChangeMessage)
-{
-	valueMap->setCurrentNonMappedValue (newValue);
-	ctrlrButton->setButtonText (valueMap->getTextForIndex (newValue));
-
-	if (ctrlrButton->getClickingTogglesState())
-	{
-		if ((double)getProperty(Ids::uiButtonTrueValue) == newValue)
-		{
-			ctrlrButton->setToggleState (true, dontSendNotification);
-			valueMap->setCurrentNonMappedValue (1);
-		}
-		else
-		{
-			ctrlrButton->setToggleState (false, dontSendNotification);
-			valueMap->setCurrentNonMappedValue (0);
-		}
-	}
-
-	if (sendChangeMessage)
-	{
-		owner.getProcessor().setValueGeneric (CtrlrModulatorValue(newValue,CtrlrModulatorValue::changedByGUI), sendChangeMessage);
-	}
-}
-
-double CtrlrButton::getComponentMaxValue()
-{
-	return (valueMap->getNonMappedMax());
-}
-
-bool CtrlrButton::getToggleState()
-{
-	return (ctrlrButton->getToggleState());
-}
-
-const String CtrlrButton::getComponentText()
-{
-	return (ctrlrButton->getButtonText());
-}
-
-void CtrlrButton::setComponentText (const String &componentText)
-{
-	setComponentValue (valueMap->getNonMappedValue(componentText));
-}
-
-double CtrlrButton::getComponentValue()
-{
-	return (valueMap->getCurrentNonMappedValue());
-}
-
-int CtrlrButton::getComponentMidiValue()
-{
-	return (valueMap->getCurrentMappedValue());
-}
-
-void CtrlrButton::buttonContentChanged()
-{
-	valueMap->copyFrom (owner.getProcessor().setValueMap (getProperty (Ids::uiButtonContent)));
-	setComponentValue (0, false);
-}
-
-void CtrlrButton::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
-{
-	if (property == Ids::uiButtonContent)
-	{
-		buttonContentChanged();
-	}
-
-	else if (property == Ids::uiButtonColourOff
-		|| property == Ids::uiButtonColourOn
-		|| property == Ids::uiButtonTextColourOff
-		|| property == Ids::uiButtonTextColourOn)
-	{
-		ctrlrButton->setColour (TextButton::buttonColourId, VAR2COLOUR(getProperty(Ids::uiButtonColourOff)));
-		ctrlrButton->setColour (TextButton::buttonOnColourId, VAR2COLOUR(getProperty(Ids::uiButtonColourOn)));
-		ctrlrButton->setColour (TextButton::textColourOffId, VAR2COLOUR(getProperty(Ids::uiButtonTextColourOff)));
-		ctrlrButton->setColour (TextButton::textColourOnId, VAR2COLOUR(getProperty(Ids::uiButtonTextColourOn)));
-	}
-
-	else if (property == Ids::uiButtonIsToggle)
-	{
-		ctrlrButton->setClickingTogglesState((bool)getProperty(property));
-	}
+//             if (getProperty(Ids::uiButtonTriggerOnMouseDown))
+//             {
+//                 ctrlrButton->triggerClick();
+//             }
+//         }
+//     }
+// 	CtrlrComponent::mouseDown(e);
+//     //[/UserCode_mouseDown]
+// }
 
 
-	else if (property == Ids::uiButtonConnectedLeft
-		|| property == Ids::uiButtonConnectedRight
-		|| property == Ids::uiButtonConnectedTop
-		|| property == Ids::uiButtonConnectedBottom
-		)
-	{
-		const int leftFlag = (bool)getProperty(Ids::uiButtonConnectedLeft) ? Button::ConnectedOnLeft : 0;
-		const int rightFlag = (bool)getProperty(Ids::uiButtonConnectedRight) ? Button::ConnectedOnRight : 0;
-		const int topFlag = (bool)getProperty(Ids::uiButtonConnectedTop) ? Button::ConnectedOnTop : 0;
-		const int bottomFlag = (bool)getProperty(Ids::uiButtonConnectedBottom) ? Button::ConnectedOnBottom : 0;
-		ctrlrButton->setConnectedEdges (leftFlag | rightFlag | topFlag | bottomFlag);
-	}
-	else if (property == Ids::uiButtonTrueValue)
-	{
-		owner.setProperty (Ids::modulatorMax, getProperty(property));
-	}
-	else if (property == Ids::uiButtonFalseValue)
-	{
-		owner.setProperty (Ids::modulatorMin, getProperty(property));
-	}
-	else if (property == Ids::uiButtonRepeat)
-	{
-		if ((bool)getProperty(property) == false)
-        {
-			stopTimer();
-		}
-	}
-	else
-	{
-		CtrlrComponent::valueTreePropertyChanged(treeWhosePropertyHasChanged, property);
-	}
 
-	if (restoreStateInProgress == false)
-	{
-		resized();
-	}
-}
+// //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
+// void CtrlrButton::timerCallback()
+// {
+// 	if (ctrlrButton->isMouseButtonDown())
+// 	{
+// 		ctrlrButton->triggerClick();
+// 	}
+// 	else
+// 	{
+// 		stopTimer();
+// 	}
+// }
 
-void CtrlrButton::click()
-{
-	ctrlrButton->triggerClick();
-}
+// void CtrlrButton::setComponentValue (const double newValue, const bool sendChangeMessage)
+// {
+// 	valueMap->setCurrentNonMappedValue (newValue);
+// 	ctrlrButton->setButtonText (valueMap->getTextForIndex (newValue));
 
-bool CtrlrButton::isToggleButton()
-{
-	return (ctrlrButton->getClickingTogglesState());
-}
+// 	if (ctrlrButton->getClickingTogglesState())
+// 	{
+// 		if ((double)getProperty(Ids::uiButtonTrueValue) == newValue)
+// 		{
+// 			ctrlrButton->setToggleState (true, dontSendNotification);
+// 			valueMap->setCurrentNonMappedValue (1);
+// 		}
+// 		else
+// 		{
+// 			ctrlrButton->setToggleState (false, dontSendNotification);
+// 			valueMap->setCurrentNonMappedValue (0);
+// 		}
+// 	}
 
-void CtrlrButton::setToggleState(const bool toggleState, const bool sendChangeMessage)
-{
-	ctrlrButton->setToggleState (toggleState, sendChangeMessage ? sendNotification : dontSendNotification);
-}
+// 	if (sendChangeMessage)
+// 	{
+// 		owner.getProcessor().setValueGeneric (CtrlrModulatorValue(newValue,CtrlrModulatorValue::changedByGUI), sendChangeMessage);
+// 	}
+// }
 
-#else
-// ============================================================================
-// 3. UPSTREAM CTRLRX PATHWAY (DROP ENTIRE NEW FILE HERE)
-// ============================================================================
+// double CtrlrButton::getComponentMaxValue()
+// {
+// 	return (valueMap->getNonMappedMax());
+// }
+
+// bool CtrlrButton::getToggleState()
+// {
+// 	return (ctrlrButton->getToggleState());
+// }
+
+// const String CtrlrButton::getComponentText()
+// {
+// 	return (ctrlrButton->getButtonText());
+// }
+
+// void CtrlrButton::setComponentText (const String &componentText)
+// {
+// 	setComponentValue (valueMap->getNonMappedValue(componentText));
+// }
+
+// double CtrlrButton::getComponentValue()
+// {
+// 	return (valueMap->getCurrentNonMappedValue());
+// }
+
+// int CtrlrButton::getComponentMidiValue()
+// {
+// 	return (valueMap->getCurrentMappedValue());
+// }
+
+// void CtrlrButton::buttonContentChanged()
+// {
+// 	valueMap->copyFrom (owner.getProcessor().setValueMap (getProperty (Ids::uiButtonContent)));
+// 	setComponentValue (0, false);
+// }
+
+// void CtrlrButton::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
+// {
+// 	if (property == Ids::uiButtonContent)
+// 	{
+// 		buttonContentChanged();
+// 	}
+
+// 	else if (property == Ids::uiButtonColourOff
+// 		|| property == Ids::uiButtonColourOn
+// 		|| property == Ids::uiButtonTextColourOff
+// 		|| property == Ids::uiButtonTextColourOn)
+// 	{
+// 		ctrlrButton->setColour (TextButton::buttonColourId, VAR2COLOUR(getProperty(Ids::uiButtonColourOff)));
+// 		ctrlrButton->setColour (TextButton::buttonOnColourId, VAR2COLOUR(getProperty(Ids::uiButtonColourOn)));
+// 		ctrlrButton->setColour (TextButton::textColourOffId, VAR2COLOUR(getProperty(Ids::uiButtonTextColourOff)));
+// 		ctrlrButton->setColour (TextButton::textColourOnId, VAR2COLOUR(getProperty(Ids::uiButtonTextColourOn)));
+// 	}
+
+// 	else if (property == Ids::uiButtonIsToggle)
+// 	{
+// 		ctrlrButton->setClickingTogglesState((bool)getProperty(property));
+// 	}
+
+
+// 	else if (property == Ids::uiButtonConnectedLeft
+// 		|| property == Ids::uiButtonConnectedRight
+// 		|| property == Ids::uiButtonConnectedTop
+// 		|| property == Ids::uiButtonConnectedBottom
+// 		)
+// 	{
+// 		const int leftFlag = (bool)getProperty(Ids::uiButtonConnectedLeft) ? Button::ConnectedOnLeft : 0;
+// 		const int rightFlag = (bool)getProperty(Ids::uiButtonConnectedRight) ? Button::ConnectedOnRight : 0;
+// 		const int topFlag = (bool)getProperty(Ids::uiButtonConnectedTop) ? Button::ConnectedOnTop : 0;
+// 		const int bottomFlag = (bool)getProperty(Ids::uiButtonConnectedBottom) ? Button::ConnectedOnBottom : 0;
+// 		ctrlrButton->setConnectedEdges (leftFlag | rightFlag | topFlag | bottomFlag);
+// 	}
+// 	else if (property == Ids::uiButtonTrueValue)
+// 	{
+// 		owner.setProperty (Ids::modulatorMax, getProperty(property));
+// 	}
+// 	else if (property == Ids::uiButtonFalseValue)
+// 	{
+// 		owner.setProperty (Ids::modulatorMin, getProperty(property));
+// 	}
+// 	else if (property == Ids::uiButtonRepeat)
+// 	{
+// 		if ((bool)getProperty(property) == false)
+//         {
+// 			stopTimer();
+// 		}
+// 	}
+// 	else
+// 	{
+// 		CtrlrComponent::valueTreePropertyChanged(treeWhosePropertyHasChanged, property);
+// 	}
+
+// 	if (restoreStateInProgress == false)
+// 	{
+// 		resized();
+// 	}
+// }
+
+// void CtrlrButton::click()
+// {
+// 	ctrlrButton->triggerClick();
+// }
+
+// bool CtrlrButton::isToggleButton()
+// {
+// 	return (ctrlrButton->getClickingTogglesState());
+// }
+
+// void CtrlrButton::setToggleState(const bool toggleState, const bool sendChangeMessage)
+// {
+// 	ctrlrButton->setToggleState (toggleState, sendChangeMessage ? sendNotification : dontSendNotification);
+// }
+
+// #else
+// // ============================================================================
+// // 3. UPSTREAM CTRLRX PATHWAY (DROP ENTIRE NEW FILE HERE)
+// // ============================================================================
 #include "CtrlrPanel/CtrlrPanelEditor.h"
 
 CtrlrButton::CtrlrButton (CtrlrModulator &owner)
     : CtrlrComponent(owner),
-      ctrlrButton (0)
+      ctrlrButton (nullptr)
 {
-	valueMap = new CtrlrValueMap();
+    valueMap = new CtrlrValueMap();
     addAndMakeVisible (ctrlrButton = new TextButton ("ctrlrButton"));
     ctrlrButton->addListener (this);
     
@@ -291,39 +291,49 @@ CtrlrButton::CtrlrButton (CtrlrModulator &owner)
     ctrlrButton->addMouseListener(this, true);
     ctrlrButton->setBufferedToImage (true);
     setProperty (Ids::uiButtonIsToggle, true);
-	setProperty (Ids::uiButtonTrueValue, 1);
-	setProperty (Ids::uiButtonFalseValue, 0);
+    setProperty (Ids::uiButtonTrueValue, 1);
+    setProperty (Ids::uiButtonFalseValue, 0);
     setProperty (Ids::uiButtonContent, "False\nTrue");
     
-	setProperty (Ids::uiButtonRepeat, false);
-	setProperty (Ids::uiButtonRepeatRate, 100);
-	setProperty (Ids::uiButtonTriggerOnMouseDown, false);
-	setProperty (Ids::componentInternalFunction, COMBO_ITEM_NONE);
+    setProperty (Ids::uiButtonRepeat, false);
+    setProperty (Ids::uiButtonRepeatRate, 100);
+    setProperty (Ids::uiButtonTriggerOnMouseDown, false);
+    setProperty (Ids::componentInternalFunction, COMBO_ITEM_NONE);
     
-    bool LegacyMode = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLegacyMode); // Legacy mode flag for version before 5.6.29
+    bool LegacyMode = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLegacyMode); 
     String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
+    auto* editor = owner.getOwnerPanel().getEditor();
     
-    if (LegacyMode || panelLnF == "V3") // Added v5.6.34. Not really good because it will create a new LnF but won't destroy it so it will lead to memory leaks
+    // REPLACED THE LEAKY 'NEW' CALLS:
+    // Safely apply look-and-feel style rules from shared pointers
+    if (editor != nullptr)
     {
-        setLookAndFeel(new LookAndFeel_V3());
-        setProperty(Ids::uiButtonLookAndFeel, "V3");
+        if (LegacyMode || panelLnF == "V3")
+        {
+            if (editor->lfV3) ctrlrButton->setLookAndFeel (editor->lfV3.get());
+            setProperty(Ids::uiButtonLookAndFeel, "V3");
+        }
+        else if (panelLnF == "V2")
+        {
+            if (editor->lfV2) ctrlrButton->setLookAndFeel (editor->lfV2.get());
+            setProperty(Ids::uiButtonLookAndFeel, "V2");
+        }
+        else if (panelLnF == "V1")
+        {
+            if (editor->lfV1) ctrlrButton->setLookAndFeel (editor->lfV1.get());
+            setProperty(Ids::uiButtonLookAndFeel, "V1");
+        }
+        else
+        {
+            ctrlrButton->setLookAndFeel (nullptr); // Fallback to safe leak-free V4 default
+        }
+    }
+    else
+    {
+        ctrlrButton->setLookAndFeel (nullptr);
     }
     
-    else if (panelLnF == "V2") // Added v5.6.34. Not really good because it will create a new LnF but won't destroy it so it will lead to memory leaks
-    {
-        setLookAndFeel(new LookAndFeel_V2());
-        setProperty(Ids::uiButtonLookAndFeel, "V2");
-    }
-    
-    else if (panelLnF == "V1") // Added v5.6.34. Not really good because it will create a new LnF but won't destroy it so it will lead to memory leaks
-    {
-        setLookAndFeel(new LookAndFeel_V1());
-        setProperty(Ids::uiButtonLookAndFeel, "V1");
-    }
-    
-    if ( panelLnF == "V3"
-        || panelLnF == "V2"
-        || panelLnF == "V1" )
+    if ( panelLnF == "V3" || panelLnF == "V2" || panelLnF == "V1" )
     {
         setSize (88, 32);
         setProperty (Ids::uiButtonColourOn, "0xff0000ff");
@@ -340,17 +350,24 @@ CtrlrButton::CtrlrButton (CtrlrModulator &owner)
         setProperty (Ids::uiButtonTextColourOff, (String)findColour(TextButton::textColourOffId).toString());
     }
     
-    setProperty (Ids::uiButtonConnectedLeft, false); // Hints about which edges of the button might be connected to adjoining buttons.
+    setProperty (Ids::uiButtonConnectedLeft, false); 
     setProperty (Ids::uiButtonConnectedRight, false);
     setProperty (Ids::uiButtonConnectedTop, false);
     setProperty (Ids::uiButtonConnectedBottom, false);
     
-    setProperty (Ids::uiButtonLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
-
+    setProperty (Ids::uiButtonLookAndFeelIsCustom, false);
 }
 
 CtrlrButton::~CtrlrButton()
 {
+    // Cleanly unbind the button from any shared look-and-feel instances 
+    // before deleting the pointer to ensure the weak reference count hits 0.
+    if (ctrlrButton != nullptr)
+    {
+        ctrlrButton->setLookAndFeel (nullptr);
+    }
+
+    // Now safely delete the UI component pointer completely out of memory
     deleteAndZero (ctrlrButton);
 }
 
@@ -490,14 +507,16 @@ void CtrlrButton::buttonContentChanged()
 
 void CtrlrButton::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
 {
-	if (property == Ids::uiButtonContent)
-	{
-		buttonContentChanged();
-	}
+    if (property == Ids::uiButtonContent)
+    {
+        buttonContentChanged();
+    }
     else if (property == Ids::uiButtonLookAndFeel)
     {
         String LookAndFeelType = getProperty(property);
-        setLookAndFeel(CtrlrButton::getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
+        
+        // 1. Unified look-and-feel resolver handles everything cleanly!
+        applyCentralLookAndFeel (ctrlrButton, LookAndFeelType);
         
         if (LookAndFeelType == "Default")
         {
@@ -508,7 +527,12 @@ void CtrlrButton::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
         {
             CtrlrButton::resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
         }
+        
+        // 2. One single trailing repaint to redraw the newly applied layout cleanly
+        repaint();
     }
+
+
 	else if (property == Ids::uiButtonColourOff
 		|| property == Ids::uiButtonColourOn
 		|| property == Ids::uiButtonTextColourOff
@@ -623,7 +647,7 @@ void CtrlrButton::updatePropertiesPanel()
 }
 
 
-#endif
+// #endif
 
 
 //[/MiscUserCode]

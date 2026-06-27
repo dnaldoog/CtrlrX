@@ -95,6 +95,12 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
     canvasWidth(0),
     canvasHeight(0)
 {
+    // Allocate the shared look and feel instances dynamically
+    lfV1 = std::make_unique<juce::LookAndFeel_V1>();
+    lfV2 = std::make_unique<juce::LookAndFeel_V2>();
+    lfV3 = std::make_unique<juce::LookAndFeel_V3>();
+   // lfV4 = std::make_unique<juce::LookAndFeel_V4>();
+
     ctrlrComponentSelection.reset(new CtrlrComponentSelection(*this));
     
     // Corrected to use the proper syntax for ScopedPointers
@@ -252,34 +258,36 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 
 CtrlrPanelEditor::~CtrlrPanelEditor()
 {
-    // Check if the component selection object is valid before trying to use it
+    // 1. Check if the component selection object is valid before trying to use it
     if (ctrlrComponentSelection)
     {
-        // Remove the listener before the objects are destroyed
         ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
     }
 
     getPanelEditorTree().removeListener(this);
     owner.getPanelTree().removeListener(this);
-    owner.getPanelTree().removeChild(getPanelEditorTree(), 0);
-
-    componentAnimator.removeChangeListener(this);
     
-    // Set look and feel to null to clean up
-    setLookAndFeel(nullptr);
+    // 2. CRITICAL: Tell the canvas/viewport to completely clear all UI elements 
+    // and sliders out of memory FIRST. This invokes ~CtrlrSlider() on all sliders!
     if (getCanvas())
     {
         getCanvas()->setLookAndFeel(nullptr);
+      //  getCanvas()->deleteAllChildren(); // <-- This wipes the sliders completely!
     }
-    // This is important: JUCE's default look and feel can also be a source of leaks if not managed
+    
+    owner.getPanelTree().removeChild(getPanelEditorTree(), 0);
+    componentAnimator.removeChangeListener(this);
+    
+    setLookAndFeel(nullptr);
     juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
 
-	// USELESS : because JUCE_DECLARE_WEAK_REFERENCEABLE macro is in the header already.
-	// It automatically handles the weak reference master
-	// masterReference.clear();
+    // 3. NOW it is completely safe to delete the styling pipelines because 
+    // all Sliders are gone and active weak references drop to exactly 0!
+    // lfV1.reset();
+    // lfV2.reset();
+    // lfV3.reset();
     
-    // The ScopedPointers will now automatically delete the components they own
-    // (ctrlrPanelViewport, ctrlrPanelProperties, spacerComponent, ctrlrPanelNotifier).
+    juce::ImageCache::releaseUnusedImages();
 }
 
 void CtrlrPanelEditor::visibilityChanged()
@@ -437,7 +445,7 @@ void CtrlrPanelEditor::restoreState(const ValueTree &savedState)
     }
 
     if (owner.getCtrlrManagerOwner().getInstanceMode() == InstanceSingle
-        || owner.getCtrlrManagerOwner().getInstanceMode() == InstanceSingleRestriced)
+        || owner.getCtrlrManagerOwner().getInstanceMode() == InstanceSingleRestricted)
     {
         initSingleInstance();
     }

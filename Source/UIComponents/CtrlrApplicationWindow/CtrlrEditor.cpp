@@ -20,11 +20,14 @@ CtrlrEditor::CtrlrEditor (CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
 {
     // Initialize currentLookAndFeel to a default LookAndFeel_V4 Light.
     // This provides a starting point before properties are loaded.
-    currentLookAndFeel = new LookAndFeel_V4(juce::LookAndFeel_V4::getLightColourScheme());
-    setLookAndFeel(currentLookAndFeel); // Set the editor's LookAndFeel initially
+    // currentLookAndFeel = new LookAndFeel_V4(juce::LookAndFeel_V4::getLightColourScheme());
+    // setLookAndFeel(currentLookAndFeel); // Set the editor's LookAndFeel initially
+    currentLookAndFeel = std::make_unique<juce::LookAndFeel_V4>(juce::LookAndFeel_V4::getLightColourScheme());
+    tooltipWindow = std::make_unique<juce::TooltipWindow> (this);
+    setLookAndFeel (currentLookAndFeel.get());
 
-    menuBar = new MenuBarComponent(this); // Added v5.6.34
-    addAndMakeVisible(menuBar); // Added v5.6.34
+    menuBar = std::make_unique<juce::MenuBarComponent>(this);
+    addAndMakeVisible(menuBar.get()); // Added v5.6.34
 	
 	Rectangle<int> editorRect;
     // http://www.juce.com/forum/topic/applicationcommandmanager-menus-not-active-annoyance#new
@@ -47,7 +50,7 @@ CtrlrEditor::CtrlrEditor (CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
     
     if (!JUCEApplication::isStandaloneApp()) // If Ctrlr is !NOT run as a standalone app but as a plugin or shared lib
     {
-        if (owner.getInstanceMode() != InstanceSingleRestriced) // is !NOT restricted instance of the plugin
+        if (owner.getInstanceMode() != InstanceSingleRestricted) // is !NOT restricted instance of the plugin
         {
             addAndMakeVisible(&resizer);
             resizer.setAlwaysOnTop(false);
@@ -58,7 +61,7 @@ CtrlrEditor::CtrlrEditor (CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
     
     if (owner.getProperty (Ids::ctrlrEditorBounds).toString() != "") // ctrlrEditorBounds is Editor size. AAX Plugin crashes here, passes without it
     {
-        if (owner.getInstanceMode() != InstanceSingle && owner.getInstanceMode() != InstanceSingleRestriced)
+        if (owner.getInstanceMode() != InstanceSingle && owner.getInstanceMode() != InstanceSingleRestricted)
         {
             editorRect = VAR2RECT(owner.getProperty(Ids::ctrlrEditorBounds)); // Size of full Editor window including top tabs and 1px borders
         }
@@ -88,7 +91,7 @@ CtrlrEditor::CtrlrEditor (CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
                 editorRect.setHeight (editorRect.getHeight());
             }
             
-            if (!JUCEApplication::isStandaloneApp() && owner.getInstanceMode() == InstanceSingleRestriced)
+            if (!JUCEApplication::isStandaloneApp() && owner.getInstanceMode() == InstanceSingleRestricted)
             {
                 setResizable(vpResizable, true);
                 
@@ -164,7 +167,7 @@ CtrlrEditor::CtrlrEditor (CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
     // Apply the determined LookAndFeel and ColourScheme
     setEditorLookAndFeel(lookAndFeelVersionToApply, colourSchemePropertyToApply);
 
-    menuBar->setLookAndFeel(currentLookAndFeel); // Ensure menuBar uses the current L&F
+    menuBar->setLookAndFeel(currentLookAndFeel.get()); // Ensure menuBar uses the current L&F
 
     lookAndFeelChanged(); // Added v5.6.31. Update LnF for all components
 
@@ -183,41 +186,34 @@ CtrlrEditor::CtrlrEditor (CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
 
 CtrlrEditor::~CtrlrEditor()
 {
-    // 1. First, make sure all child components are detached from the LookAndFeel
-	setLookAndFeel(nullptr);
-	
+    if (tooltipWindow != nullptr)
+    {
+        tooltipWindow.reset();
+    }
+    // 1. Explicitly detach the top-level editor from the layout engine first
+    setLookAndFeel(nullptr);
+    
+    // 2. Detach the LookAndFeel from the menu bar while it is guaranteed to be alive
     if (menuBar != nullptr)
+    {
         menuBar->setLookAndFeel(nullptr);
-	
-    // 2. Clear the global default LookAndFeel if it was set
-    // This is important if you ever call LookAndFeel::setDefaultLookAndFeel()
+    }
+    
+    // 3. Clear the global fallback to ensure no application-wide leaks remain
     LookAndFeel::setDefaultLookAndFeel(nullptr);
 
-    // 3. Now let the ScopedPointer's destructor run, which will safely delete the object.
-    // The ScopedPointer will do this automatically when the destructor finishes,
-    // so no manual 'deleteAndZero' or 'currentLookAndFeel.reset()' is needed.
+    // 4. FIX THE LIFECYCLE LEAK: Manually clear your unique_ptr look-and-feel tracker
+    if (currentLookAndFeel != nullptr)
+    {
+        currentLookAndFeel.reset(); 
+    }
 
-    // 4. Finally, let the parent component's destructor destroy the child components
-    // and let the weak reference macro clean up
-	
-	
-	// ---
-	// WAS
-	// ---
-	
-	// USELESS : menuBar as a child component to CtrlrEditor with the line addAndMakeVisible(menuBar).
-	// This operation transfers ownership of the menuBar object to its parent, CtrlrEditor.
-	// When a juce::Component (in this case, CtrlrEditor) is destroyed, its destructor automatically calls deleteAllChildren().
-	// This function iterates through all its child components and safely deletes them.
-	// menuBar->setLookAndFeel(nullptr); // Detach LookAndFeel from menuBar first
-	
-	// USELESS : When you use addAndMakeVisible(menuBar), the CtrlrEditor component becomes the parent of menuBar.
-	// This means the CtrlrEditor now owns the menuBar and is responsible for its destruction.
+    // 5. FIX THE ORIGINAL DEVELOPER'S ERROR: If menuBar was allocated via 'new' 
+    // and is a raw pointer in the header, we MUST clean it up here!
+    // (Note: If you already updated menuBar to a std::unique_ptr in CtrlrEditor.h, 
+    // you can safely replace this line with menuBar.reset();)
     // deleteAndZero (menuBar);
-	
-	// USELESS : because JUCE_DECLARE_WEAK_REFERENCEABLE macro is in the header already.
-	// It automatically handles the weak reference master
-	// masterReference.clear();
+     menuBar.reset();
 }
 
 void CtrlrEditor::paint (Graphics& g)
@@ -263,24 +259,35 @@ void CtrlrEditor::setEditorLookAndFeel (const String &lookAndFeelDesc, const var
 
         // Explicitly set the L&F of the editor and menubar to nullptr first
         // This ensures no components are using the old L&F before we destroy it.
-        setLookAndFeel (nullptr);
-        menuBar->setLookAndFeel(nullptr);
-        
-        currentLookAndFeel = newLookAndFeel; // Transfers ownership from ScopedPointer
-        setLookAndFeel (currentLookAndFeel); // Set the editor's LookAndFeel, which propagates to children
+// 1. Flush active styling links from components first
+        setLookAndFeel(nullptr);
+        if (menuBar != nullptr)
+            menuBar->setLookAndFeel(nullptr);
 
-        // --- THESE ARE THE CRUCIAL LINES FOR THE MENUBAR UPDATE ---
-        menuBar->setLookAndFeel(currentLookAndFeel); // Ensure menuBar also gets the new L&F
-        menuBar->lookAndFeelChanged();               // Explicitly notify the menu bar that its L&F has changed
-        menuBar->repaint();                          // Force a repaint of the menu bar's background
+        // 2. SAFE OWNERSHIP TRANSFER: Use std::move to transfer the heap assignment 
+        // cleanly from the temporary smart pointer to your class-level instance
+        // .release() takes the raw pointer out of the ScopedPointer 
+        // and hands absolute ownership over to your unique_ptr safely!
+        currentLookAndFeel.reset(static_cast<juce::LookAndFeel_V4*>(newLookAndFeel.release()));
 
-        // Force a repaint and update of all components to reflect the new LookAndFeel
-        lookAndFeelChanged(); // This calls lookAndFeelChanged() on this component and its children (like the main panel)
-        repaint();            // Force a repaint of the CtrlrEditor itself
-        
-        // This makes sure any subsequently created JUCE components (like dialogs, other windows)
-        // will default to *your* currentLookAndFeel instance.
-        LookAndFeel::setDefaultLookAndFeel(currentLookAndFeel); 
+        // 3. Extract the underlying raw address using .get() to bind the pipeline
+        setLookAndFeel(currentLookAndFeel.get());
+
+        if (menuBar != nullptr)
+        {
+            // 4. Update the menu bar link safely
+            menuBar->setLookAndFeel(currentLookAndFeel.get());
+        }
+
+        // 5. CASCADE UPDATE: Calling this on 'this' (CtrlrEditor) automatically 
+        // triggers lookAndFeelChanged() recursively on the menuBar and all other child components!
+        lookAndFeelChanged();
+
+        // 6. Force a visual refresh across the entire canvas
+        repaint();
+
+        // 7. Bind the global fallback safety anchor
+        LookAndFeel::setDefaultLookAndFeel(currentLookAndFeel.get());
     }
 }
 
@@ -358,7 +365,7 @@ void CtrlrEditor::activeCtrlrChanged()
 
 MenuBarComponent *CtrlrEditor::getMenuBar()
 {
-	return (menuBar);
+	return (menuBar.get());
 }
 
 CtrlrPanel *CtrlrEditor::getActivePanel()
@@ -368,7 +375,7 @@ CtrlrPanel *CtrlrEditor::getActivePanel()
 
 bool CtrlrEditor::isRestricted()
 {
-	return (owner.getInstanceMode() == InstanceSingleRestriced);
+	return (owner.getInstanceMode() == InstanceSingleRestricted);
 }
 
 CtrlrPanelEditor *CtrlrEditor::getActivePanelEditor()
@@ -387,7 +394,7 @@ bool CtrlrEditor::isPanelActive(const bool checkRestrictedInstance)
 	{
 		if (checkRestrictedInstance)
 		{
-			if (owner.getInstanceMode() == InstanceSingleRestriced)
+			if (owner.getInstanceMode() == InstanceSingleRestricted)
 			{
 				return (false);
 			}
@@ -407,4 +414,16 @@ void CtrlrEditor::setMenuBarVisible(const bool shouldBeVisible)
 {
 	menuBar->setVisible (shouldBeVisible);
 	resized();
+}
+
+void CtrlrEditor::recreateTooltipEngine()
+{
+    // 1. Force the engine to drop out of memory and clear all internal vector graphics caches
+    if (tooltipWindow != nullptr)
+    {
+        tooltipWindow.reset();
+    }
+
+    // 2. Spawn a fresh, brand-new tooltip instance under the updated layout pipeline context
+    tooltipWindow = std::make_unique<juce::TooltipWindow> (this);
 }

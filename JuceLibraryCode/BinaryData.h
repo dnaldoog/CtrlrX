@@ -276,7 +276,7 @@ namespace BinaryData
     const int            CtrlrLuaClassTemplates_xmlSize = 110;
 
     extern const char*   CtrlrLuaMethodTemplates_xml;
-    const int            CtrlrLuaMethodTemplates_xmlSize = 22857;
+    const int            CtrlrLuaMethodTemplates_xmlSize = 22858;
 
     extern const char*   CtrlrMidiMultiTemplate_xml;
     const int            CtrlrMidiMultiTemplate_xmlSize = 920;
@@ -297,7 +297,7 @@ namespace BinaryData
     const int            lua_api_patcher_pySize = 9390;
 
     extern const char*   LuaAPI_xml;
-    const int            LuaAPI_xmlSize = 210624;
+    const int            LuaAPI_xmlSize = 210627;
 
     extern const char*   luabind_parser_py;
     const int            luabind_parser_pySize = 9863;

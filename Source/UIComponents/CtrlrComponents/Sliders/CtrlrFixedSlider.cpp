@@ -295,11 +295,7 @@ END_JUCER_METADATA
 
 CtrlrFixedSlider::CtrlrFixedSlider (CtrlrModulator &owner)
     : CtrlrComponent(owner),
-    lfV4(*this, componentTree), // For LookAndFeel_V4 CtrlrSliderLookAndFeel_V4
-    lfV3(*this, componentTree), // For LookAndFeel_V3 CtrlrSliderLookAndFeel_V3
-    lfV2(*this, componentTree), // For LookAndFeel_V2 CtrlrSliderLookAndFeel_V2
-    lf(*this, componentTree), // For LookAndFeel_V2 CtrlrSliderLookAndFeel_V2 LEGACY
-    ctrlrSlider (0)
+      ctrlrSlider (nullptr) // Safe uninitialized raw child component pointer baseline
 {
     valueMap = new CtrlrValueMap();
     
@@ -309,19 +305,14 @@ CtrlrFixedSlider::CtrlrFixedSlider (CtrlrModulator &owner)
     setColour (TooltipWindow::outlineColourId, findColour(TooltipWindow::outlineColourId));
     
     addAndMakeVisible (ctrlrSlider = new CtrlrSliderInternal (*this));
-    
     ctrlrSlider->setName ("ctrlrSlider");
 
-    //[UserPreSize]
     ctrlrSlider->addListener (this);
-    //ctrlrSlider->setLookAndFeel(lf);  // V5.6.28 and before
-    //ctrlrSlider->setLookAndFeel(&lfV4); // V5.6.29 and +
     componentTree.addListener (this);
     
     setProperty (Ids::uiSliderMin, 0);
     setProperty (Ids::uiSliderMax, 1);
-    // setProperty (Ids::uiSliderInterval, 1); // Removed v5.6.32. Useless since indexes are stepped 1 by 1
-    setProperty (Ids::uiSliderValueSuffix, ""); // Added v5.6.32
+    setProperty (Ids::uiSliderValueSuffix, ""); 
     setProperty (Ids::uiSliderSetNotificationOnlyOnRelease, false);
     setProperty (Ids::uiSliderDoubleClickEnabled, true);
     setProperty (Ids::uiSliderDoubleClickValue, 0);
@@ -336,52 +327,30 @@ CtrlrFixedSlider::CtrlrFixedSlider (CtrlrModulator &owner)
     setProperty (Ids::uiSliderSpringValue, 0);
     
     setProperty (Ids::uiSliderMouseWheelInterval, 1);
-    
     setProperty (Ids::uiSliderPopupBubble, false);
-    
     setProperty (Ids::uiFixedSliderContent, "");
     
     setProperty (Ids::uiSliderLookAndFeel, "Default");
     setProperty (Ids::uiSliderLookAndFeelIsCustom, false);
-     
     setProperty (Ids::uiSliderPopupBubble, false);
-     
     setProperty (Ids::uiSliderStyle, "RotaryVerticalDrag");
     
-    bool LegacyMode = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLegacyMode);  // Legacy mode flag for version before 5.6.29
-	String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
-	
-	if (LegacyMode || panelLnF == "V3") // Added v5.6.34. Not really good because it will create a new LnF but won't destroy it so it will lead to memory leaks
-	{
-		setLookAndFeel(new LookAndFeel_V3());
-		setProperty(Ids::uiSliderLookAndFeel, "V3");
-	}
-	
-	else if (panelLnF == "V2") // Added v5.6.34. Not really good because it will create a new LnF but won't destroy it so it will lead to memory leaks
-	{
-		setLookAndFeel(new LookAndFeel_V2());
-		setProperty(Ids::uiSliderLookAndFeel, "V2");
-	}
-	
-	else if (panelLnF == "V1") // Added v5.6.34. Not really good because it will create a new LnF but won't destroy it so it will lead to memory leaks
-	{
-		setLookAndFeel(new LookAndFeel_V1());
-		setProperty(Ids::uiSliderLookAndFeel, "V1");
-	}
-	
-	if ( panelLnF == "V3"
-		|| panelLnF == "V2"
-		|| panelLnF == "V1" )
+    // Safely check what layout the manager panel requires
+    String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
+    applyCentralLookAndFeel (ctrlrSlider, panelLnF);
+        repaint();
+    
+    if ( panelLnF == "V3" || panelLnF == "V2" || panelLnF == "V1" )
     {
         setSize (64, 64);
-        setProperty (Ids::uiSliderRotaryOutlineColour, "0xff0000ff");  // 0xff0000ff
-        setProperty (Ids::uiSliderRotaryFillColour, "0xff0000ff"); // 0xff0000ff
-        setProperty (Ids::uiSliderTrackColour, "0xff0f0f0f"); // 0xff0f0f0f
-        setProperty (Ids::uiSliderThumbColour, "0xffff0000"); // 0xffff0000
+        setProperty (Ids::uiSliderRotaryOutlineColour, "0xff0000ff");  
+        setProperty (Ids::uiSliderRotaryFillColour, "0xff0000ff"); 
+        setProperty (Ids::uiSliderTrackColour, "0xff0f0f0f"); 
+        setProperty (Ids::uiSliderThumbColour, "0xffff0000"); 
     }
     else
     {
-        setSize (72, 96); // requires Taller default footprint for V4 H90px
+        setSize (72, 96); 
         setProperty (Ids::uiSliderRotaryOutlineColour, (String)findColour(Slider::rotarySliderOutlineColourId).toString());
         setProperty (Ids::uiSliderRotaryFillColour, (String)findColour(Slider::rotarySliderFillColourId).toString());
         setProperty (Ids::uiSliderTrackColour, (String)findColour(Slider::rotarySliderFillColourId).toString());
@@ -391,7 +360,6 @@ CtrlrFixedSlider::CtrlrFixedSlider (CtrlrModulator &owner)
     setProperty (Ids::uiSliderIncDecButtonColour, (String)findColour (Slider::backgroundColourId).toString());
     setProperty (Ids::uiSliderIncDecTextColour, (String)findColour (Label::textColourId).toString());
     
-    /**For LookAndFeel_V2 only*/
     setProperty (Ids::uiSliderTrackCornerSize, 5);
     setProperty (Ids::uiSliderThumbCornerSize, 3);
     setProperty (Ids::uiSliderThumbWidth, 0);
@@ -409,26 +377,20 @@ CtrlrFixedSlider::CtrlrFixedSlider (CtrlrModulator &owner)
     setProperty (Ids::uiSliderValueTextColour, (String)findColour (Slider::textBoxTextColourId).toString());
     setProperty (Ids::uiSliderValueBgColour, "0x00ffffff");
     setProperty (Ids::uiSliderValueHighlightColour, (String)findColour (Slider::textBoxHighlightColourId).toString());
-    setProperty (Ids::uiSliderValueBgColour, "0x00ffffff"); // (String)findColour (Slider::textBoxBackgroundColourId).toString());
-    setProperty (Ids::uiSliderValueOutlineColour, "0x00ffffff"); //(String)findColour (Slider::textBoxOutlineColourId).toString());
-
+    setProperty (Ids::uiSliderValueOutlineColour, "0x00ffffff"); 
     
     setProperty (Ids::uiSliderLookAndFeelIsCustom, false);
-    //[/UserPreSize]
-
-    //[Constructor] You can add your own custom stuff here..
-    //[/Constructor]
 }
 
 CtrlrFixedSlider::~CtrlrFixedSlider()
 {
-    //[Destructor_pre]. You can add your own custom destruction code here..
-    //[/Destructor_pre]
+    // 2. Clear out the look and feel reference before deleting the child sub-component
+    if (ctrlrSlider != nullptr)
+    {
+        ctrlrSlider->setLookAndFeel(nullptr);
+    }
 
     deleteAndZero (ctrlrSlider);
-
-    //[Destructor]. You can add your own custom destruction code here..
-    //[/Destructor]
 }
 
 //==============================================================================
@@ -523,20 +485,11 @@ void CtrlrFixedSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
     {
         ctrlrSlider->setSliderStyle ((Slider::SliderStyle)CtrlrComponentTypeManager::sliderStringToStyle (getProperty (Ids::uiSliderStyle)));
     }
-    else if (property == Ids::uiSliderLookAndFeel)
+else if (property == Ids::uiSliderLookAndFeel)
     {
-        String LookAndFeelType = getProperty(property);
-        setLookAndFeel(getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
-        
-        if (LookAndFeelType == "Default")
-        {
-            setProperty(Ids::uiSliderLookAndFeelIsCustom, false); // Resets the Customized Flag to False to allow Global L&F to apply
-        }
-        
-        if (!getProperty(Ids::uiSliderLookAndFeelIsCustom))
-        {
-            resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
-        }
+        ctrlrSlider->setLookAndFeel (nullptr);
+        const String panelLnF = getProperty(property);
+        applyCentralLookAndFeel (ctrlrSlider, panelLnF);
     }
     else if (property == Ids::uiSliderRotaryFillColour)
     {
@@ -597,34 +550,30 @@ void CtrlrFixedSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
     }
     else if (property == Ids::uiSliderSetNotificationOnlyOnRelease)
     {
-    ctrlrSlider->setChangeNotificationOnlyOnRelease((bool)getProperty(Ids::uiSliderSetNotificationOnlyOnRelease));
-    }
-    else if (property == Ids::uiSliderIncDecButtonColour
-             || property == Ids::uiSliderIncDecTextColour
-             || property == Ids::uiSliderValueFont
-             || property == Ids::uiSliderValueTextJustification)
-    {
-        
-        if ( getProperty(Ids::uiSliderLookAndFeel) == "V3"
-            || getProperty(Ids::uiSliderLookAndFeel) == "V2"
-            || getProperty(Ids::uiSliderLookAndFeel) == "V1" )
-        {
-            ctrlrSlider->setLookAndFeel (nullptr); // Warning, it resets the LnF on loading
-            ctrlrSlider->setLookAndFeel (&lf); // V5.6.28 and before
-        }
-        else
-        {
-            //ctrlrSlider->setLookAndFeel (nullptr); // Warning, it resets the LnF on loading
-            //ctrlrSlider->setLookAndFeel (&lfV4); // V5.6.28+
-        }
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
-    }
-    else if (property == Ids::uiSliderVelocityMode
-        || property == Ids::uiSliderVelocityModeKeyTrigger
-        || property == Ids::uiSliderVelocitySensitivity
-        || property == Ids::uiSliderVelocityThreshold
-        || property == Ids::uiSliderVelocityOffset
-        )
+ctrlrSlider->setChangeNotificationOnlyOnRelease((bool)getProperty(Ids::uiSliderSetNotificationOnlyOnRelease));
+} // Make sure your original closing bracket for the previous statement is here!
+else if (property == Ids::uiSliderIncDecButtonColour
+         || property == Ids::uiSliderIncDecTextColour
+         || property == Ids::uiSliderValueFont
+         || property == Ids::uiSliderValueTextJustification)
+{
+    String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
+    
+    // 1. Unified look-and-feel resolver handles the assignment safely
+    applyCentralLookAndFeel (ctrlrSlider, panelLnF);
+
+    // 2. Lock the custom color flag
+    setProperty(Ids::uiSliderLookAndFeelIsCustom, true); 
+    
+    // 3. Force a repaint to apply changes visually
+    repaint();
+}
+else if (property == Ids::uiSliderVelocityMode
+    || property == Ids::uiSliderVelocityModeKeyTrigger
+    || property == Ids::uiSliderVelocitySensitivity
+    || property == Ids::uiSliderVelocityThreshold
+    || property == Ids::uiSliderVelocityOffset
+    )
     {
         ctrlrSlider->setVelocityBasedMode((bool)getProperty(Ids::uiSliderVelocityMode));
         ctrlrSlider->setVelocityModeParameters ((double)getProperty(Ids::uiSliderVelocitySensitivity),

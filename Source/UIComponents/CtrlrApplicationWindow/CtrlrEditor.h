@@ -168,6 +168,7 @@ class CtrlrEditor  : public AudioProcessorEditor,
 		void performKeyGenerator();
 		void performMidiDeviceRefresh();
 		void setMenuBarVisible(const bool shouldBeVisible=true);
+		void recreateTooltipEngine();
     
         // New method to set the main LookAndFeel for the editor and its children
         void setEditorLookAndFeel (const String &lookAndFeelDesc, const juce::var& colourSchemeProperty); // Added v5.6.34
@@ -178,14 +179,24 @@ class CtrlrEditor  : public AudioProcessorEditor,
 
 	private:
 		// Use a ScopedPointer to manage the menuBar object
-		juce::ScopedPointer<juce::MenuBarComponent> menuBar;
+		// juce::ScopedPointer<juce::MenuBarComponent> menuBar;
+		std::unique_ptr<juce::MenuBarComponent> menuBar;
 		// MenuBarComponent *menuBar; // Updated v5.6.34. ScopedPointed will handle its destruction properly
 		
 		// Use a ScopedPointer to manage the current LookAndFeel object
-		ScopedPointer<LookAndFeel> currentLookAndFeel; // Updated v5.6.34. ScopedPointed will handle its destruction properly
-    
+		//ScopedPointer<LookAndFeel> currentLookAndFeel; // Updated v5.6.34. ScopedPointed will handle its destruction properly
+		std::unique_ptr<juce::LookAndFeel_V4> currentLookAndFeel;
+		/*
+		There is an invisible architectural trap that explains why it was still leaking!
+		JUCE's legacy ScopedPointer deletes its managed object automatically when the parent container (CtrlrEditor) dies, which is good. However, look at the order of operations when CtrlrEditor shuts down:
+		CtrlrEditor begins its implicit destructor phase.
+		The ScopedPointer<LookAndFeel> runs its destructor and deletes the layout memory.
+		The Trap: Because the component hierarchy never explicitly called setLookAndFeel(nullptr) before that memory was deleted, the child components are left holding dangling raw pointers to a destroyed look-and-feel object during the final cleanup sweep. This completely breaks JUCE's internal weak-reference release tracking, freezing the cached vector graphics (DrawablePath, FillType, etc.) inside memory at the exact moment of exit.
+		By changing it to std::unique_ptr and explicitly calling setLookAndFeel(nullptr); at the very top of your ~CtrlrEditor() destructor, you orchestrate a perfectly clean teardown.
+		*/
 		bool menuHandlerCalled;
-		TooltipWindow tooltipWindow;
+		// Inside CtrlrEditor.h - Change from a stack object to:
+		std::unique_ptr<juce::TooltipWindow> tooltipWindow;
 		CtrlrManager &owner;
 		ResizableCornerComponent resizer;
 		CtrlrProcessor *ownerFilter;

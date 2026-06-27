@@ -116,7 +116,7 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow (const String& title, const Colour&
     vpMaxWidth = ed.getProperty(Ids::uiViewPortMaxWidth);
     vpMaxHeight = ed.getProperty(Ids::uiViewPortMaxHeight);
        
-    if (ctrlrProcessor->getManager().getInstanceMode() == InstanceSingleRestriced) // restricted instances check flag to be resizable
+    if (ctrlrProcessor->getManager().getInstanceMode() == InstanceSingleRestricted) // restricted instances check flag to be resizable
     {
         _DBG("Restricted Instance Mode");
         setResizable(vpResizable, true);

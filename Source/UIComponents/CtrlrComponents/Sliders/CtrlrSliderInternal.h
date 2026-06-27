@@ -7,16 +7,19 @@
 #include "CtrlrUtilitiesGUI.h"
 #include "CtrlrPanel/CtrlrPanel.h"
 
-class CtrlrSliderLookAndFeelBase : public juce::LookAndFeel_V4 // Pure transparent window
+class CtrlrSliderLookAndFeelBase : public juce::LookAndFeel_V4 
 {
 public:
     CtrlrSliderLookAndFeelBase (CtrlrComponent& _owner, juce::ValueTree& _ownerTree)
         : ownerTree (_ownerTree), owner (_owner)
-    {}
+    {
+    }
 
-    ~CtrlrSliderLookAndFeelBase() override = default;
-
-    // All previous overrides (createSliderTextBox, createSliderButton) are completely removed!
+~CtrlrSliderLookAndFeelBase() override
+    {
+        // Tells the underlying LookAndFeel engine to clear out its local style maps
+        juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
+    }
 
 protected:
     juce::ValueTree& ownerTree;
@@ -291,28 +294,34 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrSliderLookAndFeel_V2)
 };
 
-#else
+#else // ==================== DYNAMIC PATH ====================
 
 class CtrlrSliderLookAndFeel_V1 : public CtrlrSliderLookAndFeelBase
 {
 public:
-    // Pass the parameters directly up to CtrlrSliderLookAndFeelBase
     CtrlrSliderLookAndFeel_V1 (CtrlrComponent& _owner, ValueTree& _ownerTree)
-        : CtrlrSliderLookAndFeelBase (_owner, _ownerTree)
-    {
-    }
+        : CtrlrSliderLookAndFeelBase (_owner, _ownerTree) {}
 
+    ~CtrlrSliderLookAndFeel_V1() 
+        {
+    // Force the internal LookAndFeel structures to drop cached shapes/cursors
+    // before the destructor exits
+    juce::LookAndFeel::setDefaultLookAndFeel (nullptr);
+}
+
+    // Route drawing safely to a single shared static instance
     void drawLinearSliderBackground (juce::Graphics& g, int x, int y, int w, int h, float pos, float min, float max, const juce::Slider::SliderStyle s, juce::Slider& sl) override
-    { nativeV1.drawLinearSliderBackground(g, x, y, w, h, pos, min, max, s, sl); }
+    { getNativeV1().drawLinearSliderBackground(g, x, y, w, h, pos, min, max, s, sl); }
     
     void drawLinearSliderThumb (juce::Graphics& g, int x, int y, int w, int h, float pos, float min, float max, const juce::Slider::SliderStyle s, juce::Slider& sl) override
-    { nativeV1.drawLinearSliderThumb(g, x, y, w, h, pos, min, max, s, sl); }
-
-    ~CtrlrSliderLookAndFeel_V1() override = default;
+    { getNativeV1().drawLinearSliderThumb(g, x, y, w, h, pos, min, max, s, sl); }
 
 private:
-    // REMOVED owner and ownerTree (they are inherited from base!)
-    juce::LookAndFeel_V1 nativeV1;
+    // Lazy-loaded single instance shared across all V1 sliders
+    static juce::LookAndFeel_V1& getNativeV1() {
+        static juce::LookAndFeel_V1 instance;
+        return instance;
+    }
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrSliderLookAndFeel_V1)
 };
 
@@ -320,20 +329,25 @@ class CtrlrSliderLookAndFeel_V2 : public CtrlrSliderLookAndFeelBase
 {
 public:
     CtrlrSliderLookAndFeel_V2 (CtrlrComponent& _owner, ValueTree& _ownerTree)
-        : CtrlrSliderLookAndFeelBase (_owner, _ownerTree)
-    {
-    }
+        : CtrlrSliderLookAndFeelBase (_owner, _ownerTree) {}
 
+    ~CtrlrSliderLookAndFeel_V2() override
+    {
+    // Force the internal LookAndFeel structures to drop cached shapes/cursors
+    // before the destructor exits
+    juce::LookAndFeel::setDefaultLookAndFeel (nullptr);
+}
     void drawLinearSliderBackground (juce::Graphics& g, int x, int y, int w, int h, float pos, float min, float max, const juce::Slider::SliderStyle s, juce::Slider& sl) override
-    { nativeV2.drawLinearSliderBackground(g, x, y, w, h, pos, min, max, s, sl); }
+    { getNativeV2().drawLinearSliderBackground(g, x, y, w, h, pos, min, max, s, sl); }
     
     void drawLinearSliderThumb (juce::Graphics& g, int x, int y, int w, int h, float pos, float min, float max, const juce::Slider::SliderStyle s, juce::Slider& sl) override
-    { nativeV2.drawLinearSliderThumb(g, x, y, w, h, pos, min, max, s, sl); }
-
-    ~CtrlrSliderLookAndFeel_V2() override = default;
+    { getNativeV2().drawLinearSliderThumb(g, x, y, w, h, pos, min, max, s, sl); }
 
 private:
-    juce::LookAndFeel_V2 nativeV2;
+    static juce::LookAndFeel_V2& getNativeV2() {
+        static juce::LookAndFeel_V2 instance;
+        return instance;
+    }
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrSliderLookAndFeel_V2)
 };
 
@@ -341,20 +355,26 @@ class CtrlrSliderLookAndFeel_V3 : public CtrlrSliderLookAndFeelBase
 {
 public:
     CtrlrSliderLookAndFeel_V3 (CtrlrComponent& _owner, ValueTree& _ownerTree)
-        : CtrlrSliderLookAndFeelBase (_owner, _ownerTree)
-    {
-    }
+        : CtrlrSliderLookAndFeelBase (_owner, _ownerTree) {}
+
+    ~CtrlrSliderLookAndFeel_V3() override
+        {
+    // Force the internal LookAndFeel structures to drop cached shapes/cursors
+    // before the destructor exits
+    juce::LookAndFeel::setDefaultLookAndFeel (nullptr);
+}
 
     void drawLinearSliderBackground (juce::Graphics& g, int x, int y, int w, int h, float pos, float min, float max, const juce::Slider::SliderStyle s, juce::Slider& sl) override
-    { nativeV3.drawLinearSliderBackground(g, x, y, w, h, pos, min, max, s, sl); }
+    { getNativeV3().drawLinearSliderBackground(g, x, y, w, h, pos, min, max, s, sl); }
     
     void drawLinearSliderThumb (juce::Graphics& g, int x, int y, int w, int h, float pos, float min, float max, const juce::Slider::SliderStyle s, juce::Slider& sl) override
-    { nativeV3.drawLinearSliderThumb(g, x, y, w, h, pos, min, max, s, sl); }
-
-    ~CtrlrSliderLookAndFeel_V3() override = default;
+    { getNativeV3().drawLinearSliderThumb(g, x, y, w, h, pos, min, max, s, sl); }
 
 private:
-    juce::LookAndFeel_V3 nativeV3;
+    static juce::LookAndFeel_V3& getNativeV3() {
+        static juce::LookAndFeel_V3 instance;
+        return instance;
+    }
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrSliderLookAndFeel_V3)
 };
 
@@ -362,15 +382,20 @@ class CtrlrSliderLookAndFeel_V4 : public CtrlrSliderLookAndFeelBase
 {
 public:
     CtrlrSliderLookAndFeel_V4 (CtrlrComponent& _owner, ValueTree& _ownerTree)
-        : CtrlrSliderLookAndFeelBase (_owner, _ownerTree)
-    {
-    }
+        : CtrlrSliderLookAndFeelBase (_owner, _ownerTree) {}
 
-    ~CtrlrSliderLookAndFeel_V4() override = default;
+    ~CtrlrSliderLookAndFeel_V4() override
+        {
+    // Force the internal LookAndFeel structures to drop cached shapes/cursors
+    // before the destructor exits
+    juce::LookAndFeel::setDefaultLookAndFeel (nullptr);
+}
     
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrSliderLookAndFeel_V4)
 };
+
+
 #endif
 #endif
 #endif

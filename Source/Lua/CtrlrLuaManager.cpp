@@ -1556,7 +1556,7 @@ void CtrlrPanel::wrapForLua(lua_State* L)
 				[
 					value("InstanceSingle", (uint8)InstanceSingle),
 					value("InstanceMulti", (uint8)InstanceMulti),
-					value("InstanceSingleRestriced", (uint8)InstanceSingleRestriced),
+					value("InstanceSingleRestricted", (uint8)InstanceSingleRestricted),
 					value("InstanceSingleEngine", (uint8)InstanceSingleEngine),
 					value("InstanceMultiEngine", (uint8)InstanceMultiEngine),
 					value("InstanceSingleRestrictedEngine", (uint8)InstanceSingleRestrictedEngine)

@@ -111,7 +111,7 @@ private:
     std::unique_ptr<SearchListener> searchListener;
     
 	Array <var> values;
-	CtrlrComboLF lf;
+	// CtrlrComboLF lf;
 	ScopedPointer<CtrlrValueMap> valueMap;
     bool isSearching = false;
     bool isUpdating = false;

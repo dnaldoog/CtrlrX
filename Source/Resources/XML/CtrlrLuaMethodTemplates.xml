@@ -519,7 +519,7 @@ end
     --
     -- InstanceSingle
 	-- InstanceMulti
-	-- InstanceSingleRestriced
+	-- InstanceSingleRestricted
 	-- InstanceSingleEngine
 	-- InstanceMultiEngine
 	-- InstanceSingleRestrictedEngine

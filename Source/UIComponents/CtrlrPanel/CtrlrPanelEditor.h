@@ -50,6 +50,10 @@ class CtrlrPanelEditor  :	public Component,
                             public juce::ChangeListener // Add this line
 {
 	public:
+		std::unique_ptr<juce::LookAndFeel_V1> lfV1;
+		std::unique_ptr<juce::LookAndFeel_V2> lfV2;
+		std::unique_ptr<juce::LookAndFeel_V3> lfV3;
+		// std::unique_ptr<juce::LookAndFeel_V4> lfV4; 
 		CtrlrPanelEditor (CtrlrPanel &_owner, CtrlrManager &_ctrlrManager, const String &panelName);
 		~CtrlrPanelEditor();
     
@@ -62,6 +66,8 @@ class CtrlrPanelEditor  :	public Component,
 			Center,
 			Tile
 		};
+
+
 		void restoreState(const ValueTree &savedSate);
 		void setBackgroundImage (const File &imageFile);
 		CtrlrPanelCanvas *getCanvas();

@@ -85,12 +85,12 @@ public:
     JUCE_LEAK_DETECTOR(CtrlrSlider)
 
 private:
-    CtrlrSliderLookAndFeel_V2 lf;
-    CtrlrSliderLookAndFeel_V2 lfV2;
-    CtrlrSliderLookAndFeel_V3 lfV3;
-    CtrlrSliderLookAndFeel_V4 lfV4;
+    // CtrlrSliderLookAndFeel_V2 lf;
+    // CtrlrSliderLookAndFeel_V2 lfV2;
+    // CtrlrSliderLookAndFeel_V3 lfV3;
+    // CtrlrSliderLookAndFeel_V4 lfV4;
     CtrlrSliderInternal ctrlrSlider;
-    std::unique_ptr<LookAndFeel> legacyLookAndFeel;
+    // std::unique_ptr<LookAndFeel> legacyLookAndFeel;
 };
 
 #endif // CTLRX_DISABLE_DYNAMIC_LNF

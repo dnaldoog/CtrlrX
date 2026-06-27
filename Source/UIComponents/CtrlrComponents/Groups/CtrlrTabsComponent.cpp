@@ -187,7 +187,7 @@ void CtrlrTabsInternal::currentTabChanged (int newCurrentTabIndex, const String 
 
 //==============================================================================
 CtrlrTabsComponent::CtrlrTabsComponent (CtrlrModulator &owner)
-    : CtrlrComponent(owner), lf(*this),
+    : CtrlrComponent(owner), 
       ctrlrTabs (0)
 {
     addAndMakeVisible (ctrlrTabs = new CtrlrTabsInternal (*this));
@@ -195,7 +195,11 @@ CtrlrTabsComponent::CtrlrTabsComponent (CtrlrModulator &owner)
 
 
     //[UserPreSize]
-	ctrlrTabs->setLookAndFeel (&lf);
+auto* editor = owner.getOwnerPanel().getEditor();
+String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
+
+applyCentralLookAndFeel (ctrlrTabs, panelLnF);
+        repaint();
 	owner.setProperty (Ids::modulatorVstExported, false);
 
 	setProperty (Ids::uiTabsCurrentTabChanged, "");
@@ -352,8 +356,8 @@ void CtrlrTabsComponent::valueTreePropertyChanged (ValueTree &treeWhosePropertyH
 		|| property == Ids::uiTabsFrontTabOutline
 		|| property == Ids::uiTabsTabOutline)
 	{
-		ctrlrTabs->setLookAndFeel(0);
-		ctrlrTabs->setLookAndFeel(&lf);
+		applyCentralLookAndFeel (ctrlrTabs, getProperty(property));
+        repaint();
 	}
 
 	else if (property == Ids::uiTabsDepth)

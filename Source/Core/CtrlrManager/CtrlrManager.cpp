@@ -450,6 +450,18 @@ void CtrlrManager::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChan
 	{
 		ctrlrLog.setMidiLogOptions (getProperty(property));
 	}
+	else if (property == Ids::uiPanelLookAndFeel) // Or whichever ID tracks your global look and feel style sheet
+    {
+        if (auto* editor = getEditor())
+        {
+            // Call the public bridge method to safely swap the tooltip engine tracking state
+            editor->recreateTooltipEngine();
+            
+            // Force the rest of the layout tree to cascade update
+            editor->lookAndFeelChanged();
+            editor->repaint();
+        }
+    }
 	else if (property == Ids::ctrlrNativeAlerts)
 	{
 		if (getEditor())
@@ -505,7 +517,7 @@ void CtrlrManager::restoreEditorState()
 {
 	if (getProperty(Ids::ctrlrEditorBounds).toString() == "")
 	{
-		if (getInstanceMode() == InstanceSingle || getInstanceMode() == InstanceSingleRestriced)
+		if (getInstanceMode() == InstanceSingle || getInstanceMode() == InstanceSingleRestricted)
 		{
 			Rectangle<int> r(32, 32, 800, 600);
 

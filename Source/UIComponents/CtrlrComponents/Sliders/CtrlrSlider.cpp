@@ -281,11 +281,7 @@ void CtrlrSlider::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel)
 
 CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
     :    CtrlrComponent(owner),
-        lfV4(*this, componentTree), 
-        lfV3(*this, componentTree), 
-        lfV2(*this, componentTree), 
-        lf(*this, componentTree), 
-        ctrlrSlider (*this)
+         ctrlrSlider (*this)
 {
     setColour (TooltipWindow::textColourId, findColour(Label::textColourId));
     setColour (TooltipWindow::backgroundColourId, findColour(TooltipWindow::backgroundColourId));
@@ -293,6 +289,7 @@ CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
     
     addAndMakeVisible (&ctrlrSlider);
     
+    // Hardcode a safe internal baseline range & style so JUCE can boot without invariant errors
     ctrlrSlider.setRange (0, 127, 1);
     ctrlrSlider.setSliderStyle (Slider::RotaryVerticalDrag);
     ctrlrSlider.setTextBoxStyle (Slider::TextBoxBelow, false, 64, 12);
@@ -326,29 +323,25 @@ CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
     setProperty (Ids::uiSliderPopupBubble, false);
     setProperty (Ids::uiSliderStyle, "RotaryVerticalDrag");
     
-    bool LegacyMode = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLegacyMode);  
+    // Pull the look and feel setting from the panel manager
     String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
+    auto* editor = owner.getOwnerPanel().getEditor();
     
-    if (LegacyMode || panelLnF == "V3") 
+    // 1. Assign the correct shared LookAndFeel from the parent scope before framing
+    if (editor != nullptr)
     {
-    legacyLookAndFeel = std::make_unique<LookAndFeel_V3>();
-    setLookAndFeel(legacyLookAndFeel.get());
-    setProperty(Ids::uiSliderLookAndFeel, "V3");
+        if (panelLnF == "V3")       { ctrlrSlider.setLookAndFeel (editor->lfV3.get()); }
+        else if (panelLnF == "V2")  { ctrlrSlider.setLookAndFeel (editor->lfV2.get()); }
+        else if (panelLnF == "V1")  { ctrlrSlider.setLookAndFeel (editor->lfV1.get()); }
+     //   else if (panelLnF == "V4")  { ctrlrSlider.setLookAndFeel (editor->lfV4.get()); }
+        else                        { ctrlrSlider.setLookAndFeel (nullptr); } // Defaults to internal V4
     }
-    else if (panelLnF == "V2") 
+    else
     {
-    legacyLookAndFeel = std::make_unique<LookAndFeel_V2>();
-    setLookAndFeel(legacyLookAndFeel.get());
-    setProperty(Ids::uiSliderLookAndFeel, "V2");;
-    }
-    else if (panelLnF == "V1") 
-    {
-    legacyLookAndFeel = std::make_unique<LookAndFeel_V1>();
-    setLookAndFeel(legacyLookAndFeel.get());
-    setProperty(Ids::uiSliderLookAndFeel, "V1");
+        ctrlrSlider.setLookAndFeel (nullptr);
     }
 
-    
+    // 2. Configure dimensional footprints based on the styling type
     if ( panelLnF == "V3" || panelLnF == "V2" || panelLnF == "V1" )
     {
         setSize (64, 64);
@@ -357,15 +350,23 @@ CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
         setProperty (Ids::uiSliderThumbColour, "0xffff0000"); 
         setProperty (Ids::uiSliderTrackColour, "0xff0f0f0f"); 
         setProperty (Ids::uiSliderLookAndFeelIsCustom, false);
+
+        // Keep bounds safe from juce_MathsFunctions line 288 range exceptions
+        setProperty (Ids::uiSliderValueWidth, 54);
+        setProperty (Ids::uiSliderValueHeight, 12);
     }
     else
     {
+        // V4/Default layout initialization frame bounds
         setSize (72, 96); 
         setProperty (Ids::uiSliderRotaryOutlineColour, (String)findColour(Slider::rotarySliderOutlineColourId).toString());
         setProperty (Ids::uiSliderRotaryFillColour, (String)findColour(Slider::rotarySliderFillColourId).toString());
         setProperty (Ids::uiSliderThumbColour, (String)findColour(Slider::thumbColourId).toString());
         setProperty (Ids::uiSliderTrackColour, (String)findColour(Slider::rotarySliderFillColourId).toString());
         setProperty (Ids::uiSliderLookAndFeelIsCustom, false);
+
+        setProperty (Ids::uiSliderValueWidth, 64);
+        setProperty (Ids::uiSliderValueHeight, 14);
     }
     
     setProperty (Ids::uiSliderIncDecButtonColour, (String)findColour(Slider::backgroundColourId).toString());
@@ -381,8 +382,6 @@ CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
     setProperty (Ids::uiSliderThumbFlatOnBottom, false);
     
     setProperty (Ids::uiSliderValuePosition, (int)Slider::TextBoxBelow);
-    setProperty (Ids::uiSliderValueWidth, 64);
-    setProperty (Ids::uiSliderValueHeight, 10);
     setProperty (Ids::uiSliderValueTextJustification, "centred");
     setProperty (Ids::uiSliderValueFont, FONT2STR (Font(12)));
     setProperty (Ids::uiSliderValueTextColour, (String)findColour(Slider::textBoxTextColourId).toString());
@@ -396,7 +395,12 @@ CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
 CtrlrSlider::~CtrlrSlider()
 {
     componentTree.removeListener (this);
+    
     ctrlrSlider.setLookAndFeel (nullptr);
+    this->setLookAndFeel (nullptr);
+    
+    // Fallback global flush if clearCaches() is inaccessible:
+    juce::LookAndFeel::setDefaultLookAndFeel (nullptr);
 }
 
 void CtrlrSlider::resized()
@@ -476,20 +480,44 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
     {
         ctrlrSlider.setSliderStyle ((Slider::SliderStyle)CtrlrComponentTypeManager::sliderStringToStyle (getProperty (Ids::uiSliderStyle)));
     }
-    else if (property == Ids::uiSliderLookAndFeel)
+else if (property == Ids::uiSliderLookAndFeel)
     {
-    String LookAndFeelType = getProperty(property);
-    legacyLookAndFeel.reset(CtrlrSlider::getLookAndFeelFromComponentProperty(LookAndFeelType));
-    setLookAndFeel(legacyLookAndFeel.get());
-        
-        if (LookAndFeelType == "Default")
+        // 1. Capture the existing geometry parameters
+        const auto currentPos = ctrlrSlider.getTextBoxPosition();
+        const int textBoxWidth = ctrlrSlider.getTextBoxWidth();
+        const int textBoxHeight = ctrlrSlider.getTextBoxHeight();
+        const bool isEditable = ctrlrSlider.isTextBoxEditable();
+
+        // 2. FORCE NUKING THE SUB-COMPONENTS: Switching to NoTextBox completely 
+        // destroys the internal V4 Labels/TextEditors that are holding the leaked vector caches!
+        ctrlrSlider.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+
+        // 3. Clear old LookAndFeel assignments completely
+// 3. Clear old LookAndFeel assignments completely
+    ctrlrSlider.setLookAndFeel (nullptr);
+    const String panelLnF = getProperty(property);
+    applyCentralLookAndFeel (&ctrlrSlider, panelLnF);
+
+        // 5. REBUILD FROM SCRATCH: Now that the new LookAndFeel is active, 
+        // restoring the style forces JUCE to spawn brand-new sub-components 
+        // natively under the new version's layout pipeline!
+        if (currentPos != juce::Slider::NoTextBox)
         {
-            setProperty(Ids::uiSliderLookAndFeelIsCustom, false); 
+            ctrlrSlider.setTextBoxStyle (currentPos, isEditable, textBoxWidth, textBoxHeight);
         }
         
-        if (!getProperty(Ids::uiSliderLookAndFeelIsCustom))
+        // 6. Notify the hierarchy to repaint with the clean pipeline
+        ctrlrSlider.lookAndFeelChanged();
+    }
+    else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin)
+    {
+        const double minValue = getProperty (Ids::uiSliderMin);
+        const double maxValue = getProperty (Ids::uiSliderMax);
+        const double intervalValue = getProperty (Ids::uiSliderInterval);
+
+        if (maxValue > minValue)
         {
-            CtrlrSlider::resetLookAndFeelOverrides(); 
+            ctrlrSlider.setRange (minValue, maxValue, intervalValue);
         }
     }
     else if (property == Ids::uiSliderRotaryFillColour)
@@ -532,9 +560,18 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
         ctrlrSlider.setColour (Slider::textBoxOutlineColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueOutlineColour)) );
         setProperty(Ids::uiSliderLookAndFeelIsCustom, true); 
     }
-    else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin)
+else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin)
     {
-    double max       = getProperty (Ids::uiSliderMax);
+        const double minValue = getProperty (Ids::uiSliderMin);
+        const double maxValue = getProperty (Ids::uiSliderMax);
+        const double intervalValue = getProperty (Ids::uiSliderInterval);
+
+        // Safety Guard: Only update JUCE if we have a valid range.
+        // This prevents the assertion from firing during step-by-step initialization.
+        if (maxValue > minValue)
+        {
+            ctrlrSlider.setRange (minValue, maxValue, intervalValue);
+        }
     }
     else if (property == Ids::uiSliderDecimalPlaces) 
     {
@@ -556,7 +593,7 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
         
         ctrlrSlider.lookAndFeelChanged();
     }
-    else if (property == Ids::uiSliderSetNotificationOnlyOnRelease)
+else if (property == Ids::uiSliderSetNotificationOnlyOnRelease)
     {
         ctrlrSlider.setChangeNotificationOnlyOnRelease((bool)getProperty(Ids::uiSliderSetNotificationOnlyOnRelease));
     }
@@ -565,18 +602,26 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
              || property == Ids::uiSliderValueFont
              || property == Ids::uiSliderValueTextJustification)
     {
-        if ( getProperty(Ids::uiSliderLookAndFeel) == "V3"
-            || getProperty(Ids::uiSliderLookAndFeel) == "V2"
-            || getProperty(Ids::uiSliderLookAndFeel) == "V1" )
+        const String panelLnF = getProperty(Ids::uiSliderLookAndFeel);
+        auto* editor = owner.getOwnerPanel().getEditor();
+
+        // 1. Clear old reference safely
+        ctrlrSlider.setLookAndFeel (nullptr); 
+
+        if (editor != nullptr)
         {
-            ctrlrSlider.setLookAndFeel (nullptr); 
-            ctrlrSlider.setLookAndFeel (&lf); 
+            // 2. Map color/font updates strictly to the active shared look and feel
+            if (panelLnF == "V3")       { ctrlrSlider.setLookAndFeel (editor->lfV3.get()); }
+            else if (panelLnF == "V2")  { ctrlrSlider.setLookAndFeel (editor->lfV2.get()); }
+            else if (panelLnF == "V1")  { ctrlrSlider.setLookAndFeel (editor->lfV1.get()); }
+           // else if (panelLnF == "V4")  { ctrlrSlider.setLookAndFeel (editor->lfV4.get()); }
+            else                        { ctrlrSlider.setLookAndFeel (nullptr); } // Defaults to internal V4
         }
         else
         {
             ctrlrSlider.setLookAndFeel (nullptr); 
-            ctrlrSlider.setLookAndFeel (&lfV4); 
         }
+
         setProperty(Ids::uiSliderLookAndFeelIsCustom, true); 
         ctrlrSlider.lookAndFeelChanged(); 
     }
@@ -634,22 +679,16 @@ void CtrlrSlider::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel)
     {
         ctrlrSlider.setLookAndFeel (nullptr);
         
-        if ( getProperty(Ids::uiSliderLookAndFeel) == "V3"
-            || getProperty(Ids::uiSliderLookAndFeel) == "V2"
-            || getProperty(Ids::uiSliderLookAndFeel) == "V1" )
-        {
-            ctrlrSlider.setLookAndFeel (&lf); 
-        }
+        const String panelLnF = getProperty(Ids::uiSliderLookAndFeel);
+        applyCentralLookAndFeel (&ctrlrSlider, panelLnF);
+    }
+
         else
         {
-            ctrlrSlider.setLookAndFeel (&lfV4); 
+            ctrlrSlider.setLookAndFeel (nullptr);
         }
     }
-    else
-    {
-        ctrlrSlider.setLookAndFeel (customLookAndFeel);
-    }
-}
+
 
 const String CtrlrSlider::getCurrentLF()
 {
