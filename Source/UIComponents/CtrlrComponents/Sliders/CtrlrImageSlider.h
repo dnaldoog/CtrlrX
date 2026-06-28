@@ -6,66 +6,66 @@
 
 class CtrlrImageSliderLF;
 
-class CtrlrImageSlider  : public CtrlrComponent,
-                          public SettableTooltipClient,
-						  public Slider::Listener
-{
-public:
+class CtrlrImageSlider : public CtrlrComponent,
+                         public SettableTooltipClient,
+                         public Slider::Listener {
+  public:
     //==============================================================================
-    CtrlrImageSlider (CtrlrModulator &owner);
+    CtrlrImageSlider(CtrlrModulator& owner);
     ~CtrlrImageSlider();
 
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
-	void setComponentValue (const double newValue, const bool sendChangeMessage=false);
-	double getComponentValue();
-	int getComponentMidiValue();
-	double getComponentMaxValue();
-	const String getComponentText();
-	void valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
-	void valueTreeChildrenChanged (ValueTree &treeWhoseChildHasChanged){}
-	void valueTreeParentChanged (ValueTree &treeWhoseParentHasChanged){}
-	void valueTreeChildAdded (ValueTree& parentTree, ValueTree& childWhichHasBeenAdded){}
-    void valueTreeChildRemoved (ValueTree& parentTree, ValueTree& childWhichHasBeenRemoved, int){}
-	void valueTreeChildOrderChanged (ValueTree& parentTreeWhoseChildrenHaveMoved, int, int){}
-	Image &getFilmStripImage() { return (filmStripImage); }
-	Slider *getOwnedSlider() { return (ctrlrSlider); }
-	void reloadResources(Array <CtrlrPanelResource*> resourcesThatChanged);
-	void setResource();
-	static void wrapForLua(lua_State *L);
+    void setComponentValue(const double newValue, const bool sendChangeMessage = false);
+    double getComponentValue();
+    int getComponentMidiValue();
+    double getComponentMaxValue();
+    const String getComponentText();
+    void valueTreePropertyChanged(ValueTree& treeWhosePropertyHasChanged,
+                                  const Identifier& property);
+    void valueTreeChildrenChanged(ValueTree& treeWhoseChildHasChanged) {}
+    void valueTreeParentChanged(ValueTree& treeWhoseParentHasChanged) {}
+    void valueTreeChildAdded(ValueTree& parentTree, ValueTree& childWhichHasBeenAdded) {}
+    void valueTreeChildRemoved(ValueTree& parentTree, ValueTree& childWhichHasBeenRemoved, int) {}
+    void valueTreeChildOrderChanged(ValueTree& parentTreeWhoseChildrenHaveMoved, int, int) {}
+    Image& getFilmStripImage() { return (filmStripImage); }
+    Slider* getOwnedSlider() { return (ctrlrSlider); }
+    void reloadResources(Array<CtrlrPanelResource*> resourcesThatChanged);
+    void setResource();
+    static void wrapForLua(lua_State* L);
 #if CTLRX_DISABLE_DYNAMIC_LNF
-// ============================================================================
-// 2. LIGHTWEIGHT 5.3 FORK PATHWAY (DROP ENTIRE 5.3 FILE HERE)
-// ====
-	void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr) {}
+    // ============================================================================
+    // 2. LIGHTWEIGHT 5.3 FORK PATHWAY (DROP ENTIRE 5.3 FILE HERE)
+    // ====
+    void customLookAndFeelChanged(LookAndFeelBase* customLookAndFeel = nullptr) {}
 
 #else
-// ============================================================================
-// 3. UPSTREAM CTRLRX PATHWAY (DROP ENTIRE NEW FILE HERE)
-// ============================================================================
-    void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr) {};
-    static LookAndFeel* getLookAndFeelFromComponentProperty(const String &lookAndFeelComponentProperty);
+    // ============================================================================
+    // 3. UPSTREAM CTRLRX PATHWAY (DROP ENTIRE NEW FILE HERE)
+    // ============================================================================
+    void customLookAndFeelChanged(LookAndFeelBase* customLookAndFeel = nullptr) {};
+    static LookAndFeel*
+    getLookAndFeelFromComponentProperty(const String& lookAndFeelComponentProperty);
     void resetLookAndFeelOverrides();
     void updatePropertiesPanel();
-
 
 #endif
 
     //[/UserMethods]
 
-    void paint (Graphics& g);
+    void paint(Graphics& g);
     void resized();
-    void sliderValueChanged (Slider* sliderThatWasMoved);
-    void mouseUp (const MouseEvent& e);
-
+    void sliderValueChanged(Slider* sliderThatWasMoved);
+    void mouseUp(const MouseEvent& e);
 
     //==============================================================================
-    juce_UseDebuggingNewOperator
+  juce_UseDebuggingNewOperator
 
-private:
-    //[UserVariables]   -- You can add your own custom variables in this section.
-	ScopedPointer<CtrlrImageSliderLF> lf;
-	Image filmStripImage;
+      private :
+      //[UserVariables]   -- You can add your own custom variables in this section.
+      ScopedPointer<CtrlrImageSliderLF>
+          lf;
+    Image filmStripImage;
     //[/UserVariables]
 
     //==============================================================================
@@ -73,9 +73,8 @@ private:
 
     //==============================================================================
     // (prevent copy constructor and operator= being generated..)
-    CtrlrImageSlider (const CtrlrImageSlider&);
-    const CtrlrImageSlider& operator= (const CtrlrImageSlider&);
+    CtrlrImageSlider(const CtrlrImageSlider&);
+    const CtrlrImageSlider& operator=(const CtrlrImageSlider&);
 };
 
-
-#endif   // __JUCER_HEADER_CTRLRIMAGESLIDER_CTRLRIMAGESLIDER_391ECC09__
+#endif // __JUCER_HEADER_CTRLRIMAGESLIDER_CTRLRIMAGESLIDER_391ECC09__

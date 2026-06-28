@@ -1,22 +1,19 @@
-#include "stdafx.h"
+#include "CtrlrSliderInternal.h"
 #include "../CtrlrComponent.h"
 #include "CtrlrLog.h"
-#include "CtrlrSliderInternal.h"
 #include "CtrlrPanel/CtrlrPanelEditor.h"
+#include "stdafx.h"
 
-CtrlrSliderInternal::CtrlrSliderInternal(CtrlrComponent &_owner) : owner(_owner)
-{
-    Slider::setName (owner.getName());
+CtrlrSliderInternal::CtrlrSliderInternal(CtrlrComponent& _owner) : owner(_owner) {
+    Slider::setName(owner.getName());
 }
 
-CtrlrSliderInternal::~CtrlrSliderInternal()
-{
-}
+CtrlrSliderInternal::~CtrlrSliderInternal() {}
 
-String CtrlrSliderInternal::getTextFromValue(double value) // Updated v5.6.32. Required to add suffix to value like Hz, ms etc
+String CtrlrSliderInternal::getTextFromValue(
+    double value) // Updated v5.6.32. Required to add suffix to value like Hz, ms etc
 {
-    auto getText = [this](double val)
-    {
+    auto getText = [this](double val) {
         if (textFromValueFunction != nullptr)
             return textFromValueFunction(val);
 
@@ -27,64 +24,55 @@ String CtrlrSliderInternal::getTextFromValue(double value) // Updated v5.6.32. R
     };
 
     String uiType = owner.getProperty(Ids::uiType);
-    if (uiType == "uiFixedSlider" || uiType == "uiFixedImageSlider")
-    {
+    if (uiType == "uiFixedSlider" || uiType == "uiFixedImageSlider") {
         return owner.getTextForValue(value) + getTextValueSuffix();
-    }
-    else
-    {
+    } else {
         return getText(value) + getTextValueSuffix();
     }
 }
 
-double CtrlrSliderInternal::getValueFromText (const String& text) // Added v5.6.32
+double CtrlrSliderInternal::getValueFromText(const String& text) // Added v5.6.32
 {
     auto t = text.trimStart();
 
-    if (t.endsWith (getTextValueSuffix()))
-        t = t.substring (0, t.length() - getTextValueSuffix().length());
+    if (t.endsWith(getTextValueSuffix()))
+        t = t.substring(0, t.length() - getTextValueSuffix().length());
 
     if (valueFromTextFunction != nullptr)
-        return valueFromTextFunction (t);
+        return valueFromTextFunction(t);
 
-    while (t.startsWithChar ('+'))
-        t = t.substring (1).trimStart();
+    while (t.startsWithChar('+'))
+        t = t.substring(1).trimStart();
 
     String uiType = owner.getProperty(Ids::uiType);
-    if (uiType == "uiFixedSlider" || uiType == "uiFixedImageSlider")
-    {
-        String contentValues = owner.getProperty (Ids::uiFixedSliderContent);
+    if (uiType == "uiFixedSlider" || uiType == "uiFixedImageSlider") {
+        String contentValues = owner.getProperty(Ids::uiFixedSliderContent);
         // ScopedPointer<CtrlrValueMap> valueMapRef;
         // valueMapRef->copyFrom (owner.getOwner().getProcessor().setValueMap (contentValues));
 
-        // This is where the magic should happen to return the closest value from the uiFixedSliderContent as valueMap
-        // But for now we still use the previous method
-        // return (3); // test
-        
-        return t.initialSectionContainingOnly ("0123456789.,-")
-                .getDoubleValue();
-    }
-    else
-    {
-        return t.initialSectionContainingOnly ("0123456789.,-")
-                .getDoubleValue();
+        // This is where the magic should happen to return the closest value from the
+        // uiFixedSliderContent as valueMap But for now we still use the previous method return (3);
+        // // test
+
+        return t.initialSectionContainingOnly("0123456789.,-").getDoubleValue();
+    } else {
+        return t.initialSectionContainingOnly("0123456789.,-").getDoubleValue();
     }
 }
 
-
-void CtrlrSliderInternal::mouseWheelMove (const MouseEvent &e, const MouseWheelDetails& wheel)
-{
+void CtrlrSliderInternal::mouseWheelMove(const MouseEvent& e, const MouseWheelDetails& wheel) {
     if (!isEnabled())
         return;
 
     if (wheel.deltaY < 0)
-        setValue ( snapValue (getValue() - (double)owner.getProperty(::Ids::uiSliderMouseWheelInterval), Slider::absoluteDrag) );
+        setValue(
+            snapValue(getValue() - (double)owner.getProperty(::Ids::uiSliderMouseWheelInterval),
+                      Slider::absoluteDrag));
     else
-        setValue ( snapValue (getValue() + (double)owner.getProperty(::Ids::uiSliderMouseWheelInterval), Slider::absoluteDrag) );
+        setValue(
+            snapValue(getValue() + (double)owner.getProperty(::Ids::uiSliderMouseWheelInterval),
+                      Slider::absoluteDrag));
 }
-
-
-
 
 /* Visual styles for Sliders */
 #if 0
