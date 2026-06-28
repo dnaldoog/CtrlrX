@@ -17,7 +17,7 @@ CtrlrLuaMethod::CtrlrLuaMethod(CtrlrLuaMethodManager &_owner)
 		audioThreadMethod(false),
 		luaObject(nullptr)
 {
-	luaObject = new CtrlrLuaObjectWrapper();
+	luaObject = std::make_unique<CtrlrLuaObjectWrapper>();
 	methodTree.addListener (this);
 
 	out = Font(owner.getOwner().getOwner().getCtrlrManagerOwner().getFontManager().getDefaultMonoFontName(), 10.0f, Font::plain);
@@ -31,7 +31,7 @@ CtrlrLuaMethod::CtrlrLuaMethod(CtrlrLuaMethodManager &_owner, ValueTree &_method
 		audioThreadMethod(false),
 		luaObject(nullptr)
 {
-	luaObject = new CtrlrLuaObjectWrapper();
+	luaObject = std::make_unique<CtrlrLuaObjectWrapper>();
 
 	setCodeInternal (getCode());
 
@@ -44,7 +44,7 @@ CtrlrLuaMethod::~CtrlrLuaMethod()
 {
 	methodTree.removeListener (this);
 	masterReference.clear();
-	deleteAndZero (luaObject);
+	//deleteAndZero (luaObject);
 }
 
 void CtrlrLuaMethod::remove() // this is called by the manager to remove us permanently, cleanup and stuff

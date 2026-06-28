@@ -67,8 +67,7 @@ class CtrlrLuaMethod : public ValueTree::Listener
 		bool setCodeInternal (const String &newMethodCode);
 		WeakReference<CtrlrLuaMethod>::Master masterReference;
 		friend class WeakReference<CtrlrLuaMethod>;
-		CtrlrLuaObjectWrapper *luaObject;
-		bool methodIsValid;
+		std::unique_ptr<CtrlrLuaObjectWrapper> luaObject;
 		ValueTree methodTree;
 		String methodName;
 		CtrlrLuaMethodManager &owner;
