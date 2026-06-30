@@ -51,21 +51,20 @@ class CtrlrFixedImageSlider : public CtrlrComponent, public Slider::Listener {
 	juce_UseDebuggingNewOperator
 
 		private :
-		//[UserVariables]   -- You can add your own custom variables in this section.
-		ScopedPointer<CtrlrValueMap>
+		//==============================================================================
+		std::unique_ptr<CtrlrValueMap>
 			valueMap;
-		ScopedPointer<CtrlrImageSliderLF> lf;
-		Image filmStripImage;
-		//[/UserVariables]
+		std::unique_ptr<CtrlrImageSliderLF> lf;
+		juce::Image filmStripImage;
 
 		//==============================================================================
-		CtrlrSliderInternal *ctrlrSlider;
-
-		//==============================================================================
-		// (prevent copy constructor and operator= being generated..)
-		CtrlrFixedImageSlider(const CtrlrFixedImageSlider &);
-		const CtrlrFixedImageSlider &operator=(const CtrlrFixedImageSlider &);
+		std::unique_ptr<CtrlrSliderInternal> ctrlrSlider;
 		std::unique_ptr<juce::LookAndFeel> customLF;
+
+		// Prevent copy constructor and operator= being generated
+		CtrlrFixedImageSlider(const CtrlrFixedImageSlider &) = delete;
+		CtrlrFixedImageSlider &operator=(const CtrlrFixedImageSlider &) = delete;
+
 };
 
 #endif // __JUCER_HEADER_CTRLRFIXEDIMAGESLIDER_CTRLRFIXEDIMAGESLIDER_73B20E68__
