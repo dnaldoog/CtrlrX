@@ -377,6 +377,7 @@ namespace Ids
     DECLARE_ID (uiComboBgColour);
     DECLARE_ID (uiComboContent);
     DECLARE_ID (uiComboFont);
+    DECLARE_ID (uiComboLookAndFeelIsCustom);
     DECLARE_ID (uiComboMenuFont);
     DECLARE_ID (uiComboMenuBackgroundColour);
     DECLARE_ID (uiComboMenuFontColour);

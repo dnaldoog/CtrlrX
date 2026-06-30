@@ -70,7 +70,6 @@ class CtrlrSliderInternal : public Slider {
     CtrlrSliderInternal(CtrlrComponent& _owner);
     ~CtrlrSliderInternal();
     String getTextFromValue(double value);       // Updated v5.6.32
-                                                 // #if !CTLRX_DISABLE_DYNAMIC_LNF
     double getValueFromText(const String& text); // Added v5.6.32
     // #endif
     void mouseWheelMove(const MouseEvent& e, const MouseWheelDetails& wheel);
@@ -264,7 +263,7 @@ private:
     CtrlrComponent &owner;
 };
 #else
-#if CTLRX_DISABLE_DYNAMIC_LNF
+#if 0
 
 class CtrlrSliderLookAndFeel_V2 : public juce::LookAndFeel_V2 {
   public:

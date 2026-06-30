@@ -13,6 +13,7 @@
 #include "CtrlrPanelProperties.h"
 #include "CtrlrPanelViewport.h"
 #include "CtrlrUtilities.h"
+#include <memory>
 
 class CtrlrLuaMethod;
 
@@ -107,7 +108,7 @@ class CtrlrPanelEditor : public Component,
 		// void showComponentRuntimeConfig(CtrlrComponent *componentToConfigure); // Useless. Related to the WIN crash
 		// on LnF switch
 		void searchForProperty();
-		static LookAndFeel *getLookAndFeelFromDescription(const String &lookAndFeelDesc);
+		static std::unique_ptr<juce::LookAndFeel> getLookAndFeelFromDescription(const String &lookAndFeelDesc);
 		void editModeChanged(const bool isEditMode);
 
 		bool luaEditorExistsAndIsFocused(); // Added v5.6.34. Required to pass keypress to the LUA method manager for
