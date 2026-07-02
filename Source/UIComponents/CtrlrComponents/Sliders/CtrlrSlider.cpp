@@ -2,12 +2,12 @@
 #include "../CtrlrComponentTypeManager.h"
 #include "CtrlrLuaManager.h"
 #include "CtrlrModulator/CtrlrModulator.h"
+#include "CtrlrPanel/CtrlrPanelComponentProperties.h"
 #include "CtrlrPanel/CtrlrPanelEditor.h"
+#include "CtrlrPanel/CtrlrPanelProperties.h"
 #include "CtrlrProcessor.h"
 #include "Lua/JuceClasses/LLookAndFeel.h"
 #include "stdafx.h"
-#include "CtrlrPanel/CtrlrPanelComponentProperties.h"
-#include "CtrlrPanel/CtrlrPanelProperties.h"
 
 CtrlrSlider::CtrlrSlider(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrSlider(*this) {
 	setColour(TooltipWindow::textColourId, findColour(Label::textColourId));
@@ -120,13 +120,12 @@ CtrlrSlider::CtrlrSlider(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrSl
 	setProperty(Ids::uiSliderLookAndFeelIsCustom, false);
 }
 
-CtrlrSlider::~CtrlrSlider()
-{
-    componentTree.removeListener(this);
-    _DBG("CtrlrSlider::~CtrlrSlider() called");
-    ctrlrSlider.setLookAndFeel(nullptr);
-    this->setLookAndFeel(nullptr);
-    // Nothing to delete — LookAndFeel is owned by the editor, not by this slider
+CtrlrSlider::~CtrlrSlider() {
+	componentTree.removeListener(this);
+	DBG("CtrlrSlider::~CtrlrSlider() called");
+	ctrlrSlider.setLookAndFeel(nullptr);
+	this->setLookAndFeel(nullptr);
+	// Nothing to delete — LookAndFeel is owned by the editor, not by this slider
 }
 
 void CtrlrSlider::resized() {
@@ -378,4 +377,3 @@ void CtrlrSlider::updatePropertiesPanel() {
 		props->refreshAll();
 	}
 }
-
