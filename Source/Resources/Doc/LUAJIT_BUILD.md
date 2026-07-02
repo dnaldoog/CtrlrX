@@ -89,8 +89,5 @@ MACOS_DEPLOYMENT_TARGET=14.0 make
 
 ```
 ----
-See example panel in luajit folder [Check LuaJIT_1_0.bpanelz](./Check%20LuaJIT_1_0.bpanelz).
-
-If this errors or returns nil, LuaJIT's `jit` library is not being opened at startup.
 
 The CtrlrX About window also displays the Lua/LuaJIT version if LuaJIT is enabled.
