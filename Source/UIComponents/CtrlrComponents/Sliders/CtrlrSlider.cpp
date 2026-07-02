@@ -120,16 +120,13 @@ CtrlrSlider::CtrlrSlider(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrSl
 	setProperty(Ids::uiSliderLookAndFeelIsCustom, false);
 }
 
-CtrlrSlider::~CtrlrSlider() {
-	componentTree.removeListener(this);
-
-	ctrlrSlider.setLookAndFeel(nullptr);
-	this->setLookAndFeel(nullptr);
-
-	// Fallback global flush if clearCaches() is inaccessible:
-	juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
-
-    
+CtrlrSlider::~CtrlrSlider()
+{
+    componentTree.removeListener(this);
+    _DBG("CtrlrSlider::~CtrlrSlider() called");
+    ctrlrSlider.setLookAndFeel(nullptr);
+    this->setLookAndFeel(nullptr);
+    // Nothing to delete — LookAndFeel is owned by the editor, not by this slider
 }
 
 void CtrlrSlider::resized() {

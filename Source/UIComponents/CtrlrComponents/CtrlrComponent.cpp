@@ -952,7 +952,29 @@ if (bubbleMessage != nullptr && bubbleMessage->isVisible())
     bubbleMessage->showAt(boundsInEditor, attrStr, timeout, true, false);
 }
 
-// Inside CtrlrComponent.cpp
+// void CtrlrComponent::applyCentralLookAndFeel (juce::Component* targetComponent, const String& lookAndFeelType)
+// {
+//     if (targetComponent == nullptr)
+//         return;
+
+//     // 1. Force unlinking from any previous layout caches to prevent background leaks
+//     targetComponent->setLookAndFeel (nullptr);
+
+//     // 2. Fetch the top-level editor instance from the owner panel
+//     auto* editor = owner.getOwnerPanel().getEditor();
+
+//     // 3. Apply the centralized singleton safely
+//     if (editor != nullptr)
+//     {
+//         if (lookAndFeelType == "V3" && editor->lfV3)       { targetComponent->setLookAndFeel (editor->lfV3.get()); }
+//         else if (lookAndFeelType == "V2" && editor->lfV2)  { targetComponent->setLookAndFeel (editor->lfV2.get()); }
+//         else if (lookAndFeelType == "V1" && editor->lfV1)  { targetComponent->setLookAndFeel (editor->lfV1.get()); }
+//         else                                                { targetComponent->setLookAndFeel (nullptr); } // Safe default V4
+//     }
+    
+//     // 4. Signal the component that its visual pipeline has shifted
+//     targetComponent->lookAndFeelChanged();
+// }
 void CtrlrComponent::applyCentralLookAndFeel (juce::Component* targetComponent, const String& lookAndFeelType)
 {
     if (targetComponent == nullptr)
@@ -970,9 +992,14 @@ void CtrlrComponent::applyCentralLookAndFeel (juce::Component* targetComponent, 
         if (lookAndFeelType == "V3" && editor->lfV3)       { targetComponent->setLookAndFeel (editor->lfV3.get()); }
         else if (lookAndFeelType == "V2" && editor->lfV2)  { targetComponent->setLookAndFeel (editor->lfV2.get()); }
         else if (lookAndFeelType == "V1" && editor->lfV1)  { targetComponent->setLookAndFeel (editor->lfV1.get()); }
-        else                                                { targetComponent->setLookAndFeel (nullptr); } // Safe default V4
+        else                                               
+        { 
+            // If the string is "Default", explicitly map to whatever the Master Editor's active LookAndFeel is,
+            // rather than leaving it to a blind global fallback, or keep nullptr but ensure it is treated cleanly.
+            targetComponent->setLookAndFeel (nullptr); 
+        } 
     }
     
-    // 4. Signal the component that its visual pipeline has shifted
+    // 4. Signal the component and all its nested children that its visual pipeline has shifted
     targetComponent->lookAndFeelChanged();
 }

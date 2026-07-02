@@ -509,6 +509,7 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 				owner.getCtrlrManagerOwner().getEditor()->activeCtrlrChanged();
 			}
 		} else if (property == Ids::uiPanelLookAndFeel) {
+
 			auto newLookAndFeel =
 				std::unique_ptr<juce::LookAndFeel>(getLookAndFeelFromDescription(getProperty(property)));
 
