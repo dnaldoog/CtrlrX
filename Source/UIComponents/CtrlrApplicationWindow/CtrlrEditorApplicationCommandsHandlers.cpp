@@ -451,6 +451,7 @@ case CtrlrEditor::showAboutDialog:
 
         case CtrlrEditor::doRefreshDeviceList:
             performMidiDeviceRefresh();
+            AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Refresh devices", "Device list refreshed");
             break;
 
         case CtrlrEditor::showLuaConsole:
