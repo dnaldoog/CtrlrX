@@ -94,7 +94,7 @@ namespace gui {
 
     // The central LookAndFeel factory function
     // Keep the optional 'colourSchemeProperty' parameter, it's not directly used here but the signature is fine.
-    juce::LookAndFeel* createLookAndFeelFromDescription(const juce::String& description,
+    std::unique_ptr<juce::LookAndFeel> createLookAndFeelFromDescription(const juce::String& description,
                                                         const juce::var& colourSchemeProperty = juce::var(),
                                                         bool returnDefaultV4ForUnknown = true);
 

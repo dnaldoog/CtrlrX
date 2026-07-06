@@ -57,7 +57,7 @@ class CtrlrFontManager
 		StringArray osTypefaceNames;
 		StringArray osTypefaceStyles;
         Font defaultFont;
-		int64 allFontCount;
+		int64 allFontCount = 0; // picked up as garbage by the leak detector, Valgrind so initialised JG 6/28/2026
 };
 
 #endif

@@ -29,9 +29,7 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner)
 		midiControllerInputThread(*this, controllerDevice),
 		ctrlrLuaManager(nullptr),
 		currentActionIndex(0),
-		indexOfSavedState(-1)
-{
-}
+	  indexOfSavedState(-1) {}
 
 CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int idx)
 	:	owner(_owner),
@@ -57,9 +55,10 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 {
     ctrlrPanelUndoManager	= new CtrlrPanelUndoManager(*this);
     ctrlrLuaManager 		= new CtrlrLuaManager(*this);
-
-    if ((bool)getCtrlrManagerOwner().getProperty (Ids::ctrlrLuaDisabled) == false)
-    {
+	lfV1 = std::make_unique<juce::LookAndFeel_V1>();
+	lfV2 = std::make_unique<juce::LookAndFeel_V2>();
+	lfV3 = std::make_unique<juce::LookAndFeel_V3>();
+	if ((bool)getCtrlrManagerOwner().getProperty(Ids::ctrlrLuaDisabled) == false) {
         ctrlrLuaManager->getMethodManager().setDebug ((bool)owner.getProperty(Ids::ctrlrLuaDebug));
     }
 
@@ -93,18 +92,24 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
     String fileExtension = me.getFileExtension();
     // If OS is macOS
     if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) != 0) {
-        setProperty (Ids::panelExportResourceEncryption, 1); // Added v5.6.33. Helps with debugging crash at export on Apple Silicon
-        setProperty (Ids::panelExportDelayBtwSteps, 1); // Added v5.6.33. Helps with debugging crash at export on Apple Silicon
+		setProperty(Ids::panelExportResourceEncryption,
+					1); // Added v5.6.33. Helps with debugging crash at export on Apple Silicon
+		setProperty(Ids::panelExportDelayBtwSteps,
+					1); // Added v5.6.33. Helps with debugging crash at export on Apple Silicon
         // For VST2 & VST3
-        if (fileExtension == ".vst3" || fileExtension == ".vst" || fileExtension == ".aaxplugin") { // Updated v5.6.34. AAX added
+		if (fileExtension == ".vst3" || fileExtension == ".vst" ||
+			fileExtension == ".aaxplugin") {				// Updated v5.6.34. AAX added
             setProperty (Ids::panelReplaceVst3PluginIds, 1); // Added v5.6.32
         }
-        setProperty (Ids::panelExportCodesign, 1); // Added v5.6.33. Helps with debugging crash at export on Apple Silicon
+		setProperty(Ids::panelExportCodesign,
+					1); // Added v5.6.33. Helps with debugging crash at export on Apple Silicon
         setProperty (Ids::panelCertificateMacSelectId, 0); // Added v5.6.32
         setProperty (Ids::panelCertificateMacId, ""); // Added v5.6.32
     }
     // if OS is WINDOWS
-	// else if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::Windows) != 0) { // v5.6.32. Won't work with WIN10 or will require an addon in Manifest https://forum.juce.com/t/bug-systemstats-getoperatingsystemname-on-windows-10/21659/3
+	// else if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::Windows) != 0) { // v5.6.32. Won't
+	// work with WIN10 or will require an addon in Manifest
+	// https://forum.juce.com/t/bug-systemstats-getoperatingsystemname-on-windows-10/21659/3
 	else {
         // For VST2 & VST3
         if (fileExtension == ".vst3" || fileExtension == ".dll") {
@@ -121,7 +126,8 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 
     // Set the server URL property
     // This could also be a development server URL that changes for release
-    setProperty (Ids::panelExportServerAuthURL, "https://localhost:8000/auth/authenticate"); // Example local dev server URL
+	setProperty(Ids::panelExportServerAuthURL,
+				"https://localhost:8000/auth/authenticate"); // Example local dev server URL
     
     setProperty (Ids::panelMidiSnapshotAfterLoad, false);
     setProperty (Ids::panelMidiSnapshotAfterProgramChange, false);
@@ -134,7 +140,8 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
     setProperty (Ids::panelMidiOutputDevice, COMBO_NONE_ITEM);
     setProperty (Ids::panelMidiOutputChannelDevice, 1);
 
-    if(!JUCEApplication::isStandaloneApp()) // Added v5.6.34. Set CtrlrX to receive THE MIDI IN MESSAGES from the HOST MIDI IN on ALL Channels.
+	if (!JUCEApplication::isStandaloneApp()) // Added v5.6.34. Set CtrlrX to receive THE MIDI IN MESSAGES from the HOST
+											 // MIDI IN on ALL Channels.
     {
         setProperty (Ids::panelMidiInputFromHost, true);
         setProperty (Ids::panelMidiInputChannelHost, 0);
@@ -150,7 +157,10 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
     }
     setProperty (Ids::panelMidiThruD2D, false);
     setProperty (Ids::panelMidiThruD2DChannelize, false);
-    setProperty (Ids::panelMidiRealtimeIgnore, false); // Updated v5.6.34. Was (true). Useless and does not make any sense to ignore MIDI IN Messages by default. Ref: void CtrlrPanelMIDIInputThread::handleMIDIFromDevice (const MidiMessage &message)
+	setProperty(
+		Ids::panelMidiRealtimeIgnore,
+		false); // Updated v5.6.34. Was (true). Useless and does not make any sense to ignore MIDI IN Messages by
+				// default. Ref: void CtrlrPanelMIDIInputThread::handleMIDIFromDevice (const MidiMessage &message)
     setProperty (Ids::panelMidiInputThreadPriority, 7);
     setProperty (Ids::panelMidiProgram, 0);
     setProperty (Ids::panelMidiBankLsb, 0);

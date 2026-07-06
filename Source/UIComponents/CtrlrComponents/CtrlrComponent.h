@@ -137,6 +137,7 @@ class CtrlrComponent : public Component,
         friend class WeakReference<CtrlrComponent>;
         ScopedPointer <GlowEffect> glowEffect;
         ScopedPointer <DropShadowEffect> shadowEffect;
+        void applyCentralLookAndFeel (juce::Component* targetComponent, const String& lookAndFeelType);
         WeakReference <CtrlrLuaMethod> mouseMoveCbk, mouseDownCbk, mouseUpCbk, mouseDragCbk, mouseDoubleClickCbk, mouseEnterCbk, mouseExitCbk;
     
 

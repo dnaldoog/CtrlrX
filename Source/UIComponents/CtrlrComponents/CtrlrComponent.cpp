@@ -951,3 +951,24 @@ if (bubbleMessage != nullptr && bubbleMessage->isVisible())
     Rectangle<int> boundsInEditor = editor->getLocalArea(this, getLocalBounds());
     bubbleMessage->showAt(boundsInEditor, attrStr, timeout, true, false);
 }
+void CtrlrComponent::applyCentralLookAndFeel(juce::Component* targetComponent, const String& lookAndFeelType)
+{
+    if (targetComponent == nullptr)
+        return;
+
+    targetComponent->setLookAndFeel(nullptr);
+
+    // Use CtrlrPanel (not CtrlrPanelEditor) — panel outlives editor, ensuring
+    // lfV1/V2/V3 are still alive when sliders are destroyed via CtrlrModulator
+    CtrlrPanel* panel = &owner.getOwnerPanel();
+
+    if (panel != nullptr)
+    {
+        if (lookAndFeelType == "V3" && panel->lfV3)      { targetComponent->setLookAndFeel(panel->lfV3.get()); }
+        else if (lookAndFeelType == "V2" && panel->lfV2) { targetComponent->setLookAndFeel(panel->lfV2.get()); }
+        else if (lookAndFeelType == "V1" && panel->lfV1) { targetComponent->setLookAndFeel(panel->lfV1.get()); }
+        else                                             { targetComponent->setLookAndFeel(nullptr); }
+    }
+
+    targetComponent->lookAndFeelChanged();
+}

@@ -19000,7 +19000,7 @@ static const unsigned char temp_binary_data_89[] =
 "    --\r\n"
 "    -- InstanceSingle\r\n"
 "\t-- InstanceMulti\r\n"
-"\t-- InstanceSingleRestriced\r\n"
+"\t-- InstanceSingleRestricted\r\n"
 "\t-- InstanceSingleEngine\r\n"
 "\t-- InstanceMultiEngine\r\n"
 "\t-- InstanceSingleRestrictedEngine\r\n"
@@ -24103,7 +24103,7 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
         case 0xfc902594:  numBytes = 49800; return RSRC_zip;
         case 0xa32a74e9:  numBytes = 93543; return CtrlrIDs_xml;
         case 0x4321d08a:  numBytes = 110; return CtrlrLuaClassTemplates_xml;
-        case 0x75a28bbf:  numBytes = 22857; return CtrlrLuaMethodTemplates_xml;
+        case 0x75a28bbf:  numBytes = 22858; return CtrlrLuaMethodTemplates_xml;
         case 0xcfea1483:  numBytes = 920; return CtrlrMidiMultiTemplate_xml;
         case 0xa5970535:  numBytes = 1963; return CtrlrMIDITransactions_xml;
         case 0x37e081fb:  numBytes = 15061; return CtrlrMIDIVendors_xml;

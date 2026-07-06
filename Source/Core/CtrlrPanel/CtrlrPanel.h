@@ -71,6 +71,9 @@ class CtrlrPanel:	public ValueTree::Listener,
 		CtrlrPanel(CtrlrManager &_owner);
 		CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int idx);
 		~CtrlrPanel();
+		std::unique_ptr<juce::LookAndFeel_V1> lfV1;
+		std::unique_ptr<juce::LookAndFeel_V2> lfV2;
+		std::unique_ptr<juce::LookAndFeel_V3> lfV3;
 		Result restoreState (const ValueTree &savedState);
 		CtrlrPanelEditor *getEditor(const bool createNewEditorIfNeeded=true);
 		CtrlrPanelCanvas *getCanvas();
@@ -94,13 +97,15 @@ class CtrlrPanel:	public ValueTree::Listener,
 		const String getUniqueModulatorName(const String &proposedName);
 		const Array <CtrlrModulator*> getModulatorsByUIType(const Identifier &typeToFilter);
 		const Array <CtrlrModulator*> getModulatorsByMidiType(const CtrlrMidiMessageType typeToFilter);
-		const Array <CtrlrModulator*> getModulatorsWithProperty(const Identifier &propertyName, const var &propertyValue);
+		const Array<CtrlrModulator *> getModulatorsWithProperty(const Identifier &propertyName,
+																const var &propertyValue);
 
 		CtrlrModulator *getModulatorWithProperty (const String &propertyName="", const String &propertyValue="");
 		CtrlrModulator *getModulatorWithProperty (const String &propertyName="", const int propertyValue=0);
 
 		luabind::object getModulatorsWildcardLua (const String &wildcardMatch="", const bool ignoreCase=true);
-		luabind::object getModulatorsWildcardLua (const String &wildcardMatch, const String &propertyToMatch, const bool ignoreCase);
+		luabind::object getModulatorsWildcardLua(const String &wildcardMatch, const String &propertyToMatch,
+												 const bool ignoreCase);
 		luabind::object getModulatorsWithPropertyLua (const String &propertyName, const String &propertyValue);
 
 		CtrlrWaveform *getWaveformComponent(const String &componentName);
@@ -175,15 +180,15 @@ class CtrlrPanel:	public ValueTree::Listener,
 		void luaManagerChanged();
 		void panelResourcesChanged();
 
-		static const String exportPanel(CtrlrPanel *panel, const File &lastBrowsedDir, const File &destinationFile=File(), MemoryBlock *outputPanelData=nullptr, MemoryBlock *outputResourcesData=nullptr, const bool isRestricted=false);
+		static const String exportPanel(CtrlrPanel *panel, const File &lastBrowsedDir,
+										const File &destinationFile = File(), MemoryBlock *outputPanelData = nullptr,
+										MemoryBlock *outputResourcesData = nullptr, const bool isRestricted = false);
 		static bool isPanelFile(const File &fileToCheck, const bool beThorough=false);
 		static const ValueTree openPanel(const File &panelFile);
 		static const ValueTree openXmlPanel(const File &panelFile);
 		static const ValueTree openBinPanel(const File &panelFile);
 		static const ValueTree openBinPanel(const MemoryBlock &panelData, const bool isCompressed=false);
-		static const File askForPanelFileToSave (CtrlrPanel *panel,
-													const File &lastBrowsedDir,
-													const bool isXml=true,
+		static const File askForPanelFileToSave(CtrlrPanel *panel, const File &lastBrowsedDir, const bool isXml = true,
 													const bool isCompressed=false);
 
 		void luaSavePanel(const CtrlrPanelFileType fileType, const File &file);
@@ -199,16 +204,15 @@ class CtrlrPanel:	public ValueTree::Listener,
 		static void convertLuaMethodToProperty(const File &panelLuaDir, ValueTree *method);
 		static void convertLuaChildrenToProperties(const File &panelLuaDir, ValueTree *parentElement);
 
-
-		const String getVersionString(const bool includeVersionName=true, const bool includeTime=true, const String versionSeparator="");
+		const String getVersionString(const bool includeVersionName = true, const bool includeTime = true,
+									  const String versionSeparator = "");
 		void editModeChanged(const bool isInEditMode);
 		bool getEditMode();
 		const File getPanelDirectory();
 		CtrlrPanelResourceManager &getResourceManager();
 		CtrlrPanelWindowManager &getWindowManager();
 
-		class Listener
-		{
+		class Listener {
 			public:
 				virtual ~Listener(){}
 				virtual void modulatorChanged (CtrlrModulator *) {}

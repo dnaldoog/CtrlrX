@@ -2,10 +2,10 @@
 #define __CTRLR_STANDALONE_WINDOW__
 
 #include "CtrlrMacros.h"
+#include <CtrlrManager/CtrlrManager.h>
 class CtrlrProcessor;
 
-class CtrlrStandaloneWindow	: public DocumentWindow, public ActionListener, public ChangeListener
-{
+class CtrlrStandaloneWindow : public DocumentWindow, public ActionListener, public ChangeListener {
 	public:
 		CtrlrStandaloneWindow (const String& title, const Colour& backgroundColour);
 		~CtrlrStandaloneWindow();
@@ -18,6 +18,8 @@ class CtrlrStandaloneWindow	: public DocumentWindow, public ActionListener, publ
 		void saveStateNow();
 		void actionListenerCallback(const String &message);
 		void changeListenerCallback(ChangeBroadcaster* source);
+    CtrlrManager* getManager();
+    void closeAllPanelsEarly();
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrStandaloneWindow);
 
 	private:

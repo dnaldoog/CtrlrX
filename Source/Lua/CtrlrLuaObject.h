@@ -2,13 +2,13 @@
 #define __CTRLR_LUA_OBJECT__
 
 #include "CtrlrLuaObjectWrapper.h"
-
+struct lua_State;
 //==============================================================================
-/** \brief A class that defines standard access methods for all Ctrlr-LUA based objects like Panels, Modulators, Components, MidiMessages etc.
+/** \brief A class that defines standard access methods for all Ctrlr-LUA based objects like Panels, Modulators,
+   Components, MidiMessages etc.
 
 */
-class CtrlrLuaObject
-{
+class CtrlrLuaObject {
 	public:
 		/** @brief Internal
 
@@ -32,7 +32,8 @@ class CtrlrLuaObject
 			@param	isUndoable		the handling class can use this to find out if this can be an undo transaction
 		*/
 
-		virtual void setProperty (const Identifier &propertyName, const var &newValue, const bool isUndoable=false)=0;
+		virtual void setProperty(const Identifier &propertyName, const var &newValue,
+								 const bool isUndoable = false) = 0;
 
 		/** @brief This method is an internal method overloaded by any class that wants to live in the LUA state
 			@see CtrlrPanel

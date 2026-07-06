@@ -1,38 +1,37 @@
-#include "stdafx.h"
-#include "CtrlrLuaManager.h"
-#include "CtrlrManager/CtrlrManager.h"
-#include "CtrlrMacros.h"
-#include "CtrlrUtilities.h"
-#include "CtrlrLog.h"
 #include "CtrlrPanelEditor.h"
-#include "CtrlrProcessor.h"
+#include "CtrlrComponents/CtrlrCombo.h"
+#include "CtrlrComponents/CtrlrComponent.h"
 #include "CtrlrComponents/CtrlrComponentTypeManager.h"
 #include "CtrlrInlineUtilitiesGUI.h"
+#include "CtrlrLog.h"
+#include "CtrlrLuaManager.h"
+#include "CtrlrMIDI/CtrlrMIDISettingsDialog.h"
+#include "CtrlrMacros.h"
+#include "CtrlrManager/CtrlrManager.h"
 #include "CtrlrModulator/CtrlrModulator.h"
 #include "CtrlrPanel/CtrlrPanel.h"
-#include "CtrlrComponents/CtrlrCombo.h"
-#include "CtrlrPanel/CtrlrPanelResource.h"
 #include "CtrlrPanel/CtrlrPanelCanvas.h"
+#include "CtrlrPanel/CtrlrPanelResource.h"
 #include "CtrlrPanel/CtrlrPanelViewport.h"
+#include "CtrlrProcessor.h"
+#include "CtrlrUtilities.h"
 #include "JuceClasses/LMemoryBlock.h"
-#include "CtrlrMIDI/CtrlrMIDISettingsDialog.h"
-#include "CtrlrComponents/CtrlrComponent.h"
-
+#include "stdafx.h"
 
 //--------------------------------------------------------------------------------------------------
 // CtrlrPanelNotifier
 //--------------------------------------------------------------------------------------------------
 
-CtrlrPanelNotifier::CtrlrPanelNotifier(CtrlrPanelEditor &_owner) // Added back v5.6.31 for file management bottom notification bar
-    : owner(_owner), background(Colours::lightgrey)
-{
-    addAndMakeVisible (text = new Label());
-    text->addMouseListener (this, true);
-    text->setColour (Label::backgroundColourId, Colours::transparentBlack);
-    text->setColour (Label::textColourId, Colours::white.withAlpha (0.85f));
-    text->setColour (Label::outlineColourId, Colours::transparentBlack);
-    text->setFont (Font (12.0f, Font::bold));
-    text->setText ("", dontSendNotification); // Default text required
+CtrlrPanelNotifier::CtrlrPanelNotifier(
+	CtrlrPanelEditor &_owner) // Added back v5.6.31 for file management bottom notification bar
+	: owner(_owner), background(Colours::lightgrey) {
+	addAndMakeVisible(text = new Label());
+	text->addMouseListener(this, true);
+	text->setColour(Label::backgroundColourId, Colours::transparentBlack);
+	text->setColour(Label::textColourId, Colours::white.withAlpha(0.85f));
+	text->setColour(Label::outlineColourId, Colours::transparentBlack);
+	text->setFont(Font(12.0f, Font::bold));
+	text->setText("", dontSendNotification); // Default text required
 }
 
 CtrlrPanelNotifier::~CtrlrPanelNotifier() // Added v5.6.34. Thanks to @dnaldoog
@@ -42,43 +41,41 @@ CtrlrPanelNotifier::~CtrlrPanelNotifier() // Added v5.6.34. Thanks to @dnaldoog
 	text = nullptr; // Force ScopedPointer cleanup
 }
 
-void CtrlrPanelNotifier::paint (Graphics &g) // Added back v5.6.31 for file management bottom notification bar
+void CtrlrPanelNotifier::paint(Graphics &g) // Added back v5.6.31 for file management bottom notification bar
 {
-    gui::drawSelectionRectangle (g, getWidth(), getHeight(), background); // Updated v5.6.31 (link to GUI class)
+	gui::drawSelectionRectangle(g, getWidth(), getHeight(), background); // Updated v5.6.31 (link to GUI class)
 }
 
 void CtrlrPanelNotifier::resized() // Added back v5.6.31 for file management bottom notification bar
 {
-    text->setBounds (0, 0, getWidth(), getHeight());
+	text->setBounds(0, 0, getWidth(), getHeight());
 }
 
-void CtrlrPanelNotifier::setNotification (const String &notification, const CtrlrNotificationType ctrlrNotificationType) // Added back v5.6.31 for file management bottom notification bar
+void CtrlrPanelNotifier::setNotification(
+	const String &notification,
+	const CtrlrNotificationType ctrlrNotificationType) // Added back v5.6.31 for file management bottom notification bar
 {
-    background = getBackgroundColourForNotification(ctrlrNotificationType);
-    text->setText (notification, dontSendNotification);
-    
+	background = getBackgroundColourForNotification(ctrlrNotificationType);
+	text->setText(notification, dontSendNotification);
 }
 
-void CtrlrPanelNotifier::mouseDown (const MouseEvent &e)
-{
-    owner.notificationClicked(e);
-}
+void CtrlrPanelNotifier::mouseDown(const MouseEvent &e) { owner.notificationClicked(e); }
 
-Colour CtrlrPanelNotifier::getBackgroundColourForNotification(const CtrlrNotificationType ctrlrNotificationType)  // Added back v5.6.31 for file management bottom notification bar
+Colour CtrlrPanelNotifier::getBackgroundColourForNotification(
+	const CtrlrNotificationType ctrlrNotificationType) // Added back v5.6.31 for file management bottom notification bar
 {
-    switch (ctrlrNotificationType)
-    {
-        case NotifySuccess:
-            return (Colours::green.brighter(0.2f));
-        case NotifyFailure:
-            return (Colours::red.brighter(0.2f));
-        case NotifyWarning:
-            return (Colours::yellow.darker(0.5f));
-        case NotifyInformation:
-            return (Colours::grey);
-    }
+	switch (ctrlrNotificationType) {
+	case NotifySuccess:
+		return (Colours::green.brighter(0.2f));
+	case NotifyFailure:
+		return (Colours::red.brighter(0.2f));
+	case NotifyWarning:
+		return (Colours::yellow.darker(0.5f));
+	case NotifyInformation:
+		return (Colours::grey);
+	}
 
-    return (Colours::lightgrey);
+	return (Colours::lightgrey);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -86,755 +83,652 @@ Colour CtrlrPanelNotifier::getBackgroundColourForNotification(const CtrlrNotific
 //--------------------------------------------------------------------------------------------------
 
 CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManager, const juce::String &panelName)
-    : juce::Component(L"Ctrlr Panel Editor"),
-    lastEditMode(true),
-    ctrlrManager(_ctrlrManager),
-    owner(_owner),
-    panelEditorTree(Ids::uiPanelEditor),
-    currentRestoreState(true),
-    canvasWidth(0),
-    canvasHeight(0)
-{
-    ctrlrComponentSelection.reset(new CtrlrComponentSelection(*this));
-    
-    ctrlrPanelViewport = new CtrlrPanelViewport(*this);
-    ctrlrPanelProperties = new CtrlrPanelProperties(*this);
-    spacerComponent = new juce::StretchableLayoutResizerBar(&layoutManager, 1, true);
-    
-    addAndMakeVisible(ctrlrPanelViewport);
-    addAndMakeVisible(ctrlrPanelProperties);
-    addAndMakeVisible(spacerComponent);
-    
-    addAndMakeVisible(ctrlrPanelNotifier = new CtrlrPanelNotifier(*this));
-    ctrlrPanelNotifier->setAlwaysOnTop (true);
-    ctrlrPanelNotifier->setVisible (false);
-    
-    spacerComponent->setName(L"spacerComponent");
-    
-    // --- STEP 1: PRE-DETERMINE AND ALLOCATE LOOK AND FEEL FIRST ---
-    // We figure out the theme and seat it BEFORE listeners or properties can trigger updates
-    ValueTree ed = owner.getCtrlrManagerOwner().getManagerTree();
-    juce::String lookAndFeelDesc = "V4 Light"; // Safe default fallback
+	: juce::Component(L"Ctrlr Panel Editor"),
+	  lastEditMode(true),
+	  ctrlrManager(_ctrlrManager),
+	  owner(_owner),
+	  panelEditorTree(Ids::uiPanelEditor),
+	  currentRestoreState(true),
+	  canvasWidth(0),
+	  canvasHeight(0) {
 
-    if (ed.getProperty(Ids::ctrlrLegacyMode) == "1"
-        || ed.getProperty(Ids::ctrlrLookAndFeel) == "V3"
-        || ed.getProperty(Ids::ctrlrLookAndFeel) == "V2"
-        || ed.getProperty(Ids::ctrlrLookAndFeel) == "V1")
-    {
-        panelEditorTree.setProperty(Ids::uiPanelLegacyMode, "1", nullptr);
-        panelEditorTree.setProperty(Ids::uiPanelLookAndFeel, "V3", nullptr);
-        lookAndFeelDesc = "V3";
-    }
-    else
-    {
-        panelEditorTree.setProperty(Ids::uiPanelLegacyMode, false, nullptr);
-        
-        juce::String schemeName = ed.getProperty (Ids::ctrlrColourScheme).toString();
-        if (schemeName.isEmpty())  schemeName = "Light";
-        
-        if (schemeName.startsWith ("V4 "))
-            lookAndFeelDesc = schemeName;
-        else
-            lookAndFeelDesc = "V4 " + schemeName;
-            
-        panelEditorTree.setProperty (Ids::uiPanelLookAndFeel, lookAndFeelDesc, nullptr);
-    }
+	ctrlrComponentSelection.reset(new CtrlrComponentSelection(*this));
 
-    // Allocate it immediately so it is active for all subsequent child setups
-    lookAndFeel = std::unique_ptr<juce::LookAndFeel>(getLookAndFeelFromDescription(lookAndFeelDesc));
-    if (lookAndFeel != nullptr)
-    {
-        setLookAndFeel(lookAndFeel.get());
-        if (getCanvas()) getCanvas()->setLookAndFeel(lookAndFeel.get());
-        juce::LookAndFeel::setDefaultLookAndFeel(lookAndFeel.get());
-    }
-    // ----------------------------------------------------------------
+	ctrlrPanelViewport = new CtrlrPanelViewport(*this);
+	ctrlrPanelProperties = new CtrlrPanelProperties(*this);
+	spacerComponent = new juce::StretchableLayoutResizerBar(&layoutManager, 1, true);
 
-    // --- STEP 2: NOW SAFELY ATTACH LISTENERS AND ASSIGN PROPERTIES ---
-    getPanelEditorTree().addListener(this);
-    
-    layoutManager.setItemLayout(0, -0.001, -1.0, -0.7);
-    layoutManager.setItemLayout(1, 8, 8, 8);
-    layoutManager.setItemLayout(2, -0.001, -1.0, -0.3);
-    
-    editorComponentsInEditMode[0] = ctrlrPanelViewport;
-    editorComponentsInEditMode[1] = spacerComponent;
-    editorComponentsInEditMode[2] = ctrlrPanelProperties;
-    editorComponents[0] = ctrlrPanelViewport;
-    
-    // Triggers like Ids::name will now safely execute against our already established lookAndFeel pointer!
-    setProperty(Ids::name, panelName);
-    setProperty(Ids::uiPanelEditMode, true);
-    setProperty(Ids::uiPanelLock, false);
-    setProperty(Ids::uiPanelDisabledOnEdit, false);
-    setProperty(Ids::uiPanelMenuBarVisible, true);
-    setProperty(Ids::uiPanelMenuBarHideOnExport, false);
-    setProperty(Ids::uiPanelProgramsMenuHideOnExport, false);
-    setProperty(Ids::uiPanelMidiControllerMenuHideOnExport, false);
-    setProperty(Ids::uiPanelMidiThruMenuHideOnExport, false);
-    setProperty(Ids::uiPanelMidiChannelMenuHideOnExport, false);
-    
-    setProperty(Ids::uiPanelViewPortSize, 800);
-    setProperty(Ids::uiPanelPropertiesSize, 300);
-    
-    setProperty(Ids::uiViewPortResizable, true);
-    setProperty(Ids::uiViewPortShowScrollBars, true);
-    setProperty(Ids::uiViewPortWidth, 400);
-    setProperty(Ids::uiViewPortHeight, 400);
-    setProperty(Ids::uiViewPortEnableResizeLimits, false);
-    setProperty(Ids::uiViewPortMinWidth, 0);
-    setProperty(Ids::uiViewPortMinHeight, 0);
-    setProperty(Ids::uiViewPortMaxWidth, 0);
-    setProperty(Ids::uiViewPortMaxHeight, 0);
-    setProperty(Ids::uiViewPortEnableFixedAspectRatio, false);
-    setProperty(Ids::uiViewPortFixedAspectRatio, 1.5);
-    setProperty(Ids::uiPanelZoom, 1.0);
-    
-    setProperty(Ids::uiPanelViewPortBackgroundColour, (String) Component::findColour (ResizableWindow::backgroundColourId).withAlpha(0.7f).toString());
-    setProperty(Ids::uiPanelBackgroundColour, (String) Component::findColour (ResizableWindow::backgroundColourId).toString());
-    setProperty(Ids::uiPanelBackgroundColour1, (String) Component::findColour (ResizableWindow::backgroundColourId).toString());
-    setProperty(Ids::uiPanelBackgroundColour2, (String) Component::findColour (ResizableWindow::backgroundColourId).darker(0.2f).toString());
-    setProperty(Ids::uiPanelBackgroundGradientType, 0);
-    setProperty(Ids::uiPanelImageResource, COMBO_ITEM_NONE);
-    setProperty(Ids::uiPanelImageAlpha, 255);
-    setProperty(Ids::uiPanelImageLayout, 64);
-    setProperty(Ids::uiPanelSnapActive, true);
-    
-    setProperty(Ids::uiPanelSnapSize, 8);
-    setProperty(Ids::uiPanelPropertiesOnRight, false);
-    
-    setProperty(Ids::luaPanelPaintBackground, COMBO_ITEM_NONE);
-    setProperty(Ids::luaViewPortResized, COMBO_ITEM_NONE);
-    setProperty(Ids::luaPanelResized, COMBO_ITEM_NONE);
-    setProperty(Ids::luaPanelFileDragDropHandler, COMBO_ITEM_NONE);
-    setProperty(Ids::luaPanelFileDragEnterHandler, COMBO_ITEM_NONE);
-    setProperty(Ids::luaPanelFileDragExitHandler, COMBO_ITEM_NONE);
-    
-    setProperty(Ids::uiPanelInvisibleComponentAlpha, 0.5);
-    
-    setProperty(Ids::uiPanelTooltipPlacement, BubbleComponent::below);
-    setProperty(Ids::uiPanelTooltipFont, Font(12.0f, Font::plain).toString());
-    setProperty(Ids::uiPanelTooltipColour, (String) Component::findColour (Label::textColourId).toString());
-    setProperty(Ids::uiPanelTooltipBackgroundColour, (String) Component::findColour (BubbleComponent::backgroundColourId).toString());
-    setProperty(Ids::uiPanelTooltipOutlineColour, (String) Component::findColour (BubbleComponent::outlineColourId).toString());
-    setProperty(Ids::uiPanelTooltipCornerRound, 1.0);
+	addAndMakeVisible(ctrlrPanelViewport);
+	addAndMakeVisible(ctrlrPanelProperties);
+	addAndMakeVisible(spacerComponent);
 
-    ctrlrComponentSelection->addChangeListener(ctrlrPanelProperties);
-    setSize(600, 400);
-    ctrlrComponentSelection->sendChangeMessage();
+	// Added back v5.6.31 for file management bottom notification bar
+	addAndMakeVisible(ctrlrPanelNotifier = new CtrlrPanelNotifier(*this));
+
+	ctrlrPanelNotifier->setAlwaysOnTop(true); // Added back v5.6.31 for file management bottom notification bar
+	ctrlrPanelNotifier->setVisible(false);	  // Added back v5.6.31 for file management bottom notification bar
+	// componentAnimator.addChangeListener (this); // Added back v5.6.31 not working
+
+	spacerComponent->setName(L"spacerComponent");
+
+	getPanelEditorTree().addListener(this);
+
+	layoutManager.setItemLayout(0, -0.001, -1.0, -0.7);
+	layoutManager.setItemLayout(1, 8, 8, 8);
+	layoutManager.setItemLayout(2, -0.001, -1.0, -0.3);
+
+	editorComponentsInEditMode[0] = ctrlrPanelViewport;
+	editorComponentsInEditMode[1] = spacerComponent;
+	editorComponentsInEditMode[2] = ctrlrPanelProperties;
+
+	editorComponents[0] = ctrlrPanelViewport;
+
+	setProperty(Ids::name, panelName);
+	setProperty(Ids::uiPanelEditMode, true);
+	setProperty(Ids::uiPanelLock, false);
+	setProperty(Ids::uiPanelDisabledOnEdit, false);
+	setProperty(Ids::uiPanelMenuBarVisible, true);
+	setProperty(Ids::uiPanelMenuBarHideOnExport, false);
+	setProperty(Ids::uiPanelProgramsMenuHideOnExport, false);
+	setProperty(Ids::uiPanelMidiControllerMenuHideOnExport, false);
+	setProperty(Ids::uiPanelMidiThruMenuHideOnExport, false);
+	setProperty(Ids::uiPanelMidiChannelMenuHideOnExport, false);
+
+	setProperty(Ids::uiPanelViewPortSize, 800);
+	setProperty(Ids::uiPanelPropertiesSize, 300);
+
+	setProperty(Ids::uiViewPortResizable, true);
+	setProperty(Ids::uiViewPortShowScrollBars, true);
+	setProperty(Ids::uiViewPortWidth, 400);
+	setProperty(Ids::uiViewPortHeight, 400);
+	setProperty(Ids::uiViewPortEnableResizeLimits, false);
+	setProperty(Ids::uiViewPortMinWidth, 0);
+	setProperty(Ids::uiViewPortMinHeight, 0);
+	setProperty(Ids::uiViewPortMaxWidth, 0);
+	setProperty(Ids::uiViewPortMaxHeight, 0);
+	setProperty(Ids::uiViewPortEnableFixedAspectRatio, false);
+	setProperty(Ids::uiViewPortFixedAspectRatio, 1.5);
+	setProperty(Ids::uiPanelZoom, 1.0);
+
+	setProperty(Ids::uiPanelViewPortBackgroundColour,
+				(String)Component::findColour(ResizableWindow::backgroundColourId)
+					.withAlpha(0.7f)
+					.toString()); // ViewPort background color. was "transparentblack"
+	setProperty(
+		Ids::uiPanelBackgroundColour,
+		(String)Component::findColour(ResizableWindow::backgroundColourId).toString()); // Canvas Colour 0xffffffff
+	setProperty(
+		Ids::uiPanelBackgroundColour1,
+		(String)Component::findColour(ResizableWindow::backgroundColourId).toString()); // Canvas Colour1 if gradient
+	setProperty(Ids::uiPanelBackgroundColour2, (String)Component::findColour(ResizableWindow::backgroundColourId)
+												   .darker(0.2f)
+												   .toString()); // Canvas Colour2 if gradient
+	setProperty(Ids::uiPanelBackgroundGradientType, 0);			 // Default set to SolidColor [No background gradient]
+	setProperty(Ids::uiPanelImageResource, COMBO_ITEM_NONE);
+	setProperty(Ids::uiPanelImageAlpha, 255);
+	setProperty(Ids::uiPanelImageLayout, 64);
+	setProperty(Ids::uiPanelSnapActive, true);
+
+	setProperty(Ids::uiPanelSnapSize, 8);
+	setProperty(Ids::uiPanelPropertiesOnRight, false);
+
+	setProperty(Ids::luaPanelPaintBackground, COMBO_ITEM_NONE);
+	setProperty(Ids::luaViewPortResized, COMBO_ITEM_NONE);
+	setProperty(Ids::luaPanelResized, COMBO_ITEM_NONE);
+	setProperty(Ids::luaPanelFileDragDropHandler, COMBO_ITEM_NONE);
+	setProperty(Ids::luaPanelFileDragEnterHandler, COMBO_ITEM_NONE);
+	setProperty(Ids::luaPanelFileDragExitHandler, COMBO_ITEM_NONE);
+
+	setProperty(Ids::uiPanelInvisibleComponentAlpha, 0.5);
+
+	setProperty(Ids::uiPanelTooltipPlacement, BubbleComponent::below);
+	setProperty(Ids::uiPanelTooltipFont, Font(12.0f, Font::plain).toString());
+	setProperty(Ids::uiPanelTooltipColour, (String)Component::findColour(Label::textColourId).toString()); // 0xff000000
+	setProperty(Ids::uiPanelTooltipBackgroundColour,
+				(String)Component::findColour(BubbleComponent::backgroundColourId).toString()); // 0xffeeeebb
+	setProperty(Ids::uiPanelTooltipOutlineColour,
+				(String)Component::findColour(BubbleComponent::outlineColourId).toString()); // 0xff000000
+	setProperty(Ids::uiPanelTooltipCornerRound, 1.0);
+
+	ValueTree ed = owner.getCtrlrManagerOwner().getManagerTree();
+
+	if (ed.getProperty(Ids::ctrlrLegacyMode) == "1" || ed.getProperty(Ids::ctrlrLookAndFeel) == "V3" ||
+		ed.getProperty(Ids::ctrlrLookAndFeel) == "V2" || ed.getProperty(Ids::ctrlrLookAndFeel) == "V1") {
+		setProperty(Ids::uiPanelLegacyMode, "1");
+		setProperty(Ids::uiPanelLookAndFeel, "V3");
+	} else {
+		setProperty(Ids::uiPanelLegacyMode, false);
+		setProperty(Ids::uiPanelLookAndFeel, "V4");
+
+		// Requires passing the colourScheme to the property uiPanelLookAndFeel from ctrlrColourScheme
+		// Updated v5.6.34. For a generic method schemeName Property--> schemeName. Get the current colour scheme name
+		// from the property
+		juce::String schemeName = ed.getProperty(Ids::ctrlrColourScheme).toString();
+
+		// <fallback for empty instances without any colourscheme yet defined
+		if (schemeName.isEmpty()) {
+			schemeName = "Light";
+		}
+
+		// Determine the LookAndFeel description string
+		juce::String lookAndFeelDesc;
+
+		if (schemeName.startsWith("V4 ")) {
+			// If it already has "V4 ", use it as is
+			lookAndFeelDesc = schemeName;
+		} else {
+			// Otherwise, prepend "V4 " (e.g., "Light" becomes "V4 Light")
+			lookAndFeelDesc = "V4 " + schemeName;
+		}
+
+		// Set the uiPanelLookAndFeel property with the determined string
+		setProperty(Ids::uiPanelLookAndFeel, lookAndFeelDesc);
+	}
+
+	// setProperty(Ids::uiPanelLegacyMode, false);
+	// setProperty(Ids::uiPanelLookAndFeel, "V4 Light");
+
+	//    /** displays the current LookAndFeel colourScheme UIColours */
+	//    LookAndFeel_V4::setColourScheme(getLightColourScheme());
+	//
+	//    setProperty(Ids::uiPanelUIColourWindowBackground, (String)
+	//    LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::windowBackground).toString());
+	//    setProperty(Ids::uiPanelUIColourWidgetBackground, (String)
+	//    LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::widgetBackground).toString());
+	//    setProperty(Ids::uiPanelUIColourMenuBackground, (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour
+	//    (ColourScheme::UIColour::menuBackground).toString()); setProperty(Ids::uiPanelUIColourOutline, (String)
+	//    LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::outline).toString());
+	//    setProperty(Ids::uiPanelUIColourDefaultText, (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour
+	//    (ColourScheme::UIColour::defaultText).toString()); setProperty(Ids::uiPanelUIColourDefaultFill, (String)
+	//    LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::defaultFill).toString());
+	//    setProperty(Ids::uiPanelUIColourHighlightedText, (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour
+	//    (ColourScheme::UIColour::highlightedText).toString()); setProperty(Ids::uiPanelUIColourHighlightedFill,
+	//    (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour
+	//    (ColourScheme::UIColour::highlightedFill).toString()); setProperty(Ids::uiPanelUIColourMenuText, (String)
+	//    LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::menuText).toString());
+
+	ctrlrComponentSelection->addChangeListener(ctrlrPanelProperties);
+
+	setSize(600, 400);
+
+	ctrlrComponentSelection->sendChangeMessage();
 }
-CtrlrPanelEditor::~CtrlrPanelEditor()
-{
-    // --- STEP 1: SAFETY RESET GLOBAL & LOCAL LOOK AND FEELS ---
-    // This instantly releases that 1 lingering LookAndFeel_V4 instance!
-    if (getCanvas())
-    {
-        getCanvas()->setLookAndFeel(nullptr);
-    }
-    setLookAndFeel(nullptr);
-    juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
-    
-    // Explicitly drop our unique_ptr ownership now
-    lookAndFeel.reset();
-    // -----------------------------------------------------------
+CtrlrPanelEditor::~CtrlrPanelEditor() {
+	// Explicitly detach all modulator components from borrowed lfV1/V2/V3
+	// BEFORE lfV1/V2/V3 are destroyed as members of this class.
+	// CtrlrSlider objects are owned by CtrlrModulator/CtrlrPanel which outlive
+	// CtrlrPanelEditor — so without this, sliders would hold dangling pointers
+	// to destroyed LookAndFeel objects.
+	// Recursive lambda to detach LookAndFeel from entire component tree
+	std::function<void(juce::Component *)> detachLnF = [&](juce::Component *c) {
+		if (c == nullptr)
+			return;
+		c->setLookAndFeel(nullptr);
+		for (int j = 0; j < c->getNumChildComponents(); j++)
+			detachLnF(c->getChildComponent(j));
+	};
 
-    // Check if the component selection object is valid before trying to use it
-    if (ctrlrComponentSelection)
-    {
-        // Remove the listener before the objects are destroyed
-        ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
-    }
+	for (int i = 0; i < owner.getModulators().size(); i++) {
+		if (auto *mod = owner.getModulators()[i]) {
+			if (auto *comp = mod->getComponent()) {
+				DBG("*** detaching LookAndFeel from component: " << comp->getName());
+				detachLnF(comp);
+			}
+		}
+	}
 
-    // --- CLEAN UP THE CANVAS BEFORE WE MUTATE THE VALUE TREES ---
-    if (auto* canvas = getCanvas())
-    {
-        // 1. Clear the canvas from the panel editor tree listener list right now
-        getPanelEditorTree().removeListener(canvas);
+	// Now safe to proceed — lfV1/V2/V3 will be destroyed as members after this body
+	if (ctrlrComponentSelection)
+		ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
+	// ... rest of existing destructor
+	// Check if the component selection object is valid before trying to use it
+	if (ctrlrComponentSelection) {
+		// Remove the listener before the objects are destroyed
+		ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
+	}
 
-        // 2. Run the modulator removal loop cleanly here while 'owner' is fully intact
-        for (int i = 0; i < owner.getModulators().size(); ++i)
-        {
-            if (auto* mod = owner.getModulators()[i])
-            {
-                if (auto* c = mod->getComponent())
-                {
-                    canvas->removeComponent(c, false);
-                }
-            }
-        }
-    }
+	getPanelEditorTree().removeListener(this);
+	owner.getPanelTree().removeListener(this);
+	owner.getPanelTree().removeChild(getPanelEditorTree(), 0);
 
-    // -----------------------------------------------------------------
+	componentAnimator.removeChangeListener(this);
 
-    getPanelEditorTree().removeListener(this);
-    owner.getPanelTree().removeListener(this);
-    owner.getPanelTree().removeChild(getPanelEditorTree(), 0);
+	// Set look and feel to null to clean up
+	setLookAndFeel(nullptr);
+	if (getCanvas()) {
+		getCanvas()->setLookAndFeel(nullptr);
+	}
+	// This is important: JUCE's default look and feel can also be a source of leaks if not managed
+	juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
 
-    componentAnimator.removeChangeListener(this);
-    
-    // Set look and feel to null to clean up
-    setLookAndFeel(nullptr);
-    if (getCanvas())
-    {
-        getCanvas()->setLookAndFeel(nullptr);
-    }
-    // This is important: JUCE's default look and feel can also be a source of leaks if not managed
-    juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
+	// USELESS : because JUCE_DECLARE_WEAK_REFERENCEABLE macro is in the header already.
+	// It automatically handles the weak reference master
+	// masterReference.clear();
 
-    // USELESS : because JUCE_DECLARE_WEAK_REFERENCEABLE macro is in the header already.
-    // It automatically handles the weak reference master
-    // masterReference.clear();
-    
-    // The ScopedPointers will now automatically delete the components they own
-    // (ctrlrPanelViewport, ctrlrPanelProperties, spacerComponent, ctrlrPanelNotifier).
-}
-
-// CtrlrPanelEditor::~CtrlrPanelEditor()
-// {
-//     // Check if the component selection object is valid before trying to use it
-//     if (ctrlrComponentSelection)
-//     {
-//         // Remove the listener before the objects are destroyed
-//         ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
-//     }
-
-//     getPanelEditorTree().removeListener(this);
-//     owner.getPanelTree().removeListener(this);
-//     owner.getPanelTree().removeChild(getPanelEditorTree(), 0);
-
-//     componentAnimator.removeChangeListener(this);
-    
-//     // Set look and feel to null to clean up
-//     setLookAndFeel(nullptr);
-//     if (getCanvas())
-//     {
-//         getCanvas()->setLookAndFeel(nullptr);
-//     }
-//     // This is important: JUCE's default look and feel can also be a source of leaks if not managed
-//     juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
-
-// 	// USELESS : because JUCE_DECLARE_WEAK_REFERENCEABLE macro is in the header already.
-// 	// It automatically handles the weak reference master
-// 	// masterReference.clear();
-    
-//     // The ScopedPointers will now automatically delete the components they own
-//     // (ctrlrPanelViewport, ctrlrPanelProperties, spacerComponent, ctrlrPanelNotifier).
-// }
-
-void CtrlrPanelEditor::visibilityChanged()
-{
+	// The ScopedPointers will now automatically delete the components they own
+	// (ctrlrPanelViewport, ctrlrPanelProperties, spacerComponent, ctrlrPanelNotifier).
 }
 
-void CtrlrPanelEditor::resized()
-{
-    ctrlrPanelViewport->setBounds(0, 0, getWidth() - 608, getHeight()); // Was 308
-    ctrlrPanelProperties->setBounds(getWidth() - 600, 32, 600, getHeight() - 32);
-    spacerComponent->setBounds(getWidth(), 32, 8, getHeight() - 32);
+void CtrlrPanelEditor::visibilityChanged() {}
 
-    setProperty(Ids::uiViewPortWidth, getWidth());
-    setProperty(Ids::uiViewPortHeight, getHeight());
+void CtrlrPanelEditor::resized() {
+	ctrlrPanelViewport->setBounds(0, 0, getWidth() - 608, getHeight()); // Was 308
+	ctrlrPanelProperties->setBounds(getWidth() - 600, 32, 600, getHeight() - 32);
+	spacerComponent->setBounds(getWidth(), 32, 8, getHeight() - 32);
 
-    if (ctrlrPanelNotifier) // Added back v5.6.31
-    {
-        ctrlrPanelNotifier->setBounds (0, getHeight() - 28, getWidth() - 32, 20);
-    }
-     
-    layoutItems();
+	setProperty(Ids::uiViewPortWidth, getWidth());
+	setProperty(Ids::uiViewPortHeight, getHeight());
 
-    if (!getRestoreState())
-    {
-        saveLayout();
-    }
-    if (resizedCbk && !resizedCbk.wasObjectDeleted())
-    {
-        if (resizedCbk->isValid())
-        {
-            owner.getCtrlrLuaManager().getMethodManager().call (resizedCbk, &owner);
-        }
-    }
+	if (ctrlrPanelNotifier) // Added back v5.6.31
+	{
+		ctrlrPanelNotifier->setBounds(0, getHeight() - 28, getWidth() - 32, 20);
+	}
+
+	layoutItems();
+
+	if (!getRestoreState()) {
+		saveLayout();
+	}
+	if (resizedCbk && !resizedCbk.wasObjectDeleted()) {
+		if (resizedCbk->isValid()) {
+			owner.getCtrlrLuaManager().getMethodManager().call(resizedCbk, &owner);
+		}
+	}
 }
 
-CtrlrComponentSelection *CtrlrPanelEditor::getSelection()
-{
-    return (ctrlrComponentSelection);
+CtrlrComponentSelection *CtrlrPanelEditor::getSelection() { return (ctrlrComponentSelection); }
+
+void CtrlrPanelEditor::layoutItems() {
+	if (getProperty(Ids::uiPanelEditMode)) {
+		if (getProperty(Ids::uiPanelPropertiesOnRight)) {
+			Component *comps[] = {ctrlrPanelProperties, spacerComponent, ctrlrPanelViewport};
+			layoutManager.layOutComponents(comps, 3, 0, 0, getWidth(), getHeight(), false, true);
+		} else {
+			Component *comps[] = {ctrlrPanelViewport, spacerComponent, ctrlrPanelProperties};
+			layoutManager.layOutComponents(comps, 3, 0, 0, getWidth(), getHeight(), false, true);
+		}
+	} else {
+		layoutManager.layOutComponents(editorComponents, 1, 0, 0, getWidth(), getHeight(), false, true);
+	}
 }
 
-void CtrlrPanelEditor::layoutItems()
-{
-    if (getProperty(Ids::uiPanelEditMode))
-    {
-        if (getProperty(Ids::uiPanelPropertiesOnRight))
-        {
-            Component *comps[] = {ctrlrPanelProperties, spacerComponent, ctrlrPanelViewport};
-            layoutManager.layOutComponents(comps, 3, 0, 0, getWidth(), getHeight(), false, true);
-        }
-        else
-        {
-            Component *comps[] = {ctrlrPanelViewport, spacerComponent, ctrlrPanelProperties};
-            layoutManager.layOutComponents(comps, 3, 0, 0, getWidth(), getHeight(), false, true);
-        }
-    }
-    else
-    {
-        layoutManager.layOutComponents(editorComponents, 1, 0, 0, getWidth(), getHeight(), false, true);
-    }
+void CtrlrPanelEditor::saveLayout() {
+	setProperty(Ids::uiPanelViewPortSize, layoutManager.getItemCurrentAbsoluteSize(0));
+	setProperty(Ids::uiPanelPropertiesSize, layoutManager.getItemCurrentAbsoluteSize(2));
 }
 
-void CtrlrPanelEditor::saveLayout()
-{
-    setProperty(Ids::uiPanelViewPortSize, layoutManager.getItemCurrentAbsoluteSize(0));
-    setProperty(Ids::uiPanelPropertiesSize, layoutManager.getItemCurrentAbsoluteSize(2));
+CtrlrPanelCanvas *CtrlrPanelEditor::getCanvas() {
+	if (ctrlrPanelViewport != 0) {
+		return (ctrlrPanelViewport->getCanvas());
+	}
+
+	return (0);
 }
 
-CtrlrPanelCanvas *CtrlrPanelEditor::getCanvas()
-{
-    if (ctrlrPanelViewport != 0)
-    {
-        return (ctrlrPanelViewport->getCanvas());
-    }
+void CtrlrPanelEditor::editModeChanged() {
+	const bool editMode = getProperty(Ids::uiPanelEditMode);
+	owner.editModeChanged(editMode);
 
-    return (0);
+	if (editMode) {
+		layoutManager.setItemLayout(0, -0.001, -1.0, getProperty(Ids::uiPanelViewPortSize, -0.7));
+		layoutManager.setItemLayout(2, -0.001, -1.0, getProperty(Ids::uiPanelPropertiesSize, -0.3));
+		spacerComponent->setVisible(true);
+		ctrlrPanelProperties->setVisible(true);
+		getCanvas()->getResizableBorder()->setVisible(true);
+
+		if ((bool)getProperty(Ids::uiPanelDisableCombosOnEdit))
+			setAllCombosDisabled();
+	} else {
+		if (getSelection())
+			getSelection()->deselectAll();
+		spacerComponent->setVisible(false);
+		ctrlrPanelProperties->setVisible(false);
+		getCanvas()->getResizableBorder()->setVisible(false);
+
+		if ((bool)getProperty(Ids::uiPanelDisableCombosOnEdit))
+			setAllCombosEnabled();
+	}
+
+	resized();
 }
 
-void CtrlrPanelEditor::editModeChanged()
-{
-    const bool editMode = getProperty(Ids::uiPanelEditMode);
-    owner.editModeChanged(editMode);
-
-    if (editMode)
-    {
-        layoutManager.setItemLayout(0, -0.001, -1.0, getProperty(Ids::uiPanelViewPortSize, -0.7));
-        layoutManager.setItemLayout(2, -0.001, -1.0, getProperty(Ids::uiPanelPropertiesSize, -0.3));
-        spacerComponent->setVisible(true);
-        ctrlrPanelProperties->setVisible(true);
-        getCanvas()->getResizableBorder()->setVisible(true);
-
-        if ((bool) getProperty(Ids::uiPanelDisableCombosOnEdit))
-            setAllCombosDisabled();
-    }
-    else
-    {
-        if (getSelection())
-            getSelection()->deselectAll();
-        spacerComponent->setVisible(false);
-        ctrlrPanelProperties->setVisible(false);
-        getCanvas()->getResizableBorder()->setVisible(false);
-
-        if ((bool) getProperty(Ids::uiPanelDisableCombosOnEdit))
-            setAllCombosEnabled();
-    }
-
-    resized();
+void CtrlrPanelEditor::setAllCombosDisabled() {
+	OwnedArray<CtrlrModulator, CriticalSection> &mods = owner.getModulators();
+	for (int i = 0; i < mods.size(); i++) {
+		CtrlrCombo *cc = dynamic_cast<CtrlrCombo *>(mods[i]->getComponent());
+		if (cc != nullptr) {
+			cc->setEnabled(false);
+		}
+	}
 }
 
-void CtrlrPanelEditor::setAllCombosDisabled()
-{
-    OwnedArray<CtrlrModulator, CriticalSection> &mods = owner.getModulators();
-    for (int i = 0; i < mods.size(); i++)
-    {
-        CtrlrCombo *cc = dynamic_cast<CtrlrCombo *>(mods[i]->getComponent());
-        if (cc != nullptr)
-        {
-            cc->setEnabled(false);
-        }
-    }
+void CtrlrPanelEditor::setAllCombosEnabled() {
+	OwnedArray<CtrlrModulator, CriticalSection> &mods = owner.getModulators();
+	for (int i = 0; i < mods.size(); i++) {
+		CtrlrCombo *cc = dynamic_cast<CtrlrCombo *>(mods[i]->getComponent());
+		if (cc != nullptr) {
+			cc->setEnabled(true);
+		}
+	}
 }
 
-void CtrlrPanelEditor::setAllCombosEnabled()
-{
-    OwnedArray<CtrlrModulator, CriticalSection> &mods = owner.getModulators();
-    for (int i = 0; i < mods.size(); i++)
-    {
-        CtrlrCombo *cc = dynamic_cast<CtrlrCombo *>(mods[i]->getComponent());
-        if (cc != nullptr)
-        {
-            cc->setEnabled(true);
-        }
-    }
+void CtrlrPanelEditor::restoreState(const ValueTree &savedState) {
+	setVisible(false);
+
+	setRestoreState(true);
+
+	restoreProperties(savedState.getChildWithName(Ids::uiPanelEditor), panelEditorTree, 0);
+
+	bool IsNotLegacyMode = savedState.getChildWithName(Ids::uiPanelEditor)
+							   .hasProperty(Ids::uiPanelLegacyMode); // Legacy mode check for version before 5.6.29
+	if (!IsNotLegacyMode) {
+		setProperty(Ids::uiPanelLegacyMode, true);
+		setProperty(Ids::uiPanelLookAndFeel, "V3");
+	}
+
+	getCanvas()->restoreState(savedState);
+
+	if (getSelection()) {
+		getSelection()->sendChangeMessage();
+	}
+
+	if (owner.getCtrlrManagerOwner().getInstanceMode() == InstanceSingle ||
+		owner.getCtrlrManagerOwner().getInstanceMode() == InstanceSingleRestricted) {
+		initSingleInstance();
+	}
+
+	editModeChanged();
+	setRestoreState(false);
+
+	setVisible(true);
 }
 
-void CtrlrPanelEditor::restoreState(const ValueTree &savedState)
-{
-    setVisible(false);
+CtrlrComponent *CtrlrPanelEditor::getSelected(const Identifier &type) {
+	if (getSelection() == nullptr)
+		return (nullptr);
 
-    setRestoreState(true);
+	if (getSelection()->getNumSelected() == 1) {
+		if (CtrlrComponentTypeManager::findType(getSelection()->getSelectedItem(0)) == type) {
+			return (getSelection()->getSelectedItem(0));
+		}
+	}
 
-    restoreProperties(savedState.getChildWithName(Ids::uiPanelEditor), panelEditorTree, 0);
-    
-    bool IsNotLegacyMode = savedState.getChildWithName(Ids::uiPanelEditor).hasProperty(Ids::uiPanelLegacyMode);  // Legacy mode check for version before 5.6.29
-    if (!IsNotLegacyMode)
-    {
-        setProperty(Ids::uiPanelLegacyMode, true);
-        setProperty(Ids::uiPanelLookAndFeel, "V3");
-    }
-
-    getCanvas()->restoreState(savedState);
-
-    if (getSelection())
-    {
-        getSelection()->sendChangeMessage();
-    }
-
-    if (owner.getCtrlrManagerOwner().getInstanceMode() == InstanceSingle
-        || owner.getCtrlrManagerOwner().getInstanceMode() == InstanceSingleRestriced)
-    {
-        initSingleInstance();
-    }
-
-    editModeChanged();
-    setRestoreState(false);
-
-    setVisible(true);
+	return (0);
 }
 
-CtrlrComponent *CtrlrPanelEditor::getSelected(const Identifier &type)
-{
-    if (getSelection() == nullptr)
-        return (nullptr);
+void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
+	if (treeWhosePropertyHasChanged.hasType(Ids::uiPanelEditor)) {
+		if (property == Ids::uiPanelEditMode) {
+			editModeChanged();
+		} else if (property == Ids::luaViewPortResized) {
+			if (getProperty(property) == "")
+				return;
 
-    if (getSelection()->getNumSelected() == 1)
-    {
-        if (CtrlrComponentTypeManager::findType(getSelection()->getSelectedItem(0)) == type)
-        {
-            return (getSelection()->getSelectedItem(0));
-        }
-    }
+			resizedCbk = owner.getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		} else if (property == Ids::uiPanelSnapSize) {
+			repaint();
+		} else if (property == Ids::name) {
+			// Use getPanelWindowTitle() to get the "*" when the panel is dirty
+			Component::setName(owner.getPanelWindowTitle());
+		} else if (property == Ids::uiPanelPropertiesOnRight) {
+			ctrlrPanelProperties->layoutChanged();
 
-    return (0);
+			if (!owner.getCtrlrManagerOwner().isRestoring()) {
+				resized();
+			}
+		} else if (property == Ids::uiPanelCanvasRectangle) {
+			getCanvas()->setBounds(
+				VAR2RECT(getProperty(property))); // update canvas size if values in the property field are changed
+			canvasHeight =
+				getCanvas()->getHeight();		   // Updated v5.6.31 by GoodWeather. Removed type double(canvasHeight)
+			canvasWidth = getCanvas()->getWidth(); // Updated v5.6.31 by GoodWeather. Removed type double(canvasWidth)
+			canvasAspectRatio =
+				canvasWidth / canvasHeight; // Updated v5.6.31 by GoodWeather. Removed type double(canvasAspectRatio) =
+											// double(canvasWidth) / double(canvasHeight)
+			setProperty(Ids::uiViewPortFixedAspectRatio,
+						canvasAspectRatio); // update canvas aspect ratio if canvas is resized
+			resized();
+		} else if (property == Ids::uiViewPortResizable || property == Ids::uiViewPortShowScrollBars ||
+				   property == Ids::uiViewPortEnableFixedAspectRatio || property == Ids::uiViewPortFixedAspectRatio ||
+				   property == Ids::uiViewPortEnableResizeLimits || property == Ids::uiViewPortMinWidth ||
+				   property == Ids::uiViewPortMinHeight || property == Ids::uiViewPortMaxWidth ||
+				   property == Ids::uiViewPortMaxHeight || property == Ids::uiViewPortShowScrollBars) {
+			resized();
+		} else if (property == Ids::uiViewPortWidth || property == Ids::uiViewPortHeight) {
+			resized();
+		} else if (property == Ids::uiPanelDisableCombosOnEdit) {
+			if ((bool)getProperty(property) && getMode()) {
+				setAllCombosDisabled();
+			} else {
+				setAllCombosEnabled();
+			}
+		} else if (property == Ids::uiPanelZoom) {
+			getPanelViewport()->setZoom(getProperty(property), getCanvas()->getBounds().getCentre().getX(),
+										getCanvas()->getBounds().getCentre().getY());
+		} else if (property == Ids::uiPanelMenuBarVisible) {
+			if (owner.getCtrlrManagerOwner().getEditor()) {
+				owner.getCtrlrManagerOwner().getEditor()->activeCtrlrChanged();
+			}
+		} else if (property == Ids::uiPanelBackgroundGradientType || property == Ids::uiPanelViewPortBackgroundColour ||
+				   property == Ids::uiPanelBackgroundColour || property == Ids::uiPanelBackgroundColour1 ||
+				   property == Ids::uiPanelBackgroundColour2) {
+			resized();
+
+		} else if (property == Ids::uiPanelUIColourWindowBackground ||
+				   property == Ids::uiPanelUIColourWidgetBackground || property == Ids::uiPanelUIColourMenuBackground ||
+				   property == Ids::uiPanelUIColourOutline || property == Ids::uiPanelUIColourDefaultText ||
+				   property == Ids::uiPanelUIColourDefaultFill || property == Ids::uiPanelUIColourHighlightedText ||
+				   property == Ids::uiPanelUIColourHighlightedFill || property == Ids::uiPanelUIColourMenuText) {
+			// return; // Do nothing for now, as the following code is commented out and not working yet
+			//             /** Not working yet, need to be fixed */
+			//             auto* customLookAndFeel = dynamic_cast<LookAndFeel_V4*>(&getLookAndFeel());
+			//             auto customLookAndFeelScheme = customLookAndFeel->getCurrentColourScheme();
+			//
+			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::windowBackground, VAR2COLOUR
+			//             (owner.getProperty(Ids::uiPanelUIColourWindowBackground)));
+			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::widgetBackground, VAR2COLOUR
+			//             (owner.getProperty(Ids::uiPanelUIColourWidgetBackground)));
+			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::menuBackground, VAR2COLOUR
+			//             (owner.getProperty(Ids::uiPanelUIColourMenuBackground)));
+			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::outline, VAR2COLOUR
+			//             (owner.getProperty(Ids::uiPanelUIColourOutline)));
+			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::defaultText, VAR2COLOUR
+			//             (owner.getProperty(Ids::uiPanelUIColourDefaultText)));
+			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::defaultFill, VAR2COLOUR
+			//             (owner.getProperty(Ids::uiPanelUIColourDefaultFill)));
+			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::highlightedText, VAR2COLOUR
+			//             (owner.getProperty(Ids::uiPanelUIColourHighlightedText)));
+			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::highlightedFill, VAR2COLOUR
+			//             (owner.getProperty(Ids::uiPanelUIColourHighlightedFill)));
+			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::menuText, VAR2COLOUR
+			//             (owner.getProperty(Ids::uiPanelUIColourMenuText)));
+			//
+			//             setLookAndFeel(customLookAndFeel);
+			//             getCanvas()->setLookAndFeel(customLookAndFeel);
+			//             LookAndFeel::setDefaultLookAndFeel(customLookAndFeel);
+		} else if (property == Ids::uiPanelLookAndFeel) {
+			static bool handlingLookAndFeelChange = false;
+			if (handlingLookAndFeelChange)
+				return;
+			handlingLookAndFeelChange = true;
+			struct Guard {
+					~Guard() { handlingLookAndFeelChange = false; }
+			} guard;
+
+			auto newLookAndFeel =
+				std::unique_ptr<juce::LookAndFeel>(getLookAndFeelFromDescription(getProperty(property)));
+
+			if (newLookAndFeel == nullptr)
+				return;
+
+			// Detach only the components that explicitly held our old lookAndFeel pointer.
+			// Do NOT use sendLookAndFeelChange() here — it clears all children's explicit
+			// LookAndFeel assignments (e.g. slider's lfV3 from applyCentralLookAndFeel).
+			setLookAndFeel(nullptr);
+			if (getCanvas() != nullptr)
+				getCanvas()->setLookAndFeel(nullptr);
+			if (ctrlrPanelProperties != nullptr)
+				ctrlrPanelProperties->setLookAndFeel(nullptr);
+
+			// Now safe to destroy old lookAndFeel — WeakReferences released
+			lookAndFeel = std::move(newLookAndFeel);
+
+			// Reattach new lookAndFeel
+			getCanvas()->setLookAndFeel(lookAndFeel.get());
+			setLookAndFeel(lookAndFeel.get());
+			if (ctrlrPanelProperties != nullptr)
+				ctrlrPanelProperties->setLookAndFeel(lookAndFeel.get());
+
+			// Propagates to all children via normal inheritance
+			lookAndFeelChanged();
+
+			if (!getProperty(Ids::uiPanelLegacyMode)) {
+				setProperty(
+					Ids::uiPanelViewPortBackgroundColour,
+					(String)Component::findColour(ResizableWindow::backgroundColourId).withAlpha(0.7f).toString());
+				setProperty(Ids::uiPanelBackgroundColour,
+							(String)Component::findColour(ResizableWindow::backgroundColourId).toString());
+				setProperty(Ids::uiPanelBackgroundColour1,
+							(String)Component::findColour(ResizableWindow::backgroundColourId).toString());
+				setProperty(Ids::uiPanelBackgroundColour2,
+							(String)Component::findColour(ResizableWindow::backgroundColourId).darker(0.2f).toString());
+				setProperty(Ids::uiPanelTooltipBackgroundColour,
+							(String)Component::findColour(BubbleComponent::backgroundColourId).toString());
+				setProperty(Ids::uiPanelTooltipOutlineColour,
+							(String)Component::findColour(BubbleComponent::outlineColourId).toString());
+				setProperty(Ids::uiPanelTooltipColour, (String)Component::findColour(Label::textColourId).toString());
+			}
+
+			if (owner.getCtrlrManagerOwner().getEditor())
+				owner.getCtrlrManagerOwner().getEditor()->activeCtrlrChanged();
+
+			ctrlrPanelProperties->refreshAll();
+
+			if (getSelection())
+				getSelection()->sendChangeMessage();
+		}
+	}
 }
 
-void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
+std::unique_ptr<juce::LookAndFeel>
+CtrlrPanelEditor::getLookAndFeelFromDescription(const juce::String &lookAndFeelDesc) // Added v5.6.34
 {
-    if (treeWhosePropertyHasChanged.hasType(Ids::uiPanelEditor))
-    {
-        if (property == Ids::uiPanelEditMode)
-        {
-            editModeChanged();
-        }
-        else if (property == Ids::luaViewPortResized)
-        {
-            if (getProperty(property) == "")
-                return;
+	// If "Default" has a special meaning for CtrlrPanelEditor, handle it here.
+	// Otherwise, you can just directly call the generic function.
+	if (lookAndFeelDesc == "Default") {
+		return nullptr; // Or whatever "Default" means for this specific component
+						// e.g., return new juce::LookAndFeel_V4();
+	}
 
-            resizedCbk = owner.getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
-        }
-        else if (property == Ids::uiPanelSnapSize)
-        {
-            repaint();
-        }
-        else if (property == Ids::name)
-        {
-            // Use getPanelWindowTitle() to get the "*" when the panel is dirty
-            Component::setName(owner.getPanelWindowTitle());
-        }
-        else if (property == Ids::uiPanelPropertiesOnRight)
-        {
-            ctrlrPanelProperties->layoutChanged();
-
-            if (!owner.getCtrlrManagerOwner().isRestoring())
-            {
-                resized();
-            }
-        }
-        else if (property == Ids::uiPanelCanvasRectangle)
-        {
-            getCanvas()->setBounds(VAR2RECT(getProperty(property))); // update canvas size if values in the property field are changed
-            canvasHeight = getCanvas()->getHeight(); // Updated v5.6.31 by GoodWeather. Removed type double(canvasHeight)
-            canvasWidth = getCanvas()->getWidth(); // Updated v5.6.31 by GoodWeather. Removed type double(canvasWidth)
-            canvasAspectRatio = canvasWidth / canvasHeight; // Updated v5.6.31 by GoodWeather. Removed type double(canvasAspectRatio) = double(canvasWidth) / double(canvasHeight)
-            setProperty(Ids::uiViewPortFixedAspectRatio, canvasAspectRatio); // update canvas aspect ratio if canvas is resized
-            resized();
-        }
-        else if (property == Ids::uiViewPortResizable
-                 || property == Ids::uiViewPortShowScrollBars
-                 || property == Ids::uiViewPortEnableFixedAspectRatio
-                 || property == Ids::uiViewPortFixedAspectRatio
-                 || property == Ids::uiViewPortEnableResizeLimits
-                 || property == Ids::uiViewPortMinWidth
-                 || property == Ids::uiViewPortMinHeight
-                 || property == Ids::uiViewPortMaxWidth
-                 || property == Ids::uiViewPortMaxHeight
-                 || property == Ids::uiViewPortShowScrollBars
-                 )
-        {
-            resized();
-        }
-        else if (property == Ids::uiViewPortWidth
-                 || property == Ids::uiViewPortHeight
-                 )
-        {
-            resized();
-        }
-        else if (property == Ids::uiPanelDisableCombosOnEdit)
-        {
-            if ((bool) getProperty(property) && getMode())
-            {
-                setAllCombosDisabled();
-            }
-            else
-            {
-                setAllCombosEnabled();
-            }
-        }
-        else if (property == Ids::uiPanelZoom)
-        {
-            getPanelViewport()->setZoom(getProperty(property),
-                                        getCanvas()->getBounds().getCentre().getX(),
-                                        getCanvas()->getBounds().getCentre().getY());
-        }
-        else if (property == Ids::uiPanelMenuBarVisible)
-        {
-            if (owner.getCtrlrManagerOwner().getEditor())
-            {
-                owner.getCtrlrManagerOwner().getEditor()->activeCtrlrChanged();
-            }
-        }
-        else if (property == Ids::uiPanelLookAndFeel)
-        {
-            // 1. Create a single new LookAndFeel object and give ownership to a unique_ptr.
-            //    This is the only place we call the function that allocates a new object.
-            auto newLookAndFeel = std::unique_ptr<juce::LookAndFeel>(getLookAndFeelFromDescription(getProperty(property)));
-
-            // 2. Safely check if the pointer is valid. If not, do nothing.
-            if (newLookAndFeel.get() == nullptr)
-                return;
-
-            // 3. Now, set all the necessary LookAndFeel pointers using this ONE new object.
-            //    The .get() method returns the raw pointer without transferring ownership.
-            getCanvas()->setLookAndFeel(newLookAndFeel.get());
-            setLookAndFeel(newLookAndFeel.get());
-            LookAndFeel::setDefaultLookAndFeel(newLookAndFeel.get());
-
-            // 4. Finally, assign the new unique_ptr to the class member.
-            //    This safely manages the lifetime of the new object.
-            lookAndFeel = std::move(newLookAndFeel);
-
-            // lookAndFeelChanged(); // Useless ???
-            
-            if (!getProperty(Ids::uiPanelLegacyMode)) // Added v5.6.30. Protects Legacy panels' BKG Colours when being assigned LnF V3
-            {
-                // Update colors based on the new valid LookAndFeel.
-				setProperty(Ids::uiPanelViewPortBackgroundColour, (String) Component::findColour (ResizableWindow::backgroundColourId).withAlpha(0.7f).toString()); // Update Canvas props
-                setProperty(Ids::uiPanelBackgroundColour, (String) Component::findColour (ResizableWindow::backgroundColourId).toString());
-                setProperty(Ids::uiPanelBackgroundColour1, (String) Component::findColour (ResizableWindow::backgroundColourId).toString());
-                setProperty(Ids::uiPanelBackgroundColour2, (String) Component::findColour (ResizableWindow::backgroundColourId).darker(0.2f).toString());
-                setProperty(Ids::uiPanelTooltipBackgroundColour, (String) Component::findColour (BubbleComponent::backgroundColourId).toString());
-                setProperty(Ids::uiPanelTooltipOutlineColour, (String) Component::findColour (BubbleComponent::outlineColourId).toString());
-                setProperty(Ids::uiPanelTooltipColour, (String) Component::findColour (Label::textColourId).toString());
-            }
-            
-//            /** Stores the updated LnF ColourScheme **/
-//            auto* currentLookAndFeel = dynamic_cast<LookAndFeel_V4*>(&getLookAndFeel());
-//            auto currentLookAndFeelScheme = currentLookAndFeel->getCurrentColourScheme();
-//
-//            /** Updates Default UIColours  property fields for the new ColourScheme **/
-//            setProperty(Ids::uiPanelUIColourWindowBackground, (String) currentLookAndFeelScheme.getUIColour (ColourScheme::UIColour::windowBackground).toString());
-//            setProperty(Ids::uiPanelUIColourWidgetBackground, (String) currentLookAndFeelScheme.getUIColour (ColourScheme::UIColour::widgetBackground).toString());
-//            setProperty(Ids::uiPanelUIColourMenuBackground, (String) currentLookAndFeelScheme.getUIColour (ColourScheme::UIColour::menuBackground).toString());
-//            setProperty(Ids::uiPanelUIColourOutline, (String) currentLookAndFeelScheme.getUIColour (ColourScheme::UIColour::outline).toString());
-//            setProperty(Ids::uiPanelUIColourDefaultText, (String) currentLookAndFeelScheme.getUIColour (ColourScheme::UIColour::defaultText).toString());
-//            setProperty(Ids::uiPanelUIColourDefaultFill, (String) currentLookAndFeelScheme.getUIColour (ColourScheme::UIColour::defaultFill).toString());
-//            setProperty(Ids::uiPanelUIColourHighlightedText, (String) currentLookAndFeelScheme.getUIColour (ColourScheme::UIColour::highlightedText).toString());
-//            setProperty(Ids::uiPanelUIColourHighlightedFill, (String) currentLookAndFeelScheme.getUIColour (ColourScheme::UIColour::highlightedFill).toString());
-//            setProperty(Ids::uiPanelUIColourMenuText, (String) (String) currentLookAndFeelScheme.getUIColour (ColourScheme::UIColour::menuText).toString());
-            
-            /** Updates LookAndFeel of the menuBar **/
-            if (owner.getCtrlrManagerOwner().getEditor())
-            {
-                owner.getCtrlrManagerOwner().getEditor()->activeCtrlrChanged();
-            }
-
-            /** Updates  the Property List to get textboxes LnF right  **/
-            ctrlrPanelProperties->refreshAll();
-            if (getSelection())
-            {
-                getSelection()->sendChangeMessage();  // Brings back the screen position to where it left
-            }
-        }
-        else if (property == Ids::uiPanelBackgroundGradientType
-                 || property == Ids::uiPanelViewPortBackgroundColour
-                 || property == Ids::uiPanelBackgroundColour
-                 || property == Ids::uiPanelBackgroundColour1
-                 || property == Ids::uiPanelBackgroundColour2
-                )
-        {
-            resized();
-        }
-        else if (property == Ids::uiPanelUIColourWindowBackground
-                 || property == Ids::uiPanelUIColourWidgetBackground
-                 || property == Ids::uiPanelUIColourMenuBackground
-                 || property == Ids::uiPanelUIColourOutline
-                 || property == Ids::uiPanelUIColourDefaultText
-                 || property == Ids::uiPanelUIColourDefaultFill
-                 || property == Ids::uiPanelUIColourHighlightedText
-                 || property == Ids::uiPanelUIColourHighlightedFill
-                 || property == Ids::uiPanelUIColourMenuText
-                 )
-        {
-
-//            /** Not working yet, need to be fixed */
-//            auto* customLookAndFeel = dynamic_cast<LookAndFeel_V4*>(&getLookAndFeel());
-//            auto customLookAndFeelScheme = customLookAndFeel->getCurrentColourScheme();
-//
-//            getCurrentColourScheme().setUIColour(ColourScheme::UIColour::windowBackground, VAR2COLOUR (owner.getProperty(Ids::uiPanelUIColourWindowBackground)));
-//            getCurrentColourScheme().setUIColour(ColourScheme::UIColour::widgetBackground, VAR2COLOUR (owner.getProperty(Ids::uiPanelUIColourWidgetBackground)));
-//            getCurrentColourScheme().setUIColour(ColourScheme::UIColour::menuBackground, VAR2COLOUR (owner.getProperty(Ids::uiPanelUIColourMenuBackground)));
-//            getCurrentColourScheme().setUIColour(ColourScheme::UIColour::outline, VAR2COLOUR (owner.getProperty(Ids::uiPanelUIColourOutline)));
-//            getCurrentColourScheme().setUIColour(ColourScheme::UIColour::defaultText, VAR2COLOUR (owner.getProperty(Ids::uiPanelUIColourDefaultText)));
-//            getCurrentColourScheme().setUIColour(ColourScheme::UIColour::defaultFill, VAR2COLOUR (owner.getProperty(Ids::uiPanelUIColourDefaultFill)));
-//            getCurrentColourScheme().setUIColour(ColourScheme::UIColour::highlightedText, VAR2COLOUR (owner.getProperty(Ids::uiPanelUIColourHighlightedText)));
-//            getCurrentColourScheme().setUIColour(ColourScheme::UIColour::highlightedFill, VAR2COLOUR (owner.getProperty(Ids::uiPanelUIColourHighlightedFill)));
-//            getCurrentColourScheme().setUIColour(ColourScheme::UIColour::menuText, VAR2COLOUR (owner.getProperty(Ids::uiPanelUIColourMenuText)));
-//
-//            setLookAndFeel(customLookAndFeel);
-//            getCanvas()->setLookAndFeel(customLookAndFeel);
-//            LookAndFeel::setDefaultLookAndFeel(customLookAndFeel);
-            
-        }
-    }
+	// Now, simply call your centralized function!
+	// The second argument `true` means if the `lookAndFeelDesc` doesn't match
+	// any known scheme, it will return a new LookAndFeel_V4 with the LightColourScheme.
+	// If you prefer it to return nullptr in unknown cases, change it to `false`.
+	return gui::createLookAndFeelFromDescription(lookAndFeelDesc, true);
 }
 
-juce::LookAndFeel *CtrlrPanelEditor::getLookAndFeelFromDescription(const juce::String &lookAndFeelDesc) // Added v5.6.34
-{
-    // If "Default" has a special meaning for CtrlrPanelEditor, handle it here.
-    // Otherwise, you can just directly call the generic function.
-    if (lookAndFeelDesc == "Default")
-    {
-        return nullptr; // Or whatever "Default" means for this specific component
-                        // e.g., return new juce::LookAndFeel_V4();
-    }
+const var &CtrlrPanelEditor::getProperty(const Identifier &name) const { return (panelEditorTree.getProperty(name)); }
 
-    // Now, simply call your centralized function!
-    // The second argument `true` means if the `lookAndFeelDesc` doesn't match
-    // any known scheme, it will return a new LookAndFeel_V4 with the LightColourScheme.
-    // If you prefer it to return nullptr in unknown cases, change it to `false`.
-    return gui::createLookAndFeelFromDescription(lookAndFeelDesc, true);
+const var CtrlrPanelEditor::getProperty(const Identifier &name, const var &defaultReturnValue) const {
+	return (panelEditorTree.getProperty(name, defaultReturnValue));
 }
 
-const var &CtrlrPanelEditor::getProperty(const Identifier &name) const
-{
-    return (panelEditorTree.getProperty(name));
+void CtrlrPanelEditor::setProperty(const Identifier &name, const var &newValue, const bool isUndoable) {
+	panelEditorTree.setProperty(name, newValue, 0);
 }
 
-const var CtrlrPanelEditor::getProperty(const Identifier &name, const var &defaultReturnValue) const
-{
-    return (panelEditorTree.getProperty(name, defaultReturnValue));
+const bool CtrlrPanelEditor::getMode() { return (getProperty(Ids::uiPanelEditMode)); }
+
+AffineTransform CtrlrPanelEditor::moveSelectionToPosition(const int newX, const int newY) {
+	if (getSelection() == nullptr)
+		return (AffineTransform());
+
+	RectangleList<int> rectangleList;
+
+	for (int i = 0; i < getSelection()->getNumSelected(); i++) {
+		CtrlrComponent *c = getSelection()->getSelectedItem(i);
+		rectangleList.add(c->getBounds());
+	}
+
+	RectanglePlacement rp(RectanglePlacement::xLeft);
+	return (rp.getTransformToFit(rectangleList.getBounds().toFloat(),
+								 rectangleList.getBounds().withPosition(newX, newY).toFloat()));
 }
 
-void CtrlrPanelEditor::setProperty(const Identifier &name, const var &newValue, const bool isUndoable)
+void CtrlrPanelEditor::initSingleInstance() { owner.setProperty(Ids::uiPanelEditMode, false); }
+
+void CtrlrPanelEditor::notify(
+	const String &notification, CtrlrNotificationCallback *callback,
+	const CtrlrNotificationType ctrlrNotificationType) // Added back v5.6.31 for file management bottom notification bar
 {
-    panelEditorTree.setProperty(name, newValue, 0);
+	if (ctrlrPanelNotifier) {
+		if ((int)owner.getProperty(Ids::panelMessageTime) <= 0)
+			return;
+
+		notificationCallback = callback;
+
+		componentAnimator.cancelAllAnimations(true);
+		ctrlrPanelNotifier->setVisible(true);
+
+		if (notificationCallback != nullptr) {
+			ctrlrPanelNotifier->setMouseCursor(MouseCursor::PointingHandCursor);
+		} else {
+			ctrlrPanelNotifier->setMouseCursor(MouseCursor::NormalCursor);
+		}
+		ctrlrPanelNotifier->setBounds(0, getHeight() - 28, getWidth(), 20);
+		ctrlrPanelNotifier->setAlpha(1.0f);
+
+		ctrlrPanelNotifier->setNotification(notification, ctrlrNotificationType);
+
+		componentAnimator.animateComponent(ctrlrPanelNotifier, ctrlrPanelNotifier->getBounds(), 0.0f,
+										   owner.getProperty(Ids::panelMessageTime), false, 1.0, 1.0);
+	}
 }
 
-const bool CtrlrPanelEditor::getMode()
+void CtrlrPanelEditor::notificationClicked(
+	const MouseEvent e) // Added back v5.6.31 for file management bottom notification bar
 {
-    return (getProperty(Ids::uiPanelEditMode));
+	componentAnimator.cancelAllAnimations(true);
+
+	if (!notificationCallback.wasObjectDeleted() && notificationCallback) {
+		notificationCallback->notificationClicked(e);
+	}
 }
 
-AffineTransform CtrlrPanelEditor::moveSelectionToPosition(const int newX, const int newY)
+void CtrlrPanelEditor::changeListenerCallback(
+	ChangeBroadcaster *source) // Added back v5.6.31 for file management bottom notification bar
 {
-    if (getSelection() == nullptr)
-        return (AffineTransform());
-
-    RectangleList<int> rectangleList;
-
-    for (int i = 0; i < getSelection()->getNumSelected(); i++)
-    {
-        CtrlrComponent *c = getSelection()->getSelectedItem(i);
-        rectangleList.add(c->getBounds());
-    }
-
-    RectanglePlacement rp(RectanglePlacement::xLeft);
-    return (rp.getTransformToFit(rectangleList.getBounds().toFloat(),
-                                 rectangleList.getBounds().withPosition(newX, newY).toFloat()));
+	if (source == &componentAnimator) {
+		if (!componentAnimator.isAnimating()) {
+			ctrlrPanelNotifier->setVisible(false);
+		}
+	}
 }
 
-void CtrlrPanelEditor::initSingleInstance()
-{
-    owner.setProperty(Ids::uiPanelEditMode, false);
+void CtrlrPanelEditor::reloadResources(Array<CtrlrPanelResource *> resourcesThatChanged) {
+	for (int i = 0; i < owner.getNumModulators(); i++) {
+		if (owner.getModulatorByIndex(i)->getComponent()) {
+			owner.getModulatorByIndex(i)->getComponent()->reloadResources(resourcesThatChanged);
+		}
+	}
+
+	resized();
 }
 
+void CtrlrPanelEditor::searchForProperty() {}
 
-void CtrlrPanelEditor::notify(const String &notification, CtrlrNotificationCallback *callback, const CtrlrNotificationType ctrlrNotificationType)  // Added back v5.6.31 for file management bottom notification bar
+bool CtrlrPanelEditor::luaEditorExistsAndIsFocused() // Added v5.6.34. Required to pass keypress to the LUA method
+													 // manager for menu items. Handles the focus gain/loss.
 {
-    if (ctrlrPanelNotifier)
-    {
-        if ((int)owner.getProperty(Ids::panelMessageTime) <= 0)
-            return;
+	// We use the public getContent() method on the window manager.
+	// This will return a pointer to the component inside the Lua editor window.
+	juce::Component *luaEditorContent =
+		owner.getPanelWindowManager().getContent(CtrlrPanelWindowManager::LuaMethodEditor);
 
-        notificationCallback = callback;
+	// Now we check if the content component exists and has keyboard focus.
+	if (luaEditorContent != nullptr && luaEditorContent->hasKeyboardFocus(true)) {
+		return true;
+	}
 
-        componentAnimator.cancelAllAnimations (true);
-        ctrlrPanelNotifier->setVisible (true);
-        
-        if (notificationCallback != nullptr)
-        {
-            ctrlrPanelNotifier->setMouseCursor (MouseCursor::PointingHandCursor);
-        }
-        else
-        {
-            ctrlrPanelNotifier->setMouseCursor (MouseCursor::NormalCursor);
-        }
-        ctrlrPanelNotifier->setBounds (0, getHeight() - 28, getWidth(), 20);
-        ctrlrPanelNotifier->setAlpha (1.0f);
-
-        ctrlrPanelNotifier->setNotification (notification, ctrlrNotificationType);
-
-        componentAnimator.animateComponent (ctrlrPanelNotifier, ctrlrPanelNotifier->getBounds(), 0.0f, owner.getProperty(Ids::panelMessageTime), false, 1.0, 1.0);
-    }
-}
-
-void CtrlrPanelEditor::notificationClicked(const MouseEvent e)  // Added back v5.6.31 for file management bottom notification bar
-{
-    componentAnimator.cancelAllAnimations (true);
-
-    if (!notificationCallback.wasObjectDeleted() && notificationCallback)
-    {
-        notificationCallback->notificationClicked(e);
-    }
-}
-
-void CtrlrPanelEditor::changeListenerCallback (ChangeBroadcaster *source)  // Added back v5.6.31 for file management bottom notification bar
-{
-    if (source == &componentAnimator)
-    {
-        if (!componentAnimator.isAnimating())
-        {
-            ctrlrPanelNotifier->setVisible (false);
-        }
-    }
-}
-
-
-
-void CtrlrPanelEditor::reloadResources(Array<CtrlrPanelResource *> resourcesThatChanged)
-{
-    for (int i = 0; i < owner.getNumModulators(); i++)
-    {
-        if (owner.getModulatorByIndex(i)->getComponent())
-        {
-            owner.getModulatorByIndex(i)->getComponent()->reloadResources(resourcesThatChanged);
-        }
-    }
-
-    resized();
-}
-
-void CtrlrPanelEditor::searchForProperty()
-{
-}
-
-bool CtrlrPanelEditor::luaEditorExistsAndIsFocused() // Added v5.6.34. Required to pass keypress to the LUA method manager for menu items. Handles the focus gain/loss.
-{
-    // We use the public getContent() method on the window manager.
-    // This will return a pointer to the component inside the Lua editor window.
-    juce::Component* luaEditorContent = owner.getPanelWindowManager().getContent(CtrlrPanelWindowManager::LuaMethodEditor);
-
-    // Now we check if the content component exists and has keyboard focus.
-    if (luaEditorContent != nullptr && luaEditorContent->hasKeyboardFocus(true))
-    {
-        return true;
-    }
-
-    return false;
+	return false;
 }
