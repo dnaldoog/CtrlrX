@@ -20,354 +20,350 @@ class CtrlrProcessor;
 class CtrlrProperties;
 class CtrlrDocument;
 
-#define	TIMER_AUTO_SAVE	10
+#define TIMER_AUTO_SAVE 10
 
 //==============================================================================
 /**
-    The main class that holds all panels, also connects LUA contexts.
+	The main class that holds all panels, also connects LUA contexts.
 
 */
-class CtrlrManager :    public ValueTree::Listener,
-                        public ChangeBroadcaster,
-                        public AsyncUpdater,
-                        public ChangeListener,
-                        public MultiTimer,
-                        public ApplicationCommandManagerListener,
-                        public ActionBroadcaster
+class CtrlrManager : public ValueTree::Listener,
+					 public ChangeBroadcaster,
+					 public AsyncUpdater,
+					 public ChangeListener,
+					 public MultiTimer,
+					 public ApplicationCommandManagerListener,
+					 public ActionBroadcaster
 {
+public:
+	//==============================================================================
+	/** Create a Manager instance, only one should be created.
+	 */
+	CtrlrManager(CtrlrProcessor *_owner, CtrlrLog &_ctrlrLog);
+	void setDefaults();
+
+	/** Destructor.
+	 */
+	~CtrlrManager();
+
+	enum CtrlrModulatorMapType
+	{
+		ModulatorByName,
+		ModulatorByMidiControllerNumber,
+		ModulatorBySysexFormula
+	};
+
+	enum CtrlrManagerState
+	{
+		Constructor,
+		InitGui,
+		LoadingPanels,
+		PanelsLoaded,
+		Exiting,
+		MidiChannelChanged,
+		ModulatorCreated,
+		ModulatorRemoved,
+		NewUpdateFound,
+		CheckingForUpdates,
+		NoNewUpdatesFound
+	};
+
+	//==============================================================================
+	/** The Manager Listener definition, pure virtual
+
+	*/
+	class Listener
+	{
 	public:
-		//==============================================================================
-		/** Create a Manager instance, only one should be created.
-		*/
-		CtrlrManager(CtrlrProcessor *_owner, CtrlrLog &_ctrlrLog);
-		void setDefaults();
+		virtual ~Listener() {}
+		/** The listener will be informaed of manager state changes, the new state is passed
+			as the first parameter
 
-
-		/** Destructor.
-		*/
-		~CtrlrManager();
-
-		enum CtrlrModulatorMapType
-		{
-			ModulatorByName,
-			ModulatorByMidiControllerNumber,
-			ModulatorBySysexFormula
-		};
-
-		enum CtrlrManagerState
-		{
-			Constructor,
-			InitGui,
-			LoadingPanels,
-			PanelsLoaded,
-			Exiting,
-			MidiChannelChanged,
-			ModulatorCreated,
-			ModulatorRemoved,
-			NewUpdateFound,
-			CheckingForUpdates,
-			NoNewUpdatesFound
-		};
-
-		//==============================================================================
-		/** The Manager Listener definition, pure virtual
+			@param newState		new Manager state
 
 		*/
-		class Listener
-		{
-			public:
-				virtual ~Listener(){}
-				/** The listener will be informaed of manager state changes, the new state is passed
-					as the first parameter
+		virtual void managerStateChanged(const CtrlrManagerState newState) = 0;
+	};
 
-					@param newState		new Manager state
+	/** Adds a listener for the manager, you will be informed of Manager changes
 
-				*/
-				virtual void managerStateChanged (const CtrlrManagerState newState)=0;
-		};
+		@param l					The listener to add
+		@see removeListener
+	*/
+	void addListener(Listener *l) { listeners.add(l); }
 
+	/** Remove a listener, remember to do that when you delete your objects
 
+		@param l					The listener to remove
+		@see addListener
+	*/
+	void removeListener(Listener *l) { listeners.remove(l); }
 
-		/** Adds a listener for the manager, you will be informed of Manager changes
+	/** Add a modulator to the list, modulators are not owned by the Manager.
+		Panels should own modulators, the manager only holds pointers to them
+		for easier access.
 
-			@param l					The listener to add
-			@see removeListener
-		*/
-		void addListener (Listener *l)		{ listeners.add(l); }
+		@param modulatorToAdd					The modulator to add
+		@see removeModulator
+	*/
+	void addModulator(CtrlrModulator *modulatorToAdd);
 
-		/** Remove a listener, remember to do that when you delete your objects
+	/** Get a reference to all modulators in the Manager
 
-			@param l					The listener to remove
-			@see addListener
-		*/
-		void removeListener (Listener *l)	{ listeners.remove(l); }
+	*/
+	const Array<CtrlrModulator *> &getModulators() { return (ctrlrModulators); }
 
-		/** Add a modulator to the list, modulators are not owned by the Manager.
-			Panels should own modulators, the manager only holds pointers to them
-			for easier access.
+	/** Get a reference to all modulators with a specified MIDI type. MIDI type is
+		determined based on the CtrlrMidiMessage inside the Modulator
 
-			@param modulatorToAdd					The modulator to add
-			@see removeModulator
-		*/
-		void addModulator (CtrlrModulator *modulatorToAdd);
+		@param typeToFilter					MIDI type to filter by
+		@see getModulatorsByUIType
+	*/
+	const Array<CtrlrModulator *> getModulatorsByMidiType(const CtrlrMidiMessageType typeToFilter);
 
-		/** Get a reference to all modulators in the Manager
+	/** Get a reference to all modulators with a specified UI type. UI Type is
+		determined based on the CtrlrComponent inside the Modulator
 
-		*/
-		const Array <CtrlrModulator*> &getModulators()															{ return (ctrlrModulators); }
+		@param uiType						UI type to filter by
+		@see getModulatorsByMidiType
+	*/
+	const Array<CtrlrModulator *> getModulatorsByUIType(const Identifier &uiType);
 
-		/** Get a reference to all modulators with a specified MIDI type. MIDI type is
-			determined based on the CtrlrMidiMessage inside the Modulator
+	/** Utility method to see if a UI Element is in the Manager
 
-			@param typeToFilter					MIDI type to filter by
-			@see getModulatorsByUIType
-		*/
-		const Array <CtrlrModulator*> getModulatorsByMidiType(const CtrlrMidiMessageType typeToFilter);
+		@param componentToLookFor			The CtrlrComponent to find
+		@see getModulatorsByUIType
+	*/
+	bool containsCtrlrComponent(CtrlrComponent *componentToLookFor);
 
-		/** Get a reference to all modulators with a specified UI type. UI Type is
-			determined based on the CtrlrComponent inside the Modulator
+	/** Get a pointer to a Modulator using its name.
 
-			@param uiType						UI type to filter by
-			@see getModulatorsByMidiType
-		*/
-		const Array <CtrlrModulator*> getModulatorsByUIType(const Identifier &uiType);
+		@param name							The name of the Modulator
+	*/
+	CtrlrModulator *getModulator(const String &name) const;
+	/** This is called when all panels are finished loading, if you add a Listener
+		to the Manager you will be informed about this.
 
-		/** Utility method to see if a UI Element is in the Manager
+	*/
+	void allPanelsInitialized();
 
-			@param componentToLookFor			The CtrlrComponent to find
-			@see getModulatorsByUIType
-		*/
-		bool containsCtrlrComponent(CtrlrComponent *componentToLookFor);
+	/** Add a new Panel
 
-		/** Get a pointer to a Modulator using its name.
+		@param savedState	if it's available pass in the panels state
+		@param showUI		if set to TRUE the UI of this panel will be shown, otherwise the panel will only be created
 
-			@param name							The name of the Modulator
-		*/
-		CtrlrModulator* getModulator(const String& name) const;
-		/** This is called when all panels are finished loading, if you add a Listener
-			to the Manager you will be informed about this.
+	*/
+	CtrlrPanel *addPanel(const ValueTree &savedState, const bool showUI = true);
 
-		*/
-		void allPanelsInitialized();
+	/** Show panel id the DocumentManager (default UI)
 
-		/** Add a new Panel
+		@param panelToAdd	a CtrlrPanelEditor object to show
+	*/
+	void addPanel(CtrlrPanelEditor *panelToAdd);
 
-			@param savedState	if it's available pass in the panels state
-			@param showUI		if set to TRUE the UI of this panel will be shown, otherwise the panel will only be created
+	/** Panels should also have unique names, this will generate one for you
 
-		*/
-		CtrlrPanel *addPanel(const ValueTree &savedState, const bool showUI=true);
+		@param proposedName	if the passed in name is valid it will be returned
+	*/
+	const String getUniquePanelName(const String &proposedName);
 
-		/** Show panel id the DocumentManager (default UI)
+	/** Get a pointer to a panel based on it's name
 
-			@param panelToAdd	a CtrlrPanelEditor object to show
-		*/
-		void addPanel (CtrlrPanelEditor *panelToAdd);
+		@param panelName	the name of the panel to return, 0 if not found
+	*/
 
-		/** Panels should also have unique names, this will generate one for you
+	CtrlrPanel *getPanel(const String &panelName);
 
-			@param proposedName	if the passed in name is valid it will be returned
-		*/
-		const String getUniquePanelName(const String &proposedName);
+	/** Returns a reference to the internal window manager. The window manager keeps track of all non-modal
+		windows in Ctrlr
 
-		/** Get a pointer to a panel based on it's name
+	*/
+	CtrlrManagerWindowManager &getWindowManager() { return (ctrlrWindowManager); }
 
-			@param panelName	the name of the panel to return, 0 if not found
-		*/
+	/**
+		Checks if there are any unsaved data and if so asks for the user if he wants to save before exiting
+	*/
+	bool canCloseWindow();
 
-		CtrlrPanel *getPanel(const String &panelName);
-
-		/** Returns a reference to the internal window manager. The window manager keeps track of all non-modal
-			windows in Ctrlr
-
-		*/
-		CtrlrManagerWindowManager &getWindowManager()															{ return (ctrlrWindowManager); }
-
-		/**
-			Checks if there are any unsaved data and if so asks for the user if he wants to save before exiting
-		*/
-		bool canCloseWindow();
-
-		/** Remove a modulator from the manager
+	/** Remove a modulator from the manager
 
 
-		*/
-		void removeModulator (CtrlrModulator *modulatorToDelete);
+	*/
+	void removeModulator(CtrlrModulator *modulatorToDelete);
 
-		/** Restore state
+	/** Restore state
 
 
-		*/
-		void restoreState(const XmlElement &savedState);
+	*/
+	void restoreState(const XmlElement &savedState);
 
-		/** Restore state
+	/** Restore state
 
-		*/
-		void restoreState (const ValueTree &savedTree);
+	*/
+	void restoreState(const ValueTree &savedTree);
 
-		/** Returns a reference to the manager tree, the root of all in Ctrlr, be careful
+	/** Returns a reference to the manager tree, the root of all in Ctrlr, be careful
 
-		*/
-		ValueTree &getManagerTree()																				{ return (managerTree); }
+	*/
+	ValueTree &getManagerTree() { return (managerTree); }
 
-		/** Return the number of all modulators available
+	/** Return the number of all modulators available
 
-		*/
-		int getNumModulators(const bool onlyVstParameters);
+	*/
+	int getNumModulators(const bool onlyVstParameters);
 
-		/** Return modulator based on it's vstIndex
+	/** Return modulator based on it's vstIndex
 
-		*/
-		CtrlrModulator *getModulatorByVstIndex(const int index);
+	*/
+	CtrlrModulator *getModulatorByVstIndex(const int index);
 
-		/** A pointer to the AudioProcessor class
+	/** A pointer to the AudioProcessor class
 
-		*/
-		CtrlrProcessor *owner;
+	*/
+	CtrlrProcessor *owner;
 
-		/** Returns a reference to the MIDI Device Manager
+	/** Returns a reference to the MIDI Device Manager
 
-		*/
-		CtrlrMIDIDeviceManager &getCtrlrMIDIDeviceManager()														{ return (ctrlrMidiDeviceManager); }
-		CtrlrMIDIDeviceManager &getCtrlrMidiDeviceManager()														{ return (ctrlrMidiDeviceManager); }
-		/** Returns the index of the panel that contains this modulator index
+	*/
+	CtrlrMIDIDeviceManager &getCtrlrMIDIDeviceManager() { return (ctrlrMidiDeviceManager); }
+	CtrlrMIDIDeviceManager &getCtrlrMidiDeviceManager() { return (ctrlrMidiDeviceManager); }
+	/** Returns the index of the panel that contains this modulator index
 
-			@params modulatorIndex				the vst index of the searched modulator
-		*/
-		int getPanelForModulator(const int modulatorIndex);
-		void applicationCommandInvoked(const ApplicationCommandTarget::InvocationInfo &info);
-		void applicationCommandListChanged();
-		int getNextVstIndex();
-		int getModulatorVstIndexByName(const String &modulatorName, CtrlrPanel* sourcePanel);
-		CtrlrProperties &getCtrlrProperties();
-		ApplicationProperties *getApplicationProperties();
-		CtrlrProcessor *getProcessorOwner()																				{ return (owner); }
-		CtrlrDocumentPanel &getCtrlrDocumentPanel()																{ return (*ctrlrDocumentPanel); }
-		void setProperty (const Identifier& name, const var &newValue)											{ managerTree.setProperty (name, newValue, 0); }
-		const var &getProperty (const Identifier& name) const													{ return managerTree.getProperty (name); }
-		const var getProperty (const Identifier& name, const var &defaultReturnValue) const						{ return managerTree.getProperty (name, defaultReturnValue); }
-		CtrlrLog &getCtrlrLog()																					{ return (ctrlrLog); }
-		void removePanel (CtrlrPanelEditor *editor);
-		CtrlrPanel *getActivePanel();
-		void toggleLayout();
-		void valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
-		void valueTreeChildrenChanged (ValueTree &/*treeWhoseChildHasChanged*/){}
-		void valueTreeParentChanged (ValueTree &/*treeWhoseParentHasChanged*/){}
-		void valueTreeChildAdded (ValueTree& /*parentTree*/, ValueTree& /*childWhichHasBeenAdded*/){}
-		void valueTreeChildRemoved (ValueTree& /*parentTree*/, ValueTree& /*childWhichHasBeenRemoved*/, int){}
-		void valueTreeChildOrderChanged (ValueTree& /*parentTreeWhoseChildrenHaveMoved*/, int, int){}
-		UndoManager* getUndoManager() const;
-		void changeListenerCallback (ChangeBroadcaster* source);
-		void setEditor (CtrlrEditor *editorToSet);
-		CtrlrEditor *getEditor()																				{ return (ctrlrEditor); }
-		void restoreEditorState();
-		static bool isValidComponentName(const String &name);
-		int compareElements (CtrlrModulator *first, CtrlrModulator *second);
-		int compareElements (CtrlrPanel *first, CtrlrPanel *second);
-		void organizeVstIndexes();
-		void organizePanels();
-		CtrlrManagerVst &getVstManager();
-		void handleAsyncUpdate();
-		void doUpdatePositionInfo(const AudioPlayHead::CurrentPositionInfo newTime);
-		void updatePositionInfo(const AudioPlayHead::CurrentPositionInfo newTime);
-		CtrlrNative &getNativeObject()																			{ return (*ctrlrNativeObject); }
-		void openPanelFromFile(Component *componentToAttachMenu);
-		CtrlrPanel *getPanelByUid(const String &uid);
-		CtrlrPanel *getPanel(const int panelIndex);
-        CtrlrPanel* getPanelForEditor(CtrlrPanelEditor* editorToFind); // Added v5.6.34
-		int getNumPanels();
-		AudioFormatManager &getAudioFormatManager()																{ return (audioFormatManager); }
-		AudioThumbnailCache &getAudioThumbnailCache()															{ return (audioThumbnailCache); }
-		bool isRestoring()																				{ return (ctrlrManagerRestoring); }
-		void saveStateToDisk();
-		void timerCallback (int timerId);
-		CtrlrIDManager &getIDManager()																			{ return (ctrlrIDManager); }
-		const File getCtrlrPropertiesDirectory();
-		CtrlrFontManager &getFontManager()																		{ return (*ctrlrFontManager); }
-		ApplicationCommandManager &getCommandManager()															{ return (commandManager); }
-		void panelFileOpened(const File &panelFile);
-		CtrlrModulator *getInvalidModulator()																	{ return (nullModulator); }  
-	
-		/** Detects if the current Linux session is running Wayland */
-		/** Not actually using right now but might come in handy in future*/
-		/** usage example:
-		 if (CtrlrManager::isWaylandSession())
-		 {
-		 // Wayland-specific handling
-		 }
-		 */
-		
-		static bool isWaylandSession()
-		{
+		@params modulatorIndex				the vst index of the searched modulator
+	*/
+	int getPanelForModulator(const int modulatorIndex);
+	void applicationCommandInvoked(const ApplicationCommandTarget::InvocationInfo &info);
+	void applicationCommandListChanged();
+	int getNextVstIndex();
+	int getModulatorVstIndexByName(const String &modulatorName, CtrlrPanel *sourcePanel);
+	CtrlrProperties &getCtrlrProperties();
+	ApplicationProperties *getApplicationProperties();
+	CtrlrProcessor *getProcessorOwner() { return (owner); }
+	CtrlrDocumentPanel &getCtrlrDocumentPanel() { return (*ctrlrDocumentPanel); }
+	void setProperty(const Identifier &name, const var &newValue) { managerTree.setProperty(name, newValue, 0); }
+	const var &getProperty(const Identifier &name) const { return managerTree.getProperty(name); }
+	const var getProperty(const Identifier &name, const var &defaultReturnValue) const { return managerTree.getProperty(name, defaultReturnValue); }
+	CtrlrLog &getCtrlrLog() { return (ctrlrLog); }
+	void removePanel(CtrlrPanelEditor *editor);
+	CtrlrPanel *getActivePanel();
+	void toggleLayout();
+	void valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
+	void valueTreeChildrenChanged(ValueTree & /*treeWhoseChildHasChanged*/) {}
+	void valueTreeParentChanged(ValueTree & /*treeWhoseParentHasChanged*/) {}
+	void valueTreeChildAdded(ValueTree & /*parentTree*/, ValueTree & /*childWhichHasBeenAdded*/) {}
+	void valueTreeChildRemoved(ValueTree & /*parentTree*/, ValueTree & /*childWhichHasBeenRemoved*/, int) {}
+	void valueTreeChildOrderChanged(ValueTree & /*parentTreeWhoseChildrenHaveMoved*/, int, int) {}
+	UndoManager *getUndoManager() const;
+	void changeListenerCallback(ChangeBroadcaster *source);
+	void setEditor(CtrlrEditor *editorToSet);
+	CtrlrEditor *getEditor() { return (ctrlrEditor); }
+	void restoreEditorState();
+	static bool isValidComponentName(const String &name);
+	int compareElements(CtrlrModulator *first, CtrlrModulator *second);
+	int compareElements(CtrlrPanel *first, CtrlrPanel *second);
+	void organizeVstIndexes();
+	void organizePanels();
+	CtrlrManagerVst &getVstManager();
+	void handleAsyncUpdate();
+	void doUpdatePositionInfo(const AudioPlayHead::CurrentPositionInfo newTime);
+	void updatePositionInfo(const AudioPlayHead::CurrentPositionInfo newTime);
+	CtrlrNative &getNativeObject() { return (*ctrlrNativeObject); }
+	void openPanelFromFile(Component *componentToAttachMenu);
+	CtrlrPanel *getPanelByUid(const String &uid);
+	CtrlrPanel *getPanel(const int panelIndex);
+	CtrlrPanel *getPanelForEditor(CtrlrPanelEditor *editorToFind); // Added v5.6.34
+	int getNumPanels();
+	AudioFormatManager &getAudioFormatManager() { return (audioFormatManager); }
+	AudioThumbnailCache &getAudioThumbnailCache() { return (audioThumbnailCache); }
+	bool isRestoring() { return (ctrlrManagerRestoring); }
+	void saveStateToDisk();
+	void timerCallback(int timerId);
+	CtrlrIDManager &getIDManager() { return (ctrlrIDManager); }
+	const File getCtrlrPropertiesDirectory();
+	CtrlrFontManager &getFontManager() { return (*ctrlrFontManager); }
+	ApplicationCommandManager &getCommandManager() { return (commandManager); }
+	void panelFileOpened(const File &panelFile);
+	CtrlrModulator *getInvalidModulator() { return (nullModulator); }
+
+	/** Detects if the current Linux session is running Wayland */
+	/** Not actually using right now but might come in handy in future*/
+	/** usage example:
+	 if (CtrlrManager::isWaylandSession())
+	 {
+	 // Wayland-specific handling
+	 }
+	 */
+
+	static bool isWaylandSession()
+	{
 #if JUCE_LINUX
-			const char* session = std::getenv("XDG_SESSION_TYPE");
-			return session != nullptr && String(session) == "wayland";
+		const char *session = std::getenv("XDG_SESSION_TYPE");
+		return session != nullptr && String(session) == "wayland";
 #else
-			return false;
+		return false;
 #endif
-		}
-		/** Detects if running under GNOME Shell (not GNOME Classic).
-		 GNOME Shell has issues with modal dialogs on Wayland in JUCE 6.x*/
-		static bool isGnomeShell()
-		{
+	}
+	/** Detects if running under GNOME Shell (not GNOME Classic).
+	 GNOME Shell has issues with modal dialogs on Wayland in JUCE 6.x*/
+	static bool isGnomeShell()
+	{
 #if JUCE_LINUX
-			const char* session = std::getenv("GDMSESSION");
-			if (session != nullptr)
-			{
-				String sessionStr(session);
-				// If it's "gnome" but NOT "gnome-classic", it's GNOME Shell
-				return sessionStr.containsIgnoreCase("gnome") &&
-				!sessionStr.containsIgnoreCase("classic");
-			}
-#endif
-			return false;
+		const char *session = std::getenv("GDMSESSION");
+		if (session != nullptr)
+		{
+			String sessionStr(session);
+			// If it's "gnome" but NOT "gnome-classic", it's GNOME Shell
+			return sessionStr.containsIgnoreCase("gnome") &&
+				   !sessionStr.containsIgnoreCase("classic");
 		}
+#endif
+		return false;
+	}
 
-		/** Instance handlers **/
-		const String getInstanceName() const;
-		const String getInstanceNameForHost() const;
-		CtrlrInstance getInstanceMode() const;
-		const bool isSingleInstance() const;
-		XmlElement *saveState();
-		Result importInstanceResources(CtrlrNative *native);
-		ValueTree &getInstanceTree();
-		ValueTree &getInstanceResourcesTree();
-		void openPanelInternal(const File &fileToOpen);
-		Result initEmbeddedInstance();
-		void setManagerReady();
-		CtrlrPanel *nullPanel;
-		CtrlrModulator *nullModulator;
-		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrManager);
+	/** Instance handlers **/
+	const String getInstanceName() const;
+	const String getInstanceNameForHost() const;
+	CtrlrInstance getInstanceMode() const;
+	const bool isSingleInstance() const;
+	XmlElement *saveState();
+	Result importInstanceResources(CtrlrNative *native);
+	ValueTree &getInstanceTree();
+	ValueTree &getInstanceResourcesTree();
+	void openPanelInternal(const File &fileToOpen);
+	Result initEmbeddedInstance();
+	void setManagerReady();
+	CtrlrPanel *nullPanel;
+	CtrlrModulator *nullModulator;
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrManager);
 
-	private:
+private:
+	void setEmbeddedDefaults();
+	Result addInstancePanel();
+	void restoreInstanceState(const ValueTree &instanceState);
 
-		void setEmbeddedDefaults();
-		Result addInstancePanel();
-		void restoreInstanceState(const ValueTree &instanceState);
-
-		void openPanelInternal(const ValueTree &panelTree);
-		ApplicationCommandManager commandManager;
-		bool ctrlrManagerRestoring;
-		CtrlrInstance ctrlrPlayerInstanceMode;
-		AudioPlayHead::CurrentPositionInfo currentPositionInfo;
-		OwnedArray <CtrlrPanel> ctrlrPanels;
-		Array <CtrlrModulator*> ctrlrModulators;
-		ListenerList <Listener> listeners;
-		std::unique_ptr <CtrlrDocumentPanel> ctrlrDocumentPanel;
-		CtrlrManagerWindowManager ctrlrWindowManager;
-		ValueTree managerTree;
-		CtrlrMIDIDeviceManager ctrlrMidiDeviceManager;
-		WeakReference <CtrlrEditor> ctrlrEditor;
-		CtrlrLog &ctrlrLog;
-		std::unique_ptr <CtrlrProperties> ctrlrProperties;
-		std::unique_ptr <CtrlrManagerVst> ctrlrManagerVst;
-		std::unique_ptr <CtrlrNative> ctrlrNativeObject;
-		AudioFormatManager audioFormatManager;
-		AudioThumbnailCache audioThumbnailCache;
-		CtrlrIDManager ctrlrIDManager;
-		std::unique_ptr <CtrlrFontManager> ctrlrFontManager;
-		ValueTree ctrlrPlayerInstanceTree;
-		ValueTree ctrlrPlayerInstanceResources;
-		CtrlrModulator *invalidModulator;
-		WeakReference <CtrlrLuaMethod> luaCtrlrSaveState, luaCtrlrRestoreState;
+	void openPanelInternal(const ValueTree &panelTree);
+	ApplicationCommandManager commandManager;
+	bool ctrlrManagerRestoring;
+	CtrlrInstance ctrlrPlayerInstanceMode;
+	AudioPlayHead::CurrentPositionInfo currentPositionInfo;
+	OwnedArray<CtrlrPanel> ctrlrPanels;
+	Array<CtrlrModulator *> ctrlrModulators;
+	ListenerList<Listener> listeners;
+	std::unique_ptr<CtrlrDocumentPanel> ctrlrDocumentPanel;
+	CtrlrManagerWindowManager ctrlrWindowManager;
+	ValueTree managerTree;
+	CtrlrMIDIDeviceManager ctrlrMidiDeviceManager;
+	WeakReference<CtrlrEditor> ctrlrEditor;
+	CtrlrLog &ctrlrLog;
+	std::unique_ptr<CtrlrProperties> ctrlrProperties;
+	std::unique_ptr<CtrlrManagerVst> ctrlrManagerVst;
+	std::unique_ptr<CtrlrNative> ctrlrNativeObject;
+	AudioFormatManager audioFormatManager;
+	AudioThumbnailCache audioThumbnailCache;
+	CtrlrIDManager ctrlrIDManager;
+	std::unique_ptr<CtrlrFontManager> ctrlrFontManager;
+	ValueTree ctrlrPlayerInstanceTree;
+	ValueTree ctrlrPlayerInstanceResources;
+	CtrlrModulator *invalidModulator;
+	WeakReference<CtrlrLuaMethod> luaCtrlrSaveState, luaCtrlrRestoreState;
 };
