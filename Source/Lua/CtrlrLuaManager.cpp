@@ -1,64 +1,62 @@
-#include "stdafx.h"
-#include "stdafx_luabind.h"
 #include "CtrlrLuaManager.h"
-#include "CtrlrPanel/CtrlrPanel.h"
-#include "CtrlrPanel/CtrlrPanelEditor.h"
-#include "CtrlrLuaMultiTimer.h"
-#include "CtrlrLuaObject.h"
-#include "CtrlrProperties.h"
-#include "CtrlrManager/CtrlrManager.h"
-#include "CtrlrLog.h"
-#include "CtrlrPanel/CtrlrPanelCanvasLayer.h"
-#include "CtrlrLuaObjectWrapper.h"
-#include "CtrlrMidiInputComparator.h"
-#include "CtrlrPanel/CtrlrPanelResourceManager.h"
-#include "MIDI/CtrlrMidiInputComparator.h"
-#include "CtrlrComponents/CtrlrComponent.h"
-#include "CtrlrComponents/Specials/CtrlrWaveform.h"
-#include "CtrlrComponents/Specials/CtrlrListBox.h"
-#include "CtrlrComponents/Specials/CtrlrFileListBox.h"
-#include "CtrlrComponents/CtrlrCustomComponent.h"
-#include "CtrlrComponents/CtrlrCombo.h"
-#include "CtrlrComponents/Labels/CtrlrLabel.h"
-#include "CtrlrComponents/Labels/CtrlrLCDLabel.h"
-#include "CtrlrComponents/Buttons/CtrlrToggleButton.h"
 #include "CtrlrComponents/Buttons/CtrlrButton.h"
 #include "CtrlrComponents/Buttons/CtrlrImageButton.h"
+#include "CtrlrComponents/Buttons/CtrlrToggleButton.h"
+#include "CtrlrComponents/CtrlrCombo.h"
+#include "CtrlrComponents/CtrlrComponent.h"
+#include "CtrlrComponents/CtrlrCustomComponent.h"
 #include "CtrlrComponents/Groups/CtrlrGroup.h"
+#include "CtrlrComponents/Labels/CtrlrLCDLabel.h"
+#include "CtrlrComponents/Labels/CtrlrLabel.h"
 #include "CtrlrComponents/Sliders/CtrlrFixedImageSlider.h"
 #include "CtrlrComponents/Sliders/CtrlrFixedSlider.h"
 #include "CtrlrComponents/Sliders/CtrlrImageSlider.h"
 #include "CtrlrComponents/Sliders/CtrlrSlider.h"
+#include "CtrlrComponents/Specials/CtrlrFileListBox.h"
+#include "CtrlrComponents/Specials/CtrlrListBox.h"
+#include "CtrlrComponents/Specials/CtrlrWaveform.h"
+#include "CtrlrLog.h"
+#include "CtrlrLuaAudioConverter.h"
+#include "CtrlrLuaDebugger.h"
+#include "CtrlrLuaMultiTimer.h"
+#include "CtrlrLuaObject.h"
+#include "CtrlrLuaObjectWrapper.h"
+#include "CtrlrLuaUtils.h"
+#include "CtrlrManager/CtrlrManager.h"
+#include "CtrlrMidiInputComparator.h"
+#include "CtrlrPanel/CtrlrPanel.h"
+#include "CtrlrPanel/CtrlrPanelCanvasLayer.h"
+#include "CtrlrPanel/CtrlrPanelEditor.h"
+#include "CtrlrPanel/CtrlrPanelResourceManager.h"
+#include "CtrlrProperties.h"
 #include "CtrlrValueMap.h"
 #include "JuceClasses/LAudioFormat.h"
 #include "JuceClasses/LGlobalFunctions.h"
-#include "CtrlrLuaUtils.h"
-#include "CtrlrLuaMultiTimer.h"
-#include "CtrlrLuaAudioConverter.h"
-#include "CtrlrLuaDebugger.h"
+#include "MIDI/CtrlrMidiInputComparator.h"
+#include "stdafx.h"
+#include "stdafx_luabind.h"
 
 // Deprecated classes
 #include "Deprecated/CtrlrLuaBigInteger.h"
+#include "Deprecated/CtrlrLuaComponentAnimator.h"
+#include "Deprecated/CtrlrLuaFile.h"
 #include "Deprecated/CtrlrLuaMemoryBlock.h"
 #include "Deprecated/CtrlrLuaRectangle.h"
-#include "Deprecated/CtrlrLuaComponentAnimator.h"
 
 #include "luabind/class_info.hpp"
 
-CtrlrLuaManager::CtrlrLuaManager(CtrlrPanel& _owner)
+CtrlrLuaManager::CtrlrLuaManager(CtrlrPanel &_owner)
 	: owner(_owner),
-	luaManagerTree(Ids::luaManager),
-	luaAudioFormatManager(nullptr),
-	ctrlrLuaDebugger(nullptr),
-	utils(nullptr),
-	audioConverter(nullptr),
-	luaStateAudio(nullptr),
-	luaState(nullptr)
-{
+	  luaManagerTree(Ids::luaManager),
+	  luaAudioFormatManager(nullptr),
+	  ctrlrLuaDebugger(nullptr),
+	  utils(nullptr),
+	  audioConverter(nullptr),
+	  luaStateAudio(nullptr),
+	  luaState(nullptr) {
 	methodManager = new CtrlrLuaMethodManager(*this);
 
-	if ((bool)owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrLuaDisabled))
-	{
+	if ((bool)owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrLuaDisabled)) {
 		_INF("CtrlrLuaManager::ctor, lua is disabled");
 		luaManagerTree.addChild(methodManager->getManagerTree(), -1, 0);
 		return;
@@ -91,12 +89,10 @@ CtrlrLuaManager::CtrlrLuaManager(CtrlrPanel& _owner)
 	luaManagerTree.addChild(methodManager->getManagerTree(), -1, 0);
 }
 
-CtrlrLuaManager::~CtrlrLuaManager()
-{
+CtrlrLuaManager::~CtrlrLuaManager() {
 	deleteAndZero(methodManager);
 
-	if (luaState)
-	{
+	if (luaState) {
 		deleteAndZero(utils);
 		deleteAndZero(audioConverter);
 		luaManagerTree.removeListener(this);
@@ -108,11 +104,9 @@ CtrlrLuaManager::~CtrlrLuaManager()
 	}
 }
 
-void CtrlrLuaManager::createLuaState()
-{
+void CtrlrLuaManager::createLuaState() {
 	luaState = luaL_newstate();
-	if (luaState == nullptr)
-	{
+	if (luaState == nullptr) {
 		_ERR("Failed to create Lua state");
 		return;
 	}
@@ -130,11 +124,9 @@ void CtrlrLuaManager::createLuaState()
 	set_pcall_callback(add_file_and_line);
 }
 
-void CtrlrLuaManager::createLuaStateAudio()
-{
+void CtrlrLuaManager::createLuaStateAudio() {
 	luaStateAudio = luaL_newstate();
-	if (luaStateAudio == nullptr)
-	{
+	if (luaStateAudio == nullptr) {
 		_ERR("Failed to create Lua audio state");
 		return;
 	}
@@ -173,36 +165,26 @@ void CtrlrLuaManager::createLuaStateAudio()
 	set_pcall_callback(add_file_and_line);
 }
 
-CtrlrLuaMethodManager& CtrlrLuaManager::getMethodManager()
-{
-	return (*methodManager);
-}
+CtrlrLuaMethodManager &CtrlrLuaManager::getMethodManager() { return (*methodManager); }
 
-void CtrlrLuaManager::wrapUtilities(lua_State* L)
-{
-	if (methodManager)
-	{
+void CtrlrLuaManager::wrapUtilities(lua_State *L) {
+	if (methodManager) {
 		methodManager->wrapUtilities();
 	}
 }
 
-void CtrlrLuaManager::wrapCore(lua_State* L)
-{
+void CtrlrLuaManager::wrapCore(lua_State *L) {
 	using namespace luabind;
 
 	CtrlrLuaObject::wrapForLua(L);
 
-	module(L)
-		[
-			class_<CtrlrLuaObjectWrapper>("CtrlrLuaObjectWrapper")
-				.def(constructor<luabind::object const&>())
-				.def(constructor<>())
-				.def("getObject", &CtrlrLuaObjectWrapper::getObject)
-		];
+	module(L)[class_<CtrlrLuaObjectWrapper>("CtrlrLuaObjectWrapper")
+				  .def(constructor<luabind::object const &>())
+				  .def(constructor<>())
+				  .def("getObject", &CtrlrLuaObjectWrapper::getObject)];
 }
 
-void CtrlrLuaManager::wrapCtrlrClasses(lua_State* L)
-{
+void CtrlrLuaManager::wrapCtrlrClasses(lua_State *L) {
 	CtrlrValueMap::wrapForLua(L);
 	CtrlrModulator::wrapForLua(L);
 	CtrlrPanel::wrapForLua(L);
@@ -239,8 +221,7 @@ void CtrlrLuaManager::wrapCtrlrClasses(lua_State* L)
 	CtrlrGroup::wrapForLua(L);
 }
 
-void CtrlrLuaManager::assignDefaultObjects(lua_State* L)
-{
+void CtrlrLuaManager::assignDefaultObjects(lua_State *L) {
 	luabind::globals(L)["panel"] = &owner;
 	luabind::globals(L)["utils"] = utils;
 	luabind::globals(L)["timer"] = multiTimer;
@@ -252,12 +233,9 @@ void CtrlrLuaManager::assignDefaultObjects(lua_State* L)
 	luabind::globals(L)["devices"] = &owner.getCtrlrManagerOwner().getCtrlrMIDIDeviceManager();
 }
 
-void CtrlrLuaManager::restoreState(const ValueTree& savedState)
-{
-	if (savedState.isValid())
-	{
-		if (savedState.getChildWithName(Ids::luaManagerMethods).isValid())
-		{
+void CtrlrLuaManager::restoreState(const ValueTree &savedState) {
+	if (savedState.isValid()) {
+		if (savedState.getChildWithName(Ids::luaManagerMethods).isValid()) {
 			methodManager->restoreState(savedState.getChildWithName(Ids::luaManagerMethods));
 		}
 	}
@@ -265,26 +243,21 @@ void CtrlrLuaManager::restoreState(const ValueTree& savedState)
 	methodManager->wrapUtilities();
 }
 
-void CtrlrLuaManager::valueTreePropertyChanged(ValueTree& treeWhosePropertyHasChanged, const Identifier& property)
-{
-}
+void CtrlrLuaManager::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {}
 
-int func_panic(lua_State* L)
-{
+int func_panic(lua_State *L) {
 	String err;
 	err << lua_tostring(L, -1);
 	lua_getglobal(L, "ERROR");
-	return(0);
+	return (0);
 }
 
-bool CtrlrLuaManager::runCode(const String& code, const String name)
-{
-	if (luaState && !isLuaDisabled())
-	{
-		if (luaL_loadbuffer(luaState, code.toUTF8(), std::strlen(code.toUTF8()), name.isEmpty() ? "_runtime" : name.toUTF8())
-			|| lua_pcall(luaState, 0, 0, 0))
-		{
-			const char* a = lua_tostring(luaState, -1);
+bool CtrlrLuaManager::runCode(const String &code, const String name) {
+	if (luaState && !isLuaDisabled()) {
+		if (luaL_loadbuffer(luaState, code.toUTF8(), std::strlen(code.toUTF8()),
+							name.isEmpty() ? "_runtime" : name.toUTF8()) ||
+			lua_pcall(luaState, 0, 0, 0)) {
+			const char *a = lua_tostring(luaState, -1);
 			_LERR("ERROR: " + String(a));
 			lastError = "ERROR: " + String(a);
 			lua_pop(luaState, 1);
@@ -292,44 +265,34 @@ bool CtrlrLuaManager::runCode(const String& code, const String name)
 		}
 
 		return (true);
-	}
-	else
-	{
+	} else {
 		return (false);
 	}
 }
 
-void CtrlrLuaManager::log(const String& message)
-{
+void CtrlrLuaManager::log(const String &message) {
 	if (CtrlrLog::ctrlrLog != nullptr)
 		CtrlrLog::ctrlrLog->logMessage(message, CtrlrLog::Info);
 }
 
-CtrlrLuaDebugger& CtrlrLuaManager::getDebugger()
-{
-	return (*ctrlrLuaDebugger);
-}
+CtrlrLuaDebugger &CtrlrLuaManager::getDebugger() { return (*ctrlrLuaDebugger); }
 
-const bool CtrlrLuaManager::isLuaDisabled()
-{
+const bool CtrlrLuaManager::isLuaDisabled() {
 	return ((bool)owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrLuaDisabled));
 }
 
 //
-void CtrlrPanelCanvas::wrapForLua(lua_State* L)
-{
+void CtrlrPanelCanvas::wrapForLua(lua_State *L) {
 	using namespace luabind;
 
-	module(L)
-		[
-			class_<CtrlrPanelCanvas, bases<Component> >("CtrlrPanelCanvas")
-				.def("getLayerByName", &CtrlrPanelCanvas::getLayerByName)
-				.def("getLayer", &CtrlrPanelCanvas::getLayer)
-				.def("getLayerFromArray", &CtrlrPanelCanvas::getLayerFromArray)
-				.def("getNumLayers", &CtrlrPanelCanvas::getNumLayers)
-				.def("getLayerName", &CtrlrPanelCanvas::getLayerName)
-				.def("setCustomLookAndFeel", (void (CtrlrPanelCanvas::*)(const luabind::object&)) & CtrlrPanelCanvas::setCustomLookAndFeel)
-		];
+	module(L)[class_<CtrlrPanelCanvas, bases<Component>>("CtrlrPanelCanvas")
+				  .def("getLayerByName", &CtrlrPanelCanvas::getLayerByName)
+				  .def("getLayer", &CtrlrPanelCanvas::getLayer)
+				  .def("getLayerFromArray", &CtrlrPanelCanvas::getLayerFromArray)
+				  .def("getNumLayers", &CtrlrPanelCanvas::getNumLayers)
+				  .def("getLayerName", &CtrlrPanelCanvas::getLayerName)
+				  .def("setCustomLookAndFeel",
+					   (void (CtrlrPanelCanvas::*)(const luabind::object &))&CtrlrPanelCanvas::setCustomLookAndFeel)];
 }
 
 //
@@ -337,61 +300,48 @@ void CtrlrPanelCanvas::wrapForLua(lua_State* L)
 /** @brief Move the layer up one step
 
 */
-void CtrlrPanelCanvasLayer::moveUp()
-{
-	owner.moveLayer(this, true);
-}
+void CtrlrPanelCanvasLayer::moveUp() { owner.moveLayer(this, true); }
 
 /** @brief Move the layer down one step
 
 */
-void CtrlrPanelCanvasLayer::moveDown()
-{
-	owner.moveLayer(this, false);
-}
+void CtrlrPanelCanvasLayer::moveDown() { owner.moveLayer(this, false); }
 
-void CtrlrPanelCanvasLayer::wrapForLua(lua_State* L)
-{
+void CtrlrPanelCanvasLayer::wrapForLua(lua_State *L) {
 	using namespace luabind;
 
-	module(L)
-		[
-			class_<CtrlrPanelCanvasLayer, bases<Component, CtrlrLuaObject> >("CtrlrPanelCanvasLayer")
-				.def("moveUp", &CtrlrPanelCanvasLayer::moveUp)
-				/*Override setVisble to update Layer Editor visible/hidden status */
-				.def("setVisible", (void (CtrlrPanelCanvasLayer::*)(bool)) & CtrlrPanelCanvasLayer::setVisible) // Updated v5.5.34. Thanks to @dnaldoog
-				.def("moveDown", &CtrlrPanelCanvasLayer::moveDown)
-				.def("setCustomLookAndFeel", (void (CtrlrPanelCanvasLayer::*)(const luabind::object&)) & CtrlrPanelCanvasLayer::setCustomLookAndFeel)
-		];
+	module(
+		L)[class_<CtrlrPanelCanvasLayer, bases<Component, CtrlrLuaObject>>("CtrlrPanelCanvasLayer")
+			   .def("moveUp", &CtrlrPanelCanvasLayer::moveUp)
+			   /*Override setVisble to update Layer Editor visible/hidden status */
+			   .def("setVisible", (void (CtrlrPanelCanvasLayer::*)(
+									  bool))&CtrlrPanelCanvasLayer::setVisible) // Updated v5.5.34. Thanks to @dnaldoog
+			   .def("moveDown", &CtrlrPanelCanvasLayer::moveDown)
+			   .def("setCustomLookAndFeel", (void (CtrlrPanelCanvasLayer::*)(
+												const luabind::object &))&CtrlrPanelCanvasLayer::setCustomLookAndFeel)];
 }
 
 //
-
 
 /** @brief Set a value to a global variables
 
 @param	index	the global variable index 0-16
 @param	value	the value of the variable
 */
-void CtrlrPanel::setGlobalVariable(const int index, const int value)
-{
-	if (index >= globalVariables.size() || index < 0)
-	{
+void CtrlrPanel::setGlobalVariable(const int index, const int value) {
+	if (index >= globalVariables.size() || index < 0) {
 		// _LERR("CtrlrPanel::setGlobalVariable index out of bounds("+String(index)+")");
 		return;
 	}
 
 	globalVariables.set(index, value);
 
-	if (index < 64)
-	{
+	if (index < 64) {
 		setProperty(Ids::panelGlobalVariables, globalsToString(globalVariables));
 	}
 
-	if (luaPanelGlobalChangedCbk && !luaPanelGlobalChangedCbk.wasObjectDeleted())
-	{
-		if (luaPanelGlobalChangedCbk->isValid())
-		{
+	if (luaPanelGlobalChangedCbk && !luaPanelGlobalChangedCbk.wasObjectDeleted()) {
+		if (luaPanelGlobalChangedCbk->isValid()) {
 			getCtrlrLuaManager().getMethodManager().call(luaPanelGlobalChangedCbk, index, value);
 		}
 	}
@@ -401,19 +351,14 @@ void CtrlrPanel::setGlobalVariable(const int index, const int value)
 
 @param	index	the global variable index 0-16
 */
-int CtrlrPanel::getGlobalVariable(const int index)
-{
-	return (globalVariables[index]);
-}
+int CtrlrPanel::getGlobalVariable(const int index) { return (globalVariables[index]); }
 
 /** @brief Get a modulator by it's index (this is the VST index property)
 
 @param	index	the index of the modulator to fetch
 */
-CtrlrModulator* CtrlrPanel::getModulatorByIndex(const int index)
-{
-	if (ctrlrModulators[index] == nullptr)
-	{
+CtrlrModulator *CtrlrPanel::getModulatorByIndex(const int index) {
+	if (ctrlrModulators[index] == nullptr) {
 		_LERR("CtrlrPanel::getModulatorByIndex failed to fetch modulator index=" + String(index));
 		return (owner.getInvalidModulator());
 	}
@@ -421,13 +366,10 @@ CtrlrModulator* CtrlrPanel::getModulatorByIndex(const int index)
 	return (ctrlrModulators[index]);
 }
 
-CtrlrComponent* CtrlrPanel::getComponent(const String& modulatorName)
-{
-	CtrlrModulator* m = getModulator(modulatorName);
-	if (m)
-	{
-		if (m->getComponent())
-		{
+CtrlrComponent *CtrlrPanel::getComponent(const String &modulatorName) {
+	CtrlrModulator *m = getModulator(modulatorName);
+	if (m) {
+		if (m->getComponent()) {
 			return (m->getComponent());
 		}
 	}
@@ -438,20 +380,14 @@ CtrlrComponent* CtrlrPanel::getComponent(const String& modulatorName)
 /** @brief Get the amount of modulators in the panel
 
 */
-int CtrlrPanel::getNumModulators()
-{
-	return (ctrlrModulators.size());
-}
+int CtrlrPanel::getNumModulators() { return (ctrlrModulators.size()); }
 
-luabind::object CtrlrPanel::getModulatorsWithPropertyLua(const String& propertyName, const String& propertyValue)
-{
+luabind::object CtrlrPanel::getModulatorsWithPropertyLua(const String &propertyName, const String &propertyValue) {
 	using namespace luabind;
 	object table = newtable(getCtrlrLuaManager().getLuaState());
 
-	for (int i = 0; i < ctrlrModulators.size(); i++)
-	{
-		if (ctrlrModulators[i]->getProperty(propertyName).toString() == propertyValue)
-		{
+	for (int i = 0; i < ctrlrModulators.size(); i++) {
+		if (ctrlrModulators[i]->getProperty(propertyName).toString() == propertyValue) {
 			table[i + 1] = ctrlrModulators[i];
 		}
 	}
@@ -464,21 +400,17 @@ luabind::object CtrlrPanel::getModulatorsWithPropertyLua(const String& propertyN
 @param	propertyName	the property name to look for
 @param	propertyValue	value (string) of the property
 */
-CtrlrModulator* CtrlrPanel::getModulatorWithProperty(const String& propertyName, const String& propertyValue)
-{
-	if (propertyName.length() > 512 || propertyValue.length() > 512)
-	{
-		_WRN("CtrlrPanel::getModulatorWithProperty looks like the propertyName or the propertyValue are longer then 512 bytes, that might indicate a bad call");
+CtrlrModulator *CtrlrPanel::getModulatorWithProperty(const String &propertyName, const String &propertyValue) {
+	if (propertyName.length() > 512 || propertyValue.length() > 512) {
+		_WRN("CtrlrPanel::getModulatorWithProperty looks like the propertyName or the propertyValue are longer then "
+			 "512 bytes, that might indicate a bad call");
 	}
 
-	Array <CtrlrModulator*> ret = getModulatorsWithProperty(propertyName, propertyValue);
+	Array<CtrlrModulator *> ret = getModulatorsWithProperty(propertyName, propertyValue);
 
-	if (ret.size() == 0)
-	{
+	if (ret.size() == 0) {
 		return (owner.getInvalidModulator());
-	}
-	else
-	{
+	} else {
 		return (ret[0]);
 	}
 }
@@ -488,21 +420,17 @@ CtrlrModulator* CtrlrPanel::getModulatorWithProperty(const String& propertyName,
 @param	propertyName	the property name to look for
 @param	propertyValue	value (numeric) of the property
 */
-CtrlrModulator* CtrlrPanel::getModulatorWithProperty(const String& propertyName, const int propertyValue)
-{
-	if (propertyName.length() > 512)
-	{
-		_WRN("CtrlrPanel::getModulatorWithProperty looks like the propertyName is longer then 512 bytes, that might indicate a bad call");
+CtrlrModulator *CtrlrPanel::getModulatorWithProperty(const String &propertyName, const int propertyValue) {
+	if (propertyName.length() > 512) {
+		_WRN("CtrlrPanel::getModulatorWithProperty looks like the propertyName is longer then 512 bytes, that might "
+			 "indicate a bad call");
 	}
 
-	Array <CtrlrModulator*> ret = getModulatorsWithProperty(propertyName, propertyValue);
+	Array<CtrlrModulator *> ret = getModulatorsWithProperty(propertyName, propertyValue);
 
-	if (ret.size() == 0)
-	{
+	if (ret.size() == 0) {
 		return (owner.getInvalidModulator());
-	}
-	else
-	{
+	} else {
 		return (ret[0]);
 	}
 }
@@ -512,19 +440,14 @@ CtrlrModulator* CtrlrPanel::getModulatorWithProperty(const String& propertyName,
 @param	wildcardMatch	the wildcard to use
 @param	ignoreCase		ignore case when matching
 */
-luabind::object CtrlrPanel::getModulatorsWildcardLua(const String& wildcardMatch, const bool ignoreCase)
-{
+luabind::object CtrlrPanel::getModulatorsWildcardLua(const String &wildcardMatch, const bool ignoreCase) {
 	using namespace luabind;
 	object table = newtable(getCtrlrLuaManager().getLuaState());
 
-	for (int i = 0; i < ctrlrModulators.size(); i++)
-	{
-		if (ctrlrModulators[i]->getName().matchesWildcard(wildcardMatch, ignoreCase))
-		{
+	for (int i = 0; i < ctrlrModulators.size(); i++) {
+		if (ctrlrModulators[i]->getName().matchesWildcard(wildcardMatch, ignoreCase)) {
 			table[i + 1] = ctrlrModulators[i];
-		}
-		else
-		{
+		} else {
 			table[i + 1] = 0;
 		}
 	}
@@ -532,19 +455,15 @@ luabind::object CtrlrPanel::getModulatorsWildcardLua(const String& wildcardMatch
 	return (table);
 }
 
-luabind::object CtrlrPanel::getModulatorsWildcardLua(const String& wildcardMatch, const String& propertyToMatch, const bool ignoreCase)
-{
+luabind::object CtrlrPanel::getModulatorsWildcardLua(const String &wildcardMatch, const String &propertyToMatch,
+													 const bool ignoreCase) {
 	using namespace luabind;
 	object table = newtable(getCtrlrLuaManager().getLuaState());
 
-	for (int i = 0; i < ctrlrModulators.size(); i++)
-	{
-		if (ctrlrModulators[i]->getProperty(propertyToMatch).toString().matchesWildcard(wildcardMatch, ignoreCase))
-		{
+	for (int i = 0; i < ctrlrModulators.size(); i++) {
+		if (ctrlrModulators[i]->getProperty(propertyToMatch).toString().matchesWildcard(wildcardMatch, ignoreCase)) {
 			table[i + 1] = ctrlrModulators[i];
-		}
-		else
-		{
+		} else {
 			table[i + 1] = 0;
 		}
 	}
@@ -556,10 +475,7 @@ luabind::object CtrlrPanel::getModulatorsWildcardLua(const String& wildcardMatch
 
 @param	midiMessage the midi message to send
 */
-void CtrlrPanel::sendMidiNow(CtrlrMidiMessage& midiMessage)
-{
-	sendMidi(midiMessage, 0);
-}
+void CtrlrPanel::sendMidiNow(CtrlrMidiMessage &midiMessage) { sendMidi(midiMessage, 0); }
 
 /** @brief Get a component as a Waveform component
 
@@ -567,198 +483,153 @@ void CtrlrPanel::sendMidiNow(CtrlrMidiMessage& midiMessage)
 @return	If the component is found and is a Waveform component it is returned, otherwise null
 */
 
-CtrlrWaveform* CtrlrPanel::getWaveformComponent(const String& componentName)
-{
-	CtrlrModulator* m = getModulator(componentName);
-	if (m)
-	{
-		if (m->getComponent())
-		{
-			return (dynamic_cast<CtrlrWaveform*>(m->getComponent()));
+CtrlrWaveform *CtrlrPanel::getWaveformComponent(const String &componentName) {
+	CtrlrModulator *m = getModulator(componentName);
+	if (m) {
+		if (m->getComponent()) {
+			return (dynamic_cast<CtrlrWaveform *>(m->getComponent()));
 		}
 	}
 	return (nullptr);
 }
 
-CtrlrLabel* CtrlrPanel::getLabelComponent(const String& componentName)
-{
-	CtrlrModulator* m = getModulator(componentName);
-	if (m)
-	{
-		if (m->getComponent())
-		{
-			return (dynamic_cast<CtrlrLabel*>(m->getComponent()));
+CtrlrLabel *CtrlrPanel::getLabelComponent(const String &componentName) {
+	CtrlrModulator *m = getModulator(componentName);
+	if (m) {
+		if (m->getComponent()) {
+			return (dynamic_cast<CtrlrLabel *>(m->getComponent()));
 		}
 	}
 	return (nullptr);
 }
 
-CtrlrLCDLabel* CtrlrPanel::getLCDLabelComponent(const String& componentName)
-{
-	CtrlrModulator* m = getModulator(componentName);
-	if (m)
-	{
-		if (m->getComponent())
-		{
-			return (dynamic_cast<CtrlrLCDLabel*>(m->getComponent()));
+CtrlrLCDLabel *CtrlrPanel::getLCDLabelComponent(const String &componentName) {
+	CtrlrModulator *m = getModulator(componentName);
+	if (m) {
+		if (m->getComponent()) {
+			return (dynamic_cast<CtrlrLCDLabel *>(m->getComponent()));
 		}
 	}
 	return (nullptr);
 }
 
-CtrlrToggleButton* CtrlrPanel::getToggleButtonComponent(const String& componentName)
-{
-	CtrlrModulator* m = getModulator(componentName);
-	if (m)
-	{
-		if (m->getComponent())
-		{
-			return (dynamic_cast<CtrlrToggleButton*>(m->getComponent()));
+CtrlrToggleButton *CtrlrPanel::getToggleButtonComponent(const String &componentName) {
+	CtrlrModulator *m = getModulator(componentName);
+	if (m) {
+		if (m->getComponent()) {
+			return (dynamic_cast<CtrlrToggleButton *>(m->getComponent()));
 		}
 	}
 	return (nullptr);
 }
 
-CtrlrButton* CtrlrPanel::getButtonComponent(const String& componentName)
-{
-	CtrlrModulator* m = getModulator(componentName);
-	if (m)
-	{
-		if (m->getComponent())
-		{
-			return (dynamic_cast<CtrlrButton*>(m->getComponent()));
+CtrlrButton *CtrlrPanel::getButtonComponent(const String &componentName) {
+	CtrlrModulator *m = getModulator(componentName);
+	if (m) {
+		if (m->getComponent()) {
+			return (dynamic_cast<CtrlrButton *>(m->getComponent()));
 		}
 	}
 	return (nullptr);
 }
 
-CtrlrImageButton* CtrlrPanel::getImageButtonComponent(const String& componentName)
-{
-	CtrlrModulator* m = getModulator(componentName);
-	if (m)
-	{
-		if (m->getComponent())
-		{
-			return (dynamic_cast<CtrlrImageButton*>(m->getComponent()));
+CtrlrImageButton *CtrlrPanel::getImageButtonComponent(const String &componentName) {
+	CtrlrModulator *m = getModulator(componentName);
+	if (m) {
+		if (m->getComponent()) {
+			return (dynamic_cast<CtrlrImageButton *>(m->getComponent()));
 		}
 	}
 	return (nullptr);
 }
 
-CtrlrCombo* CtrlrPanel::getComboComponent(const String& componentName)
-{
-	CtrlrModulator* m = getModulator(componentName);
-	if (m)
-	{
-		if (m->getComponent())
-		{
-			return (dynamic_cast<CtrlrCombo*>(m->getComponent()));
+CtrlrCombo *CtrlrPanel::getComboComponent(const String &componentName) {
+	CtrlrModulator *m = getModulator(componentName);
+	if (m) {
+		if (m->getComponent()) {
+			return (dynamic_cast<CtrlrCombo *>(m->getComponent()));
 		}
 	}
 	return (nullptr);
 }
 
-CtrlrListBox* CtrlrPanel::getListBoxComponent(const String& componentName)
-{
-	CtrlrModulator* m = getModulator(componentName);
+CtrlrListBox *CtrlrPanel::getListBoxComponent(const String &componentName) {
+	CtrlrModulator *m = getModulator(componentName);
 
-	if (m)
-	{
-		if (m->getComponent())
-		{
-			return (dynamic_cast<CtrlrListBox*>(m->getComponent()));
+	if (m) {
+		if (m->getComponent()) {
+			return (dynamic_cast<CtrlrListBox *>(m->getComponent()));
 		}
 	}
 	return (nullptr);
 }
 
-CtrlrFileListBox* CtrlrPanel::getFileListBoxComponent(const String& componentName)
-{
-	CtrlrModulator* m = getModulator(componentName);
+CtrlrFileListBox *CtrlrPanel::getFileListBoxComponent(const String &componentName) {
+	CtrlrModulator *m = getModulator(componentName);
 
-	if (m)
-	{
-		if (m->getComponent())
-		{
-			return (dynamic_cast<CtrlrFileListBox*>(m->getComponent()));
+	if (m) {
+		if (m->getComponent()) {
+			return (dynamic_cast<CtrlrFileListBox *>(m->getComponent()));
 		}
 	}
 	return (nullptr);
 }
 
-CtrlrSlider* CtrlrPanel::getSliderComponent(const String& componentName)
-{
-	CtrlrModulator* m = getModulator(componentName);
+CtrlrSlider *CtrlrPanel::getSliderComponent(const String &componentName) {
+	CtrlrModulator *m = getModulator(componentName);
 
-	if (m)
-	{
-		if (m->getComponent())
-		{
-			return (dynamic_cast<CtrlrSlider*>(m->getComponent()));
+	if (m) {
+		if (m->getComponent()) {
+			return (dynamic_cast<CtrlrSlider *>(m->getComponent()));
 		}
 	}
 	return (nullptr);
 }
 
-CtrlrImageSlider* CtrlrPanel::getImageSliderComponent(const String& componentName)
-{
-	CtrlrModulator* m = getModulator(componentName);
+CtrlrImageSlider *CtrlrPanel::getImageSliderComponent(const String &componentName) {
+	CtrlrModulator *m = getModulator(componentName);
 
-	if (m)
-	{
-		if (m->getComponent())
-		{
-			return (dynamic_cast<CtrlrImageSlider*>(m->getComponent()));
+	if (m) {
+		if (m->getComponent()) {
+			return (dynamic_cast<CtrlrImageSlider *>(m->getComponent()));
 		}
 	}
 	return (nullptr);
 }
 
-CtrlrFixedSlider* CtrlrPanel::getFixedSliderComponent(const String& componentName)
-{
-	CtrlrModulator* m = getModulator(componentName);
+CtrlrFixedSlider *CtrlrPanel::getFixedSliderComponent(const String &componentName) {
+	CtrlrModulator *m = getModulator(componentName);
 
-	if (m)
-	{
-		if (m->getComponent())
-		{
-			return (dynamic_cast<CtrlrFixedSlider*>(m->getComponent()));
+	if (m) {
+		if (m->getComponent()) {
+			return (dynamic_cast<CtrlrFixedSlider *>(m->getComponent()));
 		}
 	}
 	return (nullptr);
 }
 
-CtrlrFixedImageSlider* CtrlrPanel::getFixedImageSliderComponent(const String& componentName)
-{
-	CtrlrModulator* m = getModulator(componentName);
+CtrlrFixedImageSlider *CtrlrPanel::getFixedImageSliderComponent(const String &componentName) {
+	CtrlrModulator *m = getModulator(componentName);
 
-	if (m)
-	{
-		if (m->getComponent())
-		{
-			return (dynamic_cast<CtrlrFixedImageSlider*>(m->getComponent()));
+	if (m) {
+		if (m->getComponent()) {
+			return (dynamic_cast<CtrlrFixedImageSlider *>(m->getComponent()));
 		}
 	}
 	return (nullptr);
 }
 
-LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexBy,
-	const CtrlrByteEncoding byteEncoding,
-	const int bytesPerValue,
-	const bool useMappedValues)
-{
+LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String &propertyToIndexBy, const CtrlrByteEncoding byteEncoding,
+												  const int bytesPerValue, const bool useMappedValues) {
 	int maxIndex = -1;
-	for (int i = 0; i < getNumModulators(); i++)
-	{
-		CtrlrModulator* mod = getModulatorByIndex(i);
-		if (mod->hasProperty(propertyToIndexBy))
-		{
+	for (int i = 0; i < getNumModulators(); i++) {
+		CtrlrModulator *mod = getModulatorByIndex(i);
+		if (mod->hasProperty(propertyToIndexBy)) {
 			const var propertyValue = mod->getProperty(propertyToIndexBy);
 			const String strValue = propertyValue.toString().trim();
 
 			// Check if property is a valid non-negative integer
-			if (!strValue.isEmpty() && strValue.containsOnly("0123456789"))
-			{
+			if (!strValue.isEmpty() && strValue.containsOnly("0123456789")) {
 				const int index = strValue.getIntValue();
 				if (index > maxIndex)
 					maxIndex = index;
@@ -766,34 +637,28 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 		}
 	}
 
-	if (maxIndex < 0)
-	{
+	if (maxIndex < 0) {
 		return MemoryBlock();
 	}
 
 	MemoryBlock modulatorData((maxIndex + 1) * bytesPerValue, true);
 	uint32 modulatorValue;
 
-	for (int i = 0; i < getNumModulators(); i++)
-	{
-		CtrlrModulator* mod = getModulatorByIndex(i);
-		if (mod->hasProperty(propertyToIndexBy))
-		{
+	for (int i = 0; i < getNumModulators(); i++) {
+		CtrlrModulator *mod = getModulatorByIndex(i);
+		if (mod->hasProperty(propertyToIndexBy)) {
 			const var propertyValue = mod->getProperty(propertyToIndexBy);
 			const String strValue = propertyValue.toString().trim();
 
-			if (!strValue.isEmpty() && strValue.containsOnly("0123456789"))
-			{
+			if (!strValue.isEmpty() && strValue.containsOnly("0123456789")) {
 				const int index = strValue.getIntValue();
-				if (index >= 0 && index <= maxIndex)
-				{
+				if (index >= 0 && index <= maxIndex) {
 					if (useMappedValues)
 						modulatorValue = mod->getValueMapped();
 					else
 						modulatorValue = mod->getValueNonMapped();
 
-					switch (byteEncoding)
-					{
+					switch (byteEncoding) {
 					case EncodeNormal:
 						if (bytesPerValue == 1)
 							modulatorData[index] = (uint8)modulatorValue;
@@ -802,112 +667,96 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 						break;
 
 					case EncodeMSBFirst:
-						if (bytesPerValue == 2)
-						{
+						if (bytesPerValue == 2) {
 							uint8 msb = (modulatorValue >> 7) & 0x7F;
 							uint8 lsb = modulatorValue & 0x7F;
 							modulatorData[index * 2] = msb;
 							modulatorData[index * 2 + 1] = lsb;
-						}
-						else
+						} else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
 
 					case EncodeLSBFirst:
-						if (bytesPerValue == 2)
-						{
+						if (bytesPerValue == 2) {
 							uint8 msb = (modulatorValue >> 7) & 0x7F;
 							uint8 lsb = modulatorValue & 0x7F;
 							modulatorData[index * 2] = lsb;
 							modulatorData[index * 2 + 1] = msb;
-						}
-						else
+						} else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
 
 					case EncodeNibbleMsbFirst:
-						if (bytesPerValue == 2)
-						{
+						if (bytesPerValue == 2) {
 							uint8 msbNibble = (modulatorValue >> 4) & 0x0F;
 							uint8 lsbNibble = modulatorValue & 0x0F;
 							modulatorData[index * 2] = msbNibble;
 							modulatorData[index * 2 + 1] = lsbNibble;
-						}
-						else
+						} else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
 
 					case EncodeNibbleLsbFirst:
-						if (bytesPerValue == 2)
-						{
+						if (bytesPerValue == 2) {
 							uint8 msbNibble = (modulatorValue >> 4) & 0x0F;
 							uint8 lsbNibble = modulatorValue & 0x0F;
 							modulatorData[index * 2] = lsbNibble;
 							modulatorData[index * 2 + 1] = msbNibble;
-						}
-						else
+						} else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
 
 					case EncodeSignedNibbleMsbFirst:
-						if (bytesPerValue == 2)
-						{
+						if (bytesPerValue == 2) {
 							int8 signedValue = (int8)modulatorValue;
 							uint8 unsignedByte = (uint8)signedValue;
 							uint8 msbNibble = (unsignedByte >> 4) & 0x0F;
 							uint8 lsbNibble = unsignedByte & 0x0F;
 							modulatorData[index * 2] = msbNibble;
 							modulatorData[index * 2 + 1] = lsbNibble;
-						}
-						else
+						} else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
 
 					case EncodeSignedNibbleLsbFirst:
-						if (bytesPerValue == 2)
-						{
+						if (bytesPerValue == 2) {
 							int8 signedValue = (int8)modulatorValue;
 							uint8 unsignedByte = (uint8)signedValue;
 							uint8 msbNibble = (unsignedByte >> 4) & 0x0F;
 							uint8 lsbNibble = unsignedByte & 0x0F;
 							modulatorData[index * 2] = lsbNibble;
 							modulatorData[index * 2 + 1] = msbNibble;
-						}
-						else
+						} else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
-                    
+
 					case Encode16bitLsbFirst:
-						if (bytesPerValue == 4)
-						{
-							uint8 nibble0 = modulatorValue & 0x0F;           // bits 0-3
-							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;    // bits 4-7
-							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;    // bits 8-11
-							uint8 nibble3 = (modulatorValue >> 12) & 0x0F;   // bits 12-15
-							
+						if (bytesPerValue == 4) {
+							uint8 nibble0 = modulatorValue & 0x0F;		   // bits 0-3
+							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;  // bits 4-7
+							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;  // bits 8-11
+							uint8 nibble3 = (modulatorValue >> 12) & 0x0F; // bits 12-15
+
 							modulatorData[index * 4] = nibble0;
 							modulatorData[index * 4 + 1] = nibble1;
 							modulatorData[index * 4 + 2] = nibble2;
 							modulatorData[index * 4 + 3] = nibble3;
-						}
-						else
+						} else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
-					
+
 					case Encode16bitMsbFirst:
-						if (bytesPerValue == 4)
-						{
-							uint8 nibble3 = (modulatorValue >> 12) & 0x0F;   // bits 12-15
-							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;    // bits 8-11
-							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;    // bits 4-7
-							uint8 nibble0 = modulatorValue & 0x0F;           // bits 0-3
-							
+						if (bytesPerValue == 4) {
+							uint8 nibble3 = (modulatorValue >> 12) & 0x0F; // bits 12-15
+							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;  // bits 8-11
+							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;  // bits 4-7
+							uint8 nibble0 = modulatorValue & 0x0F;		   // bits 0-3
+
 							modulatorData[index * 4] = nibble3;
 							modulatorData[index * 4 + 1] = nibble2;
 							modulatorData[index * 4 + 2] = nibble1;
 							modulatorData[index * 4 + 3] = nibble0;
-						}
-						else
+						} else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
 					}
@@ -921,29 +770,21 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 
 /** @brief Get modulator values as raw data */
 
-LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexBy,
-	const CtrlrByteEncoding byteEncoding,
-	const int propertyValueStart,
-	const int howMany,
-	const int bytesPerValue,
-	const bool useMappedValues)
-{
+LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String &propertyToIndexBy, const CtrlrByteEncoding byteEncoding,
+												  const int propertyValueStart, const int howMany,
+												  const int bytesPerValue, const bool useMappedValues) {
 	MemoryBlock modulatorData(howMany * bytesPerValue, true);
 	uint32 modulatorValue;
 
-	for (int i = 0; i < getNumModulators(); i++)
-	{
-		CtrlrModulator* mod = getModulatorByIndex(i);
-		if (mod->hasProperty(propertyToIndexBy))
-		{
+	for (int i = 0; i < getNumModulators(); i++) {
+		CtrlrModulator *mod = getModulatorByIndex(i);
+		if (mod->hasProperty(propertyToIndexBy)) {
 			const var propertyValue = mod->getProperty(propertyToIndexBy);
 			const String strValue = propertyValue.toString().trim();
 
-			if (!strValue.isEmpty() && strValue.containsOnly("0123456789"))
-			{
+			if (!strValue.isEmpty() && strValue.containsOnly("0123456789")) {
 				const int index = strValue.getIntValue();
-				if (index >= propertyValueStart && index < propertyValueStart + howMany)
-				{
+				if (index >= propertyValueStart && index < propertyValueStart + howMany) {
 					if (useMappedValues)
 						modulatorValue = mod->getValueMapped();
 					else
@@ -951,122 +792,112 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 
 					const int relativeIndex = index - propertyValueStart;
 
-					switch (byteEncoding)
-					{
+					switch (byteEncoding) {
 					case EncodeNormal:
 						if (bytesPerValue == 1)
 							modulatorData[relativeIndex] = (uint8)modulatorValue;
 						else
-							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8,
+													  modulatorValue);
 						break;
 
 					case EncodeMSBFirst:
-						if (bytesPerValue == 2)
-						{
+						if (bytesPerValue == 2) {
 							uint8 msb = (modulatorValue >> 7) & 0x7F;
 							uint8 lsb = modulatorValue & 0x7F;
 							modulatorData[relativeIndex * 2] = msb;
 							modulatorData[relativeIndex * 2 + 1] = lsb;
-						}
-						else
-							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						} else
+							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8,
+													  modulatorValue);
 						break;
 
 					case EncodeLSBFirst:
-						if (bytesPerValue == 2)
-						{
+						if (bytesPerValue == 2) {
 							uint8 msb = (modulatorValue >> 7) & 0x7F;
 							uint8 lsb = modulatorValue & 0x7F;
 							modulatorData[relativeIndex * 2] = lsb;
 							modulatorData[relativeIndex * 2 + 1] = msb;
-						}
-						else
-							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						} else
+							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8,
+													  modulatorValue);
 						break;
 
 					case EncodeNibbleMsbFirst:
-						if (bytesPerValue == 2)
-						{
+						if (bytesPerValue == 2) {
 							uint8 msbNibble = (modulatorValue >> 4) & 0x0F;
 							uint8 lsbNibble = modulatorValue & 0x0F;
 							modulatorData[relativeIndex * 2] = msbNibble;
 							modulatorData[relativeIndex * 2 + 1] = lsbNibble;
-						}
-						else
-							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						} else
+							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8,
+													  modulatorValue);
 						break;
 
 					case EncodeNibbleLsbFirst:
-						if (bytesPerValue == 2)
-						{
+						if (bytesPerValue == 2) {
 							uint8 msbNibble = (modulatorValue >> 4) & 0x0F;
 							uint8 lsbNibble = modulatorValue & 0x0F;
 							modulatorData[relativeIndex * 2] = lsbNibble;
 							modulatorData[relativeIndex * 2 + 1] = msbNibble;
-						}
-						else
-							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						} else
+							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8,
+													  modulatorValue);
 						break;
 
 					case EncodeSignedNibbleMsbFirst:
-						if (bytesPerValue == 2)
-						{
+						if (bytesPerValue == 2) {
 							int8 signedValue = (int8)modulatorValue;
 							uint8 unsignedByte = (uint8)signedValue;
 							uint8 msbNibble = (unsignedByte >> 4) & 0x0F;
 							uint8 lsbNibble = unsignedByte & 0x0F;
 							modulatorData[relativeIndex * 2] = msbNibble;
 							modulatorData[relativeIndex * 2 + 1] = lsbNibble;
-						}
-						else
-							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						} else
+							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8,
+													  modulatorValue);
 						break;
 
 					case EncodeSignedNibbleLsbFirst:
-						if (bytesPerValue == 2)
-						{
+						if (bytesPerValue == 2) {
 							int8 signedValue = (int8)modulatorValue;
 							uint8 unsignedByte = (uint8)signedValue;
 							uint8 msbNibble = (unsignedByte >> 4) & 0x0F;
 							uint8 lsbNibble = unsignedByte & 0x0F;
 							modulatorData[relativeIndex * 2] = lsbNibble;
 							modulatorData[relativeIndex * 2 + 1] = msbNibble;
-						}
-						else
-							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
+						} else
+							modulatorData.setBitRange(relativeIndex * (bytesPerValue * 8), bytesPerValue * 8,
+													  modulatorValue);
 						break;
-					
+
 					case Encode16bitLsbFirst:
-						if (bytesPerValue == 4)
-						{
-							uint8 nibble0 = modulatorValue & 0x0F;           // bits 0-3
-							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;    // bits 4-7
-							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;    // bits 8-11
-							uint8 nibble3 = (modulatorValue >> 12) & 0x0F;   // bits 12-15
-							
+						if (bytesPerValue == 4) {
+							uint8 nibble0 = modulatorValue & 0x0F;		   // bits 0-3
+							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;  // bits 4-7
+							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;  // bits 8-11
+							uint8 nibble3 = (modulatorValue >> 12) & 0x0F; // bits 12-15
+
 							modulatorData[index * 4] = nibble0;
 							modulatorData[index * 4 + 1] = nibble1;
 							modulatorData[index * 4 + 2] = nibble2;
 							modulatorData[index * 4 + 3] = nibble3;
-						}
-						else
+						} else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
-						
+
 					case Encode16bitMsbFirst:
-						if (bytesPerValue == 4)
-						{
-							uint8 nibble3 = (modulatorValue >> 12) & 0x0F;   // bits 12-15
-							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;    // bits 8-11
-							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;    // bits 4-7
-							uint8 nibble0 = modulatorValue & 0x0F;           // bits 0-3
-							
+						if (bytesPerValue == 4) {
+							uint8 nibble3 = (modulatorValue >> 12) & 0x0F; // bits 12-15
+							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;  // bits 8-11
+							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;  // bits 4-7
+							uint8 nibble0 = modulatorValue & 0x0F;		   // bits 0-3
+
 							modulatorData[index * 4] = nibble3;
 							modulatorData[index * 4 + 1] = nibble2;
 							modulatorData[index * 4 + 2] = nibble1;
 							modulatorData[index * 4 + 3] = nibble0;
-						}
-						else
+						} else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
 					}
@@ -1078,23 +909,17 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const String& propertyToIndexB
 	return (modulatorData);
 }
 
-LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const ValueTree& programTree,
-	const String& propertyToIndexBy,
-	const CtrlrByteEncoding byteEncoding,
-	const int bytesPerValue,
-	const bool useMappedValues)
-{
+LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const ValueTree &programTree, const String &propertyToIndexBy,
+												  const CtrlrByteEncoding byteEncoding, const int bytesPerValue,
+												  const bool useMappedValues) {
 	int maxIndex = -1;
-	for (int i = 0; i < getNumModulators(); i++)
-	{
-		CtrlrModulator* mod = getModulatorByIndex(i);
-		if (mod->hasProperty(propertyToIndexBy))
-		{
+	for (int i = 0; i < getNumModulators(); i++) {
+		CtrlrModulator *mod = getModulatorByIndex(i);
+		if (mod->hasProperty(propertyToIndexBy)) {
 			const var propertyValue = mod->getProperty(propertyToIndexBy);
 			const String strValue = propertyValue.toString().trim();
 
-			if (!strValue.isEmpty() && strValue.containsOnly("0123456789"))
-			{
+			if (!strValue.isEmpty() && strValue.containsOnly("0123456789")) {
 				const int index = strValue.getIntValue();
 				if (index > maxIndex)
 					maxIndex = index;
@@ -1102,34 +927,28 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const ValueTree& programTree,
 		}
 	}
 
-	if (maxIndex < 0)
-	{
+	if (maxIndex < 0) {
 		return MemoryBlock();
 	}
 
 	MemoryBlock modulatorData((maxIndex + 1) * bytesPerValue, true);
 	uint32 modulatorValue;
 
-	for (int i = 0; i < getNumModulators(); i++)
-	{
-		CtrlrModulator* mod = getModulatorByIndex(i);
-		if (mod->hasProperty(propertyToIndexBy))
-		{
+	for (int i = 0; i < getNumModulators(); i++) {
+		CtrlrModulator *mod = getModulatorByIndex(i);
+		if (mod->hasProperty(propertyToIndexBy)) {
 			const var propertyValue = mod->getProperty(propertyToIndexBy);
 			const String strValue = propertyValue.toString().trim();
 
-			if (!strValue.isEmpty() && strValue.containsOnly("0123456789"))
-			{
+			if (!strValue.isEmpty() && strValue.containsOnly("0123456789")) {
 				const int index = strValue.getIntValue();
-				if (index >= 0 && index <= maxIndex)
-				{
+				if (index >= 0 && index <= maxIndex) {
 					if (useMappedValues)
 						modulatorValue = mod->getValueMapped();
 					else
 						modulatorValue = mod->getValueNonMapped();
 
-					switch (byteEncoding)
-					{
+					switch (byteEncoding) {
 					case EncodeNormal:
 						if (bytesPerValue == 1)
 							modulatorData[index] = (uint8)modulatorValue;
@@ -1138,112 +957,96 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const ValueTree& programTree,
 						break;
 
 					case EncodeMSBFirst:
-						if (bytesPerValue == 2)
-						{
+						if (bytesPerValue == 2) {
 							uint8 msb = (modulatorValue >> 7) & 0x7F;
 							uint8 lsb = modulatorValue & 0x7F;
 							modulatorData[index * 2] = msb;
 							modulatorData[index * 2 + 1] = lsb;
-						}
-						else
+						} else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
 
 					case EncodeLSBFirst:
-						if (bytesPerValue == 2)
-						{
+						if (bytesPerValue == 2) {
 							uint8 msb = (modulatorValue >> 7) & 0x7F;
 							uint8 lsb = modulatorValue & 0x7F;
 							modulatorData[index * 2] = lsb;
 							modulatorData[index * 2 + 1] = msb;
-						}
-						else
+						} else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
 
 					case EncodeNibbleMsbFirst:
-						if (bytesPerValue == 2)
-						{
+						if (bytesPerValue == 2) {
 							uint8 msbNibble = (modulatorValue >> 4) & 0x0F;
 							uint8 lsbNibble = modulatorValue & 0x0F;
 							modulatorData[index * 2] = msbNibble;
 							modulatorData[index * 2 + 1] = lsbNibble;
-						}
-						else
+						} else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
 
 					case EncodeNibbleLsbFirst:
-						if (bytesPerValue == 2)
-						{
+						if (bytesPerValue == 2) {
 							uint8 msbNibble = (modulatorValue >> 4) & 0x0F;
 							uint8 lsbNibble = modulatorValue & 0x0F;
 							modulatorData[index * 2] = lsbNibble;
 							modulatorData[index * 2 + 1] = msbNibble;
-						}
-						else
+						} else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
 
 					case EncodeSignedNibbleMsbFirst:
-						if (bytesPerValue == 2)
-						{
+						if (bytesPerValue == 2) {
 							int8 signedValue = (int8)modulatorValue;
 							uint8 unsignedByte = (uint8)signedValue;
 							uint8 msbNibble = (unsignedByte >> 4) & 0x0F;
 							uint8 lsbNibble = unsignedByte & 0x0F;
 							modulatorData[index * 2] = msbNibble;
 							modulatorData[index * 2 + 1] = lsbNibble;
-						}
-						else
+						} else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
 
 					case EncodeSignedNibbleLsbFirst:
-						if (bytesPerValue == 2)
-						{
+						if (bytesPerValue == 2) {
 							int8 signedValue = (int8)modulatorValue;
 							uint8 unsignedByte = (uint8)signedValue;
 							uint8 msbNibble = (unsignedByte >> 4) & 0x0F;
 							uint8 lsbNibble = unsignedByte & 0x0F;
 							modulatorData[index * 2] = lsbNibble;
 							modulatorData[index * 2 + 1] = msbNibble;
-						}
-						else
+						} else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
-							
+
 					case Encode16bitLsbFirst:
-						if (bytesPerValue == 4)
-						{
-							uint8 nibble0 = modulatorValue & 0x0F;           // bits 0-3
-							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;    // bits 4-7
-							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;    // bits 8-11
-							uint8 nibble3 = (modulatorValue >> 12) & 0x0F;   // bits 12-15
-							
+						if (bytesPerValue == 4) {
+							uint8 nibble0 = modulatorValue & 0x0F;		   // bits 0-3
+							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;  // bits 4-7
+							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;  // bits 8-11
+							uint8 nibble3 = (modulatorValue >> 12) & 0x0F; // bits 12-15
+
 							modulatorData[index * 4] = nibble0;
 							modulatorData[index * 4 + 1] = nibble1;
 							modulatorData[index * 4 + 2] = nibble2;
 							modulatorData[index * 4 + 3] = nibble3;
-						}
-						else
+						} else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
-						
+
 					case Encode16bitMsbFirst:
-						if (bytesPerValue == 4)
-						{
-							uint8 nibble3 = (modulatorValue >> 12) & 0x0F;   // bits 12-15
-							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;    // bits 8-11
-							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;    // bits 4-7
-							uint8 nibble0 = modulatorValue & 0x0F;           // bits 0-3
-							
+						if (bytesPerValue == 4) {
+							uint8 nibble3 = (modulatorValue >> 12) & 0x0F; // bits 12-15
+							uint8 nibble2 = (modulatorValue >> 8) & 0x0F;  // bits 8-11
+							uint8 nibble1 = (modulatorValue >> 4) & 0x0F;  // bits 4-7
+							uint8 nibble0 = modulatorValue & 0x0F;		   // bits 0-3
+
 							modulatorData[index * 4] = nibble3;
 							modulatorData[index * 4 + 1] = nibble2;
 							modulatorData[index * 4 + 2] = nibble1;
 							modulatorData[index * 4 + 3] = nibble0;
-						}
-						else
+						} else
 							modulatorData.setBitRange(index * (bytesPerValue * 8), bytesPerValue * 8, modulatorValue);
 						break;
 					}
@@ -1255,13 +1058,9 @@ LMemoryBlock CtrlrPanel::getModulatorValuesAsData(const ValueTree& programTree,
 	return (modulatorData);
 }
 
-void CtrlrPanel::setModulatorValuesFromData(const MemoryBlock& dataSource,
-	const String& propertyToIndexBy,
-	const CtrlrByteEncoding byteEncoding,
-	int propertyOffset,
-	int bytesPerValue,
-	const bool useMappedValues)
-{
+void CtrlrPanel::setModulatorValuesFromData(const MemoryBlock &dataSource, const String &propertyToIndexBy,
+											const CtrlrByteEncoding byteEncoding, int propertyOffset, int bytesPerValue,
+											const bool useMappedValues) {
 	// propertyOffset is the byte position where data starts (header size)
 	// If negative, treat absolute value as header size, modulators start at index 0
 	// If positive, data starts at byte 0, modulators start at propertyOffset
@@ -1269,14 +1068,11 @@ void CtrlrPanel::setModulatorValuesFromData(const MemoryBlock& dataSource,
 	int dataStartByte;
 	int modulatorStartIndex;
 
-	if (propertyOffset < 0)
-	{
+	if (propertyOffset < 0) {
 		// Negative: skip this many header bytes, modulators start at 0
 		dataStartByte = -propertyOffset;
 		modulatorStartIndex = 0;
-	}
-	else
-	{
+	} else {
 		// Positive: data starts at byte 0, modulator indices start at propertyOffset
 		dataStartByte = 0;
 		modulatorStartIndex = propertyOffset;
@@ -1288,18 +1084,15 @@ void CtrlrPanel::setModulatorValuesFromData(const MemoryBlock& dataSource,
 
 	const int numValues = availableBytes / bytesPerValue;
 
-	for (int i = 0; i < numValues; i++)
-	{
+	for (int i = 0; i < numValues; i++) {
 		const int dataIndex = dataStartByte + (i * bytesPerValue);
 		const int targetIndex = modulatorStartIndex + i;
 
 		const String targetIndexStr(targetIndex);
-		CtrlrModulator* m = getModulatorWithProperty(propertyToIndexBy, targetIndexStr);
+		CtrlrModulator *m = getModulatorWithProperty(propertyToIndexBy, targetIndexStr);
 
-		if (m && !m->isStatic())
-		{
-			if (m->hasProperty(propertyToIndexBy))
-			{
+		if (m && !m->isStatic()) {
+			if (m->hasProperty(propertyToIndexBy)) {
 				const var propertyValue = m->getProperty(propertyToIndexBy);
 				const String strValue = propertyValue.toString().trim();
 				if (strValue.isEmpty() || !strValue.containsOnly("0123456789"))
@@ -1308,8 +1101,7 @@ void CtrlrPanel::setModulatorValuesFromData(const MemoryBlock& dataSource,
 
 			int decodedValue = 0;
 
-			switch (byteEncoding)
-			{
+			switch (byteEncoding) {
 			case EncodeNormal:
 				if (bytesPerValue == 1)
 					decodedValue = dataSource[dataIndex];
@@ -1318,98 +1110,84 @@ void CtrlrPanel::setModulatorValuesFromData(const MemoryBlock& dataSource,
 				break;
 
 			case EncodeMSBFirst:
-				if (bytesPerValue == 2)
-				{
+				if (bytesPerValue == 2) {
 					uint8 msb = dataSource[dataIndex];
 					uint8 lsb = dataSource[dataIndex + 1];
 					decodedValue = ((msb & 0x7F) << 7) | (lsb & 0x7F);
-				}
-				else
+				} else
 					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
 				break;
 
 			case EncodeLSBFirst:
-				if (bytesPerValue == 2)
-				{
+				if (bytesPerValue == 2) {
 					uint8 lsb = dataSource[dataIndex];
 					uint8 msb = dataSource[dataIndex + 1];
 					decodedValue = ((msb & 0x7F) << 7) | (lsb & 0x7F);
-				}
-				else
+				} else
 					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
 				break;
 
 			case EncodeNibbleMsbFirst:
-				if (bytesPerValue == 2)
-				{
+				if (bytesPerValue == 2) {
 					uint8 msbNibble = dataSource[dataIndex];
 					uint8 lsbNibble = dataSource[dataIndex + 1];
 					decodedValue = ((msbNibble & 0x0F) << 4) | (lsbNibble & 0x0F);
-				}
-				else
+				} else
 					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
 				break;
 
 			case EncodeNibbleLsbFirst:
-				if (bytesPerValue == 2)
-				{
+				if (bytesPerValue == 2) {
 					uint8 lsbNibble = dataSource[dataIndex];
 					uint8 msbNibble = dataSource[dataIndex + 1];
 					decodedValue = ((msbNibble & 0x0F) << 4) | (lsbNibble & 0x0F);
-				}
-				else
+				} else
 					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
 				break;
 
 			case EncodeSignedNibbleMsbFirst:
-				if (bytesPerValue == 2)
-				{
+				if (bytesPerValue == 2) {
 					uint8 msbNibble = dataSource[dataIndex];
 					uint8 lsbNibble = dataSource[dataIndex + 1];
 					uint8 unsignedByte = ((msbNibble & 0x0F) << 4) | (lsbNibble & 0x0F);
 					int8 signedValue = (int8)unsignedByte;
 					decodedValue = (int)signedValue;
-				}
-				else
+				} else
 					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
 				break;
 
 			case EncodeSignedNibbleLsbFirst:
-				if (bytesPerValue == 2)
-				{
+				if (bytesPerValue == 2) {
 					uint8 lsbNibble = dataSource[dataIndex];
 					uint8 msbNibble = dataSource[dataIndex + 1];
 					uint8 unsignedByte = ((msbNibble & 0x0F) << 4) | (lsbNibble & 0x0F);
 					int8 signedValue = (int8)unsignedByte;
 					decodedValue = (int)signedValue;
-				}
-				else
+				} else
 					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
 				break;
-					
+
 			case Encode16bitMsbFirst:
-				if (bytesPerValue == 4)
-				{
+				if (bytesPerValue == 4) {
 					uint8 nibble3 = dataSource[dataIndex];
 					uint8 nibble2 = dataSource[dataIndex + 1];
 					uint8 nibble1 = dataSource[dataIndex + 2];
 					uint8 nibble0 = dataSource[dataIndex + 3];
-					decodedValue = ((nibble3 & 0x0F) << 12) | ((nibble2 & 0x0F) << 8) | ((nibble1 & 0x0F) << 4) | (nibble0 & 0x0F);
-				}
-				else
+					decodedValue =
+						((nibble3 & 0x0F) << 12) | ((nibble2 & 0x0F) << 8) | ((nibble1 & 0x0F) << 4) | (nibble0 & 0x0F);
+				} else
 					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
 				break;
-				
+
 			case Encode16bitLsbFirst:
-				if (bytesPerValue == 4)
-				{
+				if (bytesPerValue == 4) {
 					uint8 nibble0 = dataSource[dataIndex];
 					uint8 nibble1 = dataSource[dataIndex + 1];
 					uint8 nibble2 = dataSource[dataIndex + 2];
 					uint8 nibble3 = dataSource[dataIndex + 3];
-					decodedValue = ((nibble3 & 0x0F) << 12) | ((nibble2 & 0x0F) << 8) | ((nibble1 & 0x0F) << 4) | (nibble0 & 0x0F);
-				}
-				else
+					decodedValue =
+						((nibble3 & 0x0F) << 12) | ((nibble2 & 0x0F) << 8) | ((nibble1 & 0x0F) << 4) | (nibble0 & 0x0F);
+				} else
 					decodedValue = dataSource.getBitRange(dataIndex * 8, bytesPerValue * 8);
 				break;
 			}
@@ -1423,233 +1201,188 @@ void CtrlrPanel::setModulatorValuesFromData(const MemoryBlock& dataSource,
 }
 
 // Helper to allow Lua to send raw hex strings directly. Added v5.6.35.
-void sendMidiMessageNow_String(CtrlrPanel* panel, std::string hexData)
-{
-    if (panel)
-    {
-        // 1. Convert std::string to juce::String
-        String juceHex(hexData);
+void sendMidiMessageNow_String(CtrlrPanel *panel, std::string hexData) {
+	if (panel) {
+		// 1. Convert std::string to juce::String
+		String juceHex(hexData);
 
-        // 2. Create the MIDI message object using the String constructor
-        CtrlrMidiMessage msg(juceHex);
-        
-        // 3. Pass the object to the panel
-        panel->sendMidiNow(msg);
-    }
+		// 2. Create the MIDI message object using the String constructor
+		CtrlrMidiMessage msg(juceHex);
+
+		// 3. Pass the object to the panel
+		panel->sendMidiNow(msg);
+	}
 }
 
-std::string CtrlrMidiMessage_toString(CtrlrMidiMessage* msg) // Added v5.6.35.
+std::string CtrlrMidiMessage_toString(CtrlrMidiMessage *msg) // Added v5.6.35.
 {
-    if (msg) {
-        return msg->toString().toStdString();
-    }
-    return std::string();
+	if (msg) {
+		return msg->toString().toStdString();
+	}
+	return std::string();
 }
 
-void CtrlrPanel::wrapForLua(lua_State* L)
-{
+void CtrlrPanel::wrapForLua(lua_State *L) {
 	using namespace luabind;
 
 	module(L)
-		[
-			class_<CtrlrPanel, CtrlrLuaObject>("CtrlrPanel")
-				.def("getModulatorByName", &CtrlrPanel::getModulator)
-				.def("getModulator", &CtrlrPanel::getModulator)
-				.def("getModulatorByIndex", &CtrlrPanel::getModulatorByIndex)
-				.def("getNumModulators", &CtrlrPanel::getNumModulators)
-				.def("sendMidiMessageNow", (void (CtrlrPanel::*)(CtrlrMidiMessage&)) & CtrlrPanel::sendMidiNow) // 1. The Original (Object-based)
-				.def("sendMidiMessageNow", &::sendMidiMessageNow_String) // 2. Add String Support (For "B0 0C 40" style)
-				.def("sendMidi", (void (CtrlrPanel::*)(CtrlrMidiMessage&, double)) & CtrlrPanel::sendMidi)
-				.def("sendMidi", (void (CtrlrPanel::*)(const MidiMessage&, double)) & CtrlrPanel::sendMidi)
-				.def("sendMidi", (void (CtrlrPanel::*)(const MidiBuffer&, double)) & CtrlrPanel::sendMidi)
-				.def("getPanelEditor", &CtrlrPanel::getPanelEditor)
-				.def("getRestoreState", &CtrlrPanel::getRestoreState)
-				.def("getBootstrapState", &CtrlrPanel::getBootstrapState)
-				.def("isRestoring", &CtrlrPanel::getRestoreState)
-				.def("setRestoreState", &CtrlrPanel::setRestoreState)
-				.def("setProgramState", &CtrlrPanel::setProgramState)
-				.def("getProgramState", &CtrlrPanel::getProgramState)
-				.def("getComponent", &CtrlrPanel::getComponent)
-				.def("getGlobalVariable", &CtrlrPanel::getGlobalVariable)
-				.def("setGlobalVariable", &CtrlrPanel::setGlobalVariable)
-				.def("getCanvas", &CtrlrPanel::getCanvas)
-				.def("getWaveformComponent", &CtrlrPanel::getWaveformComponent)
-				.def("getWaveform", &CtrlrPanel::getWaveformComponent)
-				.def("getLabelComponent", &CtrlrPanel::getLabelComponent)
-				.def("getLabel", &CtrlrPanel::getLabelComponent)
-				.def("getLCDLabelComponent", &CtrlrPanel::getLCDLabelComponent)
-				.def("getLCDLabel", &CtrlrPanel::getLCDLabelComponent)
-				.def("getToggleButtonComponent", &CtrlrPanel::getToggleButtonComponent)
-				.def("getToggleButton", &CtrlrPanel::getToggleButtonComponent)
-				.def("getImageButtonComponent", &CtrlrPanel::getImageButtonComponent)
-				.def("getImageButton", &CtrlrPanel::getImageButtonComponent)
-				.def("getButtonComponent", &CtrlrPanel::getButtonComponent)
-				.def("getButton", &CtrlrPanel::getButtonComponent)
-				.def("getComboComponent", &CtrlrPanel::getComboComponent)
-				.def("getCombo", &CtrlrPanel::getComboComponent)
-				.def("getListBoxComponent", &CtrlrPanel::getListBoxComponent)
-				.def("getListBox", &CtrlrPanel::getListBoxComponent)
-				.def("getFileListBoxComponent", &CtrlrPanel::getFileListBoxComponent)
-				.def("getFileListBox", &CtrlrPanel::getFileListBoxComponent)
-				.def("getSliderComponent", &CtrlrPanel::getSliderComponent)
-				.def("getSlider", &CtrlrPanel::getSliderComponent)
-				.def("getFixedImageSliderComponent", &CtrlrPanel::getFixedImageSliderComponent)
-				.def("getFixedImageSlider", &CtrlrPanel::getFixedImageSliderComponent)
-				.def("getFixedSliderComponent", &CtrlrPanel::getFixedSliderComponent)
-				.def("getFixedSlider", &CtrlrPanel::getFixedSliderComponent)
-				.def("getImageSliderComponent", &CtrlrPanel::getImageSliderComponent)
-				.def("getImageSlider", &CtrlrPanel::getImageSliderComponent)
-				.def("getModulatorWithProperty", (CtrlrModulator * (CtrlrPanel::*)(const String&, const int)) & CtrlrPanel::getModulatorWithProperty)
-				.def("getModulatorWithProperty", (CtrlrModulator * (CtrlrPanel::*)(const String&, const String&)) & CtrlrPanel::getModulatorWithProperty)
-				.def("getModulatorsWithProperty", &CtrlrPanel::getModulatorsWithPropertyLua)
-				.def("getModulatorsWildcard", (luabind::object(CtrlrPanel::*)(const String&, const bool)) & CtrlrPanel::getModulatorsWildcardLua)
-				.def("getModulatorsWildcard", (luabind::object(CtrlrPanel::*)(const String&, const String&, const bool)) & CtrlrPanel::getModulatorsWildcardLua)
-				.def("getInputComparator", &CtrlrPanel::getInputComparator)
-				.def("getModulatorValuesAsData", (LMemoryBlock(CtrlrPanel::*)(const String&, const CtrlrByteEncoding, const int, const bool)) & CtrlrPanel::getModulatorValuesAsData)
-				.def("getModulatorValuesAsData", (LMemoryBlock(CtrlrPanel::*)(const ValueTree&, const String&, const CtrlrByteEncoding, const int, const bool)) & CtrlrPanel::getModulatorValuesAsData)
-				.def("getModulatorValuesAsData", (LMemoryBlock(CtrlrPanel::*)(const String&, const CtrlrByteEncoding, const int, const int, const int, const bool)) & CtrlrPanel::getModulatorValuesAsData)
-				.def("setModulatorValuesFromData", &CtrlrPanel::setModulatorValuesFromData)
-				.def("dumpDebugData", &CtrlrPanel::dumpDebugData)
-				.enum_("CtrlrPanelFileType")
-				[
-					value("PanelFileXML", 0),
-					value("PanelFileXMLCompressed", 1),
-					value("PanelFileBinary", 2),
-					value("PanelFileBinaryCompressed", 3),
-					value("PanelFileExport", 4)
-				]
-			.enum_("CtrlrNotificationType")
-				[
-					value("NotifySuccess", (uint8)NotifySuccess),
-					value("NotifyFailure", (uint8)NotifyFailure),
-					value("NotifyInformation", (uint8)NotifyInformation),
-					value("NotifyWarning", (uint8)NotifyWarning)
-				]
-				.enum_("CtrlrByteEncoding")
-				[
-					value("EncodeNormal", EncodeNormal),
-					value("Encode7bitMSBFirst", EncodeMSBFirst),
-					value("Encode7bitLSBFirst", EncodeLSBFirst),
-					value("EncodeMSBFirst", EncodeMSBFirst),
-					value("EncodeLSBFirst", EncodeLSBFirst),
-					value("Encode4bitMsbFirst", EncodeNibbleMsbFirst),
-					value("Encode4bitLsbFirst", EncodeNibbleLsbFirst),
-					value("EncodeMsbFirst", EncodeNibbleMsbFirst),
-					value("EncodeLsbFirst", EncodeNibbleLsbFirst),
-					value("EncodeNibbleMsbFirst", EncodeNibbleMsbFirst),
-					value("EncodeNibbleLsbFirst", EncodeNibbleLsbFirst),
-					value("EncodeSignedNibbleMsbFirst", EncodeSignedNibbleMsbFirst),
-					value("EncodeSignedNibbleLsbFirst", EncodeSignedNibbleLsbFirst),
-					value("Encode16bitLsbFirst", Encode16bitLsbFirst),
-					value("Encode16bitMsbFirst", Encode16bitMsbFirst)
-				]
-			.enum_("CtrlrByteSplit")
-				[
-					value("SplitNone", (uint8)SplitNone),
-					value("Split4Bits", (uint8)Split4Bits),
-					value("Split7Bits", (uint8)Split7Bits),
-					value("Split8Bits", (uint8)Split8Bits)
-				]
-				.enum_("CtrlrInstance")
-				[
-					value("InstanceSingle", (uint8)InstanceSingle),
-					value("InstanceMulti", (uint8)InstanceMulti),
-					value("InstanceSingleRestriced", (uint8)InstanceSingleRestriced),
-					value("InstanceSingleEngine", (uint8)InstanceSingleEngine),
-					value("InstanceMultiEngine", (uint8)InstanceMultiEngine),
-					value("InstanceSingleRestrictedEngine", (uint8)InstanceSingleRestrictedEngine)
-				]
-			];
-				
+		[class_<CtrlrPanel, CtrlrLuaObject>("CtrlrPanel")
+			 .def("getModulatorByName",
+				  (CtrlrModulator * (CtrlrPanel::*)(const String &) const) & CtrlrPanel::getModulator)
+			 .def("getModulator", (CtrlrModulator * (CtrlrPanel::*)(const String &) const) & CtrlrPanel::getModulator)
+			 .def("getModulatorByIndex", &CtrlrPanel::getModulatorByIndex)
+			 .def("getNumModulators", &CtrlrPanel::getNumModulators)
+			 .def("sendMidiMessageNow",
+				  (void (CtrlrPanel::*)(CtrlrMidiMessage &))&CtrlrPanel::sendMidiNow) // 1. The Original (Object-based)
+			 .def("sendMidiMessageNow", &::sendMidiMessageNow_String) // 2. Add String Support (For "B0 0C 40" style)
+			 .def("sendMidi", (void (CtrlrPanel::*)(CtrlrMidiMessage &, double))&CtrlrPanel::sendMidi)
+			 .def("sendMidi", (void (CtrlrPanel::*)(const MidiMessage &, double))&CtrlrPanel::sendMidi)
+			 .def("sendMidi", (void (CtrlrPanel::*)(const MidiBuffer &, double))&CtrlrPanel::sendMidi)
+			 .def("getPanelEditor", &CtrlrPanel::getPanelEditor)
+			 .def("isLoading", &CtrlrPanel::isLoading)
+			 .def("getRestoreState", &CtrlrPanel::getRestoreState)
+			 .def("getBootstrapState", &CtrlrPanel::getBootstrapState)
+			 .def("isRestoring", &CtrlrPanel::getRestoreState)
+			 .def("setRestoreState", &CtrlrPanel::setRestoreState)
+			 .def("setProgramState", &CtrlrPanel::setProgramState)
+			 .def("getProgramState", &CtrlrPanel::getProgramState)
+			 .def("getComponent", &CtrlrPanel::getComponent)
+			 .def("getGlobalVariable", &CtrlrPanel::getGlobalVariable)
+			 .def("setGlobalVariable", &CtrlrPanel::setGlobalVariable)
+			 .def("getCanvas", &CtrlrPanel::getCanvas)
+			 .def("getWaveformComponent", &CtrlrPanel::getWaveformComponent)
+			 .def("getWaveform", &CtrlrPanel::getWaveformComponent)
+			 .def("getLabelComponent", &CtrlrPanel::getLabelComponent)
+			 .def("getLabel", &CtrlrPanel::getLabelComponent)
+			 .def("getLCDLabelComponent", &CtrlrPanel::getLCDLabelComponent)
+			 .def("getLCDLabel", &CtrlrPanel::getLCDLabelComponent)
+			 .def("getToggleButtonComponent", &CtrlrPanel::getToggleButtonComponent)
+			 .def("getToggleButton", &CtrlrPanel::getToggleButtonComponent)
+			 .def("getImageButtonComponent", &CtrlrPanel::getImageButtonComponent)
+			 .def("getImageButton", &CtrlrPanel::getImageButtonComponent)
+			 .def("getButtonComponent", &CtrlrPanel::getButtonComponent)
+			 .def("getButton", &CtrlrPanel::getButtonComponent)
+			 .def("getComboComponent", &CtrlrPanel::getComboComponent)
+			 .def("getCombo", &CtrlrPanel::getComboComponent)
+			 .def("getListBoxComponent", &CtrlrPanel::getListBoxComponent)
+			 .def("getListBox", &CtrlrPanel::getListBoxComponent)
+			 .def("getFileListBoxComponent", &CtrlrPanel::getFileListBoxComponent)
+			 .def("getFileListBox", &CtrlrPanel::getFileListBoxComponent)
+			 .def("getSliderComponent", &CtrlrPanel::getSliderComponent)
+			 .def("getSlider", &CtrlrPanel::getSliderComponent)
+			 .def("getFixedImageSliderComponent", &CtrlrPanel::getFixedImageSliderComponent)
+			 .def("getFixedImageSlider", &CtrlrPanel::getFixedImageSliderComponent)
+			 .def("getFixedSliderComponent", &CtrlrPanel::getFixedSliderComponent)
+			 .def("getFixedSlider", &CtrlrPanel::getFixedSliderComponent)
+			 .def("getImageSliderComponent", &CtrlrPanel::getImageSliderComponent)
+			 .def("getImageSlider", &CtrlrPanel::getImageSliderComponent)
+			 .def("getModulatorWithProperty",
+				  (CtrlrModulator * (CtrlrPanel::*)(const String &, const int)) & CtrlrPanel::getModulatorWithProperty)
+			 .def("getModulatorWithProperty", (CtrlrModulator * (CtrlrPanel::*)(const String &, const String &)) &
+												  CtrlrPanel::getModulatorWithProperty)
+			 .def("getModulatorsWithProperty", &CtrlrPanel::getModulatorsWithPropertyLua)
+			 .def("getModulatorsWildcard",
+				  (luabind::object (CtrlrPanel::*)(const String &, const bool))&CtrlrPanel::getModulatorsWildcardLua)
+			 .def("getModulatorsWildcard",
+				  (luabind::object (CtrlrPanel::*)(const String &, const String &,
+												   const bool))&CtrlrPanel::getModulatorsWildcardLua)
+			 .def("getInputComparator", &CtrlrPanel::getInputComparator)
+			 .def("getModulatorValuesAsData",
+				  (LMemoryBlock (CtrlrPanel::*)(const String &, const CtrlrByteEncoding, const int,
+												const bool))&CtrlrPanel::getModulatorValuesAsData)
+			 .def("getModulatorValuesAsData",
+				  (LMemoryBlock (CtrlrPanel::*)(const ValueTree &, const String &, const CtrlrByteEncoding, const int,
+												const bool))&CtrlrPanel::getModulatorValuesAsData)
+			 .def("getModulatorValuesAsData",
+				  (LMemoryBlock (CtrlrPanel::*)(const String &, const CtrlrByteEncoding, const int, const int,
+												const int, const bool))&CtrlrPanel::getModulatorValuesAsData)
+			 .def("setModulatorValuesFromData", &CtrlrPanel::setModulatorValuesFromData)
+			 .def("dumpDebugData", &CtrlrPanel::dumpDebugData)
+			 .enum_("CtrlrPanelFileType")[value("PanelFileXML", 0), value("PanelFileXMLCompressed", 1),
+										  value("PanelFileBinary", 2), value("PanelFileBinaryCompressed", 3),
+										  value("PanelFileExport", 4)]
+			 .enum_("CtrlrNotificationType")
+				 [value("NotifySuccess", (uint8)NotifySuccess), value("NotifyFailure", (uint8)NotifyFailure),
+				  value("NotifyInformation", (uint8)NotifyInformation), value("NotifyWarning", (uint8)NotifyWarning)]
+			 .enum_("CtrlrByteEncoding")
+				 [value("EncodeNormal", EncodeNormal), value("Encode7bitMSBFirst", EncodeMSBFirst),
+				  value("Encode7bitLSBFirst", EncodeLSBFirst), value("EncodeMSBFirst", EncodeMSBFirst),
+				  value("EncodeLSBFirst", EncodeLSBFirst), value("Encode4bitMsbFirst", EncodeNibbleMsbFirst),
+				  value("Encode4bitLsbFirst", EncodeNibbleLsbFirst), value("EncodeMsbFirst", EncodeNibbleMsbFirst),
+				  value("EncodeLsbFirst", EncodeNibbleLsbFirst), value("EncodeNibbleMsbFirst", EncodeNibbleMsbFirst),
+				  value("EncodeNibbleLsbFirst", EncodeNibbleLsbFirst),
+				  value("EncodeSignedNibbleMsbFirst", EncodeSignedNibbleMsbFirst),
+				  value("EncodeSignedNibbleLsbFirst", EncodeSignedNibbleLsbFirst),
+				  value("Encode16bitLsbFirst", Encode16bitLsbFirst), value("Encode16bitMsbFirst", Encode16bitMsbFirst)]
+			 .enum_("CtrlrByteSplit")[value("SplitNone", (uint8)SplitNone), value("Split4Bits", (uint8)Split4Bits),
+									  value("Split7Bits", (uint8)Split7Bits), value("Split8Bits", (uint8)Split8Bits)]
+			 .enum_("CtrlrInstance")[value("InstanceSingle", (uint8)InstanceSingle),
+									 value("InstanceMulti", (uint8)InstanceMulti),
+									 value("InstanceSingleRestricted", (uint8)InstanceSingleRestricted),
+									 value("InstanceSingleEngine", (uint8)InstanceSingleEngine),
+									 value("InstanceMultiEngine", (uint8)InstanceMultiEngine),
+									 value("InstanceSingleRestrictedEngine", (uint8)InstanceSingleRestrictedEngine)]];
 }
 
 //
 
-CtrlrLuaMultiTimer::CtrlrLuaMultiTimer()
-{
-}
+CtrlrLuaMultiTimer::CtrlrLuaMultiTimer() {}
 
-CtrlrLuaMultiTimer::~CtrlrLuaMultiTimer()
-{
-}
+CtrlrLuaMultiTimer::~CtrlrLuaMultiTimer() {}
 
-void CtrlrLuaMultiTimer::wrapForLua(lua_State* L)
-{
+void CtrlrLuaMultiTimer::wrapForLua(lua_State *L) {
 	using namespace luabind;
 
-	module(L)
-		[
-			class_<CtrlrLuaMultiTimer>("CtrlrLuaMultiTimer")
-				.def("setCallback", &CtrlrLuaMultiTimer::setCallback)
-				.def("startTimer", &CtrlrLuaMultiTimer::startTimer)
-				.def("isRegistered", &CtrlrLuaMultiTimer::isRegistered)
-				.def("stopTimer", &CtrlrLuaMultiTimer::stopTimer)
-				.def("isTimerRunning", &CtrlrLuaMultiTimer::isTimerRunning)
-				.def("getTimerInterval", &CtrlrLuaMultiTimer::getTimerInterval)
-		];
+	module(L)[class_<CtrlrLuaMultiTimer>("CtrlrLuaMultiTimer")
+				  .def("setCallback", &CtrlrLuaMultiTimer::setCallback)
+				  .def("startTimer", &CtrlrLuaMultiTimer::startTimer)
+				  .def("isRegistered", &CtrlrLuaMultiTimer::isRegistered)
+				  .def("stopTimer", &CtrlrLuaMultiTimer::stopTimer)
+				  .def("isTimerRunning", &CtrlrLuaMultiTimer::isTimerRunning)
+				  .def("getTimerInterval", &CtrlrLuaMultiTimer::getTimerInterval)];
 }
 
-void CtrlrLuaMultiTimer::setCallback(const int timerId, luabind::object callback)
-{
+void CtrlrLuaMultiTimer::setCallback(const int timerId, luabind::object callback) {
 	LuaTimerCallback c;
 	c.o = callback;
 	c.isValid = true;
 	callbacks.set(timerId, c);
 }
 
-void CtrlrLuaMultiTimer::startTimer(const int timerId, const int interval)
-{
+void CtrlrLuaMultiTimer::startTimer(const int timerId, const int interval) {
 	MultiTimer::startTimer(timerId, interval);
 }
 
-void CtrlrLuaMultiTimer::timerCallback(int timerId)
-{
-	if (callbacks.contains(timerId))
-	{
-		if (callbacks[timerId].isValid)
-		{
-			try
-			{
-				luabind::call_function <void>(callbacks[timerId].o, timerId);
-			}
-			catch (const luabind::error& e)
-			{
+void CtrlrLuaMultiTimer::timerCallback(int timerId) {
+	if (callbacks.contains(timerId)) {
+		if (callbacks[timerId].isValid) {
+			try {
+				luabind::call_function<void>(callbacks[timerId].o, timerId);
+			} catch (const luabind::error &e) {
 				LuaTimerCallback cb = callbacks[timerId];
 				cb.isValid = false;
 
 				callbacks.set(timerId, cb);
-				const char* a = lua_tostring(e.state(), -1);
-				AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Timer callback error, timer id that failed was: " + String(timerId), String(e.what()) + "\n" + String(a) + "\n\nCallback disabled");
+				const char *a = lua_tostring(e.state(), -1);
+				AlertWindow::showMessageBox(AlertWindow::WarningIcon,
+											"Timer callback error, timer id that failed was: " + String(timerId),
+											String(e.what()) + "\n" + String(a) + "\n\nCallback disabled");
 			}
 		}
 	}
 }
 
-const bool CtrlrLuaMultiTimer::isRegistered(const int timerId)
-{
-	return (callbacks.contains(timerId));
-}
+const bool CtrlrLuaMultiTimer::isRegistered(const int timerId) { return (callbacks.contains(timerId)); }
 
-void CtrlrLuaMultiTimer::stopTimer(const int timerId)
-{
-	MultiTimer::stopTimer(timerId);
-}
+void CtrlrLuaMultiTimer::stopTimer(const int timerId) { MultiTimer::stopTimer(timerId); }
 
-const bool CtrlrLuaMultiTimer::isTimerRunning(const int timerId)
-{
-	return (MultiTimer::isTimerRunning(timerId));
-}
+const bool CtrlrLuaMultiTimer::isTimerRunning(const int timerId) { return (MultiTimer::isTimerRunning(timerId)); }
 
-const int CtrlrLuaMultiTimer::getTimerInterval(const int timerId)
-{
-	return (MultiTimer::getTimerInterval(timerId));
-}
+const int CtrlrLuaMultiTimer::getTimerInterval(const int timerId) { return (MultiTimer::getTimerInterval(timerId)); }
 
 //
 
-
-void CtrlrModulator::setValue(const int newValue, const bool force)
-{
+void CtrlrModulator::setValue(const int newValue, const bool force) {
 	processor.setValueGeneric(CtrlrModulatorValue(newValue, CtrlrModulatorValue::changedByLua), force, false);
 }
 
@@ -1657,25 +1390,24 @@ void CtrlrModulator::setValue(const int newValue, const bool force)
 
 @param newValue the new value for the modualtor
 */
-void CtrlrModulator::setValue(const int newValue, const bool force, const bool mute)
-{
+void CtrlrModulator::setValue(const int newValue, const bool force, const bool mute) {
 	processor.setValueGeneric(CtrlrModulatorValue(newValue, CtrlrModulatorValue::changedByLua), force, mute);
 }
 
-void CtrlrModulator::setValueMapped(const int newValue, const bool force, const bool mute)
-{
+void CtrlrModulator::setValueMapped(const int newValue, const bool force, const bool mute) {
 	processor.setMappedValue(CtrlrModulatorValue(newValue, CtrlrModulatorValue::changedByLua), force, mute);
 }
 
-void CtrlrModulator::setValueNonMapped(const int newValue, const bool force, const bool mute)
-{
+void CtrlrModulator::setValueNonMapped(const int newValue, const bool force, const bool mute) {
 	processor.setValueGeneric(CtrlrModulatorValue(newValue, CtrlrModulatorValue::changedByLua), force, mute);
 }
 
-void CtrlrModulator::setModulatorValue(const int newValue, bool vst, bool midi, bool ui)
-{
-	//processor.setValueGeneric (CtrlrModulatorValue (newValue, CtrlrModulatorValue::changedByLua), true, !midi);
-	processor.setValueGeneric(CtrlrModulatorValue(newValue, ui ? CtrlrModulatorValue::changedByProgram : CtrlrModulatorValue::changedByLua), true, !midi); // Added v5.6.31 to help avoid feedback loops between LUA and (delayed) UI commit 6e5a0b2 by midibox
+void CtrlrModulator::setModulatorValue(const int newValue, bool vst, bool midi, bool ui) {
+	// processor.setValueGeneric (CtrlrModulatorValue (newValue, CtrlrModulatorValue::changedByLua), true, !midi);
+	processor.setValueGeneric(
+		CtrlrModulatorValue(newValue, ui ? CtrlrModulatorValue::changedByProgram : CtrlrModulatorValue::changedByLua),
+		true,
+		!midi); // Added v5.6.31 to help avoid feedback loops between LUA and (delayed) UI commit 6e5a0b2 by midibox
 }
 
 double CtrlrModulator::getValueMapped() const // Updated v5.6.32. int to double
@@ -1744,121 +1476,99 @@ int CtrlrModulator::getMinNonMappedInt() // Added v5.6.32
 	return valueMinNonMappedInt;
 }
 
-void CtrlrModulator::setValueMappedCompat(const int newValue, const bool force)
-{
-	setValueMapped(newValue, force);
-}
+void CtrlrModulator::setValueMappedCompat(const int newValue, const bool force) { setValueMapped(newValue, force); }
 
-void CtrlrModulator::wrapForLua(lua_State* L)
-{
+void CtrlrModulator::wrapForLua(lua_State *L) {
 	using namespace luabind;
 
-	module(L)
-		[
-			class_<CtrlrModulator, CtrlrLuaObject>("CtrlrModulator")
+	module(
+		L)[class_<CtrlrModulator, CtrlrLuaObject>("CtrlrModulator")
 
-				.def("getValue", &CtrlrModulator::getModulatorValue)
+			   .def("getValue", &CtrlrModulator::getModulatorValue)
 
-				.def("getValueInt", &CtrlrModulator::getModulatorValueInt) // Added v5.6.32.
+			   .def("getValueInt", &CtrlrModulator::getModulatorValueInt) // Added v5.6.32.
 
-				.def("setValue", (void (CtrlrModulator::*)(const int, const bool)) & CtrlrModulator::setValue)
-				.def("setValue", (void (CtrlrModulator::*)(const int, const bool, const bool)) & CtrlrModulator::setValue)
+			   .def("setValue", (void (CtrlrModulator::*)(const int, const bool))&CtrlrModulator::setValue)
+			   .def("setValue", (void (CtrlrModulator::*)(const int, const bool, const bool))&CtrlrModulator::setValue)
 
-				.def("setValueMapped", &CtrlrModulator::setValueMapped)
-				.def("setValueMapped", &CtrlrModulator::setValueMappedCompat)
-				.def("setValueNonMapped", &CtrlrModulator::setValueNonMapped)
+			   .def("setValueMapped", &CtrlrModulator::setValueMapped)
+			   .def("setValueMapped", &CtrlrModulator::setValueMappedCompat)
+			   .def("setValueNonMapped", &CtrlrModulator::setValueNonMapped)
 
-				.def("getVstIndex", &CtrlrModulator::getVstIndex)
+			   .def("getVstIndex", &CtrlrModulator::getVstIndex)
 
-				.def("getValueMapped", &CtrlrModulator::getValueMapped)
-				.def("getValueNonMapped", &CtrlrModulator::getValueNonMapped)
+			   .def("getValueMapped", &CtrlrModulator::getValueMapped)
+			   .def("getValueNonMapped", &CtrlrModulator::getValueNonMapped)
 
-				.def("getModulatorValue", &CtrlrModulator::getModulatorValue)
+			   .def("getModulatorValue", &CtrlrModulator::getModulatorValue)
 
-				.def("getMaxModulatorValue", &CtrlrModulator::getMaxModulatorValue)
-				.def("getMinModulatorValue", &CtrlrModulator::getMinModulatorValue)
+			   .def("getMaxModulatorValue", &CtrlrModulator::getMaxModulatorValue)
+			   .def("getMinModulatorValue", &CtrlrModulator::getMinModulatorValue)
 
-				.def("getMaxMapped", &CtrlrModulator::getMaxMapped)
-				.def("getMaxNonMapped", &CtrlrModulator::getMaxNonMapped)
-				.def("getMinMapped", &CtrlrModulator::getMinMapped)
-				.def("getMinNonMapped", &CtrlrModulator::getMinNonMapped)
+			   .def("getMaxMapped", &CtrlrModulator::getMaxMapped)
+			   .def("getMaxNonMapped", &CtrlrModulator::getMaxNonMapped)
+			   .def("getMinMapped", &CtrlrModulator::getMinMapped)
+			   .def("getMinNonMapped", &CtrlrModulator::getMinNonMapped)
 
-				.def("getValueMappedInt", &CtrlrModulator::getValueMappedInt) // Added v5.6.32.
-				.def("getValueNonMappedInt", &CtrlrModulator::getValueNonMappedInt) // Added v5.6.32.
+			   .def("getValueMappedInt", &CtrlrModulator::getValueMappedInt)	   // Added v5.6.32.
+			   .def("getValueNonMappedInt", &CtrlrModulator::getValueNonMappedInt) // Added v5.6.32.
 
-				.def("getModulatorValueInt", &CtrlrModulator::getModulatorValueInt) // Added v5.6.32.
+			   .def("getModulatorValueInt", &CtrlrModulator::getModulatorValueInt) // Added v5.6.32.
 
-				.def("getMaxModulatorValueInt", &CtrlrModulator::getMaxModulatorValueInt) // Added v5.6.32.
-				.def("getMinModulatorValueInt", &CtrlrModulator::getMinModulatorValueInt) // Added v5.6.32.
+			   .def("getMaxModulatorValueInt", &CtrlrModulator::getMaxModulatorValueInt) // Added v5.6.32.
+			   .def("getMinModulatorValueInt", &CtrlrModulator::getMinModulatorValueInt) // Added v5.6.32.
 
-				.def("getMaxMappedInt", &CtrlrModulator::getMaxMappedInt) // Added v5.6.32.
-				.def("getMaxNonMappedInt", &CtrlrModulator::getMaxNonMappedInt) // Added v5.6.32.
-				.def("getMinMappedInt", &CtrlrModulator::getMinMappedInt) // Added v5.6.32.
-				.def("getMinNonMappedInt", &CtrlrModulator::getMinNonMappedInt) // Added v5.6.32.
+			   .def("getMaxMappedInt", &CtrlrModulator::getMaxMappedInt)	   // Added v5.6.32.
+			   .def("getMaxNonMappedInt", &CtrlrModulator::getMaxNonMappedInt) // Added v5.6.32.
+			   .def("getMinMappedInt", &CtrlrModulator::getMinMappedInt)	   // Added v5.6.32.
+			   .def("getMinNonMappedInt", &CtrlrModulator::getMinNonMappedInt) // Added v5.6.32.
 
-				.def("getComponent", &CtrlrModulator::getComponent)
-				.def("getRestoreState", &CtrlrModulator::getRestoreState)
-				.def("isRestoring", &CtrlrModulator::getRestoreState)
-				.def("setRestoreState", &CtrlrModulator::setRestoreState)
+			   .def("getComponent", &CtrlrModulator::getComponent)
+			   .def("getRestoreState", &CtrlrModulator::getRestoreState)
+			   .def("isRestoring", &CtrlrModulator::getRestoreState)
+			   .def("setRestoreState", &CtrlrModulator::setRestoreState)
 
-				.def("getMidiMessage", (CtrlrMidiMessage & (CtrlrModulator::*)(void)) & CtrlrModulator::getMidiMessagePtr)
-				.def("getMidiMessage", (CtrlrMidiMessage & (CtrlrModulator::*)(const CtrlrMIDIDeviceType)) & CtrlrModulator::getMidiMessagePtr)
+			   .def("getMidiMessage",
+					(CtrlrMidiMessage & (CtrlrModulator::*)(void)) & CtrlrModulator::getMidiMessagePtr)
+			   .def("getMidiMessage", (CtrlrMidiMessage & (CtrlrModulator::*)(const CtrlrMIDIDeviceType)) &
+										  CtrlrModulator::getMidiMessagePtr)
 
-				.def("getName", &CtrlrModulator::getName)
+			   .def("getName", &CtrlrModulator::getName)
 
-				.def("setModulatorValue", &CtrlrModulator::setModulatorValue)
+			   .def("setModulatorValue", &CtrlrModulator::setModulatorValue)
 
-				.def("getLuaName", &CtrlrModulator::getName)
-				.def("getModulatorName", &CtrlrModulator::getName)
+			   .def("getLuaName", &CtrlrModulator::getName)
+			   .def("getModulatorName", &CtrlrModulator::getName)
 
-				.enum_("CtrlrModulatorValue")
-				[
-					value("initialValue", 0),
-					value("changedByHost", 1),
-					value("changedByMidiIn", 2),
-					value("changedByMidiController", 3),
-					value("changedByGUI", 4),
-					value("changedByLua", 5),
-					value("changedByProgram", 6),
-					value("changedByLink", 7),
-					value("changeByUnknown", 8)
-				]
-		];
-
+			   .enum_("CtrlrModulatorValue")
+				   [value("initialValue", 0), value("changedByHost", 1), value("changedByMidiIn", 2),
+					value("changedByMidiController", 3), value("changedByGUI", 4), value("changedByLua", 5),
+					value("changedByProgram", 6), value("changedByLink", 7), value("changeByUnknown", 8)]];
 }
 
 //
 
-void CtrlrCustomComponent::wrapForLua(lua_State* L)
-{
+void CtrlrCustomComponent::wrapForLua(lua_State *L) {
 	using namespace luabind;
-	module(L)
-		[
-			class_<CtrlrCustomComponent, CtrlrComponent>("CtrlrCustomComponent")
-				,
-				class_<DragAndDropSourceDetails>("DragAndDropSourceDetails")
-				.def(constructor<const String&, Component*, int, int>())
-				.def(constructor<const String&, Image, int, int>())
-				.def(constructor<>())
-				.def("getDescription", &DragAndDropSourceDetails::getDescription)
-				.def("getSourceComponent", &DragAndDropSourceDetails::getSourceComponent)
-				.def("getLocalPositionX", &DragAndDropSourceDetails::getLocalPositionX)
-				.def("getLocalPositionY", &DragAndDropSourceDetails::getLocalPositionY)
-		];
+	module(L)[class_<CtrlrCustomComponent, CtrlrComponent>("CtrlrCustomComponent"),
+			  class_<DragAndDropSourceDetails>("DragAndDropSourceDetails")
+				  .def(constructor<const String &, Component *, int, int>())
+				  .def(constructor<const String &, Image, int, int>())
+				  .def(constructor<>())
+				  .def("getDescription", &DragAndDropSourceDetails::getDescription)
+				  .def("getSourceComponent", &DragAndDropSourceDetails::getSourceComponent)
+				  .def("getLocalPositionX", &DragAndDropSourceDetails::getLocalPositionX)
+				  .def("getLocalPositionY", &DragAndDropSourceDetails::getLocalPositionY)];
 }
 
 //
 
-void CtrlrPanelEditor::wrapForLua(lua_State* L)
-{
+void CtrlrPanelEditor::wrapForLua(lua_State *L) {
 	using namespace luabind;
 
-	module(L)
-		[
-			class_<CtrlrPanelEditor, CtrlrLuaObject>("CtrlrPanelEditor")
-				.def("getWidth", &CtrlrPanelEditor::getWidth)
-				.def("getHeight", &CtrlrPanelEditor::getHeight)
-				.def("getCanvas", &CtrlrPanelEditor::getCanvas)
-				.def("getOwner", &CtrlrPanelEditor::getOwner)
-		];
+	module(L)[class_<CtrlrPanelEditor, CtrlrLuaObject>("CtrlrPanelEditor")
+				  .def("getWidth", &CtrlrPanelEditor::getWidth)
+				  .def("getHeight", &CtrlrPanelEditor::getHeight)
+				  .def("getCanvas", &CtrlrPanelEditor::getCanvas)
+				  .def("getOwner", &CtrlrPanelEditor::getOwner)];
 }

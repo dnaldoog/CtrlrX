@@ -5,16 +5,15 @@
 
 class CtrlrLuaObjectWrapper;
 
-static const uint8 MidiStartStatus		= 0xFA;
-static const uint8 MidiStopStatus		= 0xFC;
-static const uint8 MidiTickStatus		= 0xF9;
-static const uint8 MidiContinueStatus	= 0xFB;
-static const uint8 MidiSysexData[]		= {0xF0, 00, 0xF7 };
+static const uint8 MidiStartStatus = 0xFA;
+static const uint8 MidiStopStatus = 0xFC;
+static const uint8 MidiTickStatus = 0xF9;
+static const uint8 MidiContinueStatus = 0xFB;
+static const uint8 MidiSysexData[] = {0xF0, 00, 0xF7};
 
 class LMemoryBlock;
 
-enum CtrlrMidiMessageType
-{
+enum CtrlrMidiMessageType {
 	CC,
 	Aftertouch,
 	ChannelPressure,
@@ -33,31 +32,30 @@ enum CtrlrMidiMessageType
 	kMidiMessageType,
 };
 
-class TimestampComparator
-{
+class TimestampComparator {
 	public:
-		int compareElements (CtrlrMidiMessageEx first, CtrlrMidiMessageEx second)
-		{
-			return (first.m.getTimeStamp() < second.m.getTimeStamp()) ? -1 : ((second.m.getTimeStamp() < first.m.getTimeStamp()) ? 1 : 0);
+		int compareElements(CtrlrMidiMessageEx first, CtrlrMidiMessageEx second) {
+			return (first.m.getTimeStamp() < second.m.getTimeStamp())
+					   ? -1
+					   : ((second.m.getTimeStamp() < first.m.getTimeStamp()) ? 1 : 0);
 		}
 };
 //==============================================================================
 /** @brief Class that represents a MIDI message
 
 */
-class CtrlrMidiMessage : public ValueTree::Listener
-{
+class CtrlrMidiMessage : public ValueTree::Listener {
 	public:
 		CtrlrMidiMessage();
-		CtrlrMidiMessage (const CtrlrMidiMessage &other);
-		CtrlrMidiMessage (const MidiMessage& other);
-		CtrlrMidiMessage (MemoryBlock& other);
-		CtrlrMidiMessage (const String& hexData);
-		CtrlrMidiMessage (const luabind::object& tableData); // Added v5.6.35. Support for table
-		CtrlrMidiMessage (const CtrlrLuaObjectWrapper& other);
+		CtrlrMidiMessage(const CtrlrMidiMessage &other);
+		CtrlrMidiMessage(const MidiMessage &other);
+		CtrlrMidiMessage(MemoryBlock &other);
+		CtrlrMidiMessage(const String &hexData);
+		CtrlrMidiMessage(const luabind::object &tableData); // Added v5.6.35. Support for table
+		CtrlrMidiMessage(const CtrlrLuaObjectWrapper &other);
+		// CtrlrMidiMessage(const MemoryBlock& data);
 
 		virtual ~CtrlrMidiMessage();
-
 
 		/** @brief Set the number of the MIDI message
 
@@ -75,7 +73,7 @@ class CtrlrMidiMessage : public ValueTree::Listener
 
 			@param value	 the value to set
 		*/
-		void setValue (const int value);
+		void setValue(const int value);
 
 		/** @brief Get the value of the MIDI message
 
@@ -93,13 +91,13 @@ class CtrlrMidiMessage : public ValueTree::Listener
 
 			@return the MIDI channel of this message
 		*/
-		virtual int getChannel() const ;
+		virtual int getChannel() const;
 
 		/** @brief Get the number of MIDI messages that make this one
 
 			@return the number of sub-MIDI messages inside this one
 		*/
-		int getNumMessages() const																		{ return (messageArray.size()); }
+		int getNumMessages() const { return (messageArray.size()); }
 
 		/** @brief Set the SysEx formula for this MIDI message
 
@@ -107,36 +105,39 @@ class CtrlrMidiMessage : public ValueTree::Listener
 		*/
 		// void setSysExFormula (const String &formula); // Removed v5.6.35. For multi MIDI Message. Thanks to @dnaldoog
 
-		const CtrlrMidiMessageEx &getMidiMessageEx(const int index) const									{ return (messageArray.getReference(index)); }
+		const CtrlrMidiMessageEx &getMidiMessageEx(const int index) const { return (messageArray.getReference(index)); }
 		const String toString() const;
 		CtrlrMidiMessageType getMidiMessageType() const;
-		virtual void setMidiMessageType (const CtrlrMidiMessageType newType);
+		virtual void setMidiMessageType(const CtrlrMidiMessageType newType);
 
-		void restoreState (const ValueTree &stateTree);
-		ValueTree &getMidiTree()																		{ return (midiTree); }
+		void restoreState(const ValueTree &stateTree);
+		ValueTree &getMidiTree() { return (midiTree); }
 
-		void setProperty (const Identifier& name, const var &newValue, const bool isUndoable=false)		{ midiTree.setProperty (name, newValue, nullptr); }
-		const var &getProperty (const Identifier& name) const											{ return midiTree.getProperty (name); }
-		//const var getProperty (const Identifier& name, const var &defaultReturnValue) const				{ return midiTree.getProperty (name, defaultReturnValue); } // Updated v5.6.31. Useless
-		virtual void valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
-		void valueTreeChildrenChanged (ValueTree &/*treeWhoseChildHasChanged*/){}
-		void valueTreeParentChanged (ValueTree &/*treeWhoseParentHasChanged*/){}
-		void valueTreeChildAdded (ValueTree& /*parentTree*/, ValueTree& /*childWhichHasBeenAdded*/){}
-		void valueTreeChildRemoved (ValueTree& /*parentTree*/, ValueTree& /*childWhichHasBeenRemoved*/, int){}
-		void valueTreeChildOrderChanged (ValueTree& /*parentTreeWhoseChildrenHaveMoved*/, int, int){}
-		void setNumberToSingle (const int index, const int number);
-		void setValueToSingle (const int index, const int value);
-		void setNumberToMulti (const int number);
-		void setValueToMulti (const int value);
-		void setMultiMessageFromString (const String &savedState);
-		void addMidiMessage (const MidiMessage &message);
+		void setProperty(const Identifier &name, const var &newValue, const bool isUndoable = false) {
+			midiTree.setProperty(name, newValue, nullptr);
+		}
+		const var &getProperty(const Identifier &name) const { return midiTree.getProperty(name); }
+		// const var getProperty (const Identifier& name, const var &defaultReturnValue) const				{ return
+		// midiTree.getProperty (name, defaultReturnValue); } // Updated v5.6.31. Useless
+		virtual void valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
+		void valueTreeChildrenChanged(ValueTree & /*treeWhoseChildHasChanged*/) {}
+		void valueTreeParentChanged(ValueTree & /*treeWhoseParentHasChanged*/) {}
+		void valueTreeChildAdded(ValueTree & /*parentTree*/, ValueTree & /*childWhichHasBeenAdded*/) {}
+		void valueTreeChildRemoved(ValueTree & /*parentTree*/, ValueTree & /*childWhichHasBeenRemoved*/, int) {}
+		void valueTreeChildOrderChanged(ValueTree & /*parentTreeWhoseChildrenHaveMoved*/, int, int) {}
+		void setNumberToSingle(const int index, const int number);
+		void setValueToSingle(const int index, const int value);
+		void setNumberToMulti(const int number);
+		void setValueToMulti(const int value);
+		void setMultiMessageFromString(const String &savedState);
+		void addMidiMessage(const MidiMessage &message);
 		void sortMidiArray() { messageArray.sort(timestampComparator); }
-		MidiBuffer getMidiBuffer(const int startSample=1);
+		MidiBuffer getMidiBuffer(const int startSample = 1);
 		void clear();
 		virtual void patternChanged();
-		void memoryMerge (const CtrlrMidiMessage &otherMessage);
+		void memoryMerge(const CtrlrMidiMessage &otherMessage);
 		void buildMidiMessagesFromMulti(); // Added v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
-		const MemoryBlock &getMidiPattern()	const;
+		const MemoryBlock &getMidiPattern() const;
 		const LMemoryBlock getData() const;
 		int getSize() const;
 		CtrlrMidiMessageEx &getReference(const int messageIndex) const;
@@ -145,29 +146,26 @@ class CtrlrMidiMessage : public ValueTree::Listener
 		Result fillMessagePropertiesFromJuceMidi(const MidiMessage &m);
 		Result getInitializationResult() { return (initializationResult); }
 		void initializeEmptyMessage();
-		Array <CtrlrMidiMessageEx> &getMidiMessageArray();
+		Array<CtrlrMidiMessageEx> &getMidiMessageArray();
 
-		virtual const Array<int,CriticalSection> &getGlobalVariables()
-		{
-			return (emptyGlobals);
-		}
+		virtual const Array<int, CriticalSection> &getGlobalVariables() { return (emptyGlobals); }
 
 		virtual CtrlrSysexProcessor *getSysexProcessor() { return (nullptr); }
 		ValueTree &getObjectTree() { return (midiTree); }
 
-		static void wrapForLua (lua_State *L);
+		static void wrapForLua(lua_State *L);
 
 		JUCE_LEAK_DETECTOR(CtrlrMidiMessage)
 
 	protected:
-        CtrlrMidiMessage (const Identifier &treeType);
+		CtrlrMidiMessage(const Identifier &treeType);
 		ValueTree midiTree;
-		Array <CtrlrMidiMessageEx> messageArray;
+		Array<CtrlrMidiMessageEx> messageArray;
 
 	private:
 		Result initializationResult;
 		bool restoring;
-		Array<int,CriticalSection> emptyGlobals;
+		Array<int, CriticalSection> emptyGlobals;
 		StringPairArray multiTemplates;
 		CtrlrMidiMessageType messageType;
 		String messageTypeFromTemplate;
@@ -176,43 +174,30 @@ class CtrlrMidiMessage : public ValueTree::Listener
 		MidiBuffer midiBuffer;
 		MemoryBlock messagePattern;
 		TimestampComparator timestampComparator;
-    
-    enum class Type
-    {
-        CC,
-        ProgramChange,
-        SysEx,
-        NoteOn,
-        NoteOff,
-        Aftertouch,
-        ChannelPressure,
-        PitchWheel,
-        Unknown
-    };
 
-    struct MidiMessageData
-    {
-        Type type = Type::Unknown;
-        int midiNumber = -1;    // For CC/ProgramChange/etc
-        int midiValue = -1;    // For CC/ProgramChange/etc
-        juce::String sysexData; // For SysEx
-    };
+		enum class Type { CC, ProgramChange, SysEx, NoteOn, NoteOff, Aftertouch, ChannelPressure, PitchWheel, Unknown };
 
-    struct MultiMessage
-    {
-        String midiType;
-        int numberToken = -1;
-        int valueToken = -1;
-        String sysexData;
+		struct MidiMessageData {
+				Type type = Type::Unknown;
+				int midiNumber = -1;	// For CC/ProgramChange/etc
+				int midiValue = -1;		// For CC/ProgramChange/etc
+				juce::String sysexData; // For SysEx
+		};
 
-        // For MS/LS split support (NEW format: CC,MS,99,-2)
-        String splitType;  // "MS", "LS", "MSB", "LSB", etc.
+		struct MultiMessage {
+				String midiType;
+				int numberToken = -1;
+				int valueToken = -1;
+				String sysexData;
 
-        // For legacy NRPN/RPN support (OLD format: CC,ByteValue,MSB7bitValue,99,-2)
-        String legacyData1Source;
-        String legacyData2Source;
+				// For MS/LS split support (NEW format: CC,MS,99,-2)
+				String splitType; // "MS", "LS", "MSB", "LSB", etc.
 
-        bool isSysEx() const noexcept { return midiType.equalsIgnoreCase("SysEx"); }
-    };
-    Array<MultiMessage> multiMessages;
+				// For legacy NRPN/RPN support (OLD format: CC,ByteValue,MSB7bitValue,99,-2)
+				String legacyData1Source;
+				String legacyData2Source;
+
+				bool isSysEx() const noexcept { return midiType.equalsIgnoreCase("SysEx"); }
+		};
+		Array<MultiMessage> multiMessages;
 };

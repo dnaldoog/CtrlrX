@@ -10,17 +10,17 @@ class CtrlrPanelResourceManager;
 	folder in the user preferences directory.
 
 */
-class CtrlrPanelResource : public ValueTree::Listener
-{
+class CtrlrPanelResource : public ValueTree::Listener {
 	public:
-		CtrlrPanelResource (CtrlrPanelResourceManager &_owner, const File &_resourceDataFile, const File &_resourceSourceFile, const String _resourceName="");
+		CtrlrPanelResource(CtrlrPanelResourceManager &_owner, const File &_resourceDataFile,
+						   const File &_resourceSourceFile, const String _resourceName = "");
 		~CtrlrPanelResource();
-		void valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
-		void valueTreeChildrenChanged (ValueTree &treeWhoseChildHasChanged){}
-		void valueTreeParentChanged (ValueTree &treeWhoseParentHasChanged){}
-		void valueTreeChildAdded (ValueTree& parentTree, ValueTree& childWhichHasBeenAdded){}
-		void valueTreeChildRemoved (ValueTree& parentTree, ValueTree& childWhichHasBeenRemoved, int){}
-		void valueTreeChildOrderChanged (ValueTree& parentTreeWhoseChildrenHaveMoved, int, int){}
+		void valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
+		void valueTreeChildrenChanged(ValueTree &treeWhoseChildHasChanged) {}
+		void valueTreeParentChanged(ValueTree &treeWhoseParentHasChanged) {}
+		void valueTreeChildAdded(ValueTree &parentTree, ValueTree &childWhichHasBeenAdded) {}
+		void valueTreeChildRemoved(ValueTree &parentTree, ValueTree &childWhichHasBeenRemoved, int) {}
+		void valueTreeChildOrderChanged(ValueTree &parentTreeWhoseChildrenHaveMoved, int, int) {}
 		const Image asImage();
 		const String asText();
 		const Font asFont();
@@ -43,18 +43,20 @@ class CtrlrPanelResource : public ValueTree::Listener
 		bool reloadFromSourceFile();
 		ValueTree &getResourceTree();
 		Time getLoadedTime();
-		void setProperty (const Identifier& name, const var &newValue, const bool isUndoable=true);
-		const var &getProperty (const Identifier& name) const											{ return resourceTree.getProperty (name); }
-		const var getProperty (const Identifier& name, const var &defaultReturnValue) const				{ return resourceTree.getProperty (name, defaultReturnValue); }
+		void setProperty(const Identifier &name, const var &newValue, const bool isUndoable = true);
+		const var &getProperty(const Identifier &name) const { return resourceTree.getProperty(name); }
+		const var getProperty(const Identifier &name, const var &defaultReturnValue) const {
+			return resourceTree.getProperty(name, defaultReturnValue);
+		}
 		void calculateHash();
-		InputStream* createInputStream();  // NOT std::unique_ptr   // Added for gzip support
-		const String asGzipText();// Added for gzip support
+		InputStream *createInputStream(); // NOT std::unique_ptr   // Added for gzip support
+		const String asGzipText();		  // Added for gzip support
 		JUCE_LEAK_DETECTOR(CtrlrPanelResource)
 
 	private:
 		ValueTree resourceTree;
 		WeakReference<CtrlrPanelResource>::Master masterReference;
-        friend class WeakReference<CtrlrPanelResource>;
+		friend class WeakReference<CtrlrPanelResource>;
 		MemoryBlock data;
 		String resourceName;
 		int resourceHashCode;
@@ -63,4 +65,5 @@ class CtrlrPanelResource : public ValueTree::Listener
 		AudioFormatReader *audioFormatReader;
 		CtrlrPanelResourceType resourceType;
 		CtrlrPanelResourceManager &owner;
+		int64 computeContentHash(const File &f);
 };

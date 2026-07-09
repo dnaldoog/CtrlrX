@@ -29,9 +29,7 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner)
 		midiControllerInputThread(*this, controllerDevice),
 		ctrlrLuaManager(nullptr),
 		currentActionIndex(0),
-		indexOfSavedState(-1)
-{
-}
+	  indexOfSavedState(-1) {}
 
 CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int idx)
 	:	owner(_owner),
@@ -57,9 +55,10 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 {
     ctrlrPanelUndoManager	= new CtrlrPanelUndoManager(*this);
     ctrlrLuaManager 		= new CtrlrLuaManager(*this);
-
-    if ((bool)getCtrlrManagerOwner().getProperty (Ids::ctrlrLuaDisabled) == false)
-    {
+	lfV1 = std::make_unique<juce::LookAndFeel_V1>();
+	lfV2 = std::make_unique<juce::LookAndFeel_V2>();
+	lfV3 = std::make_unique<juce::LookAndFeel_V3>();
+	if ((bool)getCtrlrManagerOwner().getProperty(Ids::ctrlrLuaDisabled) == false) {
         ctrlrLuaManager->getMethodManager().setDebug ((bool)owner.getProperty(Ids::ctrlrLuaDebug));
     }
 
@@ -93,18 +92,24 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
     String fileExtension = me.getFileExtension();
     // If OS is macOS
     if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) != 0) {
-        setProperty (Ids::panelExportResourceEncryption, 1); // Added v5.6.33. Helps with debugging crash at export on Apple Silicon
-        setProperty (Ids::panelExportDelayBtwSteps, 1); // Added v5.6.33. Helps with debugging crash at export on Apple Silicon
+		setProperty(Ids::panelExportResourceEncryption,
+					1); // Added v5.6.33. Helps with debugging crash at export on Apple Silicon
+		setProperty(Ids::panelExportDelayBtwSteps,
+					1); // Added v5.6.33. Helps with debugging crash at export on Apple Silicon
         // For VST2 & VST3
-        if (fileExtension == ".vst3" || fileExtension == ".vst" || fileExtension == ".aaxplugin") { // Updated v5.6.34. AAX added
+		if (fileExtension == ".vst3" || fileExtension == ".vst" ||
+			fileExtension == ".aaxplugin") {				// Updated v5.6.34. AAX added
             setProperty (Ids::panelReplaceVst3PluginIds, 1); // Added v5.6.32
         }
-        setProperty (Ids::panelExportCodesign, 1); // Added v5.6.33. Helps with debugging crash at export on Apple Silicon
+		setProperty(Ids::panelExportCodesign,
+					1); // Added v5.6.33. Helps with debugging crash at export on Apple Silicon
         setProperty (Ids::panelCertificateMacSelectId, 0); // Added v5.6.32
         setProperty (Ids::panelCertificateMacId, ""); // Added v5.6.32
     }
     // if OS is WINDOWS
-	// else if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::Windows) != 0) { // v5.6.32. Won't work with WIN10 or will require an addon in Manifest https://forum.juce.com/t/bug-systemstats-getoperatingsystemname-on-windows-10/21659/3
+	// else if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::Windows) != 0) { // v5.6.32. Won't
+	// work with WIN10 or will require an addon in Manifest
+	// https://forum.juce.com/t/bug-systemstats-getoperatingsystemname-on-windows-10/21659/3
 	else {
         // For VST2 & VST3
         if (fileExtension == ".vst3" || fileExtension == ".dll") {
@@ -121,7 +126,8 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 
     // Set the server URL property
     // This could also be a development server URL that changes for release
-    setProperty (Ids::panelExportServerAuthURL, "https://localhost:8000/auth/authenticate"); // Example local dev server URL
+	setProperty(Ids::panelExportServerAuthURL,
+				"https://localhost:8000/auth/authenticate"); // Example local dev server URL
     
     setProperty (Ids::panelMidiSnapshotAfterLoad, false);
     setProperty (Ids::panelMidiSnapshotAfterProgramChange, false);
@@ -134,7 +140,8 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
     setProperty (Ids::panelMidiOutputDevice, COMBO_NONE_ITEM);
     setProperty (Ids::panelMidiOutputChannelDevice, 1);
 
-    if(!JUCEApplication::isStandaloneApp()) // Added v5.6.34. Set CtrlrX to receive THE MIDI IN MESSAGES from the HOST MIDI IN on ALL Channels.
+	if (!JUCEApplication::isStandaloneApp()) // Added v5.6.34. Set CtrlrX to receive THE MIDI IN MESSAGES from the HOST
+											 // MIDI IN on ALL Channels.
     {
         setProperty (Ids::panelMidiInputFromHost, true);
         setProperty (Ids::panelMidiInputChannelHost, 0);
@@ -150,7 +157,10 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
     }
     setProperty (Ids::panelMidiThruD2D, false);
     setProperty (Ids::panelMidiThruD2DChannelize, false);
-    setProperty (Ids::panelMidiRealtimeIgnore, false); // Updated v5.6.34. Was (true). Useless and does not make any sense to ignore MIDI IN Messages by default. Ref: void CtrlrPanelMIDIInputThread::handleMIDIFromDevice (const MidiMessage &message)
+	setProperty(
+		Ids::panelMidiRealtimeIgnore,
+		false); // Updated v5.6.34. Was (true). Useless and does not make any sense to ignore MIDI IN Messages by
+				// default. Ref: void CtrlrPanelMIDIInputThread::handleMIDIFromDevice (const MidiMessage &message)
     setProperty (Ids::panelMidiInputThreadPriority, 7);
     setProperty (Ids::panelMidiProgram, 0);
     setProperty (Ids::panelMidiBankLsb, 0);
@@ -219,9 +229,13 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
     
     owner.addChangeListener (this);
     midiMessageCollector.reset (SAMPLERATE);
-
+// #if JUCE_VERSION_MAJOR >= 7
     midiInputThread.startThread (juce::Thread::Priority::normal);
     midiControllerInputThread.startThread (juce::Thread::Priority::normal);
+// #else
+//     midiInputThread.startThread(5);
+//     midiControllerInputThread.startThread(5);
+// #endif;
 }
 
 CtrlrPanel::~CtrlrPanel()
@@ -377,7 +391,9 @@ void CtrlrPanel::bootstrapPanel(const bool setInitialProgram)
 		return;
 
 	boostrapStateStatus = true;
-
+// Capture the exact system time when boot started
+    bootstrapStartTime = juce::Time::getMillisecondCounter();
+    isBootstrapTimerActive = true;
 	for (int i=0; i<ctrlrModulators.size(); i++)
 	{
 		ctrlrModulators[i]->allModulatorsInitialized();
@@ -410,6 +426,8 @@ void CtrlrPanel::bootstrapPanel(const bool setInitialProgram)
 	}
 
 	boostrapStateStatus = false;
+	bootstrapStartTime = juce::Time::getMillisecondCounter();
+    isBootstrapTimerActive = true;
 }
 
 CtrlrPanelEditor *CtrlrPanel::getEditor(const bool createNewEditorIfNeeded)
@@ -1012,7 +1030,7 @@ const String CtrlrPanel::getUniqueModulatorName(const String &proposedName)
 		nameToLookFor	= basename + "-" + String(marker);
 	}
 
-	while (getModulator(nameToLookFor))
+	while (getModulator(nameToLookFor,true))
 	{
 		nameToLookFor = basename + "-" + String(++marker);
 	}
@@ -1712,12 +1730,62 @@ void CtrlrPanel::sendMidi (CtrlrMidiMessage &m, double millisecondCounterToStart
 	if (isMidiOutPaused())
 		return;
 
-	if (outputDevicePtr)
+	if (!outputDevicePtr)
+		return;
+	
+	const double sendTime = globalMidiDelay + millisecondCounterToStartAt;
+	const bool latchEnabled = (bool)m.getProperty(Ids::midiMessageLatchAndStream);
+	
+	if (m.getMidiMessageType() == Multi && latchEnabled)
 	{
-		outputDevicePtr->sendMidiBuffer (m.getMidiBuffer(), globalMidiDelay + millisecondCounterToStartAt);
+		const int    incomingNumber  = m.getNumber();
+		const String incomingFormula = m.getProperty(Ids::midiMessageMultiList).toString();
+		
+		// Reset latch when parameter number OR formula type changes
+		if (incomingNumber != nrpnLatchedNumber || incomingFormula != nrpnLatchedFormula)
+		{
+			_DBG("NRPN latch: reset - number=" + String(incomingNumber)
+				 + " formula=" + incomingFormula);
+			nrpnHeaderLatched = false;
+			nrpnLatchedNumber  = incomingNumber;
+			nrpnLatchedFormula = incomingFormula;
 	}
 
+		auto& messages = m.getMidiMessageArray();
+		_DBG("NRPN latch: arraySize=" + String(messages.size())
+			 + " latched=" + String((int)nrpnHeaderLatched)
+			 + " number=" + String(incomingNumber));
+		
+		MidiBuffer filtered;
+		int sample = 0;
+		
+		for (int i = 0; i < messages.size(); i++)
+		{
+			const MidiMessage& msg = messages.getReference(i).m;
+			const int cc = msg.getControllerNumber();
+			
+			const bool isHeader = msg.isController()
+			&& (cc == 99 || cc == 98   // NRPN MSB/LSB
+				|| cc == 101 || cc == 100); // RPN MSB/LSB
+			
+			if (isHeader && nrpnHeaderLatched)
+			{
+				_DBG("NRPN latch: skipping header CC" + String(cc));
+				continue;
+			}
+			
+			filtered.addEvent(msg, sample++);
+		}
+		
+		nrpnHeaderLatched = true;
+		outputDevicePtr->sendMidiBuffer(filtered, sendTime);
+		queueMessagesForHostOutput(filtered);
+	}
+	else
+	{
+		outputDevicePtr->sendMidiBuffer(m.getMidiBuffer(), sendTime);
 	queueMessageForHostOutput (m);
+	}
 }
 
 bool CtrlrPanel::isMidiOutPaused()
@@ -1806,7 +1874,12 @@ const Array<int,CriticalSection> CtrlrPanel::globalsFromString(const String &glo
 
 CtrlrModulator* CtrlrPanel::getModulator (const String& name) const
 {
-	// return (modulatorsByName[name]);
+	return getModulator(name, true);
+} // this is the default version of the method, as found probably in nearly every panel. We don't want to break it!
+
+// Update this line to match the header signature (minus the default "= true")
+CtrlrModulator* CtrlrPanel::getModulator(const String& name, bool forwardToComponents) const
+{
 	for (int i=0; i<ctrlrModulators.size(); i++)
 	{
 		if (ctrlrModulators[i]->getProperty (Ids::name) == name)
@@ -2173,4 +2246,39 @@ void CtrlrPanel::restoreLayerVisibilityStates() // Added v5.6.34. Thanks to @dna
 	}
 	// Clear the backup after restoring
 	layerVisibilityBackup.clear();
+}
+
+bool CtrlrPanel::isLoading()
+{
+    const ScopedReadLock lock (panelLock);
+
+    // 1. Structural Gates: Immediate block if loading a DAW project or preset bank
+    if (restoreStateStatus || programState)
+    {
+        return true;
+    }
+
+    // 2. Core Bootstrap Gate: If C++ is actively inside bootstrapPanel(), ALWAYS block
+    if (boostrapStateStatus)
+    {
+        return true;
+    }
+
+    // 3. The Asynchronous Cooldown Gate (Your Timer Rule)
+    if (isBootstrapTimerActive)
+    {
+        uint32 currentTime = juce::Time::getMillisecondCounter();
+        
+        // Use a tight 300ms to 500ms cooldown window AFTER boostrapStateStatus drops to false
+        if (currentTime - bootstrapStartTime > 400)
+        {
+            const_cast<CtrlrPanel*>(this)->isBootstrapTimerActive = false;
+			//juce::Logger::writeToLog("[CtrlrX Engine] >>> 400ms Cooldown Passed. GATE IS OPEN! <<<");
+            return false;
+        }
+        
+        return true;
+    }
+
+    return false;
 }

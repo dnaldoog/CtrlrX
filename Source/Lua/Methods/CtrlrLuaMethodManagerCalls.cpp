@@ -1,74 +1,114 @@
+#include "CtrlrComponents/CtrlrComponent.h"
+#include "CtrlrComponents/CtrlrCustomComponent.h"
+#include "CtrlrComponents/Specials/CtrlrWaveform.h"
+#include "CtrlrLog.h"
+#include "CtrlrLua/MethodEditor/CtrlrLuaMethodEditor.h"
+#include "CtrlrLuaManager.h"
+#include "CtrlrLuaMethodManager.h"
+#include "CtrlrLuaObjectWrapper.h"
+#include "CtrlrPanel/CtrlrPanel.h"
+#include "CtrlrPanel/CtrlrPanelCanvas.h"
+#include "JuceClasses/LMemoryBlock.h"
 #include "stdafx.h"
 #include "stdafx_luabind.h"
 #include <luabind/luabind.hpp>
-#include "CtrlrLuaMethodManager.h"
-#include "CtrlrLuaManager.h"
-#include "CtrlrLog.h"
-#include "CtrlrLuaObjectWrapper.h"
-#include "CtrlrComponents/CtrlrCustomComponent.h"
-#include "CtrlrPanel/CtrlrPanel.h"
-#include "CtrlrComponents/Specials/CtrlrWaveform.h"
-#include "CtrlrPanel/CtrlrPanelCanvas.h"
-#include "CtrlrComponents/CtrlrComponent.h"
-#include "JuceClasses/LMemoryBlock.h"
-#include "CtrlrLua/MethodEditor/CtrlrLuaMethodEditor.h"
 
-#define CATCH_METHOD_EXCEPTION \
-catch (luabind::error &e)\
-{\
-	o->setValid(false);\
-	const char* a = lua_tostring(e.state(), -1);\
-	lastExecutionError = String(a);\
-	AlertWindow::showMessageBox (AlertWindow::WarningIcon,\
-        "Callback error: " + o->getName(), \
-        String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1))))\
-         + "\n\nMethod disabled");\
-	_LERR("Callback error: [" + o->getName() + "] " + String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1))))+" "+lastExecutionError+".\nMethod disabled");\
-	if (currentMethodEditor)\
-		currentMethodEditor->getMethodEditArea()->insertOutput(lastExecutionError, juce::Colours::red); \
-	return (false);\
-}
+#define CATCH_METHOD_EXCEPTION                                                                                         \
+	catch (luabind::error & e) {                                                                                       \
+		if (o)                                                                                                         \
+			o->setValid(false);                                                                                        \
+		juce::String lastExecutionError =                                                                              \
+			juce::String(luabind::object_cast<std::string>(luabind::object(luabind::from_stack(e.state(), -1))));      \
+		_LERR("Callback error: [" + (o ? o->getName() : "Unknown") + "]\n" + lastExecutionError +                      \
+			  ".\nMethod disabled");                                                                                   \
+		if (currentMethodEditor)                                                                                       \
+			currentMethodEditor->getMethodEditArea()->insertOutput(lastExecutionError, juce::Colours::red);            \
+		return (false);                                                                                                \
+	}
 
-#define CATCH_METHOD_EXCEPTION_STR \
-catch (luabind::error &e)\
-{\
-	o->setValid(false);\
-	const char* a = lua_tostring(e.state(), -1);\
-	lastExecutionError = String(a);\
-	AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error: " + o->getName(), String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1)))) + "\n\nMethod disabled");\
-	_LERR("Callback error: [" + o->getName() + "] " + String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1))))+" "+lastExecutionError+".\nMethod disabled");\
-	if (currentMethodEditor)\
-		currentMethodEditor->getMethodEditArea()->insertOutput(lastExecutionError, juce::Colours::red); \
-	return ("");\
-}
+#define CATCH_METHOD_EXCEPTION_STR                                                                                     \
+	catch (luabind::error & e) {                                                                                       \
+		if (o)                                                                                                         \
+			o->setValid(false);                                                                                        \
+		juce::String lastExecutionError =                                                                              \
+			juce::String(luabind::object_cast<std::string>(luabind::object(luabind::from_stack(e.state(), -1))));      \
+		_LERR("Callback error: [" + (o ? o->getName() : "Unknown") + "]\n" + lastExecutionError +                      \
+			  ".\nMethod disabled");                                                                                   \
+		if (currentMethodEditor)                                                                                       \
+			currentMethodEditor->getMethodEditArea()->insertOutput(lastExecutionError, juce::Colours::red);            \
+		return ("");                                                                                                   \
+	}
 
-#define CATCH_METHOD_EXCEPTION_DAD \
-catch (luabind::error &e)\
-{\
-	o->setValid(false);\
-	const char* a = lua_tostring(e.state(), -1);\
-	lastExecutionError = String(a);\
-	AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error: " + o->getName(), String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1)))) + "\n\nMethod disabled");\
-	_LERR("Callback error: [" + o->getName() + "] " + String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1))))+" "+lastExecutionError+".\nMethod disabled");\
-	if (currentMethodEditor)\
-		currentMethodEditor->getMethodEditArea()->insertOutput(lastExecutionError, juce::Colours::red); \
-}
+#define CATCH_METHOD_EXCEPTION_DAD                                                                                     \
+	catch (luabind::error & e) {                                                                                       \
+		if (o)                                                                                                         \
+			o->setValid(false);                                                                                        \
+		juce::String lastExecutionError =                                                                              \
+			juce::String(luabind::object_cast<std::string>(luabind::object(luabind::from_stack(e.state(), -1))));      \
+		_LERR("Callback error: [" + (o ? o->getName() : "Unknown") + "]\n" + lastExecutionError +                      \
+			  ".\nMethod disabled");                                                                                   \
+		if (currentMethodEditor)                                                                                       \
+			currentMethodEditor->getMethodEditArea()->insertOutput(lastExecutionError, juce::Colours::red);            \
+	}
+// #define CATCH_METHOD_EXCEPTION \
+// catch (luabind::error &e)\
+// {\
+// 	o->setValid(false);\
+// 	const char* a = lua_tostring(e.state(), -1);\
+// 	lastExecutionError = String(a);\
+// 	AlertWindow::showMessageBox (AlertWindow::WarningIcon,\
+//         "Callback error: " + o->getName(), \
+//         String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1))))\
+//          + "\n\nMethod disabled");\
+// 	_LERR("Callback error: [" + o->getName() + "] " + String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1))))+" "+lastExecutionError+".\nMethod disabled");\
+// 	if (currentMethodEditor)\
+// 		currentMethodEditor->getMethodEditArea()->insertOutput(lastExecutionError, juce::Colours::red); \
+// 	return (false);\
+// }
 
-#define CATCH_METHOD_EXCEPTION_NO_DIALOG \
-catch (luabind::error &e)\
-{\
-	o->setValid(false);\
-	String lastExecutionError = String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1))));\
-	_LERR("Callback error: [" + o->getName() + "]\n" + lastExecutionError.fromLastOccurrenceOf("Error message:\n",false,false) + ".\nMethod disabled");\
-	if (currentMethodEditor)\
-		currentMethodEditor->getMethodEditArea()->insertOutput(lastExecutionError, juce::Colours::red); \
-	return (false);\
-}
+// #define CATCH_METHOD_EXCEPTION_STR \
+// catch (luabind::error &e)\
+// {\
+// 	o->setValid(false);\
+// 	const char* a = lua_tostring(e.state(), -1);\
+// 	lastExecutionError = String(a);\
+// 	AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error: " + o->getName(), String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1)))) + "\n\nMethod disabled");\
+// 	_LERR("Callback error: [" + o->getName() + "] " + String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1))))+" "+lastExecutionError+".\nMethod disabled");\
+// 	if (currentMethodEditor)\
+// 		currentMethodEditor->getMethodEditArea()->insertOutput(lastExecutionError, juce::Colours::red); \
+// 	return ("");\
+// }
 
-#define LUA_DEBUG						if (getDebug() && o) { _INF("CtrlrLuaMethodManager::call " + o->getName()); }
+// #define CATCH_METHOD_EXCEPTION_DAD \
+// catch (luabind::error &e)\
+// {\
+// 	o->setValid(false);\
+// 	const char* a = lua_tostring(e.state(), -1);\
+// 	lastExecutionError = String(a);\
+// 	AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error: " + o->getName(), String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1)))) + "\n\nMethod disabled");\
+// 	_LERR("Callback error: [" + o->getName() + "] " + String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1))))+" "+lastExecutionError+".\nMethod disabled");\
+// 	if (currentMethodEditor)\
+// 		currentMethodEditor->getMethodEditArea()->insertOutput(lastExecutionError, juce::Colours::red); \
+// }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o)
-{
+#define CATCH_METHOD_EXCEPTION_NO_DIALOG                                                                               \
+	catch (luabind::error & e) {                                                                                       \
+		o->setValid(false);                                                                                            \
+		String lastExecutionError =                                                                                    \
+			String(luabind::object_cast<std::string>(luabind::object(luabind::from_stack(e.state(), -1))));            \
+		_LERR("Callback error: [" + o->getName() + "]\n" +                                                             \
+			  lastExecutionError.fromLastOccurrenceOf("Error message:\n", false, false) + ".\nMethod disabled");       \
+		if (currentMethodEditor)                                                                                       \
+			currentMethodEditor->getMethodEditArea()->insertOutput(lastExecutionError, juce::Colours::red);            \
+		return (false);                                                                                                \
+	}
+
+#define LUA_DEBUG                                                                                                      \
+	if (getDebug() && o) {                                                                                             \
+		_INF("CtrlrLuaMethodManager::call " + o->getName());                                                           \
+	}
+
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o) {
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -76,8 +116,7 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o)
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
+	try {
 		if (o->isValid())
 			luabind::call_function<void>(o->getObject().getObject());
 	}
@@ -86,8 +125,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o)
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1, const int param2)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1, const int param2) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -95,10 +135,8 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			luabind::call_function<void>(o->getObject().getObject(), param1, param2);
 		}
 	}
@@ -107,8 +145,11 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1, const double param2, const uint8 param3) // Updated v5.6.32. int to double. Callback on value Change
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1, const double param2,
+									   const uint8 param3) // Updated v5.6.32. int to double. Callback on value Change
 {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -116,10 +157,8 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			luabind::call_function<void>(o->getObject().getObject(), param1, param2, param3);
 		}
 	}
@@ -128,8 +167,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1, const String param2)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1, const String param2) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -137,10 +177,8 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			luabind::call_function<void>(o->getObject().getObject(), param1, param2.toUTF8().getAddress());
 		}
 	}
@@ -149,8 +187,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrComponent *param1, const String param2)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrComponent *param1, const String param2) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -158,21 +197,19 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrComponent *param1
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			luabind::call_function<void>(o->getObject().getObject(), param1, param2.toUTF8().getAddress());
 		}
 	}
 	CATCH_METHOD_EXCEPTION
 
 	return (true);
-
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrComponent *param1, const MouseEvent &param2)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrComponent *param1, const MouseEvent &param2) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -180,10 +217,8 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrComponent *param1
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			luabind::call_function<void>(o->getObject().getObject(), param1, param2);
 		}
 	}
@@ -192,8 +227,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrComponent *param1
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const MidiMessage &param1)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const MidiMessage &param1) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -201,14 +237,11 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const MidiMessage &par
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			CtrlrMidiMessage mm(param1);
 			const luabind::object &obj = o->getObject().getLuabindObject();
-			if (obj.is_valid())
-			{
+			if (obj.is_valid()) {
 				luabind::call_function<void>(obj, mm);
 			}
 		}
@@ -218,10 +251,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const MidiMessage &par
 	return (true);
 }
 
-
-
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const CtrlrMidiMessage &param1)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const CtrlrMidiMessage &param1) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -229,13 +261,10 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const CtrlrMidiMessage
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			const luabind::object &obj = o->getObject().getLuabindObject();
-			if (obj.is_valid())
-			{
+			if (obj.is_valid()) {
 				luabind::call_function<void>(obj, param1);
 			}
 		}
@@ -245,8 +274,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const CtrlrMidiMessage
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *param1)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *param1) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -254,8 +284,7 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
+	try {
 		if (o->isValid())
 			luabind::call_function<void>(o->getObject().getObject(), param1);
 	}
@@ -264,8 +293,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *param1, Graphics &param2)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *param1, Graphics &param2) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -273,8 +303,7 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
+	try {
 		if (o->isValid())
 			luabind::call_function<void>(o->getObject().getObject(), param1, boost::ref(param2));
 	}
@@ -283,8 +312,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrPanelCanvas *param1, Graphics &param2)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrPanelCanvas *param1, Graphics &param2) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -292,11 +322,10 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrPanelCanvas *para
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
-			luabind::call_function<void>(o->getObject().getObject(), param1, boost::reference_wrapper<Graphics>(param2));
+	try {
+		if (o->isValid()) {
+			luabind::call_function<void>(o->getObject().getObject(), param1,
+										 boost::reference_wrapper<Graphics>(param2));
 		}
 	}
 	CATCH_METHOD_EXCEPTION_NO_DIALOG
@@ -304,8 +333,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrPanelCanvas *para
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrPanel *param1)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrPanel *param1) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -313,8 +343,7 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrPanel *param1)
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
+	try {
 		if (o->isValid())
 			luabind::call_function<void>(o->getObject().getObject(), param1);
 	}
@@ -323,8 +352,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrPanel *param1)
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *param1, const MouseEvent &param2)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *param1, const MouseEvent &param2) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -332,8 +362,7 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
+	try {
 		if (o->isValid())
 			luabind::call_function<void>(o->getObject().getObject(), param1, boost::ref(param2));
 	}
@@ -342,8 +371,10 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *param1, const MouseEvent &param2, float param3, float param4)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *param1, const MouseEvent &param2,
+									   float param3, float param4) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -351,8 +382,7 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
+	try {
 		if (o->isValid())
 			luabind::call_function<void>(o->getObject().getObject(), param1, boost::ref(param2), param3, param4);
 	}
@@ -361,8 +391,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const int param1, const int param2, const int param3)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const int param1, const int param2, const int param3) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -370,8 +401,7 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const int param1, cons
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
+	try {
 		if (o->isValid())
 			luabind::call_function<void>(o->getObject().getObject(), param1, param2, param3);
 	}
@@ -380,8 +410,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const int param1, cons
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const int param1, const int param2)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const int param1, const int param2) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -389,8 +420,7 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const int param1, cons
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
+	try {
 		if (o->isValid())
 			luabind::call_function<void>(o->getObject().getObject(), param1, param2);
 	}
@@ -399,8 +429,10 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const int param1, cons
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const int param1, const int param2, const int param3, CtrlrLuaObjectWrapper const &param4)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const int param1, const int param2, const int param3,
+									   CtrlrLuaObjectWrapper const &param4) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -408,8 +440,7 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const int param1, cons
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
+	try {
 		if (o->isValid())
 			luabind::call_function<void>(o->getObject().getObject(), param1, param2, param3, param4);
 	}
@@ -418,8 +449,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const int param1, cons
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const int param1, const File &param2)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const int param1, const File &param2) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -427,8 +459,7 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const int param1, cons
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
+	try {
 		if (o->isValid())
 			luabind::call_function<void>(o->getObject().getObject(), param1, param2);
 	}
@@ -437,8 +468,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const int param1, cons
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1, const File &param2)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1, const File &param2) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -446,8 +478,7 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
+	try {
 		if (o->isValid())
 			luabind::call_function<void>(o->getObject().getObject(), param1, param2);
 	}
@@ -456,8 +487,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrWaveform *param1)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrWaveform *param1) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -465,8 +497,7 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrWaveform *param1)
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
+	try {
 		if (o->isValid())
 			luabind::call_function<void>(o->getObject().getObject(), param1);
 	}
@@ -475,10 +506,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrWaveform *param1)
 	return (true);
 }
 
-
-
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const ValueTree &param1, CtrlrLuaObjectWrapper &param2)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const ValueTree &param1, CtrlrLuaObjectWrapper &param2) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -486,10 +516,8 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const ValueTree &param
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			luabind::call_function<void>(o->getObject().getObject(), param1, param2);
 		}
 	}
@@ -498,8 +526,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const ValueTree &param
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const String &param1, const CtrlrNotificationType param2)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const String &param1, const CtrlrNotificationType param2) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -507,10 +536,8 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const String &param1, 
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			luabind::call_function<void>(o->getObject().getObject(), param1, param2);
 		}
 	}
@@ -520,8 +547,7 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const String &param1, 
 	return (true);
 }
 
-int CtrlrLuaMethodManager::callWithRet(CtrlrLuaMethod *o, CtrlrModulator *param1, const int param2)
-{
+int CtrlrLuaMethodManager::callWithRet(CtrlrLuaMethod *o, CtrlrModulator *param1, const int param2) {
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -529,10 +555,8 @@ int CtrlrLuaMethodManager::callWithRet(CtrlrLuaMethod *o, CtrlrModulator *param1
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			return (luabind::call_function<int>(o->getObject().getObject(), param1, param2));
 		}
 	}
@@ -541,8 +565,8 @@ int CtrlrLuaMethodManager::callWithRet(CtrlrLuaMethod *o, CtrlrModulator *param1
 	return (param2);
 }
 
-int CtrlrLuaMethodManager::callWithRet(CtrlrLuaMethod *o, CtrlrModulator *param1, const CtrlrMidiMessage &param2, const int param3)
-{
+int CtrlrLuaMethodManager::callWithRet(CtrlrLuaMethod *o, CtrlrModulator *param1, const CtrlrMidiMessage &param2,
+									   const int param3) {
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -550,10 +574,8 @@ int CtrlrLuaMethodManager::callWithRet(CtrlrLuaMethod *o, CtrlrModulator *param1
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			return (luabind::call_function<int>(o->getObject().getObject(), param1, param2, param3));
 		}
 	}
@@ -562,8 +584,10 @@ int CtrlrLuaMethodManager::callWithRet(CtrlrLuaMethod *o, CtrlrModulator *param1
 	return (param3);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const StringArray &param1, const int param2, const int param3)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const StringArray &param1, const int param2,
+									   const int param3) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -571,10 +595,8 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const StringArray &par
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			luabind::call_function<void>(o->getObject().getObject(), param1, param2, param3);
 		}
 	}
@@ -584,8 +606,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const StringArray &par
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const StringArray &param1)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const StringArray &param1) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -593,10 +616,8 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const StringArray &par
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			luabind::call_function<void>(o->getObject().getObject(), param1);
 		}
 	}
@@ -606,8 +627,7 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const StringArray &par
 	return (true);
 }
 
-int CtrlrLuaMethodManager::callWithRet(CtrlrLuaMethod *o, ValueTree valueTree1, ValueTree valueTree2)
-{
+int CtrlrLuaMethodManager::callWithRet(CtrlrLuaMethod *o, ValueTree valueTree1, ValueTree valueTree2) {
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -615,10 +635,8 @@ int CtrlrLuaMethodManager::callWithRet(CtrlrLuaMethod *o, ValueTree valueTree1, 
 	if (isLuaDisabled())
 		return (-2);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			return (luabind::call_function<int>(o->getObject().getObject(), valueTree1, valueTree2));
 		}
 	}
@@ -627,19 +645,16 @@ int CtrlrLuaMethodManager::callWithRet(CtrlrLuaMethod *o, ValueTree valueTree1, 
 	return (-1);
 }
 
-String CtrlrLuaMethodManager::callWithRetString(CtrlrLuaMethod *o, CtrlrCustomComponent *param1)
-{
-    const ScopedLock sl(methodManagerCriticalSection);
+String CtrlrLuaMethodManager::callWithRetString(CtrlrLuaMethod *o, CtrlrCustomComponent *param1) {
+	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
 
 	if (isLuaDisabled())
 		return ("");
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			return (luabind::call_function<String>(o->getObject().getObject(), param1));
 		}
 	}
@@ -648,52 +663,10 @@ String CtrlrLuaMethodManager::callWithRetString(CtrlrLuaMethod *o, CtrlrCustomCo
 	return ("");
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *param1, const KeyPress &param2, Component *param3)
-{
-    const ScopedLock sl(methodManagerCriticalSection);
-
-	LUA_DEBUG
-
-	if (isLuaDisabled())
-		return (true);
-
-	try
-	{
-		if (o->isValid())
-		{
-			luabind::call_function<void>(o->getObject().getObject(), param1, param2, param3);
-		}
-	}
-
-	CATCH_METHOD_EXCEPTION
-
-	return (true);
-}
-
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *param1, const bool param2, Component *param3)
-{
-    const ScopedLock sl(methodManagerCriticalSection);
-
-	LUA_DEBUG
-
-	if (isLuaDisabled())
-		return (true);
-
-	try
-	{
-		if (o->isValid())
-		{
-			luabind::call_function<void>(o->getObject().getObject(), param1, param2, param3);
-		}
-	}
-
-	CATCH_METHOD_EXCEPTION
-
-	return (true);
-}
-
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *param1, const double param2, const bool param3)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *param1, const KeyPress &param2,
+									   Component *param3) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -701,10 +674,8 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			luabind::call_function<void>(o->getObject().getObject(), param1, param2, param3);
 		}
 	}
@@ -714,8 +685,10 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *param1, DragAndDropSourceDetails param2)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *param1, const bool param2,
+									   Component *param3) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -723,10 +696,52 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
+			luabind::call_function<void>(o->getObject().getObject(), param1, param2, param3);
+		}
+	}
+
+	CATCH_METHOD_EXCEPTION
+
+	return (true);
+}
+
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *param1, const double param2,
+									   const bool param3) {
+	if (!isMethodValid(o))
+		return (false);
+	const ScopedLock sl(methodManagerCriticalSection);
+
+	LUA_DEBUG
+
+	if (isLuaDisabled())
+		return (true);
+
+	try {
+		if (o->isValid()) {
+			luabind::call_function<void>(o->getObject().getObject(), param1, param2, param3);
+		}
+	}
+
+	CATCH_METHOD_EXCEPTION
+
+	return (true);
+}
+
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *param1,
+									   DragAndDropSourceDetails param2) {
+	if (!isMethodValid(o))
+		return (false);
+	const ScopedLock sl(methodManagerCriticalSection);
+
+	LUA_DEBUG
+
+	if (isLuaDisabled())
+		return (true);
+
+	try {
+		if (o->isValid()) {
 			luabind::call_function<void>(o->getObject().getObject(), param1, param2);
 		}
 	}
@@ -736,8 +751,8 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrCustomComponent *
 	return (true);
 }
 
-int CtrlrLuaMethodManager::callWithRet(CtrlrLuaMethod *o, CtrlrCustomComponent *param1, DragAndDropSourceDetails param2)
-{
+int CtrlrLuaMethodManager::callWithRet(CtrlrLuaMethod *o, CtrlrCustomComponent *param1,
+									   DragAndDropSourceDetails param2) {
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -745,10 +760,8 @@ int CtrlrLuaMethodManager::callWithRet(CtrlrLuaMethod *o, CtrlrCustomComponent *
 	if (isLuaDisabled())
 		return (-2);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			return (luabind::call_function<int>(o->getObject().getObject(), param1, param2));
 		}
 	}
@@ -757,8 +770,8 @@ int CtrlrLuaMethodManager::callWithRet(CtrlrLuaMethod *o, CtrlrCustomComponent *
 	return (-1);
 }
 
-DragAndDropSourceDetails CtrlrLuaMethodManager::callWithRet (CtrlrLuaMethod *o, CtrlrCustomComponent *param1, const MouseEvent &param2)
-{
+DragAndDropSourceDetails CtrlrLuaMethodManager::callWithRet(CtrlrLuaMethod *o, CtrlrCustomComponent *param1,
+															const MouseEvent &param2) {
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -766,10 +779,8 @@ DragAndDropSourceDetails CtrlrLuaMethodManager::callWithRet (CtrlrLuaMethod *o, 
 	if (isLuaDisabled())
 		return (DragAndDropSourceDetails());
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			return (luabind::call_function<DragAndDropSourceDetails>(o->getObject().getObject(), param1, param2));
 		}
 	}
@@ -778,8 +789,9 @@ DragAndDropSourceDetails CtrlrLuaMethodManager::callWithRet (CtrlrLuaMethod *o, 
 	return (DragAndDropSourceDetails());
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, LMemoryBlock *param1)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, LMemoryBlock *param1) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -787,10 +799,8 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, LMemoryBlock *param1)
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			luabind::call_function<void>(o->getObject().getObject(), param1);
 		}
 	}
@@ -800,8 +810,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, LMemoryBlock *param1)
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, ValueTree &param1)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, ValueTree &param1) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -809,10 +820,8 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, ValueTree &param1)
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			luabind::call_function<void>(o->getObject().getObject(), param1);
 		}
 	}
@@ -822,30 +831,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, ValueTree &param1)
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, MidiBuffer *param1)
-{
-    const ScopedLock sl(methodManagerCriticalSection);
-
-	LUA_DEBUG
-
-	if (isLuaDisabled())
-		return (true);
-
-	try
-	{
-		if (o->isValid())
-		{
-			luabind::call_function<void>(o->getObject().getObject(), param1);
-		}
-	}
-
-	CATCH_METHOD_EXCEPTION
-
-	return (true);
-}
-
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const ValueTree &param1)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, MidiBuffer *param1) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -853,10 +841,8 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const ValueTree &param
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			luabind::call_function<void>(o->getObject().getObject(), param1);
 		}
 	}
@@ -866,19 +852,38 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const ValueTree &param
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::callAudio(CtrlrLuaMethod *o, MidiBuffer &param1, const AudioPlayHead::CurrentPositionInfo &param2)
-{
-    const ScopedLock sl(methodManagerCriticalSection);
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const ValueTree &param1) {
+	if (!isMethodValid(o))
+		return (false);
+	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
 
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
+			luabind::call_function<void>(o->getObject().getObject(), param1);
+		}
+	}
+
+	CATCH_METHOD_EXCEPTION
+
+	return (true);
+}
+
+const bool CtrlrLuaMethodManager::callAudio(CtrlrLuaMethod *o, MidiBuffer &param1,
+											const AudioPlayHead::CurrentPositionInfo &param2) {
+	const ScopedLock sl(methodManagerCriticalSection);
+
+	LUA_DEBUG
+
+	if (isLuaDisabled())
+		return (true);
+
+	try {
+		if (o->isValid()) {
 			luabind::call_function<void>(o->getObject().getObject(), param1, param2);
 		}
 	}
@@ -888,8 +893,10 @@ const bool CtrlrLuaMethodManager::callAudio(CtrlrLuaMethod *o, MidiBuffer &param
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const String &param1, const String &param2, CtrlrLuaObjectWrapper const &param3)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const String &param1, const String &param2,
+									   CtrlrLuaObjectWrapper const &param3) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -897,10 +904,8 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const String &param1, 
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			luabind::call_function<void>(o->getObject().getObject(), param1, param2, param3);
 		}
 	}
@@ -910,8 +915,9 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const String &param1, 
 	return (true);
 }
 
-const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const uint8 param1)
-{
+const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const uint8 param1) {
+	if (!isMethodValid(o))
+		return (false);
 	const ScopedLock sl(methodManagerCriticalSection);
 
 	LUA_DEBUG
@@ -919,10 +925,8 @@ const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, const uint8 param1)
 	if (isLuaDisabled())
 		return (true);
 
-	try
-	{
-		if (o->isValid())
-		{
+	try {
+		if (o->isValid()) {
 			luabind::call_function<void>(o->getObject().getObject(), param1);
 		}
 	}

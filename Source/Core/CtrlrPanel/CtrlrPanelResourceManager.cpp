@@ -1,48 +1,36 @@
+#include "CtrlrPanelResourceManager.h"
+#include "CtrlrLog.h"
+#include "CtrlrMacros.h"
+#include "CtrlrPanel.h"
+#include "CtrlrPanelResource.h"
+#include "CtrlrProcessor.h"
+#include "CtrlrUtilities.h"
 #include "stdafx.h"
 #include "stdafx_luabind.h"
-#include "CtrlrPanelResourceManager.h"
-#include "CtrlrPanelResource.h"
-#include "CtrlrMacros.h"
-#include "CtrlrProcessor.h"
-#include "CtrlrPanel.h"
-#include "CtrlrUtilities.h"
-#include "CtrlrLog.h"
 
 /** Resource Manager class implementation
 
 */
 
 CtrlrPanelResourceManager::CtrlrPanelResourceManager(CtrlrPanel &_owner)
-	: owner(_owner), lastLoadedResource(nullptr), managerTree(Ids::panelResources)
-{
-}
+	: owner(_owner), lastLoadedResource(nullptr), managerTree(Ids::panelResources) {}
 
-CtrlrPanelResourceManager::~CtrlrPanelResourceManager()
-{
-}
+CtrlrPanelResourceManager::~CtrlrPanelResourceManager() {}
 
-void CtrlrPanelResourceManager::panelUIDChanged()
-{
-	initManager();
-}
+void CtrlrPanelResourceManager::panelUIDChanged() { initManager(); }
 
-void CtrlrPanelResourceManager::restoreSavedState (const ValueTree &savedState)
-{
-	for (int i=0; i<savedState.getNumChildren(); i++)
-	{
-		if (savedState.getChild(i).hasType(Ids::resource))
-		{
+void CtrlrPanelResourceManager::restoreSavedState(const ValueTree &savedState) {
+	for (int i = 0; i < savedState.getNumChildren(); i++) {
+		if (savedState.getChild(i).hasType(Ids::resource)) {
 			CtrlrPanelResource *res = getResource(savedState.getChild(i).getProperty(Ids::resourceName).toString());
-			if (res)
-			{
-				res->setProperty (Ids::resourceSourceFile, savedState.getChild(i).getProperty(Ids::resourceSourceFile));
+			if (res) {
+				res->setProperty(Ids::resourceSourceFile, savedState.getChild(i).getProperty(Ids::resourceSourceFile));
 			}
 		}
 	}
 }
 
-void CtrlrPanelResourceManager::initManager()
-{
+void CtrlrPanelResourceManager::initManager() {
 	{
 		resources.clear();
 		resourceHashCodes.clear();
@@ -51,67 +39,50 @@ void CtrlrPanelResourceManager::initManager()
 
 	const File newResourcesDirectory = owner.getPanelDirectory();
 
-	if (newResourcesDirectory != resourcesDirectory && resourcesDirectory != File())
-	{
-		if (resourcesDirectory.getNumberOfChildFiles (File::findFiles) == 0)
-		{
+	if (newResourcesDirectory != resourcesDirectory && resourcesDirectory != File()) {
+		if (resourcesDirectory.getNumberOfChildFiles(File::findFiles) == 0) {
 			resourcesDirectory.deleteRecursively();
-		}
-		else
-		{
-			if (SURE("The resource directory has changed, do you want to delete the old one?",nullptr))
-			{
-				resourcesDirectory.deleteRecursively ();
+		} else {
+			if (SURE("The resource directory has changed, do you want to delete the old one?", nullptr)) {
+				resourcesDirectory.deleteRecursively();
 			}
 		}
 	}
 
 	resourcesDirectory = newResourcesDirectory;
 
-	if (!resourcesDirectory.isDirectory())
-	{
-		if (!resourcesDirectory.createDirectory())
-		{
+	if (!resourcesDirectory.isDirectory()) {
+		if (!resourcesDirectory.createDirectory()) {
 			_ERR("CtrlrResourceManager::ctor failed to create resources directory");
 			resourcesDirectory = File();
 		}
-	}
-	else
-	{
-		Array <File> resourceFiles;
-		resourcesDirectory.findChildFiles (resourceFiles, File::findFiles, false);
-		for (int i=0; i<resourceFiles.size(); i++)
-		{
-			addResource (resourceFiles[i]);
+	} else {
+		Array<File> resourceFiles;
+		resourcesDirectory.findChildFiles(resourceFiles, File::findFiles, false);
+		for (int i = 0; i < resourceFiles.size(); i++) {
+			addResource(resourceFiles[i]);
 		}
 	}
 }
 
-void CtrlrPanelResourceManager::checkMissingResources(ValueTree& panelResourcesTree)
-{	// Check missing resources from ValueTree
+void CtrlrPanelResourceManager::checkMissingResources(
+	ValueTree &panelResourcesTree) { // Check missing resources from ValueTree
 	ValueTree currentResource;
 	String resourceName;
-	for (int i = 0; i<panelResourcesTree.getNumChildren(); i++)
-	{
+	for (int i = 0; i < panelResourcesTree.getNumChildren(); i++) {
 		currentResource = panelResourcesTree.getChild(i);
-		if (currentResource.hasType(Ids::resource))
-		{
+		if (currentResource.hasType(Ids::resource)) {
 			resourceName = currentResource.getProperty(Ids::resourceName).toString();
 			CtrlrPanelResource *res = getResource(resourceName);
-			if (!res)
-			{	// Resource not find in resources directory => try and load it from the source file
+			if (!res) { // Resource not find in resources directory => try and load it from the source file
 				String resourceSourcePath = currentResource.getProperty(Ids::resourceSourceFile);
 				File resourceFile;
-				if (File::isAbsolutePath(resourceSourcePath))
-				{
+				if (File::isAbsolutePath(resourceSourcePath)) {
 					resourceFile = File(resourceSourcePath);
-				}
-				else
-				{
+				} else {
 					resourceFile = owner.getPanelResourcesDir().getChildFile(resourceSourcePath);
 				}
-				if (resourceFile.existsAsFile())
-				{
+				if (resourceFile.existsAsFile()) {
 					addResource(resourceFile, resourceName);
 				}
 			}
@@ -119,26 +90,19 @@ void CtrlrPanelResourceManager::checkMissingResources(ValueTree& panelResourcesT
 	}
 }
 
-int CtrlrPanelResourceManager::getNumResources()
-{
-	return (resources.size());
-}
+int CtrlrPanelResourceManager::getNumResources() { return (resources.size()); }
 
-CtrlrPanelResource *CtrlrPanelResourceManager::getResource (const int resourceIndex)
-{
+CtrlrPanelResource *CtrlrPanelResourceManager::getResource(const int resourceIndex) {
 	return (resources[resourceIndex]);
 }
 
-CtrlrPanelResource *CtrlrPanelResourceManager::getResource (const String &resourceName)
-{
+CtrlrPanelResource *CtrlrPanelResourceManager::getResource(const String &resourceName) {
 	if (lastLoadedResource.get() && !lastLoadedResource.wasObjectDeleted())
 		if (lastLoadedResource->getName() == resourceName)
 			return (lastLoadedResource);
 
-	for (int i=0; i<resources.size(); i++)
-	{
-		if (resources[i]->getName() == resourceName)
-		{
+	for (int i = 0; i < resources.size(); i++) {
+		if (resources[i]->getName() == resourceName) {
 			lastLoadedResource = resources[i];
 			return (resources[i]);
 		}
@@ -146,61 +110,49 @@ CtrlrPanelResource *CtrlrPanelResourceManager::getResource (const String &resour
 	return (0);
 }
 
-const Image CtrlrPanelResourceManager::getResourceAsImage (const String &resourceName)
-{
-	CtrlrPanelResource *res = getResource (resourceName);
-	if (res != 0)
-	{
+const Image CtrlrPanelResourceManager::getResourceAsImage(const String &resourceName) {
+	CtrlrPanelResource *res = getResource(resourceName);
+	if (res != 0) {
 		return (res->asImage());
 	}
 
 	return (Image());
 }
 
-const Font CtrlrPanelResourceManager::getResourceAsFont (const String &resourceName)
-{
-    CtrlrPanelResource *res = getResource (resourceName);
-	if (res != 0)
-	{
+const Font CtrlrPanelResourceManager::getResourceAsFont(const String &resourceName) {
+	CtrlrPanelResource *res = getResource(resourceName);
+	if (res != 0) {
 		return (res->asFont());
 	}
 
 	return (Font());
 }
 
-void CtrlrPanelResourceManager::reloadComboContents (ComboBox &comboToUpdate)
-{
-	const String lastSelected	= comboToUpdate.getText();
-	int newSelectedId			= -1;
-	int i=0;
+void CtrlrPanelResourceManager::reloadComboContents(ComboBox &comboToUpdate) {
+	const String lastSelected = comboToUpdate.getText();
+	int newSelectedId = -1;
+	int i = 0;
 
 	comboToUpdate.clear();
 
-	for (i=0; i<resources.size(); i++)
-	{
-		comboToUpdate.addItem (resources[i]->getName(), i+1);
-		if (lastSelected == resources[i]->getName())
-		{
-			newSelectedId = i+1;
+	for (i = 0; i < resources.size(); i++) {
+		comboToUpdate.addItem(resources[i]->getName(), i + 1);
+		if (lastSelected == resources[i]->getName()) {
+			newSelectedId = i + 1;
 		}
 	}
 
-	comboToUpdate.addItem (COMBO_NONE_ITEM, i+1);
+	comboToUpdate.addItem(COMBO_NONE_ITEM, i + 1);
 
-	comboToUpdate.setSelectedId (newSelectedId, dontSendNotification);
+	comboToUpdate.setSelectedId(newSelectedId, dontSendNotification);
 }
 
-CtrlrPanel &CtrlrPanelResourceManager::getOwner()
-{
-	return (owner);
-}
+CtrlrPanel &CtrlrPanelResourceManager::getOwner() { return (owner); }
 
-int CtrlrPanelResourceManager::getHashCode (const String &resourceName, const bool preloadResource)
-{
+int CtrlrPanelResourceManager::getHashCode(const String &resourceName, const bool preloadResource) {
 	CtrlrPanelResource *r = getResource(resourceName);
 
-	if (r)
-	{
+	if (r) {
 		if (preloadResource)
 			r->load();
 
@@ -210,102 +162,116 @@ int CtrlrPanelResourceManager::getHashCode (const String &resourceName, const bo
 	return (-1);
 }
 
-int CtrlrPanelResourceManager::getResourceIndex (const String &resourceName)
-{
-	for (int i=0; i<resources.size(); i++)
-	{
+int CtrlrPanelResourceManager::getResourceIndex(const String &resourceName) {
+	for (int i = 0; i < resources.size(); i++) {
 		if (resources[i]->getName() == resourceName)
 			return (i);
 	}
 	return (-1);
 }
 
-bool CtrlrPanelResourceManager::resourceExists(const File &resourceFile)
-{
-	if (getResource (resourceFile.getFileNameWithoutExtension()))
-	{
+bool CtrlrPanelResourceManager::resourceExists(const File &resourceFile) {
+	if (getResource(resourceFile.getFileNameWithoutExtension())) {
 		return (true);
 	}
 
 	return (false);
 }
 
-Result CtrlrPanelResourceManager::importResource (const ValueTree &resourceTree)
-{
-	if (getResource(resourceTree.getProperty(Ids::resourceName).toString()))
-	{
+Result CtrlrPanelResourceManager::importResource(const ValueTree &resourceTree) {
+	String resourceName = resourceTree.getProperty(Ids::resourceName).toString();
+
+	// _DBG("importResource: [" + resourceName + "] exists="
+	//      + String(getResource(resourceName) != nullptr ? "YES" : "NO")
+	//      + " resourcesDir=" + resourcesDirectory.getFullPathName()
+	//      + " numResources=" + String(resources.size()));
+
+	if (getResource(resourceName)) {
 		if ((bool)owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrOverwriteResources) == false)
-		{
-			return (Result::fail("ImportResource resource: " + resourceTree.getProperty(Ids::resourceName).toString() + "failed, a resource with this name already exists"));
+			return Result::fail("ImportResource resource: " + resourceName +
+								" failed, a resource with this name already exists");
+
+		// Decode incoming data first so we can hash-compare
+		MemoryBlock resourceData;
+		if (!resourceData.fromBase64Encoding(resourceTree.getProperty(Ids::resourceData).toString()))
+			return Result::fail("ImportResource resource: " + resourceName + " failed to decode base64 encoded data");
+
+		// Only overwrite if content has actually changed
+		int64 incomingHash = (int64)resourceTree.getProperty(Ids::resourceHash);
+		int64 cachedHash = getResource(resourceName)->getHashCode();
+		_DBG("importResource: [" + resourceName + "] incomingHash=" + String(incomingHash) +
+			 " cachedHash=" + String(cachedHash));
+
+		if (incomingHash != 0 && cachedHash != 0 && incomingHash == cachedHash) {
+			_DBG("importResource: [" + resourceName + "] hash match, skipping overwrite");
+			return Result::ok();
 		}
-		else
-		{
-			return (Result::ok());
-		}
-	}
-	else
-	{
-		File resourceTempFile = File::getCurrentWorkingDirectory().getChildFile(resourceTree.getProperty(Ids::resourceFile).toString());
+		_DBG("importResource: [" + resourceName + "] hash changed, overwriting");
+
+		File resourceTempFile =
+			File::getCurrentWorkingDirectory().getChildFile(resourceTree.getProperty(Ids::resourceFile).toString());
 		File resourceDest = resourcesDirectory.getChildFile(resourceTempFile.getFileName());
 
-		if (resourcesDirectory.isDirectory())
-		{
-			MemoryBlock resourceData;
-			if (resourceData.fromBase64Encoding (resourceTree.getProperty(Ids::resourceData).toString()))
-			{
-				if (!resourceDest.exists())
-				{
-					resourceDest.create();
-				}
+		if (!resourceDest.exists())
+			resourceDest.create();
 
-				if (!resourceDest.replaceWithData(resourceData.getData(), (int)resourceData.getSize()))
-				{
-					return (Result::fail("ImportResource can't replace file contents with new data, resource: "+resourceDest.getFullPathName()));
-				}
+		if (!resourceDest.replaceWithData(resourceData.getData(), (int)resourceData.getSize()))
+			return Result::fail("ImportResource can't replace file contents with new data, resource: " +
+								resourceDest.getFullPathName());
 
-				addResource (resourceDest, resourceTree.getProperty(Ids::resourceName));
-				return (Result::ok());
-			}
-			else
-			{
-				resourceDest.deleteFile();
-				return (Result::fail("ImportResource resource: " + resourceTree.getProperty(Ids::resourceName).toString() + " failed to decode base64 encoded data"));
-			}
+		_DBG("importResource: [" + resourceName + "] overwritten on disk OK: " + resourceDest.getFullPathName());
+		return Result::ok();
+	} else {
+		// Fresh import — resource not on disk yet
+		File resourceTempFile =
+			File::getCurrentWorkingDirectory().getChildFile(resourceTree.getProperty(Ids::resourceFile).toString());
+		File resourceDest = resourcesDirectory.getChildFile(resourceTempFile.getFileName());
+
+		if (!resourcesDirectory.isDirectory())
+			return Result::fail("Import resource failed, the path specified as the resource directory is not one: " +
+								resourcesDirectory.getFullPathName());
+
+		MemoryBlock resourceData;
+		if (!resourceData.fromBase64Encoding(resourceTree.getProperty(Ids::resourceData).toString())) {
+			resourceDest.deleteFile();
+			return Result::fail("ImportResource resource: " + resourceName + " failed to decode base64 encoded data");
 		}
-		else
-		{
-			return (Result::fail("Import resource failed, the path specified as the resource directory is not one:"+resourcesDirectory.getFullPathName()));
-		}
+
+		if (!resourceDest.exists())
+			resourceDest.create();
+
+		if (!resourceDest.replaceWithData(resourceData.getData(), (int)resourceData.getSize()))
+			return Result::fail("ImportResource can't replace file contents with new data, resource: " +
+								resourceDest.getFullPathName());
+
+		_DBG("importResource: [" + resourceName + "] fresh import OK: " + resourceDest.getFullPathName());
+
+		addResource(resourceDest, resourceTree.getProperty(Ids::resourceName));
+		return Result::ok();
 	}
 }
 
-Result CtrlrPanelResourceManager::addResource (const File &source, const String &name)
-{
-	if ((bool)owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrOverwriteResources) == false)
-	{
-		if (getResource (source.getFileNameWithoutExtension()))
-		{
+Result CtrlrPanelResourceManager::addResource(const File &source, const String &name) {
+	if ((bool)owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrOverwriteResources) == false) {
+		if (getResource(source.getFileNameWithoutExtension())) {
 			return (Result::fail("This resource already exists"));
 		}
 	}
 
 	File resourceDest = resourcesDirectory.getChildFile(source.getFileName());
 
-	if (resourcesDirectory.isDirectory())
-	{
-		source.copyFileTo (resourceDest);
-	}
-	else
-	{
-		return (Result::fail("Can't copy resource to resources directory:"+resourcesDirectory.getFullPathName()));
+	if (resourcesDirectory.isDirectory()) {
+		source.copyFileTo(resourceDest);
+	} else {
+		return (Result::fail("Can't copy resource to resources directory:" + resourcesDirectory.getFullPathName()));
 	}
 
 	{
-		CtrlrPanelResource *newResource = new CtrlrPanelResource (*this, resourceDest, source, name);
+		CtrlrPanelResource *newResource = new CtrlrPanelResource(*this, resourceDest, source, name);
 
-		resources.add (newResource);
-		resourceHashCodes.add (newResource->getHashCode());
-		managerTree.addChild (newResource->getResourceTree(), -1, nullptr);
+		resources.add(newResource);
+		resourceHashCodes.add(newResource->getHashCode());
+		managerTree.addChild(newResource->getResourceTree(), -1, nullptr);
 	}
 
 	// Notify the panel about the modification
@@ -314,45 +280,37 @@ Result CtrlrPanelResourceManager::addResource (const File &source, const String 
 	return (Result::ok());
 }
 
-Result CtrlrPanelResourceManager::removeResource(CtrlrPanelResource *resourceToRemove)
-{
-	return (removeResource (resources.indexOf(resourceToRemove)));
+Result CtrlrPanelResourceManager::removeResource(CtrlrPanelResource *resourceToRemove) {
+	return (removeResource(resources.indexOf(resourceToRemove)));
 }
 
-Result CtrlrPanelResourceManager::removeResource (const int resourceIndex)
-{
+Result CtrlrPanelResourceManager::removeResource(const int resourceIndex) {
 	CtrlrPanelResource *res = resources[resourceIndex];
 
-	if (res)
-	{
-		resourceHashCodes.removeAllInstancesOf (resources[resourceIndex]->getHashCode());
-		if (!resources[resourceIndex]->getFile().deleteFile())
-		{
-			return (Result::fail("Removing resource partialy failed, can't delete resource file:"+resources[resourceIndex]->getFile().getFullPathName()));
+	if (res) {
+		resourceHashCodes.removeAllInstancesOf(resources[resourceIndex]->getHashCode());
+		if (!resources[resourceIndex]->getFile().deleteFile()) {
+			return (Result::fail("Removing resource partialy failed, can't delete resource file:" +
+								 resources[resourceIndex]->getFile().getFullPathName()));
 		}
 
-		managerTree.removeChild (resources[resourceIndex]->getResourceTree(),nullptr);
-		resources.remove (resourceIndex, true);
+		managerTree.removeChild(resources[resourceIndex]->getResourceTree(), nullptr);
+		resources.remove(resourceIndex, true);
 		// Notify the panel about the modification
 		owner.panelResourcesChanged();
 		return (Result::ok());
-	}
-	else
-	{
-		return (Result::fail("Unable to remove result with index:"+STR(resourceIndex)));
+	} else {
+		return (Result::fail("Unable to remove result with index:" + STR(resourceIndex)));
 	}
 }
 
-Result CtrlrPanelResourceManager::removeResourceRange (const int resourceIndexStart, const int numberOfResourcesToRemove)
-{
-	for (int i=resourceIndexStart; i<resourceIndexStart+numberOfResourcesToRemove; i++)
-	{
-		if (resources[i])
-		{
-			Result ret = removeResource (i);
+Result CtrlrPanelResourceManager::removeResourceRange(const int resourceIndexStart,
+													  const int numberOfResourcesToRemove) {
+	for (int i = resourceIndexStart; i < resourceIndexStart + numberOfResourcesToRemove; i++) {
+		if (resources[i]) {
+			Result ret = removeResource(i);
 
-			if (!ret.wasOk())
-			{
+			if (!ret.wasOk()) {
 				return (ret);
 			}
 		}
@@ -361,121 +319,114 @@ Result CtrlrPanelResourceManager::removeResourceRange (const int resourceIndexSt
 	return (Result::ok());
 }
 
-void CtrlrPanelResourceManager::wrapForLua(lua_State *L)
-{
+void CtrlrPanelResourceManager::wrapForLua(lua_State *L) {
 	using namespace luabind;
 
-	module(L)
-    [
-		class_<CtrlrPanelResource>("CtrlrPanelResource")
-			.def("asImage", &CtrlrPanelResource::asImage)
-			.def("asText", &CtrlrPanelResource::asText)
-			.def("asFont", &CtrlrPanelResource::asFont)
-			.def("asXml", &CtrlrPanelResource::asXml)
-			.def("asAudioFormat", &CtrlrPanelResource::asAudioFormat)
-			.def("asData", &CtrlrPanelResource::asData)
-			.def("getName", &CtrlrPanelResource::getName)
-			.def("getSize", (double (CtrlrPanelResource::*)() )&CtrlrPanelResource::getSize) // Updated v5.5.35. Uncommented for : https://github.com/damiensellier/CtrlrX/issues/192
-			.def("getSizeDouble", &CtrlrPanelResource::getSizeDouble) // Added v5.6.34.
-			.def("getHashCode", &CtrlrPanelResource::getHashCode)
-			.def("load", &CtrlrPanelResource::load)
-			.def("loadIfNeeded", &CtrlrPanelResource::loadIfNeeded)
-			.def("getType", &CtrlrPanelResource::getType)
-			.def("getTypeDescription", &CtrlrPanelResource::getTypeDescription)
-			.def("getFile", &CtrlrPanelResource::getFile)
-			.def("createInputStream", &CtrlrPanelResource::createInputStream) // Added v5.6.34. gzip support
-			.def("asGzipText", &CtrlrPanelResource::asGzipText) //  Added v5.6.34. gzip support
-		,
-		class_<CtrlrPanelResourceManager>("CtrlrPanelResourceManager")
-			.def("getResource", (CtrlrPanelResource * (CtrlrPanelResourceManager::*)(const int)) & CtrlrPanelResourceManager::getResource, dependency(result, _1))
-			.def("getResource", (CtrlrPanelResource * (CtrlrPanelResourceManager::*)(const String&)) & CtrlrPanelResourceManager::getResource, dependency(result, _1))
-			//.def("getResource", (CtrlrPanelResource *(CtrlrPanelResourceManager::*)(const int))&CtrlrPanelResourceManager::getResource)
-			//.def("getResource", (CtrlrPanelResource *(CtrlrPanelResourceManager::*)(const String &))&CtrlrPanelResourceManager::getResource)
-			.def("getNumResources", &CtrlrPanelResourceManager::getNumResources)
-			.def("getResourceIndex", &CtrlrPanelResourceManager::getResourceIndex)
-			.def("getResourceAsImage", &CtrlrPanelResourceManager::getResourceAsImage)
-			.def("getResourceAsFont", &CtrlrPanelResourceManager::getResourceAsFont)
-	];
+	module(L)[class_<CtrlrPanelResource>("CtrlrPanelResource")
+				  .def("asImage", &CtrlrPanelResource::asImage)
+				  .def("asText", &CtrlrPanelResource::asText)
+				  .def("asFont", &CtrlrPanelResource::asFont)
+				  .def("asXml", &CtrlrPanelResource::asXml)
+				  .def("asAudioFormat", &CtrlrPanelResource::asAudioFormat)
+				  .def("asData", &CtrlrPanelResource::asData)
+				  .def("getName", &CtrlrPanelResource::getName)
+				  .def("getSize", (double (CtrlrPanelResource::*)())&CtrlrPanelResource::
+									  getSize) // Updated v5.5.35. Uncommented for :
+											   // https://github.com/damiensellier/CtrlrX/issues/192
+				  .def("getSizeDouble", &CtrlrPanelResource::getSizeDouble) // Added v5.6.34.
+				  .def("getHashCode", &CtrlrPanelResource::getHashCode)
+				  .def("load", &CtrlrPanelResource::load)
+				  .def("loadIfNeeded", &CtrlrPanelResource::loadIfNeeded)
+				  .def("getType", &CtrlrPanelResource::getType)
+				  .def("getTypeDescription", &CtrlrPanelResource::getTypeDescription)
+				  .def("getFile", &CtrlrPanelResource::getFile)
+				  .def("createInputStream", &CtrlrPanelResource::createInputStream) // Added v5.6.34. gzip support
+				  .def("asGzipText", &CtrlrPanelResource::asGzipText)				//  Added v5.6.34. gzip support
+			  ,
+			  class_<CtrlrPanelResourceManager>("CtrlrPanelResourceManager")
+				  .def("getResource",
+					   (CtrlrPanelResource * (CtrlrPanelResourceManager::*)(const int)) &
+						   CtrlrPanelResourceManager::getResource,
+					   dependency(result, _1))
+				  .def("getResource",
+					   (CtrlrPanelResource * (CtrlrPanelResourceManager::*)(const String &)) &
+						   CtrlrPanelResourceManager::getResource,
+					   dependency(result, _1))
+				  //.def("getResource", (CtrlrPanelResource *(CtrlrPanelResourceManager::*)(const
+				  //int))&CtrlrPanelResourceManager::getResource) .def("getResource", (CtrlrPanelResource
+				  //*(CtrlrPanelResourceManager::*)(const String &))&CtrlrPanelResourceManager::getResource)
+				  .def("getNumResources", &CtrlrPanelResourceManager::getNumResources)
+				  .def("getResourceIndex", &CtrlrPanelResourceManager::getResourceIndex)
+				  .def("getResourceAsImage", &CtrlrPanelResourceManager::getResourceAsImage)
+				  .def("getResourceAsFont", &CtrlrPanelResourceManager::getResourceAsFont)];
 }
 
-const String CtrlrPanelResourceManager::getTypeDescription(const CtrlrPanelResourceType type)
-{
-	switch (type)
-	{
-		case ImageRes:
-			return ("Image");
-		case AudioRes:
-			return ("Audio");
-		case FontRes:
-			return ("Font");
-		case TextRes:
-			return ("Text");
-		case XmlRes:
-			return ("Xml");
-		case DataRes:
-		default:
-			return ("Data");
+const String CtrlrPanelResourceManager::getTypeDescription(const CtrlrPanelResourceType type) {
+	switch (type) {
+	case ImageRes:
+		return ("Image");
+	case AudioRes:
+		return ("Audio");
+	case FontRes:
+		return ("Font");
+	case TextRes:
+		return ("Text");
+	case XmlRes:
+		return ("Xml");
+	case DataRes:
+	default:
+		return ("Data");
 	}
 }
 
-CtrlrPanelResourceType CtrlrPanelResourceManager::guessType(const File &resourceFile)
-{
+CtrlrPanelResourceType CtrlrPanelResourceManager::guessType(const File &resourceFile) {
 	// Image ?
-	Image image = ImageCache::getFromFile (resourceFile);
+	Image image = ImageCache::getFromFile(resourceFile);
 
-	if (!image.isNull())
-	{
+	if (!image.isNull()) {
 		return (ImageRes);
 	}
 
 	// Audio ?
-	ScopedPointer <AudioFormatReader> audio(owner.getCtrlrManagerOwner().getAudioFormatManager().createReaderFor(resourceFile));
+	ScopedPointer<AudioFormatReader> audio(
+		owner.getCtrlrManagerOwner().getAudioFormatManager().createReaderFor(resourceFile));
 
-	if (audio != nullptr)
-	{
+	if (audio != nullptr) {
 		return (AudioRes);
 	}
 
 	// Font ?
-	if (resourceFile.hasFileExtension("ttf") || resourceFile.hasFileExtension("otf"))
-	{
+	if (resourceFile.hasFileExtension("ttf") || resourceFile.hasFileExtension("otf")) {
 		return (FontRes);
 	}
 
 	// XML ?
-	ScopedPointer <XmlElement> xml (XmlDocument::parse (resourceFile).release());
+	ScopedPointer<XmlElement> xml(XmlDocument::parse(resourceFile).release());
 
-	if (xml != nullptr)
-	{
+	if (xml != nullptr) {
 		return (XmlRes);
 	}
 
 	// Text ?
 
-	if (resourceFile.hasFileExtension ("txt"))
-	{
+	if (resourceFile.hasFileExtension("txt")) {
 		return (TextRes);
 	}
 
 	return (DataRes);
 }
 
-int CtrlrPanelResourceManager::getResourceHashCode(const int resourceIndex)
-{
-	if (resources[resourceIndex])
-	{
+int CtrlrPanelResourceManager::getResourceHashCode(const int resourceIndex) {
+	if (resources[resourceIndex]) {
 		return (resources[resourceIndex]->getHashCode());
 	}
 
 	return (-1);
 }
 
-int CtrlrPanelResourceManager::getResourceIndexByHashCode(const int hashCode)
-{
-	for (int i=0; i<resources.size(); i++)
-	{
-		if (resources[i])
-		{
+int CtrlrPanelResourceManager::getResourceIndexByHashCode(const int hashCode) {
+	for (int i = 0; i < resources.size(); i++) {
+		if (resources[i]) {
 			if (resources[i]->getHashCode() == hashCode)
 				return (i);
 		}
@@ -484,32 +435,28 @@ int CtrlrPanelResourceManager::getResourceIndexByHashCode(const int hashCode)
 	return (-1);
 }
 
-Result CtrlrPanelResourceManager::restoreState (const ValueTree &savedState)
-{
-	for (int i=0; i<savedState.getNumChildren(); i++)
-	{
-		if (savedState.getChild(i).hasType(Ids::resourceLicense))
-		{
-			AlertWindow licenseWindow("License agreement", "You must agree to the below license", AlertWindow::QuestionIcon);
+Result CtrlrPanelResourceManager::restoreState(const ValueTree &savedState) {
+	for (int i = 0; i < savedState.getNumChildren(); i++) {
+		if (savedState.getChild(i).hasType(Ids::resourceLicense)) {
+			AlertWindow licenseWindow("License agreement", "You must agree to the below license",
+									  AlertWindow::QuestionIcon);
 			TextEditor licenseText;
 			licenseText.setMultiLine(true);
 			licenseText.setReadOnly(true);
-			licenseText.setText (savedState.getChild(i).getProperty(Ids::resourceData));
-			licenseText.setSize (500,400);
-			licenseWindow.addCustomComponent (&licenseText);
-			licenseWindow.addButton ("Yes", 1);
-			licenseWindow.addButton ("No", 0);
-			if (!licenseWindow.runModalLoop())
-			{
+			licenseText.setText(savedState.getChild(i).getProperty(Ids::resourceData));
+			licenseText.setSize(500, 400);
+			licenseWindow.addCustomComponent(&licenseText);
+			licenseWindow.addButton("Yes", 1);
+			licenseWindow.addButton("No", 0);
+			if (!licenseWindow.runModalLoop()) {
 				return (Result::fail("User did not agree to embedded license"));
 			}
 		}
 
-		if (savedState.getChild(i).hasType(Ids::resourceBlob) || savedState.getChild(i).hasType(Ids::resourceImage) || savedState.getChild(i).hasType(Ids::resource))
-		{
-			Result importResult = importResource (savedState.getChild(i));
-			if (!importResult.wasOk())
-			{
+		if (savedState.getChild(i).hasType(Ids::resourceBlob) || savedState.getChild(i).hasType(Ids::resourceImage) ||
+			savedState.getChild(i).hasType(Ids::resource)) {
+			Result importResult = importResource(savedState.getChild(i));
+			if (!importResult.wasOk()) {
 				if (owner.getDialogStatus())
 					WARN(importResult.getErrorMessage());
 				else
@@ -521,12 +468,10 @@ Result CtrlrPanelResourceManager::restoreState (const ValueTree &savedState)
 	return (Result::ok());
 }
 
-Array <CtrlrPanelResource*> CtrlrPanelResourceManager::getResourcesCopy()
-{
-	Array <CtrlrPanelResource*> ret;
-	for (int i=0; i<resources.size(); i++)
-	{
-		ret.add (resources[i]);
+Array<CtrlrPanelResource *> CtrlrPanelResourceManager::getResourcesCopy() {
+	Array<CtrlrPanelResource *> ret;
+	for (int i = 0; i < resources.size(); i++) {
+		ret.add(resources[i]);
 	}
 	return (ret);
 }

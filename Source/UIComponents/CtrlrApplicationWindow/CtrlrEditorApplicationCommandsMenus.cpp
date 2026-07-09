@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "CtrlrEditor.h"
 #include "CtrlrAbout.h"
+#include "CtrlrLog.h"
 #include "CtrlrPanel/CtrlrPanel.h"
 #include "CtrlrPanel/CtrlrPanelEditor.h"
 
@@ -111,7 +112,7 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 			menu.addCommandItem (commandManager, doNewPanel);
 			menu.addSeparator();
 			menu.addCommandItem (commandManager, doOpenPanel);
-			menu.addSubMenu ("Open Recent", getRecentOpenedFilesMenu(), getRecentOpenedFilesMenu().getNumItems() ? true : false);
+			menu.addSubMenu ("Open recent", getRecentOpenedFilesMenu(), getRecentOpenedFilesMenu().getNumItems() ? true : false);
 			menu.addSeparator();
 			menu.addCommandItem (commandManager, doSave);
 			menu.addCommandItem (commandManager, doSaveAs);
@@ -161,6 +162,7 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 	{
 		menu.addCommandItem (commandManager, doZoomIn);
 		menu.addCommandItem (commandManager, doZoomOut);
+		menu.addCommandItem (commandManager, doZoomZero);
 		menu.addSeparator();
 		if (!isRestricted()) menu.addCommandItem (commandManager, doRefreshPropertyLists);
 		if (!isRestricted()) menu.addCommandItem (commandManager, doViewPropertyDisplayIDs);
@@ -266,7 +268,19 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
     else if ((!isRestricted() && (topLevelMenuIndex == MenuHelp))
         || (isRestricted() && (topLevelMenuIndex == (hideProgramsMenu ? (MenuRestrictedHelp - 1) : MenuRestrictedHelp)))) // Help
 	{
-        menu.addCommandItem (commandManager, showAboutDialog);
+		_DBG("Building help menu: index=" + String(topLevelMenuIndex)
+			+ " MenuHelp=" + String(MenuHelp) + " restricted=" + String(isRestricted() ? "true" : "false" ));
+
+        menu.addCommandItem (commandManager, showAboutDialog);		
+		if (!isRestricted()){
+			menu.addCommandItem(commandManager, showDumpByLuaHelp);
+			menu.addCommandItem(commandManager, showExpressionHelp);
+			menu.addCommandItem(commandManager, showMidiProgrammingHelp);
+			menu.addCommandItem(commandManager, showLuaUsefulCommandsHelp);
+			menu.addCommandItem(commandManager, showLuaFileOperationsHelp);
+			menu.addCommandItem(commandManager, showMenuLuaClassBrowser);
+			menu.addSeparator();
+		}
 		menu.addSeparator();
 #ifdef JUCE_DEBUG
 		menu.addCommandItem (commandManager, doCrash);
@@ -279,7 +293,7 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 
 void CtrlrEditor::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 {
-	/* Some items are not commands, they need to be invoked manualy here */
+	/* Some items are not commands, they need to be invoked manually here */
 	//_DBG("CtrlrEditor::menuItemSelected topLevelMenuIndex="+STR(topLevelMenuIndex)+" menuItemID="+STR(menuItemID)+" MENU_OFFSET_MIDI="+STR(MENU_OFFSET_MIDI));
 
 	if (topLevelMenuIndex == 3 || topLevelMenuIndex == 4)

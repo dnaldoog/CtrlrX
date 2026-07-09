@@ -5,17 +5,18 @@
 
 class CtrlrManager;
 
-class CtrlrLinux : public CtrlrNative
-{
+class CtrlrLinux : public CtrlrNative {
 	public:
 		CtrlrLinux(CtrlrManager &_owner);
 		~CtrlrLinux();
-		const Result exportWithDefaultPanel(CtrlrPanel*  panelToWrite, const bool isRestricted=false, const bool signPanel=false);
-		const Result getDefaultPanel(MemoryBlock& dataToWrite);
-		const Result getDefaultResources(MemoryBlock& dataToWrite);
-        const Result sendKeyPressEvent(const KeyPress &event);
-    private:
-        CtrlrManager &owner;
+		const Result exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRestricted = false,
+											const bool signPanel = false);
+		const Result getDefaultPanel(MemoryBlock &dataToWrite);
+		const Result getDefaultResources(MemoryBlock &dataToWrite);
+		const Result sendKeyPressEvent(const KeyPress &event);
+
+	private:
+		CtrlrManager &owner;
 };
 
 #endif

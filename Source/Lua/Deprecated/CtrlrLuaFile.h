@@ -12,7 +12,7 @@
  *			Never use this class directly always use the File class
  *
  */
-class CtrlrLuaFile
+class CtrlrLuaFile : public File
 {
 	public:
 		CtrlrLuaFile();

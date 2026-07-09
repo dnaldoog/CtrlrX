@@ -93,6 +93,8 @@ enum CtrlrSysExFormulaToken
 	MSB4bitValue,
 	GlobalVariable,
 	ChecksumRolandJP8080,
+	CCCoarseMSB,
+	CCFineLSB,
 	RolandSplitByte1,
 	RolandSplitByte2,
 	RolandSplitByte3,
@@ -264,7 +266,7 @@ enum CtrlrInstance
 {
 	InstanceSingle,
 	InstanceMulti,
-	InstanceSingleRestriced,
+	InstanceSingleRestricted,
 	InstanceSingleEngine,
 	InstanceMultiEngine,
 	InstanceSingleRestrictedEngine

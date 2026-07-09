@@ -1,148 +1,114 @@
-#include "stdafx.h"
 #include "CtrlrManager.h"
-#include "CtrlrProperties.h"
 #include "CtrlrPanel/CtrlrPanel.h"
+#include "CtrlrProperties.h"
+#include "stdafx.h"
 
-void CtrlrManager::setEmbeddedDefaults()
-{
+void CtrlrManager::setEmbeddedDefaults() {
 	_DBG("CtrlrManager::setEmbeddedDefaults");
 
 	/* first init the ApplicationProperties stuff */
-	if (ctrlrPlayerInstanceTree.hasProperty(Ids::restricted))
-	{
-		ctrlrPlayerInstanceMode	= (CtrlrInstance)(int)ctrlrPlayerInstanceTree.getProperty(Ids::restricted);
-	}
-	else
-	{
+	if (ctrlrPlayerInstanceTree.hasProperty(Ids::restricted)) {
+		ctrlrPlayerInstanceMode = (CtrlrInstance)(int)ctrlrPlayerInstanceTree.getProperty(Ids::restricted);
+	} else {
 		ctrlrPlayerInstanceMode = InstanceSingle;
 	}
 
-	ctrlrProperties.reset(new CtrlrProperties (*this));
+	ctrlrProperties.reset(new CtrlrProperties(*this));
 
-    #if JUCE_DEBUG // Added v5.6.34. Will show the debug log.
-    // If we are in a Debug build, force logging ON
-    setProperty (Ids::ctrlrLogToFile, true);
-    #else
-    // If we are in any other build (like Release), force logging OFF by default.
-    setProperty (Ids::ctrlrLogToFile, false);
-    #endif
-    setProperty (Ids::ctrlrWarningInBootstrapState, false); // Added v5.6.32
-	setProperty (Ids::ctrlrLuaDebug, false);
-	setProperty (Ids::ctrlrVersionSeparator, "_");
-	setProperty (Ids::ctrlrVersionCompressed, false);
-	setProperty (Ids::ctrlrMidiMonInputBufferSize, 8192);
-	setProperty (Ids::ctrlrMidiMonOutputBufferSize, 8192);
-	setProperty (Ids::ctrlrLuaDisabled, false);
-	setProperty (Ids::ctrlrOverwriteResources, true);
+#if JUCE_DEBUG // Added v5.6.34. Will show the debug log.
+	// If we are in a Debug build, force logging ON
+	setProperty(Ids::ctrlrLogToFile, true);
+#else
+	// If we are in any other build (like Release), force logging OFF by default.
+	setProperty(Ids::ctrlrLogToFile, false);
+#endif
+	setProperty(Ids::ctrlrWarningInBootstrapState, false); // Added v5.6.32
+	setProperty(Ids::ctrlrLuaDebug, false);
+	setProperty(Ids::ctrlrVersionSeparator, "_");
+	setProperty(Ids::ctrlrVersionCompressed, false);
+	setProperty(Ids::ctrlrMidiMonInputBufferSize, 8192);
+	setProperty(Ids::ctrlrMidiMonOutputBufferSize, 8192);
+	setProperty(Ids::ctrlrLuaDisabled, false);
+	setProperty(Ids::ctrlrOverwriteResources, true);
 	if (JUCEApplication::isStandaloneApp()) // Added v5.6.35
 	{
-		setProperty (Ids::ctrlrAutoSave, true);
-		setProperty (Ids::ctrlrAutoSaveInterval, 300);
+		setProperty(Ids::ctrlrAutoSave, true);
+		setProperty(Ids::ctrlrAutoSaveInterval, 300);
 	}
-    // setProperty (Ids::ctrlrLogOptions, 32); // Updated v5.6.31
-    setProperty (Ids::ctrlrLogOptions, 6014); // Added v5.6.31. 6014 shows everything by default with MIDI messages in Hex
-    setProperty (Ids::ctrlrScrollbarThickness, 16.0f); // Added v5.6.31
-    setProperty (Ids::ctrlrMenuBarHeight, 24); // Added v5.6.31
-    setProperty (Ids::ctrlrTabBarDepth, 24); // Added v5.6.31
-    setProperty (Ids::ctrlrPropertyLineheightBaseValue, 36); // Added v5.6.33.
-    setProperty (Ids::ctrlrPropertyLineImprovedLegibility, false); // Added v5.6.34.
-    // setProperty (Ids::ctrlrUseEditorWrapper, (bool)ctrlrPlayerInstanceTree.hasProperty(Ids::ctrlrUseEditorWrapper) ? (bool)ctrlrPlayerInstanceTree.getProperty(Ids::ctrlrUseEditorWrapper) : true); // Removed v5.6.34. Conditions hard coded for the wrapper with Ableton Live on Windows
-    setProperty (Ids::uiLuaConsoleInputRemoveAfterRun, true);
-     
-    // Added v5.6.31
-    if (getInstanceMode() == InstanceSingle || getInstanceMode() == InstanceSingleRestriced) // Added v5.6.31. Force LnF V3 for Main & Child Windows if panel is Legacy
-    {
-        ValueTree ed = getInstanceTree().getChildWithName(Ids::uiPanelEditor);
-        
-        // Requires passing the lookAndFeel Version to the property ctrlrColourScheme from ctrlrLookAndFeel
-        if (ed.getProperty(Ids::uiPanelLegacyMode) == "1"
-            || ed.getProperty(Ids::uiPanelLookAndFeel) == "V3"
-            || ed.getProperty(Ids::uiPanelLookAndFeel) == "V2"
-            || ed.getProperty(Ids::uiPanelLookAndFeel) == "V1")
-        {
-            setProperty(Ids::ctrlrLegacyMode, "1");
-            setProperty(Ids::ctrlrLookAndFeel, "V3");
-        }
-        else
-        {
-            setProperty(Ids::ctrlrLegacyMode, "0");
-            setProperty(Ids::ctrlrLookAndFeel, "V4");
-            
-            // Requires passing the colourScheme to the property ctrlrColourScheme from uiPanelLookAndFeel
-            if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 Light")
-            {
-                setProperty(Ids::ctrlrColourScheme, "Light");
-            }
-            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 Grey")
-            {
-                setProperty(Ids::ctrlrColourScheme, "Grey");
-            }
-            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 Dark")
-            {
-                setProperty(Ids::ctrlrColourScheme, "Dark");
-            }
-            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 Midnight")
-            {
-                setProperty(Ids::ctrlrColourScheme, "Midnight");
-            }
-            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 JetBlack")
-            {
-                setProperty(Ids::ctrlrColourScheme, "JetBlack");
-            }
-            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 YamDX")
-            {
-                setProperty(Ids::ctrlrColourScheme, "YamDX");
-            }
-            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 AkAPC")
-            {
-                setProperty(Ids::ctrlrColourScheme, "AkAPC");
-            }
-            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 AkMPC")
-            {
-                setProperty(Ids::ctrlrColourScheme, "AkMPC");
-            }
-            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 LexiBlue")
-            {
-                setProperty(Ids::ctrlrColourScheme, "LexiBlue");
-            }
-            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 KurzGreen")
-            {
-                setProperty(Ids::ctrlrColourScheme, "KurzGreen");
-            }
-            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 KorGrey")
-            {
-                setProperty(Ids::ctrlrColourScheme, "KorGrey");
-            }
-            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 KorGold")
-            {
-                setProperty(Ids::ctrlrColourScheme, "KorGold");
-            }
-            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 ArturOrange")
-            {
-                setProperty(Ids::ctrlrColourScheme, "ArturOrange");
-            }
-            else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 AiraGreen")
-            {
-                setProperty(Ids::ctrlrColourScheme, "AiraGreen");
-            }
-        }
-    }
+	// setProperty (Ids::ctrlrLogOptions, 32); // Updated v5.6.31
+	setProperty(Ids::ctrlrLogOptions,
+				6014); // Added v5.6.31. 6014 shows everything by default with MIDI messages in Hex
+	setProperty(Ids::ctrlrScrollbarThickness, 16.0f);			  // Added v5.6.31
+	setProperty(Ids::ctrlrMenuBarHeight, 24);					  // Added v5.6.31
+	setProperty(Ids::ctrlrTabBarDepth, 24);						  // Added v5.6.31
+	setProperty(Ids::ctrlrPropertyLineheightBaseValue, 36);		  // Added v5.6.33.
+	setProperty(Ids::ctrlrPropertyLineImprovedLegibility, false); // Added v5.6.34.
+	// setProperty (Ids::ctrlrUseEditorWrapper, (bool)ctrlrPlayerInstanceTree.hasProperty(Ids::ctrlrUseEditorWrapper) ?
+	// (bool)ctrlrPlayerInstanceTree.getProperty(Ids::ctrlrUseEditorWrapper) : true); // Removed v5.6.34. Conditions
+	// hard coded for the wrapper with Ableton Live on Windows
+	setProperty(Ids::uiLuaConsoleInputRemoveAfterRun, true);
+
+	// Added v5.6.31
+	if (getInstanceMode() == InstanceSingle ||
+		getInstanceMode() ==
+			InstanceSingleRestricted) // Added v5.6.31. Force LnF V3 for Main & Child Windows if panel is Legacy
+	{
+		ValueTree ed = getInstanceTree().getChildWithName(Ids::uiPanelEditor);
+
+		// Requires passing the lookAndFeel Version to the property ctrlrColourScheme from ctrlrLookAndFeel
+		if (ed.getProperty(Ids::uiPanelLegacyMode) == "1" || ed.getProperty(Ids::uiPanelLookAndFeel) == "V3" ||
+			ed.getProperty(Ids::uiPanelLookAndFeel) == "V2" || ed.getProperty(Ids::uiPanelLookAndFeel) == "V1") {
+			setProperty(Ids::ctrlrLegacyMode, "1");
+			setProperty(Ids::ctrlrLookAndFeel, "V3");
+		} else {
+			setProperty(Ids::ctrlrLegacyMode, "0");
+			setProperty(Ids::ctrlrLookAndFeel, "V4");
+
+			// Requires passing the colourScheme to the property ctrlrColourScheme from uiPanelLookAndFeel
+			if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 Light") {
+				setProperty(Ids::ctrlrColourScheme, "Light");
+			} else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 Grey") {
+				setProperty(Ids::ctrlrColourScheme, "Grey");
+			} else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 Dark") {
+				setProperty(Ids::ctrlrColourScheme, "Dark");
+			} else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 Midnight") {
+				setProperty(Ids::ctrlrColourScheme, "Midnight");
+			} else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 JetBlack") {
+				setProperty(Ids::ctrlrColourScheme, "JetBlack");
+			} else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 YamDX") {
+				setProperty(Ids::ctrlrColourScheme, "YamDX");
+			} else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 AkAPC") {
+				setProperty(Ids::ctrlrColourScheme, "AkAPC");
+			} else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 AkMPC") {
+				setProperty(Ids::ctrlrColourScheme, "AkMPC");
+			} else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 LexiBlue") {
+				setProperty(Ids::ctrlrColourScheme, "LexiBlue");
+			} else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 KurzGreen") {
+				setProperty(Ids::ctrlrColourScheme, "KurzGreen");
+			} else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 KorGrey") {
+				setProperty(Ids::ctrlrColourScheme, "KorGrey");
+			} else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 KorGold") {
+				setProperty(Ids::ctrlrColourScheme, "KorGold");
+			} else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 ArturOrange") {
+				setProperty(Ids::ctrlrColourScheme, "ArturOrange");
+			} else if (ed.getProperty(Ids::uiPanelLookAndFeel) == "V4 AiraGreen") {
+				setProperty(Ids::ctrlrColourScheme, "AiraGreen");
+			}
+		}
+	}
 }
 
-Result CtrlrManager::initEmbeddedInstance()
-{
+Result CtrlrManager::initEmbeddedInstance() {
 	ctrlrNativeObject.reset(CtrlrNative::getNativeObject(*this));
 
-	if (ctrlrNativeObject)
-	{
+	if (ctrlrNativeObject) {
 		MemoryBlock defaultPanelData;
 
-		if (ctrlrNativeObject->getDefaultPanel(defaultPanelData))
-		{
-			ctrlrPlayerInstanceTree = ValueTree::readFromGZIPData(defaultPanelData.getData(), defaultPanelData.getSize());
+		if (ctrlrNativeObject->getDefaultPanel(defaultPanelData)) {
+			ctrlrPlayerInstanceTree =
+				ValueTree::readFromGZIPData(defaultPanelData.getData(), defaultPanelData.getSize());
 
-			if (ctrlrPlayerInstanceTree.isValid())
-			{
+			if (ctrlrPlayerInstanceTree.isValid()) {
 				/* Set any defaults we need **/
 				setEmbeddedDefaults();
 
@@ -150,8 +116,7 @@ Result CtrlrManager::initEmbeddedInstance()
 					we need to import them **/
 				Result result = importInstanceResources(ctrlrNativeObject.get());
 
-				if (result.wasOk())
-				{
+				if (result.wasOk()) {
 					/** We need to load the panel here
 						but make sure the VST manager is
 						done and that the restore state
@@ -159,14 +124,10 @@ Result CtrlrManager::initEmbeddedInstance()
 						the panel **/
 
 					return (addInstancePanel());
-				}
-				else
-				{
+				} else {
 					return (result);
 				}
-			}
-			else
-			{
+			} else {
 				return (Result::fail("InitEmbeddedInstance instance data is invalid"));
 			}
 		}
@@ -175,43 +136,34 @@ Result CtrlrManager::initEmbeddedInstance()
 	return (Result::fail("InitEmbeddedInstance failed to initialize the OS Native object"));
 }
 
-const String CtrlrManager::getInstanceNameForHost() const
-{
-	if (getInstanceMode() == InstanceSingle || getInstanceMode() == InstanceSingleRestriced)
-	{
-        #if JucePlugin_Build_AAX
-            // This code runs ONLY when building for AAX.
-            return (ctrlrPlayerInstanceTree.getProperty(Ids::name).toString());
-        #else
-            // This code runs for ALL other formats (VST, AU, Standalone).
-            return (ctrlrPlayerInstanceTree.getProperty(Ids::name).toString() + " | " + ctrlrPlayerInstanceTree.getProperty(Ids::panelAuthorName).toString()); // Updated v5.6.34.
-        #endif
-	}
-	else
-	{
+const String CtrlrManager::getInstanceNameForHost() const {
+	if (getInstanceMode() == InstanceSingle || getInstanceMode() == InstanceSingleRestricted) {
+#if JucePlugin_Build_AAX
+		// This code runs ONLY when building for AAX.
+		return (ctrlrPlayerInstanceTree.getProperty(Ids::name).toString());
+#else
+		// This code runs for ALL other formats (VST, AU, Standalone).
+		return (ctrlrPlayerInstanceTree.getProperty(Ids::name).toString() + " | " +
+				ctrlrPlayerInstanceTree.getProperty(Ids::panelAuthorName).toString()); // Updated v5.6.34.
+#endif
+	} else {
 		return ("CtrlrX"); // Updated v5.6.34. Default Plugin Name
 	}
 }
 
-const String CtrlrManager::getInstanceName() const
-{
-	if (isSingleInstance())
-	{
+const String CtrlrManager::getInstanceName() const {
+	if (isSingleInstance()) {
 		return (ctrlrPlayerInstanceTree.getProperty(Ids::name));
-	}
-	else
-	{
+	} else {
 		return ("CtrlrX");
 	}
 }
 
-const bool CtrlrManager::isSingleInstance() const
-{
-	return (ctrlrPlayerInstanceMode == InstanceSingle || ctrlrPlayerInstanceMode == InstanceSingleRestriced);
+const bool CtrlrManager::isSingleInstance() const {
+	return (ctrlrPlayerInstanceMode == InstanceSingle || ctrlrPlayerInstanceMode == InstanceSingleRestricted);
 }
 
-
-Result CtrlrManager::addInstancePanel()
+/*Result CtrlrManager::addInstancePanel()
 {
 	if (ctrlrPlayerInstanceTree.isValid())
 	{
@@ -239,69 +191,63 @@ Result CtrlrManager::addInstancePanel()
 		return (Result::fail("AddInstancePanel failed, the decoded instance tree is invalid"));
 	}
 }
-
-Result CtrlrManager::importInstanceResources(CtrlrNative *native)
-{
-	if (getCtrlrProperties().getProperties().getUserSettings())
-	{
-		if (getCtrlrProperties().getProperties().getUserSettings()->getFile().getParentDirectory().getChildFile(".delete_me_to_reload_resources").existsAsFile())
-		{
+*/
+Result CtrlrManager::importInstanceResources(CtrlrNative *native) {
+	if (getCtrlrProperties().getProperties().getUserSettings()) {
+		if (getCtrlrProperties()
+				.getProperties()
+				.getUserSettings()
+				->getFile()
+				.getParentDirectory()
+				.getChildFile(".delete_me_to_reload_resources")
+				.existsAsFile()) {
 			return (Result::ok());
-		}
-		else
-		{
-			getCtrlrProperties().getProperties().getUserSettings()->getFile().getParentDirectory().getChildFile(".delete_me_to_reload_resources").create();
+		} else {
+			getCtrlrProperties()
+				.getProperties()
+				.getUserSettings()
+				->getFile()
+				.getParentDirectory()
+				.getChildFile(".delete_me_to_reload_resources")
+				.create();
 		}
 	}
 
 	MemoryBlock resourcesData;
-	Result resourceFetch = native->getDefaultResources (resourcesData);
+	Result resourceFetch = native->getDefaultResources(resourcesData);
 
-	if (resourceFetch.failed())
-	{
+	if (resourceFetch.failed()) {
 		return (Result::fail("ImportInstanceResources getDefaultResources() failed"));
 	}
 
 	ctrlrPlayerInstanceResources = ValueTree::readFromGZIPData(resourcesData.getData(), resourcesData.getSize());
 
-	if (ctrlrPlayerInstanceResources.isValid())
-	{
+	if (ctrlrPlayerInstanceResources.isValid()) {
 		return (Result::ok());
-	}
-	else
-	{
+	} else {
 		return (Result::fail("ImportInstanceResources got some data but couldn't understand it"));
 	}
 }
 
-void CtrlrManager::restoreInstanceState(const ValueTree &instanceState)
-{
-	if (ctrlrEditor)
-	{
+void CtrlrManager::restoreInstanceState(const ValueTree &instanceState) {
+	if (ctrlrEditor) {
 		restoreEditorState();
 	}
 
-	getActivePanel()->setInstanceProperties (instanceState);
-	getActivePanel()->setProgram (instanceState);
+	getActivePanel()->setInstanceProperties(instanceState);
+	getActivePanel()->setProgram(instanceState);
 
 	ctrlrManagerRestoring = false;
 }
 
-CtrlrInstance CtrlrManager::getInstanceMode() const
-{
-	return (ctrlrPlayerInstanceMode);
-}
+CtrlrInstance CtrlrManager::getInstanceMode() const { return (ctrlrPlayerInstanceMode); }
 
-XmlElement *CtrlrManager::saveState()
-{
-	if (getInstanceMode() == InstanceMulti)
-	{
-		for (int i=0; i<getNumPanels(); i++)
-		{
-			CtrlrPanel *panel = getPanel (i);
+XmlElement *CtrlrManager::saveState() {
+	if (getInstanceMode() == InstanceMulti) {
+		for (int i = 0; i < getNumPanels(); i++) {
+			CtrlrPanel *panel = getPanel(i);
 
-			if (panel != nullptr)
-			{
+			if (panel != nullptr) {
 				panel->generateCustomData();
 				if (panel->hasChangedSinceSavePoint()) // Added v5.6.0
 				{
@@ -310,28 +256,19 @@ XmlElement *CtrlrManager::saveState()
 			}
 		}
 		return (managerTree.createXml().release());
-	}
-	else
-	{
-		if (getActivePanel())
-		{
+	} else {
+		if (getActivePanel()) {
 			ValueTree program = getActivePanel()->getProgram();
-			restoreProperties (managerTree, program);
-			restoreProperties (getActivePanel()->getPanelTree(), program, 0, "panelMidi");
-			restoreProperties (getActivePanel()->getPanelTree(), program, 0, Ids::panelCustomData.toString());
-			program.addChild (getActivePanel()->getCustomData(),-1,nullptr);
+			restoreProperties(managerTree, program);
+			restoreProperties(getActivePanel()->getPanelTree(), program, 0, "panelMidi");
+			restoreProperties(getActivePanel()->getPanelTree(), program, 0, Ids::panelCustomData.toString());
+			program.addChild(getActivePanel()->getCustomData(), -1, nullptr);
 			return (program.createXml().release());
 		}
 		return (nullptr);
 	}
 }
 
-ValueTree &CtrlrManager::getInstanceTree()
-{
-	return (ctrlrPlayerInstanceTree);
-}
+ValueTree &CtrlrManager::getInstanceTree() { return (ctrlrPlayerInstanceTree); }
 
-ValueTree &CtrlrManager::getInstanceResourcesTree()
-{
-	return (ctrlrPlayerInstanceResources);
-}
+ValueTree &CtrlrManager::getInstanceResourcesTree() { return (ctrlrPlayerInstanceResources); }

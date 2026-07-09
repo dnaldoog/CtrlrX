@@ -2,9 +2,10 @@
 #include "CtrlrToggleButton.h"
 #include "CtrlrValueMap.h"
 #include "CtrlrModulator/CtrlrModulator.h"
-#include "CtrlrPanel/CtrlrPanelEditor.h"
+
 #include "CtrlrIDs.h"
 #include "CtrlrPanel/CtrlrPanel.h"
+#include "CtrlrPanel/CtrlrPanelEditor.h"
 
 CtrlrToggleButton::CtrlrToggleButton (CtrlrModulator &owner)
     : CtrlrComponent(owner),
@@ -70,6 +71,7 @@ CtrlrToggleButton::~CtrlrToggleButton()
 
     //[Destructor]. You can add your own custom destruction code here..
     //[/Destructor]
+    customLF.reset(); // Safely delete the custom LookAndFeel object if it exists
 }
 
 //==============================================================================
@@ -188,19 +190,35 @@ void CtrlrToggleButton::valueTreePropertyChanged (ValueTree &treeWhosePropertyHa
 	{
 		ctrlrButton->setToggleState (false, dontSendNotification);
 	}
-    else if (property == Ids::uiButtonLookAndFeel)
+else if (property == Ids::uiButtonLookAndFeel)
     {
         String LookAndFeelType = getProperty(property);
-        setLookAndFeel(CtrlrToggleButton::getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
+        
+        // 1. CRITICAL: Unlink the current style from JUCE first
+        setLookAndFeel(nullptr);
         
         if (LookAndFeelType == "Default")
         {
-            setProperty(Ids::uiButtonLookAndFeelIsCustom, false); // Resets the Customized Flag to False to allow Global L&F to apply
+            // 2. Safely wipe out our smart pointer container (deletes old assets)
+            customLF.reset();
+            
+            setProperty(Ids::uiButtonLookAndFeelIsCustom, false); // Resets the Customized Flag to False
+        }
+        else
+        {
+            // 3. Capture full ownership from your updated static function using std::move
+            customLF = std::move(CtrlrToggleButton::getLookAndFeelFromComponentProperty(LookAndFeelType));
+            
+            // 4. Safely expose the underlying raw memory address to JUCE via .get()
+            if (customLF != nullptr)
+            {
+                setLookAndFeel(customLF.get()); // Updates the current component LookAndFeel
+            }
         }
         
         if (!getProperty(Ids::uiButtonLookAndFeelIsCustom))
         {
-            CtrlrToggleButton::resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
+            resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
         }
     }
 	if (property == Ids::uiButtonTextColourOn)
@@ -258,7 +276,7 @@ void CtrlrToggleButton::setToggleState(const bool toggleState, const bool sendCh
 
 
 
-LookAndFeel *CtrlrToggleButton::getLookAndFeelFromComponentProperty(const String &lookAndFeelComponentProperty) // Updated v5.6.34
+std::unique_ptr<juce::LookAndFeel> CtrlrToggleButton::getLookAndFeelFromComponentProperty(const String &lookAndFeelComponentProperty) // Updated v5.6.34
 {
     if (lookAndFeelComponentProperty == "Default")
     {
@@ -308,10 +326,6 @@ void CtrlrToggleButton::updatePropertiesPanel()
         props->refreshAll(); // Needs extra code to prevent scrolling back to top on refresh
     }
 }
-
-
-
-
 
 //[/MiscUserCode]
 

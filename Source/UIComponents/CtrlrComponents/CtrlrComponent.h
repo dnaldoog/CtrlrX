@@ -119,6 +119,8 @@ class CtrlrComponent : public Component,
         void setCustomLookAndFeel (LookAndFeelBase *customLookAndFeel);
         virtual void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr) = 0;
         bool isInternal();
+        void triggerBubbleHelp(const MouseEvent& e, int requiredTrigger);
+        std::unique_ptr<BubbleMessageComponent> bubbleMessage;
         JUCE_LEAK_DETECTOR(CtrlrComponent)
 
     protected:
@@ -135,6 +137,7 @@ class CtrlrComponent : public Component,
         friend class WeakReference<CtrlrComponent>;
         ScopedPointer <GlowEffect> glowEffect;
         ScopedPointer <DropShadowEffect> shadowEffect;
+        void applyCentralLookAndFeel (juce::Component* targetComponent, const String& lookAndFeelType);
         WeakReference <CtrlrLuaMethod> mouseMoveCbk, mouseDownCbk, mouseUpCbk, mouseDragCbk, mouseDoubleClickCbk, mouseEnterCbk, mouseExitCbk;
     
 

@@ -17,7 +17,9 @@ class CtrlrModulatorListSorter
 
 class CtrlrPanelModulatorList  : public CtrlrChildWindowContent,
                                  public TableListBoxModel,
-								 public CtrlrPanel::Listener
+								 public CtrlrPanel::Listener,
+								 public TableHeaderComponent::Listener,
+								 public juce::Timer
 {
 	public:
 		CtrlrPanelModulatorList (CtrlrPanel &_owner);
@@ -34,6 +36,7 @@ class CtrlrPanelModulatorList  : public CtrlrChildWindowContent,
 		};
 
 		void copyModulatorList();
+		void timerCallback() override;
 		int getNumRows();
 		void paintRowBackground (Graphics& g, int rowNumber, int width, int height, bool rowIsSelected);
 		void paintCell (Graphics& g, int rowNumber, int columnId, int width, int height, bool rowIsSelected) {}
@@ -54,7 +57,8 @@ class CtrlrPanelModulatorList  : public CtrlrChildWindowContent,
 		const Identifier getColumnCtrlrId(const int columnId);
 		static const String getValueStringForColumn (CtrlrModulator *m, const Identifier columnName);
 		static Value getValueForColumn (CtrlrModulator *m, const Identifier columnName);
-		void modulatorChanged (CtrlrModulator *modulatorThatChanged);
+
+		void modulatorChanged (CtrlrModulator *modulatorThatChanged) override;
 		void modulatorAdded (CtrlrModulator *modulatorThatWasAdded);
 		void modulatorRemoved (CtrlrModulator *modulatorRemoved);
 		void restoreColumns(const String &columnState);
@@ -71,6 +75,19 @@ class CtrlrPanelModulatorList  : public CtrlrChildWindowContent,
 		void menuItemSelected(int menuItemID, int topLevelMenuIndex);
 		void handleColumnSelection(const int itemId);
 		void handleSortSelection(const int itemId);
+
+		static const String getPropertyCategory(const String& propertyName);
+		static const Colour getCategoryColour(const String& category);
+		static const String generateLuaUsage(const String& propertyName, bool includeGetter, bool includeSetter);
+		void showClipboardBubble (const String& text);
+
+		void tableColumnsChanged (TableHeaderComponent*) override;
+		void tableColumnsResized (TableHeaderComponent*) override;
+		void tableSortOrderChanged (TableHeaderComponent*) override;
+		void tableColumnDraggingChanged (TableHeaderComponent*, int) override;
+
+		void saveColumnState();
+
 		JUCE_LEAK_DETECTOR(CtrlrPanelModulatorList)
 
 	private:
@@ -80,6 +97,9 @@ class CtrlrPanelModulatorList  : public CtrlrChildWindowContent,
 		bool isSortedForward;
 		CtrlrPanelModulatorListTree modulatorListTree;
 	    TableListBox* modulatorList;
+
+
+
 };
 
 

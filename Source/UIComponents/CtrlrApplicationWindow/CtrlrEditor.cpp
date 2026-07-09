@@ -1,404 +1,378 @@
-#include "stdafx.h"
+#include "CtrlrEditor.h"
+#include "CtrlrInlineUtilitiesGUI.h"
+#include "CtrlrLog.h"
 #include "CtrlrManager/CtrlrManager.h"
 #include "CtrlrPanel/CtrlrPanel.h"
-#include "CtrlrLog.h"
-#include "CtrlrEditor.h"
-#include "CtrlrProcessor.h"
 #include "CtrlrPanel/CtrlrPanelEditor.h"
-#include "CtrlrPanel/CtrlrViewport.h"
 #include "CtrlrPanel/CtrlrPanelViewport.h"
-#include "CtrlrInlineUtilitiesGUI.h"
+#include "CtrlrPanel/CtrlrViewport.h"
+#include "CtrlrProcessor.h"
+#include "stdafx.h"
 
-CtrlrEditor::CtrlrEditor (CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
-	:	AudioProcessorEditor (_ownerFilter),
-        ownerFilter(_ownerFilter),
-		owner(_owner),
-        resizer(this, 0),
-		tempResult(Result::ok()),
-		menuHandlerCalled(false),
-		lastCommandInvocationMillis(0)
-{
-    // Initialize currentLookAndFeel to a default LookAndFeel_V4 Light.
-    // This provides a starting point before properties are loaded.
-    currentLookAndFeel = new LookAndFeel_V4(juce::LookAndFeel_V4::getLightColourScheme());
-    setLookAndFeel(currentLookAndFeel); // Set the editor's LookAndFeel initially
+CtrlrEditor::CtrlrEditor(CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
+	: AudioProcessorEditor(_ownerFilter),
+	  ownerFilter(_ownerFilter),
+	  owner(_owner),
+	  resizer(this, 0),
+	  tempResult(Result::ok()),
+	  menuHandlerCalled(false),
+	  lastCommandInvocationMillis(0) {
+	// Initialize currentLookAndFeel to a default LookAndFeel_V4 Light.
+	// This provides a starting point before properties are loaded.
+	// currentLookAndFeel = new LookAndFeel_V4(juce::LookAndFeel_V4::getLightColourScheme());
+	// setLookAndFeel(currentLookAndFeel); // Set the editor's LookAndFeel initially
+	currentLookAndFeel = std::make_unique<juce::LookAndFeel_V4>(juce::LookAndFeel_V4::getLightColourScheme());
+	tooltipWindow = std::make_unique<juce::TooltipWindow>(this);
+	setLookAndFeel(currentLookAndFeel.get());
 
-    menuBar = new MenuBarComponent(this); // Added v5.6.34
-    addAndMakeVisible(menuBar); // Added v5.6.34
-	
+	menuBar = std::make_unique<juce::MenuBarComponent>(this);
+	addAndMakeVisible(menuBar.get()); // Added v5.6.34
+
 	Rectangle<int> editorRect;
-    // http://www.juce.com/forum/topic/applicationcommandmanager-menus-not-active-annoyance#new
-    owner.getCommandManager().setFirstCommandTarget (this);
+	// http://www.juce.com/forum/topic/applicationcommandmanager-menus-not-active-annoyance#new
+	owner.getCommandManager().setFirstCommandTarget(this);
 
-    menuBar = new MenuBarComponent (this);
-    addAndMakeVisible(menuBar);
+	setApplicationCommandManagerToWatch(&owner.getCommandManager());
 
-	setApplicationCommandManagerToWatch (&owner.getCommandManager());
+	owner.getCommandManager().registerAllCommandsForTarget(this);
+	owner.getCommandManager().registerAllCommandsForTarget(JUCEApplication::getInstance());
 
-	owner.getCommandManager().registerAllCommandsForTarget (this);
-	owner.getCommandManager().registerAllCommandsForTarget (JUCEApplication::getInstance());
-	ScopedPointer <XmlElement> xml(XmlDocument::parse(owner.getProperty(Ids::ctrlrKeyboardMapping)).release());
-    
-    if (xml)
-    {
-        owner.getCommandManager().getKeyMappings()->restoreFromXml (*xml);
-    }
-    
-    owner.setEditor (this);
-    
-    addAndMakeVisible (&owner.getCtrlrDocumentPanel());
-    
-    if (!JUCEApplication::isStandaloneApp()) // If Ctrlr is !NOT run as a standalone app but as a plugin or shared lib
-    {
-        if (owner.getInstanceMode() != InstanceSingleRestriced) // is !NOT restricted instance of the plugin
-        {
-            addAndMakeVisible(&resizer);
-            resizer.setAlwaysOnTop(false);
-            resizer.grabKeyboardFocus();
-            resizer.toFront(true);
-        }
-    }
-    
-    if (owner.getProperty (Ids::ctrlrEditorBounds).toString() != "") // ctrlrEditorBounds is Editor size. AAX Plugin crashes here, passes without it
-    {
-        if (owner.getInstanceMode() != InstanceSingle && owner.getInstanceMode() != InstanceSingleRestriced)
-        {
-            editorRect = VAR2RECT(owner.getProperty(Ids::ctrlrEditorBounds)); // Size of full Editor window including top tabs and 1px borders
-        }
-        else if (owner.getActivePanel())
-        {
-            ValueTree editorTree = owner.getActivePanel()->getEditor()->getPanelEditorTree();  // owner is CtrlrManager for the current class
-            editorRect = VAR2RECT(owner.getProperty(Ids::ctrlrEditorBounds));
-            vpMenuBarVisible = editorTree.getProperty(Ids::uiPanelMenuBarVisible);
-            vpResizable = editorTree.getProperty(Ids::uiViewPortResizable);
-            vpEnableFixedAspectRatio = editorTree.getProperty(Ids::uiViewPortEnableFixedAspectRatio);
-            vpFixedAspectRatio = editorTree.getProperty(Ids::uiViewPortFixedAspectRatio);
-            
-            vpEnableResizableLimits = editorTree.getProperty(Ids::uiViewPortEnableResizeLimits);
-            vpMinWidth = editorTree.getProperty(Ids::uiViewPortMinWidth);
-            vpMinHeight = editorTree.getProperty(Ids::uiViewPortMinHeight);
-            vpMaxWidth = editorTree.getProperty(Ids::uiViewPortMaxWidth);
-            vpMaxHeight = editorTree.getProperty(Ids::uiViewPortMaxHeight);
-            
-            if ((bool)owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelMenuBarVisible)) // Exp. instances get an override from uiPanelMenuBarHideOnExport
-            {
-                setMenuBarVisible(true); // Enable visibility
-                editorRect.setHeight (editorRect.getHeight() + (int)owner.getProperty(Ids::ctrlrMenuBarHeight, 24));
-            }
-            else
-            {
-                editorRect.setWidth (editorRect.getWidth());
-                editorRect.setHeight (editorRect.getHeight());
-            }
-            
-            if (!JUCEApplication::isStandaloneApp() && owner.getInstanceMode() == InstanceSingleRestriced)
-            {
-                setResizable(vpResizable, true);
-                
-                //if (auto* constrainer = getConstrainer()) // According to GoodWeather, auto* returns type warning in VS.
-                if (auto constrainer = getConstrainer()) // Updated v.5.6.31. Though auto* stresses better the intent that var is a pointer.
-                {
-                    if (vpEnableFixedAspectRatio == true)
-                    {
-                        constrainer->setFixedAspectRatio(vpFixedAspectRatio);
-                        
-                        if (vpEnableResizableLimits == true)
-                        {
-                            if (vpMinWidth != 0 && vpMaxWidth != 0)
-                            {
-                                setResizeLimits(vpMinWidth, round(vpMinWidth/vpFixedAspectRatio), vpMaxWidth, round(vpMaxWidth/vpFixedAspectRatio));
-                            }
-                            else if (vpMinWidth != 0 && vpMinHeight != 0 && vpMaxWidth != 0 && vpMaxHeight != 0)
-                            {
-                                setResizeLimits(vpMinWidth, vpMinHeight, vpMaxWidth, vpMaxHeight);
-                            }
-                        }
-                        else
-                        {
-                            constrainer->setMinimumSize(editorRect.getWidth(), editorRect.getHeight());
-                        }
-                    }
-                    else if (vpEnableResizableLimits == true && vpMinWidth != 0 && vpMinHeight != 0 && vpMaxWidth != 0 && vpMaxHeight != 0)
-                    {
-                        setResizeLimits(vpMinWidth, vpMinHeight, vpMaxWidth, vpMaxHeight);
-                    }
-                }
-            }
-        }
-        setBounds (editorRect);
-    }
-    else
-    {
-        if (JUCEApplication::isStandaloneApp())
-            centreWithSize(800, 600);
-        else
-            setSize(800, 600);
-    }
-    
-    // --- LOOK AND FEEL AND COLOUR SCHEME LOGIC ---
-    String lookAndFeelVersionToApply;
-    var colourSchemePropertyToApply; // Will be passed to setEditorLookAndFeel
+	std::unique_ptr<juce::XmlElement> xml(juce::XmlDocument::parse(owner.getProperty(Ids::ctrlrKeyboardMapping)));
 
-    // 1. Check for global legacy mode first
-    bool isLegacyModeGlobal = owner.getProperty(Ids::ctrlrLegacyMode); // This is a Bool property
+	if (xml) {
+		owner.getCommandManager().getKeyMappings()->restoreFromXml(*xml);
+	}
 
-    if (isLegacyModeGlobal)
-    {
-        lookAndFeelVersionToApply = "V3"; // Force V3 if legacy mode is on
-        colourSchemePropertyToApply = var(); // No colour scheme for V3
-    }
-    else
-    {
-        // 2. If not in legacy mode, check global LookAndFeel version
-        lookAndFeelVersionToApply = owner.getProperty(Ids::ctrlrLookAndFeel).toString();
-        colourSchemePropertyToApply = owner.getProperty(Ids::ctrlrColourScheme);
+	owner.setEditor(this);
 
-        // 3. If no global L&F version or colour scheme, check panel properties
-        if (lookAndFeelVersionToApply.isEmpty() && owner.getActivePanel())
-        {
-            lookAndFeelVersionToApply = owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelLookAndFeel).toString();
-        }
-        if (colourSchemePropertyToApply.isUndefined() && owner.getActivePanel())
-        {
-            colourSchemePropertyToApply = owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrColourScheme);
-        }
-    }
+	addAndMakeVisible(&owner.getCtrlrDocumentPanel());
 
-    // Apply the determined LookAndFeel and ColourScheme
-    setEditorLookAndFeel(lookAndFeelVersionToApply, colourSchemePropertyToApply);
+	if (!JUCEApplication::isStandaloneApp()) // If Ctrlr is !NOT run as a standalone app but as a
+											 // plugin or shared lib
+	{
+		if (owner.getInstanceMode() != InstanceSingleRestricted) // is !NOT restricted instance of the plugin
+		{
+			addAndMakeVisible(&resizer);
+			resizer.setAlwaysOnTop(false);
+			resizer.grabKeyboardFocus();
+			resizer.toFront(true);
+		}
+	}
 
-    menuBar->setLookAndFeel(currentLookAndFeel); // Ensure menuBar uses the current L&F
+	if (owner.getProperty(Ids::ctrlrEditorBounds).toString() !=
+		"") // ctrlrEditorBounds is Editor size. AAX Plugin crashes here, passes without it
+	{
+		if (owner.getInstanceMode() != InstanceSingle && owner.getInstanceMode() != InstanceSingleRestricted) {
+			editorRect = VAR2RECT(owner.getProperty(Ids::ctrlrEditorBounds)); // Size of full Editor window including
+																			  // top tabs and 1px borders
+		} else if (owner.getActivePanel()) {
+			ValueTree editorTree = owner.getActivePanel()
+									   ->getEditor()
+									   ->getPanelEditorTree(); // owner is CtrlrManager for the current class
+			editorRect = VAR2RECT(owner.getProperty(Ids::ctrlrEditorBounds));
+			vpMenuBarVisible = editorTree.getProperty(Ids::uiPanelMenuBarVisible);
+			vpResizable = editorTree.getProperty(Ids::uiViewPortResizable);
+			vpEnableFixedAspectRatio = editorTree.getProperty(Ids::uiViewPortEnableFixedAspectRatio);
+			vpFixedAspectRatio = editorTree.getProperty(Ids::uiViewPortFixedAspectRatio);
 
-    lookAndFeelChanged(); // Added v5.6.31. Update LnF for all components
+			vpEnableResizableLimits = editorTree.getProperty(Ids::uiViewPortEnableResizeLimits);
+			vpMinWidth = editorTree.getProperty(Ids::uiViewPortMinWidth);
+			vpMinHeight = editorTree.getProperty(Ids::uiViewPortMinHeight);
+			vpMaxWidth = editorTree.getProperty(Ids::uiViewPortMaxWidth);
+			vpMaxHeight = editorTree.getProperty(Ids::uiViewPortMaxHeight);
 
-    getLookAndFeel().setUsingNativeAlertWindows((bool)owner.getProperty(Ids::ctrlrNativeAlerts)); // Sets OS Native alert windows or JUCE
-    
-    activeCtrlrChanged(); // Refresh CtrlrEditor Template and menuBar LnF, wether panel mode or Editor with or WO menuBar from properties
-    
-    if (isRestricted() && owner.getActivePanel())
-    {
-        hideProgramsMenu = owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelProgramsMenuHideOnExport);
-        hideMidiControllerMenu = owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelMidiControllerMenuHideOnExport);
-        hideMidiThruMenu = owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelMidiThruMenuHideOnExport);
-        hideMidiChannelMenu = owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelMidiChannelMenuHideOnExport);
-    }
+			if ((bool)owner.getActivePanel()->getEditor()->getProperty(
+					Ids::uiPanelMenuBarVisible)) // Exp. instances get an override from
+												 // uiPanelMenuBarHideOnExport
+			{
+				setMenuBarVisible(true); // Enable visibility
+				editorRect.setHeight(editorRect.getHeight() + (int)owner.getProperty(Ids::ctrlrMenuBarHeight, 24));
+			} else {
+				editorRect.setWidth(editorRect.getWidth());
+				editorRect.setHeight(editorRect.getHeight());
+			}
+
+			if (!JUCEApplication::isStandaloneApp() && owner.getInstanceMode() == InstanceSingleRestricted) {
+				setResizable(vpResizable, true);
+
+				// if (auto* constrainer = getConstrainer()) // According to GoodWeather, auto*
+				// returns type warning in VS.
+				if (auto constrainer = getConstrainer()) // Updated v.5.6.31. Though auto* stresses
+														 // better the intent that var is a pointer.
+				{
+					if (vpEnableFixedAspectRatio == true) {
+						constrainer->setFixedAspectRatio(vpFixedAspectRatio);
+
+						if (vpEnableResizableLimits == true) {
+							if (vpMinWidth != 0 && vpMaxWidth != 0) {
+								setResizeLimits(vpMinWidth, round(vpMinWidth / vpFixedAspectRatio), vpMaxWidth,
+												round(vpMaxWidth / vpFixedAspectRatio));
+							} else if (vpMinWidth != 0 && vpMinHeight != 0 && vpMaxWidth != 0 && vpMaxHeight != 0) {
+								setResizeLimits(vpMinWidth, vpMinHeight, vpMaxWidth, vpMaxHeight);
+							}
+						} else {
+							constrainer->setMinimumSize(editorRect.getWidth(), editorRect.getHeight());
+						}
+					} else if (vpEnableResizableLimits == true && vpMinWidth != 0 && vpMinHeight != 0 &&
+							   vpMaxWidth != 0 && vpMaxHeight != 0) {
+						setResizeLimits(vpMinWidth, vpMinHeight, vpMaxWidth, vpMaxHeight);
+					}
+				}
+			}
+		}
+		setBounds(editorRect);
+	} else {
+		if (JUCEApplication::isStandaloneApp())
+			centreWithSize(800, 600);
+		else
+			setSize(800, 600);
+	}
+
+	// --- LOOK AND FEEL AND COLOUR SCHEME LOGIC ---
+	String lookAndFeelVersionToApply;
+	var colourSchemePropertyToApply; // Will be passed to setEditorLookAndFeel
+
+	// 1. Check for global legacy mode first
+	bool isLegacyModeGlobal = owner.getProperty(Ids::ctrlrLegacyMode); // This is a Bool property
+
+	if (isLegacyModeGlobal) {
+		lookAndFeelVersionToApply = "V3";	 // Force V3 if legacy mode is on
+		colourSchemePropertyToApply = var(); // No colour scheme for V3
+	} else {
+		// 2. If not in legacy mode, check global LookAndFeel version
+		lookAndFeelVersionToApply = owner.getProperty(Ids::ctrlrLookAndFeel).toString();
+		colourSchemePropertyToApply = owner.getProperty(Ids::ctrlrColourScheme);
+
+		// 3. If no global L&F version or colour scheme, check panel properties
+		if (lookAndFeelVersionToApply.isEmpty() && owner.getActivePanel()) {
+			lookAndFeelVersionToApply =
+				owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelLookAndFeel).toString();
+		}
+		if (colourSchemePropertyToApply.isUndefined() && owner.getActivePanel()) {
+			colourSchemePropertyToApply = owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrColourScheme);
+		}
+	}
+
+	// Apply the determined LookAndFeel and ColourScheme
+	setEditorLookAndFeel(lookAndFeelVersionToApply, colourSchemePropertyToApply);
+
+	menuBar->setLookAndFeel(currentLookAndFeel.get()); // Ensure menuBar uses the current L&F
+
+	lookAndFeelChanged(); // Added v5.6.31. Update LnF for all components
+
+	getLookAndFeel().setUsingNativeAlertWindows(
+		(bool)owner.getProperty(Ids::ctrlrNativeAlerts)); // Sets OS Native alert windows or JUCE
+
+	activeCtrlrChanged(); // Refresh CtrlrEditor Template and menuBar LnF, wether panel mode or
+						  // Editor with or WO menuBar from properties
+
+	if (isRestricted() && owner.getActivePanel()) {
+		hideProgramsMenu = owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelProgramsMenuHideOnExport);
+		hideMidiControllerMenu =
+			owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelMidiControllerMenuHideOnExport);
+		hideMidiThruMenu = owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelMidiThruMenuHideOnExport);
+		hideMidiChannelMenu = owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelMidiChannelMenuHideOnExport);
+	}
 }
 
-CtrlrEditor::~CtrlrEditor()
-{
-    // 1. First, make sure all child components are detached from the LookAndFeel
+CtrlrEditor::~CtrlrEditor() {
+	if (tooltipWindow != nullptr) {
+		tooltipWindow.reset();
+	}
+	// 1. Explicitly detach the top-level editor from the layout engine first
 	setLookAndFeel(nullptr);
-	
-    if (menuBar != nullptr)
-        menuBar->setLookAndFeel(nullptr);
-	
-    // 2. Clear the global default LookAndFeel if it was set
-    // This is important if you ever call LookAndFeel::setDefaultLookAndFeel()
-    LookAndFeel::setDefaultLookAndFeel(nullptr);
 
-    // 3. Now let the ScopedPointer's destructor run, which will safely delete the object.
-    // The ScopedPointer will do this automatically when the destructor finishes,
-    // so no manual 'deleteAndZero' or 'currentLookAndFeel.reset()' is needed.
+	// 2. Detach the LookAndFeel from the menu bar while it is guaranteed to be alive
+	if (menuBar != nullptr) {
+		menuBar->setLookAndFeel(nullptr);
+	}
 
-    // 4. Finally, let the parent component's destructor destroy the child components
-    // and let the weak reference macro clean up
-	
-	
-	// ---
-	// WAS
-	// ---
-	
-	// USELESS : menuBar as a child component to CtrlrEditor with the line addAndMakeVisible(menuBar).
-	// This operation transfers ownership of the menuBar object to its parent, CtrlrEditor.
-	// When a juce::Component (in this case, CtrlrEditor) is destroyed, its destructor automatically calls deleteAllChildren().
-	// This function iterates through all its child components and safely deletes them.
-	// menuBar->setLookAndFeel(nullptr); // Detach LookAndFeel from menuBar first
-	
-	// USELESS : When you use addAndMakeVisible(menuBar), the CtrlrEditor component becomes the parent of menuBar.
-	// This means the CtrlrEditor now owns the menuBar and is responsible for its destruction.
-    // deleteAndZero (menuBar);
-	
-	// USELESS : because JUCE_DECLARE_WEAK_REFERENCEABLE macro is in the header already.
-	// It automatically handles the weak reference master
-	// masterReference.clear();
+	// 3. Clear the global fallback to ensure no application-wide leaks remain
+	LookAndFeel::setDefaultLookAndFeel(nullptr);
+
+	// 4. FIX THE LIFECYCLE LEAK: Manually clear your unique_ptr look-and-feel tracker
+	if (currentLookAndFeel != nullptr) {
+		currentLookAndFeel.reset();
+	}
+
+	// 5. FIX THE ORIGINAL DEVELOPER'S ERROR: If menuBar was allocated via 'new'
+	// and is a raw pointer in the header, we MUST clean it up here!
+	// (Note: If you already updated menuBar to a std::unique_ptr in CtrlrEditor.h,
+	// you can safely replace this line with menuBar.reset();)
+	// deleteAndZero (menuBar);
+	menuBar.reset();
 }
 
-void CtrlrEditor::paint (Graphics& g)
-{
-    g.fillAll(Component::findColour(DocumentWindow::backgroundColourId));
-}
+void CtrlrEditor::paint(Graphics &g) { g.fillAll(Component::findColour(DocumentWindow::backgroundColourId)); }
 
-void CtrlrEditor::resized()
-{
-	if (menuBar->isVisible())
-	{
-		menuBar->setBounds (0, 0, getWidth(), (int)owner.getProperty(Ids::ctrlrMenuBarHeight,24));
-		owner.getCtrlrDocumentPanel().setBounds (0, (int)owner.getProperty(Ids::ctrlrMenuBarHeight,24), getWidth(), getHeight() - ((int)owner.getProperty(Ids::ctrlrMenuBarHeight,24)));
+void CtrlrEditor::resized() {
+	if (menuBar->isVisible()) {
+		menuBar->setBounds(0, 0, getWidth(), (int)owner.getProperty(Ids::ctrlrMenuBarHeight, 24));
+		owner.getCtrlrDocumentPanel().setBounds(0, (int)owner.getProperty(Ids::ctrlrMenuBarHeight, 24), getWidth(),
+												getHeight() - ((int)owner.getProperty(Ids::ctrlrMenuBarHeight, 24)));
+	} else {
+		owner.getCtrlrDocumentPanel().setBounds(0, 0, getWidth(), getHeight());
 	}
-	else
-	{
-		owner.getCtrlrDocumentPanel().setBounds (0, 0, getWidth(), getHeight());
-	}
-	resizer.setBounds (getWidth()-24, getHeight()-24, 24, 24);
-	owner.setProperty (Ids::ctrlrEditorBounds, getBounds().toString());
+	resizer.setBounds(getWidth() - 24, getHeight() - 24, 24, 24);
+	owner.setProperty(Ids::ctrlrEditorBounds, getBounds().toString());
 }
 
 // Added v5.6.34. New method to set the main LookAndFeel for the editor and its children
-void CtrlrEditor::setEditorLookAndFeel (const String &lookAndFeelDesc, const var& colourSchemeProperty)
-{
-    // 1. Create the new LookAndFeel object based on the description (V1, V2, V3, V4 default)
-    // Pass an empty var for colourSchemeProperty to gui::createLookAndFeelFromDescription,
-    // as it will only return the base L&F instance type.
-    ScopedPointer<LookAndFeel> newLookAndFeel = gui::createLookAndFeelFromDescription(lookAndFeelDesc, juce::var());
+void CtrlrEditor::setEditorLookAndFeel(const String &lookAndFeelDesc, const var &colourSchemeProperty) {
+	// 1. Create the new LookAndFeel object based on the description (V1, V2, V3, V4 default)
+	// Pass an empty var for colourSchemeProperty to gui::createLookAndFeelFromDescription,
+	// as it will only return the base L&F instance type.
+	// ScopedPointer<LookAndFeel> newLookAndFeel =
+	// gui::createLookAndFeelFromDescription(lookAndFeelDesc, juce::var()); FIX: Change
+	// ScopedPointer to std::unique_ptr
+	std::unique_ptr<juce::LookAndFeel> newLookAndFeel(
+		gui::createLookAndFeelFromDescription(lookAndFeelDesc, juce::var()));
+	// If a valid LookAndFeel was created, update the current one
+	if (newLookAndFeel != nullptr) {
+		// 2. If it's a LookAndFeel_V4, apply the specific ColourScheme from the property.
+		if (LookAndFeel_V4 *lnf4 = dynamic_cast<LookAndFeel_V4 *>(newLookAndFeel.get())) {
+			// Only apply a colour scheme if the property is a valid string
+			if (colourSchemeProperty.isString() && !colourSchemeProperty.toString().isEmpty()) {
+				lnf4->setColourScheme(gui::colourSchemeFromProperty(colourSchemeProperty));
+			}
+		}
 
-    // If a valid LookAndFeel was created, update the current one
-    if (newLookAndFeel != nullptr)
-    {
-        // 2. If it's a LookAndFeel_V4, apply the specific ColourScheme from the property.
-        if (LookAndFeel_V4* lnf4 = dynamic_cast<LookAndFeel_V4*>(newLookAndFeel.get()))
-        {
-            // Only apply a colour scheme if the property is a valid string
-            if (colourSchemeProperty.isString() && !colourSchemeProperty.toString().isEmpty())
-            {
-                lnf4->setColourScheme(gui::colourSchemeFromProperty(colourSchemeProperty));
-            }
-        }
+		// Explicitly set the L&F of the editor and menubar to nullptr first
+		// This ensures no components are using the old L&F before we destroy it.
+		// 1. Flush active styling links from components first
+		setLookAndFeel(nullptr);
+		// Explicitly set the L&F of the editor and menubar to nullptr first
+		if (menuBar != nullptr)
+			menuBar->setLookAndFeel(nullptr);
 
-        // Explicitly set the L&F of the editor and menubar to nullptr first
-        // This ensures no components are using the old L&F before we destroy it.
-        setLookAndFeel (nullptr);
-        menuBar->setLookAndFeel(nullptr);
-        
-        currentLookAndFeel = newLookAndFeel; // Transfers ownership from ScopedPointer
-        setLookAndFeel (currentLookAndFeel); // Set the editor's LookAndFeel, which propagates to children
+		// FIX: Remove the dangerous static_cast completely.
+		// Simply move the unique_ptr ownership cleanly via std::move!
+		currentLookAndFeel = std::move(newLookAndFeel); // This compiles perfectly!
 
-        // --- THESE ARE THE CRUCIAL LINES FOR THE MENUBAR UPDATE ---
-        menuBar->setLookAndFeel(currentLookAndFeel); // Ensure menuBar also gets the new L&F
-        menuBar->lookAndFeelChanged();               // Explicitly notify the menu bar that its L&F has changed
-        menuBar->repaint();                          // Force a repaint of the menu bar's background
+		// 3. Extract the underlying raw address using .get() to bind the pipeline
+		setLookAndFeel(currentLookAndFeel.get());
 
-        // Force a repaint and update of all components to reflect the new LookAndFeel
-        lookAndFeelChanged(); // This calls lookAndFeelChanged() on this component and its children (like the main panel)
-        repaint();            // Force a repaint of the CtrlrEditor itself
-        
-        // This makes sure any subsequently created JUCE components (like dialogs, other windows)
-        // will default to *your* currentLookAndFeel instance.
-        LookAndFeel::setDefaultLookAndFeel(currentLookAndFeel); 
-    }
+		if (menuBar != nullptr) {
+			// 4. Update the menu bar link safely
+			menuBar->setLookAndFeel(currentLookAndFeel.get());
+		}
+
+		// 5. CASCADE UPDATE: Calling this on 'this' (CtrlrEditor) automatically
+		// triggers lookAndFeelChanged() recursively on the menuBar and all other child components!
+		lookAndFeelChanged();
+
+		// 6. Force a visual refresh across the entire canvas
+		repaint();
+
+		// 7. Bind the global fallback safety anchor
+		LookAndFeel::setDefaultLookAndFeel(currentLookAndFeel.get());
+	}
 }
 
-void CtrlrEditor::activeCtrlrChanged()
-{
+void CtrlrEditor::activeCtrlrChanged() {
 	ownerFilter->activePanelChanged();
 	bool menuBarVisible = true;
 
-	if (owner.getActivePanel() && owner.getActivePanel()->getEditor())
-	{
+	if (owner.getActivePanel() && owner.getActivePanel()->getEditor()) {
 		menuBarVisible = owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelMenuBarVisible);
 
-		if (menuBarVisible != menuBar->isVisible())
-		{
+		if (menuBarVisible != menuBar->isVisible()) {
 			setMenuBarVisible(menuBarVisible);
 		}
-        
-        // Re-determine LookAndFeel and ColourScheme based on active panel
-        String lookAndFeelVersionToApply;
-        var colourSchemePropertyToApply;
 
-        // Check panel's legacy mode first (from uiPanelLegacyMode property on the panel)
-        bool isLegacyModePanel = owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelLegacyMode);
-        
-        if (isLegacyModePanel)
-        {
-            lookAndFeelVersionToApply = "V3"; // Force V3 if panel legacy mode is on
-            colourSchemePropertyToApply = var(); // No colour scheme for V3
-        }
-        else
-        {
-            // If not in panel's legacy mode, get L&F and color scheme from panel properties
-            lookAndFeelVersionToApply = owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelLookAndFeel).toString();
-            colourSchemePropertyToApply = owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrColourScheme);
-        }
+		// Re-determine LookAndFeel and ColourScheme based on active panel
+		String lookAndFeelVersionToApply;
+		var colourSchemePropertyToApply;
 
-        // Apply the determined LookAndFeel and ColourScheme
-        // This single call handles setting the L&F for the editor and explicitly for the menuBar
-        setEditorLookAndFeel(lookAndFeelVersionToApply, colourSchemePropertyToApply);
+		// Check panel's legacy mode first (from uiPanelLegacyMode property on the panel)
+		bool isLegacyModePanel = owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelLegacyMode);
 
-        //String currentLookAndFeel = owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelLookAndFeel);
-        //setMenuBarLookAndFeel(currentLookAndFeel); // Updates the current component LookAndFeel : PanelEditor
-        
-        lookAndFeelChanged();
+		if (isLegacyModePanel) {
+			lookAndFeelVersionToApply = "V3";	 // Force V3 if panel legacy mode is on
+			colourSchemePropertyToApply = var(); // No colour scheme for V3
+		} else {
+			// If not in panel's legacy mode, get L&F and color scheme from panel properties
+			lookAndFeelVersionToApply =
+				owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelLookAndFeel).toString();
+			colourSchemePropertyToApply = owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrColourScheme);
+		}
 
-//        menuBar colour properties are deprecated and need to be removed in v5.6.30
-//        String customMenuBarBackgroundColour1 = owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarBackgroundColour1);
-//        String customMenuBarBackgroundColour2 = owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarBackgroundColour2);
-//        String customMenuBarItemBackgroundColour = owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemBackgroundColour);
-//        String customMenuBarItemTextColour = owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemTextColour);
-//        String customMenuBarItemHighlightedTextColour = owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemHighlightedTextColour);
-//        String customMenuBarItemHighlightColour = owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemHighlightColour);
-//        String customMenuBarItemFont = owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemFont);
-//        String customMenuBarItemSeparatorColour = owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemSeparatorColour);
-//        String customMenuBarItemHeaderColour = owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemHeaderColour);
-//        String customMenuBarTextColour = owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarTextColour);
-//        String customMenuBarHighlightedTextColour = owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarHighlightedTextColour);
-//        String customMenuBarHighlightColour = owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarHighlightColour);
-//        String customMenuBarFont = owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarFont);
-    }
-    else // logic for no active panel
-    {
-        // No active panel, set L&F to "V4 Light"
-        setEditorLookAndFeel("V4 Light", juce::var());
+		// Apply the determined LookAndFeel and ColourScheme
+		// This single call handles setting the L&F for the editor and explicitly for the menuBar
+		setEditorLookAndFeel(lookAndFeelVersionToApply, colourSchemePropertyToApply);
 
-        // Also ensure menu bar visibility is handled when no panel is active.
-        // You might want the menu bar to always be visible, or hide if no panel.
-        // For fallback, let's assume it should be visible with the default L&F.
-        if (!menuBar->isVisible()) // If it was hidden by a panel before
-        {
-            setMenuBarVisible(true);
-        }
-    }
-}
+		// String currentLookAndFeel =
+		// owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelLookAndFeel);
+		// setMenuBarLookAndFeel(currentLookAndFeel); // Updates the current component LookAndFeel :
+		// PanelEditor
 
-MenuBarComponent *CtrlrEditor::getMenuBar()
-{
-	return (menuBar);
-}
+		lookAndFeelChanged();
 
-CtrlrPanel *CtrlrEditor::getActivePanel()
-{
-	return (owner.getActivePanel());
-}
-
-bool CtrlrEditor::isRestricted()
-{
-	return (owner.getInstanceMode() == InstanceSingleRestriced);
-}
-
-CtrlrPanelEditor *CtrlrEditor::getActivePanelEditor()
-{
-	if (owner.getActivePanel())
+		//        menuBar colour properties are deprecated and need to be removed in v5.6.30
+		//        String customMenuBarBackgroundColour1 =
+		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarBackgroundColour1);
+		//        String customMenuBarBackgroundColour2 =
+		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarBackgroundColour2);
+		//        String customMenuBarItemBackgroundColour =
+		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemBackgroundColour);
+		//        String customMenuBarItemTextColour =
+		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemTextColour);
+		//        String customMenuBarItemHighlightedTextColour =
+		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemHighlightedTextColour);
+		//        String customMenuBarItemHighlightColour =
+		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemHighlightColour);
+		//        String customMenuBarItemFont =
+		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemFont); String
+		//        customMenuBarItemSeparatorColour =
+		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemSeparatorColour);
+		//        String customMenuBarItemHeaderColour =
+		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemHeaderColour);
+		//        String customMenuBarTextColour =
+		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarTextColour);
+		//        String customMenuBarHighlightedTextColour =
+		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarHighlightedTextColour);
+		//        String customMenuBarHighlightColour =
+		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarHighlightColour);
+		//        String customMenuBarFont =
+		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarFont);
+	} else // logic for no active panel
 	{
+		// No active panel, set L&F to "V4 Light"
+		setEditorLookAndFeel("V4 Light", juce::var());
+
+		// Also ensure menu bar visibility is handled when no panel is active.
+		// You might want the menu bar to always be visible, or hide if no panel.
+		// For fallback, let's assume it should be visible with the default L&F.
+		if (!menuBar->isVisible()) // If it was hidden by a panel before
+		{
+			setMenuBarVisible(true);
+		}
+	}
+}
+
+MenuBarComponent *CtrlrEditor::getMenuBar() { return (menuBar.get()); }
+
+CtrlrPanel *CtrlrEditor::getActivePanel() { return (owner.getActivePanel()); }
+
+bool CtrlrEditor::isRestricted() { return (owner.getInstanceMode() == InstanceSingleRestricted); }
+
+CtrlrPanelEditor *CtrlrEditor::getActivePanelEditor() {
+	if (owner.getActivePanel()) {
 		return (owner.getActivePanel()->getEditor());
 	}
 
 	return (nullptr);
 }
 
-bool CtrlrEditor::isPanelActive(const bool checkRestrictedInstance)
-{
-	if (getActivePanel())
-	{
-		if (checkRestrictedInstance)
-		{
-			if (owner.getInstanceMode() == InstanceSingleRestriced)
-			{
+bool CtrlrEditor::isPanelActive(const bool checkRestrictedInstance) {
+	if (getActivePanel()) {
+		if (checkRestrictedInstance) {
+			if (owner.getInstanceMode() == InstanceSingleRestricted) {
 				return (false);
 			}
 
 			return (true);
-		}
-		else
-		{
+		} else {
 			return (true);
 		}
 	}
@@ -406,8 +380,17 @@ bool CtrlrEditor::isPanelActive(const bool checkRestrictedInstance)
 	return (false);
 }
 
-void CtrlrEditor::setMenuBarVisible(const bool shouldBeVisible)
-{
-	menuBar->setVisible (shouldBeVisible);
+void CtrlrEditor::setMenuBarVisible(const bool shouldBeVisible) {
+	menuBar->setVisible(shouldBeVisible);
 	resized();
+}
+
+void CtrlrEditor::recreateTooltipEngine() {
+	// 1. Force the engine to drop out of memory and clear all internal vector graphics caches
+	if (tooltipWindow != nullptr) {
+		tooltipWindow.reset();
+	}
+
+	// 2. Spawn a fresh, brand-new tooltip instance under the updated layout pipeline context
+	tooltipWindow = std::make_unique<juce::TooltipWindow>(this);
 }

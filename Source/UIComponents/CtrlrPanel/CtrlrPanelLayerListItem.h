@@ -57,6 +57,7 @@ public:
     void mouseDown (const MouseEvent& e);
     // void mouseDrag(const MouseEvent& e); // Useless. Handled by handleDragIconMouseUp
     void mouseUp(const MouseEvent& e);
+    void setSelected(bool shouldBeSelected);
 	
     std::unique_ptr<ToggleIconComponent> layerVisibility;
 
@@ -66,7 +67,7 @@ private:
 	CtrlrPanelCanvasLayer *layer;
 	CtrlrPanelLayerList &owner;
 	int rowIndex;
-	
+    bool isSelected = false;
 	bool isDragging;
     Point<int> dragStartPosition;
 

@@ -187,7 +187,7 @@ void CtrlrTabsInternal::currentTabChanged (int newCurrentTabIndex, const String 
 
 //==============================================================================
 CtrlrTabsComponent::CtrlrTabsComponent (CtrlrModulator &owner)
-    : CtrlrComponent(owner), lf(*this),
+    : CtrlrComponent(owner), 
       ctrlrTabs (0)
 {
     addAndMakeVisible (ctrlrTabs = new CtrlrTabsInternal (*this));
@@ -195,7 +195,11 @@ CtrlrTabsComponent::CtrlrTabsComponent (CtrlrModulator &owner)
 
 
     //[UserPreSize]
-	ctrlrTabs->setLookAndFeel (&lf);
+auto* editor = owner.getOwnerPanel().getEditor();
+String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
+
+applyCentralLookAndFeel (ctrlrTabs, panelLnF);
+        repaint();
 	owner.setProperty (Ids::modulatorVstExported, false);
 
 	setProperty (Ids::uiTabsCurrentTabChanged, "");
@@ -352,8 +356,8 @@ void CtrlrTabsComponent::valueTreePropertyChanged (ValueTree &treeWhosePropertyH
 		|| property == Ids::uiTabsFrontTabOutline
 		|| property == Ids::uiTabsTabOutline)
 	{
-		ctrlrTabs->setLookAndFeel(0);
-		ctrlrTabs->setLookAndFeel(&lf);
+		applyCentralLookAndFeel (ctrlrTabs, getProperty(property));
+        repaint();
 	}
 
 	else if (property == Ids::uiTabsDepth)
@@ -466,8 +470,19 @@ void CtrlrTabsComponent::setOwned (CtrlrComponent *componentToOwn, const int sub
 		componentToOwn->setProperty (Ids::componentTabName, owner.getName(), true);
 		componentToOwn->setProperty (Ids::componentTabId, subIndexInGroup, true);
 		componentToOwn->setProperty (Ids::componentGroupped, true, true);
-		componentToOwn->setProperty(Ids::componentGroupName, "", true);
-		componentToOwn->setProperty(Ids::componentGroupName, "", true); // Added v5.6.35. Thanks to @dnaldoog. Clear group name when assigning to tab
+		
+		// NEW FIX: If the component is being dragged by the user,
+		// we clear the Group property so the Tab becomes the primary owner.
+		if (auto* dragContainer = DragAndDropContainer::findParentDragContainerFor(this)) // Updated v5.6.36
+		{
+			if (dragContainer->isDragAndDropActive())
+			{
+				if (componentToOwn->getProperty(Ids::componentGroupName).toString().isNotEmpty())
+				{
+					componentToOwn->setProperty(Ids::componentGroupName, String(), true);
+				}
+			}
+		}
 
 		if (ctrlrTabs->getTabContentComponent(subIndexInGroup))
 			ctrlrTabs->getTabContentComponent(subIndexInGroup)->addAndMakeVisible (componentToOwn);

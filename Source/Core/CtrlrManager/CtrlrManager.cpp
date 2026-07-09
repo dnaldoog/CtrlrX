@@ -38,9 +38,26 @@ CtrlrManager::CtrlrManager(CtrlrProcessor *_owner, CtrlrLog &_ctrlrLog)
 CtrlrManager::~CtrlrManager()
 {
     commandManager.removeListener (this);
-    ctrlrDocumentPanel->closeAllDocuments(false);
-    ctrlrPanels.clear();
+
+    // 1. BLIND THE LISTENERS: Disconnect the manager from listening to the data tree
+    // so no background events can fire during the collapse.
+    managerTree.removeListener (this);
+    
+    // 2. WIPE THE DATA: Clear out the children tree first. 
+    // This strips away the properties while the components are still stable.
     managerTree.removeAllChildren(0);
+    
+    // 3. CLOSE UI WINDOWS: Shut down the document tab framework cleanly.
+    if (ctrlrDocumentPanel != nullptr)
+    {
+    ctrlrDocumentPanel->closeAllDocuments(false);
+    }
+    
+    // 4. PURGE OBJECT POOLS: Now it is 100% safe to clear the panels.
+    // They will die in a completely quiet environment with no active data triggers.
+    ctrlrPanels.clear();
+    
+    // 5. Clean up base singletons
     deleteAndZero (nullModulator);
     deleteAndZero (nullPanel);
 }
@@ -197,7 +214,10 @@ CtrlrPanel *CtrlrManager::addPanel(const ValueTree &savedState, const bool showU
 	CtrlrPanel *panel = new CtrlrPanel(*this, getUniquePanelName("Ctrlr Panel"), ctrlrPanels.size());
 
 	ctrlrPanels.add (panel);
-	panel->restoreState (savedState);
+    
+    // ADDED DEEP COPY HERE: Breaks the shared memory link for standard panels
+    panel->restoreState (savedState.createCopy()); 
+    
 	managerTree.addChild (panel->getPanelTree(), -1, 0);
 
 	if (showUI)
@@ -212,7 +232,38 @@ CtrlrPanel *CtrlrManager::addPanel(const ValueTree &savedState, const bool showU
 
 void CtrlrManager::addPanel (CtrlrPanelEditor *panelToAdd)
 {
+    // This override handles visual UI window docking, no change needed here
 	ctrlrDocumentPanel->addDocument ((Component *)panelToAdd, Colours::lightgrey, true);
+}
+
+Result CtrlrManager::addInstancePanel()
+{
+    if (ctrlrPlayerInstanceTree.isValid())
+    {
+        CtrlrPanel *panel = new CtrlrPanel(*this, getInstanceName(), ctrlrPanels.size());
+        ctrlrPanels.add (panel);
+
+        // ADDED DEEP COPY HERE: Breaks the shared memory link for standalone player instances
+        Result restoreResult = panel->restoreState (ctrlrPlayerInstanceTree.createCopy());
+
+        if (!restoreResult.wasOk())
+        {
+            WARN("AddInstancePanel failed to restore the state of the panel");
+            ctrlrPanels.clear (true);
+            return (restoreResult);
+        }
+
+        managerTree.addChild (panel->getPanelTree(), -1, 0);
+        addPanel (panel->getEditor(true));
+
+        organizePanels();
+
+        return (Result::ok());
+    }
+    else
+    {
+        return (Result::fail("AddInstancePanel failed, the decoded instance tree is invalid"));
+    }
 }
 
 void CtrlrManager::restoreState (const ValueTree &savedTree)
@@ -424,6 +475,18 @@ void CtrlrManager::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChan
 	{
 		ctrlrLog.setMidiLogOptions (getProperty(property));
 	}
+	else if (property == Ids::uiPanelLookAndFeel) // Or whichever ID tracks your global look and feel style sheet
+    {
+        if (auto* editor = getEditor())
+        {
+            // Call the public bridge method to safely swap the tooltip engine tracking state
+            editor->recreateTooltipEngine();
+            
+            // Force the rest of the layout tree to cascade update
+            editor->lookAndFeelChanged();
+            editor->repaint();
+        }
+	}
 	else if (property == Ids::ctrlrNativeAlerts)
 	{
 		if (getEditor())
@@ -479,7 +542,7 @@ void CtrlrManager::restoreEditorState()
 {
 	if (getProperty(Ids::ctrlrEditorBounds).toString() == "")
 	{
-		if (getInstanceMode() == InstanceSingle || getInstanceMode() == InstanceSingleRestriced)
+		if (getInstanceMode() == InstanceSingle || getInstanceMode() == InstanceSingleRestricted)
 		{
 			Rectangle<int> r(32, 32, 800, 600);
 
@@ -502,18 +565,27 @@ void CtrlrManager::setEditor (CtrlrEditor *editorToSet)
 	restoreEditorState();
 }
 
-int CtrlrManager::getModulatorVstIndexByName(const String &modulatorName)
+int CtrlrManager::getModulatorVstIndexByName(const String& modulatorName, CtrlrPanel* sourcePanel)
 {
-	CtrlrModulator *m = getModulator(modulatorName);
+	// 1. If no panel context was passed, fall back to whatever panel is active
+	if (sourcePanel == nullptr)
+	{
+		sourcePanel = getActivePanel();
+	}
 
-	if (m)
+	// 2. Ask the specific panel to find the modulator inside itself (NOT globally via 'this')
+	if (sourcePanel != nullptr)
 	{
-		return (m->getVstIndex());
+		// We call getModulator on the sourcePanel object, passing the 'true' boolean 
+		// to satisfy the CtrlrPanel function signature we just verified in CtrlrPanel.h!
+		CtrlrModulator* m = sourcePanel->getModulator(modulatorName, true);
+		if (m)
+		{
+			return (m->getVstIndex());
+		}
 	}
-	else
-	{
-		return (-1);
-	}
+
+	return (-1);
 }
 
 int CtrlrManager::compareElements (CtrlrModulator *first, CtrlrModulator *second)

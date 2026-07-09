@@ -93,7 +93,7 @@ CtrlrFileListBox::CtrlrFileListBox (CtrlrModulator &owner)
 
 	directoryContentsList = new DirectoryContentsList (0, timeSliceThread);
 	directoryContentsList->setDirectory (folder, true, true);
-	timeSliceThread.startThread (juce::Thread::Priority::normal);
+	timeSliceThread.startThread (3);
 
 	treeComponent = new CtrlrFileTreeComponent( *this, *directoryContentsList );
 	treeComponent->addListener (this);
@@ -267,7 +267,7 @@ void CtrlrFileListBox::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
 	}
 	else if (property == Ids::uiFileListHighlightBgColour) // Added v5.6.35. Thanks to @dobo365
 	{
-		treeComponent->setColour(DirectoryContentsDisplayComponent::highlightColourId, VAR2COLOUR(getProperty(property)));
+		treeComponent->setColour (DirectoryContentsDisplayComponent::highlightColourId, VAR2COLOUR(getProperty(property)));
 	}
 	else if (property == Ids::uiFileListOpenButtonVisible)
 	{
