@@ -96,7 +96,7 @@ class CtrlrPanelModulatorList  : public CtrlrChildWindowContent,
 		int sortColumnId;
 		bool isSortedForward;
 		CtrlrPanelModulatorListTree modulatorListTree;
-	    TableListBox* modulatorList;
+	    std::unique_ptr<TableListBox> modulatorList;
 
 
 
