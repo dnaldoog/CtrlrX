@@ -108,4 +108,4 @@ build/
 Builds/
 vs/
 .vs/
-Source/JUCE
+Source/JUCE/modules
