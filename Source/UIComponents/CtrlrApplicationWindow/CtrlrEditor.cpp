@@ -222,7 +222,7 @@ void CtrlrEditor::setEditorLookAndFeel(const String &lookAndFeelDesc, const var 
 	// 1. Create the new LookAndFeel object based on the description (V1, V2, V3, V4 default)
 	// Pass an empty var for colourSchemeProperty to gui::createLookAndFeelFromDescription,
 	// as it will only return the base L&F instance type.
-	// ScopedPointer<LookAndFeel> newLookAndFeel =
+	// std::unique_ptr<LookAndFeel> newLookAndFeel =
 	// gui::createLookAndFeelFromDescription(lookAndFeelDesc, juce::var()); FIX: Change
 	// ScopedPointer to std::unique_ptr
 	std::unique_ptr<juce::LookAndFeel> newLookAndFeel(

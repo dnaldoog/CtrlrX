@@ -24,8 +24,6 @@
 #include "JuceHeader.h"
 //[/Headers]
 
-
-
 //==============================================================================
 /**
                                                                     //[Comments]
@@ -34,21 +32,19 @@
     Describe your class and how it works here!
                                                                     //[/Comments]
 */
-class CtrlrLuaMethodDebuggerControls  : public Component
+class CtrlrLuaMethodDebuggerControls : public Component
 {
 public:
     //==============================================================================
-    CtrlrLuaMethodDebuggerControls ();
+    CtrlrLuaMethodDebuggerControls();
     ~CtrlrLuaMethodDebuggerControls();
 
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
     //[/UserMethods]
 
-    void paint (Graphics& g);
+    void paint(Graphics &g);
     void resized();
-
-
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
@@ -56,12 +52,11 @@ private:
 
     //==============================================================================
 
-
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrLuaMethodDebuggerControls)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrLuaMethodDebuggerControls)
 };
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]
 
-#endif   // __JUCE_HEADER_6DB796EA622B0BBE__
+#endif // __JUCE_HEADER_6DB796EA622B0BBE__

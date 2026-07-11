@@ -24,78 +24,73 @@
 #include "CtrlrManager/CtrlrManager.h"
 //[/Headers]
 
-
-
 //==============================================================================
 /**
-                                                                    //[Comments]
-    An auto-generated component, created by the Jucer.
+																	//[Comments]
+	An auto-generated component, created by the Jucer.
 
-    Describe your class and how it works here!
-                                                                    //[/Comments]
+	Describe your class and how it works here!
+																	//[/Comments]
 */
-class CtrlrAbout  : public Component,
-					public Button::Listener
-{
-public:
-    //==============================================================================
-    CtrlrAbout (CtrlrManager &_owner);
-    ~CtrlrAbout();
+class CtrlrAbout : public Component, public Button::Listener {
+	public:
+		//==============================================================================
+		CtrlrAbout(CtrlrManager &_owner);
+		~CtrlrAbout();
 
-    //==============================================================================
-    //[UserMethods]     -- You can add your own custom methods in this section.
-	void addVersionInfo (const String &componentName, const String &componentVersion);
-	void updateVersionLabel();
-    //[/UserMethods]
+		//==============================================================================
+		//[UserMethods]     -- You can add your own custom methods in this section.
+		void addVersionInfo(const String &componentName, const String &componentVersion);
+		void updateVersionLabel();
+		//[/UserMethods]
 
-    void paint (Graphics& g);
-    void resized();
-    void buttonClicked (Button* buttonThatWasClicked);
+		void paint(Graphics &g);
+		void resized();
+		void buttonClicked(Button *buttonThatWasClicked);
 
+	private:
+		//[UserVariables]   -- You can add your own custom variables in this section.
+		CtrlrManager &owner;
+		StringPairArray versionInformationArray;
+		//[/UserVariables]
 
-private:
-    //[UserVariables]   -- You can add your own custom variables in this section.
-	CtrlrManager &owner;
-	StringPairArray versionInformationArray;
-    //[/UserVariables]
+		//==============================================================================
+		std::unique_ptr<Label> ctrlrName;
+		std::unique_ptr<Label> ctrlrxVersionLabel;
+		std::unique_ptr<Label> ctrlrxReleaseDateLabel;
+		std::unique_ptr<Label> ctrlrxLibsVersionLabel;
+		std::unique_ptr<Label> label;
+		std::unique_ptr<Label> label2;
+		std::unique_ptr<Label> labelDonate;
+		std::unique_ptr<Label> labelAuthorEmail;
+		std::unique_ptr<Label> label3;
+		std::unique_ptr<Label> label4;
+		std::unique_ptr<Label> instanceVersion;
+		std::unique_ptr<Label> instanceAuthor;
+		std::unique_ptr<Label> instanceName;
 
-    //==============================================================================
-    ScopedPointer<Label> ctrlrName;
-    ScopedPointer<Label> ctrlrxVersionLabel;
-    ScopedPointer<Label> ctrlrxReleaseDateLabel;
-    ScopedPointer<Label> ctrlrxLibsVersionLabel;
-    ScopedPointer<Label> label;
-    ScopedPointer<Label> label2;
-    ScopedPointer<Label> labelDonate;
-    ScopedPointer<Label> labelAuthorEmail;
-    ScopedPointer<Label> label3;
-    ScopedPointer<Label> label4;
-    ScopedPointer<Label> instanceVersion;
-    ScopedPointer<Label> instanceAuthor;
-    ScopedPointer<Label> instanceName;
-    
-    ScopedPointer<DrawableButton> ctrlrLogo;
-    ScopedPointer<DrawableButton> vst3AuJuceLogo;
-    ScopedPointer<DrawableButton> githubLogo;
-    ScopedPointer<DrawableButton> paypalLogo;
-        
-    ScopedPointer<HyperlinkButton> ctrlrxUrl;
-    ScopedPointer<HyperlinkButton> ctrlrxDonateUrl;
-    ScopedPointer<HyperlinkButton> instanceUrl;
-    ScopedPointer<HyperlinkButton> instanceAuthorDonateUrl;
-    ScopedPointer<HyperlinkButton> instanceAuthorEmail;
-    
-    ScopedPointer<TextEditor> versionInfoLabel;
-    ScopedPointer<TextEditor> creditsLabel;
-    ScopedPointer<TextEditor> descriptionLabel;
-    ScopedPointer<TextEditor> copyrightLabel;
-    ScopedPointer<TextEditor> instanceDescription;
+		std::unique_ptr<DrawableButton> ctrlrLogo;
+		std::unique_ptr<DrawableButton> vst3AuJuceLogo;
+		std::unique_ptr<DrawableButton> githubLogo;
+		std::unique_ptr<DrawableButton> paypalLogo;
 
-    //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrAbout)
+		std::unique_ptr<HyperlinkButton> ctrlrxUrl;
+		std::unique_ptr<HyperlinkButton> ctrlrxDonateUrl;
+		std::unique_ptr<HyperlinkButton> instanceUrl;
+		std::unique_ptr<HyperlinkButton> instanceAuthorDonateUrl;
+		std::unique_ptr<HyperlinkButton> instanceAuthorEmail;
+
+		std::unique_ptr<TextEditor> versionInfoLabel;
+		std::unique_ptr<TextEditor> creditsLabel;
+		std::unique_ptr<TextEditor> descriptionLabel;
+		std::unique_ptr<TextEditor> copyrightLabel;
+		std::unique_ptr<TextEditor> instanceDescription;
+
+		//==============================================================================
+		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrAbout)
 };
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]
 
-#endif   // __JUCE_HEADER_38C6DBC920B693D4__
+#endif // __JUCE_HEADER_38C6DBC920B693D4__

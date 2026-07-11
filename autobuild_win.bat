@@ -132,7 +132,8 @@ cmake -G "Ninja" ^
   .. || goto ERROR
 
 echo Building...
-cmake --build . --parallel %PROCESSORS% || goto ERROR
+:: cmake --build . --parallel %PROCESSORS% || goto ERROR
+cmake --build . --parallel %PROCESSORS% > build_log.txt 2>&1 || goto ERROR
 goto END
 
 ::==============================================================================
@@ -153,7 +154,8 @@ del /s /q "%BUILD_DIR%\*.ilk"     2>nul
 del /s /q "%BUILD_DIR%\*.pdb"     2>nul
 
 echo Building...
-cmake --build . --parallel %PROCESSORS% || goto ERROR
+:: cmake --build . --parallel %PROCESSORS% || goto ERROR
+cmake --build . --parallel %PROCESSORS% > build_log.txt 2>&1 || goto ERROR
 goto END
 
 ::==============================================================================
@@ -168,7 +170,8 @@ if not exist "%BUILD_DIR%" (
 cd /d "%BUILD_DIR%" || exit /b 1
 
 echo Building...
-cmake --build . --parallel %PROCESSORS% || goto ERROR
+:: cmake --build . --parallel %PROCESSORS% || goto ERROR
+cmake --build . --parallel %PROCESSORS% > build_log.txt 2>&1 || goto ERROR
 goto END
 
 ::==============================================================================

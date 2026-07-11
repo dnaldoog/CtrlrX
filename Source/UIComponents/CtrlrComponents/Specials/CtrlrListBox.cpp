@@ -8,82 +8,78 @@
 #include "CtrlrPanel/CtrlrPanel.h"
 #include "CtrlrLuaManager.h"
 
-CtrlrListBox::CtrlrListBox (CtrlrModulator &owner)
-    : CtrlrComponent(owner),
-      listBox (0)
+CtrlrListBox::CtrlrListBox(CtrlrModulator &owner)
+	: CtrlrComponent(owner)
 {
-	valueMap = new CtrlrValueMap();
-	addAndMakeVisible (listBox = new ListBox ("List Box", this));
-	listBox->setModel( this );
+	valueMap = std::make_unique<CtrlrValueMap>();
+	listBox = std::make_unique<ListBox>("List Box", this);
+	addAndMakeVisible(listBox.get());
+	listBox->setModel(this);
 
 	//[UserPreSize]
-	setProperty (Ids::uiListBoxContent, "");
-	setProperty (Ids::uiListBoxRowHeight, 16);
-    setProperty (Ids::uiListBoxJustification, "centred");
-    setProperty (Ids::uiListBoxTextColour, (String)findColour(Label::textColourId).withAlpha(0.8f).toString()); // "0xff000000"
-    setProperty (Ids::uiListBoxFont, FONT2STR (Font(14)));
-    setProperty (Ids::uiListBoxHighlightFont, FONT2STR (Font(14)));
-    
-	setProperty (Ids::uiListBoxBackgroundColour, (String)findColour(TextButton::buttonColourId).withAlpha(0.0f).toString()); // "0xffffffff"
-	setProperty (Ids::uiListBoxHighlightBgColour,(String)findColour(TextEditor::highlightColourId).toString()); // "0xff0000ff"
-	setProperty (Ids::uiListBoxHighlightFgColour, (String)findColour(TextEditor::highlightedTextColourId).toString()); // "0xff00000"
-	
-    setProperty (Ids::uiListBoxOutline, 0);
-	setProperty (Ids::uiListBoxOutlineColour, (String)findColour(TextEditor::outlineColourId).toString()); // "0xff000000"
-	
-    setProperty (Ids::uiListBoxVScrollBgColour, (String)findColour(ScrollBar::backgroundColourId).toString()); // "0xffffffff"
-	setProperty (Ids::uiListBoxVScrollThumbColour, (String)findColour(ScrollBar::thumbColourId).toString()); // "0xffababab"
-	setProperty (Ids::uiListBoxVScrollTrackColour, (String)findColour(ScrollBar::trackColourId).toString()); // "0xffff0000"
-	setProperty (Ids::uiListBoxHScrollBgColour, (String)findColour(ScrollBar::backgroundColourId).toString()); // "0xffffffff"
-	setProperty (Ids::uiListBoxHScrollThumbColour, (String)findColour(ScrollBar::thumbColourId).toString()); // "0xffababab"
-	setProperty (Ids::uiListBoxHScrollTrackColour, (String)findColour(ScrollBar::trackColourId).toString()); // "0xffff0000"
-	
-	setProperty (Ids::uiListBoxMultipleSelection, false);
-	setProperty (Ids::uiListBoxItemClicked, COMBO_NONE_ITEM);
-	setProperty (Ids::uiListBoxItemDoubleClicked, COMBO_NONE_ITEM);
-	setProperty (Ids::uiListBoxItemDeleteKeyPressed, COMBO_NONE_ITEM);
-	setProperty (Ids::uiListBoxItemReturnKeyPressed, COMBO_NONE_ITEM);
+	setProperty(Ids::uiListBoxContent, "");
+	setProperty(Ids::uiListBoxRowHeight, 16);
+	setProperty(Ids::uiListBoxJustification, "centred");
+	setProperty(Ids::uiListBoxTextColour, (String)findColour(Label::textColourId).withAlpha(0.8f).toString()); // "0xff000000"
+	setProperty(Ids::uiListBoxFont, FONT2STR(Font(14)));
+	setProperty(Ids::uiListBoxHighlightFont, FONT2STR(Font(14)));
 
-    //[/UserPreSize]
+	setProperty(Ids::uiListBoxBackgroundColour, (String)findColour(TextButton::buttonColourId).withAlpha(0.0f).toString()); // "0xffffffff"
+	setProperty(Ids::uiListBoxHighlightBgColour, (String)findColour(TextEditor::highlightColourId).toString());				// "0xff0000ff"
+	setProperty(Ids::uiListBoxHighlightFgColour, (String)findColour(TextEditor::highlightedTextColourId).toString());		// "0xff00000"
 
-    setSize (128, 256);
+	setProperty(Ids::uiListBoxOutline, 0);
+	setProperty(Ids::uiListBoxOutlineColour, (String)findColour(TextEditor::outlineColourId).toString()); // "0xff000000"
 
+	setProperty(Ids::uiListBoxVScrollBgColour, (String)findColour(ScrollBar::backgroundColourId).toString()); // "0xffffffff"
+	setProperty(Ids::uiListBoxVScrollThumbColour, (String)findColour(ScrollBar::thumbColourId).toString());	  // "0xffababab"
+	setProperty(Ids::uiListBoxVScrollTrackColour, (String)findColour(ScrollBar::trackColourId).toString());	  // "0xffff0000"
+	setProperty(Ids::uiListBoxHScrollBgColour, (String)findColour(ScrollBar::backgroundColourId).toString()); // "0xffffffff"
+	setProperty(Ids::uiListBoxHScrollThumbColour, (String)findColour(ScrollBar::thumbColourId).toString());	  // "0xffababab"
+	setProperty(Ids::uiListBoxHScrollTrackColour, (String)findColour(ScrollBar::trackColourId).toString());	  // "0xffff0000"
 
-    //[Constructor] You can add your own custom stuff here..
-    //[/Constructor]
+	setProperty(Ids::uiListBoxMultipleSelection, false);
+	setProperty(Ids::uiListBoxItemClicked, COMBO_NONE_ITEM);
+	setProperty(Ids::uiListBoxItemDoubleClicked, COMBO_NONE_ITEM);
+	setProperty(Ids::uiListBoxItemDeleteKeyPressed, COMBO_NONE_ITEM);
+	setProperty(Ids::uiListBoxItemReturnKeyPressed, COMBO_NONE_ITEM);
+
+	//[/UserPreSize]
+
+	setSize(128, 256);
+
+	//[Constructor] You can add your own custom stuff here..
+	//[/Constructor]
 }
 
 CtrlrListBox::~CtrlrListBox()
 {
-    //[Destructor_pre]. You can add your own custom destruction code here..
-    //[/Destructor_pre]
+	//[Destructor_pre]. You can add your own custom destruction code here..
+	//[/Destructor_pre]
 
-    deleteAndZero (listBox);
+	// deleteAndZero (listBox);
 
-
-    //[Destructor]. You can add your own custom destruction code here..
-    //[/Destructor]
+	//[Destructor]. You can add your own custom destruction code here..
+	//[/Destructor]
 }
 
 //==============================================================================
-void CtrlrListBox::paint (Graphics& g)
+void CtrlrListBox::paint(Graphics &g)
 {
-    //[UserPrePaint] Add your own custom painting code here..
-    //[/UserPrePaint]
+	//[UserPrePaint] Add your own custom painting code here..
+	//[/UserPrePaint]
 
-    //[UserPaint] Add your own custom painting code here..
-    //[/UserPaint]
+	//[UserPaint] Add your own custom painting code here..
+	//[/UserPaint]
 }
 
 void CtrlrListBox::resized()
 {
-    listBox->setBounds (0, 0, getWidth() - 0, getHeight() - 0);
-    //[UserResized] Add your own custom resize handling here..
-	listBox->setBounds (getUsableRect());
-    //[/UserResized]
+	listBox->setBounds(0, 0, getWidth() - 0, getHeight() - 0);
+	//[UserResized] Add your own custom resize handling here..
+	listBox->setBounds(getUsableRect());
+	//[/UserResized]
 }
-
-
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 int CtrlrListBox::getNumRows()
@@ -91,30 +87,30 @@ int CtrlrListBox::getNumRows()
 	return (valueMap->getNumValues());
 }
 
-void CtrlrListBox::paintListBoxItem (int rowNumber, Graphics &g, int width, int height, bool rowIsSelected)
+void CtrlrListBox::paintListBoxItem(int rowNumber, Graphics &g, int width, int height, bool rowIsSelected)
 {
 	if (rowIsSelected)
 	{
-		g.setFont (STR2FONT(getProperty(Ids::uiListBoxHighlightFont)));
-		g.fillAll (VAR2COLOUR(getProperty(Ids::uiListBoxHighlightBgColour)));
-		g.setColour (VAR2COLOUR(getProperty(Ids::uiListBoxHighlightFgColour)));
-		g.drawText (valueMap->getTextForIndex(rowNumber), 0, 0,  width, height, justificationFromProperty(getProperty(Ids::uiListBoxJustification)), true);
+		g.setFont(STR2FONT(getProperty(Ids::uiListBoxHighlightFont)));
+		g.fillAll(VAR2COLOUR(getProperty(Ids::uiListBoxHighlightBgColour)));
+		g.setColour(VAR2COLOUR(getProperty(Ids::uiListBoxHighlightFgColour)));
+		g.drawText(valueMap->getTextForIndex(rowNumber), 0, 0, width, height, justificationFromProperty(getProperty(Ids::uiListBoxJustification)), true);
 	}
 	else
 	{
-		g.setFont (STR2FONT(getProperty(Ids::uiListBoxFont)));
-		g.setColour (VAR2COLOUR(getProperty(Ids::uiListBoxTextColour)));
-		g.drawText (valueMap->getTextForIndex(rowNumber), 0, 0,  width, height, justificationFromProperty(getProperty(Ids::uiListBoxJustification)), true);
+		g.setFont(STR2FONT(getProperty(Ids::uiListBoxFont)));
+		g.setColour(VAR2COLOUR(getProperty(Ids::uiListBoxTextColour)));
+		g.drawText(valueMap->getTextForIndex(rowNumber), 0, 0, width, height, justificationFromProperty(getProperty(Ids::uiListBoxJustification)), true);
 	}
 }
 
-void CtrlrListBox::setComponentValue (const double newValue, const bool sendChangeMessage)
+void CtrlrListBox::setComponentValue(const double newValue, const bool sendChangeMessage)
 {
-	listBox->selectRow (newValue, false, true);
+	listBox->selectRow(newValue, false, true);
 
 	if (sendChangeMessage)
 	{
-		owner.getProcessor().setValueGeneric (CtrlrModulatorValue(newValue,CtrlrModulatorValue::changedByGUI));
+		owner.getProcessor().setValueGeneric(CtrlrModulatorValue(newValue, CtrlrModulatorValue::changedByGUI));
 	}
 }
 
@@ -143,7 +139,7 @@ const String CtrlrListBox::getTextForValue(const double value)
 	return (valueMap->getTextForIndex(value));
 }
 
-void CtrlrListBox::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
+void CtrlrListBox::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
 {
 	if (property == Ids::uiListBoxContent)
 	{
@@ -152,38 +148,32 @@ void CtrlrListBox::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChan
 
 	else if (property == Ids::uiListBoxBackgroundColour)
 	{
-		listBox->setColour (ListBox::backgroundColourId, VAR2COLOUR(getProperty (property)));
+		listBox->setColour(ListBox::backgroundColourId, VAR2COLOUR(getProperty(property)));
 	}
 
 	else if (property == Ids::uiListBoxOutline)
 	{
-		listBox->setOutlineThickness (getProperty (property));
+		listBox->setOutlineThickness(getProperty(property));
 	}
 
 	else if (property == Ids::uiListBoxOutlineColour)
 	{
-		listBox->setColour (ListBox::outlineColourId, VAR2COLOUR(getProperty (property)));
+		listBox->setColour(ListBox::outlineColourId, VAR2COLOUR(getProperty(property)));
 	}
 
 	else if (property == Ids::uiListBoxRowHeight)
 	{
-		listBox->setRowHeight (getProperty(property));
+		listBox->setRowHeight(getProperty(property));
 	}
 
-	else if (property == Ids::uiListBoxHScrollBgColour
-		|| property == Ids::uiListBoxHScrollThumbColour
-		|| property == Ids::uiListBoxHScrollTrackColour
-		|| property == Ids::uiListBoxVScrollBgColour
-		|| property == Ids::uiListBoxVScrollThumbColour
-		|| property == Ids::uiListBoxVScrollTrackColour
-		)
+	else if (property == Ids::uiListBoxHScrollBgColour || property == Ids::uiListBoxHScrollThumbColour || property == Ids::uiListBoxHScrollTrackColour || property == Ids::uiListBoxVScrollBgColour || property == Ids::uiListBoxVScrollThumbColour || property == Ids::uiListBoxVScrollTrackColour)
 	{
-		listBox->getVerticalScrollBar().setColour (ScrollBar::backgroundColourId, VAR2COLOUR(getProperty (Ids::uiListBoxVScrollBgColour)));
-		listBox->getVerticalScrollBar().setColour (ScrollBar::thumbColourId, VAR2COLOUR(getProperty (Ids::uiListBoxVScrollThumbColour)));
-		listBox->getVerticalScrollBar().setColour (ScrollBar::trackColourId, VAR2COLOUR(getProperty (Ids::uiListBoxVScrollTrackColour)));
-		listBox->getHorizontalScrollBar().setColour (ScrollBar::backgroundColourId, VAR2COLOUR(getProperty (Ids::uiListBoxHScrollBgColour)));
-		listBox->getHorizontalScrollBar().setColour (ScrollBar::thumbColourId, VAR2COLOUR(getProperty (Ids::uiListBoxHScrollThumbColour)));
-		listBox->getHorizontalScrollBar().setColour (ScrollBar::trackColourId, VAR2COLOUR(getProperty (Ids::uiListBoxHScrollTrackColour)));
+		listBox->getVerticalScrollBar().setColour(ScrollBar::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiListBoxVScrollBgColour)));
+		listBox->getVerticalScrollBar().setColour(ScrollBar::thumbColourId, VAR2COLOUR(getProperty(Ids::uiListBoxVScrollThumbColour)));
+		listBox->getVerticalScrollBar().setColour(ScrollBar::trackColourId, VAR2COLOUR(getProperty(Ids::uiListBoxVScrollTrackColour)));
+		listBox->getHorizontalScrollBar().setColour(ScrollBar::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiListBoxHScrollBgColour)));
+		listBox->getHorizontalScrollBar().setColour(ScrollBar::thumbColourId, VAR2COLOUR(getProperty(Ids::uiListBoxHScrollThumbColour)));
+		listBox->getHorizontalScrollBar().setColour(ScrollBar::trackColourId, VAR2COLOUR(getProperty(Ids::uiListBoxHScrollTrackColour)));
 	}
 	else if (property == Ids::uiListBoxItemClicked)
 	{
@@ -215,11 +205,11 @@ void CtrlrListBox::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChan
 	}
 	else if (property == Ids::uiListBoxMultipleSelection)
 	{
-		listBox->setMultipleSelectionEnabled ((bool)getProperty(property));
+		listBox->setMultipleSelectionEnabled((bool)getProperty(property));
 	}
 	else
 	{
-		CtrlrComponent::valueTreePropertyChanged (treeWhosePropertyHasChanged, property);
+		CtrlrComponent::valueTreePropertyChanged(treeWhosePropertyHasChanged, property);
 	}
 
 	resized();
@@ -227,57 +217,56 @@ void CtrlrListBox::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChan
 	listBox->repaint();
 }
 
-void CtrlrListBox::listBoxItemClicked (int value, const MouseEvent &e)
+void CtrlrListBox::listBoxItemClicked(int value, const MouseEvent &e)
 {
 	if (itemClickedCbk && !itemClickedCbk.wasObjectDeleted())
 	{
 		if (itemClickedCbk->isValid())
 		{
-			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (itemClickedCbk, &owner, value);
+			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(itemClickedCbk, &owner, value);
 		}
 	}
 }
 
-void CtrlrListBox::listBoxItemDoubleClicked (int value, const MouseEvent &e)
+void CtrlrListBox::listBoxItemDoubleClicked(int value, const MouseEvent &e)
 {
 	if (itemDoubleClickedCbk && !itemDoubleClickedCbk.wasObjectDeleted())
 	{
 		if (itemDoubleClickedCbk->isValid())
 		{
-			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (itemDoubleClickedCbk, &owner, value);
+			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(itemDoubleClickedCbk, &owner, value);
 		}
 	}
 }
 
-void CtrlrListBox::deleteKeyPressed (int value)
+void CtrlrListBox::deleteKeyPressed(int value)
 {
 	if (itemDeleteKeyPressedCbk && !itemDeleteKeyPressedCbk.wasObjectDeleted())
 	{
 		if (itemDeleteKeyPressedCbk->isValid())
 		{
-			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (itemDeleteKeyPressedCbk, &owner, value);
+			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(itemDeleteKeyPressedCbk, &owner, value);
 		}
 	}
 }
 
-void CtrlrListBox::returnKeyPressed (int value)
+void CtrlrListBox::returnKeyPressed(int value)
 {
 	if (itemReturnKeyPressedCbk && !itemReturnKeyPressedCbk.wasObjectDeleted())
 	{
 		if (itemReturnKeyPressedCbk->isValid())
 		{
-			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (itemReturnKeyPressedCbk, &owner, value);
+			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(itemReturnKeyPressedCbk, &owner, value);
 		}
 	}
 }
 
-
 void CtrlrListBox::listboxContentChanged()
 {
-	valueMap->copyFrom (owner.getProcessor().setValueMap (getProperty (Ids::uiListBoxContent)));
+	valueMap->copyFrom(owner.getProcessor().setValueMap(getProperty(Ids::uiListBoxContent)));
 }
 
-void CtrlrListBox::selectedRowsChanged (int lastRowSelected)
+void CtrlrListBox::selectedRowsChanged(int lastRowSelected)
 {
 	if ((bool)getProperty(Ids::uiListBoxMultipleSelection))
 	{
@@ -287,7 +276,7 @@ void CtrlrListBox::selectedRowsChanged (int lastRowSelected)
 	{
 		if (lastRowSelected >= 0)
 		{
-			setComponentValue (lastRowSelected, true);
+			setComponentValue(lastRowSelected, true);
 		}
 	}
 }
@@ -304,12 +293,12 @@ void CtrlrListBox::selectRow(int rowNumber, bool dontScrollToShowThisRow, bool d
 
 void CtrlrListBox::selectRangeOfRows(int firstRow, int lastRow)
 {
-	listBox->selectRangeOfRows (firstRow, lastRow);
+	listBox->selectRangeOfRows(firstRow, lastRow);
 }
 
 void CtrlrListBox::deselectRow(int rowNumber)
 {
-	listBox->deselectRow (rowNumber);
+	listBox->deselectRow(rowNumber);
 }
 
 void CtrlrListBox::deselectAllRows()
@@ -342,17 +331,16 @@ bool CtrlrListBox::isRowSelected(int rowNumber) const
 	return (listBox->isRowSelected(rowNumber));
 }
 
-SparseSet <int> CtrlrListBox::getSelectedRows() const
+SparseSet<int> CtrlrListBox::getSelectedRows() const
 {
 	return (listBox->getSelectedRows());
 }
 
-void CtrlrListBox::setMultipleSelectionEnabled (bool shouldBeEnabled)
+void CtrlrListBox::setMultipleSelectionEnabled(bool shouldBeEnabled)
 {
 	listBox->setMultipleSelectionEnabled(shouldBeEnabled);
 }
 //[/MiscUserCode]
-
 
 //==============================================================================
 #if 0

@@ -49,12 +49,12 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 		initialProgram(Ids::panelState),
 		boostrapStateStatus(false),
 		outputDevicePtr(nullptr),
-		ctrlrPanelUndoManager(nullptr),
+		//ctrlrPanelUndoManager(nullptr),
 		currentActionIndex(0),
 		indexOfSavedState(-1)
 {
-    ctrlrPanelUndoManager	= new CtrlrPanelUndoManager(*this);
-    ctrlrLuaManager 		= new CtrlrLuaManager(*this);
+	ctrlrPanelUndoManager.reset(new CtrlrPanelUndoManager(*this));
+	ctrlrLuaManager = new CtrlrLuaManager(*this);
 	lfV1 = std::make_unique<juce::LookAndFeel_V1>();
 	lfV2 = std::make_unique<juce::LookAndFeel_V2>();
 	lfV3 = std::make_unique<juce::LookAndFeel_V3>();
@@ -249,8 +249,8 @@ CtrlrPanel::~CtrlrPanel()
 
 	panelTree.removeListener (this);
 
-	if (ctrlrLuaManager)
-		deleteAndZero (ctrlrLuaManager);
+	//if (ctrlrLuaManager)
+		//deleteAndZero (ctrlrLuaManager);
 
 	owner.removeChangeListener(this);
 

@@ -23,19 +23,17 @@
 
 #include "CtrlrLuaMethodDebuggerControls.h"
 
-
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]
 
 //==============================================================================
-CtrlrLuaMethodDebuggerControls::CtrlrLuaMethodDebuggerControls ()
+CtrlrLuaMethodDebuggerControls::CtrlrLuaMethodDebuggerControls()
 {
 
     //[UserPreSize]
     //[/UserPreSize]
 
-    setSize (600, 400);
-
+    setSize(600, 400);
 
     //[Constructor] You can add your own custom stuff here..
     //[/Constructor]
@@ -46,19 +44,17 @@ CtrlrLuaMethodDebuggerControls::~CtrlrLuaMethodDebuggerControls()
     //[Destructor_pre]. You can add your own custom destruction code here..
     //[/Destructor_pre]
 
-
-
     //[Destructor]. You can add your own custom destruction code here..
     //[/Destructor]
 }
 
 //==============================================================================
-void CtrlrLuaMethodDebuggerControls::paint (Graphics& g)
+void CtrlrLuaMethodDebuggerControls::paint(Graphics &g)
 {
     //[UserPrePaint] Add your own custom painting code here..
     //[/UserPrePaint]
 
-    g.fillAll (Colours::white);
+    g.fillAll(Colours::white);
 
     //[UserPaint] Add your own custom painting code here..
     //[/UserPaint]
@@ -70,11 +66,8 @@ void CtrlrLuaMethodDebuggerControls::resized()
     //[/UserResized]
 }
 
-
-
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 //[/MiscUserCode]
-
 
 //==============================================================================
 #if 0
@@ -95,7 +88,6 @@ BEGIN_JUCER_METADATA
 END_JUCER_METADATA
 */
 #endif
-
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]

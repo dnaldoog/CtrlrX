@@ -23,7 +23,7 @@ struct DelayedPluginDeleter : private Timer, private DeletedAtShutdown {
 
 		void timerCallback() override { delete this; }
 
-		ScopedPointer<AudioPluginInstance> plugin;
+		std::unique_ptr<AudioPluginInstance> plugin;
 };
 
 struct CtrlrParameterFromHost {
@@ -131,8 +131,8 @@ class CtrlrProcessor : public AudioProcessor, public ChangeBroadcaster {
 	private:
 		::PluginHostType host;
 		MidiBuffer leftoverBuffer;
-		CtrlrLog *ctrlrLog;
-		ScopedPointer<CtrlrManager> ctrlrManager;
+		std::unique_ptr<CtrlrLog> ctrlrLog;
+		std::unique_ptr<CtrlrManager> ctrlrManager;
 		File currentExec;
 		File overridesFile;
 		MidiMessage logResult;

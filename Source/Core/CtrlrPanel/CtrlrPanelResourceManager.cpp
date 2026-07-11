@@ -353,7 +353,7 @@ void CtrlrPanelResourceManager::wrapForLua(lua_State *L) {
 						   CtrlrPanelResourceManager::getResource,
 					   dependency(result, _1))
 				  //.def("getResource", (CtrlrPanelResource *(CtrlrPanelResourceManager::*)(const
-				  //int))&CtrlrPanelResourceManager::getResource) .def("getResource", (CtrlrPanelResource
+				  // int))&CtrlrPanelResourceManager::getResource) .def("getResource", (CtrlrPanelResource
 				  //*(CtrlrPanelResourceManager::*)(const String &))&CtrlrPanelResourceManager::getResource)
 				  .def("getNumResources", &CtrlrPanelResourceManager::getNumResources)
 				  .def("getResourceIndex", &CtrlrPanelResourceManager::getResourceIndex)
@@ -388,7 +388,7 @@ CtrlrPanelResourceType CtrlrPanelResourceManager::guessType(const File &resource
 	}
 
 	// Audio ?
-	ScopedPointer<AudioFormatReader> audio(
+	std::unique_ptr<AudioFormatReader> audio(
 		owner.getCtrlrManagerOwner().getAudioFormatManager().createReaderFor(resourceFile));
 
 	if (audio != nullptr) {
@@ -401,7 +401,7 @@ CtrlrPanelResourceType CtrlrPanelResourceManager::guessType(const File &resource
 	}
 
 	// XML ?
-	ScopedPointer<XmlElement> xml(XmlDocument::parse(resourceFile).release());
+	std::unique_ptr<XmlElement> xml(XmlDocument::parse(resourceFile).release());
 
 	if (xml != nullptr) {
 		return (XmlRes);

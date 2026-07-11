@@ -308,8 +308,8 @@ class CtrlrPanel : public ValueTree::Listener,
 		CtrlrPanelEvaluationScope &getPanelEvaluationScope() { return (panelEvaluationScope); }
 		CtrlrGlobalEvaluationScope &getGlobalEvaluationScope() { return (globalEvaluationScope); }
 		const Array<int, CriticalSection> getPanelResources() { return (panelResources); }
-		CtrlrPanelUndoManager *getPanelUndoManager() { return (ctrlrPanelUndoManager); }
-		CtrlrPanelUndoManager *getUndoManager() { return (ctrlrPanelUndoManager); }
+		CtrlrPanelUndoManager *getPanelUndoManager() { return ctrlrPanelUndoManager.get(); }
+		CtrlrPanelUndoManager *getUndoManager() { return ctrlrPanelUndoManager.get(); }
 		void undo();
 		void redo();
 		void sendMidiProgramChange();

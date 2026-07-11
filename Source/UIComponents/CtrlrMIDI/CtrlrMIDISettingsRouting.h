@@ -25,59 +25,52 @@
 class CtrlrPanel;
 //[/Headers]
 
-
-
 //==============================================================================
 /**
-                                                                    //[Comments]
-    An auto-generated component, created by the Introjucer.
+																	//[Comments]
+	An auto-generated component, created by the Introjucer.
 
-    Describe your class and how it works here!
-                                                                    //[/Comments]
+	Describe your class and how it works here!
+																	//[/Comments]
 */
-class CtrlrMIDISettingsRouting  : public Component,
-									public Button::Listener
-{
-public:
-    //==============================================================================
-    CtrlrMIDISettingsRouting (CtrlrPanel &_owner);
-    ~CtrlrMIDISettingsRouting();
+class CtrlrMIDISettingsRouting : public Component, public Button::Listener {
+	public:
+		//==============================================================================
+		CtrlrMIDISettingsRouting(CtrlrPanel &_owner);
+		~CtrlrMIDISettingsRouting();
 
-    //==============================================================================
-    //[UserMethods]     -- You can add your own custom methods in this section.
-    //[/UserMethods]
+		//==============================================================================
+		//[UserMethods]     -- You can add your own custom methods in this section.
+		//[/UserMethods]
 
-    void paint (Graphics& g);
-    void resized();
-    void buttonClicked (Button* buttonThatWasClicked);
+		void paint(Graphics &g);
+		void resized();
+		void buttonClicked(Button *buttonThatWasClicked);
 
+	private:
+		//[UserVariables]   -- You can add your own custom variables in this section.
+		CtrlrPanel &owner;
+		//[/UserVariables]
 
+		//==============================================================================
+		std::unique_ptr<GroupComponent> groupComponent;
+		std::unique_ptr<ToggleButton> inDev2OutDev;
+		std::unique_ptr<ToggleButton> ctrlDev2OutDev;
+		std::unique_ptr<ToggleButton> host2OutDev;
+		std::unique_ptr<ToggleButton> host2Host;
+		std::unique_ptr<ToggleButton> inDev2OutDevCh;
+		std::unique_ptr<ToggleButton> ctrlDev2OutDevCh;
+		std::unique_ptr<ToggleButton> host2OutDevCh;
+		std::unique_ptr<ToggleButton> host2HostCh;
+		std::unique_ptr<Label> label;
+		std::unique_ptr<ToggleButton> inDev2Host;
+		std::unique_ptr<ToggleButton> inDev2HostCh;
 
-private:
-    //[UserVariables]   -- You can add your own custom variables in this section.
-    CtrlrPanel &owner;
-    //[/UserVariables]
-
-    //==============================================================================
-    ScopedPointer<GroupComponent> groupComponent;
-    ScopedPointer<ToggleButton> inDev2OutDev;
-    ScopedPointer<ToggleButton> ctrlDev2OutDev;
-    ScopedPointer<ToggleButton> host2OutDev;
-    ScopedPointer<ToggleButton> host2Host;
-    ScopedPointer<ToggleButton> inDev2OutDevCh;
-    ScopedPointer<ToggleButton> ctrlDev2OutDevCh;
-    ScopedPointer<ToggleButton> host2OutDevCh;
-    ScopedPointer<ToggleButton> host2HostCh;
-    ScopedPointer<Label> label;
-    ScopedPointer<ToggleButton> inDev2Host;
-    ScopedPointer<ToggleButton> inDev2HostCh;
-
-
-    //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrMIDISettingsRouting)
+		//==============================================================================
+		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrMIDISettingsRouting)
 };
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]
 
-#endif   // __JUCE_HEADER_C6A688908B7833AE__
+#endif // __JUCE_HEADER_C6A688908B7833AE__

@@ -21,81 +21,75 @@
 #define __JUCE_HEADER_1BD9D118493E65A2__
 
 //[Headers]     -- You can add your own extra header files here --
+#include "../CtrlrLuaConsole.h"
+#include "CtrlrLuaMethodCodeEditor.h"
+#include "CtrlrLuaMethodDebuggerPrompt.h"
 #include "CtrlrLuaMethodEditorTabs.h"
 #include "CtrlrLuaMethodFind.h"
 #include "CtrlrTextEditor.h"
-#include "CtrlrLuaMethodCodeEditor.h"
-#include "CtrlrLuaMethodDebuggerPrompt.h"
-#include "../CtrlrLuaConsole.h"
 class CtrlrLuaMethodEditor;
 //[/Headers]
 
-
-
 //==============================================================================
 /**
-                                                                    //[Comments]
-    An auto-generated component, created by the Jucer.
+																	//[Comments]
+	An auto-generated component, created by the Jucer.
 
-    Describe your class and how it works here!
-                                                                    //[/Comments]
+	Describe your class and how it works here!
+																	//[/Comments]
 */
-class CtrlrLuaMethodEditArea  : public Component,
-                                public CtrlrLog::Listener
-{
-public:
-    //==============================================================================
-    CtrlrLuaMethodEditArea (CtrlrLuaMethodEditor &_owner);
-    ~CtrlrLuaMethodEditArea();
+class CtrlrLuaMethodEditArea : public Component, public CtrlrLog::Listener {
+	public:
+		//==============================================================================
+		CtrlrLuaMethodEditArea(CtrlrLuaMethodEditor &_owner);
+		~CtrlrLuaMethodEditArea();
 
-    //==============================================================================
-    //[UserMethods]     -- You can add your own custom methods in this section.
-    CtrlrLuaMethodEditorTabs *getTabs();
-    TabbedComponent *getLowerTabs();
-    void insertOutput(const String &textToInsert, const Colour what);
-    void insertOutput(const AttributedString stringToInsert);
-    void showFindDialog();
-    void showDebuggerTab();
-    void showConsoleTab();
-    void findNextMatch();
-    void replaceNextMatch();
-    void closeTabWithMethod(const ValueTree &item);
-    void messageLogged (CtrlrLog::CtrlrLogMessage message);
-    void mouseDoubleClick (const MouseEvent &e);
-    bool keyPressed (const KeyPress &key, Component *event);
-    void setActiveOutputTab();
-    CtrlrLuaMethodDebuggerPrompt *getLuaDebuggerPrompt(const bool activateDebuggerNow=false);
-    void clearOutputText();
-    //[/UserMethods]
+		//==============================================================================
+		//[UserMethods]     -- You can add your own custom methods in this section.
+		CtrlrLuaMethodEditorTabs *getTabs();
+		TabbedComponent *getLowerTabs();
+		void insertOutput(const String &textToInsert, const Colour what);
+		void insertOutput(const AttributedString stringToInsert);
+		void showFindDialog();
+		void showDebuggerTab();
+		void showConsoleTab();
+		void findNextMatch();
+		void replaceNextMatch();
+		void closeTabWithMethod(const ValueTree &item);
+		void messageLogged(CtrlrLog::CtrlrLogMessage message);
+		void mouseDoubleClick(const MouseEvent &e);
+		bool keyPressed(const KeyPress &key, Component *event);
+		void setActiveOutputTab();
+		CtrlrLuaMethodDebuggerPrompt *getLuaDebuggerPrompt(const bool activateDebuggerNow = false);
+		void clearOutputText();
+		//[/UserMethods]
 
-    void paint (Graphics& g);
-    void resized();
-    juce::Value& getSharedSearchTabsValue() { return sharedSearchTabsValue; }
+		void paint(Graphics &g);
+		void resized();
+		juce::Value &getSharedSearchTabsValue() { return sharedSearchTabsValue; }
 
+	private:
+		//[UserVariables]   -- You can add your own custom variables in this section.
+		CtrlrLuaMethodEditor &owner;
+		juce::Value sharedSearchTabsValue;
+		StretchableLayoutManager layoutManager;
+		StretchableLayoutResizerBar *resizer;
+		CtrlrTextEditor *output;
+		CtrlrLuaMethodFind *find;
+		CtrlrLuaMethodDebuggerPrompt *debuggerPrompt;
+		CtrlrLuaConsole *luaConsole;
+		juce::Value searchTabsValue; // This will be shared between toggles
+		//[/UserVariables]
 
-private:
-    //[UserVariables]   -- You can add your own custom variables in this section.
-    CtrlrLuaMethodEditor &owner;
-    juce::Value sharedSearchTabsValue;
-    StretchableLayoutManager layoutManager;
-    StretchableLayoutResizerBar *resizer;
-    CtrlrTextEditor *output;
-    CtrlrLuaMethodFind *find;
-    CtrlrLuaMethodDebuggerPrompt *debuggerPrompt;
-    CtrlrLuaConsole *luaConsole;
-    juce::Value searchTabsValue; // This will be shared between toggles
-    //[/UserVariables]
+		//==============================================================================
+		std::unique_ptr<TabbedComponent> lowerTabs;
+		std::unique_ptr<CtrlrLuaMethodEditorTabs> upperTabs;
 
-    //==============================================================================
-    ScopedPointer<TabbedComponent> lowerTabs;
-    ScopedPointer<CtrlrLuaMethodEditorTabs> upperTabs;
-
-
-    //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrLuaMethodEditArea)
+		//==============================================================================
+		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrLuaMethodEditArea)
 };
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]
 
-#endif   // __JUCE_HEADER_1BD9D118493E65A2__
+#endif // __JUCE_HEADER_1BD9D118493E65A2__

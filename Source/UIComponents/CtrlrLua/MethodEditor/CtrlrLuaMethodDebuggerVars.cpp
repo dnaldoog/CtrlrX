@@ -24,27 +24,25 @@
 
 #include "CtrlrLuaMethodDebuggerVars.h"
 
-
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]
 
 //==============================================================================
-CtrlrLuaMethodDebuggerVars::CtrlrLuaMethodDebuggerVars (CtrlrLuaMethodEditor &_owner)
+CtrlrLuaMethodDebuggerVars::CtrlrLuaMethodDebuggerVars(CtrlrLuaMethodEditor &_owner)
     : owner(_owner)
 {
-    addAndMakeVisible (valueList = new TableListBox());
-
+    valueList = std::make_unique<TableListBox>("valueList", this);
+    addAndMakeVisible(valueList.get());
 
     //[UserPreSize]
-    setName ("Variables");
-    valueList->setModel (this);
-    valueList->getHeader().addColumn ("Name", 1, 120, 120, -1);
-    valueList->getHeader().addColumn ("Type", 2, 120, 120, -1);
-    valueList->getHeader().addColumn ("Value", 3, 140, 140, -1);
+    setName("Variables");
+    valueList->setModel(this);
+    valueList->getHeader().addColumn("Name", 1, 120, 120, -1);
+    valueList->getHeader().addColumn("Type", 2, 120, 120, -1);
+    valueList->getHeader().addColumn("Value", 3, 140, 140, -1);
     //[/UserPreSize]
 
-    setSize (600, 400);
-
+    setSize(600, 400);
 
     //[Constructor] You can add your own custom stuff here..
     //[/Constructor]
@@ -55,20 +53,17 @@ CtrlrLuaMethodDebuggerVars::~CtrlrLuaMethodDebuggerVars()
     //[Destructor_pre]. You can add your own custom destruction code here..
     //[/Destructor_pre]
 
-    valueList = nullptr;
-
-
     //[Destructor]. You can add your own custom destruction code here..
     //[/Destructor]
 }
 
 //==============================================================================
-void CtrlrLuaMethodDebuggerVars::paint (Graphics& g)
+void CtrlrLuaMethodDebuggerVars::paint(Graphics &g)
 {
     //[UserPrePaint] Add your own custom painting code here..
     //[/UserPrePaint]
 
-    g.fillAll (Colours::white);
+    g.fillAll(Colours::white);
 
     //[UserPaint] Add your own custom painting code here..
     //[/UserPaint]
@@ -76,19 +71,17 @@ void CtrlrLuaMethodDebuggerVars::paint (Graphics& g)
 
 void CtrlrLuaMethodDebuggerVars::resized()
 {
-    valueList->setBounds (0, 0, getWidth() - 0, getHeight() - 0);
+    valueList->setBounds(0, 0, getWidth() - 0, getHeight() - 0);
     //[UserResized] Add your own custom resize handling here..
     //[/UserResized]
 }
 
-
-
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
-void CtrlrLuaMethodDebuggerVars::setData (const String &data)
+void CtrlrLuaMethodDebuggerVars::setData(const String &data)
 {
     // _DBG("CtrlrLuaMethodDebuggerVars::setData {"+data+"}");
     var result;
-    JSON::parse ("{" + data + "}", result);
+    JSON::parse("{" + data + "}", result);
 
     if (result.isObject())
     {
@@ -103,22 +96,22 @@ void CtrlrLuaMethodDebuggerVars::setData (const String &data)
                 DynamicObject *variables = o->getProperty(o->getProperties().getName(0)).getDynamicObject();
                 if (variables)
                 {
-                    for (int i=0; i<variables->getProperties().size(); i++)
+                    for (int i = 0; i < variables->getProperties().size(); i++)
                     {
                         Variable v;
                         if (variables->getProperties().getName(i).toString() == "table")
                             continue;
 
-                        v.varName   = variables->getProperties().getName(i).toString();
+                        v.varName = variables->getProperties().getName(i).toString();
                         if (variables->getProperties().getValueAt(i).isObject())
                         {
                             DynamicObject *varDesc = variables->getProperties().getValueAt(i).getDynamicObject();
 
                             if (varDesc->getProperties().getName(0).toString() == "userdata")
                             {
-                                if (isupper (varDesc->getProperties().getValueAt(0).toString()[0]))
+                                if (isupper(varDesc->getProperties().getValueAt(0).toString()[0]))
                                 {
-                                    v.varType = _STR ("(" + varDesc->getProperties().getValueAt(0).toString() + ")");
+                                    v.varType = _STR("(" + varDesc->getProperties().getValueAt(0).toString() + ")");
                                 }
                                 else
                                 {
@@ -127,13 +120,13 @@ void CtrlrLuaMethodDebuggerVars::setData (const String &data)
                             }
                             else if (varDesc->getProperties().getName(0).toString() == "table")
                             {
-                                v.varType   = varDesc->getProperties().getName(0).toString();
-                                v.varValue  = _STR("["+varDesc->getProperties().getValueAt(0).toString()+"]");
+                                v.varType = varDesc->getProperties().getName(0).toString();
+                                v.varValue = _STR("[" + varDesc->getProperties().getValueAt(0).toString() + "]");
                             }
                             else
                             {
-                                v.varType   = varDesc->getProperties().getName(0).toString();
-                                v.varValue  = varDesc->getProperties().getValueAt(0);
+                                v.varType = varDesc->getProperties().getName(0).toString();
+                                v.varValue = varDesc->getProperties().getValueAt(0);
                             }
                         }
                         else
@@ -141,7 +134,7 @@ void CtrlrLuaMethodDebuggerVars::setData (const String &data)
                             v.varValue = variables->getProperties().getValueAt(i);
                         }
 
-                        currentVars.add (v);
+                        currentVars.add(v);
                     }
                 }
 
@@ -151,7 +144,7 @@ void CtrlrLuaMethodDebuggerVars::setData (const String &data)
     }
 }
 
-void CtrlrLuaMethodDebuggerVars::paintRowBackground (Graphics &g, int rowNumber, int width, int height, bool rowIsSelected)
+void CtrlrLuaMethodDebuggerVars::paintRowBackground(Graphics &g, int rowNumber, int width, int height, bool rowIsSelected)
 {
     if (rowIsSelected)
     {
@@ -159,23 +152,23 @@ void CtrlrLuaMethodDebuggerVars::paintRowBackground (Graphics &g, int rowNumber,
     }
     else
     {
-        g.fillAll (Colours::white);
+        g.fillAll(Colours::white);
     }
 }
 
-void CtrlrLuaMethodDebuggerVars::paintCell (Graphics &g, int rowNumber, int columnId, int width, int height, bool rowIsSelected)
+void CtrlrLuaMethodDebuggerVars::paintCell(Graphics &g, int rowNumber, int columnId, int width, int height, bool rowIsSelected)
 {
     if (columnId == 1)
-        g.drawText (currentVars[rowNumber].varName, 0, 0, width, height, Justification::left, true);
+        g.drawText(currentVars[rowNumber].varName, 0, 0, width, height, Justification::left, true);
 
     if (columnId == 2)
-        g.drawText (currentVars[rowNumber].varType, 0, 0, width, height, Justification::left, true);
+        g.drawText(currentVars[rowNumber].varType, 0, 0, width, height, Justification::left, true);
 
     if (columnId == 3)
-        g.drawText (currentVars[rowNumber].varValue.toString(), 0, 0, width, height, Justification::left, true);
+        g.drawText(currentVars[rowNumber].varValue.toString(), 0, 0, width, height, Justification::left, true);
 }
 
-void CtrlrLuaMethodDebuggerVars::cellDoubleClicked (int rowNumber, int columnId, const MouseEvent &e)
+void CtrlrLuaMethodDebuggerVars::cellDoubleClicked(int rowNumber, int columnId, const MouseEvent &e)
 {
 }
 
@@ -184,7 +177,6 @@ int CtrlrLuaMethodDebuggerVars::getNumRows()
     return (currentVars.size());
 }
 //[/MiscUserCode]
-
 
 //==============================================================================
 #if 0
@@ -208,7 +200,6 @@ BEGIN_JUCER_METADATA
 END_JUCER_METADATA
 */
 #endif
-
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]

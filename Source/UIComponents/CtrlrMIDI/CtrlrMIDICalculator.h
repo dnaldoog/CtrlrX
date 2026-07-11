@@ -21,71 +21,66 @@
 #define __JUCE_HEADER_CE3E3E530CE423A0__
 
 //[Headers]     -- You can add your own extra header files here --
-#include "CtrlrMacros.h"
 #include "CtrlrLog.h"
+#include "CtrlrMacros.h"
 #include "CtrlrWindowManagers/CtrlrChildWindowContent.h"
 #include "CtrlrWindowManagers/CtrlrManagerWindowManager.h"
 class CtrlrManager;
 //[/Headers]
 
-
-
 //==============================================================================
 /**
-                                                                    //[Comments]
-    An auto-generated component, created by the Jucer.
+																	//[Comments]
+	An auto-generated component, created by the Jucer.
 
-    Describe your class and how it works here!
-                                                                    //[/Comments]
+	Describe your class and how it works here!
+																	//[/Comments]
 */
-class CtrlrMIDICalculator  : public CtrlrChildWindowContent,
-                             public TextEditor::Listener,
-							 public ComboBox::Listener,
-							 public Button::Listener
-{
-public:
-    //==============================================================================
-    CtrlrMIDICalculator (CtrlrManager &_owner);
-    ~CtrlrMIDICalculator();
+class CtrlrMIDICalculator : public CtrlrChildWindowContent,
+							public TextEditor::Listener,
+							public ComboBox::Listener,
+							public Button::Listener {
+	public:
+		//==============================================================================
+		CtrlrMIDICalculator(CtrlrManager &_owner);
+		~CtrlrMIDICalculator();
 
-    //==============================================================================
-    //[UserMethods]     -- You can add your own custom methods in this section.
-	String getContentName()					{ return ("MIDI Calculator"); }
-	uint8 getType()							{ return (CtrlrManagerWindowManager::MIDICalculator); }
-	void textEditorTextChanged (TextEditor &editor);
-	void formatData (const String &data, const bool isHex=false, const bool isDec=false, const bool isBin=false);
-	String formatHex(const int d);
-	String makeHexPretty(const String &hex);
-    //[/UserMethods]
+		//==============================================================================
+		//[UserMethods]     -- You can add your own custom methods in this section.
+		String getContentName() { return ("MIDI Calculator"); }
+		uint8 getType() { return (CtrlrManagerWindowManager::MIDICalculator); }
+		void textEditorTextChanged(TextEditor &editor);
+		void formatData(const String &data, const bool isHex = false, const bool isDec = false,
+						const bool isBin = false);
+		String formatHex(const int d);
+		String makeHexPretty(const String &hex);
+		//[/UserMethods]
 
-    void paint (Graphics& g);
-    void resized();
-    void comboBoxChanged (ComboBox* comboBoxThatHasChanged);
-    void buttonClicked (Button* buttonThatWasClicked);
+		void paint(Graphics &g);
+		void resized();
+		void comboBoxChanged(ComboBox *comboBoxThatHasChanged);
+		void buttonClicked(Button *buttonThatWasClicked);
 
+	private:
+		//[UserVariables]   -- You can add your own custom variables in this section.
+		CtrlrManager &owner;
+		//[/UserVariables]
 
+		//==============================================================================
+		std::unique_ptr<TextEditor> hexDisplay;
+		std::unique_ptr<Label> calcLabel;
+		std::unique_ptr<Label> calcLabel2;
+		std::unique_ptr<TextEditor> binDisplay;
+		std::unique_ptr<Label> calcLabel3;
+		std::unique_ptr<TextEditor> decDisplay;
+		std::unique_ptr<ComboBox> hexFormat;
+		std::unique_ptr<ToggleButton> bit16Switch;
 
-private:
-    //[UserVariables]   -- You can add your own custom variables in this section.
-	CtrlrManager &owner;
-    //[/UserVariables]
-
-    //==============================================================================
-    ScopedPointer<TextEditor> hexDisplay;
-    ScopedPointer<Label> label;
-    ScopedPointer<Label> label2;
-    ScopedPointer<TextEditor> binDisplay;
-    ScopedPointer<Label> label3;
-    ScopedPointer<TextEditor> decDisplay;
-    ScopedPointer<ComboBox> hexFormat;
-    ScopedPointer<ToggleButton> bit16Switch;
-
-
-    //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrMIDICalculator)
+		//==============================================================================
+		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrMIDICalculator)
 };
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]
 
-#endif   // __JUCE_HEADER_CE3E3E530CE423A0__
+#endif // __JUCE_HEADER_CE3E3E530CE423A0__

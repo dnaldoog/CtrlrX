@@ -4,75 +4,66 @@
 #include "CtrlrCustomButtonInternal.h"
 #include "CtrlrPanel/CtrlrPanelResource.h"
 
-CtrlrImageButton::CtrlrImageButton (CtrlrModulator &owner)
-    : CtrlrComponent(owner),
-      ctrlrButton (0)
+CtrlrImageButton::CtrlrImageButton(CtrlrModulator &owner)
+	: CtrlrComponent(owner)
 {
-	valueMap = new CtrlrValueMap();
-    addAndMakeVisible (ctrlrButton = new CtrlrCustomButtonInternal (*this));
 
-    //[UserPreSize]
-	setBufferedToImage (true);
-	ctrlrButton->addListener (this);
-    
-    
-    setProperty (Ids::componentInternalFunction, COMBO_ITEM_NONE); // Added v5.6.30. Will show up at the bottom in the component generic section
-        
-	setProperty (Ids::uiImageButtonMode, 0);
-	setProperty (Ids::uiImageButtonResource, "");
-	setProperty (Ids::resourceImageWidth, 32);
-	setProperty (Ids::resourceImageHeight, 32);
-	setProperty (Ids::resourceImagePaintMode, 36);
-	setProperty (Ids::resourceImageOrientation, 1);
-    setProperty (Ids::uiImageButtonTextColour, (String)findColour(TextButton::textColourOffId).toString());
-	setProperty (Ids::uiImageButtonContent, "");
-	setProperty (Ids::uiImageButtonTextPosition, 4);
-	setProperty (Ids::uiImageButtonTextWidth, 0);
-	setProperty (Ids::uiImageButtonTextHeight, 32);
-	setProperty (Ids::uiButtonTextFont, Font(12).toString());
-	setProperty (Ids::uiButtonTextJustification, "centred");
-	setProperty (Ids::uiImageButtonTextPosition, "bottom");
-	setProperty (Ids::uiImageButtonContent, "False\nTrue");
-	setProperty (Ids::uiButtonRepeat, false);
-	setProperty (Ids::uiButtonRepeatRate, 100);
-    //[/UserPreSize]
+	valueMap = std::make_unique<CtrlrValueMap>();
+	ctrlrButton = std::make_unique<CtrlrCustomButtonInternal>(*this);
+	addAndMakeVisible(ctrlrButton.get());
 
-    setSize (96, 62);
+	//[UserPreSize]
+	setBufferedToImage(true);
+	ctrlrButton->addListener(this);
 
-    //[Constructor] You can add your own custom stuff here..
-    //[/Constructor]
+	setProperty(Ids::componentInternalFunction, COMBO_ITEM_NONE); // Added v5.6.30. Will show up at the bottom in the component generic section
+
+	setProperty(Ids::uiImageButtonMode, 0);
+	setProperty(Ids::uiImageButtonResource, "");
+	setProperty(Ids::resourceImageWidth, 32);
+	setProperty(Ids::resourceImageHeight, 32);
+	setProperty(Ids::resourceImagePaintMode, 36);
+	setProperty(Ids::resourceImageOrientation, 1);
+	setProperty(Ids::uiImageButtonTextColour, (String)findColour(TextButton::textColourOffId).toString());
+	setProperty(Ids::uiImageButtonContent, "");
+	setProperty(Ids::uiImageButtonTextPosition, 4);
+	setProperty(Ids::uiImageButtonTextWidth, 0);
+	setProperty(Ids::uiImageButtonTextHeight, 32);
+	setProperty(Ids::uiButtonTextFont, Font(12).toString());
+	setProperty(Ids::uiButtonTextJustification, "centred");
+	setProperty(Ids::uiImageButtonTextPosition, "bottom");
+	setProperty(Ids::uiImageButtonContent, "False\nTrue");
+	setProperty(Ids::uiButtonRepeat, false);
+	setProperty(Ids::uiButtonRepeatRate, 100);
+	//[/UserPreSize]
+
+	setSize(96, 62);
+
+	//[Constructor] You can add your own custom stuff here..
+	//[/Constructor]
 }
 
 CtrlrImageButton::~CtrlrImageButton()
 {
-    //[Destructor_pre]. You can add your own custom destruction code here..
-    //[/Destructor_pre]
-
-    deleteAndZero (ctrlrButton);
-
-    //[Destructor]. You can add your own custom destruction code here..
-    //[/Destructor]
 }
 
 //==============================================================================
-void CtrlrImageButton::paint (Graphics& g)
+void CtrlrImageButton::paint(Graphics &g)
 {
-    //[UserPrePaint] Add your own custom painting code here..
-    //[/UserPrePaint]
+	//[UserPrePaint] Add your own custom painting code here..
+	//[/UserPrePaint]
 
-    //[UserPaint] Add your own custom painting code here..
-    //[/UserPaint]
+	//[UserPaint] Add your own custom painting code here..
+	//[/UserPaint]
 }
 
 void CtrlrImageButton::resized()
 {
-    ctrlrButton->setBounds (0, 0, getWidth() - 0, getHeight() - 0);
-    //[UserResized] Add your own custom resize handling here..
-	ctrlrButton->setBounds (getUsableRect());
-    //[/UserResized]
+	ctrlrButton->setBounds(0, 0, getWidth() - 0, getHeight() - 0);
+	//[UserResized] Add your own custom resize handling here..
+	ctrlrButton->setBounds(getUsableRect());
+	//[/UserResized]
 }
-
-
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 void CtrlrImageButton::timerCallback()
@@ -87,13 +78,13 @@ void CtrlrImageButton::timerCallback()
 	}
 }
 
-void CtrlrImageButton::mouseDown (const MouseEvent& e)
+void CtrlrImageButton::mouseDown(const MouseEvent &e)
 {
-	if (e.eventComponent == ctrlrButton)
+	if (e.eventComponent == ctrlrButton.get())
 	{
 		if (!isTimerRunning())
 		{
-			startTimer ((int)getProperty(Ids::uiButtonRepeatRate));
+			startTimer((int)getProperty(Ids::uiButtonRepeatRate));
 		}
 	}
 	CtrlrComponent::mouseDown(e);
@@ -114,45 +105,45 @@ const String CtrlrImageButton::getComponentText()
 	return (ctrlrButton->getButtonText());
 }
 
-void CtrlrImageButton::setComponentValue (const double newValue, const bool sendChangeMessage)
+void CtrlrImageButton::setComponentValue(const double newValue, const bool sendChangeMessage)
 {
 	if (!owner.getOwnerPanel().checkRadioGroup(this, ctrlrButton->getToggleState()))
 		return;
 
-	valueMap->setCurrentNonMappedValue (newValue);
+	valueMap->setCurrentNonMappedValue(newValue);
 
-	ctrlrButton->setButtonText (valueMap->getCurrentText());
+	ctrlrButton->setButtonText(valueMap->getCurrentText());
 
 	if (ctrlrButton->getClickingTogglesState())
 	{
-		ctrlrButton->setToggleState (newValue ? true : false, dontSendNotification);
-		ctrlrButton->setButtonText (valueMap->getTextForIndex(newValue));
+		ctrlrButton->setToggleState(newValue ? true : false, dontSendNotification);
+		ctrlrButton->setButtonText(valueMap->getTextForIndex(newValue));
 	}
 
 	if (sendChangeMessage)
 	{
-		owner.getProcessor().setValueGeneric (CtrlrModulatorValue(newValue,CtrlrModulatorValue::changedByGUI), sendChangeMessage);
+		owner.getProcessor().setValueGeneric(CtrlrModulatorValue(newValue, CtrlrModulatorValue::changedByGUI), sendChangeMessage);
 	}
 }
 
-void CtrlrImageButton::setComponentMidiValue (const int newValue, const bool sendChangeMessage)
+void CtrlrImageButton::setComponentMidiValue(const int newValue, const bool sendChangeMessage)
 {
 	if (!owner.getOwnerPanel().checkRadioGroup(this, ctrlrButton->getToggleState()))
 		return;
 
-	valueMap->setCurrentMappedValue (newValue);
+	valueMap->setCurrentMappedValue(newValue);
 
-	ctrlrButton->setButtonText (valueMap->getCurrentText());
+	ctrlrButton->setButtonText(valueMap->getCurrentText());
 
 	if (ctrlrButton->getClickingTogglesState())
 	{
-		ctrlrButton->setToggleState (newValue ? true : false, dontSendNotification);
-		ctrlrButton->setButtonText (valueMap->getTextForIndex(newValue));
+		ctrlrButton->setToggleState(newValue ? true : false, dontSendNotification);
+		ctrlrButton->setButtonText(valueMap->getTextForIndex(newValue));
 	}
 
 	if (sendChangeMessage)
 	{
-		owner.getProcessor().setValueGeneric (CtrlrModulatorValue (newValue, CtrlrModulatorValue::changedByGUI), sendChangeMessage);
+		owner.getProcessor().setValueGeneric(CtrlrModulatorValue(newValue, CtrlrModulatorValue::changedByGUI), sendChangeMessage);
 	}
 }
 
@@ -163,14 +154,14 @@ int CtrlrImageButton::getComponentMidiValue()
 
 void CtrlrImageButton::buttonContentChanged()
 {
-	valueMap->copyFrom (owner.getProcessor().setValueMap (getProperty(Ids::uiImageButtonContent)));
+	valueMap->copyFrom(owner.getProcessor().setValueMap(getProperty(Ids::uiImageButtonContent)));
 }
 
-void CtrlrImageButton::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
+void CtrlrImageButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
 {
 	if (property == Ids::componentRadioGroupId)
 	{
-		ctrlrButton->setToggleState (false, dontSendNotification);
+		ctrlrButton->setToggleState(false, dontSendNotification);
 	}
 
 	if (property == Ids::uiImageButtonContent)
@@ -178,27 +169,16 @@ void CtrlrImageButton::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
 		buttonContentChanged();
 	}
 
-	else if (property == Ids::uiImageButtonResource
-		|| property == Ids::resourceImageWidth
-		|| property == Ids::resourceImageHeight
-		|| property == Ids::resourceImagePaintMode
-		|| property == Ids::resourceImageOrientation)
+	else if (property == Ids::uiImageButtonResource || property == Ids::resourceImageWidth || property == Ids::resourceImageHeight || property == Ids::resourceImagePaintMode || property == Ids::resourceImageOrientation)
 	{
 		setResource();
-		ctrlrButton->setOrientation ((bool)getProperty(Ids::resourceImageOrientation));
-		ctrlrButton->setImage (filmStripImage, (int)getProperty(Ids::resourceImageWidth), (int)getProperty(Ids::resourceImageHeight));
-		ctrlrButton->setPaintMode ((RectanglePlacement)(int)getProperty(Ids::resourceImagePaintMode));
+		ctrlrButton->setOrientation((bool)getProperty(Ids::resourceImageOrientation));
+		ctrlrButton->setImage(filmStripImage, (int)getProperty(Ids::resourceImageWidth), (int)getProperty(Ids::resourceImageHeight));
+		ctrlrButton->setPaintMode((RectanglePlacement)(int)getProperty(Ids::resourceImagePaintMode));
 		ctrlrButton->repaint();
 	}
 
-	else if (property == Ids::uiButtonTextFont
-		|| property == Ids::uiImageButtonTextColour
-		|| property == Ids::uiImageButtonTextPosition
-		|| property == Ids::resourceImageWidth
-		|| property == Ids::resourceImageHeight
-		|| property == Ids::uiButtonTextJustification
-		|| property == Ids::uiImageButtonTextWidth
-		|| property == Ids::uiImageButtonTextHeight)
+	else if (property == Ids::uiButtonTextFont || property == Ids::uiImageButtonTextColour || property == Ids::uiImageButtonTextPosition || property == Ids::resourceImageWidth || property == Ids::resourceImageHeight || property == Ids::uiButtonTextJustification || property == Ids::uiImageButtonTextWidth || property == Ids::uiImageButtonTextHeight)
 	{
 		ctrlrButton->repaint();
 	}
@@ -211,11 +191,11 @@ void CtrlrImageButton::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
 	{
 		if ((bool)getProperty(property) == true)
 		{
-			ctrlrButton->addMouseListener (this, false);
+			ctrlrButton->addMouseListener(this, false);
 		}
 		else
 		{
-			ctrlrButton->removeMouseListener (this);
+			ctrlrButton->removeMouseListener(this);
 			stopTimer();
 		}
 	}
@@ -232,14 +212,11 @@ void CtrlrImageButton::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
 
 const Array<Font> CtrlrImageButton::getFontList()
 {
-	Array <Font> ret;
+	Array<Font> ret;
 	Font f = STR2FONT(getProperty(Ids::uiButtonTextFont));
-	if (f.getTypefaceName() != Font::getDefaultSerifFontName()
-		&& f.getTypefaceName() != Font::getDefaultSansSerifFontName()
-		&& f.getTypefaceName() != Font::getDefaultMonospacedFontName()
-		&& f.getTypefaceName() != "<Sans-Serif>")
+	if (f.getTypefaceName() != Font::getDefaultSerifFontName() && f.getTypefaceName() != Font::getDefaultSansSerifFontName() && f.getTypefaceName() != Font::getDefaultMonospacedFontName() && f.getTypefaceName() != "<Sans-Serif>")
 	{
-		ret.add (f);
+		ret.add(f);
 	}
 	return (ret);
 }
@@ -248,23 +225,23 @@ void CtrlrImageButton::buttonModeChanged(const ImageButtonMode newMode)
 {
 	switch (newMode)
 	{
-		case Normal:
-			if (valueMap->getNumValues() == 2)
-			{
-				ctrlrButton->setClickingTogglesState(true);
-			}
-			else
-				ctrlrButton->setClickingTogglesState(false);
-			break;
-
-		case Momentary:
-		case MomentaryMouseOver:
-		case NormalMouseOver:
+	case Normal:
+		if (valueMap->getNumValues() == 2)
+		{
+			ctrlrButton->setClickingTogglesState(true);
+		}
+		else
 			ctrlrButton->setClickingTogglesState(false);
-			break;
+		break;
 
-		default:
-			break;
+	case Momentary:
+	case MomentaryMouseOver:
+	case NormalMouseOver:
+		ctrlrButton->setClickingTogglesState(false);
+		break;
+
+	default:
+		break;
 	}
 }
 
@@ -285,7 +262,7 @@ bool CtrlrImageButton::isToggleButton()
 
 void CtrlrImageButton::setToggleState(const bool toggleState, const bool sendChangeMessage)
 {
-	ctrlrButton->setToggleState (toggleState, sendChangeMessage ? sendNotification : dontSendNotification);
+	ctrlrButton->setToggleState(toggleState, sendChangeMessage ? sendNotification : dontSendNotification);
 }
 
 bool CtrlrImageButton::getToggleState()
@@ -293,7 +270,7 @@ bool CtrlrImageButton::getToggleState()
 	return (ctrlrButton->getToggleState());
 }
 
-void CtrlrImageButton::buttonClicked (Button* button)
+void CtrlrImageButton::buttonClicked(Button *button)
 {
 	if (isInternal())
 	{
@@ -304,25 +281,25 @@ void CtrlrImageButton::buttonClicked (Button* button)
 	if (!owner.getOwnerPanel().checkRadioGroup(this, button->getToggleState()))
 		return;
 
-	if (button == ctrlrButton)
+	if (button == ctrlrButton.get())
 	{
 		valueMap->increment();
-		ctrlrButton->setButtonText (valueMap->getCurrentText());
-		setComponentValue (valueMap->getCurrentNonMappedValue(), true);
+		ctrlrButton->setButtonText(valueMap->getCurrentText());
+		setComponentValue(valueMap->getCurrentNonMappedValue(), true);
 	}
 }
 
 void CtrlrImageButton::setResource()
 {
-	filmStripImage = owner.getOwnerPanel().getResourceManager().getResourceAsImage (getProperty(Ids::uiImageButtonResource));
+	filmStripImage = owner.getOwnerPanel().getResourceManager().getResourceAsImage(getProperty(Ids::uiImageButtonResource));
 	lookAndFeelChanged();
 	repaint();
 	resized();
 }
 
-void CtrlrImageButton::reloadResources(Array <CtrlrPanelResource*> resourcesThatChanged)
+void CtrlrImageButton::reloadResources(Array<CtrlrPanelResource *> resourcesThatChanged)
 {
-	for (int i=0; i<resourcesThatChanged.size(); i++)
+	for (int i = 0; i < resourcesThatChanged.size(); i++)
 	{
 		if (resourcesThatChanged[i]->getName() == getProperty(Ids::uiImageButtonResource).toString())
 		{
@@ -331,7 +308,6 @@ void CtrlrImageButton::reloadResources(Array <CtrlrPanelResource*> resourcesThat
 	}
 }
 //[/MiscUserCode]
-
 
 //==============================================================================
 #if 0

@@ -92,7 +92,7 @@ private:
     //[/UserVariables]
 
     //==============================================================================
-    MidiKeyboardComponent* midiKeyboard;
+    std::unique_ptr<MidiKeyboardComponent> midiKeyboard;
 
     //==============================================================================
     // (prevent copy constructor and operator= being generated..)

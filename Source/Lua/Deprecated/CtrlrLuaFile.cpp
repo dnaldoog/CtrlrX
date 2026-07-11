@@ -1,39 +1,43 @@
-#include "CtrlrLuaFile.h"
 #include "stdafx.h"
 #include "stdafx_luabind.h"
+#include "CtrlrLuaFile.h"
 
-CtrlrLuaFile::CtrlrLuaFile() {}
-
-CtrlrLuaFile::CtrlrLuaFile(const String &path) : File(path) {}
-
-CtrlrLuaFile::CtrlrLuaFile(const File &file) : File(file) {}
-
-CtrlrLuaFile::~CtrlrLuaFile() {}
-
-void CtrlrLuaFile::replaceFileContentWithData(CtrlrLuaMemoryBlock &data) {
-	File::replaceWithData(data.getData(), data.getSize());
+CtrlrLuaFile::CtrlrLuaFile() : file()
+{
 }
 
-CtrlrLuaMemoryBlock CtrlrLuaFile::loadFileAsData() {
-	MemoryBlock mb;
-	File::loadFileAsData(mb);
-
-	return (CtrlrLuaMemoryBlock(mb));
+CtrlrLuaFile::CtrlrLuaFile (const String &path) : file(path)
+{
 }
 
-void CtrlrLuaFile::findChildFiles(luabind::object const &table, int whatToLookFor, bool searchRecursively,
-								  const String &wildcardPattern) {
-	if (luabind::type(table) == LUA_TTABLE) {
-		Array<File> ar;
-
-		File::findChildFiles(ar, whatToLookFor, searchRecursively, wildcardPattern);
-
-		for (int i = 0; i < ar.size(); i++) {
-			table[i + 1] = CtrlrLuaFile(ar[i]);
-		}
-	}
+CtrlrLuaFile::CtrlrLuaFile (const File &fileToUse) : file(fileToUse)
+{
 }
 
-CtrlrLuaFile CtrlrLuaFile::getSpecialLocation(const File::SpecialLocationType loc) {
-	return (CtrlrLuaFile(File::getSpecialLocation(loc)));
+CtrlrLuaFile::~CtrlrLuaFile()
+{
+}
+
+void CtrlrLuaFile::replaceFileContentWithData (CtrlrLuaMemoryBlock &data)
+{
+	file.replaceWithData(data.get(), data.getSize());
+}
+
+CtrlrLuaMemoryBlock CtrlrLuaFile::loadFileAsData()
+{
+	CtrlrLuaMemoryBlock block;
+	block.append(file);
+	return block;
+}
+
+void CtrlrLuaFile::findChildFiles (luabind::object const& table, int whatToLookFor, bool searchRecursively, const String &wildcardPattern)
+{
+	Array<File> results;
+	file.findChildFiles(results, whatToLookFor, searchRecursively, wildcardPattern);
+	// Add results to Lua table...
+}
+
+CtrlrLuaFile CtrlrLuaFile::getSpecialLocation(const File::SpecialLocationType loc)
+{
+	return CtrlrLuaFile(File::getSpecialLocation(loc));
 }

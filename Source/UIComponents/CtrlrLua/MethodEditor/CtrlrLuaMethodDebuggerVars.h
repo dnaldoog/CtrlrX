@@ -25,60 +25,52 @@
 class CtrlrLuaMethodEditor;
 //[/Headers]
 
-
-
 //==============================================================================
 /**
-                                                                    //[Comments]
-    An auto-generated component, created by the Introjucer.
+																	//[Comments]
+	An auto-generated component, created by the Introjucer.
 
-    Describe your class and how it works here!
-                                                                    //[/Comments]
+	Describe your class and how it works here!
+																	//[/Comments]
 */
-class CtrlrLuaMethodDebuggerVars  : public Component,
-                                    public TableListBoxModel
-{
-public:
-    //==============================================================================
-    CtrlrLuaMethodDebuggerVars (CtrlrLuaMethodEditor &_owner);
-    ~CtrlrLuaMethodDebuggerVars();
+class CtrlrLuaMethodDebuggerVars : public Component, public TableListBoxModel {
+	public:
+		//==============================================================================
+		CtrlrLuaMethodDebuggerVars(CtrlrLuaMethodEditor &_owner);
+		~CtrlrLuaMethodDebuggerVars();
 
-    //==============================================================================
-    //[UserMethods]     -- You can add your own custom methods in this section.
-    struct Variable
-    {
-        String varName;
-        String varType;
-        var varValue;
-    };
+		//==============================================================================
+		//[UserMethods]     -- You can add your own custom methods in this section.
+		struct Variable {
+				String varName;
+				String varType;
+				var varValue;
+		};
 
-    int getNumRows();
-    void paintRowBackground (Graphics &g, int rowNumber, int width, int height, bool rowIsSelected);
-    void paintCell (Graphics &g, int rowNumber, int columnId, int width, int height, bool rowIsSelected);
-    void cellDoubleClicked (int rowNumber, int columnId, const MouseEvent &e);
-    void setData (const String &data);
-    //[/UserMethods]
+		int getNumRows();
+		void paintRowBackground(Graphics &g, int rowNumber, int width, int height, bool rowIsSelected);
+		void paintCell(Graphics &g, int rowNumber, int columnId, int width, int height, bool rowIsSelected);
+		void cellDoubleClicked(int rowNumber, int columnId, const MouseEvent &e);
+		void setData(const String &data);
+		//[/UserMethods]
 
-    void paint (Graphics& g);
-    void resized();
+		void paint(Graphics &g);
+		void resized();
 
+	private:
+		//[UserVariables]   -- You can add your own custom variables in this section.
+		CtrlrLuaMethodEditor &owner;
+		Array<Variable> currentVars;
+		//[/UserVariables]
 
+		//==============================================================================
+		std::unique_ptr<TableListBox> valueList;
 
-private:
-    //[UserVariables]   -- You can add your own custom variables in this section.
-    CtrlrLuaMethodEditor &owner;
-    Array <Variable> currentVars;
-    //[/UserVariables]
-
-    //==============================================================================
-    ScopedPointer<TableListBox> valueList;
-
-
-    //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrLuaMethodDebuggerVars)
+		//==============================================================================
+		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrLuaMethodDebuggerVars)
 };
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]
 
-#endif   // __JUCE_HEADER_BA63E77F235AA466__
+#endif // __JUCE_HEADER_BA63E77F235AA466__

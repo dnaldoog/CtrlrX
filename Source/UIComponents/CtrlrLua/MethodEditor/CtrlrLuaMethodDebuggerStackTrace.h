@@ -25,63 +25,55 @@
 class CtrlrLuaMethodEditor;
 //[/Headers]
 
-
-
 //==============================================================================
 /**
-                                                                    //[Comments]
-    An auto-generated component, created by the Introjucer.
+																	//[Comments]
+	An auto-generated component, created by the Introjucer.
 
-    Describe your class and how it works here!
-                                                                    //[/Comments]
+	Describe your class and how it works here!
+																	//[/Comments]
 */
-class CtrlrLuaMethodDebuggerStackTrace  : public Component,
-                                          public TableListBoxModel
-{
-public:
-    //==============================================================================
-    CtrlrLuaMethodDebuggerStackTrace (CtrlrLuaMethodEditor &_owner);
-    ~CtrlrLuaMethodDebuggerStackTrace();
+class CtrlrLuaMethodDebuggerStackTrace : public Component, public TableListBoxModel {
+	public:
+		//==============================================================================
+		CtrlrLuaMethodDebuggerStackTrace(CtrlrLuaMethodEditor &_owner);
+		~CtrlrLuaMethodDebuggerStackTrace();
 
-    //==============================================================================
-    //[UserMethods]     -- You can add your own custom methods in this section.
-    struct StackFrame
-    {
-        int lineNumber;
-        int positionOnTheStack;
-        String methodName;
-        String scriptName;
-        bool isCurrent;
-    };
-    void setData (const String &data);
-    int getNumRows();
-    void paintRowBackground (Graphics &g, int rowNumber, int width, int height, bool rowIsSelected);
-    void paintCell (Graphics &g, int rowNumber, int columnId, int width, int height, bool rowIsSelected);
-    void cellDoubleClicked (int rowNumber, int columnId, const MouseEvent &e);
-    StackFrame getStackFrame(const String &stackTraceInfoAsString);
-    //[/UserMethods]
+		//==============================================================================
+		//[UserMethods]     -- You can add your own custom methods in this section.
+		struct StackFrame {
+				int lineNumber;
+				int positionOnTheStack;
+				String methodName;
+				String scriptName;
+				bool isCurrent;
+		};
+		void setData(const String &data);
+		int getNumRows();
+		void paintRowBackground(Graphics &g, int rowNumber, int width, int height, bool rowIsSelected);
+		void paintCell(Graphics &g, int rowNumber, int columnId, int width, int height, bool rowIsSelected);
+		void cellDoubleClicked(int rowNumber, int columnId, const MouseEvent &e);
+		StackFrame getStackFrame(const String &stackTraceInfoAsString);
+		//[/UserMethods]
 
-    void paint (Graphics& g);
-    void resized();
+		void paint(Graphics &g);
+		void resized();
 
+	private:
+		//[UserVariables]   -- You can add your own custom variables in this section.
+		CtrlrLuaMethodEditor &owner;
+		StringArray traceLines;
+		Array<StackFrame> currentFrames;
+		//[/UserVariables]
 
+		//==============================================================================
+		std::unique_ptr<TableListBox> stackTraceList;
 
-private:
-    //[UserVariables]   -- You can add your own custom variables in this section.
-    CtrlrLuaMethodEditor &owner;
-    StringArray traceLines;
-    Array<StackFrame> currentFrames;
-    //[/UserVariables]
-
-    //==============================================================================
-    ScopedPointer<TableListBox> stackTraceList;
-
-
-    //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrLuaMethodDebuggerStackTrace)
+		//==============================================================================
+		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrLuaMethodDebuggerStackTrace)
 };
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]
 
-#endif   // __JUCE_HEADER_521ABF2E90F95418__
+#endif // __JUCE_HEADER_521ABF2E90F95418__

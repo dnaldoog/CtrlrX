@@ -28,29 +28,26 @@
 #include "CtrlrMIDISettingsDevices.h"
 #include "CtrlrMIDISettingsRouting.h"
 
-
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]
 
 //==============================================================================
-CtrlrMIDISettingsDialog::CtrlrMIDISettingsDialog (CtrlrPanel &_owner)
+CtrlrMIDISettingsDialog::CtrlrMIDISettingsDialog(CtrlrPanel &_owner)
     : owner(_owner)
 {
     //[Constructor_pre] You can add your own custom stuff here..
     //[/Constructor_pre]
-
-    addAndMakeVisible (midiTabs = new TabbedComponent (TabbedButtonBar::TabsAtTop));
-    midiTabs->setTabBarDepth (30);
-    midiTabs->addTab (TRANS("Devices"), Colour (findColour(DocumentWindow::backgroundColourId)), new CtrlrMIDISettingsDevices (owner), true); // Colour (0xa2d2d2d2)
-    midiTabs->addTab (TRANS("Routing"), Colour (findColour(DocumentWindow::backgroundColourId)), new CtrlrMIDISettingsRouting (owner), true); // Colour (0xa2d2d2d2)
-    midiTabs->setCurrentTabIndex (0);
-
+    midiTabs = std::make_unique<TabbedComponent>(TabbedButtonBar::TabsAtTop);
+    addAndMakeVisible(midiTabs.get());
+    midiTabs->setTabBarDepth(30);
+    midiTabs->addTab(TRANS("Devices"), Colour(findColour(DocumentWindow::backgroundColourId)), new CtrlrMIDISettingsDevices(owner), true); // Colour (0xa2d2d2d2)
+    midiTabs->addTab(TRANS("Routing"), Colour(findColour(DocumentWindow::backgroundColourId)), new CtrlrMIDISettingsRouting(owner), true); // Colour (0xa2d2d2d2)
+    midiTabs->setCurrentTabIndex(0);
 
     //[UserPreSize]
     //[/UserPreSize]
 
-    setSize (500, 500);
-
+    setSize(500, 500);
 
     //[Constructor] You can add your own custom stuff here..
     //[/Constructor]
@@ -61,8 +58,7 @@ CtrlrMIDISettingsDialog::~CtrlrMIDISettingsDialog()
     //[Destructor_pre]. You can add your own custom destruction code here..
     //[/Destructor_pre]
 
-    midiTabs = nullptr;
-
+    // midiTabs = nullptr;
 
     //[Destructor]. You can add your own custom destruction code here..
     //[/Destructor]
@@ -73,22 +69,20 @@ void CtrlrMIDISettingsDialog::resized()
     //[UserPreResize] Add your own custom resize code here..
     //[/UserPreResize]
 
-    midiTabs->setBounds (0, 0, getWidth() - 0, getHeight() - 0);
+    midiTabs->setBounds(0, 0, getWidth() - 0, getHeight() - 0);
     //[UserResized] Add your own custom resize handling here..
     //[/UserResized]
 }
-
-
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 void CtrlrMIDISettingsDialog::showDialog(CtrlrPanel &_owner)
 {
     DialogWindow::LaunchOptions opts;
-    auto* dialogContent = new CtrlrMIDISettingsDialog(_owner);
+    auto *dialogContent = new CtrlrMIDISettingsDialog(_owner);
     opts.content.setOwned(dialogContent);
     opts.dialogTitle = "MIDI Settings";
-    opts.componentToCentreAround = dynamic_cast<Component*>(_owner.getEditor());
-    opts.dialogBackgroundColour = dynamic_cast<Component*>(_owner.getEditor())->findColour(DocumentWindow::backgroundColourId); // Colours::white;
+    opts.componentToCentreAround = dynamic_cast<Component *>(_owner.getEditor());
+    opts.dialogBackgroundColour = dynamic_cast<Component *>(_owner.getEditor())->findColour(DocumentWindow::backgroundColourId); // Colours::white;
     opts.useNativeTitleBar = true;
     opts.useBottomRightCornerResizer = true;
     opts.resizable = true;
@@ -96,7 +90,6 @@ void CtrlrMIDISettingsDialog::showDialog(CtrlrPanel &_owner)
     opts.runModal();
 }
 //[/MiscUserCode]
-
 
 //==============================================================================
 #if 0
@@ -126,7 +119,6 @@ BEGIN_JUCER_METADATA
 END_JUCER_METADATA
 */
 #endif
-
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]

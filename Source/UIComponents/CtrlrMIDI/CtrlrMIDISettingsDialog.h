@@ -21,51 +21,45 @@
 #define __JUCE_HEADER_522F0365577AE4E2__
 
 //[Headers]     -- You can add your own extra header files here --
-#include "JuceHeader.h"
 #include "CtrlrWindowManagers/CtrlrChildWindowContent.h"
+#include "JuceHeader.h"
 class CtrlrPanel;
 //[/Headers]
 
-
-
 //==============================================================================
 /**
-                                                                    //[Comments]
-    An auto-generated component, created by the Introjucer.
+																	//[Comments]
+	An auto-generated component, created by the Introjucer.
 
-    Describe your class and how it works here!
-                                                                    //[/Comments]
+	Describe your class and how it works here!
+																	//[/Comments]
 */
-class CtrlrMIDISettingsDialog  : public CtrlrChildWindowContent
-{
-public:
-    //==============================================================================
-    CtrlrMIDISettingsDialog (CtrlrPanel &_owner);
-    ~CtrlrMIDISettingsDialog();
+class CtrlrMIDISettingsDialog : public CtrlrChildWindowContent {
+	public:
+		//==============================================================================
+		CtrlrMIDISettingsDialog(CtrlrPanel &_owner);
+		~CtrlrMIDISettingsDialog();
 
-    //==============================================================================
-    //[UserMethods]     -- You can add your own custom methods in this section.
-    static void showDialog(CtrlrPanel &_owner);
-    uint8 getType() { return (CtrlrPanelWindowManager::MIDISettings); }
-    //[/UserMethods]
-    void resized();
+		//==============================================================================
+		//[UserMethods]     -- You can add your own custom methods in this section.
+		static void showDialog(CtrlrPanel &_owner);
+		uint8 getType() { return (CtrlrPanelWindowManager::MIDISettings); }
+		//[/UserMethods]
+		void resized();
 
+	private:
+		//[UserVariables]   -- You can add your own custom variables in this section.
+		CtrlrPanel &owner;
+		//[/UserVariables]
 
+		//==============================================================================
+		std::unique_ptr<TabbedComponent> midiTabs;
 
-private:
-    //[UserVariables]   -- You can add your own custom variables in this section.
-    CtrlrPanel &owner;
-    //[/UserVariables]
-
-    //==============================================================================
-    ScopedPointer<TabbedComponent> midiTabs;
-
-
-    //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrMIDISettingsDialog)
+		//==============================================================================
+		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrMIDISettingsDialog)
 };
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]
 
-#endif   // __JUCE_HEADER_522F0365577AE4E2__
+#endif // __JUCE_HEADER_522F0365577AE4E2__

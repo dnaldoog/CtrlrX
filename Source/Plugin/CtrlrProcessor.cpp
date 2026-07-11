@@ -40,7 +40,7 @@ CtrlrProcessor::CtrlrProcessor()
 	overridesTree.setProperty(Ids::ctrlrShutdownDelay, 512, 0);
 
 	if (overridesFile.existsAsFile()) {
-		ScopedPointer<XmlElement> xml(XmlDocument(overridesFile).getDocumentElement().release());
+		std::unique_ptr<XmlElement> xml(XmlDocument(overridesFile).getDocumentElement().release());
 		if (xml) {
 			overridesTree = ValueTree::fromXml(*xml);
 		}
@@ -90,10 +90,10 @@ CtrlrProcessor::~CtrlrProcessor() // Updated v5.6.34. Prevents AAX from crashing
 	// For all plugin formats *EXCEPT* AAX:
 	// Perform explicit deletion for the raw pointer (ctrlrLog).
 	// ScopedPointer (ctrlrManager) will handle its own deletion automatically.
-	if (ctrlrLog != nullptr) {
-		delete ctrlrLog;
-		ctrlrLog = nullptr;
-	}
+	// if (ctrlrLog != nullptr) {
+	// 	delete ctrlrLog;
+	// 	ctrlrLog = nullptr;
+	// }
 
 #ifdef JUCE_MAC
 	// This line was causing crashes on AAX removal, so it's excluded for AAX by the #ifndef above.
@@ -572,7 +572,7 @@ AudioProcessorEditor *CtrlrProcessor::createEditor() {
 
 void CtrlrProcessor::getStateInformation(MemoryBlock &destData) {
 	_DBG("CtrlrProcessor::getStateInformation");
-	ScopedPointer<XmlElement> xmlState(ctrlrManager->saveState());
+	std::unique_ptr<XmlElement> xmlState(ctrlrManager->saveState());
 	if (xmlState) {
 		CtrlrProcessor::copyXmlToBinary(*xmlState, destData);
 	}
@@ -580,16 +580,26 @@ void CtrlrProcessor::getStateInformation(MemoryBlock &destData) {
 
 void CtrlrProcessor::setStateInformation(const void *data, int sizeInBytes) {
 	_DBG("CtrlrProcessor::setStateInformation");
-	ScopedPointer<XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
+	std::unique_ptr<XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
 	if (xmlState) {
-		setStateInformation(xmlState);
+		setStateInformation(xmlState.get());
+		return;
 	}
 }
 
 void CtrlrProcessor::setStateInformation(const XmlElement *xmlState) {
 	if (KeyPress::isKeyCurrentlyDown(KeyPress::createFromDescription("ctrl + R").getKeyCode())) {
-		AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Ctrlr v5",
-									"Ctrl+R key is pressed, resetting to defaults");
+#if JUCE_VERSION >= 0x070000
+    // Modern JUCE 7/8 Asynchronous (Non-blocking) call
+    AlertWindow::showMessageBoxAsync (AlertWindow::WarningIcon, 
+                                      "Ctrlr v5",
+                                      "Ctrl+R key is pressed, resetting to defaults");
+#else
+    // Legacy JUCE 6 and below Synchronous (Blocking) call
+    AlertWindow::showMessageBox (AlertWindow::WarningIcon, 
+                                 "Ctrlr v5",
+                                 "Ctrl+R key is pressed, resetting to defaults");
+#endif
 		return;
 	}
 

@@ -124,6 +124,7 @@ class CtrlrLuaMethodManager : public ValueTree::Listener
 		JUCE_LEAK_DETECTOR(CtrlrLuaMethodManager)
 
 	private:
+		bool isMethodValid(CtrlrLuaMethod *o);
 		bool debug;
 		String lastExecutionError;
 		ValueTree managerTree;

@@ -1357,21 +1357,17 @@ void CtrlrLuaMultiTimer::timerCallback(int timerId) {
 	if (callbacks.contains(timerId)) {
 		if (callbacks[timerId].isValid) {
 			try {
-				luabind::call_function<void>(callbacks[timerId].o, timerId);
+				luabind::object callback = callbacks[timerId].o;
+				luabind::call_function<void>(callback, timerId);
 			} catch (const luabind::error &e) {
 				LuaTimerCallback cb = callbacks[timerId];
 				cb.isValid = false;
 
 				callbacks.set(timerId, cb);
-				const char *a = lua_tostring(e.state(), -1);
-				AlertWindow::showMessageBox(AlertWindow::WarningIcon,
-											"Timer callback error, timer id that failed was: " + String(timerId),
-											String(e.what()) + "\n" + String(a) + "\n\nCallback disabled");
+}
 			}
-		}
 	}
 }
-
 const bool CtrlrLuaMultiTimer::isRegistered(const int timerId) { return (callbacks.contains(timerId)); }
 
 void CtrlrLuaMultiTimer::stopTimer(const int timerId) { MultiTimer::stopTimer(timerId); }

@@ -131,7 +131,7 @@ class CtrlrChoicePropertyComponent : public Component, public ComboBox::Listener
 		Value valueToControl;
 		Array<var> values;
 		StringArray choices;
-		ScopedPointer<ComboBox> combo;
+		std::unique_ptr<ComboBox> combo;
 		CtrlrPropertyComponent *owner;
 		bool numeric;
 };
@@ -414,7 +414,7 @@ class CtrlrModulatorListProperty : public CtrlrPropertyChild,
 		CtrlrPanel *owner;
 		Value valueToControl;
 		StringArray choices;
-		ScopedPointer<ComboBox> combo;
+		std::unique_ptr<ComboBox> combo;
 		bool numeric;
 };
 
@@ -475,15 +475,17 @@ class MultiMidiAlert : public AlertWindow // Updated v5.6.35. For Multi MIDI Mes
 		/* This is the old system. Keep in case someone complains and wants it back!*/
 		// MultiMidiAlert ()
 		//	:	AlertWindow ("", "Add a new message to the multi list\n[-1 for parent value setting, -2 for parent
-		//number setting. For SysEx message the formula is the same as in the SysEx editor.]",
-		//AlertWindow::QuestionIcon, 0), 		valueSlider("Controller Value"), numberSlider("Controller Number")
+		// number setting. For SysEx message the formula is the same as in the SysEx editor.]",
+		// AlertWindow::QuestionIcon, 0), 		valueSlider("Controller Value"), numberSlider("Controller Number")
 		//{
 		//	const char *types[] = { "CC", "Aftertouch", "ChannelPressure", "NoteOn", "NoteOff", "SysEx", "--",
-		//"ProgramChange", "PitchWheel", 0 }; 	const char *v[] = { "Direct", "LSB7bit", "MSB7bit", "LSB4bit", "MSB4bit",
-		//0}; 	addComboBox ("messageType", StringArray(types), "Midi message type"); 	addComboBox ("value",
-		//StringArray(v), "Value mapping"); 	addComboBox ("number", StringArray(v), "Number mapping"); 	addTextEditor
-		//("sysexFormula", "F0 00 F7", "SysEx Formula", false); 	valueSlider.setSize (300,24); 	valueSlider.setSliderStyle
-		//(Slider::LinearBar); 	valueSlider.setRange (-2,127,1); 	valueSlider.setValue (-1);
+		//"ProgramChange", "PitchWheel", 0 }; 	const char *v[] = { "Direct", "LSB7bit", "MSB7bit", "LSB4bit",
+		//"MSB4bit", 0}; 	addComboBox ("messageType", StringArray(types), "Midi message type"); 	addComboBox
+		// ("value", StringArray(v), "Value mapping"); 	addComboBox ("number", StringArray(v), "Number mapping");
+		// addTextEditor
+		//("sysexFormula", "F0 00 F7", "SysEx Formula", false); 	valueSlider.setSize (300,24);
+		//valueSlider.setSliderStyle (Slider::LinearBar); 	valueSlider.setRange (-2,127,1); 	valueSlider.setValue
+		//(-1);
 
 #if JUCE_MAJOR_VERSION < 8
 		void buttonClicked(Button *button) { exitModalState(button->getCommandID()); }
@@ -726,7 +728,7 @@ class CtrlrTextPropertyComponent : public Component, public CtrlrPropertyChild {
 	private:
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrTextPropertyComponent);
 
-		ScopedPointer<Label> textEditor;
+		std::unique_ptr<Label> textEditor;
 		void createEditor(int maxNumChars, bool isMultiLine);
 
 		Value valueToControl;
@@ -743,7 +745,7 @@ class CtrlrTimestampProperty : public Component, public CtrlrPropertyChild {
 
 	private:
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrTimestampProperty);
-		ScopedPointer<Label> textEditor;
+		std::unique_ptr<Label> textEditor;
 		Value valueToControl;
 };
 

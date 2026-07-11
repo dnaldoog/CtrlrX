@@ -5,179 +5,183 @@
 #include "CtrlrPanel/CtrlrPanel.h"
 #include "CtrlrLuaManager.h"
 
-CtrlrFileListBoxLF::CtrlrFileListBoxLF (CtrlrFileListBox &_owner) : owner(_owner)
+CtrlrFileListBoxLF::CtrlrFileListBoxLF(CtrlrFileListBox &_owner) : owner(_owner)
 {
 }
 
-void CtrlrFileListBoxLF::drawFileBrowserRow (Graphics &g, int width, int height, const String &filename, Image *icon, const String &fileSizeDescription, const String &fileTimeDescription, bool isDirectory, bool isItemSelected, int itemIndex, DirectoryContentsDisplayComponent &component)
+void CtrlrFileListBoxLF::drawFileBrowserRow(Graphics &g, int width, int height, const String &filename, Image *icon, const String &fileSizeDescription, const String &fileTimeDescription, bool isDirectory, bool isItemSelected, int itemIndex, DirectoryContentsDisplayComponent &component)
 {
 	if (isItemSelected)
-		g.fillAll (VAR2COLOUR(owner.getProperty(Ids::uiFileListHighlightBgColour)));
+		g.fillAll(VAR2COLOUR(owner.getProperty(Ids::uiFileListHighlightBgColour)));
 
-    const int x = 32;
-    g.setColour (Colours::black);
+	const int x = 32;
+	g.setColour(Colours::black);
 
-    if (icon != nullptr && icon->isValid())
-    {
-        g.drawImageWithin (*icon, 2, 2, x - 4, height - 4,
-                           RectanglePlacement::centred | RectanglePlacement::onlyReduceInSize,
-                           false);
-    }
-    else
-    {
-        const Drawable* d = isDirectory ? getDefaultFolderImage()
-                                        : getDefaultDocumentFileImage();
-
-        if (d != nullptr)
-            d->drawWithin (g, Rectangle<float> (2.0f, 2.0f, x - 4.0f, height - 4.0f),
-                           RectanglePlacement::centred | RectanglePlacement::onlyReduceInSize, 1.0f);
-    }
-
-	if (isItemSelected)
+	if (icon != nullptr && icon->isValid())
 	{
-		g.setFont (owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString (owner.getProperty(Ids::uiFileListBoxHighlightFont)));
-		g.setColour (VAR2COLOUR(owner.getProperty(Ids::uiFileListHighlightTextColour)));
+		g.drawImageWithin(*icon, 2, 2, x - 4, height - 4,
+						  RectanglePlacement::centred | RectanglePlacement::onlyReduceInSize,
+						  false);
 	}
 	else
 	{
-		g.setFont (owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString (owner.getProperty(Ids::uiFileListFont)));
-		g.setColour (VAR2COLOUR(owner.getProperty(Ids::uiFileListTextColour)));
+		const Drawable *d = isDirectory ? getDefaultFolderImage()
+										: getDefaultDocumentFileImage();
+
+		if (d != nullptr)
+			d->drawWithin(g, Rectangle<float>(2.0f, 2.0f, x - 4.0f, height - 4.0f),
+						  RectanglePlacement::centred | RectanglePlacement::onlyReduceInSize, 1.0f);
 	}
 
-	if (width > 450 && ! isDirectory)
+	if (isItemSelected)
 	{
-		const int sizeX = roundToInt (width * 0.7f);
-		const int dateX = roundToInt (width * 0.8f);
+		g.setFont(owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString(owner.getProperty(Ids::uiFileListBoxHighlightFont)));
+		g.setColour(VAR2COLOUR(owner.getProperty(Ids::uiFileListHighlightTextColour)));
+	}
+	else
+	{
+		g.setFont(owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString(owner.getProperty(Ids::uiFileListFont)));
+		g.setColour(VAR2COLOUR(owner.getProperty(Ids::uiFileListTextColour)));
+	}
 
-		g.drawFittedText (filename, x, 0, sizeX - x, height, Justification::centredLeft, 1);
+	if (width > 450 && !isDirectory)
+	{
+		const int sizeX = roundToInt(width * 0.7f);
+		const int dateX = roundToInt(width * 0.8f);
 
-		g.setFont (owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString (owner.getProperty(Ids::uiFileListFont)));
-		g.setColour (VAR2COLOUR(owner.getProperty(Ids::uiFileListTextColour)));
+		g.drawFittedText(filename, x, 0, sizeX - x, height, Justification::centredLeft, 1);
 
-		if (! isDirectory)
+		g.setFont(owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString(owner.getProperty(Ids::uiFileListFont)));
+		g.setColour(VAR2COLOUR(owner.getProperty(Ids::uiFileListTextColour)));
+
+		if (!isDirectory)
 		{
-			g.drawFittedText (fileSizeDescription, sizeX, 0, dateX - sizeX - 8, height, Justification::centredRight, 1);
-			g.drawFittedText (fileTimeDescription, dateX, 0, width - 8 - dateX, height, Justification::centredRight, 1);
+			g.drawFittedText(fileSizeDescription, sizeX, 0, dateX - sizeX - 8, height, Justification::centredRight, 1);
+			g.drawFittedText(fileTimeDescription, dateX, 0, width - 8 - dateX, height, Justification::centredRight, 1);
 		}
 	}
 	else
 	{
-		g.drawFittedText (filename, x, 0, width - x, height, Justification::centredLeft, 1);
+		g.drawFittedText(filename, x, 0, width - x, height, Justification::centredLeft, 1);
 	}
 }
 
-CtrlrFileTreeComponent::CtrlrFileTreeComponent (CtrlrFileListBox &_owner, DirectoryContentsList &listToShow) : owner(_owner), FileTreeComponent( listToShow )
+CtrlrFileTreeComponent::CtrlrFileTreeComponent(CtrlrFileListBox &_owner, DirectoryContentsList &listToShow) : owner(_owner), FileTreeComponent(listToShow)
 {
 }
 
-void CtrlrFileTreeComponent::paint (Graphics& g)
+void CtrlrFileTreeComponent::paint(Graphics &g)
 {
 	int i = owner.getProperty(Ids::uiFileListBoxOutline);
-	g.setColour (VAR2COLOUR(owner.getProperty(Ids::uiFileListBoxBgColour)));
-	g.fillRect(i, i, (getWidth() - 2*i), (getHeight() - 2*i));
+	g.setColour(VAR2COLOUR(owner.getProperty(Ids::uiFileListBoxBgColour)));
+	g.fillRect(i, i, (getWidth() - 2 * i), (getHeight() - 2 * i));
 
-	g.setColour (VAR2COLOUR(owner.getProperty(Ids::uiFileListBoxOutlineColour)));
-	g.drawRect (0, 0, getWidth(), getHeight(),  i);
+	g.setColour(VAR2COLOUR(owner.getProperty(Ids::uiFileListBoxOutlineColour)));
+	g.drawRect(0, 0, getWidth(), getHeight(), i);
 }
 
 //[/MiscUserDefs]
 
 //==============================================================================
-CtrlrFileListBox::CtrlrFileListBox (CtrlrModulator &owner)
-    : CtrlrComponent(owner), timeSliceThread("CTRLR FILE LIST BOX THREAD"), fileListBoxLookAndFeel(*this)
+CtrlrFileListBox::CtrlrFileListBox(CtrlrModulator &owner)
+	: CtrlrComponent(owner), timeSliceThread("CTRLR FILE LIST BOX THREAD"), fileListBoxLookAndFeel(*this)
 {
-    //[UserPreSize]
-	File folder (File::getSpecialLocation (File::userHomeDirectory));
+	//[UserPreSize]
+	File folder(File::getSpecialLocation(File::userHomeDirectory));
 	while (folder.getParentDirectory() != folder)
 		folder = folder.getParentDirectory();
 
-	directoryContentsList = new DirectoryContentsList (0, timeSliceThread);
-	directoryContentsList->setDirectory (folder, true, true);
-	timeSliceThread.startThread (3);
+	// 1. Instantiate the DirectoryContentsList unique_ptr
+	directoryContentsList = std::make_unique<DirectoryContentsList>(nullptr, timeSliceThread);
+	directoryContentsList->setDirectory(folder, true, true);
+#if JUCE_VERSION >= 0x070000
+	timeSliceThread.startThread(Thread::Priority::normal);
+#else
+	timeSliceThread.startThread(3);
+#endif
+	// 2. Instantiate the treeComponent unique_ptr.
+	// We use `*directoryContentsList` to dereference the unique_ptr, passing the underlying object reference.
+	treeComponent = std::make_unique<CtrlrFileTreeComponent>(*this, *directoryContentsList);
 
-	treeComponent = new CtrlrFileTreeComponent( *this, *directoryContentsList );
-	treeComponent->addListener (this);
-	addAndMakeVisible (treeComponent);
+	// 3. Configure and attach to the JUCE layout
+	treeComponent->addListener(this);
+	addAndMakeVisible(treeComponent.get());
 
-    setProperty (Ids::uiFileListBoxBgColour, (String)findColour(TextButton::buttonColourId).withAlpha(0.0f).toString()); // "0xffffffff"
-	setProperty (Ids::uiFileListLineColour, (String)findColour(TextButton::textColourOffId).toString()); // "0xff000000"
-	setProperty (Ids::uiFileListIndentSize, 16);
-    
-	setProperty (Ids::uiFileListFont, FONT2STR (Font(14)));
-	setProperty (Ids::uiFileListTextColour, (String)findColour(TextButton::textColourOffId).toString()); // "0xff000000"
+	setProperty(Ids::uiFileListBoxBgColour, (String)findColour(TextButton::buttonColourId).withAlpha(0.0f).toString()); // "0xffffffff"
+	setProperty(Ids::uiFileListLineColour, (String)findColour(TextButton::textColourOffId).toString());					// "0xff000000"
+	setProperty(Ids::uiFileListIndentSize, 16);
 
-	setProperty (Ids::uiFileListHighlightTextColour, (String)findColour(TextEditor::highlightedTextColourId).toString()); // "0xff000000"
-	setProperty (Ids::uiFileListHighlightBgColour, (String)findColour(TextEditor::highlightColourId).toString()); // "0xff0000ff"
-	setProperty (Ids::uiFileListBoxHighlightFont, FONT2STR (Font(14)));
-	setProperty (Ids::uiFileListBoxOutline, 0);
-	setProperty (Ids::uiFileListBoxOutlineColour, (String)findColour(TextEditor::outlineColourId).toString()); // "0xff000000"
-	setProperty (Ids::uiFileListBoxVScrollBgColour, (String)findColour(ScrollBar::backgroundColourId).toString()); // "0xffffffff"
-	setProperty (Ids::uiFileListBoxVScrollThumbColour, (String)findColour(ScrollBar::thumbColourId).toString()); // "0xffababab"
-	setProperty (Ids::uiFileListBoxVScrollTrackColour, (String)findColour(ScrollBar::trackColourId).toString()); // "0xffff0000"
-	setProperty (Ids::uiFileListBoxHScrollBgColour, (String)findColour(ScrollBar::backgroundColourId).toString()); // "0xffffffff"
-	setProperty (Ids::uiFileListBoxHScrollThumbColour, (String)findColour(ScrollBar::thumbColourId).toString()); // "0xffababab"
-	setProperty (Ids::uiFileListBoxHScrollTrackColour, (String)findColour(ScrollBar::trackColourId).toString()); // "0xffff0000"
+	setProperty(Ids::uiFileListFont, FONT2STR(Font(14)));
+	setProperty(Ids::uiFileListTextColour, (String)findColour(TextButton::textColourOffId).toString()); // "0xff000000"
 
-	setProperty (Ids::uiFileListOpenButtonVisible, true);
-	setProperty (Ids::uiFileListFileClicked, COMBO_NONE_ITEM);
-	setProperty (Ids::uiFileListFileDoubleClicked, COMBO_NONE_ITEM);
-//	setProperty (Ids::uiFileListItemDeleteKeyPressed, COMBO_NONE_ITEM);
-//	setProperty (Ids::uiFileListItemReturnKeyPressed, COMBO_NONE_ITEM);
-	setProperty (Ids::uiFileListCurrentRoot, folder.getFullPathName());
+	setProperty(Ids::uiFileListHighlightTextColour, (String)findColour(TextEditor::highlightedTextColourId).toString()); // "0xff000000"
+	setProperty(Ids::uiFileListHighlightBgColour, (String)findColour(TextEditor::highlightColourId).toString());		 // "0xff0000ff"
+	setProperty(Ids::uiFileListBoxHighlightFont, FONT2STR(Font(14)));
+	setProperty(Ids::uiFileListBoxOutline, 0);
+	setProperty(Ids::uiFileListBoxOutlineColour, (String)findColour(TextEditor::outlineColourId).toString());	  // "0xff000000"
+	setProperty(Ids::uiFileListBoxVScrollBgColour, (String)findColour(ScrollBar::backgroundColourId).toString()); // "0xffffffff"
+	setProperty(Ids::uiFileListBoxVScrollThumbColour, (String)findColour(ScrollBar::thumbColourId).toString());	  // "0xffababab"
+	setProperty(Ids::uiFileListBoxVScrollTrackColour, (String)findColour(ScrollBar::trackColourId).toString());	  // "0xffff0000"
+	setProperty(Ids::uiFileListBoxHScrollBgColour, (String)findColour(ScrollBar::backgroundColourId).toString()); // "0xffffffff"
+	setProperty(Ids::uiFileListBoxHScrollThumbColour, (String)findColour(ScrollBar::thumbColourId).toString());	  // "0xffababab"
+	setProperty(Ids::uiFileListBoxHScrollTrackColour, (String)findColour(ScrollBar::trackColourId).toString());	  // "0xffff0000"
 
-	treeComponent->setLookAndFeel (&fileListBoxLookAndFeel);
-    //[/UserPreSize]
+	setProperty(Ids::uiFileListOpenButtonVisible, true);
+	setProperty(Ids::uiFileListFileClicked, COMBO_NONE_ITEM);
+	setProperty(Ids::uiFileListFileDoubleClicked, COMBO_NONE_ITEM);
+	//	setProperty (Ids::uiFileListItemDeleteKeyPressed, COMBO_NONE_ITEM);
+	//	setProperty (Ids::uiFileListItemReturnKeyPressed, COMBO_NONE_ITEM);
+	setProperty(Ids::uiFileListCurrentRoot, folder.getFullPathName());
 
-    setSize (128, 256);
+	treeComponent->setLookAndFeel(&fileListBoxLookAndFeel);
+	//[/UserPreSize]
 
+	setSize(128, 256);
 
-    //[Constructor] You can add your own custom stuff here..
-    //[/Constructor]
+	//[Constructor] You can add your own custom stuff here..
+	//[/Constructor]
 }
 
 CtrlrFileListBox::~CtrlrFileListBox()
 {
-    //[Destructor_pre]. You can add your own custom destruction code here..
-	treeComponent->removeListener (this);
+	//[Destructor_pre]. You can add your own custom destruction code here..
+	treeComponent->removeListener(this);
 	delete treeComponent.release();
 	delete directoryContentsList.release();
-    //[/Destructor_pre]
+	//[/Destructor_pre]
 
-
-
-    //[Destructor]. You can add your own custom destruction code here..
-    //[/Destructor]
+	//[Destructor]. You can add your own custom destruction code here..
+	//[/Destructor]
 }
 
 //==============================================================================
-void CtrlrFileListBox::paint (Graphics& g)
+void CtrlrFileListBox::paint(Graphics &g)
 {
-    //[UserPrePaint] Add your own custom painting code here..
-    //[/UserPrePaint]
+	//[UserPrePaint] Add your own custom painting code here..
+	//[/UserPrePaint]
 
-    //[UserPaint] Add your own custom painting code here..
-    //[/UserPaint]
+	//[UserPaint] Add your own custom painting code here..
+	//[/UserPaint]
 }
 
 void CtrlrFileListBox::resized()
 {
-    //[UserResized] Add your own custom resize handling here..
-	treeComponent->setBounds (getUsableRect());
+	//[UserResized] Add your own custom resize handling here..
+	treeComponent->setBounds(getUsableRect());
 	int i = getProperty(Ids::uiFileListBoxOutline);
 	int w = getWidth(), h = getHeight();
-	Viewport* v = treeComponent->getViewport();
-	v->setBounds( i, i, w - i*2, h - i*2 );
-//	v->getHorizontalScrollBar()->setBounds( i, i, w - i*2, h - i*2 );
-//	v->getVerticalScrollBar()->setBounds( i, i, w - i*2, h - i*2 );
-//	v->resized();
-    //[/UserResized]
+	Viewport *v = treeComponent->getViewport();
+	v->setBounds(i, i, w - i * 2, h - i * 2);
+	//	v->getHorizontalScrollBar()->setBounds( i, i, w - i*2, h - i*2 );
+	//	v->getVerticalScrollBar()->setBounds( i, i, w - i*2, h - i*2 );
+	//	v->resized();
+	//[/UserResized]
 }
 
-
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
-void CtrlrFileListBox::setComponentValue (const double newValue, const bool sendChangeMessage)
+void CtrlrFileListBox::setComponentValue(const double newValue, const bool sendChangeMessage)
 {
-	treeComponent->setSelectedFile (treeComponent->getSelectedFile(newValue));
+	treeComponent->setSelectedFile(treeComponent->getSelectedFile(newValue));
 }
 
 double CtrlrFileListBox::getComponentValue()
@@ -200,78 +204,72 @@ const String CtrlrFileListBox::getComponentText()
 	return (treeComponent->getSelectedFile().getFullPathName());
 }
 
-void CtrlrFileListBox::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
+void CtrlrFileListBox::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
 {
 	if (property == Ids::uiFileListBoxBgColour)
 	{
-		treeComponent->setColour (TreeView::backgroundColourId, VAR2COLOUR(getProperty(property)));
+		treeComponent->setColour(TreeView::backgroundColourId, VAR2COLOUR(getProperty(property)));
 	}
 	else if (property == Ids::uiFileListLineColour)
 	{
-		treeComponent->setColour (TreeView::linesColourId, VAR2COLOUR(getProperty(property)));
+		treeComponent->setColour(TreeView::linesColourId, VAR2COLOUR(getProperty(property)));
 	}
 	else if (property == Ids::uiFileListIndentSize)
 	{
-		treeComponent->setIndentSize (getProperty(property));
+		treeComponent->setIndentSize(getProperty(property));
 	}
 	else if (property == Ids::uiFileListBoxOutline)
 	{
 		int i = getProperty(Ids::uiFileListBoxOutline);
 		int w = getWidth(), h = getHeight();
-		Viewport* v = treeComponent->getViewport();
-		v->setBounds( i, i, w - i*2, h - i*2 );
-//		v->getHorizontalScrollBar()->setBounds( i, i, w - i*2, h - i*2 );
-//		v->getVerticalScrollBar()->setBounds( i, i, w - i*2, h - i*2 );
-//		v->resized();
+		Viewport *v = treeComponent->getViewport();
+		v->setBounds(i, i, w - i * 2, h - i * 2);
+		//		v->getHorizontalScrollBar()->setBounds( i, i, w - i*2, h - i*2 );
+		//		v->getVerticalScrollBar()->setBounds( i, i, w - i*2, h - i*2 );
+		//		v->resized();
 		treeComponent->repaint();
 	}
 	else if (property == Ids::uiFileListBoxOutlineColour)
 	{
-		treeComponent->setColour (ListBox::outlineColourId, VAR2COLOUR(getProperty (property)));
+		treeComponent->setColour(ListBox::outlineColourId, VAR2COLOUR(getProperty(property)));
 		treeComponent->repaint();
 	}
-	else if (property == Ids::uiFileListBoxHScrollBgColour
-		|| property == Ids::uiFileListBoxHScrollThumbColour
-		|| property == Ids::uiFileListBoxHScrollTrackColour
-		|| property == Ids::uiFileListBoxVScrollBgColour
-		|| property == Ids::uiFileListBoxVScrollThumbColour
-		|| property == Ids::uiFileListBoxVScrollTrackColour
-		)
+	else if (property == Ids::uiFileListBoxHScrollBgColour || property == Ids::uiFileListBoxHScrollThumbColour || property == Ids::uiFileListBoxHScrollTrackColour || property == Ids::uiFileListBoxVScrollBgColour || property == Ids::uiFileListBoxVScrollThumbColour || property == Ids::uiFileListBoxVScrollTrackColour)
 	{
-		Viewport* view = treeComponent->getViewport();
+		Viewport *view = treeComponent->getViewport();
 		ScrollBar &h = view->getHorizontalScrollBar();
 		{
-			h.setColour (ScrollBar::backgroundColourId, VAR2COLOUR(getProperty (Ids::uiFileListBoxHScrollBgColour)));
-			h.setColour (ScrollBar::thumbColourId, VAR2COLOUR(getProperty (Ids::uiFileListBoxHScrollThumbColour)));
-			h.setColour (ScrollBar::trackColourId, VAR2COLOUR(getProperty (Ids::uiFileListBoxHScrollTrackColour)));
+			h.setColour(ScrollBar::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiFileListBoxHScrollBgColour)));
+			h.setColour(ScrollBar::thumbColourId, VAR2COLOUR(getProperty(Ids::uiFileListBoxHScrollThumbColour)));
+			h.setColour(ScrollBar::trackColourId, VAR2COLOUR(getProperty(Ids::uiFileListBoxHScrollTrackColour)));
 		}
 		ScrollBar &v = view->getVerticalScrollBar();
 		{
-			v.setColour (ScrollBar::backgroundColourId, VAR2COLOUR(getProperty (Ids::uiFileListBoxVScrollBgColour)));
-			v.setColour (ScrollBar::thumbColourId, VAR2COLOUR(getProperty (Ids::uiFileListBoxVScrollThumbColour)));
-			v.setColour (ScrollBar::trackColourId, VAR2COLOUR(getProperty (Ids::uiFileListBoxVScrollTrackColour)));
+			v.setColour(ScrollBar::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiFileListBoxVScrollBgColour)));
+			v.setColour(ScrollBar::thumbColourId, VAR2COLOUR(getProperty(Ids::uiFileListBoxVScrollThumbColour)));
+			v.setColour(ScrollBar::trackColourId, VAR2COLOUR(getProperty(Ids::uiFileListBoxVScrollTrackColour)));
 		}
 	}
 	else if (property == Ids::uiFileListFont)
 	{
-		treeComponent->setLookAndFeel (0);
-		treeComponent->setLookAndFeel (&fileListBoxLookAndFeel);
+		treeComponent->setLookAndFeel(0);
+		treeComponent->setLookAndFeel(&fileListBoxLookAndFeel);
 	}
 	else if (property == Ids::uiFileListTextColour)
 	{
-		treeComponent->setColour (DirectoryContentsDisplayComponent::textColourId, VAR2COLOUR(getProperty(property)));
+		treeComponent->setColour(DirectoryContentsDisplayComponent::textColourId, VAR2COLOUR(getProperty(property)));
 	}
 	else if (property == Ids::uiFileListHighlightTextColour)
 	{
-		treeComponent->setColour (DirectoryContentsDisplayComponent::highlightedTextColourId, VAR2COLOUR(getProperty(property)));
+		treeComponent->setColour(DirectoryContentsDisplayComponent::highlightedTextColourId, VAR2COLOUR(getProperty(property)));
 	}
 	else if (property == Ids::uiFileListHighlightBgColour) // Added v5.6.35. Thanks to @dobo365
 	{
-		treeComponent->setColour (DirectoryContentsDisplayComponent::highlightColourId, VAR2COLOUR(getProperty(property)));
+		treeComponent->setColour(DirectoryContentsDisplayComponent::highlightColourId, VAR2COLOUR(getProperty(property)));
 	}
 	else if (property == Ids::uiFileListOpenButtonVisible)
 	{
-		treeComponent->setOpenCloseButtonsVisible (getProperty(property));
+		treeComponent->setOpenCloseButtonsVisible(getProperty(property));
 	}
 	else if (property == Ids::uiFileListFileClicked)
 	{
@@ -287,20 +285,20 @@ void CtrlrFileListBox::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
 
 		fileDoubleClickedCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
 	}
-/*	else if (property == Ids::uiFileListItemDeleteKeyPressed)
-	{
-		if (getProperty(property) == "")
-			return;
+	/*	else if (property == Ids::uiFileListItemDeleteKeyPressed)
+		{
+			if (getProperty(property) == "")
+				return;
 
-		itemDeleteKeyPressedCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
-	}
-	else if (property == Ids::uiFileListItemReturnKeyPressed)
-	{
-		if (getProperty(property) == "")
-			return;
+			itemDeleteKeyPressedCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		}
+		else if (property == Ids::uiFileListItemReturnKeyPressed)
+		{
+			if (getProperty(property) == "")
+				return;
 
-		itemReturnKeyPressedCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
-	} */
+			itemReturnKeyPressedCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		} */
 	else if (property == Ids::uiFileListCurrentRoot)
 	{
 		// The path will be wrong if panels are copied between
@@ -311,7 +309,7 @@ void CtrlrFileListBox::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
 			directory = File::getSpecialLocation(File::userDocumentsDirectory);
 		else
 			directory = File(filename);
-		directoryContentsList->setDirectory (directory, true, true);
+		directoryContentsList->setDirectory(directory, true, true);
 		treeComponent->refresh();
 	}
 	else
@@ -325,24 +323,24 @@ void CtrlrFileListBox::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
 	}
 }
 
-void CtrlrFileListBox::fileClicked (const File &file, const MouseEvent &e)
+void CtrlrFileListBox::fileClicked(const File &file, const MouseEvent &e)
 {
 	if (fileClickedCbk && !fileClickedCbk.wasObjectDeleted())
 	{
 		if (fileClickedCbk->isValid())
 		{
-			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (fileClickedCbk, &owner, file);
+			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(fileClickedCbk, &owner, file);
 		}
 	}
 }
 
-void CtrlrFileListBox::fileDoubleClicked (const File &file)
+void CtrlrFileListBox::fileDoubleClicked(const File &file)
 {
 	if (fileDoubleClickedCbk && !fileDoubleClickedCbk.wasObjectDeleted())
 	{
 		if (fileDoubleClickedCbk->isValid())
 		{
-			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (fileDoubleClickedCbk, &owner, file);
+			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(fileDoubleClickedCbk, &owner, file);
 		}
 	}
 }
@@ -371,11 +369,11 @@ void CtrlrFileListBox::returnKeyPressed (const int value)
 }
 */
 
-void CtrlrFileListBox::selectionChanged ()
+void CtrlrFileListBox::selectionChanged()
 {
 }
 
-void CtrlrFileListBox::browserRootChanged (const File &newRoot)
+void CtrlrFileListBox::browserRootChanged(const File &newRoot)
 {
 }
 
@@ -409,7 +407,6 @@ void CtrlrFileListBox::refresh()
 	treeComponent->refresh();
 }
 //[/MiscUserCode]
-
 
 //==============================================================================
 #if 0

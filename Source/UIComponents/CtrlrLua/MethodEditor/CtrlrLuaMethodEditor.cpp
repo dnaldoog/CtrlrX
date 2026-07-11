@@ -14,9 +14,9 @@
 #include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrLua/MethodEditor/CtrlrLuaMethodEditorCommandIDs.h" // Added v5.6.34.
 
-CtrlrLuaMethodEditor::CtrlrLuaMethodEditor (CtrlrPanel &_owner)
+CtrlrLuaMethodEditor::CtrlrLuaMethodEditor(CtrlrPanel &_owner)
     : owner(_owner),
-      methodEditArea (nullptr),
+      methodEditArea(nullptr),
       methodTree(nullptr),
       resizer(nullptr),
       caseCansitive(true),
@@ -25,35 +25,35 @@ CtrlrLuaMethodEditor::CtrlrLuaMethodEditor (CtrlrPanel &_owner)
       findDialogActive(false),
       currentSearchString("")
 {
-    addAndMakeVisible (resizer           = new StretchableLayoutResizerBar (&layoutManager, 1, true));
-    addAndMakeVisible (methodTree        = new CtrlrValueTreeEditorTree ("LUA METHOD TREE", owner));
-    addAndMakeVisible (methodEditArea    = new CtrlrLuaMethodEditArea(*this));
-    
-    methodTree->setRootItem (new CtrlrValueTreeEditorItem(*this, getMethodManager().getManagerTree(), Ids::luaMethodName));
-    methodTree->setMultiSelectEnabled (true);
-    
-    getMethodManager().setMethodEditor (this);
-       
-    layoutManager.setItemLayout (0, -0.001, -1.0, -0.29);
-     layoutManager.setItemLayout (1, 8, 8, 8);
-     layoutManager.setItemLayout (2, -0.001, -1.0, -0.69);
+    addAndMakeVisible(resizer = new StretchableLayoutResizerBar(&layoutManager, 1, true));
+    addAndMakeVisible(methodTree = new CtrlrValueTreeEditorTree("LUA METHOD TREE", owner));
+    addAndMakeVisible(methodEditArea = new CtrlrLuaMethodEditArea(*this));
 
-    addKeyListener (this);
-    componentTree.addListener (this);
-    setSize (900, 600); // Update v5.6.31. Note : follows container size 800x500
+    methodTree->setRootItem(new CtrlrValueTreeEditorItem(*this, getMethodManager().getManagerTree(), Ids::luaMethodName));
+    methodTree->setMultiSelectEnabled(true);
+
+    getMethodManager().setMethodEditor(this);
+
+    layoutManager.setItemLayout(0, -0.001, -1.0, -0.29);
+    layoutManager.setItemLayout(1, 8, 8, 8);
+    layoutManager.setItemLayout(2, -0.001, -1.0, -0.69);
+
+    addKeyListener(this);
+    componentTree.addListener(this);
+    setSize(900, 600); // Update v5.6.31. Note : follows container size 800x500
 }
 
 CtrlrLuaMethodEditor::~CtrlrLuaMethodEditor()
 {
-    deleteAndZero (methodEditArea);
-    componentTree.removeListener (this);
+    deleteAndZero(methodEditArea);
+    componentTree.removeListener(this);
     masterReference.clear();
     methodTree->deleteRootItem();
-    deleteAndZero (methodTree);
-    deleteAndZero (resizer);
+    deleteAndZero(methodTree);
+    deleteAndZero(resizer);
 }
 
-void CtrlrLuaMethodEditor::paint (Graphics& g)
+void CtrlrLuaMethodEditor::paint(Graphics &g)
 {
     g.fillAll(Colours::lightgrey.brighter(0.2f));
 }
@@ -68,27 +68,24 @@ TabbedComponent *CtrlrLuaMethodEditor::getTabs()
     return (nullptr);
 }
 
-void CtrlrLuaMethodEditor::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
+void CtrlrLuaMethodEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
 {
-    if (property == Ids::luaMethodEditorFont
-        || property == Ids::luaMethodEditorBgColour
-        || property == Ids::luaMethodEditorLineNumbersColour
-        || property == Ids::luaMethodEditorFontColour)
+    if (property == Ids::luaMethodEditorFont || property == Ids::luaMethodEditorBgColour || property == Ids::luaMethodEditorLineNumbersColour || property == Ids::luaMethodEditorFontColour)
     {
-        for (int i=0; i<methodEditArea->getTabs()->getNumTabs(); i++)
+        for (int i = 0; i < methodEditArea->getTabs()->getNumTabs(); i++)
         {
-            CtrlrLuaMethodCodeEditor *ed = dynamic_cast<CtrlrLuaMethodCodeEditor*>(methodEditArea->getTabs()->getTabContentComponent(i));
+            CtrlrLuaMethodCodeEditor *ed = dynamic_cast<CtrlrLuaMethodCodeEditor *>(methodEditArea->getTabs()->getTabContentComponent(i));
             if (ed != nullptr)
             {
-                ed->setFontAndColour (owner.getCtrlrManagerOwner().getFontManager().getFontFromString (componentTree.getProperty(Ids::luaMethodEditorFont)), VAR2COLOUR(componentTree.getProperty(Ids::luaMethodEditorBgColour)));
-				
+                ed->setFontAndColour(owner.getCtrlrManagerOwner().getFontManager().getFontFromString(componentTree.getProperty(Ids::luaMethodEditorFont)), VAR2COLOUR(componentTree.getProperty(Ids::luaMethodEditorBgColour)));
+
                 ed->getCodeComponent()->setColour(CodeEditorComponent::lineNumberTextId, VAR2COLOUR(componentTree.getProperty(Ids::luaMethodEditorLineNumbersColour)));
-				
+
                 ed->getCodeComponent()->setColour(CodeEditorComponent::lineNumberBackgroundId, VAR2COLOUR(componentTree.getProperty(Ids::luaMethodEditorLineNumbersBgColour)));
-				
+
                 ed->getCodeComponent()->setColour(CodeEditorComponent::defaultTextColourId, VAR2COLOUR(componentTree.getProperty(Ids::luaMethodEditorFontColour)));
-				
-                //ed->getCodeComponent()->setColour(0x1000440, VAR2COLOUR(componentTree.getProperty(Ids::luaMethodEditorFontColour)));
+
+                // ed->getCodeComponent()->setColour(0x1000440, VAR2COLOUR(componentTree.getProperty(Ids::luaMethodEditorFontColour)));
             }
         }
     }
@@ -96,21 +93,21 @@ void CtrlrLuaMethodEditor::valueTreePropertyChanged (ValueTree &treeWhosePropert
 
 void CtrlrLuaMethodEditor::restoreState(const ValueTree &savedState)
 {
-    restoreProperties (savedState, componentTree, nullptr);
+    restoreProperties(savedState, componentTree, nullptr);
 
-    ScopedPointer <XmlElement> treeState(XmlDocument::parse (savedState.getProperty(Ids::luaMethodEditor).toString().upToLastOccurrenceOf(";", false, true)).release());
+    ScopedPointer<XmlElement> treeState(XmlDocument::parse(savedState.getProperty(Ids::luaMethodEditor).toString().upToLastOccurrenceOf(";", false, true)).release());
 
     if (treeState)
     {
-        methodTree->restoreOpennessState (*treeState, true);
+        methodTree->restoreOpennessState(*treeState, true);
     }
 
     StringArray openedMethods;
-    openedMethods.addTokens (savedState.getProperty(Ids::luaMethodEditor).toString().fromLastOccurrenceOf(";", false, true), ":", "");
+    openedMethods.addTokens(savedState.getProperty(Ids::luaMethodEditor).toString().fromLastOccurrenceOf(";", false, true), ":", "");
 
-    for (int i=0; i<openedMethods.size(); i++)
+    for (int i = 0; i < openedMethods.size(); i++)
     {
-        setEditedMethod (Uuid (openedMethods[i]));
+        setEditedMethod(Uuid(openedMethods[i]));
     }
 
     updateTabs();
@@ -120,34 +117,38 @@ void CtrlrLuaMethodEditor::updateRootItem()
 {
     if (methodTree->getRootItem())
     {
-        ScopedPointer <XmlElement> state (methodTree->getOpennessState(true).release());
+        ScopedPointer<XmlElement> state(methodTree->getOpennessState(true).release());
         methodTree->deleteRootItem();
-        methodTree->setRootItem (new CtrlrValueTreeEditorItem(*this, owner.getCtrlrLuaManager().getMethodManager().getManagerTree(), Ids::luaMethodName));
+        methodTree->setRootItem(new CtrlrValueTreeEditorItem(*this, owner.getCtrlrLuaManager().getMethodManager().getManagerTree(), Ids::luaMethodName));
         if (state)
         {
-            methodTree->restoreOpennessState (*state, false);
+            methodTree->restoreOpennessState(*state, false);
         }
     }
 }
 
 void CtrlrLuaMethodEditor::resized()
 {
-    Component* comps[] = { methodTree, resizer, methodEditArea  };
-    layoutManager.layOutComponents (comps, 3, 0, 0, getWidth(), getHeight(), false, true);
+    Component *comps[] = {methodTree, resizer, methodEditArea};
+    layoutManager.layOutComponents(comps, 3, 0, 0, getWidth(), getHeight(), false, true);
 }
 
-bool CtrlrLuaMethodEditor::keyPressed (const KeyPress& key, Component* originatingComponent)
+bool CtrlrLuaMethodEditor::keyPressed(const KeyPress &key, Component *originatingComponent)
 {
     const auto modifiers = key.getModifiers();
     String modifiersString;
-    if (modifiers.isShiftDown())    modifiersString << "Shift ";
-    if (modifiers.isCtrlDown())     modifiersString << "Ctrl ";
-    if (modifiers.isAltDown())      modifiersString << "Alt ";
-    if (modifiers.isCommandDown())  modifiersString << "Cmd ";
-    
+    if (modifiers.isShiftDown())
+        modifiersString << "Shift ";
+    if (modifiers.isCtrlDown())
+        modifiersString << "Ctrl ";
+    if (modifiers.isAltDown())
+        modifiersString << "Alt ";
+    if (modifiers.isCommandDown())
+        modifiersString << "Cmd ";
+
     _DBG("CtrlrLuaMethodEditor::keyPressed called. Key Code: " + String(key.getKeyCode()) + ", Modifiers: " + modifiersString);
 
-    auto* currentEditor = getCurrentEditor();
+    auto *currentEditor = getCurrentEditor();
     int commandID = 0;
 
     if (modifiers.isCommandDown())
@@ -193,13 +194,13 @@ bool CtrlrLuaMethodEditor::keyPressed (const KeyPress& key, Component* originati
     {
         ApplicationCommandTarget::InvocationInfo info(commandID);
         info.originatingComponent = originatingComponent;
-        
+
         _DBG("Calling CtrlrEditor::perform with shortcut for ID: " + String(commandID));
         // This is the single, crucial line that needs to be updated.
         owner.getOwner().getEditor()->perform(info);
         return true;
     }
-    
+
     if (methodEditArea)
     {
         if (methodEditArea->keyPressed(key, originatingComponent))
@@ -209,33 +210,33 @@ bool CtrlrLuaMethodEditor::keyPressed (const KeyPress& key, Component* originati
     return false;
 }
 
-void CtrlrLuaMethodEditor::highlightCode (const String &methodName, const int lineNumber)
+void CtrlrLuaMethodEditor::highlightCode(const String &methodName, const int lineNumber)
 {
     CtrlrLuaMethod *method = setEditedMethod(methodName);
 
     if (method)
     {
-        CtrlrLuaMethodCodeEditor *editor = getEditorForMethod (method);
+        CtrlrLuaMethodCodeEditor *editor = getEditorForMethod(method);
 
         if (editor)
         {
-            editor->gotoLine (lineNumber, true);
+            editor->gotoLine(lineNumber, true);
         }
     }
 }
 
-CtrlrLuaMethod *CtrlrLuaMethodEditor::setEditedMethod (const String &methodName)
+CtrlrLuaMethod *CtrlrLuaMethodEditor::setEditedMethod(const String &methodName)
 {
     CtrlrLuaMethod *method = getMethodManager().getMethodByName(methodName);
     if (method != nullptr)
     {
-        return (setEditedMethod (method->getUuid()));
+        return (setEditedMethod(method->getUuid()));
     }
 
     return (nullptr);
 }
 
-CtrlrLuaMethod *CtrlrLuaMethodEditor::setEditedMethod (const Uuid &methodUuid)
+CtrlrLuaMethod *CtrlrLuaMethodEditor::setEditedMethod(const Uuid &methodUuid)
 {
     CtrlrLuaMethod *method = getMethodManager().getMethodByUuid(methodUuid);
 
@@ -244,12 +245,12 @@ CtrlrLuaMethod *CtrlrLuaMethodEditor::setEditedMethod (const Uuid &methodUuid)
         if (method->getCodeEditor() == nullptr)
         {
             /* the method is not yest beeing edited */
-            createNewTab (method);
+            createNewTab(method);
         }
         else
         {
             /* it looks like the method is edited, switch to the tab that has it */
-            setCurrentTab (method);
+            setCurrentTab(method);
         }
 
         return (method);
@@ -261,11 +262,11 @@ CtrlrLuaMethod *CtrlrLuaMethodEditor::setEditedMethod (const Uuid &methodUuid)
 void CtrlrLuaMethodEditor::addNewMethod(ValueTree parentGroup)
 {
     AlertWindow wnd(METHOD_NEW, "", AlertWindow::InfoIcon, this);
-    wnd.addTextEditor ("methodName", "myNewMethod", "Method name", false);
-    wnd.addComboBox ("templateList", getMethodManager().getTemplateList(), "Initialize from template");
+    wnd.addTextEditor("methodName", "myNewMethod", "Method name", false);
+    wnd.addComboBox("templateList", getMethodManager().getTemplateList(), "Initialize from template");
 
-    wnd.addButton ("OK", 1, KeyPress(KeyPress::returnKey));
-    wnd.addButton ("Cancel", 0, KeyPress(KeyPress::escapeKey));
+    wnd.addButton("OK", 1, KeyPress(KeyPress::returnKey));
+    wnd.addButton("Cancel", 0, KeyPress(KeyPress::escapeKey));
     if (wnd.runModalLoop())
     {
         const String methodName = wnd.getTextEditorContents("methodName");
@@ -274,7 +275,7 @@ void CtrlrLuaMethodEditor::addNewMethod(ValueTree parentGroup)
         {
             const String initialCode = getMethodManager().getDefaultMethodCode(methodName, wnd.getComboBoxComponent("templateList")->getText());
 
-            getMethodManager().addMethod (parentGroup, wnd.getTextEditorContents("methodName"), initialCode, "");
+            getMethodManager().addMethod(parentGroup, wnd.getTextEditorContents("methodName"), initialCode, "");
         }
         else
         {
@@ -296,17 +297,17 @@ void CtrlrLuaMethodEditor::addMethodFromFile(ValueTree parentGroup)
         lastBrowsedSourceDir = groupFolder;
     }
 
-    FileChooser fc ("Select LUA files",
-                    lastBrowsedSourceDir,
-                    "*.lua;*.txt",
-                    owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs));
+    FileChooser fc("Select LUA files",
+                   lastBrowsedSourceDir,
+                   "*.lua;*.txt",
+                   owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs));
 
-    if (fc.browseForMultipleFilesToOpen ())
+    if (fc.browseForMultipleFilesToOpen())
     {
-        Array <File> results = fc.getResults();
+        Array<File> results = fc.getResults();
 
-        for (int i=0; i<results.size(); i++)
-        {    // Check that a method with that name does not already exist
+        for (int i = 0; i < results.size(); i++)
+        { // Check that a method with that name does not already exist
             String methodName = results[i].getFileNameWithoutExtension();
             bool nameOK = true;
             for (int j = 0; j < parentGroup.getNumChildren(); j++)
@@ -327,7 +328,11 @@ void CtrlrLuaMethodEditor::addMethodFromFile(ValueTree parentGroup)
             }
             else
             {
-                AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Add Files", "A method named '"+ methodName +"' already exists in this group, file will be ignored.");
+#if JUCE_VERSION >= 0x070000
+                AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Add Files", "A method named '" + methodName + "' already exists in this group, file will be ignored.");
+#else
+                AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Add Files", "A method named '" + methodName + "' already exists in this group, file will be ignored.");
+#endif
             }
         }
     }
@@ -340,18 +345,18 @@ void CtrlrLuaMethodEditor::addMethodFromFile(ValueTree parentGroup)
 void CtrlrLuaMethodEditor::addNewGroup(ValueTree parentGroup)
 {
     AlertWindow wnd(GROUP_NEW, "", AlertWindow::InfoIcon, this);
-    wnd.addTextEditor ("groupName", "New Group", "Group name", false);
-    wnd.addButton ("OK", 1, KeyPress(KeyPress::returnKey));
-    wnd.addButton ("Cancel", 0, KeyPress(KeyPress::escapeKey));
+    wnd.addTextEditor("groupName", "New Group", "Group name", false);
+    wnd.addButton("OK", 1, KeyPress(KeyPress::returnKey));
+    wnd.addButton("Cancel", 0, KeyPress(KeyPress::escapeKey));
     if (wnd.runModalLoop())
     {
-        if (parentGroup.hasType (Ids::luaMethodGroup))
+        if (parentGroup.hasType(Ids::luaMethodGroup))
         {
-            getMethodManager().addGroup (wnd.getTextEditorContents("groupName"), parentGroup.getProperty(Ids::uuid).toString());
+            getMethodManager().addGroup(wnd.getTextEditorContents("groupName"), parentGroup.getProperty(Ids::uuid).toString());
         }
         else
         {
-            getMethodManager().addGroup (wnd.getTextEditorContents("groupName"));
+            getMethodManager().addGroup(wnd.getTextEditorContents("groupName"));
         }
     }
 
@@ -364,7 +369,7 @@ void CtrlrLuaMethodEditor::removeGroup(ValueTree parentGroup)
 {
     if (parentGroup.getNumChildren() > 0)
     {
-        if (SURE("Remove group: "+parentGroup.getProperty(Ids::name).toString()+" ?", this))
+        if (SURE("Remove group: " + parentGroup.getProperty(Ids::name).toString() + " ?", this))
         {
             getMethodManager().removeGroup(parentGroup);
         }
@@ -381,14 +386,14 @@ void CtrlrLuaMethodEditor::removeGroup(ValueTree parentGroup)
 
 void CtrlrLuaMethodEditor::renameGroup(ValueTree parentGroup)
 {
-    AlertWindow w ("Rename group", "", AlertWindow::QuestionIcon, this);
-    w.addTextEditor("name", parentGroup.getProperty (Ids::name).toString());
-    w.addButton ("OK", 1, KeyPress(KeyPress::returnKey));
-    w.addButton ("Cancel", 0, KeyPress(KeyPress::escapeKey));
+    AlertWindow w("Rename group", "", AlertWindow::QuestionIcon, this);
+    w.addTextEditor("name", parentGroup.getProperty(Ids::name).toString());
+    w.addButton("OK", 1, KeyPress(KeyPress::returnKey));
+    w.addButton("Cancel", 0, KeyPress(KeyPress::escapeKey));
 
     if (w.runModalLoop())
     {
-        parentGroup.setProperty (Ids::name, w.getTextEditorContents("name"), nullptr);
+        parentGroup.setProperty(Ids::name, w.getTextEditorContents("name"), nullptr);
         updateRootItem();
     }
 
@@ -397,10 +402,10 @@ void CtrlrLuaMethodEditor::renameGroup(ValueTree parentGroup)
 
 CtrlrLuaMethodCodeEditor *CtrlrLuaMethodEditor::getCurrentEditor()
 {
-    return (dynamic_cast<CtrlrLuaMethodCodeEditor*>(methodEditArea->getTabs()->getCurrentContentComponent()));
+    return (dynamic_cast<CtrlrLuaMethodCodeEditor *>(methodEditArea->getTabs()->getCurrentContentComponent()));
 }
 
-void CtrlrLuaMethodEditor::setPositionLabelText (const String &text)
+void CtrlrLuaMethodEditor::setPositionLabelText(const String &text)
 {
 }
 
@@ -414,7 +419,7 @@ CtrlrLuaMethodManager &CtrlrLuaMethodEditor::getMethodManager()
     return (owner.getCtrlrLuaManager().getMethodManager());
 }
 
-void CtrlrLuaMethodEditor::itemChanged (ValueTree &itemTreeThatChanged)
+void CtrlrLuaMethodEditor::itemChanged(ValueTree &itemTreeThatChanged)
 {
 }
 
@@ -439,14 +444,14 @@ bool CtrlrLuaMethodEditor::closeTab(const int tabIndex)
 {
     int currentlySelectedTab = methodEditArea->getTabs()->getCurrentTabIndex();
     bool closed = true;
-    CtrlrLuaMethodCodeEditor *ed = dynamic_cast<CtrlrLuaMethodCodeEditor*>(methodEditArea->getTabs()->getTabContentComponent(tabIndex));
+    CtrlrLuaMethodCodeEditor *ed = dynamic_cast<CtrlrLuaMethodCodeEditor *>(methodEditArea->getTabs()->getTabContentComponent(tabIndex));
     if (ed)
     {
         if (ed->getCodeDocument().hasChangedSinceSavePoint())
         {
             if (SURE("There might be some unsaved changes, are you sure?", this))
             {
-                methodEditArea->getTabs()->removeTab (tabIndex);
+                methodEditArea->getTabs()->removeTab(tabIndex);
             }
             else
             {
@@ -455,13 +460,13 @@ bool CtrlrLuaMethodEditor::closeTab(const int tabIndex)
         }
         else
         {
-            methodEditArea->getTabs()->removeTab (tabIndex);
+            methodEditArea->getTabs()->removeTab(tabIndex);
         }
 
         if (closed)
         {
             if (tabIndex == currentlySelectedTab)
-            {    // We closed the selected tab => move to previous tab
+            { // We closed the selected tab => move to previous tab
                 if (currentlySelectedTab > 0)
                 {
                     currentlySelectedTab = currentlySelectedTab - 1;
@@ -485,7 +490,7 @@ bool CtrlrLuaMethodEditor::canCloseWindow()
     CtrlrLuaMethodCodeEditor *ed;
     for (int i = 0; i < tabs->getNumTabs(); i++)
     {
-        ed = dynamic_cast<CtrlrLuaMethodCodeEditor*>(methodEditArea->getTabs()->getTabContentComponent(i));
+        ed = dynamic_cast<CtrlrLuaMethodCodeEditor *>(methodEditArea->getTabs()->getTabContentComponent(i));
         if (ed)
         {
             if (ed->getCodeDocument().hasChangedSinceSavePoint())
@@ -497,18 +502,18 @@ bool CtrlrLuaMethodEditor::canCloseWindow()
     }
     if (hasUnsavedChanges)
     {
-        int ret = AlertWindow::showYesNoCancelBox(AlertWindow::QuestionIcon, "Save changes ("+getOwner().getName()+")", "There are unsaved changes in Lua code. Do you want to save them before closing ?", "Save", "Discard", "Cancel", this);
+        int ret = AlertWindow::showYesNoCancelBox(AlertWindow::QuestionIcon, "Save changes (" + getOwner().getName() + ")", "There are unsaved changes in Lua code. Do you want to save them before closing ?", "Save", "Discard", "Cancel", this);
         if (ret == 0)
-        {    // Cancel
+        { // Cancel
             return false;
         }
         else if (ret == 1)
-        {    // Save all
+        { // Save all
             saveAndCompilAllMethods();
             return true;
         }
         else
-        {    // Discard
+        { // Discard
             return true;
         }
     }
@@ -520,9 +525,9 @@ bool CtrlrLuaMethodEditor::canCloseWindow()
 
 void CtrlrLuaMethodEditor::updateTabs()
 {
-    for (int i=0; i<methodEditArea->getTabs()->getNumTabs(); i++)
+    for (int i = 0; i < methodEditArea->getTabs()->getNumTabs(); i++)
     {
-        CtrlrLuaMethodCodeEditor *ed = dynamic_cast<CtrlrLuaMethodCodeEditor*>(methodEditArea->getTabs()->getTabContentComponent(i));
+        CtrlrLuaMethodCodeEditor *ed = dynamic_cast<CtrlrLuaMethodCodeEditor *>(methodEditArea->getTabs()->getTabContentComponent(i));
         if (ed != nullptr)
         {
             if (ed->getMethod())
@@ -548,11 +553,11 @@ void CtrlrLuaMethodEditor::tabChanged(CtrlrLuaMethodCodeEditor *codeEditor, cons
         return;
     }
 
-    for (int i=0; i<methodEditArea->getTabs()->getNumTabs(); i++)
+    for (int i = 0; i < methodEditArea->getTabs()->getNumTabs(); i++)
     {
         if (methodEditArea->getTabs()->getTabContentComponent(i) == codeEditor)
         {
-            const String n = methodEditArea->getTabs()->getTabNames() [i];
+            const String n = methodEditArea->getTabs()->getTabNames()[i];
 
             if (codeEditor->getMethod())
             {
@@ -561,14 +566,14 @@ void CtrlrLuaMethodEditor::tabChanged(CtrlrLuaMethodCodeEditor *codeEditor, cons
                     if (codeEditor->getMethod()->getName() != n)
                     {
                         /* the name of the method changed, update it */
-                        methodEditArea->getTabs()->setTabName (i, codeEditor->getMethod()->getName());
+                        methodEditArea->getTabs()->setTabName(i, codeEditor->getMethod()->getName());
                     }
                 }
                 else
                 {
-                    if (codeEditor->getMethod()->getName() != n.substring(0, n.length()-1))
+                    if (codeEditor->getMethod()->getName() != n.substring(0, n.length() - 1))
                     {
-                        methodEditArea->getTabs()->setTabName (i, codeEditor->getMethod()->getName() + "*");
+                        methodEditArea->getTabs()->setTabName(i, codeEditor->getMethod()->getName() + "*");
                     }
                 }
             }
@@ -581,12 +586,12 @@ void CtrlrLuaMethodEditor::tabChanged(CtrlrLuaMethodCodeEditor *codeEditor, cons
                 }
                 else
                 {
-                    methodEditArea->getTabs()->setTabName (i, n + "*");
+                    methodEditArea->getTabs()->setTabName(i, n + "*");
                 }
             }
             else if (n.endsWith("*"))
             {
-                methodEditArea->getTabs()->setTabName (i, n.substring (0,n.length()-1));
+                methodEditArea->getTabs()->setTabName(i, n.substring(0, n.length() - 1));
             }
         }
     }
@@ -600,9 +605,9 @@ void CtrlrLuaMethodEditor::tabChanged(CtrlrLuaMethodCodeEditor *codeEditor, cons
     updateTabs();
 }
 
-void CtrlrLuaMethodEditor::setCurrentTab (CtrlrLuaMethod *methodToSetAsCurrent)
+void CtrlrLuaMethodEditor::setCurrentTab(CtrlrLuaMethod *methodToSetAsCurrent)
 {
-    for (int i=0; i<methodEditArea->getTabs()->getNumTabs(); i++)
+    for (int i = 0; i < methodEditArea->getTabs()->getNumTabs(); i++)
     {
         if (methodEditArea->getTabs()->getTabContentComponent(i))
         {
@@ -611,7 +616,7 @@ void CtrlrLuaMethodEditor::setCurrentTab (CtrlrLuaMethod *methodToSetAsCurrent)
             {
                 if (editor->getMethod() == methodToSetAsCurrent)
                 {
-                    methodEditArea->getTabs()->setCurrentTabIndex (i);
+                    methodEditArea->getTabs()->setCurrentTabIndex(i);
                     return;
                 }
             }
@@ -619,9 +624,9 @@ void CtrlrLuaMethodEditor::setCurrentTab (CtrlrLuaMethod *methodToSetAsCurrent)
     }
 }
 
-CtrlrLuaMethodCodeEditor *CtrlrLuaMethodEditor::getEditorForMethod (CtrlrLuaMethod *method)
+CtrlrLuaMethodCodeEditor *CtrlrLuaMethodEditor::getEditorForMethod(CtrlrLuaMethod *method)
 {
-    for (int i=0; i<methodEditArea->getTabs()->getNumTabs(); i++)
+    for (int i = 0; i < methodEditArea->getTabs()->getNumTabs(); i++)
     {
         if (methodEditArea->getTabs()->getTabContentComponent(i))
         {
@@ -636,7 +641,7 @@ CtrlrLuaMethodCodeEditor *CtrlrLuaMethodEditor::getEditorForMethod (CtrlrLuaMeth
     return (nullptr);
 }
 
-void CtrlrLuaMethodEditor::createNewTab(CtrlrLuaMethod* method)
+void CtrlrLuaMethodEditor::createNewTab(CtrlrLuaMethod *method)
 {
     if (method == nullptr)
     {
@@ -644,7 +649,7 @@ void CtrlrLuaMethodEditor::createNewTab(CtrlrLuaMethod* method)
         return;
     }
 
-    CtrlrLuaMethodCodeEditor* methodEditor = new CtrlrLuaMethodCodeEditor(*this, method, sharedSearchTabsValue);
+    CtrlrLuaMethodCodeEditor *methodEditor = new CtrlrLuaMethodCodeEditor(*this, method, sharedSearchTabsValue);
     methodEditor->addKeyListener(this);
     methodEditArea->getTabs()->addTab(method->getName(), Colours::white, methodEditor, true, -1);
     methodEditArea->getTabs()->setCurrentTabIndex(methodEditArea->getTabs()->getNumTabs() - 1, true);
@@ -654,21 +659,21 @@ void CtrlrLuaMethodEditor::saveSettings()
 {
     String settings;
     StringArray openedMethod;
-    for (int i=0; i<methodEditArea->getTabs()->getNumTabs(); i++)
+    for (int i = 0; i < methodEditArea->getTabs()->getNumTabs(); i++)
     {
-        CtrlrLuaMethodCodeEditor *ed = dynamic_cast<CtrlrLuaMethodCodeEditor*>(methodEditArea->getTabs()->getTabContentComponent(i));
+        CtrlrLuaMethodCodeEditor *ed = dynamic_cast<CtrlrLuaMethodCodeEditor *>(methodEditArea->getTabs()->getTabContentComponent(i));
         if (ed != nullptr)
         {
             if (ed->getMethod())
             {
-                openedMethod.add (ed->getMethod()->getUuid().toString());
+                openedMethod.add(ed->getMethod()->getUuid().toString());
             }
         }
     }
 
     if (methodTree->getRootItem())
     {
-        ScopedPointer <XmlElement> treeState(methodTree->getOpennessState(true).release());
+        ScopedPointer<XmlElement> treeState(methodTree->getOpennessState(true).release());
 
         if (treeState)
         {
@@ -676,20 +681,20 @@ void CtrlrLuaMethodEditor::saveSettings()
             settings << ";";
         }
         settings << openedMethod.joinIntoString(":");
-        componentTree.setProperty (Ids::luaMethodEditor, settings, nullptr);
+        componentTree.setProperty(Ids::luaMethodEditor, settings, nullptr);
     }
 }
 
 // Value tree GUI stuff
-const String CtrlrLuaMethodEditor::getUniqueName (const ValueTree &item) const
+const String CtrlrLuaMethodEditor::getUniqueName(const ValueTree &item) const
 {
-    if (item.hasType (Ids::luaMethod))
+    if (item.hasType(Ids::luaMethod))
     {
         return (item.getProperty(Ids::luaMethodName).toString());
     }
     if (item.hasType(Ids::luaMethodGroup))
     {
-        return (item.getProperty (Ids::name).toString());
+        return (item.getProperty(Ids::name).toString());
     }
     if (item.hasType(Ids::luaManagerMethods))
     {
@@ -699,25 +704,25 @@ const String CtrlrLuaMethodEditor::getUniqueName (const ValueTree &item) const
     return ("Unknown");
 }
 
-const AttributedString CtrlrLuaMethodEditor::getDisplayString(const ValueTree &item)    const
+const AttributedString CtrlrLuaMethodEditor::getDisplayString(const ValueTree &item) const
 {
     AttributedString str;
-    
+
     // v5.6.30
-    //Font fNormal = owner.getOwner().getFontManager().getDefaultNormalFont();
-    //Font fSmall = owner.getOwner().getFontManager().getDefaultSmallFont();
+    // Font fNormal = owner.getOwner().getFontManager().getDefaultNormalFont();
+    // Font fSmall = owner.getOwner().getFontManager().getDefaultSmallFont();
 
     // Back to v5.3.198 & 5.3.201
     Font fNormal = Font(12.0f, Font::plain); // Added v5.6.31
-	// Font fNormal = Font("<Monospaced>", 12.0f, Font::plain);
+                                             // Font fNormal = Font("<Monospaced>", 12.0f, Font::plain);
     Font fMedium = Font(14.0f, Font::plain); // Added v5.6.31
-	// Font fMedium = Font("<Monospaced>", 14.0f, Font::plain);
-	Font fSmall = Font(10.0f, Font::plain); // Added v5.6.31
+    // Font fMedium = Font("<Monospaced>", 14.0f, Font::plain);
+    Font fSmall = Font(10.0f, Font::plain); // Added v5.6.31
     // Font fSmall = Font("<Monospaced>", 10.0f, Font::plain); // Added v5.6.31
     Font fSmallItalic = Font(10.0f, Font::italic);
-	// Font fSmallItalic = Font("<Monospaced>", 10.0f, Font::italic);
-    
-    if (item.getType () == Ids::luaMethod)
+    // Font fSmallItalic = Font("<Monospaced>", 10.0f, Font::italic);
+
+    if (item.getType() == Ids::luaMethod)
     {
         Colour text;
 
@@ -726,7 +731,7 @@ const AttributedString CtrlrLuaMethodEditor::getDisplayString(const ValueTree &i
         else
             text = Colours::black;
 
-        str.append (item.getProperty(Ids::luaMethodName).toString()+"\n", fNormal, text);
+        str.append(item.getProperty(Ids::luaMethodName).toString() + "\n", fNormal, text);
 
         if ((int)item.getProperty(Ids::luaMethodSource) == CtrlrLuaMethod::codeInFile)
         {
@@ -735,26 +740,26 @@ const AttributedString CtrlrLuaMethodEditor::getDisplayString(const ValueTree &i
         }
         else
         {
-            str.append (File::descriptionOfSizeInBytes (item.getProperty(Ids::luaMethodCode).toString().length()), fSmall, text.brighter(0.2f));
+            str.append(File::descriptionOfSizeInBytes(item.getProperty(Ids::luaMethodCode).toString().length()), fSmall, text.brighter(0.2f));
         }
 
-        str.setJustification (Justification::left);
+        str.setJustification(Justification::left);
     }
 
     if (item.getType() == Ids::luaMethodGroup)
     {
         // str.append(item.getProperty(Ids::name), fNormal, Colours::black); //Removed v5.6.31
-        str.append(item.getProperty(Ids::name), fMedium, Colours::black); // Added v5.6.31
-        str.append (" ["+String(item.getNumChildren())+"]", fSmall, Colours::darkgrey); // Added v5.6.31
+        str.append(item.getProperty(Ids::name), fMedium, Colours::black);                  // Added v5.6.31
+        str.append(" [" + String(item.getNumChildren()) + "]", fSmall, Colours::darkgrey); // Added v5.6.31
 
-        str.setJustification (Justification::left);
+        str.setJustification(Justification::left);
     }
 
     if (item.getType() == Ids::luaManagerMethods)
     {
-        str.append ("LUA", fNormal.boldened(), Colours::black);
+        str.append("LUA", fNormal.boldened(), Colours::black);
 
-        str.setJustification (Justification::left);
+        str.setJustification(Justification::left);
     }
 
     return (str);
@@ -764,22 +769,22 @@ const Font CtrlrLuaMethodEditor::getItemFont(const ValueTree &item) const
 {
     if (item.hasType(Ids::luaManagerMethods) || item.hasType(Ids::luaMethodGroup))
     {
-        return (Font (14.0, Font::bold));
+        return (Font(14.0, Font::bold));
     }
 
     return (Font(12.0f, Font::plain));
 }
 
-Drawable* CtrlrLuaMethodEditor::getIconForItem (const ValueTree &item) const
+Drawable *CtrlrLuaMethodEditor::getIconForItem(const ValueTree &item) const
 {
-    if (item.hasType (Ids::luaMethod))
+    if (item.hasType(Ids::luaMethod))
     {
-        if ((int)item.getProperty (Ids::luaMethodSource) == (int)CtrlrLuaMethod::codeInProperty)
+        if ((int)item.getProperty(Ids::luaMethodSource) == (int)CtrlrLuaMethod::codeInProperty)
         {
             return gui::createDrawable(BIN2STR(cog_svg));
         }
 
-        if ((int)item.getProperty (Ids::luaMethodSource) == (int)CtrlrLuaMethod::codeInFile)
+        if ((int)item.getProperty(Ids::luaMethodSource) == (int)CtrlrLuaMethod::codeInFile)
         {
             if (owner.getLuaMethodSourceFile(&item).existsAsFile())
             {
@@ -791,11 +796,11 @@ Drawable* CtrlrLuaMethodEditor::getIconForItem (const ValueTree &item) const
             }
         }
     }
-    else if (item.hasType (Ids::luaMethodGroup))
+    else if (item.hasType(Ids::luaMethodGroup))
     {
         return gui::createDrawable(BIN2STR(folder_svg));
     }
-    else if (item.hasType (Ids::luaManagerMethods))
+    else if (item.hasType(Ids::luaManagerMethods))
     {
         return gui::createDrawable(BIN2STR(folder_open_svg));
     }
@@ -803,73 +808,73 @@ Drawable* CtrlrLuaMethodEditor::getIconForItem (const ValueTree &item) const
     return gui::createDrawable(BIN2STR(radio_svg));
 }
 
-void CtrlrLuaMethodEditor::itemClicked (const MouseEvent &e, ValueTree &item)
+void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item)
 {
     if (e.mods.isPopupMenu())
     {
-        if ( item.hasType (Ids::luaManagerMethods) || item.hasType (Ids::luaMethodGroup) )
+        if (item.hasType(Ids::luaManagerMethods) || item.hasType(Ids::luaMethodGroup))
         {
             PopupMenu m;
-            m.addSectionHeader ("Group operations");
-            m.addItem (1, "Add method");
-            m.addItem (2, "Add files");
-            m.addItem (3, "Add group");
+            m.addSectionHeader("Group operations");
+            m.addItem(1, "Add method");
+            m.addItem(2, "Add files");
+            m.addItem(3, "Add group");
             m.addSeparator();
             bool isMethodGroup = item.hasType(Ids::luaMethodGroup);
             if (isMethodGroup)
             {
-                m.addItem (4, "Remove group");
-                m.addItem (5, "Rename group");
+                m.addItem(4, "Remove group");
+                m.addItem(5, "Rename group");
             }
             else
-            {    // Root element => add a menu to convert method to filesto files
+            { // Root element => add a menu to convert method to filesto files
                 m.addItem(4, "Convert to files...");
             }
 
             m.addSeparator();
-            m.addItem (6, "Sort by name");
-            m.addItem (7, "Sort by size");
+            m.addItem(6, "Sort by name");
+            m.addItem(7, "Sort by size");
 
             const int ret = m.show();
 
             if (ret == 1)
             {
-                addNewMethod (item);
+                addNewMethod(item);
             }
             else if (ret == 2)
             {
-                addMethodFromFile (item);
+                addMethodFromFile(item);
             }
             else if (ret == 3)
             {
-                addNewGroup (item);
+                addNewGroup(item);
             }
             else if (ret == 4)
             {
                 if (isMethodGroup)
-                {    // Case of a method group => remove group
+                { // Case of a method group => remove group
                     removeGroup(item);
                 }
                 else
-                {    // Case of to root element => export to files
+                { // Case of to root element => export to files
                     convertToFiles();
                 }
             }
             else if (ret == 5)
             {
-                renameGroup (item);
+                renameGroup(item);
             }
             else if (ret == 6)
             {
-                ChildSorter sorter(true,*this);
-                getMethodManager().getManagerTree().sort (sorter, nullptr, false);
+                ChildSorter sorter(true, *this);
+                getMethodManager().getManagerTree().sort(sorter, nullptr, false);
 
                 triggerAsyncUpdate();
             }
             else if (ret == 7)
             {
-                ChildSorter sorter(false,*this);
-                getMethodManager().getManagerTree().sort (sorter, nullptr, false);
+                ChildSorter sorter(false, *this);
+                getMethodManager().getManagerTree().sort(sorter, nullptr, false);
 
                 triggerAsyncUpdate();
             }
@@ -877,17 +882,17 @@ void CtrlrLuaMethodEditor::itemClicked (const MouseEvent &e, ValueTree &item)
         else if (item.hasType(Ids::luaMethod))
         {
             PopupMenu m;
-            m.addSectionHeader ("Method " + item.getProperty(Ids::luaMethodName).toString());
+            m.addSectionHeader("Method " + item.getProperty(Ids::luaMethodName).toString());
             if ((int)item.getProperty(Ids::luaMethodSource) == CtrlrLuaMethod::codeInFile)
             {
                 if (!owner.getLuaMethodSourceFile(&item).existsAsFile())
                 {
-                    m.addItem (12, "Locate file on disk");
+                    m.addItem(12, "Locate file on disk");
                 }
             }
 
             m.addSeparator();
-            m.addItem (2,"Remove method");
+            m.addItem(2, "Remove method");
 
             const int ret = m.show();
 
@@ -909,8 +914,8 @@ void CtrlrLuaMethodEditor::itemClicked (const MouseEvent &e, ValueTree &item)
                 if (SURE("Delete the selected method?", this))
                 {
                     {
-                        methodEditArea->closeTabWithMethod (item);
-                        getMethodManager().removeMethod (item.getProperty(Ids::uuid).toString());
+                        methodEditArea->closeTabWithMethod(item);
+                        getMethodManager().removeMethod(item.getProperty(Ids::uuid).toString());
                     }
 
                     triggerAsyncUpdate();
@@ -920,9 +925,9 @@ void CtrlrLuaMethodEditor::itemClicked (const MouseEvent &e, ValueTree &item)
     }
 }
 
-void CtrlrLuaMethodEditor::itemDoubleClicked (const MouseEvent &e, ValueTree &item)
+void CtrlrLuaMethodEditor::itemDoubleClicked(const MouseEvent &e, ValueTree &item)
 {
-    setEditedMethod (Uuid(item.getProperty(Ids::uuid).toString()));
+    setEditedMethod(Uuid(item.getProperty(Ids::uuid).toString()));
 }
 
 const bool CtrlrLuaMethodEditor::renameItem(const ValueTree &item, const String &newName) const
@@ -932,7 +937,7 @@ const bool CtrlrLuaMethodEditor::renameItem(const ValueTree &item, const String 
 
 const bool CtrlrLuaMethodEditor::canBeRenamed(const ValueTree &item) const
 {
-    if ( item.getType() == Ids::luaMethod && ((int)item.getProperty(Ids::luaMethodSource) == CtrlrLuaMethod::codeInProperty) )
+    if (item.getType() == Ids::luaMethod && ((int)item.getProperty(Ids::luaMethodSource) == CtrlrLuaMethod::codeInProperty))
     {
         return (true);
     }
@@ -955,13 +960,13 @@ const bool CtrlrLuaMethodEditor::isInterestedInDragSource(const ValueTree &item,
     return (false);
 }
 
-var CtrlrLuaMethodEditor::getDragSourceDescription(Array <ValueTree> &selectedTreeItems)
+var CtrlrLuaMethodEditor::getDragSourceDescription(Array<ValueTree> &selectedTreeItems)
 {
     String returnValue;
 
-    for (int i=0; i<methodTree->getNumSelectedItems(); i++)
+    for (int i = 0; i < methodTree->getNumSelectedItems(); i++)
     {
-        CtrlrValueTreeEditorItem *item = dynamic_cast<CtrlrValueTreeEditorItem*>(methodTree->getSelectedItem(i));
+        CtrlrValueTreeEditorItem *item = dynamic_cast<CtrlrValueTreeEditorItem *>(methodTree->getSelectedItem(i));
 
         if (item != nullptr)
         {
@@ -972,22 +977,22 @@ var CtrlrLuaMethodEditor::getDragSourceDescription(Array <ValueTree> &selectedTr
     return (returnValue);
 }
 
-void CtrlrLuaMethodEditor::itemDropped (ValueTree &targetItem, const DragAndDropTarget::SourceDetails &dragSourceDetails, int insertIndex)
+void CtrlrLuaMethodEditor::itemDropped(ValueTree &targetItem, const DragAndDropTarget::SourceDetails &dragSourceDetails, int insertIndex)
 {
-    if ( (targetItem.hasType(Ids::luaMethodGroup) || targetItem.hasType(Ids::luaManagerMethods)) && insertIndex == 0 )
+    if ((targetItem.hasType(Ids::luaMethodGroup) || targetItem.hasType(Ids::luaManagerMethods)) && insertIndex == 0)
     {
         StringArray ar;
-        ar.addTokens (dragSourceDetails.description.toString(), ";", "\"'");
+        ar.addTokens(dragSourceDetails.description.toString(), ";", "\"'");
 
-        for (int i=0; i<ar.size(); i++)
+        for (int i = 0; i < ar.size(); i++)
         {
-            CtrlrValueTreeEditorItem *sourceItem = dynamic_cast<CtrlrValueTreeEditorItem*>(methodTree->findItemFromIdentifierString (ar[i]));
+            CtrlrValueTreeEditorItem *sourceItem = dynamic_cast<CtrlrValueTreeEditorItem *>(methodTree->findItemFromIdentifierString(ar[i]));
             if (sourceItem != nullptr)
             {
-                ValueTree child        = sourceItem->getTree();
-                ValueTree parent    = child.getParent();
-                parent.removeChild (child, nullptr);
-                targetItem.addChild (child, -1, nullptr);
+                ValueTree child = sourceItem->getTree();
+                ValueTree parent = child.getParent();
+                parent.removeChild(child, nullptr);
+                targetItem.addChild(child, -1, nullptr);
             }
         }
 
@@ -1000,17 +1005,15 @@ void CtrlrLuaMethodEditor::handleAsyncUpdate()
     updateRootItem();
 }
 
-
-
-ChildSorter::ChildSorter(const bool _sortByName, CtrlrLuaMethodEditor &_parent) :sortByName(_sortByName),parent(_parent)
+ChildSorter::ChildSorter(const bool _sortByName, CtrlrLuaMethodEditor &_parent) : sortByName(_sortByName), parent(_parent)
 {
 }
 
-int ChildSorter::compareElements (ValueTree first, ValueTree second)
+int ChildSorter::compareElements(ValueTree first, ValueTree second)
 {
     if (sortByName)
     {
-        return (first.getProperty(Ids::luaMethodName).toString().compareNatural (second.getProperty(Ids::luaMethodName).toString()));
+        return (first.getProperty(Ids::luaMethodName).toString().compareNatural(second.getProperty(Ids::luaMethodName).toString()));
     }
     else
     {
@@ -1022,7 +1025,7 @@ int ChildSorter::compareElements (ValueTree first, ValueTree second)
         }
         else
         {
-            firstSize = first.getProperty (Ids::luaMethodCode).toString().length();
+            firstSize = first.getProperty(Ids::luaMethodCode).toString().length();
         }
 
         if ((int)second.getProperty(Ids::luaMethodSource) == CtrlrLuaMethod::codeInFile)
@@ -1031,7 +1034,7 @@ int ChildSorter::compareElements (ValueTree first, ValueTree second)
         }
         else
         {
-            secondSize = second.getProperty (Ids::luaMethodCode).toString().length();
+            secondSize = second.getProperty(Ids::luaMethodCode).toString().length();
         }
 
         if (firstSize > secondSize)
@@ -1047,14 +1050,14 @@ int ChildSorter::compareElements (ValueTree first, ValueTree second)
 
 StringArray CtrlrLuaMethodEditor::getMenuBarNames()
 {
-    const char* const names[] = { "File", "Edit", nullptr}; // Removed 5.6.34. Help is now useless since we have the shortcuts displayed in the menu items. nullptr is mandatory to tell the process to stop the at the last member of array.
-    return StringArray (names);
+    const char *const names[] = {"File", "Edit", nullptr}; // Removed 5.6.34. Help is now useless since we have the shortcuts displayed in the menu items. nullptr is mandatory to tell the process to stop the at the last member of array.
+    return StringArray(names);
 }
 
 PopupMenu CtrlrLuaMethodEditor::getMenuForIndex(int topLevelMenuIndex, const String &menuName)
 {
     // Make sure your command manager is available before trying to use it.
-    auto* commandManager = &owner.getCtrlrManagerOwner().getCommandManager();
+    auto *commandManager = &owner.getCtrlrManagerOwner().getCommandManager();
 
     PopupMenu menu;
 
@@ -1064,11 +1067,11 @@ PopupMenu CtrlrLuaMethodEditor::getMenuForIndex(int topLevelMenuIndex, const Str
         // You should put the original code back here using `menu.addItem()`
         // so that the menu works even if the command manager is not available.
         // I'll provide an example below.
-        
+
         // This is a temporary fix to get your menus working again:
         if (topLevelMenuIndex == 0) // File Menu
         {
-            menu.addItem (LuaMethodEditorCommandIDs::fileSave, "Save");
+            menu.addItem(LuaMethodEditorCommandIDs::fileSave, "Save");
             // ... all the other original addItem() calls
         }
         else if (topLevelMenuIndex == 1) // Edit Menu
@@ -1083,39 +1086,39 @@ PopupMenu CtrlrLuaMethodEditor::getMenuForIndex(int topLevelMenuIndex, const Str
     // Assuming 'commandManager' is now a valid pointer.
     if (topLevelMenuIndex == 0) // File Menu
     {
-        menu.addCommandItem (commandManager, LuaMethodEditorCommandIDs::fileSave);
-        menu.addCommandItem (commandManager, LuaMethodEditorCommandIDs::fileSaveAndCompile);
-        menu.addCommandItem (commandManager, LuaMethodEditorCommandIDs::fileSaveAndCompileAll);
+        menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::fileSave);
+        menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::fileSaveAndCompile);
+        menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::fileSaveAndCompileAll);
         menu.addSeparator();
-        menu.addCommandItem (commandManager, LuaMethodEditorCommandIDs::fileCloseCurrentTab);
-        menu.addCommandItem (commandManager, LuaMethodEditorCommandIDs::fileCloseAllTabs);
+        menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::fileCloseCurrentTab);
+        menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::fileCloseAllTabs);
         menu.addSeparator();
-        menu.addCommandItem (commandManager, LuaMethodEditorCommandIDs::fileConvertToFiles);
+        menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::fileConvertToFiles);
         menu.addSeparator();
-        menu.addCommandItem (commandManager, LuaMethodEditorCommandIDs::fileClose);
+        menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::fileClose);
     }
     else if (topLevelMenuIndex == 1) // Edit Menu
     {
         // Existing Edit commands
-        menu.addCommandItem (commandManager, LuaMethodEditorCommandIDs::editSearch);
-        menu.addCommandItem (commandManager, LuaMethodEditorCommandIDs::editFindAndReplace);
-        menu.addCommandItem (commandManager, LuaMethodEditorCommandIDs::editDebugger);
-        menu.addCommandItem (commandManager, LuaMethodEditorCommandIDs::editConsole);
-        menu.addCommandItem (commandManager, LuaMethodEditorCommandIDs::editClearOutput);
+        menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::editSearch);
+        menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::editFindAndReplace);
+        menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::editDebugger);
+        menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::editConsole);
+        menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::editClearOutput);
         menu.addSeparator();
         // Adding the new commands with their shortcuts
-        menu.addCommandItem (commandManager, LuaMethodEditorCommandIDs::editSingleLineComment);
-        menu.addCommandItem (commandManager, LuaMethodEditorCommandIDs::editMultiLineComment);
-        menu.addCommandItem (commandManager, LuaMethodEditorCommandIDs::editDuplicateLine);
-        menu.addCommandItem (commandManager, LuaMethodEditorCommandIDs::editGoToLine);
+        menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::editSingleLineComment);
+        menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::editMultiLineComment);
+        menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::editDuplicateLine);
+        menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::editGoToLine);
         menu.addSeparator();
-        menu.addCommandItem (commandManager, LuaMethodEditorCommandIDs::editPreferences);
+        menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::editPreferences);
     }
-        
+
     // The previous section for "Key Commands" (topLevelMenuIndex == 2)
     // is now obsolete and can be safely removed, as the shortcuts will
     // automatically be displayed next to their commands in the main menus.
-    
+
     return menu;
 }
 
@@ -1125,32 +1128,32 @@ void CtrlrLuaMethodEditor::menuItemSelected(int menuItemID, int topLevelMenuInde
     // The command manager will handle the rest.
     switch (menuItemID)
     {
-        case LuaMethodEditorCommandIDs::fileClose:
+    case LuaMethodEditorCommandIDs::fileClose:
+    {
+        // This close handle seems to be doing some custom modal state handling,
+        // so it may be necessary to keep it here.
+        if (isCurrentlyModal())
+            exitModalState(-1);
+
+        if (canCloseWindow())
         {
-            // This close handle seems to be doing some custom modal state handling,
-            // so it may be necessary to keep it here.
-            if (isCurrentlyModal())
-                exitModalState(-1);
-
-            if (canCloseWindow())
-            {
-                owner.getWindowManager().toggle(CtrlrPanelWindowManager::LuaMethodEditor, false);
-            }
+            owner.getWindowManager().toggle(CtrlrPanelWindowManager::LuaMethodEditor, false);
         }
-        break;
+    }
+    break;
 
-        // All other command IDs (save, compile, search, etc.) should be handled by the
-        // performLuaEditorCommand function and NOT here.
-        default:
-            break;
+    // All other command IDs (save, compile, search, etc.) should be handled by the
+    // performLuaEditorCommand function and NOT here.
+    default:
+        break;
     }
 }
 
 void CtrlrLuaMethodEditor::saveAndCompilAllMethods()
 {
-    for (int i=0; i<getTabs()->getNumTabs(); i++)
+    for (int i = 0; i < getTabs()->getNumTabs(); i++)
     {
-        CtrlrLuaMethodCodeEditor *ed = dynamic_cast<CtrlrLuaMethodCodeEditor*> (getTabs()->getTabContentComponent (i));
+        CtrlrLuaMethodCodeEditor *ed = dynamic_cast<CtrlrLuaMethodCodeEditor *>(getTabs()->getTabContentComponent(i));
 
         if (ed)
         {
@@ -1174,7 +1177,11 @@ void CtrlrLuaMethodEditor::convertToFiles()
         }
         else
         {
+#if JUCE_VERSION >= 0x070000
+            AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Convert to files", "Failed to convert Lua methods to files.\n" + res.getErrorMessage());
+#else
             AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Convert to files", "Failed to convert Lua methods to files.\n" + res.getErrorMessage());
+#endif
         }
     }
 }
@@ -1189,23 +1196,23 @@ CtrlrLuaMethodEditArea *CtrlrLuaMethodEditor::getMethodEditArea()
     return (methodEditArea);
 }
 
-void CtrlrLuaMethodEditor::searchResultClicked (const String &methodName, const int lineNumber, const int resultPositionStart, const int resultPositionEnd)
+void CtrlrLuaMethodEditor::searchResultClicked(const String &methodName, const int lineNumber, const int resultPositionStart, const int resultPositionEnd)
 {
-//    _DBG("CtrlrLuaMethodEditor::searchResultClicked");
-//    _DBG("\t"+methodName+" ln:"+STR(lineNumber)+" s:"+STR(resultPositionStart)+" e:"+STR(resultPositionEnd));
+    //    _DBG("CtrlrLuaMethodEditor::searchResultClicked");
+    //    _DBG("\t"+methodName+" ln:"+STR(lineNumber)+" s:"+STR(resultPositionStart)+" e:"+STR(resultPositionEnd));
 
     CtrlrLuaMethod *method = getMethodManager().getMethodByName(methodName);
     if (method != nullptr)
     {
-        setEditedMethod (method->getUuid());
+        setEditedMethod(method->getUuid());
 
         if (method->getCodeEditor())
         {
             CodeEditorComponent *ed = method->getCodeEditor()->getCodeComponent();
-            CodeDocument &doc        = method->getCodeEditor()->getCodeDocument();
+            CodeDocument &doc = method->getCodeEditor()->getCodeDocument();
             if (ed)
             {
-                ed->selectRegion (CodeDocument::Position(doc,resultPositionStart), CodeDocument::Position(doc,resultPositionEnd));
+                ed->selectRegion(CodeDocument::Position(doc, resultPositionStart), CodeDocument::Position(doc, resultPositionEnd));
             }
         }
     }
@@ -1214,7 +1221,7 @@ void CtrlrLuaMethodEditor::searchResultClicked (const String &methodName, const 
 void CtrlrLuaMethodEditor::insertRawDebuggerOutput(const String &debuggerOutput)
 {
     if (methodEditArea->getLuaDebuggerPrompt())
-        methodEditArea->getLuaDebuggerPrompt(true)->insertRawDebuggerOutput (debuggerOutput);
+        methodEditArea->getLuaDebuggerPrompt(true)->insertRawDebuggerOutput(debuggerOutput);
 }
 
 void CtrlrLuaMethodEditor::setJsonDebuggerOutput(const String &jsonData)

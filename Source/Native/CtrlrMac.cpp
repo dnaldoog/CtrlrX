@@ -81,10 +81,10 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bo
 	}
 
 	// Now, create the FileChooser with the determined initial directory.
-	fc =
-		std::make_unique<FileChooser>(CTRLR_NEW_INSTANCE_DIALOG_TITLE, fcInitialDirectory, me.getFileExtension(),
-									  nativeFileChooser); // panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs));
-														  // // if vst3, this won't work since there's no ctrlr.settings
+	fc = std::make_unique<FileChooser>(
+		CTRLR_NEW_INSTANCE_DIALOG_TITLE, fcInitialDirectory, me.getFileExtension(),
+		nativeFileChooser); // panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs));
+							// // if vst3, this won't work since there's no ctrlr.settings
 
 	// Launch FileChooser to export file and define the new output file name and extension
 	// browseForFileToSave(true) to show "cancel | Save" instead of "Cancel | Open" buttons won't work. It will show a
@@ -1156,7 +1156,7 @@ const Result CtrlrMac::setBundleInfoCarbon(CtrlrPanel *sourceInfo, const File &b
 
 	if (zipFileEntry) {
 		_DBG("\tgot it");
-		ScopedPointer<InputStream> is(zipFile.createStreamForEntry(*zipFileEntry));
+		std::unique_ptr<InputStream> is(zipFile.createStreamForEntry(*zipFileEntry));
 
 		if (is) {
 			MemoryBlock data;

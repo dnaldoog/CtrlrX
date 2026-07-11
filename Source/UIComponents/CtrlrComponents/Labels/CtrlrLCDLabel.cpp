@@ -4,106 +4,102 @@
 #include "CtrlrLuaManager.h"
 
 //==============================================================================
-CtrlrLCDLabel::CtrlrLCDLabel (CtrlrModulator &owner)
-    : CtrlrComponent(owner)
-	// , ctrlrLabel (0) // Updated v5.6.34. Thanks to @dnaldoog
+CtrlrLCDLabel::CtrlrLCDLabel(CtrlrModulator &owner)
+	: CtrlrComponent(owner)
+// , ctrlrLabel (0) // Updated v5.6.34. Thanks to @dnaldoog
 {
-    addAndMakeVisible (ctrlrLabel = new Label ("ctrlrLabel",
-                                               "LCD TEST"));
-    ctrlrLabel->setFont (Font (16.0000f, Font::plain));
-    ctrlrLabel->setJustificationType (Justification::centred);
-    ctrlrLabel->setEditable (false, false, false);
-    ctrlrLabel->setColour (Label::backgroundColourId, Colour (0x0));
-    ctrlrLabel->setColour (Label::textColourId, findColour(Label::textColourId)); // Colours::black
-    ctrlrLabel->setColour (TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black
-    ctrlrLabel->setColour (TextEditor::backgroundColourId, Colour (0x0));
+	ctrlrLabel = std::make_unique<Label>("ctrlrLabel", "LCD TEST");
+	addAndMakeVisible(ctrlrLabel.get());
 
+	ctrlrLabel->setFont(Font(16.0000f, Font::plain));
+	ctrlrLabel->setJustificationType(Justification::centred);
+	ctrlrLabel->setEditable(false, false, false);
+	ctrlrLabel->setColour(Label::backgroundColourId, Colour(0x0));
+	ctrlrLabel->setColour(Label::textColourId, findColour(Label::textColourId));		   // Colours::black
+	ctrlrLabel->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black
+	ctrlrLabel->setColour(TextEditor::backgroundColourId, Colour(0x0));
 
-    //[UserPreSize]
-    ctrlrLabel->addListener (this);
-	owner.setProperty (Ids::modulatorIsStatic, true);
-	owner.setProperty (Ids::modulatorVstExported, false);
+	//[UserPreSize]
+	ctrlrLabel->addListener(this);
+	owner.setProperty(Ids::modulatorIsStatic, true);
+	owner.setProperty(Ids::modulatorVstExported, false);
 
-	setProperty (Ids::uiLabelBgColour, "0xff000000");
-	setProperty (Ids::uiLabelTextColour, "0xff56c312");
-	setProperty (Ids::uiLabelOutline, 0);
-	setProperty (Ids::uiLabelOutlineColour, "0x00000000");
-	setProperty (Ids::uiLabelJustification, "centred");
-	setProperty (Ids::uiLabelFitFont, false);
-	setProperty (Ids::uiLCDLabelFont, 5);
-	setProperty (Ids::uiLCDLabelFontHeight, 18);
-	setProperty (Ids::uiLabelText, "Label text");
-	setProperty (Ids::uiLabelDisplaysAllValues, false);
-	setProperty (Ids::uiLabelDisplayFormat, "%n(%N) = %v(%h)");
-	setProperty (Ids::uiLabelInputHighlightTextColour, "0xffffffff");
-	setProperty (Ids::uiLabelInputHighlightColour, "0xff0000ff");
-	setProperty (Ids::uiLabelEditOnSingleClick, false);
-	setProperty (Ids::uiLabelEditOnDoubleClick, false);
-	setProperty (Ids::uiLabelEditFocusDiscardsChanges, true);
-	setProperty (Ids::uiLabelInputAllowedChars, "");
-	setProperty (Ids::uiLabelInputAllowedChars, "");
-	setProperty (Ids::uiLabelInputMaxLength, 1024);
-	setProperty (Ids::uiLabelChangedCbk, COMBO_NONE_ITEM);
-	componentTree.addListener (this);
-    //[/UserPreSize]
+	setProperty(Ids::uiLabelBgColour, "0xff000000");
+	setProperty(Ids::uiLabelTextColour, "0xff56c312");
+	setProperty(Ids::uiLabelOutline, 0);
+	setProperty(Ids::uiLabelOutlineColour, "0x00000000");
+	setProperty(Ids::uiLabelJustification, "centred");
+	setProperty(Ids::uiLabelFitFont, false);
+	setProperty(Ids::uiLCDLabelFont, 5);
+	setProperty(Ids::uiLCDLabelFontHeight, 18);
+	setProperty(Ids::uiLabelText, "Label text");
+	setProperty(Ids::uiLabelDisplaysAllValues, false);
+	setProperty(Ids::uiLabelDisplayFormat, "%n(%N) = %v(%h)");
+	setProperty(Ids::uiLabelInputHighlightTextColour, "0xffffffff");
+	setProperty(Ids::uiLabelInputHighlightColour, "0xff0000ff");
+	setProperty(Ids::uiLabelEditOnSingleClick, false);
+	setProperty(Ids::uiLabelEditOnDoubleClick, false);
+	setProperty(Ids::uiLabelEditFocusDiscardsChanges, true);
+	setProperty(Ids::uiLabelInputAllowedChars, "");
+	setProperty(Ids::uiLabelInputAllowedChars, "");
+	setProperty(Ids::uiLabelInputMaxLength, 1024);
+	setProperty(Ids::uiLabelChangedCbk, COMBO_NONE_ITEM);
+	componentTree.addListener(this);
+	//[/UserPreSize]
 
-    setSize (96, 32);
+	setSize(96, 32);
 
-    //[Constructor] You can add your own custom stuff here..
-    //[/Constructor]
+	//[Constructor] You can add your own custom stuff here..
+	//[/Constructor]
 }
 
 CtrlrLCDLabel::~CtrlrLCDLabel()
 {
-    //[Destructor_pre]. You can add your own custom destruction code here..
-    //[/Destructor_pre]
+	//[Destructor_pre]. You can add your own custom destruction code here..
+	//[/Destructor_pre]
 
-    // deleteAndZero (ctrlrLabel); // Removed v5.6.34. Useless. Thanks to @dnaldoog.
+	// deleteAndZero (ctrlrLabel); // Removed v5.6.34. Useless. Thanks to @dnaldoog.
 
-    //[Destructor]. You can add your own custom destruction code here..
-    //[/Destructor]
+	//[Destructor]. You can add your own custom destruction code here..
+	//[/Destructor]
 }
 
 //==============================================================================
-void CtrlrLCDLabel::paint (Graphics& g)
+void CtrlrLCDLabel::paint(Graphics &g)
 {
 	//[UserPrePaint] Add your own custom painting code here..
 	//[/UserPrePaint]
 
-
-
 	//[UserPaint] Add your own custom painting code here..
 	int i = getProperty(Ids::uiLabelOutline);
-	g.setColour (VAR2COLOUR (getProperty(Ids::uiLabelBgColour)));
-	g.fillRoundedRectangle (i, i, getWidth() - 2*i, getHeight() - 2*i, 7);
-//	g.fillRect( i, i, (getWidth() - 2*i), (getHeight() - 2*i));
-//	g.fillRoundedRectangle (2.0f, 2.0f, (float) (getWidth() - 4), (float) (getHeight() - 4), 7.0000f);
+	g.setColour(VAR2COLOUR(getProperty(Ids::uiLabelBgColour)));
+	g.fillRoundedRectangle(i, i, getWidth() - 2 * i, getHeight() - 2 * i, 7);
+	//	g.fillRect( i, i, (getWidth() - 2*i), (getHeight() - 2*i));
+	//	g.fillRoundedRectangle (2.0f, 2.0f, (float) (getWidth() - 4), (float) (getHeight() - 4), 7.0000f);
 
-	g.setColour (VAR2COLOUR (getProperty(Ids::uiLabelOutlineColour)));
-	g.drawRoundedRectangle (0, 0, getWidth(), getHeight(), 7, i);
-//	g.drawRect (0, 0, getWidth(), getHeight(), i);
-//	g.setColour (STR2COLOUR (getProperty(Ids::uiLabelBgColour)).darker(0.2f));
-//	g.drawRoundedRectangle (2.0f, 2.0f, (float) (getWidth() - 4), (float) (getHeight() - 4), 7.0000f, 2.0000f);
+	g.setColour(VAR2COLOUR(getProperty(Ids::uiLabelOutlineColour)));
+	g.drawRoundedRectangle(0, 0, getWidth(), getHeight(), 7, i);
+	//	g.drawRect (0, 0, getWidth(), getHeight(), i);
+	//	g.setColour (STR2COLOUR (getProperty(Ids::uiLabelBgColour)).darker(0.2f));
+	//	g.drawRoundedRectangle (2.0f, 2.0f, (float) (getWidth() - 4), (float) (getHeight() - 4), 7.0000f, 2.0000f);
 	//[/UserPaint]
 }
 
 void CtrlrLCDLabel::resized()
 {
-    //ctrlrLabel->setBounds (0, 0, getWidth() - 0, getHeight() - 0);
-    //[UserResized] Add your own custom resize handling here..
+	// ctrlrLabel->setBounds (0, 0, getWidth() - 0, getHeight() - 0);
+	//[UserResized] Add your own custom resize handling here..
 	if (restoreStateInProgress)
 		return;
-	if ((bool)ctrlrLabel->getProperties() ["fh"] == true)
+	if ((bool)ctrlrLabel->getProperties()["fh"] == true)
 	{
 		Font f = ctrlrLabel->getFont();
-		f.setHeight (getHeight()*0.95f);
-		ctrlrLabel->setFont (f);
+		f.setHeight(getHeight() * 0.95f);
+		ctrlrLabel->setFont(f);
 	}
-	ctrlrLabel->setBounds (getUsableRect());
-    //[/UserResized]
+	ctrlrLabel->setBounds(getUsableRect());
+	//[/UserResized]
 }
-
-
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 double CtrlrLCDLabel::getComponentMaxValue()
@@ -111,7 +107,7 @@ double CtrlrLCDLabel::getComponentMaxValue()
 	return (1);
 }
 
-void CtrlrLCDLabel::setComponentValue (const double newValue, const bool sendChangeMessage)
+void CtrlrLCDLabel::setComponentValue(const double newValue, const bool sendChangeMessage)
 {
 }
 
@@ -125,7 +121,7 @@ int CtrlrLCDLabel::getComponentMidiValue()
 	return (1);
 }
 
-void CtrlrLCDLabel::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
+void CtrlrLCDLabel::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
 {
 	if (property == Ids::uiLabelDisplaysAllValues)
 	{
@@ -140,7 +136,7 @@ void CtrlrLCDLabel::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasCha
 	}
 	else if (property == Ids::uiLabelText)
 	{
-		ctrlrLabel->setText (getProperty(Ids::uiLabelText), sendNotification);
+		ctrlrLabel->setText(getProperty(Ids::uiLabelText), sendNotification);
 	}
 	else if (property == Ids::uiLabelBgColour)
 	{
@@ -148,29 +144,27 @@ void CtrlrLCDLabel::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasCha
 	}
 	else if (property == Ids::uiLabelTextColour)
 	{
-		ctrlrLabel->setColour (Label::textColourId, VAR2COLOUR(getProperty(Ids::uiLabelTextColour)));
-		ctrlrLabel->setColour (TextEditor::textColourId, VAR2COLOUR(getProperty(Ids::uiLabelTextColour)));
+		ctrlrLabel->setColour(Label::textColourId, VAR2COLOUR(getProperty(Ids::uiLabelTextColour)));
+		ctrlrLabel->setColour(TextEditor::textColourId, VAR2COLOUR(getProperty(Ids::uiLabelTextColour)));
 	}
 	else if (property == Ids::uiLabelFitFont)
 	{
-		ctrlrLabel->getProperties().set ("fh", getProperty(Ids::uiLabelFitFont));
+		ctrlrLabel->getProperties().set("fh", getProperty(Ids::uiLabelFitFont));
 		const String t = ctrlrLabel->getText();
-		ctrlrLabel->setFont (CtrlrFontManager::getBuiltInFont ((int)getProperty(Ids::uiLCDLabelFont)).withHeight((float)getProperty(Ids::uiLCDLabelFontHeight)));
-		ctrlrLabel->setText (t, dontSendNotification);
+		ctrlrLabel->setFont(CtrlrFontManager::getBuiltInFont((int)getProperty(Ids::uiLCDLabelFont)).withHeight((float)getProperty(Ids::uiLCDLabelFontHeight)));
+		ctrlrLabel->setText(t, dontSendNotification);
 	}
 	else if (property == Ids::uiLabelJustification)
 	{
-		ctrlrLabel->setJustificationType (justificationFromProperty(getProperty(property)));
+		ctrlrLabel->setJustificationType(justificationFromProperty(getProperty(property)));
 	}
 	else if (property == Ids::uiLCDLabelFont || property == Ids::uiLCDLabelFontHeight)
 	{
-		ctrlrLabel->setFont(CtrlrFontManager::getBuiltInFont ((int)getProperty(Ids::uiLCDLabelFont)).withHeight((float)getProperty(Ids::uiLCDLabelFontHeight)));
+		ctrlrLabel->setFont(CtrlrFontManager::getBuiltInFont((int)getProperty(Ids::uiLCDLabelFont)).withHeight((float)getProperty(Ids::uiLCDLabelFontHeight)));
 	}
-	else if (property == Ids::uiLabelEditOnSingleClick
-		|| property == Ids::uiLabelEditOnDoubleClick
-		|| property == Ids::uiLabelEditFocusDiscardsChanges)
+	else if (property == Ids::uiLabelEditOnSingleClick || property == Ids::uiLabelEditOnDoubleClick || property == Ids::uiLabelEditFocusDiscardsChanges)
 	{
-		ctrlrLabel->setEditable ((bool)getProperty(Ids::uiLabelEditOnSingleClick),(bool)getProperty(Ids::uiLabelEditOnDoubleClick),(bool)getProperty(Ids::uiLabelEditFocusDiscardsChanges));
+		ctrlrLabel->setEditable((bool)getProperty(Ids::uiLabelEditOnSingleClick), (bool)getProperty(Ids::uiLabelEditOnDoubleClick), (bool)getProperty(Ids::uiLabelEditFocusDiscardsChanges));
 	}
 	else if (property == Ids::uiLabelChangedCbk)
 	{
@@ -181,8 +175,8 @@ void CtrlrLCDLabel::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasCha
 	}
 	else if (property == Ids::uiLabelInputHighlightTextColour || property == Ids::uiLabelInputHighlightColour)
 	{
-		ctrlrLabel->setColour (TextEditor::highlightColourId, VAR2COLOUR(getProperty(Ids::uiLabelInputHighlightColour)));
-		ctrlrLabel->setColour (TextEditor::highlightedTextColourId, VAR2COLOUR(getProperty(Ids::uiLabelInputHighlightTextColour)));
+		ctrlrLabel->setColour(TextEditor::highlightColourId, VAR2COLOUR(getProperty(Ids::uiLabelInputHighlightColour)));
+		ctrlrLabel->setColour(TextEditor::highlightedTextColourId, VAR2COLOUR(getProperty(Ids::uiLabelInputHighlightTextColour)));
 	}
 	else
 	{
@@ -197,7 +191,7 @@ void CtrlrLCDLabel::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasCha
 
 void CtrlrLCDLabel::setComponentText(const String &newText)
 {
-	setProperty (Ids::uiLabelText, newText);
+	setProperty(Ids::uiLabelText, newText);
 }
 
 const String CtrlrLCDLabel::getComponentText()
@@ -205,7 +199,7 @@ const String CtrlrLCDLabel::getComponentText()
 	return (ctrlrLabel->getText());
 }
 
-void CtrlrLCDLabel::modulatorChanged (CtrlrModulator *modulatorThatChanged)
+void CtrlrLCDLabel::modulatorChanged(CtrlrModulator *modulatorThatChanged)
 {
 	if (modulatorThatChanged == 0 || modulatorThatChanged->getComponent() == 0)
 		return;
@@ -213,13 +207,13 @@ void CtrlrLCDLabel::modulatorChanged (CtrlrModulator *modulatorThatChanged)
 	if ((bool)modulatorThatChanged->getComponent()->getProperty(Ids::componentExcludedFromLabelDisplay) == true)
 		return;
 
-	ctrlrLabel->setText (labelFromProperty (modulatorThatChanged, getProperty (Ids::uiLabelDisplayFormat)), dontSendNotification);
+	ctrlrLabel->setText(labelFromProperty(modulatorThatChanged, getProperty(Ids::uiLabelDisplayFormat)), dontSendNotification);
 }
 
-void CtrlrLCDLabel::labelTextChanged (Label* labelThatHasChanged)
+void CtrlrLCDLabel::labelTextChanged(Label *labelThatHasChanged)
 {
-	if (getProperty (Ids::uiLabelText).toString() != labelThatHasChanged->getText())
-        setProperty (Ids::uiLabelText, labelThatHasChanged->getText(), false);
+	if (getProperty(Ids::uiLabelText).toString() != labelThatHasChanged->getText())
+		setProperty(Ids::uiLabelText, labelThatHasChanged->getText(), false);
 
 	setComponentValue(0, true);
 
@@ -227,21 +221,21 @@ void CtrlrLCDLabel::labelTextChanged (Label* labelThatHasChanged)
 	{
 		if (labelChangedCbk->isValid())
 		{
-			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (labelChangedCbk, dynamic_cast<CtrlrComponent*>(this), labelThatHasChanged->getText());
+			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(labelChangedCbk, dynamic_cast<CtrlrComponent *>(this), labelThatHasChanged->getText());
 		}
 	}
 }
 
 CtrlrLCDLabel &CtrlrLCDLabel::setLabelText(const String &text)
 {
-	setProperty (Ids::uiLabelText, text);
+	setProperty(Ids::uiLabelText, text);
 
 	return (*this);
 }
 
 CtrlrLCDLabel &CtrlrLCDLabel::appendText(const String &text)
 {
-	setProperty (Ids::uiLabelText, ctrlrLabel->getText() + text);
+	setProperty(Ids::uiLabelText, ctrlrLabel->getText() + text);
 
 	return (*this);
 }
@@ -251,7 +245,6 @@ const String CtrlrLCDLabel::getText()
 	return (ctrlrLabel->getText());
 }
 //[/MiscUserCode]
-
 
 //==============================================================================
 #if 0
