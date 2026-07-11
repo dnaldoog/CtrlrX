@@ -25,9 +25,9 @@ CtrlrProcessor::CtrlrProcessor()
 						 ),
 #endif
 
-	  overridesTree(Ids::ctrlrOverrides),
-	  ctrlrManager(nullptr),
-	  ctrlrLog(nullptr) // Added v5.6.34. Could be useful
+	  overridesTree(Ids::ctrlrOverrides)
+	  //ctrlrManager(nullptr),
+	  //ctrlrLog(nullptr) // Added v5.6.34. Could be useful
 {
 	_DBG("CtrlrProcessor::ctor");
 
@@ -49,13 +49,12 @@ CtrlrProcessor::CtrlrProcessor()
 #if JUCE_DEBUG // Added v5.6.34. Will show the debug log. Was set to (false) by default from the CtrlrManager property
 			   // ctrlrLogToFile.
 			   // If we are in a Debug build, force logging ON
-	ctrlrLog = new CtrlrLog(true);
+	ctrlrLog = std::make_unique<CtrlrLog>(true);
 #else
 	// If we are in any other build (like Release), force logging OFF
-	ctrlrLog = new CtrlrLog(overridesTree.getProperty(Ids::ctrlrLogToFile));
+	ctrlrLog = std::make_unique<CtrlrLog>(overridesTree.getProperty(Ids::ctrlrLogToFile));
 #endif
-
-	ctrlrManager = new CtrlrManager(this, *ctrlrLog);
+	ctrlrManager = std::make_unique<CtrlrManager>(this, *ctrlrLog);
 
 	if (!ctrlrManager->initEmbeddedInstance()) {
 		ctrlrManager->setDefaults();
@@ -85,7 +84,7 @@ CtrlrProcessor::~CtrlrProcessor() // Updated v5.6.34. Prevents AAX from crashing
 	// We ensure raw pointers are nullified without deletion to avoid crashes during scan/removal.
 	// ScopedPointer will still automatically delete its content (ctrlrManager) when the CtrlrProcessor object is
 	// destroyed.
-	ctrlrLog = nullptr;
+	// ctrlrLog = nullptr;
 #else
 	// For all plugin formats *EXCEPT* AAX:
 	// Perform explicit deletion for the raw pointer (ctrlrLog).
@@ -590,15 +589,13 @@ void CtrlrProcessor::setStateInformation(const void *data, int sizeInBytes) {
 void CtrlrProcessor::setStateInformation(const XmlElement *xmlState) {
 	if (KeyPress::isKeyCurrentlyDown(KeyPress::createFromDescription("ctrl + R").getKeyCode())) {
 #if JUCE_VERSION >= 0x070000
-    // Modern JUCE 7/8 Asynchronous (Non-blocking) call
-    AlertWindow::showMessageBoxAsync (AlertWindow::WarningIcon, 
-                                      "Ctrlr v5",
-                                      "Ctrl+R key is pressed, resetting to defaults");
+		// Modern JUCE 7/8 Asynchronous (Non-blocking) call
+		AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Ctrlr v5",
+										 "Ctrl+R key is pressed, resetting to defaults");
 #else
-    // Legacy JUCE 6 and below Synchronous (Blocking) call
-    AlertWindow::showMessageBox (AlertWindow::WarningIcon, 
-                                 "Ctrlr v5",
-                                 "Ctrl+R key is pressed, resetting to defaults");
+		// Legacy JUCE 6 and below Synchronous (Blocking) call
+		AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Ctrlr v5",
+									"Ctrl+R key is pressed, resetting to defaults");
 #endif
 		return;
 	}

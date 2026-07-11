@@ -77,26 +77,26 @@ private:
 	int sampleWidth;
 	int sampleHeight;
 
-	ComboBox *fontTypeface;
-	ColourComboBox *bgColour;
-	ColourComboBox *lineNumbersBgColour;
-	ColourComboBox *lineNumbersColour;
-	ComboBox *syntaxTokenType;
-	ColourComboBox *syntaxTokenColor;
-	ToggleButton *fontBold;
-	ToggleButton *fontItalic;
-	ToggleButton *openSearchTabs;
-	TextButton *applyButton;
-	TextButton *cancelButton;
-	TextButton *resetButton;
-	TextButton *resetToPreviousButton;
-	Slider *fontSize;
+	std::unique_ptr<ComboBox> fontTypeface;
+	std::unique_ptr<ColourComboBox> bgColour;
+	std::unique_ptr<ColourComboBox> lineNumbersBgColour;
+	std::unique_ptr<ColourComboBox> lineNumbersColour;
+	std::unique_ptr<ComboBox> syntaxTokenType;
+	std::unique_ptr<ColourComboBox> syntaxTokenColor;
+	std::unique_ptr<ToggleButton> fontBold;
+	std::unique_ptr<ToggleButton> fontItalic;
+	std::unique_ptr<ToggleButton> openSearchTabs;
+	std::unique_ptr<TextButton> applyButton;
+	std::unique_ptr<TextButton> cancelButton;
+	std::unique_ptr<TextButton> resetButton;
+	std::unique_ptr<TextButton> resetToPreviousButton;
+	std::unique_ptr<Slider> fontSize;
 	std::unique_ptr<Label> label0;		// Updated v5.6.34. Thanks to @dnaldoog
 	std::unique_ptr<Label> label1;		// Updated v5.6.34. Thanks to @dnaldoog
 	std::unique_ptr<Label> label2;		// Updated v5.6.34. Thanks to @dnaldoog
 	std::unique_ptr<Label> label3;		// Updated v5.6.34. Thanks to @dnaldoog
 	std::unique_ptr<Label> syntaxLabel; // Updated v5.6.34. Thanks to @dnaldoog
-	CodeEditorComponent *fontTest;
+	std::unique_ptr<CodeEditorComponent> fontTest;
 
 	static CodeEditorComponent::ColourScheme &getSharedScheme();
 	HashMap<String, Colour> customSyntaxColors;

@@ -213,7 +213,8 @@ bool CtrlrEditor::perform(
 #else
 		// Modal dialog on Windows/macOS where it's stable
 		owner.getWindowManager().showModalDialog("CtrlrX/Settings",
-												 std::unique_ptr<CtrlrSettings>(new CtrlrSettings(owner)), true, this);
+												 new CtrlrSettings(owner), // Pass raw pointer directly
+												 true, this);
 #endif
 		break;
 
@@ -261,7 +262,7 @@ bool CtrlrEditor::perform(
 									new CtrlrGenericHelp(BinaryData::LuaFileOperations_md,
 														 BinaryData::LuaFileOperations_mdSize));
 				return true;
-		*/
+
 	case showMenuLuaClassBrowser: {
 		CtrlrPanel *panel = getActivePanel();
 		if (panel) {
@@ -274,7 +275,7 @@ bool CtrlrEditor::perform(
 		}
 		return true;
 	}
-
+*/
 		// break;
 	case CtrlrEditor::doZoomIn:
 		if (getActivePanelEditor()) {
@@ -554,7 +555,7 @@ void CtrlrEditor::performShowKeyboardMappingDialog(const int /*menuItemID*/) {
 	std::unique_ptr<KeyMappingEditorComponent> keys(
 		new KeyMappingEditorComponent(*owner.getCommandManager().getKeyMappings(), true));
 
-	owner.getWindowManager().showModalDialog("Keyboard mapping", keys, true, this);
+	owner.getWindowManager().showModalDialog("Keyboard mapping", keys.get(), true, this);
 
 	std::unique_ptr<XmlElement> keysXml(owner.getCommandManager().getKeyMappings()->createXml(true).release());
 
