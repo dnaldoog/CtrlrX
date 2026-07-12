@@ -501,6 +501,7 @@ Tuturial coming soon.
 * **FIXED** Some modulator duplication when loading a panel. `CtrlrPropertyComponent.cpp`. Thanks to [John Goodland](https://github.com/dnaldoog)
 * **ADDED** .clang-format file to the root to enforce code style across IDEs. `.clang-format`
 * **UPGRADED** LUA 5.1 to LuaJIT 2.1. Thanks to [John Goodland](https://github.com/dnaldoog)
+* **ADDED** refresh MIDI devices shortcut (cmd/ctrl + D). `CtrlrEditorApplicationCommands.cpp`, `CtrlrEditorApplicationCommandsHandlers.cpp`. Thanks to [John Goodland](https://github.com/dnaldoog)
 
 #### Version 5.6.35 | 2026.04.20
 

@@ -324,6 +324,7 @@ bool CtrlrEditor::perform (const InvocationInfo &info) // Updated v5.6.34. Will 
             break;
 
         case CtrlrEditor::doRefreshDeviceList:
+            AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Refresh devices", "Device list refreshed");
             performMidiDeviceRefresh();
             break;
 
