@@ -349,7 +349,7 @@ void CtrlrLuaMethodDebuggerPrompt::sendCommand(const String &command) {
 }
 
 void CtrlrLuaMethodDebuggerPrompt::textEditorReturnKeyPressed(TextEditor &editor) {
-	if (&editor == debuggerInput) {
+	if (&editor == debuggerInput.get()) {
 		sendCommand(debuggerInput->getText());
 		debuggerInput->clear();
 	}

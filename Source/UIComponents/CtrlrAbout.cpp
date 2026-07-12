@@ -115,7 +115,7 @@ CtrlrAbout::CtrlrAbout(CtrlrManager &_owner) : owner(_owner) {
 						  "Ctrlr by Roman Kubiak under BSD|GPL license.");
 
 	// Github LOGO SVG
-	githubLogo = std::make_unique<DrawableButton>(gui::createDrawableButton(
+	githubLogo = std::unique_ptr<DrawableButton>(gui::createDrawableButton(
 		"Github Logo", BIN2STR(github_colour_svg))); // Updated v5.6.31. It required to drag drop SVG file in the
 													 // projucer in the icon folder to be embedded
 	addAndMakeVisible(githubLogo.get());
@@ -359,8 +359,8 @@ CtrlrAbout::CtrlrAbout(CtrlrManager &_owner) : owner(_owner) {
 		authorDonateUrl = "";
 
 	if (!authorDonateUrl.isEmpty()) {
-		labelDonate = std::make_unique<Label>("new label", TRANS("Donate"));)
-        addAndMakeVisible(labelDonate.get());
+		labelDonate = std::make_unique<Label>("new label", TRANS("Donate"));
+		addAndMakeVisible(labelDonate.get());
 		labelDonate->setFont(Font(14.00f, Font::plain));
 		labelDonate->setJustificationType(Justification::topRight);
 		labelDonate->setEditable(false, false, false);

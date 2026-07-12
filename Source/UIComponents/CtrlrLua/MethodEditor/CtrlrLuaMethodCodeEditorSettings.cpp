@@ -535,13 +535,15 @@ const Font CtrlrLuaMethodCodeEditorSettings::getFont() {
 	return (font);
 }
 
-const Colour CtrlrLuaMethodCodeEditorSettings::getBgColour() { return getColourFromCombo(bgColour); }
+const Colour CtrlrLuaMethodCodeEditorSettings::getBgColour() { return getColourFromCombo(bgColour.get()); }
 
 const Colour CtrlrLuaMethodCodeEditorSettings::getLineNumbersBgColour() {
 	return getColourFromCombo(lineNumbersBgColour.get());
 }
 
-const Colour CtrlrLuaMethodCodeEditorSettings::getLineNumbersColour() { return getColourFromCombo(lineNumbersColour); }
+const Colour CtrlrLuaMethodCodeEditorSettings::getLineNumbersColour() {
+	return getColourFromCombo(lineNumbersColour.get());
+}
 
 void CtrlrLuaMethodCodeEditorSettings::populateColourCombo(ColourComboBox *combo) {
 	combo->clear();
