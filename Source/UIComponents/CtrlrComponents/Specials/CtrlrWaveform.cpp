@@ -1,21 +1,21 @@
-#include "stdafx.h"
-#include "stdafx_luabind.h"
+#include "CtrlrWaveform.h"
+#include "../../CtrlrPanel/CtrlrPanelEditor.h"
+#include "CtrlrLuaAudioConverter.h"
+#include "CtrlrLuaManager.h"
 #include "CtrlrLuaObjectWrapper.h"
 #include "CtrlrManager/CtrlrManager.h"
-#include "../../CtrlrPanel/CtrlrPanelEditor.h"
-#include "CtrlrWaveform.h"
-#include "CtrlrLuaAudioConverter.h"
 #include "CtrlrModulator/CtrlrModulator.h"
-#include "CtrlrLuaManager.h"
+#include "stdafx.h"
+#include "stdafx_luabind.h"
 
 CtrlrWaveform::CtrlrWaveform(CtrlrModulator &owner)
-	: CtrlrComponent(owner),
-	  audioThumbnail(nullptr),
-	  audioBufferCopy(1, 0),
-	  qualityForAudioFiles(0)
-{
-	audioThumbnail = std::make_unique<AudioThumbnail>(1, owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager(), owner.getOwnerPanel().getCtrlrManagerOwner().getAudioThumbnailCache());
-	// audioThumbnail			= new AudioThumbnail (1, owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager(), owner.getOwnerPanel().getCtrlrManagerOwner().getAudioThumbnailCache());
+	: CtrlrComponent(owner), audioThumbnail(nullptr), audioBufferCopy(1, 0), qualityForAudioFiles(0) {
+	audioThumbnail =
+		std::make_unique<AudioThumbnail>(1, owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager(),
+										 owner.getOwnerPanel().getCtrlrManagerOwner().getAudioThumbnailCache());
+	// audioThumbnail			= new AudioThumbnail (1,
+	// owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager(),
+	// owner.getOwnerPanel().getCtrlrManagerOwner().getAudioThumbnailCache());
 	audioThumbnail->addChangeListener(this);
 
 	setProperty(Ids::uiWaveformColour, "0xff000000");
@@ -33,23 +33,17 @@ CtrlrWaveform::CtrlrWaveform(CtrlrModulator &owner)
 	setSize(256, 128);
 }
 
-CtrlrWaveform::~CtrlrWaveform()
-{
-}
+CtrlrWaveform::~CtrlrWaveform() {}
 
-void CtrlrWaveform::mouseDown(const MouseEvent &e)
-{
-}
+void CtrlrWaveform::mouseDown(const MouseEvent &e) {}
 
-void CtrlrWaveform::paint(Graphics &g)
-{
+void CtrlrWaveform::paint(Graphics &g) {
 	Rectangle<int> r = getUsableRect();
 
 	g.setGradientFill(ColourGradient(VAR2COLOUR(getProperty(Ids::uiWaveformBackgroundColour1)),
 									 (float)(r.getWidth() / 2), 0.0f,
 									 VAR2COLOUR(getProperty(Ids::uiWaveformBackgroundColour2)),
-									 (float)(r.getWidth() / 2), (float)r.getHeight(),
-									 false));
+									 (float)(r.getWidth() / 2), (float)r.getHeight(), false));
 	g.fillRect(r.withSize(r.getWidth(), r.getHeight()));
 
 	g.setColour(VAR2COLOUR(getProperty(Ids::uiWaveformOutlineColour)));
@@ -59,47 +53,26 @@ void CtrlrWaveform::paint(Graphics &g)
 
 	g.setColour(VAR2COLOUR(getProperty(Ids::uiWaveformColour)));
 
-	if (drawSecondsEnd < 0)
-	{
+	if (drawSecondsEnd < 0) {
 		audioThumbnail->drawChannels(g, r, drawSecondsStart, audioThumbnail->getTotalLength(), drawVerticalZoom);
-	}
-	else
-	{
+	} else {
 		audioThumbnail->drawChannels(g, r, drawSecondsStart, drawSecondsEnd, drawVerticalZoom);
 	}
 }
 
-void CtrlrWaveform::resized()
-{
-	CtrlrComponent::resized();
-}
+void CtrlrWaveform::resized() { CtrlrComponent::resized(); }
 
-void CtrlrWaveform::setComponentValue(const double newValue, const bool sendChangeMessage)
-{
-}
+void CtrlrWaveform::setComponentValue(const double newValue, const bool sendChangeMessage) {}
 
-double CtrlrWaveform::getComponentValue()
-{
-	return (1);
-}
+double CtrlrWaveform::getComponentValue() { return (1); }
 
-int CtrlrWaveform::getComponentMidiValue()
-{
-	return (1);
-}
+int CtrlrWaveform::getComponentMidiValue() { return (1); }
 
-double CtrlrWaveform::getComponentMaxValue()
-{
-	return (roundFloatToInt(getApproximatePeak()));
-}
+double CtrlrWaveform::getComponentMaxValue() { return (roundFloatToInt(getApproximatePeak())); }
 
-const String CtrlrWaveform::getComponentText()
-{
-	return (currentFile.getFullPathName());
-}
+const String CtrlrWaveform::getComponentText() { return (currentFile.getFullPathName()); }
 
-const PopupMenu CtrlrWaveform::getComponentMenu(const MouseEvent &e)
-{
+const PopupMenu CtrlrWaveform::getComponentMenu(const MouseEvent &e) {
 	PopupMenu m;
 	m.addSectionHeader("Waveform");
 
@@ -110,62 +83,49 @@ const PopupMenu CtrlrWaveform::getComponentMenu(const MouseEvent &e)
 	return (m);
 }
 
-void CtrlrWaveform::handlePopupMenu(const int popupMenuItem)
-{
-	if (popupMenuItem == 4096)
-	{
-		if (audioThumbnail->isFullyLoaded())
-		{
-			FileChooser fc("Load a file", currentFile.getParentDirectory(),
-						   owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager().getWildcardForAllFormats(),
-						   owner.getOwnerPanel().getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs));
-			if (fc.browseForFileToOpen())
-			{
+void CtrlrWaveform::handlePopupMenu(const int popupMenuItem) {
+	if (popupMenuItem == 4096) {
+		if (audioThumbnail->isFullyLoaded()) {
+			FileChooser fc(
+				"Load a file", currentFile.getParentDirectory(),
+				owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager().getWildcardForAllFormats(),
+				owner.getOwnerPanel().getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs));
+			if (fc.browseForFileToOpen()) {
 				loadFromFile(fc.getResult());
 			}
-		}
-		else
-		{
+		} else {
 			audioThumbnail->clear();
 		}
-	}
-	else if (popupMenuItem == 4097)
-	{
+	} else if (popupMenuItem == 4097) {
 		WARN("Not implemented yet :(");
-	}
-	else if (popupMenuItem == 4098)
-	{
-		FileChooser fc("Save to an audio file", currentFile.getParentDirectory(), owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager().getWildcardForAllFormats(), true);
+	} else if (popupMenuItem == 4098) {
+		FileChooser fc("Save to an audio file", currentFile.getParentDirectory(),
+					   owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager().getWildcardForAllFormats(),
+					   true);
 
-		if (fc.browseForFileToSave(true))
-		{
+		if (fc.browseForFileToSave(true)) {
 			File outputFile = fc.getResult();
 
-			AudioFormat *format = owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager().findFormatForFileExtension(outputFile.getFileExtension());
+			AudioFormat *format =
+				owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager().findFormatForFileExtension(
+					outputFile.getFileExtension());
 
-			if (format != nullptr)
-			{
+			if (format != nullptr) {
 				{
-					ScopedPointer<AudioFormatWriter> writer(format->createWriterFor(outputFile.createOutputStream().get(),
-																					currentSampleRate,
-																					audioThumbnail->getNumChannels(),
-																					32,
-																					metadataForAudioFiles,
-																					qualityForAudioFiles));
+					ScopedPointer<AudioFormatWriter> writer(format->createWriterFor(
+						outputFile.createOutputStream().get(), currentSampleRate, audioThumbnail->getNumChannels(), 32,
+						metadataForAudioFiles, qualityForAudioFiles));
 
-					if (writer != nullptr)
-					{
+					if (writer != nullptr) {
 						writer->writeFromAudioSampleBuffer(audioBufferCopy, 0, audioBufferCopy.getNumSamples());
-					}
-					else
-					{
+					} else {
 						if (owner.getOwnerPanel().getDialogStatus())
-							WARN("Can't create AudioFormatWriter sampleRate=" + String(currentSampleRate) + ", channels=" + String(audioThumbnail->getNumChannels()) + ", bitsPerSample=32, qualityIndex=" + String(qualityForAudioFiles));
+							WARN("Can't create AudioFormatWriter sampleRate=" + String(currentSampleRate) +
+								 ", channels=" + String(audioThumbnail->getNumChannels()) +
+								 ", bitsPerSample=32, qualityIndex=" + String(qualityForAudioFiles));
 					}
 				}
-			}
-			else
-			{
+			} else {
 				if (owner.getOwnerPanel().getDialogStatus())
 					WARN("Can't find AudioFormat for the file: " + outputFile.getFileName());
 				return;
@@ -174,78 +134,72 @@ void CtrlrWaveform::handlePopupMenu(const int popupMenuItem)
 	}
 }
 
-void CtrlrWaveform::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
-{
-	if (property == Ids::uiWaveformBackgroundColour1 || property == Ids::uiWaveformBackgroundColour2 || property == Ids::uiWaveformOutlineColour || property == Ids::uiWaveformColour || property == Ids::uiWaveformOutlineThickness)
-	{
+void CtrlrWaveform::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
+	if (property == Ids::uiWaveformBackgroundColour1 || property == Ids::uiWaveformBackgroundColour2 ||
+		property == Ids::uiWaveformOutlineColour || property == Ids::uiWaveformColour ||
+		property == Ids::uiWaveformOutlineThickness) {
 		repaint();
-	}
-	else if (property == Ids::uiWaveformSourceSamplesPerThumbnailSample)
-	{
+	} else if (property == Ids::uiWaveformSourceSamplesPerThumbnailSample) {
+#if JUCE_VERSION >= 0x070000
+		// --- Modern JUCE 7/8 Approach (Safe Smart Pointer Assignment) ---
+		audioThumbnail = std::make_unique<AudioThumbnail>(
+			getProperty(property), owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager(),
+			owner.getOwnerPanel().getCtrlrManagerOwner().getAudioThumbnailCache());
+#else
+		// --- Legacy JUCE 6 Approach ---
 		if (audioThumbnail)
 			delete audioThumbnail.release();
 
-		audioThumbnail = new AudioThumbnail(getProperty(property), owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager(),
+		audioThumbnail = new AudioThumbnail(getProperty(property),
+											owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager(),
 											owner.getOwnerPanel().getCtrlrManagerOwner().getAudioThumbnailCache());
+#endif
+
+		// Both versions need to execute these configuration steps on the resulting pointer
 		audioThumbnail->addChangeListener(this);
 		audioThumbnail->clear();
 		audioBufferCopy.clear();
 
 		repaint();
-	}
-	else if (property == Ids::uiWaveFormDrawSecondsStart)
-	{
+	} else if (property == Ids::uiWaveFormDrawSecondsStart) {
 		drawSecondsStart = getProperty(property);
 		repaint();
-	}
-	else if (property == Ids::uiWaveFormDrawSecondsEnd)
-	{
+	} else if (property == Ids::uiWaveFormDrawSecondsEnd) {
 		drawSecondsEnd = getProperty(property);
 		repaint();
-	}
-	else if (property == Ids::uiWaveFormVeritcalZoomFactor)
-	{
+	} else if (property == Ids::uiWaveFormVeritcalZoomFactor) {
 		drawVerticalZoom = getProperty(property);
 		repaint();
-	}
-	else if (property == Ids::uiWaveFormThumbnailChangedCallback)
-	{
+	} else if (property == Ids::uiWaveFormThumbnailChangedCallback) {
 		if (isInvalidMethodName(getProperty(property)))
 			return;
 
-		thumbnailChangedCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
-	}
-	else if (property == Ids::uiWaveFormSourceChangedCallback)
-	{
+		thumbnailChangedCbk =
+			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+	} else if (property == Ids::uiWaveFormSourceChangedCallback) {
 		if (isInvalidMethodName(getProperty(property)))
 			return;
 
-		sourceChangedCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
-	}
-	else if (property == Ids::uiWaveFormFilesDroppedCallback)
-	{
+		sourceChangedCbk =
+			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+	} else if (property == Ids::uiWaveFormFilesDroppedCallback) {
 		if (isInvalidMethodName(getProperty(property)))
 			return;
 
 		fileDroppedCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
 	}
 
-	if (restoreStateInProgress == false)
-	{
+	if (restoreStateInProgress == false) {
 		resized();
 	}
 
 	CtrlrComponent::valueTreePropertyChanged(treeWhosePropertyHasChanged, property);
 }
 
-void CtrlrWaveform::changeListenerCallback(ChangeBroadcaster *source)
-{
-	if (source == audioThumbnail)
-	{
-		if (thumbnailChangedCbk && !thumbnailChangedCbk.wasObjectDeleted())
-		{
-			if (thumbnailChangedCbk->isValid())
-			{
+void CtrlrWaveform::changeListenerCallback(ChangeBroadcaster *source) {
+	if (source == audioThumbnail.get()) {
+		if (thumbnailChangedCbk && !thumbnailChangedCbk.wasObjectDeleted()) {
+			if (thumbnailChangedCbk->isValid()) {
 				owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(thumbnailChangedCbk, this);
 			}
 		}
@@ -254,38 +208,32 @@ void CtrlrWaveform::changeListenerCallback(ChangeBroadcaster *source)
 	CtrlrComponent::changeListenerCallback(source);
 }
 
-void CtrlrWaveform::setReader(AudioFormatReader *newReader, double hashCode)
-{
+void CtrlrWaveform::setReader(AudioFormatReader *newReader, double hashCode) {
 	audioThumbnail->setReader(newReader, hashCode);
 	repaint();
 }
 
-void CtrlrWaveform::addBlock(double sampleNumberInsource, const AudioSampleBuffer &newData, int startOffsetInBuffer, int numSamples)
-{
+void CtrlrWaveform::addBlock(double sampleNumberInsource, const AudioSampleBuffer &newData, int startOffsetInBuffer,
+							 int numSamples) {
 	int sampleToAddAt = 0;
 
-	if (audioBufferCopy.getNumSamples() == 0)
-	{
+	if (audioBufferCopy.getNumSamples() == 0) {
 		/* Initialize the buffer */
 		audioBufferCopy.setSize(newData.getNumChannels(), newData.getNumSamples());
-	}
-	else
-	{
+	} else {
 		/* it's already filled, just extend it */
 		sampleToAddAt = audioBufferCopy.getNumSamples();
 
-		if (newData.getNumChannels() > audioBufferCopy.getNumChannels())
-		{
-			audioBufferCopy.setSize(newData.getNumChannels(), audioBufferCopy.getNumSamples() + newData.getNumSamples(), true);
-		}
-		else
-		{
-			audioBufferCopy.setSize(audioBufferCopy.getNumChannels(), audioBufferCopy.getNumSamples() + newData.getNumSamples(), true);
+		if (newData.getNumChannels() > audioBufferCopy.getNumChannels()) {
+			audioBufferCopy.setSize(newData.getNumChannels(), audioBufferCopy.getNumSamples() + newData.getNumSamples(),
+									true);
+		} else {
+			audioBufferCopy.setSize(audioBufferCopy.getNumChannels(),
+									audioBufferCopy.getNumSamples() + newData.getNumSamples(), true);
 		}
 	}
 
-	for (int i = 0; i < newData.getNumChannels(); i++)
-	{
+	for (int i = 0; i < newData.getNumChannels(); i++) {
 		audioBufferCopy.copyFrom(i, sampleToAddAt, newData, i, startOffsetInBuffer, numSamples);
 	}
 
@@ -293,8 +241,7 @@ void CtrlrWaveform::addBlock(double sampleNumberInsource, const AudioSampleBuffe
 	repaint();
 }
 
-void CtrlrWaveform::reset(int numChannels, double sampleRate, double totalSamplesInSource)
-{
+void CtrlrWaveform::reset(int numChannels, double sampleRate, double totalSamplesInSource) {
 	currentFile = File();
 	currentSampleRate = sampleRate;
 
@@ -302,174 +249,118 @@ void CtrlrWaveform::reset(int numChannels, double sampleRate, double totalSample
 
 	audioThumbnail->reset(numChannels, sampleRate, totalSamplesInSource);
 
-	if (sourceChangedCbk && !sourceChangedCbk.wasObjectDeleted())
-	{
-		if (sourceChangedCbk->isValid())
-		{
+	if (sourceChangedCbk && !sourceChangedCbk.wasObjectDeleted()) {
+		if (sourceChangedCbk->isValid()) {
 			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(sourceChangedCbk, this);
 		}
 	}
 }
 
-const bool CtrlrWaveform::loadFromFile(const File &fileToLoadFrom)
-{
+const bool CtrlrWaveform::loadFromFile(const File &fileToLoadFrom) {
 	currentFile = fileToLoadFrom;
 
-	AudioFormatReader *reader = owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager().createReaderFor(currentFile);
+	AudioFormatReader *reader =
+		owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager().createReaderFor(currentFile);
 
-	if (sourceChangedCbk && !sourceChangedCbk.wasObjectDeleted())
-	{
-		if (sourceChangedCbk->isValid())
-		{
+	if (sourceChangedCbk && !sourceChangedCbk.wasObjectDeleted()) {
+		if (sourceChangedCbk->isValid()) {
 			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(sourceChangedCbk, this);
 		}
 	}
 
-	if (reader)
-	{
+	if (reader) {
 		setReader(reader, Random::getSystemRandom().nextInt64());
 		return (true);
-	}
-	else
-	{
+	} else {
 		return (false);
 	}
 }
 
-const bool CtrlrWaveform::loadFromFile(const String &filePath)
-{
+const bool CtrlrWaveform::loadFromFile(const String &filePath) {
 	File file(filePath);
 
-	if (file.existsAsFile())
-	{
+	if (file.existsAsFile()) {
 		return (loadFromFile(file));
 	}
 
 	return (false);
 }
 
-void CtrlrWaveform::setStart(const double seconds)
-{
-	setProperty(Ids::uiWaveFormDrawSecondsStart, seconds);
-}
+void CtrlrWaveform::setStart(const double seconds) { setProperty(Ids::uiWaveFormDrawSecondsStart, seconds); }
 
-void CtrlrWaveform::setEnd(const double seconds)
-{
-	setProperty(Ids::uiWaveFormDrawSecondsEnd, seconds);
-}
+void CtrlrWaveform::setEnd(const double seconds) { setProperty(Ids::uiWaveFormDrawSecondsEnd, seconds); }
 
-void CtrlrWaveform::setVerticalZoomFactor(const float verticalZoomFactor)
-{
+void CtrlrWaveform::setVerticalZoomFactor(const float verticalZoomFactor) {
 	setProperty(Ids::uiWaveFormVeritcalZoomFactor, verticalZoomFactor);
 }
 
-void CtrlrWaveform::setSourceSamplesPerThumbnailSample(int sourceSamplesPerThumbnailSample)
-{
+void CtrlrWaveform::setSourceSamplesPerThumbnailSample(int sourceSamplesPerThumbnailSample) {
 	setProperty(Ids::uiWaveformSourceSamplesPerThumbnailSample, sourceSamplesPerThumbnailSample);
 }
 
-AudioSampleBuffer &CtrlrWaveform::getCurrentAudioBuffer()
-{
-	return (audioBufferCopy);
-}
+AudioSampleBuffer &CtrlrWaveform::getCurrentAudioBuffer() { return (audioBufferCopy); }
 
-File CtrlrWaveform::getCurrentFile()
-{
-	return (currentFile);
-}
+File CtrlrWaveform::getCurrentFile() { return (currentFile); }
 
-double CtrlrWaveform::getTotalLength()
-{
-	return (audioThumbnail->getTotalLength());
-}
+double CtrlrWaveform::getTotalLength() { return (audioThumbnail->getTotalLength()); }
 
-bool CtrlrWaveform::isFullyLoaded()
-{
-	return (audioThumbnail->isFullyLoaded());
-}
+bool CtrlrWaveform::isFullyLoaded() { return (audioThumbnail->isFullyLoaded()); }
 
-double CtrlrWaveform::getNumSamplesFinished()
-{
-	return (audioThumbnail->getNumSamplesFinished());
-}
+double CtrlrWaveform::getNumSamplesFinished() { return (audioThumbnail->getNumSamplesFinished()); }
 
-float CtrlrWaveform::getApproximatePeak()
-{
-	return (audioThumbnail->getApproximatePeak());
-}
+float CtrlrWaveform::getApproximatePeak() { return (audioThumbnail->getApproximatePeak()); }
 
-void CtrlrWaveform::getApproximateMinMax(double startTime, double endTime, int channelIndex, float &minValue, float &maxValue)
-{
+void CtrlrWaveform::getApproximateMinMax(double startTime, double endTime, int channelIndex, float &minValue,
+										 float &maxValue) {
 	audioThumbnail->getApproximateMinMax(startTime, endTime, channelIndex, minValue, maxValue);
 }
 
-double CtrlrWaveform::getHashCode()
-{
-	return (audioThumbnail->getHashCode());
-}
+double CtrlrWaveform::getHashCode() { return (audioThumbnail->getHashCode()); }
 
-int CtrlrWaveform::getNumChannels()
-{
-	return (audioThumbnail->getNumChannels());
-}
+int CtrlrWaveform::getNumChannels() { return (audioThumbnail->getNumChannels()); }
 
-void CtrlrWaveform::clear()
-{
+void CtrlrWaveform::clear() {
 	audioBufferCopy.clear();
 	audioThumbnail->clear();
 }
 
-bool CtrlrWaveform::isInterestedInFileDrag(const StringArray &files)
-{
-	return (true);
-}
+bool CtrlrWaveform::isInterestedInFileDrag(const StringArray &files) { return (true); }
 
-void CtrlrWaveform::filesDropped(const StringArray &files, int x, int y)
-{
-	if (fileDroppedCbk && !fileDroppedCbk.wasObjectDeleted())
-	{
-		if (fileDroppedCbk->isValid())
-		{
+void CtrlrWaveform::filesDropped(const StringArray &files, int x, int y) {
+	if (fileDroppedCbk && !fileDroppedCbk.wasObjectDeleted()) {
+		if (fileDroppedCbk->isValid()) {
 			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(fileDroppedCbk, files, x, y);
 		}
-	}
-	else if (files.size() == 1)
-	{
+	} else if (files.size() == 1) {
 		loadFromFile(files[0]);
 	}
 }
 
-void CtrlrWaveform::fileDragExit(const StringArray &files)
-{
-}
+void CtrlrWaveform::fileDragExit(const StringArray &files) {}
 
-void CtrlrWaveform::fileDragEnter(const StringArray &files, int x, int y)
-{
-}
+void CtrlrWaveform::fileDragEnter(const StringArray &files, int x, int y) {}
 
-void CtrlrWaveform::wrapForLua(lua_State *L)
-{
+void CtrlrWaveform::wrapForLua(lua_State *L) {
 	using namespace luabind;
 
-	module(L)
-		[class_<CtrlrWaveform, bases<CtrlrComponent, CtrlrLuaObject>>("CtrlrWaveform")
-			 .def("setReader", &CtrlrWaveform::setReader)
-			 .def("reset", &CtrlrWaveform::reset)
-			 .def("addBlock", &CtrlrWaveform::addBlock)
-			 .def("loadFromFile", (const bool (CtrlrWaveform::*)(const File &))&CtrlrWaveform::loadFromFile)
-			 .def("loadFromFile", (const bool (CtrlrWaveform::*)(const String &))&CtrlrWaveform::loadFromFile)
-			 .def("getCurrentFile", &CtrlrWaveform::getCurrentFile)
-			 .def("getCurrentAudioBuffer", &CtrlrWaveform::getCurrentAudioBuffer)
-			 .def("setVerticalZoomFactor", &CtrlrWaveform::setVerticalZoomFactor)
-			 .def("setSourceSamplesPerThumbnailSample", &CtrlrWaveform::setSourceSamplesPerThumbnailSample)
-			 .def("setStart", &CtrlrWaveform::setStart)
-			 .def("setEnd", &CtrlrWaveform::setEnd)
-			 .def("clear", &CtrlrWaveform::clear)
-			 .def("getNumChannels", &CtrlrWaveform::getNumChannels)
-			 .def("getHashCode", &CtrlrWaveform::getHashCode)
-			 .def("getApproximateMinMax", &CtrlrWaveform::getApproximateMinMax)
-			 .def("getApproximatePeak", &CtrlrWaveform::getApproximatePeak)
-			 .def("getNumSamplesFinished", &CtrlrWaveform::getNumSamplesFinished)
-			 .def("isFullyLoaded", &CtrlrWaveform::isFullyLoaded)
-			 .def("getTotalLength", &CtrlrWaveform::getTotalLength)];
+	module(L)[class_<CtrlrWaveform, bases<CtrlrComponent, CtrlrLuaObject>>("CtrlrWaveform")
+				  .def("setReader", &CtrlrWaveform::setReader)
+				  .def("reset", &CtrlrWaveform::reset)
+				  .def("addBlock", &CtrlrWaveform::addBlock)
+				  .def("loadFromFile", (const bool (CtrlrWaveform::*)(const File &))&CtrlrWaveform::loadFromFile)
+				  .def("loadFromFile", (const bool (CtrlrWaveform::*)(const String &))&CtrlrWaveform::loadFromFile)
+				  .def("getCurrentFile", &CtrlrWaveform::getCurrentFile)
+				  .def("getCurrentAudioBuffer", &CtrlrWaveform::getCurrentAudioBuffer)
+				  .def("setVerticalZoomFactor", &CtrlrWaveform::setVerticalZoomFactor)
+				  .def("setSourceSamplesPerThumbnailSample", &CtrlrWaveform::setSourceSamplesPerThumbnailSample)
+				  .def("setStart", &CtrlrWaveform::setStart)
+				  .def("setEnd", &CtrlrWaveform::setEnd)
+				  .def("clear", &CtrlrWaveform::clear)
+				  .def("getNumChannels", &CtrlrWaveform::getNumChannels)
+				  .def("getHashCode", &CtrlrWaveform::getHashCode)
+				  .def("getApproximateMinMax", &CtrlrWaveform::getApproximateMinMax)
+				  .def("getApproximatePeak", &CtrlrWaveform::getApproximatePeak)
+				  .def("getNumSamplesFinished", &CtrlrWaveform::getNumSamplesFinished)
+				  .def("isFullyLoaded", &CtrlrWaveform::isFullyLoaded)
+				  .def("getTotalLength", &CtrlrWaveform::getTotalLength)];
 }

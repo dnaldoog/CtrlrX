@@ -1,68 +1,63 @@
-#include "stdafx.h"
-#include "CtrlrManager/CtrlrManager.h"
-#include "UIComponents/CtrlrPanel/CtrlrPanelEditor.h"
-#include "CtrlrProcessor.h"
-#include "CtrlrPanel/CtrlrPanelResource.h"
-#include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrPanelResourceEditor.h"
+#include "CtrlrInlineUtilitiesGUI.h"
+#include "CtrlrManager/CtrlrManager.h"
+#include "CtrlrPanel/CtrlrPanelResource.h"
+#include "CtrlrProcessor.h"
+#include "UIComponents/CtrlrPanel/CtrlrPanelEditor.h"
+#include "stdafx.h"
 
 // Definition of ImageInfoComponent
-class ImageInfoComponent : public Component
-{
-public:
-	ImageInfoComponent(const String &infoText, const Image &thumbnailImg)
-		: infoMessage(infoText), thumbnail(thumbnailImg)
-	{
-	}
+class ImageInfoComponent : public Component {
+	public:
+		ImageInfoComponent(const String &infoText, const Image &thumbnailImg)
+			: infoMessage(infoText), thumbnail(thumbnailImg) {}
 
-	void paint(Graphics &g) override // updated to calculate text height
-	{
-		g.fillAll(Colour(0xfff0f0f0));
-
-		// Create an AttributedString to hold the text with its properties
-		AttributedString text;
-		text.append(infoMessage, Font(12.0f), Colours::black);
-
-		int textX = 10;
-		int textY = 10;
-		int textWidth = getWidth() - 20;
-
-		// Use a TextLayout to calculate the exact height required
-		TextLayout tl;
-		tl.createLayout(text, (float)textWidth);
-
-		// Draw the info text
-		tl.draw(g, Rectangle<float>((float)textX, (float)textY, (float)textWidth, tl.getHeight()));
-
-		// Get the actual vertical position where the text ends
-		int textEndY = textY + (int)tl.getHeight();
-
-		// Draw the thumbnail image underneath the text
-		if (!thumbnail.isNull())
+		void paint(Graphics &g) override // updated to calculate text height
 		{
-			// Position the image with a margin below the text
-			int imageY = textEndY + 20;
-			int imageX = (getWidth() - thumbnail.getWidth()) / 2;
+			g.fillAll(Colour(0xfff0f0f0));
 
-			if (imageX < 10)
-				imageX = 10;
+			// Create an AttributedString to hold the text with its properties
+			AttributedString text;
+			text.append(infoMessage, Font(12.0f), Colours::black);
 
-			g.drawImage(thumbnail, imageX, imageY, thumbnail.getWidth(), thumbnail.getHeight(),
-						0, 0, thumbnail.getWidth(), thumbnail.getHeight());
+			int textX = 10;
+			int textY = 10;
+			int textWidth = getWidth() - 20;
 
-			g.setColour(Colours::grey);
-			g.drawRect(imageX - 1, imageY - 1, thumbnail.getWidth() + 2, thumbnail.getHeight() + 2);
+			// Use a TextLayout to calculate the exact height required
+			TextLayout tl;
+			tl.createLayout(text, (float)textWidth);
+
+			// Draw the info text
+			tl.draw(g, Rectangle<float>((float)textX, (float)textY, (float)textWidth, tl.getHeight()));
+
+			// Get the actual vertical position where the text ends
+			int textEndY = textY + (int)tl.getHeight();
+
+			// Draw the thumbnail image underneath the text
+			if (!thumbnail.isNull()) {
+				// Position the image with a margin below the text
+				int imageY = textEndY + 20;
+				int imageX = (getWidth() - thumbnail.getWidth()) / 2;
+
+				if (imageX < 10)
+					imageX = 10;
+
+				g.drawImage(thumbnail, imageX, imageY, thumbnail.getWidth(), thumbnail.getHeight(), 0, 0,
+							thumbnail.getWidth(), thumbnail.getHeight());
+
+				g.setColour(Colours::grey);
+				g.drawRect(imageX - 1, imageY - 1, thumbnail.getWidth() + 2, thumbnail.getHeight() + 2);
+			}
 		}
-	}
 
-	void resized() override
-	{
-		// Component will be resized by the dialog window
-	}
+		void resized() override {
+			// Component will be resized by the dialog window
+		}
 
-private:
-	String infoMessage;
-	Image thumbnail;
+	private:
+		String infoMessage;
+		Image thumbnail;
 };
 
 // Definition of CtrlrPanelResourceEditor
@@ -80,7 +75,8 @@ CtrlrPanelResourceEditor::CtrlrPanelResourceEditor(CtrlrPanelEditor &_owner)
 	addAndMakeVisible(resourceList = new TableListBox("Resource List", this));
 	resourceList->setName(L"resourceList");
 
-	addAndMakeVisible(add = new TextButton(L"new button"), -1); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/2025
+	addAndMakeVisible(add = new TextButton(L"new button"),
+					  -1); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/2025
 	add->setTooltip(L"Add new resources");
 	add->setButtonText(L"Add");
 	add->addListener(this);
@@ -112,8 +108,7 @@ CtrlrPanelResourceEditor::CtrlrPanelResourceEditor(CtrlrPanelEditor &_owner)
 	updateTable();
 }
 
-CtrlrPanelResourceEditor::~CtrlrPanelResourceEditor()
-{
+CtrlrPanelResourceEditor::~CtrlrPanelResourceEditor() {
 	deleteAndZero(resourceList);
 	deleteAndZero(add);
 	deleteAndZero(remove);
@@ -121,11 +116,10 @@ CtrlrPanelResourceEditor::~CtrlrPanelResourceEditor()
 	deleteAndZero(reload);
 }
 
-void CtrlrPanelResourceEditor::paint(Graphics &g)
-{
-}
+void CtrlrPanelResourceEditor::paint(Graphics &g) {}
 
-void CtrlrPanelResourceEditor::resized() // Updated v5.6.34. Thanks to @dobo365. Updated v5.6.33. FIX issue #86 : unresponsive buttons
+void CtrlrPanelResourceEditor::resized() // Updated v5.6.34. Thanks to @dobo365. Updated v5.6.33. FIX issue #86 :
+										 // unresponsive buttons
 {
 	int margin = 8;
 	int buttonWidth = 72;
@@ -137,132 +131,106 @@ void CtrlrPanelResourceEditor::resized() // Updated v5.6.34. Thanks to @dobo365.
 	reload->setBounds(getWidth() - buttonWidth - margin, getHeight() - 48 + margin, buttonWidth, 32);
 }
 
-void CtrlrPanelResourceEditor::buttonClicked(Button *buttonThatWasClicked)
-{
-	if (buttonThatWasClicked == add)
-	{
+void CtrlrPanelResourceEditor::buttonClicked(Button *buttonThatWasClicked) {
+	if (buttonThatWasClicked == add) {
 		addResourceFromFile();
-	}
-	else if (buttonThatWasClicked == remove)
-	{
+	} else if (buttonThatWasClicked == remove) {
 		deleteSelectedResources();
-	}
-	else if (buttonThatWasClicked == move)
-	{
+	} else if (buttonThatWasClicked == move) {
 		moveResources();
-	}
-	else if (buttonThatWasClicked == reload)
-	{
+	} else if (buttonThatWasClicked == reload) {
 		reloadAllResourcesFromSourceFiles();
 	}
 }
 
-int CtrlrPanelResourceEditor::getNumRows()
-{
-	return (resources.size());
-}
+int CtrlrPanelResourceEditor::getNumRows() { return (resources.size()); }
 
-void CtrlrPanelResourceEditor::paintRowBackground(Graphics &g, int rowNumber, int width, int height, bool rowIsSelected)
-{
-	if (rowIsSelected)
-	{
+void CtrlrPanelResourceEditor::paintRowBackground(Graphics &g, int rowNumber, int width, int height,
+												  bool rowIsSelected) {
+	if (rowIsSelected) {
 		gui::drawSelectionRectangle(g, width, height);
 	}
 }
 
-void CtrlrPanelResourceEditor::paintCell(Graphics &g, int rowNumber, int columnId, int width, int height, bool rowIsSelected)
-{
+void CtrlrPanelResourceEditor::paintCell(Graphics &g, int rowNumber, int columnId, int width, int height,
+										 bool rowIsSelected) {
 	// Updated v5.6.34. SEE : https://github.com/damiensellier/CtrlrX/issues/147
 	// Draw the background first. The color changes depending on whether the row is selected.
-	if (rowIsSelected)
-	{
+	if (rowIsSelected) {
 		// For selected rows, use a distinct background color.
 		// Use the dedicated highlight color from the file tree component.
 		g.setColour(findColour(DirectoryContentsDisplayComponent::highlightColourId));
-	}
-	else
-	{
+	} else {
 		// For unselected rows, use the standard background color.
 		g.setColour(findColour(ListBox::backgroundColourId));
 	}
 	g.fillRect(0, 0, width, height);
 
 	// Set the color for the text and other content based on selection.
-	if (rowIsSelected)
-	{
+	if (rowIsSelected) {
 		// For selected rows, use a text color that contrasts well with the highlight color.
 		// `highlightedTextColourId` is often used for this.
 		g.setColour(findColour(DirectoryContentsDisplayComponent::highlightedTextColourId));
-	}
-	else
-	{
+	} else {
 		// Set the standard text color for unselected rows.
 		g.setColour(findColour(ListBox::textColourId));
 	}
 
 	// Now, the code to draw the content of each column.
 
-	if (columnId == 1)
-	{
-		if (resources[rowNumber])
-		{
+	if (columnId == 1) {
+		if (resources[rowNumber]) {
 			g.setFont(tableFont.boldened());
 			g.drawFittedText(resources[rowNumber]->getName(), 4, 2, width - 8, height - 4, Justification::left, 2);
 		}
 	}
 
-	if (columnId == 2)
-	{
-		if (resources[rowNumber])
-		{
+	if (columnId == 2) {
+		if (resources[rowNumber]) {
 			g.setFont(tableFont);
-			g.drawFittedText(STR(File::descriptionOfSizeInBytes(resources[rowNumber]->getSize()) + " (" + STR(resources[rowNumber]->getSize()) + ")"), 4, 2, width - 8, height - 4, Justification::left, 2);
+			g.drawFittedText(STR(File::descriptionOfSizeInBytes(resources[rowNumber]->getSize()) + " (" +
+								 STR(resources[rowNumber]->getSize()) + ")"),
+							 4, 2, width - 8, height - 4, Justification::left, 2);
 		}
 	}
 
-	if (columnId == 3)
-	{
-		if (resources[rowNumber])
-		{
+	if (columnId == 3) {
+		if (resources[rowNumber]) {
 			g.setFont(tableFont);
-			g.drawFittedText(resources[rowNumber]->getTypeDescription(), 4, 2, width - 8, height - 4, Justification::left, 2);
+			g.drawFittedText(resources[rowNumber]->getTypeDescription(), 4, 2, width - 8, height - 4,
+							 Justification::left, 2);
 		}
 	}
 }
 
-void CtrlrPanelResourceEditor::addResourceFromFile()
-{
+void CtrlrPanelResourceEditor::addResourceFromFile() {
 	FileChooser fileChooser("Resource file",
-							File(owner.getOwner().getCtrlrManagerOwner().getProperty(Ids::ctrlrLastBrowsedResourceDir)), "*.*", owner.getOwner().getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs));
-	if (fileChooser.browseForMultipleFilesToOpen(0))
-	{
+							File(owner.getOwner().getCtrlrManagerOwner().getProperty(Ids::ctrlrLastBrowsedResourceDir)),
+							"*.*", owner.getOwner().getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs));
+	if (fileChooser.browseForMultipleFilesToOpen(0)) {
 		Array<File> filesToOpen = fileChooser.getResults();
 
-		for (int i = 0; i < filesToOpen.size(); i++)
-		{
+		for (int i = 0; i < filesToOpen.size(); i++) {
 			if (i == 0)
-				owner.getOwner().getCtrlrManagerOwner().setProperty(Ids::ctrlrLastBrowsedResourceDir, filesToOpen[i].getParentDirectory().getFullPathName());
+				owner.getOwner().getCtrlrManagerOwner().setProperty(
+					Ids::ctrlrLastBrowsedResourceDir, filesToOpen[i].getParentDirectory().getFullPathName());
 
-			if (getResourceManager().resourceExists(filesToOpen[i]))
-			{
-				if ((bool)owner.getOwner().getCtrlrManagerOwner().getProperty(Ids::ctrlrOverwriteResources) == false)
-				{
-					if (!SURE("Resource: " + filesToOpen[i].getFileNameWithoutExtension() + " already exists. Overwrite?", this))
-					{
+			if (getResourceManager().resourceExists(filesToOpen[i])) {
+				if ((bool)owner.getOwner().getCtrlrManagerOwner().getProperty(Ids::ctrlrOverwriteResources) == false) {
+					if (!SURE("Resource: " + filesToOpen[i].getFileNameWithoutExtension() +
+								  " already exists. Overwrite?",
+							  this)) {
 						return;
 					}
 				}
 
 				int index = getResourceManager().getResourceIndex(filesToOpen[i].getFileNameWithoutExtension());
 
-				if (index >= 0)
-				{
+				if (index >= 0) {
 					getResourceManager().removeResource(index);
 					getResourceManager().addResource(filesToOpen[i]);
 				}
-			}
-			else
-			{
+			} else {
 				getResourceManager().addResource(filesToOpen[i]);
 			}
 		}
@@ -271,18 +239,15 @@ void CtrlrPanelResourceEditor::addResourceFromFile()
 	updateTable();
 }
 
-void CtrlrPanelResourceEditor::deleteSelectedResources()
-{
+void CtrlrPanelResourceEditor::deleteSelectedResources() {
 	_DBG("CtrlrPanelResourceEditor::deleteSelectedResources");
 
-	for (int i = resourceList->getNumSelectedRows() - 1; i >= 0; i--)
-	{
+	for (int i = resourceList->getNumSelectedRows() - 1; i >= 0; i--) {
 		const int row = resourceList->getSelectedRow(i);
 
 		_DBG("row selected: " + STR(row) + "/" + STR(i));
 
-		if (resources[row])
-		{
+		if (resources[row]) {
 			getResourceManager().removeResource(resources[row]);
 		}
 	}
@@ -290,8 +255,7 @@ void CtrlrPanelResourceEditor::deleteSelectedResources()
 	updateTable();
 }
 
-void CtrlrPanelResourceEditor::updateTable()
-{
+void CtrlrPanelResourceEditor::updateTable() {
 	resources = getResourceManager().getResourcesCopy();
 
 	resourceList->deselectAllRows();
@@ -301,40 +265,33 @@ void CtrlrPanelResourceEditor::updateTable()
 	resources.sort(*this, false);
 }
 
-CtrlrPanelResourceManager &CtrlrPanelResourceEditor::getResourceManager()
-{
+CtrlrPanelResourceManager &CtrlrPanelResourceEditor::getResourceManager() {
 	return (owner.getOwner().getResourceManager());
 }
 
-void CtrlrPanelResourceEditor::visibilityChanged()
-{
+void CtrlrPanelResourceEditor::visibilityChanged() {
 	resources = getResourceManager().getResourcesCopy();
 	resourceList->updateContent();
 }
 
-void CtrlrPanelResourceEditor::cellDoubleClicked(int rowNumber, int columnId, const MouseEvent &e)
-{
+void CtrlrPanelResourceEditor::cellDoubleClicked(int rowNumber, int columnId, const MouseEvent &e) {
 	showResourceInfo(rowNumber);
 }
 
-void CtrlrPanelResourceEditor::cellClicked(int rowNumber, int columnId, const MouseEvent &e)
-{
-	if (e.mods.isPopupMenu())
-	{
+void CtrlrPanelResourceEditor::cellClicked(int rowNumber, int columnId, const MouseEvent &e) {
+	if (e.mods.isPopupMenu()) {
 		PopupMenu m;
 		m.addSectionHeader("Resource");
 		m.addItem(1, "More info");
-		const int ret = m.show();
-
-		if (ret == 1)
-		{
-			showResourceInfo(rowNumber);
-		}
+		MyPopupHelper::showMenuAsyncSafe(m, this, [this, rowNumber](int ret) {
+			if (ret == 1) {
+				showResourceInfo(rowNumber);
+			}
+		});
 	}
 }
 
-void CtrlrPanelResourceEditor::showResourceInfo(const int resourceIndex)
-{
+void CtrlrPanelResourceEditor::showResourceInfo(const int resourceIndex) {
 	CtrlrPanelResource *res = resources[resourceIndex];
 	if (res == nullptr)
 		return;
@@ -346,8 +303,7 @@ void CtrlrPanelResourceEditor::showResourceInfo(const int resourceIndex)
 	message << "Source hash: " + STR(res->getHashCode()) + "\n";
 	AudioFormatReader *afr = res->asAudioFormat();
 
-	if (afr)
-	{
+	if (afr) {
 		message << "Type: Audio\n";
 		message << "Format name: " << afr->getFormatName() << "\n";
 		message << "Sample rate: " << afr->sampleRate << "\n";
@@ -365,8 +321,7 @@ void CtrlrPanelResourceEditor::showResourceInfo(const int resourceIndex)
 	Font previewFont;
 
 	// Check if it's a regular image format
-	if (!originalImage.isNull())
-	{
+	if (!originalImage.isNull()) {
 		hasImage = true;
 		message << "Type: Image\n";
 		message << "Width: " + STR(originalImage.getWidth()) + "\n";
@@ -379,14 +334,11 @@ void CtrlrPanelResourceEditor::showResourceInfo(const int resourceIndex)
 		bool isHorizontalStrip = (originalWidth >= 6 * originalHeight && originalWidth % originalHeight == 0);
 		bool isVerticalStrip = (originalHeight >= 6 * originalWidth && originalHeight % originalWidth == 0);
 
-		if (isHorizontalStrip)
-		{
+		if (isHorizontalStrip) {
 			int numFrames = originalWidth / originalHeight;
 			message << "Detected horizontal image strip with " + STR(numFrames) + " frames\n";
 			message << "Frame size: " + STR(originalHeight) + "x" + STR(originalHeight) + "\n";
-		}
-		else if (isVerticalStrip)
-		{
+		} else if (isVerticalStrip) {
 			int numFrames = originalHeight / originalWidth;
 			message << "Detected vertical image strip with " + STR(numFrames) + " frames\n";
 			message << "Frame size: " + STR(originalWidth) + "x" + STR(originalWidth) + "\n";
@@ -396,32 +348,26 @@ void CtrlrPanelResourceEditor::showResourceInfo(const int resourceIndex)
 		message << "Thumbnail size: " + STR(thumbnailImage.getWidth()) + "x" + STR(thumbnailImage.getHeight()) + "\n";
 	}
 	// Check if it might be a font file
-	else if (isFontFile(res->getFile()))
-	{
-		try
-		{
+	else if (isFontFile(res->getFile())) {
+		try {
 			// Try to load the font from the file directly
 			File fontFile = res->getFile();
 
-			if (fontFile.exists())
-			{
+			if (fontFile.exists()) {
 				// Try different methods to create typeface based on JUCE version
 				Typeface::Ptr typeface = nullptr;
 
 				// Method 1: Try the most common JUCE 6.x method
 				MemoryBlock fontData;
-				if (fontFile.loadFileAsData(fontData))
-				{
+				if (fontFile.loadFileAsData(fontData)) {
 					typeface = Typeface::createSystemTypefaceFor(fontData.getData(), fontData.getSize());
 				}
 
 				// Method 2: If that doesn't work, try alternative methods
-				if (typeface == nullptr)
-				{
+				if (typeface == nullptr) {
 					// Try with InputStream
 					FileInputStream fontStream(fontFile);
-					if (fontStream.openedOk())
-					{
+					if (fontStream.openedOk()) {
 						// Different possible method names in JUCE 6.x
 						// typeface = Typeface::createSystemTypefaceFor(fontStream);  // Already failed
 						// typeface = Typeface::createFromInputStream(fontStream);
@@ -429,8 +375,7 @@ void CtrlrPanelResourceEditor::showResourceInfo(const int resourceIndex)
 					}
 				}
 
-				if (typeface != nullptr)
-				{
+				if (typeface != nullptr) {
 					hasFont = true;
 					message << "Type: Font\n";
 					message << "Font name: " + typeface->getName() + "\n";
@@ -476,9 +421,7 @@ void CtrlrPanelResourceEditor::showResourceInfo(const int resourceIndex)
 					g.drawRect(0, 0, previewWidth, previewHeight);
 
 					message << "Font preview generated\n";
-				}
-				else
-				{
+				} else {
 					// Method 3: Simple fallback - just show it's a font without preview
 					hasFont = true;
 					message << "Type: Font\n";
@@ -501,7 +444,8 @@ void CtrlrPanelResourceEditor::showResourceInfo(const int resourceIndex)
 
 					g.setColour(Colours::grey);
 					g.setFont(Font(12.0f));
-					g.drawText(fontFile.getFileNameWithoutExtension(), 5, previewHeight - 20, previewWidth - 10, 15, Justification::centred);
+					g.drawText(fontFile.getFileNameWithoutExtension(), 5, previewHeight - 20, previewWidth - 10, 15,
+							   Justification::centred);
 
 					// Draw a border
 					g.setColour(Colours::lightgrey);
@@ -509,29 +453,22 @@ void CtrlrPanelResourceEditor::showResourceInfo(const int resourceIndex)
 
 					message << "Font placeholder generated\n";
 				}
-			}
-			else
-			{
+			} else {
 				message << "Type: Font (file not found)\n";
 				message << "Font file does not exist: " + fontFile.getFullPathName() + "\n";
 			}
-		}
-		catch (...)
-		{
+		} catch (...) {
 			message << "Type: Font (error loading)\n";
 			message << "Error creating font preview\n";
 		}
 	}
 	// Check if it might be an SVG file
-	else if (res->getFile().getFileExtension().toLowerCase() == ".svg")
-	{
-		try
-		{
+	else if (res->getFile().getFileExtension().toLowerCase() == ".svg") {
+		try {
 			String svgContent = res->getFile().loadFileAsString();
 			std::unique_ptr<XmlElement> svgElement = XmlDocument::parse(svgContent);
 
-			if (svgElement != nullptr && svgElement->hasTagName("svg"))
-			{
+			if (svgElement != nullptr && svgElement->hasTagName("svg")) {
 				hasImage = true;
 				message << "Type: SVG Vector Image\n";
 
@@ -539,20 +476,17 @@ void CtrlrPanelResourceEditor::showResourceInfo(const int resourceIndex)
 				String widthStr = svgElement->getStringAttribute("width");
 				String heightStr = svgElement->getStringAttribute("height");
 
-				if (widthStr.isNotEmpty() && heightStr.isNotEmpty())
-				{
+				if (widthStr.isNotEmpty() && heightStr.isNotEmpty()) {
 					message << "SVG dimensions: " + widthStr + " x " + heightStr + "\n";
 				}
 
 				// Create a thumbnail from SVG
 				std::unique_ptr<Drawable> svgDrawable = Drawable::createFromSVG(*svgElement);
-				if (svgDrawable != nullptr)
-				{
+				if (svgDrawable != nullptr) {
 					Rectangle<float> svgBounds = svgDrawable->getDrawableBounds();
 
 					// Handle case where bounds might be empty or invalid
-					if (svgBounds.isEmpty() || svgBounds.getWidth() <= 0 || svgBounds.getHeight() <= 0)
-					{
+					if (svgBounds.isEmpty() || svgBounds.getWidth() <= 0 || svgBounds.getHeight() <= 0) {
 						// Use default size if bounds are invalid
 						svgBounds = Rectangle<float>(0, 0, 100, 100);
 					}
@@ -562,13 +496,10 @@ void CtrlrPanelResourceEditor::showResourceInfo(const int resourceIndex)
 					float aspectRatio = svgBounds.getWidth() / svgBounds.getHeight();
 					int thumbWidth, thumbHeight;
 
-					if (aspectRatio > 1.0f)
-					{
+					if (aspectRatio > 1.0f) {
 						thumbWidth = maxThumbnailSize;
 						thumbHeight = jmax(1, (int)(maxThumbnailSize / aspectRatio));
-					}
-					else
-					{
+					} else {
 						thumbWidth = jmax(1, (int)(maxThumbnailSize * aspectRatio));
 						thumbHeight = maxThumbnailSize;
 					}
@@ -579,26 +510,22 @@ void CtrlrPanelResourceEditor::showResourceInfo(const int resourceIndex)
 					g.fillAll(Colours::lightgrey);
 
 					// Set transform and draw
-					AffineTransform transform = RectanglePlacement(RectanglePlacement::centred)
-													.getTransformToFit(svgBounds, Rectangle<float>(0, 0, (float)thumbWidth, (float)thumbHeight));
+					AffineTransform transform =
+						RectanglePlacement(RectanglePlacement::centred)
+							.getTransformToFit(svgBounds,
+											   Rectangle<float>(0, 0, (float)thumbWidth, (float)thumbHeight));
 					g.addTransform(transform);
 
 					svgDrawable->draw(g, 1.0f);
 
 					message << "SVG rendered to thumbnail: " + STR(thumbWidth) + "x" + STR(thumbHeight) + "\n";
-				}
-				else
-				{
+				} else {
 					message << "Failed to create SVG drawable\n";
 				}
-			}
-			else
-			{
+			} else {
 				message << "Invalid SVG format\n";
 			}
-		}
-		catch (...)
-		{
+		} catch (...) {
 			message << "Error processing SVG file\n";
 		}
 	}
@@ -628,13 +555,12 @@ void CtrlrPanelResourceEditor::showResourceInfo(const int resourceIndex)
 		// textImageMargin for space between text and image
 		// thumbnailImage.getHeight() for the image itself
 		// bottomMargin for space below image
-		int dialogHeight = topMargin + estimatedTextHeight + textImageMargin + thumbnailImage.getHeight() + bottomMargin;
+		int dialogHeight =
+			topMargin + estimatedTextHeight + textImageMargin + thumbnailImage.getHeight() + bottomMargin;
 
 		contentComponent->setSize(450, dialogHeight);
 		lo.content.set(contentComponent, true);
-	}
-	else
-	{
+	} else {
 		// No image, just show the text label as before
 		Label *l = new Label("", message);
 		l->setSize(400, 150);
@@ -651,20 +577,17 @@ void CtrlrPanelResourceEditor::showResourceInfo(const int resourceIndex)
 	lo.launchAsync();
 }
 
-void CtrlrPanelResourceEditor::sortOrderChanged(int newSortColumnId, bool isForwards)
-{
+void CtrlrPanelResourceEditor::sortOrderChanged(int newSortColumnId, bool isForwards) {
 	sortByColumnId = newSortColumnId;
 	sortForward = isForwards ? 1 : -1;
 
 	resources.sort(*this, false);
 }
 
-int CtrlrPanelResourceEditor::compareElements(CtrlrPanelResource *first, CtrlrPanelResource *second)
-{
+int CtrlrPanelResourceEditor::compareElements(CtrlrPanelResource *first, CtrlrPanelResource *second) {
 	int ret = 0;
 
-	switch (sortByColumnId)
-	{
+	switch (sortByColumnId) {
 	case 1:
 		ret = first->getName().compareNatural(second->getName());
 		break;
@@ -684,68 +607,71 @@ int CtrlrPanelResourceEditor::compareElements(CtrlrPanelResource *first, CtrlrPa
 	return (ret * sortForward);
 }
 
-void CtrlrPanelResourceEditor::moveResources()
-{
+void CtrlrPanelResourceEditor::moveResources() {
 	Array<CtrlrPanelResource *> resourcesReloaded;
 	const String location = owner.getOwner().getPanelResourcesDirPath();
-	const int confirm = AlertWindow::showOkCancelBox(AlertWindow::QuestionIcon, "Move resources to panel folder", "Do you want to move all resources to the panel folder (location=" + location + ")?", "Yes", "No");
-	if (confirm == 1)
-	{
+	const int confirm = AlertWindow::showOkCancelBox(
+		AlertWindow::QuestionIcon, "Move resources to panel folder",
+		"Do you want to move all resources to the panel folder (location=" + location + ")?", "Yes", "No");
+	if (confirm == 1) {
 		File targetFolder = owner.getOwner().getPanelResourcesDir();
-		if (!targetFolder.exists())
-		{
+		if (!targetFolder.exists()) {
 			const Result res = targetFolder.createDirectory();
-			if (res.failed())
-			{
+			if (res.failed()) {
 #if JUCE_VERSION >= 0x070000
-				AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Move resources to panel folder", "Failed to create resources folder '" + location + "'.\n" + res.getErrorMessage());
+				AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Move resources to panel folder",
+												 "Failed to create resources folder '" + location + "'.\n" +
+													 res.getErrorMessage());
 #else
-				AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Move resources to panel folder", "Failed to create resources folder '" + location + "'.\n" + res.getErrorMessage());
+				AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Move resources to panel folder",
+											"Failed to create resources folder '" + location + "'.\n" +
+												res.getErrorMessage());
 #endif
 				return;
 			}
-		}
-		else if (!targetFolder.isDirectory())
-		{
+		} else if (!targetFolder.isDirectory()) {
 #if JUCE_VERSION >= 0x070000
-			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Move resources to panel folder", "Failed to access resources folder '" + location + "'.");
+			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Move resources to panel folder",
+											 "Failed to access resources folder '" + location + "'.");
 #else
-			AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Move resources to panel folder", "Failed to access resources folder '" + location + "'.");
+			AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Move resources to panel folder",
+										"Failed to access resources folder '" + location + "'.");
 #endif
 			return;
 		}
-		for (int i = 0; i < resources.size(); i++)
-		{
-			if (resources[i])
-			{
+		for (int i = 0; i < resources.size(); i++) {
+			if (resources[i]) {
 				File originalFile = resources[i]->getSourceFile();
-				if (!originalFile.exists())
-				{ // If the source file is not available, use the data file
+				if (!originalFile.exists()) { // If the source file is not available, use the data file
 					resources[i]->getFile();
 				}
-				if (!originalFile.isAChildOf(targetFolder))
-				{ // Skip resources that are already located in the panel folder
+				if (!originalFile.isAChildOf(
+						targetFolder)) { // Skip resources that are already located in the panel folder
 					File targetFile = targetFolder.getChildFile(originalFile.getFileName());
-					if (targetFile.exists())
-					{
+					if (targetFile.exists()) {
 #if JUCE_VERSION >= 0x070000
-						AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Move resources to panel folder", "Target file '" + targetFile.getFullPathName() + "' already exists, resource will be skiped.");
+						AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Move resources to panel folder",
+														 "Target file '" + targetFile.getFullPathName() +
+															 "' already exists, resource will be skiped.");
 #else
-						AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Move resources to panel folder", "Target file '" + targetFile.getFullPathName() + "' already exists, resource will be skiped.");
+						AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Move resources to panel folder",
+													"Target file '" + targetFile.getFullPathName() +
+														"' already exists, resource will be skiped.");
 #endif
-					}
-					else
-					{
-						if (!originalFile.copyFileTo(targetFile))
-						{
+					} else {
+						if (!originalFile.copyFileTo(targetFile)) {
 #if JUCE_VERSION >= 0x070000
-							AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Move resources to panel folder", "Could not copy resource to file '" + targetFile.getFullPathName() + "', resource will be skiped.");
+							AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Move resources to panel folder",
+															 "Could not copy resource to file '" +
+																 targetFile.getFullPathName() +
+																 "', resource will be skiped.");
 #else
-							AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Move resources to panel folder", "Could not copy resource to file '" + targetFile.getFullPathName() + "', resource will be skiped.");
+							AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Move resources to panel folder",
+														"Could not copy resource to file '" +
+															targetFile.getFullPathName() +
+															"', resource will be skiped.");
 #endif
-						}
-						else
-						{
+						} else {
 							resources[i]->setSourceFile(targetFile);
 							resourcesReloaded.add(resources[i]);
 							resources[i]->reloadFromSourceFile();
@@ -758,28 +684,20 @@ void CtrlrPanelResourceEditor::moveResources()
 	owner.reloadResources(resourcesReloaded);
 }
 
-void CtrlrPanelResourceEditor::reloadAllResourcesFromSourceFiles()
-{
+void CtrlrPanelResourceEditor::reloadAllResourcesFromSourceFiles() {
 	Array<CtrlrPanelResource *> resourcesReloaded;
 
-	if (resourceList->getNumSelectedRows() <= 0)
-	{
-		for (int i = 0; i < resources.size(); i++)
-		{
-			if (resources[i])
-			{
+	if (resourceList->getNumSelectedRows() <= 0) {
+		for (int i = 0; i < resources.size(); i++) {
+			if (resources[i]) {
 				resourcesReloaded.add(resources[i]);
 				resources[i]->reloadFromSourceFile();
 			}
 		}
-	}
-	else
-	{
-		for (int i = 0; i < resourceList->getNumSelectedRows(); i++)
-		{
+	} else {
+		for (int i = 0; i < resourceList->getNumSelectedRows(); i++) {
 			const int row = resourceList->getSelectedRow(i);
-			if (resources[row])
-			{
+			if (resources[row]) {
 				resourcesReloaded.add(resources[row]);
 				resources[row]->reloadFromSourceFile();
 			}
@@ -789,13 +707,9 @@ void CtrlrPanelResourceEditor::reloadAllResourcesFromSourceFiles()
 	owner.reloadResources(resourcesReloaded);
 }
 
-void CtrlrPanelResourceEditor::backgroundClicked(const MouseEvent &e)
-{
-	resourceList->deselectAllRows();
-}
+void CtrlrPanelResourceEditor::backgroundClicked(const MouseEvent &e) { resourceList->deselectAllRows(); }
 
-void CtrlrPanelResourceEditor::lookAndFeelChanged()
-{
+void CtrlrPanelResourceEditor::lookAndFeelChanged() {
 	// Update the 'add' button's colours
 	add->setColour(TextButton::buttonColourId, findColour(TextButton::buttonColourId));
 	add->setColour(TextButton::buttonOnColourId, findColour(TextButton::buttonOnColourId));
@@ -822,57 +736,50 @@ void CtrlrPanelResourceEditor::lookAndFeelChanged()
 }
 
 // Helper method to detect font files
-bool CtrlrPanelResourceEditor::isFontFile(const File &file)
-{
+bool CtrlrPanelResourceEditor::isFontFile(const File &file) {
 	String extension = file.getFileExtension().toLowerCase();
 	return extension == ".ttf" || extension == ".otf" || extension == ".woff" || extension == ".woff2";
 }
 
 // Helper method to create thumbnails
-Image CtrlrPanelResourceEditor::createThumbnail(const Image &originalImage, int maxSize) // Added v5.6.34. Thanks to @dnaldoog
+Image CtrlrPanelResourceEditor::createThumbnail(const Image &originalImage,
+												int maxSize) // Added v5.6.34. Thanks to @dnaldoog
 {
 	int originalWidth = originalImage.getWidth();
 	int originalHeight = originalImage.getHeight();
 
-	if (originalWidth <= maxSize && originalHeight <= maxSize)
-	{
+	if (originalWidth <= maxSize && originalHeight <= maxSize) {
 		return originalImage; // Already small enough
 	}
 
 	// Calculate scaling factor to maintain aspect ratio
-	float scaleFactor = jmin((float)maxSize / originalWidth,
-							 (float)maxSize / originalHeight);
+	float scaleFactor = jmin((float)maxSize / originalWidth, (float)maxSize / originalHeight);
 
 	int thumbnailWidth = (int)(originalWidth * scaleFactor);
 	int thumbnailHeight = (int)(originalHeight * scaleFactor);
 
 	// Create scaled thumbnail with high quality resampling
-	return originalImage.rescaled(thumbnailWidth, thumbnailHeight,
-								  Graphics::ResamplingQuality::highResamplingQuality);
+	return originalImage.rescaled(thumbnailWidth, thumbnailHeight, Graphics::ResamplingQuality::highResamplingQuality);
 }
 
 // New image strip helper methods
 // REF : https://github.com/damiensellier/CtrlrX/pull/161#issuecomment-3257863818
-Image CtrlrPanelResourceEditor::createImageStripThumbnail(const Image &originalImage, int maxSize)
-{
+Image CtrlrPanelResourceEditor::createImageStripThumbnail(const Image &originalImage, int maxSize) {
 	int originalWidth = originalImage.getWidth();
 	int originalHeight = originalImage.getHeight();
 
 	// Case 1: Symmetrical Strip
 	if ((originalWidth > originalHeight && (originalWidth % originalHeight == 0)) ||
-		(originalHeight > originalWidth && (originalHeight % originalWidth == 0)))
-	{
+		(originalHeight > originalWidth && (originalHeight % originalWidth == 0))) {
 		int sectionSize = jmin(originalWidth, originalHeight);
 		int numSections = jmax(originalWidth, originalHeight) / sectionSize;
 
-		if (numSections >= 5)
-		{
+		if (numSections >= 5) {
 			_DBG("Detected image strip with " + String(numSections) + " sections");
 			if (originalWidth > originalHeight) // Horizontal Strip
 			{
 				return createHorizontalStripThumbnail(originalImage, sectionSize, numSections, maxSize);
-			}
-			else // Vertical Strip
+			} else // Vertical Strip
 			{
 				return createVerticalStripThumbnail(originalImage, sectionSize, numSections, maxSize);
 			}
@@ -882,8 +789,7 @@ Image CtrlrPanelResourceEditor::createImageStripThumbnail(const Image &originalI
 	double aspectRatio = (double)jmax(originalWidth, originalHeight) / (double)jmin(originalWidth, originalHeight);
 	_DBG("L/W ratio: " + String(maxAspectRatioForStrip) + ":AspectRatio = 1:" + String(aspectRatio));
 	// Check if the image has an extreme length-to-width ratio
-	if (aspectRatio > maxAspectRatioForStrip)
-	{
+	if (aspectRatio > maxAspectRatioForStrip) {
 		_DBG("Extreme aspect ratio detected, cropping to square region");
 		Image croppedImage;
 		if (originalHeight > originalWidth) // Vertical Strip
@@ -892,8 +798,7 @@ Image CtrlrPanelResourceEditor::createImageStripThumbnail(const Image &originalI
 			int croppedHeight = frameHeight * 5;
 
 			croppedImage = originalImage.getClippedImage({0, 0, originalWidth, jmin(croppedHeight, originalHeight)});
-		}
-		else // Horizontal Strip
+		} else // Horizontal Strip
 		{
 			int frameWidth = originalHeight;
 			int croppedWidth = frameWidth * 5;
@@ -909,9 +814,8 @@ Image CtrlrPanelResourceEditor::createImageStripThumbnail(const Image &originalI
 	return createThumbnail(originalImage, maxSize);
 }
 
-Image CtrlrPanelResourceEditor::createHorizontalStripThumbnail(const Image &originalImage,
-															   int sectionSize, int numSections, int maxSize)
-{
+Image CtrlrPanelResourceEditor::createHorizontalStripThumbnail(const Image &originalImage, int sectionSize,
+															   int numSections, int maxSize) {
 	// Calculate positions for 5 representative sections
 	Array<int> sectionIndices;
 	sectionIndices.add(0);					   // First
@@ -930,8 +834,7 @@ Image CtrlrPanelResourceEditor::createHorizontalStripThumbnail(const Image &orig
 	Graphics g(thumbnail);
 	g.fillAll(Colours::transparentBlack);
 
-	for (int i = 0; i < 5; i++)
-	{
+	for (int i = 0; i < 5; i++) {
 		int sourceX = sectionIndices[i] * sectionSize;
 		int destX = i * thumbSectionSize;
 
@@ -950,8 +853,7 @@ Image CtrlrPanelResourceEditor::createHorizontalStripThumbnail(const Image &orig
 		g.drawImageAt(scaledSection, destX, 0);
 
 		// Draw separator line between sections (except after last)
-		if (i < 4)
-		{
+		if (i < 4) {
 			g.setColour(Colours::darkgrey);
 			g.drawVerticalLine(destX + thumbSectionSize, 0, thumbHeight);
 		}
@@ -960,9 +862,8 @@ Image CtrlrPanelResourceEditor::createHorizontalStripThumbnail(const Image &orig
 	return thumbnail;
 }
 
-Image CtrlrPanelResourceEditor::createVerticalStripThumbnail(const Image &originalImage,
-															 int sectionSize, int numSections, int maxSize)
-{
+Image CtrlrPanelResourceEditor::createVerticalStripThumbnail(const Image &originalImage, int sectionSize,
+															 int numSections, int maxSize) {
 	// Calculate positions for 5 representative sections
 	Array<int> sectionIndices;
 	sectionIndices.add(0);					   // First
@@ -981,8 +882,7 @@ Image CtrlrPanelResourceEditor::createVerticalStripThumbnail(const Image &origin
 	Graphics g(thumbnail);
 	g.fillAll(Colours::transparentBlack);
 
-	for (int i = 0; i < 5; i++)
-	{
+	for (int i = 0; i < 5; i++) {
 		int sourceY = sectionIndices[i] * sectionSize;
 		int destY = i * thumbSectionSize;
 
@@ -1001,8 +901,7 @@ Image CtrlrPanelResourceEditor::createVerticalStripThumbnail(const Image &origin
 		g.drawImageAt(scaledSection, 0, destY);
 
 		// Draw separator line between sections (except after last)
-		if (i < 4)
-		{
+		if (i < 4) {
 			g.setColour(Colours::darkgrey);
 			g.drawHorizontalLine(destY + thumbSectionSize, 0, thumbWidth);
 		}

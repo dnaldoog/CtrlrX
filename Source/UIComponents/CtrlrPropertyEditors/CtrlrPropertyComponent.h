@@ -288,7 +288,7 @@ class CtrlrExpressionProperty : public Component,
 								public Button::Listener,
 								public CtrlrPropertyChild {
 	public:
-		CtrlrExpressionProperty(const Value &_valeToControl);
+		CtrlrExpressionProperty(const Value &_valueToControl);
 		~CtrlrExpressionProperty();
 		void refresh();
 		void textEditorTextChanged(TextEditor &editor);
@@ -302,25 +302,27 @@ class CtrlrExpressionProperty : public Component,
 
 	private:
 		CtrlrFloatingWindow *externalEditorWindow;
-		Value valeToControl;
-		TextEditor *text;
-		DrawableButton *apply;
+		Value valueToControl;
+		std::unique_ptr<TextEditor> text;
+		std::unique_ptr<DrawableButton> apply;
 };
 
 class CtrlrFileProperty : public Component, public Label::Listener, public Button::Listener, public CtrlrPropertyChild {
 	public:
-		CtrlrFileProperty(const Value &_valeToControl);
+		CtrlrFileProperty(const Value &_valueToControl);
 		~CtrlrFileProperty();
 		void refresh();
 		void resized();
 		void buttonClicked(Button *buttonThatWasClicked);
 		void labelTextChanged(Label *labelThatHasChanged);
-
+#if JUCE_VERSION >= 0x070000
+		std::unique_ptr<juce::FileChooser> fileChooser;
+#endif
 	private:
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrFileProperty);
 		Value valueToControl;
-		Label *path;
-		TextButton *browse;
+		std::unique_ptr<Label> path;
+		std::unique_ptr<TextButton> browse;
 };
 
 class CtrlrFontPropertyComponent : public Component,
@@ -359,17 +361,17 @@ class CtrlrFontPropertyComponent : public Component,
 		CtrlrPanel *owner;
 
 		// Pointers for components whose memory will be managed by the parent
-		ComboBox *typeface;
-		ComboBox *fontSizeComboBox;		   // Replaces the Slider
-		ComboBox *horizontalScaleComboBox; // Replaces the Slider
-		ComboBox *kerningComboBox;		   // Replaces the Slider
-		DrawableButton *fontBold;
-		DrawableButton *fontItalic;
-		DrawableButton *fontUnderline;
+		std::unique_ptr<ComboBox> typeface;
+		std::unique_ptr<ComboBox> fontSizeComboBox;		   // Replaces the Slider
+		std::unique_ptr<ComboBox> horizontalScaleComboBox; // Replaces the Slider
+		std::unique_ptr<ComboBox> kerningComboBox;		   // Replaces the Slider
+		std::unique_ptr<DrawableButton> fontBold;
+		std::unique_ptr<DrawableButton> fontItalic;
+		std::unique_ptr<DrawableButton> fontUnderline;
 
-		Label *fontSizeLabel;		 // Added v5.6.34. Thanks to @dnaldoog
-		Label *horizontalScaleLabel; // Added v5.6.34. Thanks to @dnaldoog
-		Label *kerningLabel;		 // Added v5.6.34. Thanks to @dnaldoog
+		std::unique_ptr<Label> fontSizeLabel;		 // Added v5.6.34. Thanks to @dnaldoog
+		std::unique_ptr<Label> horizontalScaleLabel; // Added v5.6.34. Thanks to @dnaldoog
+		std::unique_ptr<Label> kerningLabel;		 // Added v5.6.34. Thanks to @dnaldoog
 };
 
 class CtrlrLuaMethodProperty : public Component,
@@ -377,7 +379,7 @@ class CtrlrLuaMethodProperty : public Component,
 							   public Button::Listener,
 							   public CtrlrPropertyChild {
 	public:
-		CtrlrLuaMethodProperty(const Value &_valeToControl, const Identifier &_id, CtrlrPanel *_owner);
+		CtrlrLuaMethodProperty(const Value &_valueToControl, const Identifier &_id, CtrlrPanel *_owner);
 		~CtrlrLuaMethodProperty();
 		void refresh();
 		void resized();
@@ -385,14 +387,14 @@ class CtrlrLuaMethodProperty : public Component,
 		void buttonClicked(Button *buttonThatWasClicked);
 
 	private:
-		Value valeToControl;
+		Value valueToControl;
 		Identifier id;
 		String propertyName;
-		CtrlrPanel *owner;
-		ComboBox *methodSelectorCombo;
-		DrawableButton *editMethodButton;
-		DrawableButton *newMethodButton;
-		DrawableButton *deleteMethodButton;
+		std::unique_ptr<CtrlrPanel> owner;
+		std::unique_ptr<ComboBox> methodSelectorCombo;
+		std::unique_ptr<DrawableButton> editMethodButton;
+		std::unique_ptr<DrawableButton> newMethodButton;
+		std::unique_ptr<DrawableButton> deleteMethodButton;
 };
 
 class CtrlrModulatorListProperty : public CtrlrPropertyChild,
@@ -411,7 +413,7 @@ class CtrlrModulatorListProperty : public CtrlrPropertyChild,
 		void listChanged();
 
 	private:
-		CtrlrPanel *owner;
+		std::unique_ptr<CtrlrPanel> owner;
 		Value valueToControl;
 		StringArray choices;
 		std::unique_ptr<ComboBox> combo;
@@ -484,7 +486,7 @@ class MultiMidiAlert : public AlertWindow // Updated v5.6.35. For Multi MIDI Mes
 		// ("value", StringArray(v), "Value mapping"); 	addComboBox ("number", StringArray(v), "Number mapping");
 		// addTextEditor
 		//("sysexFormula", "F0 00 F7", "SysEx Formula", false); 	valueSlider.setSize (300,24);
-		//valueSlider.setSliderStyle (Slider::LinearBar); 	valueSlider.setRange (-2,127,1); 	valueSlider.setValue
+		// valueSlider.setSliderStyle (Slider::LinearBar); 	valueSlider.setRange (-2,127,1); 	valueSlider.setValue
 		//(-1);
 
 #if JUCE_MAJOR_VERSION < 8
@@ -508,51 +510,45 @@ class MultiMidiAlert : public AlertWindow // Updated v5.6.35. For Multi MIDI Mes
 };
 /********************New Class for JUCE Bubble native code********************************* */
 class BubbleConfigAlert : public AlertWindow {
-	public:
-		BubbleConfigAlert(const String &currentTitle, const String &currentText, int currentTimeout)
-			: AlertWindow("Configure Tooltip Bubble", String(), AlertWindow::NoIcon) {
-			// Add text editor for the Bubble Header Title
-			addTextEditor("bubbleTitle", currentTitle, "Bubble Header/Title:", false);
+public:
+    BubbleConfigAlert(const String &currentTitle, const String &currentText, int currentTimeout)
+        : AlertWindow("Configure Tooltip Bubble", String(), AlertWindow::NoIcon) { // Fixed Base Class Call
+        
+        // Add text editor for the Bubble Header Title
+        addTextEditor("bubbleTitle", currentTitle, "Bubble Header/Title:", false);
 
-			// Add a larger multi-line text editor for the actual help content
-			addTextEditor("bubbleText", currentText, "Help text description:", false);
-			if (auto *textEd = getTextEditor("bubbleText")) {
-				textEd->setMultiLine(true, true);
-				textEd->setReturnKeyStartsNewLine(true);
-			}
+        // Add a larger multi-line text editor for the actual help content
+        addTextEditor("bubbleText", currentText, "Help text description:", false);
+        if (auto *textEd = getTextEditor("bubbleText")) {
+            textEd->setMultiLine(true, true);
+            textEd->setReturnKeyStartsNewLine(true);
+        }
 
-			// Add a text field for timeout duration (in milliseconds)
-			addTextEditor("bubbleTimeout", String(currentTimeout), "Display timeout (ms):", false);
+        // Add a text field for timeout duration (in milliseconds)
+        addTextEditor("bubbleTimeout", String(currentTimeout), "Display timeout (ms):", false);
 
-#if JUCE_MAJOR_VERSION >= 8
-			// JUCE 8 Custom Button Bounds Layout Logic
-			addButton("Save Changes", 1, KeyPress(KeyPress::returnKey, 0, 0));
-			addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
-			setSize(500, 350);
+#if JUCE_VERSION >= 0x080000
+        // --- JUCE 8 Custom Button Bounds Layout Logic ---
+        addButton("Save Changes", 1, KeyPress(KeyPress::returnKey, 0, 0));
+        addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
+        setSize(500, 350);
 
-			if (auto *okBtn = getButton("Save Changes")) {
-				if (auto *cancelBtn = getButton("Cancel")) {
-					const int bW = 120, bH = 35, gap = 15;
-					const int totalWidth = (bW * 2) + gap;
-					const int startX = (getWidth() - totalWidth) / 2;
-					const int yPos = getHeight() - bH - 20;
-					okBtn->setBounds(startX, yPos, bW, bH);
-					cancelBtn->setBounds(startX + bW + gap, yPos, bW, bH);
-				}
-			}
+        if (auto *okBtn = getButton("Save Changes")) {
+            if (auto *cancelBtn = getButton("Cancel")) {
+                const int bW = 120, bH = 35, gap = 15;
+                const int totalWidth = (bW * 2) + gap;
+                const int startX = (getWidth() - totalWidth) / 2;
+                const int yPos = getHeight() - bH - 20;
+                okBtn->setBounds(startX, yPos, bW, bH);
+                cancelBtn->setBounds(startX + bW + gap, yPos, bW, bH);
+            }
+        }
 #else
-			// JUCE 6/7 Fallback Layout Engine
-			addButton("Save Changes", 1);
-			addButton("Cancel", 0);
+        // --- JUCE 6/7 Fallback Layout Engine ---
+        addButton("Save Changes", 1);
+        addButton("Cancel", 0);
 #endif
-		}
-
-		// Getters to retrieve the final values out of the dialog boxes
-		String getBubbleTitle() { return getTextEditor("bubbleTitle") ? getTextEditor("bubbleTitle")->getText() : ""; }
-		String getBubbleText() { return getTextEditor("bubbleText") ? getTextEditor("bubbleText")->getText() : ""; }
-		int getBubbleTimeout() {
-			return getTextEditor("bubbleTimeout") ? getTextEditor("bubbleTimeout")->getText().getIntValue() : 5000;
-		}
+    }
 };
 
 class CtrlrMultiMidiPropertyComponent : public Component,
@@ -585,12 +581,12 @@ class CtrlrMultiMidiPropertyComponent : public Component,
 		StringArray values;
 		Value valueToControl;
 		StringPairArray templates;
-		DrawableButton *addMulti;	 // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
-		DrawableButton *removeMulti; // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
-		ListBox *listMulti;			 // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
-		DrawableButton *copy;
-		DrawableButton *paste;
-		DrawableButton *helpMmidi; // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
+		std::unique_ptr<DrawableButton> addMulti;	 // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
+		std::unique_ptr<DrawableButton> removeMulti; // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
+		std::unique_ptr<ListBox> listMulti;			 // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
+		std::unique_ptr<DrawableButton> copy;
+		std::unique_ptr<DrawableButton> paste;
+		std::unique_ptr<DrawableButton> helpMmidi; // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
 };
 
 class CtrlrSliderPropertyComponent : public Component, private Slider::Listener, public CtrlrPropertyChild {
@@ -624,6 +620,9 @@ class CtrlrSysExEditor : public Component, public Slider::Listener, public Label
 		CtrlrSysExEditor(Value &_val, CtrlrPanel *_panel);
 		~CtrlrSysExEditor();
 		void setLength(const int newLength);
+		// NOTE: Keeps a raw pointer here because ownership is handled by the JUCE
+		// component hierarchy (via addAndMakeVisible). Returning a raw pointer
+		// allows callers to modify the label without accidentally taking ownership.
 		Label *addByte(const String &byteAsString);
 		const String getValue();
 		const PopupMenu getVendorIdMenu();
@@ -639,15 +638,18 @@ class CtrlrSysExEditor : public Component, public Slider::Listener, public Label
 
 	private:
 		Value val;
-		CtrlrPanel *owner;
+		std::unique_ptr<CtrlrPanel> owner;
 		StringArray splitMessage;
 		OwnedArray<Label> byteValueLabels;
 		OwnedArray<SysExRow> rows;
 		int currentMessageLength;
-		Slider *messageLength;
-		Label *label;
-		TextButton *addTokenButton = nullptr;
-		Label *lastFocusedLabel = nullptr;
+		std::unique_ptr<Slider> messageLength;
+		std::unique_ptr<Label> lengthLabel;
+		std::unique_ptr<TextButton> addTokenButton;
+		// NOTE: Keeps a raw pointer here because ownership is handled by the JUCE
+		// component hierarchy (via addAndMakeVisible). Returning a raw pointer
+		// allows callers to modify the label without accidentally taking ownership.
+		Label *lastFocusedLabel = nullptr; // Added v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
 };
 
 class CtrlrSysExFormulaEditor : public Component {
@@ -675,9 +677,9 @@ class CtrlrSysExFormulaEditor : public Component {
 		//==============================================================================
 		CodeEditorComponent *forwardFormula;
 		CodeEditorComponent *reverseFormula;
-		Label *forwardLabel;
-		Label *reverseLabel;
-		Label *label;
+		std::unique_ptr<Label> forwardLabel;
+		std::unique_ptr<Label> reverseLabel;
+		std::unique_ptr<Label> label;
 
 		//==============================================================================
 		// (prevent copy constructor and operator= being generated..)
@@ -703,13 +705,13 @@ class CtrlrSysExPropertyComponent : public Component,
 
 	private:
 		Value valueToControl;
-		Label *sysexPreview;
-		TextButton *editButton;
-		DrawableButton *copy;
-		DrawableButton *paste;
+		std::unique_ptr<Label> sysexPreview;
+		std::unique_ptr<TextButton> editButton;
+		std::unique_ptr<DrawableButton> copy;
+		std::unique_ptr<DrawableButton> paste;
 		ValueTree propertyTree;
 		Identifier propertyName;
-		CtrlrPanel *owner;
+		std::unique_ptr<CtrlrPanel> owner;
 };
 
 class CtrlrTextPropertyComponent : public Component, public CtrlrPropertyChild {

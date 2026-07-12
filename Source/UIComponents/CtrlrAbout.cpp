@@ -193,7 +193,7 @@ CtrlrAbout::CtrlrAbout(CtrlrManager &_owner) : owner(_owner) {
 
 	// JUCE & FRIENDS LOGO SVG
 	vst3AuJuceLogo = std::unique_ptr<DrawableButton>(gui::createDrawableButton("Copyright Logo", BIN2STR(vst3_au_juce_mini_logo_bg_rnd_svg)));
-		gui::createDrawableButton("Copyright Logo", BIN2STR(vst3_au_juce_mini_logo_bg_rnd_svg)));
+		gui::createDrawableButton("Copyright Logo", BIN2STR(vst3_au_juce_mini_logo_bg_rnd_svg));
 	addAndMakeVisible(vst3AuJuceLogo.get()); // Dereference to pass Component&;
 	/*
 	1.	gui::createDrawableButton(...) returns std::unique_ptr<DrawableButton>

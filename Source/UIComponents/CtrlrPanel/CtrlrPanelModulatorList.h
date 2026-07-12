@@ -2,6 +2,7 @@
 #define __CTRLR_PANEL_MODULATOR_LIST__
 
 #include "CtrlrPanelModulatorListTree.h"
+#include "CtrlrPanel.h"
 
 class CtrlrModulatorListSorter
 {

@@ -73,11 +73,11 @@ class CtrlrLuaMethodEditArea : public Component, public CtrlrLog::Listener {
 		CtrlrLuaMethodEditor &owner;
 		juce::Value sharedSearchTabsValue;
 		StretchableLayoutManager layoutManager;
-		StretchableLayoutResizerBar *resizer;
-		CtrlrTextEditor *output;
-		CtrlrLuaMethodFind *find;
-		CtrlrLuaMethodDebuggerPrompt *debuggerPrompt;
-		CtrlrLuaConsole *luaConsole;
+		std::unique_ptr<StretchableLayoutResizerBar> resizer;
+		std::unique_ptr<CtrlrTextEditor> output;
+		std::unique_ptr<CtrlrLuaMethodFind> find;
+		std::unique_ptr<CtrlrLuaMethodDebuggerPrompt> debuggerPrompt;
+		std::unique_ptr<CtrlrLuaConsole> luaConsole;
 		juce::Value searchTabsValue; // This will be shared between toggles
 		//[/UserVariables]
 

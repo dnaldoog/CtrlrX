@@ -183,43 +183,43 @@ void CtrlrMIDISettingsRouting::buttonClicked(Button *buttonThatWasClicked) {
 	//[UserbuttonClicked_Pre]
 	//[/UserbuttonClicked_Pre]
 
-	if (buttonThatWasClicked == inDev2OutDev) {
+	if (buttonThatWasClicked == inDev2OutDev.get()) {
 		//[UserButtonCode_inDev2OutDev] -- add your button handler code here..
 		owner.setProperty(Ids::panelMidiThruD2D, inDev2OutDev->getToggleState());
 		//[/UserButtonCode_inDev2OutDev]
-	} else if (buttonThatWasClicked == ctrlDev2OutDev) {
+	} else if (buttonThatWasClicked == ctrlDev2OutDev.get()) {
 		//[UserButtonCode_ctrlDev2OutDev] -- add your button handler code here..
 		owner.setProperty(Ids::panelMidiThruC2D, ctrlDev2OutDev->getToggleState());
 		//[/UserButtonCode_ctrlDev2OutDev]
-	} else if (buttonThatWasClicked == host2OutDev) {
+	} else if (buttonThatWasClicked == host2OutDev.get()) {
 		//[UserButtonCode_host2OutDev] -- add your button handler code here..
 		owner.setProperty(Ids::panelMidiThruH2D, host2OutDev->getToggleState());
 		//[/UserButtonCode_host2OutDev]
-	} else if (buttonThatWasClicked == host2Host) {
+	} else if (buttonThatWasClicked == host2Host.get()) {
 		//[UserButtonCode_host2Host] -- add your button handler code here..
 		owner.setProperty(Ids::panelMidiThruH2H, host2Host->getToggleState());
 		//[/UserButtonCode_host2Host]
-	} else if (buttonThatWasClicked == inDev2OutDevCh) {
+	} else if (buttonThatWasClicked == inDev2OutDevCh.get()) {
 		//[UserButtonCode_inDev2OutDevCh] -- add your button handler code here..
 		owner.setProperty(Ids::panelMidiThruD2DChannelize, inDev2OutDevCh->getToggleState());
 		//[/UserButtonCode_inDev2OutDevCh]
-	} else if (buttonThatWasClicked == ctrlDev2OutDevCh) {
+	} else if (buttonThatWasClicked == ctrlDev2OutDevCh.get()) {
 		//[UserButtonCode_ctrlDev2OutDevCh] -- add your button handler code here..
 		owner.setProperty(Ids::panelMidiThruC2DChannelize, ctrlDev2OutDevCh->getToggleState());
 		//[/UserButtonCode_ctrlDev2OutDevCh]
-	} else if (buttonThatWasClicked == host2OutDevCh) {
+	} else if (buttonThatWasClicked == host2OutDevCh.get()) {
 		//[UserButtonCode_host2OutDevCh] -- add your button handler code here..
 		owner.setProperty(Ids::panelMidiThruH2DChannelize, host2OutDevCh->getToggleState());
 		//[/UserButtonCode_host2OutDevCh]
-	} else if (buttonThatWasClicked == host2HostCh) {
+	} else if (buttonThatWasClicked == host2HostCh.get()) {
 		//[UserButtonCode_host2HostCh] -- add your button handler code here..
 		owner.setProperty(Ids::panelMidiThruH2HChannelize, host2HostCh->getToggleState());
 		//[/UserButtonCode_host2HostCh]
-	} else if (buttonThatWasClicked == inDev2Host) {
+	} else if (buttonThatWasClicked == inDev2Host.get()) {
 		//[UserButtonCode_inDev2Host] -- add your button handler code here..
 		owner.setProperty(Ids::panelMidiThruD2H, inDev2Host->getToggleState());
 		//[/UserButtonCode_inDev2Host]
-	} else if (buttonThatWasClicked == inDev2HostCh) {
+	} else if (buttonThatWasClicked == inDev2HostCh.get()) {
 		//[UserButtonCode_inDev2HostCh] -- add your button handler code here..
 		owner.setProperty(Ids::panelMidiThruD2HChannelize, inDev2HostCh->getToggleState());
 		//[/UserButtonCode_inDev2HostCh]

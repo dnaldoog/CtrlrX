@@ -4,6 +4,83 @@
 #include "CtrlrMacros.h"
 #include <juce_gui_basics/juce_gui_basics.h> // Make sure this is included for LookAndFeel_V4
 
+class MyPopupHelper {
+	public:
+		/**
+			Safely shows a popup menu across JUCE 6, 7, and 8.
+
+			@param menuToDisplay   The PopupMenu object you built.
+			@param targetComponent The component the menu should align with (usually 'this').
+			@param callback        A lambda/function to execute with the resulting integer ID.
+			@param componentToTargetForShowAt Optional: If you were originally using m.showAt(someButton),
+											  pass that specific button pointer here. Otherwise leave it null.
+		*/
+		static void showMenuAsyncSafe(juce::PopupMenu &menuToDisplay, juce::Component *targetComponent,
+									  std::function<void(int)> callback,
+									  juce::Component *componentToTargetForShowAt = nullptr) {
+#if JUCE_VERSION >= 0x070000
+			// --- Modern JUCE 7/8 Asynchronous Approach ---
+			// If a specific showAt target was passed, use it. Otherwise fall back to targetComponent.
+			juce::Component *finalTarget =
+				(componentToTargetForShowAt != nullptr) ? componentToTargetForShowAt : targetComponent;
+
+			juce::PopupMenu::Options options = juce::PopupMenu::Options().withTargetComponent(finalTarget);
+
+			menuToDisplay.showMenuAsync(options, [callback](int result) {
+				callback(result); // Runs your menu handling logic
+			});
+#else
+			// --- Legacy JUCE 6 Synchronous Approach ---
+			int result = 0;
+			if (componentToTargetForShowAt != nullptr) {
+				result = menuToDisplay.showAt(componentToTargetForShowAt); // Emulates old showAt()
+			} else {
+				result = menuToDisplay.show(); // Emulates old show()
+			}
+
+			callback(result);
+#endif
+		}
+};
+
+class AlertWindowUtils 
+{
+public:
+    /**
+        Safely shows an OK/Cancel question box across JUCE 6, 7, and 8.
+        
+        @param title       The header text of the alert window.
+        @param message     The body description text.
+        @param callback    A lambda/function executing with a boolean (true if user clicked OK).
+    */
+    static void showOkCancelAsyncSafe (const juce::String& title,
+                                       const juce::String& message,
+                                       std::function<void(bool)> callback)
+    {
+#if JUCE_VERSION >= 0x070000
+        // --- Modern JUCE 7/8 Asynchronous Execution ---
+        juce::AlertWindow::showOkCancelBoxAsync (
+            juce::AlertWindow::QuestionIcon,
+            title,
+            message,
+            "OK", "Cancel", nullptr,
+            [callback](int result) {
+                // JUCE 7/8 returns 1 for the first button (OK), 0 for cancel/escaped
+                callback(result == 1);
+            }
+        );
+#else
+        // --- Legacy JUCE 6 Synchronous Execution ---
+        bool confirmed = juce::AlertWindow::showOkCancelBox (
+            juce::AlertWindow::QuestionIcon,
+            title,
+            message
+        );
+        callback(confirmed); // Trigger the logic immediately with the true/false result
+#endif
+    }
+};
+
 namespace gui {
 
 static inline DrawableButton *createDrawableButton(const String &buttonName, const String &svgData,

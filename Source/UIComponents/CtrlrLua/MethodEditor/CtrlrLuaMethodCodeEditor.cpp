@@ -1403,7 +1403,7 @@ class GenericCodeEditorComponent::FindPanel : public Component,
 		void textEditorReturnKeyPressed(TextEditor &textEditor) override {
 			if (&textEditor == &editor) {
 				lookInSearch();
-			} else if (&textEditor == replaceEditor) {
+			} else if (&textEditor == replaceEditor.get()) {
 				if (GenericCodeEditorComponent *ed = getOwner()) {
 					ed->replaceNextMatch(editor.getText(), replaceEditor->getText(), caseButton.getToggleState());
 				}
@@ -1485,7 +1485,7 @@ bool GenericCodeEditorComponent::isFindActive() { return (findPanel == nullptr);
 
 void GenericCodeEditorComponent::showFindPanel(bool bForReplace) {
 	if (findPanel == nullptr) {
-		findPanel = new FindPanel();
+		findPanel = std::make_unique<FindPanel>();
 		addAndMakeVisible(findPanel.get());
 		resized();
 	}

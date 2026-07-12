@@ -83,7 +83,7 @@ CtrlrMIDISettingsDevices::CtrlrMIDISettingsDevices(CtrlrPanel &_owner) : owner(_
 	label3->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
 
 	oscProtocol = std::make_unique<ComboBox>("OSC Protocol");
-	addAndMakeVisible(oscProtocol = new ComboBox("OSC Protocol"));
+	addAndMakeVisible(oscProtocol.get());
 	oscProtocol->setEditableText(false);
 	oscProtocol->setJustificationType(Justification::centredLeft);
 	oscProtocol->setTextWhenNothingSelected(TRANS("TCP"));

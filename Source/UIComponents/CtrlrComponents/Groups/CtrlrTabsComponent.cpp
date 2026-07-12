@@ -1,457 +1,384 @@
 #include "stdafx.h"
 
 #ifdef _WIN32
-#pragma warning(disable:4244)
+#pragma warning(disable : 4244)
 #endif
 
-#include "CtrlrTabsComponent.h"
-#include "CtrlrPanel/CtrlrPanelEditor.h"
 #include "CtrlrLuaManager.h"
+#include "CtrlrPanel/CtrlrPanelEditor.h"
+#include "CtrlrTabsComponent.h"
 
-CtrlrTabsLF::CtrlrTabsLF(CtrlrTabsComponent &_owner) : owner(_owner)
-{
+CtrlrTabsLF::CtrlrTabsLF(CtrlrTabsComponent &_owner) : owner(_owner) {}
+
+int CtrlrTabsLF::getTabButtonBestWidth(int tabIndex, const String &text, int tabDepth, Button &button) {
+	Font f = owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString(
+		owner.getProperty(Ids::uiTabsTabFont));
+	return f.getStringWidth(text.trim()) + getTabButtonOverlap(tabDepth) * 2;
 }
 
-int CtrlrTabsLF::getTabButtonBestWidth (int tabIndex,
-                                        const String& text,
-                                        int tabDepth,
-                                        Button &button)
-{
-	Font f = owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString (owner.getProperty(Ids::uiTabsTabFont));
-    return f.getStringWidth (text.trim()) + getTabButtonOverlap (tabDepth) * 2;
+void CtrlrTabsLF::drawTabButtonText(TabBarButton &button, Graphics &g, bool isMouseOver, bool isMouseDown) {
+	const Rectangle<float> area(button.getTextArea().toFloat());
+
+	float length = area.getWidth();
+	float depth = area.getHeight();
+
+	if (button.getTabbedButtonBar().isVertical())
+		std::swap(length, depth);
+
+	Font otherTabFont = owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString(
+		owner.getProperty(Ids::uiTabsTabFont));
+	Font activeTabFont = owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString(
+		owner.getProperty(Ids::uiTabsFrontTabFont));
+
+	otherTabFont.setUnderline(button.hasKeyboardFocus(false));
+	activeTabFont.setUnderline(button.hasKeyboardFocus(false));
+
+	GlyphArrangement textLayout;
+	textLayout.addFittedText(button.isFrontTab() ? activeTabFont : otherTabFont, button.getButtonText().trim(), 0.0f,
+							 0.0f, (float)length, (float)depth, Justification::centred, jmax<int>(1, depth / 12));
+	AffineTransform t;
+
+	switch (button.getTabbedButtonBar().getOrientation()) {
+	case TabbedButtonBar::TabsAtLeft:
+		t = t.rotated(float_Pi * -0.5f).translated(area.getX(), area.getBottom());
+		break;
+	case TabbedButtonBar::TabsAtRight:
+		t = t.rotated(float_Pi * 0.5f).translated(area.getRight(), area.getY());
+		break;
+	case TabbedButtonBar::TabsAtTop:
+	case TabbedButtonBar::TabsAtBottom:
+		t = t.translated(area.getX(), area.getY());
+		break;
+	default:
+		jassertfalse;
+		break;
+	}
+
+	Colour col;
+
+	if (button.isFrontTab() && (button.isColourSpecified(TabbedButtonBar::frontTextColourId) ||
+								isColourSpecified(TabbedButtonBar::frontTextColourId)))
+		col = findColour(TabbedButtonBar::frontTextColourId);
+	else if (button.isColourSpecified(TabbedButtonBar::tabTextColourId) ||
+			 isColourSpecified(TabbedButtonBar::tabTextColourId))
+		col = findColour(TabbedButtonBar::tabTextColourId);
+	else
+		col = button.getTabBackgroundColour().contrasting();
+
+	const float alpha = button.isEnabled() ? ((isMouseOver || isMouseDown) ? 1.0f : 0.8f) : 0.3f;
+
+	g.setColour(col.withMultipliedAlpha(alpha));
+	textLayout.draw(g, t);
 }
 
+void CtrlrTabsLF::fillTabButtonShape(TabBarButton &button, Graphics &g, const Path &path, bool /*isMouseOver*/,
+									 bool /*isMouseDown*/) {
+	const Colour tabBackground(button.getTabBackgroundColour());
+	const bool isFrontTab = button.isFrontTab();
 
+	g.setColour(isFrontTab ? tabBackground : tabBackground.withMultipliedAlpha(0.9f));
 
-void CtrlrTabsLF::drawTabButtonText (TabBarButton& button, Graphics& g, bool isMouseOver, bool isMouseDown)
-{
-	const Rectangle<float> area (button.getTextArea().toFloat());
+	g.fillPath(path);
 
-    float length = area.getWidth();
-    float depth  = area.getHeight();
+	g.setColour(
+		button
+			.findColour(isFrontTab ? TabbedButtonBar::frontOutlineColourId : TabbedButtonBar::tabOutlineColourId, false)
+			.withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.5f));
 
-    if (button.getTabbedButtonBar().isVertical())
-        std::swap (length, depth);
-
-	Font otherTabFont  = owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString (owner.getProperty(Ids::uiTabsTabFont));
-	Font activeTabFont = owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString (owner.getProperty(Ids::uiTabsFrontTabFont));
-
-    otherTabFont.setUnderline (button.hasKeyboardFocus (false));
-	activeTabFont.setUnderline (button.hasKeyboardFocus (false));
-
-    GlyphArrangement textLayout;
-	textLayout.addFittedText (button.isFrontTab() ? activeTabFont : otherTabFont, button.getButtonText().trim(),
-				                0.0f, 0.0f, (float) length, (float) depth,
-								Justification::centred,
-								jmax<int> (1, depth / 12));
-    AffineTransform t;
-
-    switch (button.getTabbedButtonBar().getOrientation())
-    {
-        case TabbedButtonBar::TabsAtLeft:   t = t.rotated (float_Pi * -0.5f).translated (area.getX(), area.getBottom()); break;
-        case TabbedButtonBar::TabsAtRight:  t = t.rotated (float_Pi *  0.5f).translated (area.getRight(), area.getY()); break;
-        case TabbedButtonBar::TabsAtTop:
-        case TabbedButtonBar::TabsAtBottom: t = t.translated (area.getX(), area.getY()); break;
-        default:                            jassertfalse; break;
-    }
-
-    Colour col;
-
-    if (button.isFrontTab() && (button.isColourSpecified (TabbedButtonBar::frontTextColourId)
-                                    || isColourSpecified (TabbedButtonBar::frontTextColourId)))
-        col = findColour (TabbedButtonBar::frontTextColourId);
-    else if (button.isColourSpecified (TabbedButtonBar::tabTextColourId)
-                 || isColourSpecified (TabbedButtonBar::tabTextColourId))
-        col = findColour (TabbedButtonBar::tabTextColourId);
-    else
-        col = button.getTabBackgroundColour().contrasting();
-
-    const float alpha = button.isEnabled() ? ((isMouseOver || isMouseDown) ? 1.0f : 0.8f) : 0.3f;
-
-    g.setColour (col.withMultipliedAlpha (alpha));
-    textLayout.draw (g, t);
+	g.strokePath(path, PathStrokeType(isFrontTab ? owner.getProperty(Ids::uiTabsFrontTabOutline)
+												 : owner.getProperty(Ids::uiTabsTabOutline)));
 }
-
-void CtrlrTabsLF::fillTabButtonShape (TabBarButton& button, Graphics& g, const Path& path,  bool /*isMouseOver*/, bool /*isMouseDown*/)
-{
-	const Colour tabBackground (button.getTabBackgroundColour());
-    const bool isFrontTab = button.isFrontTab();
-
-    g.setColour (isFrontTab ? tabBackground
-                            : tabBackground.withMultipliedAlpha (0.9f));
-
-    g.fillPath (path);
-
-    g.setColour (button.findColour (isFrontTab ? TabbedButtonBar::frontOutlineColourId
-                                               : TabbedButtonBar::tabOutlineColourId, false)
-                    .withMultipliedAlpha (button.isEnabled() ? 1.0f : 0.5f));
-
-    g.strokePath (path, PathStrokeType (isFrontTab ? owner.getProperty(Ids::uiTabsFrontTabOutline) : owner.getProperty(Ids::uiTabsTabOutline)));
-}
-
-
-
 
 CtrlrTabsContentComponent::CtrlrTabsContentComponent(const ValueTree &_tabTree, CtrlrTabsComponent &_owner)
-	: tabTree(_tabTree), owner(_owner)
-{
+	: tabTree(_tabTree), owner(_owner) {
 	tabTree.addListener(this);
-	tabBackgroundImage = owner.getOwner().getOwnerPanel().getResourceManager().getResourceAsImage(getProperty(Ids::uiTabsTabBackgroundImage));
+	tabBackgroundImage = owner.getOwner().getOwnerPanel().getResourceManager().getResourceAsImage(
+		getProperty(Ids::uiTabsTabBackgroundImage));
 }
 
-CtrlrTabsContentComponent::~CtrlrTabsContentComponent()
-{
-	tabTree.removeListener(this);
-}
+CtrlrTabsContentComponent::~CtrlrTabsContentComponent() { tabTree.removeListener(this); }
 
-const var &CtrlrTabsContentComponent::getProperty (const Identifier& name) const
-{
-	return (tabTree.getProperty(name));
-}
+const var &CtrlrTabsContentComponent::getProperty(const Identifier &name) const { return (tabTree.getProperty(name)); }
 
-void CtrlrTabsContentComponent::resized()
-{
-}
+void CtrlrTabsContentComponent::resized() {}
 
-void CtrlrTabsContentComponent::paint (Graphics &g)
-{
+void CtrlrTabsContentComponent::paint(Graphics &g) {
 	g.fillAll(VAR2COLOUR(getProperty(Ids::uiTabsTabContentBackgroundColour)));
 
-	if (tabBackgroundImage.isValid())
-	{
-		if ((int)getProperty (Ids::uiTabsTabBackgroundImageLayout) == 8192)
-		{
-			g.setTiledImageFill (tabBackgroundImage, 0, 0, (float)getProperty (Ids::uiTabsTabBackgroundImageAlpha)/255.0f);
+	if (tabBackgroundImage.isValid()) {
+		if ((int)getProperty(Ids::uiTabsTabBackgroundImageLayout) == 8192) {
+			g.setTiledImageFill(tabBackgroundImage, 0, 0,
+								(float)getProperty(Ids::uiTabsTabBackgroundImageAlpha) / 255.0f);
 			g.fillAll();
-		}
-		else
-		{
-			g.setColour (Colours::black.withAlpha ((float)getProperty (Ids::uiTabsTabBackgroundImageAlpha)/255.0f));
-			g.drawImageWithin (tabBackgroundImage,
-								0,
-								0,
-								getWidth(),
-								getHeight(),
-								RectanglePlacement(getProperty (Ids::uiTabsTabBackgroundImageLayout)));
+		} else {
+			g.setColour(Colours::black.withAlpha((float)getProperty(Ids::uiTabsTabBackgroundImageAlpha) / 255.0f));
+			g.drawImageWithin(tabBackgroundImage, 0, 0, getWidth(), getHeight(),
+							  RectanglePlacement(getProperty(Ids::uiTabsTabBackgroundImageLayout)));
 		}
 	}
 }
 
-void CtrlrTabsContentComponent::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
-{
-	if (property == Ids::uiTabsTabBackgroundImage)
-	{
-		tabBackgroundImage = owner.getOwner().getOwnerPanel().getResourceManager().getResourceAsImage(getProperty(Ids::uiTabsTabBackgroundImage));
+void CtrlrTabsContentComponent::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged,
+														 const Identifier &property) {
+	if (property == Ids::uiTabsTabBackgroundImage) {
+		tabBackgroundImage = owner.getOwner().getOwnerPanel().getResourceManager().getResourceAsImage(
+			getProperty(Ids::uiTabsTabBackgroundImage));
 	}
 
 	repaint();
 }
 
-void CtrlrTabsContentComponent::parentNameChanged(const String &newName)
-{
-	for (int i=0; i<getNumChildComponents(); i++)
-	{
-		CtrlrComponent *c = dynamic_cast<CtrlrComponent*>(getChildComponent(i));
-		if (c!=0)
-		{
-			c->setProperty (Ids::componentTabName, newName);
+void CtrlrTabsContentComponent::parentNameChanged(const String &newName) {
+	for (int i = 0; i < getNumChildComponents(); i++) {
+		CtrlrComponent *c = dynamic_cast<CtrlrComponent *>(getChildComponent(i));
+		if (c != 0) {
+			c->setProperty(Ids::componentTabName, newName);
 		}
 	}
 }
 
-void CtrlrTabsContentComponent::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel)
-{
-    for (int i=0; i<getNumChildComponents(); i++)
-	{
-		CtrlrComponent *c = dynamic_cast<CtrlrComponent*>(getChildComponent(i));
-		if (c!=0)
-		{
-			c->setCustomLookAndFeel (customLookAndFeel);
+void CtrlrTabsContentComponent::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel) {
+	for (int i = 0; i < getNumChildComponents(); i++) {
+		CtrlrComponent *c = dynamic_cast<CtrlrComponent *>(getChildComponent(i));
+		if (c != 0) {
+			c->setCustomLookAndFeel(customLookAndFeel);
 		}
 	}
 }
 
-CtrlrTabsInternal::CtrlrTabsInternal(CtrlrTabsComponent &_owner) : owner(_owner), TabbedComponent(TabbedButtonBar::TabsAtTop)
-{
-}
+CtrlrTabsInternal::CtrlrTabsInternal(CtrlrTabsComponent &_owner)
+	: owner(_owner), TabbedComponent(TabbedButtonBar::TabsAtTop) {}
 
-CtrlrTabsInternal::~CtrlrTabsInternal()
-{
-}
+CtrlrTabsInternal::~CtrlrTabsInternal() {}
 
-void CtrlrTabsInternal::currentTabChanged (int newCurrentTabIndex, const String &newCurrentTabName)
-{
-	owner.setProperty (Ids::uiTabsCurrentTab, newCurrentTabIndex);
+void CtrlrTabsInternal::currentTabChanged(int newCurrentTabIndex, const String &newCurrentTabName) {
+	owner.setProperty(Ids::uiTabsCurrentTab, newCurrentTabIndex);
 }
 //[/MiscUserDefs]
 
 //==============================================================================
-CtrlrTabsComponent::CtrlrTabsComponent (CtrlrModulator &owner)
-    : CtrlrComponent(owner), 
-      ctrlrTabs (0)
-{
-    addAndMakeVisible (ctrlrTabs = new CtrlrTabsInternal (*this));
-    ctrlrTabs->setName (L"ctrlrTabs");
+CtrlrTabsComponent::CtrlrTabsComponent(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrTabs(0) {
+	addAndMakeVisible(ctrlrTabs = new CtrlrTabsInternal(*this));
+	ctrlrTabs->setName(L"ctrlrTabs");
 
+	//[UserPreSize]
+	auto *editor = owner.getOwnerPanel().getEditor();
+	String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
 
-    //[UserPreSize]
-auto* editor = owner.getOwnerPanel().getEditor();
-String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
+	applyCentralLookAndFeel(ctrlrTabs, panelLnF);
+	repaint();
+	owner.setProperty(Ids::modulatorVstExported, false);
 
-applyCentralLookAndFeel (ctrlrTabs, panelLnF);
-        repaint();
-	owner.setProperty (Ids::modulatorVstExported, false);
+	setProperty(Ids::uiTabsCurrentTabChanged, "");
+	setProperty(Ids::uiTabsDepth, 24);
+	setProperty(Ids::uiTabsOutlineThickness, 1);
+	setProperty(Ids::uiTabsTabOutline, 0.5f);
+	setProperty(Ids::uiTabsIndentThickness, 0);
+	setProperty(Ids::uiTabsOrientation, 0);
 
-	setProperty (Ids::uiTabsCurrentTabChanged, "");
-	setProperty (Ids::uiTabsDepth, 24);
-	setProperty (Ids::uiTabsOutlineThickness, 1);
-	setProperty (Ids::uiTabsTabOutline, 0.5f);
-	setProperty (Ids::uiTabsIndentThickness, 0);
-	setProperty (Ids::uiTabsOrientation, 0);
+	setProperty(Ids::uiTabsTabFont, FONT2STR(Font(16)));
+	setProperty(Ids::uiTabsTextTabColour, (String)findColour(TextButton::textColourOffId).toString()); // 0xff909090
+	setProperty(Ids::uiTabsOutlineTabColour,
+				(String)findColour(TextButton::textColourOffId).brighter(0.2f).toString()); // 0xff303030
 
-	setProperty (Ids::uiTabsTabFont, FONT2STR(Font(16)));
-    setProperty (Ids::uiTabsTextTabColour, (String)findColour(TextButton::textColourOffId).toString()); // 0xff909090
-    setProperty (Ids::uiTabsOutlineTabColour, (String)findColour(TextButton::textColourOffId).brighter(0.2f).toString()); // 0xff303030
+	setProperty(Ids::uiTabsOutlineGlobalBackgroundColour, (String)findColour(TextButton::textColourOffId)
+															  .darker(0.25f)
+															  .toString()); // 0x40000000 Container L,R,BTM outline
+	setProperty(Ids::uiTabsOutlineGlobalColour, "0x00000000"); // 0x00000000 Main container background colour
 
-	setProperty (Ids::uiTabsOutlineGlobalBackgroundColour, (String)findColour(TextButton::textColourOffId).darker(0.25f).toString()); // 0x40000000 Container L,R,BTM outline
-    setProperty (Ids::uiTabsOutlineGlobalColour, "0x00000000"); // 0x00000000 Main container background colour
-    
-    setProperty (Ids::uiTabsFrontTabOutline, 1.0f);
-    setProperty (Ids::uiTabsFrontTabFont, FONT2STR(Font(16)));
-	setProperty (Ids::uiTabsFrontTabTextColour, (String)findColour(TextButton::textColourOffId).toString()); // 0xff000000
-    setProperty (Ids::uiTabsFrontTabOutlineColour, (String)findColour(TextButton::textColourOffId).brighter(0.5f).toString()); // 0xff000000
-    
-	setProperty (Ids::uiTabsAddTab, 0);
-	setProperty (Ids::uiTabsRemoveTab, 0);
-    //[/UserPreSize]
+	setProperty(Ids::uiTabsFrontTabOutline, 1.0f);
+	setProperty(Ids::uiTabsFrontTabFont, FONT2STR(Font(16)));
+	setProperty(Ids::uiTabsFrontTabTextColour,
+				(String)findColour(TextButton::textColourOffId).toString()); // 0xff000000
+	setProperty(Ids::uiTabsFrontTabOutlineColour,
+				(String)findColour(TextButton::textColourOffId).brighter(0.5f).toString()); // 0xff000000
 
-    setSize (256, 256);
+	setProperty(Ids::uiTabsAddTab, 0);
+	setProperty(Ids::uiTabsRemoveTab, 0);
+	//[/UserPreSize]
 
+	setSize(256, 256);
 
-    //[Constructor] You can add your own custom stuff here..
-    //[/Constructor]
+	//[Constructor] You can add your own custom stuff here..
+	//[/Constructor]
 }
 
-CtrlrTabsComponent::~CtrlrTabsComponent()
-{
-    //[Destructor_pre]. You can add your own custom destruction code here..
-	owner.getModulatorTree().removeListener (this);
-    //[/Destructor_pre]
+CtrlrTabsComponent::~CtrlrTabsComponent() {
+	//[Destructor_pre]. You can add your own custom destruction code here..
+	owner.getModulatorTree().removeListener(this);
+	//[/Destructor_pre]
 
-    deleteAndZero (ctrlrTabs);
+	deleteAndZero(ctrlrTabs);
 
-
-    //[Destructor]. You can add your own custom destruction code here..
-    //[/Destructor]
+	//[Destructor]. You can add your own custom destruction code here..
+	//[/Destructor]
 }
 
 //==============================================================================
-void CtrlrTabsComponent::paint (Graphics& g)
-{
-    //[UserPrePaint] Add your own custom painting code here..
-    //[/UserPrePaint]
+void CtrlrTabsComponent::paint(Graphics &g) {
+	//[UserPrePaint] Add your own custom painting code here..
+	//[/UserPrePaint]
 
-    //[UserPaint] Add your own custom painting code here..
-    //[/UserPaint]
+	//[UserPaint] Add your own custom painting code here..
+	//[/UserPaint]
 }
 
-void CtrlrTabsComponent::resized()
-{
-    //ctrlrTabs->setBounds (0, 0, getWidth() - 0, getHeight() - 0);
-    //[UserResized] Add your own custom resize handling here..
-	ctrlrTabs->setBounds (getUsableRect());
-    //[/UserResized]
+void CtrlrTabsComponent::resized() {
+	// ctrlrTabs->setBounds (0, 0, getWidth() - 0, getHeight() - 0);
+	//[UserResized] Add your own custom resize handling here..
+	ctrlrTabs->setBounds(getUsableRect());
+	//[/UserResized]
 }
-
-
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
-void CtrlrTabsComponent::setComponentValue (const double newValue, const bool sendChangeMessage)
-{
+void CtrlrTabsComponent::setComponentValue(const double newValue, const bool sendChangeMessage) {
 	if (newValue >= ctrlrTabs->getNumTabs())
 		ctrlrTabs->setCurrentTabIndex(0);
 	else
 		ctrlrTabs->setCurrentTabIndex(newValue);
 
-	if (sendChangeMessage)
-	{
-		owner.getProcessor().setValueGeneric (CtrlrModulatorValue(newValue,CtrlrModulatorValue::changedByGUI));
+	if (sendChangeMessage) {
+		owner.getProcessor().setValueGeneric(CtrlrModulatorValue(newValue, CtrlrModulatorValue::changedByGUI));
 	}
 }
 
-double CtrlrTabsComponent::getComponentValue()
-{
-	return (ctrlrTabs->getCurrentTabIndex());
-}
+double CtrlrTabsComponent::getComponentValue() { return (ctrlrTabs->getCurrentTabIndex()); }
 
-int CtrlrTabsComponent::getComponentMidiValue()
-{
-	return (getComponentValue());
-}
+int CtrlrTabsComponent::getComponentMidiValue() { return (getComponentValue()); }
 
-double CtrlrTabsComponent::getComponentMaxValue()
-{
-	return (ctrlrTabs->getNumTabs()-1);
-}
+double CtrlrTabsComponent::getComponentMaxValue() { return (ctrlrTabs->getNumTabs() - 1); }
 
-void CtrlrTabsComponent::modulatorChanged (CtrlrModulator *modulatorThatChanged)
-{
-}
+void CtrlrTabsComponent::modulatorChanged(CtrlrModulator *modulatorThatChanged) {}
 
-void CtrlrTabsComponent::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
-{
-	if (property == Ids::uiTabsOutlineThickness
-		|| property == Ids::uiTabsIndentThickness)
-	{
+void CtrlrTabsComponent::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
+	if (property == Ids::uiTabsOutlineThickness || property == Ids::uiTabsIndentThickness) {
 		ctrlrTabs->setOutline(getProperty(Ids::uiTabsOutlineThickness));
 		ctrlrTabs->setIndent(getProperty(Ids::uiTabsIndentThickness));
 
 		repaint();
 	}
 
-	else if (property == Ids::uiTabsCurrentTabChanged)
-	{
+	else if (property == Ids::uiTabsCurrentTabChanged) {
 		if (getProperty(property) == "")
 			return;
 
 		tabChangedCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
 	}
 
-	else if (property == Ids::uiTabsCurrentTab)
-	{
-		if (ctrlrTabs->getCurrentTabIndex() != (int)getProperty (property))
-		{
-			ctrlrTabs->setCurrentTabIndex (getProperty(property), false);
+	else if (property == Ids::uiTabsCurrentTab) {
+		if (ctrlrTabs->getCurrentTabIndex() != (int)getProperty(property)) {
+			ctrlrTabs->setCurrentTabIndex(getProperty(property), false);
 		}
 
-		if (tabChangedCbk && !tabChangedCbk.wasObjectDeleted())
-		{
-			if (tabChangedCbk->isValid())
-			{
-				owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (tabChangedCbk, &owner, (int)getProperty(property));
+		if (tabChangedCbk && !tabChangedCbk.wasObjectDeleted()) {
+			if (tabChangedCbk->isValid()) {
+				owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(tabChangedCbk, &owner,
+																				   (int)getProperty(property));
 			}
 		}
 	}
 
-	else if (property == Ids::uiTabsOutlineGlobalColour
-		|| property == Ids::uiTabsOutlineGlobalBackgroundColour
-		|| property == Ids::uiTabsOutlineTabColour
-		|| property == Ids::uiTabsTextTabColour
-		|| property == Ids::uiTabsFrontTabOutlineColour
-		|| property == Ids::uiTabsFrontTabTextColour)
-	{
-		ctrlrTabs->setColour ( TabbedComponent::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiTabsOutlineGlobalColour)) );
-		ctrlrTabs->setColour ( TabbedComponent::outlineColourId, VAR2COLOUR(getProperty(Ids::uiTabsOutlineGlobalBackgroundColour)) );
+	else if (property == Ids::uiTabsOutlineGlobalColour || property == Ids::uiTabsOutlineGlobalBackgroundColour ||
+			 property == Ids::uiTabsOutlineTabColour || property == Ids::uiTabsTextTabColour ||
+			 property == Ids::uiTabsFrontTabOutlineColour || property == Ids::uiTabsFrontTabTextColour) {
+		ctrlrTabs->setColour(TabbedComponent::backgroundColourId,
+							 VAR2COLOUR(getProperty(Ids::uiTabsOutlineGlobalColour)));
+		ctrlrTabs->setColour(TabbedComponent::outlineColourId,
+							 VAR2COLOUR(getProperty(Ids::uiTabsOutlineGlobalBackgroundColour)));
 
-		ctrlrTabs->setColour ( TabbedButtonBar::tabOutlineColourId, VAR2COLOUR(getProperty(Ids::uiTabsOutlineTabColour)) );
-		ctrlrTabs->setColour ( TabbedButtonBar::tabTextColourId, VAR2COLOUR(getProperty(Ids::uiTabsTextTabColour)) );
-		ctrlrTabs->setColour ( TabbedButtonBar::frontOutlineColourId, VAR2COLOUR(getProperty(Ids::uiTabsFrontTabOutlineColour)) );
-		ctrlrTabs->setColour ( TabbedButtonBar::frontTextColourId, VAR2COLOUR(getProperty(Ids::uiTabsFrontTabTextColour)) );
+		ctrlrTabs->setColour(TabbedButtonBar::tabOutlineColourId, VAR2COLOUR(getProperty(Ids::uiTabsOutlineTabColour)));
+		ctrlrTabs->setColour(TabbedButtonBar::tabTextColourId, VAR2COLOUR(getProperty(Ids::uiTabsTextTabColour)));
+		ctrlrTabs->setColour(TabbedButtonBar::frontOutlineColourId,
+							 VAR2COLOUR(getProperty(Ids::uiTabsFrontTabOutlineColour)));
+		ctrlrTabs->setColour(TabbedButtonBar::frontTextColourId,
+							 VAR2COLOUR(getProperty(Ids::uiTabsFrontTabTextColour)));
 
 		repaint();
 	}
 
-	else if (property == Ids::uiTabsFrontTabFont
-		|| property == Ids::uiTabsTabFont
-		|| property == Ids::uiTabsFrontTabOutline
-		|| property == Ids::uiTabsTabOutline)
-	{
-		applyCentralLookAndFeel (ctrlrTabs, getProperty(property));
-        repaint();
+	else if (property == Ids::uiTabsFrontTabFont || property == Ids::uiTabsTabFont ||
+			 property == Ids::uiTabsFrontTabOutline || property == Ids::uiTabsTabOutline) {
+		applyCentralLookAndFeel(ctrlrTabs, getProperty(property));
+		repaint();
 	}
 
-	else if (property == Ids::uiTabsDepth)
-	{
+	else if (property == Ids::uiTabsDepth) {
 		ctrlrTabs->setTabBarDepth(getProperty(property));
 	}
 
-	else if (property == Ids::uiTabsOrientation)
-	{
-		ctrlrTabs->setOrientation ((TabbedButtonBar::Orientation)(int)getProperty(property));
+	else if (property == Ids::uiTabsOrientation) {
+		ctrlrTabs->setOrientation((TabbedButtonBar::Orientation)(int)getProperty(property));
 	}
 
-	else if (property == Ids::uiTabsTabName)
-	{
+	else if (property == Ids::uiTabsTabName) {
 		const int tabIndex = treeWhosePropertyHasChanged.getProperty(Ids::uiTabsTabIndex);
-		ctrlrTabs->setTabName (tabIndex, treeWhosePropertyHasChanged.getProperty(property));
+		ctrlrTabs->setTabName(tabIndex, treeWhosePropertyHasChanged.getProperty(property));
 	}
 
-	else if (property == Ids::uiTabsTabBackgroundColour)
-	{
+	else if (property == Ids::uiTabsTabBackgroundColour) {
 		const int tabIndex = treeWhosePropertyHasChanged.getProperty(Ids::uiTabsTabIndex);
-		ctrlrTabs->setTabBackgroundColour (tabIndex, VAR2COLOUR(treeWhosePropertyHasChanged.getProperty(property)));
+		ctrlrTabs->setTabBackgroundColour(tabIndex, VAR2COLOUR(treeWhosePropertyHasChanged.getProperty(property)));
 	}
 
-	else if (property == Ids::uiTabsAddTab)
-	{
+	else if (property == Ids::uiTabsAddTab) {
 		if (CtrlrComponent::restoreStateInProgress)
 			return;
 
-		if ((bool)getProperty(property) == true)
-		{
+		if ((bool)getProperty(property) == true) {
 			ValueTree v(Ids::uiTabsTab);
-			getComponentTree().addChild (v, -1, 0);
+			getComponentTree().addChild(v, -1, 0);
 		}
 
 		setProperty(property, false);
-        updatePropertiesPanel(); // Updates the property pane with new tab props
+		updatePropertiesPanel(); // Updates the property pane with new tab props
 	}
 
-	else if (property == Ids::uiTabsRemoveTab)
-	{
+	else if (property == Ids::uiTabsRemoveTab) {
 		if (CtrlrComponent::restoreStateInProgress)
 			return;
 
-		if ((bool)getProperty(property) == true)
-		{
+		if ((bool)getProperty(property) == true) {
 			PopupMenu m;
-			for (int i=0; i<ctrlrTabs->getNumTabs(); i++)
-			{
-				m.addItem (i+1, ctrlrTabs->getTabNames() [i]);
+			for (int i = 0; i < ctrlrTabs->getNumTabs(); i++) {
+				m.addItem(i + 1, ctrlrTabs->getTabNames()[i]);
 			}
-			const int ret = m.show();
-			if (ret > 0)
-			{
-				if (AlertWindow::showOkCancelBox(AlertWindow::QuestionIcon, "Removing tab", "Are you sure you want to remove this tab? All child components in it will also be removed"))
-				{
-					getComponentTree().removeChild (ret-1, 0);
+			// const int ret = m.show(); //JUCE 6 LEGACY CODE
+			MyPopupHelper::showMenuAsyncSafe(m, this, [this](int ret) {
+				if (ret > 0) {
+					if (AlertWindow::showOkCancelBox(AlertWindow::QuestionIcon, "Removing tab",
+													 "Are you sure you want to remove this tab? All child components "
+													 "in it will also be removed")) {
+						getComponentTree().removeChild(ret - 1, 0);
+					}
 				}
-			}
+			});
 		}
 
 		setProperty(property, false);
-        updatePropertiesPanel();  // Updates the property pane with new tab props
-	}
-	else
-	{
+		updatePropertiesPanel(); // Updates the property pane with new tab props
+	} else {
 		CtrlrComponent::valueTreePropertyChanged(treeWhosePropertyHasChanged, property);
 	}
 
-	if (restoreStateInProgress == false)
-	{
+	if (restoreStateInProgress == false) {
 		resized();
 	}
 }
 
-void CtrlrTabsComponent::valueTreeChildAdded (ValueTree& parentTree, ValueTree& childWhichHasBeenAdded)
-{
+void CtrlrTabsComponent::valueTreeChildAdded(ValueTree &parentTree, ValueTree &childWhichHasBeenAdded) {
 	addTab(childWhichHasBeenAdded);
 }
 
-void CtrlrTabsComponent::valueTreeChildRemoved (ValueTree& parentTree, ValueTree& childWhichHasBeenRemoved, int)
-{
+void CtrlrTabsComponent::valueTreeChildRemoved(ValueTree &parentTree, ValueTree &childWhichHasBeenRemoved, int) {
 	removeTab(childWhichHasBeenRemoved);
 }
 
-bool CtrlrTabsComponent::isOwned(CtrlrComponent *componentToCheck)
-{
-	for (int i=0; i<ctrlrTabs->getNumTabs(); i++)
-	{
-		for (int j=0; j<ctrlrTabs->getTabContentComponent(i)->getNumChildComponents(); j++)
-		{
-			CtrlrComponent *child = dynamic_cast<CtrlrComponent*>(ctrlrTabs->getTabContentComponent(i)->getChildComponent(j));
-			if (child == componentToCheck)
-			{
+bool CtrlrTabsComponent::isOwned(CtrlrComponent *componentToCheck) {
+	for (int i = 0; i < ctrlrTabs->getNumTabs(); i++) {
+		for (int j = 0; j < ctrlrTabs->getTabContentComponent(i)->getNumChildComponents(); j++) {
+			CtrlrComponent *child =
+				dynamic_cast<CtrlrComponent *>(ctrlrTabs->getTabContentComponent(i)->getChildComponent(j));
+			if (child == componentToCheck) {
 				return (true);
 			}
 		}
@@ -460,115 +387,101 @@ bool CtrlrTabsComponent::isOwned(CtrlrComponent *componentToCheck)
 	return (false);
 }
 
-void CtrlrTabsComponent::setOwned (CtrlrComponent *componentToOwn, const int subIndexInGroup, const bool shouldOwnThisComponent)
-{
+void CtrlrTabsComponent::setOwned(CtrlrComponent *componentToOwn, const int subIndexInGroup,
+								  const bool shouldOwnThisComponent) {
 	if (componentToOwn == nullptr)
 		return;
 
-	if (shouldOwnThisComponent)
-	{
-		componentToOwn->setProperty (Ids::componentTabName, owner.getName(), true);
-		componentToOwn->setProperty (Ids::componentTabId, subIndexInGroup, true);
-		componentToOwn->setProperty (Ids::componentGroupped, true, true);
-		
+	if (shouldOwnThisComponent) {
+		componentToOwn->setProperty(Ids::componentTabName, owner.getName(), true);
+		componentToOwn->setProperty(Ids::componentTabId, subIndexInGroup, true);
+		componentToOwn->setProperty(Ids::componentGroupped, true, true);
+
 		// NEW FIX: If the component is being dragged by the user,
 		// we clear the Group property so the Tab becomes the primary owner.
-		if (auto* dragContainer = DragAndDropContainer::findParentDragContainerFor(this)) // Updated v5.6.36
+		if (auto *dragContainer = DragAndDropContainer::findParentDragContainerFor(this)) // Updated v5.6.36
 		{
-			if (dragContainer->isDragAndDropActive())
-			{
-				if (componentToOwn->getProperty(Ids::componentGroupName).toString().isNotEmpty())
-				{
+			if (dragContainer->isDragAndDropActive()) {
+				if (componentToOwn->getProperty(Ids::componentGroupName).toString().isNotEmpty()) {
 					componentToOwn->setProperty(Ids::componentGroupName, String(), true);
 				}
 			}
 		}
 
 		if (ctrlrTabs->getTabContentComponent(subIndexInGroup))
-			ctrlrTabs->getTabContentComponent(subIndexInGroup)->addAndMakeVisible (componentToOwn);
-	}
-	else
-	{
-		owner.getOwnerPanel().getEditor()->getCanvas()->addAndMakeVisibleNg (componentToOwn);
-		componentToOwn->setProperty (Ids::componentGroupped, false, true);
+			ctrlrTabs->getTabContentComponent(subIndexInGroup)->addAndMakeVisible(componentToOwn);
+	} else {
+		owner.getOwnerPanel().getEditor()->getCanvas()->addAndMakeVisibleNg(componentToOwn);
+		componentToOwn->setProperty(Ids::componentGroupped, false, true);
 
-        if (!getOwner().getOwnerPanel().isSchemeAtLeast(1))
-		{
-            componentToOwn->setProperty (Ids::componentTabName, "", false);
+		if (!getOwner().getOwnerPanel().isSchemeAtLeast(1)) {
+			componentToOwn->setProperty(Ids::componentTabName, "", false);
 		}
 	}
 }
 
-void CtrlrTabsComponent::canvasStateRestored()
-{
-	Array <CtrlrModulator*> children = owner.getOwnerPanel().getModulatorsWithProperty(Ids::componentTabName, owner.getName());
+void CtrlrTabsComponent::canvasStateRestored() {
+	Array<CtrlrModulator *> children =
+		owner.getOwnerPanel().getModulatorsWithProperty(Ids::componentTabName, owner.getName());
 
-	for (int i=0; i<children.size(); i++)
-	{
-		if (children[i]->getComponent())
-		{
-			if (getOwner().getOwnerPanel().isSchemeAtLeast(1))
-			{
-				if ((bool)children[i]->getComponent()->getProperty(Ids::componentGroupped))
-				{
-					setOwned (children[i]->getComponent(), children[i]->getComponent()->getProperty(Ids::componentTabId));
+	for (int i = 0; i < children.size(); i++) {
+		if (children[i]->getComponent()) {
+			if (getOwner().getOwnerPanel().isSchemeAtLeast(1)) {
+				if ((bool)children[i]->getComponent()->getProperty(Ids::componentGroupped)) {
+					setOwned(children[i]->getComponent(),
+							 children[i]->getComponent()->getProperty(Ids::componentTabId));
 				}
-			}
-			else
-			{
-				setOwned (children[i]->getComponent(), children[i]->getComponent()->getProperty(Ids::componentTabId));
+			} else {
+				setOwned(children[i]->getComponent(), children[i]->getComponent()->getProperty(Ids::componentTabId));
 			}
 		}
 	}
 }
 
-void CtrlrTabsComponent::addTab(const ValueTree tabToAdd)
-{
+void CtrlrTabsComponent::addTab(const ValueTree tabToAdd) {
 	ValueTree tabTree = tabToAdd;
 
 	const int tabId = ctrlrTabs->getNumTabs();
 
 	if (!tabTree.hasProperty(Ids::uiTabsTabIndex))
-		tabTree.setProperty (Ids::uiTabsTabIndex, tabId, 0);
+		tabTree.setProperty(Ids::uiTabsTabIndex, tabId, 0);
 
 	if (!tabTree.hasProperty(Ids::uiTabsTabName))
-		tabTree.setProperty (Ids::uiTabsTabName, "Tab "+String(tabId), 0);
+		tabTree.setProperty(Ids::uiTabsTabName, "Tab " + String(tabId), 0);
 
 	if (!tabTree.hasProperty(Ids::uiTabsTabContentBackgroundColour))
-		tabTree.setProperty (Ids::uiTabsTabContentBackgroundColour, (String)findColour(DocumentWindow::backgroundColourId).darker(0.1f).toString(), 0); // Colours::yellow.toString()
+		tabTree.setProperty(Ids::uiTabsTabContentBackgroundColour,
+							(String)findColour(DocumentWindow::backgroundColourId).darker(0.1f).toString(),
+							0); // Colours::yellow.toString()
 
 	if (!tabTree.hasProperty(Ids::uiTabsTabBackgroundColour))
-        tabTree.setProperty (Ids::uiTabsTabBackgroundColour, (String)findColour(DocumentWindow::backgroundColourId).darker(0.1f).toString(), 0); // Colours::lightgrey.toString()
+		tabTree.setProperty(Ids::uiTabsTabBackgroundColour,
+							(String)findColour(DocumentWindow::backgroundColourId).darker(0.1f).toString(),
+							0); // Colours::lightgrey.toString()
 
 	if (!tabTree.hasProperty(Ids::uiTabsTabBackgroundImage))
-		tabTree.setProperty (Ids::uiTabsTabBackgroundImage, COMBO_NONE_ITEM, 0);
+		tabTree.setProperty(Ids::uiTabsTabBackgroundImage, COMBO_NONE_ITEM, 0);
 
 	if (!tabTree.hasProperty(Ids::uiTabsTabBackgroundImageLayout))
-		tabTree.setProperty (Ids::uiTabsTabBackgroundImageLayout, 36, 0);
+		tabTree.setProperty(Ids::uiTabsTabBackgroundImageLayout, 36, 0);
 
 	if (!tabTree.hasProperty(Ids::uiTabsTabBackgroundImageAlpha))
-		tabTree.setProperty (Ids::uiTabsTabBackgroundImageAlpha, 255, 0);
+		tabTree.setProperty(Ids::uiTabsTabBackgroundImageAlpha, 255, 0);
 
-	ctrlrTabs->addTab (	tabTree.getProperty(Ids::uiTabsTabName).toString(),
-						VAR2COLOUR(tabTree.getProperty(Ids::uiTabsTabBackgroundColour)),
-						new CtrlrTabsContentComponent(tabTree, *this),
-						true,
-						tabTree.getProperty(Ids::uiTabsTabIndex));
+	ctrlrTabs->addTab(tabTree.getProperty(Ids::uiTabsTabName).toString(),
+					  VAR2COLOUR(tabTree.getProperty(Ids::uiTabsTabBackgroundColour)),
+					  new CtrlrTabsContentComponent(tabTree, *this), true, tabTree.getProperty(Ids::uiTabsTabIndex));
 }
 
-void CtrlrTabsComponent::removeTab(const ValueTree tabToRemove)
-{
+void CtrlrTabsComponent::removeTab(const ValueTree tabToRemove) {
 	const int tabId = tabToRemove.getProperty(Ids::uiTabsTabIndex);
 
-	if (tabId >= 0)
-	{
-		if (ctrlrTabs->getTabContentComponent(tabId))
-		{
-			for (int i=0; i<ctrlrTabs->getTabContentComponent(tabId)->getNumChildComponents(); i++)
-			{
-				CtrlrComponent *child = dynamic_cast<CtrlrComponent*>(ctrlrTabs->getTabContentComponent(tabId)->getChildComponent(i));
-				if (child != 0)
-				{
+	if (tabId >= 0) {
+		if (ctrlrTabs->getTabContentComponent(tabId)) {
+			for (int i = 0; i < ctrlrTabs->getTabContentComponent(tabId)->getNumChildComponents(); i++) {
+				CtrlrComponent *child =
+					dynamic_cast<CtrlrComponent *>(ctrlrTabs->getTabContentComponent(tabId)->getChildComponent(i));
+				if (child != 0) {
 					owner.getOwnerPanel().getEditor()->getCanvas()->removeComponent(child);
 				}
 			}
@@ -578,81 +491,65 @@ void CtrlrTabsComponent::removeTab(const ValueTree tabToRemove)
 	}
 }
 
-void CtrlrTabsComponent::modulatorNameChanged (const String &newName)
-{
-	for (int i=0; i<ctrlrTabs->getNumTabs(); i++)
-	{
-		CtrlrTabsContentComponent *c = dynamic_cast<CtrlrTabsContentComponent*>(ctrlrTabs->getTabContentComponent(i));
-		if (c!=0)
-		{
+void CtrlrTabsComponent::modulatorNameChanged(const String &newName) {
+	for (int i = 0; i < ctrlrTabs->getNumTabs(); i++) {
+		CtrlrTabsContentComponent *c = dynamic_cast<CtrlrTabsContentComponent *>(ctrlrTabs->getTabContentComponent(i));
+		if (c != 0) {
 			c->parentNameChanged(newName);
 		}
 	}
 }
 
-bool CtrlrTabsComponent::isInterestedInDragSource (const SourceDetails &dragSourceDetails)
-{
-	if (dragSourceDetails.description == "__ctrlr_component_selection")
-	{
+bool CtrlrTabsComponent::isInterestedInDragSource(const SourceDetails &dragSourceDetails) {
+	if (dragSourceDetails.description == "__ctrlr_component_selection") {
 		return (true);
 	}
 
 	return (false);
 }
 
-void CtrlrTabsComponent::itemDropped (const SourceDetails &dragSourceDetails)
-{
-	if (dragSourceDetails.description == "__ctrlr_component_selection")
-	{
-		if (owner.getOwnerPanel().getEditor() && owner.getOwnerPanel().getEditor()->getSelection())
-		{
-			AffineTransform trans = owner.getOwnerPanel().getEditor()->moveSelectionToPosition(dragSourceDetails.localPosition.getX(), dragSourceDetails.localPosition.getY()-ctrlrTabs->getTabBarDepth());
+void CtrlrTabsComponent::itemDropped(const SourceDetails &dragSourceDetails) {
+	if (dragSourceDetails.description == "__ctrlr_component_selection") {
+		if (owner.getOwnerPanel().getEditor() && owner.getOwnerPanel().getEditor()->getSelection()) {
+			AffineTransform trans = owner.getOwnerPanel().getEditor()->moveSelectionToPosition(
+				dragSourceDetails.localPosition.getX(),
+				dragSourceDetails.localPosition.getY() - ctrlrTabs->getTabBarDepth());
 
-			for (int i=0; i<owner.getOwnerPanel().getEditor()->getSelection()->getNumSelected(); i++)
-			{
+			for (int i = 0; i < owner.getOwnerPanel().getEditor()->getSelection()->getNumSelected(); i++) {
 				CtrlrComponent *c = owner.getOwnerPanel().getEditor()->getSelection()->getSelectedItem(i);
 
-				if (c != nullptr)
-				{
+				if (c != nullptr) {
 					if (c == this || isOwned(c) || (bool)c->getProperty(Ids::componentIsLocked) == true)
 						continue;
 
-					setOwned (c, ctrlrTabs->getCurrentTabIndex(), true);
+					setOwned(c, ctrlrTabs->getCurrentTabIndex(), true);
 
-					c->setBounds (c->getBounds().transformedBy(trans));
+					c->setBounds(c->getBounds().transformedBy(trans));
 				}
 			}
 		}
 	}
 }
 
-void CtrlrTabsComponent::itemDragExit (const SourceDetails &dragSourceDetails)
-{
+void CtrlrTabsComponent::itemDragExit(const SourceDetails &dragSourceDetails) {}
+
+void CtrlrTabsComponent::itemDragEnter(const SourceDetails &dragSourceDetails) {}
+
+void CtrlrTabsComponent::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel) {
+	for (int i = 0; i < ctrlrTabs->getNumTabs(); i++) {
+		dynamic_cast<CtrlrTabsContentComponent *>(ctrlrTabs->getTabContentComponent(i))
+			->customLookAndFeelChanged(customLookAndFeel);
+	}
 }
 
-void CtrlrTabsComponent::itemDragEnter (const SourceDetails &dragSourceDetails)
-{
-}
+Array<CtrlrComponent *> CtrlrTabsComponent::getOwnedChildren() {
+	Array<CtrlrComponent *> ar;
 
-void CtrlrTabsComponent::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel)
-{
-    for (int i=0; i<ctrlrTabs->getNumTabs(); i++)
-    {
-        dynamic_cast<CtrlrTabsContentComponent*> (ctrlrTabs->getTabContentComponent(i))->customLookAndFeelChanged(customLookAndFeel);
-    }
-}
-
-Array <CtrlrComponent*> CtrlrTabsComponent::getOwnedChildren()
-{
-	Array <CtrlrComponent*> ar;
-
-	for (int i=0; i<ctrlrTabs->getNumTabs(); i++)
-	{
-		for (int j=0; j<ctrlrTabs->getTabContentComponent(i)->getNumChildComponents(); j++)
-		{
-			CtrlrComponent *child = dynamic_cast<CtrlrComponent*>(ctrlrTabs->getTabContentComponent(i)->getChildComponent(j));
-			if (child != nullptr)
-			{
+	for (int i = 0; i < ctrlrTabs->getNumTabs(); i++) {
+		for (int j = 0; j < ctrlrTabs->getTabContentComponent(i)->getNumChildComponents(); j++) {
+			CtrlrComponent *child =
+				dynamic_cast<CtrlrComponent *>(ctrlrTabs->getTabContentComponent(i)->getChildComponent(j));
+			if (child != nullptr) {
 				ar.add(child);
 			}
 		}
@@ -661,19 +558,14 @@ Array <CtrlrComponent*> CtrlrTabsComponent::getOwnedChildren()
 	return (ar);
 }
 
-
-
-void CtrlrTabsComponent::updatePropertiesPanel()
-{
-    CtrlrPanelProperties *props = owner.getCtrlrManagerOwner().getActivePanel()->getEditor(false)->getPropertiesPanel();
-    if (props)
-    {
-        props->refreshAll(); // Needs extra code to prevent scrolling back to top on refresh
-    }
+void CtrlrTabsComponent::updatePropertiesPanel() {
+	CtrlrPanelProperties *props = owner.getCtrlrManagerOwner().getActivePanel()->getEditor(false)->getPropertiesPanel();
+	if (props) {
+		props->refreshAll(); // Needs extra code to prevent scrolling back to top on refresh
+	}
 }
 
 //[/MiscUserCode]
-
 
 //==============================================================================
 #if 0
