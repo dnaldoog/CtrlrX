@@ -1486,7 +1486,7 @@ bool GenericCodeEditorComponent::isFindActive() { return (findPanel == nullptr);
 void GenericCodeEditorComponent::showFindPanel(bool bForReplace) {
 	if (findPanel == nullptr) {
 		findPanel = new FindPanel();
-		addAndMakeVisible(findPanel);
+		addAndMakeVisible(findPanel.get());
 		resized();
 	}
 
@@ -1508,8 +1508,8 @@ void GenericCodeEditorComponent::hideFindPanel() {
 
 void GenericCodeEditorComponent::showGoTOPanel() {
 	if (goToPanel == nullptr) {
-		goToPanel = new GoToPanel();
-		addAndMakeVisible(goToPanel);
+		goToPanel = std::make_unique<GoToPanel>();
+		addAndMakeVisible(goToPanel.get());
 		resized();
 	}
 	if (goToPanel != nullptr) {
