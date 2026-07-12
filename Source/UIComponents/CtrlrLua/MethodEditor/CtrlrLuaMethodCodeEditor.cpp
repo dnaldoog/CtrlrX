@@ -1274,31 +1274,36 @@ class GenericCodeEditorComponent::FindPanel : public Component,
 		void setSearchText(const String &s) { editor.setText(s); }
 
 		void addReplaceComponents() {
-			replaceEditor = new TextEditor();
+			// 1. Instantiate and configure the Editor FIRST
+			replaceEditor = std::make_unique<TextEditor>();
 			replaceEditor->setColour(CaretComponent::caretColourId, Colours::black);
-			addAndMakeVisible(*replaceEditor);
+			addAndMakeVisible(replaceEditor.get()); // Using .get() for JUCE's hierarchy
 
-			replaceLabel = new Label();
+			// 2. Instantiate and attach the Label (Safe because replaceEditor exists!)
+			replaceLabel = std::make_unique<Label>();
 			replaceLabel->setText("Replace:", dontSendNotification);
 			replaceLabel->setFont(Font(13.00f, Font::plain));
 			replaceLabel->setColour(Label::textColourId, Colours::white);
-			replaceLabel->attachToComponent(replaceEditor, true);
 
-			replaceButton = new TextButton(">", "Replace Next");
+			// Pass the raw pointer .get() so the label knows which component to stick to
+			replaceLabel->attachToComponent(replaceEditor.get(), true);
+
+			// 3. Instantiate and configure the Buttons
+			replaceButton = std::make_unique<TextButton>(">", "Replace Next");
 			replaceButton->addListener(this);
-			addAndMakeVisible(*replaceButton);
+			addAndMakeVisible(replaceButton.get());
 
-			replaceAllButton = new TextButton("A", "Replace all in current");
+			replaceAllButton = std::make_unique<TextButton>("A", "Replace all in current");
 			replaceAllButton->addListener(this);
-			addAndMakeVisible(*replaceAllButton);
+			addAndMakeVisible(replaceAllButton.get());
 
+			// 4. Final Layout Configurations
 			replaceButton->setConnectedEdges(Button::ConnectedOnRight);
 			replaceAllButton->setConnectedEdges(Button::ConnectedOnLeft);
 
 			replaceEditor->addListener(this);
 			resized();
 		}
-
 		void paint(Graphics &g) override {
 			Path outline;
 			outline.addRoundedRectangle(1.0f, 1.0f, getWidth() - 2.0f, getHeight() - 2.0f, 8.0f);
@@ -1367,9 +1372,9 @@ class GenericCodeEditorComponent::FindPanel : public Component,
 					ed->findNext(true, true);
 				} else if (button == &findPrev) {
 					ed->findNext(false, false);
-				} else if (button == replaceButton) {
+				} else if (button == replaceButton.get()) {
 					ed->replaceNextMatch(editor.getText(), replaceEditor->getText(), caseButton.getToggleState());
-				} else if (button == replaceAllButton) {
+				} else if (button == replaceAllButton.get()) {
 					ed->replaceAllMatches(editor.getText(), replaceEditor->getText(), caseButton.getToggleState());
 				} else if (button == &searchButton) {
 					lookInSearch();

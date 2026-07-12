@@ -48,13 +48,14 @@ CtrlrMIDISettingsRouting::CtrlrMIDISettingsRouting(CtrlrPanel &_owner) : owner(_
 	ctrlDev2OutDev->setButtonText(TRANS("CTRL Device -> OUT Device"));
 	ctrlDev2OutDev->addListener(this);
 
-	host2OutDev = std::make_unique<ToggleButton>("") addAndMakeVisible(host2OutDev.get());
+	host2OutDev = std::make_unique<ToggleButton>("");
+	addAndMakeVisible(host2OutDev.get());
 	host2OutDev->setTooltip(
 		TRANS("All messages received from the plugin HOST, will be copied to the MIDI Output device"));
 	host2OutDev->setButtonText(TRANS("HOST -> OUT Device"));
 	host2OutDev->addListener(this);
 
-	host2host = std::make_unique<ToggleButton>("");
+	host2Host = std::make_unique<ToggleButton>("");
 	addAndMakeVisible(host2Host.get());
 	host2Host->setTooltip(TRANS("All messages received from the plugin HOST, will be copied back to the plugin HOST"));
 	host2Host->setButtonText(TRANS("HOST -> HOST"));
@@ -65,34 +66,38 @@ CtrlrMIDISettingsRouting::CtrlrMIDISettingsRouting(CtrlrPanel &_owner) : owner(_
 	inDev2OutDevCh->setButtonText("");
 	inDev2OutDevCh->addListener(this);
 
-	addAndMakeVisible(ctrlDev2OutDevCh = new ToggleButton("new toggle button"));
+	ctrlDev2OutDevCh = std::make_unique<ToggleButton>("");
+	addAndMakeVisible(ctrlDev2OutDevCh.get());
 	ctrlDev2OutDevCh->setButtonText("");
 	ctrlDev2OutDevCh->addListener(this);
 
-	addAndMakeVisible(host2OutDevCh = new ToggleButton("new toggle button"));
+	host2OutDevCh = std::make_unique<ToggleButton>("");
+	addAndMakeVisible(host2OutDevCh.get());
 	host2OutDevCh->setButtonText("");
 	host2OutDevCh->addListener(this);
 
-	addAndMakeVisible(host2HostCh = new ToggleButton("new toggle button"));
+	host2HostCh = std::make_unique<ToggleButton>("");
+	addAndMakeVisible(host2HostCh.get());
 	host2HostCh->setButtonText("");
 	host2HostCh->addListener(this);
 
-	addAndMakeVisible(label = new Label("new label", TRANS("Change\n"
-														   "MIDI\n"
-														   "Channel")));
+	label = std::make_unique<Label>("new label", TRANS("Change\nMIDI\nChannel"));
+	addAndMakeVisible(label.get());
 	label->setFont(Font(12.00f, Font::plain));
 	label->setJustificationType(Justification::centred);
 	label->setEditable(false, false, false);
 	label->setColour(Label::textColourId, findColour(Label::textColourId)); // Colours::black
 	label->setColour(Label::backgroundColourId, Colour(0x00000000));
 
-	addAndMakeVisible(inDev2Host = new ToggleButton(""));
+	inDev2Host = std::make_unique<ToggleButton>("");
+	addAndMakeVisible(inDev2Host.get());
 	inDev2Host->setTooltip(
 		TRANS("All messages that are received on the MIDI Input device will be copied to the plugin HOST"));
 	inDev2Host->setButtonText(TRANS("In Device -> Host"));
 	inDev2Host->addListener(this);
 
-	addAndMakeVisible(inDev2HostCh = new ToggleButton("new toggle button"));
+	inDev2HostCh = std::make_unique<ToggleButton>("");
+	addAndMakeVisible(inDev2HostCh.get());
 	inDev2HostCh->setButtonText("");
 	inDev2HostCh->addListener(this);
 
@@ -120,18 +125,18 @@ CtrlrMIDISettingsRouting::~CtrlrMIDISettingsRouting() {
 	//[Destructor_pre]. You can add your own custom destruction code here..
 	//[/Destructor_pre]
 
-	groupComponent = nullptr;
-	inDev2OutDev = nullptr;
-	ctrlDev2OutDev = nullptr;
-	host2OutDev = nullptr;
-	host2Host = nullptr;
-	inDev2OutDevCh = nullptr;
-	ctrlDev2OutDevCh = nullptr;
-	host2OutDevCh = nullptr;
-	host2HostCh = nullptr;
-	label = nullptr;
-	inDev2Host = nullptr;
-	inDev2HostCh = nullptr;
+	// groupComponent = nullptr;
+	// inDev2OutDev = nullptr;
+	// ctrlDev2OutDev = nullptr;
+	// host2OutDev = nullptr;
+	// host2Host = nullptr;
+	// inDev2OutDevCh = nullptr;
+	// ctrlDev2OutDevCh = nullptr;
+	// host2OutDevCh = nullptr;
+	// host2HostCh = nullptr;
+	// label = nullptr;
+	// inDev2Host = nullptr;
+	// inDev2HostCh = nullptr;
 
 	//[Destructor]. You can add your own custom destruction code here..
 	//[/Destructor]

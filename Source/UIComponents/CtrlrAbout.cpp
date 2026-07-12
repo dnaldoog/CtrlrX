@@ -145,7 +145,7 @@ CtrlrAbout::CtrlrAbout(CtrlrManager &_owner) : owner(_owner) {
 	// ("https://ko-fi.com/damiensellier"))); // Updated v5.6.35
 
 	// PayPal LOGO SVG
-	paypalLogo = std::make_unique<DrawableButton>(gui::createDrawableButton(
+	paypalLogo = std::unique_ptr<DrawableButton>(gui::createDrawableButton(
 		"PayPal Logo", BIN2STR(paypal_colour_svg))); // Updated v5.6.31. It required to drag drop SVG file in the
 													 // projucer in the icon folder to be embedded
 	addAndMakeVisible(paypalLogo.get());
@@ -192,7 +192,7 @@ CtrlrAbout::CtrlrAbout(CtrlrManager &_owner) : owner(_owner) {
 																								  // Typo. @dnaldoog
 
 	// JUCE & FRIENDS LOGO SVG
-	vst3AuJuceLogo = std::make_unique<DrawableButton>(
+	vst3AuJuceLogo = std::unique_ptr<DrawableButton>(gui::createDrawableButton("Copyright Logo", BIN2STR(vst3_au_juce_mini_logo_bg_rnd_svg)));
 		gui::createDrawableButton("Copyright Logo", BIN2STR(vst3_au_juce_mini_logo_bg_rnd_svg)));
 	addAndMakeVisible(vst3AuJuceLogo.get()); // Dereference to pass Component&;
 	/*
