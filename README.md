@@ -503,7 +503,8 @@ Tuturial coming soon.
 * **UPGRADED** LUA 5.1 to LuaJIT 2.1. Thanks to [John Goodland](https://github.com/dnaldoog)
 * **ADDED** refresh MIDI devices shortcut (cmd/ctrl + D). `CtrlrEditorApplicationCommands.cpp`, `CtrlrEditorApplicationCommandsHandlers.cpp`. Thanks to [John Goodland](https://github.com/dnaldoog)
 * **UPDATED** Zoom Shortcuts & Keypad Minus zoom-out. Thanks to [John Goodland](https://github.com/dnaldoog)
-* **FIXED**  Zoom Out for Linux Wayland. Thanks to [John Goodland](https://github.com/dnaldoog)
+* **FIXED** Zoom Out for Linux Wayland. Thanks to [John Goodland](https://github.com/dnaldoog)
+* **FIXED** Resources not updating on load after panel update. RSRCs now compared by hash. `CtrlrPanelResourceManager.cpp`, `CtrlrPanelResource.cpp` & `.h`. Thanks to [John Goodland](https://github.com/dnaldoog)
 
 #### Version 5.6.35 | 2026.04.20
 
