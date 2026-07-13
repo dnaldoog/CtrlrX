@@ -67,10 +67,10 @@ class CtrlrPanelModulatorList : public CtrlrChildWindowContent,
 		void handleColumnSelection(const int itemId);
 		void handleSortSelection(const int itemId);
 
-		static const String getPropertyCategory(const String &propertyName);
-		static const Colour getCategoryColour(const String &category);
-		static const String generateLuaUsage(const String &propertyName, bool includeGetter, bool includeSetter);
-		void showClipboardBubble(const String &text);
+		//static const String getPropertyCategory(const String &propertyName);
+		//static const Colour getCategoryColour(const String &category);
+		//static const String generateLuaUsage(const String &propertyName, bool includeGetter, bool includeSetter);
+		//void showClipboardBubble(const String &text);
 
 		void tableColumnsChanged(TableHeaderComponent *) override;
 		void tableColumnsResized(TableHeaderComponent *) override;

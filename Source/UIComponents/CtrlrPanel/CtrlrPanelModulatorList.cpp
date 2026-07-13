@@ -215,12 +215,18 @@ int CtrlrPanelModulatorList::getNumRows() { return (copyOfModulatorList.size());
 
 void CtrlrPanelModulatorList::paintRowBackground(Graphics &g, int rowNumber, int width, int height,
 												 bool rowIsSelected) {
-	if (rowIsSelected) {
-		// Fill the background with SteelBlue
-		g.fillAll(Colours::steelblue);
+	// https://github.com/damiensellier/CtrlrX/issues/295#issuecomment-4961237685
+	if (rowIsSelected) // Updated v5.6.36
+	{
+		Colour rowBackgroundColour = findColour(TextButton::buttonOnColourId);
 
-		// Optional: Keep the Ctrlr-specific selection outline
-		gui::drawSelectionRectangle(g, width, height);
+		// 1. Fill the background base
+		g.fillAll(rowBackgroundColour);
+
+		// 2. Override the macro by passing your dynamic color as the 3rd argument
+		gui::drawSelectionRectangle(g, width, height, rowBackgroundColour, 1.0f, 1.0f, 0.0f,
+									0.0f); // This will remove the stuborn blue gradient at the end of the selected row.
+										   // @dobo365 will like that.
 	}
 }
 
