@@ -1,43 +1,52 @@
+#include "CtrlrLuaFile.h"
 #include "stdafx.h"
 #include "stdafx_luabind.h"
-#include "CtrlrLuaFile.h"
 
-CtrlrLuaFile::CtrlrLuaFile() : file()
-{
+CtrlrLuaFile::CtrlrLuaFile() : file() {}
+
+CtrlrLuaFile::CtrlrLuaFile(const String &path) : file(path) {}
+
+CtrlrLuaFile::CtrlrLuaFile(const File &fileToUse) : file(fileToUse) {}
+
+CtrlrLuaFile::~CtrlrLuaFile() {}
+
+#if JUCE_VERSION >= 0x070000
+void CtrlrLuaFile::replaceFileContentWithData(CtrlrLuaMemoryBlock &data) {
+	file.replaceWithData(data.getData(), data.getSize());
 }
 
-CtrlrLuaFile::CtrlrLuaFile (const String &path) : file(path)
-{
-}
+CtrlrLuaMemoryBlock CtrlrLuaFile::loadFileAsData() {
 
-CtrlrLuaFile::CtrlrLuaFile (const File &fileToUse) : file(fileToUse)
-{
-}
+	CtrlrLuaMemoryBlock block;
 
-CtrlrLuaFile::~CtrlrLuaFile()
-{
-}
+	MemoryBlock fileData;
 
-void CtrlrLuaFile::replaceFileContentWithData (CtrlrLuaMemoryBlock &data)
-{
+	file.loadFileAsData(fileData); // File::loadFileAsData(MemoryBlock&) const
+
+	block.getMemoryBlock() = fileData;
+
+	return block;
+}
+#else
+
+void CtrlrLuaFile::replaceFileContentWithData(CtrlrLuaMemoryBlock &data) {
 	file.replaceWithData(data.get(), data.getSize());
-}
+} // I think get() should be getData() ??
 
-CtrlrLuaMemoryBlock CtrlrLuaFile::loadFileAsData()
-{
+CtrlrLuaMemoryBlock CtrlrLuaFile::loadFileAsData() {
 	CtrlrLuaMemoryBlock block;
 	block.append(file);
 	return block;
 }
+#endif
 
-void CtrlrLuaFile::findChildFiles (luabind::object const& table, int whatToLookFor, bool searchRecursively, const String &wildcardPattern)
-{
+void CtrlrLuaFile::findChildFiles(luabind::object const &table, int whatToLookFor, bool searchRecursively,
+								  const String &wildcardPattern) {
 	Array<File> results;
 	file.findChildFiles(results, whatToLookFor, searchRecursively, wildcardPattern);
 	// Add results to Lua table...
 }
 
-CtrlrLuaFile CtrlrLuaFile::getSpecialLocation(const File::SpecialLocationType loc)
-{
+CtrlrLuaFile CtrlrLuaFile::getSpecialLocation(const File::SpecialLocationType loc) {
 	return CtrlrLuaFile(File::getSpecialLocation(loc));
 }

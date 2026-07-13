@@ -156,7 +156,7 @@ namespace BinaryData
     const int            memory_svgSize = 348;
 
     extern const char*   midi_svg;
-    const int            midi_svgSize = 9089;
+    const int            midi_svgSize = 9017;
 
     extern const char*   nav_next_svg;
     const int            nav_next_svgSize = 201;
@@ -270,13 +270,13 @@ namespace BinaryData
     const int            LuaAPI_xmlSize = 247299;
 
     extern const char*   CtrlrIDs_xml;
-    const int            CtrlrIDs_xmlSize = 92363;
+    const int            CtrlrIDs_xmlSize = 93543;
 
     extern const char*   CtrlrLuaClassTemplates_xml;
     const int            CtrlrLuaClassTemplates_xmlSize = 110;
 
     extern const char*   CtrlrLuaMethodTemplates_xml;
-    const int            CtrlrLuaMethodTemplates_xmlSize = 23292;
+    const int            CtrlrLuaMethodTemplates_xmlSize = 22858;
 
     extern const char*   CtrlrMidiMultiTemplate_xml;
     const int            CtrlrMidiMultiTemplate_xmlSize = 932;
