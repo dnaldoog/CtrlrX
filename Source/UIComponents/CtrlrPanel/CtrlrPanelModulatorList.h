@@ -70,12 +70,14 @@ class CtrlrPanelModulatorList : public CtrlrChildWindowContent, // Component bas
 		void menuItemSelected(int menuItemID, int topLevelMenuIndex);
 		void handleColumnSelection(const int itemId);
 		void handleSortSelection(const int itemId);
-
+		
+/* I don't know what these are, but they don't seem to be used anywhere
+https://github.com/damiensellier/CtrlrX/issues/295#issuecomment-4960450879
 		static const String getPropertyCategory(const String &propertyName);
 		static const Colour getCategoryColour(const String &category);
 		static const String generateLuaUsage(const String &propertyName, bool includeGetter, bool includeSetter);
 		void showClipboardBubble(const String &text);
-
+*/
 		void tableColumnsChanged(TableHeaderComponent *) override;
 		void tableColumnsResized(TableHeaderComponent *) override;
 		void tableSortOrderChanged(TableHeaderComponent *) override;

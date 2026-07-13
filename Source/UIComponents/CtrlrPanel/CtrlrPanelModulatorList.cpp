@@ -221,15 +221,19 @@ const int CtrlrPanelModulatorList::getColumnIdForIdentifier(const String &column
 
 int CtrlrPanelModulatorList::getNumRows() { return (copyOfModulatorList.size()); }
 
-void CtrlrPanelModulatorList::paintRowBackground(Graphics &g, int rowNumber, int width, int height,
-												 bool rowIsSelected) {
-	if (rowIsSelected) {
-		// Fill the background with SteelBlue
-		g.fillAll(Colours::steelblue);
-
-		// Optional: Keep the Ctrlr-specific selection outline
-		gui::drawSelectionRectangle(g, width, height);
-	}
+void CtrlrPanelModulatorList::paintRowBackground (Graphics& g, int rowNumber, int width, int height, bool rowIsSelected)
+{
+	//https://github.com/damiensellier/CtrlrX/issues/295#issuecomment-4961237685
+    if (rowIsSelected) // Updated v5.6.36
+    {
+		Colour rowBackgroundColour = findColour (TextButton::buttonOnColourId);
+		
+		// 1. Fill the background base
+		g.fillAll (rowBackgroundColour);
+		
+		// 2. Override the macro by passing your dynamic color as the 3rd argument
+		gui::drawSelectionRectangle (g, width, height, rowBackgroundColour, 1.0f, 1.0f, 0.0f, 0.0f); // This will remove the stuborn blue gradient at the end of the selected row. @dobo365 will like that.
+    }
 }
 
 juce::Component *CtrlrPanelModulatorList::refreshComponentForCell(int rowNumber, int columnId, bool isRowSelected,
