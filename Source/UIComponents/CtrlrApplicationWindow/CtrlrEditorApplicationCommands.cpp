@@ -338,9 +338,9 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 		break;
 
 	case doRefreshDeviceList:
-		result.setInfo("Refresh devices", "Refresh the list of devices available in the OS", panelCategory, 0);
+		result.setInfo("Refresh MIDI devices", "Refresh available MIDI devices", panelCategory, 0);
 		result.addDefaultKeypress('d', ModifierKeys::commandModifier);
-		result.addDefaultKeypress(KeyPress::F5Key, ModifierKeys::commandModifier);
+		//result.addDefaultKeypress(KeyPress::F5Key, ModifierKeys::commandModifier);
 		result.setActive(true);
 		break;
 

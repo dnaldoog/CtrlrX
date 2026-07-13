@@ -2,6 +2,9 @@
 #define CTRLR_PANEL_RESOURCE_EDITOR_H
 
 #include "CtrlrMacros.h"
+#if JUCE_VERSION >= 0x070000 
+class CtrlrPanelResource; // forward declaration. Didn't seem to be necessary for JUCE 6
+#endif
 class CtrlrPanelEditor;
 class CtrlrPanelResourceManager;
 
@@ -42,10 +45,10 @@ class CtrlrPanelResourceEditor  : public Component,
 		int sortByColumnId;
 		int sortForward;
 		Font tableFont;
-	    TableListBox* resourceList;
-	    TextButton* add;
-		TextButton* move;
-		TextButton* remove, *reload;
+	    std::unique_ptr<TableListBox> resourceList;
+	    std::unique_ptr<TextButton> add;
+		std::unique_ptr<TextButton> move;
+		std::unique_ptr<TextButton> remove, reload;
 
 	    // Declarations for ImageInfoComponent helper functions
 		Image createThumbnail(const Image& originalImage, int maxSize);

@@ -1,28 +1,37 @@
 #include "CtrlrPanelModulatorList.h"
+#include "../../Core/CtrlrPanel/CtrlrPanel.h" // Fixed path to point to Core!
 #include "CtrlrComponents/CtrlrComponent.h"
 #include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrManager/CtrlrManager.h"
-#include "CtrlrPanel/CtrlrPanel.h"
 #include "CtrlrPanel/CtrlrPanelCanvas.h"
 #include "CtrlrPanel/CtrlrPanelEditor.h"
 #include "stdafx.h"
+// Top of CtrlrPanelModulatorList.cpp
 
 /* ********************************************************************************** */
 CtrlrPanelModulatorList::CtrlrPanelModulatorList(CtrlrPanel &_owner)
-	: owner(_owner), modulatorList(nullptr), modulatorListTree(owner) {
-	addAndMakeVisible(modulatorList = new TableListBox("Modulator List", this));
+	: owner(_owner),
+	  modulatorListTree(owner) // Note: Removed modulatorList(nullptr) from initializer list since unique_ptr
+							   // initializes to nullptr automatically
+{
+	// 1. Allocate the table layout once using modern smart pointers
+	modulatorList = std::make_unique<TableListBox>("Modulator List", this);
+	addAndMakeVisible(modulatorList.get());
+
+	// 2. Configure the table setup
+	modulatorList->setName("modulatorList");
 	modulatorList->getHeader().addListener(this);
+	modulatorList->getHeader().setStretchToFitActive(true);
+	modulatorList->setMultipleSelectionEnabled(true);
+	modulatorList->setHeaderHeight(20);
+
+	// 3. Setup the TreeView alternative layout
 	addAndMakeVisible(&modulatorListTree);
 	modulatorListTree.setVisible(false);
 
 	owner.setProperty(Ids::uiPanelModulatorListViewTree, false);
 
-	addAndMakeVisible(modulatorList = new TableListBox("Modulator List", this));
-	modulatorList->setName(L"modulatorList");
-	modulatorList->getHeader().setStretchToFitActive(true);
-	modulatorList->setMultipleSelectionEnabled(true);
-	modulatorList->setHeaderHeight(20);
-
+	// 4. Restore settings and register listeners
 	if (owner.getProperty(Ids::panelModulatorListColumns).toString() != COMBO_ITEM_NONE) {
 		restoreColumns(owner.getProperty(Ids::panelModulatorListColumns));
 	} else {
@@ -43,10 +52,11 @@ CtrlrPanelModulatorList::~CtrlrPanelModulatorList() {
 
 	owner.removePanelListener(this);
 
+	// Keep this! We must unregister the listener before the object dies.
 	if (modulatorList != nullptr)
 		modulatorList->getHeader().removeListener(this);
 
-	deleteAndZero(modulatorList);
+	// deleteAndZero(modulatorList); // REMOVED! std::unique_ptr handles this automatically now.
 }
 
 void CtrlrPanelModulatorList::paint(Graphics &g) {}
@@ -222,46 +232,49 @@ void CtrlrPanelModulatorList::paintRowBackground(Graphics &g, int rowNumber, int
 	}
 }
 
-Component *CtrlrPanelModulatorList::refreshComponentForCell(int rowNumber, int columnId, bool isRowSelected,
-															Component *existingComponentToUpdate) {
+juce::Component *CtrlrPanelModulatorList::refreshComponentForCell(int rowNumber, int columnId, bool isRowSelected,
+																  juce::Component *existingComponentToUpdate) {
 	WeakReference<CtrlrModulator> m = copyOfModulatorList[rowNumber];
 
 	if (m.wasObjectDeleted() || m == nullptr) {
 		refresh();
-		return (nullptr);
+		return nullptr;
 	}
 
-	Label *label = (Label *)existingComponentToUpdate;
+	// 1. Safe modern cast (replaces dangerous legacy C-cast)
+	auto *label = dynamic_cast<juce::Label *>(existingComponentToUpdate);
 
-	if (label == 0) {
-		label = new Label();
-		label->setFont(Font(12));
+	// 2. Fixed legacy integer '0' check to modern nullptr
+	if (label == nullptr) {
+		label = new juce::Label();
+		label->setFont(juce::FontOptions(12.0f)); // Modern JUCE Font handling
 		label->setEditable(false, true, false);
-		label->setJustificationType(Justification::centred);
+		label->setJustificationType(juce::Justification::centred);
 		label->addMouseListener(this, false);
 
-		label->setColour(TextEditor::highlightColourId, findColour(TextEditor::highlightColourId));
-		label->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId));			  // Added v5.6.31
-		label->setColour(TextEditor::backgroundColourId, findColour(TextEditor::backgroundColourId)); // Added v5.6.31
-		label->setColour(TextEditor::highlightedTextColourId,
-						 findColour(TextEditor::highlightedTextColourId));						// Added v5.6.31
-		label->setColour(TextEditor::outlineColourId, findColour(TextEditor::outlineColourId)); // Added v5.6.31
-		label->setColour(TextEditor::focusedOutlineColourId,
-						 findColour(TextEditor::focusedOutlineColourId));					  // Added v5.6.31
-		label->setColour(TextEditor::shadowColourId, findColour(TextEditor::shadowColourId)); // Added v5.6.31
+		// UI Colour scheme initialization
+		label->setColour(juce::TextEditor::highlightColourId, findColour(juce::TextEditor::highlightColourId));
+		label->setColour(juce::TextEditor::textColourId, findColour(juce::TextEditor::textColourId));
+		label->setColour(juce::TextEditor::backgroundColourId, findColour(juce::TextEditor::backgroundColourId));
+		label->setColour(juce::TextEditor::highlightedTextColourId,
+						 findColour(juce::TextEditor::highlightedTextColourId));
+		label->setColour(juce::TextEditor::outlineColourId, findColour(juce::TextEditor::outlineColourId));
+		label->setColour(juce::TextEditor::focusedOutlineColourId,
+						 findColour(juce::TextEditor::focusedOutlineColourId));
+		label->setColour(juce::TextEditor::shadowColourId, findColour(juce::TextEditor::shadowColourId));
 	}
 
-	// label->setColour (Label::textColourId, isRowSelected ? Colours::white : Colours::black);
-	label->setColour(Label::textColourId, isRowSelected ? findColour(TextButton::textColourOnId)
-														: findColour(Label::textColourId)); // Added v5.6.31
-	label->setColour(Label::backgroundColourId, isRowSelected ? findColour(TextButton::buttonOnColourId)
-															  : findColour(Label::backgroundColourId)); // Added v5.6.31
+	// Row selection highlights
+	label->setColour(juce::Label::textColourId, isRowSelected ? findColour(juce::TextButton::textColourOnId)
+															  : findColour(juce::Label::textColourId));
+	label->setColour(juce::Label::backgroundColourId, isRowSelected ? findColour(juce::TextButton::buttonOnColourId)
+																	: findColour(juce::Label::backgroundColourId));
 
-	label->getTextValue().referTo(Value());
-	label->setText(getValueStringForColumn(m, getColumnCtrlrId(columnId - 1)), dontSendNotification);
-	label->getProperties().set("rowNumber", rowNumber);
+	// 3. Cleaned up text linking logic to avoid dynamic value collisions
 	label->getTextValue().referTo(getValueForColumn(m, getColumnCtrlrId(columnId - 1)));
-	return (label);
+	label->getProperties().set("rowNumber", rowNumber);
+
+	return label;
 }
 
 void CtrlrPanelModulatorList::sortOrderChanged(int newSortColumnId, bool isForwards) {

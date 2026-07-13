@@ -63,37 +63,41 @@ class ImageInfoComponent : public Component {
 // Definition of CtrlrPanelResourceEditor
 CtrlrPanelResourceEditor::CtrlrPanelResourceEditor(CtrlrPanelEditor &_owner)
 	: owner(_owner),
-	  resourceList(nullptr),
-	  add(nullptr),
-	  remove(nullptr),
-	  move(nullptr),
-	  reload(nullptr),
+	  //   resourceList(nullptr),
+	  //   add(nullptr),
+	  //   remove(nullptr),
+	  //   move(nullptr),
+	  //   reload(nullptr),
 	  sortByColumnId(1),
 	  sortForward(1),
 	  maxAspectRatioForStrip(50.0f) // Lower value will split small l/w ratios
 {
-	addAndMakeVisible(resourceList = new TableListBox("Resource List", this));
+	resourceList = std::make_unique<TableListBox>("Resource List", this);
+	addAndMakeVisible(resourceList.get());
 	resourceList->setName(L"resourceList");
 
-	addAndMakeVisible(add = new TextButton(L"new button"),
-					  -1); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/2025
+	add = std::make_unique<TextButton>(L"Add");
+	remove->setComponentID("-1"); // this was the second argument in JUCE 6, now illegal in JUCE 7+
+	addAndMakeVisible(add.get()); // Updated v5.6.33. Z index added. By @dnaldoog JG on 4/23/2025
 	add->setTooltip(L"Add new resources");
-	add->setButtonText(L"Add");
 	add->addListener(this);
 
-	addAndMakeVisible(remove = new TextButton(""), -1); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/2025
+	remove = std::make_unique<TextButton>(L"Remove");
+	remove->setComponentID("-1"); // this was the second argument in JUCE 6, now illegal in JUCE 7+
+	addAndMakeVisible(remove.get()); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/2025
 	remove->setTooltip(L"Remove selected resources");
-	remove->setButtonText(L"Remove");
 	remove->addListener(this);
 
-	addAndMakeVisible(move = new TextButton(""), -1); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/2025
-	move->setTooltip(L"Move resources to panel folder");
+	move = std::make_unique<TextButton>(L"Move resources to panel folder");
+	move->setComponentID("-1"); // this was the second argument in JUCE 6, now illegal in JUCE 7+
+	addAndMakeVisible(move.get()); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/2025
 	move->setButtonText(L"Move...");
 	move->addListener(this);
 
-	addAndMakeVisible(reload = new TextButton(""), -1); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/2025
+	reload = std::make_unique<TextButton>(L"Reload");
+	reload->setComponentID("-1"); // this was the second argument in JUCE 6, now illegal in JUCE 7+
+	addAndMakeVisible(reload.get()); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/2025
 	reload->setTooltip(L"Reload all resources");
-	reload->setButtonText(L"Reload");
 	reload->addListener(this);
 
 	tableFont = Font(Font::getDefaultSansSerifFontName(), 12.0f, Font::plain);
@@ -109,11 +113,11 @@ CtrlrPanelResourceEditor::CtrlrPanelResourceEditor(CtrlrPanelEditor &_owner)
 }
 
 CtrlrPanelResourceEditor::~CtrlrPanelResourceEditor() {
-	deleteAndZero(resourceList);
-	deleteAndZero(add);
-	deleteAndZero(remove);
-	deleteAndZero(move);
-	deleteAndZero(reload);
+	// deleteAndZero(resourceList);
+	// deleteAndZero(add);
+	// deleteAndZero(remove);
+	// deleteAndZero(move);
+	// deleteAndZero(reload);
 }
 
 void CtrlrPanelResourceEditor::paint(Graphics &g) {}
@@ -132,13 +136,13 @@ void CtrlrPanelResourceEditor::resized() // Updated v5.6.34. Thanks to @dobo365.
 }
 
 void CtrlrPanelResourceEditor::buttonClicked(Button *buttonThatWasClicked) {
-	if (buttonThatWasClicked == add) {
+	if (buttonThatWasClicked == add.get()) {
 		addResourceFromFile();
-	} else if (buttonThatWasClicked == remove) {
+	} else if (buttonThatWasClicked == remove.get()) {
 		deleteSelectedResources();
-	} else if (buttonThatWasClicked == move) {
+	} else if (buttonThatWasClicked == move.get()) {
 		moveResources();
-	} else if (buttonThatWasClicked == reload) {
+	} else if (buttonThatWasClicked == reload.get()) {
 		reloadAllResourcesFromSourceFiles();
 	}
 }
@@ -204,6 +208,89 @@ void CtrlrPanelResourceEditor::paintCell(Graphics &g, int rowNumber, int columnI
 }
 
 void CtrlrPanelResourceEditor::addResourceFromFile() {
+
+#if JUCE_VERSION >= 0x070000
+
+	{
+		// 1. Create the FileChooser on the HEAP (std::unique_ptr) so it survives the function scope
+		auto chooser = std::make_shared<FileChooser>(
+			"Resource file",
+			File(owner.getOwner().getCtrlrManagerOwner().getProperty(Ids::ctrlrLastBrowsedResourceDir)), "*.*",
+			owner.getOwner().getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs));
+
+		// 2. Launch it asynchronously
+		chooser->launchAsync(
+			FileBrowserComponent::openMode | FileBrowserComponent::canSelectMultipleItems,
+			[this, chooser](const FileChooser &fc) {
+				Array<File> filesToOpen = fc.getResults();
+				if (filesToOpen.isEmpty())
+					return; // User cancelled
+
+				// Update the last browsed directory using the first file
+				owner.getOwner().getCtrlrManagerOwner().setProperty(
+					Ids::ctrlrLastBrowsedResourceDir, filesToOpen[0].getParentDirectory().getFullPathName());
+
+				// 3. Define a helper lambda to process files sequentially to handle async overwrite dialogs safely
+				struct FileProcessor {
+						CtrlrPanelResourceEditor &editor;
+						Array<File> files;
+						int currentIndex = 0;
+
+						void processNext() {
+							if (currentIndex >= files.size()) {
+								editor.updateTable(); // All done! Refresh UI
+								return;
+							}
+
+							File currentFile = files[currentIndex];
+							bool overwriteAllowed = (bool)editor.owner.getOwner().getCtrlrManagerOwner().getProperty(
+								Ids::ctrlrOverwriteResources);
+
+							if (editor.getResourceManager().resourceExists(currentFile)) {
+								if (!overwriteAllowed) {
+									// Use your unified AlertWindowUtils helper instead of synchronous SURE
+									AlertWindowUtils::showOkCancelAsyncSafe(
+										"Overwrite Resource",
+										"Resource: " + currentFile.getFileNameWithoutExtension() +
+											" already exists. Overwrite?",
+										[this, currentFile](bool confirmed) {
+											if (confirmed) {
+												int index = editor.getResourceManager().getResourceIndex(
+													currentFile.getFileNameWithoutExtension());
+												if (index >= 0) {
+													editor.getResourceManager().removeResource(index);
+													editor.getResourceManager().addResource(currentFile);
+												}
+											}
+											currentIndex++;
+											processNext(); // Loop to next file asynchronously
+										});
+									return; // Halt execution loop here; the alert window takes over
+								} else {
+									// Overwrite is globally allowed
+									int index = editor.getResourceManager().getResourceIndex(
+										currentFile.getFileNameWithoutExtension());
+									if (index >= 0) {
+										editor.getResourceManager().removeResource(index);
+										editor.getResourceManager().addResource(currentFile);
+									}
+								}
+							} else {
+								// Safe to add directly
+								editor.getResourceManager().addResource(currentFile);
+							}
+
+							currentIndex++;
+							processNext();
+						}
+				};
+
+				// Instantiate and run the safe processing loop
+				auto processor = std::make_shared<FileProcessor>(FileProcessor{*this, filesToOpen, 0});
+				processor->processNext();
+			});
+	}
+#else
 	FileChooser fileChooser("Resource file",
 							File(owner.getOwner().getCtrlrManagerOwner().getProperty(Ids::ctrlrLastBrowsedResourceDir)),
 							"*.*", owner.getOwner().getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs));
@@ -237,6 +324,7 @@ void CtrlrPanelResourceEditor::addResourceFromFile() {
 	}
 
 	updateTable();
+#endif
 }
 
 void CtrlrPanelResourceEditor::deleteSelectedResources() {

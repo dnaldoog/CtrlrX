@@ -760,7 +760,7 @@ CtrlrFileProperty::CtrlrFileProperty(const Value &_valueToControl) : valueToCont
 	path->setColour(Label::backgroundColourId, findColour(ComboBox::backgroundColourId));
 	path->setColour(Label::outlineColourId, findColour(ComboBox::outlineColourId));
 
-	browse = std::make_unique<TextButton>("Browse", "Browse");
+	browse = std::make_unique<TextButton>(L"Browse");
 	addAndMakeVisible(browse.get());
 	browse->addListener(this);
 	// browse->setConnectedEdges (TextButton::ConnectedOnLeft);
@@ -1190,7 +1190,9 @@ void CtrlrLuaMethodProperty::refresh() {
 
 CtrlrModulatorListProperty::CtrlrModulatorListProperty(const Value &_valueToControl, CtrlrPanel *_owner)
 	: owner(_owner), valueToControl(_valueToControl) {
-	addAndMakeVisible(combo = new ComboBox(""));
+
+	combo = std::make_unique<ComboBox>("");
+	addAndMakeVisible(combo.get());
 	combo->setEditableText(false);
 	combo->setJustificationType(Justification::centredLeft);
 	combo->setTextWhenNothingSelected(COMBO_ITEM_NONE);
@@ -1265,7 +1267,6 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent(const Value &_v
 
 	// Create Remove button
 	removeMulti = std::unique_ptr<DrawableButton>(gui::createDrawableButton("Remove", BIN2STR(clear_svg)));
-
 	addAndMakeVisible(removeMulti.get());
 	removeMulti->setTooltip(L"Remove selected message");
 	removeMulti->addListener(this);
@@ -1292,12 +1293,13 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent(const Value &_v
 
 	// Create Help button
 	auto helpIcon = SvgIconManager::getDrawable(IconType::SolidQuest, *this);
-	helpMmidi = std::make_unique<DrawableButton>(juce::DrawableButton("Help", juce::DrawableButton::ImageFitted));
+	helpMmidi = std::make_unique<DrawableButton>("Help", DrawableButton::ImageFitted);
 	helpMmidi->setImages(helpIcon.release());
 	addAndMakeVisible(helpMmidi.get());
 	helpMmidi->setTooltip(L"Click to see Multi MIDI message syntax");
 	helpMmidi->addListener(this);
 	helpMmidi->setMouseCursor(MouseCursor::PointingHandCursor);
+	helpMmidi->setImages(helpIcon.release());
 
 	loadAdditionalTemplates(File());
 	setSize(256, 96);
@@ -1455,51 +1457,50 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button *buttonThatWasClicked
 		// 		});
 		// #else
 		// --- Legacy JUCE 6 Synchronous Approach ---
-		MyPopupHelper::showMenuAsyncSafe(m, this, [this](int ret)
+		MyPopupHelper::showMenuAsyncSafe(
+			m, this, [this, customId, templateKeys, standardStartId, standardTypes](int ret) {
+				if (ret <= 0)
+					return; // cancelled
 
-		if (ret <= 0)
-			return; // cancelled
+				if (ret == customId) // Custom editor
+				{
+					CtrlrSysexProcessor sysexProcessor;
+					// CRITICAL: Ensure this method does NOT trigger a synchronous modal loop!
+					String newCsv = sysexProcessor.openAdvancedMessageEditor();
 
-		if (ret == customId) // Custom editor
-		{
-			CtrlrSysexProcessor sysexProcessor;
-			String newCsv = sysexProcessor.openAdvancedMessageEditor();
-
-			if (newCsv.isNotEmpty()) {
-				String currentValue = valueToControl.toString();
-				if (currentValue.isNotEmpty())
-					valueToControl = currentValue + ":" + newCsv;
-				else
-					valueToControl = newCsv;
-				refresh();
-			}
-		} else if (ret <= templateKeys.size()) // XML template
-		{
-			String data = templates.getValue(templateKeys[ret - 1], "");
-			if (data.isNotEmpty()) {
-				String currentValue = valueToControl.toString();
-				if (currentValue.isNotEmpty())
-					valueToControl = currentValue + ":" + data;
-				else
-					valueToControl = data;
-				refresh();
-			}
-		} else // Standard MIDI type
-		{
-			int index = ret - standardStartId;
-			if (index >= 0 && index < numElementsInArray(standardTypes)) {
-				String currentValue = valueToControl.toString();
-				if (currentValue.isNotEmpty())
-					valueToControl = currentValue + ":" + standardTypes[index].defaultCsv;
-				else
-					valueToControl = standardTypes[index].defaultCsv;
-				refresh();
-			}
-		}
-		// #endif
-	}
-	// --- Added missing .get() calls down here to handle your unique_ptrs correctly ---
-	else if (buttonThatWasClicked == removeMulti.get()) {
+					if (newCsv.isNotEmpty()) {
+						String currentValue = valueToControl.toString();
+						if (currentValue.isNotEmpty())
+							valueToControl = currentValue + ":" + newCsv;
+						else
+							valueToControl = newCsv;
+						refresh();
+					}
+				} else if (ret <= templateKeys.size()) // XML template
+				{
+					String data = templates.getValue(templateKeys[ret - 1], "");
+					if (data.isNotEmpty()) {
+						String currentValue = valueToControl.toString();
+						if (currentValue.isNotEmpty())
+							valueToControl = currentValue + ":" + data;
+						else
+							valueToControl = data;
+						refresh();
+					}
+				} else // Standard MIDI type
+				{
+					int index = ret - standardStartId;
+					if (index >= 0 && index < numElementsInArray(standardTypes)) {
+						String currentValue = valueToControl.toString();
+						if (currentValue.isNotEmpty())
+							valueToControl = currentValue + ":" + standardTypes[index].defaultCsv;
+						else
+							valueToControl = standardTypes[index].defaultCsv;
+						refresh();
+					}
+				}
+			});
+	} else if (buttonThatWasClicked == removeMulti.get()) {
 		int selectedRow = listMulti->getSelectedRow();
 		if (selectedRow >= 0) {
 			StringArray temp;
@@ -1687,15 +1688,14 @@ CtrlrSysExEditor::CtrlrSysExEditor(Value &_val, CtrlrPanel *_owner) : val(_val),
 
 	// Length label
 	lengthLabel = std::make_unique<Label>("Length", "Length");
-	addAndMakeVisible(addTokenButton.get());
-	(lengthLabel.get());
+	addAndMakeVisible(lengthLabel.get());
 	lengthLabel->setFont(Font(14.0f, Font::bold));
 	lengthLabel->setJustificationType(Justification::centred);
 	lengthLabel->setEditable(true, true, true);
 	lengthLabel->addListener(this);
 
 	// Add Token button
-	addTokenButton = std::make_unique<TextButton>("Add Token");
+	addTokenButton = std::make_unique<TextButton>(L"Add Token");
 	addAndMakeVisible(addTokenButton.get());
 	addTokenButton->onClick = [this]() {
 		if (byteValueLabels.size() == 0) {
@@ -1882,8 +1882,7 @@ void CtrlrSysExEditor::showTokenMenuForLabel(Label *l) {
 	// const int ret = m.show(); JUCE 6
 	// 1. Call the helper function.
 	// 2. 'int ret' is generated automatically inside the parentheses below!
-MyPopupHelper::showMenuAsyncSafe(m, this, [this,l](int ret) 
-{
+	MyPopupHelper::showMenuAsyncSafe(m, this, [this, l](int ret) {
 		// --- Handle selection ---
 		if (ret == 1)
 			l->setText("yy", sendNotification);
@@ -1948,7 +1947,7 @@ MyPopupHelper::showMenuAsyncSafe(m, this, [this,l](int ret)
 			l->setText("tp", sendNotification);
 		else if (ret == 8193)
 			l->setText("tb", sendNotification);
-};
+	});
 }
 
 //==============================================================================
@@ -1976,7 +1975,7 @@ void CtrlrSysExEditor::setLength(const int newLength) {
 
 	rows.clear();
 	for (int i = 0; i <= byteValueLabels.size() / 16; i++) {
-		SysExRow *r = new SysExRow(i);
+		auto *r = new SysExRow(i);
 		addAndMakeVisible(r);
 		rows.add(r);
 	}
@@ -2014,27 +2013,31 @@ void SysExRow::paint(Graphics &g) {
 }
 void SysExRow::resized() {}
 
-CtrlrSysExFormulaEditor::CtrlrSysExFormulaEditor()
-	: forwardFormula(0), reverseFormula(0), forwardLabel(0), reverseLabel(0), label(0) {
-	addAndMakeVisible(forwardFormula = new CodeEditorComponent(forwardFormulaDocument, 0));
+CtrlrSysExFormulaEditor::CtrlrSysExFormulaEditor() {
+	forwardFormula = std::make_unique<CodeEditorComponent>(forwardFormulaDocument, nullptr);
+	addAndMakeVisible(forwardFormula.get());
 
-	addAndMakeVisible(reverseFormula = new CodeEditorComponent(reverseFormulaDocument, 0));
+	reverseFormula = std::make_unique<CodeEditorComponent>(reverseFormulaDocument, nullptr);
+	addAndMakeVisible(reverseFormula.get());
 
-	addAndMakeVisible(forwardLabel = new Label(L"forwardLabel", L"Forward"));
+	forwardLabel = std::make_unique<Label>(L"forwardLabel", L"Forward");
+	addAndMakeVisible(forwardLabel.get());
 	forwardLabel->setFont(Font(16.0000f, Font::plain));
 	forwardLabel->setJustificationType(Justification::centredLeft);
 	forwardLabel->setEditable(false, false, false);
 	forwardLabel->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId));
 	forwardLabel->setColour(TextEditor::backgroundColourId, findColour(TextEditor::backgroundColourId));
 
-	addAndMakeVisible(reverseLabel = new Label(L"reverseLabel", L"Reverse"));
+	reverseLabel = std::make_unique<Label>(L"reverseLabel", L"Reverse");
+	addAndMakeVisible(reverseLabel.get());
 	reverseLabel->setFont(Font(16.0000f, Font::plain));
 	reverseLabel->setJustificationType(Justification::centredLeft);
 	reverseLabel->setEditable(false, false, false);
 	reverseLabel->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId));
 	reverseLabel->setColour(TextEditor::backgroundColourId, findColour(TextEditor::backgroundColourId));
 
-	addAndMakeVisible(label = new Label(L"new label", L"SysEx Formula ()"));
+	label = std::make_unique<Label>(L"new label", L"SysEx Formula ()");
+	addAndMakeVisible(label.get());
 	label->setFont(Font(24.0000f, Font::plain));
 	label->setJustificationType(Justification::centred);
 	label->setEditable(false, false, false);
@@ -2054,11 +2057,11 @@ CtrlrSysExFormulaEditor::~CtrlrSysExFormulaEditor() {
 	//[Destructor_pre]. You can add your own custom destruction code here..
 	//[/Destructor_pre]
 
-	deleteAndZero(forwardFormula);
-	deleteAndZero(reverseFormula);
-	deleteAndZero(forwardLabel);
-	deleteAndZero(reverseLabel);
-	deleteAndZero(label);
+	// deleteAndZero(forwardFormula);
+	// deleteAndZero(reverseFormula);
+	// deleteAndZero(forwardLabel);
+	// deleteAndZero(reverseLabel);
+	// deleteAndZero(label);
 
 	//[Destructor]. You can add your own custom destruction code here..
 	//[/Destructor]
@@ -2090,7 +2093,8 @@ void CtrlrSysExFormulaEditor::resized() {
 CtrlrSysExPropertyComponent::CtrlrSysExPropertyComponent(const Value &_valueToControl, const ValueTree &_propertyTree,
 														 const Identifier &_propertyName, CtrlrPanel *_owner)
 	: valueToControl(_valueToControl), propertyTree(_propertyTree), propertyName(_propertyName), owner(_owner) {
-	addAndMakeVisible(sysexPreview = new Label(L"sysexPreview", L"F0 00 F7"));
+	sysexPreview = std::make_unique<Label>(L"sysexPreview", L"F0 00 F7");
+	addAndMakeVisible(sysexPreview.get());
 	sysexPreview->setFont(Font(Font::getDefaultMonospacedFontName(), 12.0000f, Font::plain));
 	sysexPreview->setJustificationType(Justification::centredLeft);
 	sysexPreview->setEditable(true, false, false);
@@ -2143,7 +2147,7 @@ void CtrlrSysExPropertyComponent::buttonClicked(Button *buttonThatWasClicked) {
 	if (buttonThatWasClicked == editButton.get()) {
 		DialogWindow::LaunchOptions o;
 
-		CtrlrSysExEditor *editor = new CtrlrSysExEditor(valueToControl, owner);
+		CtrlrSysExEditor *editor = new CtrlrSysExEditor(valueToControl, owner.get());
 		editor->addChangeListener(this);
 
 		if (propertyTree.hasType(Ids::midi) && propertyTree.getParent().hasType(Ids::modulator))
@@ -2184,7 +2188,8 @@ void CtrlrSysExPropertyComponent::buttonClicked(Button *buttonThatWasClicked) {
 void CtrlrSysExPropertyComponent::changeListenerCallback(ChangeBroadcaster *source) {
 	if (auto *editor = dynamic_cast<CtrlrSysExEditor *>(source)) {
 		valueToControl = editor->getValue();
-		sysexPreview->setText(valueToControl.toString(), dontSendNotification);
+		if (sysexPreview != nullptr)
+			sysexPreview->setText(valueToControl.toString(), dontSendNotification);
 	}
 }
 
@@ -2286,9 +2291,8 @@ void CtrlrTextPropertyComponent::setText(const String &newText) { textEditor->se
 String CtrlrTextPropertyComponent::getText() const { return textEditor->getText(); }
 
 void CtrlrTextPropertyComponent::createEditor(const int maxNumChars, const bool isMultiLine) {
-	addAndMakeVisible(
-		textEditor = new CtrlrTextPropLabel(*this, maxNumChars, isMultiLine,
-											useImprovedLegibility)); // Updated v5.6.34. useImprovedLegibility arg added
+	textEditor = std::make_unique<CtrlrTextPropLabel>(*this, maxNumChars, isMultiLine, useImprovedLegibility);
+	addAndMakeVisible(textEditor.get()); // Updated v5.6.34. useImprovedLegibility arg added
 
 	if (isMultiLine) {
 		textEditor->setJustificationType(Justification::topLeft);
@@ -2313,7 +2317,8 @@ void CtrlrTextPropertyComponent::refresh() {
 }
 
 CtrlrTimestampProperty::CtrlrTimestampProperty(const Value &_valueToControl) : valueToControl(_valueToControl) {
-	addAndMakeVisible(textEditor = new Label());
+	textEditor = std::make_unique<Label>();
+	addAndMakeVisible(textEditor.get());
 	textEditor->setColour(Label::backgroundColourId, Colours::white.withAlpha(0.2f));
 }
 

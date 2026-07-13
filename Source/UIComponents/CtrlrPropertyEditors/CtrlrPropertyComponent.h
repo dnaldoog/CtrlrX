@@ -510,45 +510,45 @@ class MultiMidiAlert : public AlertWindow // Updated v5.6.35. For Multi MIDI Mes
 };
 /********************New Class for JUCE Bubble native code********************************* */
 class BubbleConfigAlert : public AlertWindow {
-public:
-    BubbleConfigAlert(const String &currentTitle, const String &currentText, int currentTimeout)
-        : AlertWindow("Configure Tooltip Bubble", String(), AlertWindow::NoIcon) { // Fixed Base Class Call
-        
-        // Add text editor for the Bubble Header Title
-        addTextEditor("bubbleTitle", currentTitle, "Bubble Header/Title:", false);
+	public:
+		BubbleConfigAlert(const String &currentTitle, const String &currentText, int currentTimeout)
+			: AlertWindow("Configure Tooltip Bubble", String(), AlertWindow::NoIcon) { // Fixed Base Class Call
 
-        // Add a larger multi-line text editor for the actual help content
-        addTextEditor("bubbleText", currentText, "Help text description:", false);
-        if (auto *textEd = getTextEditor("bubbleText")) {
-            textEd->setMultiLine(true, true);
-            textEd->setReturnKeyStartsNewLine(true);
-        }
+			// Add text editor for the Bubble Header Title
+			addTextEditor("bubbleTitle", currentTitle, "Bubble Header/Title:", false);
 
-        // Add a text field for timeout duration (in milliseconds)
-        addTextEditor("bubbleTimeout", String(currentTimeout), "Display timeout (ms):", false);
+			// Add a larger multi-line text editor for the actual help content
+			addTextEditor("bubbleText", currentText, "Help text description:", false);
+			if (auto *textEd = getTextEditor("bubbleText")) {
+				textEd->setMultiLine(true, true);
+				textEd->setReturnKeyStartsNewLine(true);
+			}
+
+			// Add a text field for timeout duration (in milliseconds)
+			addTextEditor("bubbleTimeout", String(currentTimeout), "Display timeout (ms):", false);
 
 #if JUCE_VERSION >= 0x080000
-        // --- JUCE 8 Custom Button Bounds Layout Logic ---
-        addButton("Save Changes", 1, KeyPress(KeyPress::returnKey, 0, 0));
-        addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
-        setSize(500, 350);
+			// --- JUCE 8 Custom Button Bounds Layout Logic ---
+			addButton("Save Changes", 1, KeyPress(KeyPress::returnKey, 0, 0));
+			addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
+			setSize(500, 350);
 
-        if (auto *okBtn = getButton("Save Changes")) {
-            if (auto *cancelBtn = getButton("Cancel")) {
-                const int bW = 120, bH = 35, gap = 15;
-                const int totalWidth = (bW * 2) + gap;
-                const int startX = (getWidth() - totalWidth) / 2;
-                const int yPos = getHeight() - bH - 20;
-                okBtn->setBounds(startX, yPos, bW, bH);
-                cancelBtn->setBounds(startX + bW + gap, yPos, bW, bH);
-            }
-        }
+			if (auto *okBtn = getButton("Save Changes")) {
+				if (auto *cancelBtn = getButton("Cancel")) {
+					const int bW = 120, bH = 35, gap = 15;
+					const int totalWidth = (bW * 2) + gap;
+					const int startX = (getWidth() - totalWidth) / 2;
+					const int yPos = getHeight() - bH - 20;
+					okBtn->setBounds(startX, yPos, bW, bH);
+					cancelBtn->setBounds(startX + bW + gap, yPos, bW, bH);
+				}
+			}
 #else
-        // --- JUCE 6/7 Fallback Layout Engine ---
-        addButton("Save Changes", 1);
-        addButton("Cancel", 0);
+			// --- JUCE 6/7 Fallback Layout Engine ---
+			addButton("Save Changes", 1);
+			addButton("Cancel", 0);
 #endif
-    }
+		}
 };
 
 class CtrlrMultiMidiPropertyComponent : public Component,
@@ -675,8 +675,8 @@ class CtrlrSysExFormulaEditor : public Component {
 		//[/UserVariables]
 
 		//==============================================================================
-		CodeEditorComponent *forwardFormula;
-		CodeEditorComponent *reverseFormula;
+		std::unique_ptr<CodeEditorComponent> forwardFormula;
+		std::unique_ptr<CodeEditorComponent> reverseFormula;
 		std::unique_ptr<Label> forwardLabel;
 		std::unique_ptr<Label> reverseLabel;
 		std::unique_ptr<Label> label;

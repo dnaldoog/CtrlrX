@@ -12,8 +12,10 @@ class CtrlrPanelResourceManager;
 */
 class CtrlrPanelResource : public ValueTree::Listener {
 	public:
-		CtrlrPanelResource(CtrlrPanelResourceManager &_owner, const File &_resourceDataFile,
-						   const File &_resourceSourceFile, const String _resourceName = "");
+		// Inside CtrlrPanelResource.h
+		CtrlrPanelResource(CtrlrPanelResourceManager &_owner, const juce::File &_resourceDataFile,
+						   const juce::File &_resourceSourceFile,
+						   const juce::String &_resourceName = ""); // Default assignment
 		~CtrlrPanelResource();
 		void valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
 		void valueTreeChildrenChanged(ValueTree &treeWhoseChildHasChanged) {}

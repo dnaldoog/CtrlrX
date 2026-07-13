@@ -10,7 +10,7 @@ setlocal enabledelayedexpansion
 :: #cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCTRLRX_USE_LUAJIT=ON ..
 :: #cmake --build build
 set "BUILD_DIR=%USERPROFILE%\Documents\CtrlrX\build"
-set "PROCESSORS=%NUMBER_OF_PROCESSORS%"
+set "PROCESSORS=%PROCESSORS%"
 
 ::==============================================================================
 :: Bootstrap VS environment if cl.exe isn't already available

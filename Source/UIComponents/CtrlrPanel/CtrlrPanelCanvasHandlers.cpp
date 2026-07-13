@@ -80,7 +80,7 @@ void CtrlrPanelCanvas::handleRightClickOnCanvas(const MouseEvent &e) {
 	}
 
 #endif
-	PopupMenu m;
+	PopupMenu m; // This should be JUCE 6.0 compatible
 
 	if (em) {
 		m = CtrlrComponentTypeManager::getComponentMenu(em);
@@ -89,15 +89,18 @@ void CtrlrPanelCanvas::handleRightClickOnCanvas(const MouseEvent &e) {
 		m = getRightClickComponentMenu(e);
 	}
 
-	// const int ret = m.show(); // JUCE 6 code
-	MyPopupHelper::showMenuAsyncSafe(m, this, [this, e](int ret) {
+	// Explicitly make a local copy outside the lambda for absolute compatibility
+	PopupMenu menuCopy(m);
+
+	MyPopupHelper::showMenuAsyncSafe(m, this, [this, e, em, menuCopy](int ret) {
 		if (ret >= 4096) {
 			handleComponentPopupMenu(e, ret);
 		} else if (ret == 1024) {
 			getOwner().setProperty(Ids::uiPanelEditMode, !em);
 			getOwner().editModeChanged();
 		} else if (ret < 1024 && ret > 10) {
-			PopupMenu::MenuItemIterator iterator((const PopupMenu &)m);
+			// Use the captured copy safely
+			PopupMenu::MenuItemIterator iterator((const PopupMenu &)menuCopy);
 			while (iterator.next()) {
 				if (iterator.getItem().subMenu) {
 					PopupMenu::MenuItemIterator iterator2(*iterator.getItem().subMenu);

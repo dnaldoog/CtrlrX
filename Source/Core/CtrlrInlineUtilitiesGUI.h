@@ -43,42 +43,31 @@ class MyPopupHelper {
 		}
 };
 
-class AlertWindowUtils 
-{
-public:
-    /**
-        Safely shows an OK/Cancel question box across JUCE 6, 7, and 8.
-        
-        @param title       The header text of the alert window.
-        @param message     The body description text.
-        @param callback    A lambda/function executing with a boolean (true if user clicked OK).
-    */
-    static void showOkCancelAsyncSafe (const juce::String& title,
-                                       const juce::String& message,
-                                       std::function<void(bool)> callback)
-    {
+class AlertWindowUtils {
+	public:
+		/**
+			Safely shows an OK/Cancel question box across JUCE 6, 7, and 8.
+
+			@param title       The header text of the alert window.
+			@param message     The body description text.
+			@param callback    A lambda/function executing with a boolean (true if user clicked OK).
+		*/
+		static void showOkCancelAsyncSafe(const juce::String &title, const juce::String &message,
+										  std::function<void(bool)> callback) {
 #if JUCE_VERSION >= 0x070000
-        // --- Modern JUCE 7/8 Asynchronous Execution ---
-        juce::AlertWindow::showOkCancelBoxAsync (
-            juce::AlertWindow::QuestionIcon,
-            title,
-            message,
-            "OK", "Cancel", nullptr,
-            [callback](int result) {
-                // JUCE 7/8 returns 1 for the first button (OK), 0 for cancel/escaped
-                callback(result == 1);
-            }
-        );
+			// --- Modern JUCE 7/8 Asynchronous Execution ---
+			auto alertWindow = std::make_unique<juce::AlertWindow>(title, message, juce::AlertWindow::QuestionIcon);
+			alertWindow->addButton("OK", 1);
+			alertWindow->addButton("Cancel", 0);
+
+			alertWindow->enterModalState(
+				true, juce::ModalCallbackFunction::create([callback](int result) { callback(result == 1); }), true);
 #else
-        // --- Legacy JUCE 6 Synchronous Execution ---
-        bool confirmed = juce::AlertWindow::showOkCancelBox (
-            juce::AlertWindow::QuestionIcon,
-            title,
-            message
-        );
-        callback(confirmed); // Trigger the logic immediately with the true/false result
+			// --- Legacy JUCE 6 Synchronous Execution ---
+			bool confirmed = juce::AlertWindow::showOkCancelBox(juce::AlertWindow::QuestionIcon, title, message);
+			callback(confirmed); // Trigger the logic immediately with the true/false result
 #endif
-    }
+		}
 };
 
 namespace gui {

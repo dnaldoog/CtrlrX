@@ -12,7 +12,8 @@
 */
 
 CtrlrPanelResource::CtrlrPanelResource(CtrlrPanelResourceManager &_owner, const File &_resourceDataFile,
-									   const File &_resourceSourceFile, const String _resourceName)
+									   const File &_resourceSourceFile,
+									   const String &_resourceName) // Match the const String& signature
 	: resourceDataFile(_resourceDataFile),
 	  resourceHashCode(0),
 	  resourceLoaded(false),
@@ -207,4 +208,13 @@ const String CtrlrPanelResource::asGzipText() {
 
 	// Read the decompressed content as string
 	return gzipStream.readEntireStreamAsString();
+}
+int64 CtrlrPanelResource::computeContentHash (const File &f)
+{
+    if (! f.existsAsFile() || f.getSize() == 0)
+        return 0;
+
+    MemoryBlock data;
+    f.loadFileAsData (data);
+    return data.toBase64Encoding().hashCode64();
 }
