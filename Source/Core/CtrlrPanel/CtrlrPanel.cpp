@@ -241,23 +241,22 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 }
 
 CtrlrPanel::~CtrlrPanel() {
+	// 1. Remove from the parent tree FIRST so listeners fire
+	// while the panel's internal data is still 100% intact and valid.
+	owner.getManagerTree().removeChild(panelTree, 0);
+
+	// 2. Shut down threads safely
 	midiInputThread.signalThreadShouldExit();
 	midiInputThread.waitForThreadToExit(1200);
 	midiControllerInputThread.signalThreadShouldExit();
 	midiControllerInputThread.waitForThreadToExit(1200);
 
 	masterReference.clear();
-
 	panelTree.removeListener(this);
-
-	// if (ctrlrLuaManager)
-	// deleteAndZero (ctrlrLuaManager);
-
 	owner.removeChangeListener(this);
 
+	// 3. Clear everything else out
 	ctrlrModulators.clear();
-
-	owner.getManagerTree().removeChild(panelTree, 0);
 }
 
 void CtrlrPanel::setRestoreState(const bool _restoreStateStatus) {
@@ -1014,9 +1013,13 @@ void CtrlrPanel::setProgram(ValueTree programTree, const bool sendSnapshotNow) {
 			snapshot.sendSnapshot();
 		}
 
-		if (luaPanelProgramChangedCbk && !luaPanelProgramChangedCbk.wasObjectDeleted()) {
-			if (luaPanelProgramChangedCbk->isValid()) {
-				getCtrlrLuaManager().getMethodManager().call(luaPanelProgramChangedCbk);
+		// --- DEFENSIVE CRASH FIX ---
+		// Ensure the Lua manager is fully alive and ready before evaluating callbacks
+		if (getCtrlrLuaManager().getLuaState() != nullptr) {
+			if (luaPanelProgramChangedCbk && !luaPanelProgramChangedCbk.wasObjectDeleted()) {
+				if (luaPanelProgramChangedCbk->isValid()) {
+					getCtrlrLuaManager().getMethodManager().call(luaPanelProgramChangedCbk);
+				}
 			}
 		}
 	}

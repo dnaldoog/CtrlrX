@@ -2147,7 +2147,7 @@ void CtrlrSysExPropertyComponent::buttonClicked(Button *buttonThatWasClicked) {
 	if (buttonThatWasClicked == editButton.get()) {
 		DialogWindow::LaunchOptions o;
 
-		CtrlrSysExEditor *editor = new CtrlrSysExEditor(valueToControl, owner.get());
+		CtrlrSysExEditor *editor = new CtrlrSysExEditor(valueToControl, owner);
 		editor->addChangeListener(this);
 
 		if (propertyTree.hasType(Ids::midi) && propertyTree.getParent().hasType(Ids::modulator))

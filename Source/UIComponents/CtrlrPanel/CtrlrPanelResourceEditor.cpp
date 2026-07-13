@@ -77,25 +77,25 @@ CtrlrPanelResourceEditor::CtrlrPanelResourceEditor(CtrlrPanelEditor &_owner)
 	resourceList->setName(L"resourceList");
 
 	add = std::make_unique<TextButton>(L"Add");
-	remove->setComponentID("-1"); // this was the second argument in JUCE 6, now illegal in JUCE 7+
-	addAndMakeVisible(add.get()); // Updated v5.6.33. Z index added. By @dnaldoog JG on 4/23/2025
+	addAndMakeVisible(add.get());
 	add->setTooltip(L"Add new resources");
 	add->addListener(this);
 
+	// Instantiate REMOVE first before using it!
 	remove = std::make_unique<TextButton>(L"Remove");
-	remove->setComponentID("-1"); // this was the second argument in JUCE 6, now illegal in JUCE 7+
-	addAndMakeVisible(remove.get()); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/2025
+	remove->setComponentID("-1");
+	addAndMakeVisible(remove.get());
 	remove->setTooltip(L"Remove selected resources");
 	remove->addListener(this);
 
 	move = std::make_unique<TextButton>(L"Move resources to panel folder");
-	move->setComponentID("-1"); // this was the second argument in JUCE 6, now illegal in JUCE 7+
+	move->setComponentID("-1");	   // this was the second argument in JUCE 6, now illegal in JUCE 7+
 	addAndMakeVisible(move.get()); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/2025
 	move->setButtonText(L"Move...");
 	move->addListener(this);
 
 	reload = std::make_unique<TextButton>(L"Reload");
-	reload->setComponentID("-1"); // this was the second argument in JUCE 6, now illegal in JUCE 7+
+	reload->setComponentID("-1");	 // this was the second argument in JUCE 6, now illegal in JUCE 7+
 	addAndMakeVisible(reload.get()); // Updated v5.6.33. Z index added. By @dnladoog JG on 4/23/2025
 	reload->setTooltip(L"Reload all resources");
 	reload->addListener(this);

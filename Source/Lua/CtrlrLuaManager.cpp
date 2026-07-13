@@ -1364,8 +1364,8 @@ void CtrlrLuaMultiTimer::timerCallback(int timerId) {
 				cb.isValid = false;
 
 				callbacks.set(timerId, cb);
-}
 			}
+		}
 	}
 }
 const bool CtrlrLuaMultiTimer::isRegistered(const int timerId) { return (callbacks.contains(timerId)); }

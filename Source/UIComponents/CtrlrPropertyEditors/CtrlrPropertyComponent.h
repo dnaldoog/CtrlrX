@@ -390,7 +390,7 @@ class CtrlrLuaMethodProperty : public Component,
 		Value valueToControl;
 		Identifier id;
 		String propertyName;
-		std::unique_ptr<CtrlrPanel> owner;
+		CtrlrPanel *owner;
 		std::unique_ptr<ComboBox> methodSelectorCombo;
 		std::unique_ptr<DrawableButton> editMethodButton;
 		std::unique_ptr<DrawableButton> newMethodButton;
@@ -413,7 +413,7 @@ class CtrlrModulatorListProperty : public CtrlrPropertyChild,
 		void listChanged();
 
 	private:
-		std::unique_ptr<CtrlrPanel> owner;
+		CtrlrPanel *owner;
 		Value valueToControl;
 		StringArray choices;
 		std::unique_ptr<ComboBox> combo;
@@ -638,7 +638,7 @@ class CtrlrSysExEditor : public Component, public Slider::Listener, public Label
 
 	private:
 		Value val;
-		std::unique_ptr<CtrlrPanel> owner;
+		CtrlrPanel *owner;
 		StringArray splitMessage;
 		OwnedArray<Label> byteValueLabels;
 		OwnedArray<SysExRow> rows;
@@ -711,7 +711,7 @@ class CtrlrSysExPropertyComponent : public Component,
 		std::unique_ptr<DrawableButton> paste;
 		ValueTree propertyTree;
 		Identifier propertyName;
-		std::unique_ptr<CtrlrPanel> owner;
+		CtrlrPanel *owner;
 };
 
 class CtrlrTextPropertyComponent : public Component, public CtrlrPropertyChild {
