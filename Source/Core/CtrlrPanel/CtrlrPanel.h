@@ -1,5 +1,21 @@
 #pragma once
+#include <JuceHeader.h>
+// Force the build system to parse JUCE definitions and namespaces first
+#ifdef JUCE_APP_CONFIG_HEADER
+ #include JUCE_APP_CONFIG_HEADER
+#elif defined(JucePlugin_Build_VST) || defined(JucePlugin_Build_AU) || defined(JUCE_SHARED_CODE) || 1
+ #include <JuceHeader.h>
+#endif
 
+#include "MIDI/CtrlrOwnedMidiMessage.h"
+#include "CtrlrLuaObject.h"
+
+// Core JUCE modules required for this file
+#include <juce_audio_basics/juce_audio_basics.h> // For MidiMessage, MidiBuffer
+#include <juce_core/juce_core.h>				 // For ValueTree, String, Identifier, Result
+#include <juce_gui_basics/juce_gui_basics.h>	 // For ChangeListener, AsyncUpdater, LookAndFeel
+
+// Other CtrlrX dependencies
 #include "CtrlrApplicationWindow/CtrlrEditor.h"
 #include "CtrlrEvaluationScopes.h"
 #include "CtrlrLuaObject.h"
@@ -7,6 +23,7 @@
 #include "CtrlrMIDIDeviceManager.h"
 #include "CtrlrMacros.h"
 #include "CtrlrMidiInputComparator.h"
+#include "CtrlrOwnedMidiMessage.h"
 #include "CtrlrPanel/CtrlrPanelCanvasLayer.h" // Added v5.6.34
 #include "CtrlrPanelMIDIInputThread.h"
 #include "CtrlrPanelMIDISnapshot.h"
@@ -48,12 +65,12 @@ class CtrlrFixedSlider;
 /** @brief Class that represents a Ctrlr Panel
 
 */
-class CtrlrPanel : public ValueTree::Listener,
-				   public ChangeListener,
+class CtrlrPanel : public juce::ValueTree::Listener,
+				   public juce::ChangeListener,
 				   public CtrlrLuaObject,
-				   public AsyncUpdater,
+				   public juce::AsyncUpdater,
 				   public CtrlrMidiMessageOwner,
-				   public LookAndFeel_V4 {
+				   public juce::LookAndFeel_V4 {
 	public:
 		/** @brief When saving a panel this tells the LUA callback what sort of format is beeing saved
 
@@ -127,14 +144,14 @@ class CtrlrPanel : public ValueTree::Listener,
 		std::string CtrlrMidiMessage_toString(CtrlrMidiMessage *msg);			// Added v5.6.35
 
 		void sendMidi(const MidiBuffer &buffer, double millisecondCounterToStartAt = 0);
-		void sendMidi(const MidiMessage &message, double millisecondCounterToStartAt = 0);
+		void sendMidi(const juce::MidiMessage &message, double millisecondCounterToStartAt = 0);
 		void sendMidi(CtrlrMidiMessage &m, double millisecondCounterToStartAt = 0);
 		void sendMidiNow(CtrlrMidiMessage &midiMessage);
 		bool isMidiOutPaused();
 		bool isMidiInPaused();
 
 		void queueMessageForHostOutput(const CtrlrMidiMessage &m);
-		void queueMessageForHostOutput(const MidiMessage &message);
+		void queueMessageForHostOutput(const juce::MidiMessage &message);
 		void queueMessagesForHostOutput(const MidiBuffer &messages);
 
 		void setMidiChannelToAllModulators(const int newChannel);
@@ -217,7 +234,7 @@ class CtrlrPanel : public ValueTree::Listener,
 				virtual void modulatorAdded(CtrlrModulator *) {}
 				virtual void modulatorRemoved(CtrlrModulator *) {}
 				virtual void panelChanged(CtrlrPanel *) {}
-				virtual void midiReceived(MidiMessage &, CtrlrMIDIDeviceType source = inputDevice) {}
+				virtual void midiReceived(juce::MidiMessage &, CtrlrMIDIDeviceType source = inputDevice) {}
 		};
 
 		void setRadioGroupId(CtrlrComponent *componentMember, const int groupId);

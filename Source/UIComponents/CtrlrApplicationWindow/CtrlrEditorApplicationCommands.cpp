@@ -70,13 +70,15 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 							 doRegisterExtension,
 							 doKeyGenerator,
 							 doProgramWizard,
-							 doQuit,
+							 doQuit
+							 #if 0
 							 showDumpByLuaHelp,
 							 showExpressionHelp,
 							 showMidiProgrammingHelp,
 							 showLuaUsefulCommandsHelp,
 							 showLuaFileOperationsHelp,
 							 showMenuLuaClassBrowser
+							 #endif
 
 	};
 
@@ -167,6 +169,7 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 		result.setInfo("About", "About CTRLR", globalCategory, 0);
 		result.addDefaultKeypress('a', ModifierKeys::commandModifier);
 		break;
+#if 0
 	case showDumpByLuaHelp:
 		result.setInfo("Bulk Dump by Lua Help", "Show help reading/writing Dumps to panel", globalCategory, 0);
 		result.addDefaultKeypress('b', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
@@ -178,13 +181,7 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 
 		break;
 
-	case showKeyboardMappingDialog:
-		result.setInfo("Keyboard mapping", "Change default keyboard mappings", globalCategory, 0);
-		if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
-		{
-			result.addDefaultKeypress('k', ModifierKeys::commandModifier);
-		}
-		break;
+
 	case showMidiProgrammingHelp:
 		result.setInfo("MIDI programming Help", "Show help for MIDI programming", globalCategory, 0);
 		result.addDefaultKeypress('m', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
@@ -203,6 +200,14 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 	case showMenuLuaClassBrowser:
 		result.setInfo("Browse class API", "Select lua class API", globalCategory, 0);
 		result.addDefaultKeypress('c', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
+		break;
+#endif
+	case showKeyboardMappingDialog:
+		result.setInfo("Keyboard mapping", "Change default keyboard mappings", globalCategory, 0);
+		if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
+		{
+			result.addDefaultKeypress('k', ModifierKeys::commandModifier);
+		}
 		break;
 
 	case doViewPropertyDisplayIDs:
