@@ -394,7 +394,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		CtrlrPanelProcessor processor;
 		CtrlrPanelMIDISnapshot snapshot;
 		CtrlrMIDIDevice *outputDevicePtr;
-		CtrlrPanelUndoManager* ctrlrPanelUndoManager;
+		std::unique_ptr <CtrlrPanelUndoManager> ctrlrPanelUndoManager;
 		CtrlrPanelEvaluationScope panelEvaluationScope;
 		CtrlrGlobalEvaluationScope globalEvaluationScope;
 		Array<int, CriticalSection> panelResources;

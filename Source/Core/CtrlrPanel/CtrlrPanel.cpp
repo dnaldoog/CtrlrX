@@ -900,7 +900,7 @@ const String CtrlrPanel::getUniqueModulatorName(const String &proposedName) {
 }
 
 void CtrlrPanel::changeListenerCallback(ChangeBroadcaster *source) {
-	if (source == ctrlrPanelUndoManager) {
+	if (source == ctrlrPanelUndoManager.get()) {
 		Array<const UndoableAction *> actions;
 		ctrlrPanelUndoManager->getActionsInCurrentTransaction(actions);
 	} else {
@@ -1858,20 +1858,18 @@ bool CtrlrPanel::isLoading() {
 	return false;
 }
 
-    void CtrlrPanel::setLookAndFeel(LookAndFeel* newLookAndFeel) // Added JUCE 8
-    {
-        // JUCE's Component::setLookAndFeel is protected, so we need to cast to Component.
-        // CtrlrPanel inherits from juce::LookAndFeel_V4, but not from Component directly.
-        // If CtrlrPanel is not a Component, you must set the LookAndFeel on the editor or canvas.
-        // If you want to set the LookAndFeel for the editor, you can do:
-        if (ctrlrPanelEditor != nullptr)
-        {
-            ctrlrPanelEditor->setLookAndFeel(newLookAndFeel);
-        }
-        // If you want to set it for the canvas:
-        else if (getCanvas() != nullptr)
-        {
-            getCanvas()->setLookAndFeel(newLookAndFeel);
-        }
-        // Otherwise, do nothing.
-    }
+void CtrlrPanel::setLookAndFeel(LookAndFeel *newLookAndFeel) // Added JUCE 8
+{
+	// JUCE's Component::setLookAndFeel is protected, so we need to cast to Component.
+	// CtrlrPanel inherits from juce::LookAndFeel_V4, but not from Component directly.
+	// If CtrlrPanel is not a Component, you must set the LookAndFeel on the editor or canvas.
+	// If you want to set the LookAndFeel for the editor, you can do:
+	if (ctrlrPanelEditor != nullptr) {
+		ctrlrPanelEditor->setLookAndFeel(newLookAndFeel);
+	}
+	// If you want to set it for the canvas:
+	else if (getCanvas() != nullptr) {
+		getCanvas()->setLookAndFeel(newLookAndFeel);
+	}
+	// Otherwise, do nothing.
+}
