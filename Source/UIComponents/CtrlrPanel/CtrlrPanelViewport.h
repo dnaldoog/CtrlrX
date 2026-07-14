@@ -31,12 +31,12 @@ class CtrlrMagnifierComponent : public Component {
 			transform();
 		}
 
-void setViewedComponent(std::unique_ptr<Component> content_) {
-    removeAllChildren();
-    content = std::move(content_);      // Actually assign the new content
-    addAndMakeVisible(*content);        // Dereference unique_ptr to pass reference
-    childBoundsChanged(content.get());  // Get raw pointer from unique_ptr
-}
+		void setViewedComponent(std::unique_ptr<Component> content_) {
+			removeAllChildren();
+			content = std::move(content_);	   // Actually assign the new content
+			addAndMakeVisible(*content);	   // Dereference unique_ptr to pass reference
+			childBoundsChanged(content.get()); // Get raw pointer from unique_ptr
+		}
 
 		void transform() {
 			const Rectangle<int> childArea(getLocalArea(content.get(), content->getLocalBounds()));
@@ -101,7 +101,8 @@ class CtrlrPanelViewport : public Component {
 	public:
 		CtrlrPanelViewport(CtrlrPanelEditor &_owner);
 		~CtrlrPanelViewport();
-		CtrlrPanelCanvas *getCanvas(const int canvasIndex = 0) { return (canvasList[canvasIndex]); }
+		// CtrlrPanelCanvas *getCanvas(const int canvasIndex = 0) { return (canvasList[canvasIndex]); }
+		CtrlrPanelCanvas *getCanvas(const int canvasIndex = 0); // definition moved to CtrlrPanelViewport.cpp for JUCE 8
 		CtrlrPanelEditor &getOwner() { return (owner); }
 		CtrlrMagnifierComponent *getMagnifier() { return (magnifier); }
 		void setZoom(const double zoom, int anchorX, int anchorY);

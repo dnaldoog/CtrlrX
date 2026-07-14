@@ -8,171 +8,152 @@
 #include <cmath>
 #endif
 
-class CtrlrApplication : public JUCEApplication
-{
-public:
-	CtrlrApplication() : filterWindow(nullptr) {}
+class CtrlrApplication : public JUCEApplication {
+	public:
+		CtrlrApplication() : filterWindow(nullptr) {}
 
-	static void crashHandler()
-	{
-		if (JUCEApplication::isStandaloneApp())
-		{
-			MemoryBlock mb(SystemStats::getStackBacktrace().toUTF8(), SystemStats::getStackBacktrace().length());
-			File::getSpecialLocation(File::currentApplicationFile)
-				.startAsProcess("--crashReport=\"" +
-								File::getSpecialLocation(File::currentApplicationFile).getFullPathName() +
-								"\" --stackTrace=\"" + mb.toBase64Encoding() + "\"");
-		}
-		else
-		{
-			const String stackTrace = SystemStats::getStackBacktrace();
-			File crashFile(File::getSpecialLocation(File::currentApplicationFile).getFileExtension() + ".crash");
+		static void crashHandler() {
+			if (JUCEApplication::isStandaloneApp()) {
+				MemoryBlock mb(SystemStats::getStackBacktrace().toUTF8(), SystemStats::getStackBacktrace().length());
+				File::getSpecialLocation(File::currentApplicationFile)
+					.startAsProcess("--crashReport=\"" +
+									File::getSpecialLocation(File::currentApplicationFile).getFullPathName() +
+									"\" --stackTrace=\"" + mb.toBase64Encoding() + "\"");
+			} else {
+				const String stackTrace = SystemStats::getStackBacktrace();
+				File crashFile(File::getSpecialLocation(File::currentApplicationFile).getFileExtension() + ".crash");
 
 #if JUCE_VERSION >= 0x070000
-			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Ctrlr has crashed",
-											 "Looks like Ctrlr has crashed, since this is not a standalone instance, we won't do anything.\
+				AlertWindow::showMessageBoxAsync(
+					AlertWindow::WarningIcon, "Ctrlr has crashed",
+					"Looks like Ctrlr has crashed, since this is not a standalone instance, we won't do anything.\
 																		A crash log will be written to " +
-												 crashFile.getFullPathName() + "\n\n" + stackTrace);
+						crashFile.getFullPathName() + "\n\n" + stackTrace);
 #else
-			AlertWindow::showMessageBox(
-				AlertWindow::WarningIcon, "Ctrlr has crashed",
-				"Looks like Ctrlr has crashed, since this is not a standalone instance, we won't do anything.\
+				AlertWindow::showMessageBox(
+					AlertWindow::WarningIcon, "Ctrlr has crashed",
+					"Looks like Ctrlr has crashed, since this is not a standalone instance, we won't do anything.\
 														A crash log will be written to " +
-					crashFile.getFullPathName() + "\n\n" + stackTrace);
+						crashFile.getFullPathName() + "\n\n" + stackTrace);
 #endif
-			crashFile.replaceWithText("Ctrlr crash at: " + Time::getCurrentTime().toString(true, true, true, true) +
-									  "\nStack trace:\n" + stackTrace);
-		}
-	}
-
-	const StringArray getParameters(const String &cli)
-	{
-		StringArray tokens;
-		StringArray ret;
-		tokens.addTokens(cli, " ", "\'\"");
-
-		for (int i = 0; i < tokens.size(); i++)
-		{
-			ret.add(tokens[i].fromFirstOccurrenceOf("--", false, false).upToFirstOccurrenceOf("=", false, true));
+				crashFile.replaceWithText("Ctrlr crash at: " + Time::getCurrentTime().toString(true, true, true, true) +
+										  "\nStack trace:\n" + stackTrace);
+			}
 		}
 
-		return (ret);
-	}
+		const StringArray getParameters(const String &cli) {
+			StringArray tokens;
+			StringArray ret;
+			tokens.addTokens(cli, " ", "\'\"");
 
-	const StringArray getParameterValues(const String &cli)
-	{
-		StringArray tokens;
-		StringArray ret;
-		tokens.addTokens(cli, " ", "\'\"");
+			for (int i = 0; i < tokens.size(); i++) {
+				ret.add(tokens[i].fromFirstOccurrenceOf("--", false, false).upToFirstOccurrenceOf("=", false, true));
+			}
 
-		for (int i = 0; i < tokens.size(); i++)
-		{
-			ret.add(tokens[i].fromFirstOccurrenceOf("=", false, false).unquoted().trim());
+			return (ret);
 		}
 
-		return (ret);
-	}
+		const StringArray getParameterValues(const String &cli) {
+			StringArray tokens;
+			StringArray ret;
+			tokens.addTokens(cli, " ", "\'\"");
 
-	void initialise(const String &commandLineParameters)
-	{
-		Logger::writeToLog("CTRLR:initialise params \"" + commandLineParameters + "\"");
+			for (int i = 0; i < tokens.size(); i++) {
+				ret.add(tokens[i].fromFirstOccurrenceOf("=", false, false).unquoted().trim());
+			}
+
+			return (ret);
+		}
+
+		void initialise(const String &commandLineParameters) {
+			Logger::writeToLog("CTRLR:initialise params \"" + commandLineParameters + "\"");
 
 #if JUCE_LINUX
-		const double linuxScale = ctrlrx_get_linux_scale_factor();
-		if (std::abs(linuxScale - 1.0) > 0.001)
-			Desktop::getInstance().setGlobalScaleFactor((float)linuxScale);
+			const double linuxScale = ctrlrx_get_linux_scale_factor();
+			if (std::abs(linuxScale - 1.0) > 0.001)
+				Desktop::getInstance().setGlobalScaleFactor((float)linuxScale);
 
-		Logger::writeToLog("CTRLR:linux scale factor \"" + String(linuxScale, 3) + "\"");
+			Logger::writeToLog("CTRLR:linux scale factor \"" + String(linuxScale, 3) + "\"");
 #endif
 
-		{
-			bool setcrashhandler = true;
-			if (!commandLineParameters.isEmpty())
 			{
-				String stackTrace = "?";
-				StringArray parameters = getParameters(commandLineParameters);
-				StringArray parameterValues = getParameterValues(commandLineParameters);
+				bool setcrashhandler = true;
+				if (!commandLineParameters.isEmpty()) {
+					String stackTrace = "?";
+					StringArray parameters = getParameters(commandLineParameters);
+					StringArray parameterValues = getParameterValues(commandLineParameters);
 
-				if (parameters.contains("crashReport"))
-				{
-					File crashReportForExec(parameterValues[parameters.indexOf("crashReport")]);
-					File crashReportFile(
-						crashReportForExec.withFileExtension(crashReportForExec.getFileExtension() + ".crash"));
-					AlertWindow crashReport("Ctrlr has crashed",
-											"This is a crash indicator, it means that Ctrlr has crashed for some "
-											"reason. Some crash information will be written to: " +
-												crashReportFile.getFullPathName(),
-											AlertWindow::WarningIcon);
+					if (parameters.contains("crashReport")) {
+						File crashReportForExec(parameterValues[parameters.indexOf("crashReport")]);
+						File crashReportFile(
+							crashReportForExec.withFileExtension(crashReportForExec.getFileExtension() + ".crash"));
+						AlertWindow crashReport("Ctrlr has crashed",
+												"This is a crash indicator, it means that Ctrlr has crashed for some "
+												"reason. Some crash information will be written to: " +
+													crashReportFile.getFullPathName(),
+												AlertWindow::WarningIcon);
 
-					if (parameters.contains("stackTrace"))
-					{
-						if (!parameterValues[parameters.indexOf("stackTrace")].isEmpty())
-						{
-							MemoryBlock mb;
-							mb.fromBase64Encoding(parameterValues[parameters.indexOf("stackTrace")]);
-							stackTrace = mb.toString();
-							crashReport.addTextBlock(stackTrace);
+						if (parameters.contains("stackTrace")) {
+							if (!parameterValues[parameters.indexOf("stackTrace")].isEmpty()) {
+								MemoryBlock mb;
+								mb.fromBase64Encoding(parameterValues[parameters.indexOf("stackTrace")]);
+								stackTrace = mb.toString();
+								crashReport.addTextBlock(stackTrace);
+							}
 						}
+						crashReport.addButton("OK", 1, KeyPress(KeyPress::returnKey));
+						crashReport.runModalLoop();
+
+						crashReportFile.replaceWithText(
+							"Ctrlr crash at: " + Time::getCurrentTime().toString(true, true, true, true) +
+							"\nStack trace:\n" + stackTrace);
+
+						JUCEApplication::quit();
 					}
-					crashReport.addButton("OK", 1, KeyPress(KeyPress::returnKey));
-					crashReport.runModalLoop();
-
-					crashReportFile.replaceWithText(
-						"Ctrlr crash at: " + Time::getCurrentTime().toString(true, true, true, true) +
-						"\nStack trace:\n" + stackTrace);
-
-					JUCEApplication::quit();
 				}
+				// Set the crash handler only, if no crash is reported.
+				if (setcrashhandler)
+					SystemStats::setApplicationCrashHandler(
+						(juce::SystemStats::CrashHandlerFunction)&CtrlrApplication::crashHandler);
 			}
-			// Set the crash handler only, if no crash is reported.
-			if (setcrashhandler)
-				SystemStats::setApplicationCrashHandler(
-					(juce::SystemStats::CrashHandlerFunction)&CtrlrApplication::crashHandler);
+
+			filterWindow = new CtrlrStandaloneWindow(
+				ProjectInfo::projectName + String("/") + ProjectInfo::versionString, Colours::lightgrey);
+
+			if (File::isAbsolutePath(commandLineParameters.unquoted()))
+				filterWindow->openFileFromCli(File(commandLineParameters.unquoted()));
 		}
 
-		filterWindow = new CtrlrStandaloneWindow(
-			ProjectInfo::projectName + String("/") + ProjectInfo::versionString, Colours::lightgrey);
+		void shutdown() {
+			juce::PopupMenu::dismissAllActiveMenus();
 
-		if (File::isAbsolutePath(commandLineParameters.unquoted()))
-			filterWindow->openFileFromCli(File(commandLineParameters.unquoted()));
-	}
+			if (filterWindow != nullptr) {
+				// 1. Save state while everything is guaranteed to be 100% alive
+				filterWindow->saveStateNow();
 
-	void shutdown()
-	{
+				// 2. Delete the window.
+				// This triggers ~CtrlrStandaloneWindow(), which will safely
+				// unregister listeners and delete the processor via deleteFilter().
+				deleteAndZero(filterWindow);
+			}
 
-		juce::PopupMenu::dismissAllActiveMenus();
-
-		if (filterWindow)
-		{
-			// 1. Forcefully break internal modulator look-and-feel bindings while the tree is fully intact
-			filterWindow->closeAllPanelsEarly();
-
-			// 2. Delete the standalone application window container frame
-			deleteAndZero(filterWindow);
+			// 3. Standard static JUCE teardowns
+			juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
+			juce::DeletedAtShutdown::deleteAll();
+			juce::MessageManager::deleteInstance();
 		}
 
-		// 3. Clear JUCE's default static fallback styles completely
-		juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
+		const String getApplicationName() { return (ProjectInfo::projectName); }
 
-		// 4. Force JUCE to purge internal singletons and weak reference listeners
-		juce::DeletedAtShutdown::deleteAll();
+		const String getApplicationVersion() { return (ProjectInfo::versionString); }
 
-		// 5. Close down the central JUCE message pipeline cleanly
-		juce::MessageManager::deleteInstance();
-	}
+		void unhandledException(const std::exception *e, const String &sourceFilename, int lineNumber) {
+			_DBG("CtrlrApplication::unhandledException");
+			_DBG("\tfile: " + sourceFilename + ":" + _STR(lineNumber));
+			_DBG("\t" + _STR(e->what()));
+		}
 
-	const String getApplicationName() { return (ProjectInfo::projectName); }
-
-	const String getApplicationVersion() { return (ProjectInfo::versionString); }
-
-	void unhandledException(const std::exception *e, const String &sourceFilename, int lineNumber)
-	{
-		_DBG("CtrlrApplication::unhandledException");
-		_DBG("\tfile: " + sourceFilename + ":" + _STR(lineNumber));
-		_DBG("\t" + _STR(e->what()));
-	}
-
-private:
-	CtrlrStandaloneWindow *filterWindow;
+	private:
+		CtrlrStandaloneWindow *filterWindow;
 };
 START_JUCE_APPLICATION(CtrlrApplication)

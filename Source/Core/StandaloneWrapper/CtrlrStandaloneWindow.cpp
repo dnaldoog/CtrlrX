@@ -11,20 +11,17 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 	  ctrlrProcessor(nullptr),
 	  filter(nullptr),
 	  appProperties(nullptr),
-	  restoreState(true)
-{
+	  restoreState(true) {
 	filter = createPluginFilter();
 	setTitleBarButtonsRequired(DocumentWindow::allButtons, false);
 	setUsingNativeTitleBar(true);
 	setResizable(true, true); // default. Set to false, false to lock, hide the corner resizer
 	centreWithSize(800, 600); // set Size of the whole app with title bar included H22px and borders 2x1px
 
-	if (filter != 0)
-	{
+	if (filter != 0) {
 		ctrlrProcessor = dynamic_cast<CtrlrProcessor *>(filter);
 
-		if (ctrlrProcessor == nullptr)
-		{
+		if (ctrlrProcessor == nullptr) {
 #if JUCE_VERSION >= 0x070000
 			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "CTRLR",
 											 "The filter object is not a valid Ctrlr Processor");
@@ -50,13 +47,11 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 		/* get the properties pointer from the manager */
 		appProperties = ctrlrProcessor->getManager().getApplicationProperties();
 
-		if (appProperties != nullptr)
-		{
+		if (appProperties != nullptr) {
 			_DBG("appProperties != nullptr");
 			auto xml = appProperties->getUserSettings()->getXmlValue(CTRLR_PROPERTIES_FILTER_STATE);
 
-			if (xml != nullptr)
-			{
+			if (xml != nullptr) {
 				_DBG("xml != nullptr");
 				ctrlrProcessor->setStateInformation(xml.get());
 			}
@@ -64,16 +59,12 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 			AudioProcessorEditor *editor = ctrlrProcessor->createEditorIfNeeded();
 			setName(ctrlrProcessor->getManager().getInstanceName());
 
-			if (appProperties->getUserSettings()->getValue(CTRLR_PROPERTIES_WINDOW_STATE, "") != "")
-			{
+			if (appProperties->getUserSettings()->getValue(CTRLR_PROPERTIES_WINDOW_STATE, "") != "") {
 				_DBG("CTRLR_PROPERTIES_WINDOW_STATE != null");
 				restoreWindowStateFromString(appProperties->getUserSettings()->getValue(CTRLR_PROPERTIES_WINDOW_STATE));
-			}
-			else
-			{
+			} else {
 				_DBG("CTRLR_PROPERTIES_WINDOW_STATE == null");
-				if (ctrlrProcessor->getManager().getInstanceTree().getChildWithName(Ids::uiPanelEditor).isValid())
-				{
+				if (ctrlrProcessor->getManager().getInstanceTree().getChildWithName(Ids::uiPanelEditor).isValid()) {
 					_DBG("uiPanelEditor isValid");
 					ValueTree ed = ctrlrProcessor->getManager().getInstanceTree().getChildWithName(Ids::uiPanelEditor);
 					Rectangle<int> r = VAR2RECT(ed.getProperty(Ids::uiPanelCanvasRectangle, "0 0 800 600"));
@@ -92,12 +83,11 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 			}
 
 			setContentOwned(editor, false);
-		}
-		else
-		{
+		} else {
 			_DBG("No appProperties");
 #if JUCE_VERSION >= 0x070000
-			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "CTRLR", "Can't find any application properties");
+			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "CTRLR",
+											 "Can't find any application properties");
 #else
 			AlertWindow::showMessageBox(AlertWindow::WarningIcon, "CTRLR", "Can't find any application properties");
 #endif
@@ -139,41 +129,29 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 		_DBG("Restricted Instance Mode");
 		setResizable(vpResizable, true);
 
-		if (auto *constrainer = getConstrainer())
-		{
-			if (vpEnableFixedAspectRatio == true)
-			{
+		if (auto *constrainer = getConstrainer()) {
+			if (vpEnableFixedAspectRatio == true) {
 				constrainer->setFixedAspectRatio(vpStandaloneAspectRatio); // set window aspect ratio
 
-				if (vpEnableResizableLimits == true)
-				{
-					if (vpMinWidth != 0 && vpMaxWidth != 0)
-					{
+				if (vpEnableResizableLimits == true) {
+					if (vpMinWidth != 0 && vpMaxWidth != 0) {
 						setResizeLimits(vpMinWidth, round(vpMinWidth / vpStandaloneAspectRatio), vpMaxWidth,
 										round(vpMaxWidth / vpStandaloneAspectRatio));
-					}
-					else if (vpMinWidth != 0 && vpMinHeight != 0 && vpMaxWidth != 0 && vpMaxHeight != 0)
-					{
+					} else if (vpMinWidth != 0 && vpMinHeight != 0 && vpMaxWidth != 0 && vpMaxHeight != 0) {
 						setResizeLimits(
 							vpMinWidth + vpOsFrameLeft + vpOsFrameRight, vpMinHeight + vpOsFrameTop + vpOsFrameBtm,
 							vpMaxWidth + vpOsFrameLeft + vpOsFrameRight, vpMaxHeight + vpOsFrameTop + vpOsFrameBtm);
-					}
-					else
-					{
+					} else {
 						constrainer->setMinimumSize(panelCanvasWidth, panelCanvasHeight + vpOsFrameTop + vpOsFrameBtm);
 					}
 				}
-			}
-			else if (vpEnableResizableLimits == true && vpMinWidth != 0 && vpMinHeight != 0 && vpMaxWidth != 0 &&
-					 vpMaxHeight != 0)
-			{
+			} else if (vpEnableResizableLimits == true && vpMinWidth != 0 && vpMinHeight != 0 && vpMaxWidth != 0 &&
+					   vpMaxHeight != 0) {
 				setResizeLimits(vpMinWidth + vpOsFrameLeft + vpOsFrameRight, vpMinHeight + vpOsFrameTop + vpOsFrameBtm,
 								vpMaxWidth + vpOsFrameLeft + vpOsFrameRight, vpMaxHeight + vpOsFrameTop + vpOsFrameBtm);
 			}
 		}
-	}
-	else
-	{
+	} else {
 		setResizable(true, true);
 	}
 
@@ -181,60 +159,64 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 	setVisible(true);
 }
 
-CtrlrStandaloneWindow::~CtrlrStandaloneWindow()
-{
-	ctrlrProcessor->removeChangeListener(this);
-	ctrlrProcessor->getManager().removeActionListener(this);
-	saveStateNow();
-	deleteFilter();
+CtrlrStandaloneWindow::~CtrlrStandaloneWindow() {
+    // 1. Only clean up via the processor if it actually still exists!
+    if (ctrlrProcessor != nullptr)
+    {
+        ctrlrProcessor->removeChangeListener(this);
+        
+        // Use a defensive check for the manager as well
+        try {
+            ctrlrProcessor->getManager().removeActionListener(this);
+        } 
+        catch (...) {
+            _DBG("~CtrlrStandaloneWindow: Failed to remove action listener (Manager already dead)");
+        }
+
+        // 2. Save state while the processor is still guaranteed alive
+        saveStateNow();
+
+        // 3. Delete the processor owned by this window
+        deleteFilter();
+    }
 }
 
-void CtrlrStandaloneWindow::actionListenerCallback(const String &message)
-{
-	if (message == "save")
-	{
+void CtrlrStandaloneWindow::actionListenerCallback(const String &message) {
+	if (message == "save") {
 		saveStateNow();
 	}
 }
 
-void CtrlrStandaloneWindow::changeListenerCallback(ChangeBroadcaster *source)
-{ // Check for window title modification
+void CtrlrStandaloneWindow::changeListenerCallback(ChangeBroadcaster *source) { // Check for window title modification
 	CtrlrPanel *panel = ctrlrProcessor->getManager().getActivePanel();
 	String windowTitle = ctrlrProcessor->getManager().getInstanceName();
-	if (panel && !ctrlrProcessor->getManager().isSingleInstance())
-	{
+	if (panel && !ctrlrProcessor->getManager().isSingleInstance()) {
 		windowTitle += " - " + panel->getPanelWindowTitle();
 	}
 	setName(windowTitle);
 }
 
-void CtrlrStandaloneWindow::saveStateNow()
-{
+void CtrlrStandaloneWindow::saveStateNow() {
 	_DBG("CtrlrStandaloneWindow::saveStateNow");
 
-	if (ctrlrProcessor != nullptr && appProperties != nullptr)
-	{
+	if (ctrlrProcessor != nullptr && appProperties != nullptr) {
 		appProperties->getUserSettings()->setValue(CTRLR_PROPERTIES_WINDOW_STATE, getWindowStateAsString());
 
 		MemoryBlock data;
 		ctrlrProcessor->getStateInformation(data);
 
-		if (data.getSize() > 0)
-		{
+		if (data.getSize() > 0) {
 			std::unique_ptr<XmlElement> xml(CtrlrProcessor::getXmlFromBinary(data.getData(), (int)data.getSize()));
 
-			if (xml)
-			{
+			if (xml) {
 				appProperties->getUserSettings()->setValue(CTRLR_PROPERTIES_FILTER_STATE, xml.get());
 			}
 		}
 	}
 }
 
-void CtrlrStandaloneWindow::deleteFilter()
-{
-	if (filter != 0 && getContentComponent() != 0)
-	{
+void CtrlrStandaloneWindow::deleteFilter() {
+	if (filter != 0 && getContentComponent() != 0) {
 		filter->editorBeingDeleted(dynamic_cast<AudioProcessorEditor *>(getContentComponent()));
 		clearContentComponent();
 	}
@@ -242,70 +224,59 @@ void CtrlrStandaloneWindow::deleteFilter()
 	deleteAndZero(filter);
 }
 
-PropertySet *CtrlrStandaloneWindow::getGlobalSettings()
-{
+PropertySet *CtrlrStandaloneWindow::getGlobalSettings() {
 	return ctrlrProcessor->getManager().getCtrlrProperties().getProperties().getUserSettings();
 }
 
-void CtrlrStandaloneWindow::closeButtonPressed()
-{
-	if (ctrlrProcessor->getManager().canCloseWindow())
-	{
+void CtrlrStandaloneWindow::closeButtonPressed() {
+	if (ctrlrProcessor->getManager().canCloseWindow()) {
 		JUCEApplication::quit();
 	}
 }
 
-void CtrlrStandaloneWindow::resized()
+void CtrlrStandaloneWindow::clearProcessorPointer() // Added JUCE 8
 {
+	ctrlrProcessor = nullptr;
+}
+
+void CtrlrStandaloneWindow::resized() {
 	DocumentWindow::resized();
 
-	if (appProperties != nullptr && !restoreState)
-	{
+	if (appProperties != nullptr && !restoreState) {
 		appProperties->getUserSettings()->setValue(CTRLR_PROPERTIES_WINDOW_STATE, getWindowStateAsString());
 	}
 }
 
-void CtrlrStandaloneWindow::moved()
-{
+void CtrlrStandaloneWindow::moved() {
 	DocumentWindow::moved();
 
-	if (appProperties != nullptr)
-	{
+	if (appProperties != nullptr) {
 		appProperties->getUserSettings()->setValue(CTRLR_PROPERTIES_WINDOW_STATE, getWindowStateAsString());
 	}
 }
 
 AudioProcessor *CtrlrStandaloneWindow::getFilter() { return (filter); }
 
-void CtrlrStandaloneWindow::openFileFromCli(const File &file)
-{
-	if (ctrlrProcessor)
-	{
+void CtrlrStandaloneWindow::openFileFromCli(const File &file) {
+	if (ctrlrProcessor) {
 		ctrlrProcessor->openFileFromCli(file);
 	}
 }
 
-CtrlrManager *CtrlrStandaloneWindow::getManager()
-{
-	if (ctrlrProcessor != nullptr)
-	{
+CtrlrManager *CtrlrStandaloneWindow::getManager() {
+	if (ctrlrProcessor != nullptr) {
 		// Wrap the manager reference inside an address-of operator (&) to return a raw pointer
 		return &(ctrlrProcessor->getManager());
 	}
 	return nullptr;
 }
 
-void CtrlrStandaloneWindow::closeAllPanelsEarly()
-{
-	if (auto *manager = getManager())
-	{
+void CtrlrStandaloneWindow::closeAllPanelsEarly() {
+	if (auto *manager = getManager()) {
 		// Safely loop backward through the active panel count to avoid index shifting bugs
-		for (int i = manager->getNumPanels() - 1; i >= 0; --i)
-		{
-			if (auto *panel = manager->getPanel(i))
-			{
-				if (auto *editor = panel->getEditor())
-				{
+		for (int i = manager->getNumPanels() - 1; i >= 0; --i) {
+			if (auto *panel = manager->getPanel(i)) {
+				if (auto *editor = panel->getEditor()) {
 					// If removePanel expects the editor pointer, remove the UI view context
 					manager->removePanel(editor);
 				}

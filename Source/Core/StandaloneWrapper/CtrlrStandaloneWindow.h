@@ -20,6 +20,7 @@ class CtrlrStandaloneWindow : public DocumentWindow, public ActionListener, publ
 		void changeListenerCallback(ChangeBroadcaster *source);
 		CtrlrManager *getManager();
 		void closeAllPanelsEarly();
+		void clearProcessorPointer(); // Added JUCE 8
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrStandaloneWindow);
 
 	private:
