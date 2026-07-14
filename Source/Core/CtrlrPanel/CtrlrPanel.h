@@ -98,7 +98,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		int getModulatorIndex(const String &modulatorToFind) const;
 		void removeModulator(CtrlrModulator *modulatorToDelete);
 		bool containsCtrlrComponent(const CtrlrComponent *const componentToLookFor) const;
-
+		void setLookAndFeel(LookAndFeel* newLookAndFeel); // Added JUCE 8
 		void valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
 		void valueTreeChildrenChanged(ValueTree & /*treeWhoseChildHasChanged*/) {}
 		void valueTreeParentChanged(ValueTree & /*treeWhoseParentHasChanged*/) {}
@@ -394,7 +394,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		CtrlrPanelProcessor processor;
 		CtrlrPanelMIDISnapshot snapshot;
 		CtrlrMIDIDevice *outputDevicePtr;
-		ScopedPointer<CtrlrPanelUndoManager> ctrlrPanelUndoManager;
+		CtrlrPanelUndoManager* ctrlrPanelUndoManager;
 		CtrlrPanelEvaluationScope panelEvaluationScope;
 		CtrlrGlobalEvaluationScope globalEvaluationScope;
 		Array<int, CriticalSection> panelResources;

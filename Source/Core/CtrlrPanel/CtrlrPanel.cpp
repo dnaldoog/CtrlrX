@@ -241,6 +241,21 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 }
 
 CtrlrPanel::~CtrlrPanel() {
+	// =========================================================================
+	// FIX FOR JUCE ASSERTION FAILURE IN juce_LookAndFeel.cpp:94
+	// =========================================================================
+	// Break the styling reference chain immediately before any components drop out of scope.
+	setLookAndFeel(nullptr);
+
+	// Explicitly clear your unique_ptr versions too if they exist
+	if (lfV1)
+		lfV1 = nullptr;
+	if (lfV2)
+		lfV2 = nullptr;
+	if (lfV3)
+		lfV3 = nullptr;
+	// =========================================================================
+
 	// 1. Remove from the parent tree FIRST so listeners fire
 	// while the panel's internal data is still 100% intact and valid.
 	owner.getManagerTree().removeChild(panelTree, 0);
@@ -1842,3 +1857,21 @@ bool CtrlrPanel::isLoading() {
 
 	return false;
 }
+
+    void CtrlrPanel::setLookAndFeel(LookAndFeel* newLookAndFeel) // Added JUCE 8
+    {
+        // JUCE's Component::setLookAndFeel is protected, so we need to cast to Component.
+        // CtrlrPanel inherits from juce::LookAndFeel_V4, but not from Component directly.
+        // If CtrlrPanel is not a Component, you must set the LookAndFeel on the editor or canvas.
+        // If you want to set the LookAndFeel for the editor, you can do:
+        if (ctrlrPanelEditor != nullptr)
+        {
+            ctrlrPanelEditor->setLookAndFeel(newLookAndFeel);
+        }
+        // If you want to set it for the canvas:
+        else if (getCanvas() != nullptr)
+        {
+            getCanvas()->setLookAndFeel(newLookAndFeel);
+        }
+        // Otherwise, do nothing.
+    }
