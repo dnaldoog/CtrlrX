@@ -1299,7 +1299,7 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent(const Value &_v
 	helpMmidi->setTooltip(L"Click to see Multi MIDI message syntax");
 	helpMmidi->addListener(this);
 	helpMmidi->setMouseCursor(MouseCursor::PointingHandCursor);
-	helpMmidi->setImages(helpIcon.release());
+
 
 	loadAdditionalTemplates(File());
 	setSize(256, 96);
