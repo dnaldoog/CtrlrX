@@ -156,7 +156,7 @@ namespace BinaryData
     const int            memory_svgSize = 348;
 
     extern const char*   midi_svg;
-    const int            midi_svgSize = 9017;
+    const int            midi_svgSize = 9089;
 
     extern const char*   nav_next_svg;
     const int            nav_next_svgSize = 201;

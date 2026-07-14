@@ -19,7 +19,11 @@ CtrlrDocumentPanel::CtrlrDocumentPanel(CtrlrManager &_owner) : ctrlrEditor(0), o
 											// main window by default on grey to please everyone :)
 }
 
-CtrlrDocumentPanel::~CtrlrDocumentPanel() {}
+CtrlrDocumentPanel::~CtrlrDocumentPanel()
+{
+    // Force the MultiDocumentPanel to close and delete all active document tabs
+    closeAllDocuments (true);
+}
 
 CtrlrDocumentPanelCloseButton::CtrlrDocumentPanelCloseButton(const String &buttonName) // Added v5.6.30
 	: Button("") {

@@ -254,13 +254,37 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 
 	ctrlrComponentSelection->sendChangeMessage();
 }
+
 CtrlrPanelEditor::~CtrlrPanelEditor() {
-	// Explicitly detach all modulator components from borrowed lfV1/V2/V3
-	// BEFORE lfV1/V2/V3 are destroyed as members of this class.
-	// CtrlrSlider objects are owned by CtrlrModulator/CtrlrPanel which outlive
-	// CtrlrPanelEditor — so without this, sliders would hold dangling pointers
-	// to destroyed LookAndFeel objects.
-	// Recursive lambda to detach LookAndFeel from entire component tree
+	// =========================================================================
+	// STEP 1: UNREGISTER LISTENERS & DESTROY PROPERTY PANEL IMMEDIATELY
+	// =========================================================================
+	DBG("!!!!!! TRACKING: CtrlrPanelEditor Destructor has been entered !!!");
+
+	getPanelEditorTree().removeListener(this);
+	owner.getPanelTree().removeListener(this);
+
+	// 1. Break the change link between selection and properties
+	if (ctrlrComponentSelection != nullptr && ctrlrPanelProperties != nullptr) {
+		ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
+	}
+
+	// 2. FORCE-KILL the properties panel immediately
+	// This destroys all property components so they can't react to tree mutations
+	if (ctrlrPanelProperties != nullptr) {
+		ctrlrPanelProperties.reset();
+	}
+
+	componentAnimator.removeChangeListener(this);
+
+	// =========================================================================
+	// STEP 2: DETACH LOOKANDFEEL
+	// =========================================================================
+	setLookAndFeel(nullptr);
+	if (getCanvas()) {
+		getCanvas()->setLookAndFeel(nullptr);
+	}
+
 	std::function<void(juce::Component *)> detachLnF = [&](juce::Component *c) {
 		if (c == nullptr)
 			return;
@@ -278,36 +302,19 @@ CtrlrPanelEditor::~CtrlrPanelEditor() {
 		}
 	}
 
-	// Now safe to proceed — lfV1/V2/V3 will be destroyed as members after this body
-	if (ctrlrComponentSelection)
-		ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
-	// ... rest of existing destructor
-	// Check if the component selection object is valid before trying to use it
-	if (ctrlrComponentSelection) {
-		// Remove the listener before the objects are destroyed
-		ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
-	}
+	// =========================================================================
+	// STEP 3: CLEAN UP REST OF THE OBJECTS
+	// =========================================================================
 
-	getPanelEditorTree().removeListener(this);
-	owner.getPanelTree().removeListener(this);
+	// Safely remove from tree now that we are no longer listening to it
+	// and the properties panel is completely gone
 	owner.getPanelTree().removeChild(getPanelEditorTree(), 0);
 
-	componentAnimator.removeChangeListener(this);
-
-	// Set look and feel to null to clean up
-	setLookAndFeel(nullptr);
-	if (getCanvas()) {
-		getCanvas()->setLookAndFeel(nullptr);
-	}
-	// This is important: JUCE's default look and feel can also be a source of leaks if not managed
 	juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
 
-	// USELESS : because JUCE_DECLARE_WEAK_REFERENCEABLE macro is in the header already.
-	// It automatically handles the weak reference master
-	// masterReference.clear();
-
-	// The ScopedPointers will now automatically delete the components they own
-	// (ctrlrPanelViewport, ctrlrPanelProperties, spacerComponent, ctrlrPanelNotifier).
+	if (ctrlrPanelNotifier != nullptr) {
+		ctrlrPanelNotifier.reset();
+	}
 }
 
 void CtrlrPanelEditor::visibilityChanged() {}
@@ -458,6 +465,25 @@ CtrlrComponent *CtrlrPanelEditor::getSelected(const Identifier &type) {
 }
 
 void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
+	// 1. Guard against a null editor context
+	if (this == nullptr)
+		return;
+
+	// 2. Safely grab the parent panel and check its address
+	auto &panel = getOwner(); // Or getPanel() depending on your exact class getter
+	if (&panel == nullptr)
+		return;
+
+	// 3. Guard against the Lua manager reference resolving to nullptr during destruction
+	if (&panel.getCtrlrLuaManager() == nullptr) {
+		return;
+	}
+
+	// 4. Safely check if the method manager has already been deallocated
+	auto &luaManager = panel.getCtrlrLuaManager();
+	if (&luaManager.getMethodManager() == nullptr) {
+		return;
+	}
 	if (treeWhosePropertyHasChanged.hasType(Ids::uiPanelEditor)) {
 		if (property == Ids::uiPanelEditMode) {
 			editModeChanged();

@@ -660,22 +660,20 @@ void CtrlrPanelCanvas::handleComponentPopupMenu(const MouseEvent &e, const int i
 
 void CtrlrPanelCanvas::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
 
-	// 1. Check if the canvas itself is in a valid state
+	// 1. Guard against a null canvas object
 	if (this == nullptr)
 		return;
 
-	// 2. Safely get the panel/owner chain and ensure nothing is null
-	// (Adjust these getter names to match CtrlrX's exact class structure)
+	// 2. Safely get the panel reference and check its address
 	auto &panel = getPanel();
 	if (&panel == nullptr)
 		return;
 
-	// 3. Ensure the Lua Manager and Method Manager are fully intact
-	if (panel.getCtrlrLuaManager() == nullptr) {
-		_DBG("CtrlrPanelCanvas::valueTreePropertyChanged - Lua Manager is already dead. Skipping.");
+	// 3. Guard against the Lua manager reference resolving to nullptr during destruction
+	if (&panel.getCtrlrLuaManager() == nullptr) {
 		return;
 	}
-	
+
 	if (property == Ids::uiPanelImageResource) {
 		if (treeWhosePropertyHasChanged.getProperty(Ids::uiPanelImageResource).toString() == COMBO_NONE_ITEM) {
 			ctrlrPanelBackgroundImage = Image();

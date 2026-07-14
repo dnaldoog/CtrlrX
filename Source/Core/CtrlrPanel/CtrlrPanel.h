@@ -2,13 +2,13 @@
 #include <JuceHeader.h>
 // Force the build system to parse JUCE definitions and namespaces first
 #ifdef JUCE_APP_CONFIG_HEADER
- #include JUCE_APP_CONFIG_HEADER
+#include JUCE_APP_CONFIG_HEADER
 #elif defined(JucePlugin_Build_VST) || defined(JucePlugin_Build_AU) || defined(JUCE_SHARED_CODE) || 1
- #include <JuceHeader.h>
+#include <JuceHeader.h>
 #endif
 
-#include "MIDI/CtrlrOwnedMidiMessage.h"
 #include "CtrlrLuaObject.h"
+#include "MIDI/CtrlrOwnedMidiMessage.h"
 
 // Core JUCE modules required for this file
 #include <juce_audio_basics/juce_audio_basics.h> // For MidiMessage, MidiBuffer
@@ -98,7 +98,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		int getModulatorIndex(const String &modulatorToFind) const;
 		void removeModulator(CtrlrModulator *modulatorToDelete);
 		bool containsCtrlrComponent(const CtrlrComponent *const componentToLookFor) const;
-		void setLookAndFeel(LookAndFeel* newLookAndFeel); // Added JUCE 8
+		void setLookAndFeel(LookAndFeel *newLookAndFeel); // Added JUCE 8
 		void valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
 		void valueTreeChildrenChanged(ValueTree & /*treeWhoseChildHasChanged*/) {}
 		void valueTreeParentChanged(ValueTree & /*treeWhoseParentHasChanged*/) {}
@@ -373,7 +373,8 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 	private:
 		ValueTree initialProgram, panelTree;
 		ReadWriteLock panelLock;
-		CtrlrLuaManager *ctrlrLuaManager;
+		// CtrlrLuaManager *ctrlrLuaManager;
+		std::unique_ptr<CtrlrLuaManager> ctrlrLuaManager;
 		double globalMidiDelay;
 		bool restoreStateStatus, boostrapStateStatus, programState, editMode;
 		ListenerList<CtrlrPanel::Listener> listeners;
@@ -394,7 +395,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		CtrlrPanelProcessor processor;
 		CtrlrPanelMIDISnapshot snapshot;
 		CtrlrMIDIDevice *outputDevicePtr;
-		std::unique_ptr <CtrlrPanelUndoManager> ctrlrPanelUndoManager;
+		std::unique_ptr<CtrlrPanelUndoManager> ctrlrPanelUndoManager;
 		CtrlrPanelEvaluationScope panelEvaluationScope;
 		CtrlrGlobalEvaluationScope globalEvaluationScope;
 		Array<int, CriticalSection> panelResources;

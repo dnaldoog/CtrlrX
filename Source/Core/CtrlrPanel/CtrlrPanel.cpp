@@ -44,7 +44,7 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 	  midiInputThread(*this, inputDevice),
 	  midiControllerInputThread(*this, controllerDevice),
 	  restoreStateStatus(true),
-	  ctrlrLuaManager(0),
+	  //   ctrlrLuaManager(0),
 	  ctrlrPanelEditor(nullptr),
 	  initialProgram(Ids::panelState),
 	  boostrapStateStatus(false),
@@ -53,7 +53,8 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 	  currentActionIndex(0),
 	  indexOfSavedState(-1) {
 	ctrlrPanelUndoManager.reset(new CtrlrPanelUndoManager(*this));
-	ctrlrLuaManager = new CtrlrLuaManager(*this);
+	//	ctrlrLuaManager = new CtrlrLuaManager(*this);
+	ctrlrLuaManager = std::make_unique<CtrlrLuaManager>(*this);
 	lfV1 = std::make_unique<juce::LookAndFeel_V1>();
 	lfV2 = std::make_unique<juce::LookAndFeel_V2>();
 	lfV3 = std::make_unique<juce::LookAndFeel_V3>();
@@ -241,6 +242,7 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 }
 
 CtrlrPanel::~CtrlrPanel() {
+	DBG("!!! TRACKING: CtrlrPanel Destructor has been entered !!!");
 	// =========================================================================
 	// FIX FOR JUCE ASSERTION FAILURE IN juce_LookAndFeel.cpp:94
 	// =========================================================================
@@ -272,6 +274,7 @@ CtrlrPanel::~CtrlrPanel() {
 
 	// 3. Clear everything else out
 	ctrlrModulators.clear();
+	// deleteAndZero(ctrlrLuaManager);
 }
 
 void CtrlrPanel::setRestoreState(const bool _restoreStateStatus) {
