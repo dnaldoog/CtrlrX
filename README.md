@@ -505,6 +505,8 @@ Tuturial coming soon.
 * **UPDATED** Zoom Shortcuts & Keypad Minus zoom-out. Thanks to [John Goodland](https://github.com/dnaldoog)
 * **FIXED** Zoom Out for Linux Wayland. Thanks to [John Goodland](https://github.com/dnaldoog)
 * **FIXED** Resources not updating on load after panel update. RSRCs now compared by hash. `CtrlrPanelResourceManager.cpp`, `CtrlrPanelResource.cpp` & `.h`. Thanks to [John Goodland](https://github.com/dnaldoog)
+* **FIXED** Modulator List configurations being lost or duplicated incorrectly. `CtrlrPanelModulatorList.cpp` & `.h`. Thanks to [John Goodland](https://github.com/dnaldoog)
+* **FIXED** Modulator List selected row background color giving a gradient blue part at the end of the line. `CtrlrPanelModulatorList.cpp`
 
 #### Version 5.6.35 | 2026.04.20
 
