@@ -504,7 +504,7 @@ void CtrlrManager::restoreEditorState()
 {
 	if (getProperty(Ids::ctrlrEditorBounds).toString() == "")
 	{
-		if (getInstanceMode() == InstanceSingle || getInstanceMode() == InstanceSingleRestriced)
+		if (getInstanceMode() == InstanceSingle || getInstanceMode() == InstanceSingleRestricted)
 		{
 			Rectangle<int> r(32, 32, 800, 600);
 
