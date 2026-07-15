@@ -299,6 +299,15 @@ namespace Ids
     DECLARE_ID (componentLookAndFeel);
     DECLARE_ID (componentLookAndFeelIsCustom);
     
+    DECLARE_ID (componentBubbleHelpTrigger); // Added v5.6.36 for bubble tooltip
+    DECLARE_ID (componentBubbleHelpEnabled); // Added v5.6.36 for bubble tooltip
+    DECLARE_ID (componentBubbleHelpTitle); // Added v5.6.36 for bubble tooltip
+    DECLARE_ID (componentBubbleHelpText); // Added v5.6.36 for bubble tooltip
+    DECLARE_ID (componentBubbleHelpTimeout); // Added v5.6.36 for bubble tooltip
+    DECLARE_ID (componentBubbleNameFont); // Added v5.6.36 for bubble tooltip. Not using for now
+    DECLARE_ID (componentBubbleNameColour); // Added v5.6.36 for bubble tooltip. Not using for now
+    DECLARE_ID (componentBubbleHelpDismissOnExit); // Added v5.6.36 for bubble tooltip. Not using for now
+    
     DECLARE_ID (uiSliderLookAndFeel);
     DECLARE_ID (uiSliderLookAndFeelIsCustom);
     DECLARE_ID (uiSliderStyle);

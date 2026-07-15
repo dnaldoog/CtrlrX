@@ -119,6 +119,9 @@ class CtrlrComponent : public Component,
         void setCustomLookAndFeel (LookAndFeelBase *customLookAndFeel);
         virtual void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr) = 0;
         bool isInternal();
+        void triggerBubbleHelp(const MouseEvent& e, int requiredTrigger);
+        std::unique_ptr<BubbleMessageComponent> bubbleMessage;
+        
         JUCE_LEAK_DETECTOR(CtrlrComponent)
 
     protected:
