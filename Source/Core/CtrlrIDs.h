@@ -334,6 +334,7 @@ namespace Ids
     DECLARE_ID (uiSliderValueHighlightColour);
     DECLARE_ID (uiSliderValueOutlineColour);
     DECLARE_ID (uiSliderTrackColour);
+    DECLARE_ID (uiSliderBackgroundColour); // Added v5.5.36 for linear bar slider
     DECLARE_ID (uiSliderIncDecButtonColour);
     DECLARE_ID (uiSliderIncDecTextColour);
     DECLARE_ID (uiSliderValueFont);

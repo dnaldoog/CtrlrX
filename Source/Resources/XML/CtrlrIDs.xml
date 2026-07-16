@@ -285,6 +285,7 @@
   <id name="uiSliderValueHighlightColour" 	text="Value text colour highlighted" type="Colour"/>
   <id name="uiSliderValueOutlineColour" 	text="Value outline colour" type="Colour"/>
   <id name="uiSliderTrackColour" 			text="Track colour (linear)" type="Colour"/>
+  <id name="uiSliderBackgroundColour" 		text="Background colour (linear)" type="Colour"/>
   <id name="uiSliderIncDecButtonColour" 	text="Inc/Dec buttons background colour" type="Colour"/>
   <id name="uiSliderIncDecTextColour" 		text="Inc/Dec buttons text colour" type="Colour"/>
 

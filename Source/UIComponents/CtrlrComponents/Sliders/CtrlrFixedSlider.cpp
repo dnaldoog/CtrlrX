@@ -87,6 +87,7 @@ CtrlrFixedSlider::CtrlrFixedSlider (CtrlrModulator &owner)
         setProperty (Ids::uiSliderRotaryOutlineColour, "0xff0000ff");  // 0xff0000ff
         setProperty (Ids::uiSliderRotaryFillColour, "0xff0000ff"); // 0xff0000ff
         setProperty (Ids::uiSliderTrackColour, "0xff0f0f0f"); // 0xff0f0f0f
+        setProperty (Ids::uiSliderBackgroundColour, "0x00000000"); // Added v5.5.36 for linear bar slider
         setProperty (Ids::uiSliderThumbColour, "0xffff0000"); // 0xffff0000
     }
     else
@@ -96,6 +97,7 @@ CtrlrFixedSlider::CtrlrFixedSlider (CtrlrModulator &owner)
         setProperty (Ids::uiSliderRotaryFillColour, (String)findColour(Slider::rotarySliderFillColourId).toString());
         setProperty (Ids::uiSliderTrackColour, (String)findColour(Slider::rotarySliderFillColourId).toString());
         setProperty (Ids::uiSliderThumbColour, (String)findColour(Slider::thumbColourId).toString());
+        setProperty (Ids::uiSliderBackgroundColour, (String)findColour(Slider::backgroundColourId).toString()); // Added v5.5.36 for linear bar slider
     }
  
     setProperty (Ids::uiSliderIncDecButtonColour, (String)findColour (Slider::backgroundColourId).toString());
@@ -262,6 +264,11 @@ void CtrlrFixedSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
         ctrlrSlider->setColour (Slider::trackColourId, VAR2COLOUR(getProperty (Ids::uiSliderTrackColour)) );
         setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
+    else if (property == Ids::uiSliderBackgroundColour) // Added v5.5.36 for linear bar slider
+    {
+        ctrlrSlider->setColour (Slider::backgroundColourId, VAR2COLOUR(getProperty (Ids::uiSliderBackgroundColour)) );
+        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+    }
     else if (property == Ids::uiSliderThumbColour)
     {
         ctrlrSlider->setColour (Slider::thumbColourId, VAR2COLOUR(getProperty (Ids::uiSliderThumbColour)) );
@@ -408,6 +415,7 @@ void CtrlrFixedSlider::resetLookAndFeelOverrides()
         setProperty (Ids::uiSliderThumbColour, (String)findColour(Slider::thumbColourId).toString());
 
         setProperty (Ids::uiSliderTrackColour, (String)findColour(Slider::rotarySliderFillColourId).toString());
+        setProperty (Ids::uiSliderBackgroundColour, (String)findColour(Slider::backgroundColourId).toString()); // Added v5.5.36 for linear bar slider
 
         setProperty (Ids::uiSliderIncDecTextColour, (String)findColour(Slider::textBoxTextColourId).toString());
         setProperty (Ids::uiSliderIncDecButtonColour, (String)findColour(Slider::backgroundColourId).toString());
