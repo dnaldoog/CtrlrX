@@ -17,6 +17,7 @@ class CtrlrDocumentPanel  : public MultiDocumentPanel, public Button::Listener
 		void setEditor (CtrlrEditor *_editorToSet);
 		void resized();
         void buttonClicked (Button *button);
+        void closeDocument(Component* descriptionComponent, bool deleteComponent);
         //void lookAndFeelChanged();
 		JUCE_LEAK_DETECTOR(CtrlrDocumentPanel)
 

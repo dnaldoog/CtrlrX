@@ -19,22 +19,21 @@ CtrlrDocumentPanel::CtrlrDocumentPanel(CtrlrManager &_owner) : ctrlrEditor(0), o
 											// main window by default on grey to please everyone :)
 }
 
-CtrlrDocumentPanel::~CtrlrDocumentPanel()
-{
-    DBG("!!! TRACKING: CtrlrDocumentPanel Destructor has been entered !!!");
-    
-    // 1. Manually force synchronous destruction of all open document components
-    for (int i = getNumDocuments() - 1; i >= 0; --i)
-    {
-        if (auto* doc = getDocument(i))
-        {
-            // closeDocumentAsync takes the component pointer and a callback function
-            closeDocumentAsync(doc, [](bool) {});
-        }
-    }
-    
-    // 2. Clear out any remaining children as a fallback
-    deleteAllChildren();
+CtrlrDocumentPanel::~CtrlrDocumentPanel() {
+	DBG("!!! TRACKING: CtrlrDocumentPanel Destructor has been entered !!!");
+
+	// // 1. Manually force synchronous destruction of all open document components
+	// for (int i = getNumDocuments() - 1; i >= 0; --i)
+	// {
+	//     if (auto* doc = getDocument(i))
+	//     {
+	//         // closeDocumentAsync takes the component pointer and a callback function
+	//         closeDocumentAsync(doc, [](bool) {});
+	//     }
+	// }
+
+	// // 2. Clear out any remaining children as a fallback
+	// deleteAllChildren();
 }
 
 CtrlrDocumentPanelCloseButton::CtrlrDocumentPanelCloseButton(const String &buttonName) // Added v5.6.30
@@ -108,6 +107,27 @@ void CtrlrDocumentPanel::buttonClicked(
 				if (panelToClose->canClose(true)) {
 					owner.removePanel(ed);
 				}
+			}
+		}
+	}
+}
+
+void CtrlrDocumentPanel::closeDocument(Component *descriptionComponent, bool deleteComponent) {
+	if (descriptionComponent == nullptr)
+		return;
+
+	if (TabbedComponent *tc = getCurrentTabbedComponent()) {
+		// Loop through the tabs to find which index contains this specific editor component
+		for (int i = 0; i < tc->getNumTabs(); ++i) {
+			if (tc->getTabContentComponent(i) == descriptionComponent) {
+				// Remove the tab view context from the active UI container
+				tc->removeTab(i);
+
+				// If the parameter asks to delete it, force-free the memory layout now
+				if (deleteComponent) {
+					delete descriptionComponent;
+				}
+				break;
 			}
 		}
 	}

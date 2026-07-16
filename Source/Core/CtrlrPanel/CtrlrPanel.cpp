@@ -53,8 +53,8 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 	  currentActionIndex(0),
 	  indexOfSavedState(-1) {
 	ctrlrPanelUndoManager.reset(new CtrlrPanelUndoManager(*this));
-	//	ctrlrLuaManager = new CtrlrLuaManager(*this);
-	ctrlrLuaManager = std::make_unique<CtrlrLuaManager>(*this);
+	ctrlrLuaManager = new CtrlrLuaManager(*this);
+	// ctrlrLuaManager = std::make_unique<CtrlrLuaManager>(*this);
 	lfV1 = std::make_unique<juce::LookAndFeel_V1>();
 	lfV2 = std::make_unique<juce::LookAndFeel_V2>();
 	lfV3 = std::make_unique<juce::LookAndFeel_V3>();
@@ -260,9 +260,16 @@ CtrlrPanel::~CtrlrPanel() {
 
 	// 1. Remove from the parent tree FIRST so listeners fire
 	// while the panel's internal data is still 100% intact and valid.
-	owner.getManagerTree().removeChild(panelTree, 0);
+	if (!owner.isShuttingDown()) {
+		owner.getManagerTree().removeChild(panelTree, 0);
+	}
+// A. CLEAR LISTENERS FIRST (Stop data pipeline before killing threads!)
+	panelTree.removeListener(this);
+    owner.removeChangeListener(this);
+    masterReference.clear();
 
-	// 2. Shut down threads safely
+
+	// B. Shut down threads safely
 	midiInputThread.signalThreadShouldExit();
 	midiInputThread.waitForThreadToExit(1200);
 	midiControllerInputThread.signalThreadShouldExit();
@@ -272,9 +279,13 @@ CtrlrPanel::~CtrlrPanel() {
 	panelTree.removeListener(this);
 	owner.removeChangeListener(this);
 
-	// 3. Clear everything else out
+	// C. Clear everything else out
 	ctrlrModulators.clear();
-	// deleteAndZero(ctrlrLuaManager);
+	deleteAndZero(ctrlrLuaManager);
+
+	// if (!owner.isShuttingDown()) {
+	// 	owner.getManagerTree().removeChild(panelTree, 0);
+	// }
 }
 
 void CtrlrPanel::setRestoreState(const bool _restoreStateStatus) {

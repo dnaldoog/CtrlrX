@@ -373,8 +373,8 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 	private:
 		ValueTree initialProgram, panelTree;
 		ReadWriteLock panelLock;
-		// CtrlrLuaManager *ctrlrLuaManager;
-		std::unique_ptr<CtrlrLuaManager> ctrlrLuaManager;
+		CtrlrLuaManager *ctrlrLuaManager;
+		// std::unique_ptr<CtrlrLuaManager> ctrlrLuaManager;
 		double globalMidiDelay;
 		bool restoreStateStatus, boostrapStateStatus, programState, editMode;
 		ListenerList<CtrlrPanel::Listener> listeners;
