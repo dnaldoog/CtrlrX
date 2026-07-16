@@ -160,25 +160,23 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 }
 
 CtrlrStandaloneWindow::~CtrlrStandaloneWindow() {
-    // 1. Only clean up via the processor if it actually still exists!
-    if (ctrlrProcessor != nullptr)
-    {
-        ctrlrProcessor->removeChangeListener(this);
-        
-        // Use a defensive check for the manager as well
-        try {
-            ctrlrProcessor->getManager().removeActionListener(this);
-        } 
-        catch (...) {
-            _DBG("~CtrlrStandaloneWindow: Failed to remove action listener (Manager already dead)");
-        }
+	// 1. Only clean up via the processor if it actually still exists!
+	if (ctrlrProcessor != nullptr) {
+		ctrlrProcessor->removeChangeListener(this);
 
-        // 2. Save state while the processor is still guaranteed alive
-        saveStateNow();
+		// Use a defensive check for the manager as well
+		try {
+			ctrlrProcessor->getManager().removeActionListener(this);
+		} catch (...) {
+			_DBG("~CtrlrStandaloneWindow: Failed to remove action listener (Manager already dead)");
+		}
 
-        // 3. Delete the processor owned by this window
-        deleteFilter();
-    }
+		// 2. Save state while the processor is still guaranteed alive
+		saveStateNow();
+
+		// 3. Delete the processor owned by this window
+		deleteFilter();
+	}
 }
 
 void CtrlrStandaloneWindow::actionListenerCallback(const String &message) {
@@ -198,7 +196,12 @@ void CtrlrStandaloneWindow::changeListenerCallback(ChangeBroadcaster *source) { 
 
 void CtrlrStandaloneWindow::saveStateNow() {
 	_DBG("CtrlrStandaloneWindow::saveStateNow");
-
+	if (auto *manager = getManager()) {
+		// If the manager is already in the middle of running its destructor,
+		// instantly break out so we don't spin up phantom UI updates or leaks!
+		if (manager->isShuttingDown())
+			return;
+	}
 	if (ctrlrProcessor != nullptr && appProperties != nullptr) {
 		appProperties->getUserSettings()->setValue(CTRLR_PROPERTIES_WINDOW_STATE, getWindowStateAsString());
 
