@@ -1,30 +1,24 @@
-<img src="Doc/readme/images/CtrlrX-README-512x645.png" width="206" alt="CtlrX Logo">
+[← Main Index](../../README.md) | Next: [02 — Licensing Terms →](02-licensing.md)
 
-# CtrlrX — Control MIDI hardware from your DAW
+---
 
-<img src="Doc/readme/images/CtrlrX-preview.jpg" alt="CtlrX GUI">
+# 01 — About & Donations
 
 > **TL;DR**
 > - **CtrlrX** by Damien Sellier is an updated version of **Ctrlr** by Roman Kubiak under BSD|GPL license.
 > - Based on the JUCE framework, it acts as a cross-platform standalone application or DAW plugin (VST3, AU, AAX) to control any MIDI-enabled hardware.
 
+
+## Contents
+- [About CtrlrX](#about-ctrlrx)
+- [About the original Ctrlr](#about-the-original-ctrlr)
+- [Donations](#donations)
+- [Credits](#credits)
+- [Contributors](#contributors)
+
 ---
 
-## Technical Index
-
-| What are you looking for? | Jump straight to… |
-|---|---|
-| Core overview, donation links, and credits | [01 — About](Doc/readme/01-about.md) |
-| Licensing Terms | [02 — Licensing](Doc/readme/02-licensing.md) |
-| Binary links, installation paths, and OS security flags | [03 — Installation Guide](Doc/readme/03-installation.md) |
-| Compiling via CMake, Visual Studio or Xcode, and source dependencies | [04 — Compilation Guide](Doc/readme/04-compiling.md) |
-| Exporting standalone into DAW plugin targets | [05 — Exporting Instances](Doc/readme/05-exporting-instances.md) |
-| Full version logs and ongoing task trackers | [06 — Roadmap & Changelog](Doc/readme/06-changelog.md) |
-| Step-by-step start-up guide | [User Manual Index](Doc/manual/README.md) |
-| Documentation maintenance guidelines | [Documentation guidelines](Doc/readme/MAINTAINING.md) |
----
-
-## Project Overview
+## About CtrlrX
 
 [CtrlrX](https://github.com/damiensellier/CtrlrX) by [Damien Sellier](https://github.com/DamienSellier/) is an alternative fork of [Ctrlr](https://github.com/RomanKubiak/ctrlr) by [Roman Kubiak](https://github.com/RomanKubiak) under BSD|GPL license. The 'X' in CtrlrX represents a commitment to delivering **extra** features, **extended** functionalities, and a **collaborative** space for its evolution.
 
@@ -40,7 +34,6 @@ Ctrlr allows you to control any MIDI-enabled hardware: synthesizers, drum machin
 * **Extend:** With the scripting possibilities inside Ctrlr, you can extend your panels in various ways. The Lua scripting language gives you access to all panel elements and hooks to various events.
 * **Open Source:** Need special functionality or want to propose a patch/feature update? If you know a bit about C++/JUCE framework, etc., you can always download the source code and build Ctrlr by yourself.
 
----
 
 ## Donations
 
@@ -49,14 +42,19 @@ Development and maintenance of [CtrlrX](https://github.com/damiensellier/CtrlrX)
 * You can donate via PayPal using this link: **[https://paypal.me/damiensellier](https://paypal.me/damiensellier)**
 * You can donate via ko-fi using this link: **[https://ko-fi.com/damiensellier](https://ko-fi.com/damiensellier)**
 
+
+## Credits
+
+* Thanks to [Damien Sellier](https://github.com/DamienSellier) for developing and maintaining [CtrlrX](https://github.com/damiensellier/CtrlrX).
+* Thanks to [Roman Kubiak](https://github.com/RomanKubiak) for developing [Ctrlr](https://github.com/RomanKubiak/ctrlr).
+ 
+## Contributors
+
+* Thanks to [John Goodland](https://github.com/donaldoog) for contributing to [CtrlrX](https://github.com/damiensellier/CtrlrX) debugging & development.
+* Thanks to [Dominique Bontemps](https://github.com/dobo365) for contributing to [CtrlrX](https://github.com/damiensellier/CtrlrX) debugging.
+* Thanks to [Sudara](https://github.com/sudara) for [Pamplejuce](https://github.com/sudara/pamplejuce) which serves as the base for [CtrlrX](https://github.com/damiensellier/CtrlrX) CI/CD workflow.
+* Thanks to [Hedde Bosman](https://github.com/sgorpi) for contributing to [CtrlrX](https://github.com/damiensellier/CtrlrX) CI/CD workflow, debugging & development.
+
 ---
 
-## Quick Disclaimer & Licensing Summary
-
-The core engine of CtrlrX is double-licensed under the **BSD-3-Clause** and **GPL-2.0-or-later** terms. However, because it links against modern runtime framework submodules like **JUCE** and various proprietary formats (like **Avid AAX SDK** or **Steinberg VST3**), compiled production binaries are bound by copyleft protections or strict vendor commercial requirements.
-
-> ⚠️ **Commercial Warning:** If you plan on distributing derivative standalone applications or customized plugin layers built using this codebase for commercial gain, you must review the respective SDK compliance terms carefully. See [02 — Licensing](Doc/readme/02-licensing.md) for full legally binding breakdowns.
-
----
-
-*This is the root repository index for CtrlrX. For corrections, optimizations, or feature updates, please feel free to submit a bug report in the [Issues](https://github.com/damiensellier/CtrlrX/issues) section or an official [Pull Request](https://github.com/damiensellier/CtrlrX/issues).*
+[← Main Index](../../README.md) | Next: [02 — Licensing Terms →](02-licensing.md)

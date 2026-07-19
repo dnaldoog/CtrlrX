@@ -1,4 +1,4 @@
-# Maintaining the CtrlrX Manual — guide for agents (and humans)
+# Maintaining the CtrlrX Manual — guide for contributors
 
 This is the working guide for **updating** the manual under `Doc/manual/`. Read this **before** editing any chapter.
 
