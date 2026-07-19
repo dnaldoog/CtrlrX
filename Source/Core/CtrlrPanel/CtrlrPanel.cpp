@@ -450,6 +450,7 @@ void CtrlrPanel::setProperty(const Identifier &name, const var &newValue, const 
 	}
 }
 
+#if JUCE_VERSION < 0x70000								   // original JUCE 6 code
 juce::String CtrlrPanel::getCodeSigningIdentityFromPopup() // Updated v5.6.34. FIXED The Apple certificates where not
 														   // showing up properly.
 {
@@ -552,6 +553,104 @@ juce::String CtrlrPanel::getCodeSigningIdentityFromPopup() // Updated v5.6.34. F
 
 	return juce::String();
 }
+#else
+
+// 1. SIGNATURE CHANGE: Changed return type from juce::String to void, and added the callback parameter.
+void CtrlrPanel::getCodeSigningIdentityFromPopup(std::function<void(juce::String)> completionCallback) {
+	juce::String debugType = "MAC_SIGNING";
+
+	juce::StringArray commandParts;
+	commandParts.add("security");
+	commandParts.add("find-identity");
+	commandParts.add("-v");
+	commandParts.add("-p");
+	commandParts.add("codesigning");
+
+	juce::String command = commandParts.joinIntoString(" ");
+	std::cout << debugType << " - Executing command: " << command << std::endl;
+
+	juce::ChildProcess childProcess;
+	if (childProcess.start(commandParts)) {
+		childProcess.waitForProcessToFinish(-1);
+
+		if (!childProcess.isRunning()) {
+			int exitCode = childProcess.getExitCode();
+			juce::String output = childProcess.readAllProcessOutput();
+
+			std::cout << debugType << " - Command finished. Exit Code: " << exitCode << std::endl;
+			std::cout << debugType << " - Full Combined Output (Stdout + Stderr):\n" << output << std::endl;
+
+			if (exitCode == 0) {
+				// Parsing logic
+				juce::StringArray identities;
+				juce::StringArray lines;
+				lines.addLines(output);
+
+				for (auto &line : lines) {
+					if (line.contains(" \"") && line.contains(" valid identities found") == false) {
+						int startIndex = line.indexOf("\"") + 1;
+						int endIndex = line.lastIndexOf("\"");
+
+						if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
+							juce::String identity = line.substring(startIndex, endIndex);
+							identities.add(identity);
+							std::cout << debugType << " - Successfully extracted identity: " << identity << std::endl;
+						}
+					}
+				}
+
+				if (identities.isEmpty()) {
+					std::cout << debugType
+							  << " - WARNING: Parsing completed, but no identities were extracted. Using fallback."
+							  << std::endl;
+					identities.add("Developer ID Application: Ad-HocSigning (No Certificate)");
+				} else {
+					std::cout << debugType << " - Found and parsed " << identities.size()
+							  << " identities. Launching popup." << std::endl;
+				}
+
+				// Populate the PopupMenu item options
+				juce::PopupMenu menu;
+				for (int i = 0; i < identities.size(); ++i) {
+					menu.addItem(i + 1, identities[i]);
+				}
+
+				// 2. MODERN REFACTOR: Pass the menu context out to your cross-version wrapper class
+				// Pass 'this' if CtrlrPanel inherits from juce::Component. Otherwise pass nullptr.
+				MyPopupHelper::showMenuAsyncSafe(
+					menu, nullptr, [identities, debugType, completionCallback](int result) {
+						if (result > 0) {
+							juce::String selected = identities[result - 1];
+							std::cout << debugType << " - Selected Identity: " << selected << std::endl;
+
+							if (completionCallback != nullptr)
+								completionCallback(selected); // Pass selected identity string back out
+						} else {
+							if (completionCallback != nullptr)
+								completionCallback(""); // User canceled the menu selection
+						}
+					});
+
+			} else {
+				juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon, "Error",
+													   "Failed to retrieve code signing identities. Error code: " +
+														   juce::String(exitCode) + "\nCombined Output:\n" + output,
+													   "OK", nullptr, juce::ModalCallbackFunction::create([](int) {}));
+				if (completionCallback != nullptr)
+					completionCallback("");
+			}
+		} else {
+			juce::Result::fail("Error: Code signing identity retrieval process did not finish properly.");
+			if (completionCallback != nullptr)
+				completionCallback("");
+		}
+	} else {
+		juce::Result::fail("Error: Failed to start the code signing identity retrieval process.");
+		if (completionCallback != nullptr)
+			completionCallback("");
+	}
+}
+#endif
 
 void CtrlrPanel::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
 	if (treeWhosePropertyHasChanged.hasType(Ids::modulator)) {
@@ -628,23 +727,38 @@ void CtrlrPanel::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 		return; // Handled this property, no need to check other conditions below.
 	}
 	// 1. Handle the button click that launches the popup
-	else if (property ==
-			 Ids::panelCertificateMacSelectId) // Added v5.6.32. Returns the MAC certificate ID from the popupMenu
-	{
+	else if (property == Ids::panelCertificateMacSelectId) {
 		if (getRestoreState()) // Prevent showing up the popupMenu on load
 			return;
 
 		if ((bool)getProperty(property) == true) // on button click
 		{
-			// Launch the popup to select the certificate identity
+			// Force the button state back to false immediately
+			setProperty(property, false);
+
+#if JUCE_VERSION >= 0x070000
+			// --- Modern JUCE 7/8 Asynchronous Path ---
+			// We pass a lambda block. The code inside this lambda waits patiently
+			// until the user clicks an item in the popup menu, then executes later.
+			getCodeSigningIdentityFromPopup([this](juce::String selectedIdentity) {
+				if (selectedIdentity.isNotEmpty()) {
+					// Save the selected certificate identity text to your panel properties
+					setProperty(Ids::panelCertificateMacId, selectedIdentity);
+
+					// Optional: If you need to immediately kick off a signing process, call it here:
+					// performSigning(selectedIdentity);
+				}
+			});
+#else
+			// --- Legacy JUCE 6 Synchronous Path ---
+			// This blocks the UI thread immediately, waits for a choice, and returns the string.
 			String selectedIdentity = getCodeSigningIdentityFromPopup();
 
 			if (selectedIdentity.isNotEmpty()) {
-				// Set the property with the selected certificate identity
 				setProperty(Ids::panelCertificateMacId, selectedIdentity);
 			}
+#endif
 		}
-		setProperty(property, false);
 	}
 	// 2. Handle the change to the certificate identity property (Triggers GUI refresh)
 	else if (property == Ids::panelCertificateMacId) // Added v5.6.34.

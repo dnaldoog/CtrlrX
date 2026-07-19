@@ -9,6 +9,7 @@
 #include "CtrlrSysexProcessorOwned.h"
 #include "CtrlrWindowManagers/CtrlrManagerWindowManager.h"
 #include "Native/CtrlrNative.h"
+#include <memory>
 
 class CtrlrLuaManager;
 class CtrlrPanelCanvas;
@@ -352,6 +353,7 @@ class CtrlrManager : public ValueTree::Listener,
 		std::unique_ptr<CtrlrProperties> ctrlrProperties;
 		std::unique_ptr<CtrlrManagerVst> ctrlrManagerVst;
 		std::unique_ptr<CtrlrNative> ctrlrNativeObject;
+		std::unique_ptr<FileChooser> fileChooser;
 		AudioFormatManager audioFormatManager;
 		AudioThumbnailCache audioThumbnailCache;
 		CtrlrIDManager ctrlrIDManager;

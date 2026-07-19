@@ -3,6 +3,7 @@
 
 #include "CtrlrIDManager.h"
 #include "CtrlrLog.h" // Case sensitive on LINUX
+#include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrPanel/CtrlrPanel.h"
 #include "CtrlrPanel/CtrlrPanelCanvas.h"
 #include "CtrlrPanel/CtrlrPanelCanvasLayer.h"
@@ -420,6 +421,103 @@ class CtrlrModulatorListProperty : public CtrlrPropertyChild,
 		bool numeric;
 };
 
+class MultiMidiAlert : public AlertWindow 
+{
+public:
+    MultiMidiAlert()
+        : AlertWindow("Add Custom MIDI Message",
+#if JUCE_VERSION >= 0x070000
+                      String(), // JUCE 7/8: Custom label layout below
+#else
+                      getHelpText(), // JUCE 6: Native area usage
+#endif
+                      AlertWindow::QuestionIcon) 
+    {
+        addTextEditor("customMidi", "F0 00 xx F7", "MIDI Message", false);
+
+#if JUCE_VERSION >= 0x070000
+        // --- JUCE 7/8 Setup ---
+        messageLabel.setText(getHelpText(), dontSendNotification);
+        messageLabel.setFont(Font(15.0f));
+        messageLabel.setColour(Label::textColourId, findColour(AlertWindow::textColourId));
+        messageLabel.setSize(460, 200);
+        addCustomComponent(&messageLabel);
+
+        addButton("OK", 1, KeyPress(KeyPress::returnKey, 0, 0));
+        addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
+        setSize(560, 400);
+        
+        AW::layoutButtonsJUCE8(this, "OK", "Cancel", 80, 40);
+#else
+        // --- JUCE 6 Setup ---
+        addButton("OK", 1);
+        addButton("Cancel", 0);
+#endif
+    }
+
+    static const String getHelpText() {
+        return "Enter a Raw MIDI message:\n\n"
+               "Examples:\n"
+               "  Bn,-2,-1           (CC using component number & value)\n"
+               "  Cn,-1   (Program change using component value)\n"
+               "  SysEx,F0 00 xx F7  (SysEx with tokens)\n\n"
+               "  B4 03 67           (Raw MIDI hex bytes)\n\n"
+               "Tokens: -2=component number, -1=component value, xx etc = SysEx tokens";
+    }
+
+#if JUCE_VERSION < 0x070000
+    void buttonClicked(Button* button) override { exitModalState(button->getCommandID()); }
+#endif
+
+    const String getValue() {
+        if (auto* ed = getTextEditor("customMidi")) {
+            String userInput = ed->getText().trim();
+            if (userInput.isNotEmpty())
+                return "Custom," + userInput;
+        }
+        return String();
+    }
+
+private:
+#if JUCE_VERSION >= 0x070000
+    Label messageLabel;
+#endif
+};
+
+class BubbleConfigAlert : public AlertWindow 
+{
+public:
+    BubbleConfigAlert(const String& currentTitle, const String& currentText, int currentTimeout)
+        : AlertWindow("Configure Tooltip Bubble", String(), AlertWindow::NoIcon) 
+    {
+        addTextEditor("bubbleTitle", currentTitle, "Bubble Header/Title:", false);
+        addTextEditor("bubbleText", currentText, "Help text description:", false);
+        
+        if (auto* textEd = getTextEditor("bubbleText")) {
+            textEd->setMultiLine(true, true);
+            textEd->setReturnKeyStartsNewLine(true);
+        }
+
+        addTextEditor("bubbleTimeout", String(currentTimeout), "Display timeout (ms):", false);
+
+#if JUCE_VERSION >= 0x070000
+        addButton("Save Changes", 1, KeyPress(KeyPress::returnKey, 0, 0));
+        addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
+        setSize(500, 350);
+        
+        AW::layoutButtonsJUCE8(this, "Save Changes", "Cancel", 120, 35);
+#else
+        addButton("Save Changes", 1);
+        addButton("Cancel", 0);
+#endif
+    }
+
+#if JUCE_VERSION < 0x070000
+    void buttonClicked(Button* button) override { exitModalState(button->getCommandID()); }
+#endif
+};
+
+#if 0
 class MultiMidiAlert : public AlertWindow // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog . Updated by
 										  // dam for juce 6 & Juce 8
 {
@@ -550,7 +648,7 @@ class BubbleConfigAlert : public AlertWindow {
 #endif
 		}
 };
-
+#endif
 class CtrlrMultiMidiPropertyComponent : public Component,
 										public ListBoxModel,
 										public Label::Listener,

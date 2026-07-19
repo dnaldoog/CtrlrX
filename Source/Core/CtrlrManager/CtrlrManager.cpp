@@ -555,13 +555,43 @@ int CtrlrManager::getPanelForModulator(const int modulatorIndex) {
 int CtrlrManager::getNextVstIndex() { return (ctrlrManagerVst->getFirstFree()); }
 
 void CtrlrManager::openPanelFromFile(Component *componentToAttachMenu) {
-	FileChooser fc("Open panel", File(getProperty(Ids::ctrlrLastBrowsedFileDirectory)),
-				   "*.panel;*.panelz;*.bpanel;*.bpanelz;*.*", (bool)getProperty(Ids::ctrlrNativeFileDialogs));
+#if JUCE_VERSION >= 0x070000
+    // 1. Set the specific file types Ctrlr expects, matching your legacy code
+    String wildcards = "*.panel;*.panelz;*.bpanel;*.bpanelz;*.*";
+    bool useNativeDialog = (bool)getProperty(Ids::ctrlrNativeFileDialogs);
+    
+    // Make sure fileChooser is declared as a std::unique_ptr<juce::FileChooser> 
+    // either in your CtrlrManager class header file, or as a static/tracked instance.
+    fileChooser = std::make_unique<FileChooser>(
+        "Open panel", 
+        File(getProperty(Ids::ctrlrLastBrowsedFileDirectory)),
+        wildcards, 
+        useNativeDialog
+    );
 
-	if (fc.browseForFileToOpen()) {
-		openPanelInternal(fc.getResult());
-		panelFileOpened(fc.getResult());
-	}
+    // 2. Launch the dialog box asynchronously
+    fileChooser->launchAsync(
+        FileBrowserComponent::openMode | FileBrowserComponent::canSelectFiles,
+        [this](const FileChooser &chooser) {
+            File result = chooser.getResult();
+
+            // 3. Process the file using the original Ctrlr engine methods
+            if (result.existsAsFile()) {
+                openPanelInternal(result);
+                panelFileOpened(result);
+            }
+        }
+    );
+#else
+    // --- Legacy JUCE 6 Synchronous Execution ---
+    FileChooser fc("Open panel", File(getProperty(Ids::ctrlrLastBrowsedFileDirectory)),
+                   "*.panel;*.panelz;*.bpanel;*.bpanelz;*.*", (bool)getProperty(Ids::ctrlrNativeFileDialogs));
+    
+    if (fc.browseForFileToOpen()) {
+        openPanelInternal(fc.getResult());
+        panelFileOpened(fc.getResult());
+    }
+#endif
 }
 
 void CtrlrManager::panelFileOpened(const File &panelFile) {

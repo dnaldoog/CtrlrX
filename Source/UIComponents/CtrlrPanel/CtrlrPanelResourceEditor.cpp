@@ -248,8 +248,8 @@ void CtrlrPanelResourceEditor::addResourceFromFile() {
 
 							if (editor.getResourceManager().resourceExists(currentFile)) {
 								if (!overwriteAllowed) {
-									// Use your unified AlertWindowUtils helper instead of synchronous SURE
-									AlertWindowUtils::showOkCancelAsyncSafe(
+									// Use your unified AW  helper instead of synchronous SURE
+									AW::showOkCancelAsyncSafe(AW::Question,
 										"Overwrite Resource",
 										"Resource: " + currentFile.getFileNameWithoutExtension() +
 											" already exists. Overwrite?",

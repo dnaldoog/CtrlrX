@@ -43,31 +43,99 @@ class MyPopupHelper {
 		}
 };
 
-class AlertWindowUtils {
-    public:
-        /**
-            Safely shows a fire-and-forget message box across JUCE 6, 7, and 8.
-        */
-        static void showMessageAsyncSafe(juce::AlertWindow::AlertIconType iconType,
-                                         const juce::String &title, 
-                                         const juce::String &message) {
-#if JUCE_VERSION >= 0x070000
-            juce::AlertWindow::showMessageBoxAsync(
-                iconType, title, message, "OK", nullptr, 
-                juce::ModalCallbackFunction::create([](int){})
-            );
-#else
-            juce::AlertWindow::showMessageBox(iconType, title, message, "OK", nullptr);
-#endif
-        }
+class AW {
+	public:
+		enum Icon { None, Question, Warning, Info };
 
-        /**
-            Safely shows an OK/Cancel question box across JUCE 6, 7, and 8.
-        */
-        static void showOkCancelAsyncSafe(const juce::String &title, const juce::String &message,
-                                          std::function<void(bool)> callback) {
-            // ... (your existing showOkCancelAsyncSafe implementation) ...
-        }
+		static bool showNativeDialogBox(Icon icon, const juce::String &title, const juce::String &bodyText,
+										bool isOkCancel) {
+#if JUCE_VERSION < 0x070000
+			// Map down to legacy standard icons
+			auto juce6Icon = (icon == Question)	 ? juce::AlertWindow::QuestionIcon
+							 : (icon == Warning) ? juce::AlertWindow::WarningIcon
+							 : (icon == Info)	 ? juce::AlertWindow::InfoIcon
+												 : juce::AlertWindow::NoIcon;
+
+			return juce::AlertWindow::showNativeDialogBox(title, bodyText, isOkCancel);
+#else
+			// Map down to modern native icons
+			auto juce8Icon = (icon == Question)	 ? juce::MessageBoxIconType::QuestionIcon
+							 : (icon == Warning) ? juce::MessageBoxIconType::WarningIcon
+							 : (icon == Info)	 ? juce::MessageBoxIconType::InfoIcon
+												 : juce::MessageBoxIconType::NoIcon;
+
+			if (isOkCancel) {
+				juce::NativeMessageBox::showOkCancelBox(juce8Icon, title, bodyText, nullptr,
+														juce::ModalCallbackFunction::create([](int) {}));
+			} else {
+				juce::NativeMessageBox::showMessageBoxAsync(juce8Icon, title, bodyText, nullptr,
+															juce::ModalCallbackFunction::create([](int) {}));
+			}
+			return false;
+#endif
+		}
+
+		bool AW::showNativeDialogBox(const String &title, const String &bodyText, bool isOkCancel) {
+#if JUCE_VERSION < 0x070000
+			// --- Legacy JUCE 6 Path (Synchronous) ---
+			return juce::AlertWindow::showNativeDialogBox(title, bodyText, isOkCancel);
+#else
+			// --- Modern JUCE 8 Path (Asynchronous) ---
+			using namespace juce;
+			MessageBoxIconType icon = isOkCancel ? MessageBoxIconType::QuestionIcon : MessageBoxIconType::InfoIcon;
+
+			if (isOkCancel) {
+				NativeMessageBox::showOkCancelBox(icon, title, bodyText, nullptr,
+												  ModalCallbackFunction::create([](int result) {
+													  // result == 1 means 'OK' / 'Yes' was clicked.
+													  // If Ctrlr needs to take action here, trigger a global event or
+													  // callback.
+												  }));
+			} else {
+				NativeMessageBox::showMessageBoxAsync(icon, title, bodyText, nullptr,
+													  ModalCallbackFunction::create([](int) {}));
+			}
+
+			return false; // JUCE 8 fallback return
+#endif
+		}
+
+		/**
+		Executes a custom AlertWindow asynchronously for JUCE 7/8, or synchronously for JUCE 6.
+	*/
+		static void runCustomAlertAsyncSafe(juce::AlertWindow *alert, std::function<void(int)> callback) {
+#if JUCE_VERSION >= 0x070000
+			alert->enterModalState(true, juce::ModalCallbackFunction::create([alert, callback](int result) {
+									   callback(result);
+									   // Safe cleanup if it's a dynamic heap allocation
+								   }),
+								   true);
+#else
+			int result = alert->runModalLoop();
+			callback(result);
+#endif
+		}
+
+		/**
+			Centralizes the custom button layout engines for JUCE 8 custom components.
+			Does absolutely nothing on JUCE 6 to save execution cycles.
+		*/
+		static void layoutButtonsJUCE8(juce::AlertWindow *alert, const juce::String &okText,
+									   const juce::String &cancelText, int bW = 100, int bH = 35) {
+#if JUCE_VERSION >= 0x070000
+			if (auto *okBtn = alert->getButton(okText)) {
+				if (auto *cancelBtn = alert->getButton(cancelText)) {
+					const int gap = 15;
+					const int totalWidth = (bW * 2) + gap;
+					const int startX = (alert->getWidth() - totalWidth) / 2;
+					const int yPos = alert->getHeight() - bH - 25;
+
+					okBtn->setBounds(startX, yPos, bW, bH);
+					cancelBtn->setBounds(startX + bW + gap, yPos, bW, bH);
+				}
+			}
+#endif
+		}
 };
 
 namespace gui {
