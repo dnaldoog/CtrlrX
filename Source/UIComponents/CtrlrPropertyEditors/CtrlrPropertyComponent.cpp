@@ -1138,22 +1138,25 @@ void CtrlrLuaMethodProperty::buttonClicked(Button *buttonThatWasClicked) {
 
 #if JUCE_VERSION >= 0x070000
 		// --- Modern JUCE 7/8 Asynchronous Non-Blocking Approach ---
-
 		auto *w = new AlertWindow("Method name", "New method name", AlertWindow::QuestionIcon, this);
 		w->addTextEditor("methodName", "myMethod", "Method", false);
 		w->addButton("OK", 1, KeyPress(KeyPress::returnKey));
 		w->addButton("Cancel", 0, KeyPress(KeyPress::escapeKey));
 
-		// Use ModalCallbackFunction::create here:
-		w->enterModalState(true, ModalCallbackFunction::create([this, w](int result) {
-							   if (result == 1) { // User clicked "OK"
-								   if (owner) {
+		// Fix: Use the exact class type for the safe pointer wrapper
+		Component::SafePointer<CtrlrLuaMethodProperty> safeThis(this);
+
+		w->enterModalState(true, ModalCallbackFunction::create([safeThis, w](int result) {
+							   // safeThis protects against a crash if the UI changes mid-air
+							   if (safeThis != nullptr && result == 1) {
+								   if (auto *owner = safeThis->owner) {
 									   owner->getCtrlrLuaManager().getMethodManager().addMethod(
-										   ValueTree(), w->getTextEditorContents("methodName"), "", id.toString());
+										   ValueTree(), w->getTextEditorContents("methodName"), "",
+										   safeThis->id.toString());
 								   }
 							   }
 						   }),
-						   true);
+						   true); // JUCE automatically handles deleting 'w'
 
 #else
 		// --- Legacy JUCE 6 Synchronous Blocking Approach ---

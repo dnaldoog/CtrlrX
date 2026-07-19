@@ -49,9 +49,18 @@
 
 #define MENU_OFFSET_PROGRAM_LIST		0x80000
 
+#if JUCE_VERSION >= 0x70000
+#define WARN(x)                                                 AlertWindow::showMessageBoxAsync (AlertWindow::WarningIcon, "WARNING", x, "OK", nullptr, ModalCallbackFunction::create([](int){}))
+#define INFO(x,y)                                               AlertWindow::showMessageBoxAsync (AlertWindow::InfoIcon, x, y, "OK", nullptr, ModalCallbackFunction::create([](int){}))
+
+// NOTE: SURE(x,y) now fires asynchronously. 'y' must be an associated parent component, or nullptr. 
+// Any actual logic relying on the user's choice must be refactored into a ModalCallbackFunction in the source files.
+#define SURE(x,y)  
+#else
 #define WARN(x)													AlertWindow::showMessageBox (AlertWindow::WarningIcon, "WARNING", x, "OK", nullptr)
 #define INFO(x,y)												AlertWindow::showMessageBox (AlertWindow::InfoIcon, x, y, "OK", nullptr)
 #define SURE(x,y)												AlertWindow::showOkCancelBox (AlertWindow::QuestionIcon, "Are you sure?", x, "Yes", "No", y, nullptr)
+#endif
 #define _STR(x)                                                 String(x)
 #define STR(x)													_STR(x)
 #define IMAGE(x)												ImageCache::getFromMemory(BinaryData::x, BinaryData::x ## Size)
