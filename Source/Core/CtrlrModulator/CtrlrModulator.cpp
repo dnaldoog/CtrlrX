@@ -4,6 +4,7 @@
 #include "CtrlrPanel/CtrlrPanel.h"
 #include "CtrlrComponents/CtrlrComponent.h"
 #include "CtrlrComponents/CtrlrComponentTypeManager.h"
+#include "CtrlrInlineUtilitiesGUI.h"
 
 CtrlrModulator::CtrlrModulator(CtrlrPanel &_owner)
 	:	ctrlrComponent(0),
@@ -464,7 +465,8 @@ void CtrlrModulator::setReference (const String &modulatorToReference)
 	}
 	else
 	{
-		AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Modulator link", "Can't link to myself");
+		AW::showMessageBox(AW::Warning, "Modulator link", "Can't link to myself");
+		//AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Modulator link", "Can't link to myself");
 		setProperty (Ids::modulatorLinkedToModulator, COMBO_NONE_ITEM);
 	}
 }

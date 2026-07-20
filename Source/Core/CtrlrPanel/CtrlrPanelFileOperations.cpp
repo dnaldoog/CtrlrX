@@ -414,35 +414,42 @@ const String CtrlrPanel::exportPanel(CtrlrPanel *panel, const File &lastBrowsedD
 
 	if (panel->getResourceManager().getNumResources() > 0)
 	{
-		const int ret = AlertWindow::showOkCancelBox(AlertWindow::QuestionIcon, "License question",
-													 "Would you like to attach a license to this panel?", "Yes", "No");
-		if (ret == 1)
-		{
-			AlertWindow licenseWindow("License content", "Paste your license below", AlertWindow::InfoIcon, 0);
-			TextEditor lic;
-			lic.setMultiLine(true, false);
-			lic.setSize(400, 300);
-			licenseWindow.addCustomComponent(&lic);
-			licenseWindow.addButton("OK", 1);
+		// const int ret = AlertWindow::showOkCancelBox(AlertWindow::QuestionIcon, "License question",
+		// "Would you like to attach a license to this panel?", "Yes", "No");
+		AW::showNativeDialogBox(AW::Question, "License question", "Would you like to attach a license to this panel?",
+								"Yes", "No", true, [](bool userClickedYes) {
+									if (userClickedYes) {
+										AlertWindow licenseWindow("License content", "Paste your license below",
+																  AlertWindow::InfoIcon, 0);
+										TextEditor lic;
+										lic.setMultiLine(true, false);
+										lic.setSize(400, 300);
+										licenseWindow.addCustomComponent(&lic);
+										licenseWindow.addButton("OK", 1);
+										/**
+										 *
+										 * the code that used to live inside  if (licenseWindow.runModalLoop())
+										 * block moves directly into the userClickedYes == true branch of the callback
+										 * lambda. If the user clicks "No" (meaning userClickedYes is false), simply
+										 * skip adding the license or handle any cancellation cleanup.
+										 *
+										 */
+										// if (licenseWindow.runModalLoop())
+										// {
+										// 	ValueTree licTree(Ids::resourceLicense);
+										// 	licTree.setProperty(Ids::resourceData, lic.getText(), 0);
+										// 	resources.addChild(licTree, -1, 0);
+										// }
+									}
+								});
 
-			if (licenseWindow.runModalLoop())
-			{
-				ValueTree licTree(Ids::resourceLicense);
-				licTree.setProperty(Ids::resourceData, lic.getText(), 0);
-				resources.addChild(licTree, -1, 0);
+		ValueTree exportTree = panel->getCleanPanelTree();
+
+		if (isRestricted) {
+			exportTree.setProperty(Ids::restricted, (int)InstanceSingleRestricted, nullptr);
+			if (exportTree.getChildWithName(Ids::uiPanelEditor).isValid()) {
+				exportTree.getChildWithName(Ids::uiPanelEditor).setProperty(Ids::uiPanelEditMode, false, nullptr);
 			}
-		}
-	}
-
-	ValueTree exportTree = panel->getCleanPanelTree();
-
-	if (isRestricted)
-	{
-		exportTree.setProperty(Ids::restricted, (int)InstanceSingleRestricted, nullptr);
-		if (exportTree.getChildWithName(Ids::uiPanelEditor).isValid())
-		{
-			exportTree.getChildWithName(Ids::uiPanelEditor).setProperty(Ids::uiPanelEditMode, false, nullptr);
-		}
 	}
 
 	if (panelSnapshot != Image())
@@ -501,7 +508,7 @@ const String CtrlrPanel::exportPanel(CtrlrPanel *panel, const File &lastBrowsedD
 		return ("Can't export panel, I can't write to the specified file");
 	}
 }
-
+}
 const ValueTree CtrlrPanel::openBinPanel(const File &panelFile)
 {
 	ValueTree tree;
@@ -940,67 +947,7 @@ const File CtrlrPanel::askForPanelFileToSave(CtrlrPanel *panel, const File &last
 		panelFile = File::getSpecialLocation(File::userDocumentsDirectory).getChildFile(panelFileName);
 	}
 
-	if (isXml)
-	{
-		if (isCompressed)
-		{
-			FileChooser fileChooser("Panel file XML compressed", panelFile, "*.panelz", useOSDialog);
-			if (fileChooser.browseForFileToSave(true))
-			{
-				return (fileChooser.getResult().withFileExtension("panelz"));
-			}
-			else
-			{
-				if (panel)
-					panel->notify("Save file dialog failed", nullptr, NotifyFailure);
-			}
-		}
-		else
-		{
-			FileChooser fileChooser("Panel file XML", panelFile, "*.panel", useOSDialog);
-			if (fileChooser.browseForFileToSave(true))
-			{
-				return (fileChooser.getResult().withFileExtension("panel"));
-			}
-			else
-			{
-				if (panel)
-					panel->notify("Save file dialog failed", nullptr, NotifyFailure);
-			}
-		}
-	}
-	else
-	{
-		if (isCompressed)
-		{
-			FileChooser fileChooser("Panel file binary compressed", panelFile, "*.bpanelz", useOSDialog);
-			if (fileChooser.browseForFileToSave(true))
-			{
-				return (fileChooser.getResult().withFileExtension("bpanelz"));
-			}
-			else
-			{
-				if (panel)
-					panel->notify("Save file dialog failed", nullptr, NotifyFailure);
-			}
-		}
-		else
-		{
-			FileChooser fileChooser("Panel file binary", panelFile, "*.bpanel", useOSDialog);
-			if (fileChooser.browseForFileToSave(true))
-			{
-				return (fileChooser.getResult().withFileExtension("bpanel"));
-			}
-			else
-			{
-				if (panel)
-					panel->notify("Save file dialog failed", nullptr, NotifyFailure);
-			}
-		}
-	}
 
-	return (File());
-}
 
 bool CtrlrPanel::isPanelFile(const File &fileToCheck, const bool beThorough)
 {

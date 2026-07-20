@@ -16,8 +16,13 @@ class CtrlrWindows : public CtrlrNative {
 								   const MemoryBlock &resourceData);
 		const Result readResource(void *handle, const LPSTR resourceId, const LPSTR resourceType,
 								  MemoryBlock &resourceData);
+#if JUCE_VERSION >= 0x070000
+		void exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRestricted, const bool signPanel,
+									std::function<void(juce::Result)> callback = nullptr);
+#else
 		const Result exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRestricted = false,
 											const bool signPanel = false);
+#endif
 		const Result getDefaultPanel(MemoryBlock &dataToWrite);
 		const Result getDefaultResources(MemoryBlock &dataToWrite);
 		const Result registerFileHandler();

@@ -1,4 +1,5 @@
 #include "CtrlrSysexProcessor.h"
+#include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrLog.h"
 #include "CtrlrMidiMessage.h"
 #include "CtrlrPanel/CtrlrPanel.h"
@@ -509,6 +510,29 @@ void CtrlrSysexProcessor::checksumXor(const CtrlrSysexToken token, MidiMessage &
 	*(ptr + token.getPosition()) = chTotal & 0x7f;
 }
 
+// Ensure the parameter is named 'callback' here so the code below can find it!
+void CtrlrSysexProcessor::openAdvancedMessageEditor(std::function<void(const String &)> callback) {
+	MultiMidiAlert *alert = new MultiMidiAlert();
+
+	alert->centreAroundComponent(nullptr, alert->getWidth(), alert->getHeight());
+
+	alert->enterModalState(true, juce::ModalCallbackFunction::create([alert, callback](int result) {
+							   if (result == 1) {
+								   const String newMsg = alert->getValue();
+								   if (newMsg.isNotEmpty()) {
+									   callback(newMsg); // Works now!
+									   delete alert;
+									   return;
+								   }
+							   }
+
+							   callback(String()); // Works now!
+							   delete alert;
+						   }),
+						   true);
+}
+
+#if 0
 String CtrlrSysexProcessor::openAdvancedMessageEditor() // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
 														// . Updated by dam for juce 6 & Juce 8
 {
@@ -526,7 +550,7 @@ String CtrlrSysexProcessor::openAdvancedMessageEditor() // Updated v5.6.35. For 
 
 	return String();
 }
-
+#endif
 void CtrlrSysexProcessor::showMidiHelp() {
 	const String helpText = "MIDI Message Conventions:\n\n"
 							"-1       = Parent component value\n"
@@ -569,12 +593,17 @@ void CtrlrSysexProcessor::showMidiHelp() {
 #endif
 
 	// --- Unified Execution/Cleanup ---
-#if JUCE_LINUX
-	// Always async on Linux to avoid window manager deadlocks
-	alert->enterModalState(true, ModalCallbackFunction::create([alert](int) { delete alert; }), true);
-#else
-	// For Windows/macOS
-	alert->runModalLoop();
-	delete alert;
-#endif
+	// #if JUCE_LINUX
+	// 	// Always async on Linux to avoid window manager deadlocks
+	// 	alert->enterModalState(true, ModalCallbackFunction::create([alert](int) { delete alert; }), true);
+	// #else
+	// 	// For Windows/macOS
+	// 	alert->runModalLoop();
+	// 	delete alert;
+	// #endif
+	// Works identically on Windows, macOS, and Linux without macros
+	// --- Unified Execution/Cleanup ---
+	// Works flawlessly on JUCE 6, 7, and 8 across Windows, macOS, and Linux.
+	// No 'callback' or 'getValue' required—just clean memory up when closed!
+	alert->enterModalState(true, juce::ModalCallbackFunction::create([alert](int result) { delete alert; }), true);
 }

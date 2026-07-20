@@ -86,6 +86,76 @@ const PopupMenu CtrlrWaveform::getComponentMenu(const MouseEvent &e) {
 void CtrlrWaveform::handlePopupMenu(const int popupMenuItem) {
 	if (popupMenuItem == 4096) {
 		if (audioThumbnail->isFullyLoaded()) {
+			String patterns =
+				owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager().getWildcardForAllFormats();
+			bool useNative =
+				(bool)owner.getOwnerPanel().getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs);
+
+			Component::SafePointer<CtrlrWaveform> safeThis(this);
+
+			FC::openFileAsync("Load a file", currentFile.getParentDirectory(), patterns, useNative,
+							  [safeThis](const File &fileToOpen) {
+								  if (safeThis != nullptr && fileToOpen.existsAsFile()) {
+									  safeThis->loadFromFile(fileToOpen);
+								  }
+							  });
+		} else {
+			audioThumbnail->clear();
+		}
+	} else if (popupMenuItem == 4097) {
+		WARN("Not implemented yet :(");
+	} else if (popupMenuItem == 4098) {
+		String patterns =
+			owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager().getWildcardForAllFormats();
+		bool useNative = (bool)owner.getOwnerPanel().getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs);
+
+		Component::SafePointer<CtrlrWaveform> safeThis(this);
+
+		FC::saveFileAsync(
+			"Save to an audio file", currentFile.getParentDirectory(), patterns, useNative,
+			[safeThis](const File &outputFile) {
+				if (safeThis == nullptr || outputFile == File())
+					return;
+
+				AudioFormat *format = safeThis->owner.getOwnerPanel()
+										  .getCtrlrManagerOwner()
+										  .getAudioFormatManager()
+										  .findFormatForFileExtension(outputFile.getFileExtension());
+
+				if (format != nullptr) {
+					std::unique_ptr<FileOutputStream> outStream(outputFile.createOutputStream());
+
+					if (outStream != nullptr && outStream->openedOk()) {
+						std::unique_ptr<AudioFormatWriter> writer(
+							format->createWriterFor(outStream.release(), safeThis->currentSampleRate,
+													safeThis->audioThumbnail->getNumChannels(), 32,
+													safeThis->metadataForAudioFiles, safeThis->qualityForAudioFiles));
+
+						if (writer != nullptr) {
+							writer->writeFromAudioSampleBuffer(safeThis->audioBufferCopy, 0,
+															   safeThis->audioBufferCopy.getNumSamples());
+						} else {
+							if (safeThis->owner.getOwnerPanel().getDialogStatus()) {
+								WARN(
+									"Can't create AudioFormatWriter sampleRate=" + String(safeThis->currentSampleRate) +
+									", channels=" + String(safeThis->audioThumbnail->getNumChannels()) +
+									", bitsPerSample=32, qualityIndex=" + String(safeThis->qualityForAudioFiles));
+							}
+						}
+					}
+				} else {
+					if (safeThis->owner.getOwnerPanel().getDialogStatus()) {
+						WARN("Can't find AudioFormat for the file: " + outputFile.getFileName());
+					}
+				}
+			});
+	}
+}
+
+#if 0 // Old JUCE 6 code
+void CtrlrWaveform::handlePopupMenu(const int popupMenuItem) {
+	if (popupMenuItem == 4096) {
+		if (audioThumbnail->isFullyLoaded()) {
 			FileChooser fc(
 				"Load a file", currentFile.getParentDirectory(),
 				owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager().getWildcardForAllFormats(),
@@ -133,7 +203,7 @@ void CtrlrWaveform::handlePopupMenu(const int popupMenuItem) {
 		}
 	}
 }
-
+#endif
 void CtrlrWaveform::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
 	if (property == Ids::uiWaveformBackgroundColour1 || property == Ids::uiWaveformBackgroundColour2 ||
 		property == Ids::uiWaveformOutlineColour || property == Ids::uiWaveformColour ||

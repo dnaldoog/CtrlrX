@@ -1,14 +1,15 @@
-#include "stdafx.h"
-#include "CtrlrLuaManager.h"
 #include "CtrlrModulatorProcessor.h"
-#include "CtrlrModulator.h"
-#include "CtrlrIDs.h"
-#include "CtrlrUtilities.h"
-#include "CtrlrPanel/CtrlrPanel.h"
-#include "CtrlrManager/CtrlrManager.h"
-#include "Plugin/CtrlrProcessor.h"
-#include "CtrlrLog.h"
 #include "CtrlrComponents/CtrlrComponent.h"
+#include "CtrlrIDs.h"
+#include "CtrlrInlineUtilitiesGUI.h"
+#include "CtrlrLog.h"
+#include "CtrlrLuaManager.h"
+#include "CtrlrManager/CtrlrManager.h"
+#include "CtrlrModulator.h"
+#include "CtrlrPanel/CtrlrPanel.h"
+#include "CtrlrUtilities.h"
+#include "Plugin/CtrlrProcessor.h"
+#include "stdafx.h"
 
 CtrlrModulatorProcessor::CtrlrModulatorProcessor(CtrlrModulator &_owner)
 	: owner(_owner),
@@ -86,8 +87,11 @@ void CtrlrModulatorProcessor::handleAsyncUpdate()
                                                                                     (uint8)currentValue.lastChangeSource);
             }
             else{
-                AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error", owner.getName() + "\n" + "LUA script not valid: luaModulatorValueChange");
-            }
+				// AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error", owner.getName() + "\n" +
+				// "LUA script not valid: luaModulatorValueChange");
+				AW::showMessageBox(AW::Warning, "Callback error",
+								   owner.getName() + "\n" + "LUA script not valid: luaModulatorValueChange");
+			}
         }
     }
     else // else if (warningInBoostrapState == (false))
@@ -108,8 +112,11 @@ void CtrlrModulatorProcessor::handleAsyncUpdate()
                                                                                     (uint8)currentValue.lastChangeSource);
             }
             else{
-                AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error", owner.getName() + "\n LUA script not valid: luaModulatorValueChange");
-            }
+				// AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error", owner.getName() + "\n LUA
+				// script not valid: luaModulatorValueChange");
+				AW::showMessageBox(AW::Warning, "Callback error",
+								   owner.getName() + "\n LUA script not valid: luaModulatorValueChange");
+			}
         }
     }
     

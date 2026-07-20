@@ -928,6 +928,44 @@ void CtrlrPanelCanvas::exportSelectedComponents() {
 }
 
 void CtrlrPanelCanvas::exportComponent(CtrlrComponent *componentToExport) {
+	if (componentToExport == nullptr)
+		return;
+
+	// 1. Resolve starting directory/file
+	File initialDir(owner.getProperty(Ids::lastBrowsedComponentDir));
+	if (initialDir == File()) {
+		initialDir = File::getSpecialLocation(File::userDocumentsDirectory);
+		owner.setProperty(Ids::lastBrowsedComponentDir, initialDir.getFullPathName());
+	}
+
+	File initialFile = initialDir.getChildFile(componentToExport->getOwner().getName() + ".component");
+	bool useNative = (bool)owner.getOwner().getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs);
+
+	// Safely wrap 'this' in case the component is destroyed while the dialog is open
+	Component::SafePointer<CtrlrPanelCanvas> safeThis(this);
+
+	// 2. Non-blocking Async File Chooser
+	FC::saveFileAsync("Ctrlr component file", initialFile, "*.component", useNative,
+					  [safeThis, componentToExport](const File &fileChosen) {
+						  if (safeThis == nullptr || fileChosen == File())
+							  return; // User cancelled or canvas closed
+
+						  File fileToSave = fileChosen.withFileExtension(".component");
+
+						  // Update last browsed path
+						  safeThis->owner.setProperty(Ids::lastBrowsedComponentDir,
+													  fileToSave.getParentDirectory().getFullPathName());
+
+						  // 3. Modernized output stream handling (std::unique_ptr)
+						  std::unique_ptr<FileOutputStream> fileOutputStream(fileToSave.createOutputStream());
+						  if (fileOutputStream != nullptr && fileOutputStream->openedOk()) {
+							  componentToExport->getOwner().getModulatorTree().writeToStream(*fileOutputStream);
+						  }
+					  });
+}
+
+#if 0
+void CtrlrPanelCanvas::exportComponent(CtrlrComponent *componentToExport) {
 	if (componentToExport != 0) {
 		File f(owner.getProperty(Ids::lastBrowsedComponentDir));
 		if (f == File()) {
@@ -951,7 +989,25 @@ void CtrlrPanelCanvas::exportComponent(CtrlrComponent *componentToExport) {
 		}
 	}
 }
+#endif
 
+#if JUCE_VERSION >= 0x070000
+void CtrlrPanelCanvas::importComponent(const File &componentFile, int x, int y) {
+	// Replace ScopedPointer with std::unique_ptr and drop .release()
+	std::unique_ptr<FileInputStream> fileInputStream(componentFile.createInputStream());
+
+	if (fileInputStream != nullptr && fileInputStream->openedOk()) {
+		ValueTree cTree = ValueTree::readFromStream(*fileInputStream);
+
+		if (cTree.isValid()) {
+			CtrlrComponent *c = addNewComponent(cTree);
+			if (c != nullptr) {
+				c->setTopLeftPosition(x, y);
+			}
+		}
+	}
+}
+#else
 void CtrlrPanelCanvas::importComponent(const File &componentFile, int x, int y) {
 	ScopedPointer<FileInputStream> fileInputStream(componentFile.createInputStream().release());
 	if (fileInputStream) {
@@ -964,37 +1020,25 @@ void CtrlrPanelCanvas::importComponent(const File &componentFile, int x, int y) 
 		}
 	}
 }
-
+#endif
 void CtrlrPanelCanvas::importPanel(const File &panelFile, int x, int y) {}
 
 void CtrlrPanelCanvas::importImage(const File &imageFile, int x, int y) {
 	if (owner.getOwner().getResourceManager().addResource(imageFile)) {
-#if JUCE_VERSION >= 0x070000
-		AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Image import",
-										 "Can't import the file as a image resource");
-#else
-		AlertWindow::showMessageBox(AlertWindow::InfoIcon, "Image import", "Can't import the file as a image resource");
-#endif
+		AW::showMessageBox(AW::Info, "Image import", "Can't import the file as an image resource");
 		return;
 	}
 
 	Image i = owner.getOwner().getResourceManager().getResourceAsImage(imageFile.getFileNameWithoutExtension());
 
 	if (i == Image()) {
-#if JUCE_VERSION >= 0x070000
-		AlertWindow::showMessageBoxAsync(
-			AlertWindow::InfoIcon, "Image import",
-			"Image has been imported as a resource, but i can't fetch if from the resource manager");
-#else
-		AlertWindow::showMessageBox(
-			AlertWindow::InfoIcon, "Image import",
-			"Image has been imported as a resource, but i can't fetch if from the resource manager");
-#endif
+		AW::showMessageBox(AW::Info, "Image import",
+						   "Image has been imported as a resource, but can't fetch it from the resource manager");
 		return;
 	}
 
 	CtrlrComponent *c = addNewComponent(Ids::uiImage, Point<int>(x, y));
-	if (c) {
+	if (c != nullptr) {
 		c->setProperty(Ids::uiImageResource, imageFile.getFileNameWithoutExtension());
 		c->setSize(i.getWidth(), i.getHeight());
 	}
@@ -1233,7 +1277,35 @@ CtrlrQuickXmlPreview::CtrlrQuickXmlPreview(ValueTree &_treeToPreview)
 }
 
 void CtrlrQuickXmlPreview::resized() { h.setSize(getWidth(), getHeight()); }
+#if JUCE_VERSION >= 0x070000
+void CtrlrQuickXmlPreview::buttonClicked(Button *) {
+	// 1. Create document and editor
+	CodeDocument doc;
 
+	// Modernize ScopedPointer -> std::unique_ptr and drop .release()
+	std::unique_ptr<XmlElement> xml(treeToPreview.createXml());
+	if (xml != nullptr) {
+		doc.replaceAllContent(xml->createDocument(""));
+	}
+
+	// Allocate editor on heap so it stays alive while the dialog is open
+	auto *ed = new CodeEditorComponent(doc, nullptr);
+	ed->setSize(600, 600);
+
+	// 2. Configure dialog window options
+	DialogWindow::LaunchOptions options;
+	options.dialogTitle = "XML Preview";
+	options.dialogBackgroundColour = Colours::white;
+	options.content.setOwned(ed); // DialogWindow takes ownership and deletes 'ed' when closed
+	options.componentToCentreAround = this;
+	options.escapeKeyTriggersCloseButton = true;
+	options.useNativeTitleBar = true;
+	options.resizable = true;
+
+	// 3. Launch asynchronously (non-blocking)
+	options.launchAsync();
+}
+#else
 void CtrlrQuickXmlPreview::buttonClicked(Button *) {
 	CodeDocument doc;
 	CodeEditorComponent ed(doc, 0);
@@ -1242,3 +1314,4 @@ void CtrlrQuickXmlPreview::buttonClicked(Button *) {
 	ed.setSize(600, 600);
 	DialogWindow::showModalDialog("XML Preview", &ed, this, Colours::white, true, true, true);
 }
+#endif

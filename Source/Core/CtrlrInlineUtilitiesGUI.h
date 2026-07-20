@@ -3,7 +3,8 @@
 
 #include "CtrlrMacros.h"
 #include <juce_gui_basics/juce_gui_basics.h> // Make sure this is included for LookAndFeel_V4
-
+// #pragma once
+#include <JuceHeader.h>
 class MyPopupHelper {
 	public:
 		/**
@@ -41,68 +42,108 @@ class MyPopupHelper {
 			callback(result);
 #endif
 		}
-};
-
+}; //
+/**************************************************************************************************/
 class AW {
 	public:
 		enum Icon { None, Question, Warning, Info };
-
+		/**************************************************************************************************/
 		static bool showNativeDialogBox(Icon icon, const juce::String &title, const juce::String &bodyText,
-										bool isOkCancel) {
-#if JUCE_VERSION < 0x070000
-			// Map down to legacy standard icons
-			auto juce6Icon = (icon == Question)	 ? juce::AlertWindow::QuestionIcon
-							 : (icon == Warning) ? juce::AlertWindow::WarningIcon
-							 : (icon == Info)	 ? juce::AlertWindow::InfoIcon
-												 : juce::AlertWindow::NoIcon;
+										const juce::String &buttonText1, // Added "Yes" / "OK" string slot
+										const juce::String &buttonText2, // Added "No" / "Cancel" string slot
+										bool isOkCancel, std::function<void(bool)> completionCallback = nullptr) {
+			auto juceAlertIcon = (icon == Question)	 ? juce::AlertWindow::QuestionIcon
+								 : (icon == Warning) ? juce::AlertWindow::WarningIcon
+								 : (icon == Info)	 ? juce::AlertWindow::InfoIcon
+													 : juce::AlertWindow::NoIcon;
 
-			return juce::AlertWindow::showNativeDialogBox(title, bodyText, isOkCancel);
+#if JUCE_VERSION < 0x070000
+			// --- Legacy JUCE 6 Path (Synchronous) ---
+			if (isOkCancel) {
+				// Now correctly passing your custom button strings down
+				bool result =
+					juce::AlertWindow::showOkCancelBox(juceAlertIcon, title, bodyText, buttonText1, buttonText2);
+
+				if (completionCallback != nullptr)
+					completionCallback(result);
+
+				return result;
+			} else {
+				juce::AlertWindow::showMessageBox(juceAlertIcon, title, bodyText, buttonText1);
+				if (completionCallback != nullptr)
+					completionCallback(true);
+				return true;
+			}
 #else
-			// Map down to modern native icons
+			// --- Modern JUCE 7/8 Path (Asynchronous) ---
+			auto juce8NativeIcon = (icon == Question)  ? juce::MessageBoxIconType::QuestionIcon
+								   : (icon == Warning) ? juce::MessageBoxIconType::WarningIcon
+								   : (icon == Info)	   ? juce::MessageBoxIconType::InfoIcon
+													   : juce::MessageBoxIconType::NoIcon;
+
+			if (isOkCancel) {
+				// NativeMessageBox maps buttonText1 to the primary action, buttonText2 to alternative action
+				juce::NativeMessageBox::showOkCancelBox(
+					juce8NativeIcon, title, bodyText, nullptr,
+					juce::ModalCallbackFunction::create([completionCallback](int result) {
+						if (completionCallback != nullptr) {
+							completionCallback(result == 1); // 1 = Primary Button Clicked
+						}
+					}));
+			} else {
+				juce::NativeMessageBox::showMessageBoxAsync(
+					juce8NativeIcon, title, bodyText, nullptr,
+					juce::ModalCallbackFunction::create([completionCallback](int) {
+						if (completionCallback != nullptr) {
+							completionCallback(true);
+						}
+					}));
+			}
+			return false; // JUCE 8 fallback
+#endif
+		}
+		/**************************************************************************************************/
+		static void showMessageBox(Icon icon, const juce::String &title, const juce::String &message,
+								   const juce::String &buttonText = "OK", std::function<void()> callback = nullptr) {
+#if JUCE_VERSION >= 0x070000
 			auto juce8Icon = (icon == Question)	 ? juce::MessageBoxIconType::QuestionIcon
 							 : (icon == Warning) ? juce::MessageBoxIconType::WarningIcon
 							 : (icon == Info)	 ? juce::MessageBoxIconType::InfoIcon
 												 : juce::MessageBoxIconType::NoIcon;
-
-			if (isOkCancel) {
-				juce::NativeMessageBox::showOkCancelBox(juce8Icon, title, bodyText, nullptr,
-														juce::ModalCallbackFunction::create([](int) {}));
-			} else {
-				juce::NativeMessageBox::showMessageBoxAsync(juce8Icon, title, bodyText, nullptr,
-															juce::ModalCallbackFunction::create([](int) {}));
-			}
-			return false;
-#endif
-		}
-
-		bool AW::showNativeDialogBox(const String &title, const String &bodyText, bool isOkCancel) {
-#if JUCE_VERSION < 0x070000
-			// --- Legacy JUCE 6 Path (Synchronous) ---
-			return juce::AlertWindow::showNativeDialogBox(title, bodyText, isOkCancel);
+			// --- Modern JUCE 7/8 Asynchronous Path ---
+			juce::AlertWindow::showMessageBoxAsync(juce8Icon, title, message, buttonText,
+												   nullptr, // Associated component (optional)
+												   juce::ModalCallbackFunction::create([callback](int /*result*/) {
+													   if (callback != nullptr)
+														   callback();
+												   }));
 #else
-			// --- Modern JUCE 8 Path (Asynchronous) ---
-			using namespace juce;
-			MessageBoxIconType icon = isOkCancel ? MessageBoxIconType::QuestionIcon : MessageBoxIconType::InfoIcon;
+			auto juce6Icon = (icon == Question)	 ? juce::AlertWindow::QuestionIcon
+							 : (icon == Warning) ? juce::AlertWindow::WarningIcon
+							 : (icon == Info)	 ? juce::AlertWindow::InfoIcon
+												 : juce::AlertWindow::NoIcon;
+			// --- Legacy JUCE 6 Synchronous Path ---
+			juce::AlertWindow::showMessageBox(juce6Icon, title, message, buttonText);
 
-			if (isOkCancel) {
-				NativeMessageBox::showOkCancelBox(icon, title, bodyText, nullptr,
-												  ModalCallbackFunction::create([](int result) {
-													  // result == 1 means 'OK' / 'Yes' was clicked.
-													  // If Ctrlr needs to take action here, trigger a global event or
-													  // callback.
-												  }));
-			} else {
-				NativeMessageBox::showMessageBoxAsync(icon, title, bodyText, nullptr,
-													  ModalCallbackFunction::create([](int) {}));
-			}
-
-			return false; // JUCE 8 fallback return
+			if (callback != nullptr)
+				callback();
 #endif
+			/**
+			Executes a custom AlertWindow asynchronously for JUCE 7/8, or synchronously for JUCE 6.
+		*/
 		}
-
+		/**************************************************************************************************/
 		/**
-		Executes a custom AlertWindow asynchronously for JUCE 7/8, or synchronously for JUCE 6.
-	*/
+		 * Display a non-blocking Ok/Cancel (Yes/No) dialog across JUCE versions.
+		 */
+		static void showOkCancelAsyncSafe(Icon icon, const juce::String &title, const juce::String &bodyText,
+										  std::function<void(bool)> completionCallback,
+										  const juce::String &button1Text = "Yes",
+										  const juce::String &button2Text = "No") {
+			// Forwards directly to your existing showNativeDialogBox implementation!
+			showNativeDialogBox(icon, title, bodyText, button1Text, button2Text, true, completionCallback);
+		}
+		/**************************************************************************************************/
 		static void runCustomAlertAsyncSafe(juce::AlertWindow *alert, std::function<void(int)> callback) {
 #if JUCE_VERSION >= 0x070000
 			alert->enterModalState(true, juce::ModalCallbackFunction::create([alert, callback](int result) {
@@ -114,7 +155,7 @@ class AW {
 			int result = alert->runModalLoop();
 			callback(result);
 #endif
-		}
+	}
 
 		/**
 			Centralizes the custom button layout engines for JUCE 8 custom components.
@@ -137,6 +178,149 @@ class AW {
 #endif
 		}
 };
+/**************************************************************************************************/
+/*
+USAGE
+
+FC::saveFileAsync(
+	"Save Panel File",
+	panelFile,
+	"*.panel",
+	useOSDialog,
+	[this](const File& selectedFile) {
+		if (selectedFile.existsAsFile()) {
+			// Save logic here
+		}
+	}
+);
+
+
+*/
+
+namespace FC {
+/**
+ * Unified cross-version helper for saving files.
+ * Works seamlessly on JUCE 6, 7, and 8.
+ */
+/**************************************************************************************************/
+inline void saveFileAsync(const String &dialogTitle, const File &initialFileOrDirectory,
+						  const String &filePatternsAllowed, bool useNativeDialog,
+						  std::function<void(const File &)> callback) {
+	int flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles;
+
+#if JUCE_MAJOR_VERSION >= 7
+	// --- JUCE 7 & 8 Path ---
+	// Shared pointer keeps the FileChooser alive in memory until launchAsync completes
+	auto chooser =
+		std::make_shared<juce::FileChooser>(dialogTitle, initialFileOrDirectory, filePatternsAllowed, useNativeDialog);
+
+	chooser->launchAsync(flags, [chooser, callback](const juce::FileChooser &fc) {
+		if (callback) {
+			callback(fc.getResult());
+		}
+	});
+#else
+	// --- JUCE 6 Path ---
+	auto *chooser = new juce::FileChooser(dialogTitle, initialFileOrDirectory, filePatternsAllowed, useNativeDialog);
+
+	chooser->launchAsync(flags, [chooser, callback](const juce::FileChooser &fc) {
+		if (callback) {
+			callback(fc.getResult());
+		}
+		delete chooser;
+	});
+#endif
+}
+
+/**
+ * Unified cross-version helper for opening single files.
+ */
+/**************************************************************************************************/
+/**
+ * Cross-version helper for saving a file asynchronously.
+ */
+inline void saveFileAsync(const juce::String &dialogTitle, const juce::File &initialFileOrDirectory,
+						  const juce::String &filePatternsAllowed, bool useNativeDialog,
+						  std::function<void(const juce::File &)> callback) {
+	int flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles |
+				juce::FileBrowserComponent::warnAboutOverwriting;
+
+#if JUCE_VERSION >= 0x070000
+	auto chooser =
+		std::make_shared<juce::FileChooser>(dialogTitle, initialFileOrDirectory, filePatternsAllowed, useNativeDialog);
+	chooser->launchAsync(flags, [chooser, callback](const juce::FileChooser &fc) {
+		if (callback) {
+			callback(fc.getResult());
+		}
+	});
+#else
+	auto *chooser = new juce::FileChooser(dialogTitle, initialFileOrDirectory, filePatternsAllowed, useNativeDialog);
+	chooser->launchAsync(flags, [chooser, callback](const juce::FileChooser &fc) {
+		if (callback) {
+			callback(fc.getResult());
+		}
+		delete chooser;
+	});
+#endif
+}
+/**************************************************************************************************/
+inline void openFileAsync(const String &dialogTitle, const File &initialFileOrDirectory,
+						  const String &filePatternsAllowed, bool useNativeDialog,
+						  std::function<void(const File &)> callback) {
+	int flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+
+#if JUCE_MAJOR_VERSION >= 7
+	// --- JUCE 7 & 8 Path ---
+	auto chooser =
+		std::make_shared<juce::FileChooser>(dialogTitle, initialFileOrDirectory, filePatternsAllowed, useNativeDialog);
+
+	chooser->launchAsync(flags, [chooser, callback](const juce::FileChooser &fc) {
+		if (callback) {
+			callback(fc.getResult());
+		}
+	});
+#else
+	// --- JUCE 6 Path ---
+	auto *chooser = new juce::FileChooser(dialogTitle, initialFileOrDirectory, filePatternsAllowed, useNativeDialog);
+
+	chooser->launchAsync(flags, [chooser, callback](const juce::FileChooser &fc) {
+		if (callback) {
+			callback(fc.getResult());
+		}
+		delete chooser;
+	});
+#endif
+}
+/**
+ * Cross-version helper to open multiple files asynchronously.
+ */
+/**************************************************************************************************/
+inline void openMultipleFilesAsync(const juce::String &dialogTitle, const juce::File &initialFileOrDirectory,
+								   const juce::String &filePatternsAllowed, bool useNativeDialog,
+								   std::function<void(const juce::Array<juce::File> &)> callback) {
+	int flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles |
+				juce::FileBrowserComponent::canSelectMultipleItems;
+
+#if JUCE_VERSION >= 0x070000
+	auto chooser =
+		std::make_shared<juce::FileChooser>(dialogTitle, initialFileOrDirectory, filePatternsAllowed, useNativeDialog);
+	chooser->launchAsync(flags, [chooser, callback](const juce::FileChooser &fc) {
+		if (callback) {
+			callback(fc.getResults());
+		}
+	});
+#else
+	auto *chooser = new juce::FileChooser(dialogTitle, initialFileOrDirectory, filePatternsAllowed, useNativeDialog);
+	chooser->launchAsync(flags, [chooser, callback](const juce::FileChooser &fc) {
+		if (callback) {
+			callback(fc.getResults());
+		}
+		delete chooser;
+	});
+#endif
+}
+} // namespace FC
+/**************************************************************************************************/
 
 namespace gui {
 

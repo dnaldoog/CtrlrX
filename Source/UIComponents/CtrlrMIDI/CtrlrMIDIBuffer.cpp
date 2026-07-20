@@ -18,8 +18,9 @@
 */
 
 //[Headers] You can add your own extra header files here...
-#include "stdafx.h"
+#include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrPanel/CtrlrPanel.h"
+#include "stdafx.h"
 
 //[/Headers]
 
@@ -551,9 +552,54 @@ void CtrlrMIDIBuffer::buttonClicked (juce::Button* buttonThatWasClicked)
     //[UserbuttonClicked_Post]
     //[/UserbuttonClicked_Post]
 }
+void CtrlrMIDIBuffer::loadBinFile(const File fileToOpen) {
+	_DBG("CtrlrMIDIBuffer::loadBinFile");
 
+	// Helper lambda to perform the actual file loading once we have a valid File
+	auto processFile = [this](const File &file) {
+		if (!file.existsAsFile())
+			return;
 
+		lastFile = file;
+		lastBrowsedDirectory = file.getParentDirectory();
 
+		lastFile.loadFileAsData(data);
+		reloadEditor(String::toHexString(data.getData(), (int)data.getSize()), true);
+	};
+
+	if (fileToOpen == File()) {
+		bool useNative = (bool)owner.getOwner().getProperty(Ids::ctrlrNativeFileDialogs);
+
+		FC::openFileAsync("Open file", lastBrowsedDirectory, "*.syx;*.bin;*.dat;*.*", useNative, processFile);
+	} else {
+		processFile(fileToOpen);
+	}
+}
+
+void CtrlrMIDIBuffer::loadTextFile(const File fileToOpen) {
+	// Helper lambda to perform the actual file loading once we have a valid File
+	auto processFile = [this](const File &file) {
+		if (!file.existsAsFile())
+			return;
+
+		lastFile = file;
+		lastBrowsedDirectory = file.getParentDirectory();
+
+		MemoryBlock tmp;
+		tmp.loadFromHexString(lastFile.loadFileAsString());
+		reloadEditor(lastFile.loadFileAsString(), true);
+	};
+
+	if (fileToOpen == File()) {
+		bool useNative = (bool)owner.getOwner().getProperty(Ids::ctrlrNativeFileDialogs);
+
+		FC::openFileAsync("Open file", lastBrowsedDirectory, "*.syx;*.bin;*.dat;*.*", useNative, processFile);
+	} else {
+		processFile(fileToOpen);
+	}
+}
+
+#if 0 // Old JUCE 6 code
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 const File CtrlrMIDIBuffer::browseForFile(const String &mask)
 {
@@ -601,7 +647,7 @@ void CtrlrMIDIBuffer::loadTextFile(const File fileToOpen)
 	tmp.loadFromHexString (lastFile.loadFileAsString());
 	reloadEditor (lastFile.loadFileAsString(), true);
 }
-
+#endif
 CtrlrMIDIBufferTokenSet CtrlrMIDIBuffer::getTokenSetFromMenu()
 {
 	return (CtrlrMIDIBufferTokenSet (	prefixLengthLabel->getText().getIntValue(),

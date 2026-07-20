@@ -71,6 +71,224 @@ const Result CtrlrWindows::readResource(void *handle, const LPSTR resourceId, co
 	}
 }
 
+void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
+                                          const bool isRestricted,
+                                          const bool signPanel,
+                                          std::function<void(juce::Result)> callback)
+{
+    // Helper macro/lambda to handle returning results asynchronously
+    auto notifyAndReturn = [callback](const juce::Result& res) {
+        if (callback)
+            callback(res);
+    };
+
+    if (panelToWrite == nullptr) {
+        notifyAndReturn(Result::fail("Windows Native: exportWithDefaultPanel got nullptr for panel"));
+        return;
+    }
+
+    // 1. Setup Variables & Logger
+    CtrlrManager& manager = panelToWrite->getOwner();
+    File me = File::getSpecialLocation(File::currentExecutableFile);
+    PluginLogger logger(me);
+    logger.log("Starting exportWithDefaultPanel");
+    String fileExtension = me.getFileExtension();
+    logger.log("CtrlrX source fileExtension is :" + fileExtension);
+
+    // 3. Determine Initial Directory (Sticky Logic)
+    String lastPath = manager.getProperty("lastExportPath").toString();
+    File targetDir;
+
+    if (lastPath.isNotEmpty() && File(lastPath).isDirectory()) {
+        targetDir = File(lastPath);
+    } else {
+        if (fileExtension.equalsIgnoreCase(".vst3") || fileExtension.equalsIgnoreCase(".dll")) {
+            String subFolder = fileExtension.equalsIgnoreCase(".vst3") ? "VST3" : "VST2";
+            targetDir = File::getSpecialLocation(File::globalApplicationsDirectory)
+                            .getChildFile("Common Files")
+                            .getChildFile(subFolder);
+
+            if (!targetDir.exists())
+                targetDir = File::getSpecialLocation(File::userDocumentsDirectory);
+        } else {
+            targetDir = File::getSpecialLocation(File::userDocumentsDirectory);
+        }
+    }
+
+    // 4. File Chooser Setup
+    String defaultFileName = File::createLegalFileName(panelToWrite->getProperty(Ids::name));
+    File defaultFile = targetDir.getChildFile(defaultFileName).withFileExtension(fileExtension);
+    bool useNative = (bool)manager.getProperty(Ids::ctrlrNativeFileDialogs);
+
+    // Use member std::unique_ptr<FileChooser> fc to prevent dialog lifetime issues
+    fc = std::make_unique<FileChooser>(CTRLR_NEW_INSTANCE_DIALOG_TITLE,
+                                       defaultFile,
+                                       "*" + fileExtension,
+                                       useNative);
+
+    auto flags = FileBrowserComponent::saveMode | FileBrowserComponent::canSelectFiles;
+
+    // Launch Native File Dialog Asynchronously
+    fc->launchAsync(flags, [this, panelToWrite, isRestricted, me, fileExtension, callback, notifyAndReturn](const FileChooser& chooser) mutable {
+        File newMe = chooser.getResult();
+
+        if (newMe == File()) {
+            PluginLogger logger(me);
+            logger.log("Error: File selection dialog cancelled");
+            notifyAndReturn(Result::fail("User cancelled the export operation."));
+            return;
+        }
+
+        CtrlrManager& manager = panelToWrite->getOwner();
+        PluginLogger logger(me);
+
+        // Save sticky path
+        manager.setProperty("lastExportPath", newMe.getParentDirectory().getFullPathName());
+        manager.saveState();
+
+        if (!newMe.hasFileExtension(fileExtension))
+            newMe = newMe.withFileExtension(fileExtension);
+
+        if (!me.copyFileTo(newMe)) {
+            logger.log("Error: Failed to copy executable");
+            notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource can't copy \"" + me.getFullPathName() +
+                                         "\" to \"" + newMe.getFullPathName() + "\""));
+            return;
+        }
+        logger.log("Executable copied successfully.");
+
+        // 5. Update Win32 Resources (Panel Injection)
+        HANDLE hResource = BeginUpdateResource(newMe.getFullPathName().toUTF8(), FALSE);
+        MemoryBlock panelExportData, panelResourcesData;
+        String error;
+
+        if (hResource) {
+            if ((error = CtrlrPanel::exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData, isRestricted)) == "") {
+                if (writeResource(hResource, MAKEINTRESOURCE(CTRLR_INTERNAL_PANEL_RESID), RT_RCDATA, panelExportData) &&
+                    writeResource(hResource, MAKEINTRESOURCE(CTRLR_INTERNAL_RESOURCES_RESID), RT_RCDATA, panelResourcesData)) {
+                    EndUpdateResource(hResource, FALSE);
+                } else {
+                    notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource writeResource[panel] failed"));
+                    return;
+                }
+            } else {
+                notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource exportPanel error: \"" + error + "\""));
+                return;
+            }
+        } else {
+            notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource BeginUpdateResource failed"));
+            return;
+        }
+
+        // 6. Binary String Replacement (Rebranding)
+        logger.log("Thread sleep to delay binary modification task.");
+        juce::Thread::sleep(500);
+        logger.log("Thread restarted for binary modification task.");
+
+        File executableFile = newMe;
+        if (executableFile.existsAsFile()) {
+            if (fileExtension.equalsIgnoreCase(".vst3") || fileExtension.equalsIgnoreCase(".dll")) {
+                logger.log("fileExtension is : " + fileExtension);
+
+                const bool replaceVst3PluginIds = panelToWrite->getProperty(Ids::panelReplaceVst3PluginIds);
+
+                if (replaceVst3PluginIds) {
+                    logger.log("Replace the VST3 plugin identifiers with the panel ones : " + String((int)replaceVst3PluginIds));
+
+                    MemoryBlock executableData;
+                    if (executableFile.loadFileAsData(executableData)) {
+                        logger.log("Executable loaded into memory for modification.");
+
+                        String pluginName = panelToWrite->getProperty(Ids::name).toString();
+                        String pluginCode = panelToWrite->getProperty(Ids::panelInstanceUID).toString();
+                        String manufacturerName = panelToWrite->getProperty(Ids::panelAuthorName).toString();
+                        String manufacturerCode = panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString();
+                        String versionMajor = panelToWrite->getProperty(Ids::panelVersionMajor).toString();
+                        String versionMinor = panelToWrite->getProperty(Ids::panelVersionMinor).toString();
+                        String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
+
+                        MemoryBlock pluginNameHex, pluginCodeHex, manufacturerNameHex, manufacturerCodeHex, 
+                                    versionMajorHex, versionMinorHex, plugTypeHex;
+
+                        hexStringToBytes(pluginName, 32, pluginNameHex);
+                        hexStringToBytes(pluginCode, 4, pluginCodeHex);
+                        hexStringToBytes(manufacturerName, 16, manufacturerNameHex);
+                        hexStringToBytes(manufacturerCode, 4, manufacturerCodeHex);
+                        hexStringToBytes(versionMajor, 2, versionMajorHex);
+                        hexStringToBytes(versionMinor, 2, versionMinorHex);
+                        hexStringToBytes(plugType, 16, plugTypeHex);
+
+                        MemoryBlock searchPluginNameHex, searchPluginCodeHex, searchManufacturerNameHex,
+                                    searchManufacturerCodeHex, searchPlugTypeHex;
+
+                        hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20", searchPluginNameHex);
+                        hexStringToBytes("63 54 72 58", searchPluginCodeHex);
+                        hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20", searchManufacturerNameHex);
+                        hexStringToBytes("63 54 72 6C", searchManufacturerCodeHex);
+                        hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHex);
+
+                        logger.log("Starting string replacement process...");
+
+                        replaceAllOccurrences(executableData, searchPluginNameHex, pluginNameHex);
+                        replaceAllOccurrences(executableData, searchPluginCodeHex, pluginCodeHex);
+                        replaceAllOccurrences(executableData, searchManufacturerNameHex, manufacturerNameHex);
+                        replaceAllOccurrences(executableData, searchManufacturerCodeHex, manufacturerCodeHex);
+                        replaceAllOccurrences(executableData, searchPlugTypeHex, plugTypeHex);
+
+                        logger.log("String replacement process completed.");
+
+                        if (!executableFile.replaceWithData(executableData.getData(), executableData.getSize())) {
+                            logger.log("Error: Failed to write modified executable data");
+                            notifyAndReturn(Result::fail("Windows Native: Failed to write modified executable data"));
+                            return;
+                        }
+                        logger.log("Modified executable data written.");
+                    } else {
+                        logger.log("Error: Failed to load executable into memory.");
+                        notifyAndReturn(Result::fail("Windows Native: Failed to load executable into memory."));
+                        return;
+                    }
+                } else {
+                    logger.log("replaceVst3PluginIds set to false, Vst3 IDs replacement skipped.");
+                }
+            } else {
+                logger.log("Exported file is not vst3.");
+            }
+
+            // Codesigning step
+            logger.log("Thread sleep to delay codesigning task.");
+            juce::Thread::sleep(500);
+            logger.log("Thread restarted for codesigning task.");
+
+            juce::String panelCertificateWinPath = panelToWrite->getProperty(Ids::panelCertificateWinPath).toString();
+            juce::String panelCertificateWinPassCode = panelToWrite->getProperty(Ids::panelCertificateWinPassCode).toString();
+
+            if (panelCertificateWinPath.isNotEmpty() && juce::File::isAbsolutePath(panelCertificateWinPath) &&
+                juce::File(panelCertificateWinPath).existsAsFile() && panelCertificateWinPassCode.isNotEmpty()) {
+                
+                const Result codesignResult = codesignFileWindows(newMe, panelCertificateWinPath, panelCertificateWinPassCode);
+                if (!codesignResult.wasOk()) {
+                    logger.logResult(codesignResult);
+                    notifyAndReturn(codesignResult);
+                    return;
+                }
+                logger.log("Codesigning successful.");
+                logger.logResult(codesignResult);
+            } else {
+                logger.log("Codesigning failed because either CertificatePath or CertificatePassCode were wrong.");
+            }
+        } else {
+            logger.log("Error: Executable file does not exist.");
+            notifyAndReturn(Result::fail("Windows Native: Executable file does not exist"));
+            return;
+        }
+
+        notifyAndReturn(Result::ok());
+    });
+}
+
+
+#if 0
 const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRestricted,
 												  const bool signPanel) {
 	if (panelToWrite == nullptr) {
@@ -310,6 +528,7 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel *panelToWrite, cons
 	return (Result::ok()); // Should be removed v5.6.32 ? all other elements already return ok() or fail() anyway.
 
 } // end result() overall function
+#endif
 
 // Codesign the exported binary
 const Result CtrlrWindows::codesignFileWindows(const File &fileToSign, const String &certificatePath,

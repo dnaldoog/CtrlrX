@@ -405,7 +405,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		Array<MemoryBlock, CriticalSection> partialMidiQueue;
 		int currentActionIndex, indexOfSavedState;
 #if JUCE_VERSION >= 0x70000
-		void getCodeSigningIdentityFromPopup(std::function<void(juce::String)> completionCallback)
+		void getCodeSigningIdentityFromPopup(std::function<void(juce::String)> completionCallback);
 #else
 		String getCodeSigningIdentityFromPopup(); // Added v5.6.32
 #endif

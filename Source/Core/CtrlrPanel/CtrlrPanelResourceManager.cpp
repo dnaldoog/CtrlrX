@@ -1,4 +1,5 @@
 #include "CtrlrPanelResourceManager.h"
+#include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrLog.h"
 #include "CtrlrMacros.h"
 #include "CtrlrPanel.h"
@@ -31,26 +32,50 @@ void CtrlrPanelResourceManager::restoreSavedState(const ValueTree &savedState) {
 }
 
 void CtrlrPanelResourceManager::initManager() {
-	{
-		resources.clear();
-		resourceHashCodes.clear();
-		lastLoadedResource = nullptr;
-	}
+	resources.clear();
+	resourceHashCodes.clear();
+	lastLoadedResource = nullptr;
 
 	const File newResourcesDirectory = owner.getPanelDirectory();
 
+	// Check if the directory has migrated
 	if (newResourcesDirectory != resourcesDirectory && resourcesDirectory != File()) {
 		if (resourcesDirectory.getNumberOfChildFiles(File::findFiles) == 0) {
 			resourcesDirectory.deleteRecursively();
+
+			// Move directly to setting up the new directory
+			resourcesDirectory = newResourcesDirectory;
 		} else {
-			if (SURE("The resource directory has changed, do you want to delete the old one?", nullptr)) {
-				resourcesDirectory.deleteRecursively();
-			}
+			const File oldDirectoryToDelete = resourcesDirectory;
+
+			// Capture only the variables we need by value/reference cleanly
+			AW::showNativeDialogBox(
+				AW::Question, "Are you sure?", "The resource directory has changed, do you want to delete the old one?",
+				"Yes", "No", true, [this, oldDirectoryToDelete, newResourcesDirectory](bool userClickedYes) mutable {
+					if (userClickedYes) {
+						oldDirectoryToDelete.deleteRecursively();
+					}
+
+					// Update state and scan files inside the callback
+					this->resourcesDirectory = newResourcesDirectory;
+					if (this->resourcesDirectory.isDirectory()) {
+						Array<File> resourceFiles;
+						this->resourcesDirectory.findChildFiles(resourceFiles, File::findFiles, false);
+						for (int i = 0; i < resourceFiles.size(); i++) {
+							this->addResource(resourceFiles[i]);
+						}
+					}
+				});
+
+			// Return early! The async callback above handles the rest of the setup
+			return;
 		}
+	} else {
+		// Normal startup path: point to the directory
+		resourcesDirectory = newResourcesDirectory;
 	}
 
-	resourcesDirectory = newResourcesDirectory;
-
+	// This section handles normal startup or the immediate empty-directory deletion path
 	if (!resourcesDirectory.isDirectory()) {
 		if (!resourcesDirectory.createDirectory()) {
 			_ERR("CtrlrResourceManager::ctor failed to create resources directory");
@@ -181,127 +206,151 @@ bool CtrlrPanelResourceManager::resourceExists(const File &resourceFile) {
 Result CtrlrPanelResourceManager::importResource(const ValueTree &resourceTree) {
 	String resourceName = resourceTree.getProperty(Ids::resourceName).toString();
 
-	// _DBG("importResource: [" + resourceName + "] exists="
-	//      + String(getResource(resourceName) != nullptr ? "YES" : "NO")
-	//      + " resourcesDir=" + resourcesDirectory.getFullPathName()
-	//      + " numResources=" + String(resources.size()));
+	// Decode incoming data upfront
+	MemoryBlock resourceData;
+	if (!resourceData.fromBase64Encoding(resourceTree.getProperty(Ids::resourceData).toString())) {
+		return Result::fail("ImportResource resource: " + resourceName + " failed to decode base64 encoded data");
+	}
 
-	if (getResource(resourceName)) {
-		if ((bool)owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrOverwriteResources) == false)
+	// Safely resolve destination directory using the owner panel
+	File resDir = owner.getPanelDirectory();
+	if (!resDir.isDirectory()) {
+		resDir = owner.getPanelResourcesDir();
+	}
+
+	if (!resDir.isDirectory()) {
+		return Result::fail("Import resource failed, resource directory does not exist: " + resDir.getFullPathName());
+	}
+
+	String filename = resourceTree.getProperty(Ids::resourceFile).toString();
+	File resourceDest = resDir.getChildFile(File::createLegalFileName(filename));
+
+	// --- Path A: Resource already exists internally ---
+	if (auto *existingResource = getResource(resourceName)) {
+		if (!(bool)owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrOverwriteResources)) {
 			return Result::fail("ImportResource resource: " + resourceName +
 								" failed, a resource with this name already exists");
+		}
 
-		// Decode incoming data first so we can hash-compare
-		MemoryBlock resourceData;
-		if (!resourceData.fromBase64Encoding(resourceTree.getProperty(Ids::resourceData).toString()))
-			return Result::fail("ImportResource resource: " + resourceName + " failed to decode base64 encoded data");
-
-		// Only overwrite if content has actually changed
+		// Check content hashes to avoid unnecessary disk writes
 		int64 incomingHash = (int64)resourceTree.getProperty(Ids::resourceHash);
-		int64 cachedHash = getResource(resourceName)->getHashCode();
-		_DBG("importResource: [" + resourceName + "] incomingHash=" + String(incomingHash) +
-			 " cachedHash=" + String(cachedHash));
+		int64 cachedHash = existingResource->getHashCode();
 
 		if (incomingHash != 0 && cachedHash != 0 && incomingHash == cachedHash) {
 			_DBG("importResource: [" + resourceName + "] hash match, skipping overwrite");
 			return Result::ok();
 		}
+
 		_DBG("importResource: [" + resourceName + "] hash changed, overwriting");
 
-		File resourceTempFile =
-			File::getCurrentWorkingDirectory().getChildFile(resourceTree.getProperty(Ids::resourceFile).toString());
-		File resourceDest = resourcesDirectory.getChildFile(resourceTempFile.getFileName());
-
-		if (!resourceDest.exists())
-			resourceDest.create();
-
-		if (!resourceDest.replaceWithData(resourceData.getData(), (int)resourceData.getSize()))
-			return Result::fail("ImportResource can't replace file contents with new data, resource: " +
+		if (!resourceDest.replaceWithData(resourceData.getData(), (int)resourceData.getSize())) {
+			return Result::fail("ImportResource can't replace file contents, resource: " +
 								resourceDest.getFullPathName());
-
-		_DBG("importResource: [" + resourceName + "] overwritten on disk OK: " + resourceDest.getFullPathName());
-		return Result::ok();
-	} else {
-		// Fresh import — resource not on disk yet
-		File resourceTempFile =
-			File::getCurrentWorkingDirectory().getChildFile(resourceTree.getProperty(Ids::resourceFile).toString());
-		File resourceDest = resourcesDirectory.getChildFile(resourceTempFile.getFileName());
-
-		if (!resourcesDirectory.isDirectory())
-			return Result::fail("Import resource failed, the path specified as the resource directory is not one: " +
-								resourcesDirectory.getFullPathName());
-
-		MemoryBlock resourceData;
-		if (!resourceData.fromBase64Encoding(resourceTree.getProperty(Ids::resourceData).toString())) {
-			resourceDest.deleteFile();
-			return Result::fail("ImportResource resource: " + resourceName + " failed to decode base64 encoded data");
 		}
 
-		if (!resourceDest.exists())
-			resourceDest.create();
+		_DBG("importResource: [" + resourceName + "] overwritten on disk OK: " + resourceDest.getFullPathName());
 
-		if (!resourceDest.replaceWithData(resourceData.getData(), (int)resourceData.getSize()))
-			return Result::fail("ImportResource can't replace file contents with new data, resource: " +
-								resourceDest.getFullPathName());
-
-		_DBG("importResource: [" + resourceName + "] fresh import OK: " + resourceDest.getFullPathName());
-
-		addResource(resourceDest, resourceTree.getProperty(Ids::resourceName));
+		// Refresh internal cache tracking
+		existingResource->checkFileMap();
 		return Result::ok();
 	}
+
+	// --- Path B: Fresh import ---
+	_DBG("importResource: [" + resourceName + "] fresh import starting");
+
+	if (!resourceDest.replaceWithData(resourceData.getData(), (int)resourceData.getSize())) {
+		return Result::fail("ImportResource can't write fresh file data, resource: " + resourceDest.getFullPathName());
+	}
+
+	_DBG("importResource: [" + resourceName + "] fresh import OK: " + resourceDest.getFullPathName());
+
+	// Pass source file to addResource (which will detect source == resourceDest and register it safely)
+	return addResource(resourceDest, resourceTree.getProperty(Ids::resourceName));
 }
 
 Result CtrlrPanelResourceManager::addResource(const File &source, const String &name) {
-	if ((bool)owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrOverwriteResources) == false) {
-		if (getResource(source.getFileNameWithoutExtension())) {
-			return (Result::fail("This resource already exists"));
+	File resDir = owner.getPanelDirectory();
+	if (!resDir.isDirectory()) {
+		resDir = owner.getPanelResourcesDir();
+	}
+
+	if (!resDir.isDirectory()) {
+		return Result::fail("Can't copy resource, destination directory does not exist: " + resDir.getFullPathName());
+	}
+
+	File resourceDest = resDir.getChildFile(source.getFileName());
+
+	// Check if resource already exists internally
+	if (auto *existingResource = getResource(source.getFileNameWithoutExtension())) {
+		if (!(bool)owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrOverwriteResources)) {
+			return Result::fail("This resource already exists");
+		}
+
+		// Prevent file corruption when copying onto itself
+		if (source != resourceDest) {
+			if (!source.copyFileTo(resourceDest)) {
+				return Result::fail("Failed to overwrite file in resources directory: " +
+									resourceDest.getFullPathName());
+			}
+		}
+
+		existingResource->checkFileMap();
+		owner.panelResourcesChanged();
+		return Result::ok();
+	}
+
+	// Copy file if it's external
+	if (source != resourceDest) {
+		if (!source.copyFileTo(resourceDest)) {
+			return Result::fail("Failed to copy file to resources directory: " + resourceDest.getFullPathName());
 		}
 	}
 
-	File resourceDest = resourcesDirectory.getChildFile(source.getFileName());
+	// Allocate new object and add to management tracking structures
+	auto *newResource = new CtrlrPanelResource(*this, resourceDest, source, name);
+	resources.add(newResource);
+	resourceHashCodes.add(newResource->getHashCode());
+	managerTree.addChild(newResource->getResourceTree(), -1, nullptr);
 
-	if (resourcesDirectory.isDirectory()) {
-		source.copyFileTo(resourceDest);
-	} else {
-		return (Result::fail("Can't copy resource to resources directory:" + resourcesDirectory.getFullPathName()));
-	}
-
-	{
-		CtrlrPanelResource *newResource = new CtrlrPanelResource(*this, resourceDest, source, name);
-
-		resources.add(newResource);
-		resourceHashCodes.add(newResource->getHashCode());
-		managerTree.addChild(newResource->getResourceTree(), -1, nullptr);
-	}
-
-	// Notify the panel about the modification
 	owner.panelResourcesChanged();
-
-	return (Result::ok());
+	return Result::ok();
 }
 
 Result CtrlrPanelResourceManager::removeResource(CtrlrPanelResource *resourceToRemove) {
-	return (removeResource(resources.indexOf(resourceToRemove)));
+	if (resourceToRemove == nullptr)
+		return Result::fail("Cannot remove null resource");
+
+	return removeResource(resources.indexOf(resourceToRemove));
 }
 
 Result CtrlrPanelResourceManager::removeResource(const int resourceIndex) {
+	// Array bounds protection
+	if (!isPositiveAndBelow(resourceIndex, resources.size())) {
+		return Result::fail("Unable to remove resource with invalid index: " + String(resourceIndex));
+	}
+
+	// Store local pointer before modifying containers
 	CtrlrPanelResource *res = resources[resourceIndex];
 
-	if (res) {
-		resourceHashCodes.removeAllInstancesOf(resources[resourceIndex]->getHashCode());
-		if (!resources[resourceIndex]->getFile().deleteFile()) {
-			return (Result::fail("Removing resource partialy failed, can't delete resource file:" +
-								 resources[resourceIndex]->getFile().getFullPathName()));
+	if (res != nullptr) {
+		resourceHashCodes.removeAllInstancesOf(res->getHashCode());
+
+		File targetFile = res->getFile();
+		if (targetFile.exists() && !targetFile.deleteFile()) {
+			return Result::fail("Removing resource partially failed, can't delete resource file: " +
+								targetFile.getFullPathName());
 		}
 
-		managerTree.removeChild(resources[resourceIndex]->getResourceTree(), nullptr);
+		managerTree.removeChild(res->getResourceTree(), nullptr);
+
+		// true = OwnedArray deletes the object allocation safely from heap
 		resources.remove(resourceIndex, true);
-		// Notify the panel about the modification
+
 		owner.panelResourcesChanged();
-		return (Result::ok());
-	} else {
-		return (Result::fail("Unable to remove result with index:" + STR(resourceIndex)));
+		return Result::ok();
 	}
+
+	return Result::fail("Unable to remove resource at index: " + String(resourceIndex));
 }
 
 Result CtrlrPanelResourceManager::removeResourceRange(const int resourceIndexStart,
@@ -435,6 +484,67 @@ int CtrlrPanelResourceManager::getResourceIndexByHashCode(const int hashCode) {
 	return (-1);
 }
 
+Result CtrlrPanelResourceManager::restoreState(const ValueTree &savedState,
+											   std::function<void(Result)> completionCallback) {
+	for (int i = 0; i < savedState.getNumChildren(); i++) {
+		if (savedState.getChild(i).hasType(Ids::resourceLicense)) {
+
+			// Allocate the layout elements safely on the heap so they survive the async window lifetime
+			auto *licenseWindow =
+				new AlertWindow("License agreement", "You must agree to the below license", AlertWindow::QuestionIcon);
+
+			auto *licenseText = new TextEditor();
+			licenseText->setMultiLine(true);
+			licenseText->setReadOnly(true);
+			licenseText->setText(savedState.getChild(i).getProperty(Ids::resourceData));
+			licenseText->setSize(500, 400);
+
+			licenseWindow->addCustomComponent(licenseText);
+			licenseWindow->addButton("Yes", 1);
+			licenseWindow->addButton("No", 0);
+
+#if JUCE_VERSION < 0x070000
+			// --- Legacy JUCE 6 Path (Synchronous) ---
+			bool accepted = (licenseWindow->runModalLoop() == 1);
+			delete licenseWindow; // Cleans up custom components automatically
+
+			if (!accepted) {
+				Result failRes = Result::fail("User did not agree to embedded license");
+				if (completionCallback)
+					completionCallback(failRes);
+				return failRes;
+			}
+#else
+			// --- Modern JUCE 7/8 Path (Asynchronous) ---
+			licenseWindow->enterModalState(
+				true, ModalCallbackFunction::create([licenseWindow, completionCallback](int result) {
+					bool accepted = (result == 1);
+					delete licenseWindow; // Clean up memory allocation from heap
+
+					if (!accepted) {
+						if (completionCallback)
+							completionCallback(Result::fail("User did not agree to embedded license"));
+					} else {
+						if (completionCallback)
+							completionCallback(Result::ok());
+					}
+				}),
+				true);
+
+			// Return a pending status immediately so the caller knows it is waiting on UI interaction
+			return Result::ok();
+#endif
+		}
+	}
+
+	// No license found, or processed synchronously
+	Result okRes = Result::ok();
+	if (completionCallback)
+		completionCallback(okRes);
+	return okRes;
+}
+
+#if 0 // old JUCE 6 code
 Result CtrlrPanelResourceManager::restoreState(const ValueTree &savedState) {
 	for (int i = 0; i < savedState.getNumChildren(); i++) {
 		if (savedState.getChild(i).hasType(Ids::resourceLicense)) {
@@ -467,7 +577,7 @@ Result CtrlrPanelResourceManager::restoreState(const ValueTree &savedState) {
 
 	return (Result::ok());
 }
-
+#endif
 Array<CtrlrPanelResource *> CtrlrPanelResourceManager::getResourcesCopy() {
 	Array<CtrlrPanelResource *> ret;
 	for (int i = 0; i < resources.size(); i++) {

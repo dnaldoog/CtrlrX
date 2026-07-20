@@ -209,6 +209,89 @@ void CtrlrPanelResourceEditor::paintCell(Graphics &g, int rowNumber, int columnI
 
 void CtrlrPanelResourceEditor::addResourceFromFile() {
 
+	// Safely wrap 'this' in case the editor component is closed mid-dialog
+	Component::SafePointer<CtrlrPanelResourceEditor> safeThis(this);
+
+	// 1. Fetch browsed directory and native dialog preference
+	File initialDir(owner.getOwner().getCtrlrManagerOwner().getProperty(Ids::ctrlrLastBrowsedResourceDir));
+	bool useNative = (bool)owner.getOwner().getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs);
+
+	// 2. Open file dialog (works on JUCE 6, 7, and 8)
+	FC::openMultipleFilesAsync(
+		"Resource file", initialDir, "*.*", useNative, [safeThis](const Array<File> &filesToOpen) {
+			if (safeThis == nullptr || filesToOpen.isEmpty())
+				return; // Component destroyed or user cancelled
+
+			// Update the last browsed directory using the first file selected
+			safeThis->owner.getOwner().getCtrlrManagerOwner().setProperty(
+				Ids::ctrlrLastBrowsedResourceDir, filesToOpen[0].getParentDirectory().getFullPathName());
+
+			// 3. Sequential Async Batch Processor (state held safely in heap lambda)
+			auto processIndex = std::make_shared<std::function<void(int)>>();
+
+			*processIndex = [safeThis, filesToOpen, processIndex](int index) {
+				if (safeThis == nullptr)
+					return;
+
+				// Base Case: Done processing all files
+				if (index >= filesToOpen.size()) {
+					safeThis->updateTable();
+					return;
+				}
+
+				File currentFile = filesToOpen[index];
+				bool overwriteAllowed =
+					(bool)safeThis->owner.getOwner().getCtrlrManagerOwner().getProperty(Ids::ctrlrOverwriteResources);
+
+				// Helper lambda to apply the file replacement
+				auto performImport = [safeThis, currentFile]() {
+					int resourceIdx =
+						safeThis->getResourceManager().getResourceIndex(currentFile.getFileNameWithoutExtension());
+
+					if (resourceIdx >= 0) {
+						safeThis->getResourceManager().removeResource(resourceIdx);
+					}
+					safeThis->getResourceManager().addResource(currentFile);
+				};
+
+				// Check if resource already exists
+				if (safeThis->getResourceManager().resourceExists(currentFile)) {
+					if (!overwriteAllowed) {
+						// Ask user asynchronously
+						AW::showOkCancelAsyncSafe(AW::Question, "Overwrite Resource",
+												  "Resource: " + currentFile.getFileNameWithoutExtension() +
+													  " already exists. Overwrite?",
+												  [safeThis, performImport, processIndex, index](bool confirmed) {
+													  if (safeThis != nullptr) {
+														  if (confirmed) {
+															  performImport();
+														  }
+														  // Loop to the next file asynchronously
+														  (*processIndex)(index + 1);
+													  }
+												  });
+						return; // Halt sync loop here while waiting for dialog response
+					} else {
+						// Overwrite is globally allowed
+						performImport();
+					}
+				} else {
+					// Fresh resource
+					safeThis->getResourceManager().addResource(currentFile);
+				}
+
+				// Proceed directly to next file
+				(*processIndex)(index + 1);
+			};
+
+			// Start processing at index 0
+			(*processIndex)(0);
+		});
+}
+
+#if 0
+void CtrlrPanelResourceEditor::addResourceFromFile() {
+
 #if JUCE_VERSION >= 0x070000
 
 	{
@@ -326,6 +409,7 @@ void CtrlrPanelResourceEditor::addResourceFromFile() {
 	updateTable();
 #endif
 }
+#endif
 
 void CtrlrPanelResourceEditor::deleteSelectedResources() {
 	_DBG("CtrlrPanelResourceEditor::deleteSelectedResources");

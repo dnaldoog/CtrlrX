@@ -782,8 +782,32 @@ void CtrlrFileProperty::resized() {
 
 void CtrlrFileProperty::buttonClicked(Button *buttonThatWasClicked) {
 	if (buttonThatWasClicked == browse.get()) {
+
+		// Create a safe pointer to 'this' in case the component is destroyed while the dialog is open
+		Component::SafePointer<CtrlrFileProperty> safeThis(this);
+
+		FC::openFileAsync("Select a file",
+						  File(valueToControl.getValue().toString()), // Initial path/file
+						  "*",										  // File patterns allowed
+						  true,										  // Use OS native dialog
+						  [safeThis](const File &selectedFile) {
+							  // Ensure the component still exists before modifying UI/Value
+							  if (safeThis != nullptr && selectedFile.existsAsFile()) {
+								  safeThis->valueToControl = selectedFile.getFullPathName();
+
+								  if (safeThis->path != nullptr) {
+									  safeThis->path->setText(safeThis->valueToControl.toString(),
+															  dontSendNotification);
+								  }
+
+								  safeThis->refresh();
+							  }
+						  });
+	}
+}
+#if 0 // Old code supporting JUCE 6/7/8
 #if JUCE_VERSION >= 0x070000
-		fileChooser = std::make_unique<FileChooser>("Select a file", File::getSpecialLocation(File::userHomeDirectory),
+		//fileChooser = std::make_unique<FileChooser>("Select a file", File::getSpecialLocation(File::userHomeDirectory),
 													"*.*", false);
 
 		// 2. Launch the dialog box asynchronously
@@ -806,7 +830,8 @@ void CtrlrFileProperty::buttonClicked(Button *buttonThatWasClicked) {
 		}
 #endif
 	}
-}
+	}
+#endif
 
 void CtrlrFileProperty::refresh() { path->setText(valueToControl.toString(), dontSendNotification); }
 

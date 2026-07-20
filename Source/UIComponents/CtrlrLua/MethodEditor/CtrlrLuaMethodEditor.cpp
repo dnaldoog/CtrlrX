@@ -240,6 +240,45 @@ CtrlrLuaMethod *CtrlrLuaMethodEditor::setEditedMethod(const Uuid &methodUuid) {
 }
 
 void CtrlrLuaMethodEditor::addNewMethod(ValueTree parentGroup) {
+    // Allocate the custom AlertWindow on the heap
+    auto wnd = std::make_shared<juce::AlertWindow>(METHOD_NEW, "", juce::AlertWindow::InfoIcon, this);
+    
+    wnd->addTextEditor("methodName", "myNewMethod", "Method name", false);
+    wnd->addComboBox("templateList", getMethodManager().getTemplateList(), "Initialize from template");
+
+    wnd->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    wnd->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+    Component::SafePointer<CtrlrLuaMethodEditor> safeThis(this);
+
+    // Launch non-blockingly
+    wnd->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, wnd, parentGroup](int result) {
+        if (safeThis == nullptr || result != 1)
+            return; // User cancelled or window closed
+
+        const String methodName = wnd->getTextEditorContents("methodName");
+
+        if (safeThis->getMethodManager().isValidMethodName(methodName)) {
+            String templateText;
+            if (auto* combo = wnd->getComboBoxComponent("templateList")) {
+                templateText = combo->getText();
+            }
+
+            const String initialCode = safeThis->getMethodManager().getDefaultMethodCode(methodName, templateText);
+
+            safeThis->getMethodManager().addMethod(parentGroup, methodName, initialCode, "");
+        } else {
+            WARN("Invalid method name, please correct");
+        }
+
+        safeThis->updateRootItem();
+        safeThis->saveSettings();
+    }));
+}
+
+
+#if 0
+void CtrlrLuaMethodEditor::addNewMethod(ValueTree parentGroup) {
 	AlertWindow wnd(METHOD_NEW, "", AlertWindow::InfoIcon, this);
 	wnd.addTextEditor("methodName", "myNewMethod", "Method name", false);
 	wnd.addComboBox("templateList", getMethodManager().getTemplateList(), "Initialize from template");
@@ -263,7 +302,60 @@ void CtrlrLuaMethodEditor::addNewMethod(ValueTree parentGroup) {
 
 	saveSettings(); // save settings
 }
+#endif
+void CtrlrLuaMethodEditor::addMethodFromFile(ValueTree parentGroup) {
+    // See if group folder exists
+    File groupFolder = owner.getLuaMethodGroupDir(parentGroup);
+    if (groupFolder.exists() && groupFolder.isDirectory()) {
+        lastBrowsedSourceDir = groupFolder;
+    }
 
+    bool useNative = (bool)owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs);
+
+    Component::SafePointer<CtrlrLuaMethodEditor> safeThis(this);
+
+    FC::openMultipleFilesAsync(
+        "Select LUA files",
+        lastBrowsedSourceDir,
+        "*.lua;*.txt",
+        useNative,
+        [safeThis, parentGroup](const Array<File>& results) {
+            if (safeThis == nullptr || results.isEmpty())
+                return;
+
+            for (const auto& file : results) {
+                String methodName = file.getFileNameWithoutExtension();
+                bool nameOK = true;
+
+                // Check that a method with that name does not already exist
+                for (int j = 0; j < parentGroup.getNumChildren(); j++) {
+                    ValueTree child = parentGroup.getChild(j);
+                    if (child.hasType(Ids::luaMethod)) {
+                        if (methodName == child.getProperty(Ids::luaMethodName).toString()) {
+                            nameOK = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (nameOK) {
+                    safeThis->getMethodManager().addMethodFromFile(parentGroup, file);
+                } else {
+                    AW::showMessageBox(
+                        AW::Warning,
+                        "Add Files",
+                        "A method named '" + methodName + "' already exists in this group, file will be ignored."
+                    );
+                }
+            }
+
+            safeThis->updateRootItem();
+            safeThis->saveSettings();
+        }
+    );
+}
+
+#if 0
 void CtrlrLuaMethodEditor::addMethodFromFile(ValueTree parentGroup) {
 	// See if group folder exists
 	File groupFolder = owner.getLuaMethodGroupDir(parentGroup);
@@ -309,7 +401,7 @@ void CtrlrLuaMethodEditor::addMethodFromFile(ValueTree parentGroup) {
 
 	saveSettings(); // save settings
 }
-
+#endif
 void CtrlrLuaMethodEditor::addNewGroup(ValueTree parentGroup) {
 	AlertWindow wnd(GROUP_NEW, "", AlertWindow::InfoIcon, this);
 	wnd.addTextEditor("groupName", "New Group", "Group name", false);

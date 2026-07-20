@@ -316,9 +316,9 @@ class CtrlrFileProperty : public Component, public Label::Listener, public Butto
 		void resized();
 		void buttonClicked(Button *buttonThatWasClicked);
 		void labelTextChanged(Label *labelThatHasChanged);
-#if JUCE_VERSION >= 0x070000
-		std::unique_ptr<juce::FileChooser> fileChooser;
-#endif
+// #if JUCE_VERSION >= 0x070000
+// 		std::unique_ptr<juce::FileChooser> fileChooser; -> Now using static FC wrapper code in CtrlrInlineUtilitiesGUI.h
+// #endif
 	private:
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrFileProperty);
 		Value valueToControl;
