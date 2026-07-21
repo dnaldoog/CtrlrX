@@ -192,6 +192,12 @@ void CtrlrStandaloneWindow::saveStateNow()
 {
     _DBG("CtrlrStandaloneWindow::saveStateNow");
 
+    // ADDED v5.6.36. Thanks to @dnaldoog
+    // If the manager is already in the middle of running its destructor,
+    // instantly break out so we don't spin up phantom UI updates or leaks!
+    if (ctrlrProcessor != nullptr && ctrlrProcessor->getManager().isShuttingDown())
+        return;
+    
     if (ctrlrProcessor != nullptr && appProperties != nullptr)
     {
 		appProperties->getUserSettings()->setValue (CTRLR_PROPERTIES_WINDOW_STATE, getWindowStateAsString());
