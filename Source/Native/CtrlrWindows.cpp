@@ -129,15 +129,19 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
     auto flags = FileBrowserComponent::saveMode | FileBrowserComponent::canSelectFiles;
 
     // Launch Native File Dialog Asynchronously
-    fc->launchAsync(flags, [this, panelToWrite, isRestricted, me, fileExtension, callback, notifyAndReturn](const FileChooser& chooser) mutable {
-        File newMe = chooser.getResult();
+fc->launchAsync(flags, [this, panelToWrite, isRestricted, me, fileExtension, callback, notifyAndReturn](const FileChooser& chooser) mutable {
+    
+    // Safely schedule cleanup after the lambda completes
+    juce::MessageManager::callAsync([this]() { fc.reset(); });
 
-        if (newMe == File()) {
-            PluginLogger logger(me);
-            logger.log("Error: File selection dialog cancelled");
-            notifyAndReturn(Result::fail("User cancelled the export operation."));
-            return;
-        }
+    File newMe = chooser.getResult();
+
+    if (newMe == File()) {
+        PluginLogger logger(me);
+        logger.log("Error: File selection dialog cancelled");
+        notifyAndReturn(Result::fail("User cancelled the export operation."));
+        return;
+    }
 
         CtrlrManager& manager = panelToWrite->getOwner();
         PluginLogger logger(me);
@@ -158,7 +162,11 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
         logger.log("Executable copied successfully.");
 
         // 5. Update Win32 Resources (Panel Injection)
+		#if JUCE_VERSION < 0x070000
         HANDLE hResource = BeginUpdateResource(newMe.getFullPathName().toUTF8(), FALSE);
+		#else
+		HANDLE hResource = BeginUpdateResource(newMe.getFullPathName().toWideCharPointer(), FALSE);
+		#endif
         MemoryBlock panelExportData, panelResourcesData;
         String error;
 

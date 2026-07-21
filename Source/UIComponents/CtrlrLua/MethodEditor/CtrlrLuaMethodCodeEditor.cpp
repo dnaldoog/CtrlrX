@@ -415,7 +415,9 @@ bool CtrlrLuaMethodCodeEditor::keyPressed(const juce::KeyPress &key, juce::Compo
 			if (targetPos != -1) {
 				editorComponent->moveCaretTo(juce::CodeDocument::Position(document, targetPos), false);
 
-				juce::MessageManager::callAsync([this]() { updateCallTipHighlight(); });
+				juce::MessageManager::callAsync([this]() { 
+
+					updateCallTipHighlight(); });
 
 				return true; // Stop the editor from inserting a '\t'
 			}

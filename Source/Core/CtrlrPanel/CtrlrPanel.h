@@ -189,7 +189,11 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		void setPanelDirty(const bool dirty);
 		void actionPerformed();
 		void actionUndone();
+		#if JUCE_VERSION < 0x070000
 		bool canClose(const bool closePanel);
+		#else
+		void canClose(const bool closePanel, std::function<void(bool)> completionCallback);
+		#endif
 		const String getPanelWindowTitle();
 		void updatePanelWindowTitle();
 		void luaManagerChanged();

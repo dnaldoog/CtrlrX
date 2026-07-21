@@ -203,35 +203,6 @@ namespace FC {
  * Works seamlessly on JUCE 6, 7, and 8.
  */
 /**************************************************************************************************/
-inline void saveFileAsync(const String &dialogTitle, const File &initialFileOrDirectory,
-						  const String &filePatternsAllowed, bool useNativeDialog,
-						  std::function<void(const File &)> callback) {
-	int flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles;
-
-#if JUCE_MAJOR_VERSION >= 7
-	// --- JUCE 7 & 8 Path ---
-	// Shared pointer keeps the FileChooser alive in memory until launchAsync completes
-	auto chooser =
-		std::make_shared<juce::FileChooser>(dialogTitle, initialFileOrDirectory, filePatternsAllowed, useNativeDialog);
-
-	chooser->launchAsync(flags, [chooser, callback](const juce::FileChooser &fc) {
-		if (callback) {
-			callback(fc.getResult());
-		}
-	});
-#else
-	// --- JUCE 6 Path ---
-	auto *chooser = new juce::FileChooser(dialogTitle, initialFileOrDirectory, filePatternsAllowed, useNativeDialog);
-
-	chooser->launchAsync(flags, [chooser, callback](const juce::FileChooser &fc) {
-		if (callback) {
-			callback(fc.getResult());
-		}
-		delete chooser;
-	});
-#endif
-}
-
 /**
  * Unified cross-version helper for opening single files.
  */

@@ -124,7 +124,7 @@ LMemoryBlock *CtrlrLuaUtils::packDsiData (MemoryBlock &dataToPack)
 
 	return (new LMemoryBlock ((uint8 *)packed.data, packed.size));
 }
-
+#if JUCE_VERSION < 0x070000
 void CtrlrLuaUtils::warnWindow (const String title, const String message)
 {
 	AlertWindow::showMessageBox (AlertWindow::WarningIcon, title, message);
@@ -216,7 +216,122 @@ String CtrlrLuaUtils::askForTextInputWindow (const String title, const String me
 		return ("-1");
 	}
 }
+#else
 
+// -----------------------------------------------------------------------------
+// 1. Alert Windows
+// -----------------------------------------------------------------------------
+
+void CtrlrLuaUtils::warnWindow(const String title, const String message) {
+	juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon, title, message);
+}
+
+void CtrlrLuaUtils::infoWindow(const String title, const String message) {
+	juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon, title, message);
+}
+
+void CtrlrLuaUtils::questionWindow(const String title, const String message, const String button1Text,
+								   const String button2Text, std::function<void(bool)> callback) {
+	juce::AlertWindow::showOkCancelBox(juce::AlertWindow::QuestionIcon, title, message, button1Text, button2Text,
+									   nullptr, juce::ModalCallbackFunction::create([callback](int result) {
+										   if (callback)
+											   callback(result == 1); // 1 = OK/button1
+									   }));
+}
+
+// -----------------------------------------------------------------------------
+// 2. File Choosers (Async with Callbacks)
+// -----------------------------------------------------------------------------
+
+void CtrlrLuaUtils::openFileWindow(const String &dialogBoxTitle, const File &initialFileOrDirectory,
+								   const String &filePatternsAllowed, bool useOSNativeDialogBox,
+								   std::function<void(const File &)> callback) {
+	// Heap allocate dialog so it stays alive while user picks file
+	auto dialog = std::make_shared<juce::FileChooser>(dialogBoxTitle, initialFileOrDirectory, filePatternsAllowed,
+													  useOSNativeDialogBox);
+
+	auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+
+	dialog->launchAsync(flags, [dialog, callback](const juce::FileChooser &fc) {
+		File result = fc.getResult();
+		if (callback)
+			callback(result);
+	});
+}
+
+void CtrlrLuaUtils::openMultipleFilesWindow(const String &dialogBoxTitle, const File &initialFileOrDirectory,
+											const String &filePatternsAllowed, bool useOSNativeDialogBox,
+											luabind::object const &table) {
+	// Capture table by value/ref safely in async context
+	auto dialog = std::make_shared<juce::FileChooser>(dialogBoxTitle, initialFileOrDirectory, filePatternsAllowed,
+													  useOSNativeDialogBox);
+
+	auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles |
+				 juce::FileBrowserComponent::canSelectMultipleItems;
+
+	dialog->launchAsync(flags, [dialog, table](const juce::FileChooser &fc) {
+		if (luabind::type(table) == LUA_TTABLE) {
+			Array<File> res = fc.getResults();
+
+			for (int i = 0; i < res.size(); i++) {
+				table[i + 1] = res[i];
+			}
+		}
+	});
+}
+
+void CtrlrLuaUtils::saveFileWindow(const String &dialogBoxTitle, const File &initialFileOrDirectory,
+								   const String &filePatternsAllowed, bool useOSNativeDialogBox,
+								   std::function<void(const File &)> callback) {
+	auto dialog = std::make_shared<juce::FileChooser>(dialogBoxTitle, initialFileOrDirectory, filePatternsAllowed,
+													  useOSNativeDialogBox);
+
+	auto flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles;
+
+	dialog->launchAsync(flags, [dialog, callback](const juce::FileChooser &fc) {
+		File result = fc.getResult();
+		if (callback)
+			callback(result);
+	});
+}
+
+void CtrlrLuaUtils::getDirectoryWindow(const String &dialogBoxTitle, const File &initialFileOrDirectory,
+									   std::function<void(const File &)> callback) {
+	auto dialog = std::make_shared<juce::FileChooser>(dialogBoxTitle, initialFileOrDirectory);
+
+	auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories;
+
+	dialog->launchAsync(flags, [dialog, callback](const juce::FileChooser &fc) {
+		File result = fc.getResult();
+		if (callback)
+			callback(result);
+	});
+}
+
+// -----------------------------------------------------------------------------
+// 3. Text Input Alert Window
+// -----------------------------------------------------------------------------
+
+void CtrlrLuaUtils::askForTextInputWindow(const String title, const String message, const String initialInputContent,
+										  const String onScreenLabel, const bool isPassword, const String button1Text,
+										  const String button2Text, std::function<void(const String &)> callback) {
+	auto w = std::make_shared<juce::AlertWindow>(title, message, juce::AlertWindow::QuestionIcon, nullptr);
+
+	w->addTextEditor("userInput", initialInputContent, onScreenLabel, isPassword);
+	w->addButton(button1Text, 1);
+	w->addButton(button2Text, 0);
+
+	w->enterModalState(true, juce::ModalCallbackFunction::create([w, callback](int result) {
+						   if (callback) {
+							   if (result == 1)
+								   callback(w->getTextEditorContents("userInput"));
+							   else
+								   callback("-1"); // Preserved original "-1" cancellation return logic
+						   }
+					   }));
+}
+
+#endif
 StringArray CtrlrLuaUtils::getMidiInputDevices() // Update v5.6.35. For JUCE 8
 {
     StringArray devices;

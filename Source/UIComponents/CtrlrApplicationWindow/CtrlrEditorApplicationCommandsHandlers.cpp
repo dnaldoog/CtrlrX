@@ -345,10 +345,27 @@ bool CtrlrEditor::perform(
 		break;
 
 	case CtrlrEditor::doClose:
+#if JUCE_VERSION < 0x070000
 		if (getActivePanel()->canClose(true)) {
 			owner.removePanel(getActivePanelEditor());
 		}
 		break;
+#else
+		// 1. Fetch pointers to the active panel and its editor
+		if (auto *panel = getActivePanel()) {
+			// Use SafePointer to protect the editor component in case it gets destroyed while waiting for user
+			// interaction
+			juce::Component::SafePointer<CtrlrPanelEditor> safeEditor(getActivePanelEditor());
+
+			// 2. Call non-blocking canClose
+			panel->canClose(true, [this, safeEditor](bool shouldClose) {
+				if (shouldClose && safeEditor != nullptr) {
+					owner.removePanel(safeEditor);
+				}
+			});
+		}
+		break;
+#endif
 
 	case CtrlrEditor::doSaveAs:
 		getActivePanel()->savePanelAs(doExportFileText);

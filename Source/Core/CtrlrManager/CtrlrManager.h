@@ -178,7 +178,12 @@ class CtrlrManager : public ValueTree::Listener,
 		/**
 			Checks if there are any unsaved data and if so asks for the user if he wants to save before exiting
 		*/
+#if JUCE_VERSION < 0x070000
 		bool canCloseWindow();
+#else
+		void canCloseWindow(std::function<void(bool)> completionCallback);
+
+#endif
 
 		/** Remove a modulator from the manager
 

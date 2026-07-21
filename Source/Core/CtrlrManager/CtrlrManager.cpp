@@ -389,6 +389,41 @@ CtrlrPanel *CtrlrManager::getPanel(const String &panelName) {
 	return (0);
 }
 
+void CtrlrManager::canCloseWindow(std::function<void(bool)> completionCallback) {
+	// Helper lambda to process panels sequentially
+	auto checkNextPanel = [this, completionCallback](auto self, int index) -> void {
+		// Base case: tested all panels successfully
+		if (index >= getNumPanels()) {
+			if (completionCallback)
+				completionCallback(true);
+			return;
+		}
+
+		CtrlrPanel *panel = getPanel(index);
+		if (panel != nullptr) {
+			// Check current panel asynchronously
+			panel->canClose(false, [self, index, completionCallback](bool canCloseThisOne) {
+				if (!canCloseThisOne) {
+					// User canceled or panel cannot close -> abort the whole close process
+					if (completionCallback)
+						completionCallback(false);
+					return;
+				}
+
+				// Current panel passed, check the next panel in line
+				self(self, index + 1);
+			});
+		} else {
+			// Skip invalid panel pointer and move to next
+			self(self, index + 1);
+		}
+	};
+
+	// Start checking from the first panel (index 0)
+	checkNextPanel(checkNextPanel, 0);
+}
+
+#if JUCE_VERSION < 0x07000
 bool CtrlrManager::canCloseWindow() {
 	for (int i = 0; i < getNumPanels(); i++) {
 		CtrlrPanel *panel = getPanel(i);
@@ -400,6 +435,9 @@ bool CtrlrManager::canCloseWindow() {
 	}
 	return true;
 }
+#else
+
+#endif
 
 void CtrlrManager::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
 	if (property == Ids::ctrlrAutoSave) {

@@ -251,7 +251,7 @@ Result CtrlrPanelResourceManager::importResource(const ValueTree &resourceTree) 
 		_DBG("importResource: [" + resourceName + "] overwritten on disk OK: " + resourceDest.getFullPathName());
 
 		// Refresh internal cache tracking
-		existingResource->checkFileMap();
+		existingResource->reloadFromSourceFile();
 		return Result::ok();
 	}
 
@@ -294,7 +294,7 @@ Result CtrlrPanelResourceManager::addResource(const File &source, const String &
 			}
 		}
 
-		existingResource->checkFileMap();
+		existingResource->reloadFromSourceFile();
 		owner.panelResourcesChanged();
 		return Result::ok();
 	}
