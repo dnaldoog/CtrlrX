@@ -1,9 +1,16 @@
 @echo off
 setlocal enabledelayedexpansion
-
-:: Dynamically set build directories relative to script location
-set "BUILD_DIR=%~dp0build"
-set "PROCESSORS=%NUMBER_OF_PROCESSORS%"
+:: #To build with LuaJIT: cmake -B build -DCTRLRX_USE_LUAJIT=ON
+:: #To build without (default): cmake -B build
+:: #Check whether you have Ninja installed and available in PATH, as it will speed up the build significantly. 
+:: #If not, you can install it via your system package manager or from https://ninja-build.org/. 
+:: #On Windows, you can also install it via winget:
+:: #ninja --version
+:: #winget install -e --id Ninja-build.Ninja
+:: #cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCTRLRX_USE_LUAJIT=ON ..
+:: #cmake --build build
+set "BUILD_DIR=%USERPROFILE%\Documents\CtrlrX\build"
+set "PROCESSORS=%PROCESSORS%"
 
 ::==============================================================================
 :: Bootstrap VS environment if cl.exe isn't already available
@@ -25,27 +32,19 @@ if errorlevel 1 (
 )
 
 ::==============================================================================
-:: Extract and Build LuaJIT if compressed archive exists
+:: Build LuaJIT if source exists but lib is missing
+:: If luajit source is not present (non-LuaJIT branch) this is silently skipped
 ::==============================================================================
-set "LUAJIT_ZIP=%~dp0Source\Resources\LuaJIT\luajit.zip"
-set "LUAJIT_TARGET_DIR=%~dp0Source\Misc\luajit"
-
-if exist "%LUAJIT_ZIP%" (
-    if not exist "%LUAJIT_TARGET_DIR%\src\msvcbuild.bat" (
-        echo Extracting LuaJIT archive...
-        powershell -Command "Expand-Archive -Path '%LUAJIT_ZIP%' -DestinationPath '%~dp0Source\Misc' -Force"
-    )
-)
-
 set "LUAJIT_FLAG="
-if exist "%LUAJIT_TARGET_DIR%\src\msvcbuild.bat" (
+echo PATH CHECK: "%~dp0Source\Misc\luajit\src\msvcbuild.bat"
+if exist "%~dp0Source\Misc\luajit\src\msvcbuild.bat" (
     set "LUAJIT_FLAG=-DCTRLRX_USE_LUAJIT=ON"
-    if not exist "%LUAJIT_TARGET_DIR%\src\lua51.lib" (
+    if not exist "%~dp0Source\Misc\luajit\src\lua51.lib" (
         echo Building LuaJIT...
-        pushd "%LUAJIT_TARGET_DIR%\src"
+        pushd "%~dp0Source\Misc\luajit\src"
         call msvcbuild.bat static
         popd
-        if not exist "%LUAJIT_TARGET_DIR%\src\lua51.lib" (
+        if not exist "%~dp0Source\Misc\luajit\src\lua51.lib" (
             echo ERROR: LuaJIT build failed - lua51.lib not found.
             pause
             exit /b 1
@@ -66,7 +65,7 @@ echo  [1] Release
 echo  [2] Debug
 echo  [3] RelWithDebInfo  - Release speed, no LTO optimisation (fast compile, works in DAW)
 echo.
-set /p CONFIG_CHOICE="Build configuration [1-3]: "
+set /p CONFIG_CHOICE="Build configuration [1-2]: "
 
 if "%CONFIG_CHOICE%"=="1" (
     set "CONFIG=Release"
@@ -83,6 +82,7 @@ if "%CONFIG_CHOICE%"=="1" (
 :: Prompt: Build Mode
 ::==============================================================================
 echo.
+
 echo  [1] Full Build     - Wipe build dir, run CMake, build
 echo  [2] Clean Build    - Keep CMake cache and Ninja files, wipe objects only
 echo  [3] Quick Build    - Incremental, no clean
@@ -98,6 +98,7 @@ exit /b 1
 ::==============================================================================
 :FULL
 ::==============================================================================
+
 echo.
 echo [FULL BUILD] Config: %CONFIG%
 if defined LUAJIT_FLAG (
@@ -131,13 +132,15 @@ cmake -G "Ninja" ^
   .. || goto ERROR
 
 echo Building...
-cmake --build . --parallel %PROCESSORS% || goto ERROR
+:: cmake --build . --parallel %PROCESSORS% || goto ERROR
+cmake --build . --parallel %PROCESSORS% > build_log.txt 2>&1 || goto ERROR
 goto END
 
 ::==============================================================================
 :CLEAN
 ::==============================================================================
 echo.
+echo View compiler messages in build/build_log.txt
 echo [CLEAN BUILD] Config: %CONFIG%
 if not exist "%BUILD_DIR%" (
     echo Build directory not found - run a Full Build first.
@@ -152,7 +155,8 @@ del /s /q "%BUILD_DIR%\*.ilk"     2>nul
 del /s /q "%BUILD_DIR%\*.pdb"     2>nul
 
 echo Building...
-cmake --build . --parallel %PROCESSORS% || goto ERROR
+:: cmake --build . --parallel %PROCESSORS% || goto ERROR
+cmake --build . --parallel %PROCESSORS% > build_log.txt 2>&1 || goto ERROR
 goto END
 
 ::==============================================================================
@@ -167,7 +171,8 @@ if not exist "%BUILD_DIR%" (
 cd /d "%BUILD_DIR%" || exit /b 1
 
 echo Building...
-cmake --build . --parallel %PROCESSORS% || goto ERROR
+:: cmake --build . --parallel %PROCESSORS% || goto ERROR
+cmake --build . --parallel %PROCESSORS% > build_log.txt 2>&1 || goto ERROR
 goto END
 
 ::==============================================================================
