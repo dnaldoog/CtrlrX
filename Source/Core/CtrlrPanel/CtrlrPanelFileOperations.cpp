@@ -916,7 +916,8 @@ const File CtrlrPanel::askForPanelFileToSave(CtrlrPanel *panel, const File &last
 {
 	String panelFileName = "Ctrlr Panel";
 	File panelFile;
-	bool useOSDialog = panel ? (bool)panel->getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs) : true;
+	// bool useOSDialog = panel ? (bool)panel->getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs) : true;
+	// unused ?? JG 7/21/2026
 	if (panel)
 	{
 		panelFileName = panel->getProperty(Ids::name);
@@ -1080,7 +1081,9 @@ void CtrlrPanel::canClose(const bool closePanel, std::function<void(bool)> compl
 			"There are unsaved changes in this panel.\nDo you want to save them before closing?",
 			nullptr, // optional associated component
 			juce::ModalCallbackFunction::create([safeThis, completionCallback](int result) {
-				if (safeThis == nullptr)
+				// if (safeThis == nullptr)
+				//  Explicit, works reliably across all JUCE versions
+				if (safeThis.getComponent() == nullptr)
 					return;
 
 				if (result == 1) // Save ("Yes")

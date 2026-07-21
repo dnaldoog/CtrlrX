@@ -218,6 +218,81 @@ String CtrlrLuaUtils::askForTextInputWindow (const String title, const String me
 }
 #else
 
+void CtrlrLuaUtils::questionWindow(const String title, const String message, const String button1Text,
+								   const String button2Text, std::function<void(bool)> callback) {
+	juce::AlertWindow::showOkCancelBox(juce::AlertWindow::QuestionIcon, title, message, button1Text, button2Text,
+									   nullptr, juce::ModalCallbackFunction::create([callback](int result) {
+										   if (callback)
+											   callback(result == 1); // 1 = button1 (OK)
+									   }));
+}
+// -----------------------------------------------------------------------------
+// 2. File Choosers (Async with Callbacks)
+// -----------------------------------------------------------------------------
+
+void CtrlrLuaUtils::openFileWindow(const String &dialogBoxTitle, const File &initialFileOrDirectory,
+								   const String &filePatternsAllowed, bool useOSNativeDialogBox,
+								   std::function<void(const File &)> callback) {
+	auto dialog = std::make_shared<juce::FileChooser>(dialogBoxTitle, initialFileOrDirectory, filePatternsAllowed,
+													  useOSNativeDialogBox);
+	auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+
+	dialog->launchAsync(flags, [dialog, callback](const juce::FileChooser &fc) {
+		if (callback)
+			callback(fc.getResult());
+	});
+}
+
+void CtrlrLuaUtils::openMultipleFilesWindow(const String &dialogBoxTitle, const File &initialFileOrDirectory,
+											const String &filePatternsAllowed, bool useOSNativeDialogBox,
+											luabind::object table) { // Pass luabind::object by value for async safety
+	auto dialog = std::make_shared<juce::FileChooser>(dialogBoxTitle, initialFileOrDirectory, filePatternsAllowed,
+													  useOSNativeDialogBox);
+	auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles |
+				 juce::FileBrowserComponent::canSelectMultipleItems;
+
+	dialog->launchAsync(flags, [dialog, table](const juce::FileChooser &fc) {
+		if (luabind::type(table) == LUA_TTABLE) {
+			Array<File> res = fc.getResults();
+			for (int i = 0; i < res.size(); i++) {
+				table[i + 1] = res[i];
+			}
+		}
+	});
+}
+
+void CtrlrLuaUtils::saveFileWindow(const String &dialogBoxTitle, const File &initialFileOrDirectory,
+								   const String &filePatternsAllowed, bool useOSNativeDialogBox,
+								   std::function<void(const File &)> callback) {
+	auto dialog = std::make_shared<juce::FileChooser>(dialogBoxTitle, initialFileOrDirectory, filePatternsAllowed,
+													  useOSNativeDialogBox);
+	auto flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles |
+				 juce::FileBrowserComponent::warnAboutOverwriting;
+
+	dialog->launchAsync(flags, [dialog, callback](const juce::FileChooser &fc) {
+		if (callback)
+			callback(fc.getResult());
+	});
+}
+
+void CtrlrLuaUtils::getDirectoryWindow(const String &dialogBoxTitle, const File &initialFileOrDirectory,
+									   std::function<void(const File &)> callback) {
+	auto dialog = std::make_shared<juce::FileChooser>(dialogBoxTitle, initialFileOrDirectory);
+	auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories;
+
+	dialog->launchAsync(flags, [dialog, callback](const juce::FileChooser &fc) {
+		if (callback)
+			callback(fc.getResult());
+	});
+}
+// If you prefer preserving modal dialogs for legacy Lua scripts without changing Lua function signatures to callbacks,
+// use AlertWindow directly:
+// bool CtrlrLuaUtils::questionWindow(const String title, const String message,
+//                                      const String button1Text, const String button2Text) {
+//     return juce::AlertWindow::showOkCancelBox(
+//         juce::AlertWindow::QuestionIcon, title, message, button1Text, button2Text);
+// }
+#if 0 // Old JUCE 6 code
 // -----------------------------------------------------------------------------
 // 1. Alert Windows
 // -----------------------------------------------------------------------------
@@ -331,6 +406,7 @@ void CtrlrLuaUtils::askForTextInputWindow(const String title, const String messa
 					   }));
 }
 
+#endif
 #endif
 StringArray CtrlrLuaUtils::getMidiInputDevices() // Update v5.6.35. For JUCE 8
 {

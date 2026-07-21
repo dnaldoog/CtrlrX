@@ -230,7 +230,9 @@ void CtrlrPanelResourceEditor::addResourceFromFile() {
 			auto processIndex = std::make_shared<std::function<void(int)>>();
 
 			*processIndex = [safeThis, filesToOpen, processIndex](int index) {
-				if (safeThis == nullptr)
+				// if (safeThis == nullptr)
+				// Explicit, works reliably across all JUCE versions
+				if (safeThis.getComponent() == nullptr)
 					return;
 
 				// Base Case: Done processing all files

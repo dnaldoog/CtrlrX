@@ -231,11 +231,28 @@ PropertySet *CtrlrStandaloneWindow::getGlobalSettings() {
 	return ctrlrProcessor->getManager().getCtrlrProperties().getProperties().getUserSettings();
 }
 
+#if JUCE_VERSION < 0x070000
 void CtrlrStandaloneWindow::closeButtonPressed() {
 	if (ctrlrProcessor->getManager().canCloseWindow()) {
 		JUCEApplication::quit();
 	}
 }
+#else
+void CtrlrStandaloneWindow::closeButtonPressed() {
+	if (ctrlrProcessor == nullptr) {
+		JUCEApplication::quit();
+		return;
+	}
+
+	// Pass a callback function that runs after the window close check finishes
+	ctrlrProcessor->getManager().canCloseWindow([this](bool canClose) {
+		if (canClose) {
+			JUCEApplication::quit();
+		}
+	});
+}
+
+#endif
 
 void CtrlrStandaloneWindow::clearProcessorPointer() // Added JUCE 8
 {
