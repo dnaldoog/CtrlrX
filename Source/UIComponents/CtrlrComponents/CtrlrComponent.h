@@ -121,7 +121,16 @@ class CtrlrComponent : public Component,
         bool isInternal();
         void triggerBubbleHelp(const MouseEvent& e, int requiredTrigger);
         std::unique_ptr<BubbleMessageComponent> bubbleMessage;
-        
+	
+        static void applySafeSliderRange(juce::Slider &slider, double minVal, double maxVal, double interval) {
+            const double juceMin = std::min(minVal, maxVal);
+            double juceMax = std::max(minVal, maxVal);
+		    
+            // JUCE demands juceMax > juceMin. Pad slightly if equal to prevent assertions.
+            if (juceMin == juceMax) { juceMax = juceMin + 0.0001; }
+            slider.setRange(juceMin, juceMax, interval);
+        }
+
         JUCE_LEAK_DETECTOR(CtrlrComponent)
 
     protected:
