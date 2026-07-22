@@ -782,82 +782,65 @@ int CtrlrPanelResourceEditor::compareElements(CtrlrPanelResource *first, CtrlrPa
 }
 
 void CtrlrPanelResourceEditor::moveResources() {
-	Array<CtrlrPanelResource *> resourcesReloaded;
 	const String location = owner.getOwner().getPanelResourcesDirPath();
-	const int confirm = AlertWindow::showOkCancelBox(
-		AlertWindow::QuestionIcon, "Move resources to panel folder",
-		"Do you want to move all resources to the panel folder (location=" + location + ")?", "Yes", "No");
-	if (confirm == 1) {
-		File targetFolder = owner.getOwner().getPanelResourcesDir();
-		if (!targetFolder.exists()) {
-			const Result res = targetFolder.createDirectory();
-			if (res.failed()) {
-#if JUCE_VERSION >= 0x070000
-				AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Move resources to panel folder",
-												 "Failed to create resources folder '" + location + "'.\n" +
-													 res.getErrorMessage());
-#else
-				AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Move resources to panel folder",
-											"Failed to create resources folder '" + location + "'.\n" +
-												res.getErrorMessage());
-#endif
+
+	AW::showOkCancelAsyncSafe(
+		AW::Question, "Move resources to panel folder",
+		"Do you want to move all resources to the panel folder (location=" + location + ")?",
+		[this, location](int confirm) {
+			if (confirm != 1) { // User clicked "No" or closed dialog
 				return;
 			}
-		} else if (!targetFolder.isDirectory()) {
-#if JUCE_VERSION >= 0x070000
-			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Move resources to panel folder",
-											 "Failed to access resources folder '" + location + "'.");
-#else
-			AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Move resources to panel folder",
-										"Failed to access resources folder '" + location + "'.");
-#endif
-			return;
-		}
-		for (int i = 0; i < resources.size(); i++) {
-			if (resources[i]) {
-				File originalFile = resources[i]->getSourceFile();
-				if (!originalFile.exists()) { // If the source file is not available, use the data file
-					resources[i]->getFile();
+
+			Array<CtrlrPanelResource *> resourcesReloaded;
+			File targetFolder = owner.getOwner().getPanelResourcesDir();
+
+			if (!targetFolder.exists()) {
+				const Result res = targetFolder.createDirectory();
+				if (res.failed()) {
+					AW::showWarning("Move resources to panel folder",
+									"Failed to create resources folder '" + location + "'.\n" + res.getErrorMessage());
+					return;
 				}
-				if (!originalFile.isAChildOf(
-						targetFolder)) { // Skip resources that are already located in the panel folder
-					File targetFile = targetFolder.getChildFile(originalFile.getFileName());
-					if (targetFile.exists()) {
-#if JUCE_VERSION >= 0x070000
-						AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Move resources to panel folder",
-														 "Target file '" + targetFile.getFullPathName() +
-															 "' already exists, resource will be skiped.");
-#else
-						AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Move resources to panel folder",
-													"Target file '" + targetFile.getFullPathName() +
-														"' already exists, resource will be skiped.");
-#endif
-					} else {
-						if (!originalFile.copyFileTo(targetFile)) {
-#if JUCE_VERSION >= 0x070000
-							AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Move resources to panel folder",
-															 "Could not copy resource to file '" +
-																 targetFile.getFullPathName() +
-																 "', resource will be skiped.");
-#else
-							AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Move resources to panel folder",
-														"Could not copy resource to file '" +
-															targetFile.getFullPathName() +
-															"', resource will be skiped.");
-#endif
+			} else if (!targetFolder.isDirectory()) {
+				AW::showWarning("Move resources to panel folder",
+								"Failed to access resources folder '" + location + "'.");
+				return;
+			}
+
+			for (int i = 0; i < resources.size(); i++) {
+				if (resources[i]) {
+					File originalFile = resources[i]->getSourceFile();
+					if (!originalFile.exists()) { // If source file isn't available, fallback to data file
+						resources[i]->getFile();
+					}
+
+					// Skip resources already located in the panel folder
+					if (!originalFile.isAChildOf(targetFolder)) {
+						File targetFile = targetFolder.getChildFile(originalFile.getFileName());
+
+						if (targetFile.exists()) {
+							AW::showWarning("Move resources to panel folder",
+											"Target file '" + targetFile.getFullPathName() +
+												"' already exists, resource will be skipped.");
 						} else {
-							resources[i]->setSourceFile(targetFile);
-							resourcesReloaded.add(resources[i]);
-							resources[i]->reloadFromSourceFile();
+							if (!originalFile.copyFileTo(targetFile)) {
+								AW::showWarning("Move resources to panel folder", "Could not copy resource to file '" +
+																					  targetFile.getFullPathName() +
+																					  "', resource will be skipped.");
+							} else {
+								resources[i]->setSourceFile(targetFile);
+								resourcesReloaded.add(resources[i]);
+								resources[i]->reloadFromSourceFile();
+							}
 						}
 					}
 				}
 			}
-		}
-	}
-	owner.reloadResources(resourcesReloaded);
-}
 
+			owner.reloadResources(resourcesReloaded);
+		});
+}
 void CtrlrPanelResourceEditor::reloadAllResourcesFromSourceFiles() {
 	Array<CtrlrPanelResource *> resourcesReloaded;
 

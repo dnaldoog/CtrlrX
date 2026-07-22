@@ -13,6 +13,7 @@
 #include "CtrlrWindowManagers/CtrlrDialogWindow.h"
 #include "CtrlrWindowManagers/CtrlrManagerWindowManager.h"
 #include "stdafx.h"
+#include <memory>
 
 CtrlrLuaMethodEditor::CtrlrLuaMethodEditor(CtrlrPanel &_owner)
 	: owner(_owner),
@@ -482,7 +483,11 @@ CtrlrLuaMethodManager &CtrlrLuaMethodEditor::getMethodManager() {
 
 void CtrlrLuaMethodEditor::itemChanged(ValueTree &itemTreeThatChanged) {}
 
-void CtrlrLuaMethodEditor::closeCurrentTab() { closeTab(methodEditArea->getTabs()->getCurrentTabIndex()); }
+void CtrlrLuaMethodEditor::closeCurrentTab() {
+	closeTab(methodEditArea->getTabs()->getCurrentTabIndex(), [](bool /*closed*/) {
+		// Optional: Add post-close logic here if needed
+	});
+}
 
 #if JUCE_VERSION < 0x07000
 /*
@@ -918,14 +923,14 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 					/* convert a method from a file to a in-memory property */
 				} else if (ret == 2) {
 					/* remove a method */
-					if (SURE("Delete the selected method?", this)) {
-						{
-							methodEditArea->closeTabWithMethod(item);
-							getMethodManager().removeMethod(item.getProperty(Ids::uuid).toString());
-						}
-
-						triggerAsyncUpdate();
-					}
+					AW::showOkCancelAsyncSafe(
+						AW::Question, "Confirm Deletion", "Delete the selected method?", [this, item](int result) {
+							if (result == 1) { // User confirmed
+								methodEditArea->closeTabWithMethod(item);
+								getMethodManager().removeMethod(item.getProperty(Ids::uuid).toString());
+								triggerAsyncUpdate();
+							}
+						});
 				}
 			});
 		}
@@ -1111,10 +1116,11 @@ void CtrlrLuaMethodEditor::menuItemSelected(int menuItemID, int topLevelMenuInde
 		// so it may be necessary to keep it here.
 		if (isCurrentlyModal())
 			exitModalState(-1);
-
-		if (canCloseWindow()) {
-			owner.getWindowManager().toggle(CtrlrPanelWindowManager::LuaMethodEditor, false);
-		}
+		canCloseWindow([this](bool canClose) {
+			if (canClose) {
+				owner.getWindowManager().toggle(CtrlrPanelWindowManager::LuaMethodEditor, false);
+			}
+		});
 	} break;
 
 	// All other command IDs (save, compile, search, etc.) should be handled by the
@@ -1135,26 +1141,25 @@ void CtrlrLuaMethodEditor::saveAndCompilAllMethods() {
 }
 
 void CtrlrLuaMethodEditor::convertToFiles() {
-	// Show confirmation dialog
 	const String location = owner.getPanelLuaDirPath();
-	const int confirm = AlertWindow::showOkCancelBox(
-		AlertWindow::QuestionIcon, "Convert to files",
-		"Do you want to convert all Lua methods to files (location=" + location + ")?", "Yes", "No");
-	if (confirm == 1) {
-		Result res = owner.convertLuaMethodsToFiles(location);
-		if (res.wasOk()) {
-			owner.luaManagerChanged();
-			triggerAsyncUpdate();
-		} else {
-#if JUCE_VERSION >= 0x070000
-			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Convert to files",
-											 "Failed to convert Lua methods to files.\n" + res.getErrorMessage());
-#else
-			AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Convert to files",
-										"Failed to convert Lua methods to files.\n" + res.getErrorMessage());
-#endif
-		}
-	}
+
+	AW::showOkCancelAsyncSafe(AW::Question, "Convert to files",
+							  "Do you want to convert all Lua methods to files (location=" + location + ")?",
+							  [this, location](int confirm) {
+								  if (confirm != 1) { // User clicked "No" or closed dialog
+									  return;
+								  }
+
+								  Result res = owner.convertLuaMethodsToFiles(location);
+
+								  if (res.wasOk()) {
+									  owner.luaManagerChanged();
+									  triggerAsyncUpdate();
+								  } else {
+									  AW::showWarning("Convert to files", "Failed to convert Lua methods to files.\n" +
+																			  res.getErrorMessage());
+								  }
+							  });
 }
 
 ValueTree &CtrlrLuaMethodEditor::getComponentTree() { return (componentTree); }
@@ -1195,9 +1200,17 @@ const String CtrlrLuaMethodEditor::getCurrentDebuggerCommand(const bool clearThe
 
 	return ("");
 }
-
+#if JUCE_VERSION < 0x070000
 int CtrlrLuaMethodEditor::waitForCommand() { return (getParentComponent()->runModalLoop()); }
-
+#else
+void CtrlrLuaMethodEditor::waitForCommand(std::function<void(int commandResult)> callback) {
+	// enterModalState triggers when the modal loop exits via exitModalState(result)
+	getParentComponent()->enterModalState(true, ModalCallbackFunction::create([callback](int result) {
+											  if (callback)
+												  callback(result);
+										  }));
+}
+#endif
 void CtrlrLuaMethodEditor::setOpenSearchTabsEnabled(bool shouldOpen) { openSearchTabsEnabledState = shouldOpen; }
 
 bool CtrlrLuaMethodEditor::getOpenSearchTabsEnabled() const { return openSearchTabsEnabledState; }

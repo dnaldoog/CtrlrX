@@ -165,19 +165,26 @@ void CtrlrValueTreeEditorItem::keyPressed (const KeyPress &key)
 		if (!provider.canBeRenamed(treeToEdit))
 			return;
 
-		AlertWindow wnd("Rename item","Rename current item type: " + treeToEdit.getType().toString(), AlertWindow::QuestionIcon, getOwnerView());
-		wnd.addTextEditor ("name", treeToEdit.getProperty(nameIdentifier), "Name:", false);
-		wnd.addButton ("OK", 1, KeyPress(KeyPress::returnKey));
-		wnd.addButton ("Cancel", 0, KeyPress(KeyPress::escapeKey));
-		if (wnd.runModalLoop())
-		{
-			if (provider.renameItem (treeToEdit, wnd.getTextEditorContents("name")))
-			{
-				treeToEdit.setProperty (Ids::name, wnd.getTextEditorContents("name"), nullptr);
-			}
+		auto *wnd = new AlertWindow("Rename item", "Rename current item type: " + treeToEdit.getType().toString(),
+									AlertWindow::QuestionIcon, getOwnerView());
+		wnd->addTextEditor("name", treeToEdit.getProperty(nameIdentifier), "Name:", false);
+		wnd->addButton("OK", 1, KeyPress(KeyPress::returnKey));
+		wnd->addButton("Cancel", 0, KeyPress(KeyPress::escapeKey));
 
-			provider.triggerAsyncUpdate();
-		}
+		wnd->enterModalState(true, ModalCallbackFunction::create([this, wnd](int result) mutable {
+								 if (result == 1) // User clicked OK
+								 {
+									 String newName = wnd->getTextEditorContents("name");
+
+									 if (provider.renameItem(treeToEdit, newName)) {
+										 treeToEdit.setProperty(Ids::name, newName, nullptr);
+									 }
+
+									 provider.triggerAsyncUpdate();
+								 }
+
+								 delete wnd; // Clean up window memory
+							 }));
 	}
 }
 

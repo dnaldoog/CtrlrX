@@ -122,8 +122,12 @@ class CtrlrLuaMethodEditor  : public CtrlrChildWindowContent,
         void insertRawDebuggerOutput(const String &debuggerOutput);
         //void setRawDebuggerOutput(const String &debuggerOutput); JG 1/19/2025
         void setJsonDebuggerOutput(const String &jsonData);
-        int waitForCommand();
-        const String getCurrentDebuggerCommand(const bool clearTheReturnedCommand=true);
+#if JUCE_VERSION < 0x070000
+		int waitForCommand();
+#else
+		void waitForCommand(std::function<void(int commandResult)> callback);
+#endif
+		const String getCurrentDebuggerCommand(const bool clearTheReturnedCommand=true);
         void setOpenSearchTabsEnabled(bool shouldOpen); // used for toggling search closed files
         bool getOpenSearchTabsEnabled() const; // getter
 

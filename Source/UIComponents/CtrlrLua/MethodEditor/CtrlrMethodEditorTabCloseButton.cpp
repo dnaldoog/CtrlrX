@@ -157,6 +157,7 @@ void CtrlrMethodEditorTabCloseButton::paintButton (Graphics& g, bool isMouseOver
     }
 }
 
+#if JUCE_VERSION < 0x070000
 void CtrlrMethodEditorTabCloseButton::mouseDown (const MouseEvent& e)
 {
     //[UserCode_mouseDown] -- Add your code here...
@@ -169,7 +170,20 @@ void CtrlrMethodEditorTabCloseButton::mouseDown (const MouseEvent& e)
 	}
     //[/UserCode_mouseDown]
 }
+#else
+void CtrlrMethodEditorTabCloseButton::mouseDown(const MouseEvent &e) {
+	//[UserCode_mouseDown] -- Add your code here...
+	Button::mouseDown(e);
+	TabBarButton *parent = dynamic_cast<TabBarButton *>(getParentComponent());
 
+	if (parent) {
+		owner.closeTab(parent->getIndex(), [](bool /*closed*/) {
+			// Optional: Add post-close UI logic here if needed
+		});
+	}
+	//[/UserCode_mouseDown]
+}
+#endif
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 //[/MiscUserCode]
 

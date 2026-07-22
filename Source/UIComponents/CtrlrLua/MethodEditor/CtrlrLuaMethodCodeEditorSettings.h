@@ -50,7 +50,11 @@ public:
 	bool hasUnsavedChanges() const;
 	void markAsChanged();
 	void markAsSaved();
+#if JUCE_VERSION < 0x070000
 	bool promptToSaveChanges();
+#else
+	void promptToSaveChanges(std::function<void(bool proceedWithClose)> onCompletion);
+#endif
 	void applySettings();
 	void closeWindow();
 

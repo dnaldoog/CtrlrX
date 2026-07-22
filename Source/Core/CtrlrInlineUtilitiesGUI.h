@@ -187,6 +187,21 @@ class AW {
 											  });
 		}
 		/**************************************************************************************************/
+		static void showWarning(const juce::String &title, const juce::String &message,
+								std::function<void(int)> callback = nullptr) {
+			juce::NativeMessageBox::showAsync(juce::MessageBoxOptions()
+												  .withIconType(juce::MessageBoxIconType::WarningIcon)
+												  .withTitle(title)
+												  .withMessage(message)
+												  .withButton("OK"),
+											  [callback](int result) {
+												  if (callback) {
+													  callback(result);
+												  }
+											  });
+		}
+
+		/**************************************************************************************************/
 		static void runCustomAlertAsyncSafe(juce::AlertWindow *alert, std::function<void(int)> callback) {
 #if JUCE_VERSION >= 0x070000
 			alert->enterModalState(true, juce::ModalCallbackFunction::create([alert, callback](int result) {
