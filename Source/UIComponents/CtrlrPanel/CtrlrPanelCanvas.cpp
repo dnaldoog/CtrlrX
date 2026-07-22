@@ -1056,7 +1056,7 @@ case DistributeHorizontally: {
 	}
 
 	break;
-} // 🟢 Closes DistributeHorizontally scope
+}
 
 case DistributeVertically: {
 	const int numSelected = getSelection().getNumSelected();
@@ -1098,7 +1098,7 @@ case DistributeVertically: {
 	}
 
 	break;
-} // 🟢 Closes DistributeVertically scope
+}
 
 case MatchWidth: {
 	const int numSelected = getSelection().getNumSelected();
@@ -1116,7 +1116,7 @@ case MatchWidth: {
 		}
 	}
 	break;
-} // 🟢 Closes MatchWidth scope
+}
 
 case MatchHeight: {
 	const int numSelected = getSelection().getNumSelected();
@@ -1134,7 +1134,7 @@ case MatchHeight: {
 		}
 	}
 	break;
-} // 🟢 Closes MatchHeight scope
+}
 
 case MatchSize: {
 	const int numSelected = getSelection().getNumSelected();
@@ -1153,7 +1153,7 @@ case MatchSize: {
 		}
 	}
 	break;
-} // 🟢 Closes MatchSize scope
+} // Closes MatchSize scope
 
 case Copy:
 case Cut:
