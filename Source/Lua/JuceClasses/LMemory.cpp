@@ -679,18 +679,18 @@ void LThreadWithProgressWindow::wrapForLua (lua_State *L)
 {
 	using namespace luabind;
 
-	module(L)
-    [
-		class_<ThreadWithProgressWindow> ("JThreadWithProgressWindow")
-		,
-		class_<Thread>("JThread")
-		,
-		class_<LThreadWithProgressWindow,bases<Thread,ThreadWithProgressWindow> >("ThreadWithProgressWindow")
-			.def(constructor<const String &, bool, bool, int, const String &>())
-			.def("runThread", &ThreadWithProgressWindow::runThread)
-			.def("setThreadFunction", &LThreadWithProgressWindow::setThreadFunction)
-			.def("wait", &Thread::wait)
-			.def("setProgress", &LThreadWithProgressWindow::setProgress)
-			.def("setStatusMessage", &LThreadWithProgressWindow::setStatusMessage)
-	];
+	module(L)[class_<ThreadWithProgressWindow>("JThreadWithProgressWindow"), class_<Thread>("JThread"),
+			  class_<LThreadWithProgressWindow, bases<Thread, ThreadWithProgressWindow>>("ThreadWithProgressWindow")
+				  .def(constructor<const String &, bool, bool, int, const String &>())
+#if JUCE_VERSION >= 0x070000
+				  // JUCE 7/8 uses launchThread instead of runThread
+				  .def("runThread", &ThreadWithProgressWindow::launchThread)
+				  .def("launchThread", &ThreadWithProgressWindow::launchThread)
+#else
+				  .def("runThread", &ThreadWithProgressWindow::runThread)
+#endif
+				  .def("setThreadFunction", &LThreadWithProgressWindow::setThreadFunction)
+				  .def("wait", &Thread::wait)
+				  .def("setProgress", &LThreadWithProgressWindow::setProgress)
+				  .def("setStatusMessage", &LThreadWithProgressWindow::setStatusMessage)];
 }

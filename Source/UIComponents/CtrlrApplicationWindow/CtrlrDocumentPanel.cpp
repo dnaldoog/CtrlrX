@@ -89,9 +89,7 @@ void CtrlrDocumentPanel::activeDocumentChanged() {
 	}
 }
 
-void CtrlrDocumentPanel::buttonClicked(
-	Button *button) // Updated v5.6.34. Get the appropriate index panel from the close tab index.
-{
+void CtrlrDocumentPanel::buttonClicked(Button *button) {
 	int index = (int)button->getProperties().getWithDefault("index", -1);
 	TabbedComponent *tc = getCurrentTabbedComponent();
 
@@ -99,14 +97,15 @@ void CtrlrDocumentPanel::buttonClicked(
 		CtrlrPanelEditor *ed = dynamic_cast<CtrlrPanelEditor *>(tc->getTabContentComponent(index));
 
 		if (ed != nullptr) {
-			// Get the actual CtrlrPanel associated with this editor 'ed'
 			CtrlrPanel *panelToClose = owner.getPanelForEditor(ed);
 
 			if (panelToClose != nullptr) {
-				// Call canClose on the CtrlrPanel instance related to the close button
-				if (panelToClose->canClose(true)) {
-					owner.removePanel(ed);
-				}
+				// Call canClose asynchronously with the close flag and callback lambda
+				panelToClose->canClose(true, [this, ed](bool canCloseNow) {
+					if (canCloseNow) {
+						owner.removePanel(ed);
+					}
+				});
 			}
 		}
 	}
