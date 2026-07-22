@@ -1,4 +1,5 @@
 #include "CtrlrLuaMethodCodeEditorSettings.h"
+#include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrLuaMethodEditor.h"
 #include "CtrlrManager/CtrlrManager.h"
 #include "CtrlrPanel/CtrlrPanel.h"
@@ -463,44 +464,49 @@ void CtrlrLuaMethodCodeEditorSettings::buttonClicked(Button *buttonThatWasClicke
 		applySettings();
 		closeWindow(); // Added to apply and close settings window
 	} else if (buttonThatWasClicked == resetButton.get()) {
-		int result =
-			AlertWindow::showOkCancelBox(AlertWindow::QuestionIcon, "Reset Editor", "Reset Editor to default?");
+		AW::showOkCancelAsyncSafe(AW::Question, "Reset Editor", "Reset Editor to default", [this](int result) {
+			if (result == 1) {
+				// Reset to defaults
+				fontTypeface->setText("<Monospaced>", dontSendNotification);
+				fontBold->setToggleState(false, dontSendNotification);
+				fontItalic->setToggleState(false, dontSendNotification);
+				openSearchTabs->setToggleState(false, dontSendNotification);
+				fontSize->setValue(14.0f, dontSendNotification);
+				bgColour->setSelectedId(findColourIndex(Colours::white), dontSendNotification);
+				lineNumbersBgColour->setSelectedId(findColourIndex(Colours::cornflowerblue), dontSendNotification);
+				lineNumbersColour->setSelectedId(findColourIndex(Colours::black), dontSendNotification);
 
-		if (result == 1) {
-			// Reset to defaults
-			// fontTypeface->setText(getDefaultFont(), dontSendNotification);
-			fontTypeface->setText("<Monospaced>", dontSendNotification); // "Courrier New" ???
-			fontBold->setToggleState(false, dontSendNotification);
-			fontItalic->setToggleState(false, dontSendNotification);
-			openSearchTabs->setToggleState(false, dontSendNotification);
-			fontSize->setValue(14.0f, dontSendNotification);
-			bgColour->setSelectedId(findColourIndex(Colours::white), dontSendNotification);
-			lineNumbersBgColour->setSelectedId(findColourIndex(Colours::cornflowerblue), dontSendNotification);
-			lineNumbersColour->setSelectedId(findColourIndex(Colours::black), dontSendNotification);
+				customSyntaxColors.clear();
+				clearSyntaxColorSettings();
+				String currentToken = getCurrentSelectedTokenType();
+				updateTokenColorDisplay(currentToken);
+				updateSyntaxColors();
 
-			customSyntaxColors.clear();
-			clearSyntaxColorSettings();
-			String currentToken = getCurrentSelectedTokenType();
-			updateTokenColorDisplay(currentToken);
-			updateSyntaxColors();
-
-			previousFont = getFont();
-			resetToPreviousButton->setEnabled(true);
-			changeListenerCallback(nullptr);
-			closeWindow(); // Added to apply and close settings window
-		} else if (buttonThatWasClicked == fontBold.get() || buttonThatWasClicked == fontItalic.get()) {
-			// For style changes, also enable reset and store previous
-			if (!resetToPreviousButton->isEnabled()) {
-				previousFont = getFont(); // Store current before style change
+				previousFont = getFont();
 				resetToPreviousButton->setEnabled(true);
+
+				// Trigger listener ONLY after user clicks OK
+				changeListenerCallback(nullptr);
+				closeWindow();
 			}
-		} else if (buttonThatWasClicked == openSearchTabs.get()) {
-			bool currentState = openSearchTabs->getToggleState();
-			owner.setOpenSearchTabsEnabled(currentState);
-			owner.getComponentTree().setProperty(Ids::openSearchTabsState, currentState, nullptr);
+		});
+
+		// Return early so the trailing changeListenerCallback doesn't fire prematurely
+		return;
+
+	} else if (buttonThatWasClicked == fontBold.get() || buttonThatWasClicked == fontItalic.get()) {
+		// For style changes, also enable reset and store previous
+		if (!resetToPreviousButton->isEnabled()) {
+			previousFont = getFont(); // Store current before style change
+			resetToPreviousButton->setEnabled(true);
 		}
+	} else if (buttonThatWasClicked == openSearchTabs.get()) {
+		bool currentState = openSearchTabs->getToggleState();
+		owner.setOpenSearchTabsEnabled(currentState);
+		owner.getComponentTree().setProperty(Ids::openSearchTabsState, currentState, nullptr);
 	}
 
+	// Runs immediately for non-async button clicks
 	changeListenerCallback(nullptr);
 }
 
@@ -758,25 +764,35 @@ void CtrlrLuaMethodCodeEditorSettings::markAsSaved() {
 	originalLineNumbersColour = getLineNumbersColour();
 	originalOpenSearchTabs = openSearchTabs->getToggleState();
 }
-
-bool CtrlrLuaMethodCodeEditorSettings::promptToSaveChanges() {
-	if (!hasUnsavedChanges())
-		return true; // No changes, safe to close
-
-	int result = AlertWindow::showYesNoCancelBox(AlertWindow::QuestionIcon, "Unsaved Changes",
-												 "You have unsaved changes. Do you want to apply them before closing?",
-												 "Apply & Close", "Close Without Saving", "Cancel");
-
-	switch (result) {
-	case 1: // Apply & Close
-		applySettings();
-		return true;
-	case 2: // Close Without Saving
-		return true;
-	case 0: // Cancel
-	default:
-		return false;
+void CtrlrLuaMethodCodeEditorSettings::promptToSaveChanges(std::function<void(bool proceedWithClose)> onCompletion) {
+	if (!hasUnsavedChanges()) {
+		if (onCompletion)
+			onCompletion(true); // No changes, proceed immediately
+		return;
 	}
+
+	AW::showYesNoCancelBox(AW::Question, "Unsaved Changes",
+						   "You have unsaved changes. Do you want to apply them before closing?", "Apply & Close",
+						   "Close Without Saving", "Cancel", [this, onCompletion](int result) {
+							   switch (result) {
+							   case 1: // Apply & Close
+								   applySettings();
+								   if (onCompletion)
+									   onCompletion(true);
+								   break;
+
+							   case 2: // Close Without Saving
+								   if (onCompletion)
+									   onCompletion(true);
+								   break;
+
+							   case 0: // Cancel / Dismissed
+							   default:
+								   if (onCompletion)
+									   onCompletion(false);
+								   break;
+							   }
+						   });
 }
 
 void CtrlrLuaMethodCodeEditorSettings::applySettings() {

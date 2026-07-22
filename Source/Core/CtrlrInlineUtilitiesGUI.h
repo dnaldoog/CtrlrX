@@ -144,6 +144,49 @@ class AW {
 			showNativeDialogBox(icon, title, bodyText, button1Text, button2Text, true, completionCallback);
 		}
 		/**************************************************************************************************/
+		/**
+		 * Modern non-blocking 3-button dialog box safe for JUCE 7 & 8.
+		 *
+		 * @param iconType      Icon to display (AW::Question, AW::Warning, etc.)
+		 * @param title         Dialog window title
+		 * @param message       Body message text
+		 * @param button1Text   First option (e.g., "Apply & Close" -> passes 1 to callback)
+		 * @param button2Text   Second option (e.g., "Close Without Saving" -> passes 2 to callback)
+		 * @param button3Text   Third option / Cancel (e.g., "Cancel" -> passes 0 to callback)
+		 * @param callback      Lambda function receiving the button result index (1, 2, or 0)
+		 */
+		static void showYesNoCancelBox(Icon icon, const juce::String &title, const juce::String &message,
+									   const juce::String &button1Text, const juce::String &button2Text,
+									   const juce::String &button3Text, std::function<void(int)> callback) {
+			juce::MessageBoxIconType juceIcon = juce::MessageBoxIconType::NoIcon;
+			switch (icon) {
+			case Question:
+				juceIcon = juce::MessageBoxIconType::QuestionIcon;
+				break;
+			case Warning:
+				juceIcon = juce::MessageBoxIconType::WarningIcon;
+				break;
+			case Info:
+				juceIcon = juce::MessageBoxIconType::InfoIcon;
+				break;
+			default:
+				break;
+			}
+
+			juce::NativeMessageBox::showAsync(juce::MessageBoxOptions()
+												  .withIconType(juceIcon)
+												  .withTitle(title)
+												  .withMessage(message)
+												  .withButton(button1Text)	// Returns 1
+												  .withButton(button2Text)	// Returns 2
+												  .withButton(button3Text), // Returns 0 (Cancel)
+											  [callback](int result) {
+												  if (callback) {
+													  callback(result);
+												  }
+											  });
+		}
+		/**************************************************************************************************/
 		static void runCustomAlertAsyncSafe(juce::AlertWindow *alert, std::function<void(int)> callback) {
 #if JUCE_VERSION >= 0x070000
 			alert->enterModalState(true, juce::ModalCallbackFunction::create([alert, callback](int result) {
@@ -155,7 +198,7 @@ class AW {
 			int result = alert->runModalLoop();
 			callback(result);
 #endif
-	}
+		}
 
 		/**
 			Centralizes the custom button layout engines for JUCE 8 custom components.

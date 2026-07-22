@@ -403,50 +403,69 @@ void CtrlrLuaMethodEditor::addMethodFromFile(ValueTree parentGroup) {
 }
 #endif
 void CtrlrLuaMethodEditor::addNewGroup(ValueTree parentGroup) {
-	AlertWindow wnd(GROUP_NEW, "", AlertWindow::InfoIcon, this);
-	wnd.addTextEditor("groupName", "New Group", "Group name", false);
-	wnd.addButton("OK", 1, KeyPress(KeyPress::returnKey));
-	wnd.addButton("Cancel", 0, KeyPress(KeyPress::escapeKey));
-	if (wnd.runModalLoop()) {
-		if (parentGroup.hasType(Ids::luaMethodGroup)) {
-			getMethodManager().addGroup(wnd.getTextEditorContents("groupName"),
-										parentGroup.getProperty(Ids::uuid).toString());
-		} else {
-			getMethodManager().addGroup(wnd.getTextEditorContents("groupName"));
-		}
-	}
+	auto *wnd = new AlertWindow(GROUP_NEW, "", AlertWindow::InfoIcon, this);
+	wnd->addTextEditor("groupName", "New Group", "Group name", false);
+	wnd->addButton("OK", 1, KeyPress(KeyPress::returnKey));
+	wnd->addButton("Cancel", 0, KeyPress(KeyPress::escapeKey));
 
-	updateRootItem();
+	// Modern async modal execution with automatic memory cleanup
+	wnd->enterModalState(true, ModalCallbackFunction::create([this, parentGroup, wnd](int result) {
+							 if (result == 1) { // User clicked OK
+								 String groupName = wnd->getTextEditorContents("groupName");
 
-	saveSettings(); // save settings
+								 if (parentGroup.hasType(Ids::luaMethodGroup)) {
+									 getMethodManager().addGroup(groupName,
+																 parentGroup.getProperty(Ids::uuid).toString());
+								 } else {
+									 getMethodManager().addGroup(groupName);
+								 }
+
+								 updateRootItem();
+								 saveSettings();
+							 }
+
+							 // Delete the dynamically allocated AlertWindow instance
+							 delete wnd;
+						 }));
 }
 
 void CtrlrLuaMethodEditor::removeGroup(ValueTree parentGroup) {
-	if (parentGroup.getNumChildren() > 0) {
-		if (SURE("Remove group: " + parentGroup.getProperty(Ids::name).toString() + " ?", this)) {
-			getMethodManager().removeGroup(parentGroup);
-		}
-	} else {
+	auto doRemove = [this, parentGroup]() {
 		getMethodManager().removeGroup(parentGroup);
+		updateRootItem();
+		saveSettings();
+	};
+
+	if (parentGroup.getNumChildren() > 0) {
+		String msg = "Remove group: " + parentGroup.getProperty(Ids::name).toString() + " ?";
+
+		AW::showOkCancelAsyncSafe(AW::Question, "Remove Group", msg, [doRemove](int result) {
+			if (result == 1) { // User clicked OK
+				doRemove();
+			}
+		});
+	} else {
+		// No children, remove immediately
+		doRemove();
 	}
-
-	updateRootItem();
-
-	saveSettings(); // save settings
 }
 
 void CtrlrLuaMethodEditor::renameGroup(ValueTree parentGroup) {
-	AlertWindow w("Rename group", "", AlertWindow::QuestionIcon, this);
-	w.addTextEditor("name", parentGroup.getProperty(Ids::name).toString());
-	w.addButton("OK", 1, KeyPress(KeyPress::returnKey));
-	w.addButton("Cancel", 0, KeyPress(KeyPress::escapeKey));
+	auto *w = new AlertWindow("Rename group", "", AlertWindow::QuestionIcon, this);
+	w->addTextEditor("name", parentGroup.getProperty(Ids::name).toString());
+	w->addButton("OK", 1, KeyPress(KeyPress::returnKey));
+	w->addButton("Cancel", 0, KeyPress(KeyPress::escapeKey));
 
-	if (w.runModalLoop()) {
-		parentGroup.setProperty(Ids::name, w.getTextEditorContents("name"), nullptr);
-		updateRootItem();
-	}
+	// Notice 'mutable' added before the body:
+	w->enterModalState(true, ModalCallbackFunction::create([this, parentGroup, w](int result) mutable {
+						   if (result == 1) { // User clicked OK
+							   parentGroup.setProperty(Ids::name, w->getTextEditorContents("name"), nullptr);
+							   updateRootItem();
+							   saveSettings();
+						   }
 
-	saveSettings(); // save settings
+						   delete w;
+					   }));
 }
 
 CtrlrLuaMethodCodeEditor *CtrlrLuaMethodEditor::getCurrentEditor() {
@@ -465,6 +484,17 @@ void CtrlrLuaMethodEditor::itemChanged(ValueTree &itemTreeThatChanged) {}
 
 void CtrlrLuaMethodEditor::closeCurrentTab() { closeTab(methodEditArea->getTabs()->getCurrentTabIndex()); }
 
+#if JUCE_VERSION < 0x07000
+/*
+This while loop was written back when closeTab(0) returned a synchronous bool.
+Now that closeTab is non-blocking and takes a callback,
+calling if (!closeTab(0)) fails to compile because closeTab returns void.
+
+Also, you can't use a standard while loop for closing tabs anymore.
+If a tab has unsaved changes, the confirmation dialog will pop up
+asynchronously while the loop continues running in the background,
+causing a race condition or opening dozens of popups at once!*/
+
 void CtrlrLuaMethodEditor::closeAllTabs() {
 	CtrlrLuaMethodEditorTabs *tabs = methodEditArea->getTabs();
 	while (tabs->getNumTabs() > 0) {
@@ -473,42 +503,83 @@ void CtrlrLuaMethodEditor::closeAllTabs() {
 		}
 	}
 }
+#else
 
-bool CtrlrLuaMethodEditor::closeTab(const int tabIndex) {
-	int currentlySelectedTab = methodEditArea->getTabs()->getCurrentTabIndex();
-	bool closed = true;
-	CtrlrLuaMethodCodeEditor *ed =
-		dynamic_cast<CtrlrLuaMethodCodeEditor *>(methodEditArea->getTabs()->getTabContentComponent(tabIndex));
-	if (ed) {
-		if (ed->getCodeDocument().hasChangedSinceSavePoint()) {
-			if (SURE("There might be some unsaved changes, are you sure?", this)) {
-				methodEditArea->getTabs()->removeTab(tabIndex);
-			} else {
-				closed = false;
-			}
-		} else {
-			methodEditArea->getTabs()->removeTab(tabIndex);
+void CtrlrLuaMethodEditor::closeAllTabs() {
+	// Helper lambda to process tabs sequentially
+	auto processNextTab = [this](auto self) -> void {
+		CtrlrLuaMethodEditorTabs *tabs = methodEditArea->getTabs();
+
+		if (tabs == nullptr || tabs->getNumTabs() == 0) {
+			return; // All tabs closed!
 		}
 
-		if (closed) {
-			if (tabIndex == currentlySelectedTab) { // We closed the selected tab => move to previous tab
-				if (currentlySelectedTab > 0) {
-					currentlySelectedTab = currentlySelectedTab - 1;
-				}
-			} else if (tabIndex < currentlySelectedTab) {
-				currentlySelectedTab = currentlySelectedTab - 1;
+		// Attempt to close the first tab
+		closeTab(0, [this, self](bool closed) {
+			if (closed) {
+				// If closed successfully, recursively call self to process the next tab
+				self(self);
 			}
-			methodEditArea->getTabs()->setCurrentTabIndex(currentlySelectedTab, false);
-			saveSettings();
-		}
-	}
-	return closed;
+			// If closed is false (user clicked Cancel), the chain stops naturally.
+		});
+	};
+
+	// Kick off the loop with the first tab
+	processNextTab(processNextTab);
 }
 
-bool CtrlrLuaMethodEditor::canCloseWindow() {
+#endif
+void CtrlrLuaMethodEditor::closeTab(const int tabIndex, std::function<void(bool closed)> callback) {
+	CtrlrLuaMethodCodeEditor *ed =
+		dynamic_cast<CtrlrLuaMethodCodeEditor *>(methodEditArea->getTabs()->getTabContentComponent(tabIndex));
+
+	// Helper lambda to perform tab removal & tab index adjustment
+	auto doClose = [this, tabIndex, callback]() {
+		int currentlySelectedTab = methodEditArea->getTabs()->getCurrentTabIndex();
+
+		methodEditArea->getTabs()->removeTab(tabIndex);
+
+		if (tabIndex == currentlySelectedTab) { // Closed selected tab => move to previous tab
+			if (currentlySelectedTab > 0) {
+				currentlySelectedTab = currentlySelectedTab - 1;
+			}
+		} else if (tabIndex < currentlySelectedTab) {
+			currentlySelectedTab = currentlySelectedTab - 1;
+		}
+
+		methodEditArea->getTabs()->setCurrentTabIndex(currentlySelectedTab, false);
+		saveSettings();
+
+		if (callback)
+			callback(true);
+	};
+
+	if (ed) {
+		if (ed->getCodeDocument().hasChangedSinceSavePoint()) {
+			// Asynchronous non-blocking confirmation dialog
+			AW::showOkCancelAsyncSafe(AW::Question, "Unsaved Changes",
+									  "There might be some unsaved changes, are you sure?",
+									  [doClose, callback](int result) {
+										  if (result == 1) { // User clicked OK
+											  doClose();
+										  } else { // User clicked Cancel
+											  if (callback)
+												  callback(false);
+										  }
+									  });
+			return;
+		}
+	}
+
+	// No unsaved changes (or no editor), close immediately
+	doClose();
+}
+
+void CtrlrLuaMethodEditor::canCloseWindow(std::function<void(bool canClose)> callback) {
 	bool hasUnsavedChanges = false;
 	CtrlrLuaMethodEditorTabs *tabs = methodEditArea->getTabs();
 	CtrlrLuaMethodCodeEditor *ed;
+
 	for (int i = 0; i < tabs->getNumTabs(); i++) {
 		ed = dynamic_cast<CtrlrLuaMethodCodeEditor *>(methodEditArea->getTabs()->getTabContentComponent(i));
 		if (ed) {
@@ -518,21 +589,30 @@ bool CtrlrLuaMethodEditor::canCloseWindow() {
 			}
 		}
 	}
+
 	if (hasUnsavedChanges) {
-		int ret = AlertWindow::showYesNoCancelBox(
-			AlertWindow::QuestionIcon, "Save changes (" + getOwner().getName() + ")",
-			"There are unsaved changes in Lua code. Do you want to save them before closing ?", "Save", "Discard",
-			"Cancel", this);
-		if (ret == 0) { // Cancel
-			return false;
-		} else if (ret == 1) { // Save all
-			saveAndCompilAllMethods();
-			return true;
-		} else { // Discard
-			return true;
-		}
-	} else {
-		return true;
+		// AW helper with modern non-blocking popup
+		AW::showYesNoCancelBox(AW::Question, "Save changes (" + getOwner().getName() + ")",
+							   "There are unsaved changes in Lua code. Do you want to save them before closing?",
+							   "Save",	  // Button 1
+							   "Discard", // Button 2
+							   "Cancel",  // Button 3
+							   [this, callback](int ret) {
+								   if (ret == 1) { // Save
+									   saveAndCompilAllMethods();
+									   if (callback)
+										   callback(true);
+								   } else if (ret == 2) { // Discard
+									   if (callback)
+										   callback(true);
+								   } else { // Cancel (ret == 0)
+									   if (callback)
+										   callback(false);
+								   }
+							   });
+		// No unsaved changes, proceed immediately
+		if (callback)
+			callback(true);
 	}
 }
 
@@ -640,6 +720,7 @@ void CtrlrLuaMethodEditor::createNewTab(CtrlrLuaMethod *method) {
 void CtrlrLuaMethodEditor::saveSettings() {
 	String settings;
 	StringArray openedMethod;
+
 	for (int i = 0; i < methodEditArea->getTabs()->getNumTabs(); i++) {
 		CtrlrLuaMethodCodeEditor *ed =
 			dynamic_cast<CtrlrLuaMethodCodeEditor *>(methodEditArea->getTabs()->getTabContentComponent(i));
@@ -651,12 +732,14 @@ void CtrlrLuaMethodEditor::saveSettings() {
 	}
 
 	if (methodTree->getRootItem()) {
-		ScopedPointer<XmlElement> treeState(methodTree->getOpennessState(true).release());
+		// JUCE 6/7/8: getOpennessState returns a std::unique_ptr<XmlElement>
+		std::unique_ptr<XmlElement> treeState = methodTree->getOpennessState(true);
 
-		if (treeState) {
+		if (treeState != nullptr) {
 			settings << treeState->createDocument("");
 			settings << ";";
 		}
+
 		settings << openedMethod.joinIntoString(":");
 		componentTree.setProperty(Ids::luaMethodEditor, settings, nullptr);
 	}

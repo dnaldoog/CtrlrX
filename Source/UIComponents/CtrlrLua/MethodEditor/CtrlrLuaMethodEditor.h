@@ -89,11 +89,15 @@ class CtrlrLuaMethodEditor  : public CtrlrChildWindowContent,
         bool keyPressed (const KeyPress& key, Component* originatingComponent);
         void closeCurrentTab();
         void closeAllTabs();
-        bool closeTab(const int tabIndex);
-        bool canCloseWindow();
-        
-        void tabChanged(CtrlrLuaMethodCodeEditor *codeEditor, const bool save=false, const bool recompile=false);
-        void updateTabs();
+#if JUCE_VERSION < 0x070000
+		bool closeTab(const int tabIndex);
+		bool canCloseWindow();
+#else
+		void closeTab(const int tabIndex, std::function<void(bool closed)> callback);
+		void canCloseWindow(std::function<void(bool canClose)> callback);
+#endif
+		void tabChanged(CtrlrLuaMethodCodeEditor *codeEditor, const bool save = false, const bool recompile = false);
+		void updateTabs();
         void valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
         void valueTreeChildrenChanged (ValueTree &treeWhoseChildHasChanged){}
         void valueTreeParentChanged (ValueTree &treeWhoseParentHasChanged){}

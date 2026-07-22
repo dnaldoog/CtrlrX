@@ -173,13 +173,16 @@ fc->launchAsync(flags, [this, panelToWrite, isRestricted, me, fileExtension, cal
 		if (hResource) {
 			if ((error = CtrlrPanel::exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData,
 												 isRestricted)) == "") {
-				if (writeResource(hResource, MAKEINTRESOURCE(CTRLR_INTERNAL_PANEL_RESID), RT_RCDATA, panelExportData) &&
-                    writeResource(hResource, MAKEINTRESOURCE(CTRLR_INTERNAL_RESOURCES_RESID), RT_RCDATA, panelResourcesData)) {
-                    EndUpdateResource(hResource, FALSE);
-                } else {
-                    notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource writeResource[panel] failed"));
-                    return;
-                }
+				if (writeResource(hResource, MAKEINTRESOURCEW(CTRLR_INTERNAL_PANEL_RESID), (LPCWSTR)RT_RCDATA,
+								  panelExportData) &&
+					writeResource(hResource, MAKEINTRESOURCEW(CTRLR_INTERNAL_RESOURCES_RESID), (LPCWSTR)RT_RCDATA,
+								  panelResourcesData)) {
+					EndUpdateResource(hResource, FALSE);
+				} else {
+					notifyAndReturn(
+						Result::fail("Windows Native: exportMeWithNewResource writeResource[panel] failed"));
+					return;
+				}
 			} else {
 				notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource exportPanel error: \"" + error + "\""));
                 return;
@@ -669,7 +672,7 @@ const Result CtrlrWindows::getDefaultPanel(MemoryBlock &dataToWrite) {
 	return (Result::ok());
 #endif
 
-	return (readResource(nullptr, MAKEINTRESOURCE(CTRLR_INTERNAL_PANEL_RESID), RT_RCDATA, dataToWrite));
+	return (readResource(nullptr, MAKEINTRESOURCEW(CTRLR_INTERNAL_PANEL_RESID), (LPCWSTR)RT_RCDATA, dataToWrite));
 }
 
 const Result CtrlrWindows::getDefaultResources(MemoryBlock &dataToWrite) {
@@ -701,7 +704,7 @@ const Result CtrlrWindows::getDefaultResources(MemoryBlock &dataToWrite) {
 	}
 #endif
 
-	return (readResource(nullptr, MAKEINTRESOURCE(CTRLR_INTERNAL_RESOURCES_RESID), RT_RCDATA, dataToWrite));
+	return (readResource(nullptr, MAKEINTRESOURCEW(CTRLR_INTERNAL_RESOURCES_RESID), (LPCWSTR)RT_RCDATA, dataToWrite));
 }
 
 const Result CtrlrWindows::registerFileHandler() {
@@ -772,13 +775,13 @@ const Result CtrlrWindows::sendKeyPressEvent(const KeyPress &event, const String
 	HWND firstwindow = FindWindowEx(NULL, NULL, NULL, NULL);
 	HWND window = firstwindow;
 	TCHAR windowtext[MAX_PATH];
-	// INPUT input;
 
-	if (targetWindowName != "") {
+	if (targetWindowName.isNotEmpty()) {
 		while (1) {
-
 			GetWindowText(window, windowtext, MAX_PATH);
-			if (strstr(windowtext, targetWindowName.getCharPointer()) != NULL)
+
+			// Convert windowtext to juce::String and use JUCE's native contains method
+			if (String(windowtext).containsIgnoreCase(targetWindowName))
 				break;
 
 			window = FindWindowEx(NULL, window, NULL, NULL);
