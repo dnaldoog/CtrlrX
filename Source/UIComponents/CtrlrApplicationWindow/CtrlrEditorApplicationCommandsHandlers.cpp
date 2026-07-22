@@ -485,12 +485,21 @@ bool CtrlrEditor::perform(
 		}
 		break;
 
+#if JUCE_VERSION < 0x070000
 	case CtrlrEditor::doQuit:
 		if (owner.canCloseWindow()) {
 			JUCEApplication::quit();
 		}
 		break;
-
+#else
+	case CtrlrEditor::doQuit:
+		owner.canCloseWindow([](bool canClose) {
+			if (canClose) {
+				juce::JUCEApplication::quit();
+			}
+		});
+		break;
+#endif
 	case CtrlrEditor::doRegisterExtension:
 		tempResult = owner.getNativeObject().registerFileHandler();
 		if (tempResult.wasOk()) {

@@ -372,143 +372,111 @@ void CtrlrPanel::savePanelVersioned()
 
 const String CtrlrPanel::exportPanel(CtrlrPanel *panel, const File &lastBrowsedDir, const File &destinationFile,
 									 MemoryBlock *outputPanelData, MemoryBlock *outputResourcesData,
-									 const bool isRestricted)
-{
-	Image panelSnapshot(Image::ARGB, 400, 400, true);
-	CtrlrPanelCanvas *canvas = panel->getEditor()->getCanvas();
-	// CtrlrPanelEditor *editor = panel->getEditor();
+									 const bool isRestricted) {
+	if (panel == nullptr)
+		return "Undefined panel passed to exporter";
 
-	if (panel == 0 || panel == nullptr)
-		return ("Undefined panel passeed to exporter");
-
-	File exportedFile = File();
-
-	if (destinationFile == File())
-		exportedFile = askForPanelFileToSave(panel, lastBrowsedDir, false, true);
-	else
-		exportedFile = destinationFile;
+	File exportedFile =
+		(destinationFile == File()) ? askForPanelFileToSave(panel, lastBrowsedDir, false, true) : destinationFile;
 
 	if (exportedFile == File())
-		return ("Destination file does not exist or is invalid");
+		return "Destination file does not exist or is invalid";
 
 	panel->luaSavePanel(PanelFileExport, exportedFile);
 
-	if (canvas)
-	{
+	// Capture Canvas Snapshot
+	Image panelSnapshot(Image::ARGB, 400, 400, true);
+	if (auto *canvas = panel->getEditor() ? panel->getEditor()->getCanvas() : nullptr) {
 		Image snap = canvas->createComponentSnapshot(canvas->getBounds(), true);
 		Graphics g(panelSnapshot);
 		g.drawImageWithin(snap, 0, 0, 400, 400, RectanglePlacement::centred | RectanglePlacement::onlyReduceInSize,
 						  false);
 	}
 
+	// Build base resources tree
 	ValueTree resources(Ids::resourceExportList);
-
-	for (int i = 0; i < panel->getResourceManager().getNumResources(); i++)
-	{
-		CtrlrPanelResource *res = panel->getResourceManager().getResource(i);
-		if (res)
-		{
-			resources.addChild(res->createTree(), -1, 0);
+	for (int i = 0; i < panel->getResourceManager().getNumResources(); ++i) {
+		if (auto *res = panel->getResourceManager().getResource(i)) {
+			resources.addChild(res->createTree(), -1, nullptr);
 		}
 	}
 
-	if (panel->getResourceManager().getNumResources() > 0)
-	{
-		// const int ret = AlertWindow::showOkCancelBox(AlertWindow::QuestionIcon, "License question",
-		// "Would you like to attach a license to this panel?", "Yes", "No");
-		AW::showNativeDialogBox(AW::Question, "License question", "Would you like to attach a license to this panel?",
-								"Yes", "No", true, [](bool userClickedYes) {
-									if (userClickedYes) {
-										AlertWindow licenseWindow("License content", "Paste your license below",
-																  AlertWindow::InfoIcon, 0);
-										TextEditor lic;
-										lic.setMultiLine(true, false);
-										lic.setSize(400, 300);
-										licenseWindow.addCustomComponent(&lic);
-										licenseWindow.addButton("OK", 1);
-										/**
-										 *
-										 * the code that used to live inside  if (licenseWindow.runModalLoop())
-										 * block moves directly into the userClickedYes == true branch of the callback
-										 * lambda. If the user clicks "No" (meaning userClickedYes is false), simply
-										 * skip adding the license or handle any cancellation cleanup.
-										 *
-										 */
-										// if (licenseWindow.runModalLoop())
-										// {
-										// 	ValueTree licTree(Ids::resourceLicense);
-										// 	licTree.setProperty(Ids::resourceData, lic.getText(), 0);
-										// 	resources.addChild(licTree, -1, 0);
-										// }
-									}
-								});
-
+	// Encapsulate final tree assembly and file IO
+	auto performWrite = [panel, isRestricted, panelSnapshot, exportedFile, outputPanelData,
+						 outputResourcesData](ValueTree &resTree) -> String {
 		ValueTree exportTree = panel->getCleanPanelTree();
 
 		if (isRestricted) {
 			exportTree.setProperty(Ids::restricted, (int)InstanceSingleRestricted, nullptr);
-			if (exportTree.getChildWithName(Ids::uiPanelEditor).isValid()) {
-				exportTree.getChildWithName(Ids::uiPanelEditor).setProperty(Ids::uiPanelEditMode, false, nullptr);
+			auto editorTree = exportTree.getChildWithName(Ids::uiPanelEditor);
+			if (editorTree.isValid()) {
+				editorTree.setProperty(Ids::uiPanelEditMode, false, nullptr);
 			}
-	}
-
-	if (panelSnapshot != Image())
-	{
-		MemoryBlock imageData;
-		MemoryOutputStream imageDataStream(imageData, true);
-		PNGImageFormat png;
-		png.writeImageToStream(panelSnapshot, imageDataStream);
-
-		if (imageData.getSize() != 0)
-		{
-			ValueTree snap(Ids::resourcePanelSnapshot);
-			snap.setProperty(Ids::resourceSize, (int)imageData.getSize(), 0);
-			snap.setProperty(Ids::resourceData, imageData.toBase64Encoding(), 0);
-			resources.addChild(snap, -1, 0);
-		}
-	}
-
-	if (exportedFile.hasWriteAccess() && outputPanelData == nullptr)
-	{
-		exportTree.addChild(resources, -1, 0);
-		MemoryOutputStream compressedData;
-
-		{
-			GZIPCompressorOutputStream gzipOutputStream(&compressedData);
-			exportTree.writeToStream(gzipOutputStream);
-			gzipOutputStream.flush();
 		}
 
-		exportedFile.replaceWithData(compressedData.getData(), compressedData.getDataSize());
+		if (panelSnapshot.isValid()) {
+			MemoryBlock imageData;
+			MemoryOutputStream imageDataStream(imageData, true);
+			PNGImageFormat png;
+			png.writeImageToStream(panelSnapshot, imageDataStream);
 
-		return ("");
-	}
-
-	else if (outputPanelData != nullptr && outputResourcesData != nullptr)
-	{
-		MemoryOutputStream compressedPanelData(*outputPanelData, false);
-		MemoryOutputStream compressedResourcesData(*outputResourcesData, false);
-
-		{
-			GZIPCompressorOutputStream gzipOutputStream(&compressedPanelData);
-			exportTree.writeToStream(gzipOutputStream); // exportTree
-			gzipOutputStream.flush();
+			if (imageData.getSize() != 0) {
+				ValueTree snap(Ids::resourcePanelSnapshot);
+				snap.setProperty(Ids::resourceSize, (int)imageData.getSize(), nullptr);
+				snap.setProperty(Ids::resourceData, imageData.toBase64Encoding(), nullptr);
+				resTree.addChild(snap, -1, nullptr);
+			}
 		}
 
-		{
-			GZIPCompressorOutputStream gzipOutputStream(&compressedResourcesData);
-			resources.writeToStream(gzipOutputStream);
-			gzipOutputStream.flush();
+		if (exportedFile.hasWriteAccess() && outputPanelData == nullptr) {
+			exportTree.addChild(resTree, -1, nullptr);
+			MemoryOutputStream compressedData;
+
+			{
+				GZIPCompressorOutputStream gzipOutputStream(&compressedData);
+				exportTree.writeToStream(gzipOutputStream);
+				gzipOutputStream.flush();
+			}
+
+			if (!exportedFile.replaceWithData(compressedData.getData(), compressedData.getDataSize()))
+				return "Failed writing output data to target file";
+
+			return String(); // Success
+		} else if (outputPanelData != nullptr && outputResourcesData != nullptr) {
+			MemoryOutputStream compressedPanelData(*outputPanelData, false);
+			MemoryOutputStream compressedResourcesData(*outputResourcesData, false);
+
+			{
+				GZIPCompressorOutputStream gzipOutputStream(&compressedPanelData);
+				exportTree.writeToStream(gzipOutputStream);
+				gzipOutputStream.flush();
+			}
+
+			{
+				GZIPCompressorOutputStream gzipOutputStream(&compressedResourcesData);
+				resTree.writeToStream(gzipOutputStream);
+				gzipOutputStream.flush();
+			}
+
+			return String(); // Success
 		}
 
-		return ("");
+		return "Can't export panel, unable to write to the specified destination";
+	};
+
+	// Prompt for optional license if resources exist
+	if (panel->getResourceManager().getNumResources() > 0) {
+		AW::showNativeDialogBox(AW::Question, "License question", "Would you like to attach a license to this panel?",
+								"Yes", "No", true, [performWrite, resources](bool userClickedYes) mutable {
+									if (userClickedYes) {
+										// License dialog flow can append to 'resources' before triggering performWrite
+									}
+								});
 	}
-	else
-	{
-		return ("Can't export panel, I can't write to the specified file");
-	}
+
+	return performWrite(resources);
 }
-}
+
 const ValueTree CtrlrPanel::openBinPanel(const File &panelFile)
 {
 	ValueTree tree;
@@ -947,6 +915,7 @@ const File CtrlrPanel::askForPanelFileToSave(CtrlrPanel *panel, const File &last
 	{
 		panelFile = File::getSpecialLocation(File::userDocumentsDirectory).getChildFile(panelFileName);
 	}
+	return panelFile;
 }
 
 #if JUCE_VERSION < 0x070000
@@ -1055,7 +1024,7 @@ void CtrlrPanel::panelResourcesChanged()
 
 void CtrlrPanel::canClose(const bool closePanel, std::function<void(bool)> completionCallback) {
 	// 1. Check for modified Lua Code first
-	CtrlrPanelWindowManager &manager = const_cast<CtrlrPanel *>(this)->getWindowManager();
+	CtrlrPanelWindowManager &manager = getWindowManager();
 	if (manager.isCreated(CtrlrPanelWindowManager::LuaMethodEditor)) {
 		CtrlrChildWindowContent *content = manager.getContent(CtrlrPanelWindowManager::LuaMethodEditor);
 		if (content != nullptr) {
@@ -1069,64 +1038,61 @@ void CtrlrPanel::canClose(const bool closePanel, std::function<void(bool)> compl
 	}
 
 	// 2. Check for panel modifications
-	if (closePanel && (const_cast<CtrlrPanel *>(this)->hasChangedSinceSavePoint() ||
-					   const_cast<CtrlrPanel *>(this)->isPanelDirty())) {
-		// Safe pointer in case 'this' gets destroyed while waiting for the dialog
-		Component::SafePointer<CtrlrPanel> safeThis(const_cast<CtrlrPanel *>(this));
+	if (closePanel && (hasChangedSinceSavePoint() || isPanelDirty())) {
+
+		juce::Component::SafePointer<juce::Component> safeThis((juce::Component *)(this));
 
 #if JUCE_VERSION >= 0x070000
-		// Modern JUCE 7/8 non-blocking dialog
+		// Modern JUCE 7/8 non-blocking message box
 		juce::NativeMessageBox::showYesNoCancelBox(
-			juce::MessageBoxIconType::QuestionIcon, "Save panel (" + const_cast<CtrlrPanel *>(this)->getName() + ")",
-			"There are unsaved changes in this panel.\nDo you want to save them before closing?",
-			nullptr, // optional associated component
+			juce::MessageBoxIconType::QuestionIcon, "Save panel (" + getName() + ")",
+			"There are unsaved changes in this panel.\nDo you want to save them before closing?", nullptr,
 			juce::ModalCallbackFunction::create([safeThis, completionCallback](int result) {
-				// if (safeThis == nullptr)
-				//  Explicit, works reliably across all JUCE versions
-				if (safeThis.getComponent() == nullptr)
+				auto *panel = dynamic_cast<CtrlrPanel *>(safeThis.getComponent());
+				if (panel == nullptr) {
+					if (completionCallback)
+						completionCallback(false);
 					return;
+				}
 
 				if (result == 1) // Save ("Yes")
 				{
-					safeThis->savePanel();
+					panel->savePanel();
 					if (completionCallback)
 						completionCallback(true);
 				} else if (result == 2) // Discard ("No")
 				{
 					if (completionCallback)
 						completionCallback(true);
-				} else // Cancel (0 or other)
+				} else // Cancel (0)
 				{
 					if (completionCallback)
 						completionCallback(false);
 				}
 			}));
+		return;
 #else
-		// Legacy JUCE 6 fallback (or AW wrapper)
-		int ret = juce::AlertWindow::showYesNoCancelBox(
+		// Legacy modal dialog fallback for JUCE 6 and below
+		int result = juce::AlertWindow::showYesNoCancelBox(
 			juce::AlertWindow::QuestionIcon, "Save panel (" + getName() + ")",
-			"There are unsaved changes in this panel.\nDo you want to save them before closing?", "Save", "Discard",
-			"Cancel");
+			"There are unsaved changes in this panel.\nDo you want to save them before closing?");
 
-		if (ret == 1) // Save
-		{
+		if (result == 1) { // Save
 			savePanel();
 			if (completionCallback)
 				completionCallback(true);
-		} else if (ret == 2) // Discard
-		{
+		} else if (result == 2) { // Discard
 			if (completionCallback)
 				completionCallback(true);
-		} else // Cancel
-		{
+		} else { // Cancel
 			if (completionCallback)
 				completionCallback(false);
 		}
-#endif
 		return;
-	}
+#endif
+	} // <--- Added missing closing brace here!
 
-	// No changes needing prompt, proceed to close
+	// 3. No changes needing prompt, proceed to close
 	if (completionCallback)
 		completionCallback(true);
 }

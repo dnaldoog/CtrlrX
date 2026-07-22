@@ -16,7 +16,7 @@ CtrlrWindows::CtrlrWindows(CtrlrManager &_owner) : owner(_owner) {}
 
 CtrlrWindows::~CtrlrWindows() {}
 
-const Result CtrlrWindows::writeResource(void *handle, const LPSTR resourceId, const LPSTR resourceType,
+const Result CtrlrWindows::writeResource(void *handle, const LPCWSTR resourceId, const LPCWSTR resourceType,
 										 const MemoryBlock &resourceData) {
 	HANDLE hResource = (HANDLE)handle;
 
@@ -30,11 +30,10 @@ const Result CtrlrWindows::writeResource(void *handle, const LPSTR resourceId, c
 	}
 }
 
-const Result CtrlrWindows::readResource(void *handle, const LPSTR resourceId, const LPSTR resourceType,
+const Result CtrlrWindows::readResource(void *handle, const LPCWSTR resourceId, const LPCWSTR resourceType,
 										MemoryBlock &resourceData) {
 	HRSRC panelResource;
 	HGLOBAL panelLoadedResource;
-	String data;
 	char *dataPointer;
 	DWORD dataSize;
 	HMODULE myModuleHandle;
@@ -42,12 +41,13 @@ const Result CtrlrWindows::readResource(void *handle, const LPSTR resourceId, co
 	if (handle != nullptr) {
 		myModuleHandle = (HMODULE)handle;
 	} else {
-		myModuleHandle =
-			GetModuleHandle(File::getSpecialLocation(File::currentExecutableFile).getFullPathName().toUTF8());
+		// Use .toWideCharPointer() or LPCWSTR cast for Wide/Unicode Win32 APIs
+		myModuleHandle = GetModuleHandleW(
+			File::getSpecialLocation(File::currentExecutableFile).getFullPathName().toWideCharPointer());
 	}
 
 	if (myModuleHandle) {
-		panelResource = FindResource(myModuleHandle, resourceId, resourceType);
+		panelResource = FindResourceW(myModuleHandle, resourceId, resourceType);
 
 		if (panelResource) {
 			panelLoadedResource = LoadResource(myModuleHandle, panelResource);
@@ -160,36 +160,36 @@ fc->launchAsync(flags, [this, panelToWrite, isRestricted, me, fileExtension, cal
             return;
         }
         logger.log("Executable copied successfully.");
+		MemoryBlock panelExportData, panelResourcesData;
+		String error;
+// 5. Update Win32 Resources (Panel Injection)
+#if JUCE_VERSION < 0x070000
+		HANDLE hResource = BeginUpdateResource(newMe.getFullPathName().toUTF8(), FALSE);
+#else
+		HANDLE hResource = BeginUpdateResourceW(newMe.getFullPathName().toWideCharPointer(), FALSE);
+#endif
 
-        // 5. Update Win32 Resources (Panel Injection)
-		#if JUCE_VERSION < 0x070000
-        HANDLE hResource = BeginUpdateResource(newMe.getFullPathName().toUTF8(), FALSE);
-		#else
-		HANDLE hResource = BeginUpdateResource(newMe.getFullPathName().toWideCharPointer(), FALSE);
-		#endif
-        MemoryBlock panelExportData, panelResourcesData;
-        String error;
-
-        if (hResource) {
-            if ((error = CtrlrPanel::exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData, isRestricted)) == "") {
-                if (writeResource(hResource, MAKEINTRESOURCE(CTRLR_INTERNAL_PANEL_RESID), RT_RCDATA, panelExportData) &&
+		if (hResource) {
+			if ((error = CtrlrPanel::exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData,
+												 isRestricted)) == "") {
+				if (writeResource(hResource, MAKEINTRESOURCE(CTRLR_INTERNAL_PANEL_RESID), RT_RCDATA, panelExportData) &&
                     writeResource(hResource, MAKEINTRESOURCE(CTRLR_INTERNAL_RESOURCES_RESID), RT_RCDATA, panelResourcesData)) {
                     EndUpdateResource(hResource, FALSE);
                 } else {
                     notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource writeResource[panel] failed"));
                     return;
                 }
-            } else {
-                notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource exportPanel error: \"" + error + "\""));
+			} else {
+				notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource exportPanel error: \"" + error + "\""));
                 return;
-            }
-        } else {
-            notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource BeginUpdateResource failed"));
-            return;
-        }
+			}
+		} else {
+			notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource BeginUpdateResource failed"));
+			return;
+		}
 
-        // 6. Binary String Replacement (Rebranding)
-        logger.log("Thread sleep to delay binary modification task.");
+		// 6. Binary String Replacement (Rebranding)
+		logger.log("Thread sleep to delay binary modification task.");
         juce::Thread::sleep(500);
         logger.log("Thread restarted for binary modification task.");
 

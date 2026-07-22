@@ -69,8 +69,8 @@ class CtrlrLuaUtils
 			@param	button1Text	text for the first button
 			@param	button2Text	text for the second button
 		*/
-		static bool questionWindow (const String title, const String message, const String button1Text, const String button2Text);
-
+		static void questionWindow(const juce::String title, const juce::String message, const juce::String button1Text,
+								   const juce::String button2Text, std::function<void(bool)> callback);
 		/** @brief Show a messge window with a text input field for the user to type in
 
 			@return Contents of the text input field
@@ -96,8 +96,9 @@ class CtrlrLuaUtils
 
 			@return If a valid file was selected, a File object that represents that file
 		*/
-		static File openFileWindow (const String &dialogBoxTitle, const File &initialFileOrDirectory,
-									const String &filePatternsAllowed, bool useOSNativeDialogBox);
+		static void openFileWindow(const juce::String &title, const juce::File &fileToSelect,
+								   const juce::String &pattern, bool browseForDirectory,
+								   std::function<void(const juce::File &)> callback);
 
 		/** @brief Ask for multiple files to open
 
@@ -109,28 +110,30 @@ class CtrlrLuaUtils
 
 			@return A lua array of File objects selected
 		*/
-		void openMultipleFilesWindow(const String &dialogBoxTitle, const File &initialFileOrDirectory,
-									const String &filePatternsAllowed, bool useOSNativeDialogBox,
-									luabind::object const& table);
+	static void openMultipleFilesWindow(const juce::String &title, const juce::File &fileToSelect,
+										const juce::String &pattern, bool browseForDirectory, luabind::object callback);
 
-		/** @brief Ask for a File to save
+	/** @brief Ask for a File to save
 
-			@param dialogBoxTitle
-			@param initialFileOrDirectory
-			@param filePatternsAllowed
-			@param useOSNativeDialogBox
-		*/
-		static File saveFileWindow(const String &dialogBoxTitle, const File &initialFileOrDirectory,
-									const String &filePatternsAllowed, bool useOSNativeDialogBox);
+		@param dialogBoxTitle
+		@param initialFileOrDirectory
+		@param filePatternsAllowed
+		@param useOSNativeDialogBox
+	*/
+	static void saveFileWindow(const juce::String &title, const juce::File &fileToSelect, const juce::String &pattern,
+							   bool browseForDirectory, std::function<void(const juce::File &)> callback);
 
-		/** @brief Ask for a directory
+	/** @brief Ask for a directory
 
-		*/
-		static File getDirectoryWindow(const String &dialogBoxTitle, const File &initialFileOrDirectory);
+	*/
+	static void getDirectoryWindow(const juce::String &title, const juce::File &fileToSelect,
+								   std::function<void(const juce::File &)> callback);
 
-        static int getVersionMajor() { return (_STR(ctrlrRevision).upToFirstOccurrenceOf(".", false, true).getIntValue()); }
-        static int getVersionMinor() { return (_STR(ctrlrRevision).fromFirstOccurrenceOf(".", false, true).getIntValue()); }
-        static int getVersionRevision() { return (_STR(ctrlrRevision).fromLastOccurrenceOf(".", false, true).getIntValue()); }
+	static int getVersionMajor() { return (_STR(ctrlrRevision).upToFirstOccurrenceOf(".", false, true).getIntValue()); }
+	static int getVersionMinor() { return (_STR(ctrlrRevision).fromFirstOccurrenceOf(".", false, true).getIntValue()); }
+	static int getVersionRevision() {
+		return (_STR(ctrlrRevision).fromLastOccurrenceOf(".", false, true).getIntValue());
+	}
         static double getPi() { return (double_Pi); }
         static int16_t get16bitSigned(uint16_t val) { // Added v5.6.34. Thanks to @dnaldoog
             // return a signed 16bit integer from an unsigned 16bit integer

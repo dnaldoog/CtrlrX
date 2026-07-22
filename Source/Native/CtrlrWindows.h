@@ -12,9 +12,9 @@ class CtrlrWindows : public CtrlrNative {
 		~CtrlrWindows();
 
 		/* resource handling */
-		const Result writeResource(void *handle, const LPSTR resourceId, const LPSTR resourceType,
+		const Result writeResource(void *handle, const LPCWSTR resourceId, const LPCWSTR resourceType,
 								   const MemoryBlock &resourceData);
-		const Result readResource(void *handle, const LPSTR resourceId, const LPSTR resourceType,
+		const Result readResource(void *handle, const LPCWSTR resourceId, const LPCWSTR resourceType,
 								  MemoryBlock &resourceData);
 #if JUCE_VERSION >= 0x070000
 		void exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRestricted, const bool signPanel,
