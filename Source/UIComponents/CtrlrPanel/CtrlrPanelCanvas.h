@@ -91,7 +91,9 @@ public:
 		AlignToRight	= 2057,
 		FitToRect		= 2058,
 		GroupCreate		= 2059,
-		GroupDestroy	= 2060
+		GroupDestroy	= 2060,
+		DistributeHorizontally	= 2061,
+		DistributeVertically	= 2062
 	};
 
 	enum Direction

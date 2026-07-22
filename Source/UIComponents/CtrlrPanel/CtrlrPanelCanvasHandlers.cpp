@@ -299,6 +299,8 @@ void CtrlrPanelCanvas::getEditMenu(PopupMenu &m)
 		m.addItem (AlignToBottom, "Align to bottom", true, false);
 		m.addItem (AlignToLeft, "Align to left", true, false);
 		m.addItem (AlignToRight, "Align to right", true, false);
+		m.addItem (DistributeHorizontally, "Distribute centres equidistanly horizontally", true, false);
+		m.addItem (DistributeVertically, "Distribute centres equidistanly vertically", true, false);
 	}
 }
 
@@ -327,6 +329,8 @@ void CtrlrPanelCanvas::handleEditMenu (const int returnCode, const MouseEvent &e
 		case AlignToLeft:
 		case AlignToBottom:
 		case AlignToRight:
+		case DistributeHorizontally:
+		case DistributeVertically:
 			alignSelection ((EditMenuItems)returnCode);
 			break;
 
