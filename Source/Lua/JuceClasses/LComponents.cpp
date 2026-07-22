@@ -62,7 +62,12 @@ int LAlertWindow::showYesNoCancelBox (AlertIconType iconType, const String& titl
     return AlertWindow::showYesNoCancelBox (iconType, title, message, button1Text, button2Text, button3Text, nullptr, nullptr);
 #endif
 }
-
+// #if JUCE_VERSION < 0x070000
+// bool LAlertWindow::showNativeDialogBox (const String& title, const String& bodyText, bool isOkCancel)
+// {
+//     return AlertWindow::showNativeDialogBox (title, bodyText, isOkCancel);
+// }
+// #else
 bool LAlertWindow::showNativeDialogBox (const String& title, const String& bodyText, bool isOkCancel)
 {
 	AW::showNativeDialogBox(AW::Question, title, bodyText, "OK", isOkCancel ? "Cancel" : "", true,
@@ -73,6 +78,7 @@ bool LAlertWindow::showNativeDialogBox (const String& title, const String& bodyT
 	return true; // Indicates the dialog was opened
 }
 
+// #endif
 // --- Asynchronous Context for Luabind Queries ---
 void LAlertWindow::queryText(AlertIconType iconType, const String &title, const String &textMessage, const String &textAreaContent, const String &textAreaLabel, const String &button1Text, const String &button2Text, bool isContentPassword, luabind::object const &result)
 {
@@ -150,9 +156,7 @@ void LAlertWindow::setModalHandler(luabind::object const& _o)
 }
 
 // --- Binding Mapping Layer ---
-void LAlertWindow::wrapForLua (lua_State *L)
-{
-
+void LAlertWindow::wrapForLua(lua_State *L) {
 	using namespace luabind;
 
 	module(L)[class_<AlertWindow>("JAlertWindow"),
@@ -178,8 +182,9 @@ void LAlertWindow::wrapForLua (lua_State *L)
 				  .def("containsAnyExtraComponents", &AlertWindow::containsAnyExtraComponents)
 				  .def("setModalHandler", &LAlertWindow::setModalHandler)
 
-	// Asynchronous engine hooks for modern JUCE
+	// Expose the safe asynchronous engine hook to Lua bindings instead of standard blocking loops
 #if JUCE_VERSION >= 0x070000
+
 				  .def("runModalLoop", &LAlertWindow::runModalLoopAsync)
 				  .def("runModalLoopAsync", &LAlertWindow::runModalLoopAsync)
 #else
@@ -194,49 +199,4 @@ void LAlertWindow::wrapForLua (lua_State *L)
 						 def("showYesNoCancelBox", &LAlertWindow::showYesNoCancelBox),
 						 def("showNativeDialogBox", &LAlertWindow::showNativeDialogBox),
 						 def("queryText", &LAlertWindow::queryText)]];
-}
-			.def("getAlertType", &AlertWindow::getAlertType)
-            .def("setMessage", &AlertWindow::setMessage)
-            .def("addButton", &AlertWindow::addButton)
-            .def("getNumButtons", &AlertWindow::getNumButtons)
-            .def("triggerButtonClick", &AlertWindow::triggerButtonClick)
-            .def("setEscapeKeyCancels", &AlertWindow::setEscapeKeyCancels)
-            .def("addTextEditor", &AlertWindow::addTextEditor)
-            .def("getTextEditorContents", &AlertWindow::getTextEditorContents)
-            .def("getTextEditor", &AlertWindow::getTextEditor)
-            .def("addComboBox", &AlertWindow::addComboBox)
-            .def("getComboBoxComponent", &LAlertWindow::getComboBoxComponent)
-            .def("addTextBlock", &AlertWindow::addTextBlock)
-            .def("addProgressBarComponent", &AlertWindow::addProgressBarComponent)
-            .def("addCustomComponent", &AlertWindow::addCustomComponent)
-            .def("getNumCustomComponents", &AlertWindow::getNumCustomComponents)
-            .def("getCustomComponent", &AlertWindow::getCustomComponent)
-            .def("removeCustomComponent", &AlertWindow::removeCustomComponent)
-            .def("containsAnyExtraComponents", &AlertWindow::containsAnyExtraComponents)
-            .def("setModalHandler", &LAlertWindow::setModalHandler)
-
-			// Expose the safe asynchronous engine hook to Lua bindings instead of standard blocking loops
-#if JUCE_VERSION >= 0x070000
-            .def("runModalLoop", &LAlertWindow::runModalLoopAsync)
-#else
-            .def("runModalLoop", &LAlertWindow::runModalLoop)
-#endif
-            .def("exitModalState", &Component::exitModalState)
-            .enum_("AlertIconType")
-            [
-                value("NoIcon", 0),
-                value("QuestionIcon", 1),
-                value("WarningIcon", 2),
-                value("InfoIcon", 3)
-            ]
-            .scope
-            [
-                def("showMessageBox", &LAlertWindow::showMessageBox),
-                def("showMessageBoxAsync", &LAlertWindow::showMessageBoxAsync),
-                def("showOkCancelBox", &LAlertWindow::showOkCancelBox),
-                def("showYesNoCancelBox", &LAlertWindow::showYesNoCancelBox),
-                def("showNativeDialogBox", &LAlertWindow::showNativeDialogBox),
-                def("queryText", &LAlertWindow::queryText)
-             ]
-    ];
 }

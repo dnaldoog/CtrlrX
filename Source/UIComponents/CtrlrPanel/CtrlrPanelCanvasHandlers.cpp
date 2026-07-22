@@ -18,7 +18,7 @@ void CtrlrPanelCanvas::handleRightClickOnMultiSelection(const MouseEvent &e) {
 	m.addSeparator();
 	m.addSubMenu("Replace with", componentSubMenu, true);
 
-	MyPopupHelper::showMenuAsyncSafe(m, this, [this, e, componentSubMenu](int ret) {
+	PU::showMenuAsyncSafe(m, this, [this, e, componentSubMenu](int ret) {
 		if (ret >= 2048 && ret < 4096) {
 			handleEditMenu(ret, e);
 		} else if (ret >= 4096 && ret < 8192) {
@@ -64,7 +64,7 @@ void CtrlrPanelCanvas::handleRightClickOnCanvas(const MouseEvent &e) {
 		PopupMenu m = getRightClickComponentMenu(e);
 
 		// Pass 'e' into the capture list so the lambda can use it asynchronously
-		MyPopupHelper::showMenuAsyncSafe(m, this, [this, e](int ret) {
+		PU::showMenuAsyncSafe(m, this, [this, e](int ret) {
 			// This replaces the old handleComponentPopupMenu(e, m.show());
 			handleComponentPopupMenu(e, ret);
 		});
@@ -92,7 +92,7 @@ void CtrlrPanelCanvas::handleRightClickOnCanvas(const MouseEvent &e) {
 	// Explicitly make a local copy outside the lambda for absolute compatibility
 	PopupMenu menuCopy(m);
 
-	MyPopupHelper::showMenuAsyncSafe(m, this, [this, e, em, menuCopy](int ret) {
+	PU::showMenuAsyncSafe(m, this, [this, e, em, menuCopy](int ret) {
 		if (ret >= 4096) {
 			handleComponentPopupMenu(e, ret);
 		} else if (ret == 1024) {
@@ -153,7 +153,7 @@ void CtrlrPanelCanvas::handleRightClickOnComponent(const MouseEvent &e) {
 
 	// const int ret = m.show(); JUCE 6 code
 	//  Explicitly copying the submenu structure inside the capture keeps it safe from scope changes
-	MyPopupHelper::showMenuAsyncSafe(m, this, [this, c, e, componentSubMenu](int ret) {
+	PU::showMenuAsyncSafe(m, this, [this, c, e, componentSubMenu](int ret) {
 		if (ret == 512) {
 			exportSelectedComponents();
 		} else if (ret == 513) {

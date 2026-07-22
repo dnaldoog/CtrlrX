@@ -1,5 +1,6 @@
-#include "stdafx.h"
 #include "CtrlrSettings.h"
+#include "CtrlrInlineUtilitiesGUI.h"
+#include "stdafx.h"
 
 CtrlrSettings::CtrlrSettings (CtrlrManager &_owner) : Component ("Global Properties"), owner(_owner), propertyPanel (0)
 {
@@ -119,8 +120,10 @@ CtrlrSettings::~CtrlrSettings()
     }
     else{
         // For VST/AU instances
-        AlertWindow::showMessageBox (AlertWindow::WarningIcon, "CtrlrX", "Restart to apply new settings."); // Added v5.6.31
-    }
+		AW::showMessageBox(AW::Warning, "CtrlrX", "Restart to apply new settings.");
+		// AlertWindow::showMessageBox (AlertWindow::WarningIcon, "CtrlrX", "Restart to apply new settings."); // Added
+		// v5.6.31
+	}
 }
 
 void CtrlrSettings::restart()

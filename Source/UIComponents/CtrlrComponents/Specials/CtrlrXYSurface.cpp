@@ -300,7 +300,7 @@ void CtrlrXYSurface::showPopupMenu() {
 	m.addSubMenu("Y Axis", modsY);
 
 	// const int ret = m.show();	JUCE 6 LEGACY CODE
-	MyPopupHelper::showMenuAsyncSafe(m, this, [this](int ret) {
+	PU::showMenuAsyncSafe(m, this, [this](int ret) {
 		if (ret == 1) {
 			setProperty(Ids::uiXYSuraceXFlip, !getProperty(Ids::uiXYSuraceXFlip));
 			return;

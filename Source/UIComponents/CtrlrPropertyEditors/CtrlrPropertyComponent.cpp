@@ -1485,7 +1485,7 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button *buttonThatWasClicked
 		// 		});
 		// #else
 		// --- Legacy JUCE 6 Synchronous Approach ---
-		MyPopupHelper::showMenuAsyncSafe(
+		PU::showMenuAsyncSafe(
 			m, this, [this, customId, templateKeys, standardStartId, standardTypes](int ret) {
 				if (ret <= 0)
 					return; // cancelled
@@ -1910,7 +1910,7 @@ void CtrlrSysExEditor::showTokenMenuForLabel(Label *l) {
 	// const int ret = m.show(); JUCE 6
 	// 1. Call the helper function.
 	// 2. 'int ret' is generated automatically inside the parentheses below!
-	MyPopupHelper::showMenuAsyncSafe(m, this, [this, l](int ret) {
+	PU::showMenuAsyncSafe(m, this, [this, l](int ret) {
 		// --- Handle selection ---
 		if (ret == 1)
 			l->setText("yy", sendNotification);

@@ -20,14 +20,15 @@ const Result CtrlrWindows::writeResource(void *handle, const LPCWSTR resourceId,
 										 const MemoryBlock &resourceData) {
 	HANDLE hResource = (HANDLE)handle;
 
-	if (hResource) {
-		return (UpdateResource(hResource, resourceType, resourceId, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-							   (LPVOID)resourceData.getData(), (DWORD)resourceData.getSize())
-					? Result::ok()
-					: Result::fail("WIN32 UpdateResource failed"));
-	} else {
-		return (Result::fail("Windows Native: UpdateResource, resource HANDLE cast failed"));
-	}
+if (hResource) {
+        // Explicitly use UpdateResourceW for LPCWSTR parameters
+        return (UpdateResourceW(hResource, resourceType, resourceId, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                                (LPVOID)resourceData.getData(), (DWORD)resourceData.getSize())
+                    ? Result::ok()
+                    : Result::fail("WIN32 UpdateResource failed"));
+    } else {
+        return (Result::fail("Windows Native: UpdateResource, resource HANDLE cast failed"));
+    }
 }
 
 const Result CtrlrWindows::readResource(void *handle, const LPCWSTR resourceId, const LPCWSTR resourceType,

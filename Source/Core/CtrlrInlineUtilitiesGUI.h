@@ -5,7 +5,7 @@
 #include <juce_gui_basics/juce_gui_basics.h> // Make sure this is included for LookAndFeel_V4
 // #pragma once
 #include <JuceHeader.h>
-class MyPopupHelper {
+class PU {
 	public:
 		/**
 			Safely shows a popup menu across JUCE 6, 7, and 8.

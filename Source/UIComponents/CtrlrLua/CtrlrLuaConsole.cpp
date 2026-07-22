@@ -235,7 +235,7 @@ void CtrlrLuaConsole::snipsItemClicked(Button *b) {
 	// const int ret = m.showAt(b); JUCE 8 CODE pass 4 arguments to lambda
 
 	// 1. Open the helper function call
-	MyPopupHelper::showMenuAsyncSafe(
+	PU::showMenuAsyncSafe(
 		m, this,
 		[this](int ret) {
 			// --- Your menu handling code lives inside the lambda body ---

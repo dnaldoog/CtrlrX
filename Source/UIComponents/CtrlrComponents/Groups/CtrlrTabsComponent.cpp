@@ -343,13 +343,17 @@ void CtrlrTabsComponent::valueTreePropertyChanged(ValueTree &treeWhosePropertyHa
 				m.addItem(i + 1, ctrlrTabs->getTabNames()[i]);
 			}
 			// const int ret = m.show(); //JUCE 6 LEGACY CODE
-			MyPopupHelper::showMenuAsyncSafe(m, this, [this](int ret) {
+			PU::showMenuAsyncSafe(m, this, [this](int ret) {
 				if (ret > 0) {
-					if (AlertWindow::showOkCancelBox(AlertWindow::QuestionIcon, "Removing tab",
-													 "Are you sure you want to remove this tab? All child components "
-													 "in it will also be removed")) {
-						getComponentTree().removeChild(ret - 1, 0);
-					}
+					// Modernized async confirmation box using AW
+					AW::showNativeDialogBox(
+						AW::Question, "Removing tab",
+						"Are you sure you want to remove this tab? All child components in it will also be removed",
+						"Yes", "No", true, [this, ret](bool userClickedYes) {
+							if (userClickedYes) {
+								getComponentTree().removeChild(ret - 1, 0);
+							}
+						});
 				}
 			});
 		}

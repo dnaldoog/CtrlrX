@@ -617,19 +617,18 @@ void CtrlrPanel::getCodeSigningIdentityFromPopup(std::function<void(juce::String
 
 				// 2. MODERN REFACTOR: Pass the menu context out to your cross-version wrapper class
 				// Pass 'this' if CtrlrPanel inherits from juce::Component. Otherwise pass nullptr.
-				MyPopupHelper::showMenuAsyncSafe(
-					menu, nullptr, [identities, debugType, completionCallback](int result) {
-						if (result > 0) {
-							juce::String selected = identities[result - 1];
-							std::cout << debugType << " - Selected Identity: " << selected << std::endl;
+				PU::showMenuAsyncSafe(menu, nullptr, [identities, debugType, completionCallback](int result) {
+					if (result > 0) {
+						juce::String selected = identities[result - 1];
+						std::cout << debugType << " - Selected Identity: " << selected << std::endl;
 
-							if (completionCallback != nullptr)
-								completionCallback(selected); // Pass selected identity string back out
-						} else {
-							if (completionCallback != nullptr)
-								completionCallback(""); // User canceled the menu selection
-						}
-					});
+						if (completionCallback != nullptr)
+							completionCallback(selected); // Pass selected identity string back out
+					} else {
+						if (completionCallback != nullptr)
+							completionCallback(""); // User canceled the menu selection
+					}
+				});
 
 			} else {
 				juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon, "Error",

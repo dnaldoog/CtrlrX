@@ -786,7 +786,7 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 			m.addItem(7, "Sort by size");
 
 			// const int ret = m.show(); JUCE 6 LEGACY CODE
-			MyPopupHelper::showMenuAsyncSafe(m, this, [this, item, isMethodGroup](int ret) {
+			PU::showMenuAsyncSafe(m, this, [this, item, isMethodGroup](int ret) {
 				if (ret == 1) {
 					addNewMethod(item);
 				} else if (ret == 2) {
@@ -826,7 +826,7 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 			m.addItem(2, "Remove method");
 
 			//  const int ret = m.show(); JUCE 6 code
-			MyPopupHelper::showMenuAsyncSafe(m, this, [this, item](int ret) {
+			PU::showMenuAsyncSafe(m, this, [this, item](int ret) {
 				if (ret == 11) {
 					/* convert a in-memory method to a file based one */
 				} else if (ret == 12) {

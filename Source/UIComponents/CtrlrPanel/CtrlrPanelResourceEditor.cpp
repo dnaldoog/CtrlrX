@@ -457,7 +457,7 @@ void CtrlrPanelResourceEditor::cellClicked(int rowNumber, int columnId, const Mo
 		PopupMenu m;
 		m.addSectionHeader("Resource");
 		m.addItem(1, "More info");
-		MyPopupHelper::showMenuAsyncSafe(m, this, [this, rowNumber](int ret) {
+		PU::showMenuAsyncSafe(m, this, [this, rowNumber](int ret) {
 			if (ret == 1) {
 				showResourceInfo(rowNumber);
 			}
