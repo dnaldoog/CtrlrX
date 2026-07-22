@@ -1030,8 +1030,6 @@ case DistributeHorizontally: {
 	ComponentXComparator compX;
 	sortedItems.sort(compX);
 
-	// sortedItems.sort([](CtrlrComponent *a, CtrlrComponent *b) { return a->getX() - b->getX(); });
-
 	// 2. Find total inner space between first item's right edge and last item's left edge
 	const int firstRightX = sortedItems.getFirst()->getRight();
 	const int lastLeftX = sortedItems.getLast()->getX();
@@ -1058,7 +1056,7 @@ case DistributeHorizontally: {
 	}
 
 	break;
-}
+} // 🟢 Closes DistributeHorizontally scope
 
 case DistributeVertically: {
 	const int numSelected = getSelection().getNumSelected();
@@ -1074,8 +1072,6 @@ case DistributeVertically: {
 	// JUCE 6 compatible sort call:
 	ComponentYComparator compY;
 	sortedItems.sort(compY);
-
-	//	sortedItems.sort([](CtrlrComponent *a, CtrlrComponent *b) { return a->getY() - b->getY(); });
 
 	// 2. Find total inner space between first item's bottom edge and last item's top edge
 	const int firstBottomY = sortedItems.getFirst()->getBottom();
@@ -1102,19 +1098,74 @@ case DistributeVertically: {
 	}
 
 	break;
-}
+} // 🟢 Closes DistributeVertically scope
 
-		case Copy:
-		case Cut:
-		case Paste:
-		case Delete:
-		case Undo:
-		case Redo:
-		case FitToRect:
-		case GroupCreate:
-		case GroupDestroy:
-			break;
-		} // Closes switch
+case MatchWidth: {
+	const int numSelected = getSelection().getNumSelected();
+	if (numSelected < 2)
+		break; // Need at least a reference component and 1 target component
+
+	// Use the first selected component as the target width template
+	if (auto *targetModel = getSelection().getSelectedItem(0)) {
+		const int targetWidth = targetModel->getWidth();
+
+		for (int i = 1; i < numSelected; ++i) {
+			if (auto *comp = getSelection().getSelectedItem(i)) {
+				comp->setSize(targetWidth, comp->getHeight());
+			}
+		}
+	}
+	break;
+} // 🟢 Closes MatchWidth scope
+
+case MatchHeight: {
+	const int numSelected = getSelection().getNumSelected();
+	if (numSelected < 2)
+		break;
+
+	// Use the first selected component as the target height template
+	if (auto *targetModel = getSelection().getSelectedItem(0)) {
+		const int targetHeight = targetModel->getHeight();
+
+		for (int i = 1; i < numSelected; ++i) {
+			if (auto *comp = getSelection().getSelectedItem(i)) {
+				comp->setSize(comp->getWidth(), targetHeight);
+			}
+		}
+	}
+	break;
+} // 🟢 Closes MatchHeight scope
+
+case MatchSize: {
+	const int numSelected = getSelection().getNumSelected();
+	if (numSelected < 2)
+		break;
+
+	// Use the first selected component as both target width and height
+	if (auto *targetModel = getSelection().getSelectedItem(0)) {
+		const int targetWidth = targetModel->getWidth();
+		const int targetHeight = targetModel->getHeight();
+
+		for (int i = 1; i < numSelected; ++i) {
+			if (auto *comp = getSelection().getSelectedItem(i)) {
+				comp->setSize(targetWidth, targetHeight);
+			}
+		}
+	}
+	break;
+} // 🟢 Closes MatchSize scope
+
+case Copy:
+case Cut:
+case Paste:
+case Delete:
+case Undo:
+case Redo:
+case FitToRect:
+case GroupCreate:
+case GroupDestroy:
+	break;
+} // Closes switch
 	} // Closes if (getNumSelected() > 0)
 } // Closes function
 

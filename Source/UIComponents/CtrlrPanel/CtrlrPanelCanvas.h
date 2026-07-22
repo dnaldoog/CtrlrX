@@ -77,23 +77,25 @@ public:
     CtrlrPanelCanvas (CtrlrPanelEditor &_owner);
     ~CtrlrPanelCanvas();
 
-	enum EditMenuItems
-	{
-		Copy	=	2048,
-		Paste	=	2049,
-		Cut		=	2050,
-		Delete	=	2051,
-		Undo	=	2052,
-		Redo	=	2053,
-		AlignToTop		= 2054,
-		AlignToLeft		= 2055,
-		AlignToBottom	= 2056,
-		AlignToRight	= 2057,
-		FitToRect		= 2058,
-		GroupCreate		= 2059,
-		GroupDestroy	= 2060,
-		DistributeHorizontally	= 2061,
-		DistributeVertically	= 2062
+	enum EditMenuItems {
+		Copy = 2048,
+		Paste = 2049,
+		Cut = 2050,
+		Delete = 2051,
+		Undo = 2052,
+		Redo = 2053,
+		AlignToTop = 2054,
+		AlignToLeft = 2055,
+		AlignToBottom = 2056,
+		AlignToRight = 2057,
+		FitToRect = 2058,
+		GroupCreate = 2059,
+		GroupDestroy = 2060,
+		DistributeHorizontally = 2061,
+		DistributeVertically = 2062,
+		MatchWidth = 2063,
+		MatchHeight = 2064,
+		MatchSize = 2065
 	};
 
 	enum Direction
