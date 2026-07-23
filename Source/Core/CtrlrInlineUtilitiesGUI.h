@@ -46,16 +46,29 @@ class PU {
 /**************************************************************************************************/
 class AW {
 	public:
-		enum Icon { None, Question, Warning, Info };
+		enum Icon { None, Question, Warning, Info, NoIcon };
 		/**************************************************************************************************/
 		static bool showNativeDialogBox(Icon icon, const juce::String &title, const juce::String &bodyText,
 										const juce::String &buttonText1, // Added "Yes" / "OK" string slot
 										const juce::String &buttonText2, // Added "No" / "Cancel" string slot
 										bool isOkCancel, std::function<void(bool)> completionCallback = nullptr) {
-			auto juceAlertIcon = (icon == Question)	 ? juce::AlertWindow::QuestionIcon
-								 : (icon == Warning) ? juce::AlertWindow::WarningIcon
-								 : (icon == Info)	 ? juce::AlertWindow::InfoIcon
-													 : juce::AlertWindow::NoIcon;
+			juce::MessageBoxIconType juce8Icon;
+
+			switch (icon) {
+			case AW::Question:
+				juce8Icon = juce::MessageBoxIconType::QuestionIcon;
+				break;
+			case AW::Warning:
+				juce8Icon = juce::MessageBoxIconType::WarningIcon;
+				break;
+			case AW::Info:
+				juce8Icon = juce::MessageBoxIconType::InfoIcon;
+				break;
+			case AW::NoIcon:
+			default:
+				juce8Icon = juce::MessageBoxIconType::NoIcon;
+				break;
+			}
 
 #if JUCE_VERSION < 0x070000
 			// --- Legacy JUCE 6 Path (Synchronous) ---
@@ -109,6 +122,7 @@ class AW {
 			auto juce8Icon = (icon == Question)	 ? juce::MessageBoxIconType::QuestionIcon
 							 : (icon == Warning) ? juce::MessageBoxIconType::WarningIcon
 							 : (icon == Info)	 ? juce::MessageBoxIconType::InfoIcon
+							 : (icon == NoIcon)	 ? juce::MessageBoxIconType::NoIcon
 												 : juce::MessageBoxIconType::NoIcon;
 			// --- Modern JUCE 7/8 Asynchronous Path ---
 			juce::AlertWindow::showMessageBoxAsync(juce8Icon, title, message, buttonText,

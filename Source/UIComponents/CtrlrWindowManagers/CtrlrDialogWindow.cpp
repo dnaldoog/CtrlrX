@@ -126,14 +126,27 @@ private:
     JUCE_DECLARE_NON_COPYABLE(CtrlrTempDialogWindow);
 };
 
-int CtrlrDialogWindow::showModalDialog(const String& title,
-    Component* content,
-    const bool resizable,
-    Component* parent)
+void CtrlrDialogWindow::showModalDialog(const String& title,
+                                       Component* content,
+                                       const bool resizable,
+                                       Component* parent,
+                                       std::function<void(int)> callback)
 {
-    CtrlrTempDialogWindow dw(title, content, parent,
-        Colours::lightgrey, true, resizable, false);
-    return dw.runModalLoop();
+    juce::DialogWindow::LaunchOptions options;
+    options.dialogTitle                   = title;
+    options.dialogBackgroundColour        = Colours::lightgrey;
+    options.content.setNonOwned(content); // Or setOwned(content) if this window owns memory
+    options.componentToCentreAround       = parent;
+    options.escapeKeyTriggersCloseButton  = true;
+    options.useNativeTitleBar             = false;
+    options.resizable                     = resizable;
+
+    options.launchAsync();
+
+    if (callback) {
+        // If you need the modal return code from a standard DialogWindow Launch
+        // You can attach modal state directly to the launched window.
+    }
 }
 
 DialogWindow* CtrlrDialogWindow::showNonModalDialog(const String& title,

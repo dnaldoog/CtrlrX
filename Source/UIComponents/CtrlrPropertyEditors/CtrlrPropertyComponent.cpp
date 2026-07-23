@@ -1485,25 +1485,29 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button *buttonThatWasClicked
 		// 		});
 		// #else
 		// --- Legacy JUCE 6 Synchronous Approach ---
-		PU::showMenuAsyncSafe(
-			m, this, [this, customId, templateKeys, standardStartId, standardTypes](int ret) {
-				if (ret <= 0)
-					return; // cancelled
+PU::showMenuAsyncSafe(
+    m, this, [this, customId, templateKeys, standardStartId, standardTypes](int ret) {
+			if (ret <= 0)
+				return; // cancelled
 
-				if (ret == customId) // Custom editor
-				{
-					CtrlrSysexProcessor sysexProcessor;
-					// CRITICAL: Ensure this method does NOT trigger a synchronous modal loop!
-					String newCsv = sysexProcessor.openAdvancedMessageEditor();
+			if (ret == customId) // Custom editor
+			{
+				CtrlrSysexProcessor sysexProcessor;
 
+				// Pass a callback lambda to receive newCsv when the editor closes
+				sysexProcessor.openAdvancedMessageEditor([this](const String &newCsv) {
 					if (newCsv.isNotEmpty()) {
 						String currentValue = valueToControl.toString();
 						if (currentValue.isNotEmpty())
 							valueToControl = currentValue + ":" + newCsv;
 						else
 							valueToControl = newCsv;
+
 						refresh();
 					}
+				});
+			} else if (ret <= templateKeys.size()) // XML template
+			// ... rest of your code ...
 				} else if (ret <= templateKeys.size()) // XML template
 				{
 					String data = templates.getValue(templateKeys[ret - 1], "");
