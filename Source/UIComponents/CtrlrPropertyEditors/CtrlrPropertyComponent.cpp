@@ -1431,71 +1431,16 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button *buttonThatWasClicked
 		// Custom editor
 		int customId = standardStartId + numElementsInArray(standardTypes);
 		m.addItem(customId, "Custom...");
-		// LOGIC MOVED TO A STATIC FUNCTION 	MyPopupHelper in CtrlrPanel.cpp
-		// #if JUCE_VERSION >= 0x070000
-		// 		// --- Modern JUCE 7/8 Asynchronous Approach ---
-		// 		PopupMenu::Options options = PopupMenu::Options().withTargetComponent(this);
-
-		// 		// We explicitly convert standardTypes to a std::vector to safely pass its data to the async scope
-		// 		std::vector<String> defaultCsvs;
-		// 		for (const auto &st : standardTypes) {
-		// 			defaultCsvs.push_back(st.defaultCsv);
-		// 		}
-
-		// 		m.showMenuAsync(options, [this, customId, templateKeys, standardStartId, defaultCsvs](int ret) {
-		// 			if (ret <= 0)
-		// 				return; // cancelled
-
-		// 			if (ret == customId) // Custom editor
-		// 			{
-		// 				CtrlrSysexProcessor sysexProcessor;
-		// 				String newCsv = sysexProcessor.openAdvancedMessageEditor();
-
-		// 				if (newCsv.isNotEmpty()) {
-		// 					String currentValue = valueToControl.toString();
-		// 					if (currentValue.isNotEmpty())
-		// 						valueToControl = currentValue + ":" + newCsv;
-		// 					else
-		// 						valueToControl = newCsv;
-		// 					refresh();
-		// 				}
-		// 			} else if (ret <= templateKeys.size()) // XML template
-		// 			{
-		// 				String data = templates.getValue(templateKeys[ret - 1], "");
-		// 				if (data.isNotEmpty()) {
-		// 					String currentValue = valueToControl.toString();
-		// 					if (currentValue.isNotEmpty())
-		// 						valueToControl = currentValue + ":" + data;
-		// 					else
-		// 						valueToControl = data;
-		// 					refresh();
-		// 				}
-		// 			} else // Standard MIDI type
-		// 			{
-		// 				int index = ret - standardStartId;
-		// 				if (index >= 0 && index < (int)defaultCsvs.size()) {
-		// 					String currentValue = valueToControl.toString();
-		// 					if (currentValue.isNotEmpty())
-		// 						valueToControl = currentValue + ":" + defaultCsvs[index];
-		// 					else
-		// 						valueToControl = defaultCsvs[index];
-		// 					refresh();
-		// 				}
-		// 			}
-		// 		});
-		// #else
-		// --- Legacy JUCE 6 Synchronous Approach ---
-PU::showMenuAsyncSafe(
-    m, this, [this, customId, templateKeys, standardStartId, standardTypes](int ret) {
+		PU::showMenuAsyncSafe(m, this, [this, customId, templateKeys, standardStartId, standardTypes](int ret) {
 			if (ret <= 0)
-				return; // cancelled
+				return; // Cancelled or dismiss
 
 			if (ret == customId) // Custom editor
 			{
-				CtrlrSysexProcessor sysexProcessor;
-
-				// Pass a callback lambda to receive newCsv when the editor closes
-				sysexProcessor.openAdvancedMessageEditor([this](const String &newCsv) {
+				auto sysexProcessor = std::make_shared<CtrlrSysexProcessor>();
+				// Call openAdvancedMessageEditor directly on this or member sysexProcessor
+				// so it stays alive during the modal lifetime
+				sysexProcessor->openAdvancedMessageEditor([this, sysexProcessor](const String &newCsv) {
 					if (newCsv.isNotEmpty()) {
 						String currentValue = valueToControl.toString();
 						if (currentValue.isNotEmpty())
@@ -1507,50 +1452,33 @@ PU::showMenuAsyncSafe(
 					}
 				});
 			} else if (ret <= templateKeys.size()) // XML template
-			// ... rest of your code ...
-				} else if (ret <= templateKeys.size()) // XML template
-				{
-					String data = templates.getValue(templateKeys[ret - 1], "");
-					if (data.isNotEmpty()) {
-						String currentValue = valueToControl.toString();
-						if (currentValue.isNotEmpty())
-							valueToControl = currentValue + ":" + data;
-						else
-							valueToControl = data;
-						refresh();
-					}
-				} else // Standard MIDI type
-				{
-					int index = ret - standardStartId;
-					if (index >= 0 && index < numElementsInArray(standardTypes)) {
-						String currentValue = valueToControl.toString();
-						if (currentValue.isNotEmpty())
-							valueToControl = currentValue + ":" + standardTypes[index].defaultCsv;
-						else
-							valueToControl = standardTypes[index].defaultCsv;
-						refresh();
-					}
+			{
+				String data = templates.getValue(templateKeys[ret - 1], "");
+				if (data.isNotEmpty()) {
+					String currentValue = valueToControl.toString();
+					if (currentValue.isNotEmpty())
+						valueToControl = currentValue + ":" + data;
+					else
+						valueToControl = data;
+
+					refresh();
 				}
-			});
-	} else if (buttonThatWasClicked == removeMulti.get()) {
-		int selectedRow = listMulti->getSelectedRow();
-		if (selectedRow >= 0) {
-			StringArray temp;
-			temp.addTokens(valueToControl.toString().trim(), ":", "\"\'");
-			if (selectedRow < temp.size()) {
-				temp.remove(selectedRow);
-				valueToControl = temp.joinIntoString(":");
-				refresh();
+			} else // Standard MIDI type
+			{
+				int index = ret - standardStartId;
+				if (index >= 0 && index < numElementsInArray(standardTypes)) {
+					String currentValue = valueToControl.toString();
+					if (currentValue.isNotEmpty())
+						valueToControl = currentValue + ":" + standardTypes[index].defaultCsv;
+					else
+						valueToControl = standardTypes[index].defaultCsv;
+
+					refresh();
+				}
 			}
-		}
-	} else if (buttonThatWasClicked == copy.get()) {
-		SystemClipboard::copyTextToClipboard(values.joinIntoString(":"));
-	} else if (buttonThatWasClicked == paste.get()) {
-		valueToControl = SystemClipboard::getTextFromClipboard();
-		refresh();
+		});
 	}
 }
-
 void CtrlrMultiMidiPropertyComponent::updateButtonIcons() {
 	auto bgColour = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
 	bool isDarkTheme = bgColour.getBrightness() < 0.5f;

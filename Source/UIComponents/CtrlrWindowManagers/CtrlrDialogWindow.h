@@ -11,8 +11,8 @@ public:
 	//     juce::Component* content,
 	//     const bool resizable = false,
 	//     juce::Component* parent = nullptr);
-	void showModalDialog(const String &title, Component *content, const bool resizable, Component *parent,
-						 std::function<void(int)> callback);
+	static void showModalDialog(const String &title, Component *content, const bool resizable = true,
+								Component *parent = nullptr, std::function<void(int)> callback = nullptr);
 	// -------------------------
     // Non-modal dialogs (all platforms)
     // Opens completely offscreen first on Linux to prevent flicker
