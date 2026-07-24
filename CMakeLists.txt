@@ -182,6 +182,8 @@ target_include_directories(SharedCode INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/JuceLibraryCode"
 )
 
+add_compile_definitions(BOOST_BIND_GLOBAL_PLACEHOLDERS)
+
 target_compile_definitions(SharedCode INTERFACE
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
