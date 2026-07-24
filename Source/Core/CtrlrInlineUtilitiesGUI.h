@@ -5,13 +5,15 @@
 #include <juce_gui_basics/juce_gui_basics.h> // Make sure this is included for LookAndFeel_V4
 // #pragma once
 #include <JuceHeader.h>
+#include <functional>
+
 class PU {
 public:
     // =========================================================================
-    // SYNCHRONOUS HELPERS (For legacy Lua scripts & synchronous callers)
+    // SYNCHRONOUS HELPERS (Return selected item ID integer)
     // =========================================================================
 
-    /** Displays a menu synchronously with detailed layout constraints */
+    /** Displays a menu synchronously with layout constraints */
     static int showMenuSync(juce::PopupMenu &menu,
                             int itemIDThatMustBeVisible = 0,
                             int minimumWidth = 0,
@@ -69,7 +71,7 @@ public:
     }
 
     // =========================================================================
-    // ASYNCHRONOUS HELPERS (For modern UI / non-blocking execution)
+    // ASYNCHRONOUS HELPERS (Non-blocking, uses callback)
     // =========================================================================
 
     /** Safely shows a popup menu asynchronously across JUCE versions */
@@ -103,28 +105,23 @@ public:
 
 private:
 #if JUCE_VERSION >= 0x070000
-    /** Private helper: Blocks locally until JUCE 8 async menu completes */
+    /** Private helper to run modern JUCE async menus synchronously */
     static int showSyncWithOptions(juce::PopupMenu &menu, const juce::PopupMenu::Options &options)
     {
-        // Must be on the main message thread to run synchronous modal loops
         JUCE_ASSERT_MESSAGE_THREAD
 
         int chosenID = 0;
-        bool completed = false;
-
-        menu.showMenuAsync(options, [&chosenID, &completed](int result) {
-            chosenID = result;
-            completed = true;
-            
-            // Exit the local loop as soon as a selection is made or dismissed
-            if (auto* mm = juce::MessageManager::getInstanceWithoutCreating())
-                mm->stopDispatchLoop();
-        });
-
-        // Run local message dispatch loop until stopDispatchLoop() is called
-        while (!completed)
+        
+        // ModalComponentManager runner handles loop pumping safely for JUCE 7/8
+        auto* modalLoop = juce::ModalComponentManager::getInstance();
+        if (modalLoop != nullptr)
         {
-            juce::MessageManager::getInstance()->runDispatchLoop();
+            menu.showMenuAsync(options, [&chosenID](int result) {
+                chosenID = result;
+            });
+
+            // Pump message thread safely until menu is dismissed
+            modalLoop->runEventLoopForCurrentComponent();
         }
 
         return chosenID;
