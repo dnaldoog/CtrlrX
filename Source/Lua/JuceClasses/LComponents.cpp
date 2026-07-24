@@ -1620,6 +1620,26 @@ void LookAndFeelBase::drawKeymapChangeButton(Graphics &g, int width, int height,
     TRY_CALL(drawKeymapChangeButton, boost::ref(g), width, height, boost::ref(button), keyDescription);
 }
 // Static helper for showAsync
+// --- Sync Helpers ---
+// --- Static Helpers for LPopupMenu Sync Calls ---
+
+static int LPopupMenu_show4(LPopupMenu *self, int itemIDThatMustBeVisible, int minimumWidth, int maximumNumColumns,
+							int standardItemHeight) {
+	return self->show(itemIDThatMustBeVisible, minimumWidth, maximumNumColumns, standardItemHeight);
+}
+
+static int LPopupMenu_show1(LPopupMenu *self, int itemHeight) {
+	// Explicitly pass 4 arguments to eliminate C2668 overload ambiguity
+	return self->show(0, 0, 0, itemHeight);
+}
+
+static int LPopupMenu_show0(LPopupMenu *self) {
+	// Explicitly pass 4 arguments to eliminate C2668 overload ambiguity
+	return self->show(0, 0, 0, 0);
+}
+
+// --- Static Helpers for LPopupMenu Async Calls ---
+
 static void LPopupMenu_showAsync(LPopupMenu *self, juce::Component *target, luabind::object cb) {
 	PU::showMenuAsyncSafe(*self, target, [cb](int res) {
 		if (luabind::type(cb) == LUA_TFUNCTION)
@@ -1627,7 +1647,6 @@ static void LPopupMenu_showAsync(LPopupMenu *self, juce::Component *target, luab
 	});
 }
 
-// Static helper for showAtAsync
 static void LPopupMenu_showAtAsync(LPopupMenu *self, juce::Component *targetComp, luabind::object cb) {
 	PU::showMenuAsyncSafe(
 		*self, nullptr,
@@ -1637,13 +1656,46 @@ static void LPopupMenu_showAtAsync(LPopupMenu *self, juce::Component *targetComp
 		},
 		targetComp);
 }
+
+// --- Class Implementation ---
+
 LPopupMenu::LPopupMenu() {}
+
 void LPopupMenu::addSubMenu(const juce::String &subMenuName, const LPopupMenu &subMenu, bool isEnabled,
 							const juce::Image &iconToUse, bool isTicked, int itemResultID) {
 	juce::PopupMenu::addSubMenu(subMenuName, subMenu, isEnabled, iconToUse, isTicked, itemResultID);
 }
-void LPopupMenu::wrapForLua (lua_State *L)
+int LPopupMenu::show(int itemIDThatMustBeVisible, int minimumWidth, int maximumNumColumns, int standardItemHeight)
 {
+    return PU::showMenuSync(*this, itemIDThatMustBeVisible, minimumWidth, maximumNumColumns, standardItemHeight);
+}
+
+int LPopupMenu::show(int itemHeight)
+{
+    return PU::showMenuSync(*this, 0, 0, 0, itemHeight);
+}
+
+int LPopupMenu::showAt(juce::Rectangle<int>& areaToAttachTo, int standardItemHeight)
+{
+    return PU::showMenuSyncAtArea(*this, areaToAttachTo, standardItemHeight);
+}
+
+int LPopupMenu::showAt(juce::Component* componentToAttachTo, int standardItemHeight)
+{
+    return PU::showMenuSyncAtComponent(*this, componentToAttachTo, standardItemHeight);
+}
+// static int LPopupMenu_show4(LPopupMenu *self, int itemIDThatMustBeVisible, int minimumWidth, int maximumNumColumns, int standardItemHeight) {
+//     juce::PopupMenu::Options opts = juce::PopupMenu::Options()
+//         .withMinimumWidth(minimumWidth)
+//         .withMaximumNumColumns(maximumNumColumns)
+//         .withStandardItemHeight(standardItemHeight);
+
+//     if (itemIDThatMustBeVisible > 0)
+//         opts = opts.withItemThatMustBeVisible(itemIDThatMustBeVisible);
+
+//     return self->showMenuAsync(opts);
+// }
+void LPopupMenu::wrapForLua(lua_State *L) {
 	using namespace luabind;
 
 	module(L)[class_<PopupMenu>("JPopupMenu"),
@@ -1661,7 +1713,12 @@ void LPopupMenu::wrapForLua (lua_State *L)
 				  .def("addSectionHeader", &PopupMenu::addSectionHeader)
 				  .def("getNumItems", &PopupMenu::getNumItems)
 
-				  // Bound via clean static function pointers:
+				  // --- Synchronous Show Methods ---
+				  .def("show", &LPopupMenu_show4)
+				  .def("show", &LPopupMenu_show1)
+				  .def("show", &LPopupMenu_show0)
+
+				  // --- Asynchronous Show Methods ---
 				  .def("showAsync", &LPopupMenu_showAsync)
 				  .def("showAtAsync", &LPopupMenu_showAtAsync)];
 }

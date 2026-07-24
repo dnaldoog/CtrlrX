@@ -6,43 +6,131 @@
 // #pragma once
 #include <JuceHeader.h>
 class PU {
-	public:
-		/**
-			Safely shows a popup menu across JUCE 6, 7, and 8.
+public:
+    // =========================================================================
+    // SYNCHRONOUS HELPERS (For legacy Lua scripts & synchronous callers)
+    // =========================================================================
 
-			@param menuToDisplay   The PopupMenu object you built.
-			@param targetComponent The component the menu should align with (usually 'this').
-			@param callback        A lambda/function to execute with the resulting integer ID.
-			@param componentToTargetForShowAt Optional: If you were originally using m.showAt(someButton),
-											  pass that specific button pointer here. Otherwise leave it null.
-		*/
-		static void showMenuAsyncSafe(juce::PopupMenu &menuToDisplay, juce::Component *targetComponent,
-									  std::function<void(int)> callback,
-									  juce::Component *componentToTargetForShowAt = nullptr) {
+    /** Displays a menu synchronously with detailed layout constraints */
+    static int showMenuSync(juce::PopupMenu &menu,
+                            int itemIDThatMustBeVisible = 0,
+                            int minimumWidth = 0,
+                            int maximumNumColumns = 0,
+                            int standardItemHeight = 0) 
+    {
 #if JUCE_VERSION >= 0x070000
-			// --- Modern JUCE 7/8 Asynchronous Approach ---
-			// If a specific showAt target was passed, use it. Otherwise fall back to targetComponent.
-			juce::Component *finalTarget =
-				(componentToTargetForShowAt != nullptr) ? componentToTargetForShowAt : targetComponent;
+        auto options = juce::PopupMenu::Options()
+            .withMinimumWidth(minimumWidth)
+            .withMaximumNumColumns(maximumNumColumns)
+            .withStandardItemHeight(standardItemHeight);
 
-			juce::PopupMenu::Options options = juce::PopupMenu::Options().withTargetComponent(finalTarget);
+        if (itemIDThatMustBeVisible > 0)
+            options = options.withItemThatMustBeVisible(itemIDThatMustBeVisible);
 
-			menuToDisplay.showMenuAsync(options, [callback](int result) {
-				callback(result); // Runs your menu handling logic
-			});
+        return showSyncWithOptions(menu, options);
 #else
-			// --- Legacy JUCE 6 Synchronous Approach ---
-			int result = 0;
-			if (componentToTargetForShowAt != nullptr) {
-				result = menuToDisplay.showAt(componentToTargetForShowAt); // Emulates old showAt()
-			} else {
-				result = menuToDisplay.show(); // Emulates old show()
-			}
-
-			callback(result);
+        return menu.show(itemIDThatMustBeVisible, minimumWidth, maximumNumColumns, standardItemHeight);
 #endif
-		}
-}; //
+    }
+
+    /** Displays a menu synchronously attached to a target Component */
+    static int showMenuSyncAtComponent(juce::PopupMenu &menu,
+                                       juce::Component *componentToAttachTo,
+                                       int standardItemHeight = 0) 
+    {
+        if (componentToAttachTo == nullptr)
+            return showMenuSync(menu, 0, 0, 0, standardItemHeight);
+
+#if JUCE_VERSION >= 0x070000
+        auto options = juce::PopupMenu::Options()
+            .withTargetComponent(componentToAttachTo)
+            .withStandardItemHeight(standardItemHeight);
+
+        return showSyncWithOptions(menu, options);
+#else
+        return menu.showAt(componentToAttachTo, standardItemHeight);
+#endif
+    }
+
+    /** Displays a menu synchronously attached to a Screen Area */
+    static int showMenuSyncAtArea(juce::PopupMenu &menu,
+                                  const juce::Rectangle<int> &areaToAttachTo,
+                                  int standardItemHeight = 0) 
+    {
+#if JUCE_VERSION >= 0x070000
+        auto options = juce::PopupMenu::Options()
+            .withTargetScreenArea(areaToAttachTo)
+            .withStandardItemHeight(standardItemHeight);
+
+        return showSyncWithOptions(menu, options);
+#else
+        return menu.showAt(areaToAttachTo, standardItemHeight);
+#endif
+    }
+
+    // =========================================================================
+    // ASYNCHRONOUS HELPERS (For modern UI / non-blocking execution)
+    // =========================================================================
+
+    /** Safely shows a popup menu asynchronously across JUCE versions */
+    static void showMenuAsyncSafe(juce::PopupMenu &menuToDisplay,
+                                  juce::Component *targetComponent,
+                                  std::function<void(int)> callback,
+                                  juce::Component *componentToTargetForShowAt = nullptr) 
+    {
+        juce::Component *finalTarget =
+            (componentToTargetForShowAt != nullptr) ? componentToTargetForShowAt : targetComponent;
+
+#if JUCE_VERSION >= 0x070000
+        auto options = juce::PopupMenu::Options();
+        if (finalTarget != nullptr)
+            options = options.withTargetComponent(finalTarget);
+
+        menuToDisplay.showMenuAsync(options, [callback](int result) {
+            if (callback) callback(result);
+        });
+#else
+        int result = 0;
+        if (componentToTargetForShowAt != nullptr) {
+            result = menuToDisplay.showAt(componentToTargetForShowAt);
+        } else {
+            result = menuToDisplay.show();
+        }
+
+        if (callback) callback(result);
+#endif
+    }
+
+private:
+#if JUCE_VERSION >= 0x070000
+    /** Private helper: Blocks locally until JUCE 8 async menu completes */
+    static int showSyncWithOptions(juce::PopupMenu &menu, const juce::PopupMenu::Options &options)
+    {
+        // Must be on the main message thread to run synchronous modal loops
+        JUCE_ASSERT_MESSAGE_THREAD
+
+        int chosenID = 0;
+        bool completed = false;
+
+        menu.showMenuAsync(options, [&chosenID, &completed](int result) {
+            chosenID = result;
+            completed = true;
+            
+            // Exit the local loop as soon as a selection is made or dismissed
+            if (auto* mm = juce::MessageManager::getInstanceWithoutCreating())
+                mm->stopDispatchLoop();
+        });
+
+        // Run local message dispatch loop until stopDispatchLoop() is called
+        while (!completed)
+        {
+            juce::MessageManager::getInstance()->runDispatchLoop();
+        }
+
+        return chosenID;
+    }
+#endif
+};
 /**************************************************************************************************/
 class AW {
 	public:
