@@ -3,14 +3,18 @@
 #include "CtrlrLog.h"
 #include "CtrlrPropertyEditors/CtrlrPropertyComponent.h"
 
+#include "CtrlrIDManager.h"
+#include "CtrlrLog.h"
+#include "CtrlrPropertyEditors/CtrlrPropertyComponent.h"
+
 CtrlrIDManager::CtrlrIDManager() : ctrlrIdTree(Ids::ctrlr)
 {
-	XmlDocument contstantsDoc (String (BinaryData::CtrlrIDs_xml, BinaryData::CtrlrIDs_xmlSize));
+	XmlDocument constantsDoc (String (BinaryData::CtrlrIDs_xml, BinaryData::CtrlrIDs_xmlSize));
 	XmlDocument vendorsDoc (String (BinaryData::CtrlrMIDIVendors_xml, BinaryData::CtrlrMIDIVendors_xmlSize));
 
 	{
-		ScopedPointer <XmlElement> xml (contstantsDoc.getDocumentElement().release());
-		if (xml)
+		std::unique_ptr<XmlElement> xml (constantsDoc.getDocumentElement());
+		if (xml != nullptr)
 		{
 			ctrlrIdTree = ValueTree::fromXml (*xml);
 
@@ -20,14 +24,14 @@ CtrlrIDManager::CtrlrIDManager() : ctrlrIdTree(Ids::ctrlr)
 	}
 
 	{
-		ScopedPointer <XmlElement> xml (vendorsDoc.getDocumentElement().release());
-		if (xml)
+		std::unique_ptr<XmlElement> xml (vendorsDoc.getDocumentElement());
+		if (xml != nullptr)
 		{
 			vendorTree = ValueTree::fromXml (*xml);
 
 			if (vendorTree.isValid())
 			{
-				/* let's sort it alphabeticaly */
+				/* let's sort it alphabetically */
 				VendorComparator c;
 				vendorTree.sort (c, nullptr, false);
 			}

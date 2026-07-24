@@ -70,12 +70,23 @@ public:
 #endif
     }
 
-    // =========================================================================
-    // ASYNCHRONOUS HELPERS (Non-blocking, uses callback)
-    // =========================================================================
+	static int showSyncWithOptions(juce::PopupMenu &menu, const juce::PopupMenu::Options &options) {
+#if JUCE_VERSION >= 0x070000
+		// JUCE 8 non-blocking async execution (returns 0 immediately to caller)
+		menu.showMenuAsync(options, nullptr);
+		return 0;
+#else
+		// Legacy JUCE 6 synchronous execution
+		return menu.showWithOptionalTargetComponent(options.getTargetComponent());
+#endif
+	}
 
-    /** Safely shows a popup menu asynchronously across JUCE versions */
-    static void showMenuAsyncSafe(juce::PopupMenu &menuToDisplay,
+	// =========================================================================
+	// ASYNCHRONOUS HELPERS (Non-blocking, uses callback)
+	// =========================================================================
+
+	/** Safely shows a popup menu asynchronously across JUCE versions */
+	static void showMenuAsyncSafe(juce::PopupMenu &menuToDisplay,
                                   juce::Component *targetComponent,
                                   std::function<void(int)> callback,
                                   juce::Component *componentToTargetForShowAt = nullptr) 
@@ -104,61 +115,72 @@ public:
     }
 
 private:
-#if JUCE_VERSION >= 0x070000
-    /** Private helper to run modern JUCE async menus synchronously */
-    static int showSyncWithOptions(juce::PopupMenu &menu, const juce::PopupMenu::Options &options)
-    {
-        JUCE_ASSERT_MESSAGE_THREAD
-
-        int chosenID = 0;
-        
-        // ModalComponentManager runner handles loop pumping safely for JUCE 7/8
-        auto* modalLoop = juce::ModalComponentManager::getInstance();
-        if (modalLoop != nullptr)
-        {
-            menu.showMenuAsync(options, [&chosenID](int result) {
-                chosenID = result;
-            });
-
-            // Pump message thread safely until menu is dismissed
-            modalLoop->runEventLoopForCurrentComponent();
-        }
-
-        return chosenID;
-    }
-#endif
+	// #if JUCE_VERSION >= 0x070000
+	//     /** Private helper to run modern JUCE async menus synchronously */
+	// static void showSyncWithOptions(juce::PopupMenu& menu, const juce::PopupMenu::Options& options,
+	// std::function<void(int)> callback = nullptr)
+	// {
+	//     menu.showMenuAsync(options, juce::ModalComponentManager::Callback::create([callback](int result)
+	//     {
+	//         if (callback)
+	//             callback(result);
+	//     }));
+	// }
+	// #endif
 };
 /**************************************************************************************************/
 class AW {
 	public:
 		enum Icon { None, Question, Warning, Info, NoIcon };
-		/**************************************************************************************************/
-		static bool showNativeDialogBox(Icon icon, const juce::String &title, const juce::String &bodyText,
-										const juce::String &buttonText1, // Added "Yes" / "OK" string slot
-										const juce::String &buttonText2, // Added "No" / "Cancel" string slot
-										bool isOkCancel, std::function<void(bool)> completionCallback = nullptr) {
-			juce::MessageBoxIconType juce8Icon;
 
-			switch (icon) {
-			case AW::Question:
-				juce8Icon = juce::MessageBoxIconType::QuestionIcon;
-				break;
-			case AW::Warning:
-				juce8Icon = juce::MessageBoxIconType::WarningIcon;
-				break;
-			case AW::Info:
-				juce8Icon = juce::MessageBoxIconType::InfoIcon;
-				break;
-			case AW::NoIcon:
-			default:
-				juce8Icon = juce::MessageBoxIconType::NoIcon;
-				break;
-			}
+		/**************************************************************************************************/
+		/**
+		 * JUCE 8 Async Popup Menu Wrapper
+		 * Handles non-blocking popup menu execution across all JUCE versions.
+		 *
+		 * @param menu      The juce::PopupMenu instance to present
+		 * @param options   juce::PopupMenu::Options configuring target, position, etc.
+		 * @param callback  Optional callback lambda receiving the selected Item ID (0 if dismissed)
+		 */
+		static void showPopupMenuAsync(juce::PopupMenu &menu, const juce::PopupMenu::Options &options,
+									   std::function<void(int)> callback = nullptr) {
+#if JUCE_VERSION >= 0x070000
+			menu.showMenuAsync(options, [callback](int result) {
+				if (callback != nullptr)
+					callback(result);
+			});
+#else
+			int result = menu.showWithOptionalTargetComponent(options.getTargetComponent());
+			if (callback != nullptr)
+				callback(result);
+#endif
+		}
+
+		/**************************************************************************************************/
+static bool showNativeDialogBox(Icon icon, const juce::String &title, const juce::String &bodyText,
+								const juce::String &buttonText1, const juce::String &buttonText2, bool isOkCancel,
+								std::function<void(bool)> completionCallback = nullptr) {
+	juce::MessageBoxIconType juce8Icon;
+
+	switch (icon) {
+	case AW::Question:
+		juce8Icon = juce::MessageBoxIconType::QuestionIcon;
+		break;
+	case AW::Warning:
+		juce8Icon = juce::MessageBoxIconType::WarningIcon;
+		break;
+	case AW::Info:
+		juce8Icon = juce::MessageBoxIconType::InfoIcon;
+		break;
+	case AW::NoIcon:
+	default:
+		juce8Icon = juce::MessageBoxIconType::NoIcon;
+		break;
+	}
 
 #if JUCE_VERSION < 0x070000
 			// --- Legacy JUCE 6 Path (Synchronous) ---
 			if (isOkCancel) {
-				// Now correctly passing your custom button strings down
 				bool result =
 					juce::AlertWindow::showOkCancelBox(juceAlertIcon, title, bodyText, buttonText1, buttonText2);
 
@@ -180,12 +202,11 @@ class AW {
 													   : juce::MessageBoxIconType::NoIcon;
 
 			if (isOkCancel) {
-				// NativeMessageBox maps buttonText1 to the primary action, buttonText2 to alternative action
 				juce::NativeMessageBox::showOkCancelBox(
 					juce8NativeIcon, title, bodyText, nullptr,
 					juce::ModalCallbackFunction::create([completionCallback](int result) {
 						if (completionCallback != nullptr) {
-							completionCallback(result == 1); // 1 = Primary Button Clicked
+							completionCallback(result == 1);
 						}
 					}));
 			} else {
@@ -197,9 +218,10 @@ class AW {
 						}
 					}));
 			}
-			return false; // JUCE 8 fallback
+			return false;
 #endif
-		}
+}
+
 		/**************************************************************************************************/
 		static void showMessageBox(Icon icon, const juce::String &title, const juce::String &message,
 								   const juce::String &buttonText = "OK", std::function<void()> callback = nullptr) {
@@ -209,9 +231,8 @@ class AW {
 							 : (icon == Info)	 ? juce::MessageBoxIconType::InfoIcon
 							 : (icon == NoIcon)	 ? juce::MessageBoxIconType::NoIcon
 												 : juce::MessageBoxIconType::NoIcon;
-			// --- Modern JUCE 7/8 Asynchronous Path ---
-			juce::AlertWindow::showMessageBoxAsync(juce8Icon, title, message, buttonText,
-												   nullptr, // Associated component (optional)
+
+			juce::AlertWindow::showMessageBoxAsync(juce8Icon, title, message, buttonText, nullptr,
 												   juce::ModalCallbackFunction::create([callback](int /*result*/) {
 													   if (callback != nullptr)
 														   callback();
@@ -221,39 +242,23 @@ class AW {
 							 : (icon == Warning) ? juce::AlertWindow::WarningIcon
 							 : (icon == Info)	 ? juce::AlertWindow::InfoIcon
 												 : juce::AlertWindow::NoIcon;
-			// --- Legacy JUCE 6 Synchronous Path ---
+
 			juce::AlertWindow::showMessageBox(juce6Icon, title, message, buttonText);
 
 			if (callback != nullptr)
 				callback();
 #endif
-			/**
-			Executes a custom AlertWindow asynchronously for JUCE 7/8, or synchronously for JUCE 6.
-		*/
 		}
+
 		/**************************************************************************************************/
-		/**
-		 * Display a non-blocking Ok/Cancel (Yes/No) dialog across JUCE versions.
-		 */
 		static void showOkCancelAsyncSafe(Icon icon, const juce::String &title, const juce::String &bodyText,
 										  std::function<void(bool)> completionCallback,
 										  const juce::String &button1Text = "Yes",
 										  const juce::String &button2Text = "No") {
-			// Forwards directly to your existing showNativeDialogBox implementation!
 			showNativeDialogBox(icon, title, bodyText, button1Text, button2Text, true, completionCallback);
 		}
+
 		/**************************************************************************************************/
-		/**
-		 * Modern non-blocking 3-button dialog box safe for JUCE 7 & 8.
-		 *
-		 * @param iconType      Icon to display (AW::Question, AW::Warning, etc.)
-		 * @param title         Dialog window title
-		 * @param message       Body message text
-		 * @param button1Text   First option (e.g., "Apply & Close" -> passes 1 to callback)
-		 * @param button2Text   Second option (e.g., "Close Without Saving" -> passes 2 to callback)
-		 * @param button3Text   Third option / Cancel (e.g., "Cancel" -> passes 0 to callback)
-		 * @param callback      Lambda function receiving the button result index (1, 2, or 0)
-		 */
 		static void showYesNoCancelBox(Icon icon, const juce::String &title, const juce::String &message,
 									   const juce::String &button1Text, const juce::String &button2Text,
 									   const juce::String &button3Text, std::function<void(int)> callback) {
@@ -276,15 +281,16 @@ class AW {
 												  .withIconType(juceIcon)
 												  .withTitle(title)
 												  .withMessage(message)
-												  .withButton(button1Text)	// Returns 1
-												  .withButton(button2Text)	// Returns 2
-												  .withButton(button3Text), // Returns 0 (Cancel)
+												  .withButton(button1Text)
+												  .withButton(button2Text)
+												  .withButton(button3Text),
 											  [callback](int result) {
 												  if (callback) {
 													  callback(result);
 												  }
 											  });
 		}
+
 		/**************************************************************************************************/
 		static void showWarning(const juce::String &title, const juce::String &message,
 								std::function<void(int)> callback = nullptr) {
@@ -303,21 +309,15 @@ class AW {
 		/**************************************************************************************************/
 		static void runCustomAlertAsyncSafe(juce::AlertWindow *alert, std::function<void(int)> callback) {
 #if JUCE_VERSION >= 0x070000
-			alert->enterModalState(true, juce::ModalCallbackFunction::create([alert, callback](int result) {
-									   callback(result);
-									   // Safe cleanup if it's a dynamic heap allocation
-								   }),
-								   true);
+			alert->enterModalState(
+				true, juce::ModalCallbackFunction::create([alert, callback](int result) { callback(result); }), true);
 #else
 			int result = alert->runModalLoop();
 			callback(result);
 #endif
 		}
 
-		/**
-			Centralizes the custom button layout engines for JUCE 8 custom components.
-			Does absolutely nothing on JUCE 6 to save execution cycles.
-		*/
+		/**************************************************************************************************/
 		static void layoutButtonsJUCE8(juce::AlertWindow *alert, const juce::String &okText,
 									   const juce::String &cancelText, int bW = 100, int bH = 35) {
 #if JUCE_VERSION >= 0x070000

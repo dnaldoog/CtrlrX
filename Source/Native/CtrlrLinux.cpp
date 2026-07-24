@@ -3,6 +3,7 @@
 				 // https://github.com/damiensellier/CtrlrX/pull/193#issuecomment-3561230356
 #define PACKAGE "Ctrlr"
 
+#include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrLinux.h"
 #include "CtrlrMacros.h"
 #include "CtrlrManager/CtrlrManager.h"
@@ -294,8 +295,6 @@ const Result CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const 
 	}
 
 	File me = getVST3PluginPath();
-	File newMe;
-	MemoryBlock panelExportData, panelResourcesData;
 
 	// Check if the current binary is running as VST3 or VST2/Standalone
 	File parentDir = me.getParentDirectory();
@@ -305,157 +304,161 @@ const Result CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const 
 	bool isVST3 = bundleDir.getFileName().endsWith(".vst3");
 	bool isVST2 = isVST2Plugin();
 
-	// Cast bool to int to fix the compile error
 	_DBG("Export detection: isVST3=" + String((int)isVST3) + ", isVST2=" + String((int)isVST2));
 	_DBG("Current binary path: " + me.getFullPathName());
 
 	String panelName = File::createLegalFileName(panelToWrite->getProperty(Ids::name));
 
-	// Build suggested file based on type
+	// Build suggested file and pattern based on plugin type
 	File suggestedFile;
 	String filePattern;
 
 	if (isVST3) {
 		suggestedFile = bundleDir.getParentDirectory().getChildFile(panelName + ".vst3");
-		filePattern = ".vst3";
+		filePattern = "*.vst3";
 	} else if (isVST2) {
-		// VST2: Suggest and enforce .so
 		suggestedFile = me.getParentDirectory().getChildFile(panelName + ".so");
 		filePattern = "*.so";
 		_DBG("VST2 export detected. suggestedFile = " + suggestedFile.getFullPathName());
 	} else {
-		// STANDALONE (isVST3=0, isVST2=0): Suggest and export without extension
 		suggestedFile = me.getParentDirectory().getChildFile(panelName);
-		filePattern = "*"; // No required pattern
+		filePattern = "*";
 		_DBG("Standalone export detected. suggestedFile = " + suggestedFile.getFullPathName());
 	}
 
-	FileChooser fc(CTRLR_NEW_INSTANCE_DIALOG_TITLE, suggestedFile, filePattern,
-				   panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs));
+	const bool useNativeDialog = panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs);
 
-	if (fc.browseForFileToSave(true)) {
-		File chosenFile = fc.getResult();
-		_DBG("FileChooser returned: " + chosenFile.getFullPathName());
-
-		if (isVST3) {
-			if (!chosenFile.getFileName().endsWith(".vst3")) {
-				chosenFile = chosenFile.withFileExtension(".vst3");
+	// Launch non-blocking file chooser via FC::saveFileAsync
+	FC::saveFileAsync(
+		CTRLR_NEW_INSTANCE_DIALOG_TITLE, suggestedFile, filePattern, useNativeDialog,
+		[this, panelToWrite, me, isVST3, isVST2, isRestricted](const File &chosenFile) {
+			if (chosenFile == File()) {
+				_DBG("User cancelled the export operation.");
+				return;
 			}
 
-			File bundleDir = chosenFile;
-			File binaryDir = bundleDir.getChildFile("Contents/x86_64-linux");
-			String binaryName = bundleDir.getFileNameWithoutExtension() + ".so";
-			File binaryFile = binaryDir.getChildFile(binaryName);
+			_DBG("FileChooser returned: " + chosenFile.getFullPathName());
+			File newMe;
 
-			if (!binaryDir.createDirectory()) {
-				return Result::fail("Failed to create VST3 bundle directory structure");
-			}
+			if (isVST3) {
+				File bundleDir =
+					chosenFile.getFileName().endsWith(".vst3") ? chosenFile : chosenFile.withFileExtension(".vst3");
 
-			if (!me.copyFileTo(binaryFile)) {
-				return Result::fail("Linux native, VST3 copyFileTo failed");
-			}
+				File binaryDir = bundleDir.getChildFile("Contents/x86_64-linux");
+				String binaryName = bundleDir.getFileNameWithoutExtension() + ".so";
+				File binaryFile = binaryDir.getChildFile(binaryName);
 
-			newMe = binaryFile;
-		} else {
-			// --- Logic for VST2 (isVST2=1) and Standalone (isVST2=0) ---
-
-			newMe = chosenFile; // Start with the file the user chose
-
-			if (isVST2) {
-				// If VST2, we MUST ensure it has the .so extension
-				if (!newMe.getFullPathName().endsWith(".so")) {
-					newMe = newMe.withFileExtension(".so");
-					_DBG("VST2 export: Added missing .so extension, now = " + newMe.getFullPathName());
-				} else {
-					_DBG("VST2 export: Already has .so extension");
+				if (!binaryDir.createDirectory()) {
+					_DBG("Failed to create VST3 bundle directory structure");
+					return;
 				}
+
+				if (!me.copyFileTo(binaryFile)) {
+					_DBG("Linux native, VST3 copyFileTo failed");
+					return;
+				}
+
+				newMe = binaryFile;
 			} else {
-				// If Standalone, we keep the file name exactly as chosen (no forced extension)
-				_DBG("Standalone export: Final file created without extension = " + newMe.getFullPathName());
+				newMe = chosenFile;
+
+				if (isVST2) {
+					if (!newMe.getFullPathName().endsWith(".so")) {
+						newMe = newMe.withFileExtension(".so");
+						_DBG("VST2 export: Added missing .so extension: " + newMe.getFullPathName());
+					}
+				} else {
+					_DBG("Standalone export: Final file created without extension = " + newMe.getFullPathName());
+				}
+
+				if (!me.copyFileTo(newMe)) {
+					_DBG("Linux native, Standalone/VST2 copyFileTo failed");
+					return;
+				}
 			}
 
-			if (!me.copyFileTo(newMe)) {
-				return Result::fail("Linux native, Standalone/VST2 copyFileTo failed");
+			// Export panel data
+			MemoryBlock panelExportData, panelResourcesData;
+			CtrlrPanel p(owner, "", 0);
+			String error =
+				p.exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData, isRestricted);
+
+			if (error.isNotEmpty()) {
+				_DBG("CtrlrPanel::exportPanel failed: " + error);
+				return;
 			}
 
-			_DBG("VST2/Standalone export: Final file created = " + newMe.getFullPathName());
-		}
-	} else {
-		return Result::fail("User cancelled the export operation.");
-	}
+			// Perform binary patching for VST3 AND VST2
+			if (isVST3 || isVST2) {
+				MemoryBlock binaryData;
+				if (newMe.loadFileAsData(binaryData)) {
+					String pluginName = panelToWrite->getProperty(Ids::name).toString();
+					String pluginCode = panelToWrite->getProperty(Ids::panelInstanceUID).toString();
+					String manufacturerName = panelToWrite->getProperty(Ids::panelAuthorName).toString();
+					String manufacturerCode = panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString();
+					String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
 
-	// Export panel data
-	CtrlrPanel p(owner, "", 0);
-	String error = p.exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData, isRestricted);
-	if (error != "") {
-		return Result::fail("CtrlrPanel::exportPanel failed: " + error);
-	}
+					MemoryBlock pluginNameBytes = stringToFixedBytes(pluginName, 32);
+					MemoryBlock pluginCodeBytes = stringToFixedBytes(pluginCode, 4);
+					MemoryBlock manufacturerNameBytes = stringToFixedBytes(manufacturerName, 16);
+					MemoryBlock manufacturerCodeBytes = stringToFixedBytes(manufacturerCode, 4);
+					MemoryBlock plugTypeBytes = stringToFixedBytes(plugType, 16);
 
-	// Perform binary patching for VST3 AND VST2
-	if (isVST3 || isVST2) {
+					MemoryBlock searchPluginName = hexToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 "
+															  "20 20 20 20 20 20 20 20 20 20 20 20 20 20");
+					MemoryBlock searchPluginCode = hexToBytes("63 54 78 58");
+					MemoryBlock searchManufacturerName = hexToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20");
+					MemoryBlock searchManufacturerCode = hexToBytes("63 54 72 6C");
+					MemoryBlock searchPlugTypeHex = hexToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73");
 
-		MemoryBlock binaryData;
-		if (newMe.loadFileAsData(binaryData)) {
-			String pluginName = panelToWrite->getProperty(Ids::name).toString();
-			String pluginCode = panelToWrite->getProperty(Ids::panelInstanceUID).toString();
-			String manufacturerName = panelToWrite->getProperty(Ids::panelAuthorName).toString();
-			String manufacturerCode = panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString();
-			// --- NEW: Retrieve the plug type from the panel properties ---
-			String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
+					int totalReplacements = 0;
+					totalReplacements += replaceAllOccurrences(binaryData, searchPluginName, pluginNameBytes);
+					totalReplacements += replaceAllOccurrences(binaryData, searchPluginCode, pluginCodeBytes);
+					totalReplacements +=
+						replaceAllOccurrences(binaryData, searchManufacturerName, manufacturerNameBytes);
+					totalReplacements +=
+						replaceAllOccurrences(binaryData, searchManufacturerCode, manufacturerCodeBytes);
+					totalReplacements += replaceAllOccurrences(binaryData, searchPlugTypeHex, plugTypeBytes);
 
-			MemoryBlock pluginNameBytes = stringToFixedBytes(pluginName, 32);
-			MemoryBlock pluginCodeBytes = stringToFixedBytes(pluginCode, 4);
-			MemoryBlock manufacturerNameBytes = stringToFixedBytes(manufacturerName, 16);
-			MemoryBlock manufacturerCodeBytes = stringToFixedBytes(manufacturerCode, 4);
-			MemoryBlock plugTypeBytes = stringToFixedBytes(plugType, 16);
+					_DBG("Binary patching complete: " + String(totalReplacements) + " replacements");
 
-			MemoryBlock searchPluginName = hexToBytes(
-				"43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20");
-			MemoryBlock searchPluginCode = hexToBytes("63 54 72 58");
-			MemoryBlock searchManufacturerName = hexToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20");
-			MemoryBlock searchManufacturerCode = hexToBytes("63 54 72 6C");
-			MemoryBlock searchPlugTypeHex = hexToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73");
-
-			int totalReplacements = 0;
-			totalReplacements += replaceAllOccurrences(binaryData, searchPluginName, pluginNameBytes);
-			totalReplacements += replaceAllOccurrences(binaryData, searchPluginCode, pluginCodeBytes);
-			totalReplacements += replaceAllOccurrences(binaryData, searchManufacturerName, manufacturerNameBytes);
-			totalReplacements += replaceAllOccurrences(binaryData, searchManufacturerCode, manufacturerCodeBytes);
-			totalReplacements += replaceAllOccurrences(binaryData, searchPlugTypeHex, plugTypeBytes);
-
-			_DBG("Binary patching complete: " + String(totalReplacements) + " replacements");
-
-			if (!newMe.replaceWithData(binaryData.getData(), binaryData.getSize())) {
-				return Result::fail("Failed to write patched binary");
+					if (!newMe.replaceWithData(binaryData.getData(), binaryData.getSize())) {
+						_DBG("Failed to write patched binary");
+						return;
+					}
+				}
 			}
-		}
-	}
 
-	// Embed data using SimpleEmbeddedDataManager
-	SimpleEmbeddedDataManager dataManager(newMe.getFullPathName().toStdString());
-	dataManager.initialize();
+			// Embed data using SimpleEmbeddedDataManager
+			SimpleEmbeddedDataManager dataManager(newMe.getFullPathName().toStdString());
+			dataManager.initialize();
 
-	if (!dataManager.writeSection(CTRLR_INTERNAL_PANEL_SECTION, panelExportData)) {
-		return Result::fail("Failed to write panel data");
-	}
+			if (!dataManager.writeSection(CTRLR_INTERNAL_PANEL_SECTION, panelExportData)) {
+				_DBG("Failed to write panel data");
+				return;
+			}
 
-	if (panelResourcesData.getSize() > 0) {
-		if (!dataManager.writeSection(CTRLR_INTERNAL_RESOURCES_SECTION, panelResourcesData)) {
-			return Result::fail("Failed to write resources");
-		}
-	}
+			if (panelResourcesData.getSize() > 0) {
+				if (!dataManager.writeSection(CTRLR_INTERNAL_RESOURCES_SECTION, panelResourcesData)) {
+					_DBG("Failed to write resources");
+					return;
+				}
+			}
 
-	// Ensure the executable bit is set for all non-VST3 exports
-	if (!isVST3) {
-		if (chmod(newMe.getFullPathName().toUTF8().getAddress(),
-				  S_IRUSR | S_IWUSR | S_IXUSR | S_IXOTH | S_IRGRP | S_IXGRP | S_IROTH)) {
-			return Result::fail("chmod failed");
-		}
-	}
+			// Set executable bit for non-VST3 binary targets
+			if (!isVST3) {
+				if (chmod(newMe.getFullPathName().toUTF8().getAddress(),
+						  S_IRUSR | S_IWUSR | S_IXUSR | S_IXOTH | S_IRGRP | S_IXGRP | S_IROTH)) {
+					_DBG("chmod failed");
+					return;
+				}
+			}
+
+			_DBG("Export succeeded for: " + newMe.getFullPathName());
+		});
 
 	return Result::ok();
 }
-
 // --- Getter functions (unchanged logic) ---
 
 const Result CtrlrLinux::getDefaultPanel(MemoryBlock &dataToWrite) {
