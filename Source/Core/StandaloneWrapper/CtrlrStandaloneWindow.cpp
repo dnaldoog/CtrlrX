@@ -195,29 +195,29 @@ void CtrlrStandaloneWindow::changeListenerCallback(ChangeBroadcaster *source) { 
 }
 
 void CtrlrStandaloneWindow::saveStateNow() {
-	_DBG("CtrlrStandaloneWindow::saveStateNow");
-	if (auto *manager = getManager()) {
-		// If the manager is already in the middle of running its destructor,
-		// instantly break out so we don't spin up phantom UI updates or leaks!
-		if (manager->isShuttingDown())
-			return;
-	}
-	if (ctrlrProcessor != nullptr && appProperties != nullptr) {
-		appProperties->getUserSettings()->setValue(CTRLR_PROPERTIES_WINDOW_STATE, getWindowStateAsString());
+    _DBG("CtrlrStandaloneWindow::saveStateNow");
+    
+    // REMOVED: manager->isShuttingDown() guard block!
+    // We WANT to save state specifically when shutting down.
 
-		MemoryBlock data;
-		ctrlrProcessor->getStateInformation(data);
+    if (ctrlrProcessor != nullptr && appProperties != nullptr) {
+        appProperties->getUserSettings()->setValue(CTRLR_PROPERTIES_WINDOW_STATE, getWindowStateAsString());
 
-		if (data.getSize() > 0) {
-			std::unique_ptr<XmlElement> xml(CtrlrProcessor::getXmlFromBinary(data.getData(), (int)data.getSize()));
+        MemoryBlock data;
+        ctrlrProcessor->getStateInformation(data);
 
-			if (xml) {
-				appProperties->getUserSettings()->setValue(CTRLR_PROPERTIES_FILTER_STATE, xml.get());
-			}
-		}
-	}
+        if (data.getSize() > 0) {
+            std::unique_ptr<XmlElement> xml(CtrlrProcessor::getXmlFromBinary(data.getData(), (int)data.getSize()));
+
+            if (xml) {
+                appProperties->getUserSettings()->setValue(CTRLR_PROPERTIES_FILTER_STATE, xml.get());
+            }
+        }
+
+        // --- CRITICAL JUCE 8 FIX: Force flush to disk! ---
+        appProperties->getUserSettings()->saveIfNeeded();
+    }
 }
-
 void CtrlrStandaloneWindow::deleteFilter() {
 	if (filter != 0 && getContentComponent() != 0) {
 		filter->editorBeingDeleted(dynamic_cast<AudioProcessorEditor *>(getContentComponent()));

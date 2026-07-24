@@ -135,8 +135,18 @@ class CtrlrApplication : public JUCEApplication {
 				filterWindow->openFileFromCli(File(commandLineParameters.unquoted()));
 		}
 
-		// Make sure to clean up your window pointers when the app shuts down normally!
-		void shutdown() override { filterWindow = nullptr; }
+		void shutdown() override {
+			juce::PopupMenu::dismissAllActiveMenus();
+
+			if (filterWindow != nullptr) {
+				// 1. Force the window to flush open panel states to XML / Properties
+				filterWindow->saveStateNow();
+
+				// 2. Delete the window to trigger proper destruction / cleanup
+				delete filterWindow;
+				filterWindow = nullptr;
+			}
+		}
 
 		const String getApplicationName() override { return ProjectInfo::projectName; }
 		const String getApplicationVersion() override { return ProjectInfo::versionString; }
