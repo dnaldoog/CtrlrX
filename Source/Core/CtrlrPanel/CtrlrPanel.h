@@ -86,6 +86,8 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		CtrlrPanel(CtrlrManager &_owner);
 		CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int idx);
 		~CtrlrPanel();
+		// Unique ID for this specific running panel session
+		juce::Uuid getSessionId() const { return sessionId; }
 		std::unique_ptr<juce::LookAndFeel_V1> lfV1;
 		std::unique_ptr<juce::LookAndFeel_V2> lfV2;
 		std::unique_ptr<juce::LookAndFeel_V3> lfV3;
@@ -375,6 +377,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrPanel)
 
 	private:
+		juce::Uuid sessionId{juce::Uuid()}; // Automatically generates a 128-bit random UUID
 		ValueTree initialProgram, panelTree;
 		ReadWriteLock panelLock;
 		CtrlrLuaManager *ctrlrLuaManager;

@@ -206,22 +206,28 @@ void CtrlrManager::allPanelsInitialized() {
 }
 
 CtrlrPanel *CtrlrManager::addPanel(const ValueTree &savedState, const bool showUI) {
-	CtrlrPanel *panel = new CtrlrPanel(*this, getUniquePanelName("Ctrlr Panel"), ctrlrPanels.size());
+    CtrlrPanel *panel = new CtrlrPanel(*this, getUniquePanelName("Ctrlr Panel"), ctrlrPanels.size());
 
-	ctrlrPanels.add(panel);
+    ctrlrPanels.add(panel);
 
-	// ADDED DEEP COPY HERE: Breaks the shared memory link for standard panels
-	panel->restoreState(savedState.createCopy());
+    // Deep copy state restore
+    panel->restoreState(savedState.createCopy());
 
-	managerTree.addChild(panel->getPanelTree(), -1, 0);
+    managerTree.addChild(panel->getPanelTree(), -1, 0);
 
-	if (showUI) {
-		addPanel(panel->getEditor(true));
-	}
+    if (showUI) {
+        if (auto* editor = panel->getEditor(true)) {
+            // Store the Session ID directly on the Editor component
+            // editor->getProperties().set("panelSessionId", panel->getSessionId().toString());
+			// DBG("!!! set panelId to " <<  panel->getSessionId().toString());
+			// moved to CtrlrPanelEditor::CtrlrPanelEditor
+            addPanel(editor);
+        }
+    }
 
-	organizePanels();
+    organizePanels();
 
-	return (panel);
+    return (panel);
 }
 
 void CtrlrManager::addPanel(CtrlrPanelEditor *panelToAdd) {
@@ -735,6 +741,18 @@ void CtrlrManager::timerCallback(int timerId) {
 
 const File CtrlrManager::getCtrlrPropertiesDirectory() {
 	return (getCtrlrProperties().getProperties().getUserSettings()->getFile().getParentDirectory());
+}
+
+CtrlrPanel* CtrlrManager::getPanelBySessionId(const String& sessionId)
+{
+    for (auto* panel : ctrlrPanels)
+    {
+        if (panel != nullptr && panel->getSessionId().toString() == sessionId)
+        {
+            return panel;
+        }
+    }
+    return nullptr;
 }
 
 CtrlrProperties &CtrlrManager::getCtrlrProperties() { return (*ctrlrProperties); }

@@ -240,6 +240,7 @@ class CtrlrManager : public ValueTree::Listener,
 		ApplicationProperties *getApplicationProperties();
 		CtrlrProcessor *getProcessorOwner() { return (owner); }
 		CtrlrDocumentPanel &getCtrlrDocumentPanel() { return (*ctrlrDocumentPanel); }
+		CtrlrPanel* getPanelBySessionId(const String& sessionId);
 		void setProperty(const Identifier &name, const var &newValue) { managerTree.setProperty(name, newValue, 0); }
 		const var &getProperty(const Identifier &name) const { return managerTree.getProperty(name); }
 		const var getProperty(const Identifier &name, const var &defaultReturnValue) const {

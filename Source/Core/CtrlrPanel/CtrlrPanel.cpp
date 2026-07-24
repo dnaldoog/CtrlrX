@@ -243,49 +243,63 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 
 CtrlrPanel::~CtrlrPanel() {
 	DBG("!!! TRACKING: CtrlrPanel Destructor has been entered !!!");
-	// =========================================================================
-	// FIX FOR JUCE ASSERTION FAILURE IN juce_LookAndFeel.cpp:94
-	// =========================================================================
-	// Break the styling reference chain immediately before any components drop out of scope.
-	setLookAndFeel(nullptr);
+	if (auto *ed = getEditor()) {
+		ed->setVisible(false);
+		ed->setLookAndFeel(nullptr);
 
-	// Explicitly clear your unique_ptr versions too if they exist
+		if (auto *parent = ed->getParentComponent()) {
+			parent->removeChildComponent(ed);
+		}
+	}
+	// =========================================================================
+	// 0. IMMEDIATE EDITOR TEARDOWN (Prevents HarfBuzz Stack Overflow)
+	// =========================================================================
+	// Releasing the editor std::unique_ptr / ScopedPointer instantly destroys
+	// all child controls without triggering lookAndFeelChanged() text-shaping passes.
+
+	// NOTE: Replace 'ctrlrPanelEditor' / 'getEditor()' with your panel's editor member variable pointer
+	// if you own it via unique_ptr/ScopedPointer (e.g., ctrlrPanelEditor.reset() or deleteAndZero(ctrlrPanelEditor))
+	if (auto *ed = getEditor()) {
+		if (auto *parent = ed->getParentComponent()) {
+			parent->removeChildComponent(ed);
+		}
+	}
+
+	// Completely break main panel LookAndFeel references
+	setLookAndFeel(nullptr);
 	if (lfV1)
 		lfV1 = nullptr;
 	if (lfV2)
 		lfV2 = nullptr;
 	if (lfV3)
 		lfV3 = nullptr;
-	// =========================================================================
 
-	// 1. Remove from the parent tree FIRST so listeners fire
-	// while the panel's internal data is still 100% intact and valid.
+	// =========================================================================
+	// 1. CLEAR LISTENERS & REFERENCES
+	// =========================================================================
+	panelTree.removeListener(this);
+	owner.removeChangeListener(this);
+	masterReference.clear();
+
 	if (!owner.isShuttingDown()) {
 		owner.getManagerTree().removeChild(panelTree, 0);
 	}
-// A. CLEAR LISTENERS FIRST (Stop data pipeline before killing threads!)
-	panelTree.removeListener(this);
-    owner.removeChangeListener(this);
-    masterReference.clear();
 
-
-	// B. Shut down threads safely
+	// =========================================================================
+	// 2. SHUT DOWN THREADS SAFELY
+	// =========================================================================
 	midiInputThread.signalThreadShouldExit();
 	midiInputThread.waitForThreadToExit(1200);
+
 	midiControllerInputThread.signalThreadShouldExit();
 	midiControllerInputThread.waitForThreadToExit(1200);
 
-	masterReference.clear();
-	panelTree.removeListener(this);
-	owner.removeChangeListener(this);
-
-	// C. Clear everything else out
+	// =========================================================================
+	// 3. DESTROY DATA, MODULATORS & LUA
+	// =========================================================================
 	ctrlrModulators.clear();
-	deleteAndZero(ctrlrLuaManager);
 
-	// if (!owner.isShuttingDown()) {
-	// 	owner.getManagerTree().removeChild(panelTree, 0);
-	// }
+	deleteAndZero(ctrlrLuaManager);
 }
 
 void CtrlrPanel::setRestoreState(const bool _restoreStateStatus) {

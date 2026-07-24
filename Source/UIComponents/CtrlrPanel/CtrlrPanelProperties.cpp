@@ -65,12 +65,25 @@ CtrlrPanelProperties::CtrlrPanelProperties(CtrlrPanelEditor& _owner)
 
 CtrlrPanelProperties::~CtrlrPanelProperties()
 {
-    CtrlrPanelComponentProperties* p = dynamic_cast <CtrlrPanelComponentProperties*>(tabbedComponent->getTabContentComponent(0));
-    if (p)
+    if (tabbedComponent != nullptr)
     {
-        owner.getOwner().getCtrlrManagerOwner().removeListener(p);
+        for (int i = 0; i < tabbedComponent->getNumTabs(); ++i)
+        {
+            if (auto* content = tabbedComponent->getTabContentComponent(i))
+            {
+                if (auto* p = dynamic_cast<CtrlrPanelComponentProperties*>(content))
+                {
+                    owner.getOwner().getCtrlrManagerOwner().removeListener(p);
+                }
+
+                content->setLookAndFeel(nullptr);
+                content->setVisible(false);
+            }
+        }
+
+        tabbedComponent->clearTabs();
+        deleteAndZero(tabbedComponent);
     }
-    deleteAndZero(tabbedComponent);
 }
 
 void CtrlrPanelProperties::paint(Graphics& g)
