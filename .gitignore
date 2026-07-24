@@ -111,3 +111,4 @@ vs/
 .vs/
 Source/JUCE/modules
 JUCE/extras
+build_log.txt
