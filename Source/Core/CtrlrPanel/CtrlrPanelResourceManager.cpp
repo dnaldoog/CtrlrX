@@ -122,9 +122,10 @@ CtrlrPanelResource *CtrlrPanelResourceManager::getResource(const int resourceInd
 }
 
 CtrlrPanelResource *CtrlrPanelResourceManager::getResource(const String &resourceName) {
-	if (lastLoadedResource.get() && !lastLoadedResource.wasObjectDeleted())
-		if (lastLoadedResource->getName() == resourceName)
-			return (lastLoadedResource);
+	if (auto *last = lastLoadedResource.get()) {
+		if (last->getName() == resourceName)
+			return last;
+	}
 
 	for (int i = 0; i < resources.size(); i++) {
 		if (resources[i]->getName() == resourceName) {
@@ -132,7 +133,7 @@ CtrlrPanelResource *CtrlrPanelResourceManager::getResource(const String &resourc
 			return (resources[i]);
 		}
 	}
-	return (0);
+	return nullptr;
 }
 
 const Image CtrlrPanelResourceManager::getResourceAsImage(const String &resourceName) {
@@ -487,16 +488,18 @@ int CtrlrPanelResourceManager::getResourceIndexByHashCode(const int hashCode) {
 Result CtrlrPanelResourceManager::restoreState(const ValueTree &savedState,
 											   std::function<void(Result)> completionCallback) {
 	for (int i = 0; i < savedState.getNumChildren(); i++) {
-		if (savedState.getChild(i).hasType(Ids::resourceLicense)) {
+		const auto child = savedState.getChild(i);
 
-			// Allocate the layout elements safely on the heap so they survive the async window lifetime
+		// --- 1. Handle License Dialog if present ---
+		if (child.hasType(Ids::resourceLicense)) {
+
 			auto *licenseWindow =
 				new AlertWindow("License agreement", "You must agree to the below license", AlertWindow::QuestionIcon);
 
 			auto *licenseText = new TextEditor();
 			licenseText->setMultiLine(true);
 			licenseText->setReadOnly(true);
-			licenseText->setText(savedState.getChild(i).getProperty(Ids::resourceData));
+			licenseText->setText(child.getProperty(Ids::resourceData));
 			licenseText->setSize(500, 400);
 
 			licenseWindow->addCustomComponent(licenseText);
@@ -504,9 +507,8 @@ Result CtrlrPanelResourceManager::restoreState(const ValueTree &savedState,
 			licenseWindow->addButton("No", 0);
 
 #if JUCE_VERSION < 0x070000
-			// --- Legacy JUCE 6 Path (Synchronous) ---
 			bool accepted = (licenseWindow->runModalLoop() == 1);
-			delete licenseWindow; // Cleans up custom components automatically
+			delete licenseWindow;
 
 			if (!accepted) {
 				Result failRes = Result::fail("User did not agree to embedded license");
@@ -515,29 +517,45 @@ Result CtrlrPanelResourceManager::restoreState(const ValueTree &savedState,
 				return failRes;
 			}
 #else
-			// --- Modern JUCE 7/8 Path (Asynchronous) ---
 			licenseWindow->enterModalState(
-				true, ModalCallbackFunction::create([licenseWindow, completionCallback](int result) {
+				true, ModalCallbackFunction::create([this, savedState, completionCallback, licenseWindow](int result) {
 					bool accepted = (result == 1);
-					delete licenseWindow; // Clean up memory allocation from heap
+					delete licenseWindow;
 
 					if (!accepted) {
 						if (completionCallback)
 							completionCallback(Result::fail("User did not agree to embedded license"));
 					} else {
+						// License accepted asynchronously -> proceed to import resources
+						for (int j = 0; j < savedState.getNumChildren(); j++) {
+							const auto resChild = savedState.getChild(j);
+							if (resChild.hasType(Ids::resourceBlob) || resChild.hasType(Ids::resourceImage) ||
+								resChild.hasType(Ids::resource)) {
+								importResource(resChild);
+							}
+						}
 						if (completionCallback)
 							completionCallback(Result::ok());
 					}
 				}),
 				true);
 
-			// Return a pending status immediately so the caller knows it is waiting on UI interaction
 			return Result::ok();
 #endif
 		}
+
+		// --- 2. Import Embedded Resources (Synchronous / standard path) ---
+		if (child.hasType(Ids::resourceBlob) || child.hasType(Ids::resourceImage) || child.hasType(Ids::resource)) {
+			Result importResult = importResource(child);
+			if (!importResult.wasOk()) {
+				if (owner.getDialogStatus())
+					WARN(importResult.getErrorMessage());
+				else
+					_WRN(importResult.getErrorMessage());
+			}
+		}
 	}
 
-	// No license found, or processed synchronously
 	Result okRes = Result::ok();
 	if (completionCallback)
 		completionCallback(okRes);
