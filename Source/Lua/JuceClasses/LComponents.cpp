@@ -1619,72 +1619,52 @@ void LookAndFeelBase::drawKeymapChangeButton(Graphics &g, int width, int height,
 {
     TRY_CALL(drawKeymapChangeButton, boost::ref(g), width, height, boost::ref(button), keyDescription);
 }
-
-LPopupMenu::LPopupMenu()
-{
+// Static helper for showAsync
+static void LPopupMenu_showAsync(LPopupMenu *self, juce::Component *target, luabind::object cb) {
+	PU::showMenuAsyncSafe(*self, target, [cb](int res) {
+		if (luabind::type(cb) == LUA_TFUNCTION)
+			luabind::call_function<void>(cb, res);
+	});
 }
 
-int LPopupMenu::show(int itemIDThatMustBeVisible,
-              int minimumWidth,
-              int maximumNumColumns,
-              int standardItemHeight)
-{
-	return (PopupMenu::show(itemIDThatMustBeVisible,minimumWidth,maximumNumColumns,standardItemHeight));
+// Static helper for showAtAsync
+static void LPopupMenu_showAtAsync(LPopupMenu *self, juce::Component *targetComp, luabind::object cb) {
+	PU::showMenuAsyncSafe(
+		*self, nullptr,
+		[cb](int res) {
+			if (luabind::type(cb) == LUA_TFUNCTION)
+				luabind::call_function<void>(cb, res);
+		},
+		targetComp);
 }
-
-int LPopupMenu::show(int itemHeight)
-{
-    return (PopupMenu::show(-1,-1,-1,itemHeight));
+LPopupMenu::LPopupMenu() {}
+void LPopupMenu::addSubMenu(const juce::String &subMenuName, const LPopupMenu &subMenu, bool isEnabled,
+							const juce::Image &iconToUse, bool isTicked, int itemResultID) {
+	juce::PopupMenu::addSubMenu(subMenuName, subMenu, isEnabled, iconToUse, isTicked, itemResultID);
 }
-
-void LPopupMenu::addSubMenu (const String& subMenuName,
-                     const LPopupMenu& subMenu,
-                     bool isEnabled,
-                     const Image& iconToUse,
-                     bool isTicked,
-                     int itemResultID)
-{
-	PopupMenu::addSubMenu (subMenuName, subMenu, isEnabled, iconToUse, isTicked, itemResultID);
-}
-
-int LPopupMenu::showAt(Component *componentToAttachTo, int standardItemHeight)
-{
-    return (PopupMenu::showAt (componentToAttachTo, -1, -1, -1, standardItemHeight, nullptr));
-}
-
-int LPopupMenu::showAt(Rectangle<int> &areaToAttachTo, int standardItemHeight)
-{
-    return (PopupMenu::showAt (areaToAttachTo, -1, -1, -1, standardItemHeight, nullptr));
-}
-
 void LPopupMenu::wrapForLua (lua_State *L)
 {
 	using namespace luabind;
 
-	module(L)
-    [
-		class_<PopupMenu>("JPopupMenu")
-		,
-		class_<LPopupMenu, bases<PopupMenu> >("PopupMenu")
-				.def(constructor<>())
-				.def("clear", &PopupMenu::clear)
-				.def("addItem", (void(PopupMenu::*)(int , String , bool , bool , const Image&))&PopupMenu::addItem)
-				//.def("addItem", (void(PopupMenu::*)(int , String , bool , bool , Drawable*))&PopupMenu::addItem)
-				.def("addItem", (void(PopupMenu::*)(int , String , bool , bool))&PopupMenu::addItem)
-				//.def("addColouredItem", (void(PopupMenu::*)(int, String, Colour, bool, bool, Drawable *))&PopupMenu::addColouredItem)
-				.def("addColouredItem", (void(PopupMenu::*)(int, String, Colour, bool, bool, const Image &))&PopupMenu::addColouredItem)
-				.def("addSubMenu", &LPopupMenu::addSubMenu)
-				.def("addSeparator", &PopupMenu::addSeparator)
-                .def("addColumnBreak", &LPopupMenu::addColumnBreak) // Added v5.6.33. @dnaldoog
-				.def("addSectionHeader", &PopupMenu::addSectionHeader)
-				.def("getNumItems", &PopupMenu::getNumItems)
-				.def("show", (int(PopupMenu::*)(int, int, int, int))&LPopupMenu::show)
-				.def("show", (int(LPopupMenu::*)(int))&LPopupMenu::show)
-				.def("showAt", (int(LPopupMenu::*)(Component*, int)) &LPopupMenu::showAt)
-				.def("showAt", (int(LPopupMenu::*)(Rectangle<int> &, int)) &LPopupMenu::showAt)
-	];
-}
+	module(L)[class_<PopupMenu>("JPopupMenu"),
 
+			  class_<LPopupMenu, bases<PopupMenu>>("PopupMenu")
+				  .def(constructor<>())
+				  .def("clear", &PopupMenu::clear)
+				  .def("addItem", (void (PopupMenu::*)(int, String, bool, bool, const Image &))&PopupMenu::addItem)
+				  .def("addItem", (void (PopupMenu::*)(int, String, bool, bool))&PopupMenu::addItem)
+				  .def("addColouredItem",
+					   (void (PopupMenu::*)(int, String, Colour, bool, bool, const Image &))&PopupMenu::addColouredItem)
+				  .def("addSubMenu", &LPopupMenu::addSubMenu)
+				  .def("addSeparator", &PopupMenu::addSeparator)
+				  .def("addColumnBreak", &LPopupMenu::addColumnBreak)
+				  .def("addSectionHeader", &PopupMenu::addSectionHeader)
+				  .def("getNumItems", &PopupMenu::getNumItems)
+
+				  // Bound via clean static function pointers:
+				  .def("showAsync", &LPopupMenu_showAsync)
+				  .def("showAtAsync", &LPopupMenu_showAtAsync)];
+}
 void LSlider::wrapForLua (lua_State *L)
 {
 	using namespace luabind;
