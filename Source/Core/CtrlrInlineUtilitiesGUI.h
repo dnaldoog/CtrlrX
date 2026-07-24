@@ -1,11 +1,67 @@
 #ifndef CTRLR_INLINE_UTILITIES_GUI
 #define CTRLR_INLINE_UTILITIES_GUI
 
+#include "../UIComponents/CtrlrWindowManagers/CtrlrDialogWindow.h"
 #include "CtrlrMacros.h"
-#include <juce_gui_basics/juce_gui_basics.h> // Make sure this is included for LookAndFeel_V4
-// #pragma once
 #include <JuceHeader.h>
 #include <functional>
+#include <juce_gui_basics/juce_gui_basics.h> // Make sure this is included for LookAndFeel_V4
+
+#pragma once
+
+#include <JuceHeader.h> // or your standard JUCE include
+
+// 1. Forward declaration outside namespace
+class CtrlrDialogWindow;
+
+// 2. The namespace block
+namespace AW {
+// --- Decoupled async dialog (defined in .cpp) ---
+void showCustomDialogAsync(const juce::String &title, juce::Component *content, const juce::Colour &backgroundColour,
+						   bool resizable, std::function<void(int)> callback = nullptr);
+
+// --- Inline Alert Helpers (defined right here in .h) ---
+static inline void runCustomAlertAsyncSafe(juce::AlertWindow *alert, std::function<void(int)> callback) {
+#if JUCE_VERSION >= 0x070000
+	alert->enterModalState(
+		true, juce::ModalCallbackFunction::create([alert, callback](int result) { callback(result); }), true);
+#else
+	int result = alert->runModalLoop();
+	if (callback != nullptr)
+		callback(result);
+#endif
+}
+
+// 1. AlertWindow version
+static inline void layoutButtonsJUCE8(juce::AlertWindow *alert, const juce::String &okText,
+									  const juce::String &cancelText, int bW = 100, int bH = 35) {
+#if JUCE_VERSION >= 0x070000
+	if (alert == nullptr)
+		return;
+
+	if (auto *okBtn = alert->getButton(okText)) {
+		if (auto *cancelBtn = alert->getButton(cancelText)) {
+			const int gap = 15;
+			const int totalWidth = (bW * 2) + gap;
+			const int startX = (alert->getWidth() - totalWidth) / 2;
+			const int yPos = alert->getHeight() - bH - 25;
+
+			okBtn->setBounds(startX, yPos, bW, bH);
+			cancelBtn->setBounds(startX + bW + gap, yPos, bW, bH);
+		}
+	}
+#endif
+}
+
+// 2. Component* overload (calls the AlertWindow version above)
+static inline void layoutButtonsJUCE8(juce::Component *component, const juce::String &okText,
+									  const juce::String &cancelText, int bW = 100, int bH = 35) {
+	if (auto *alert = dynamic_cast<juce::AlertWindow *>(component)) {
+		layoutButtonsJUCE8(alert, okText, cancelText, bW, bH);
+	}
+}
+
+} // namespace AW
 
 class PU {
 public:
@@ -129,8 +185,8 @@ private:
 	// #endif
 };
 /**************************************************************************************************/
-class AW {
-	public:
+namespace AW {
+	// public:
 		enum Icon { None, Question, Warning, Info, NoIcon };
 
 		/**************************************************************************************************/
@@ -307,33 +363,33 @@ static bool showNativeDialogBox(Icon icon, const juce::String &title, const juce
 		}
 
 		/**************************************************************************************************/
-		static void runCustomAlertAsyncSafe(juce::AlertWindow *alert, std::function<void(int)> callback) {
-#if JUCE_VERSION >= 0x070000
-			alert->enterModalState(
-				true, juce::ModalCallbackFunction::create([alert, callback](int result) { callback(result); }), true);
-#else
-			int result = alert->runModalLoop();
-			callback(result);
-#endif
-		}
+// 		static void runCustomAlertAsyncSafe(juce::AlertWindow *alert, std::function<void(int)> callback) {
+// #if JUCE_VERSION >= 0x070000
+// 			alert->enterModalState(
+// 				true, juce::ModalCallbackFunction::create([alert, callback](int result) { callback(result); }), true);
+// #else
+// 			int result = alert->runModalLoop();
+// 			callback(result);
+// #endif
+// 		}
 
 		/**************************************************************************************************/
-		static void layoutButtonsJUCE8(juce::AlertWindow *alert, const juce::String &okText,
-									   const juce::String &cancelText, int bW = 100, int bH = 35) {
-#if JUCE_VERSION >= 0x070000
-			if (auto *okBtn = alert->getButton(okText)) {
-				if (auto *cancelBtn = alert->getButton(cancelText)) {
-					const int gap = 15;
-					const int totalWidth = (bW * 2) + gap;
-					const int startX = (alert->getWidth() - totalWidth) / 2;
-					const int yPos = alert->getHeight() - bH - 25;
+// 		static void layoutButtonsJUCE8(juce::AlertWindow *alert, const juce::String &okText,
+// 									   const juce::String &cancelText, int bW = 100, int bH = 35) {
+// #if JUCE_VERSION >= 0x070000
+// 			if (auto *okBtn = alert->getButton(okText)) {
+// 				if (auto *cancelBtn = alert->getButton(cancelText)) {
+// 					const int gap = 15;
+// 					const int totalWidth = (bW * 2) + gap;
+// 					const int startX = (alert->getWidth() - totalWidth) / 2;
+// 					const int yPos = alert->getHeight() - bH - 25;
 
-					okBtn->setBounds(startX, yPos, bW, bH);
-					cancelBtn->setBounds(startX + bW + gap, yPos, bW, bH);
-				}
-			}
-#endif
-		}
+// 					okBtn->setBounds(startX, yPos, bW, bH);
+// 					cancelBtn->setBounds(startX + bW + gap, yPos, bW, bH);
+// 				}
+// 			}
+// #endif
+// 		}
 };
 /**************************************************************************************************/
 /*

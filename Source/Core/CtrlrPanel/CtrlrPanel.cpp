@@ -1700,7 +1700,7 @@ CtrlrModulator *CtrlrPanel::getModulator(const String &name, bool forwardToCompo
 			return (ctrlrModulators[i]);
 		}
 	}
-	return (0);
+	return (nullptr);
 }
 
 CtrlrModulator *CtrlrPanel::getModulatorByVstIndex(const int vstIndex) {

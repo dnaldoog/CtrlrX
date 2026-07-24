@@ -152,58 +152,6 @@ void CtrlrWaveform::handlePopupMenu(const int popupMenuItem) {
 	}
 }
 
-#if 0 // Old JUCE 6 code
-void CtrlrWaveform::handlePopupMenu(const int popupMenuItem) {
-	if (popupMenuItem == 4096) {
-		if (audioThumbnail->isFullyLoaded()) {
-			FileChooser fc(
-				"Load a file", currentFile.getParentDirectory(),
-				owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager().getWildcardForAllFormats(),
-				owner.getOwnerPanel().getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs));
-			if (fc.browseForFileToOpen()) {
-				loadFromFile(fc.getResult());
-			}
-		} else {
-			audioThumbnail->clear();
-		}
-	} else if (popupMenuItem == 4097) {
-		WARN("Not implemented yet :(");
-	} else if (popupMenuItem == 4098) {
-		FileChooser fc("Save to an audio file", currentFile.getParentDirectory(),
-					   owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager().getWildcardForAllFormats(),
-					   true);
-
-		if (fc.browseForFileToSave(true)) {
-			File outputFile = fc.getResult();
-
-			AudioFormat *format =
-				owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager().findFormatForFileExtension(
-					outputFile.getFileExtension());
-
-			if (format != nullptr) {
-				{
-					ScopedPointer<AudioFormatWriter> writer(format->createWriterFor(
-						outputFile.createOutputStream().get(), currentSampleRate, audioThumbnail->getNumChannels(), 32,
-						metadataForAudioFiles, qualityForAudioFiles));
-
-					if (writer != nullptr) {
-						writer->writeFromAudioSampleBuffer(audioBufferCopy, 0, audioBufferCopy.getNumSamples());
-					} else {
-						if (owner.getOwnerPanel().getDialogStatus())
-							WARN("Can't create AudioFormatWriter sampleRate=" + String(currentSampleRate) +
-								 ", channels=" + String(audioThumbnail->getNumChannels()) +
-								 ", bitsPerSample=32, qualityIndex=" + String(qualityForAudioFiles));
-					}
-				}
-			} else {
-				if (owner.getOwnerPanel().getDialogStatus())
-					WARN("Can't find AudioFormat for the file: " + outputFile.getFileName());
-				return;
-			}
-		}
-	}
-}
-#endif
 void CtrlrWaveform::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
 	if (property == Ids::uiWaveformBackgroundColour1 || property == Ids::uiWaveformBackgroundColour2 ||
 		property == Ids::uiWaveformOutlineColour || property == Ids::uiWaveformColour ||

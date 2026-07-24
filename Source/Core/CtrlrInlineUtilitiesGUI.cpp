@@ -1,6 +1,23 @@
 // CtrlInlineUtilityGUI.cpp
 #include "CtrlrInlineUtilitiesGUI.h"
 #include <juce_gui_basics/juce_gui_basics.h>
+#include "CtrlrInlineUtilitiesGUI.h"
+#include "../UIComponents/CtrlrWindowManagers/CtrlrDialogWindow.h"
+
+#include "CtrlrInlineUtilitiesGUI.h"
+#include "../UIComponents/CtrlrWindowManagers/CtrlrDialogWindow.h"
+
+namespace AW {
+    void showCustomDialogAsync(const juce::String& title,
+                               juce::Component* content,
+                               const juce::Colour& backgroundColour,
+                               bool resizable,
+                               std::function<void(int)> callback)
+    {
+        CtrlrDialogWindow::showCustomDialogAsync(title, content, backgroundColour, resizable, callback);
+    }
+}
+
 
 namespace gui {
 

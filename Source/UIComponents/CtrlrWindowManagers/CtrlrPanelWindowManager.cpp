@@ -239,14 +239,15 @@ void CtrlrPanelWindowManager::windowChanged(CtrlrChildWindow *windowThatChanged)
 
 	if (managerTree.getChildWithProperty (Ids::uiChildWindowName, getWindowName(window)).isValid())
 	{
-		managerTree.getChildWithProperty (Ids::uiChildWindowName, getWindowName(window)).setProperty (Ids::uiChildWindowState, getWindow(window)->getWindowStateAsString(), 0);
+		managerTree.getChildWithProperty(Ids::uiChildWindowName, getWindowName(window))
+			.setProperty(Ids::uiChildWindowState, getWindow(window)->getWindowStateAsString(), nullptr);
 	}
 	else
 	{
 		ValueTree windowTree(Ids::uiChildWindow);
 
-		windowTree.setProperty (Ids::uiChildWindowName, getWindowName(window), 0);
-		windowTree.setProperty (Ids::uiChildWindowState, getWindow(window)->getWindowStateAsString(), 0);
+		windowTree.setProperty(Ids::uiChildWindowName, getWindowName(window), nullptr);
+		windowTree.setProperty(Ids::uiChildWindowState, getWindow(window)->getWindowStateAsString(), nullptr);
 		windowTree.addChild (c->saveState(), -1, nullptr);
 
 		managerTree.addChild(windowTree,-1,0);

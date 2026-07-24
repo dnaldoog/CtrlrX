@@ -1115,33 +1115,6 @@ void CtrlrPanelCanvas::exportComponent(CtrlrComponent *componentToExport) {
 					  });
 }
 
-#if 0
-void CtrlrPanelCanvas::exportComponent(CtrlrComponent *componentToExport) {
-	if (componentToExport != 0) {
-		File f(owner.getProperty(Ids::lastBrowsedComponentDir));
-		if (f == File()) {
-			owner.setProperty(Ids::lastBrowsedComponentDir,
-							  File::getSpecialLocation(File::userDocumentsDirectory).getFullPathName());
-		}
-
-		FileChooser fileChooser("Ctrlr component file",
-								File(owner.getProperty(Ids::lastBrowsedComponentDir))
-									.getChildFile(componentToExport->getOwner().getName() + ".component"),
-								"*.component",
-								owner.getOwner().getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs));
-		if (fileChooser.browseForFileToSave(true)) {
-			File fileToSave = fileChooser.getResult().withFileExtension(".component");
-
-			owner.setProperty(Ids::lastBrowsedComponentDir, fileToSave.getParentDirectory().getFullPathName());
-			ScopedPointer<FileOutputStream> fileOutputStream(fileToSave.createOutputStream().release());
-			if (fileOutputStream) {
-				componentToExport->getOwner().getModulatorTree().writeToStream(*fileOutputStream);
-			}
-		}
-	}
-}
-#endif
-
 #if JUCE_VERSION >= 0x070000
 void CtrlrPanelCanvas::importComponent(const File &componentFile, int x, int y) {
 	// Replace ScopedPointer with std::unique_ptr and drop .release()

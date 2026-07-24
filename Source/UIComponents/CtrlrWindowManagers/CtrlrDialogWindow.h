@@ -13,6 +13,8 @@ public:
 	//     juce::Component* parent = nullptr);
 	static void showModalDialog(const String &title, Component *content, const bool resizable = true,
 								Component *parent = nullptr, std::function<void(int)> callback = nullptr);
+	static void showCustomDialogAsync(const String &title, Component *content, const Colour &backgroundColour,
+									  bool resizable, std::function<void(int)> callback = nullptr);
 	// -------------------------
     // Non-modal dialogs (all platforms)
     // Opens completely offscreen first on Linux to prevent flicker

@@ -13,19 +13,17 @@
 
 CtrlrModulatorProcessor::CtrlrModulatorProcessor(CtrlrModulator &_owner)
 	: owner(_owner),
-		valueChangedCbk(0),
-		usingForwardProcess(false),
-		usingReverseProcess(false),
-		minValue(0),
-		maxValue(127),
-		usingValueMap(false),
-		linkedToGlobal(false),
-		ctrlrMidiMessage(nullptr),
-		ctrlrMidiControllerMessage(nullptr),
-		isMute(false)
-{
-	ctrlrMidiMessage	        = new CtrlrOwnedMidiMessage(*this);
-	ctrlrMidiControllerMessage  = new CtrlrOwnedMidiMessage(*this, Identifier(Ids::controllerMIDI));
+	  valueChangedCbk(0),
+	  usingForwardProcess(false),
+	  usingReverseProcess(false),
+	  minValue(0),
+	  maxValue(127),
+	  usingValueMap(false),
+	  linkedToGlobal(false),
+	  isMute(false) {
+
+	ctrlrMidiMessage = std::make_unique<CtrlrOwnedMidiMessage>(*this);
+	ctrlrMidiControllerMessage = std::make_unique<CtrlrOwnedMidiMessage>(*this, Identifier(Ids::controllerMIDI));
 }
 
 CtrlrModulatorProcessor::~CtrlrModulatorProcessor()
@@ -441,9 +439,9 @@ float CtrlrModulatorProcessor::getValueForHost() const
 CtrlrOwnedMidiMessage *CtrlrModulatorProcessor::getMidiMessagePtr(const CtrlrMIDIDeviceType source)
 {
     if (source == controllerDevice)
-        return (ctrlrMidiControllerMessage);
+		return (ctrlrMidiControllerMessage.get());
 
-	return (ctrlrMidiMessage);
+	return (ctrlrMidiMessage.get());
 }
 
 CtrlrMidiMessage &CtrlrModulatorProcessor::getMidiMessage(const CtrlrMIDIDeviceType source)
