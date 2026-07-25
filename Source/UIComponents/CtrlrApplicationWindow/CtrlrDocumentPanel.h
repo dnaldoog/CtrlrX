@@ -19,6 +19,20 @@ class CtrlrDocumentPanel  : public MultiDocumentPanel, public Button::Listener
         void buttonClicked (Button *button);
 		void closeDocumentAsync(juce::Component *component, bool checkItsOkToCloseFirst,
 								std::function<void(bool)> callback = nullptr);
+		void closeAllDocumentsAsync(bool checkItsOkToCloseFirst, std::function<void(bool)> callback = nullptr) {
+			juce::MultiDocumentPanel::closeAllDocumentsAsync(checkItsOkToCloseFirst, callback);
+		}
+		// Synchronous cleanup function for teardown in ~CtrlrManager()
+		void CtrlrDocumentPanel::closeAllDocumentsSync() {
+			// 1. Hide the panel immediately to prevent repaint calls during teardown
+			setVisible(false);
+
+			// Explicitly reset active document to null so getStateInformation doesn't query a dead panel
+			setActiveDocument(nullptr);
+
+			// 2. Safely close documents using MultiDocumentPanel's native API
+			closeAllDocumentsAsync(false, nullptr);
+		}
 
 #if JUCE_MODAL_LOOPS_PERMITTED
 	//	bool closeDocument(juce::Component *component, bool checkItsOkToCloseFirst) override;

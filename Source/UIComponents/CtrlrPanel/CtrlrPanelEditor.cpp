@@ -260,28 +260,30 @@ CtrlrPanelEditor::~CtrlrPanelEditor() {
 	// STEP 1: UNREGISTER LISTENERS & DESTROY PROPERTY PANEL IMMEDIATELY
 	// =========================================================================
 	DBG("!!!!!! TRACKING: CtrlrPanelEditor Destructor has been entered !!!");
+
+	// Stop all active animations FIRST so ComponentAnimator releases its component pointers
+	componentAnimator.cancelAllAnimations(false);
+	componentAnimator.removeChangeListener(this);
+
 	// Unsubscribe from ValueTree property change notifications early
 	if (owner.getPanelTree().isValid()) {
 		owner.getPanelTree().removeListener(this);
 	}
 
-	// 2. Unregister from the editor tree
+	// Unregister from the editor tree
 	if (getPanelEditorTree().isValid()) {
 		getPanelEditorTree().removeListener(this);
 	}
 
-	// 1. Break the change link between selection and properties
+	// Break the change link between selection and properties
 	if (ctrlrComponentSelection != nullptr && ctrlrPanelProperties != nullptr) {
 		ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
 	}
 
-	// 2. FORCE-KILL the properties panel immediately
-	// This destroys all property components so they can't react to tree mutations
+	// FORCE-KILL the properties panel immediately
 	if (ctrlrPanelProperties != nullptr) {
 		ctrlrPanelProperties.reset();
 	}
-
-	componentAnimator.removeChangeListener(this);
 
 	// =========================================================================
 	// STEP 2: DETACH LOOKANDFEEL
@@ -312,29 +314,37 @@ CtrlrPanelEditor::~CtrlrPanelEditor() {
 	// STEP 3: CLEAN UP REST OF THE OBJECTS
 	// =========================================================================
 
+	// Detach and destroy notifier safely
+	if (ctrlrPanelNotifier != nullptr) {
+		ctrlrPanelNotifier->setVisible(false);
+
+		// 1. Remove from JUCE child list so parent component clears pointer
+		removeChildComponent(ctrlrPanelNotifier.get());
+
+		// 2. Clear LookAndFeel from notifier
+		ctrlrPanelNotifier->setLookAndFeel(nullptr);
+
+		// 3. Reset unique pointer
+		ctrlrPanelNotifier.reset();
+	}
+
 	// Safely remove from tree now that we are no longer listening to it
-	// and the properties panel is completely gone
 	owner.getPanelTree().removeChild(getPanelEditorTree(), 0);
 
 	juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
-
-	if (ctrlrPanelNotifier != nullptr) {
-		ctrlrPanelNotifier.reset();
-	}
 }
 
 void CtrlrPanelEditor::visibilityChanged() {}
 
 void CtrlrPanelEditor::resized() {
-	ctrlrPanelViewport->setBounds(0, 0, getWidth() - 608, getHeight()); // Was 308
+	ctrlrPanelViewport->setBounds(0, 0, getWidth() - 608, getHeight());
 	ctrlrPanelProperties->setBounds(getWidth() - 600, 32, 600, getHeight() - 32);
 	spacerComponent->setBounds(getWidth(), 32, 8, getHeight() - 32);
 
 	setProperty(Ids::uiViewPortWidth, getWidth());
 	setProperty(Ids::uiViewPortHeight, getHeight());
 
-	if (ctrlrPanelNotifier) // Added back v5.6.31
-	{
+	if (ctrlrPanelNotifier) {
 		ctrlrPanelNotifier->setBounds(0, getHeight() - 28, getWidth() - 32, 20);
 	}
 
@@ -343,13 +353,13 @@ void CtrlrPanelEditor::resized() {
 	if (!getRestoreState()) {
 		saveLayout();
 	}
+
 	if (resizedCbk && !resizedCbk.wasObjectDeleted()) {
 		if (resizedCbk->isValid()) {
 			owner.getCtrlrLuaManager().getMethodManager().call(resizedCbk, &owner);
 		}
 	}
 }
-
 CtrlrComponentSelection *CtrlrPanelEditor::getSelection() { return (ctrlrComponentSelection.get()); }
 
 void CtrlrPanelEditor::layoutItems() {

@@ -141,6 +141,7 @@ void CtrlrDocumentPanel::closeDocumentAsync(juce::Component *doc, bool checkItsO
 //	return juce::MultiDocumentPanel::closeDocument(doc, checkItsOkToCloseFirst);
 //}
 #endif
+// In CtrlrDocumentPanel.h
 
 void CtrlrDocumentPanel::setEditor(CtrlrEditor *_editorToSet) { ctrlrEditor = _editorToSet; }
 

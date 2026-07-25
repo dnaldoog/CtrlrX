@@ -195,12 +195,13 @@ class CtrlrManager : public ValueTree::Listener,
 
 
 		*/
-		void restoreState(const XmlElement &savedState);
+		void restoreState(const juce::ValueTree &savedTree);
 
 		/** Restore state
 
 		*/
-		void restoreState(const ValueTree &savedTree);
+
+		void restoreState(const juce::XmlElement &xmlState);
 
 		/** Returns a reference to the manager tree, the root of all in Ctrlr, be careful
 
