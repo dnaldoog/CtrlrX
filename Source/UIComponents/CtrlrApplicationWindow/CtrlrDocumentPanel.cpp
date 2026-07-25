@@ -6,6 +6,7 @@
 #include "CtrlrPanel/CtrlrPanelEditor.h"
 #include "CtrlrProcessor.h"
 #include "stdafx.h"
+#include <juce_gui_basics/juce_gui_basics.h>
 
 CtrlrDocumentPanel::CtrlrDocumentPanel(CtrlrManager &_owner) : ctrlrEditor(0), owner(_owner) {
 	/* Full screen mode is not completely implemented in JUCE 6
@@ -111,26 +112,35 @@ void CtrlrDocumentPanel::buttonClicked(Button *button) {
 	}
 }
 
-void CtrlrDocumentPanel::closeDocument(Component *descriptionComponent, bool deleteComponent) {
-	if (descriptionComponent == nullptr)
+void CtrlrDocumentPanel::closeDocumentAsync(juce::Component *doc, bool checkItsOkToCloseFirst,
+											std::function<void(bool)> callback) {
+	if (doc == nullptr) {
+		if (callback != nullptr)
+			callback(false);
 		return;
-
-	if (TabbedComponent *tc = getCurrentTabbedComponent()) {
-		// Loop through the tabs to find which index contains this specific editor component
-		for (int i = 0; i < tc->getNumTabs(); ++i) {
-			if (tc->getTabContentComponent(i) == descriptionComponent) {
-				// Remove the tab view context from the active UI container
-				tc->removeTab(i);
-
-				// If the parameter asks to delete it, force-free the memory layout now
-				if (deleteComponent) {
-					delete descriptionComponent;
-				}
-				break;
-			}
-		}
 	}
+
+	// 1. Clear active focus FIRST so active tab operations don't target a dying component
+	// if (getActiveDocument() == doc) {
+	// 	setActiveDocument(nullptr);
+	// }
+
+	// 2. Call JUCE's base async method
+	juce::MultiDocumentPanel::closeDocumentAsync(doc, checkItsOkToCloseFirst, callback);
 }
+
+#if JUCE_MODAL_LOOPS_PERMITTED
+//bool CtrlrDocumentPanel::closeDocument(juce::Component *doc, bool checkItsOkToCloseFirst) {
+//	if (doc == nullptr)
+//		return false;
+//
+//	if (getActiveDocument() == doc) {
+//		setActiveDocument(nullptr);
+//	}
+//
+//	return juce::MultiDocumentPanel::closeDocument(doc, checkItsOkToCloseFirst);
+//}
+#endif
 
 void CtrlrDocumentPanel::setEditor(CtrlrEditor *_editorToSet) { ctrlrEditor = _editorToSet; }
 

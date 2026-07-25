@@ -1021,9 +1021,8 @@ void CtrlrPanel::panelResourcesChanged()
 		updatePanelWindowTitle();
 	}
 }
-
-void CtrlrPanel::canClose(const bool closePanel, std::function<void(bool)> completionCallback) {
-    // 1. Check for modified Lua Code first
+void CtrlrPanel::canClose(const bool closePanel, std::function<void(bool)> completionCallback) 
+{
     CtrlrPanelWindowManager &manager = getWindowManager();
     if (manager.isCreated(CtrlrPanelWindowManager::LuaMethodEditor)) {
         CtrlrChildWindowContent *content = manager.getContent(CtrlrPanelWindowManager::LuaMethodEditor);
@@ -1037,31 +1036,17 @@ void CtrlrPanel::canClose(const bool closePanel, std::function<void(bool)> compl
         }
     }
 
-    // 2. Check for panel modifications
     if (closePanel && (hasChangedSinceSavePoint() || isPanelDirty())) {
 
-        // --- JUCE 8 SAFE POINTER RESOLUTION ---
-        // dynamic_cast ensures correct vtable pointer calculation
-        juce::Component *compTarget = getEditor() ? dynamic_cast<juce::Component *>(getEditor())
-                                                  : dynamic_cast<juce::Component *>(this);
-
-        if (compTarget == nullptr) {
-            if (completionCallback)
-                completionCallback(true);
-            return;
-        }
-
-        juce::Component::SafePointer<juce::Component> safeComp(compTarget);
         juce::WeakReference<CtrlrPanel> safePanel(this);
 
-#if JUCE_VERSION >= 0x070000
         juce::NativeMessageBox::showYesNoCancelBox(
             juce::MessageBoxIconType::QuestionIcon, 
             "Save panel (" + getName() + ")",
             "There are unsaved changes in this panel.\nDo you want to save them before closing?", 
             nullptr,
-            juce::ModalCallbackFunction::create([safePanel, safeComp, completionCallback](int result) {
-                if (safePanel.wasObjectDeleted() || safeComp == nullptr) {
+            juce::ModalCallbackFunction::create([safePanel, completionCallback](int result) {
+                if (safePanel.wasObjectDeleted()) {
                     if (completionCallback)
                         completionCallback(false);
                     return;
@@ -1070,20 +1055,13 @@ void CtrlrPanel::canClose(const bool closePanel, std::function<void(bool)> compl
                 if (result == 1) // Save ("Yes")
                 {
                     safePanel->savePanel();
-                    
-                    // DEFER CLOSING to prevent destroying components mid-dialog cleanup
-                    juce::MessageManager::callAsync([completionCallback]() {
-                        if (completionCallback)
-                            completionCallback(true);
-                    });
+                    if (completionCallback)
+                        completionCallback(true);
                 } 
                 else if (result == 2) // Discard ("No")
                 {
-                    // DEFER CLOSING
-                    juce::MessageManager::callAsync([completionCallback]() {
-                        if (completionCallback)
-                            completionCallback(true);
-                    });
+                    if (completionCallback)
+                        completionCallback(true);
                 } 
                 else // Cancel (0)
                 {
@@ -1092,28 +1070,103 @@ void CtrlrPanel::canClose(const bool closePanel, std::function<void(bool)> compl
                 }
             }));
         return;
-#else
-        // Legacy modal dialog fallback for JUCE 6 and below
-        int result = juce::AlertWindow::showYesNoCancelBox(
-            juce::AlertWindow::QuestionIcon, "Save panel (" + getName() + ")",
-            "There are unsaved changes in this panel.\nDo you want to save them before closing?");
-
-        if (result == 1) { // Save
-            savePanel();
-            if (completionCallback)
-                completionCallback(true);
-        } else if (result == 2) { // Discard
-            if (completionCallback)
-                completionCallback(true);
-        } else { // Cancel
-            if (completionCallback)
-                completionCallback(false);
-        }
-        return;
-#endif
     }
 
-    // 3. No changes needing prompt, proceed to close
     if (completionCallback)
         completionCallback(true);
 }
+// void CtrlrPanel::canClose(const bool closePanel, std::function<void(bool)> completionCallback) {
+//     // 1. Check for modified Lua Code first
+//     CtrlrPanelWindowManager &manager = getWindowManager();
+//     if (manager.isCreated(CtrlrPanelWindowManager::LuaMethodEditor)) {
+//         CtrlrChildWindowContent *content = manager.getContent(CtrlrPanelWindowManager::LuaMethodEditor);
+//         if (content != nullptr) {
+//             content->toFront(true);
+//             if (!content->canCloseWindow()) {
+//                 if (completionCallback)
+//                     completionCallback(false);
+//                 return;
+//             }
+//         }
+//     }
+
+//     // 2. Check for panel modifications
+//     if (closePanel && (hasChangedSinceSavePoint() || isPanelDirty())) {
+
+//         // --- JUCE 8 SAFE POINTER RESOLUTION ---
+//         // dynamic_cast ensures correct vtable pointer calculation
+//         juce::Component *compTarget = getEditor() ? dynamic_cast<juce::Component *>(getEditor())
+//                                                   : dynamic_cast<juce::Component *>(this);
+
+//         if (compTarget == nullptr) {
+//             if (completionCallback)
+//                 completionCallback(true);
+//             return;
+//         }
+
+//         juce::Component::SafePointer<juce::Component> safeComp(compTarget);
+//         juce::WeakReference<CtrlrPanel> safePanel(this);
+
+// #if JUCE_VERSION >= 0x070000
+//         juce::NativeMessageBox::showYesNoCancelBox(
+//             juce::MessageBoxIconType::QuestionIcon, 
+//             "Save panel (" + getName() + ")",
+//             "There are unsaved changes in this panel.\nDo you want to save them before closing?", 
+//             nullptr,
+//             juce::ModalCallbackFunction::create([safePanel, safeComp, completionCallback](int result) {
+//                 if (safePanel.wasObjectDeleted() || safeComp == nullptr) {
+//                     if (completionCallback)
+//                         completionCallback(false);
+//                     return;
+//                 }
+
+//                 if (result == 1) // Save ("Yes")
+//                 {
+//                     safePanel->savePanel();
+                    
+//                     // DEFER CLOSING to prevent destroying components mid-dialog cleanup
+//                     juce::MessageManager::callAsync([completionCallback]() {
+//                         if (completionCallback)
+//                             completionCallback(true);
+//                     });
+//                 } 
+//                 else if (result == 2) // Discard ("No")
+//                 {
+//                     // DEFER CLOSING
+//                     juce::MessageManager::callAsync([completionCallback]() {
+//                         if (completionCallback)
+//                             completionCallback(true);
+//                     });
+//                 } 
+//                 else // Cancel (0)
+//                 {
+//                     if (completionCallback)
+//                         completionCallback(false);
+//                 }
+//             }));
+//         return;
+// #else
+//         // Legacy modal dialog fallback for JUCE 6 and below
+//         int result = juce::AlertWindow::showYesNoCancelBox(
+//             juce::AlertWindow::QuestionIcon, "Save panel (" + getName() + ")",
+//             "There are unsaved changes in this panel.\nDo you want to save them before closing?");
+
+//         if (result == 1) { // Save
+//             savePanel();
+//             if (completionCallback)
+//                 completionCallback(true);
+//         } else if (result == 2) { // Discard
+//             if (completionCallback)
+//                 completionCallback(true);
+//         } else { // Cancel
+//             if (completionCallback)
+//                 completionCallback(false);
+//         }
+//         return;
+// #endif
+//     }
+
+//     // 3. No changes needing prompt, proceed to close
+//     if (completionCallback)
+//         completionCallback(true);
+// }

@@ -10,15 +10,20 @@ class CtrlrDocumentPanel  : public MultiDocumentPanel, public Button::Listener
 {
 	public:
 		CtrlrDocumentPanel (CtrlrManager &_owner);
-		~CtrlrDocumentPanel();
+		~CtrlrDocumentPanel() override;
 		bool tryToCloseDocument (Component* component);
 		void tryToCloseDocumentAsync (Component* component, std::function<void (bool)> callback) override;
 		void activeDocumentChanged();
 		void setEditor (CtrlrEditor *_editorToSet);
 		void resized();
         void buttonClicked (Button *button);
-        void closeDocument(Component* descriptionComponent, bool deleteComponent);
-        //void lookAndFeelChanged();
+		void closeDocumentAsync(juce::Component *component, bool checkItsOkToCloseFirst,
+								std::function<void(bool)> callback = nullptr);
+
+#if JUCE_MODAL_LOOPS_PERMITTED
+	//	bool closeDocument(juce::Component *component, bool checkItsOkToCloseFirst) override;
+#endif
+		// void lookAndFeelChanged();
 		JUCE_LEAK_DETECTOR(CtrlrDocumentPanel)
 
 	private:

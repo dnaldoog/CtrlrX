@@ -260,9 +260,15 @@ CtrlrPanelEditor::~CtrlrPanelEditor() {
 	// STEP 1: UNREGISTER LISTENERS & DESTROY PROPERTY PANEL IMMEDIATELY
 	// =========================================================================
 	DBG("!!!!!! TRACKING: CtrlrPanelEditor Destructor has been entered !!!");
+	// Unsubscribe from ValueTree property change notifications early
+	if (owner.getPanelTree().isValid()) {
+		owner.getPanelTree().removeListener(this);
+	}
 
-	getPanelEditorTree().removeListener(this);
-	owner.getPanelTree().removeListener(this);
+	// 2. Unregister from the editor tree
+	if (getPanelEditorTree().isValid()) {
+		getPanelEditorTree().removeListener(this);
+	}
 
 	// 1. Break the change link between selection and properties
 	if (ctrlrComponentSelection != nullptr && ctrlrPanelProperties != nullptr) {
@@ -465,6 +471,13 @@ CtrlrComponent *CtrlrPanelEditor::getSelected(const Identifier &type) {
 }
 
 void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
+	if (!isShowing() || owner.getOwner().isShuttingDown())
+		return;
+	juce::Component::SafePointer<CtrlrPanelEditor> safeThis(this);
+	if (safeThis == nullptr)
+		return;
+	if (owner.getOwner().isShuttingDown())
+		return;
 	// 1. Guard against a null editor context
 	if (this == nullptr)
 		return;

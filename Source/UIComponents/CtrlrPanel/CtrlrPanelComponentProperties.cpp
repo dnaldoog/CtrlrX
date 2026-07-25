@@ -26,19 +26,18 @@ CtrlrPanelComponentProperties::CtrlrPanelComponentProperties(CtrlrPanelEditor &_
 	//[Constructor] You can add your own custom stuff here..
 	//[/Constructor]
 }
-
 CtrlrPanelComponentProperties::~CtrlrPanelComponentProperties() {
-	//[Destructor_pre]. You can add your own custom destruction code here..
-	if (owner.getSelection())
-		owner.getSelection()->removeChangeListener(this);
-	//[/Destructor_pre]
+	// 1. Safely unhook from selection change broadcaster
+	if (auto *sel = owner.getSelection()) {
+		sel->removeChangeListener(this);
+	}
+
+	// 2. Clear any active selection tree listeners
+	selectionTree.removeListener(this);
+	selectionTree = juce::ValueTree();
 
 	propertyPanel = nullptr;
-
-	//[Destructor]. You can add your own custom destruction code here..
-	//[/Destructor]
 }
-
 //==============================================================================
 void CtrlrPanelComponentProperties::paint(Graphics &g) {
 	//[UserPrePaint] Add your own custom painting code here..
@@ -251,24 +250,50 @@ void CtrlrPanelComponentProperties::setTree(const ValueTree &_treeToEdit, const 
 			propertyPanel->addSection("Component", filterProperties(componentUIProperties));
 	}
 }
-
-void CtrlrPanelComponentProperties::changeListenerCallback(ChangeBroadcaster *source) {
-	if (owner.getSelection() == nullptr)
+void CtrlrPanelComponentProperties::changeListenerCallback(juce::ChangeBroadcaster *source) {
+	// 1. Guard against 'this' component being deleted or mid-destruction
+	juce::Component::SafePointer<CtrlrPanelComponentProperties> safeThis(this);
+	if (safeThis == nullptr)
 		return;
 
-	if (selectedItems != owner.getSelection()->getNumSelected() && owner.getSelection()->getNumSelected() > 1) {
-		selectedItems = owner.getSelection()->getNumSelected();
-		selectionTree = ValueTree(Ids::modulator);
+	// 2. Do not process if propertyPanel is already null
+	if (propertyPanel == nullptr)
+		return;
+
+	// 3. DO NOT traverse owner.getOwner().getOwner().
+	// Check if this component is visible and showing on screen instead.
+	// If the panel or editor is tearing down, isShowing() returns false.
+	if (!isShowing())
+		return;
+
+	// 4. Safely obtain selection
+	auto *selection = owner.getSelection();
+	if (selection == nullptr)
+		return;
+
+	// ---------------- CORE LOGIC ----------------
+	int numSelected = selection->getNumSelected();
+
+	// Multi-selection
+	if (selectedItems != numSelected && numSelected > 1) {
+		selectedItems = numSelected;
+		selectionTree = juce::ValueTree(Ids::modulator);
 		selectionTree.removeListener(this);
 
-		for (int i = 0; i < owner.getSelection()->getNumSelected(); i++) {
-			ValueTree modTree = owner.getSelection()->getSelectedItem(i)->getOwner().getModulatorTree();
+		for (int i = 0; i < numSelected; i++) {
+			auto *item = selection->getSelectedItem(i);
+			if (item == nullptr)
+				continue;
+
+			juce::ValueTree modTree = item->getOwner().getModulatorTree();
+			if (!modTree.isValid())
+				continue;
 
 			copyProperties(modTree, selectionTree);
 
 			for (int j = 0; j < modTree.getNumChildren(); j++) {
 				if (!selectionTree.getChildWithName(modTree.getChild(j).getType()).isValid())
-					selectionTree.addChild(modTree.getChild(i).createCopy(), j, 0);
+					selectionTree.addChild(modTree.getChild(j).createCopy(), j, 0);
 			}
 		}
 
@@ -278,18 +303,34 @@ void CtrlrPanelComponentProperties::changeListenerCallback(ChangeBroadcaster *so
 
 		selectionTree.addListener(this);
 		setTree(selectionTree);
+		return;
 	}
 
-	if (owner.getSelection()->getNumSelected() == 0) {
-		setTree(owner.getOwner().getPanelTree());
-		propertyPanel->restoreOpennessState(panelPropertyOpennessState);
+	// Zero items selected
+	if (numSelected == 0) {
+		// Safely check if the panel tree is still valid before passing it to setTree
+		juce::ValueTree panelTree = owner.getOwner().getPanelTree();
+		if (panelTree.isValid()) {
+			setTree(panelTree);
+			if (propertyPanel != nullptr)
+				propertyPanel->restoreOpennessState(panelPropertyOpennessState);
+		}
+		return;
 	}
 
-	if (owner.getSelection()->getNumSelected() == 1) {
-		refreshTargetModulationPropertyList(owner.getSelection()->getSelectedItem(0)->getOwner().getModulatorTree());
-		refreshDynamicData();
-		setTree(owner.getSelection()->getSelectedItem(0)->getOwner().getModulatorTree());
-		propertyPanel->restoreOpennessState(modulatorPropertyOpennessState);
+	// 1 item selected
+	if (numSelected == 1) {
+		auto *selectedItem = selection->getSelectedItem(0);
+		if (selectedItem != nullptr) {
+			juce::ValueTree modTree = selectedItem->getOwner().getModulatorTree();
+			if (modTree.isValid()) {
+				refreshTargetModulationPropertyList(modTree);
+				refreshDynamicData();
+				setTree(modTree);
+				if (propertyPanel != nullptr)
+					propertyPanel->restoreOpennessState(modulatorPropertyOpennessState);
+			}
+		}
 	}
 }
 

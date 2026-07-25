@@ -394,7 +394,7 @@ CtrlrPanel *CtrlrManager::getPanel(const String &panelName) {
 	}
 	return (0);
 }
-
+#if JUCE_VERSION >= 0x070000
 void CtrlrManager::canCloseWindow(std::function<void(bool)> completionCallback) {
 	// Helper lambda to process panels sequentially
 	auto checkNextPanel = [this, completionCallback](auto self, int index) -> void {
@@ -429,7 +429,7 @@ void CtrlrManager::canCloseWindow(std::function<void(bool)> completionCallback) 
 	checkNextPanel(checkNextPanel, 0);
 }
 
-#if JUCE_VERSION < 0x07000
+#else
 bool CtrlrManager::canCloseWindow() {
 	for (int i = 0; i < getNumPanels(); i++) {
 		CtrlrPanel *panel = getPanel(i);
@@ -441,8 +441,6 @@ bool CtrlrManager::canCloseWindow() {
 	}
 	return true;
 }
-#else
-
 #endif
 
 void CtrlrManager::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
@@ -490,33 +488,73 @@ bool CtrlrManager::isValidComponentName(const String &name) {
 }
 
 CtrlrPanel *CtrlrManager::getActivePanel() {
-	CtrlrPanelEditor *ed = dynamic_cast<CtrlrPanelEditor *>(ctrlrDocumentPanel->getActiveDocument());
+	// 1. Guard against null or missing document panel
+	if (ctrlrDocumentPanel == nullptr)
+		return nullptr;
 
-	if (ed) {
-		return (&ed->getOwner());
-	} else {
-		return (0);
+	// 2. Ensure documents actually exist before querying active document
+	if (ctrlrDocumentPanel->getNumDocuments() <= 0)
+		return nullptr;
+
+	// 3. Safely cast active document
+	if (auto *activeDoc = ctrlrDocumentPanel->getActiveDocument()) {
+		if (auto *ed = dynamic_cast<CtrlrPanelEditor *>(activeDoc)) {
+			return &(ed->getOwner());
+		}
 	}
+
+	return nullptr;
 }
-
 void CtrlrManager::removePanel(CtrlrPanelEditor *editor) {
-	if (editor) {
-		CtrlrPanel *panel = &editor->getOwner();
+	if (editor == nullptr)
+		return;
 
-		if (panel) {
-			for (int i = 0; i < panel->getModulators().size(); i++) {
-				ctrlrModulators.removeAllInstancesOf(panel->getModulators()[i]);
+	// Guard: ensure the editor component is still valid
+	juce::Component::SafePointer<CtrlrPanelEditor> safeEditor(editor);
+	if (safeEditor == nullptr)
+		return;
+
+	CtrlrPanel *panel = &editor->getOwner();
+
+	// 1. Unregister modulators from manager arrays safely
+	if (panel != nullptr) {
+		for (int i = 0; i < panel->getModulators().size(); i++) {
+			ctrlrModulators.removeAllInstancesOf(panel->getModulators()[i]);
+			if (ctrlrManagerVst != nullptr) {
 				ctrlrManagerVst->remove(panel->getModulators()[i]);
 			}
+		}
+	}
 
-			ctrlrDocumentPanel->closeDocument(editor, true);
-			ctrlrPanels.removeObject(panel, true);
+	// 2. Remove document tab safely
+	if (ctrlrDocumentPanel != nullptr && safeEditor != nullptr) {
+		// DO NOT call setActiveDocument(nullptr)!
+		// Check if the document panel still contains this component
+		bool containsDoc = false;
+		for (int i = 0; i < ctrlrDocumentPanel->getNumDocuments(); ++i) {
+			if (ctrlrDocumentPanel->getDocument(i) == safeEditor.getComponent()) {
+				containsDoc = true;
+				break;
+			}
 		}
 
-		organizePanels();
+		if (containsDoc) {
+			// JUCE will automatically select a remaining active document
+			// and delete/detach safeEditor asynchronously.
+			ctrlrDocumentPanel->closeDocumentAsync(safeEditor.getComponent(), false, nullptr);
+		}
 	}
-}
 
+	// 3. Remove panel object from owned array
+	if (panel != nullptr) {
+		// Pass false soJUCE MultiDocumentPanel's automatic deletion
+		// doesn't cause a double-free on the panel/editor.
+		ctrlrPanels.removeObject(panel, false);
+	}
+
+	// 4. Re-organize layout
+	organizePanels();
+}
 void CtrlrManager::restoreEditorState() {
 	if (getProperty(Ids::ctrlrEditorBounds).toString() == "") {
 		if (getInstanceMode() == InstanceSingle || getInstanceMode() == InstanceSingleRestricted) {
