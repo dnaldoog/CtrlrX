@@ -245,54 +245,60 @@ CtrlrPanel::~CtrlrPanel()
 {
     DBG("!!! TRACKING: CtrlrPanel Destructor has been entered !!!");
 
-    // =========================================================================
-    // 1. SHUT DOWN THREADS SAFELY FIRST
-    // =========================================================================
-    // Stopping threads immediately prevents background processing from accessing 
-    // modulators or ValueTrees while they are being destroyed.
-    midiInputThread.signalThreadShouldExit();
+	// =========================================================================
+	// 1. SHUT DOWN THREADS FIRST (Crucial!)
+	// =========================================================================
+	// Stop background MIDI threads BEFORE touching modulators, UI, or ValueTrees.
+	midiInputThread.signalThreadShouldExit();
     midiInputThread.waitForThreadToExit(1200);
 
     midiControllerInputThread.signalThreadShouldExit();
     midiControllerInputThread.waitForThreadToExit(1200);
 
-    // =========================================================================
-    // 2. CLEAR LISTENERS & TREE REFERENCES
-    // =========================================================================
-    panelTree.removeListener(this);
-    owner.removeChangeListener(this);
-    masterReference.clear();
+	// =========================================================================
+	// 2. CLEAR LISTENERS & DETACH PANEL TREE SAFELY
+	// =========================================================================
+	panelTree.removeListener(this);
+	owner.removeChangeListener(this);
 
-    if (!owner.isShuttingDown()) {
-        owner.getManagerTree().removeChild(panelTree, 0);
-    }
+	// Safely detach panelTree from owner's managerTree without assuming index 0
+	if (!owner.isShuttingDown()) {
+		juce::ValueTree managerTree = owner.getManagerTree();
+		if (managerTree.isValid() && managerTree.indexOf(panelTree) >= 0) {
+			managerTree.removeChild(panelTree, nullptr);
+		}
+	}
 
-    // =========================================================================
+	// =========================================================================
     // 3. IMMEDIATE EDITOR & UI TEARDOWN
     // =========================================================================
-    if (auto *ed = getEditor()) {
-        ed->setVisible(false);
-        ed->setLookAndFeel(nullptr);
+	if (auto *ed = getEditor()) {
+		ed->setVisible(false);
+		ed->setLookAndFeel(nullptr);
 
-        if (auto *parent = ed->getParentComponent()) {
-            parent->removeChildComponent(ed);
-        }
-    }
+		if (auto *parent = ed->getParentComponent()) {
+			parent->removeChildComponent(ed);
+		}
+	}
 
-    // Completely break main panel LookAndFeel references
-    setLookAndFeel(nullptr);
+	// Break LookAndFeel references
+	setLookAndFeel(nullptr);
     lfV1 = nullptr;
     lfV2 = nullptr;
     lfV3 = nullptr;
 
-    // =========================================================================
-    // 4. DESTROY DATA, MODULATORS & LUA
-    // =========================================================================
-    ctrlrModulators.clear();
+	// =========================================================================
+	// 4. DESTROY MODULATORS & LUA (Threads are dead, panelTree is valid)
+	// =========================================================================
+	// Modulators can now safely detach from panelTree while panelTree is still valid
+	ctrlrModulators.clear(true);
 
-    deleteAndZero(ctrlrLuaManager);
+	deleteAndZero(ctrlrLuaManager);
+
+	// Master reference and tree cleanup at the very end
+	masterReference.clear();
+	panelTree.removeAllChildren(nullptr);
 }
-
 void CtrlrPanel::setRestoreState(const bool _restoreStateStatus) {
 	const ScopedWriteLock lock(panelLock);
 

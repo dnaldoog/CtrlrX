@@ -245,13 +245,13 @@ juce::Component *CtrlrPanelModulatorList::refreshComponentForCell(int rowNumber,
 		return nullptr;
 	}
 
-	// 1. Safe modern cast (replaces dangerous legacy C-cast)
+	// 1. Try to recycle the existing component passed in by JUCE
 	auto *label = dynamic_cast<juce::Label *>(existingComponentToUpdate);
 
-	// 2. Fixed legacy integer '0' check to modern nullptr
+	// 2. If JUCE passed nullptr (or a different component type), create a new one
 	if (label == nullptr) {
-		label = new juce::Label();
-		label->setFont(juce::FontOptions(12.0f)); // Modern JUCE Font handling
+		label = new juce::Label(); // JUCE's TableListBox assumes ownership of this raw pointer
+		label->setFont(juce::FontOptions(12.0f));
 		label->setEditable(false, true, false);
 		label->setJustificationType(juce::Justification::centred);
 		label->addMouseListener(this, false);
@@ -274,7 +274,7 @@ juce::Component *CtrlrPanelModulatorList::refreshComponentForCell(int rowNumber,
 	label->setColour(juce::Label::backgroundColourId, isRowSelected ? findColour(juce::TextButton::buttonOnColourId)
 																	: findColour(juce::Label::backgroundColourId));
 
-	// 3. Cleaned up text linking logic to avoid dynamic value collisions
+	// 3. Update text & metadata on the cell component
 	label->getTextValue().referTo(getValueForColumn(m, getColumnCtrlrId(columnId - 1)));
 	label->getProperties().set("rowNumber", rowNumber);
 

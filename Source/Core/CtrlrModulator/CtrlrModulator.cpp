@@ -69,12 +69,33 @@ CtrlrModulator::CtrlrModulator(CtrlrPanel &_owner, const int suggestedVstIndex)
 
 CtrlrModulator::~CtrlrModulator()
 {
-	modulatorTree.removeListener (this);
-	owner.getPanelTree().removeChild (modulatorTree,0);
-	masterReference.clear();
+    // 1. Remove listener first
+    modulatorTree.removeListener (this);
 
-	if (ctrlrComponent)
-		deleteAndZero (ctrlrComponent);
+    // 2. Detach from parent tree SAFELY
+    juce::ValueTree parent = modulatorTree.getParent();
+    
+    // Only attempt removal if parent is valid AND actually contains children
+    if (parent.isValid() && parent.getNumChildren() > 0)
+    {
+        // Avoid calling removeChild if the parent tree is already being wiped/reset
+        if (parent.indexOf(modulatorTree) >= 0)
+        {
+            parent.removeChild(modulatorTree, nullptr);
+        }
+    }
+
+    // 3. Clear master reference
+    masterReference.clear();
+
+    // 4. Delete component safely
+    if (ctrlrComponent != nullptr)
+    {
+        if (auto* parentComp = ctrlrComponent->getParentComponent())
+            parentComp->removeChildComponent(ctrlrComponent);
+
+        deleteAndZero (ctrlrComponent);
+    }
 }
 
 void CtrlrModulator::restoreState (const ValueTree &savedState)

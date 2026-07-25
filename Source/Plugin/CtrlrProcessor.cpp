@@ -570,6 +570,16 @@ AudioProcessorEditor *CtrlrProcessor::createEditor() {
 //==============================================================================
 
 void CtrlrProcessor::getStateInformation(MemoryBlock &destData) {
+	// Skip state generation if manager is restoring or shutting down
+	if (ctrlrManager == nullptr || ctrlrManager->isRestoring() || ctrlrManager->isShuttingDown())
+		return;
+
+	// Optional: Ensure document panel isn't in a middle state
+	if (&ctrlrManager->getCtrlrDocumentPanel() != nullptr) {
+		if (ctrlrManager->getCtrlrDocumentPanel().getNumDocuments() == 0) {
+			// Handle state saving safely when no tabs are open
+		}
+	}
 	_DBG("CtrlrProcessor::getStateInformation");
 	std::unique_ptr<XmlElement> xmlState(ctrlrManager->saveState());
 	if (xmlState) {

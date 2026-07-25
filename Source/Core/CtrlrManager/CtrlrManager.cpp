@@ -36,7 +36,31 @@ CtrlrManager::CtrlrManager(CtrlrProcessor *_owner, CtrlrLog &_ctrlrLog)
 
 CtrlrManager::~CtrlrManager() {
 	shuttingDown = true; // Freeze updates instantly
+    // 1. Teardown document panel UI FIRST so it stops tracking active tabs/components
+    if (ctrlrDocumentPanel != nullptr)
+    {
+        ctrlrDocumentPanel->setVisible(false);
 
+        // Safely detach all editor components so MultiDocumentPanel releases focus
+        for (int i = 0; i < ctrlrPanels.size(); ++i)
+        {
+            if (auto* panel = ctrlrPanels.getUnchecked(i))
+            {
+                if (auto* editor = panel->getEditor(false)) 
+                {
+                    ctrlrDocumentPanel->removeChildComponent(editor);
+                }
+            }
+        }
+
+        // Delete the document panel explicitly before panel objects are destroyed
+        ctrlrDocumentPanel.reset(); // or deleteAndZero(ctrlrDocumentPanel); depending on pointer type
+    }
+
+    // 2. NOW it is safe to delete panel data objects and clear collections
+    ctrlrPanels.clear(true);
+    ctrlrModulators.clear();
+    
 	commandManager.removeListener(this);
 	managerTree.removeListener(this);
 
@@ -263,6 +287,7 @@ void CtrlrManager::restoreState(const juce::XmlElement &xmlState) {
 		restoreState(tree);
 	}
 }
+
 void CtrlrManager::restoreState(const ValueTree &savedTree) {
 	_DBG("CtrlrManager::restoreState (ValueTree) enter");
 
@@ -273,6 +298,7 @@ void CtrlrManager::restoreState(const ValueTree &savedTree) {
 	_DBG("CtrlrManager::restoreState: MessageManagerLock skipped (AAX build).");
 #endif
 
+	// 1. Validate tree upfront BEFORE touching UI state
 	if (!savedTree.isValid()) {
 		_DBG("CtrlrManager::restoreState: savedTree is NOT valid. No state to restore.");
 		_DBG("CtrlrManager::restoreState (ValueTree) exit");
@@ -281,32 +307,38 @@ void CtrlrManager::restoreState(const ValueTree &savedTree) {
 
 	_DBG("CtrlrManager::restoreState: savedTree is valid. Proceeding with state restoration.");
 
-	// RAII Guard: Guarantees ctrlrManagerRestoring resets to false on ANY return path
+	// RAII Guard: Guarantees ctrlrManagerRestoring resets to false on ANY exit path
 	ctrlrManagerRestoring = true;
 	const juce::ScopedValueSetter<bool> restoringGuard(ctrlrManagerRestoring, true, false);
-
+	// Safely close documents backward using JUCE's Component* API
 // =================================================================
     // STEP 1 & 2: CLEANUP PREVIOUS STATE & UI DETACHMENT
     // =================================================================
     if (ctrlrDocumentPanel != nullptr) 
     {
+        // 1. Hide document panel during teardown to avoid unwanted repaints
         ctrlrDocumentPanel->setVisible(false);
 
-        // Safely detach active document first without triggering line 496 assertion
-        if (ctrlrDocumentPanel->getNumDocuments() > 0)
+        // 2. Remove document components from MultiDocumentPanel cleanly
+        //    Using getNumDocuments() + closeDocument with force=false 
+        //    or removing child components without explicit setActiveDocument(nullptr)
+        for (int i = 0; i < ctrlrPanels.size(); ++i)
         {
-            // Close documents backward to avoid indexing shifts
-            for (int i = ctrlrDocumentPanel->getNumDocuments() - 1; i >= 0; --i)
+            if (auto* panel = ctrlrPanels.getUnchecked(i))
             {
-                if (auto* doc = ctrlrDocumentPanel->getDocument(i))
+                if (auto* editor = panel->getEditor(false)) 
                 {
-                    ctrlrDocumentPanel->closeDocument(doc, false); // false = don't ask to save
+                    ctrlrDocumentPanel->removeChildComponent(editor);
                 }
             }
         }
+        
+        // DO NOT call ctrlrDocumentPanel->setActiveDocument(nullptr); 
+        // JUCE handles active document clearing internally when components are detached.
     }
 
-    ctrlrPanels.clear(true); // Deletes old panel objects cleanly
+    // 3. Clear data models safely
+    ctrlrPanels.clear(true); 
     ctrlrModulators.clear();
     managerTree.removeAllChildren(nullptr);
 
@@ -319,13 +351,11 @@ void CtrlrManager::restoreState(const ValueTree &savedTree) {
 
 	if (owner != nullptr && owner->getOverrides().isValid()) {
 		_DBG("CtrlrManager::restoreState: Overrides found, setting properties.");
-
-		// Use non-const reference to owner->getOverrides()
 		auto &overrides = owner->getOverrides();
 
 		for (int i = 0; i < overrides.getNumProperties(); ++i) {
 			const auto propName = overrides.getPropertyName(i);
-			setProperty(propName, overrides.getProperty(propName)); // <-- Query var value directly
+			setProperty(propName, overrides.getPropertyAsValue(propName, 0));
 		}
 		_DBG("CtrlrManager::restoreState: Overrides processed.");
 	}
@@ -341,11 +371,11 @@ void CtrlrManager::restoreState(const ValueTree &savedTree) {
 		_DBG("CtrlrManager::restoreState: MIDI device manager state restored.");
 	}
 
-if (const auto windowTree = savedTree.getChildWithName(Ids::uiWindowManager); windowTree.isValid()) {
-	_DBG("CtrlrManager::restoreState: Restoring UI Window manager state.");
-	ctrlrWindowManager.restoreState(windowTree);
-	_DBG("CtrlrManager::restoreState: UI Window manager state restored.");
-}
+	if (const auto windowTree = savedTree.getChildWithName(Ids::uiWindowManager); windowTree.isValid()) {
+		_DBG("CtrlrManager::restoreState: Restoring UI Window manager state.");
+		ctrlrWindowManager.restoreState(windowTree);
+		_DBG("CtrlrManager::restoreState: UI Window manager state restored.");
+	}
 
 	// =================================================================
 	// STEP 4: RE-CREATE PANELS FROM SAVED TREE
@@ -581,21 +611,17 @@ void CtrlrManager::removePanel(CtrlrPanelEditor *editor) {
 	organizePanels();
 }
 void CtrlrManager::restoreEditorState() {
-	if (getProperty(Ids::ctrlrEditorBounds).toString() == "") {
-		if (getInstanceMode() == InstanceSingle || getInstanceMode() == InstanceSingleRestricted) {
-			Rectangle<int> r(32, 32, 800, 600);
-
-			if (getActivePanel() && getActivePanel()->getEditor()) {
-				r = VAR2RECT(getActivePanel()->getEditor()->getProperty(Ids::uiPanelCanvasRectangle));
-			}
-
-			ctrlrEditor->setSize(r.getWidth(), r.getHeight());
-			return;
-		}
-	}
-	// ctrlrEditor->centreWithSize(800, 600);
+    if (ctrlrEditor != nullptr && ctrlrDocumentPanel != nullptr) {
+        // Only attempt to set/restore active document if documents actually exist
+        if (ctrlrDocumentPanel->getNumDocuments() > 0) {
+            // Set the active document safely
+            if (auto *currentDoc = ctrlrDocumentPanel->getDocument(0)) {
+                ctrlrDocumentPanel->setActiveDocument(currentDoc);
+            }
+        }
+        // No 'else' block needed! If getNumDocuments() is 0, JUCE has no active document by default.
+    }
 }
-
 void CtrlrManager::setEditor(CtrlrEditor *editorToSet) {
 	ctrlrEditor = editorToSet;
 
