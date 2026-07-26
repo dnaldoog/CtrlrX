@@ -279,6 +279,7 @@ CtrlrPanel::~CtrlrPanel()
 		if (auto *parent = ed->getParentComponent()) {
 			parent->removeChildComponent(ed);
 		}
+		delete ed;
 	}
 
 	// Break LookAndFeel references
@@ -443,14 +444,26 @@ void CtrlrPanel::bootstrapPanel(const bool setInitialProgram) {
 	isBootstrapTimerActive = true;
 }
 
-CtrlrPanelEditor *CtrlrPanel::getEditor(const bool createNewEditorIfNeeded) {
-	if (ctrlrPanelEditor.get() == nullptr) {
-		if (createNewEditorIfNeeded) {
-			ctrlrPanelEditor = new CtrlrPanelEditor(*this, owner, getPanelWindowTitle());
-			getPanelTree().addChild(ctrlrPanelEditor->getPanelEditorTree(), -1, nullptr);
-		}
-	}
-	return (ctrlrPanelEditor);
+CtrlrPanelEditor *CtrlrPanel::getEditor(const bool createNewEditorIfNeeded) 
+{
+    // 1. Never instantiate a new editor if shutting down!
+    if (owner.isShuttingDown())
+    {
+        return ctrlrPanelEditor.get();
+    }
+
+    if (ctrlrPanelEditor == nullptr) 
+    {
+        if (createNewEditorIfNeeded) 
+        {
+            // std::make_unique handles memory ownership cleanly
+            ctrlrPanelEditor = std::make_unique<CtrlrPanelEditor>(*this, owner, getPanelWindowTitle());
+            
+            getPanelTree().addChild(ctrlrPanelEditor->getPanelEditorTree(), -1, nullptr);
+        }
+    }
+
+    return ctrlrPanelEditor.get();
 }
 
 void CtrlrPanel::setProperty(const Identifier &name, const var &newValue, const bool isUndoable) {

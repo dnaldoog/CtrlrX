@@ -385,7 +385,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		double globalMidiDelay;
 		bool restoreStateStatus, boostrapStateStatus, programState, editMode;
 		ListenerList<CtrlrPanel::Listener> listeners;
-		WeakReference<CtrlrPanelEditor> ctrlrPanelEditor;
+		std::unique_ptr<CtrlrPanelEditor> ctrlrPanelEditor;
 		CtrlrManager &owner;
 		OwnedArray<CtrlrModulator, CriticalSection> ctrlrModulators;
 		Array<ComponentReference> radioGrouppedComponent;

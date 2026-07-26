@@ -35,10 +35,9 @@ class CtrlrPanelNotifier : public Component
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrPanelNotifier)
 
 	private:
-		juce::Colour background;
-		// Corrected to use a ScopedPointer for proper memory management.
-		std::unique_ptr<juce::Label> text;
 		CtrlrPanelEditor &owner;
+		juce::Colour background;
+		std::unique_ptr<juce::Label> text; // keep last
 };
 
 class CtrlrPanelEditor : public Component,

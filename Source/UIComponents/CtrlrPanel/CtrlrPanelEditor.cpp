@@ -35,11 +35,18 @@ CtrlrPanelNotifier::CtrlrPanelNotifier(
 	text->setText("", dontSendNotification); // Default text required
 }
 
-CtrlrPanelNotifier::~CtrlrPanelNotifier() // Added v5.6.34. Thanks to @dnaldoog
-{
-	// The ScopedPointer 'text' will be automatically cleaned up.
-	// No manual cleanup is needed. But...
-	// text = nullptr; // Force ScopedPointer cleanup
+CtrlrPanelNotifier::~CtrlrPanelNotifier() {
+	DBG("==== ~CtrlrPanelNotifier() DTOR ====== ");
+	if (text != nullptr) {
+		// Detach the mouse listener explicitly before text is freed
+		text->removeMouseListener(this);
+
+		// Remove text from JUCE's internal child list
+		removeChildComponent(text.get());
+
+		// Clear the smart pointer
+		text.reset();
+	}
 }
 
 void CtrlrPanelNotifier::paint(Graphics &g) // Added back v5.6.31 for file management bottom notification bar
@@ -256,31 +263,26 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 }
 
 CtrlrPanelEditor::~CtrlrPanelEditor() {
-	// =========================================================================
-	// STEP 1: UNREGISTER LISTENERS & DESTROY PROPERTY PANEL IMMEDIATELY
-	// =========================================================================
-	DBG("!!!!!! TRACKING: CtrlrPanelEditor Destructor has been entered !!!");
 
-	// Stop all active animations FIRST so ComponentAnimator releases its component pointers
-	componentAnimator.cancelAllAnimations(false);
+	DBG("=== CtrlrPanelEditor Destructor Called ===");
+
+	// 1. FORCE-CANCEL all animations immediately (must pass true!)
+	componentAnimator.cancelAllAnimations(true);
 	componentAnimator.removeChangeListener(this);
 
-	// Unsubscribe from ValueTree property change notifications early
+	// Unsubscribe from ValueTree property change notifications
 	if (owner.getPanelTree().isValid()) {
 		owner.getPanelTree().removeListener(this);
 	}
 
-	// Unregister from the editor tree
 	if (getPanelEditorTree().isValid()) {
 		getPanelEditorTree().removeListener(this);
 	}
 
-	// Break the change link between selection and properties
 	if (ctrlrComponentSelection != nullptr && ctrlrPanelProperties != nullptr) {
 		ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
 	}
 
-	// FORCE-KILL the properties panel immediately
 	if (ctrlrPanelProperties != nullptr) {
 		ctrlrPanelProperties.reset();
 	}
@@ -304,33 +306,25 @@ CtrlrPanelEditor::~CtrlrPanelEditor() {
 	for (int i = 0; i < owner.getModulators().size(); i++) {
 		if (auto *mod = owner.getModulators()[i]) {
 			if (auto *comp = mod->getComponent()) {
-				DBG("*** detaching LookAndFeel from component: " << comp->getName());
 				detachLnF(comp);
 			}
 		}
 	}
 
 	// =========================================================================
-	// STEP 3: CLEAN UP REST OF THE OBJECTS
+	// STEP 3: DESTROY NOTIFIER
 	// =========================================================================
-
-	// Detach and destroy notifier safely
 	if (ctrlrPanelNotifier != nullptr) {
+		// Ensure ComponentAnimator has no remaining handles on this component
+		componentAnimator.cancelAllAnimations(true);
+
 		ctrlrPanelNotifier->setVisible(false);
-
-		// 1. Remove from JUCE child list so parent component clears pointer
 		removeChildComponent(ctrlrPanelNotifier.get());
-
-		// 2. Clear LookAndFeel from notifier
 		ctrlrPanelNotifier->setLookAndFeel(nullptr);
-
-		// 3. Reset unique pointer
 		ctrlrPanelNotifier.reset();
 	}
 
-	// Safely remove from tree now that we are no longer listening to it
 	owner.getPanelTree().removeChild(getPanelEditorTree(), 0);
-
 	juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
 }
 

@@ -172,8 +172,10 @@ CtrlrStandaloneWindow::~CtrlrStandaloneWindow() {
 		}
 
 		// 2. Save state while the processor is still guaranteed alive
-		saveStateNow();
-
+		// saveStateNow();
+		/*let ~CtrlrStandaloneWindow() handle it exclusively (since ~CtrlrStandaloneWindow()
+		 * already checks if
+		 * ctrlrProcessor is alive and deletes the filter afterwards):*/
 		// 3. Delete the processor owned by this window
 		deleteFilter();
 	}
@@ -196,27 +198,34 @@ void CtrlrStandaloneWindow::changeListenerCallback(ChangeBroadcaster *source) { 
 
 void CtrlrStandaloneWindow::saveStateNow() {
     _DBG("CtrlrStandaloneWindow::saveStateNow");
-    
-    // REMOVED: manager->isShuttingDown() guard block!
-    // We WANT to save state specifically when shutting down.
+	if (auto *manager = getManager()) {
+		// If the manager is already in the middle of running its destructor,
+		// instantly break out so we don't spin up phantom UI updates or leaks!
+		if (manager->isShuttingDown())
+			return;
+	}
+	    // if (ctrlrProcessor != nullptr && ctrlrProcessor->getManager().isShuttingDown())
+        // return;
+	// REMOVED: manager->isShuttingDown() guard block!
+	// We WANT to save state specifically when shutting down.
 
-    if (ctrlrProcessor != nullptr && appProperties != nullptr) {
-        appProperties->getUserSettings()->setValue(CTRLR_PROPERTIES_WINDOW_STATE, getWindowStateAsString());
+	if (ctrlrProcessor != nullptr && appProperties != nullptr) {
+		appProperties->getUserSettings()->setValue(CTRLR_PROPERTIES_WINDOW_STATE, getWindowStateAsString());
 
-        MemoryBlock data;
-        ctrlrProcessor->getStateInformation(data);
+		MemoryBlock data;
+		ctrlrProcessor->getStateInformation(data);
 
-        if (data.getSize() > 0) {
-            std::unique_ptr<XmlElement> xml(CtrlrProcessor::getXmlFromBinary(data.getData(), (int)data.getSize()));
+		if (data.getSize() > 0) {
+			std::unique_ptr<XmlElement> xml(CtrlrProcessor::getXmlFromBinary(data.getData(), (int)data.getSize()));
 
-            if (xml) {
-                appProperties->getUserSettings()->setValue(CTRLR_PROPERTIES_FILTER_STATE, xml.get());
-            }
-        }
+			if (xml) {
+				appProperties->getUserSettings()->setValue(CTRLR_PROPERTIES_FILTER_STATE, xml.get());
+			}
+		}
 
-        // --- CRITICAL JUCE 8 FIX: Force flush to disk! ---
-        appProperties->getUserSettings()->saveIfNeeded();
-    }
+		// --- CRITICAL JUCE 8 FIX: Force flush to disk! ---
+		appProperties->getUserSettings()->saveIfNeeded();
+	}
 }
 void CtrlrStandaloneWindow::deleteFilter() {
 	if (filter != 0 && getContentComponent() != 0) {
