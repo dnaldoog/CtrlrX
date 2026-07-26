@@ -21,15 +21,11 @@ CtrlrPanelProperties::CtrlrPanelProperties(CtrlrPanelEditor& _owner)
     tabbedComponent->setCurrentTabIndex(-1);
     tabbedComponent->setOutline(1);
 
-    CtrlrPanelComponentProperties* props = new CtrlrPanelComponentProperties(owner);
+	auto *props = new CtrlrPanelComponentProperties(owner);
 
-    tabbedComponent->addTab("General",
-        getLookAndFeel().findColour(TabbedComponent::backgroundColourId),
-        props,
-        true
-    );
+	tabbedComponent->addTab("General", getLookAndFeel().findColour(TabbedComponent::backgroundColourId), props, true);
 
-    tabbedComponent->addTab("Resources",
+	tabbedComponent->addTab("Resources",
         getLookAndFeel().findColour(TabbedComponent::backgroundColourId),
         new CtrlrPanelResourceEditor(owner),
         true
@@ -58,32 +54,36 @@ CtrlrPanelProperties::CtrlrPanelProperties(CtrlrPanelEditor& _owner)
     tabbedComponent->getTabbedButtonBar().setColour(TabbedButtonBar::tabTextColourId, findColour(Label::textColourId).withAlpha(0.6f));
     tabbedComponent->getTabbedButtonBar().setColour(TabbedButtonBar::tabOutlineColourId, findColour(Slider::textBoxOutlineColourId));
 
-    ctrlrPanelFindProperty.reset(new CtrlrPanelFindProperty(owner, props));
-    addAndMakeVisible(ctrlrPanelFindProperty.get());
-    setSize(216, 364);
+	// ctrlrPanelFindProperty.reset(new CtrlrPanelFindProperty(owner, props));
+	// addAndMakeVisible(ctrlrPanelFindProperty.get());
+
+	ctrlrPanelFindProperty.reset(new CtrlrPanelFindProperty(owner, props));
+	addAndMakeVisible(ctrlrPanelFindProperty.get());
+	setSize(216, 364);
 }
 
 CtrlrPanelProperties::~CtrlrPanelProperties()
 {
     if (tabbedComponent != nullptr)
     {
-        for (int i = 0; i < tabbedComponent->getNumTabs(); ++i)
-        {
-            if (auto* content = tabbedComponent->getTabContentComponent(i))
-            {
-                if (auto* p = dynamic_cast<CtrlrPanelComponentProperties*>(content))
-                {
-                    owner.getOwner().getCtrlrManagerOwner().removeListener(p);
-                }
+		// 1. Clean up listeners and LookAndFeel pointers while tabs are still valid
+		for (int i = 0; i < tabbedComponent->getNumTabs(); ++i) {
+			if (auto *content = tabbedComponent->getTabContentComponent(i)) {
+				if (auto *p = dynamic_cast<CtrlrPanelComponentProperties *>(content)) {
+					owner.getOwner().getCtrlrManagerOwner().removeListener(p);
+				}
 
-                content->setLookAndFeel(nullptr);
-                content->setVisible(false);
-            }
-        }
+				content->setLookAndFeel(nullptr);
+			}
+		}
 
-        tabbedComponent->clearTabs();
-        deleteAndZero(tabbedComponent);
-    }
+		// 2. Remove tabbedComponent from parent child list BEFORE deleting it
+		removeChildComponent(tabbedComponent);
+
+		// 3. Delete tabbedComponent (this automatically deletes all tabs because deleteComponentWhenNotNeeded == true)
+		delete tabbedComponent;
+		tabbedComponent = nullptr;
+	}
 }
 
 void CtrlrPanelProperties::paint(Graphics& g)

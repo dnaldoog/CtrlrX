@@ -128,6 +128,7 @@ class CtrlrPanelEditor : public Component,
 		std::unique_ptr<CtrlrPanelViewport> ctrlrPanelViewport;
 		std::unique_ptr<CtrlrPanelNotifier>
 			ctrlrPanelNotifier; // Added back v5.6.31 for file management bottom notification bar
+		std::unique_ptr<CtrlrPanelFindProperty> panelFindProperty;
 
 		ComponentAnimator componentAnimator;
 		CtrlrPanel &owner;

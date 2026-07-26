@@ -797,7 +797,19 @@ void CtrlrPanelEditor::reloadResources(Array<CtrlrPanelResource *> resourcesThat
 	resized();
 }
 
-void CtrlrPanelEditor::searchForProperty() {}
+void CtrlrPanelEditor::searchForProperty() {
+	if (panelFindProperty == nullptr) {
+		// Pass 'this' as owner, and nullptr for props
+		panelFindProperty.reset(new CtrlrPanelFindProperty(*this, nullptr));
+
+		if (panelFindProperty != nullptr) {
+			addAndMakeVisible(panelFindProperty.get());
+			panelFindProperty->toFront(true);
+		}
+	} else {
+		panelFindProperty->toFront(true);
+	}
+}
 
 bool CtrlrPanelEditor::luaEditorExistsAndIsFocused() // Added v5.6.34. Required to pass keypress to the LUA method
 													 // manager for menu items. Handles the focus gain/loss.
