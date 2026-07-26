@@ -91,29 +91,37 @@ void CtrlrDocumentPanel::activeDocumentChanged() {
 }
 
 void CtrlrDocumentPanel::buttonClicked(Button *button) {
-	int index = (int)button->getProperties().getWithDefault("index", -1);
-	TabbedComponent *tc = getCurrentTabbedComponent();
+    int index = (int)button->getProperties().getWithDefault("index", -1);
+    TabbedComponent *tc = getCurrentTabbedComponent();
 
-	if (tc != nullptr) {
-		CtrlrPanelEditor *ed = dynamic_cast<CtrlrPanelEditor *>(tc->getTabContentComponent(index));
+    if (tc != nullptr) {
+        if (auto* ed = dynamic_cast<CtrlrPanelEditor *>(tc->getTabContentComponent(index))) {
+            if (auto* panelToClose = owner.getPanelForEditor(ed)) {
 
-		if (ed != nullptr) {
-			CtrlrPanel *panelToClose = owner.getPanelForEditor(ed);
+                panelToClose->canClose(true, [this, panelToClose](bool canCloseNow) {
+                    if (canCloseNow && panelToClose != nullptr) {
 
-			if (panelToClose != nullptr) {
-				// Call canClose asynchronously with the close flag and callback lambda
-				panelToClose->canClose(true, [this, ed](bool canCloseNow) {
-					if (canCloseNow) {
-						owner.removePanel(ed);
-					}
-				});
-			}
-		}
-	}
+                        // 1. Fetch current editor safely while panel is still fully alive
+                        if (auto* currentEditor = panelToClose->getEditor()) {
+
+                            // 2. Clear property selection gracefully BEFORE removing
+                            if (auto* selection = currentEditor->getSelection()) {
+                                selection->deselectAll();
+                            }
+
+                            // 3. Pass the valid CtrlrPanelEditor pointer to removePanel
+                            owner.removePanel(currentEditor);
+                        }
+                    }
+                });
+            }
+        }
+    }
 }
 
 void CtrlrDocumentPanel::closeDocumentAsync(juce::Component *doc, bool checkItsOkToCloseFirst,
 											std::function<void(bool)> callback) {
+	DBG("===closeDocumentAsync() - I closed : " << doc->getName());
 	if (doc == nullptr) {
 		if (callback != nullptr)
 			callback(false);

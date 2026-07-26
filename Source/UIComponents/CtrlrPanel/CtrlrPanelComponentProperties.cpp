@@ -66,6 +66,14 @@ CtrlrIDManager &CtrlrPanelComponentProperties::getIDManager() {
 }
 
 void CtrlrPanelComponentProperties::setTree(const ValueTree &_treeToEdit, const bool force) {
+	// If the tree isn't valid, simply clear existing property components and exit early!
+	// if (!_treeToEdit.isValid())
+	// {
+	//     deleteAllChildren(); // Clear old property components safely
+	//     return;
+	// } // prevents crash when closing panel
+	if (owner.getOwner().getOwner().isShuttingDown())
+		return;
 	if (_treeToEdit == treeToEdit && force == false) {
 		return;
 	}

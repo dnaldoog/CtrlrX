@@ -27,22 +27,31 @@ CtrlrPanelCanvas::CtrlrPanelCanvas(CtrlrPanelEditor &_owner) : owner(_owner), ct
 	getOwner().getPanelEditorTree().addListener(this);
 	setSize(600, 400);
 }
-
 CtrlrPanelCanvas::~CtrlrPanelCanvas() {
-	for (int i = 0; i < getOwner().getOwner().getModulators().size(); i++) {
-		if (getOwner().getOwner().getModulators()[i]) {
-			if (getOwner().getOwner().getModulators()[i]->getComponent()) {
-				CtrlrComponent *c = getOwner().getOwner().getModulators()[i]->getComponent();
-				removeComponent(c, false);
-			}
-		}
-	}
+    // 1. Delete child resizable border first
+    deleteAndZero(ctrlrPanelCanvasResizableBorder);
 
-	getOwner().getPanelEditorTree().removeListener(
-		this); // this is accessing freed memory. Canvas has to be deleted before valueTree, but not sure where...
-	deleteAndZero(ctrlrPanelCanvasResizableBorder);
-	setLookAndFeel(nullptr);
+    // 2. Clear LookAndFeel safely
+    setLookAndFeel(nullptr);
+
+    // NOTE: Removed getOwner().getPanelEditorTree().removeListener(this) 
+    // because CtrlrPanelEditor has already unhooked it in STEP 0 above!
 }
+// CtrlrPanelCanvas::~CtrlrPanelCanvas() {
+// 	for (int i = 0; i < getOwner().getOwner().getModulators().size(); i++) {
+// 		if (getOwner().getOwner().getModulators()[i]) {
+// 			if (getOwner().getOwner().getModulators()[i]->getComponent()) {
+// 				CtrlrComponent *c = getOwner().getOwner().getModulators()[i]->getComponent();
+// 				removeComponent(c, false);
+// 			}
+// 		}
+// 	}
+
+// 	getOwner().getPanelEditorTree().removeListener(
+// 		this); // this is accessing freed memory. Canvas has to be deleted before valueTree, but not sure where...
+// 	deleteAndZero(ctrlrPanelCanvasResizableBorder);
+// 	setLookAndFeel(nullptr);
+// }
 
 //==============================================================================
 void CtrlrPanelCanvas::paint(Graphics &g) {

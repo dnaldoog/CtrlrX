@@ -37,16 +37,18 @@ CtrlrPanelNotifier::CtrlrPanelNotifier(
 
 CtrlrPanelNotifier::~CtrlrPanelNotifier() {
 	DBG("==== ~CtrlrPanelNotifier() DTOR ====== ");
-	if (text != nullptr) {
-		// Detach the mouse listener explicitly before text is freed
+	// if (text != nullptr) {
+	// 	// Detach the mouse listener explicitly before text is freed
+	// 	text->removeMouseListener(this);
+
+	// 	// Remove text from JUCE's internal child list
+	// 	removeChildComponent(text.get());
+
+	// 	// Clear the smart pointer
+	// 	text.reset();
+	// }
+	if (text != nullptr)
 		text->removeMouseListener(this);
-
-		// Remove text from JUCE's internal child list
-		removeChildComponent(text.get());
-
-		// Clear the smart pointer
-		text.reset();
-	}
 }
 
 void CtrlrPanelNotifier::paint(Graphics &g) // Added back v5.6.31 for file management bottom notification bar
@@ -264,68 +266,68 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 
 CtrlrPanelEditor::~CtrlrPanelEditor() {
 
-	DBG("=== CtrlrPanelEditor Destructor Called ===");
+    DBG("=== CtrlrPanelEditor Destructor Called ===");
 
-	// 1. FORCE-CANCEL all animations immediately (must pass true!)
-	componentAnimator.cancelAllAnimations(true);
-	componentAnimator.removeChangeListener(this);
+    // =========================================================================
+    // STEP 0: UNHOOK CANVAS LISTENERS (DO NOT CALL 'delete canvas;')
+    // =========================================================================
+    if (auto* canvas = getCanvas()) {
+        // Unhook listener safely while getPanelEditorTree() is valid
+        if (getPanelEditorTree().isValid()) {
+            getPanelEditorTree().removeListener(canvas);
+        }
 
-	// Unsubscribe from ValueTree property change notifications
-	if (owner.getPanelTree().isValid()) {
-		owner.getPanelTree().removeListener(this);
-	}
+        // Unmount canvas from parent component hierarchy so JUCE doesn't route events
+        removeChildComponent(canvas);
+        
+        // DO NOT call 'delete canvas;' here!
+        // The panel viewport / unique_ptr manages the actual memory deletion.
+    }
 
-	if (getPanelEditorTree().isValid()) {
-		getPanelEditorTree().removeListener(this);
-	}
+    // =========================================================================
+    // STEP 1: FORCE-CANCEL ANIMATIONS & LISTENERS
+    // =========================================================================
+    componentAnimator.cancelAllAnimations(true);
+    componentAnimator.removeChangeListener(this);
 
-	if (ctrlrComponentSelection != nullptr && ctrlrPanelProperties != nullptr) {
-		ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
-	}
+    if (owner.getPanelTree().isValid()) {
+        owner.getPanelTree().removeListener(this);
+    }
 
-	if (ctrlrPanelProperties != nullptr) {
-		ctrlrPanelProperties.reset();
-	}
+    if (getPanelEditorTree().isValid()) {
+        getPanelEditorTree().removeListener(this);
+    }
 
-	// =========================================================================
-	// STEP 2: DETACH LOOKANDFEEL
-	// =========================================================================
-	setLookAndFeel(nullptr);
-	if (getCanvas()) {
-		getCanvas()->setLookAndFeel(nullptr);
-	}
+    if (ctrlrComponentSelection != nullptr) {
+        ctrlrComponentSelection->deselectAll();
 
-	std::function<void(juce::Component *)> detachLnF = [&](juce::Component *c) {
-		if (c == nullptr)
-			return;
-		c->setLookAndFeel(nullptr);
-		for (int j = 0; j < c->getNumChildComponents(); j++)
-			detachLnF(c->getChildComponent(j));
-	};
+        if (ctrlrPanelProperties != nullptr) {
+            ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
+        }
+    }
 
-	for (int i = 0; i < owner.getModulators().size(); i++) {
-		if (auto *mod = owner.getModulators()[i]) {
-			if (auto *comp = mod->getComponent()) {
-				detachLnF(comp);
-			}
-		}
-	}
+    if (ctrlrPanelProperties != nullptr) {
+        ctrlrPanelProperties.reset();
+    }
 
-	// =========================================================================
-	// STEP 3: DESTROY NOTIFIER
-	// =========================================================================
-	if (ctrlrPanelNotifier != nullptr) {
-		// Ensure ComponentAnimator has no remaining handles on this component
-		componentAnimator.cancelAllAnimations(true);
+    // =========================================================================
+    // STEP 2: DETACH LOOKANDFEEL SAFELY
+    // =========================================================================
+    setLookAndFeel(nullptr);
 
-		ctrlrPanelNotifier->setVisible(false);
-		removeChildComponent(ctrlrPanelNotifier.get());
-		ctrlrPanelNotifier->setLookAndFeel(nullptr);
-		ctrlrPanelNotifier.reset();
-	}
-
-	owner.getPanelTree().removeChild(getPanelEditorTree(), 0);
-	juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
+    // =========================================================================
+// STEP 3: CLEAR VIEWPORT CONTAINER
+// =========================================================================
+if (ctrlrPanelViewport != nullptr) {
+    // Unmount from editor children so events stop routing to it
+    removeChildComponent(ctrlrPanelViewport.get());
+    
+    // Clear LookAndFeel on the viewport
+    ctrlrPanelViewport->setLookAndFeel(nullptr);
+    
+    // Destroy the viewport container cleanly
+    ctrlrPanelViewport.reset();
+}
 }
 
 void CtrlrPanelEditor::visibilityChanged() {}

@@ -544,23 +544,35 @@ bool CtrlrManager::isValidComponentName(const String &name) {
 }
 
 CtrlrPanel *CtrlrManager::getActivePanel() {
-	// 1. Guard against null or missing document panel
+	// 1. Guard against null document panel
 	if (ctrlrDocumentPanel == nullptr)
 		return nullptr;
 
-	// 2. Ensure documents actually exist before querying active document
+	// 2. Ensure documents actually exist
 	if (ctrlrDocumentPanel->getNumDocuments() <= 0)
 		return nullptr;
 
-	// 3. Safely cast active document
-	if (auto *activeDoc = ctrlrDocumentPanel->getActiveDocument()) {
-		if (auto *ed = dynamic_cast<CtrlrPanelEditor *>(activeDoc)) {
-			return &(ed->getOwner());
+	// 3. Get active document component
+	juce::Component *activeDoc = ctrlrDocumentPanel->getActiveDocument();
+	if (activeDoc == nullptr)
+		return nullptr;
+
+	// 4. Validate against owned panels list before casting
+	// Iterate through known alive panels to verify this editor actually belongs to one
+	for (int i = 0; i < ctrlrPanels.size(); ++i) {
+		CtrlrPanel *panel = ctrlrPanels.getUnchecked(i);
+		if (panel != nullptr) {
+			// Compare editor pointers safely
+			if (panel->getEditor() == activeDoc) {
+				return panel;
+			}
 		}
 	}
 
 	return nullptr;
 }
+
+
 void CtrlrManager::removePanel(CtrlrPanelEditor *editor) {
 	if (editor == nullptr)
 		return;
@@ -582,28 +594,14 @@ void CtrlrManager::removePanel(CtrlrPanelEditor *editor) {
 		}
 	}
 
-	// 2. Remove document tab safely
+	// 2. Unmount document tab synchronously (bypassing closeDocumentAsync)
 	if (ctrlrDocumentPanel != nullptr && safeEditor != nullptr) {
-		// DO NOT call setActiveDocument(nullptr)!
-		// Check if the document panel still contains this component
-		bool containsDoc = false;
-		for (int i = 0; i < ctrlrDocumentPanel->getNumDocuments(); ++i) {
-			if (ctrlrDocumentPanel->getDocument(i) == safeEditor.getComponent()) {
-				containsDoc = true;
-				break;
-			}
-		}
-
-		if (containsDoc) {
-			// JUCE will automatically select a remaining active document
-			// and delete/detach safeEditor asynchronously.
-			ctrlrDocumentPanel->closeDocumentAsync(safeEditor.getComponent(), false, nullptr);
-		}
+		safeEditor->setVisible(false);
+		ctrlrDocumentPanel->removeChildComponent(safeEditor.getComponent());
 	}
 
-	// 3. Remove panel object from owned array
+	// 3. Remove panel object from owned array (deletes ~CtrlrPanel & ~CtrlrPanelEditor)
 	if (panel != nullptr) {
-		// Pass true so OwnedArray deletes the CtrlrPanel and its editor cleanly
 		ctrlrPanels.removeObject(panel, true);
 	}
 

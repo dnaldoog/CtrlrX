@@ -32,15 +32,26 @@ CtrlrViewport::~CtrlrViewport() { deleteContentComp(); }
 void CtrlrViewport::visibleAreaChanged(const Rectangle<int> &) {}
 
 //==============================================================================
-void CtrlrViewport::deleteContentComp() {
-	if (deleteContent) {
-		// This sets the content comp to a null pointer before deleting the old one, in case
-		// anything tries to use the old one while it's in mid-deletion..
-		std::unique_ptr<Component> oldCompDeleter(contentComp);
-		contentComp = nullptr;
-	} else {
-		contentComp = nullptr;
-	}
+void CtrlrViewport::deleteContentComp()
+{
+    // Check if the referenced component is still alive
+    if (Component* comp = contentComp.get())
+    {
+        // Detach from parent UI tree so JUCE doesn't keep repainting/referencing it
+        if (auto* parent = comp->getParentComponent()) {
+            parent->removeChildComponent(comp);
+        }
+
+        // Clear weak reference before deleting object
+        contentComp = nullptr;
+
+        // Safely delete the actual component instance
+        delete comp;
+    }
+    else
+    {
+        contentComp = nullptr;
+    }
 }
 
 void CtrlrViewport::setViewedComponent(Component *const newViewedComponent,
