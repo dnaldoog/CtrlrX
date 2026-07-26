@@ -23,7 +23,7 @@ class CtrlrDocumentPanel  : public MultiDocumentPanel, public Button::Listener
 			juce::MultiDocumentPanel::closeAllDocumentsAsync(checkItsOkToCloseFirst, callback);
 		}
 		// Synchronous cleanup function for teardown in ~CtrlrManager()
-		void CtrlrDocumentPanel::closeAllDocumentsSync() {
+		void closeAllDocumentsSync() {
 			// 1. Hide the panel immediately to prevent repaint calls during teardown
 			setVisible(false);
 

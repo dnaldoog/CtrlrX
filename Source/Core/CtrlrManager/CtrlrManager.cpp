@@ -351,11 +351,11 @@ void CtrlrManager::restoreState(const ValueTree &savedTree) {
 
 	if (owner != nullptr && owner->getOverrides().isValid()) {
 		_DBG("CtrlrManager::restoreState: Overrides found, setting properties.");
-		auto &overrides = owner->getOverrides();
+		const auto overrides = owner->getOverrides();
 
 		for (int i = 0; i < overrides.getNumProperties(); ++i) {
 			const auto propName = overrides.getPropertyName(i);
-			setProperty(propName, overrides.getPropertyAsValue(propName, 0));
+			setProperty(propName, overrides.getProperty(propName));
 		}
 		_DBG("CtrlrManager::restoreState: Overrides processed.");
 	}
