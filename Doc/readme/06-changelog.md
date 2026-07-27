@@ -24,7 +24,7 @@
 
 ## Changelog
 
-#### Version 5.6.36 | 2026.07.22
+#### Version 5.6.36 | 2026.07.26
 
 * **FIXED** CtrlrTabsComponents.cpp and CtrlrGroup.cpp keep component owner group on uiTabs. `CtrlrTabsComponent.cpp`, `CtrlrGroup.cpp`
 * **FIXED** Doubling of menu item causing potential crash. `CtrlrEditor.cpp`. Thanks to [John Goodland](https://github.com/dnaldoog) `CtrlrEditorApplicationCommandsHandlers.cpp`
@@ -47,6 +47,8 @@
 * **ADDED** uiSliderBackgroundColour property to uiSlider & uiFixedSlider for linear bar background colour. `CtrlrIDs.h`, `CtrlrIDs.xml`, `CtrlrSlider.cpp`, `CtrlrFixedSlider.cpp` , `CtrlSliderInternal.cpp` & `.h`
 * **ADDED** Centralized documentation as .md file. Thanks to [Sgorpi](https://github.com/sgorpi)
 * **ADDED** Align/Resize to first selection between components. [John Goodland](https://github.com/dnaldoog).`CtrlrPanelCanvas.cpp` & `.h`, `CtrlrPanelCanvasHandlers.cpp`
+* **FIXED** blank ComboBox display when switching tabs with fuzzy search OFF. `CtrlrCombo.cpp`
+
 
 #### Version 5.6.35 | 2026.04.20
 

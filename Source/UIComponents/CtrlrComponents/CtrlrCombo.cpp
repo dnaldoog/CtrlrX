@@ -317,6 +317,11 @@ void CtrlrCombo::parentHierarchyChanged()
         _DBG("GUI_TRACE [" + owner.getName() + "] parentHierarchyChanged EXIT | UI Index: "
              + String(ctrlrCombo->getSelectedItemIndex()) + " | UI Text: '" + ctrlrCombo->getText() + "'");
     }
+	
+    if (isVisible() && getWidth() > 0 && getHeight() > 0) // Added v5.6.36. Prevents ComboBox internal label from blanking out when embedded inside uiTabs with fuzzy search disabled.
+    {
+        startTimer(50); // Quick check to re-sync display text
+    }
 }
 
 void CtrlrCombo::timerCallback()
