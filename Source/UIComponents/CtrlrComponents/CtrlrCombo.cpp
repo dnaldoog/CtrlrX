@@ -298,20 +298,20 @@ void CtrlrCombo::lookAndFeelChanged()
 
 void CtrlrCombo::parentHierarchyChanged()
 {
-    // TRACE: Capture the state at the exact moment of attachment
     if (ctrlrCombo)
     {
         _DBG("GUI_TRACE [" + owner.getName() + "] parentHierarchyChanged ENTER | UI Index: "
              + String(ctrlrCombo->getSelectedItemIndex()) + " | UI Text: '" + ctrlrCombo->getText() + "'");
     }
 
-    if (getParentComponent() != nullptr)
+    // Only refresh if we are actively in the middle of a search session 
+    // when attached/re-parented. Otherwise, leave the saved combo selection alone!
+    if (getParentComponent() != nullptr && isSearching)
     {
-        _DBG("LIFECYCLE: Component attached to parent. Refreshing Search state.");
+        _DBG("LIFECYCLE: Component re-attached during active search. Refreshing search results.");
         triggerAsyncUpdate();
     }
 
-    // TRACE: See if the act of attaching triggered a JUCE internal reset
     if (ctrlrCombo)
     {
         _DBG("GUI_TRACE [" + owner.getName() + "] parentHierarchyChanged EXIT | UI Index: "
