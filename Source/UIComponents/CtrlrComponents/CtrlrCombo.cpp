@@ -181,11 +181,14 @@ void CtrlrCombo::mouseDown (const MouseEvent& e)
             {
                 if (auto* lb = dynamic_cast<juce::Label*>(ctrlrCombo->getChildComponent(i)))
                 {
-                    lb->showEditor(); // This creates the TextEditor component
+					// Clear label text so initial click starts with a blank slate
+					lb->setText(String(), dontSendNotification); // <--- Updated v5.6.36. FIX 1: Clear existing text on 1st click after load to prevent appending new typed text
+					lb->showEditor(); // This creates the TextEditor component
                     
                     if (auto* ed = lb->getCurrentTextEditor())
                     {
-                        ed->grabKeyboardFocus();
+						ed->clear(); // Updated v5.6.36. Ensure text editor buffer is completely empty
+						ed->grabKeyboardFocus();
                         ed->setCaretVisible(true);
                         ed->moveCaretToEnd();
                     }
