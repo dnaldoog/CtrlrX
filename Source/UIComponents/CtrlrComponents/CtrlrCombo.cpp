@@ -305,9 +305,11 @@ void CtrlrCombo::parentHierarchyChanged()
              + String(ctrlrCombo->getSelectedItemIndex()) + " | UI Text: '" + ctrlrCombo->getText() + "'");
     }
 
-    if (getParentComponent() != nullptr)
+    // Only refresh if we are actively in the middle of a search session
+    // when attached/re-parented. Otherwise, leave the saved combo selection alone!
+    if (getParentComponent() != nullptr) // && isSearching) // Updated v5.6.36. Thanks to @dnaldoog
     {
-        _DBG("LIFECYCLE: Component attached to parent. Refreshing Search state.");
+        _DBG("LIFECYCLE: Component re-attached during active search. Refreshing search results.");
         triggerAsyncUpdate();
     }
 
