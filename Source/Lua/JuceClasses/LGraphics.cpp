@@ -330,7 +330,7 @@ void LFont::wrapForLua (lua_State *L)
 			[
 				def("getDefaultSansSerifFontName", &Font::getDefaultSansSerifFontName),
 				def("getDefaultSerifFontName", &Font::getDefaultSerifFontName),
-				def("getDefaultMonospacedFontName ", &Font::getDefaultMonospacedFontName),
+				def("getDefaultMonospacedFontName", &Font::getDefaultMonospacedFontName), // Updated v5.6.36. Typo
 				def("getDefaultStyle", &Font::getDefaultStyle),
 				def("getDefaultTypefaceForFont", &Font::getDefaultTypefaceForFont),
 				def("findAllTypefaceNames", &Font::findAllTypefaceNames),
