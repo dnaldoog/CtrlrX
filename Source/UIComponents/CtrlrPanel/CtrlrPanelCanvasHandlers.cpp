@@ -291,6 +291,10 @@ void CtrlrPanelCanvas::getEditMenu(PopupMenu &m)
 	m.addItem (Paste, "Paste");
 	m.addItem (Cut, "Cut", getSelection().getNumSelected() ? true : false);
 	m.addItem (Delete, "Delete", getSelection().getNumSelected() ? true : false);
+	m.addSeparator();
+	m.addSectionHeader("Align");
+	m.addItem(CenterX, "Centre X", true, false);
+	m.addItem(CenterY, "Centre Y", true, false);
 
 	if (getSelection().getNumSelected() > 1)
 	{
@@ -299,12 +303,16 @@ void CtrlrPanelCanvas::getEditMenu(PopupMenu &m)
 		m.addItem (AlignToBottom, "Align to bottom", true, false);
 		m.addItem (AlignToLeft, "Align to left", true, false);
 		m.addItem (AlignToRight, "Align to right", true, false);
-		m.addItem (DistributeHorizontally, "Distribute horizontally", true, false); // Added v5.6.36. Thanks to @dnaldoog. Align/Resize to first selection between components
-		m.addItem (DistributeVertically, "Distribute vertically", true, false);
+
 		m.addSeparator();
 		m.addItem(MatchWidth, "Match width to first selected", true, false);
 		m.addItem(MatchHeight, "Match height to first selected", true, false);
-		m.addItem(MatchSize, "Match height/width to first selected", true, false);
+		m.addItem(MatchSize, "Match height/wid1th to first selected", true, false);
+	}
+	if (getSelection().getNumSelected() > 2) {
+		m.addItem(DistributeHorizontally, "Distribute horizontally", true,
+				  false); // Added v5.6.36. Thanks to @dnaldoog. Align/Resize to first selection between components
+		m.addItem(DistributeVertically, "Distribute vertically", true, false);
 	}
 }
 
@@ -335,6 +343,8 @@ void CtrlrPanelCanvas::handleEditMenu (const int returnCode, const MouseEvent &e
 		case AlignToRight:
 		case DistributeHorizontally: // Added v5.6.36. Thanks to @dnaldoog. Align/Resize to first selection between components
 		case DistributeVertically:
+		case CenterX:
+		case CenterY:
 		case MatchHeight:
 		case MatchWidth:
 		case MatchSize:
