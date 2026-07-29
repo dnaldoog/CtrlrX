@@ -286,6 +286,12 @@ void CtrlrCombo::parentHierarchyChanged() {
 		_DBG("GUI_TRACE [" + owner.getName() + "] parentHierarchyChanged EXIT | UI Index: " +
 			 String(ctrlrCombo->getSelectedItemIndex()) + " | UI Text: '" + ctrlrCombo->getText() + "'");
 	}
+	if (isVisible() && getWidth() > 0 &&
+		getHeight() > 0) // Added v5.6.36. Prevents ComboBox internal label from blanking out when embedded inside
+						 // uiTabs with fuzzy search disabled.
+	{
+		startTimer(50); // Quick check to re-sync display text
+	}
 }
 
 void CtrlrCombo::timerCallback() {
@@ -333,6 +339,13 @@ void CtrlrCombo::timerCallback() {
 			// If Index is valid but Text is empty, the UI "wipe" happened right here.
 			_DBG("GUI_TRACE [" + owner.getName() + "] timerCallback | Post-Refill Index: " +
 				 String(ctrlrCombo->getSelectedItemIndex()) + " | Text: '" + ctrlrCombo->getText() + "'");
+		}
+		// Only refresh if we are actively in the middle of a search session
+		// when attached/re-parented. Otherwise, leave the saved combo selection alone!
+		if (getParentComponent() != nullptr) // && isSearching) // Updated v5.6.36. Thanks to @dnaldoog
+		{
+			_DBG("LIFECYCLE: Component re-attached during active search. Refreshing search results.");
+			triggerAsyncUpdate();
 		}
 	}
 

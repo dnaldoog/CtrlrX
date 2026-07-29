@@ -1712,6 +1712,7 @@ void LPopupMenu::wrapForLua(lua_State *L) {
 				  .def("addColumnBreak", &LPopupMenu::addColumnBreak)
 				  .def("addSectionHeader", &PopupMenu::addSectionHeader)
 				  .def("getNumItems", &PopupMenu::getNumItems)
+				  .def("setLookAndFeel", &PopupMenu::setLookAndFeel)
 
 				  // --- Synchronous Show Methods ---
 				  .def("show", &LPopupMenu_show4)
