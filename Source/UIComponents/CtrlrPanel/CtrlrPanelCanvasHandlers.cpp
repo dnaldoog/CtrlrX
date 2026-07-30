@@ -286,33 +286,88 @@ void CtrlrPanelCanvas::replaceComponent (CtrlrModulator &modulator, const String
 
 void CtrlrPanelCanvas::getEditMenu(PopupMenu &m)
 {
-	m.addSectionHeader ("Edit");
-	m.addItem (Copy, "Copy", getSelection().getNumSelected() ? true : false);
-	m.addItem (Paste, "Paste");
-	m.addItem (Cut, "Cut", getSelection().getNumSelected() ? true : false);
-	m.addItem (Delete, "Delete", getSelection().getNumSelected() ? true : false);
-	m.addSeparator();
-	m.addSectionHeader("Align");
-	m.addItem(CenterX, "Centre X", true, false);
-	m.addItem(CenterY, "Centre Y", true, false);
+	auto createMenuIcon = [](const char *data, const size_t size) -> std::unique_ptr<juce::Drawable> {
+		if (auto svg = juce::Drawable::createFromImageData(data, size)) {
+			// 1. Set explicit dimensions (24x24 px square)
+			svg->setBounds(0, 0, 24, 24);
 
-	if (getSelection().getNumSelected() > 1)
-	{
-		m.addSectionHeader ("Align");
-		m.addItem (AlignToTop, "Align to top", true, false);
-		m.addItem (AlignToBottom, "Align to bottom", true, false);
-		m.addItem (AlignToLeft, "Align to left", true, false);
-		m.addItem (AlignToRight, "Align to right", true, false);
+			// 2. Scale vector nicely inside 24x24 maintaining aspect ratio
+			svg->setTransformToFit(juce::Rectangle<float>(0, 0, 24.0f, 24.0f),
+								   juce::RectanglePlacement::centred | juce::RectanglePlacement::onlyReduceInSize);
+
+			return svg;
+		}
+		return nullptr;
+	};
+
+	const bool hasSelection = getSelection().getNumSelected() > 0;
+
+	// --- Edit Section ---
+	m.addSectionHeader("Edit");
+
+	m.addItem(Copy, "Copy", hasSelection, false,
+			  createMenuIcon(BinaryData::editduplicatesymbolic_svg, BinaryData::editduplicatesymbolic_svgSize));
+
+	m.addItem(Paste, "Paste", true, false,
+			  createMenuIcon(BinaryData::editpastestylesymbolic_svg, BinaryData::editpastestylesymbolic_svgSize));
+
+	m.addItem(Cut, "Cut", hasSelection, false,
+			  createMenuIcon(BinaryData::editcutsymbolic_svg, BinaryData::editcutsymbolic_svgSize));
+
+	m.addItem(Delete, "Delete", hasSelection, false,
+			  createMenuIcon(BinaryData::editdeletesymbolic_svg, BinaryData::editdeletesymbolic_svgSize));
+
+	m.addSeparator();
+
+	// --- Center Section (Works on 1+ objects) ---
+	m.addSectionHeader("Position");
+
+	m.addItem(
+		CenterX, "Centre X", true, false,
+		createMenuIcon(BinaryData::boundingbox_centersymbolic_svg, BinaryData::boundingbox_centersymbolic_svgSize));
+
+	m.addItem(CenterY, "Centre Y", true, false,
+			  createMenuIcon(BinaryData::snapnodesmidpointsymbolic_svg, BinaryData::snapnodesmidpointsymbolic_svgSize));
+
+	// --- Alignment Section (2+ objects) ---
+	if (getSelection().getNumSelected() > 1) {
+		m.addSeparator();
+		m.addSectionHeader("Align");
+
+		m.addItem(
+			AlignToTop, "Align to top", true, false,
+			createMenuIcon(BinaryData::alignverticaltopsymbolic_svg, BinaryData::alignverticaltopsymbolic_svgSize));
+
+		m.addItem(AlignToBottom, "Align to bottom", true, false,
+				  createMenuIcon(BinaryData::alignverticalbottomsymbolic_svg,
+								 BinaryData::alignverticalbottomsymbolic_svgSize));
+
+		m.addItem(AlignToLeft, "Align to left", true, false,
+				  createMenuIcon(BinaryData::alignhorizontalleftsymbolic_svg,
+								 BinaryData::alignhorizontalleftsymbolic_svgSize));
+
+		m.addItem(AlignToRight, "Align to right", true, false,
+				  createMenuIcon(BinaryData::alignhorizontalrightsymbolic_svg,
+								 BinaryData::alignhorizontalrightsymbolic_svgSize));
 
 		m.addSeparator();
 		m.addItem(MatchWidth, "Match width to first selected", true, false);
 		m.addItem(MatchHeight, "Match height to first selected", true, false);
-		m.addItem(MatchSize, "Match height/wid1th to first selected", true, false);
+		m.addItem(MatchSize, "Match height/width to first selected", true, false);
 	}
+
+	// --- Distribution Section (3+ objects) ---
 	if (getSelection().getNumSelected() > 2) {
-		m.addItem(DistributeHorizontally, "Distribute horizontally", true,
-				  false); // Added v5.6.36. Thanks to @dnaldoog. Align/Resize to first selection between components
-		m.addItem(DistributeVertically, "Distribute vertically", true, false);
+		m.addSeparator();
+		m.addSectionHeader("Distribute");
+
+		m.addItem(DistributeHorizontally, "Distribute horizontally", true, false,
+				  createMenuIcon(BinaryData::distributehorizontalgapssymbolic_svg,
+								 BinaryData::distributehorizontalgapssymbolic_svgSize));
+
+		m.addItem(DistributeVertically, "Distribute vertically", true, false,
+				  createMenuIcon(BinaryData::distributeverticalgapssymbolic_svg,
+								 BinaryData::distributeverticalgapssymbolic_svgSize));
 	}
 }
 

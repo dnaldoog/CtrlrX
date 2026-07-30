@@ -623,6 +623,42 @@
           <FILE id="OOpHQ2" name="FONT_ZX81.ttf" compile="0" resource="1" file="Source/Resources/Fonts/FONT_ZX81.ttf"/>
         </GROUP>
         <GROUP id="{57CA4634-99B0-23FB-F19C-154181EAAE85}" name="Icons">
+          <FILE id="IiigV3" name="align-horizontal-left-symbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/align-horizontal-left-symbolic.svg"/>
+          <FILE id="QDOuK9" name="align-horizontal-right-symbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/align-horizontal-right-symbolic.svg"/>
+          <FILE id="yR34Pf" name="align-vertical-bottom-symbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/align-vertical-bottom-symbolic.svg"/>
+          <FILE id="ZT6H3Z" name="align-vertical-top-symbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/align-vertical-top-symbolic.svg"/>
+          <FILE id="Yrj4mK" name="boundingbox_center-symbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/boundingbox_center-symbolic.svg"/>
+          <FILE id="MbvLqw" name="CtrlrX-Logo-512x512-DEF.png" compile="0" resource="1"
+                file="Source/Resources/Icons/CtrlrX-Logo-512x512-DEF.png"/>
+          <FILE id="BNY1ib" name="CtrlrX-Logo-vector-DEF.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/CtrlrX-Logo-vector-DEF.svg"/>
+          <FILE id="HYJkXa" name="CtrlrX-README-250x315-02.png" compile="0" resource="1"
+                file="Source/Resources/Icons/CtrlrX-README-250x315-02.png"/>
+          <FILE id="BuMQI7" name="CtrlrX-README-250x315.png" compile="0" resource="1"
+                file="Source/Resources/Icons/CtrlrX-README-250x315.png"/>
+          <FILE id="qBu4Yy" name="distribute-horizontal-gaps-symbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/distribute-horizontal-gaps-symbolic.svg"/>
+          <FILE id="O4vn32" name="distribute-vertical-gaps-symbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/distribute-vertical-gaps-symbolic.svg"/>
+          <FILE id="ovnFCf" name="edit-cut-symbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/edit-cut-symbolic.svg"/>
+          <FILE id="djfP3y" name="edit-delete-symbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/edit-delete-symbolic.svg"/>
+          <FILE id="ybpFem" name="edit-duplicate-symbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/edit-duplicate-symbolic.svg"/>
+          <FILE id="AkTwTc" name="edit-paste-style-symbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/edit-paste-style-symbolic.svg"/>
+          <FILE id="khMNvB" name="happy.svg" compile="0" resource="1" file="Source/Resources/Icons/happy.svg"/>
+          <FILE id="HM5MKJ" name="object-locked-symbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/object-locked-symbolic.svg"/>
+          <FILE id="gGsRTp" name="sad.svg" compile="0" resource="1" file="Source/Resources/Icons/sad.svg"/>
+          <FILE id="AX7Mq6" name="snap-nodes-midpoint-symbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/snap-nodes-midpoint-symbolic.svg"/>
           <FILE id="d8Ox7r" name="kofi.svg" compile="0" resource="1" file="Source/Resources/Icons/kofi.svg"/>
           <FILE id="hvQjEJ" name="github_line.svg" compile="0" resource="1" file="Source/Resources/Icons/github_line.svg"/>
           <FILE id="tsirkk" name="paypal_colour.svg" compile="0" resource="1"

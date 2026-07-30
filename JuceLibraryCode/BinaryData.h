@@ -9,19 +9,19 @@
 namespace BinaryData
 {
     extern const char*   build_information_hpp_cmake_in;
-    const int            build_information_hpp_cmake_inSize = 2032;
+    const int            build_information_hpp_cmake_inSize = 2087;
 
     extern const char*   getdeps_sh;
-    const int            getdeps_shSize = 457;
+    const int            getdeps_shSize = 477;
 
     extern const char*   INSTALL_txt;
-    const int            INSTALL_txtSize = 2054;
+    const int            INSTALL_txtSize = 2121;
 
     extern const char*   LICENSE_txt;
-    const int            LICENSE_txtSize = 1207;
+    const int            LICENSE_txtSize = 1230;
 
     extern const char*   README_md;
-    const int            README_mdSize = 7469;
+    const int            README_mdSize = 7609;
 
     extern const char*   CtrlrRevision_template;
     const int            CtrlrRevision_templateSize = 597;
@@ -58,6 +58,63 @@ namespace BinaryData
 
     extern const char*   FONT_ZX81_ttf;
     const int            FONT_ZX81_ttfSize = 17176;
+
+    extern const char*   alignhorizontalleftsymbolic_svg;
+    const int            alignhorizontalleftsymbolic_svgSize = 3096;
+
+    extern const char*   alignhorizontalrightsymbolic_svg;
+    const int            alignhorizontalrightsymbolic_svgSize = 3741;
+
+    extern const char*   alignverticalbottomsymbolic_svg;
+    const int            alignverticalbottomsymbolic_svgSize = 3253;
+
+    extern const char*   alignverticaltopsymbolic_svg;
+    const int            alignverticaltopsymbolic_svgSize = 3454;
+
+    extern const char*   boundingbox_centersymbolic_svg;
+    const int            boundingbox_centersymbolic_svgSize = 2297;
+
+    extern const char*   CtrlrXLogo512x512DEF_png;
+    const int            CtrlrXLogo512x512DEF_pngSize = 27821;
+
+    extern const char*   CtrlrXLogovectorDEF_svg;
+    const int            CtrlrXLogovectorDEF_svgSize = 1751;
+
+    extern const char*   CtrlrXREADME250x31502_png;
+    const int            CtrlrXREADME250x31502_pngSize = 8691;
+
+    extern const char*   CtrlrXREADME250x315_png;
+    const int            CtrlrXREADME250x315_pngSize = 8691;
+
+    extern const char*   distributehorizontalgapssymbolic_svg;
+    const int            distributehorizontalgapssymbolic_svgSize = 3762;
+
+    extern const char*   distributeverticalgapssymbolic_svg;
+    const int            distributeverticalgapssymbolic_svgSize = 3849;
+
+    extern const char*   editcutsymbolic_svg;
+    const int            editcutsymbolic_svgSize = 2976;
+
+    extern const char*   editdeletesymbolic_svg;
+    const int            editdeletesymbolic_svgSize = 2946;
+
+    extern const char*   editduplicatesymbolic_svg;
+    const int            editduplicatesymbolic_svgSize = 2198;
+
+    extern const char*   editpastestylesymbolic_svg;
+    const int            editpastestylesymbolic_svgSize = 3295;
+
+    extern const char*   happy_svg;
+    const int            happy_svgSize = 508;
+
+    extern const char*   objectlockedsymbolic_svg;
+    const int            objectlockedsymbolic_svgSize = 3108;
+
+    extern const char*   sad_svg;
+    const int            sad_svgSize = 511;
+
+    extern const char*   snapnodesmidpointsymbolic_svg;
+    const int            snapnodesmidpointsymbolic_svgSize = 3267;
 
     extern const char*   kofi_svg;
     const int            kofi_svgSize = 2391;
@@ -123,7 +180,7 @@ namespace BinaryData
     const int            copy_svgSize = 282;
 
     extern const char*   ctrlr_logo_svg;
-    const int            ctrlr_logo_svgSize = 23612;
+    const int            ctrlr_logo_svgSize = 23961;
 
     extern const char*   cut_svg;
     const int            cut_svgSize = 692;
@@ -159,7 +216,7 @@ namespace BinaryData
     const int            memory_svgSize = 348;
 
     extern const char*   midi_svg;
-    const int            midi_svgSize = 9017;
+    const int            midi_svgSize = 9089;
 
     extern const char*   nav_next_svg;
     const int            nav_next_svgSize = 201;
@@ -270,7 +327,7 @@ namespace BinaryData
     const int            RSRC_zipSize = 49800;
 
     extern const char*   LuaAPI_xml;
-    const int            LuaAPI_xmlSize = 243499;
+    const int            LuaAPI_xmlSize = 247366;
 
     extern const char*   CtrlrIDs_xml;
     const int            CtrlrIDs_xmlSize = 93870;
@@ -291,7 +348,7 @@ namespace BinaryData
     const int            CtrlrMIDIVendors_xmlSize = 15061;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 94;
+    const int namedResourceListSize = 113;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];
