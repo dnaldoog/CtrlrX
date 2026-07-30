@@ -72,7 +72,7 @@ namespace BinaryData
     const int            alignverticaltopsymbolic_svgSize = 3565;
 
     extern const char*   boundingboxcentersymbolic_svg;
-    const int            boundingboxcentersymbolic_svgSize = 2374;
+    const int            boundingboxcentersymbolic_svgSize = 6295;
 
     extern const char*   distributehorizontalgapssymbolic_svg;
     const int            distributehorizontalgapssymbolic_svgSize = 3892;
@@ -99,7 +99,7 @@ namespace BinaryData
     const int            objectunlockedsymbolic_svgSize = 3194;
 
     extern const char*   snapnodesmidpointsymbolic_svg;
-    const int            snapnodesmidpointsymbolic_svgSize = 3378;
+    const int            snapnodesmidpointsymbolic_svgSize = 6796;
 
     extern const char*   transformrotatesymbolic_svg;
     const int            transformrotatesymbolic_svgSize = 3606;
