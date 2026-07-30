@@ -60,19 +60,55 @@ namespace BinaryData
     const int            FONT_ZX81_ttfSize = 17176;
 
     extern const char*   alignhorizontalleftsymbolic_svg;
-    const int            alignhorizontalleftsymbolic_svgSize = 3096;
+    const int            alignhorizontalleftsymbolic_svgSize = 3196;
 
     extern const char*   alignhorizontalrightsymbolic_svg;
-    const int            alignhorizontalrightsymbolic_svgSize = 3741;
+    const int            alignhorizontalrightsymbolic_svgSize = 3862;
 
     extern const char*   alignverticalbottomsymbolic_svg;
-    const int            alignverticalbottomsymbolic_svgSize = 3253;
+    const int            alignverticalbottomsymbolic_svgSize = 3358;
 
     extern const char*   alignverticaltopsymbolic_svg;
-    const int            alignverticaltopsymbolic_svgSize = 3454;
+    const int            alignverticaltopsymbolic_svgSize = 3565;
 
-    extern const char*   boundingbox_centersymbolic_svg;
-    const int            boundingbox_centersymbolic_svgSize = 2297;
+    extern const char*   boundingboxcentersymbolic_svg;
+    const int            boundingboxcentersymbolic_svgSize = 2374;
+
+    extern const char*   distributehorizontalgapssymbolic_svg;
+    const int            distributehorizontalgapssymbolic_svgSize = 3892;
+
+    extern const char*   distributeverticalgapssymbolic_svg;
+    const int            distributeverticalgapssymbolic_svgSize = 3976;
+
+    extern const char*   editcutsymbolic_svg;
+    const int            editcutsymbolic_svgSize = 3061;
+
+    extern const char*   editdeletesymbolic_svg;
+    const int            editdeletesymbolic_svgSize = 3032;
+
+    extern const char*   editduplicatesymbolic_svg;
+    const int            editduplicatesymbolic_svgSize = 2279;
+
+    extern const char*   editpastestylesymbolic_svg;
+    const int            editpastestylesymbolic_svgSize = 3387;
+
+    extern const char*   objectlockedsymbolic_svg;
+    const int            objectlockedsymbolic_svgSize = 3210;
+
+    extern const char*   objectunlockedsymbolic_svg;
+    const int            objectunlockedsymbolic_svgSize = 3194;
+
+    extern const char*   snapnodesmidpointsymbolic_svg;
+    const int            snapnodesmidpointsymbolic_svgSize = 3378;
+
+    extern const char*   transformrotatesymbolic_svg;
+    const int            transformrotatesymbolic_svgSize = 3606;
+
+    extern const char*   transformscalehorizontalsymbolic_svg;
+    const int            transformscalehorizontalsymbolic_svgSize = 2749;
+
+    extern const char*   transformscaleverticalsymbolic_svg;
+    const int            transformscaleverticalsymbolic_svgSize = 2777;
 
     extern const char*   CtrlrXLogo512x512DEF_png;
     const int            CtrlrXLogo512x512DEF_pngSize = 27821;
@@ -86,35 +122,11 @@ namespace BinaryData
     extern const char*   CtrlrXREADME250x315_png;
     const int            CtrlrXREADME250x315_pngSize = 8691;
 
-    extern const char*   distributehorizontalgapssymbolic_svg;
-    const int            distributehorizontalgapssymbolic_svgSize = 3762;
-
-    extern const char*   distributeverticalgapssymbolic_svg;
-    const int            distributeverticalgapssymbolic_svgSize = 3849;
-
-    extern const char*   editcutsymbolic_svg;
-    const int            editcutsymbolic_svgSize = 2976;
-
-    extern const char*   editdeletesymbolic_svg;
-    const int            editdeletesymbolic_svgSize = 2946;
-
-    extern const char*   editduplicatesymbolic_svg;
-    const int            editduplicatesymbolic_svgSize = 2198;
-
-    extern const char*   editpastestylesymbolic_svg;
-    const int            editpastestylesymbolic_svgSize = 3295;
-
     extern const char*   happy_svg;
     const int            happy_svgSize = 508;
 
-    extern const char*   objectlockedsymbolic_svg;
-    const int            objectlockedsymbolic_svgSize = 3108;
-
     extern const char*   sad_svg;
     const int            sad_svgSize = 511;
-
-    extern const char*   snapnodesmidpointsymbolic_svg;
-    const int            snapnodesmidpointsymbolic_svgSize = 3267;
 
     extern const char*   kofi_svg;
     const int            kofi_svgSize = 2391;
@@ -348,7 +360,7 @@ namespace BinaryData
     const int            CtrlrMIDIVendors_xmlSize = 15061;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 113;
+    const int namedResourceListSize = 117;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

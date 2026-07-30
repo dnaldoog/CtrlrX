@@ -11392,548 +11392,1826 @@ static const unsigned char temp_binary_data_16[] =
 
 const char* FONT_ZX81_ttf = (const char*) temp_binary_data_16;
 
-//================== align-horizontal-left-symbolic.svg ==================
+//================== alignhorizontalleftsymbolic.svg ==================
 static const unsigned char temp_binary_data_17[] =
-"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
-"<svg\n"
-"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
-"   xmlns:cc=\"http://creativecommons.org/ns#\"\n"
-"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
-"   xmlns:svg=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\n"
-"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\n"
-"   version=\"1.1\"\n"
-"   id=\"svg1\"\n"
-"   width=\"16\"\n"
-"   height=\"16\"\n"
-"   viewBox=\"0 0 16 16\"\n"
-"   sodipodi:docname=\"align-horizontal-left-symbolic.svg\"\n"
-"   inkscape:version=\"1.0 (4035a4fb49, 2020-05-01)\">\n"
-"  <style\n"
-"     id=\"s0\">\n"
-"   .success { fill: #009909; }\n"
-"   .warning { fill: #FF1990; }\n"
-"   .error   { fill: #00AAFF; }\n"
-"  </style>\n"
-"  <style\n"
-"     id=\"s2\"> \n"
-"     @import '../../highlights.css'; \n"
-"  </style>\n"
-"  <metadata\n"
-"     id=\"metadata280\">\n"
-"    <rdf:RDF>\n"
-"      <cc:Work\n"
-"         rdf:about=\"\">\n"
-"        <dc:format>image/svg+xml</dc:format>\n"
-"        <dc:type\n"
-"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\n"
-"        <dc:title></dc:title>\n"
-"      </cc:Work>\n"
-"    </rdf:RDF>\n"
-"  </metadata>\n"
-"  <defs\n"
-"     id=\"defs278\" />\n"
-"  <sodipodi:namedview\n"
-"     objecttolerance=\"10\"\n"
-"     gridtolerance=\"10\"\n"
-"     guidetolerance=\"10\"\n"
-"     id=\"namedview\"\n"
-"     showgrid=\"true\"\n"
-"     inkscape:zoom=\"22.4\"\n"
-"     inkscape:cx=\"10.987773\"\n"
-"     inkscape:cy=\"10.14426\"\n"
-"     inkscape:window-width=\"1858\"\n"
-"     inkscape:window-height=\"1177\"\n"
-"     inkscape:window-x=\"54\"\n"
-"     inkscape:window-y=\"-8\"\n"
-"     inkscape:window-maximized=\"1\"\n"
-"     inkscape:current-layer=\"g22133\"\n"
-"     inkscape:document-rotation=\"0\"\n"
-"     inkscape:snap-global=\"true\">\n"
-"    <inkscape:grid\n"
-"       spacingy=\"0.66666\"\n"
-"       spacingx=\"0.66666\"\n"
-"       type=\"xygrid\"\n"
-"       id=\"grid\" />\n"
-"  </sodipodi:namedview>\n"
-"  <g\n"
-"     transform=\"matrix(0.666667,0,0,0.666666,-721.33333,-396.90779)\"\n"
-"     inkscape:label=\"00269\"\n"
-"     id=\"align-horizontal-left\">\n"
-"    <g\n"
-"       id=\"g22133\">\n"
-"      <path\n"
-"         inkscape:connector-curvature=\"0\"\n"
-"         id=\"rect22335\"\n"
-"         d=\"m 1084.9993,595.36228 h -1.9999 v 23.99993 h 1.9999 z\"\n"
-"         style=\"opacity:1;fill:#009909;fill-opacity:1;stroke-width:1.15469\"\n"
-"         class=\"success\" />\n"
-"      <path\n"
-"         inkscape:connector-curvature=\"0\"\n"
-"         id=\"rect22337\"\n"
-"         d=\"m 1102.9993,595.36248 h -15.9999 v 4 h 15.9999 z\"\n"
-"         style=\"opacity:1;stroke-width:0.894425\" />\n"
-"      <path\n"
-"         inkscape:connector-curvature=\"0\"\n"
-"         id=\"rect22339\"\n"
-"         d=\"m 1097.9991,601.36239 h -10.9997 v 3 h 10.9997 z\"\n"
-"         style=\"opacity:1;stroke-width:1.03682\"\n"
-"         sodipodi:nodetypes=\"ccccc\" />\n"
-"      <path\n"
-"         inkscape:connector-curvature=\"0\"\n"
-"         id=\"rect22341\"\n"
-"         d=\"m 1099.9992,606.36239 h -12.9998 v 3.99991 h 12.9998 z\"\n"
-"         style=\"opacity:1;stroke-width:0.963615\" />\n"
-"      <path\n"
-"         d=\"m 1090.9992,612.3623 v 2.00001 h 5.9999 v 2 h -5.9999 v 2.0009 l -3.9999,-3.0009 z\"\n"
-"         style=\"opacity:1;fill-opacity:0.501961;stroke-width:1.5\"\n"
-"         id=\"path22343\"\n"
-"         inkscape:connector-curvature=\"0\"\n"
-"         sodipodi:nodetypes=\"cccccccc\" />\n"
-"    </g>\n"
-"  </g>\n"
-"</svg>\n";
+"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
+"<svg\r\n"
+"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\r\n"
+"   xmlns:cc=\"http://creativecommons.org/ns#\"\r\n"
+"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\r\n"
+"   xmlns:svg=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\r\n"
+"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\r\n"
+"   version=\"1.1\"\r\n"
+"   id=\"svg1\"\r\n"
+"   width=\"16\"\r\n"
+"   height=\"16\"\r\n"
+"   viewBox=\"0 0 16 16\"\r\n"
+"   sodipodi:docname=\"align-horizontal-left-symbolic.svg\"\r\n"
+"   inkscape:version=\"1.0 (4035a4fb49, 2020-05-01)\">\r\n"
+"  <style\r\n"
+"     id=\"s0\">\r\n"
+"   .success { fill: #009909; }\r\n"
+"   .warning { fill: #FF1990; }\r\n"
+"   .error   { fill: #00AAFF; }\r\n"
+"  </style>\r\n"
+"  <style\r\n"
+"     id=\"s2\"> \r\n"
+"     @import '../../highlights.css'; \r\n"
+"  </style>\r\n"
+"  <metadata\r\n"
+"     id=\"metadata280\">\r\n"
+"    <rdf:RDF>\r\n"
+"      <cc:Work\r\n"
+"         rdf:about=\"\">\r\n"
+"        <dc:format>image/svg+xml</dc:format>\r\n"
+"        <dc:type\r\n"
+"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\r\n"
+"        <dc:title></dc:title>\r\n"
+"      </cc:Work>\r\n"
+"    </rdf:RDF>\r\n"
+"  </metadata>\r\n"
+"  <defs\r\n"
+"     id=\"defs278\" />\r\n"
+"  <sodipodi:namedview\r\n"
+"     objecttolerance=\"10\"\r\n"
+"     gridtolerance=\"10\"\r\n"
+"     guidetolerance=\"10\"\r\n"
+"     id=\"namedview\"\r\n"
+"     showgrid=\"true\"\r\n"
+"     inkscape:zoom=\"22.4\"\r\n"
+"     inkscape:cx=\"10.987773\"\r\n"
+"     inkscape:cy=\"10.14426\"\r\n"
+"     inkscape:window-width=\"1858\"\r\n"
+"     inkscape:window-height=\"1177\"\r\n"
+"     inkscape:window-x=\"54\"\r\n"
+"     inkscape:window-y=\"-8\"\r\n"
+"     inkscape:window-maximized=\"1\"\r\n"
+"     inkscape:current-layer=\"g22133\"\r\n"
+"     inkscape:document-rotation=\"0\"\r\n"
+"     inkscape:snap-global=\"true\">\r\n"
+"    <inkscape:grid\r\n"
+"       spacingy=\"0.66666\"\r\n"
+"       spacingx=\"0.66666\"\r\n"
+"       type=\"xygrid\"\r\n"
+"       id=\"grid\" />\r\n"
+"  </sodipodi:namedview>\r\n"
+"  <g\r\n"
+"     transform=\"matrix(0.666667,0,0,0.666666,-721.33333,-396.90779)\"\r\n"
+"     inkscape:label=\"00269\"\r\n"
+"     id=\"align-horizontal-left\">\r\n"
+"    <g\r\n"
+"       id=\"g22133\">\r\n"
+"      <path\r\n"
+"         inkscape:connector-curvature=\"0\"\r\n"
+"         id=\"rect22335\"\r\n"
+"         d=\"m 1084.9993,595.36228 h -1.9999 v 23.99993 h 1.9999 z\"\r\n"
+"         style=\"opacity:1;fill:#009909;fill-opacity:1;stroke-width:1.15469\"\r\n"
+"         class=\"success\" />\r\n"
+"      <path\r\n"
+"         inkscape:connector-curvature=\"0\"\r\n"
+"         id=\"rect22337\"\r\n"
+"         d=\"m 1102.9993,595.36248 h -15.9999 v 4 h 15.9999 z\"\r\n"
+"         style=\"opacity:1;stroke-width:0.894425\" />\r\n"
+"      <path\r\n"
+"         inkscape:connector-curvature=\"0\"\r\n"
+"         id=\"rect22339\"\r\n"
+"         d=\"m 1097.9991,601.36239 h -10.9997 v 3 h 10.9997 z\"\r\n"
+"         style=\"opacity:1;stroke-width:1.03682\"\r\n"
+"         sodipodi:nodetypes=\"ccccc\" />\r\n"
+"      <path\r\n"
+"         inkscape:connector-curvature=\"0\"\r\n"
+"         id=\"rect22341\"\r\n"
+"         d=\"m 1099.9992,606.36239 h -12.9998 v 3.99991 h 12.9998 z\"\r\n"
+"         style=\"opacity:1;stroke-width:0.963615\" />\r\n"
+"      <path\r\n"
+"         d=\"m 1090.9992,612.3623 v 2.00001 h 5.9999 v 2 h -5.9999 v 2.0009 l -3.9999,-3.0009 z\"\r\n"
+"         style=\"opacity:1;fill-opacity:0.501961;stroke-width:1.5\"\r\n"
+"         id=\"path22343\"\r\n"
+"         inkscape:connector-curvature=\"0\"\r\n"
+"         sodipodi:nodetypes=\"cccccccc\" />\r\n"
+"    </g>\r\n"
+"  </g>\r\n"
+"</svg>\r\n";
 
 const char* alignhorizontalleftsymbolic_svg = (const char*) temp_binary_data_17;
 
-//================== align-horizontal-right-symbolic.svg ==================
+//================== alignhorizontalrightsymbolic.svg ==================
 static const unsigned char temp_binary_data_18[] =
-"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
-"<svg\n"
-"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
-"   xmlns:cc=\"http://creativecommons.org/ns#\"\n"
-"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
-"   xmlns:svg=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\n"
-"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\n"
-"   version=\"1.1\"\n"
-"   id=\"svg1\"\n"
-"   width=\"16\"\n"
-"   height=\"16\"\n"
-"   viewBox=\"0 0 16 16\"\n"
-"   sodipodi:docname=\"align-horizontal-right-symbolic.svg\"\n"
-"   inkscape:version=\"1.0 (4035a4fb49, 2020-05-01)\">\n"
-"  <style\n"
-"     id=\"s0\">\n"
-"   .success { fill: #009909; }\n"
-"   .warning { fill: #FF1990; }\n"
-"   .error   { fill: #00AAFF; }\n"
-"  </style>\n"
-"  <style\n"
-"     id=\"s2\"> \n"
-"     @import '../../highlights.css'; \n"
-"  </style>\n"
-"  <metadata\n"
-"     id=\"metadata502\">\n"
-"    <rdf:RDF>\n"
-"      <cc:Work\n"
-"         rdf:about=\"\">\n"
-"        <dc:format>image/svg+xml</dc:format>\n"
-"        <dc:type\n"
-"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\n"
-"        <dc:title></dc:title>\n"
-"      </cc:Work>\n"
-"    </rdf:RDF>\n"
-"  </metadata>\n"
-"  <defs\n"
-"     id=\"defs500\">\n"
-"    <inkscape:path-effect\n"
-"       attempt_force_join=\"true\"\n"
-"       miter_limit=\"100\"\n"
-"       linejoin_type=\"extrp_arc\"\n"
-"       line_width=\"2\"\n"
-"       linecap_type=\"butt\"\n"
-"       is_visible=\"true\"\n"
-"       id=\"path-effect3466\"\n"
-"       effect=\"join_type\" />\n"
-"  </defs>\n"
-"  <sodipodi:namedview\n"
-"     objecttolerance=\"10\"\n"
-"     gridtolerance=\"10\"\n"
-"     guidetolerance=\"10\"\n"
-"     id=\"namedview\"\n"
-"     showgrid=\"true\"\n"
-"     inkscape:zoom=\"22.4\"\n"
-"     inkscape:cx=\"19.016862\"\n"
-"     inkscape:cy=\"10.729792\"\n"
-"     inkscape:window-width=\"1858\"\n"
-"     inkscape:window-height=\"1177\"\n"
-"     inkscape:window-x=\"54\"\n"
-"     inkscape:window-y=\"-8\"\n"
-"     inkscape:window-maximized=\"1\"\n"
-"     inkscape:current-layer=\"g22331\"\n"
-"     inkscape:document-rotation=\"0\"\n"
-"     inkscape:snap-global=\"true\">\n"
-"    <inkscape:grid\n"
-"       spacingy=\"0.66667\"\n"
-"       spacingx=\"0.6666666\"\n"
-"       type=\"xygrid\"\n"
-"       id=\"grid\" />\n"
-"  </sodipodi:namedview>\n"
-"  <g\n"
-"     transform=\"matrix(0.666667,0,0,0.666666,-772,-396.90779)\"\n"
-"     inkscape:label=\"00273\"\n"
-"     id=\"align-horizontal-right\">\n"
-"    <g\n"
-"       inkscape:label=\"#al_left_in\"\n"
-"       id=\"g22329\"\n"
-"       transform=\"matrix(-1,0,0,1,2264,0)\">\n"
-"      <g\n"
-"         id=\"g22331\">\n"
-"        <path\n"
-"           inkscape:connector-curvature=\"0\"\n"
-"           id=\"rect22333\"\n"
-"           d=\"m -1106,595.36218 h 24 v 24 h -24 z\"\n"
-"           style=\"opacity:0;fill:none\"\n"
-"           transform=\"scale(-1,1)\" />\n"
-"        <path\n"
-"           class=\"success\"\n"
-"           style=\"opacity:1;fill:#009909;fill-opacity:1;stroke-width:1.15469\"\n"
-"           d=\"m 1085.0005,595.36221 h -1.9999 v 23.99993 h 1.9999 z\"\n"
-"           id=\"rect22335\"\n"
-"           inkscape:connector-curvature=\"0\" />\n"
-"        <path\n"
-"           style=\"opacity:1;stroke-width:0.894425\"\n"
-"           d=\"m 1103.0005,595.36241 h -15.9999 v 4 h 15.9999 z\"\n"
-"           id=\"rect22337\"\n"
-"           inkscape:connector-curvature=\"0\" />\n"
-"        <path\n"
-"           sodipodi:nodetypes=\"ccccc\"\n"
-"           style=\"opacity:1;stroke-width:1.03682\"\n"
-"           d=\"m 1098.0003,601.36232 h -10.9997 v 3 h 10.9997 z\"\n"
-"           id=\"rect22339\"\n"
-"           inkscape:connector-curvature=\"0\" />\n"
-"        <path\n"
-"           style=\"opacity:1;stroke-width:0.963615\"\n"
-"           d=\"m 1100.0004,606.36232 h -12.9998 v 3.99991 h 12.9998 z\"\n"
-"           id=\"rect22341\"\n"
-"           inkscape:connector-curvature=\"0\" />\n"
-"        <path\n"
-"           sodipodi:nodetypes=\"cccccccc\"\n"
-"           inkscape:connector-curvature=\"0\"\n"
-"           id=\"path22343\"\n"
-"           style=\"opacity:1;fill-opacity:0.501961;stroke-width:1.5\"\n"
-"           d=\"m 1091.0004,612.36223 v 2.00001 h 5.9999 v 2 h -5.9999 v 2.0009 l -3.9999,-3.0009 z\" />\n"
-"      </g>\n"
-"    </g>\n"
-"  </g>\n"
-"</svg>\n";
+"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
+"<svg\r\n"
+"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\r\n"
+"   xmlns:cc=\"http://creativecommons.org/ns#\"\r\n"
+"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\r\n"
+"   xmlns:svg=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\r\n"
+"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\r\n"
+"   version=\"1.1\"\r\n"
+"   id=\"svg1\"\r\n"
+"   width=\"16\"\r\n"
+"   height=\"16\"\r\n"
+"   viewBox=\"0 0 16 16\"\r\n"
+"   sodipodi:docname=\"align-horizontal-right-symbolic.svg\"\r\n"
+"   inkscape:version=\"1.0 (4035a4fb49, 2020-05-01)\">\r\n"
+"  <style\r\n"
+"     id=\"s0\">\r\n"
+"   .success { fill: #009909; }\r\n"
+"   .warning { fill: #FF1990; }\r\n"
+"   .error   { fill: #00AAFF; }\r\n"
+"  </style>\r\n"
+"  <style\r\n"
+"     id=\"s2\"> \r\n"
+"     @import '../../highlights.css'; \r\n"
+"  </style>\r\n"
+"  <metadata\r\n"
+"     id=\"metadata502\">\r\n"
+"    <rdf:RDF>\r\n"
+"      <cc:Work\r\n"
+"         rdf:about=\"\">\r\n"
+"        <dc:format>image/svg+xml</dc:format>\r\n"
+"        <dc:type\r\n"
+"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\r\n"
+"        <dc:title></dc:title>\r\n"
+"      </cc:Work>\r\n"
+"    </rdf:RDF>\r\n"
+"  </metadata>\r\n"
+"  <defs\r\n"
+"     id=\"defs500\">\r\n"
+"    <inkscape:path-effect\r\n"
+"       attempt_force_join=\"true\"\r\n"
+"       miter_limit=\"100\"\r\n"
+"       linejoin_type=\"extrp_arc\"\r\n"
+"       line_width=\"2\"\r\n"
+"       linecap_type=\"butt\"\r\n"
+"       is_visible=\"true\"\r\n"
+"       id=\"path-effect3466\"\r\n"
+"       effect=\"join_type\" />\r\n"
+"  </defs>\r\n"
+"  <sodipodi:namedview\r\n"
+"     objecttolerance=\"10\"\r\n"
+"     gridtolerance=\"10\"\r\n"
+"     guidetolerance=\"10\"\r\n"
+"     id=\"namedview\"\r\n"
+"     showgrid=\"true\"\r\n"
+"     inkscape:zoom=\"22.4\"\r\n"
+"     inkscape:cx=\"19.016862\"\r\n"
+"     inkscape:cy=\"10.729792\"\r\n"
+"     inkscape:window-width=\"1858\"\r\n"
+"     inkscape:window-height=\"1177\"\r\n"
+"     inkscape:window-x=\"54\"\r\n"
+"     inkscape:window-y=\"-8\"\r\n"
+"     inkscape:window-maximized=\"1\"\r\n"
+"     inkscape:current-layer=\"g22331\"\r\n"
+"     inkscape:document-rotation=\"0\"\r\n"
+"     inkscape:snap-global=\"true\">\r\n"
+"    <inkscape:grid\r\n"
+"       spacingy=\"0.66667\"\r\n"
+"       spacingx=\"0.6666666\"\r\n"
+"       type=\"xygrid\"\r\n"
+"       id=\"grid\" />\r\n"
+"  </sodipodi:namedview>\r\n"
+"  <g\r\n"
+"     transform=\"matrix(0.666667,0,0,0.666666,-772,-396.90779)\"\r\n"
+"     inkscape:label=\"00273\"\r\n"
+"     id=\"align-horizontal-right\">\r\n"
+"    <g\r\n"
+"       inkscape:label=\"#al_left_in\"\r\n"
+"       id=\"g22329\"\r\n"
+"       transform=\"matrix(-1,0,0,1,2264,0)\">\r\n"
+"      <g\r\n"
+"         id=\"g22331\">\r\n"
+"        <path\r\n"
+"           inkscape:connector-curvature=\"0\"\r\n"
+"           id=\"rect22333\"\r\n"
+"           d=\"m -1106,595.36218 h 24 v 24 h -24 z\"\r\n"
+"           style=\"opacity:0;fill:none\"\r\n"
+"           transform=\"scale(-1,1)\" />\r\n"
+"        <path\r\n"
+"           class=\"success\"\r\n"
+"           style=\"opacity:1;fill:#009909;fill-opacity:1;stroke-width:1.15469\"\r\n"
+"           d=\"m 1085.0005,595.36221 h -1.9999 v 23.99993 h 1.9999 z\"\r\n"
+"           id=\"rect22335\"\r\n"
+"           inkscape:connector-curvature=\"0\" />\r\n"
+"        <path\r\n"
+"           style=\"opacity:1;stroke-width:0.894425\"\r\n"
+"           d=\"m 1103.0005,595.36241 h -15.9999 v 4 h 15.9999 z\"\r\n"
+"           id=\"rect22337\"\r\n"
+"           inkscape:connector-curvature=\"0\" />\r\n"
+"        <path\r\n"
+"           sodipodi:nodetypes=\"ccccc\"\r\n"
+"           style=\"opacity:1;stroke-width:1.03682\"\r\n"
+"           d=\"m 1098.0003,601.36232 h -10.9997 v 3 h 10.9997 z\"\r\n"
+"           id=\"rect22339\"\r\n"
+"           inkscape:connector-curvature=\"0\" />\r\n"
+"        <path\r\n"
+"           style=\"opacity:1;stroke-width:0.963615\"\r\n"
+"           d=\"m 1100.0004,606.36232 h -12.9998 v 3.99991 h 12.9998 z\"\r\n"
+"           id=\"rect22341\"\r\n"
+"           inkscape:connector-curvature=\"0\" />\r\n"
+"        <path\r\n"
+"           sodipodi:nodetypes=\"cccccccc\"\r\n"
+"           inkscape:connector-curvature=\"0\"\r\n"
+"           id=\"path22343\"\r\n"
+"           style=\"opacity:1;fill-opacity:0.501961;stroke-width:1.5\"\r\n"
+"           d=\"m 1091.0004,612.36223 v 2.00001 h 5.9999 v 2 h -5.9999 v 2.0009 l -3.9999,-3.0009 z\" />\r\n"
+"      </g>\r\n"
+"    </g>\r\n"
+"  </g>\r\n"
+"</svg>\r\n";
 
 const char* alignhorizontalrightsymbolic_svg = (const char*) temp_binary_data_18;
 
-//================== align-vertical-bottom-symbolic.svg ==================
+//================== alignverticalbottomsymbolic.svg ==================
 static const unsigned char temp_binary_data_19[] =
-"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
-"<svg\n"
-"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
-"   xmlns:cc=\"http://creativecommons.org/ns#\"\n"
-"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
-"   xmlns:svg=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\n"
-"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\n"
-"   version=\"1.1\"\n"
-"   id=\"svg1\"\n"
-"   width=\"16\"\n"
-"   height=\"16\"\n"
-"   viewBox=\"0 0 16 16\"\n"
-"   sodipodi:docname=\"align-vertical-bottom-symbolic.svg\"\n"
-"   inkscape:version=\"1.0 (4035a4fb49, 2020-05-01)\">\n"
-"  <style\n"
-"     id=\"s0\">\n"
-"   .success { fill: #009909; }\n"
-"   .warning { fill: #FF1990; }\n"
-"   .error   { fill: #00AAFF; }\n"
-"  </style>\n"
-"  <style\n"
-"     id=\"s2\"> \n"
-"     @import '../../highlights.css'; \n"
-"  </style>\n"
-"  <metadata\n"
-"     id=\"metadata969\">\n"
-"    <rdf:RDF>\n"
-"      <cc:Work\n"
-"         rdf:about=\"\">\n"
-"        <dc:format>image/svg+xml</dc:format>\n"
-"        <dc:type\n"
-"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\n"
-"        <dc:title></dc:title>\n"
-"      </cc:Work>\n"
-"    </rdf:RDF>\n"
-"  </metadata>\n"
-"  <defs\n"
-"     id=\"defs967\" />\n"
-"  <sodipodi:namedview\n"
-"     objecttolerance=\"10\"\n"
-"     gridtolerance=\"10\"\n"
-"     guidetolerance=\"10\"\n"
-"     id=\"namedview\"\n"
-"     showgrid=\"true\"\n"
-"     inkscape:zoom=\"22.4\"\n"
-"     inkscape:cx=\"19.527398\"\n"
-"     inkscape:cy=\"10.379764\"\n"
-"     inkscape:window-width=\"1858\"\n"
-"     inkscape:window-height=\"1177\"\n"
-"     inkscape:window-x=\"54\"\n"
-"     inkscape:window-y=\"-8\"\n"
-"     inkscape:window-maximized=\"1\"\n"
-"     inkscape:current-layer=\"g22331\"\n"
-"     inkscape:document-rotation=\"0\"\n"
-"     inkscape:snap-global=\"true\">\n"
-"    <inkscape:grid\n"
-"       spacingy=\"0.66666\"\n"
-"       spacingx=\"0.66666\"\n"
-"       type=\"xygrid\"\n"
-"       id=\"grid\" />\n"
-"  </sodipodi:namedview>\n"
-"  <g\n"
-"     id=\"align-horizontal-right\"\n"
-"     inkscape:label=\"00273\"\n"
-"     transform=\"matrix(0,0.666667,-0.666666,0,412.90772,-772.00039)\">\n"
-"    <g\n"
-"       transform=\"matrix(-1,0,0,1,2264,0)\"\n"
-"       id=\"g22329\"\n"
-"       inkscape:label=\"#al_left_in\">\n"
-"      <g\n"
-"         id=\"g22331\">\n"
-"        <path\n"
-"           inkscape:connector-curvature=\"0\"\n"
-"           id=\"rect22335\"\n"
-"           d=\"m 1085.0002,595.36218 h -2 v 24.00002 h 2 z\"\n"
-"           style=\"opacity:1;fill:#009909;fill-opacity:1;stroke-width:1.15469\"\n"
-"           class=\"success\" />\n"
-"        <path\n"
-"           inkscape:connector-curvature=\"0\"\n"
-"           id=\"rect22337\"\n"
-"           d=\"m 1103.0002,595.36242 h -16 v 3.99996 h 16 z\"\n"
-"           style=\"opacity:1;stroke-width:0.894425\" />\n"
-"        <path\n"
-"           inkscape:connector-curvature=\"0\"\n"
-"           id=\"rect22339\"\n"
-"           d=\"m 1098,601.36236 h -10.9998 v 3.00001 H 1098 Z\"\n"
-"           style=\"opacity:1;stroke-width:1.03682\"\n"
-"           sodipodi:nodetypes=\"ccccc\" />\n"
-"        <path\n"
-"           inkscape:connector-curvature=\"0\"\n"
-"           id=\"rect22341\"\n"
-"           d=\"m 1100,606.36232 h -12.9998 v 3.99996 H 1100 Z\"\n"
-"           style=\"opacity:1;stroke-width:0.963615\" />\n"
-"        <path\n"
-"           d=\"m 1091.0001,612.36226 v 1.99998 H 1097 v 1.99999 h -5.9999 v 2.00097 l -4,-3.00096 z\"\n"
-"           style=\"opacity:1;fill-opacity:0.501961;stroke-width:1.5\"\n"
-"           id=\"path22343\"\n"
-"           inkscape:connector-curvature=\"0\"\n"
-"           sodipodi:nodetypes=\"cccccccc\" />\n"
-"      </g>\n"
-"    </g>\n"
-"  </g>\n"
-"</svg>\n";
+"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
+"<svg\r\n"
+"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\r\n"
+"   xmlns:cc=\"http://creativecommons.org/ns#\"\r\n"
+"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\r\n"
+"   xmlns:svg=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\r\n"
+"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\r\n"
+"   version=\"1.1\"\r\n"
+"   id=\"svg1\"\r\n"
+"   width=\"16\"\r\n"
+"   height=\"16\"\r\n"
+"   viewBox=\"0 0 16 16\"\r\n"
+"   sodipodi:docname=\"align-vertical-bottom-symbolic.svg\"\r\n"
+"   inkscape:version=\"1.0 (4035a4fb49, 2020-05-01)\">\r\n"
+"  <style\r\n"
+"     id=\"s0\">\r\n"
+"   .success { fill: #009909; }\r\n"
+"   .warning { fill: #FF1990; }\r\n"
+"   .error   { fill: #00AAFF; }\r\n"
+"  </style>\r\n"
+"  <style\r\n"
+"     id=\"s2\"> \r\n"
+"     @import '../../highlights.css'; \r\n"
+"  </style>\r\n"
+"  <metadata\r\n"
+"     id=\"metadata969\">\r\n"
+"    <rdf:RDF>\r\n"
+"      <cc:Work\r\n"
+"         rdf:about=\"\">\r\n"
+"        <dc:format>image/svg+xml</dc:format>\r\n"
+"        <dc:type\r\n"
+"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\r\n"
+"        <dc:title></dc:title>\r\n"
+"      </cc:Work>\r\n"
+"    </rdf:RDF>\r\n"
+"  </metadata>\r\n"
+"  <defs\r\n"
+"     id=\"defs967\" />\r\n"
+"  <sodipodi:namedview\r\n"
+"     objecttolerance=\"10\"\r\n"
+"     gridtolerance=\"10\"\r\n"
+"     guidetolerance=\"10\"\r\n"
+"     id=\"namedview\"\r\n"
+"     showgrid=\"true\"\r\n"
+"     inkscape:zoom=\"22.4\"\r\n"
+"     inkscape:cx=\"19.527398\"\r\n"
+"     inkscape:cy=\"10.379764\"\r\n"
+"     inkscape:window-width=\"1858\"\r\n"
+"     inkscape:window-height=\"1177\"\r\n"
+"     inkscape:window-x=\"54\"\r\n"
+"     inkscape:window-y=\"-8\"\r\n"
+"     inkscape:window-maximized=\"1\"\r\n"
+"     inkscape:current-layer=\"g22331\"\r\n"
+"     inkscape:document-rotation=\"0\"\r\n"
+"     inkscape:snap-global=\"true\">\r\n"
+"    <inkscape:grid\r\n"
+"       spacingy=\"0.66666\"\r\n"
+"       spacingx=\"0.66666\"\r\n"
+"       type=\"xygrid\"\r\n"
+"       id=\"grid\" />\r\n"
+"  </sodipodi:namedview>\r\n"
+"  <g\r\n"
+"     id=\"align-horizontal-right\"\r\n"
+"     inkscape:label=\"00273\"\r\n"
+"     transform=\"matrix(0,0.666667,-0.666666,0,412.90772,-772.00039)\">\r\n"
+"    <g\r\n"
+"       transform=\"matrix(-1,0,0,1,2264,0)\"\r\n"
+"       id=\"g22329\"\r\n"
+"       inkscape:label=\"#al_left_in\">\r\n"
+"      <g\r\n"
+"         id=\"g22331\">\r\n"
+"        <path\r\n"
+"           inkscape:connector-curvature=\"0\"\r\n"
+"           id=\"rect22335\"\r\n"
+"           d=\"m 1085.0002,595.36218 h -2 v 24.00002 h 2 z\"\r\n"
+"           style=\"opacity:1;fill:#009909;fill-opacity:1;stroke-width:1.15469\"\r\n"
+"           class=\"success\" />\r\n"
+"        <path\r\n"
+"           inkscape:connector-curvature=\"0\"\r\n"
+"           id=\"rect22337\"\r\n"
+"           d=\"m 1103.0002,595.36242 h -16 v 3.99996 h 16 z\"\r\n"
+"           style=\"opacity:1;stroke-width:0.894425\" />\r\n"
+"        <path\r\n"
+"           inkscape:connector-curvature=\"0\"\r\n"
+"           id=\"rect22339\"\r\n"
+"           d=\"m 1098,601.36236 h -10.9998 v 3.00001 H 1098 Z\"\r\n"
+"           style=\"opacity:1;stroke-width:1.03682\"\r\n"
+"           sodipodi:nodetypes=\"ccccc\" />\r\n"
+"        <path\r\n"
+"           inkscape:connector-curvature=\"0\"\r\n"
+"           id=\"rect22341\"\r\n"
+"           d=\"m 1100,606.36232 h -12.9998 v 3.99996 H 1100 Z\"\r\n"
+"           style=\"opacity:1;stroke-width:0.963615\" />\r\n"
+"        <path\r\n"
+"           d=\"m 1091.0001,612.36226 v 1.99998 H 1097 v 1.99999 h -5.9999 v 2.00097 l -4,-3.00096 z\"\r\n"
+"           style=\"opacity:1;fill-opacity:0.501961;stroke-width:1.5\"\r\n"
+"           id=\"path22343\"\r\n"
+"           inkscape:connector-curvature=\"0\"\r\n"
+"           sodipodi:nodetypes=\"cccccccc\" />\r\n"
+"      </g>\r\n"
+"    </g>\r\n"
+"  </g>\r\n"
+"</svg>\r\n";
 
 const char* alignverticalbottomsymbolic_svg = (const char*) temp_binary_data_19;
 
-//================== align-vertical-top-symbolic.svg ==================
+//================== alignverticaltopsymbolic.svg ==================
 static const unsigned char temp_binary_data_20[] =
-"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
-"<svg\n"
-"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
-"   xmlns:cc=\"http://creativecommons.org/ns#\"\n"
-"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
-"   xmlns:svg=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\n"
-"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\n"
-"   version=\"1.1\"\n"
-"   id=\"svg1\"\n"
-"   width=\"16\"\n"
-"   height=\"16\"\n"
-"   viewBox=\"0 0 16 16\"\n"
-"   sodipodi:docname=\"align-vertical-top-symbolic.svg\"\n"
-"   inkscape:version=\"1.0 (4035a4fb49, 2020-05-01)\">\n"
-"  <style\n"
-"     id=\"s0\">\n"
-"   .success { fill: #009909; }\n"
-"   .warning { fill: #FF1990; }\n"
-"   .error   { fill: #00AAFF; }\n"
-"  </style>\n"
-"  <style\n"
-"     id=\"s2\"> \n"
-"     @import '../../highlights.css'; \n"
-"  </style>\n"
-"  <metadata\n"
-"     id=\"metadata1280\">\n"
-"    <rdf:RDF>\n"
-"      <cc:Work\n"
-"         rdf:about=\"\">\n"
-"        <dc:format>image/svg+xml</dc:format>\n"
-"        <dc:type\n"
-"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\n"
-"        <dc:title></dc:title>\n"
-"      </cc:Work>\n"
-"    </rdf:RDF>\n"
-"  </metadata>\n"
-"  <defs\n"
-"     id=\"defs1278\" />\n"
-"  <sodipodi:namedview\n"
-"     objecttolerance=\"10\"\n"
-"     gridtolerance=\"10\"\n"
-"     guidetolerance=\"10\"\n"
-"     id=\"namedview\"\n"
-"     showgrid=\"true\"\n"
-"     inkscape:zoom=\"31.5625\"\n"
-"     inkscape:cx=\"13.963064\"\n"
-"     inkscape:cy=\"7.8985034\"\n"
-"     inkscape:window-width=\"1858\"\n"
-"     inkscape:window-height=\"1177\"\n"
-"     inkscape:window-x=\"54\"\n"
-"     inkscape:window-y=\"-8\"\n"
-"     inkscape:window-maximized=\"1\"\n"
-"     inkscape:current-layer=\"g22331\"\n"
-"     inkscape:document-rotation=\"0\"\n"
-"     inkscape:snap-global=\"true\">\n"
-"    <inkscape:grid\n"
-"       spacingy=\"0.66666\"\n"
-"       spacingx=\"0.66666\"\n"
-"       type=\"xygrid\"\n"
-"       id=\"grid\" />\n"
-"  </sodipodi:namedview>\n"
-"  <g\n"
-"     id=\"align-horizontal-right\"\n"
-"     inkscape:label=\"00273\"\n"
-"     transform=\"matrix(0,-0.666667,-0.666666,0,412.90772,788.00039)\">\n"
-"    <g\n"
-"       transform=\"matrix(-1,0,0,1,2264,0)\"\n"
-"       id=\"g22329\"\n"
-"       inkscape:label=\"#al_left_in\">\n"
-"      <g\n"
-"         id=\"g22331\">\n"
-"        <path\n"
-"           transform=\"scale(-1,1)\"\n"
-"           style=\"opacity:0;fill:none\"\n"
-"           d=\"m -1106,595.36218 h 24 v 24 h -24 z\"\n"
-"           id=\"rect22333\"\n"
-"           inkscape:connector-curvature=\"0\" />\n"
-"        <path\n"
-"           class=\"success\"\n"
-"           style=\"opacity:1;fill-opacity:1;stroke-width:1.15469\"\n"
-"           d=\"m 1085,595.36218 h -2 v 24.00002 h 2 z\"\n"
-"           id=\"rect22335\"\n"
-"           inkscape:connector-curvature=\"0\" />\n"
-"        <path\n"
-"           style=\"opacity:1;stroke-width:0.894424\"\n"
-"           d=\"m 1103,595.36242 h -16 v 3.99996 h 16 z\"\n"
-"           id=\"rect22337\"\n"
-"           inkscape:connector-curvature=\"0\" />\n"
-"        <path\n"
-"           sodipodi:nodetypes=\"ccccc\"\n"
-"           style=\"opacity:1;stroke-width:1.03682\"\n"
-"           d=\"M 1097.9998,601.36236 H 1087 v 3.00001 h 10.9998 z\"\n"
-"           id=\"rect22339\"\n"
-"           inkscape:connector-curvature=\"0\" />\n"
-"        <path\n"
-"           style=\"opacity:1;stroke-width:0.963615\"\n"
-"           d=\"M 1099.9998,606.36232 H 1087 v 3.99996 h 12.9998 z\"\n"
-"           id=\"rect22341\"\n"
-"           inkscape:connector-curvature=\"0\" />\n"
-"        <path\n"
-"           sodipodi:nodetypes=\"cccccccc\"\n"
-"           inkscape:connector-curvature=\"0\"\n"
-"           id=\"path22343\"\n"
-"           style=\"opacity:1;fill-opacity:0.501961;stroke-width:1.5\"\n"
-"           d=\"m 1090.9999,612.36226 v 1.99998 h 5.9999 v 1.99999 h -5.9999 v 2.00097 l -4,-3.00096 z\" />\n"
-"      </g>\n"
-"    </g>\n"
-"  </g>\n"
-"</svg>\n";
+"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
+"<svg\r\n"
+"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\r\n"
+"   xmlns:cc=\"http://creativecommons.org/ns#\"\r\n"
+"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\r\n"
+"   xmlns:svg=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\r\n"
+"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\r\n"
+"   version=\"1.1\"\r\n"
+"   id=\"svg1\"\r\n"
+"   width=\"16\"\r\n"
+"   height=\"16\"\r\n"
+"   viewBox=\"0 0 16 16\"\r\n"
+"   sodipodi:docname=\"align-vertical-top-symbolic.svg\"\r\n"
+"   inkscape:version=\"1.0 (4035a4fb49, 2020-05-01)\">\r\n"
+"  <style\r\n"
+"     id=\"s0\">\r\n"
+"   .success { fill: #009909; }\r\n"
+"   .warning { fill: #FF1990; }\r\n"
+"   .error   { fill: #00AAFF; }\r\n"
+"  </style>\r\n"
+"  <style\r\n"
+"     id=\"s2\"> \r\n"
+"     @import '../../highlights.css'; \r\n"
+"  </style>\r\n"
+"  <metadata\r\n"
+"     id=\"metadata1280\">\r\n"
+"    <rdf:RDF>\r\n"
+"      <cc:Work\r\n"
+"         rdf:about=\"\">\r\n"
+"        <dc:format>image/svg+xml</dc:format>\r\n"
+"        <dc:type\r\n"
+"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\r\n"
+"        <dc:title></dc:title>\r\n"
+"      </cc:Work>\r\n"
+"    </rdf:RDF>\r\n"
+"  </metadata>\r\n"
+"  <defs\r\n"
+"     id=\"defs1278\" />\r\n"
+"  <sodipodi:namedview\r\n"
+"     objecttolerance=\"10\"\r\n"
+"     gridtolerance=\"10\"\r\n"
+"     guidetolerance=\"10\"\r\n"
+"     id=\"namedview\"\r\n"
+"     showgrid=\"true\"\r\n"
+"     inkscape:zoom=\"31.5625\"\r\n"
+"     inkscape:cx=\"13.963064\"\r\n"
+"     inkscape:cy=\"7.8985034\"\r\n"
+"     inkscape:window-width=\"1858\"\r\n"
+"     inkscape:window-height=\"1177\"\r\n"
+"     inkscape:window-x=\"54\"\r\n"
+"     inkscape:window-y=\"-8\"\r\n"
+"     inkscape:window-maximized=\"1\"\r\n"
+"     inkscape:current-layer=\"g22331\"\r\n"
+"     inkscape:document-rotation=\"0\"\r\n"
+"     inkscape:snap-global=\"true\">\r\n"
+"    <inkscape:grid\r\n"
+"       spacingy=\"0.66666\"\r\n"
+"       spacingx=\"0.66666\"\r\n"
+"       type=\"xygrid\"\r\n"
+"       id=\"grid\" />\r\n"
+"  </sodipodi:namedview>\r\n"
+"  <g\r\n"
+"     id=\"align-horizontal-right\"\r\n"
+"     inkscape:label=\"00273\"\r\n"
+"     transform=\"matrix(0,-0.666667,-0.666666,0,412.90772,788.00039)\">\r\n"
+"    <g\r\n"
+"       transform=\"matrix(-1,0,0,1,2264,0)\"\r\n"
+"       id=\"g22329\"\r\n"
+"       inkscape:label=\"#al_left_in\">\r\n"
+"      <g\r\n"
+"         id=\"g22331\">\r\n"
+"        <path\r\n"
+"           transform=\"scale(-1,1)\"\r\n"
+"           style=\"opacity:0;fill:none\"\r\n"
+"           d=\"m -1106,595.36218 h 24 v 24 h -24 z\"\r\n"
+"           id=\"rect22333\"\r\n"
+"           inkscape:connector-curvature=\"0\" />\r\n"
+"        <path\r\n"
+"           class=\"success\"\r\n"
+"           style=\"opacity:1;fill-opacity:1;stroke-width:1.15469\"\r\n"
+"           d=\"m 1085,595.36218 h -2 v 24.00002 h 2 z\"\r\n"
+"           id=\"rect22335\"\r\n"
+"           inkscape:connector-curvature=\"0\" />\r\n"
+"        <path\r\n"
+"           style=\"opacity:1;stroke-width:0.894424\"\r\n"
+"           d=\"m 1103,595.36242 h -16 v 3.99996 h 16 z\"\r\n"
+"           id=\"rect22337\"\r\n"
+"           inkscape:connector-curvature=\"0\" />\r\n"
+"        <path\r\n"
+"           sodipodi:nodetypes=\"ccccc\"\r\n"
+"           style=\"opacity:1;stroke-width:1.03682\"\r\n"
+"           d=\"M 1097.9998,601.36236 H 1087 v 3.00001 h 10.9998 z\"\r\n"
+"           id=\"rect22339\"\r\n"
+"           inkscape:connector-curvature=\"0\" />\r\n"
+"        <path\r\n"
+"           style=\"opacity:1;stroke-width:0.963615\"\r\n"
+"           d=\"M 1099.9998,606.36232 H 1087 v 3.99996 h 12.9998 z\"\r\n"
+"           id=\"rect22341\"\r\n"
+"           inkscape:connector-curvature=\"0\" />\r\n"
+"        <path\r\n"
+"           sodipodi:nodetypes=\"cccccccc\"\r\n"
+"           inkscape:connector-curvature=\"0\"\r\n"
+"           id=\"path22343\"\r\n"
+"           style=\"opacity:1;fill-opacity:0.501961;stroke-width:1.5\"\r\n"
+"           d=\"m 1090.9999,612.36226 v 1.99998 h 5.9999 v 1.99999 h -5.9999 v 2.00097 l -4,-3.00096 z\" />\r\n"
+"      </g>\r\n"
+"    </g>\r\n"
+"  </g>\r\n"
+"</svg>\r\n";
 
 const char* alignverticaltopsymbolic_svg = (const char*) temp_binary_data_20;
 
-//================== boundingbox_center-symbolic.svg ==================
+//================== boundingboxcentersymbolic.svg ==================
 static const unsigned char temp_binary_data_21[] =
-"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
-"<svg\n"
-"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
-"   xmlns:cc=\"http://creativecommons.org/ns#\"\n"
-"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
-"   xmlns:svg=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\n"
-"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\n"
-"   inkscape:version=\"1.1-dev (6039630, 2019-12-20)\"\n"
-"   sodipodi:docname=\"boundingbox_center-symbolic.svg\"\n"
-"   viewBox=\"0 0 16 16\"\n"
-"   height=\"16\"\n"
-"   width=\"16\"\n"
-"   id=\"svg1\"\n"
-"   version=\"1.1\">\n"
-"  <metadata\n"
-"     id=\"metadata2799\">\n"
-"    <rdf:RDF>\n"
-"      <cc:Work\n"
-"         rdf:about=\"\">\n"
-"        <dc:format>image/svg+xml</dc:format>\n"
-"        <dc:type\n"
-"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\n"
-"      </cc:Work>\n"
-"    </rdf:RDF>\n"
-"  </metadata>\n"
-"  <defs\n"
-"     id=\"defs2797\" />\n"
-"  <style\n"
-"     id=\"s0\">\n"
-".success { fill:#009909; }\n"
-".warning { fill:#FF1990; }\n"
-".error { fill:#00AAFF; }\n"
-"</style>\n"
-"  <style\n"
-"     id=\"s2\">\n"
-"@import '../../highlights.css';\n"
-"</style>\n"
-"  <sodipodi:namedview\n"
-"     inkscape:document-rotation=\"0\"\n"
-"     inkscape:current-layer=\"svg1\"\n"
-"     inkscape:window-maximized=\"1\"\n"
-"     inkscape:window-y=\"-6\"\n"
-"     inkscape:window-x=\"65\"\n"
-"     inkscape:window-height=\"890\"\n"
-"     inkscape:window-width=\"1296\"\n"
-"     inkscape:cy=\"8\"\n"
-"     inkscape:cx=\"8\"\n"
-"     inkscape:zoom=\"41.125\"\n"
-"     showgrid=\"true\"\n"
-"     id=\"namedview\"\n"
-"     guidetolerance=\"10\"\n"
-"     gridtolerance=\"10\"\n"
-"     objecttolerance=\"10\">\n"
-"    <inkscape:grid\n"
-"       id=\"grid\"\n"
-"       type=\"xygrid\" />\n"
-"  </sodipodi:namedview>\n"
-"  <g\n"
-"     inkscape:label=\"00359\"\n"
-"     id=\"boundingbox_center\">\n"
-"    <title\n"
-"       id=\"title40580\">boundingbox_center</title>\n"
-"    <path\n"
-"       style=\"opacity:0;fill:none\"\n"
-"       d=\"M 0,0 H 16 V 16 H 0 Z\"\n"
-"       id=\"rect40582\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <path\n"
-"       class=\"success\"\n"
-"       style=\"opacity:0.75;stroke-linecap:butt\"\n"
+"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
+"<svg\r\n"
+"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\r\n"
+"   xmlns:cc=\"http://creativecommons.org/ns#\"\r\n"
+"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\r\n"
+"   xmlns:svg=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\r\n"
+"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\r\n"
+"   inkscape:version=\"1.1-dev (6039630, 2019-12-20)\"\r\n"
+"   sodipodi:docname=\"boundingbox_center-symbolic.svg\"\r\n"
+"   viewBox=\"0 0 16 16\"\r\n"
+"   height=\"16\"\r\n"
+"   width=\"16\"\r\n"
+"   id=\"svg1\"\r\n"
+"   version=\"1.1\">\r\n"
+"  <metadata\r\n"
+"     id=\"metadata2799\">\r\n"
+"    <rdf:RDF>\r\n"
+"      <cc:Work\r\n"
+"         rdf:about=\"\">\r\n"
+"        <dc:format>image/svg+xml</dc:format>\r\n"
+"        <dc:type\r\n"
+"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\r\n"
+"      </cc:Work>\r\n"
+"    </rdf:RDF>\r\n"
+"  </metadata>\r\n"
+"  <defs\r\n"
+"     id=\"defs2797\" />\r\n"
+"  <style\r\n"
+"     id=\"s0\">\r\n"
+".success { fill:#009909; }\r\n"
+".warning { fill:#FF1990; }\r\n"
+".error { fill:#00AAFF; }\r\n"
+"</style>\r\n"
+"  <style\r\n"
+"     id=\"s2\">\r\n"
+"@import '../../highlights.css';\r\n"
+"</style>\r\n"
+"  <sodipodi:namedview\r\n"
+"     inkscape:document-rotation=\"0\"\r\n"
+"     inkscape:current-layer=\"svg1\"\r\n"
+"     inkscape:window-maximized=\"1\"\r\n"
+"     inkscape:window-y=\"-6\"\r\n"
+"     inkscape:window-x=\"65\"\r\n"
+"     inkscape:window-height=\"890\"\r\n"
+"     inkscape:window-width=\"1296\"\r\n"
+"     inkscape:cy=\"8\"\r\n"
+"     inkscape:cx=\"8\"\r\n"
+"     inkscape:zoom=\"41.125\"\r\n"
+"     showgrid=\"true\"\r\n"
+"     id=\"namedview\"\r\n"
+"     guidetolerance=\"10\"\r\n"
+"     gridtolerance=\"10\"\r\n"
+"     objecttolerance=\"10\">\r\n"
+"    <inkscape:grid\r\n"
+"       id=\"grid\"\r\n"
+"       type=\"xygrid\" />\r\n"
+"  </sodipodi:namedview>\r\n"
+"  <g\r\n"
+"     inkscape:label=\"00359\"\r\n"
+"     id=\"boundingbox_center\">\r\n"
+"    <title\r\n"
+"       id=\"title40580\">boundingbox_center</title>\r\n"
+"    <path\r\n"
+"       style=\"opacity:0;fill:none\"\r\n"
+"       d=\"M 0,0 H 16 V 16 H 0 Z\"\r\n"
+"       id=\"rect40582\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       class=\"success\"\r\n"
+"       style=\"opacity:0.75;stroke-linecap:butt\"\r\n"
 "       d=\"M 8,3 C 5.2444986,3 3,5.2444986 3,8 c 0,2.755501 2.2444986,5 5,5 2.755501,0 5,-2.244499 5,-5 C 13,5.2444986 10.755501,3 8,3 Z m 0,1 c 2.215061,0 4,1.7849387 4,4 0,2.215061 -1.784939,4 -4,4 C 5.7849387,12 4,10.215061 4,8 4,5.7849387 5.78493"
-"87,4 8,4 Z\"\n"
-"       id=\"circle40584\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"  </g>\n"
-"</svg>\n";
+"87,4 8,4 Z\"\r\n"
+"       id=\"circle40584\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"  </g>\r\n"
+"</svg>\r\n";
 
-const char* boundingbox_centersymbolic_svg = (const char*) temp_binary_data_21;
+const char* boundingboxcentersymbolic_svg = (const char*) temp_binary_data_21;
+
+//================== distributehorizontalgapssymbolic.svg ==================
+static const unsigned char temp_binary_data_22[] =
+"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
+"<svg\r\n"
+"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\r\n"
+"   xmlns:cc=\"http://creativecommons.org/ns#\"\r\n"
+"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\r\n"
+"   xmlns:svg=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\r\n"
+"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\r\n"
+"   inkscape:version=\"0.92.4 (5da689c313, 2019-01-14)\"\r\n"
+"   sodipodi:docname=\"distribute-horizontal-gaps-symbolic.svg\"\r\n"
+"   viewBox=\"0 0 16 16\"\r\n"
+"   height=\"16\"\r\n"
+"   width=\"16\"\r\n"
+"   id=\"svg1\"\r\n"
+"   version=\"1.1\">\r\n"
+"<style id=\"s0\">\r\n"
+"   .success { fill: #009909; }\r\n"
+"   .warning { fill: #FF1990; }\r\n"
+"   .error   { fill: #00AAFF; }\r\n"
+"  </style>\r\n"
+"  <style id=\"s2\"> \r\n"
+"     @import '../../highlights.css'; \r\n"
+"  </style>\r\n"
+"     \r\n"
+"<metadata\r\n"
+"     id=\"metadata2602\">\r\n"
+"    <rdf:RDF>\r\n"
+"      <cc:Work\r\n"
+"         rdf:about=\"\">\r\n"
+"        <dc:format>image/svg+xml</dc:format>\r\n"
+"        <dc:type\r\n"
+"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\r\n"
+"        <dc:title />\r\n"
+"      </cc:Work>\r\n"
+"    </rdf:RDF>\r\n"
+"  </metadata>\r\n"
+"  <defs\r\n"
+"     id=\"defs2600\" />\r\n"
+"  <sodipodi:namedview\r\n"
+"     inkscape:snap-global=\"false\"\r\n"
+"     inkscape:document-rotation=\"0\"\r\n"
+"     inkscape:current-layer=\"distribute-horizontal-gaps\"\r\n"
+"     inkscape:window-maximized=\"1\"\r\n"
+"     inkscape:window-y=\"-8\"\r\n"
+"     inkscape:window-x=\"54\"\r\n"
+"     inkscape:window-height=\"1177\"\r\n"
+"     inkscape:window-width=\"1858\"\r\n"
+"     inkscape:cy=\"10.312132\"\r\n"
+"     inkscape:cx=\"4.0075318\"\r\n"
+"     inkscape:zoom=\"43.982267\"\r\n"
+"     showgrid=\"true\"\r\n"
+"     id=\"namedview\"\r\n"
+"     guidetolerance=\"10\"\r\n"
+"     gridtolerance=\"10\"\r\n"
+"     objecttolerance=\"10\">\r\n"
+"    <inkscape:grid\r\n"
+"       id=\"grid\"\r\n"
+"       type=\"xygrid\" />\r\n"
+"  </sodipodi:namedview>\r\n"
+"  <g\r\n"
+"     id=\"distribute-horizontal-gaps\"\r\n"
+"     inkscape:label=\"00282\"\r\n"
+"     transform=\"matrix(0.666667,0,0,0.666655,-772.66667,-472.23283)\">\r\n"
+"    <path\r\n"
+"       style=\"opacity:1;\"\r\n"
+"       d=\"m 1159,732.36206 v -14.90647 h 3.0069 v 14.90647 z\"\r\n"
+"       id=\"rect18780\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       style=\"opacity:0;fill:none\"\r\n"
+"       d=\"m 1159,708.36218 h 24 v 24 h -24 z\"\r\n"
+"       id=\"rect18784\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       style=\"opacity:1;\"\r\n"
+"       d=\"m 1169.441,718.32984 h 3.7562 v 10.00973 h -3.7562 z\"\r\n"
+"       id=\"rect18782\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       style=\"opacity:1;fill-opacity:1;\"\r\n"
+"       d=\"m 1168.7153,708.3622 v 0.9231 22.1538 0.9231 h 0.75 v -0.9231 -22.1538 -0.9231 z\"\r\n"
+"       id=\"path904\"\r\n"
+"       class=\"success\r\n"
+"\" />\r\n"
+"    <path\r\n"
+"       class=\"success\r\n"
+"\"\r\n"
+"       id=\"path892\"\r\n"
+"       d=\"m 1179.8289,708.3622 v 0.9231 22.1538 0.9231 h 0.75 v -0.9231 -22.1538 -0.9231 z\"\r\n"
+"       style=\"opacity:1;fill-opacity:1;\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       style=\"opacity:1;fill-opacity:1;\"\r\n"
+"       d=\"m 1161.9994,708.3622 v 0.9231 22.1538 0.9231 h 0.75 v -0.9231 -22.1538 -0.9231 z\"\r\n"
+"       id=\"path906\"\r\n"
+"       class=\"success\r\n"
+"\" />\r\n"
+"    <path\r\n"
+"       class=\"success\r\n"
+"\"\r\n"
+"       id=\"path894\"\r\n"
+"       d=\"m 1173.113,708.3622 v 0.9231 22.1538 0.9231 h 0.75 v -0.9231 -22.1538 -0.9231 z\"\r\n"
+"       style=\"opacity:1;fill-opacity:1;\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <rect\r\n"
+"       style=\"opacity:0.5;fill-opacity:1;\"\r\n"
+"       id=\"rect912\"\r\n"
+"       width=\"3.8606291\"\r\n"
+"       height=\"2.4136133\"\r\n"
+"       x=\"1163.802\"\r\n"
+"       y=\"709.57239\" />\r\n"
+"    <rect\r\n"
+"       y=\"709.57239\"\r\n"
+"       x=\"1174.9156\"\r\n"
+"       height=\"2.4136133\"\r\n"
+"       width=\"3.8606291\"\r\n"
+"       id=\"rect910\"\r\n"
+"       style=\"opacity:0.5;fill-opacity:1;\" />\r\n"
+"  </g>\r\n"
+"  <rect\r\n"
+"     id=\"rect968\"\r\n"
+"     width=\"1.6858754\"\r\n"
+"     height=\"9.9876719\"\r\n"
+"     x=\"14.353012\"\r\n"
+"     y=\"6.0123286\"\r\n"
+"     style=\"opacity:1;\"/>\r\n"
+"</svg>\r\n";
+
+const char* distributehorizontalgapssymbolic_svg = (const char*) temp_binary_data_22;
+
+//================== distributeverticalgapssymbolic.svg ==================
+static const unsigned char temp_binary_data_23[] =
+"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
+"<svg\r\n"
+"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\r\n"
+"   xmlns:cc=\"http://creativecommons.org/ns#\"\r\n"
+"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\r\n"
+"   xmlns:svg=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\r\n"
+"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\r\n"
+"   inkscape:version=\"0.92.4 (5da689c313, 2019-01-14)\"\r\n"
+"   sodipodi:docname=\"distribute-vertical-gaps-symbolic.svg\"\r\n"
+"   viewBox=\"0 0 16 16\"\r\n"
+"   height=\"16\"\r\n"
+"   width=\"16\"\r\n"
+"   id=\"svg1\"\r\n"
+"   version=\"1.1\">\r\n"
+"<style id=\"s0\">\r\n"
+"   .success { fill: #009909; }\r\n"
+"   .warning { fill: #FF1990; }\r\n"
+"   .error   { fill: #00AAFF; }\r\n"
+"  </style>\r\n"
+"  <style id=\"s2\"> \r\n"
+"     @import '../../highlights.css'; \r\n"
+"  </style>\r\n"
+"     \r\n"
+"<metadata\r\n"
+"     id=\"metadata1253\">\r\n"
+"    <rdf:RDF>\r\n"
+"      <cc:Work\r\n"
+"         rdf:about=\"\">\r\n"
+"        <dc:format>image/svg+xml</dc:format>\r\n"
+"        <dc:type\r\n"
+"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\r\n"
+"      </cc:Work>\r\n"
+"    </rdf:RDF>\r\n"
+"  </metadata>\r\n"
+"  <defs\r\n"
+"     id=\"defs1251\" />\r\n"
+"  <sodipodi:namedview\r\n"
+"     inkscape:snap-global=\"false\"\r\n"
+"     inkscape:document-rotation=\"0\"\r\n"
+"     inkscape:current-layer=\"svg1\"\r\n"
+"     inkscape:window-maximized=\"1\"\r\n"
+"     inkscape:window-y=\"-8\"\r\n"
+"     inkscape:window-x=\"54\"\r\n"
+"     inkscape:window-height=\"1177\"\r\n"
+"     inkscape:window-width=\"1858\"\r\n"
+"     inkscape:cy=\"26.108674\"\r\n"
+"     inkscape:cx=\"-0.86135142\"\r\n"
+"     inkscape:zoom=\"10.995567\"\r\n"
+"     showgrid=\"true\"\r\n"
+"     id=\"namedview\"\r\n"
+"     guidetolerance=\"10\"\r\n"
+"     gridtolerance=\"10\"\r\n"
+"     objecttolerance=\"10\">\r\n"
+"    <inkscape:grid\r\n"
+"       id=\"grid\"\r\n"
+"       type=\"xygrid\" />\r\n"
+"  </sodipodi:namedview>\r\n"
+"  <g\r\n"
+"     id=\"g944\"\r\n"
+"     transform=\"translate(-20.28426,-14.749237)\">\r\n"
+"    <path\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       id=\"rect18780-3\"\r\n"
+"       d=\"m 36.283901,30.749237 h -9.937474 v -2.004601 h 9.937474 z\"\r\n"
+"       style=\"opacity:1;\"/>\r\n"
+"    <path\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       id=\"rect18784\"\r\n"
+"       d=\"M 20.28426,30.749237 V 14.749229 h 15.999721 v 16.000008 z\"\r\n"
+"       style=\"opacity:0;fill:none;\"/>\r\n"
+"    <path\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       id=\"rect18782-0\"\r\n"
+"       d=\"m 26.929251,23.788567 v -2.504135 h 6.673037 v 2.504135 z\"\r\n"
+"       style=\"opacity:1;\"/>\r\n"
+"    <path\r\n"
+"       class=\"success \"\r\n"
+"       id=\"path904\"\r\n"
+"       d=\"m 20.284273,24.272367 h 0.61539 14.768942 0.615389 v -0.5 h -0.615389 -14.768942 -0.61539 z\"\r\n"
+"       style=\"opacity:1;fill-opacity:1;\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       style=\"opacity:1;fill-opacity:1;\"\r\n"
+"       d=\"m 20.284273,16.863297 h 0.61539 14.768942 0.615389 v -0.500001 h -0.615389 -14.768942 -0.61539 z\"\r\n"
+"       id=\"path892\"\r\n"
+"       class=\"success \" />\r\n"
+"    <path\r\n"
+"       class=\"success \"\r\n"
+"       id=\"path906\"\r\n"
+"       d=\"m 20.284273,28.749636 h 0.61539 14.768942 0.615389 v -0.5 h -0.615389 -14.768942 -0.61539 z\"\r\n"
+"       style=\"opacity:1;fill-opacity:1;\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       style=\"opacity:1;fill-opacity:1;\"\r\n"
+"       d=\"m 20.284273,21.340565 h 0.61539 14.768942 0.615389 v -0.5 h -0.615389 -14.768942 -0.61539 z\"\r\n"
+"       id=\"path894\"\r\n"
+"       class=\"success \" />\r\n"
+"    <rect\r\n"
+"       transform=\"rotate(-90)\"\r\n"
+"       y=\"21.091049\"\r\n"
+"       x=\"-27.547899\"\r\n"
+"       height=\"1.6090474\"\r\n"
+"       width=\"2.5737541\"\r\n"
+"       id=\"rect912\"\r\n"
+"       style=\"opacity:0.5;fill-opacity:1;\" />\r\n"
+"    <rect\r\n"
+"       transform=\"rotate(-90)\"\r\n"
+"       style=\"opacity:0.5;fill-opacity:1;\"\r\n"
+"       id=\"rect910\"\r\n"
+"       width=\"2.5737541\"\r\n"
+"       height=\"1.6090474\"\r\n"
+"       x=\"-20.1388\"\r\n"
+"       y=\"21.091049\" />\r\n"
+"    <rect\r\n"
+"       transform=\"rotate(-90)\"\r\n"
+"       style=\"opacity:1;\"\r\n"
+"       y=\"26.29623\"\r\n"
+"       x=\"-16.396608\"\r\n"
+"       height=\"9.9876719\"\r\n"
+"       width=\"1.6858754\"\r\n"
+"       id=\"rect968-5\" />\r\n"
+"  </g>\r\n"
+"</svg>\r\n";
+
+const char* distributeverticalgapssymbolic_svg = (const char*) temp_binary_data_23;
+
+//================== editcutsymbolic.svg ==================
+static const unsigned char temp_binary_data_24[] =
+"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
+"<svg\r\n"
+"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\r\n"
+"   xmlns:cc=\"http://creativecommons.org/ns#\"\r\n"
+"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\r\n"
+"   xmlns:svg=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\r\n"
+"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\r\n"
+"   inkscape:version=\"1.1-dev (6039630, 2019-12-20)\"\r\n"
+"   sodipodi:docname=\"edit-cut-symbolic.svg\"\r\n"
+"   viewBox=\"0 0 16 16\"\r\n"
+"   height=\"16\"\r\n"
+"   width=\"16\"\r\n"
+"   id=\"svg1\"\r\n"
+"   version=\"1.1\">\r\n"
+"  <metadata\r\n"
+"     id=\"metadata1005\">\r\n"
+"    <rdf:RDF>\r\n"
+"      <cc:Work\r\n"
+"         rdf:about=\"\">\r\n"
+"        <dc:format>image/svg+xml</dc:format>\r\n"
+"        <dc:type\r\n"
+"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\r\n"
+"      </cc:Work>\r\n"
+"    </rdf:RDF>\r\n"
+"  </metadata>\r\n"
+"  <defs\r\n"
+"     id=\"defs1003\" />\r\n"
+"  <style\r\n"
+"     id=\"s0\">\r\n"
+".success { fill:#009909; }\r\n"
+".warning { fill:#FF1990; }\r\n"
+".error { fill:#00AAFF; }\r\n"
+"</style>\r\n"
+"  <style\r\n"
+"     id=\"s2\">\r\n"
+"@import '../../highlights.css';\r\n"
+"</style>\r\n"
+"  <sodipodi:namedview\r\n"
+"     inkscape:document-rotation=\"0\"\r\n"
+"     inkscape:current-layer=\"edit-cut\"\r\n"
+"     inkscape:window-maximized=\"1\"\r\n"
+"     inkscape:window-y=\"-6\"\r\n"
+"     inkscape:window-x=\"65\"\r\n"
+"     inkscape:window-height=\"890\"\r\n"
+"     inkscape:window-width=\"1296\"\r\n"
+"     inkscape:cy=\"8\"\r\n"
+"     inkscape:cx=\"8\"\r\n"
+"     inkscape:zoom=\"41.125\"\r\n"
+"     showgrid=\"true\"\r\n"
+"     id=\"namedview\"\r\n"
+"     guidetolerance=\"10\"\r\n"
+"     gridtolerance=\"10\"\r\n"
+"     objecttolerance=\"10\">\r\n"
+"    <inkscape:grid\r\n"
+"       id=\"grid\"\r\n"
+"       type=\"xygrid\" />\r\n"
+"  </sodipodi:namedview>\r\n"
+"  <g\r\n"
+"     inkscape:label=\"00377\"\r\n"
+"     id=\"edit-cut\"\r\n"
+"     transform=\"matrix(1,0,0,0.999994,-441,-1132.3549)\">\r\n"
+"    <path\r\n"
+"       style=\"opacity:0;fill:none\"\r\n"
+"       d=\"m 441,1132.3621 h 16 v 16 h -16 z\"\r\n"
+"       id=\"gtk-edit\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       id=\"path12477\"\r\n"
+"       d=\"m 444.3591,1132.362 c -1.0384,0.472 -1.3774,1.498 -0.7778,2.315 l 4.3289,6.201 -1.7101,2.016 1.3848,1.776 1.5766,-2.116 1.5461,2.116 1.3721,-1.701 -1.6668,-2.091 4.3289,-6.201 c 0.5995,-0.817 0.2606,-1.843 -0.7779,-2.315 l -4.8024,6.813 z\""
+"\r\n"
+"       style=\"opacity:1\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       id=\"path61250\"\r\n"
+"       d=\"m 453.5,1141.362 c -1.933,0 -3.5,1.567 -3.5,3.5 0,1.933 1.567,3.5 3.5,3.5 1.933,0 3.5,-1.567 3.5,-3.5 0,-1.933 -1.567,-3.5 -3.5,-3.5 z m 0,2 c 0.8284,0 1.5,0.672 1.5,1.5 0,0.829 -0.6716,1.5 -1.5,1.5 -0.8284,0 -1.5,-0.671 -1.5,-1.5 0,-0.828"
+" 0.6716,-1.5 1.5,-1.5 z\"\r\n"
+"       style=\"opacity:1\" />\r\n"
+"    <path\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       style=\"opacity:1\"\r\n"
+"       d=\"m 444.5,1141.362 c -1.933,0 -3.5,1.567 -3.5,3.5 0,1.933 1.567,3.5 3.5,3.5 1.933,0 3.5,-1.567 3.5,-3.5 0,-1.933 -1.567,-3.5 -3.5,-3.5 z m 0,2 c 0.8284,0 1.5,0.672 1.5,1.5 0,0.829 -0.6716,1.5 -1.5,1.5 -0.8284,0 -1.5,-0.671 -1.5,-1.5 0,-0.828"
+" 0.6716,-1.5 1.5,-1.5 z\"\r\n"
+"       id=\"path61253\" />\r\n"
+"  </g>\r\n"
+"</svg>\r\n";
+
+const char* editcutsymbolic_svg = (const char*) temp_binary_data_24;
+
+//================== editdeletesymbolic.svg ==================
+static const unsigned char temp_binary_data_25[] =
+"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
+"<svg\r\n"
+"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\r\n"
+"   xmlns:cc=\"http://creativecommons.org/ns#\"\r\n"
+"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\r\n"
+"   xmlns:svg=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\r\n"
+"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\r\n"
+"   inkscape:version=\"1.1-dev (1fceb22, 2019-12-30)\"\r\n"
+"   sodipodi:docname=\"edit-delete-symbolic.svg\"\r\n"
+"   viewBox=\"0 0 16 16\"\r\n"
+"   height=\"16\"\r\n"
+"   width=\"16\"\r\n"
+"   id=\"svg1\"\r\n"
+"   version=\"1.1\">\r\n"
+"  <style\r\n"
+"     id=\"s0\">\r\n"
+".success { fill:#009909; }\r\n"
+".warning { fill:#FF1990; }\r\n"
+".error { fill:#00AAFF; }\r\n"
+"</style>\r\n"
+"  <style\r\n"
+"     id=\"s2\">\r\n"
+"@import '../../highlights.css';\r\n"
+"</style>\r\n"
+"  <metadata\r\n"
+"     id=\"metadata21\">\r\n"
+"    <rdf:RDF>\r\n"
+"      <cc:Work\r\n"
+"         rdf:about=\"\">\r\n"
+"        <dc:format>image/svg+xml</dc:format>\r\n"
+"        <dc:type\r\n"
+"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\r\n"
+"      </cc:Work>\r\n"
+"    </rdf:RDF>\r\n"
+"  </metadata>\r\n"
+"  <defs\r\n"
+"     id=\"defs19\">\r\n"
+"    <inkscape:path-effect\r\n"
+"       update_on_knot_move=\"true\"\r\n"
+"       attempt_force_join=\"true\"\r\n"
+"       miter_limit=\"4\"\r\n"
+"       offset=\"0.22568149\"\r\n"
+"       unit=\"mm\"\r\n"
+"       linejoin_type=\"miter\"\r\n"
+"       is_visible=\"true\"\r\n"
+"       id=\"path-effect31\"\r\n"
+"       effect=\"offset\" />\r\n"
+"  </defs>\r\n"
+"  <sodipodi:namedview\r\n"
+"     inkscape:document-rotation=\"0\"\r\n"
+"     inkscape:current-layer=\"svg1\"\r\n"
+"     inkscape:window-maximized=\"1\"\r\n"
+"     inkscape:window-y=\"-8\"\r\n"
+"     inkscape:window-x=\"54\"\r\n"
+"     inkscape:window-height=\"1177\"\r\n"
+"     inkscape:window-width=\"1858\"\r\n"
+"     inkscape:cy=\"8\"\r\n"
+"     inkscape:cx=\"7.6831683\"\r\n"
+"     inkscape:zoom=\"31.5625\"\r\n"
+"     showgrid=\"true\"\r\n"
+"     id=\"namedview\"\r\n"
+"     guidetolerance=\"10\"\r\n"
+"     gridtolerance=\"10\"\r\n"
+"     objecttolerance=\"10\">\r\n"
+"    <inkscape:grid\r\n"
+"       id=\"grid\"\r\n"
+"       type=\"xygrid\" />\r\n"
+"  </sodipodi:namedview>\r\n"
+"  <g\r\n"
+"     inkscape:label=\"00384\"\r\n"
+"     id=\"edit-delete\">\r\n"
+"    <title\r\n"
+"       id=\"title34114\">edit-delete</title>\r\n"
+"    <path\r\n"
+"       style=\"opacity:0;fill:none\"\r\n"
+"       d=\"M 0,0 H 16 V 16 H 0 Z\"\r\n"
+"       id=\"gtk-remove\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       id=\"path34118\"\r\n"
+"       style=\"opacity:1;fill-rule:evenodd\"\r\n"
+"       d=\"M 8,1.03125 C 4.14673,1.03125 1.03125,4.14672 1.03125,8 c 0,3.85327 3.11548,6.96875 6.96875,6.96875 3.85327,0 6.96875,-3.11548 6.96875,-6.96875 C 14.96875,4.14672 11.85327,1.03125 8,1.03125 Z M 5,11 h 1 c 0.01037,0 0.02079,0 0.03125,0 0.25"
+"4951,-0.0112 0.50987,-0.12858 0.6875,-0.3125 L 8,9.40625 9.3125,10.6875 C 9.578125,10.918 9.759172,10.993 10,11 h 1 V 10 C 11,9.71353 10.9657,9.44935 10.75,9.25 l -1.28125,-1.28125 1.25,-1.25 C 10.90694,6.53058 11,6.2653 11,6 V 5 H 10 C 9.734699,5.00"
+"001 9.469414,5.0931 9.28125,5.28125 L 8,6.5625 6.71875,5.28125 C 6.530586,5.09306 6.26529,5 6,5 H 5 V 6 C 5,6.26529 5.09306,6.53058 5.28125,6.71875 L 6.5625,7.96875 5.28125,9.25 C 5.070508,9.44463 4.97809,9.71925 5,10 Z\" />\r\n"
+"  </g>\r\n"
+"</svg>\r\n";
+
+const char* editdeletesymbolic_svg = (const char*) temp_binary_data_25;
+
+//================== editduplicatesymbolic.svg ==================
+static const unsigned char temp_binary_data_26[] =
+"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
+"<svg\r\n"
+"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\r\n"
+"   xmlns:cc=\"http://creativecommons.org/ns#\"\r\n"
+"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\r\n"
+"   xmlns:svg=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\r\n"
+"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\r\n"
+"   inkscape:version=\"1.1-dev (6039630, 2019-12-20)\"\r\n"
+"   sodipodi:docname=\"edit-duplicate-symbolic.svg\"\r\n"
+"   viewBox=\"0 0 16 16\"\r\n"
+"   height=\"16\"\r\n"
+"   width=\"16\"\r\n"
+"   id=\"svg1\"\r\n"
+"   version=\"1.1\">\r\n"
+"  <metadata\r\n"
+"     id=\"metadata6429\">\r\n"
+"    <rdf:RDF>\r\n"
+"      <cc:Work\r\n"
+"         rdf:about=\"\">\r\n"
+"        <dc:format>image/svg+xml</dc:format>\r\n"
+"        <dc:type\r\n"
+"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\r\n"
+"      </cc:Work>\r\n"
+"    </rdf:RDF>\r\n"
+"  </metadata>\r\n"
+"  <defs\r\n"
+"     id=\"defs6427\" />\r\n"
+"  <style\r\n"
+"     id=\"s0\">\r\n"
+".success { fill:#009909; }\r\n"
+".warning { fill:#FF1990; }\r\n"
+".error { fill:#00AAFF; }\r\n"
+"</style>\r\n"
+"  <style\r\n"
+"     id=\"s2\">\r\n"
+"@import '../../highlights.css';\r\n"
+"</style>\r\n"
+"  <sodipodi:namedview\r\n"
+"     inkscape:document-rotation=\"0\"\r\n"
+"     inkscape:current-layer=\"edit-duplicate\"\r\n"
+"     inkscape:window-maximized=\"1\"\r\n"
+"     inkscape:window-y=\"-6\"\r\n"
+"     inkscape:window-x=\"65\"\r\n"
+"     inkscape:window-height=\"890\"\r\n"
+"     inkscape:window-width=\"1296\"\r\n"
+"     inkscape:cy=\"8\"\r\n"
+"     inkscape:cx=\"8\"\r\n"
+"     inkscape:zoom=\"41.125\"\r\n"
+"     showgrid=\"true\"\r\n"
+"     id=\"namedview\"\r\n"
+"     guidetolerance=\"10\"\r\n"
+"     gridtolerance=\"10\"\r\n"
+"     objecttolerance=\"10\">\r\n"
+"    <inkscape:grid\r\n"
+"       id=\"grid\"\r\n"
+"       type=\"xygrid\" />\r\n"
+"  </sodipodi:namedview>\r\n"
+"  <g\r\n"
+"     id=\"edit-duplicate\"\r\n"
+"     inkscape:label=\"00012\"\r\n"
+"     transform=\"translate(-45,-587.36218)\">\r\n"
+"    <path\r\n"
+"       style=\"opacity:0;fill:none\"\r\n"
+"       d=\"m 45,587.36218 h 16 v 16 H 45 Z\"\r\n"
+"       id=\"rect4989\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       class=\"success\"\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       id=\"rect4993\"\r\n"
+"       d=\"m 60,602.3622 v -9 H 50 v 9 z\"\r\n"
+"       style=\"opacity:1\" />\r\n"
+"    <path\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       id=\"path4998\"\r\n"
+"       d=\"m 49,597.3622 v -1 -4 h 6 v 0 -4 H 45 v 9 z\"\r\n"
+"       style=\"opacity:1\" />\r\n"
+"  </g>\r\n"
+"</svg>\r\n";
+
+const char* editduplicatesymbolic_svg = (const char*) temp_binary_data_26;
+
+//================== editpastestylesymbolic.svg ==================
+static const unsigned char temp_binary_data_27[] =
+"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
+"<svg\r\n"
+"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\r\n"
+"   xmlns:cc=\"http://creativecommons.org/ns#\"\r\n"
+"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\r\n"
+"   xmlns:svg=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\r\n"
+"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\r\n"
+"   version=\"1.1\"\r\n"
+"   id=\"svg1\"\r\n"
+"   width=\"16\"\r\n"
+"   height=\"16\"\r\n"
+"   viewBox=\"0 0 16 16\"\r\n"
+"   sodipodi:docname=\"edit-paste-style-symbolic.svg\"\r\n"
+"   inkscape:version=\"1.1-dev (3d47766, 2020-01-22)\">\r\n"
+"  <metadata\r\n"
+"     id=\"metadata7580\">\r\n"
+"    <rdf:RDF>\r\n"
+"      <cc:Work\r\n"
+"         rdf:about=\"\">\r\n"
+"        <dc:format>image/svg+xml</dc:format>\r\n"
+"        <dc:type\r\n"
+"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\r\n"
+"      </cc:Work>\r\n"
+"    </rdf:RDF>\r\n"
+"  </metadata>\r\n"
+"  <defs\r\n"
+"     id=\"defs7578\" />\r\n"
+"  <style\r\n"
+"     id=\"s0\">\r\n"
+".success { fill:#009909; }\r\n"
+".warning { fill:#FF1990; }\r\n"
+".error { fill:#00AAFF; }\r\n"
+"</style>\r\n"
+"  <style\r\n"
+"     id=\"s2\">\r\n"
+"@import '../../highlights.css';\r\n"
+"</style>\r\n"
+"  <sodipodi:namedview\r\n"
+"     showguides=\"false\"\r\n"
+"     objecttolerance=\"10\"\r\n"
+"     gridtolerance=\"10\"\r\n"
+"     guidetolerance=\"10\"\r\n"
+"     id=\"namedview\"\r\n"
+"     showgrid=\"true\"\r\n"
+"     inkscape:zoom=\"41.125\"\r\n"
+"     inkscape:cx=\"7.9635258\"\r\n"
+"     inkscape:cy=\"8\"\r\n"
+"     inkscape:window-width=\"1296\"\r\n"
+"     inkscape:window-height=\"890\"\r\n"
+"     inkscape:window-x=\"65\"\r\n"
+"     inkscape:window-y=\"-6\"\r\n"
+"     inkscape:window-maximized=\"1\"\r\n"
+"     inkscape:current-layer=\"svg1\"\r\n"
+"     inkscape:document-rotation=\"0\">\r\n"
+"    <inkscape:grid\r\n"
+"       type=\"xygrid\"\r\n"
+"       id=\"grid\" />\r\n"
+"  </sodipodi:namedview>\r\n"
+"  <g\r\n"
+"     transform=\"matrix(1,0,0,1.000004,-45.070339,-567.36441)\"\r\n"
+"     inkscape:label=\"00011\"\r\n"
+"     id=\"edit-paste-style\">\r\n"
+"    <path\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       id=\"rect27708\"\r\n"
+"       d=\"m 45.070339,567.41998 h 16 v 15.93773 h -16 z\"\r\n"
+"       style=\"opacity:0;fill:none\" />\r\n"
+"    <path\r\n"
+"       class=\"error\"\r\n"
+"       sodipodi:nodetypes=\"cccccc\"\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       id=\"path27712\"\r\n"
+"       d=\"m 49.070339,572.3427 v 8.01939 h 6 l 2,-1.99999 v -6.0194 z\"\r\n"
+"       style=\"opacity:1\" />\r\n"
+"  </g>\r\n"
+"  <path\r\n"
+"     \r\n"
+"     inkscape:connector-curvature=\"0\"\r\n"
+"     id=\"rect27710\"\r\n"
+"     d=\"m 5.53033,3.9e-5 h 4.93934 C 10.763473,3.9e-5 11,0.23656995 11,0.53037112 V 2.4580488 C 11,2.75185 10.763473,2.988381 10.46967,2.988381 H 5.53033 C 5.236527,2.988381 5,2.75185 5,2.4580488 V 0.53037112 C 5,0.23656995 5.236527,3.9e-5 5.53033,3"
+".9e-5 Z\"\r\n"
+"     style=\"opacity:1;stroke-width:1\"\r\n"
+"     sodipodi:nodetypes=\"sssssssss\" />\r\n"
+"  <path\r\n"
+"     \r\n"
+"     inkscape:connector-curvature=\"0\"\r\n"
+"     id=\"path27714\"\r\n"
+"     d=\"m 2,1.000003 c -0.648732,0 -1,0.4447918 -1,0.999994 v 13.470924 c 0,0.473192 0.318397,0.529002 0.523411,0.529002 l 12.945339,8e-5 C 14.76255,16.000003 15,15.701322 15,15.408621 V 1.5875654 C 15,1.2949642 14.770364,1.000003 14.339844,1.000003"
+" H 12 v 1.011574 h 1.400982 C 13.799743,2.011577 14,2.3905086 14,2.7107298 V 14.412517 c 0,0.292701 -0.23745,0.527602 -0.53125,0.529202 -0.249948,10e-4 -10.697256,0.0623 -10.945339,0.0623 C 2.161855,15.004019 2,14.709818 2,14.474917 V 2.5215691 C 2,2"
+".1534176 2.2792,1.992567 2.460911,1.992567 H 4 V 0.99646299\"\r\n"
+"     style=\"opacity:1;stroke-width:1\"\r\n"
+"     sodipodi:nodetypes=\"csssssssccsssssssscc\" />\r\n"
+"</svg>\r\n";
+
+const char* editpastestylesymbolic_svg = (const char*) temp_binary_data_27;
+
+//================== objectlockedsymbolic.svg ==================
+static const unsigned char temp_binary_data_28[] =
+"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
+"<svg\r\n"
+"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\r\n"
+"   xmlns:cc=\"http://creativecommons.org/ns#\"\r\n"
+"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\r\n"
+"   xmlns:svg=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\r\n"
+"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\r\n"
+"   inkscape:version=\"1.0.1 (3bc2e813f5, 2020-09-07)\"\r\n"
+"   sodipodi:docname=\"object-locked-symbolic.svg\"\r\n"
+"   viewBox=\"0 0 16 16\"\r\n"
+"   height=\"16\"\r\n"
+"   width=\"16\"\r\n"
+"   id=\"svg1\"\r\n"
+"   version=\"1.1\">\r\n"
+"  <metadata\r\n"
+"     id=\"metadata1250\">\r\n"
+"    <rdf:RDF>\r\n"
+"      <cc:Work\r\n"
+"         rdf:about=\"\">\r\n"
+"        <dc:format>image/svg+xml</dc:format>\r\n"
+"        <dc:type\r\n"
+"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\r\n"
+"      </cc:Work>\r\n"
+"    </rdf:RDF>\r\n"
+"  </metadata>\r\n"
+"  <defs\r\n"
+"     id=\"defs1248\">\r\n"
+"    <inkscape:path-effect\r\n"
+"       hide_knots=\"false\"\r\n"
+"       only_selected=\"false\"\r\n"
+"       apply_with_radius=\"true\"\r\n"
+"       apply_no_radius=\"true\"\r\n"
+"       use_knot_distance=\"true\"\r\n"
+"       flexible=\"false\"\r\n"
+"       chamfer_steps=\"1\"\r\n"
+"       radius=\"0\"\r\n"
+"       mode=\"F\"\r\n"
+"       method=\"auto\"\r\n"
+"       unit=\"px\"\r\n"
+"       satellites_param=\"F,0,0,1,0,0.99998,0,1 @ F,0,0,1,0,0,0,1 @ F,0,0,1,0,0,0,1 @ F,0,1,1,0,0.99998,0,1\"\r\n"
+"       lpeversion=\"1\"\r\n"
+"       is_visible=\"true\"\r\n"
+"       id=\"path-effect1829\"\r\n"
+"       effect=\"fillet_chamfer\" />\r\n"
+"  </defs>\r\n"
+"  <style\r\n"
+"     id=\"s0\">\r\n"
+".success { fill:#009909; }\r\n"
+".warning { fill:#FF1990; }\r\n"
+".error { fill:#00AAFF; }\r\n"
+"</style>\r\n"
+"  <style\r\n"
+"     id=\"s2\">\r\n"
+"@import '../../highlights.css';\r\n"
+"</style>\r\n"
+"  <sodipodi:namedview\r\n"
+"     inkscape:document-rotation=\"0\"\r\n"
+"     inkscape:current-layer=\"object-locked\"\r\n"
+"     inkscape:window-maximized=\"1\"\r\n"
+"     inkscape:window-y=\"-8\"\r\n"
+"     inkscape:window-x=\"54\"\r\n"
+"     inkscape:window-height=\"1177\"\r\n"
+"     inkscape:window-width=\"1858\"\r\n"
+"     inkscape:cy=\"9.9655048\"\r\n"
+"     inkscape:cx=\"4.5005265\"\r\n"
+"     inkscape:zoom=\"29.079766\"\r\n"
+"     showgrid=\"true\"\r\n"
+"     id=\"namedview\"\r\n"
+"     guidetolerance=\"10\"\r\n"
+"     gridtolerance=\"10\"\r\n"
+"     objecttolerance=\"10\">\r\n"
+"    <inkscape:grid\r\n"
+"       id=\"grid\"\r\n"
+"       type=\"xygrid\" />\r\n"
+"  </sodipodi:namedview>\r\n"
+"  <g\r\n"
+"     id=\"object-locked\"\r\n"
+"     inkscape:label=\"00259\"\r\n"
+"     transform=\"translate(-195,-981.36218)\">\r\n"
+"    <path\r\n"
+"       style=\"opacity:0;fill:none\"\r\n"
+"       d=\"m 195,981.36218 h 16 v 16 h -16 z\"\r\n"
+"       id=\"rect31383\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       inkscape:original-d=\"m 198,988.3622 v 8 h 10 v -8 z\"\r\n"
+"       inkscape:path-effect=\"#path-effect1829\"\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       style=\"opacity:1\"\r\n"
+"       d=\"m 198,989.36218 v 7.00002 h 10 v -7.00002 a 0.99998,0.99998 45 0 0 -0.99998,-0.99998 h -8.00004 A 0.99998,0.99998 135 0 0 198,989.36218 Z\"\r\n"
+"       id=\"path31387\"\r\n"
+"       sodipodi:nodetypes=\"ccccc\" />\r\n"
+"    <path\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       id=\"rect31389\"\r\n"
+"       d=\"m 199,986.3622 v 2 h 2 v -2 c 0,-1.108 0.892,-2 2,-2 1.108,0 2,0.892 2,2 v 2 h 2 v -2 c 0,-2.3808 -1.6025,-4 -4,-4 -2.3975,0 -4,1.68965 -4,4 z\"\r\n"
+"       style=\"opacity:1\"\r\n"
+"       sodipodi:nodetypes=\"sccsssccsss\" />\r\n"
+"  </g>\r\n"
+"</svg>\r\n";
+
+const char* objectlockedsymbolic_svg = (const char*) temp_binary_data_28;
+
+//================== objectunlockedsymbolic.svg ==================
+static const unsigned char temp_binary_data_29[] =
+"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
+"<svg\r\n"
+"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\r\n"
+"   xmlns:cc=\"http://creativecommons.org/ns#\"\r\n"
+"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\r\n"
+"   xmlns:svg=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\r\n"
+"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\r\n"
+"   version=\"1.1\"\r\n"
+"   id=\"svg1\"\r\n"
+"   width=\"16\"\r\n"
+"   height=\"16\"\r\n"
+"   viewBox=\"0 0 16 16\"\r\n"
+"   sodipodi:docname=\"object-unlocked-symbolic.svg\"\r\n"
+"   inkscape:version=\"1.0.1 (3bc2e813f5, 2020-09-07)\">\r\n"
+"  <metadata\r\n"
+"     id=\"metadata1264\">\r\n"
+"    <rdf:RDF>\r\n"
+"      <cc:Work\r\n"
+"         rdf:about=\"\">\r\n"
+"        <dc:format>image/svg+xml</dc:format>\r\n"
+"        <dc:type\r\n"
+"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\r\n"
+"      </cc:Work>\r\n"
+"    </rdf:RDF>\r\n"
+"  </metadata>\r\n"
+"  <defs\r\n"
+"     id=\"defs1262\">\r\n"
+"    <inkscape:path-effect\r\n"
+"       effect=\"fillet_chamfer\"\r\n"
+"       id=\"path-effect1827\"\r\n"
+"       is_visible=\"true\"\r\n"
+"       lpeversion=\"1\"\r\n"
+"       satellites_param=\"F,0,1,1,0,1,0,1 @ F,0,0,1,0,0,0,1 @ F,0,0,1,0,0,0,1 @ F,0,0,1,0,1,0,1\"\r\n"
+"       unit=\"px\"\r\n"
+"       method=\"auto\"\r\n"
+"       mode=\"F\"\r\n"
+"       radius=\"0\"\r\n"
+"       chamfer_steps=\"1\"\r\n"
+"       flexible=\"false\"\r\n"
+"       use_knot_distance=\"true\"\r\n"
+"       apply_no_radius=\"true\"\r\n"
+"       apply_with_radius=\"true\"\r\n"
+"       only_selected=\"false\"\r\n"
+"       hide_knots=\"false\" />\r\n"
+"  </defs>\r\n"
+"  <style\r\n"
+"     id=\"s0\">\r\n"
+".success { fill:#009909; }\r\n"
+".warning { fill:#FF1990; }\r\n"
+".error { fill:#00AAFF; }\r\n"
+"</style>\r\n"
+"  <style\r\n"
+"     id=\"s2\">\r\n"
+"@import '../../highlights.css';\r\n"
+"</style>\r\n"
+"  <sodipodi:namedview\r\n"
+"     objecttolerance=\"10\"\r\n"
+"     gridtolerance=\"10\"\r\n"
+"     guidetolerance=\"10\"\r\n"
+"     id=\"namedview\"\r\n"
+"     showgrid=\"true\"\r\n"
+"     inkscape:zoom=\"14.539883\"\r\n"
+"     inkscape:cx=\"-18.542002\"\r\n"
+"     inkscape:cy=\"5.5945155\"\r\n"
+"     inkscape:window-width=\"1858\"\r\n"
+"     inkscape:window-height=\"1177\"\r\n"
+"     inkscape:window-x=\"54\"\r\n"
+"     inkscape:window-y=\"-8\"\r\n"
+"     inkscape:window-maximized=\"1\"\r\n"
+"     inkscape:current-layer=\"object-unlocked\"\r\n"
+"     inkscape:document-rotation=\"0\">\r\n"
+"    <inkscape:grid\r\n"
+"       type=\"xygrid\"\r\n"
+"       id=\"grid\" />\r\n"
+"  </sodipodi:namedview>\r\n"
+"  <g\r\n"
+"     transform=\"translate(-195,-961.3622)\"\r\n"
+"     inkscape:label=\"00260\"\r\n"
+"     id=\"object-unlocked\">\r\n"
+"    <path\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       id=\"rect31373\"\r\n"
+"       d=\"m 195,449 h 16 v 16 h -16 z\"\r\n"
+"       style=\"opacity:0;fill:none\"\r\n"
+"       transform=\"translate(0,512.3622)\" />\r\n"
+"    <path\r\n"
+"       sodipodi:nodetypes=\"ccccc\"\r\n"
+"       style=\"opacity:1\"\r\n"
+"       d=\"m 198,969.3622 v 7 h 10 v -7 a 1,1 45 0 0 -1,-1 h -8 a 1,1 135 0 0 -1,1 z\"\r\n"
+"       id=\"rect31375\"\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       inkscape:path-effect=\"#path-effect1827\"\r\n"
+"       inkscape:original-d=\"m 198,968.3622 v 8 h 10 v -8 z\" />\r\n"
+"    <path\r\n"
+"       sodipodi:nodetypes=\"sccszsccszs\"\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       id=\"rect31389\"\r\n"
+"       d=\"m 204,966.3622 v 2 h 2 v -2 c 0,-1.108 0.49516,-2 1.5,-2 1.00484,0 1.5,0.892 1.5,2 v 2 h 2 v -2 c 0,-2.3808 -1.34322,-4 -3.5,-4 -2.15678,0 -3.5,1.68965 -3.5,4 z\"\r\n"
+"       style=\"opacity:1\" />\r\n"
+"  </g>\r\n"
+"</svg>\r\n";
+
+const char* objectunlockedsymbolic_svg = (const char*) temp_binary_data_29;
+
+//================== snapnodesmidpointsymbolic.svg ==================
+static const unsigned char temp_binary_data_30[] =
+"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
+"<svg\r\n"
+"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\r\n"
+"   xmlns:cc=\"http://creativecommons.org/ns#\"\r\n"
+"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\r\n"
+"   xmlns:svg=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\r\n"
+"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\r\n"
+"   inkscape:version=\"1.0beta0 (1b5d333, 2019-09-08)\"\r\n"
+"   sodipodi:docname=\"snap-nodes-midpoint-symbolic.svg\"\r\n"
+"   viewBox=\"0 0 16 16\"\r\n"
+"   height=\"16\"\r\n"
+"   width=\"16\"\r\n"
+"   id=\"svg1\"\r\n"
+"   version=\"1.1\">\r\n"
+"<style id=\"s0\">\r\n"
+"   .success { fill: #009909; }\r\n"
+"   .warning { fill: #FF1990; }\r\n"
+"   .error   { fill: #00AAFF; }\r\n"
+"  </style>\r\n"
+"  <style id=\"s2\"> \r\n"
+"     @import '../../highlights.css'; \r\n"
+"  </style>\r\n"
+"   \r\n"
+"  <metadata\r\n"
+"     id=\"metadata3229\">\r\n"
+"    <rdf:RDF>\r\n"
+"      <cc:Work\r\n"
+"         rdf:about=\"\">\r\n"
+"        <dc:format>image/svg+xml</dc:format>\r\n"
+"        <dc:type\r\n"
+"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\r\n"
+"      </cc:Work>\r\n"
+"    </rdf:RDF>\r\n"
+"  </metadata>\r\n"
+"  <defs\r\n"
+"     id=\"defs3227\" />\r\n"
+"  <sodipodi:namedview\r\n"
+"     inkscape:document-rotation=\"0\"\r\n"
+"     inkscape:current-layer=\"snap-nodes-midpoint\"\r\n"
+"     inkscape:window-maximized=\"1\"\r\n"
+"     inkscape:window-y=\"-8\"\r\n"
+"     inkscape:window-x=\"54\"\r\n"
+"     inkscape:window-height=\"1177\"\r\n"
+"     inkscape:window-width=\"1858\"\r\n"
+"     inkscape:cy=\"7.6000299\"\r\n"
+"     inkscape:cx=\"5.1947466\"\r\n"
+"     inkscape:zoom=\"38.41879\"\r\n"
+"     showgrid=\"true\"\r\n"
+"     id=\"namedview\"\r\n"
+"     guidetolerance=\"10\"\r\n"
+"     gridtolerance=\"10\"\r\n"
+"     objecttolerance=\"10\">\r\n"
+"    <inkscape:grid\r\n"
+"       id=\"grid\"\r\n"
+"       type=\"xygrid\" />\r\n"
+"  </sodipodi:namedview>\r\n"
+"  <g\r\n"
+"     inkscape:label=\"00329\"\r\n"
+"     id=\"snap-nodes-midpoint\"\r\n"
+"     transform=\"matrix(1,0,0,0.996108,-859,-504.39161)\">\r\n"
+"    <path\r\n"
+"       style=\"opacity:0;fill:none\"\r\n"
+"       d=\"m 859,506.42471 h 16 v 16 h -16 z\"\r\n"
+"       id=\"rect22787\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       transform=\"rotate(90)\"\r\n"
+"       style=\"opacity:1\"\r\n"
+"       d=\"m 513.36218,-865 h 2 v 4 h -2 z\"\r\n"
+"       id=\"rect22801\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       style=\"opacity:1\"\r\n"
+"       d=\"m 865,511.3622 v 6 l 4,-3 z\"\r\n"
+"       id=\"path22803\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       style=\"opacity:1\"\r\n"
+"       d=\"m 861,510.36221 h 2 v 8 h -2 z\"\r\n"
+"       id=\"rect22807\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       id=\"path22809\"\r\n"
+"       d=\"m 865,518.3622 h -6 l 3,4 z\"\r\n"
+"       style=\"opacity:1\" />\r\n"
+"    <path\r\n"
+"       style=\"opacity:1\"\r\n"
+"       d=\"m 865,510.3622 h -6 l 3,-4 z\"\r\n"
+"       id=\"path22811\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       id=\"path3809\"\r\n"
+"       d=\"m 872,517.40535 h 1 v 5.01954 h -1 z\"\r\n"
+"       style=\"opacity:1;stroke-width:0.560108\" />\r\n"
+"    <path\r\n"
+"       style=\"opacity:1;stroke-width:0.560108\"\r\n"
+"       d=\"m 872,506.36237 h 1 v 5.01954 h -1 z\"\r\n"
+"       id=\"rect22813\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       class=\"success\"\r\n"
+"       style=\"opacity:1\"\r\n"
+"       d=\"m 875,514.39363 a 2.5,2.5 0 0 1 -2.5,2.5 2.5,2.5 0 0 1 -2.5,-2.5 2.5,2.5 0 0 1 2.5,-2.5 2.5,2.5 0 0 1 2.5,2.5 z\"\r\n"
+"       id=\"path22815\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"  </g>\r\n"
+"</svg>\r\n";
+
+const char* snapnodesmidpointsymbolic_svg = (const char*) temp_binary_data_30;
+
+//================== transformrotatesymbolic.svg ==================
+static const unsigned char temp_binary_data_31[] =
+"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
+"<svg\r\n"
+"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\r\n"
+"   xmlns:cc=\"http://creativecommons.org/ns#\"\r\n"
+"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\r\n"
+"   xmlns:svg=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\r\n"
+"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\r\n"
+"   inkscape:version=\"1.1-dev (6039630, 2019-12-20)\"\r\n"
+"   sodipodi:docname=\"transform-rotate-symbolic.svg\"\r\n"
+"   viewBox=\"0 0 16 16\"\r\n"
+"   height=\"16\"\r\n"
+"   width=\"16\"\r\n"
+"   id=\"svg1\"\r\n"
+"   version=\"1.1\">\r\n"
+"  <metadata\r\n"
+"     id=\"metadata955\">\r\n"
+"    <rdf:RDF>\r\n"
+"      <cc:Work\r\n"
+"         rdf:about=\"\">\r\n"
+"        <dc:format>image/svg+xml</dc:format>\r\n"
+"        <dc:type\r\n"
+"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\r\n"
+"      </cc:Work>\r\n"
+"    </rdf:RDF>\r\n"
+"  </metadata>\r\n"
+"  <defs\r\n"
+"     id=\"defs953\">\r\n"
+"    <inkscape:path-effect\r\n"
+"       effect=\"join_type\"\r\n"
+"       id=\"path-effect7712-0\"\r\n"
+"       is_visible=\"true\"\r\n"
+"       lpeversion=\"1\"\r\n"
+"       linecap_type=\"butt\"\r\n"
+"       line_width=\"1.8897638\"\r\n"
+"       linejoin_type=\"extrp_arc\"\r\n"
+"       miter_limit=\"100\"\r\n"
+"       attempt_force_join=\"true\" />\r\n"
+"  </defs>\r\n"
+"  <style\r\n"
+"     id=\"s0\">\r\n"
+".success { fill:#009909; }\r\n"
+".warning { fill:#FF1990; }\r\n"
+".error { fill:#00AAFF; }\r\n"
+"</style>\r\n"
+"  <style\r\n"
+"     id=\"s2\">\r\n"
+"@import '../../highlights.css';\r\n"
+"</style>\r\n"
+"  <sodipodi:namedview\r\n"
+"     inkscape:snap-midpoints=\"true\"\r\n"
+"     inkscape:snap-smooth-nodes=\"true\"\r\n"
+"     inkscape:snap-intersection-paths=\"true\"\r\n"
+"     inkscape:object-paths=\"true\"\r\n"
+"     inkscape:snap-bbox=\"true\"\r\n"
+"     inkscape:document-rotation=\"0\"\r\n"
+"     inkscape:current-layer=\"svg1\"\r\n"
+"     inkscape:window-maximized=\"1\"\r\n"
+"     inkscape:window-y=\"-6\"\r\n"
+"     inkscape:window-x=\"65\"\r\n"
+"     inkscape:window-height=\"890\"\r\n"
+"     inkscape:window-width=\"1296\"\r\n"
+"     inkscape:cy=\"5.0428171\"\r\n"
+"     inkscape:cx=\"6.1615889\"\r\n"
+"     inkscape:zoom=\"41.125\"\r\n"
+"     showgrid=\"true\"\r\n"
+"     id=\"namedview\"\r\n"
+"     guidetolerance=\"10\"\r\n"
+"     gridtolerance=\"10\"\r\n"
+"     objecttolerance=\"10\">\r\n"
+"    <inkscape:grid\r\n"
+"       id=\"grid\"\r\n"
+"       type=\"xygrid\" />\r\n"
+"  </sodipodi:namedview>\r\n"
+"  <g\r\n"
+"     id=\"transform-rotate\"\r\n"
+"     inkscape:label=\"00244\"\r\n"
+"     transform=\"matrix(1,0,0,-0.999995,-559,728.37174)\">\r\n"
+"    <path\r\n"
+"       style=\"opacity:0;fill:none\"\r\n"
+"       d=\"m 559.46967,712.37518 h 15.06066 c 0.2602,0 0.46967,0.20948 0.46967,0.46967 v 15.04764 c 0,0.2602 -0.20947,0.46967 -0.46967,0.46967 h -15.06066 c -0.2602,0 -0.46967,-0.20947 -0.46967,-0.46967 v -15.04764 c 0,-0.26019 0.20947,-0.46967 0.469"
+"67,-0.46967 z\"\r\n"
+"       id=\"rect10072\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"  </g>\r\n"
+"  <path\r\n"
+"     class=\"success\"\r\n"
+"     style=\"opacity:1;fill:#009909\"\r\n"
+"     d=\"m 6.9448815,12.000014 3.0000004,3 V 9.0000146 Z\"\r\n"
+"     id=\"path15904\"\r\n"
+"     inkscape:connector-curvature=\"0\" />\r\n"
+"  <path\r\n"
+"     transform=\"rotate(90,429.18109,294.12597)\"\r\n"
+"     style=\"opacity:1;fill:#009909;fill-rule:nonzero;stroke:none;stroke-width:1.88976;stroke-linecap:butt\"\r\n"
+"     d=\"m 147.945,713.40706 c 0,-3.79164 -2.52243,-5.04488 -5.88988,-5.04488 v 1.88976 c 2.63255,0 4.00012,0.74676 4.00012,3.15512 z\"\r\n"
+"     id=\"path7710\"\r\n"
+"     inkscape:connector-curvature=\"0\"\r\n"
+"     inkscape:path-effect=\"#path-effect7712-0\"\r\n"
+"     inkscape:original-d=\"m 147.00012,713.40706 c 0,-3.1 -1.945,-4.1 -4.945,-4.1\"\r\n"
+"     class=\"success\"\r\n"
+"     sodipodi:nodetypes=\"cc\" />\r\n"
+"  <rect\r\n"
+"     \r\n"
+"     ry=\"1\"\r\n"
+"     rx=\"1\"\r\n"
+"     y=\"1\"\r\n"
+"     x=\"2\"\r\n"
+"     height=\"7\"\r\n"
+"     width=\"7\"\r\n"
+"     id=\"rect1670\"\r\n"
+"     style=\"opacity:1;stroke-width:3.42779;stroke-linecap:round\" />\r\n"
+"</svg>\r\n";
+
+const char* transformrotatesymbolic_svg = (const char*) temp_binary_data_31;
+
+//================== transformscalehorizontalsymbolic.svg ==================
+static const unsigned char temp_binary_data_32[] =
+"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
+"<svg\r\n"
+"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\r\n"
+"   xmlns:cc=\"http://creativecommons.org/ns#\"\r\n"
+"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\r\n"
+"   xmlns:svg=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\r\n"
+"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\r\n"
+"   inkscape:version=\"1.1-dev (6039630, 2019-12-20)\"\r\n"
+"   sodipodi:docname=\"transform-scale-horizontal-symbolic.svg\"\r\n"
+"   viewBox=\"0 0 16 16\"\r\n"
+"   height=\"16\"\r\n"
+"   width=\"16\"\r\n"
+"   id=\"svg1\"\r\n"
+"   version=\"1.1\">\r\n"
+"  <metadata\r\n"
+"     id=\"metadata12980\">\r\n"
+"    <rdf:RDF>\r\n"
+"      <cc:Work\r\n"
+"         rdf:about=\"\">\r\n"
+"        <dc:format>image/svg+xml</dc:format>\r\n"
+"        <dc:type\r\n"
+"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\r\n"
+"      </cc:Work>\r\n"
+"    </rdf:RDF>\r\n"
+"  </metadata>\r\n"
+"  <defs\r\n"
+"     id=\"defs12978\" />\r\n"
+"  <style\r\n"
+"     id=\"s0\">\r\n"
+".success { fill:#009909; }\r\n"
+".warning { fill:#FF1990; }\r\n"
+".error { fill:#00AAFF; }\r\n"
+"</style>\r\n"
+"  <style\r\n"
+"     id=\"s2\">\r\n"
+"@import '../../highlights.css';\r\n"
+"</style>\r\n"
+"  <sodipodi:namedview\r\n"
+"     inkscape:document-rotation=\"0\"\r\n"
+"     inkscape:current-layer=\"svg1\"\r\n"
+"     inkscape:window-maximized=\"1\"\r\n"
+"     inkscape:window-y=\"-6\"\r\n"
+"     inkscape:window-x=\"65\"\r\n"
+"     inkscape:window-height=\"890\"\r\n"
+"     inkscape:window-width=\"1296\"\r\n"
+"     inkscape:cy=\"8\"\r\n"
+"     inkscape:cx=\"8\"\r\n"
+"     inkscape:zoom=\"41.125\"\r\n"
+"     showgrid=\"true\"\r\n"
+"     id=\"namedview\"\r\n"
+"     guidetolerance=\"10\"\r\n"
+"     gridtolerance=\"10\"\r\n"
+"     objecttolerance=\"10\">\r\n"
+"    <inkscape:grid\r\n"
+"       id=\"grid\"\r\n"
+"       type=\"xygrid\" />\r\n"
+"  </sodipodi:namedview>\r\n"
+"  <g\r\n"
+"     id=\"transform-scale-horizontal\"\r\n"
+"     inkscape:label=\"00240\"\r\n"
+"     transform=\"matrix(0.999268,0,0,1,-557.59156,-682.36218)\">\r\n"
+"    <path\r\n"
+"       style=\"opacity:0;fill:none\"\r\n"
+"       d=\"m 558.01172,682.36218 h 16 v 16 h -16 z\"\r\n"
+"       id=\"rect15601\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       sodipodi:nodetypes=\"cccccccc\"\r\n"
+"       class=\"success\"\r\n"
+"       style=\"opacity:1\"\r\n"
+"       d=\"m 564,686.3622 v 2 h 5.011 v 2 l 4,-3 -4,-3 v 2 z\"\r\n"
+"       id=\"path15603\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       sodipodi:nodetypes=\"sssssssss\"\r\n"
+"       style=\"opacity:1\"\r\n"
+"       d=\"m 564.00588,692.36218 h 4 c 0.554,0 1,0.446 1,1 v 4 c 0,0.554 -0.446,1 -1,1 h -4 c -0.554,0 -1,-0.446 -1,-1 v -4 c 0,-0.554 0.446,-1 1,-1 z\"\r\n"
+"       id=\"rect15605\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       sodipodi:nodetypes=\"cccccccc\"\r\n"
+"       class=\"success\"\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       id=\"path15609\"\r\n"
+"       d=\"m 568,686.3622 v 2 h -4.99925 v 2 l -4,-3 4,-3 v 2 z\"\r\n"
+"       style=\"opacity:1\" />\r\n"
+"  </g>\r\n"
+"</svg>\r\n";
+
+const char* transformscalehorizontalsymbolic_svg = (const char*) temp_binary_data_32;
+
+//================== transformscaleverticalsymbolic.svg ==================
+static const unsigned char temp_binary_data_33[] =
+"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
+"<svg\r\n"
+"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\r\n"
+"   xmlns:cc=\"http://creativecommons.org/ns#\"\r\n"
+"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\r\n"
+"   xmlns:svg=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns=\"http://www.w3.org/2000/svg\"\r\n"
+"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\r\n"
+"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\r\n"
+"   inkscape:version=\"1.1-dev (6039630, 2019-12-20)\"\r\n"
+"   sodipodi:docname=\"transform-scale-vertical-symbolic.svg\"\r\n"
+"   viewBox=\"0 0 16 16\"\r\n"
+"   height=\"16\"\r\n"
+"   width=\"16\"\r\n"
+"   id=\"svg1\"\r\n"
+"   version=\"1.1\">\r\n"
+"  <metadata\r\n"
+"     id=\"metadata13556\">\r\n"
+"    <rdf:RDF>\r\n"
+"      <cc:Work\r\n"
+"         rdf:about=\"\">\r\n"
+"        <dc:format>image/svg+xml</dc:format>\r\n"
+"        <dc:type\r\n"
+"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\r\n"
+"      </cc:Work>\r\n"
+"    </rdf:RDF>\r\n"
+"  </metadata>\r\n"
+"  <defs\r\n"
+"     id=\"defs13554\" />\r\n"
+"  <style\r\n"
+"     id=\"s0\">\r\n"
+".success { fill:#009909; }\r\n"
+".warning { fill:#FF1990; }\r\n"
+".error { fill:#00AAFF; }\r\n"
+"</style>\r\n"
+"  <style\r\n"
+"     id=\"s2\">\r\n"
+"@import '../../highlights.css';\r\n"
+"</style>\r\n"
+"  <sodipodi:namedview\r\n"
+"     inkscape:document-rotation=\"0\"\r\n"
+"     inkscape:current-layer=\"transform-scale-vertical\"\r\n"
+"     inkscape:window-maximized=\"1\"\r\n"
+"     inkscape:window-y=\"-6\"\r\n"
+"     inkscape:window-x=\"65\"\r\n"
+"     inkscape:window-height=\"890\"\r\n"
+"     inkscape:window-width=\"1296\"\r\n"
+"     inkscape:cy=\"13.155015\"\r\n"
+"     inkscape:cx=\"8\"\r\n"
+"     inkscape:zoom=\"41.125\"\r\n"
+"     showgrid=\"true\"\r\n"
+"     id=\"namedview\"\r\n"
+"     guidetolerance=\"10\"\r\n"
+"     gridtolerance=\"10\"\r\n"
+"     objecttolerance=\"10\">\r\n"
+"    <inkscape:grid\r\n"
+"       id=\"grid\"\r\n"
+"       type=\"xygrid\" />\r\n"
+"  </sodipodi:namedview>\r\n"
+"  <g\r\n"
+"     inkscape:label=\"00241\"\r\n"
+"     id=\"transform-scale-vertical\"\r\n"
+"     transform=\"matrix(1,0,0,0.999999,-588.01172,-682.36133)\">\r\n"
+"    <path\r\n"
+"       style=\"opacity:0;fill:none\"\r\n"
+"       d=\"m 588.01172,682.36218 h 16 v 16 h -16 z\"\r\n"
+"       id=\"rect15612\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       sodipodi:nodetypes=\"cccccccc\"\r\n"
+"       class=\"success\"\r\n"
+"       inkscape:connector-curvature=\"0\"\r\n"
+"       id=\"path15614\"\r\n"
+"       d=\"m 594,688.3622 h -2 v 4.99983 h -2 l 3,4 3,-4 h -2 z\"\r\n"
+"       style=\"opacity:1\" />\r\n"
+"    <path\r\n"
+"       sodipodi:nodetypes=\"sssssssss\"\r\n"
+"       style=\"opacity:1\"\r\n"
+"       d=\"m 599.01172,687.36218 h 4 c 0.554,0 1,0.446 1,1 v 4 c 0,0.554 -0.446,1 -1,1 h -4 c -0.554,0 -1,-0.446 -1,-1 v -4 c 0,-0.554 0.446,-1 1,-1 z\"\r\n"
+"       id=\"rect15616\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"    <path\r\n"
+"       sodipodi:nodetypes=\"cccccccc\"\r\n"
+"       class=\"success\"\r\n"
+"       style=\"opacity:1\"\r\n"
+"       d=\"m 594,692.3622 h -2 v -5.00019 h -2 l 3,-4 3,4 h -2 z\"\r\n"
+"       id=\"path15618\"\r\n"
+"       inkscape:connector-curvature=\"0\" />\r\n"
+"  </g>\r\n"
+"</svg>\r\n";
+
+const char* transformscaleverticalsymbolic_svg = (const char*) temp_binary_data_33;
 
 //================== CtrlrX-Logo-512x512-DEF.png ==================
-static const unsigned char temp_binary_data_22[] =
+static const unsigned char temp_binary_data_34[] =
 { 137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,2,0,0,0,2,0,8,6,0,0,0,244,120,212,250,0,0,0,25,116,69,88,116,83,111,102,116,119,97,114,101,0,65,100,111,98,101,32,73,109,97,103,101,82,101,97,100,121,113,201,101,60,0,0,3,40,105,84,88,116,88,77,76,58,
 99,111,109,46,97,100,111,98,101,46,120,109,112,0,0,0,0,0,60,63,120,112,97,99,107,101,116,32,98,101,103,105,110,61,34,239,187,191,34,32,105,100,61,34,87,53,77,48,77,112,67,101,104,105,72,122,114,101,83,122,78,84,99,122,107,99,57,100,34,63,62,32,60,120,
 58,120,109,112,109,101,116,97,32,120,109,108,110,115,58,120,61,34,97,100,111,98,101,58,110,115,58,109,101,116,97,47,34,32,120,58,120,109,112,116,107,61,34,65,100,111,98,101,32,88,77,80,32,67,111,114,101,32,53,46,54,45,99,48,49,52,32,55,57,46,49,53,54,
@@ -12323,10 +13601,10 @@ static const unsigned char temp_binary_data_22[] =
 253,153,200,190,7,64,0,0,64,61,240,163,182,70,159,76,202,31,199,233,239,180,172,42,196,232,193,86,78,47,120,234,247,167,24,228,247,207,147,24,229,136,92,249,103,127,147,223,67,159,126,86,125,154,173,87,232,255,95,202,226,190,215,255,255,123,207,243,254,
 69,8,0,130,201,127,5,24,0,139,85,133,147,166,30,101,5,0,0,0,0,73,69,78,68,174,66,96,130,0,0 };
 
-const char* CtrlrXLogo512x512DEF_png = (const char*) temp_binary_data_22;
+const char* CtrlrXLogo512x512DEF_png = (const char*) temp_binary_data_34;
 
 //================== CtrlrX-Logo-vector-DEF.svg ==================
-static const unsigned char temp_binary_data_23[] =
+static const unsigned char temp_binary_data_35[] =
 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n"
 "<svg version=\"1.1\" id=\"CtrlrX\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\r\n"
 "\t width=\"512px\" height=\"512px\" viewBox=\"0 0 512 512\"  xml:space=\"preserve\">\r\n"
@@ -12351,10 +13629,10 @@ static const unsigned char temp_binary_data_23[] =
 "\t353.2,248.6 365.4,236.4 \"/>\r\n"
 "</svg>\r\n";
 
-const char* CtrlrXLogovectorDEF_svg = (const char*) temp_binary_data_23;
+const char* CtrlrXLogovectorDEF_svg = (const char*) temp_binary_data_35;
 
 //================== CtrlrX-README-250x315-02.png ==================
-static const unsigned char temp_binary_data_24[] =
+static const unsigned char temp_binary_data_36[] =
 { 137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,250,0,0,1,59,8,3,0,0,0,195,241,108,170,0,0,0,25,116,69,88,116,83,111,102,116,119,97,114,101,0,65,100,111,98,101,32,73,109,97,103,101,82,101,97,100,121,113,201,101,60,0,0,3,40,105,84,88,116,88,77,76,
 58,99,111,109,46,97,100,111,98,101,46,120,109,112,0,0,0,0,0,60,63,120,112,97,99,107,101,116,32,98,101,103,105,110,61,34,239,187,191,34,32,105,100,61,34,87,53,77,48,77,112,67,101,104,105,72,122,114,101,83,122,78,84,99,122,107,99,57,100,34,63,62,32,60,
 120,58,120,109,112,109,101,116,97,32,120,109,108,110,115,58,120,61,34,97,100,111,98,101,58,110,115,58,109,101,116,97,47,34,32,120,58,120,109,112,116,107,61,34,65,100,111,98,101,32,88,77,80,32,67,111,114,101,32,53,46,54,45,99,48,49,52,32,55,57,46,49,53,
@@ -12481,10 +13759,10 @@ static const unsigned char temp_binary_data_24[] =
 126,142,18,71,65,228,135,174,198,213,93,102,195,55,33,71,83,197,109,8,95,84,120,67,248,79,125,42,168,161,251,93,131,31,151,31,233,222,189,251,135,229,241,131,189,126,43,197,99,226,93,130,252,191,0,3,0,235,139,118,199,125,13,163,72,0,0,0,0,73,69,78,68,
 174,66,96,130,0,0 };
 
-const char* CtrlrXREADME250x31502_png = (const char*) temp_binary_data_24;
+const char* CtrlrXREADME250x31502_png = (const char*) temp_binary_data_36;
 
 //================== CtrlrX-README-250x315.png ==================
-static const unsigned char temp_binary_data_25[] =
+static const unsigned char temp_binary_data_37[] =
 { 137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,250,0,0,1,59,8,3,0,0,0,195,241,108,170,0,0,0,25,116,69,88,116,83,111,102,116,119,97,114,101,0,65,100,111,98,101,32,73,109,97,103,101,82,101,97,100,121,113,201,101,60,0,0,3,40,105,84,88,116,88,77,76,
 58,99,111,109,46,97,100,111,98,101,46,120,109,112,0,0,0,0,0,60,63,120,112,97,99,107,101,116,32,98,101,103,105,110,61,34,239,187,191,34,32,105,100,61,34,87,53,77,48,77,112,67,101,104,105,72,122,114,101,83,122,78,84,99,122,107,99,57,100,34,63,62,32,60,
 120,58,120,109,112,109,101,116,97,32,120,109,108,110,115,58,120,61,34,97,100,111,98,101,58,110,115,58,109,101,116,97,47,34,32,120,58,120,109,112,116,107,61,34,65,100,111,98,101,32,88,77,80,32,67,111,114,101,32,53,46,54,45,99,48,49,52,32,55,57,46,49,53,
@@ -12611,888 +13889,26 @@ static const unsigned char temp_binary_data_25[] =
 126,142,18,71,65,228,135,174,198,213,93,102,195,55,33,71,83,197,109,8,95,84,120,67,248,79,125,42,168,161,251,93,131,31,151,31,233,222,189,251,135,229,241,131,189,126,43,197,99,226,93,130,252,191,0,3,0,235,139,118,199,125,13,163,72,0,0,0,0,73,69,78,68,
 174,66,96,130,0,0 };
 
-const char* CtrlrXREADME250x315_png = (const char*) temp_binary_data_25;
-
-//================== distribute-horizontal-gaps-symbolic.svg ==================
-static const unsigned char temp_binary_data_26[] =
-"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
-"<svg\n"
-"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
-"   xmlns:cc=\"http://creativecommons.org/ns#\"\n"
-"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
-"   xmlns:svg=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\n"
-"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\n"
-"   inkscape:version=\"0.92.4 (5da689c313, 2019-01-14)\"\n"
-"   sodipodi:docname=\"distribute-horizontal-gaps-symbolic.svg\"\n"
-"   viewBox=\"0 0 16 16\"\n"
-"   height=\"16\"\n"
-"   width=\"16\"\n"
-"   id=\"svg1\"\n"
-"   version=\"1.1\">\n"
-"<style id=\"s0\">\n"
-"   .success { fill: #009909; }\n"
-"   .warning { fill: #FF1990; }\n"
-"   .error   { fill: #00AAFF; }\n"
-"  </style>\n"
-"  <style id=\"s2\"> \n"
-"     @import '../../highlights.css'; \n"
-"  </style>\n"
-"     \n"
-"<metadata\n"
-"     id=\"metadata2602\">\n"
-"    <rdf:RDF>\n"
-"      <cc:Work\n"
-"         rdf:about=\"\">\n"
-"        <dc:format>image/svg+xml</dc:format>\n"
-"        <dc:type\n"
-"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\n"
-"        <dc:title />\n"
-"      </cc:Work>\n"
-"    </rdf:RDF>\n"
-"  </metadata>\n"
-"  <defs\n"
-"     id=\"defs2600\" />\n"
-"  <sodipodi:namedview\n"
-"     inkscape:snap-global=\"false\"\n"
-"     inkscape:document-rotation=\"0\"\n"
-"     inkscape:current-layer=\"distribute-horizontal-gaps\"\n"
-"     inkscape:window-maximized=\"1\"\n"
-"     inkscape:window-y=\"-8\"\n"
-"     inkscape:window-x=\"54\"\n"
-"     inkscape:window-height=\"1177\"\n"
-"     inkscape:window-width=\"1858\"\n"
-"     inkscape:cy=\"10.312132\"\n"
-"     inkscape:cx=\"4.0075318\"\n"
-"     inkscape:zoom=\"43.982267\"\n"
-"     showgrid=\"true\"\n"
-"     id=\"namedview\"\n"
-"     guidetolerance=\"10\"\n"
-"     gridtolerance=\"10\"\n"
-"     objecttolerance=\"10\">\n"
-"    <inkscape:grid\n"
-"       id=\"grid\"\n"
-"       type=\"xygrid\" />\n"
-"  </sodipodi:namedview>\n"
-"  <g\n"
-"     id=\"distribute-horizontal-gaps\"\n"
-"     inkscape:label=\"00282\"\n"
-"     transform=\"matrix(0.666667,0,0,0.666655,-772.66667,-472.23283)\">\n"
-"    <path\n"
-"       style=\"opacity:1;\"\n"
-"       d=\"m 1159,732.36206 v -14.90647 h 3.0069 v 14.90647 z\"\n"
-"       id=\"rect18780\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <path\n"
-"       style=\"opacity:0;fill:none\"\n"
-"       d=\"m 1159,708.36218 h 24 v 24 h -24 z\"\n"
-"       id=\"rect18784\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <path\n"
-"       style=\"opacity:1;\"\n"
-"       d=\"m 1169.441,718.32984 h 3.7562 v 10.00973 h -3.7562 z\"\n"
-"       id=\"rect18782\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <path\n"
-"       inkscape:connector-curvature=\"0\"\n"
-"       style=\"opacity:1;fill-opacity:1;\"\n"
-"       d=\"m 1168.7153,708.3622 v 0.9231 22.1538 0.9231 h 0.75 v -0.9231 -22.1538 -0.9231 z\"\n"
-"       id=\"path904\"\n"
-"       class=\"success\n"
-"\" />\n"
-"    <path\n"
-"       class=\"success\n"
-"\"\n"
-"       id=\"path892\"\n"
-"       d=\"m 1179.8289,708.3622 v 0.9231 22.1538 0.9231 h 0.75 v -0.9231 -22.1538 -0.9231 z\"\n"
-"       style=\"opacity:1;fill-opacity:1;\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <path\n"
-"       inkscape:connector-curvature=\"0\"\n"
-"       style=\"opacity:1;fill-opacity:1;\"\n"
-"       d=\"m 1161.9994,708.3622 v 0.9231 22.1538 0.9231 h 0.75 v -0.9231 -22.1538 -0.9231 z\"\n"
-"       id=\"path906\"\n"
-"       class=\"success\n"
-"\" />\n"
-"    <path\n"
-"       class=\"success\n"
-"\"\n"
-"       id=\"path894\"\n"
-"       d=\"m 1173.113,708.3622 v 0.9231 22.1538 0.9231 h 0.75 v -0.9231 -22.1538 -0.9231 z\"\n"
-"       style=\"opacity:1;fill-opacity:1;\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <rect\n"
-"       style=\"opacity:0.5;fill-opacity:1;\"\n"
-"       id=\"rect912\"\n"
-"       width=\"3.8606291\"\n"
-"       height=\"2.4136133\"\n"
-"       x=\"1163.802\"\n"
-"       y=\"709.57239\" />\n"
-"    <rect\n"
-"       y=\"709.57239\"\n"
-"       x=\"1174.9156\"\n"
-"       height=\"2.4136133\"\n"
-"       width=\"3.8606291\"\n"
-"       id=\"rect910\"\n"
-"       style=\"opacity:0.5;fill-opacity:1;\" />\n"
-"  </g>\n"
-"  <rect\n"
-"     id=\"rect968\"\n"
-"     width=\"1.6858754\"\n"
-"     height=\"9.9876719\"\n"
-"     x=\"14.353012\"\n"
-"     y=\"6.0123286\"\n"
-"     style=\"opacity:1;\"/>\n"
-"</svg>\n";
-
-const char* distributehorizontalgapssymbolic_svg = (const char*) temp_binary_data_26;
-
-//================== distribute-vertical-gaps-symbolic.svg ==================
-static const unsigned char temp_binary_data_27[] =
-"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
-"<svg\n"
-"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
-"   xmlns:cc=\"http://creativecommons.org/ns#\"\n"
-"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
-"   xmlns:svg=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\n"
-"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\n"
-"   inkscape:version=\"0.92.4 (5da689c313, 2019-01-14)\"\n"
-"   sodipodi:docname=\"distribute-vertical-gaps-symbolic.svg\"\n"
-"   viewBox=\"0 0 16 16\"\n"
-"   height=\"16\"\n"
-"   width=\"16\"\n"
-"   id=\"svg1\"\n"
-"   version=\"1.1\">\n"
-"<style id=\"s0\">\n"
-"   .success { fill: #009909; }\n"
-"   .warning { fill: #FF1990; }\n"
-"   .error   { fill: #00AAFF; }\n"
-"  </style>\n"
-"  <style id=\"s2\"> \n"
-"     @import '../../highlights.css'; \n"
-"  </style>\n"
-"     \n"
-"<metadata\n"
-"     id=\"metadata1253\">\n"
-"    <rdf:RDF>\n"
-"      <cc:Work\n"
-"         rdf:about=\"\">\n"
-"        <dc:format>image/svg+xml</dc:format>\n"
-"        <dc:type\n"
-"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\n"
-"      </cc:Work>\n"
-"    </rdf:RDF>\n"
-"  </metadata>\n"
-"  <defs\n"
-"     id=\"defs1251\" />\n"
-"  <sodipodi:namedview\n"
-"     inkscape:snap-global=\"false\"\n"
-"     inkscape:document-rotation=\"0\"\n"
-"     inkscape:current-layer=\"svg1\"\n"
-"     inkscape:window-maximized=\"1\"\n"
-"     inkscape:window-y=\"-8\"\n"
-"     inkscape:window-x=\"54\"\n"
-"     inkscape:window-height=\"1177\"\n"
-"     inkscape:window-width=\"1858\"\n"
-"     inkscape:cy=\"26.108674\"\n"
-"     inkscape:cx=\"-0.86135142\"\n"
-"     inkscape:zoom=\"10.995567\"\n"
-"     showgrid=\"true\"\n"
-"     id=\"namedview\"\n"
-"     guidetolerance=\"10\"\n"
-"     gridtolerance=\"10\"\n"
-"     objecttolerance=\"10\">\n"
-"    <inkscape:grid\n"
-"       id=\"grid\"\n"
-"       type=\"xygrid\" />\n"
-"  </sodipodi:namedview>\n"
-"  <g\n"
-"     id=\"g944\"\n"
-"     transform=\"translate(-20.28426,-14.749237)\">\n"
-"    <path\n"
-"       inkscape:connector-curvature=\"0\"\n"
-"       id=\"rect18780-3\"\n"
-"       d=\"m 36.283901,30.749237 h -9.937474 v -2.004601 h 9.937474 z\"\n"
-"       style=\"opacity:1;\"/>\n"
-"    <path\n"
-"       inkscape:connector-curvature=\"0\"\n"
-"       id=\"rect18784\"\n"
-"       d=\"M 20.28426,30.749237 V 14.749229 h 15.999721 v 16.000008 z\"\n"
-"       style=\"opacity:0;fill:none;\"/>\n"
-"    <path\n"
-"       inkscape:connector-curvature=\"0\"\n"
-"       id=\"rect18782-0\"\n"
-"       d=\"m 26.929251,23.788567 v -2.504135 h 6.673037 v 2.504135 z\"\n"
-"       style=\"opacity:1;\"/>\n"
-"    <path\n"
-"       class=\"success \"\n"
-"       id=\"path904\"\n"
-"       d=\"m 20.284273,24.272367 h 0.61539 14.768942 0.615389 v -0.5 h -0.615389 -14.768942 -0.61539 z\"\n"
-"       style=\"opacity:1;fill-opacity:1;\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <path\n"
-"       inkscape:connector-curvature=\"0\"\n"
-"       style=\"opacity:1;fill-opacity:1;\"\n"
-"       d=\"m 20.284273,16.863297 h 0.61539 14.768942 0.615389 v -0.500001 h -0.615389 -14.768942 -0.61539 z\"\n"
-"       id=\"path892\"\n"
-"       class=\"success \" />\n"
-"    <path\n"
-"       class=\"success \"\n"
-"       id=\"path906\"\n"
-"       d=\"m 20.284273,28.749636 h 0.61539 14.768942 0.615389 v -0.5 h -0.615389 -14.768942 -0.61539 z\"\n"
-"       style=\"opacity:1;fill-opacity:1;\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <path\n"
-"       inkscape:connector-curvature=\"0\"\n"
-"       style=\"opacity:1;fill-opacity:1;\"\n"
-"       d=\"m 20.284273,21.340565 h 0.61539 14.768942 0.615389 v -0.5 h -0.615389 -14.768942 -0.61539 z\"\n"
-"       id=\"path894\"\n"
-"       class=\"success \" />\n"
-"    <rect\n"
-"       transform=\"rotate(-90)\"\n"
-"       y=\"21.091049\"\n"
-"       x=\"-27.547899\"\n"
-"       height=\"1.6090474\"\n"
-"       width=\"2.5737541\"\n"
-"       id=\"rect912\"\n"
-"       style=\"opacity:0.5;fill-opacity:1;\" />\n"
-"    <rect\n"
-"       transform=\"rotate(-90)\"\n"
-"       style=\"opacity:0.5;fill-opacity:1;\"\n"
-"       id=\"rect910\"\n"
-"       width=\"2.5737541\"\n"
-"       height=\"1.6090474\"\n"
-"       x=\"-20.1388\"\n"
-"       y=\"21.091049\" />\n"
-"    <rect\n"
-"       transform=\"rotate(-90)\"\n"
-"       style=\"opacity:1;\"\n"
-"       y=\"26.29623\"\n"
-"       x=\"-16.396608\"\n"
-"       height=\"9.9876719\"\n"
-"       width=\"1.6858754\"\n"
-"       id=\"rect968-5\" />\n"
-"  </g>\n"
-"</svg>\n";
-
-const char* distributeverticalgapssymbolic_svg = (const char*) temp_binary_data_27;
-
-//================== edit-cut-symbolic.svg ==================
-static const unsigned char temp_binary_data_28[] =
-"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
-"<svg\n"
-"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
-"   xmlns:cc=\"http://creativecommons.org/ns#\"\n"
-"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
-"   xmlns:svg=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\n"
-"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\n"
-"   inkscape:version=\"1.1-dev (6039630, 2019-12-20)\"\n"
-"   sodipodi:docname=\"edit-cut-symbolic.svg\"\n"
-"   viewBox=\"0 0 16 16\"\n"
-"   height=\"16\"\n"
-"   width=\"16\"\n"
-"   id=\"svg1\"\n"
-"   version=\"1.1\">\n"
-"  <metadata\n"
-"     id=\"metadata1005\">\n"
-"    <rdf:RDF>\n"
-"      <cc:Work\n"
-"         rdf:about=\"\">\n"
-"        <dc:format>image/svg+xml</dc:format>\n"
-"        <dc:type\n"
-"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\n"
-"      </cc:Work>\n"
-"    </rdf:RDF>\n"
-"  </metadata>\n"
-"  <defs\n"
-"     id=\"defs1003\" />\n"
-"  <style\n"
-"     id=\"s0\">\n"
-".success { fill:#009909; }\n"
-".warning { fill:#FF1990; }\n"
-".error { fill:#00AAFF; }\n"
-"</style>\n"
-"  <style\n"
-"     id=\"s2\">\n"
-"@import '../../highlights.css';\n"
-"</style>\n"
-"  <sodipodi:namedview\n"
-"     inkscape:document-rotation=\"0\"\n"
-"     inkscape:current-layer=\"edit-cut\"\n"
-"     inkscape:window-maximized=\"1\"\n"
-"     inkscape:window-y=\"-6\"\n"
-"     inkscape:window-x=\"65\"\n"
-"     inkscape:window-height=\"890\"\n"
-"     inkscape:window-width=\"1296\"\n"
-"     inkscape:cy=\"8\"\n"
-"     inkscape:cx=\"8\"\n"
-"     inkscape:zoom=\"41.125\"\n"
-"     showgrid=\"true\"\n"
-"     id=\"namedview\"\n"
-"     guidetolerance=\"10\"\n"
-"     gridtolerance=\"10\"\n"
-"     objecttolerance=\"10\">\n"
-"    <inkscape:grid\n"
-"       id=\"grid\"\n"
-"       type=\"xygrid\" />\n"
-"  </sodipodi:namedview>\n"
-"  <g\n"
-"     inkscape:label=\"00377\"\n"
-"     id=\"edit-cut\"\n"
-"     transform=\"matrix(1,0,0,0.999994,-441,-1132.3549)\">\n"
-"    <path\n"
-"       style=\"opacity:0;fill:none\"\n"
-"       d=\"m 441,1132.3621 h 16 v 16 h -16 z\"\n"
-"       id=\"gtk-edit\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <path\n"
-"       id=\"path12477\"\n"
-"       d=\"m 444.3591,1132.362 c -1.0384,0.472 -1.3774,1.498 -0.7778,2.315 l 4.3289,6.201 -1.7101,2.016 1.3848,1.776 1.5766,-2.116 1.5461,2.116 1.3721,-1.701 -1.6668,-2.091 4.3289,-6.201 c 0.5995,-0.817 0.2606,-1.843 -0.7779,-2.315 l -4.8024,6.813 z\""
-"\n"
-"       style=\"opacity:1\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <path\n"
-"       inkscape:connector-curvature=\"0\"\n"
-"       id=\"path61250\"\n"
-"       d=\"m 453.5,1141.362 c -1.933,0 -3.5,1.567 -3.5,3.5 0,1.933 1.567,3.5 3.5,3.5 1.933,0 3.5,-1.567 3.5,-3.5 0,-1.933 -1.567,-3.5 -3.5,-3.5 z m 0,2 c 0.8284,0 1.5,0.672 1.5,1.5 0,0.829 -0.6716,1.5 -1.5,1.5 -0.8284,0 -1.5,-0.671 -1.5,-1.5 0,-0.828"
-" 0.6716,-1.5 1.5,-1.5 z\"\n"
-"       style=\"opacity:1\" />\n"
-"    <path\n"
-"       inkscape:connector-curvature=\"0\"\n"
-"       style=\"opacity:1\"\n"
-"       d=\"m 444.5,1141.362 c -1.933,0 -3.5,1.567 -3.5,3.5 0,1.933 1.567,3.5 3.5,3.5 1.933,0 3.5,-1.567 3.5,-3.5 0,-1.933 -1.567,-3.5 -3.5,-3.5 z m 0,2 c 0.8284,0 1.5,0.672 1.5,1.5 0,0.829 -0.6716,1.5 -1.5,1.5 -0.8284,0 -1.5,-0.671 -1.5,-1.5 0,-0.828"
-" 0.6716,-1.5 1.5,-1.5 z\"\n"
-"       id=\"path61253\" />\n"
-"  </g>\n"
-"</svg>\n";
-
-const char* editcutsymbolic_svg = (const char*) temp_binary_data_28;
-
-//================== edit-delete-symbolic.svg ==================
-static const unsigned char temp_binary_data_29[] =
-"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
-"<svg\n"
-"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
-"   xmlns:cc=\"http://creativecommons.org/ns#\"\n"
-"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
-"   xmlns:svg=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\n"
-"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\n"
-"   inkscape:version=\"1.1-dev (1fceb22, 2019-12-30)\"\n"
-"   sodipodi:docname=\"edit-delete-symbolic.svg\"\n"
-"   viewBox=\"0 0 16 16\"\n"
-"   height=\"16\"\n"
-"   width=\"16\"\n"
-"   id=\"svg1\"\n"
-"   version=\"1.1\">\n"
-"  <style\n"
-"     id=\"s0\">\n"
-".success { fill:#009909; }\n"
-".warning { fill:#FF1990; }\n"
-".error { fill:#00AAFF; }\n"
-"</style>\n"
-"  <style\n"
-"     id=\"s2\">\n"
-"@import '../../highlights.css';\n"
-"</style>\n"
-"  <metadata\n"
-"     id=\"metadata21\">\n"
-"    <rdf:RDF>\n"
-"      <cc:Work\n"
-"         rdf:about=\"\">\n"
-"        <dc:format>image/svg+xml</dc:format>\n"
-"        <dc:type\n"
-"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\n"
-"      </cc:Work>\n"
-"    </rdf:RDF>\n"
-"  </metadata>\n"
-"  <defs\n"
-"     id=\"defs19\">\n"
-"    <inkscape:path-effect\n"
-"       update_on_knot_move=\"true\"\n"
-"       attempt_force_join=\"true\"\n"
-"       miter_limit=\"4\"\n"
-"       offset=\"0.22568149\"\n"
-"       unit=\"mm\"\n"
-"       linejoin_type=\"miter\"\n"
-"       is_visible=\"true\"\n"
-"       id=\"path-effect31\"\n"
-"       effect=\"offset\" />\n"
-"  </defs>\n"
-"  <sodipodi:namedview\n"
-"     inkscape:document-rotation=\"0\"\n"
-"     inkscape:current-layer=\"svg1\"\n"
-"     inkscape:window-maximized=\"1\"\n"
-"     inkscape:window-y=\"-8\"\n"
-"     inkscape:window-x=\"54\"\n"
-"     inkscape:window-height=\"1177\"\n"
-"     inkscape:window-width=\"1858\"\n"
-"     inkscape:cy=\"8\"\n"
-"     inkscape:cx=\"7.6831683\"\n"
-"     inkscape:zoom=\"31.5625\"\n"
-"     showgrid=\"true\"\n"
-"     id=\"namedview\"\n"
-"     guidetolerance=\"10\"\n"
-"     gridtolerance=\"10\"\n"
-"     objecttolerance=\"10\">\n"
-"    <inkscape:grid\n"
-"       id=\"grid\"\n"
-"       type=\"xygrid\" />\n"
-"  </sodipodi:namedview>\n"
-"  <g\n"
-"     inkscape:label=\"00384\"\n"
-"     id=\"edit-delete\">\n"
-"    <title\n"
-"       id=\"title34114\">edit-delete</title>\n"
-"    <path\n"
-"       style=\"opacity:0;fill:none\"\n"
-"       d=\"M 0,0 H 16 V 16 H 0 Z\"\n"
-"       id=\"gtk-remove\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <path\n"
-"       id=\"path34118\"\n"
-"       style=\"opacity:1;fill-rule:evenodd\"\n"
-"       d=\"M 8,1.03125 C 4.14673,1.03125 1.03125,4.14672 1.03125,8 c 0,3.85327 3.11548,6.96875 6.96875,6.96875 3.85327,0 6.96875,-3.11548 6.96875,-6.96875 C 14.96875,4.14672 11.85327,1.03125 8,1.03125 Z M 5,11 h 1 c 0.01037,0 0.02079,0 0.03125,0 0.25"
-"4951,-0.0112 0.50987,-0.12858 0.6875,-0.3125 L 8,9.40625 9.3125,10.6875 C 9.578125,10.918 9.759172,10.993 10,11 h 1 V 10 C 11,9.71353 10.9657,9.44935 10.75,9.25 l -1.28125,-1.28125 1.25,-1.25 C 10.90694,6.53058 11,6.2653 11,6 V 5 H 10 C 9.734699,5.00"
-"001 9.469414,5.0931 9.28125,5.28125 L 8,6.5625 6.71875,5.28125 C 6.530586,5.09306 6.26529,5 6,5 H 5 V 6 C 5,6.26529 5.09306,6.53058 5.28125,6.71875 L 6.5625,7.96875 5.28125,9.25 C 5.070508,9.44463 4.97809,9.71925 5,10 Z\" />\n"
-"  </g>\n"
-"</svg>\n";
-
-const char* editdeletesymbolic_svg = (const char*) temp_binary_data_29;
-
-//================== edit-duplicate-symbolic.svg ==================
-static const unsigned char temp_binary_data_30[] =
-"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
-"<svg\n"
-"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
-"   xmlns:cc=\"http://creativecommons.org/ns#\"\n"
-"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
-"   xmlns:svg=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\n"
-"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\n"
-"   inkscape:version=\"1.1-dev (6039630, 2019-12-20)\"\n"
-"   sodipodi:docname=\"edit-duplicate-symbolic.svg\"\n"
-"   viewBox=\"0 0 16 16\"\n"
-"   height=\"16\"\n"
-"   width=\"16\"\n"
-"   id=\"svg1\"\n"
-"   version=\"1.1\">\n"
-"  <metadata\n"
-"     id=\"metadata6429\">\n"
-"    <rdf:RDF>\n"
-"      <cc:Work\n"
-"         rdf:about=\"\">\n"
-"        <dc:format>image/svg+xml</dc:format>\n"
-"        <dc:type\n"
-"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\n"
-"      </cc:Work>\n"
-"    </rdf:RDF>\n"
-"  </metadata>\n"
-"  <defs\n"
-"     id=\"defs6427\" />\n"
-"  <style\n"
-"     id=\"s0\">\n"
-".success { fill:#009909; }\n"
-".warning { fill:#FF1990; }\n"
-".error { fill:#00AAFF; }\n"
-"</style>\n"
-"  <style\n"
-"     id=\"s2\">\n"
-"@import '../../highlights.css';\n"
-"</style>\n"
-"  <sodipodi:namedview\n"
-"     inkscape:document-rotation=\"0\"\n"
-"     inkscape:current-layer=\"edit-duplicate\"\n"
-"     inkscape:window-maximized=\"1\"\n"
-"     inkscape:window-y=\"-6\"\n"
-"     inkscape:window-x=\"65\"\n"
-"     inkscape:window-height=\"890\"\n"
-"     inkscape:window-width=\"1296\"\n"
-"     inkscape:cy=\"8\"\n"
-"     inkscape:cx=\"8\"\n"
-"     inkscape:zoom=\"41.125\"\n"
-"     showgrid=\"true\"\n"
-"     id=\"namedview\"\n"
-"     guidetolerance=\"10\"\n"
-"     gridtolerance=\"10\"\n"
-"     objecttolerance=\"10\">\n"
-"    <inkscape:grid\n"
-"       id=\"grid\"\n"
-"       type=\"xygrid\" />\n"
-"  </sodipodi:namedview>\n"
-"  <g\n"
-"     id=\"edit-duplicate\"\n"
-"     inkscape:label=\"00012\"\n"
-"     transform=\"translate(-45,-587.36218)\">\n"
-"    <path\n"
-"       style=\"opacity:0;fill:none\"\n"
-"       d=\"m 45,587.36218 h 16 v 16 H 45 Z\"\n"
-"       id=\"rect4989\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <path\n"
-"       class=\"success\"\n"
-"       inkscape:connector-curvature=\"0\"\n"
-"       id=\"rect4993\"\n"
-"       d=\"m 60,602.3622 v -9 H 50 v 9 z\"\n"
-"       style=\"opacity:1\" />\n"
-"    <path\n"
-"       inkscape:connector-curvature=\"0\"\n"
-"       id=\"path4998\"\n"
-"       d=\"m 49,597.3622 v -1 -4 h 6 v 0 -4 H 45 v 9 z\"\n"
-"       style=\"opacity:1\" />\n"
-"  </g>\n"
-"</svg>\n";
-
-const char* editduplicatesymbolic_svg = (const char*) temp_binary_data_30;
-
-//================== edit-paste-style-symbolic.svg ==================
-static const unsigned char temp_binary_data_31[] =
-"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
-"<svg\n"
-"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
-"   xmlns:cc=\"http://creativecommons.org/ns#\"\n"
-"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
-"   xmlns:svg=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\n"
-"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\n"
-"   version=\"1.1\"\n"
-"   id=\"svg1\"\n"
-"   width=\"16\"\n"
-"   height=\"16\"\n"
-"   viewBox=\"0 0 16 16\"\n"
-"   sodipodi:docname=\"edit-paste-style-symbolic.svg\"\n"
-"   inkscape:version=\"1.1-dev (3d47766, 2020-01-22)\">\n"
-"  <metadata\n"
-"     id=\"metadata7580\">\n"
-"    <rdf:RDF>\n"
-"      <cc:Work\n"
-"         rdf:about=\"\">\n"
-"        <dc:format>image/svg+xml</dc:format>\n"
-"        <dc:type\n"
-"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\n"
-"      </cc:Work>\n"
-"    </rdf:RDF>\n"
-"  </metadata>\n"
-"  <defs\n"
-"     id=\"defs7578\" />\n"
-"  <style\n"
-"     id=\"s0\">\n"
-".success { fill:#009909; }\n"
-".warning { fill:#FF1990; }\n"
-".error { fill:#00AAFF; }\n"
-"</style>\n"
-"  <style\n"
-"     id=\"s2\">\n"
-"@import '../../highlights.css';\n"
-"</style>\n"
-"  <sodipodi:namedview\n"
-"     showguides=\"false\"\n"
-"     objecttolerance=\"10\"\n"
-"     gridtolerance=\"10\"\n"
-"     guidetolerance=\"10\"\n"
-"     id=\"namedview\"\n"
-"     showgrid=\"true\"\n"
-"     inkscape:zoom=\"41.125\"\n"
-"     inkscape:cx=\"7.9635258\"\n"
-"     inkscape:cy=\"8\"\n"
-"     inkscape:window-width=\"1296\"\n"
-"     inkscape:window-height=\"890\"\n"
-"     inkscape:window-x=\"65\"\n"
-"     inkscape:window-y=\"-6\"\n"
-"     inkscape:window-maximized=\"1\"\n"
-"     inkscape:current-layer=\"svg1\"\n"
-"     inkscape:document-rotation=\"0\">\n"
-"    <inkscape:grid\n"
-"       type=\"xygrid\"\n"
-"       id=\"grid\" />\n"
-"  </sodipodi:namedview>\n"
-"  <g\n"
-"     transform=\"matrix(1,0,0,1.000004,-45.070339,-567.36441)\"\n"
-"     inkscape:label=\"00011\"\n"
-"     id=\"edit-paste-style\">\n"
-"    <path\n"
-"       inkscape:connector-curvature=\"0\"\n"
-"       id=\"rect27708\"\n"
-"       d=\"m 45.070339,567.41998 h 16 v 15.93773 h -16 z\"\n"
-"       style=\"opacity:0;fill:none\" />\n"
-"    <path\n"
-"       class=\"error\"\n"
-"       sodipodi:nodetypes=\"cccccc\"\n"
-"       inkscape:connector-curvature=\"0\"\n"
-"       id=\"path27712\"\n"
-"       d=\"m 49.070339,572.3427 v 8.01939 h 6 l 2,-1.99999 v -6.0194 z\"\n"
-"       style=\"opacity:1\" />\n"
-"  </g>\n"
-"  <path\n"
-"     \n"
-"     inkscape:connector-curvature=\"0\"\n"
-"     id=\"rect27710\"\n"
-"     d=\"m 5.53033,3.9e-5 h 4.93934 C 10.763473,3.9e-5 11,0.23656995 11,0.53037112 V 2.4580488 C 11,2.75185 10.763473,2.988381 10.46967,2.988381 H 5.53033 C 5.236527,2.988381 5,2.75185 5,2.4580488 V 0.53037112 C 5,0.23656995 5.236527,3.9e-5 5.53033,3"
-".9e-5 Z\"\n"
-"     style=\"opacity:1;stroke-width:1\"\n"
-"     sodipodi:nodetypes=\"sssssssss\" />\n"
-"  <path\n"
-"     \n"
-"     inkscape:connector-curvature=\"0\"\n"
-"     id=\"path27714\"\n"
-"     d=\"m 2,1.000003 c -0.648732,0 -1,0.4447918 -1,0.999994 v 13.470924 c 0,0.473192 0.318397,0.529002 0.523411,0.529002 l 12.945339,8e-5 C 14.76255,16.000003 15,15.701322 15,15.408621 V 1.5875654 C 15,1.2949642 14.770364,1.000003 14.339844,1.000003"
-" H 12 v 1.011574 h 1.400982 C 13.799743,2.011577 14,2.3905086 14,2.7107298 V 14.412517 c 0,0.292701 -0.23745,0.527602 -0.53125,0.529202 -0.249948,10e-4 -10.697256,0.0623 -10.945339,0.0623 C 2.161855,15.004019 2,14.709818 2,14.474917 V 2.5215691 C 2,2"
-".1534176 2.2792,1.992567 2.460911,1.992567 H 4 V 0.99646299\"\n"
-"     style=\"opacity:1;stroke-width:1\"\n"
-"     sodipodi:nodetypes=\"csssssssccsssssssscc\" />\n"
-"</svg>\n";
-
-const char* editpastestylesymbolic_svg = (const char*) temp_binary_data_31;
+const char* CtrlrXREADME250x315_png = (const char*) temp_binary_data_37;
 
 //================== happy.svg ==================
-static const unsigned char temp_binary_data_32[] =
+static const unsigned char temp_binary_data_38[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 2"
 "0c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78"
 " 3.5 5.11 3.5z\"/></svg>";
 
-const char* happy_svg = (const char*) temp_binary_data_32;
-
-//================== object-locked-symbolic.svg ==================
-static const unsigned char temp_binary_data_33[] =
-"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
-"<svg\n"
-"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
-"   xmlns:cc=\"http://creativecommons.org/ns#\"\n"
-"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
-"   xmlns:svg=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\n"
-"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\n"
-"   inkscape:version=\"1.0.1 (3bc2e813f5, 2020-09-07)\"\n"
-"   sodipodi:docname=\"object-locked-symbolic.svg\"\n"
-"   viewBox=\"0 0 16 16\"\n"
-"   height=\"16\"\n"
-"   width=\"16\"\n"
-"   id=\"svg1\"\n"
-"   version=\"1.1\">\n"
-"  <metadata\n"
-"     id=\"metadata1250\">\n"
-"    <rdf:RDF>\n"
-"      <cc:Work\n"
-"         rdf:about=\"\">\n"
-"        <dc:format>image/svg+xml</dc:format>\n"
-"        <dc:type\n"
-"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\n"
-"      </cc:Work>\n"
-"    </rdf:RDF>\n"
-"  </metadata>\n"
-"  <defs\n"
-"     id=\"defs1248\">\n"
-"    <inkscape:path-effect\n"
-"       hide_knots=\"false\"\n"
-"       only_selected=\"false\"\n"
-"       apply_with_radius=\"true\"\n"
-"       apply_no_radius=\"true\"\n"
-"       use_knot_distance=\"true\"\n"
-"       flexible=\"false\"\n"
-"       chamfer_steps=\"1\"\n"
-"       radius=\"0\"\n"
-"       mode=\"F\"\n"
-"       method=\"auto\"\n"
-"       unit=\"px\"\n"
-"       satellites_param=\"F,0,0,1,0,0.99998,0,1 @ F,0,0,1,0,0,0,1 @ F,0,0,1,0,0,0,1 @ F,0,1,1,0,0.99998,0,1\"\n"
-"       lpeversion=\"1\"\n"
-"       is_visible=\"true\"\n"
-"       id=\"path-effect1829\"\n"
-"       effect=\"fillet_chamfer\" />\n"
-"  </defs>\n"
-"  <style\n"
-"     id=\"s0\">\n"
-".success { fill:#009909; }\n"
-".warning { fill:#FF1990; }\n"
-".error { fill:#00AAFF; }\n"
-"</style>\n"
-"  <style\n"
-"     id=\"s2\">\n"
-"@import '../../highlights.css';\n"
-"</style>\n"
-"  <sodipodi:namedview\n"
-"     inkscape:document-rotation=\"0\"\n"
-"     inkscape:current-layer=\"object-locked\"\n"
-"     inkscape:window-maximized=\"1\"\n"
-"     inkscape:window-y=\"-8\"\n"
-"     inkscape:window-x=\"54\"\n"
-"     inkscape:window-height=\"1177\"\n"
-"     inkscape:window-width=\"1858\"\n"
-"     inkscape:cy=\"9.9655048\"\n"
-"     inkscape:cx=\"4.5005265\"\n"
-"     inkscape:zoom=\"29.079766\"\n"
-"     showgrid=\"true\"\n"
-"     id=\"namedview\"\n"
-"     guidetolerance=\"10\"\n"
-"     gridtolerance=\"10\"\n"
-"     objecttolerance=\"10\">\n"
-"    <inkscape:grid\n"
-"       id=\"grid\"\n"
-"       type=\"xygrid\" />\n"
-"  </sodipodi:namedview>\n"
-"  <g\n"
-"     id=\"object-locked\"\n"
-"     inkscape:label=\"00259\"\n"
-"     transform=\"translate(-195,-981.36218)\">\n"
-"    <path\n"
-"       style=\"opacity:0;fill:none\"\n"
-"       d=\"m 195,981.36218 h 16 v 16 h -16 z\"\n"
-"       id=\"rect31383\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <path\n"
-"       inkscape:original-d=\"m 198,988.3622 v 8 h 10 v -8 z\"\n"
-"       inkscape:path-effect=\"#path-effect1829\"\n"
-"       inkscape:connector-curvature=\"0\"\n"
-"       style=\"opacity:1\"\n"
-"       d=\"m 198,989.36218 v 7.00002 h 10 v -7.00002 a 0.99998,0.99998 45 0 0 -0.99998,-0.99998 h -8.00004 A 0.99998,0.99998 135 0 0 198,989.36218 Z\"\n"
-"       id=\"path31387\"\n"
-"       sodipodi:nodetypes=\"ccccc\" />\n"
-"    <path\n"
-"       inkscape:connector-curvature=\"0\"\n"
-"       id=\"rect31389\"\n"
-"       d=\"m 199,986.3622 v 2 h 2 v -2 c 0,-1.108 0.892,-2 2,-2 1.108,0 2,0.892 2,2 v 2 h 2 v -2 c 0,-2.3808 -1.6025,-4 -4,-4 -2.3975,0 -4,1.68965 -4,4 z\"\n"
-"       style=\"opacity:1\"\n"
-"       sodipodi:nodetypes=\"sccsssccsss\" />\n"
-"  </g>\n"
-"</svg>\n";
-
-const char* objectlockedsymbolic_svg = (const char*) temp_binary_data_33;
+const char* happy_svg = (const char*) temp_binary_data_38;
 
 //================== sad.svg ==================
-static const unsigned char temp_binary_data_34[] =
+static const unsigned char temp_binary_data_39[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0V0z\" fill=\"none\"/><path d=\"M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12"
 " 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 3c-2.33 0-4.31 1.46-5.11 3.5h10.22c-.8-2.04-2"
 ".78-3.5-5.11-3.5z\"/></svg>";
 
-const char* sad_svg = (const char*) temp_binary_data_34;
-
-//================== snap-nodes-midpoint-symbolic.svg ==================
-static const unsigned char temp_binary_data_35[] =
-"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
-"<svg\n"
-"   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
-"   xmlns:cc=\"http://creativecommons.org/ns#\"\n"
-"   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
-"   xmlns:svg=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns=\"http://www.w3.org/2000/svg\"\n"
-"   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\n"
-"   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\n"
-"   inkscape:version=\"1.0beta0 (1b5d333, 2019-09-08)\"\n"
-"   sodipodi:docname=\"snap-nodes-midpoint-symbolic.svg\"\n"
-"   viewBox=\"0 0 16 16\"\n"
-"   height=\"16\"\n"
-"   width=\"16\"\n"
-"   id=\"svg1\"\n"
-"   version=\"1.1\">\n"
-"<style id=\"s0\">\n"
-"   .success { fill: #009909; }\n"
-"   .warning { fill: #FF1990; }\n"
-"   .error   { fill: #00AAFF; }\n"
-"  </style>\n"
-"  <style id=\"s2\"> \n"
-"     @import '../../highlights.css'; \n"
-"  </style>\n"
-"   \n"
-"  <metadata\n"
-"     id=\"metadata3229\">\n"
-"    <rdf:RDF>\n"
-"      <cc:Work\n"
-"         rdf:about=\"\">\n"
-"        <dc:format>image/svg+xml</dc:format>\n"
-"        <dc:type\n"
-"           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\n"
-"      </cc:Work>\n"
-"    </rdf:RDF>\n"
-"  </metadata>\n"
-"  <defs\n"
-"     id=\"defs3227\" />\n"
-"  <sodipodi:namedview\n"
-"     inkscape:document-rotation=\"0\"\n"
-"     inkscape:current-layer=\"snap-nodes-midpoint\"\n"
-"     inkscape:window-maximized=\"1\"\n"
-"     inkscape:window-y=\"-8\"\n"
-"     inkscape:window-x=\"54\"\n"
-"     inkscape:window-height=\"1177\"\n"
-"     inkscape:window-width=\"1858\"\n"
-"     inkscape:cy=\"7.6000299\"\n"
-"     inkscape:cx=\"5.1947466\"\n"
-"     inkscape:zoom=\"38.41879\"\n"
-"     showgrid=\"true\"\n"
-"     id=\"namedview\"\n"
-"     guidetolerance=\"10\"\n"
-"     gridtolerance=\"10\"\n"
-"     objecttolerance=\"10\">\n"
-"    <inkscape:grid\n"
-"       id=\"grid\"\n"
-"       type=\"xygrid\" />\n"
-"  </sodipodi:namedview>\n"
-"  <g\n"
-"     inkscape:label=\"00329\"\n"
-"     id=\"snap-nodes-midpoint\"\n"
-"     transform=\"matrix(1,0,0,0.996108,-859,-504.39161)\">\n"
-"    <path\n"
-"       style=\"opacity:0;fill:none\"\n"
-"       d=\"m 859,506.42471 h 16 v 16 h -16 z\"\n"
-"       id=\"rect22787\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <path\n"
-"       transform=\"rotate(90)\"\n"
-"       style=\"opacity:1\"\n"
-"       d=\"m 513.36218,-865 h 2 v 4 h -2 z\"\n"
-"       id=\"rect22801\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <path\n"
-"       style=\"opacity:1\"\n"
-"       d=\"m 865,511.3622 v 6 l 4,-3 z\"\n"
-"       id=\"path22803\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <path\n"
-"       style=\"opacity:1\"\n"
-"       d=\"m 861,510.36221 h 2 v 8 h -2 z\"\n"
-"       id=\"rect22807\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <path\n"
-"       inkscape:connector-curvature=\"0\"\n"
-"       id=\"path22809\"\n"
-"       d=\"m 865,518.3622 h -6 l 3,4 z\"\n"
-"       style=\"opacity:1\" />\n"
-"    <path\n"
-"       style=\"opacity:1\"\n"
-"       d=\"m 865,510.3622 h -6 l 3,-4 z\"\n"
-"       id=\"path22811\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <path\n"
-"       inkscape:connector-curvature=\"0\"\n"
-"       id=\"path3809\"\n"
-"       d=\"m 872,517.40535 h 1 v 5.01954 h -1 z\"\n"
-"       style=\"opacity:1;stroke-width:0.560108\" />\n"
-"    <path\n"
-"       style=\"opacity:1;stroke-width:0.560108\"\n"
-"       d=\"m 872,506.36237 h 1 v 5.01954 h -1 z\"\n"
-"       id=\"rect22813\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"    <path\n"
-"       class=\"success\"\n"
-"       style=\"opacity:1\"\n"
-"       d=\"m 875,514.39363 a 2.5,2.5 0 0 1 -2.5,2.5 2.5,2.5 0 0 1 -2.5,-2.5 2.5,2.5 0 0 1 2.5,-2.5 2.5,2.5 0 0 1 2.5,2.5 z\"\n"
-"       id=\"path22815\"\n"
-"       inkscape:connector-curvature=\"0\" />\n"
-"  </g>\n"
-"</svg>\n";
-
-const char* snapnodesmidpointsymbolic_svg = (const char*) temp_binary_data_35;
+const char* sad_svg = (const char*) temp_binary_data_39;
 
 //================== kofi.svg ==================
-static const unsigned char temp_binary_data_36[] =
+static const unsigned char temp_binary_data_40[] =
 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n"
 "<svg version=\"1.1\" id=\"Calque_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\r\n"
 "\t width=\"512px\" height=\"512px\" viewBox=\"0 0 512 512\" fill=\"none\">\r\n"
@@ -13520,10 +13936,10 @@ static const unsigned char temp_binary_data_36[] =
 "</g>\r\n"
 "</svg>\r\n";
 
-const char* kofi_svg = (const char*) temp_binary_data_36;
+const char* kofi_svg = (const char*) temp_binary_data_40;
 
 //================== github_line.svg ==================
-static const unsigned char temp_binary_data_37[] =
+static const unsigned char temp_binary_data_41[] =
 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n"
 "<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->\r\n"
 "<svg fill=\"#000000\" width=\"800px\" height=\"800px\" viewBox=\"-6 0 32 32\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\">\r\n"
@@ -13536,10 +13952,10 @@ static const unsigned char temp_binary_data_37[] =
 "-0.32 0.84-0.76 0.16-1.76 0.28-4.48-0.28-6.2 2.32-0.48 4.56-2.040 5.16-4.76 0.64-3-0.040-4.68-1-5.96z\"></path>\r\n"
 "</svg>";
 
-const char* github_line_svg = (const char*) temp_binary_data_37;
+const char* github_line_svg = (const char*) temp_binary_data_41;
 
 //================== paypal_colour.svg ==================
-static const unsigned char temp_binary_data_38[] =
+static const unsigned char temp_binary_data_42[] =
 "<?xml version=\"1.0\" encoding=\"utf-8\"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->\n"
 "<svg width=\"800px\" height=\"800px\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\r\n"
 "<circle cx=\"24\" cy=\"24\" r=\"20\" fill=\"#0070BA\"/>\r\n"
@@ -13554,10 +13970,10 @@ static const unsigned char temp_binary_data_38[] =
 "L14.0079 32.5969C13.9467 32.9866 14.2473 33.3381 14.6402 33.3381H19.2458L20.4022 26.0014L21.6461 18.1231Z\" fill=\"white\"/>\r\n"
 "</svg>";
 
-const char* paypal_colour_svg = (const char*) temp_binary_data_38;
+const char* paypal_colour_svg = (const char*) temp_binary_data_42;
 
 //================== paypal_bw.svg ==================
-static const unsigned char temp_binary_data_39[] =
+static const unsigned char temp_binary_data_43[] =
 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
 "<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->\r\n"
 "<svg width=\"800px\" height=\"800px\" viewBox=\"-1.5 0 20 20\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\r\n"
@@ -13581,10 +13997,10 @@ static const unsigned char temp_binary_data_39[] =
 "    </g>\r\n"
 "</svg>";
 
-const char* paypal_bw_svg = (const char*) temp_binary_data_39;
+const char* paypal_bw_svg = (const char*) temp_binary_data_43;
 
 //================== github_colour.svg ==================
-static const unsigned char temp_binary_data_40[] =
+static const unsigned char temp_binary_data_44[] =
 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
 "<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->\r\n"
 "<svg width=\"800px\" height=\"800px\" viewBox=\"0 0 20 20\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\r\n"
@@ -13609,10 +14025,10 @@ static const unsigned char temp_binary_data_40[] =
 "    </g>\r\n"
 "</svg>";
 
-const char* github_colour_svg = (const char*) temp_binary_data_40;
+const char* github_colour_svg = (const char*) temp_binary_data_44;
 
 //================== github_bw.svg ==================
-static const unsigned char temp_binary_data_41[] =
+static const unsigned char temp_binary_data_45[] =
 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
 "<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->\r\n"
 "<svg width=\"800px\" height=\"800px\" viewBox=\"0 0 20 20\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\r\n"
@@ -13637,10 +14053,10 @@ static const unsigned char temp_binary_data_41[] =
 "    </g>\r\n"
 "</svg>";
 
-const char* github_bw_svg = (const char*) temp_binary_data_41;
+const char* github_bw_svg = (const char*) temp_binary_data_45;
 
 //================== vst3_au_juce_mini_logo_bg_rnd.svg ==================
-static const unsigned char temp_binary_data_42[] =
+static const unsigned char temp_binary_data_46[] =
 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n"
 "<svg version=\"1.1\" id=\"Calque_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\r\n"
 "\t width=\"1093px\" height=\"250px\" viewBox=\"291 132 1093 250\" xml:space=\"preserve\">\r\n"
@@ -13733,10 +14149,10 @@ static const unsigned char temp_binary_data_42[] =
 "</g>\r\n"
 "</svg>\r\n";
 
-const char* vst3_au_juce_mini_logo_bg_rnd_svg = (const char*) temp_binary_data_42;
+const char* vst3_au_juce_mini_logo_bg_rnd_svg = (const char*) temp_binary_data_46;
 
 //================== ctrlrx_logo.svg ==================
-static const unsigned char temp_binary_data_43[] =
+static const unsigned char temp_binary_data_47[] =
 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n"
 "<svg version=\"1.1\" id=\"CtrlrX\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\r\n"
 "\t width=\"512px\" height=\"512px\" viewBox=\"0 0 512 512\"  xml:space=\"preserve\">\r\n"
@@ -13761,17 +14177,17 @@ static const unsigned char temp_binary_data_43[] =
 "\t353.2,248.6 365.4,236.4 \"/>\r\n"
 "</svg>\r\n";
 
-const char* ctrlrx_logo_svg = (const char*) temp_binary_data_43;
+const char* ctrlrx_logo_svg = (const char*) temp_binary_data_47;
 
 //================== add.svg ==================
-static const unsigned char temp_binary_data_44[] =
+static const unsigned char temp_binary_data_48[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4"
 "V7h2v4h4v2z\"/></svg>";
 
-const char* add_svg = (const char*) temp_binary_data_44;
+const char* add_svg = (const char*) temp_binary_data_48;
 
 //================== appbar.debug.restart.png ==================
-static const unsigned char temp_binary_data_45[] =
+static const unsigned char temp_binary_data_49[] =
 { 137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,76,0,0,0,76,8,6,0,0,0,199,151,81,43,0,0,0,1,115,82,71,66,0,174,206,28,233,0,0,0,4,103,65,77,65,0,0,177,143,11,252,97,5,0,0,0,9,112,72,89,115,0,0,14,195,0,0,14,195,1,199,111,168,100,0,0,1,73,73,68,65,
 84,120,94,237,216,177,73,5,81,16,133,225,213,204,84,176,1,83,65,140,172,195,64,48,19,49,179,0,67,27,176,19,109,64,176,2,43,48,176,4,83,49,49,80,207,192,46,44,151,179,143,59,193,202,27,252,63,248,89,120,94,46,206,32,184,188,1,0,0,0,0,0,0,0,0,0,0,86,182,
 51,62,215,244,51,62,255,202,170,51,237,142,79,116,98,97,73,44,44,137,133,37,177,176,164,109,92,216,221,248,252,183,226,181,162,183,91,21,220,207,122,43,207,13,213,246,173,110,212,196,157,233,173,60,55,212,188,88,214,181,154,115,231,122,43,207,13,53,245,
@@ -13779,10 +14195,10 @@ static const unsigned char temp_binary_data_45[] =
 121,110,168,121,75,255,37,63,213,179,58,142,15,140,39,213,222,21,149,231,134,106,219,244,30,246,161,142,84,235,74,205,207,77,149,231,134,90,106,233,77,255,81,181,98,137,237,185,168,60,55,212,166,98,105,237,103,239,170,117,160,218,115,209,170,42,125,69,
 237,126,87,119,55,95,81,111,19,22,150,196,194,146,88,88,18,11,75,98,97,73,44,44,137,133,1,0,0,0,0,0,0,0,0,0,192,86,25,134,95,71,167,239,137,131,56,135,16,0,0,0,0,73,69,78,68,174,66,96,130,0,0 };
 
-const char* appbar_debug_restart_png = (const char*) temp_binary_data_45;
+const char* appbar_debug_restart_png = (const char*) temp_binary_data_49;
 
 //================== appbar.debug.step.into.png ==================
-static const unsigned char temp_binary_data_46[] =
+static const unsigned char temp_binary_data_50[] =
 { 137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,76,0,0,0,76,8,6,0,0,0,199,151,81,43,0,0,0,1,115,82,71,66,0,174,206,28,233,0,0,0,4,103,65,77,65,0,0,177,143,11,252,97,5,0,0,0,9,112,72,89,115,0,0,14,195,0,0,14,195,1,199,111,168,100,0,0,1,129,73,68,65,
 84,120,94,237,216,49,74,196,64,24,134,225,104,161,182,138,8,118,226,17,60,128,149,104,103,35,118,94,197,11,120,1,59,177,19,59,79,96,103,99,47,90,217,88,120,0,27,173,244,27,54,35,195,240,15,155,152,25,25,157,247,129,151,44,100,216,77,126,150,108,54,29,
 0,0,0,0,0,0,0,0,0,0,160,46,11,253,54,183,61,117,164,118,213,166,90,85,78,234,243,62,251,109,105,165,206,247,199,182,213,173,114,3,176,74,177,214,150,168,42,59,234,85,89,7,234,75,177,214,150,168,26,91,106,222,176,92,41,214,218,18,85,227,78,89,7,24,151,
@@ -13791,10 +14207,10 @@ static const unsigned char temp_binary_data_46[] =
 214,228,170,42,67,158,135,165,58,85,158,181,63,87,213,153,247,196,213,170,217,111,88,104,95,157,171,39,245,166,172,131,119,197,195,114,172,117,185,250,115,194,131,111,250,87,114,40,134,53,146,27,22,127,143,70,72,13,203,127,243,74,55,89,142,231,97,57,
 100,57,153,1,120,30,246,219,24,216,72,12,12,0,0,0,0,0,0,0,0,0,24,169,235,190,0,29,91,147,129,227,74,136,41,0,0,0,0,73,69,78,68,174,66,96,130,0,0 };
 
-const char* appbar_debug_step_into_png = (const char*) temp_binary_data_46;
+const char* appbar_debug_step_into_png = (const char*) temp_binary_data_50;
 
 //================== appbar.debug.step.out.png ==================
-static const unsigned char temp_binary_data_47[] =
+static const unsigned char temp_binary_data_51[] =
 { 137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,76,0,0,0,76,8,6,0,0,0,199,151,81,43,0,0,0,1,115,82,71,66,0,174,206,28,233,0,0,0,4,103,65,77,65,0,0,177,143,11,252,97,5,0,0,0,9,112,72,89,115,0,0,14,195,0,0,14,195,1,199,111,168,100,0,0,1,106,73,68,65,
 84,120,94,237,217,63,74,196,64,24,134,241,104,161,214,178,88,139,71,240,12,162,157,157,157,87,241,2,94,192,78,236,196,206,19,216,217,216,139,86,54,22,118,219,216,104,165,239,224,6,134,225,155,144,100,38,59,193,121,126,240,176,203,238,16,146,143,253,147,
 236,54,0,0,0,0,0,0,0,0,0,192,90,93,174,110,209,211,143,98,104,3,184,129,185,174,213,166,123,0,221,218,129,49,52,207,145,186,82,207,106,169,252,33,133,221,169,45,85,165,3,245,160,172,193,116,117,175,170,27,218,161,250,80,214,64,250,116,161,170,177,175,
@@ -13803,10 +14219,10 @@ static const unsigned char temp_binary_data_47[] =
 141,98,172,181,185,154,133,177,23,223,49,214,218,92,205,198,152,159,119,98,172,181,185,154,157,99,229,126,64,124,85,159,202,218,233,182,24,107,109,174,0,252,47,69,175,173,60,235,250,124,73,62,94,254,234,26,136,129,13,196,192,6,98,96,0,0,0,0,0,0,0,0,0,
 0,48,43,77,243,11,47,213,156,14,120,145,79,154,0,0,0,0,73,69,78,68,174,66,96,130,0,0 };
 
-const char* appbar_debug_step_out_png = (const char*) temp_binary_data_47;
+const char* appbar_debug_step_out_png = (const char*) temp_binary_data_51;
 
 //================== appbar.debug.step.over.png ==================
-static const unsigned char temp_binary_data_48[] =
+static const unsigned char temp_binary_data_52[] =
 { 137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,76,0,0,0,76,8,6,0,0,0,199,151,81,43,0,0,0,1,115,82,71,66,0,174,206,28,233,0,0,0,4,103,65,77,65,0,0,177,143,11,252,97,5,0,0,0,9,112,72,89,115,0,0,14,195,0,0,14,195,1,199,111,168,100,0,0,1,126,73,68,65,
 84,120,94,237,218,191,46,5,65,24,134,241,69,226,79,68,226,50,92,131,90,73,167,209,185,29,10,151,160,81,81,233,36,116,46,67,161,17,149,66,161,33,18,188,195,74,38,147,239,200,124,118,71,102,205,243,75,158,28,178,89,217,253,178,231,216,179,187,29,0,0,0,
 0,0,0,0,0,0,80,204,146,218,85,39,234,70,61,170,119,5,195,142,186,85,97,64,105,136,204,171,3,245,166,172,97,133,16,57,82,214,144,226,208,219,83,214,128,210,32,171,234,94,89,3,186,84,219,106,93,253,196,90,183,68,85,216,87,214,198,29,170,92,214,250,37,170,
@@ -13815,71 +14231,71 @@ static const unsigned char temp_binary_data_48[] =
 84,16,47,107,122,104,185,55,114,211,78,213,162,106,82,206,163,2,86,231,106,50,67,91,232,95,199,112,165,86,212,166,242,156,81,111,168,87,117,253,249,91,131,194,115,97,179,30,119,178,154,212,17,86,74,252,64,93,24,222,147,98,88,191,16,15,171,233,255,146,
 185,24,150,83,24,22,95,143,28,24,22,0,0,0,0,0,0,48,25,93,247,1,62,94,2,242,227,172,124,82,0,0,0,0,73,69,78,68,174,66,96,130,0,0 };
 
-const char* appbar_debug_step_over_png = (const char*) temp_binary_data_48;
+const char* appbar_debug_step_over_png = (const char*) temp_binary_data_52;
 
 //================== bold.svg ==================
-static const unsigned char temp_binary_data_49[] =
+static const unsigned char temp_binary_data_53[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M15.6 10.79c.97-.67 1.65-1.77 1.65-2.79 0-2.26-1.75-4-4-4H7v14h7.04c2.09 0 3.71-1.7 3.71-"
 "3.79 0-1.52-.86-2.82-2.15-3.42zM10 6.5h3c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-3v-3zm3.5 9H10v-3h3.5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5z\"/></svg>";
 
-const char* bold_svg = (const char*) temp_binary_data_49;
+const char* bold_svg = (const char*) temp_binary_data_53;
 
 //================== bug.svg ==================
-static const unsigned char temp_binary_data_50[] =
+static const unsigned char temp_binary_data_54[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M20 8h-2.81c-.45-.78-1.07-1.45-1.82-1.96L17 4.41 15.59 3l-2.17 2.17C12.96 5.06 12.49 5 12"
 " 5c-.49 0-.96.06-1.41.17L8.41 3 7 4.41l1.62 1.63C7.88 6.55 7.26 7.22 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81c1.04 1.79 2.97 3 5.19 3s4.15-1.21 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H2"
 "0V8zm-6 8h-4v-2h4v2zm0-4h-4v-2h4v2z\"/></svg>";
 
-const char* bug_svg = (const char*) temp_binary_data_50;
+const char* bug_svg = (const char*) temp_binary_data_54;
 
 //================== camera.svg ==================
-static const unsigned char temp_binary_data_51[] =
+static const unsigned char temp_binary_data_55[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><circle cx=\"12\" cy=\"12\" r=\"3.2\"/><path d=\"M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c"
 "1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z\"/></svg>";
 
-const char* camera_svg = (const char*) temp_binary_data_51;
+const char* camera_svg = (const char*) temp_binary_data_55;
 
 //================== camera_special.svg ==================
-static const unsigned char temp_binary_data_52[] =
+static const unsigned char temp_binary_data_56[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><circle cx=\"12\" cy=\"14\" r=\"3.2\"/><circle cx=\"12\" cy=\"14\" fill=\"none\" r=\"5\"/><path d=\"M16 3.33c2.58 0 4.67 2.09 4.67 4.67H22c0"
 "-3.31-2.69-6-6-6v1.33M16 6c1.11 0 2 .89 2 2h1.33c0-1.84-1.49-3.33-3.33-3.33V6\"/><path d=\"M24 0H0v24h24V0z\" fill=\"none\"/><path d=\"M17 9c0-1.11-.89-2-2-2V4H9L7.17 6H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9h-5zm-5 10c-2.76 0-5-2.24-5"
 "-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z\"/></svg>";
 
-const char* camera_special_svg = (const char*) temp_binary_data_52;
+const char* camera_special_svg = (const char*) temp_binary_data_56;
 
 //================== cleanup.svg ==================
-static const unsigned char temp_binary_data_53[] =
+static const unsigned char temp_binary_data_57[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" enable-background=\"new 0 0 24 24\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><g><rect fill=\"none\" height=\"24\" width=\"24\"/></g><g><path d=\"M16,11h-1V3c0-1.1-0.9-2-2-2h-2C9.9,1"
 ",9,1.9,9,3v8H8c-2.76,0-5,2.24-5,5v7h18v-7C21,13.24,18.76,11,16,11z M19,21h-2v-3 c0-0.55-0.45-1-1-1s-1,0.45-1,1v3h-2v-3c0-0.55-0.45-1-1-1s-1,0.45-1,1v3H9v-3c0-0.55-0.45-1-1-1s-1,0.45-1,1v3H5v-5 c0-1.65,1.35-3,3-3h8c1.65,0,3,1.35,3,3V21z\"/></g></svg>";
 
-const char* cleanup_svg = (const char*) temp_binary_data_53;
+const char* cleanup_svg = (const char*) temp_binary_data_57;
 
 //================== clear.svg ==================
-static const unsigned char temp_binary_data_54[] =
+static const unsigned char temp_binary_data_58[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17."
 "59 13.41 12z\"/></svg>";
 
-const char* clear_svg = (const char*) temp_binary_data_54;
+const char* clear_svg = (const char*) temp_binary_data_58;
 
 //================== cog.svg ==================
-static const unsigned char temp_binary_data_55[] =
+static const unsigned char temp_binary_data_59[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" enable-background=\"new 0 0 24 24\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><g><path d=\"M0,0h24v24H0V0z\" fill=\"none\"/><path d=\"M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.9"
 "4l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33"
 "c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0"
 ".36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6"
 "-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z\"/></g></svg>";
 
-const char* cog_svg = (const char*) temp_binary_data_55;
+const char* cog_svg = (const char*) temp_binary_data_59;
 
 //================== copy.svg ==================
-static const unsigned char temp_binary_data_56[] =
+static const unsigned char temp_binary_data_60[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9"
 " 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z\"/></svg>";
 
-const char* copy_svg = (const char*) temp_binary_data_56;
+const char* copy_svg = (const char*) temp_binary_data_60;
 
 //================== ctrlr_logo.svg ==================
-static const unsigned char temp_binary_data_57[] =
+static const unsigned char temp_binary_data_61[] =
 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
 "<!-- Created with Inkscape (http://www.inkscape.org/) -->\r\n"
 "\r\n"
@@ -14230,60 +14646,60 @@ static const unsigned char temp_binary_data_57[] =
 "  </g>\r\n"
 "</svg>\r\n";
 
-const char* ctrlr_logo_svg = (const char*) temp_binary_data_57;
+const char* ctrlr_logo_svg = (const char*) temp_binary_data_61;
 
 //================== cut.svg ==================
-static const unsigned char temp_binary_data_58[] =
+static const unsigned char temp_binary_data_62[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><circle cx=\"6\" cy=\"18\" fill=\"none\" r=\"2\"/><circle cx=\"12\" cy=\"12\" fill=\"none\" r=\".5\""
 "/><circle cx=\"6\" cy=\"6\" fill=\"none\" r=\"2\"/><path d=\"M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13"
 "-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3z\"/></svg>";
 
-const char* cut_svg = (const char*) temp_binary_data_58;
+const char* cut_svg = (const char*) temp_binary_data_62;
 
 //================== done.svg ==================
-static const unsigned char temp_binary_data_59[] =
+static const unsigned char temp_binary_data_63[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0V0z\" fill=\"none\"/><path d=\"M19.77 5.03l1.4 1.4L8.43 19.17l-5.6-5.6 1.4-1.4 4.2 4.2L19.77 5.03m0-2.83L8.43 13.54l-4.2-4.2L0 13.57 8.43"
 " 22 24 6.43 19.77 2.2z\"/></svg>";
 
-const char* done_svg = (const char*) temp_binary_data_59;
+const char* done_svg = (const char*) temp_binary_data_63;
 
 //================== edit.svg ==================
-static const unsigned char temp_binary_data_60[] =
+static const unsigned char temp_binary_data_64[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2"
 ".34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z\"/></svg>";
 
-const char* edit_svg = (const char*) temp_binary_data_60;
+const char* edit_svg = (const char*) temp_binary_data_64;
 
 //================== file.svg ==================
-static const unsigned char temp_binary_data_61[] =
+static const unsigned char temp_binary_data_65[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5"
 " 9H13z\"/></svg>";
 
-const char* file_svg = (const char*) temp_binary_data_61;
+const char* file_svg = (const char*) temp_binary_data_65;
 
 //================== folder.svg ==================
-static const unsigned char temp_binary_data_62[] =
+static const unsigned char temp_binary_data_66[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-"
 "2z\"/></svg>";
 
-const char* folder_svg = (const char*) temp_binary_data_62;
+const char* folder_svg = (const char*) temp_binary_data_66;
 
 //================== folder_open.svg ==================
-static const unsigned char temp_binary_data_63[] =
+static const unsigned char temp_binary_data_67[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-"
 "2zm0 12H4V8h16v10z\"/></svg>";
 
-const char* folder_open_svg = (const char*) temp_binary_data_63;
+const char* folder_open_svg = (const char*) temp_binary_data_67;
 
 //================== gradient.svg ==================
-static const unsigned char temp_binary_data_64[] =
+static const unsigned char temp_binary_data_68[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M11 9h2v2h-2zm-2 2h2v2H9zm4 0h2v2h-2zm2-2h2v2h-2zM7 9h2v2H7zm12-6H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 "
 "0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 18H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm2-7h-2v2h2v2h-2v-2h-2v2h-2v-2h-2v2H9v-2H7v2H5v-2h2v-2H5V5h14v6z\"/></svg>";
 
-const char* gradient_svg = (const char*) temp_binary_data_64;
+const char* gradient_svg = (const char*) temp_binary_data_68;
 
 //================== ico_ctrlr_mac.icns ==================
-static const unsigned char temp_binary_data_65[] =
+static const unsigned char temp_binary_data_69[] =
 { 105,99,110,115,0,0,250,64,84,79,67,32,0,0,0,88,105,99,48,57,0,0,90,211,105,99,48,56,0,0,41,101,105,116,51,50,0,0,23,228,116,56,109,107,0,0,64,8,105,104,51,50,0,0,8,70,104,56,109,107,0,0,9,8,105,108,51,50,0,0,5,63,108,56,109,107,0,0,4,8,105,115,51,50,
 0,0,2,31,115,56,109,107,0,0,1,8,105,99,48,57,0,0,90,211,137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,2,0,0,0,2,0,8,6,0,0,0,244,120,212,250,0,0,4,36,105,67,67,80,73,67,67,32,80,114,111,102,105,108,101,0,0,56,17,133,85,223,111,219,84,20,62,137,111,
 82,164,22,63,32,88,71,135,138,197,175,85,83,91,185,27,26,173,198,6,73,147,165,237,74,22,165,233,216,42,36,228,58,55,137,169,27,7,219,233,182,170,79,123,129,55,6,252,1,64,217,3,15,72,60,33,13,6,98,123,217,246,192,180,73,83,135,42,170,73,72,123,232,196,
@@ -15115,31 +15531,31 @@ static const unsigned char temp_binary_data_65[] =
 112,0,0,0,0,255,255,255,0,0,0,255,255,175,32,143,175,48,0,0,0,0,0,0,0,0,0,191,255,255,32,239,255,175,112,112,0,0,0,0,0,0,0,96,255,255,191,128,239,143,255,255,64,0,0,0,0,0,0,0,207,255,255,191,32,32,223,223,32,32,207,207,16,0,0,0,32,239,255,255,255,175,
 128,128,175,255,255,255,175,0,0,0,0,32,207,255,255,255,255,255,255,255,255,207,32,0,0,0,0,0,0,96,175,255,255,255,255,175,96,0,0,0,0,0,0 };
 
-const char* ico_ctrlr_mac_icns = (const char*) temp_binary_data_65;
+const char* ico_ctrlr_mac_icns = (const char*) temp_binary_data_69;
 
 //================== invisible.svg ==================
-static const unsigned char temp_binary_data_66[] =
+static const unsigned char temp_binary_data_70[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0zm0 0h24v24H0zm0 0h24v24H0zm0 0h24v24H0z\" fill=\"none\"/><path d=\"M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2."
 "92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27z"
 "M7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z\"/></svg>";
 
-const char* invisible_svg = (const char*) temp_binary_data_66;
+const char* invisible_svg = (const char*) temp_binary_data_70;
 
 //================== italic.svg ==================
-static const unsigned char temp_binary_data_67[] =
+static const unsigned char temp_binary_data_71[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M10 4v3h2.21l-3.42 8H6v3h8v-3h-2.21l3.42-8H18V4z\"/></svg>";
 
-const char* italic_svg = (const char*) temp_binary_data_67;
+const char* italic_svg = (const char*) temp_binary_data_71;
 
 //================== memory.svg ==================
-static const unsigned char temp_binary_data_68[] =
+static const unsigned char temp_binary_data_72[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M15 9H9v6h6V9zm-2 4h-2v-2h2v2zm8-2V9h-2V7c0-1.1-.9-2-2-2h-2V3h-2v2h-2V3H9v2H7c-1.1 0-2 .9"
 "-2 2v2H3v2h2v2H3v2h2v2c0 1.1.9 2 2 2h2v2h2v-2h2v2h2v-2h2c1.1 0 2-.9 2-2v-2h2v-2h-2v-2h2zm-4 6H7V7h10v10z\"/></svg>";
 
-const char* memory_svg = (const char*) temp_binary_data_68;
+const char* memory_svg = (const char*) temp_binary_data_72;
 
 //================== midi.svg ==================
-static const unsigned char temp_binary_data_69[] =
+static const unsigned char temp_binary_data_73[] =
 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
 "<svg\r\n"
 "   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\r\n"
@@ -15240,130 +15656,130 @@ static const unsigned char temp_binary_data_69[] =
 "     inkscape:connector-curvature=\"0\" />\r\n"
 "</svg>\r\n";
 
-const char* midi_svg = (const char*) temp_binary_data_69;
+const char* midi_svg = (const char*) temp_binary_data_73;
 
 //================== nav_next.svg ==================
-static const unsigned char temp_binary_data_70[] =
+static const unsigned char temp_binary_data_74[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z\"/></svg>";
 
-const char* nav_next_svg = (const char*) temp_binary_data_70;
+const char* nav_next_svg = (const char*) temp_binary_data_74;
 
 //================== nav_prev.svg ==================
-static const unsigned char temp_binary_data_71[] =
+static const unsigned char temp_binary_data_75[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z\"/></svg>";
 
-const char* nav_prev_svg = (const char*) temp_binary_data_71;
+const char* nav_prev_svg = (const char*) temp_binary_data_75;
 
 //================== new_folder.svg ==================
-static const unsigned char temp_binary_data_72[] =
+static const unsigned char temp_binary_data_76[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0V0z\" fill=\"none\"/><path d=\"M20 6h-8l-2-2H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.1"
 "1-.89-2-2-2zm-1 8h-3v3h-2v-3h-3v-2h3V9h2v3h3v2z\"/></svg>";
 
-const char* new_folder_svg = (const char*) temp_binary_data_72;
+const char* new_folder_svg = (const char*) temp_binary_data_76;
 
 //================== open_in_new.svg ==================
-static const unsigned char temp_binary_data_73[] =
+static const unsigned char temp_binary_data_77[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.5"
 "9l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z\"/></svg>";
 
-const char* open_in_new_svg = (const char*) temp_binary_data_73;
+const char* open_in_new_svg = (const char*) temp_binary_data_77;
 
 //================== paste.svg ==================
-static const unsigned char temp_binary_data_74[] =
+static const unsigned char temp_binary_data_78[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M19 2h-4.18C14.4.84 13.3 0 12 0c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h1"
 "4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 18H5V4h2v3h10V4h2v16z\"/></svg>";
 
-const char* paste_svg = (const char*) temp_binary_data_74;
+const char* paste_svg = (const char*) temp_binary_data_78;
 
 //================== play.svg ==================
-static const unsigned char temp_binary_data_75[] =
+static const unsigned char temp_binary_data_79[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M8 5v14l11-7z\"/></svg>";
 
-const char* play_svg = (const char*) temp_binary_data_75;
+const char* play_svg = (const char*) temp_binary_data_79;
 
 //================== radio.svg ==================
-static const unsigned char temp_binary_data_76[] =
+static const unsigned char temp_binary_data_80[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-"
 "8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z\"/></svg>";
 
-const char* radio_svg = (const char*) temp_binary_data_76;
+const char* radio_svg = (const char*) temp_binary_data_80;
 
 //================== radio_checked.svg ==================
-static const unsigned char temp_binary_data_77[] =
+static const unsigned char temp_binary_data_81[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0-5C6.48 2 2 6.48 2 12s4.48 10"
 " 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z\"/></svg>";
 
-const char* radio_checked_svg = (const char*) temp_binary_data_77;
+const char* radio_checked_svg = (const char*) temp_binary_data_81;
 
 //================== receive.svg ==================
-static const unsigned char temp_binary_data_78[] =
+static const unsigned char temp_binary_data_82[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M20 5.41L18.59 4 7 15.59V9H5v10h10v-2H8.41z\"/></svg>";
 
-const char* receive_svg = (const char*) temp_binary_data_78;
+const char* receive_svg = (const char*) temp_binary_data_82;
 
 //================== search.svg ==================
-static const unsigned char temp_binary_data_79[] =
+static const unsigned char temp_binary_data_83[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 "
 "3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z\"/></svg>";
 
-const char* search_svg = (const char*) temp_binary_data_79;
+const char* search_svg = (const char*) temp_binary_data_83;
 
 //================== search_off.svg ==================
-static const unsigned char temp_binary_data_80[] =
+static const unsigned char temp_binary_data_84[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" enable-background=\"new 0 0 24 24\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><g><rect fill=\"none\" height=\"24\" width=\"24\"/></g><g><g><path d=\"M15.5,14h-0.79l-0.28-0.27C15.41,12.59,16,11.11,16,9."
 "5C16,5.91,13.09,3,9.5,3C6.08,3,3.28,5.64,3.03,9h2.02 C5.3,6.75,7.18,5,9.5,5C11.99,5,14,7.01,14,9.5S11.99,14,9.5,14c-0.17,0-0.33-0.03-0.5-0.05v2.02C9.17,15.99,9.33,16,9.5,16 c1.61,0,3.09-0.59,4.23-1.57L14,14.71v0.79l5,4.99L20.49,19L15.5,14z\"/><polygo"
 "n points=\"6.47,10.82 4,13.29 1.53,10.82 0.82,11.53 3.29,14 0.82,16.47 1.53,17.18 4,14.71 6.47,17.18 7.18,16.47 4.71,14 7.18,11.53\"/></g></g></svg>";
 
-const char* search_off_svg = (const char*) temp_binary_data_80;
+const char* search_off_svg = (const char*) temp_binary_data_84;
 
 //================== send.svg ==================
-static const unsigned char temp_binary_data_81[] =
+static const unsigned char temp_binary_data_85[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M9 5v2h6.59L4 18.59 5.41 20 17 8.41V15h2V5z\"/></svg>";
 
-const char* send_svg = (const char*) temp_binary_data_81;
+const char* send_svg = (const char*) temp_binary_data_85;
 
 //================== stop.svg ==================
-static const unsigned char temp_binary_data_82[] =
+static const unsigned char temp_binary_data_86[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M6 6h12v12H6z\"/></svg>";
 
-const char* stop_svg = (const char*) temp_binary_data_82;
+const char* stop_svg = (const char*) temp_binary_data_86;
 
 //================== sync.svg ==================
-static const unsigned char temp_binary_data_83[] =
+static const unsigned char temp_binary_data_87[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57"
 " 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z\"/></svg>";
 
-const char* sync_svg = (const char*) temp_binary_data_83;
+const char* sync_svg = (const char*) temp_binary_data_87;
 
 //================== trash.svg ==================
-static const unsigned char temp_binary_data_84[] =
+static const unsigned char temp_binary_data_88[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z\"/></svg>";
 
-const char* trash_svg = (const char*) temp_binary_data_84;
+const char* trash_svg = (const char*) temp_binary_data_88;
 
 //================== underline.svg ==================
-static const unsigned char temp_binary_data_85[] =
+static const unsigned char temp_binary_data_89[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M12 17c3.31 0 6-2.69 6-6V3h-2.5v8c0 1.93-1.57 3.5-3.5 3.5S8.5 12.93 8.5 11V3H6v8c0 3.31 2"
 ".69 6 6 6zm-7 2v2h14v-2H5z\"/></svg>";
 
-const char* underline_svg = (const char*) temp_binary_data_85;
+const char* underline_svg = (const char*) temp_binary_data_89;
 
 //================== visible.svg ==================
-static const unsigned char temp_binary_data_86[] =
+static const unsigned char temp_binary_data_90[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"black\" width=\"24px\" height=\"24px\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-"
 "7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z\"/></svg>";
 
-const char* visible_svg = (const char*) temp_binary_data_86;
+const char* visible_svg = (const char*) temp_binary_data_90;
 
 //================== wysiwyg.svg ==================
-static const unsigned char temp_binary_data_87[] =
+static const unsigned char temp_binary_data_91[] =
 "<svg xmlns=\"http://www.w3.org/2000/svg\" enable-background=\"new 0 0 24 24\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><g><rect fill=\"none\" height=\"24\" width=\"24\"/><path d=\"M19,3H5C3.89,3,3,3.9,3,5v14c0,1.1,0.89,2,2,2h14c1.1,0,2-0.9,2-"
 "2V5C21,3.9,20.11,3,19,3z M19,19H5V7h14V19z M17,12H7v-2 h10V12z M13,16H7v-2h6V16z\"/></g></svg>";
 
-const char* wysiwyg_svg = (const char*) temp_binary_data_87;
+const char* wysiwyg_svg = (const char*) temp_binary_data_91;
 
 //================== debugger.lua ==================
-static const unsigned char temp_binary_data_88[] =
+static const unsigned char temp_binary_data_92[] =
 { 13,10,45,45,123,123,123,32,32,104,105,115,116,111,114,121,13,10,13,10,45,45,49,53,47,48,51,47,48,54,32,68,67,78,32,67,114,101,97,116,101,100,32,98,97,115,101,100,32,111,110,32,82,101,109,68,101,98,117,103,13,10,45,45,50,56,47,48,52,47,48,54,32,68,67,
 78,32,85,112,100,97,116,101,32,102,111,114,32,76,117,97,32,53,46,49,13,10,45,45,48,49,47,48,54,47,48,54,32,68,67,78,32,70,105,120,32,99,111,109,109,97,110,100,32,97,114,103,117,109,101,110,116,32,112,97,114,115,105,110,103,13,10,45,45,32,32,32,32,32,
 32,32,32,32,32,32,32,32,65,100,100,32,115,116,101,112,47,111,118,101,114,32,78,32,102,97,99,105,108,105,116,121,13,10,45,45,32,32,32,32,32,32,32,32,32,32,32,32,32,65,100,100,32,116,114,97,99,101,32,108,105,110,101,115,32,102,97,99,105,108,105,116,121,
@@ -15992,10 +16408,10 @@ static const unsigned char temp_binary_data_88[] =
 116,109,115,103,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,45,45,99,97,114,114,121,32,111,110,13,10,101,110,100,13,10,13,10,95,84,82,65,67,69,66,65,67,75,32,61,32,100,101,98,117,103,46,116,114,97,99,101,98,97,99,107,32,32,32,
 32,32,32,32,32,32,32,32,32,32,45,45,76,117,97,32,53,46,48,32,102,117,110,99,116,105,111,110,13,10,13,10,45,45,125,125,125,13,10,0,0 };
 
-const char* debugger_lua = (const char*) temp_binary_data_88;
+const char* debugger_lua = (const char*) temp_binary_data_92;
 
 //================== LICENSE ==================
-static const unsigned char temp_binary_data_89[] =
+static const unsigned char temp_binary_data_93[] =
 "The MIT License (MIT)\r\n"
 "\r\n"
 "Copyright (c) 2006 Dave Nichols\r\n"
@@ -16017,10 +16433,10 @@ static const unsigned char temp_binary_data_89[] =
 "IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\r\n"
 "CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\r\n";
 
-const char* LICENSE = (const char*) temp_binary_data_89;
+const char* LICENSE = (const char*) temp_binary_data_93;
 
 //================== README.md ==================
-static const unsigned char temp_binary_data_90[] =
+static const unsigned char temp_binary_data_94[] =
 "clidebugger\r\n"
 "===========\r\n"
 "\r\n"
@@ -16028,10 +16444,10 @@ static const unsigned char temp_binary_data_90[] =
 "\r\n"
 "Author is Dave Nichols.\r\n";
 
-const char* README_md2 = (const char*) temp_binary_data_90;
+const char* README_md2 = (const char*) temp_binary_data_94;
 
 //================== test.lua ==================
-static const unsigned char temp_binary_data_91[] =
+static const unsigned char temp_binary_data_95[] =
 "require (\"debugger\")\r\n"
 "\r\n"
 "function stopNow()\r\n"
@@ -16040,10 +16456,10 @@ static const unsigned char temp_binary_data_91[] =
 "\r\n"
 "stopNow()";
 
-const char* test_lua = (const char*) temp_binary_data_91;
+const char* test_lua = (const char*) temp_binary_data_95;
 
 //================== json.lua ==================
-static const unsigned char temp_binary_data_92[] =
+static const unsigned char temp_binary_data_96[] =
 "-----------------------------------------------------------------------------\r\n"
 "-- JSON4Lua: JSON encoding / decoding support for the Lua language.\r\n"
 "-- json Module.\r\n"
@@ -16464,10 +16880,10 @@ static const unsigned char temp_binary_data_92[] =
 "end\r\n"
 "\r\n";
 
-const char* json_lua = (const char*) temp_binary_data_92;
+const char* json_lua = (const char*) temp_binary_data_96;
 
 //================== LICENCE.txt ==================
-static const unsigned char temp_binary_data_93[] =
+static const unsigned char temp_binary_data_97[] =
 "The MIT License\r\n"
 "\r\n"
 "Copyright (c) 2009 Craig Mason-Jones\r\n"
@@ -16490,10 +16906,10 @@ static const unsigned char temp_binary_data_93[] =
 "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\r\n"
 "THE SOFTWARE.";
 
-const char* LICENCE_txt = (const char*) temp_binary_data_93;
+const char* LICENCE_txt = (const char*) temp_binary_data_97;
 
 //================== gen_LLookAndFeel.cpp.sh ==================
-static const unsigned char temp_binary_data_94[] =
+static const unsigned char temp_binary_data_98[] =
 "#!/bin/bash\r\n"
 "HEADER=\"$1\"\r\n"
 "\r\n"
@@ -16634,10 +17050,10 @@ static const unsigned char temp_binary_data_94[] =
 "echo\r\n"
 "echo \"}\"";
 
-const char* gen_LLookAndFeel_cpp_sh = (const char*) temp_binary_data_94;
+const char* gen_LLookAndFeel_cpp_sh = (const char*) temp_binary_data_98;
 
 //================== gen_LLookAndFeel.h.sh ==================
-static const unsigned char temp_binary_data_95[] =
+static const unsigned char temp_binary_data_99[] =
 "#!/bin/bash\r\n"
 "HEADER=\"$1\"\r\n"
 "\r\n"
@@ -16826,10 +17242,10 @@ static const unsigned char temp_binary_data_95[] =
 "echo\r\n"
 "echo \"#endif\"";
 
-const char* gen_LLookAndFeel_h_sh = (const char*) temp_binary_data_95;
+const char* gen_LLookAndFeel_h_sh = (const char*) temp_binary_data_99;
 
 //================== gen_LookAndFeel.lua.sh ==================
-static const unsigned char temp_binary_data_96[] =
+static const unsigned char temp_binary_data_100[] =
 "#!/bin/bash\r\n"
 "HEADER=\"$1\"\r\n"
 "\r\n"
@@ -16960,10 +17376,10 @@ static const unsigned char temp_binary_data_96[] =
 "\tprintf (\"-- end\\n\\n\");\r\n"
 "}'\r\n";
 
-const char* gen_LookAndFeel_lua_sh = (const char*) temp_binary_data_96;
+const char* gen_LookAndFeel_lua_sh = (const char*) temp_binary_data_100;
 
 //================== gen_LookAndFeelBase.cpp.sh ==================
-static const unsigned char temp_binary_data_97[] =
+static const unsigned char temp_binary_data_101[] =
 "#!/bin/bash\r\n"
 "HEADER=\"$1\"\r\n"
 "\r\n"
@@ -17141,10 +17557,10 @@ static const unsigned char temp_binary_data_97[] =
 "\r\n"
 "echo\r\n";
 
-const char* gen_LookAndFeelBase_cpp_sh = (const char*) temp_binary_data_97;
+const char* gen_LookAndFeelBase_cpp_sh = (const char*) temp_binary_data_101;
 
 //================== gen_LookAndFeelBase.h.sh ==================
-static const unsigned char temp_binary_data_98[] =
+static const unsigned char temp_binary_data_102[] =
 "#!/bin/bash\r\n"
 "HEADER=\"$1\"\r\n"
 "\r\n"
@@ -17249,10 +17665,10 @@ static const unsigned char temp_binary_data_98[] =
 "echo\r\n"
 "echo \"#endif\"";
 
-const char* gen_LookAndFeelBase_h_sh = (const char*) temp_binary_data_98;
+const char* gen_LookAndFeelBase_h_sh = (const char*) temp_binary_data_102;
 
 //================== gen_LookAndFeelParamWrapper-Lua-Member-Binding.sh ==================
-static const unsigned char temp_binary_data_99[] =
+static const unsigned char temp_binary_data_103[] =
 "#!/bin/bash\r\n"
 "cat << _EOF_\r\n"
 "\tstatic void wrapForLua (lua_State *L)\r\n"
@@ -17281,10 +17697,10 @@ static const unsigned char temp_binary_data_99[] =
 "echo -e \"\\t\\t\\t];\"\r\n"
 "echo -e \"\\t\\t}\"";
 
-const char* gen_LookAndFeelParamWrapperLuaMemberBinding_sh = (const char*) temp_binary_data_99;
+const char* gen_LookAndFeelParamWrapperLuaMemberBinding_sh = (const char*) temp_binary_data_103;
 
 //================== gen_LookAndFeelParamWrapper.h.sh ==================
-static const unsigned char temp_binary_data_100[] =
+static const unsigned char temp_binary_data_104[] =
 "#!/bin/bash\r\n"
 "HEADER=\"$1\"\r\n"
 "\r\n"
@@ -17664,10 +18080,10 @@ static const unsigned char temp_binary_data_100[] =
 "echo \"#endif\"\r\n"
 "echo";
 
-const char* gen_LookAndFeelParamWrapper_h_sh = (const char*) temp_binary_data_100;
+const char* gen_LookAndFeelParamWrapper_h_sh = (const char*) temp_binary_data_104;
 
 //================== inspect.lua ==================
-static const unsigned char temp_binary_data_101[] =
+static const unsigned char temp_binary_data_105[] =
 "function getInspect()\r\n"
 "local inspect ={\r\n"
 "  _VERSION = 'inspect.lua 3.0.0',\r\n"
@@ -18000,10 +18416,10 @@ static const unsigned char temp_binary_data_101[] =
 "\r\n"
 "inspect = getInspect()";
 
-const char* inspect_lua = (const char*) temp_binary_data_101;
+const char* inspect_lua = (const char*) temp_binary_data_105;
 
 //================== lf.template ==================
-static const unsigned char temp_binary_data_102[] =
+static const unsigned char temp_binary_data_106[] =
 "        static Colour def_findColour (LookAndFeel_V3 *ptr, int colourId)\r\n"
 "        static void def_setColour (LookAndFeel_V3 *ptr, int colourId, Colour colour)\r\n"
 "        static bool def_isColourSpecified (LookAndFeel_V3 *ptr, int colourId)\r\n"
@@ -18110,10 +18526,10 @@ static const unsigned char temp_binary_data_102[] =
 "        static void def_drawLevelMeter (LookAndFeel_V3 *ptr, Graphics &g, int width, int height, float level)\r\n"
 "        static void def_drawKeymapChangeButton (LookAndFeel_V3 *ptr, Graphics &g, int width, int height, Button &button, const String &keyDescription)\r\n";
 
-const char* lf_template = (const char*) temp_binary_data_102;
+const char* lf_template = (const char*) temp_binary_data_106;
 
 //================== LookAndFeel.lua ==================
-static const unsigned char temp_binary_data_103[] =
+static const unsigned char temp_binary_data_107[] =
 "class '__method_name' (LookAndFeel)\r\n"
 "\r\n"
 "function __method_name:__init()\r\n"
@@ -18471,10 +18887,10 @@ static const unsigned char temp_binary_data_103[] =
 "-- end\r\n"
 "\r\n";
 
-const char* LookAndFeel_lua = (const char*) temp_binary_data_103;
+const char* LookAndFeel_lua = (const char*) temp_binary_data_107;
 
 //================== paramWrapper.template ==================
-static const unsigned char temp_binary_data_104[] =
+static const unsigned char temp_binary_data_108[] =
 "\tGraphics *g;\r\n"
 "\tint x;\r\n"
 "\tint y;\r\n"
@@ -18618,10 +19034,10 @@ static const unsigned char temp_binary_data_104[] =
 "\tPropertyComponent *propertyComponent;\r\n"
 "\tCallOutBox *callOutBox;";
 
-const char* paramWrapper_template = (const char*) temp_binary_data_104;
+const char* paramWrapper_template = (const char*) temp_binary_data_108;
 
 //================== RSRC.zip ==================
-static const unsigned char temp_binary_data_105[] =
+static const unsigned char temp_binary_data_109[] =
 { 80,75,3,4,20,0,0,0,8,0,202,128,4,69,232,71,224,189,228,0,0,0,217,2,0,0,13,0,28,0,114,101,115,117,108,116,95,49,46,114,115,114,99,85,84,9,0,3,92,147,223,83,92,147,223,83,117,120,11,0,1,4,245,1,0,0,4,20,0,0,0,99,96,96,100,96,96,96,82,97,96,96,4,98,134,
 173,12,35,15,176,178,248,90,41,248,1,25,156,28,206,37,69,57,69,186,142,161,64,14,47,152,237,24,234,154,87,82,84,9,82,22,148,88,154,91,234,28,18,228,227,233,23,28,130,106,66,112,72,144,2,243,11,48,249,18,102,40,19,136,228,4,179,153,4,128,68,74,78,78,42,
 243,11,6,54,36,54,7,144,41,37,233,153,87,92,146,153,158,88,146,95,100,165,0,179,95,33,44,51,181,156,160,172,32,212,137,32,46,178,51,203,202,113,59,147,253,2,152,188,136,207,153,236,23,16,206,4,178,57,112,134,156,12,195,52,6,38,144,121,12,204,12,82,32,
@@ -19255,10 +19671,10 @@ static const unsigned char temp_binary_data_105[] =
 82,25,142,119,233,0,0,0,155,3,0,0,14,0,24,0,0,0,0,0,0,0,0,0,164,129,252,149,0,0,114,101,115,117,108,116,95,57,56,46,114,115,114,99,85,84,5,0,3,100,147,223,83,117,120,11,0,1,4,245,1,0,0,4,20,0,0,0,80,75,1,2,30,3,20,0,0,0,8,0,207,128,4,69,212,116,58,233,
 233,0,0,0,157,3,0,0,14,0,24,0,0,0,0,0,0,0,0,0,164,129,45,151,0,0,114,101,115,117,108,116,95,57,57,46,114,115,114,99,85,84,5,0,3,101,147,223,83,117,120,11,0,1,4,245,1,0,0,4,20,0,0,0,80,75,5,6,0,0,0,0,128,0,128,0,20,42,0,0,94,152,0,0,0,0,0,0 };
 
-const char* RSRC_zip = (const char*) temp_binary_data_105;
+const char* RSRC_zip = (const char*) temp_binary_data_109;
 
 //================== LuaAPI.xml ==================
-static const unsigned char temp_binary_data_106[] =
+static const unsigned char temp_binary_data_110[] =
 { 60,63,120,109,108,32,118,101,114,115,105,111,110,61,34,49,46,48,34,32,101,110,99,111,100,105,110,103,61,34,85,84,70,45,56,34,32,63,62,13,10,60,76,117,97,65,80,73,62,13,10,32,32,60,99,108,97,115,115,32,110,97,109,101,61,34,65,34,32,99,112,112,95,110,97,
 109,101,61,34,65,34,62,13,10,32,32,60,47,99,108,97,115,115,62,13,10,32,32,60,99,108,97,115,115,32,110,97,109,101,61,34,65,102,102,105,110,101,84,114,97,110,115,102,111,114,109,34,32,99,112,112,95,110,97,109,101,61,34,65,102,102,105,110,101,84,114,97,
 110,115,102,111,114,109,34,62,13,10,32,32,32,32,60,109,101,116,104,111,100,115,62,13,10,32,32,32,32,32,32,60,109,101,116,104,111,100,32,110,97,109,101,61,34,102,111,108,108,111,119,101,100,66,121,34,32,97,114,103,115,61,34,40,41,34,32,116,121,112,101,
@@ -22731,10 +23147,10 @@ static const unsigned char temp_binary_data_106[] =
 32,32,32,32,60,47,115,116,97,116,105,99,95,109,101,116,104,111,100,115,62,13,10,32,32,32,32,60,99,111,110,115,116,114,117,99,116,111,114,115,62,13,10,32,32,32,32,32,32,60,109,101,116,104,111,100,32,110,97,109,101,61,34,118,97,114,34,32,97,114,103,115,
 61,34,40,41,34,32,47,62,13,10,32,32,32,32,60,47,99,111,110,115,116,114,117,99,116,111,114,115,62,13,10,32,32,60,47,99,108,97,115,115,62,13,10,60,47,76,117,97,65,80,73,62,13,10,0,0 };
 
-const char* LuaAPI_xml = (const char*) temp_binary_data_106;
+const char* LuaAPI_xml = (const char*) temp_binary_data_110;
 
 //================== CtrlrIDs.xml ==================
-static const unsigned char temp_binary_data_107[] =
+static const unsigned char temp_binary_data_111[] =
 { 60,63,120,109,108,32,118,101,114,115,105,111,110,61,34,49,46,48,34,32,101,110,99,111,100,105,110,103,61,34,85,84,70,45,56,34,63,62,13,10,13,10,60,99,116,114,108,114,73,100,115,62,13,10,32,32,60,33,45,45,32,77,111,100,117,108,97,116,111,114,32,112,114,
 111,112,101,114,116,105,101,115,32,45,45,62,13,10,32,32,60,105,100,32,110,97,109,101,61,34,109,111,100,117,108,97,116,111,114,86,97,108,117,101,34,32,9,9,9,9,9,116,101,120,116,61,34,67,117,114,114,101,110,116,32,109,111,100,117,108,97,116,111,114,32,
 118,97,108,117,101,34,32,116,121,112,101,61,34,82,101,97,100,79,110,108,121,34,47,62,13,10,32,32,60,105,100,32,110,97,109,101,61,34,109,111,100,117,108,97,116,111,114,73,115,83,116,97,116,105,99,34,32,9,9,9,9,9,116,101,120,116,61,34,77,111,100,117,108,
@@ -24043,10 +24459,10 @@ static const unsigned char temp_binary_data_107[] =
 114,117,109,101,110,116,44,70,120,124,77,97,115,116,101,114,105,110,103,44,70,120,124,77,111,100,117,108,97,116,105,111,110,44,70,120,124,80,105,116,99,104,32,83,104,105,102,116,44,70,120,124,82,101,115,116,111,114,97,116,105,111,110,44,70,120,124,82,
 101,118,101,114,98,44,70,120,124,83,112,97,116,105,97,108,44,70,120,124,83,121,110,116,104,44,70,120,124,84,111,111,108,115,34,32,47,62,13,10,32,32,60,47,99,111,110,115,116,97,110,116,115,62,13,10,13,10,60,47,99,116,114,108,114,73,100,115,62,13,10,0,0 };
 
-const char* CtrlrIDs_xml = (const char*) temp_binary_data_107;
+const char* CtrlrIDs_xml = (const char*) temp_binary_data_111;
 
 //================== CtrlrLuaClassTemplates.xml ==================
-static const unsigned char temp_binary_data_108[] =
+static const unsigned char temp_binary_data_112[] =
 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n"
 "<classes>\r\n"
 "  <class name=\"LookAndFeel_V3\">\r\n"
@@ -24054,10 +24470,10 @@ static const unsigned char temp_binary_data_108[] =
 "  </class>\r\n"
 "</methods>\r\n";
 
-const char* CtrlrLuaClassTemplates_xml = (const char*) temp_binary_data_108;
+const char* CtrlrLuaClassTemplates_xml = (const char*) temp_binary_data_112;
 
 //================== CtrlrLuaMethodTemplates.xml ==================
-static const unsigned char temp_binary_data_109[] =
+static const unsigned char temp_binary_data_113[] =
 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n"
 "<methods>\r\n"
 "  <luaMethod name=\"luaModulatorValueChange\">\r\n"
@@ -24826,10 +25242,10 @@ static const unsigned char temp_binary_data_109[] =
 "  </utilityMethods>\r\n"
 "</methods>\r\n";
 
-const char* CtrlrLuaMethodTemplates_xml = (const char*) temp_binary_data_109;
+const char* CtrlrLuaMethodTemplates_xml = (const char*) temp_binary_data_113;
 
 //================== CtrlrMidiMultiTemplate.xml ==================
-static const unsigned char temp_binary_data_110[] =
+static const unsigned char temp_binary_data_114[] =
 "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\r\n"
 "<templates>\r\n"
 "<!--\r\n"
@@ -24865,10 +25281,10 @@ static const unsigned char temp_binary_data_110[] =
 "  -->\r\n"
 "</templates>\r\n";
 
-const char* CtrlrMidiMultiTemplate_xml = (const char*) temp_binary_data_110;
+const char* CtrlrMidiMultiTemplate_xml = (const char*) temp_binary_data_114;
 
 //================== CtrlrMIDITransactions.xml ==================
-static const unsigned char temp_binary_data_111[] =
+static const unsigned char temp_binary_data_115[] =
 "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\r\n"
 "<transactions>\r\n"
 "\t<trans \t\tname=\"Request Identity\"\r\n"
@@ -24950,10 +25366,10 @@ static const unsigned char temp_binary_data_111[] =
 "\t\t/>\r\n"
 "</transactions>\r\n";
 
-const char* CtrlrMIDITransactions_xml = (const char*) temp_binary_data_111;
+const char* CtrlrMIDITransactions_xml = (const char*) temp_binary_data_115;
 
 //================== CtrlrMIDIVendors.xml ==================
-static const unsigned char temp_binary_data_112[] =
+static const unsigned char temp_binary_data_116[] =
 "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\r\n"
 "<vendors>\r\n"
 "\t\t<vendor name=\"Ta Horng Musical Instrument\" id=\"000074\" />\r\n"
@@ -25262,7 +25678,7 @@ static const unsigned char temp_binary_data_112[] =
 "\t\t<vendor name=\"SD Card Association\"\tid=\"5F\" />\r\n"
 "</vendors>\r\n";
 
-const char* CtrlrMIDIVendors_xml = (const char*) temp_binary_data_112;
+const char* CtrlrMIDIVendors_xml = (const char*) temp_binary_data_116;
 
 
 const char* getNamedResource (const char* resourceNameUTF8, int& numBytes);
@@ -25293,25 +25709,29 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
         case 0xd9246464:  numBytes = 27664; return FONT_LCD_ttf;
         case 0xe2e98fdc:  numBytes = 28212; return FONT_WarenhausStandard_ttf;
         case 0x398f8e4e:  numBytes = 17176; return FONT_ZX81_ttf;
-        case 0x8f867dc7:  numBytes = 3096; return alignhorizontalleftsymbolic_svg;
-        case 0x228427aa:  numBytes = 3741; return alignhorizontalrightsymbolic_svg;
-        case 0x6b4053bd:  numBytes = 3253; return alignverticalbottomsymbolic_svg;
-        case 0x46c07c51:  numBytes = 3454; return alignverticaltopsymbolic_svg;
-        case 0x4859cfc4:  numBytes = 2297; return boundingbox_centersymbolic_svg;
+        case 0x8f867dc7:  numBytes = 3196; return alignhorizontalleftsymbolic_svg;
+        case 0x228427aa:  numBytes = 3862; return alignhorizontalrightsymbolic_svg;
+        case 0x6b4053bd:  numBytes = 3358; return alignverticalbottomsymbolic_svg;
+        case 0x46c07c51:  numBytes = 3565; return alignverticaltopsymbolic_svg;
+        case 0x602d2013:  numBytes = 2374; return boundingboxcentersymbolic_svg;
+        case 0x238bccf9:  numBytes = 3892; return distributehorizontalgapssymbolic_svg;
+        case 0x4e4ef88b:  numBytes = 3976; return distributeverticalgapssymbolic_svg;
+        case 0xf57d6d4f:  numBytes = 3061; return editcutsymbolic_svg;
+        case 0x8b51de0c:  numBytes = 3032; return editdeletesymbolic_svg;
+        case 0x29be7218:  numBytes = 2279; return editduplicatesymbolic_svg;
+        case 0xc2f241df:  numBytes = 3387; return editpastestylesymbolic_svg;
+        case 0xc419a6e0:  numBytes = 3210; return objectlockedsymbolic_svg;
+        case 0xa5103d79:  numBytes = 3194; return objectunlockedsymbolic_svg;
+        case 0xdeb64946:  numBytes = 3378; return snapnodesmidpointsymbolic_svg;
+        case 0x2bf3569e:  numBytes = 3606; return transformrotatesymbolic_svg;
+        case 0x5fe09e59:  numBytes = 2749; return transformscalehorizontalsymbolic_svg;
+        case 0xa2f72e2b:  numBytes = 2777; return transformscaleverticalsymbolic_svg;
         case 0x2b7e3ed7:  numBytes = 27821; return CtrlrXLogo512x512DEF_png;
         case 0x052f32ab:  numBytes = 1751; return CtrlrXLogovectorDEF_svg;
         case 0x480ddad9:  numBytes = 8691; return CtrlrXREADME250x31502_png;
         case 0x2574dd17:  numBytes = 8691; return CtrlrXREADME250x315_png;
-        case 0x238bccf9:  numBytes = 3762; return distributehorizontalgapssymbolic_svg;
-        case 0x4e4ef88b:  numBytes = 3849; return distributeverticalgapssymbolic_svg;
-        case 0xf57d6d4f:  numBytes = 2976; return editcutsymbolic_svg;
-        case 0x8b51de0c:  numBytes = 2946; return editdeletesymbolic_svg;
-        case 0x29be7218:  numBytes = 2198; return editduplicatesymbolic_svg;
-        case 0xc2f241df:  numBytes = 3295; return editpastestylesymbolic_svg;
         case 0x82cdd485:  numBytes = 508; return happy_svg;
-        case 0xc419a6e0:  numBytes = 3108; return objectlockedsymbolic_svg;
         case 0x6ea0ce7b:  numBytes = 511; return sad_svg;
-        case 0xdeb64946:  numBytes = 3267; return snapnodesmidpointsymbolic_svg;
         case 0x0ef4534c:  numBytes = 2391; return kofi_svg;
         case 0xdbb04875:  numBytes = 1633; return github_line_svg;
         case 0x3ec9163d:  numBytes = 2052; return paypal_colour_svg;
@@ -25419,21 +25839,25 @@ const char* namedResourceList[] =
     "alignhorizontalrightsymbolic_svg",
     "alignverticalbottomsymbolic_svg",
     "alignverticaltopsymbolic_svg",
-    "boundingbox_centersymbolic_svg",
-    "CtrlrXLogo512x512DEF_png",
-    "CtrlrXLogovectorDEF_svg",
-    "CtrlrXREADME250x31502_png",
-    "CtrlrXREADME250x315_png",
+    "boundingboxcentersymbolic_svg",
     "distributehorizontalgapssymbolic_svg",
     "distributeverticalgapssymbolic_svg",
     "editcutsymbolic_svg",
     "editdeletesymbolic_svg",
     "editduplicatesymbolic_svg",
     "editpastestylesymbolic_svg",
-    "happy_svg",
     "objectlockedsymbolic_svg",
-    "sad_svg",
+    "objectunlockedsymbolic_svg",
     "snapnodesmidpointsymbolic_svg",
+    "transformrotatesymbolic_svg",
+    "transformscalehorizontalsymbolic_svg",
+    "transformscaleverticalsymbolic_svg",
+    "CtrlrXLogo512x512DEF_png",
+    "CtrlrXLogovectorDEF_svg",
+    "CtrlrXREADME250x31502_png",
+    "CtrlrXREADME250x315_png",
+    "happy_svg",
+    "sad_svg",
     "kofi_svg",
     "github_line_svg",
     "paypal_colour_svg",
@@ -25532,25 +25956,29 @@ const char* originalFilenames[] =
     "FONT_LCD.ttf",
     "FONT_Warenhaus-Standard.ttf",
     "FONT_ZX81.ttf",
-    "align-horizontal-left-symbolic.svg",
-    "align-horizontal-right-symbolic.svg",
-    "align-vertical-bottom-symbolic.svg",
-    "align-vertical-top-symbolic.svg",
-    "boundingbox_center-symbolic.svg",
+    "alignhorizontalleftsymbolic.svg",
+    "alignhorizontalrightsymbolic.svg",
+    "alignverticalbottomsymbolic.svg",
+    "alignverticaltopsymbolic.svg",
+    "boundingboxcentersymbolic.svg",
+    "distributehorizontalgapssymbolic.svg",
+    "distributeverticalgapssymbolic.svg",
+    "editcutsymbolic.svg",
+    "editdeletesymbolic.svg",
+    "editduplicatesymbolic.svg",
+    "editpastestylesymbolic.svg",
+    "objectlockedsymbolic.svg",
+    "objectunlockedsymbolic.svg",
+    "snapnodesmidpointsymbolic.svg",
+    "transformrotatesymbolic.svg",
+    "transformscalehorizontalsymbolic.svg",
+    "transformscaleverticalsymbolic.svg",
     "CtrlrX-Logo-512x512-DEF.png",
     "CtrlrX-Logo-vector-DEF.svg",
     "CtrlrX-README-250x315-02.png",
     "CtrlrX-README-250x315.png",
-    "distribute-horizontal-gaps-symbolic.svg",
-    "distribute-vertical-gaps-symbolic.svg",
-    "edit-cut-symbolic.svg",
-    "edit-delete-symbolic.svg",
-    "edit-duplicate-symbolic.svg",
-    "edit-paste-style-symbolic.svg",
     "happy.svg",
-    "object-locked-symbolic.svg",
     "sad.svg",
-    "snap-nodes-midpoint-symbolic.svg",
     "kofi.svg",
     "github_line.svg",
     "paypal_colour.svg",

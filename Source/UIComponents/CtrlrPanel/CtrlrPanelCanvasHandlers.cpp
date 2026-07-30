@@ -315,7 +315,7 @@ void CtrlrPanelCanvas::getEditMenu(PopupMenu &m) {
 
 	m.addItem(
 		CenterX, "Centre X", true, false,
-		createMenuIcon(BinaryData::boundingbox_centersymbolic_svg, BinaryData::boundingbox_centersymbolic_svgSize));
+		createMenuIcon(BinaryData::boundingboxcentersymbolic_svg, BinaryData::boundingboxcentersymbolic_svgSize));
 
 	m.addItem(CenterY, "Centre Y", true, false,
 			  createMenuIcon(BinaryData::snapnodesmidpointsymbolic_svg, BinaryData::snapnodesmidpointsymbolic_svgSize));
