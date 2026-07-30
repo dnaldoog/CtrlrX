@@ -131,23 +131,29 @@ void CtrlrPanelCanvas::handleRightClickOnTabs(const MouseEvent &e)
 void CtrlrPanelCanvas::handleRightClickOnComponent(const MouseEvent &e)
 {
 	CtrlrComponent *c = findEventComponent(e);
-
-	if (c == 0)
+	if (c == nullptr)
 		return;
 
-	if (dynamic_cast<ResizableBorderComponent*>(e.eventComponent) == 0 && getOwner().getSelection())
-	{
-		getOwner().getSelection()->selectOnly (c);
+	const bool isLocked = (bool)c->getProperty(Ids::componentIsLocked);
+
+	if (dynamic_cast<ResizableBorderComponent *>(e.eventComponent) == nullptr && getOwner().getSelection()) {
+		getOwner().getSelection()->selectOnly(c);
 	}
 
 	PopupMenu m;
 	PopupMenu componentSubMenu = CtrlrComponentTypeManager::getComponentMenu(true);
-	m.addSectionHeader ("Actions");
-	m.addItem (512, "Export component");
-	m.addItem (513, "Lock", true, c->getProperty(Ids::componentIsLocked));
 
-	m.addSectionHeader ("Layout");
-	m.addItem (1024, "Send to back");
+	m.addSectionHeader("Actions");
+	m.addItem(512, "Export component");
+
+	// Pass 'false' for isTicked so JUCE renders the icon instead of the checkmark!
+	m.addItem(513, isLocked ? "Unlock" : "Lock", true, false,
+			  createMenuIcon(isLocked ? BinaryData::objectlockedsymbolic_svg : BinaryData::objectunlockedsymbolic_svg,
+							 isLocked ? BinaryData::objectlockedsymbolic_svgSize
+									  : BinaryData::objectunlockedsymbolic_svgSize));
+
+	m.addSectionHeader("Layout");
+	m.addItem(1024, "Send to back");
 	m.addItem (1025, "Send to front");
 	m.addSubMenu ("Send to layer", getLayerMenu());
 	m.addSeparator();
@@ -284,22 +290,7 @@ void CtrlrPanelCanvas::replaceComponent (CtrlrModulator &modulator, const String
 	}
 }
 
-void CtrlrPanelCanvas::getEditMenu(PopupMenu &m)
-{
-	auto createMenuIcon = [](const char *data, const size_t size) -> std::unique_ptr<juce::Drawable> {
-		if (auto svg = juce::Drawable::createFromImageData(data, size)) {
-			// 1. Set explicit dimensions (24x24 px square)
-			svg->setBounds(0, 0, 24, 24);
-
-			// 2. Scale vector nicely inside 24x24 maintaining aspect ratio
-			svg->setTransformToFit(juce::Rectangle<float>(0, 0, 24.0f, 24.0f),
-								   juce::RectanglePlacement::centred | juce::RectanglePlacement::onlyReduceInSize);
-
-			return svg;
-		}
-		return nullptr;
-	};
-
+void CtrlrPanelCanvas::getEditMenu(PopupMenu &m) {
 	const bool hasSelection = getSelection().getNumSelected() > 0;
 
 	// --- Edit Section ---
@@ -351,9 +342,14 @@ void CtrlrPanelCanvas::getEditMenu(PopupMenu &m)
 								 BinaryData::alignhorizontalrightsymbolic_svgSize));
 
 		m.addSeparator();
-		m.addItem(MatchWidth, "Match width to first selected", true, false);
-		m.addItem(MatchHeight, "Match height to first selected", true, false);
-		m.addItem(MatchSize, "Match height/width to first selected", true, false);
+		m.addItem(MatchWidth, "Match width to first selected", true, false,
+				  createMenuIcon(BinaryData::transformscalehorizontalsymbolic_svg,
+								 BinaryData::transformscalehorizontalsymbolic_svgSize));
+		m.addItem(MatchHeight, "Match height to first selected", true, false,
+				  createMenuIcon(BinaryData::transformscaleverticalsymbolic_svg,
+								 BinaryData::transformscaleverticalsymbolic_svgSize));
+		m.addItem(MatchSize, "Match height/width to first selected", true, false,
+				  createMenuIcon(BinaryData::transformrotatesymbolic_svg, BinaryData::transformrotatesymbolic_svgSize));
 	}
 
 	// --- Distribution Section (3+ objects) ---

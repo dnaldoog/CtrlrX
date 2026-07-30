@@ -1682,3 +1682,16 @@ void CtrlrQuickXmlPreview::buttonClicked(Button *)
 	ed.setSize (600, 600);
 	DialogWindow::showModalDialog ("XML Preview", &ed, this, Colours::white, true, true, true);
 }
+//static function for drawing icons in right click menu
+std::unique_ptr<juce::Drawable> CtrlrPanelCanvas::createMenuIcon(const char* data, const size_t size)
+{
+    if (auto svg = juce::Drawable::createFromImageData(data, size)) {
+        svg->setBounds(0, 0, 24, 24); 
+        svg->setTransformToFit(
+            juce::Rectangle<float>(0, 0, 24.0f, 24.0f),
+            juce::RectanglePlacement::centred | juce::RectanglePlacement::onlyReduceInSize
+        );
+        return svg;
+    }
+    return nullptr;
+}
