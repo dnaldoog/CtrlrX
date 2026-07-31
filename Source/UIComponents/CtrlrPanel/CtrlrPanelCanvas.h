@@ -91,11 +91,13 @@ public:
 		FitToRect = 2058,
 		GroupCreate = 2059,
 		GroupDestroy = 2060,
-		DistributeHorizontally = 2061,
+		DistributeHorizontally	= 2061, // Added v5.6.36. Thanks to @dnaldoog. Align/Resize to first selection between components
 		DistributeVertically = 2062,
-		MatchWidth = 2063,
-		MatchHeight = 2064,
-		MatchSize = 2065
+		CenterX	= 2063,
+		CenterY	= 2064,
+		MatchWidth		= 2065,
+		MatchHeight		= 2066,
+		MatchSize		= 2067
 	};
 
 	enum Direction

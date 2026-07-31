@@ -275,7 +275,13 @@ void CtrlrCombo::parentHierarchyChanged() {
 		_DBG("GUI_TRACE [" + owner.getName() + "] parentHierarchyChanged ENTER | UI Index: " +
 			 String(ctrlrCombo->getSelectedItemIndex()) + " | UI Text: '" + ctrlrCombo->getText() + "'");
 	}
-
+    // Only refresh if we are actively in the middle of a search session 
+    // when attached/re-parented. Otherwise, leave the saved combo selection alone!
+    if (getParentComponent() != nullptr && isSearching)
+    {
+        _DBG("LIFECYCLE: Component re-attached during active search. Refreshing search results.");
+        triggerAsyncUpdate();
+    }
 	if (getParentComponent() != nullptr) {
 		_DBG("LIFECYCLE: Component attached to parent. Refreshing Search state.");
 		triggerAsyncUpdate();

@@ -956,7 +956,43 @@ case DistributeVertically: {
 
 	break;
 }
+			case CenterX: {
+				if (getSelection().getNumSelected() < 1)
+					break;
 
+				// Get the canvas component directly from the owner panel
+				if (auto *canvas = owner.getCanvas()) {
+					const int canvasWidth = canvas->getWidth();
+
+					for (int i = 0; i < getSelection().getNumSelected(); ++i) {
+						if (auto *item = getSelection().getSelectedItem(i)) {
+							const int newX = (canvasWidth - item->getWidth()) / 2;
+
+							// Set bounds directly on the item or through Ctrlr's property system
+							item->setTopLeftPosition(newX, item->getY());
+						}
+					}
+				}
+				break;
+			}
+
+			case CenterY: {
+				if (getSelection().getNumSelected() < 1)
+					break;
+
+				if (auto *canvas = owner.getCanvas()) {
+					const int canvasHeight = canvas->getHeight();
+
+					for (int i = 0; i < getSelection().getNumSelected(); ++i) {
+						if (auto *item = getSelection().getSelectedItem(i)) {
+							const int newY = (canvasHeight - item->getHeight()) / 2;
+
+							item->setTopLeftPosition(item->getX(), newY);
+						}
+					}
+				}
+				break;
+			}
 case MatchWidth: {
 	const int numSelected = getSelection().getNumSelected();
 	if (numSelected < 2)
