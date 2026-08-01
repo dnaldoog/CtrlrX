@@ -63,24 +63,28 @@ CtrlrMIDISettingsDevices::CtrlrMIDISettingsDevices(CtrlrPanel &_owner) : owner(_
 	label->setFont(Font(16.00f, Font::bold));
 	label->setJustificationType(Justification::centredLeft);
 	label->setEditable(false, false, false);
-	label->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
-	label->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
+
+	//In JUCE 8, calling findColour() for an unassigned Colour ID triggers the assertion on line 94 of juce_LookAndFeel.cpp.
+
+
+	// label->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
+	// label->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
 
 	label2 = std::make_unique<Label>(String(), TRANS("Controller device"));
 	addAndMakeVisible(label2.get());
 	label2->setFont(Font(16.00f, Font::bold));
 	label2->setJustificationType(Justification::centredLeft);
 	label2->setEditable(false, false, false);
-	label2->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
-	label2->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
+	// label2->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
+	// label2->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
 
 	label3 = std::make_unique<Label>(String(), TRANS("Output device"));
 	addAndMakeVisible(label3.get());
 	label3->setFont(Font(16.00f, Font::bold));
 	label3->setJustificationType(Justification::centredLeft);
 	label3->setEditable(false, false, false);
-	label3->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
-	label3->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
+	// label3->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
+	// label3->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
 
 	oscProtocol = std::make_unique<ComboBox>("OSC Protocol");
 	addAndMakeVisible(oscProtocol.get());
@@ -99,8 +103,8 @@ CtrlrMIDISettingsDevices::CtrlrMIDISettingsDevices(CtrlrPanel &_owner) : owner(_
 	label4->setFont(Font(16.00f, Font::bold));
 	label4->setJustificationType(Justification::centredLeft);
 	label4->setEditable(false, false, false);
-	label4->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
-	label4->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
+	// label4->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
+	// label4->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
 
 	oscPort = std::make_unique<Label>("OSC Port", TRANS("7770"));
 	addAndMakeVisible(oscPort.get());
@@ -108,11 +112,11 @@ CtrlrMIDISettingsDevices::CtrlrMIDISettingsDevices(CtrlrPanel &_owner) : owner(_
 	oscPort->setFont(Font(24.00f, Font::plain));
 	oscPort->setJustificationType(Justification::centred);
 	oscPort->setEditable(true, true, false);
-	oscPort->setColour(Label::backgroundColourId, findColour(Label::backgroundColourId));
-	oscPort->setColour(Label::textColourId, findColour(Label::textColourId));
-	oscPort->setColour(Label::outlineColourId, findColour(Label::outlineColourId));
-	oscPort->setColour(Label::textWhenEditingColourId, findColour(Label::textWhenEditingColourId));
-	oscPort->setColour(Label::outlineWhenEditingColourId, findColour(Label::outlineWhenEditingColourId));
+	// oscPort->setColour(Label::backgroundColourId, findColour(Label::backgroundColourId));
+	// oscPort->setColour(Label::textColourId, findColour(Label::textColourId));
+	// oscPort->setColour(Label::outlineColourId, findColour(Label::outlineColourId));
+	// oscPort->setColour(Label::textWhenEditingColourId, findColour(Label::textWhenEditingColourId));
+	// oscPort->setColour(Label::outlineWhenEditingColourId, findColour(Label::outlineWhenEditingColourId));
 	oscPort->addListener(this);
 
 	label5 = std::make_unique<Label>("new label", TRANS("Protocol"));
@@ -120,16 +124,16 @@ CtrlrMIDISettingsDevices::CtrlrMIDISettingsDevices(CtrlrPanel &_owner) : owner(_
 	label5->setFont(Font(14.00f, Font::plain));
 	label5->setJustificationType(Justification::centredLeft);
 	label5->setEditable(false, false, false);
-	label5->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
-	label5->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
+	// label5->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
+	// label5->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
 
 	label6 = std::make_unique<Label>("new label", TRANS("Port/Socket path"));
 	addAndMakeVisible(label6.get());
 	label6->setFont(Font(14.00f, Font::plain));
 	label6->setJustificationType(Justification::centredLeft);
 	label6->setEditable(false, false, false);
-	label6->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
-	label6->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
+	// label6->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
+	// label6->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
 
 	oscEnabled = std::make_unique<ToggleButton>("OSC Enabled");
 	addAndMakeVisible(oscEnabled.get());
@@ -141,8 +145,8 @@ CtrlrMIDISettingsDevices::CtrlrMIDISettingsDevices(CtrlrPanel &_owner) : owner(_
 	label7->setFont(Font(14.00f, Font::plain));
 	label7->setJustificationType(Justification::centredLeft);
 	label7->setEditable(false, false, false);
-	label7->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
-	label7->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
+	// label7->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
+	// label7->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
 
 	inputChannel = std::make_unique<ComboBox>(String());
 	addAndMakeVisible(inputChannel.get());
@@ -223,8 +227,8 @@ CtrlrMIDISettingsDevices::CtrlrMIDISettingsDevices(CtrlrPanel &_owner) : owner(_
 	label8->setFont(Font(16.00f, Font::bold));
 	label8->setJustificationType(Justification::centredLeft);
 	label8->setEditable(false, false, false);
-	label8->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
-	label8->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
+	// label8->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
+	// label8->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
 
 	pluginOutputChannel = std::make_unique<ComboBox>(String());
 	addAndMakeVisible(pluginOutputChannel.get());
@@ -259,8 +263,8 @@ CtrlrMIDISettingsDevices::CtrlrMIDISettingsDevices(CtrlrPanel &_owner) : owner(_
 	label9->setFont(Font(16.00f, Font::bold));
 	label9->setJustificationType(Justification::centredLeft);
 	label9->setEditable(false, false, false);
-	label9->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
-	label9->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
+	// label9->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId)); // Colours::black);
+	// label9->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
 
 	pluginInput = std::make_unique<ToggleButton>(TRANS("Enable input from plugin host"));
 	addAndMakeVisible(pluginInput.get());
