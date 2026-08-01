@@ -244,6 +244,7 @@ private:
 	OwnedArray <CtrlrPanelCanvasLayer> layers;
     ResizableBorderComponent* ctrlrPanelCanvasResizableBorder;
     CtrlrPanelCanvas (const CtrlrPanelCanvas&);
+    static std::unique_ptr<juce::Drawable> createMenuIcon(const char* data, size_t size);
     const CtrlrPanelCanvas& operator= (const CtrlrPanelCanvas&);
 };
 

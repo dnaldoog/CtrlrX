@@ -684,3 +684,37 @@ AudioProcessor *JUCE_CALLTYPE createPluginFilter() {
 	_DBG("createPluginFilter");
 	return new CtrlrProcessor();
 }
+
+CtrlrParameter::CtrlrParameter (CtrlrProcessor& p, int idx)
+    : owner(p), paramIndex(idx) {}
+
+float CtrlrParameter::getValue() const
+{
+    if (owner.ctrlrManager)
+        if (auto* m = owner.ctrlrManager->getModulatorByVstIndex (paramIndex))
+            return m->getProcessor().getValueForHost();
+    return 0.0f;
+}
+
+void CtrlrParameter::setValue (float newValue)
+{
+    if (owner.ctrlrManager)
+        if (auto* m = owner.ctrlrManager->getModulatorByVstIndex (paramIndex))
+            m->getProcessor().setValueFromHost (newValue);
+}
+
+float  CtrlrParameter::getDefaultValue()                 const { return 0.0f; }
+String CtrlrParameter::getLabel()                        const { return {}; }
+
+String CtrlrParameter::getName (int maxLen) const
+{
+    if (owner.ctrlrManager)
+        if (auto* m = owner.ctrlrManager->getModulatorByVstIndex (paramIndex))
+            return m->getNameForHost().substring (0, maxLen);
+    return " ";
+}
+
+float CtrlrParameter::getValueForText (const String& t) const
+{
+    return t.getFloatValue();
+}

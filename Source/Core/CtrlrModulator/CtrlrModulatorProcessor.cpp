@@ -360,11 +360,48 @@ void CtrlrModulatorProcessor::setValueFromMIDI(CtrlrMidiMessage &m, const CtrlrM
 //	}
 //}
 
+
+/* Maybe this is better? Once you get Ctrlr JUCE 8.0 working check against current code:
+
+
+//void CtrlrModulatorProcessor::setParameterNotifyingHost() // CtrlrX->VST Host
+//{
+//	if (owner.getVstIndex() >= 0 && owner.isExportedToVst())
+//	{
+//		getProcessor()->setParameterNotifyingHost (owner.getVstIndex(), normalizeValue (currentValue.value, minValue, maxValue));
+//	}
+//}
+
+void CtrlrModulatorProcessor::setParameterNotifyingHost()
+{
+    if (owner.getVstIndex() >= 0 && owner.isExportedToVst())
+    {
+#if JUCE_VERSION >= 0x070000
+        auto& params  = getProcessor()->getParameters();
+        const int idx = owner.getVstIndex();
+        if (idx < params.size())
+            params[idx]->setValueNotifyingHost(
+                normalizeValue(currentValue.value, minValue, maxValue));
+#else
+        getProcessor()->setParameterNotifyingHost(
+            owner.getVstIndex(),
+            normalizeValue(currentValue.value, minValue, maxValue));
+#endif
+    }
+}
+
+
+
+
+
+
+*/
 void CtrlrModulatorProcessor::setParameterNotifyingHost() // CtrlrX->VST Host Updated v5.6.35. JUCE 7+
 {
     // 1. Basic sanity check for export status and index
     if (owner.getVstIndex() >= 0 && owner.isExportedToVst())
     {
+
         // 2. Get the list of parameters currently registered with the AudioProcessor
         auto& params = getProcessor()->getParameters();
         const int index = owner.getVstIndex();

@@ -625,6 +625,40 @@
           <FILE id="OOpHQ2" name="FONT_ZX81.ttf" compile="0" resource="1" file="Source/Resources/Fonts/FONT_ZX81.ttf"/>
         </GROUP>
         <GROUP id="{57CA4634-99B0-23FB-F19C-154181EAAE85}" name="Icons">
+          <FILE id="FT80tn" name="alignhorizontalleftsymbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/alignhorizontalleftsymbolic.svg"/>
+          <FILE id="lQTfzZ" name="alignhorizontalrightsymbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/alignhorizontalrightsymbolic.svg"/>
+          <FILE id="PZUZQh" name="alignverticalbottomsymbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/alignverticalbottomsymbolic.svg"/>
+          <FILE id="O7QE6f" name="alignverticaltopsymbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/alignverticaltopsymbolic.svg"/>
+          <FILE id="jc9UZZ" name="boundingboxcentersymbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/boundingboxcentersymbolic.svg"/>
+          <FILE id="rSVL8n" name="distributehorizontalgapssymbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/distributehorizontalgapssymbolic.svg"/>
+          <FILE id="DLl9xa" name="distributeverticalgapssymbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/distributeverticalgapssymbolic.svg"/>
+          <FILE id="xAq8ke" name="editcutsymbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/editcutsymbolic.svg"/>
+          <FILE id="BchWmP" name="editdeletesymbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/editdeletesymbolic.svg"/>
+          <FILE id="wX55bG" name="editduplicatesymbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/editduplicatesymbolic.svg"/>
+          <FILE id="BNho5J" name="editpastestylesymbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/editpastestylesymbolic.svg"/>
+          <FILE id="X4bOeV" name="objectlockedsymbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/objectlockedsymbolic.svg"/>
+          <FILE id="JzZe5p" name="objectunlockedsymbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/objectunlockedsymbolic.svg"/>
+          <FILE id="xrEv4i" name="snapnodesmidpointsymbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/snapnodesmidpointsymbolic.svg"/>
+          <FILE id="PqsTMI" name="transformrotatesymbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/transformrotatesymbolic.svg"/>
+          <FILE id="YFpGCW" name="transformscalehorizontalsymbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/transformscalehorizontalsymbolic.svg"/>
+          <FILE id="rDxPVE" name="transformscaleverticalsymbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/transformscaleverticalsymbolic.svg"/>
           <FILE id="hvQjEJ" name="github_line.svg" compile="0" resource="1" file="Source/Resources/Icons/github_line.svg"/>
           <FILE id="tsirkk" name="paypal_colour.svg" compile="0" resource="1"
                 file="Source/Resources/Icons/paypal_colour.svg"/>

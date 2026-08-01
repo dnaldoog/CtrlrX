@@ -1484,3 +1484,25 @@ void CtrlrQuickXmlPreview::buttonClicked(Button *) {
 	DialogWindow::showModalDialog("XML Preview", &ed, this, Colours::white, true, true, true);
 }
 #endif
+
+//static function for drawing icons in right click menu
+std::unique_ptr<juce::Drawable> CtrlrPanelCanvas::createMenuIcon(const char* data, const size_t size)
+{
+    if (auto svg = juce::Drawable::createFromImageData(data, size)) {
+        svg->setBounds(0, 0, 24, 24); 
+
+        // 1. Calculate standard centered transform using getDrawableBounds()
+        auto transform = juce::RectanglePlacement(
+            juce::RectanglePlacement::centred | juce::RectanglePlacement::onlyReduceInSize
+        ).getTransformToFit(
+            svg->getDrawableBounds(), 
+            juce::Rectangle<float>(0, 0, 24.0f, 24.0f)
+        );
+
+        // 2. Nudge the draw transform slightly up (-Y) or down (+Y) to align with text height
+        svg->setTransform(transform.translated(0.0f, -3.0f));
+
+        return svg;
+    }
+    return nullptr;
+}

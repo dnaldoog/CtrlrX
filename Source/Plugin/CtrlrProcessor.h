@@ -129,6 +129,7 @@ class CtrlrProcessor : public AudioProcessor, public ChangeBroadcaster {
 		void activePanelChanged();
 
 	private:
+    friend class CtrlrParameter;
 		::PluginHostType host;
 		MidiBuffer leftoverBuffer;
 		std::unique_ptr<CtrlrLog> ctrlrLog;
@@ -184,4 +185,19 @@ class PluginLoggerVst3 { // Added v5.6.32
 		juce::File logFile;
 };
 
+class CtrlrParameter : public AudioProcessorParameter
+{
+public:
+    CtrlrParameter (CtrlrProcessor& p, int idx);
+    float getValue()                          const override;
+    void  setValue (float newValue)                 override;
+    float getDefaultValue()                   const override;
+    String getLabel()                         const override;
+    String getName (int maxLen)               const override;
+    float getValueForText (const String& t)   const override;
+
+private:
+    CtrlrProcessor& owner;
+    int paramIndex;
+};
 #endif
