@@ -340,10 +340,6 @@ bool CtrlrEditor::perform(
 		getActivePanelEditor()->searchForProperty();
 		break;
 
-	case CtrlrEditor::doSave:
-		getActivePanel()->savePanel();
-		break;
-
 	case CtrlrEditor::doClose:
 #if JUCE_VERSION < 0x070000
 		if (getActivePanel()->canClose(true)) {
@@ -352,15 +348,25 @@ bool CtrlrEditor::perform(
 		break;
 #else
 		// 1. Fetch pointers to the active panel and its editor
+		DBG("I clicked on the close button in the menu");
 		if (auto *panel = getActivePanel()) {
-			// Use SafePointer to protect the editor component in case it gets destroyed while waiting for user
-			// interaction
+			// Use SafePointer to protect the editor component
 			juce::Component::SafePointer<CtrlrPanelEditor> safeEditor(getActivePanelEditor());
 
 			// 2. Call non-blocking canClose
 			panel->canClose(true, [this, safeEditor](bool shouldClose) {
 				if (shouldClose && safeEditor != nullptr) {
+					// Deselect any active selection first
+					if (auto *selection = safeEditor->getSelection())
+						selection->deselectAll();
+
+					// Tell CtrlrManager to destroy the panel object model
 					owner.removePanel(safeEditor);
+
+					// Tell MultiDocumentPanel (CtrlrDocumentPanel) to remove the visual tab!
+					if (auto *docPanel = &owner.getCtrlrDocumentPanel()) {
+						docPanel->closeDocumentAsync(safeEditor, false, nullptr);
+					}
 				}
 			});
 		}
