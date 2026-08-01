@@ -835,7 +835,9 @@ CtrlrManager::getPanelForEditor(CtrlrPanelEditor *editorToFind) // Added v5.6.34
 	return nullptr; // No matching CtrlrPanel found for the given editor
 }
 
-int CtrlrManager::getNumPanels() { return (ctrlrPanels.size()); }
+int CtrlrManager::getNumPanels() { 
+	DBG("!!!! NUMBER  OF PANELS = " << ctrlrPanels.size() );
+	return (ctrlrPanels.size()); }
 
 CtrlrModulator *CtrlrManager::getModulatorByVstIndex(const int index) {
 	if (ctrlrManagerVst)

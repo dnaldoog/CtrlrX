@@ -95,34 +95,35 @@ void CtrlrDocumentPanel::activeDocumentChanged() {
 }
 
 void CtrlrDocumentPanel::buttonClicked(Button *button) {
-    int index = (int)button->getProperties().getWithDefault("index", -1);
-    TabbedComponent *tc = getCurrentTabbedComponent();
+	if (button == nullptr)
+		return;
 
-    if (tc != nullptr) {
-        if (auto* ed = dynamic_cast<CtrlrPanelEditor *>(tc->getTabContentComponent(index))) {
-            if (auto* panelToClose = owner.getPanelForEditor(ed)) {
+	// 1. Find the TabBarButton hosting this close button
+	if (auto *tabButton = button->findParentComponentOfClass<TabBarButton>()) {
+		if (auto *tc = getCurrentTabbedComponent()) {
+			int tabIndex = tc->getTabbedButtonBar().indexOfTabButton(tabButton);
+			if (tabIndex >= 0) {
+				if (auto *ed = dynamic_cast<CtrlrPanelEditor *>(tc->getTabContentComponent(tabIndex))) {
+					if (auto *panelToClose = owner.getPanelForEditor(ed)) {
+						panelToClose->canClose(true, [this, ed, panelToClose](bool canCloseNow) {
+							if (canCloseNow && panelToClose != nullptr) {
+								// Deselect any active UI items
+								if (auto *selection = ed->getSelection())
+									selection->deselectAll();
 
-                panelToClose->canClose(true, [this, panelToClose](bool canCloseNow) {
-                    if (canCloseNow && panelToClose != nullptr) {
+								// Tell CtrlrManager to destroy the panel object
+								owner.removePanel(ed);
 
-                        // 1. Fetch current editor safely while panel is still fully alive
-                        if (auto* currentEditor = panelToClose->getEditor()) {
-
-                            // 2. Clear property selection gracefully BEFORE removing
-                            if (auto* selection = currentEditor->getSelection()) {
-                                selection->deselectAll();
-                            }
-
-                            // 3. Pass the valid CtrlrPanelEditor pointer to removePanel
-                            owner.removePanel(currentEditor);
-                        }
-                    }
-                });
-            }
-        }
-    }
+								// CRITICAL: Tell MultiDocumentPanel to synchronously remove the visual tab!
+								closeDocumentAsync(ed, false, nullptr);
+							}
+						});
+					}
+				}
+			}
+		}
+	}
 }
-
 void CtrlrDocumentPanel::closeAllPanelsAndDetach()
 {
     // 1. Hide immediately to stop repaints
