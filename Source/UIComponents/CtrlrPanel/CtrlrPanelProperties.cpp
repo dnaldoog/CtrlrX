@@ -64,17 +64,33 @@ CtrlrPanelProperties::CtrlrPanelProperties(CtrlrPanelEditor& _owner)
 
 CtrlrPanelProperties::~CtrlrPanelProperties()
 {
-DBG("(W) CtrlrPanelProperties DTOR");
-	CtrlrPanelComponentProperties *p = dynamic_cast <CtrlrPanelComponentProperties*>(tabbedComponent->getTabContentComponent (0));
-	if (p)
-	{
-		owner.getOwner().getCtrlrManagerOwner().removeListener (p);
-	}
-   // deleteAndZero (tabbedComponent);
-delete tabbedComponent;
-tabbedComponent = nullptr;
-}
+    if (tabbedComponent != nullptr)
+    {
+        // 1. Safely unhook listeners / lookAndFeels
+        for (int i = 0; i < tabbedComponent->getNumTabs(); ++i)
+        {
+            if (auto* content = tabbedComponent->getTabContentComponent(i))
+            {
+                // Disable component callbacks before JUCE triggers visibilityChanged
+                content->setComponentEffect(nullptr);
+                content->setLookAndFeel(nullptr);
+            }
+        }
 
+        // 2. CRITICAL: Clear tab content pointers BEFORE deleting tabbedComponent
+        // This prevents ~TabbedComponent() -> clearTabs() -> visibilityChanged() from firing!
+        while (tabbedComponent->getNumTabs() > 0)
+        {
+            // Remove component without triggering visibility refresh cascades
+            tabbedComponent->removeTab(0);
+        }
+
+        // 3. Remove and delete tabbedComponent cleanly
+        removeChildComponent(tabbedComponent);
+        delete tabbedComponent;
+        tabbedComponent = nullptr;
+    }
+}
 
 /*
 CtrlrPanelProperties::~CtrlrPanelProperties()

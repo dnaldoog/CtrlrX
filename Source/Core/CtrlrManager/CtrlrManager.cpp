@@ -35,14 +35,39 @@ CtrlrManager::CtrlrManager(CtrlrProcessor *_owner, CtrlrLog &_ctrlrLog)
 }
 CtrlrManager::~CtrlrManager()
 {
-DBG("(C) CtrlrManager DTOR called");
-    shuttingDown = true; // Added v5.6.36. Thanks to @dnaldoog. Freeze tree updates instantly
-    commandManager.removeListener (this);
-    ctrlrDocumentPanel->closeAllDocuments(false);
-    ctrlrPanels.clear();
-    managerTree.removeAllChildren(0);
-    deleteAndZero (nullModulator);
-    deleteAndZero (nullPanel);
+	DBG("(C) CtrlrManager DTOR called");
+
+	// 1. Set shutdown flags immediately
+	shuttingDown = true;
+
+	// 2. Stop all MIDI threads while panels & managers are 100% intact
+	for (int i = 0; i < getNumPanels(); ++i) {
+		if (auto *panel = getPanel(i)) {
+			panel->getMIDIInputThread().signalThreadShouldExit();
+			panel->getMIDIInputThread().stopThread(2000);
+
+			panel->getMIDIInputControllerThread().signalThreadShouldExit();
+			panel->getMIDIInputControllerThread().stopThread(2000);
+		}
+	}
+
+	// 3. Remove global listeners
+	commandManager.removeListener(this);
+
+	// 4. SYNCHRONOUSLY detach and close all document panel tabs
+	// BEFORE deleting the panels themselves
+	if (ctrlrDocumentPanel != nullptr) {
+		ctrlrDocumentPanel->closeAllPanelsAndDetach(); // Calls our synchronous unhook helper
+	}
+
+	// 5. Now safely destroy all CtrlrPanel instances
+	ctrlrPanels.clear();
+
+	// 6. Clean up remaining manager trees and null objects
+	managerTree.removeAllChildren(nullptr);
+
+	deleteAndZero(nullModulator);
+	deleteAndZero(nullPanel);
 }
 /*
 CtrlrManager::~CtrlrManager() {

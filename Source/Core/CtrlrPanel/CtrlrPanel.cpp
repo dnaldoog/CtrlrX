@@ -243,30 +243,55 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 
 CtrlrPanel::~CtrlrPanel()
 {
-DBG("(G) CtrlrPanel DTOR");
-	midiInputThread.signalThreadShouldExit();
-	midiInputThread.waitForThreadToExit (1200);
-	midiControllerInputThread.signalThreadShouldExit();
-	midiControllerInputThread.waitForThreadToExit (1200);
+    DBG("(G) CtrlrPanel DTOR");
 
-	masterReference.clear();
+    // 1. FORCE STOP THREADS FIRST
+    // Must complete before any panel members or memory structures are invalidated
+    midiInputThread.signalThreadShouldExit();
+    midiInputThread.stopThread(3000);
 
-	panelTree.removeListener (this);
+    midiControllerInputThread.signalThreadShouldExit();
+    midiControllerInputThread.stopThread(3000);
 
-	if (ctrlrLuaManager)
-		deleteAndZero (ctrlrLuaManager);
 
-	owner.removeChangeListener(this);
+	if (ctrlrPanelEditor != nullptr)
+    {
+        ctrlrPanelEditor.release(); 
+    }
 
-	ctrlrModulators.clear();
+	
+    // 2. UNHOOK EXTERNAL LISTENERS
+    // Prevent incoming changes/events from triggering callbacks into this panel
+    owner.removeChangeListener(this);
+    panelTree.removeListener(this);
 
-	// UPDATED v5.6.36. Thanks to @dnaldoog.
-	// !owner.isShuttingDown prevents a use-after-free crash during app shutdown.
-	if (!owner.isShuttingDown()) {
-		owner.getManagerTree().removeChild(panelTree, 0);
-	}
+    // 3. DESTROY UI EDITOR FIRST
+    // Synchronously destroys CtrlrPanelEditor, unbinding all UI child controls, 
+    // properties views, and notifiers while Modulators are still 100% alive
+    ctrlrPanelEditor.reset(); 
+
+    // 4. CLEAR MODULATORS
+    // Synchronously runs ~CtrlrModulator and ~CtrlrSlider now
+    ctrlrModulators.clear();
+    DBG("(G) >> modulators cleared OK");
+
+    // 5. CLEAN UP SUBSYSTEMS (LUA MANAGER)
+    if (ctrlrLuaManager != nullptr)
+    {
+        deleteAndZero(ctrlrLuaManager); // Or ctrlrLuaManager.reset() if std::unique_ptr
+    }
+
+    // 6. TREE DETACHMENT
+    // Avoid tree mutations during application shutdown to prevent use-after-free
+    if (!owner.isShuttingDown())
+    {
+        owner.getManagerTree().removeChild(panelTree, nullptr);
+    }
+
+    // 7. CLEAR MASTER REFERENCE LAST
+    // Keep 'this' valid via WeakReference until all child teardowns complete
+    masterReference.clear();
 }
-
 /*
 CtrlrPanel::~CtrlrPanel() {
 

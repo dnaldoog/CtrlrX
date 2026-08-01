@@ -169,34 +169,34 @@ CtrlrStandaloneWindow::~CtrlrStandaloneWindow()
 }
 
 
-/*
-CtrlrStandaloneWindow::~CtrlrStandaloneWindow() {
-	// 1. Only clean up via the processor if it actually still exists!
-	DBG("(A) CtrlrDocumentPanel~CtrlrStandaloneWindow: Destructor called");
-    if (auto* docPanel = dynamic_cast<CtrlrDocumentPanel*>(getContentComponent()))
-    {
-        docPanel->closeAllPanelsAndDetach();
-    }
-	if (ctrlrProcessor != nullptr) {
-		ctrlrProcessor->removeChangeListener(this);
 
-		// Use a defensive check for the manager as well
-		try {
-			ctrlrProcessor->getManager().removeActionListener(this);
-		} catch (...) {
-			_DBG("~CtrlrStandaloneWindow: Failed to remove action listener (Manager already dead)");
-		}
+// CtrlrStandaloneWindow::~CtrlrStandaloneWindow() {
+// 	// 1. Only clean up via the processor if it actually still exists!
+// 	DBG("(A) CtrlrDocumentPanel~CtrlrStandaloneWindow: Destructor called");
+//     if (auto* docPanel = dynamic_cast<CtrlrDocumentPanel*>(getContentComponent()))
+//     {
+//         docPanel->closeAllPanelsAndDetach();
+//     }
+// 	if (ctrlrProcessor != nullptr) {
+// 		ctrlrProcessor->removeChangeListener(this);
 
-		// 2. Save state while the processor is still guaranteed alive
-		// saveStateNow();
-		/*let ~CtrlrStandaloneWindow() handle it exclusively (since ~CtrlrStandaloneWindow()
-		 * already checks if
-		 * ctrlrProcessor is alive and deletes the filter afterwards):*/
-		// 3. Delete the processor owned by this window
-		deleteFilter();
-	}
-}
-*/
+// 		// Use a defensive check for the manager as well
+// 		try {
+// 			ctrlrProcessor->getManager().removeActionListener(this);
+// 		} catch (...) {
+// 			_DBG("~CtrlrStandaloneWindow: Failed to remove action listener (Manager already dead)");
+// 		}
+
+// 		// 2. Save state while the processor is still guaranteed alive
+// 		// saveStateNow();
+// 		/*let ~CtrlrStandaloneWindow() handle it exclusively (since ~CtrlrStandaloneWindow()
+// 		 * already checks if
+// 		 * ctrlrProcessor is alive and deletes the filter afterwards):*/
+// 		// 3. Delete the processor owned by this window
+// 		deleteFilter();
+// 	}
+// }
+
 void CtrlrStandaloneWindow::actionListenerCallback(const String &message) {
 	if (message == "save") {
 		saveStateNow();

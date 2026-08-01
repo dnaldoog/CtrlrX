@@ -125,34 +125,30 @@ void CtrlrDocumentPanel::buttonClicked(Button *button) {
 
 void CtrlrDocumentPanel::closeAllPanelsAndDetach()
 {
-    // 1. Hide immediately to halt repaints
+    // 1. Hide immediately to stop repaints
     setVisible(false);
 
-    // 2. Clear active document pointer so JUCE doesn't query it
-    setActiveDocument(nullptr);
-
-    // 3. Iterate through hosted documents backwards
-    const int numDocs = getNumDocuments();
-    for (int i = numDocs - 1; i >= 0; --i)
+    // 2. Notify editors and cleanly detach them from JUCE parent components
+    for (int i = getNumDocuments() - 1; i >= 0; --i)
     {
         if (auto* docComponent = getDocument(i))
         {
-            // Call panelWillClose on the editor
             if (auto* editor = dynamic_cast<CtrlrPanelEditor*>(docComponent))
             {
                 editor->panelWillClose();
             }
 
-            // Remove from MultiDocumentPanel child component hierarchy synchronously
-            removeChildComponent(docComponent);
-
-            // Close asynchronously or delete directly so it dies NOW while CtrlrManager is alive
-            // MultiDocumentPanel owns the components; removing and deleting them here guarantees immediate cleanup:
-            delete docComponent;
+            // Remove from JUCE UI hierarchy without deleting the pointer
+            if (auto* parent = docComponent->getParentComponent())
+            {
+                parent->removeChildComponent(docComponent);
+            }
         }
     }
-}
 
+    // DO NOT call closeDocumentAsync here! 
+    // Let CtrlrPanel's unique_ptr<CtrlrPanelEditor> handle single ownership deletion.
+}
 void CtrlrDocumentPanel::closeDocumentAsync(juce::Component *doc, bool checkItsOkToCloseFirst,
 											std::function<void(bool)> callback) {
 	DBG("===closeDocumentAsync() - I closed : " << doc->getName());

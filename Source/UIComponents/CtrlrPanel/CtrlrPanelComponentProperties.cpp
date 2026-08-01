@@ -474,9 +474,23 @@ void CtrlrPanelComponentProperties::refreshTargetModulationPropertyList(const Va
 	}
 }
 
-void CtrlrPanelComponentProperties::visibilityChanged() {
-	propertyPanel->clear();
-	refreshAll();
+void CtrlrPanelComponentProperties::visibilityChanged() 
+{
+    // 1. Only do work when the component BECOMES VISIBLE, not when being hidden
+    if (!isVisible())
+        return;
+
+    // 2. Guard against accessing dead parent managers during teardown
+    if (auto* editor = findParentComponentOfClass<CtrlrPanelEditor>())
+    {
+        if (!editor->getOwner().getCtrlrManagerOwner().isShuttingDown())
+        {
+            if (propertyPanel != nullptr)
+                propertyPanel->clear();
+
+            refreshAll();
+        }
+    }
 }
 
 const String CtrlrPanelComponentProperties::setFilter(const String &filter) {
