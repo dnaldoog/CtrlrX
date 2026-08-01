@@ -72,34 +72,29 @@ CtrlrLuaMethodEditArea::CtrlrLuaMethodEditArea(CtrlrLuaMethodEditor &_owner) : o
 	// 3. Complete the remaining allocations
 	debuggerPrompt = std::make_unique<CtrlrLuaMethodDebuggerPrompt>(owner);
 	luaConsole = std::make_unique<CtrlrLuaConsole>(owner.getOwner());
-	lowerTabs->addTab("Output", Colours::lightgrey, output.get(), true);
-	lowerTabs->addTab("Find and replace", Colours::lightgrey, find.get(), true);
-	lowerTabs->addTab("Debugger output", Colours::lightgrey, debuggerPrompt.get(), true);
-	lowerTabs->addTab("Console", Colours::lightgrey, luaConsole.get(), true);
+	// Pass 'false' so lowerTabs does NOT attempt to delete unique_ptr managed components
+	lowerTabs->addTab("Output", Colours::lightgrey, output.get(), false);
+	lowerTabs->addTab("Find and replace", Colours::lightgrey, find.get(), false);
+	lowerTabs->addTab("Debugger output", Colours::lightgrey, debuggerPrompt.get(), false);
+	lowerTabs->addTab("Console", Colours::lightgrey, luaConsole.get(), false);
 	lowerTabs->setTabBarDepth(owner.getOwner().getOwner().getProperty(Ids::ctrlrTabBarDepth));
 
 	layoutManager.setItemLayout(0, -0.001, -1.0, -0.79);
 	layoutManager.setItemLayout(1, -0.001, -0.01, -0.01);
 	layoutManager.setItemLayout(2, -0.001, -1.0, -0.19);
 	//[/UserPreSize]
-
 	setSize(600, 400);
-
-	//[Constructor] You can add your own custom stuff here..
-	//[/Constructor]
 }
 
 CtrlrLuaMethodEditArea::~CtrlrLuaMethodEditArea() {
 	//[Destructor_pre]. You can add your own custom destruction code here..
 	owner.getOwner().getCtrlrManagerOwner().getCtrlrLog().removeListener(this);
+
+	if (lowerTabs != nullptr)
+		lowerTabs->clearTabs(); // Drops component references safely
+
 	resizer.reset();
 	//[/Destructor_pre]
-
-	// lowerTabs = nullptr;
-	// upperTabs = nullptr;
-
-	//[Destructor]. You can add your own custom destruction code here..
-	//[/Destructor]
 }
 
 //==============================================================================
