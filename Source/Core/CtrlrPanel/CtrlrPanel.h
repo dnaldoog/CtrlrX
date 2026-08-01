@@ -180,7 +180,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		Result convertLuaMethodsToFiles(const String dirPath);
 		File getLuaMethodGroupDir(const ValueTree &methodGroup);
 
-		void CtrlrPanel::savePanelAs(const CommandID saveOption);
+		void savePanelAs(const CommandID saveOption);
 		void savePanelVersioned();
 		Result savePanelXml(const File &fileToSave, CtrlrPanel *panel, const bool compressPanel = false);
 		Result savePanelBin(const File &fileToSave, CtrlrPanel *panel, const bool compressPanel = false);
