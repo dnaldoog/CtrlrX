@@ -15,7 +15,7 @@ CtrlrMac::CtrlrMac(CtrlrManager &_owner) : owner(_owner) {}
 
 CtrlrMac::~CtrlrMac() {}
 
-const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRestricted, const bool signPanel) {
+Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRestricted, const bool signPanel) {
 	if (panelToWrite == nullptr) {
 		return (Result::fail("MAC native, panel pointer is invalid"));
 	}
@@ -173,7 +173,7 @@ const Result CtrlrMac::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bo
 			}
 		}
 
-		const bool enableExportResourceEncryption = panelToWrite->getProperty(Ids::panelExportResourceEncryption);
+		bool enableExportResourceEncryption = panelToWrite->getProperty(Ids::panelExportResourceEncryption);
 
 		if (enableExportResourceEncryption) {
 

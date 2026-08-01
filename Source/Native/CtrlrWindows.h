@@ -12,22 +12,22 @@ class CtrlrWindows : public CtrlrNative {
 		~CtrlrWindows();
 
 		/* resource handling */
-		const Result writeResource(void *handle, const LPCWSTR resourceId, const LPCWSTR resourceType,
+		 Result writeResource(void *handle, const LPCWSTR resourceId, const LPCWSTR resourceType,
 								   const MemoryBlock &resourceData);
-		const Result readResource(void *handle, const LPCWSTR resourceId, const LPCWSTR resourceType,
+		 Result readResource(void *handle, const LPCWSTR resourceId, const LPCWSTR resourceType,
 								  MemoryBlock &resourceData);
 #if JUCE_VERSION >= 0x070000
 		void exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRestricted, const bool signPanel,
-									std::function<void(juce::Result)> callback = nullptr);
+									std::function<void(juce::Result)> callback = nullptr) override;
 #else
 		const Result exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRestricted = false,
 											const bool signPanel = false);
 #endif
-		const Result getDefaultPanel(MemoryBlock &dataToWrite);
-		const Result getDefaultResources(MemoryBlock &dataToWrite);
-		const Result registerFileHandler();
-		const Result sendKeyPressEvent(const KeyPress &event);
-		const Result sendKeyPressEvent(const KeyPress &event, const String &targetWindowName);
+		 Result getDefaultPanel(MemoryBlock &dataToWrite) override;
+		 Result getDefaultResources(MemoryBlock &dataToWrite) override;
+		 Result registerFileHandler() override;
+		 Result sendKeyPressEvent(const KeyPress &event) override;
+		 Result sendKeyPressEvent(const KeyPress &event, const String &targetWindowName) override;
 		static void replaceAllOccurrences(MemoryBlock &targetData, const MemoryBlock &searchData,
 										  const MemoryBlock &replaceData); // Added v5.6.32
 		static void replaceFirstNOccurrences(MemoryBlock &targetData, const MemoryBlock &searchData,

@@ -9,12 +9,17 @@ class CtrlrMac : public CtrlrNative {
 	public:
 		CtrlrMac(CtrlrManager &_owner);
 		~CtrlrMac();
-		const Result exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRestricted = false,
-											const bool signPanel = false);
-		const Result getDefaultPanel(MemoryBlock &dataToWrite);
-		const Result getDefaultResources(MemoryBlock &dataToWrite);
-		const Result setBundleInfo(CtrlrPanel *sourceInfo, const File &bundle);
-		const Result setBundleInfoCarbon(CtrlrPanel *sourceInfo, const File &bundle);
+		// Modernized async panel export (matching CtrlrNative)
+		void exportWithDefaultPanel(CtrlrPanel *panelToWrite, bool isRestricted, bool signPanel,
+									std::function<void(juce::Result)> callback) override;
+
+		// Fixed return types (removed legacy 'const' qualifiers & added 'override')
+		juce::Result getDefaultPanel(juce::MemoryBlock &dataToWrite) override;
+		juce::Result getDefaultResources(juce::MemoryBlock &dataToWrite) override;
+
+		// Mac-specific native helper functions
+		juce::Result setBundleInfo(CtrlrPanel *sourceInfo, const juce::File &bundle);
+		juce::Result setBundleInfoCarbon(CtrlrPanel *sourceInfo, const juce::File &bundle);
 		static void replaceOccurrences(juce::MemoryBlock &targetData, const juce::MemoryBlock &searchData,
 									   const juce::MemoryBlock &replaceData, int maxOccurrences); // Added v5.6.32
 		static void replaceOccurrencesIfSplitted(juce::MemoryBlock &targetData, const juce::MemoryBlock &searchData,

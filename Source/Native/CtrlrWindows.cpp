@@ -16,7 +16,7 @@ CtrlrWindows::CtrlrWindows(CtrlrManager &_owner) : owner(_owner) {}
 
 CtrlrWindows::~CtrlrWindows() {}
 
-const Result CtrlrWindows::writeResource(void *handle, const LPCWSTR resourceId, const LPCWSTR resourceType,
+Result CtrlrWindows::writeResource(void *handle, const LPCWSTR resourceId, const LPCWSTR resourceType,
 										 const MemoryBlock &resourceData) {
 	HANDLE hResource = (HANDLE)handle;
 
@@ -31,7 +31,7 @@ if (hResource) {
     }
 }
 
-const Result CtrlrWindows::readResource(void *handle, const LPCWSTR resourceId, const LPCWSTR resourceType,
+Result CtrlrWindows::readResource(void *handle, const LPCWSTR resourceId, const LPCWSTR resourceType,
 										MemoryBlock &resourceData) {
 	HRSRC panelResource;
 	HGLOBAL panelLoadedResource;
@@ -665,7 +665,7 @@ void CtrlrWindows::replaceFirstNOccurrences(MemoryBlock &targetData, const Memor
 	}
 }
 
-const Result CtrlrWindows::getDefaultPanel(MemoryBlock &dataToWrite) {
+Result CtrlrWindows::getDefaultPanel(MemoryBlock &dataToWrite) {
 #ifdef DEBUG_INSTANCE
 	File temp("c:\\devel\\debug_small.bpanelz");
 	temp.loadFileAsData(dataToWrite);
@@ -675,7 +675,7 @@ const Result CtrlrWindows::getDefaultPanel(MemoryBlock &dataToWrite) {
 	return (readResource(nullptr, MAKEINTRESOURCEW(CTRLR_INTERNAL_PANEL_RESID), (LPCWSTR)RT_RCDATA, dataToWrite));
 }
 
-const Result CtrlrWindows::getDefaultResources(MemoryBlock &dataToWrite) {
+Result CtrlrWindows::getDefaultResources(MemoryBlock &dataToWrite) {
 #ifdef DEBUG_INSTANCE
 	File temp("c:\\devel\\debug_small.bpanelz");
 
@@ -707,7 +707,7 @@ const Result CtrlrWindows::getDefaultResources(MemoryBlock &dataToWrite) {
 	return (readResource(nullptr, MAKEINTRESOURCEW(CTRLR_INTERNAL_RESOURCES_RESID), (LPCWSTR)RT_RCDATA, dataToWrite));
 }
 
-const Result CtrlrWindows::registerFileHandler() {
+Result CtrlrWindows::registerFileHandler() {
 	if (!JUCEApplication::isStandaloneApp())
 		return (Result::ok());
 
@@ -769,9 +769,9 @@ static void sendKey(const KeyPress &event) {
 	}
 }
 
-const Result CtrlrWindows::sendKeyPressEvent(const KeyPress &event) { return (sendKeyPressEvent(event, "")); }
+Result CtrlrWindows::sendKeyPressEvent(const KeyPress &event) { return (sendKeyPressEvent(event, "")); }
 
-const Result CtrlrWindows::sendKeyPressEvent(const KeyPress &event, const String &targetWindowName) {
+Result CtrlrWindows::sendKeyPressEvent(const KeyPress &event, const String &targetWindowName) {
 	HWND firstwindow = FindWindowEx(NULL, NULL, NULL, NULL);
 	HWND window = firstwindow;
 	TCHAR windowtext[MAX_PATH];

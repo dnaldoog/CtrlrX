@@ -7,16 +7,22 @@ class CtrlrManager;
 
 class CtrlrLinux : public CtrlrNative {
 	public:
-		CtrlrLinux(CtrlrManager &_owner);
-		~CtrlrLinux();
-		const Result exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRestricted = false,
-											const bool signPanel = false);
-		const Result getDefaultPanel(MemoryBlock &dataToWrite);
-		const Result getDefaultResources(MemoryBlock &dataToWrite);
-		const Result sendKeyPressEvent(const KeyPress &event);
+		CtrlrLinux(CtrlrManager &owner);
+		~CtrlrLinux() override;
+
+		// Modernized async panel export (matching CtrlrNative)
+		void exportWithDefaultPanel(CtrlrPanel *panelToWrite, bool isRestricted, bool signPanel,
+									std::function<void(juce::Result)> callback) override;
+
+		// Fixed return types (removed legacy 'const' qualifiers & added 'override')
+		juce::Result getDefaultPanel(juce::MemoryBlock &dataToWrite) override;
+		juce::Result getDefaultResources(juce::MemoryBlock &dataToWrite) override;
+		juce::Result sendKeyPressEvent(const juce::KeyPress &event) override;
+		juce::Result sendKeyPressEvent(const juce::KeyPress &event, const juce::String &target) override;
 
 	private:
 		CtrlrManager &owner;
+		std::unique_ptr<juce::FileChooser> fc;
 };
 
-#endif
+#endif // CTRLR_LINUX_H
