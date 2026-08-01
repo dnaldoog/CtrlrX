@@ -463,36 +463,47 @@ void CtrlrLuaMethodCodeEditorSettings::buttonClicked(Button *buttonThatWasClicke
 	} else if (buttonThatWasClicked == applyButton.get()) {
 		applySettings();
 		closeWindow(); // Added to apply and close settings window
-	} else if (buttonThatWasClicked == resetButton.get()) {
-		AW::showOkCancelAsyncSafe(AW::Question, "Reset Editor", "Reset Editor to default", [this](int result) {
-			if (result == 1) {
-				// Reset to defaults
-				fontTypeface->setText("<Monospaced>", dontSendNotification);
-				fontBold->setToggleState(false, dontSendNotification);
-				fontItalic->setToggleState(false, dontSendNotification);
-				openSearchTabs->setToggleState(false, dontSendNotification);
-				fontSize->setValue(14.0f, dontSendNotification);
-				bgColour->setSelectedId(findColourIndex(Colours::white), dontSendNotification);
-				lineNumbersBgColour->setSelectedId(findColourIndex(Colours::cornflowerblue), dontSendNotification);
-				lineNumbersColour->setSelectedId(findColourIndex(Colours::black), dontSendNotification);
+	}  else if (buttonThatWasClicked == resetButton.get()) {
+    // Capture a SafePointer to prevent accessing a destroyed 'this'
+    juce::Component::SafePointer<CtrlrLuaMethodCodeEditorSettings> safeThis(this);
 
-				customSyntaxColors.clear();
-				clearSyntaxColorSettings();
-				String currentToken = getCurrentSelectedTokenType();
-				updateTokenColorDisplay(currentToken);
-				updateSyntaxColors();
+    AW::showOkCancelAsyncSafe(AW::Question, "Reset Editor", "Reset Editor to default", [safeThis](int result) {
+        // Ensure 'this' component hasn't been deleted by parent while waiting for user click
+        if (safeThis == nullptr)
+            return;
 
-				previousFont = getFont();
-				resetToPreviousButton->setEnabled(true);
+        if (result == 1) {
+            // Reset to defaults
+            safeThis->fontTypeface->setText("<Monospaced>", dontSendNotification);
+            safeThis->fontBold->setToggleState(false, dontSendNotification);
+            safeThis->fontItalic->setToggleState(false, dontSendNotification);
+            safeThis->openSearchTabs->setToggleState(false, dontSendNotification);
+            safeThis->fontSize->setValue(14.0f, dontSendNotification);
+            safeThis->bgColour->setSelectedId(safeThis->findColourIndex(Colours::white), dontSendNotification);
+            safeThis->lineNumbersBgColour->setSelectedId(safeThis->findColourIndex(Colours::cornflowerblue), dontSendNotification);
+            safeThis->lineNumbersColour->setSelectedId(safeThis->findColourIndex(Colours::black), dontSendNotification);
 
-				// Trigger listener ONLY after user clicks OK
-				changeListenerCallback(nullptr);
-				closeWindow();
-			}
-		});
+            safeThis->customSyntaxColors.clear();
+            safeThis->clearSyntaxColorSettings();
+            String currentToken = safeThis->getCurrentSelectedTokenType();
+            safeThis->updateTokenColorDisplay(currentToken);
+            safeThis->updateSyntaxColors();
 
-		// Return early so the trailing changeListenerCallback doesn't fire prematurely
-		return;
+            safeThis->previousFont = safeThis->getFont();
+            safeThis->resetToPreviousButton->setEnabled(true);
+
+            safeThis->changeListenerCallback(nullptr);
+
+            // DEFER WINDOW CLOSE: Allows the AW async dialog to finish completely before deleting 'this'
+            juce::MessageManager::callAsync([safeThis]() {
+                if (safeThis != nullptr) {
+                    safeThis->closeWindow();
+                }
+            });
+        }
+    });
+
+    return;
 
 	} else if (buttonThatWasClicked == fontBold.get() || buttonThatWasClicked == fontItalic.get()) {
 		// For style changes, also enable reset and store previous
