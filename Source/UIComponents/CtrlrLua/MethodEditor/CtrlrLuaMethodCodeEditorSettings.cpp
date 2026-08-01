@@ -298,7 +298,7 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings(CtrlrLuaMetho
 	originalLineNumbersColour = getLineNumbersColour();
 	originalOpenSearchTabs = openSearchTabs->getToggleState();
 
-	setSize(334, 586);
+	setSize(550, 586);
 	updateSyntaxColors();
 }
 

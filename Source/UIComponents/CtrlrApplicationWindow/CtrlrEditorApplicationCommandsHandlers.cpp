@@ -61,66 +61,52 @@ void CtrlrEditor::performLuaEditorCommand(
 				luaMethodEditor->getMethodEditArea()->showConsoleTab();
 			} else if (commandID == LuaMethodEditorCommandIDs::editClearOutput) {
 				luaMethodEditor->getMethodEditArea()->clearOutputText();
-			} else if (commandID == LuaMethodEditorCommandIDs::editPreferences) {
-#if JUCE_LINUX
+			} else if (commandID == LuaMethodEditorCommandIDs::editPreferences) 
+{
+    if (luaMethodEditor != nullptr)
+    {
+        // 1. Instanced settings component
+        auto settings = std::make_unique<CtrlrLuaMethodCodeEditorSettings>(*luaMethodEditor, SharedValues::getSearchTabsValue());
+        
+        // Ensure explicit size before passing ownership
+        settings->setSize(550, 586);
+        // settings->setSize(600, 500);
 
-				auto *editor = luaMethodEditor;
+        // Keep raw pointer for property extraction on close
+        auto* settingsPtr = settings.get();
+        auto* editorPtr = luaMethodEditor;
 
-				// Kill any popup/modals now
-				if (auto *mm = ModalComponentManager::getInstanceWithoutCreating())
-					mm->cancelAllModalComponents();
+        // 2. Configure launch options
+        juce::DialogWindow::LaunchOptions options;
+        options.content.setOwned(settings.release());
+        options.dialogTitle = "Code editor preferences";
+        options.resizable = false;
+        options.useNativeTitleBar = false; // Prevents Linux GTK window manager glitches
+        options.dialogBackgroundColour = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
+        options.escapeKeyTriggersCloseButton = true;
+        options.componentToCentreAround = editorPtr;
 
-				// Defer once so PopupMenu closes fully
-				MessageManager::callAsync([this, editor] {
-					_DBG("Launching Linux async dialog");
+        // 3. Launch asynchronously
+        options.launchAsync();
 
-					auto *settings = new CtrlrLuaMethodCodeEditorSettings(*editor, SharedValues::getSearchTabsValue());
+        // 4. Save/Apply properties when modified or on dialog dismiss
+        if (activePanel != nullptr) 
+        {
+            auto& manager = activePanel->getCtrlrManagerOwner();
 
-					settings->setSize(settings->getWidth() ? settings->getWidth() : 600,
-									  settings->getHeight() ? settings->getHeight() : 500);
+            editorPtr->getComponentTree().setProperty(
+                Ids::luaMethodEditorFont, manager.getFontManager().getStringFromFont(settingsPtr->getFont()), nullptr);
+            editorPtr->getComponentTree().setProperty(
+                Ids::luaMethodEditorBgColour, COLOUR2STR(settingsPtr->getBgColour()), nullptr);
+            editorPtr->getComponentTree().setProperty(
+                Ids::luaMethodEditorLineNumbersBgColour, COLOUR2STR(settingsPtr->getLineNumbersBgColour()), nullptr);
+            editorPtr->getComponentTree().setProperty(
+                Ids::luaMethodEditorLineNumbersColour, COLOUR2STR(settingsPtr->getLineNumbersColour()), nullptr);
 
-					DialogWindow::LaunchOptions options;
-					options.content.setOwned(settings);
-					options.dialogTitle = "Code editor preferences";
-					options.resizable = false;
-					options.useNativeTitleBar = false; // <-- CRUCIAL FIX
-					options.dialogBackgroundColour = Colours::lightgrey;
-					options.escapeKeyTriggersCloseButton = true;
-					options.componentToCentreAround = editor;
-
-					options.launchAsync();
-				});
-
-				return;
-#else
-
-				{
-					CtrlrLuaMethodCodeEditorSettings s(*luaMethodEditor, SharedValues::getSearchTabsValue());
-
-					_DBG("Attempting to show modal dialog.");
-
-					CtrlrDialogWindow::showModalDialog("Code editor preferences", &s, false, luaMethodEditor);
-
-					_DBG("Modal dialog returned.");
-
-					if (activePanel) {
-						auto &manager = activePanel->getCtrlrManagerOwner();
-
-						luaMethodEditor->getComponentTree().setProperty(
-							Ids::luaMethodEditorFont, manager.getFontManager().getStringFromFont(s.getFont()), nullptr);
-						luaMethodEditor->getComponentTree().setProperty(Ids::luaMethodEditorBgColour,
-																		COLOUR2STR(s.getBgColour()), nullptr);
-						luaMethodEditor->getComponentTree().setProperty(
-							Ids::luaMethodEditorLineNumbersBgColour, COLOUR2STR(s.getLineNumbersBgColour()), nullptr);
-						luaMethodEditor->getComponentTree().setProperty(Ids::luaMethodEditorLineNumbersColour,
-																		COLOUR2STR(s.getLineNumbersColour()), nullptr);
-
-						luaMethodEditor->updateTabs();
-					}
-				}
-
-#endif
-			}
+            editorPtr->updateTabs();
+        }
+    }
+}
 
 			else if (commandID == LuaMethodEditorCommandIDs::editSingleLineComment) {
 				if (auto *editor = luaMethodEditor->getCurrentEditor())
