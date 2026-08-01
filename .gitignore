@@ -105,6 +105,7 @@ Builds/MacOSX/build/Release/libCtrlrX.a
 Builds/MacOSX/CtrlrX.xcodeproj/project.xcworkspace/xcuserdata/DYREC.xcuserdatad/UserInterfaceState.xcuserstate
 Source/Core/CtrlrRevision.h
 BinaryData*
+JuceLibraryCode/BinaryData.*
 build/
 Builds/
 vs/
