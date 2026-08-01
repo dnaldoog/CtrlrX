@@ -66,7 +66,18 @@ CtrlrModulator::CtrlrModulator(CtrlrPanel &_owner, const int suggestedVstIndex)
     setProperty (Ids::modulatorMax, MAX_CONTROLLER_VALUE); // Added v5.6.32
     setProperty (Ids::modulatorValue, ""); // Added v5.6.32
 }
+CtrlrModulator::~CtrlrModulator()
+{
+DBG("(Z) ~CtrlrModulator");
 
+	modulatorTree.removeListener (this);
+	owner.getPanelTree().removeChild (modulatorTree,0);
+	masterReference.clear();
+
+	if (ctrlrComponent)
+		deleteAndZero (ctrlrComponent);
+}
+/*
 CtrlrModulator::~CtrlrModulator()
 {
     // 1. Remove listener first
@@ -97,7 +108,7 @@ CtrlrModulator::~CtrlrModulator()
         deleteAndZero (ctrlrComponent);
     }
 }
-
+*/
 void CtrlrModulator::restoreState (const ValueTree &savedState)
 {
 	setRestoreState (true);

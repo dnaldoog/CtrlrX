@@ -33,6 +33,22 @@ CtrlrManager::CtrlrManager(CtrlrProcessor *_owner, CtrlrLog &_ctrlrLog)
 	nullModulator = new CtrlrModulator(*nullPanel);
 	ctrlrFontManager.reset(new CtrlrFontManager(*this));
 }
+CtrlrManager::~CtrlrManager()
+{
+DBG("(C) CtrlrManager DTOR called");
+    shuttingDown = true; // Added v5.6.36. Thanks to @dnaldoog. Freeze tree updates instantly
+    commandManager.removeListener (this);
+    ctrlrDocumentPanel->closeAllDocuments(false);
+    ctrlrPanels.clear();
+    managerTree.removeAllChildren(0);
+    deleteAndZero (nullModulator);
+    deleteAndZero (nullPanel);
+}
+/*
+CtrlrManager::~CtrlrManager() {
+DBG("(C) CtrlrManager DTOR called");
+
+}
 
 CtrlrManager::~CtrlrManager() {
 	shuttingDown = true; // Freeze updates instantly
@@ -96,7 +112,7 @@ CtrlrManager::~CtrlrManager() {
 	DBG("!!! DTOR for CtrlrManager completed cleanly");
 }
 //~~
-
+*/
 void CtrlrManager::setManagerReady() {
 	managerTree.addListener(this);
 	managerTree.addChild(ctrlrMidiDeviceManager.getManagerTree(), -1, 0);

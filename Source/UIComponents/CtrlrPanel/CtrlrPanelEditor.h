@@ -31,7 +31,7 @@ class CtrlrPanelNotifier : public Component
 		void setNotification(const String &notification, const CtrlrNotificationType ctrlrNotificationType);
 		Colour getBackgroundColourForNotification(const CtrlrNotificationType ctrlrNotificationType);
 		void mouseDown(const MouseEvent &e);
-
+		void panelWillClose();
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrPanelNotifier)
 
 	private:
@@ -60,6 +60,7 @@ class CtrlrPanelEditor : public Component,
 		CtrlrPanelCanvas *getCanvas();
 		CtrlrComponentSelection *getSelection();
 		void editModeChanged();
+		void panelWillClose();
 		CtrlrPanelProperties *getPanelProperties() { return ctrlrPanelProperties.get(); }
 		CtrlrPanelViewport *getPanelViewport() { return ctrlrPanelViewport.get(); }
 		CtrlrComponent *getSelected(const Identifier &uiType);

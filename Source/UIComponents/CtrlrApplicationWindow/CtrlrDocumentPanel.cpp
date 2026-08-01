@@ -19,9 +19,13 @@ CtrlrDocumentPanel::CtrlrDocumentPanel(CtrlrManager &_owner) : ctrlrEditor(0), o
 		(Colours::lightgrey).darker(0.2f)); // Added v.6.30. Updated v5.6.31 for (0.2f). Sets background colour behind
 											// main window by default on grey to please everyone :)
 }
-
+CtrlrDocumentPanel::~CtrlrDocumentPanel()
+{
+	DBG("(D) TRACKING: CtrlrDocumentPanel Destructor has been entered !!!");
+}
+/*
 CtrlrDocumentPanel::~CtrlrDocumentPanel() {
-	DBG("!!! TRACKING: CtrlrDocumentPanel Destructor has been entered !!!");
+	DBG("(D) TRACKING: CtrlrDocumentPanel Destructor has been entered !!!");
 
 	// // 1. Manually force synchronous destruction of all open document components
 	// for (int i = getNumDocuments() - 1; i >= 0; --i)
@@ -36,7 +40,7 @@ CtrlrDocumentPanel::~CtrlrDocumentPanel() {
 	// // 2. Clear out any remaining children as a fallback
 	// deleteAllChildren();
 }
-
+*/
 CtrlrDocumentPanelCloseButton::CtrlrDocumentPanelCloseButton(const String &buttonName) // Added v5.6.30
 	: Button("") {
 	setSize(18, 18);
@@ -115,6 +119,36 @@ void CtrlrDocumentPanel::buttonClicked(Button *button) {
                     }
                 });
             }
+        }
+    }
+}
+
+void CtrlrDocumentPanel::closeAllPanelsAndDetach()
+{
+    // 1. Hide immediately to halt repaints
+    setVisible(false);
+
+    // 2. Clear active document pointer so JUCE doesn't query it
+    setActiveDocument(nullptr);
+
+    // 3. Iterate through hosted documents backwards
+    const int numDocs = getNumDocuments();
+    for (int i = numDocs - 1; i >= 0; --i)
+    {
+        if (auto* docComponent = getDocument(i))
+        {
+            // Call panelWillClose on the editor
+            if (auto* editor = dynamic_cast<CtrlrPanelEditor*>(docComponent))
+            {
+                editor->panelWillClose();
+            }
+
+            // Remove from MultiDocumentPanel child component hierarchy synchronously
+            removeChildComponent(docComponent);
+
+            // Close asynchronously or delete directly so it dies NOW while CtrlrManager is alive
+            // MultiDocumentPanel owns the components; removing and deleting them here guarantees immediate cleanup:
+            delete docComponent;
         }
     }
 }

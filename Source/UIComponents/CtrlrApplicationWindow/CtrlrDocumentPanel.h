@@ -19,6 +19,7 @@ class CtrlrDocumentPanel  : public MultiDocumentPanel, public Button::Listener
         void buttonClicked (Button *button);
 		void closeDocumentAsync(juce::Component *component, bool checkItsOkToCloseFirst,
 								std::function<void(bool)> callback = nullptr);
+		void closeAllPanelsAndDetach();
 		void closeAllDocumentsAsync(bool checkItsOkToCloseFirst, std::function<void(bool)> callback = nullptr) {
 			juce::MultiDocumentPanel::closeAllDocumentsAsync(checkItsOkToCloseFirst, callback);
 		}

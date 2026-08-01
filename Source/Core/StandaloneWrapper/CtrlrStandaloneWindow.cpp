@@ -159,8 +159,24 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 	setVisible(true);
 }
 
+CtrlrStandaloneWindow::~CtrlrStandaloneWindow()
+{
+	DBG("(A) CtrlrDocumentPanel~CtrlrStandaloneWindow: Destructor called");
+	ctrlrProcessor->removeChangeListener(this);
+    ctrlrProcessor->getManager().removeActionListener (this);
+    saveStateNow();
+    deleteFilter();
+}
+
+
+/*
 CtrlrStandaloneWindow::~CtrlrStandaloneWindow() {
 	// 1. Only clean up via the processor if it actually still exists!
+	DBG("(A) CtrlrDocumentPanel~CtrlrStandaloneWindow: Destructor called");
+    if (auto* docPanel = dynamic_cast<CtrlrDocumentPanel*>(getContentComponent()))
+    {
+        docPanel->closeAllPanelsAndDetach();
+    }
 	if (ctrlrProcessor != nullptr) {
 		ctrlrProcessor->removeChangeListener(this);
 
@@ -180,7 +196,7 @@ CtrlrStandaloneWindow::~CtrlrStandaloneWindow() {
 		deleteFilter();
 	}
 }
-
+*/
 void CtrlrStandaloneWindow::actionListenerCallback(const String &message) {
 	if (message == "save") {
 		saveStateNow();

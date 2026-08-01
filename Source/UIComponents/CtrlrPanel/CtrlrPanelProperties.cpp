@@ -64,6 +64,21 @@ CtrlrPanelProperties::CtrlrPanelProperties(CtrlrPanelEditor& _owner)
 
 CtrlrPanelProperties::~CtrlrPanelProperties()
 {
+DBG("(W) CtrlrPanelProperties DTOR");
+	CtrlrPanelComponentProperties *p = dynamic_cast <CtrlrPanelComponentProperties*>(tabbedComponent->getTabContentComponent (0));
+	if (p)
+	{
+		owner.getOwner().getCtrlrManagerOwner().removeListener (p);
+	}
+   // deleteAndZero (tabbedComponent);
+delete tabbedComponent;
+tabbedComponent = nullptr;
+}
+
+
+/*
+CtrlrPanelProperties::~CtrlrPanelProperties()
+{
     if (tabbedComponent != nullptr)
     {
 		// 1. Clean up listeners and LookAndFeel pointers while tabs are still valid
@@ -85,7 +100,7 @@ CtrlrPanelProperties::~CtrlrPanelProperties()
 		tabbedComponent = nullptr;
 	}
 }
-
+*/
 void CtrlrPanelProperties::paint(Graphics& g)
 {
     g.fillAll(findColour(DocumentWindow::backgroundColourId));

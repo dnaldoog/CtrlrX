@@ -107,6 +107,7 @@ void CtrlrSettings::resized()
 
 CtrlrSettings::~CtrlrSettings()
 {
+DBG("(X) CtrlrSettings DTOR call");
     deleteAndZero (propertyPanel);
     
     if (JUCEApplication::isStandaloneApp())

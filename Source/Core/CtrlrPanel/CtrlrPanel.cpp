@@ -241,6 +241,38 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 	// #endif;
 }
 
+CtrlrPanel::~CtrlrPanel()
+{
+DBG("(G) CtrlrPanel DTOR");
+	midiInputThread.signalThreadShouldExit();
+	midiInputThread.waitForThreadToExit (1200);
+	midiControllerInputThread.signalThreadShouldExit();
+	midiControllerInputThread.waitForThreadToExit (1200);
+
+	masterReference.clear();
+
+	panelTree.removeListener (this);
+
+	if (ctrlrLuaManager)
+		deleteAndZero (ctrlrLuaManager);
+
+	owner.removeChangeListener(this);
+
+	ctrlrModulators.clear();
+
+	// UPDATED v5.6.36. Thanks to @dnaldoog.
+	// !owner.isShuttingDown prevents a use-after-free crash during app shutdown.
+	if (!owner.isShuttingDown()) {
+		owner.getManagerTree().removeChild(panelTree, 0);
+	}
+}
+
+/*
+CtrlrPanel::~CtrlrPanel() {
+
+DBG("(G) CtrlrPanel DTOR");
+}
+
 CtrlrPanel::~CtrlrPanel() 
 {
     DBG("!!! TRACKING: CtrlrPanel Destructor has been entered !!!");
@@ -309,6 +341,7 @@ CtrlrPanel::~CtrlrPanel()
     masterReference.clear();
     panelTree.removeAllChildren(nullptr);
 }
+*/
 
 void CtrlrPanel::setRestoreState(const bool _restoreStateStatus) {
 	const ScopedWriteLock lock(panelLock);

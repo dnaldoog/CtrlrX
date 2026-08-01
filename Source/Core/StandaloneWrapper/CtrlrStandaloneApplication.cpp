@@ -11,8 +11,10 @@
 
 class CtrlrApplication : public JUCEApplication {
 	public:
-		CtrlrApplication() : filterWindow(nullptr) {}
-
+		CtrlrApplication() {}
+	// private:
+	// juce::Component::SafePointer<CtrlrStandaloneWindow> filterWindow { nullptr };
+	public:
 		static void crashHandler() {
 			if (JUCEApplication::isStandaloneApp()) {
 				MemoryBlock mb(SystemStats::getStackBacktrace().toUTF8(), SystemStats::getStackBacktrace().length());
@@ -135,26 +137,58 @@ class CtrlrApplication : public JUCEApplication {
 				filterWindow->openFileFromCli(File(commandLineParameters.unquoted()));
 		}
 
-		void shutdown() override {
-			juce::PopupMenu::dismissAllActiveMenus();
+		
+void shutdown() override 
+{
+    juce::PopupMenu::dismissAllActiveMenus();
 
-			if (filterWindow != nullptr) {
-				// 1. Force the window to flush open panel states to XML / Properties
-				filterWindow->saveStateNow();
+    if (filterWindow != nullptr) 
+    {
+        filterWindow->saveStateNow();
 
-				// 2. Delete the window to trigger proper destruction / cleanup
-				delete filterWindow;
-				filterWindow = nullptr;
-			}
-		}
+        if (auto* content = filterWindow->getContentComponent())
+        {
+            // Case 1: If content is CtrlrDocumentPanel directly
+            if (auto* docPanel = dynamic_cast<CtrlrDocumentPanel*>(content))
+            {
+                docPanel->closeAllPanelsAndDetach();
+            }
+            // Case 2: Content is CtrlrEditor (Most common in Ctrlr)
+            else if (auto* editor = dynamic_cast<CtrlrEditor*>(content))
+            {
+                if (auto* docPanel = editor->getDocumentPanel()) // or editor->getFrame()
+                {
+                    docPanel->closeAllPanelsAndDetach();
+                }
+                else
+                {
+                    // Fallback: search child components for CtrlrDocumentPanel
+                    if (auto* childDocPanel = content->findChildWithID<CtrlrDocumentPanel*>() /* or findParent */)
+                    {
+                        childDocPanel->closeAllPanelsAndDetach();
+                    }
+                }
+            }
+            // Case 3: Universal fallback using JUCE component tree traversal
+            else if (auto* docPanel = content->findChildWithID<CtrlrDocumentPanel*>() 
+                  || content->getChildComponent(0) != nullptr)
+            {
+                // Traverse child components to find CtrlrDocumentPanel
+                for (int i = 0; i < content->getNumChildComponents(); ++i)
+                {
+                    if (auto* dp = dynamic_cast<CtrlrDocumentPanel*>(content->getChildComponent(i)))
+                    {
+                        dp->closeAllPanelsAndDetach();
+                        break;
+                    }
+                }
+            }
+        }
 
-		const String getApplicationName() override { return ProjectInfo::projectName; }
-		const String getApplicationVersion() override { return ProjectInfo::versionString; }
-		bool moreThanOneInstanceAllowed() override { return true; }
-
-	private:
-		Component::SafePointer<CtrlrStandaloneWindow> filterWindow;
-};
+        delete filterWindow;
+        filterWindow = nullptr;
+    }
+}
 
 // Main macro hook to launch the application
 START_JUCE_APPLICATION(CtrlrApplication)
@@ -253,7 +287,7 @@ class CtrlrApplication : public JUCEApplication {
 							}
 						}
 						crashReport.addButton("OK", 1, KeyPress(KeyPress::returnKey));
-						crashReport.runModalLoop();
+						//crashReport.runModalLoop();
 
 						crashReportFile.replaceWithText(
 							"Ctrlr crash at: " + Time::getCurrentTime().toString(true, true, true, true) +

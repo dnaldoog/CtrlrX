@@ -34,9 +34,16 @@ CtrlrPanelNotifier::CtrlrPanelNotifier(
 	text->setFont(Font(12.0f, Font::bold));
 	text->setText("", dontSendNotification); // Default text required
 }
-
+CtrlrPanelNotifier::~CtrlrPanelNotifier() // Added v5.6.34. Thanks to @dnaldoog
+{
+DBG("(F) ~CtrlrPanelNotifier()");
+	// The ScopedPointer 'text' will be automatically cleaned up.
+	// No manual cleanup is needed. But...
+	text = nullptr; // Force ScopedPointer cleanup
+}
+/*
 CtrlrPanelNotifier::~CtrlrPanelNotifier() {
-	DBG("==== ~CtrlrPanelNotifier() DTOR ====== ");
+	DBG("(F) ~CtrlrPanelNotifier()");
 	// if (text != nullptr) {
 	// 	// Detach the mouse listener explicitly before text is freed
 	// 	text->removeMouseListener(this);
@@ -47,10 +54,12 @@ CtrlrPanelNotifier::~CtrlrPanelNotifier() {
 	// 	// Clear the smart pointer
 	// 	text.reset();
 	// }
+	
 	if (text != nullptr)
 		text->removeMouseListener(this);
+		
 }
-
+*/
 void CtrlrPanelNotifier::paint(Graphics &g) // Added back v5.6.31 for file management bottom notification bar
 {
 	gui::drawSelectionRectangle(g, getWidth(), getHeight(), background); // Updated v5.6.31 (link to GUI class)
@@ -68,7 +77,16 @@ void CtrlrPanelNotifier::setNotification(
 	background = getBackgroundColourForNotification(ctrlrNotificationType);
 	text->setText(notification, dontSendNotification);
 }
-
+// Call this explicitly BEFORE CtrlrManager or CtrlrDocumentPanel deletes the panel/editor:
+void CtrlrPanelNotifier::panelWillClose()
+{
+    if (text != nullptr)
+    {
+        text->removeMouseListener(this);
+        removeChildComponent(text.get());
+        text.reset(); // Destroy juce::Label NOW while ValueTree memory is valid
+    }
+}
 void CtrlrPanelNotifier::mouseDown(const MouseEvent &e) { owner.notificationClicked(e); }
 
 Colour CtrlrPanelNotifier::getBackgroundColourForNotification(
@@ -264,7 +282,57 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 	ctrlrComponentSelection->sendChangeMessage();
 }
 
+void CtrlrPanelEditor::panelWillClose()
+{
+    // 1. Detach and destroy notifier while manager/trees are 100% alive
+    if (ctrlrPanelNotifier != nullptr)
+    {
+        ctrlrPanelNotifier->panelWillClose();
+        
+        // Remove from UI hierarchy and null out unique_ptr/pointer
+        removeChildComponent(ctrlrPanelNotifier.get()); // or panelNotifier if raw pointer
+        ctrlrPanelNotifier.reset(); // If panelNotifier is std::unique_ptr
+    }
+
+    // 2. Clear LookAndFeel bindings to avoid juce_LookAndFeel.cpp assertion
+    setLookAndFeel(nullptr);
+}
+
+CtrlrPanelEditor::~CtrlrPanelEditor()
+{
+ DBG("(E) ~CtrlrPanelEditor Destructor Called");
+    // Check if the component selection object is valid before trying to use it
+    if (ctrlrComponentSelection)
+    {
+        // Remove the listener before the objects are destroyed
+        ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
+    }
+
+    getPanelEditorTree().removeListener(this);
+    owner.getPanelTree().removeListener(this);
+    owner.getPanelTree().removeChild(getPanelEditorTree(), 0);
+
+    componentAnimator.removeChangeListener(this);
+    
+    // Set look and feel to null to clean up
+    setLookAndFeel(nullptr);
+    if (getCanvas())
+    {
+        getCanvas()->setLookAndFeel(nullptr);
+    }
+    // This is important: JUCE's default look and feel can also be a source of leaks if not managed
+    juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
+
+	// USELESS : because JUCE_DECLARE_WEAK_REFERENCEABLE macro is in the header already.
+	// It automatically handles the weak reference master
+	// masterReference.clear();
+    
+    // The ScopedPointers will now automatically delete the components they own
+    // (ctrlrPanelViewport, ctrlrPanelProperties, spacerComponent, ctrlrPanelNotifier).
+}
+/*
 CtrlrPanelEditor::~CtrlrPanelEditor() {
+	    DBG("(E) ~CtrlrPanelEditor Destructor Called");
 
     DBG("=== CtrlrPanelEditor Destructor Called ===");
 
@@ -328,8 +396,9 @@ if (ctrlrPanelViewport != nullptr) {
     // Destroy the viewport container cleanly
     ctrlrPanelViewport.reset();
 }
+	
 }
-
+*/
 void CtrlrPanelEditor::visibilityChanged() {}
 
 void CtrlrPanelEditor::resized() {

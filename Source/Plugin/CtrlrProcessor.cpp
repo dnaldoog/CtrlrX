@@ -73,6 +73,7 @@ CtrlrProcessor::CtrlrProcessor()
 CtrlrProcessor::~CtrlrProcessor() // Updated v5.6.34. Prevents AAX from crashing when deleting the plugin from the
 								  // instrument track insert slot.
 {
+DBG("(Y) CtrlrProcessor DTOR");
 // ***** CRITICAL AAX-SPECIFIC WORKAROUND *****
 // This entire block is excluded for AAX builds because:
 // 1. The MessageManager::runDispatchLoopUntil() call causes crashes on AAX plugin removal.
