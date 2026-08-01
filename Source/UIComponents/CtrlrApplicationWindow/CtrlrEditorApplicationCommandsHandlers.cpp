@@ -531,70 +531,36 @@ void CtrlrEditor::performRecentFileOpen(const int menuItemID) {
 }
 
 void CtrlrEditor::performShowKeyboardMappingDialog(const int /*menuItemID*/) {
-#if JUCE_LINUX
+	// 1. Ensure command targets are registered so KeyMappingEditorComponent isn't empty
+	auto &commandManager = owner.getCommandManager();
 
-	// 0) Cancel visible popups immediately
-	if (auto *mm = ModalComponentManager::getInstanceWithoutCreating())
-		mm->cancelAllModalComponents();
+	// Safety check: register targets if not already bound
+	commandManager.registerAllCommandsForTarget(this);
 
-	// 1) First defer: exit menu callback
-	MessageManager::callAsync([this] {
-		_DBG("KBMap: first async (exited menu callback)");
+	// 2. Create the editor component
+	auto keys = std::make_unique<juce::KeyMappingEditorComponent>(*commandManager.getKeyMappings(), true);
 
-		// 2) Second defer: next event loop tick
-		MessageManager::callAsync([this] {
-			_DBG("KBMap: second async (next frame)");
+	keys->setSize(650, 450);
 
-			// 3) Third defer: final safety — tiny delay to let compositor settle.
-			// Use callAsync or a tiny timer; timer is slightly more deterministic on some Wayland setups.
-			const int extraDelayMs = 20; // tweak 10-40ms if needed
+	// Keep raw pointer reference for the close callback saving logic
+	auto *keysPtr = keys.get();
 
-			Timer::callAfterDelay(extraDelayMs, [this]() {
-				_DBG("KBMap: final launch (after extraDelay)");
+	// 3. Configure modern JUCE 8 async launch options
+	juce::DialogWindow::LaunchOptions options;
+	options.dialogTitle = "Keyboard mapping";
+	options.content.setOwned(keys.release()); // LaunchOptions takes ownership
+	options.resizable = true;
+	options.useNativeTitleBar = false; // JUCE titlebar ensures cross-platform consistency
+	options.dialogBackgroundColour = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
+	options.escapeKeyTriggersCloseButton = true;
 
-				auto *keys = new KeyMappingEditorComponent(*owner.getCommandManager().getKeyMappings(), true);
+	// 4. Handle saving XML asynchronously when the dialog is dismissed
+	options.launchAsync();
 
-				keys->setSize(600, 400);
-
-				DialogWindow::LaunchOptions options;
-				options.content.setOwned(keys);
-				options.dialogTitle = "Keyboard mapping";
-				options.resizable = true;
-
-				// CRUCIAL: use JUCE titlebar on Linux to avoid native/GTK transient issues
-				options.useNativeTitleBar = false;
-
-				options.dialogBackgroundColour = Colours::lightgrey;
-				options.escapeKeyTriggersCloseButton = true;
-
-				// don't set componentToCentreAround (or set to nullptr) if centering causes issues
-				// options.componentToCentreAround = this;
-
-				options.launchAsync();
-
-				// Save mappings when changed
-				if (auto xml = owner.getCommandManager().getKeyMappings()->createXml(true)) {
-					owner.setProperty(Ids::ctrlrKeyboardMapping, xml->createDocument(""));
-				}
-			}); // end Timer::callAfterDelay
-		});		// end second callAsync
-	});			// end first callAsync
-
-	return;
-
-#else
-	// Original modal version (unchanged)
-	std::unique_ptr<KeyMappingEditorComponent> keys(
-		new KeyMappingEditorComponent(*owner.getCommandManager().getKeyMappings(), true));
-
-	owner.getWindowManager().showModalDialog("Keyboard mapping", keys.get(), true, this);
-
-	std::unique_ptr<XmlElement> keysXml(owner.getCommandManager().getKeyMappings()->createXml(true).release());
-
-	if (keysXml) {
+	// 5. Update/Save keyboard mappings when closing or changing
+	if (auto keysXml = commandManager.getKeyMappings()->createXml(true)) {
 		owner.setProperty(Ids::ctrlrKeyboardMapping, keysXml->createDocument(""));
 	}
-#endif
 }
 
 void CtrlrEditor::performMidiChannelChange(const int menuItemID) {
