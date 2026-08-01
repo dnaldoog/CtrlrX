@@ -122,17 +122,14 @@ Result CtrlrPanel::savePanel()
 {
 	_DBG("CtrlrPanel::savePanel");
 
-	// Store current state panelWasDirty before changing the property panelIsDirty to false/0
-	bool panelWasDirty =
-		isPanelDirty(); // return getProperty(Ids::panelIsDirty,false); with false (0) being the defaultReturnValue
+	bool panelWasDirty = isPanelDirty();
 	setPanelDirty(false);
 
 	Result res = Result::ok();
 	const String filePath = getProperty(Ids::panelFilePath);
 	File panelFile(filePath);
 
-	if (panelFile.existsAsFile() && panelFile.hasWriteAccess())
-	{
+	if (panelFile.existsAsFile() && panelFile.hasWriteAccess()) {
 		if (panelFile.hasFileExtension("panel"))
 			res = savePanelXml(panelFile, this, false);
 		if (panelFile.hasFileExtension("panelz"))
@@ -142,208 +139,163 @@ Result CtrlrPanel::savePanel()
 		if (panelFile.hasFileExtension("bpanelz"))
 			res = savePanelBin(panelFile, this, true);
 
-		if (getEditor())
-		{
+		if (getEditor()) {
 			if (res.failed())
-			{
 				notify("Panel save: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
-			}
 			else
-			{
 				notify("Panel saved: [" + panelFile.getFullPathName() + "]", nullptr, NotifySuccess);
-			}
-		}
-	}
-	else
-	{
-		File ret = askForPanelFileToSave(
-			this, File(owner.getProperty(Ids::panelLastSaveDir)).getChildFile(getVersionString()));
-		if (ret != File())
-		{
-			res = savePanelXml(ret, this);
-			setProperty(Ids::panelFilePath, ret.getFullPathName());
-			setProperty(Ids::panelLastSaveDir, ret.getParentDirectory().getFullPathName());
-		}
-		else
-		{
-			res = Result::fail("Selected file is invalid");
 		}
 
-		if (getEditor())
-		{
-			if (res.failed())
-			{
-				notify("Panel save: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
-			}
-			else
-			{
-				notify("Panel saved: [" + panelFile.getFullPathName() + "]", nullptr, NotifySuccess);
-			}
+		if (res.wasOk()) {
+			if (auto *um = getUndoManager())
+				um->clearUndoHistory();
+			updatePanelWindowTitle();
+		} else if (panelWasDirty) {
+			setPanelDirty(panelWasDirty);
 		}
+
+		return res;
 	}
-	if (res.wasOk())
-	{
-		getUndoManager()->clearUndoHistory();
+
+	// Default target path calculated synchronously
+	File defaultTarget = askForPanelFileToSave(
+		this, File(owner.getProperty(Ids::panelLastSaveDir)).getChildFile(getVersionString()), true, false);
+
+	bool useNativeDialog = (bool)owner.getProperty(Ids::ctrlrNativeFileDialogs, true);
+
+	// Launch async chooser using your FC helper
+	FC::saveFileAsync("Save Panel File", defaultTarget, "*.panel;*.panelz", useNativeDialog,
+					  [this, panelWasDirty](const File &ret) {
+						  Result asyncRes = Result::ok();
+
+						  if (ret != File()) {
+							  asyncRes = savePanelXml(ret, this);
+							  setProperty(Ids::panelFilePath, ret.getFullPathName());
+							  setProperty(Ids::panelLastSaveDir, ret.getParentDirectory().getFullPathName());
+						  } else {
+							  asyncRes = Result::fail("Selected file is invalid");
+						  }
+
+						  if (getEditor()) {
+							  if (asyncRes.failed())
+								  notify("Panel save: [" + asyncRes.getErrorMessage() + "]", nullptr, NotifyFailure);
+							  else
+								  notify("Panel saved: [" + ret.getFullPathName() + "]", nullptr, NotifySuccess);
+						  }
+
+						  if (asyncRes.wasOk()) {
+							  if (auto *um = getUndoManager())
+								  um->clearUndoHistory();
+							  updatePanelWindowTitle();
+						  } else if (panelWasDirty) {
+							  setPanelDirty(panelWasDirty);
+						  }
+					  });
+
+	return Result::ok();
+}
+void CtrlrPanel::savePanelAs(const CommandID saveOption) {
+	File initialDir(getProperty(Ids::panelLastSaveDir));
+
+	auto handleSaveSuccess = [this](const File &fileToSave) {
+		setProperty(Ids::panelFilePath, fileToSave.getFullPathName());
+		setProperty(Ids::panelLastSaveDir, fileToSave.getParentDirectory().getFullPathName());
+
+		setPanelDirty(false);
+		if (auto *um = getUndoManager())
+			um->clearUndoHistory();
+
 		updatePanelWindowTitle();
-	}
+	};
 
-	else if (panelWasDirty)
-	{
-		setPanelDirty(panelWasDirty); // setProperty(Ids::panelIsDirty, dirty);
-	}
-	return res;
+switch (saveOption) {
+case CtrlrEditor::doExportFileText: {
+    // 1. Generate default target path/filename synchronously
+    File defaultFile = askForPanelFileToSave(this, initialDir, true, false);
+
+    // 2. Open non-blocking OS dialog via your FC helper
+    FC::saveFileAsync("Export XML Panel", defaultFile, "*.panel", true, [this, handleSaveSuccess](const File &fileToSave) {
+        if (fileToSave == File() || !fileToSave.getSiblingFile(fileToSave.getFileName()).existsAsFile())
+            return;
+
+        savePanelXml(fileToSave, this);
+        handleSaveSuccess(fileToSave);
+    });
+    break;
 }
 
-const File CtrlrPanel::savePanelAs(const CommandID saveOption)
-{
-	File fileToSave;
-	File f(getProperty(Ids::panelLastSaveDir));
+case CtrlrEditor::doExportFileZText: {
+    File defaultFile = askForPanelFileToSave(this, initialDir, true, true);
 
-	if (saveOption == CtrlrEditor::doExportFileText)
-	{
-		fileToSave = CtrlrPanel::askForPanelFileToSave(this, f, true, false);
+    FC::saveFileAsync("Export Compressed XML Panel", defaultFile, "*.panelz", true, [this, handleSaveSuccess](const File &fileToSave) {
+        if (fileToSave == File())
+            return;
 
-		if (fileToSave == File())
-			return (fileToSave);
+        savePanelXml(fileToSave, this, true);
+        handleSaveSuccess(fileToSave);
+    });
+    break;
+}
 
-		savePanelXml(fileToSave, this);
-		setProperty(Ids::panelFilePath, fileToSave.getFullPathName());
-		setProperty(Ids::panelLastSaveDir, fileToSave.getParentDirectory().getFullPathName());
+case CtrlrEditor::doExportFileBin: {
+    File defaultFile = askForPanelFileToSave(this, initialDir, false, false);
 
-		// Store current state panelWasDirty before changing the property panelIsDirty to false/0
-		bool panelWasDirty =
-			isPanelDirty(); // Added v5.6.30 (removes asterisk suffix from name in panel tab). Returns
-							// getProperty(Ids::panelIsDirty,false); where false is default value if not available
+    FC::saveFileAsync("Export Binary Panel", defaultFile, "*.bpanel", true, [this](const File &fileToSave) {
+        if (fileToSave == File())
+            return;
 
-		setPanelDirty(false); // Updated v5.6.31. false = 0 = notDirty.
+        savePanelBin(fileToSave, this, false);
+    });
+    break;
+}
 
-		if (panelWasDirty) // Added v5.6.30. if panelPanelWasDirty = true/1
-		{
-			setPanelDirty(panelWasDirty); // Added v5.6.30. setProperty(Ids::panelIsDirty, dirty);
-		}
+case CtrlrEditor::doExportFileZBin: {
+    File defaultFile = askForPanelFileToSave(this, initialDir, false, true);
 
-		getUndoManager()->clearUndoHistory(); // Added v5.6.30
-		updatePanelWindowTitle();			  // Added v5.6.30
+    FC::saveFileAsync("Export Compressed Binary Panel", defaultFile, "*.bpanelz", true, [this](const File &fileToSave) {
+        if (fileToSave == File())
+            return;
+
+        savePanelBin(fileToSave, this, true);
+    });
+    break;
+}
+
+	case CtrlrEditor::doExportFileZBinRes: {
+		exportPanel(this, initialDir);
+		break;
 	}
 
-	if (saveOption == CtrlrEditor::doExportFileZText)
-	{
-		fileToSave = CtrlrPanel::askForPanelFileToSave(this, f, true, true);
+	case CtrlrEditor::doExportFileInstance:
+	case CtrlrEditor::doExportFileInstanceRestricted: {
+		const bool isRestricted = (saveOption == CtrlrEditor::doExportFileInstanceRestricted);
+		Result res = owner.getNativeObject().exportWithDefaultPanel(this, isRestricted, isRestricted);
 
-		if (fileToSave == File())
-			return (fileToSave);
-
-		savePanelXml(fileToSave, this, true);
-		setProperty(Ids::panelFilePath, fileToSave.getFullPathName());
-		setProperty(Ids::panelLastSaveDir, fileToSave.getParentDirectory().getFullPathName());
-	}
-	if (saveOption == CtrlrEditor::doExportFileBin)
-	{
-		fileToSave = CtrlrPanel::askForPanelFileToSave(this, f, false, false);
-
-		if (fileToSave == File())
-			return (fileToSave);
-
-		savePanelBin(fileToSave, this, false);
-	}
-	if (saveOption == CtrlrEditor::doExportFileZBin)
-	{
-		fileToSave = CtrlrPanel::askForPanelFileToSave(this, f, false, true);
-
-		if (fileToSave == File())
-			return (fileToSave);
-
-		savePanelBin(fileToSave, this, true);
-	}
-	if (saveOption == CtrlrEditor::doExportFileZBinRes)
-	{
-		const String err = exportPanel(this, f);
-		if (err != "")
-		{
-#if JUCE_VERSION >= 0x070000
-			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Panel Export", err);
-#else
-			AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Panel Export", err);
-#endif
-		}
-	}
-	if (saveOption == CtrlrEditor::doExportFileInstance) // Updated v5.6.34.
-	{
-		Result res = owner.getNativeObject().exportWithDefaultPanel(this, false, false);
-
-		if (res.failed())
-		{
-			if (res.getErrorMessage() == "User cancelled the export operation.")
-			{
-				// Silently handle the cancellation. No message box.
+		if (res.failed()) {
+			if (res.getErrorMessage() == "User cancelled the export operation.") {
 				notify("Panel instance export: Cancelled by user.", nullptr, NotifyFailure);
-			}
-			else
-			{
+			} else {
 				notify("Panel instance export: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
-// Handle a true export failure with a warning message.
-#if JUCE_VERSION >= 0x070000
-				AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Panel export",
-												 "Failed to export panel as standalone instance.\n" + res.getErrorMessage());
-#else
-				AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Panel export",
-											"Failed to export panel as standalone instance.\n" + res.getErrorMessage());
-#endif
+
+				// Clean replacement using AW namespace
+				AW::showMessageBox(AW::Warning, "Panel export",
+								   "Failed to export panel as standalone instance.\n" + res.getErrorMessage());
 			}
-		}
-		else
-		{
+		} else {
 			notify("Panel instance export: Wrote new panel instance.", nullptr, NotifySuccess);
-// Handle a successful export.
-#if JUCE_VERSION >= 0x070000
-			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Panel export", "Wrote new panel instance");
-#else
-			AlertWindow::showMessageBox(AlertWindow::InfoIcon, "Panel export", "Wrote new panel instance");
-#endif
+			AW::showMessageBox(AW::Info, "Panel export", "Wrote new panel instance");
 		}
+		break;
 	}
 
-	if (saveOption == CtrlrEditor::doExportFileInstanceRestricted) // Updated v5.6.34.
-	{
-		Result res = owner.getNativeObject().exportWithDefaultPanel(this, true, true);
-
-		if (res.failed())
-		{
-			if (res.getErrorMessage() == "User cancelled the export operation.")
-			{
-				// Silently handle the cancellation. No message box.
-				notify("Panel instance export: Cancelled by user.", nullptr, NotifyFailure);
-			}
-			else
-			{
-				notify("Panel instance export: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
-// Handle a true export failure with a warning message.
-#if JUCE_VERSION >= 0x070000
-				AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Panel export",
-												 "Failed to export panel as standalone instance.\n" + res.getErrorMessage());
-#else
-				AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Panel export",
-											"Failed to export panel as standalone instance.\n" + res.getErrorMessage());
-#endif
-			}
-		}
-		else
-		{
-			notify("Panel instance export: Wrote new panel instance.", nullptr, NotifySuccess);
-// Handle a successful export.
-#if JUCE_VERSION >= 0x070000
-			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Panel export", "Wrote new panel instance");
-#else
-			AlertWindow::showMessageBox(AlertWindow::InfoIcon, "Panel export", "Wrote new panel instance");
-#endif
-		}
-	}
-	if (saveOption == CtrlrEditor::doExportGenerateUID)
-	{
-		setProperty(Ids::panelUID, generateRandomUnique(STR(Time::currentTimeMillis())));
+	case CtrlrEditor::doExportGenerateUID: {
+		setProperty(Ids::panelUID, generateRandomUnique(juce::String(juce::Time::currentTimeMillis())));
+		break;
 	}
 
-	return (fileToSave);
+	default:
+		break;
+	}
 }
 
 void CtrlrPanel::savePanelVersioned()
@@ -376,105 +328,113 @@ const String CtrlrPanel::exportPanel(CtrlrPanel *panel, const File &lastBrowsedD
 	if (panel == nullptr)
 		return "Undefined panel passed to exporter";
 
-	File exportedFile =
-		(destinationFile == File()) ? askForPanelFileToSave(panel, lastBrowsedDir, false, true) : destinationFile;
+if (destinationFile == File())
+{
+    // 1. Generate default target path/filename synchronously
+    File defaultFile = askForPanelFileToSave(panel, lastBrowsedDir, false, true);
 
-	if (exportedFile == File())
-		return "Destination file does not exist or is invalid";
+    // 2. Determine native dialog preference
+    bool useNativeDialog = panel ? (bool)panel->getOwner().getProperty(Ids::ctrlrNativeFileDialogs, true) : true;
 
-	panel->luaSavePanel(PanelFileExport, exportedFile);
+    // 3. Trigger async file chooser via your FC helper
+    FC::saveFileAsync(
+        "Export Compressed Binary Panel",
+        defaultFile,
+        "*.bpanelz",
+        useNativeDialog,
+        [panel, lastBrowsedDir, isRestricted](const File &exportedFile)
+        {
+            if (exportedFile != File())
+            {
+                String err = exportPanel(panel, lastBrowsedDir, exportedFile, nullptr, nullptr, isRestricted);
+                if (err.isNotEmpty())
+                {
+                    AW::showMessageBox(AW::Warning, "Panel Export", err);
+                }
+            }
+        });
 
-	// Capture Canvas Snapshot
-	Image panelSnapshot(Image::ARGB, 400, 400, true);
+    return juce::String();
+}
+
+	panel->luaSavePanel(PanelFileExport, destinationFile);
+
+	// Snapshot Capture
+	juce::Image panelSnapshot(juce::Image::ARGB, 400, 400, true);
 	if (auto *canvas = panel->getEditor() ? panel->getEditor()->getCanvas() : nullptr) {
-		Image snap = canvas->createComponentSnapshot(canvas->getBounds(), true);
-		Graphics g(panelSnapshot);
-		g.drawImageWithin(snap, 0, 0, 400, 400, RectanglePlacement::centred | RectanglePlacement::onlyReduceInSize,
-						  false);
+		juce::Image snap = canvas->createComponentSnapshot(canvas->getBounds(), true);
+		juce::Graphics g(panelSnapshot);
+		g.drawImageWithin(snap, 0, 0, 400, 400,
+						  juce::RectanglePlacement::centred | juce::RectanglePlacement::onlyReduceInSize, false);
 	}
 
-	// Build base resources tree
-	ValueTree resources(Ids::resourceExportList);
+	// Build resources tree
+	juce::ValueTree resources(Ids::resourceExportList);
 	for (int i = 0; i < panel->getResourceManager().getNumResources(); ++i) {
 		if (auto *res = panel->getResourceManager().getResource(i)) {
 			resources.addChild(res->createTree(), -1, nullptr);
 		}
 	}
 
-	// Encapsulate final tree assembly and file IO
-	auto performWrite = [panel, isRestricted, panelSnapshot, exportedFile, outputPanelData,
-						 outputResourcesData](ValueTree &resTree) -> String {
-		ValueTree exportTree = panel->getCleanPanelTree();
+	juce::ValueTree exportTree = panel->getCleanPanelTree();
 
-		if (isRestricted) {
-			exportTree.setProperty(Ids::restricted, (int)InstanceSingleRestricted, nullptr);
-			auto editorTree = exportTree.getChildWithName(Ids::uiPanelEditor);
-			if (editorTree.isValid()) {
-				editorTree.setProperty(Ids::uiPanelEditMode, false, nullptr);
-			}
+	if (isRestricted) {
+		exportTree.setProperty(Ids::restricted, static_cast<int>(InstanceSingleRestricted), nullptr);
+		auto editorTree = exportTree.getChildWithName(Ids::uiPanelEditor);
+		if (editorTree.isValid()) {
+			editorTree.setProperty(Ids::uiPanelEditMode, false, nullptr);
 		}
-
-		if (panelSnapshot.isValid()) {
-			MemoryBlock imageData;
-			MemoryOutputStream imageDataStream(imageData, true);
-			PNGImageFormat png;
-			png.writeImageToStream(panelSnapshot, imageDataStream);
-
-			if (imageData.getSize() != 0) {
-				ValueTree snap(Ids::resourcePanelSnapshot);
-				snap.setProperty(Ids::resourceSize, (int)imageData.getSize(), nullptr);
-				snap.setProperty(Ids::resourceData, imageData.toBase64Encoding(), nullptr);
-				resTree.addChild(snap, -1, nullptr);
-			}
-		}
-
-		if (exportedFile.hasWriteAccess() && outputPanelData == nullptr) {
-			exportTree.addChild(resTree, -1, nullptr);
-			MemoryOutputStream compressedData;
-
-			{
-				GZIPCompressorOutputStream gzipOutputStream(&compressedData);
-				exportTree.writeToStream(gzipOutputStream);
-				gzipOutputStream.flush();
-			}
-
-			if (!exportedFile.replaceWithData(compressedData.getData(), compressedData.getDataSize()))
-				return "Failed writing output data to target file";
-
-			return String(); // Success
-		} else if (outputPanelData != nullptr && outputResourcesData != nullptr) {
-			MemoryOutputStream compressedPanelData(*outputPanelData, false);
-			MemoryOutputStream compressedResourcesData(*outputResourcesData, false);
-
-			{
-				GZIPCompressorOutputStream gzipOutputStream(&compressedPanelData);
-				exportTree.writeToStream(gzipOutputStream);
-				gzipOutputStream.flush();
-			}
-
-			{
-				GZIPCompressorOutputStream gzipOutputStream(&compressedResourcesData);
-				resTree.writeToStream(gzipOutputStream);
-				gzipOutputStream.flush();
-			}
-
-			return String(); // Success
-		}
-
-		return "Can't export panel, unable to write to the specified destination";
-	};
-
-	// Prompt for optional license if resources exist
-	if (panel->getResourceManager().getNumResources() > 0) {
-		AW::showNativeDialogBox(AW::Question, "License question", "Would you like to attach a license to this panel?",
-								"Yes", "No", true, [performWrite, resources](bool userClickedYes) mutable {
-									if (userClickedYes) {
-										// License dialog flow can append to 'resources' before triggering performWrite
-									}
-								});
 	}
 
-	return performWrite(resources);
+	if (panelSnapshot.isValid()) {
+		juce::MemoryBlock imageData;
+		{
+			juce::MemoryOutputStream imageDataStream(imageData, true);
+			juce::PNGImageFormat png;
+			png.writeImageToStream(panelSnapshot, imageDataStream);
+		}
+
+		if (imageData.getSize() != 0) {
+			juce::ValueTree snap(Ids::resourcePanelSnapshot);
+			snap.setProperty(Ids::resourceSize, static_cast<int64>(imageData.getSize()), nullptr);
+			snap.setProperty(Ids::resourceData, imageData.toBase64Encoding(), nullptr);
+			resources.addChild(snap, -1, nullptr);
+		}
+	}
+
+	if (destinationFile.hasWriteAccess() && outputPanelData == nullptr) {
+		exportTree.addChild(resources, -1, nullptr);
+		juce::MemoryOutputStream compressedData;
+
+		{
+			juce::GZIPCompressorOutputStream gzipOutputStream(&compressedData, 9, false);
+			exportTree.writeToStream(gzipOutputStream);
+			gzipOutputStream.flush();
+		}
+
+		if (!destinationFile.replaceWithData(compressedData.getData(), compressedData.getDataSize()))
+			return "Failed writing output data to target file";
+
+		return juce::String();
+	} else if (outputPanelData != nullptr && outputResourcesData != nullptr) {
+		{
+			juce::MemoryOutputStream compressedPanelData(*outputPanelData, false);
+			juce::GZIPCompressorOutputStream gzipOutputStream(&compressedPanelData, 9, false);
+			exportTree.writeToStream(gzipOutputStream);
+			gzipOutputStream.flush();
+		}
+
+		{
+			juce::MemoryOutputStream compressedResourcesData(*outputResourcesData, false);
+			juce::GZIPCompressorOutputStream gzipOutputStream(&compressedResourcesData, 9, false);
+			resources.writeToStream(gzipOutputStream);
+			gzipOutputStream.flush();
+		}
+
+		return juce::String();
+	}
+
+	return "Can't export panel, unable to write to the specified destination";
 }
 
 const ValueTree CtrlrPanel::openBinPanel(const File &panelFile)
@@ -880,42 +840,25 @@ Result CtrlrPanel::savePanelXml(const File &fileToSave, CtrlrPanel *panel, const
 }
 
 const File CtrlrPanel::askForPanelFileToSave(CtrlrPanel *panel, const File &lastBrowsedDir, const bool isXml,
-											 const bool isCompressed)
-{
-	String panelFileName = "Ctrlr Panel";
-	File panelFile;
-	// bool useOSDialog = panel ? (bool)panel->getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs) : true;
-	// unused ?? JG 7/21/2026
-	if (panel)
-	{
-		panelFileName = panel->getProperty(Ids::name);
-		panelFileName << "_" + panel->getVersionString();
+											 const bool isCompressed) {
+	juce::String panelFileName = "Ctrlr Panel";
+
+	if (panel != nullptr) {
+		panelFileName = panel->getProperty(Ids::name).toString();
+		panelFileName << "_" << panel->getVersionString();
 	}
 
-	if (isXml)
-	{
-		if (isCompressed)
-			panelFileName << ".panelz";
-		else
-			panelFileName << ".panel";
-	}
-	else
-	{
-		if (isCompressed)
-			panelFileName << ".bpanelz";
-		else
-			panelFileName << ".bpanel";
+	if (isXml) {
+		panelFileName << (isCompressed ? ".panelz" : ".panel");
+	} else {
+		panelFileName << (isCompressed ? ".bpanelz" : ".bpanel");
 	}
 
-	if (File::isAbsolutePath(lastBrowsedDir.getFullPathName()))
-	{
-		panelFile = lastBrowsedDir.getChildFile(panelFileName);
+	if (juce::File::isAbsolutePath(lastBrowsedDir.getFullPathName())) {
+		return lastBrowsedDir.getChildFile(panelFileName);
 	}
-	else
-	{
-		panelFile = File::getSpecialLocation(File::userDocumentsDirectory).getChildFile(panelFileName);
-	}
-	return panelFile;
+
+	return juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile(panelFileName);
 }
 
 #if JUCE_VERSION < 0x070000

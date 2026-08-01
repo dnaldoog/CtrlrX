@@ -180,7 +180,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		Result convertLuaMethodsToFiles(const String dirPath);
 		File getLuaMethodGroupDir(const ValueTree &methodGroup);
 
-		const File savePanelAs(const CommandID saveOption);
+		void CtrlrPanel::savePanelAs(const CommandID saveOption);
 		void savePanelVersioned();
 		Result savePanelXml(const File &fileToSave, CtrlrPanel *panel, const bool compressPanel = false);
 		Result savePanelBin(const File &fileToSave, CtrlrPanel *panel, const bool compressPanel = false);
@@ -209,9 +209,8 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		static const ValueTree openXmlPanel(const File &panelFile);
 		static const ValueTree openBinPanel(const File &panelFile);
 		static const ValueTree openBinPanel(const MemoryBlock &panelData, const bool isCompressed = false);
-		static const File askForPanelFileToSave(CtrlrPanel *panel, const File &lastBrowsedDir, const bool isXml = true,
-												const bool isCompressed = false);
-
+		static const File askForPanelFileToSave(CtrlrPanel *panel, const File &lastBrowsedDir, const bool isXml,
+												const bool isCompressed);
 		void luaSavePanel(const CtrlrPanelFileType fileType, const File &file);
 		void setInstanceProperties(const ValueTree &instanceState);
 		ValueTree getCleanPanelTree();
