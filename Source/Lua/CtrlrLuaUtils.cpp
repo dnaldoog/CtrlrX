@@ -247,6 +247,68 @@ juce::String CtrlrLuaUtils::base64_decode(const juce::String &base64String) // A
 	return juce::String();
 }
 
+File CtrlrLuaUtils::saveFileWindowSync(const String &dialogBoxTitle, const File &initialFileOrDirectory,
+                                        const String &filePatternsAllowed, bool useOSNativeDialogBox)
+{
+    auto *mm = juce::MessageManager::getInstance();
+
+    if (!mm->isThisTheMessageThread())
+    {
+        jassertfalse;
+        return File();
+    }
+
+    auto dialog = std::make_shared<juce::FileChooser>(dialogBoxTitle, initialFileOrDirectory,
+                                                        filePatternsAllowed, useOSNativeDialogBox);
+    auto flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles |
+                 juce::FileBrowserComponent::warnAboutOverwriting;
+
+    bool finished = false;
+    File result;
+
+    dialog->launchAsync(flags, [dialog, &finished, &result](const juce::FileChooser &fc)
+    {
+        result = fc.getResult();
+        finished = true;
+    });
+
+    while (!finished)
+        mm->runDispatchLoopUntil(20);
+
+    return result;
+}
+
+File CtrlrLuaUtils::openFileWindowSync(const String &dialogBoxTitle, const File &initialFileOrDirectory,
+                                        const String &filePatternsAllowed, bool useOSNativeDialogBox)
+{
+    auto *mm = juce::MessageManager::getInstance();
+
+    if (!mm->isThisTheMessageThread())
+    {
+        jassertfalse;
+        return File();
+    }
+
+    auto dialog = std::make_shared<juce::FileChooser>(dialogBoxTitle, initialFileOrDirectory,
+                                                        filePatternsAllowed, useOSNativeDialogBox);
+    auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+
+    bool finished = false;
+    File result;
+
+    dialog->launchAsync(flags, [dialog, &finished, &result](const juce::FileChooser &fc)
+    {
+        result = fc.getResult();
+        finished = true;
+    });
+
+    while (!finished)
+        mm->runDispatchLoopUntil(20);
+
+    return result;
+}
+
+
 void CtrlrLuaUtils::wrapForLua(lua_State *L) {
 	using namespace luabind;
 
@@ -256,9 +318,9 @@ void CtrlrLuaUtils::wrapForLua(lua_State *L) {
 				  .def("warnWindow", &CtrlrLuaUtils::warnWindow)
 				  .def("infoWindow", &CtrlrLuaUtils::infoWindow)
 				  .def("questionWindow", &CtrlrLuaUtils::questionWindow)
-				  .def("openFileWindow", &CtrlrLuaUtils::openFileWindow)
+				  .def("openFileWindow", &CtrlrLuaUtils::openFileWindowSync)
 				  .def("openMultipleFilesWindow", &CtrlrLuaUtils::openMultipleFilesWindow)
-				  .def("saveFileWindow", &CtrlrLuaUtils::saveFileWindow)
+				  .def("saveFileWindow", &CtrlrLuaUtils::saveFileWindowSync)
 				  .def("getDirectoryWindow", &CtrlrLuaUtils::getDirectoryWindow)
 				  .def("askForTextInputWindow", &CtrlrLuaUtils::askForTextInputWindow)
 				  .def("getMidiInputDevices", &CtrlrLuaUtils::getMidiInputDevices)

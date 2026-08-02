@@ -30,6 +30,26 @@ class LMemoryBlock;
 class CtrlrLuaUtils
 {
 	public:
+// ---------------------------------------------------------------------------
+// JUCE 8 backward-compatibility wrapper.
+//
+// JUCE 8 made this API asynchronous-only (was synchronous in JUCE 6/7).
+// Hundreds of existing panel Lua scripts call this expecting a direct,
+// blocking return value (the old idiom: `local x = utils.someCall(...)`).
+//
+// This wrapper fakes that synchronous behaviour by locally pumping the
+// message loop (MessageManager::runDispatchLoopUntil) against our own
+// flag, checked in a loop, rather than the real async callback API.
+//
+// IMPORTANT: never use MessageManager::runDispatchLoop()/stopDispatchLoop()
+// for this — stopDispatchLoop() posts a real quit message and will
+// terminate the *entire application's* top-level loop, not just this
+// local one. See: <link to your notes/commit/issue if you keep one>.
+// ---------------------------------------------------------------------------
+static File openFileWindowSync(const String &dialogBoxTitle, const File &initialFileOrDirectory,
+                                const String &filePatternsAllowed, bool useOSNativeDialogBox);
+static File saveFileWindowSync(const String &dialogBoxTitle, const File &initialFileOrDirectory,
+                                const String &filePatternsAllowed, bool useOSNativeDialogBox);
 		/** @brief Internal
 
 		*/
