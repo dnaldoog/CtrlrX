@@ -59,7 +59,7 @@ static inline void layoutButtonsJUCE8(juce::Component *component, const juce::St
 
 } // namespace AW
 
-#include <juce_gui_basics/juce_gui_basics.h>
+//--------------------------------------------------------------------------------------
 
 class PU {
 public:
@@ -113,30 +113,32 @@ public:
     }
 
     /** Runs the JUCE 8 async menu synchronously via local message pumping */
-	static int showSyncWithOptions(juce::PopupMenu &menu, const juce::PopupMenu::Options &options) {
-		auto *mm = juce::MessageManager::getInstance();
+static int showSyncWithOptions(juce::PopupMenu &menu, const juce::PopupMenu::Options &options)
+{
+    auto *mm = juce::MessageManager::getInstance();
 
-		if (!mm->isThisTheMessageThread()) {
-			jassertfalse; // Popup menus must be shown from the Message Thread
-			return 0;
-		}
+    if (!mm->isThisTheMessageThread())
+    {
+        jassertfalse; // Popup menus must be shown from the Message Thread
+        return 0;
+    }
 
-		int selectedResult = 0;
+    bool finished = false;
+    int selectedResult = 0;
 
-		// Launch JUCE 8 popup asynchronously
-		menu.showMenuAsync(options, [mm, &selectedResult](int result) {
-			selectedResult = result;
+    menu.showMenuAsync(options, [&finished, &selectedResult](int result)
+    {
+        selectedResult = result;
+        finished = true;
+    });
 
-			// Stop the local message loop when user makes a selection or dismisses
-			if (mm != nullptr)
-				mm->stopDispatchLoop();
-		});
+    // Pump the queue in short slices, checking our OWN local flag —
+    // never touch stopDispatchLoop()/the global quit state.
+    while (!finished)
+        mm->runDispatchLoopUntil(20);
 
-		// Spin the main message thread locally until stopDispatchLoop() is called
-		mm->runDispatchLoop();
-
-		return selectedResult;
-	}
+    return selectedResult;
+}
 // =========================================================================
 // ASYNCHRONOUS HELPERS (For modern C++ / Lua callbacks)
 // =========================================================================
