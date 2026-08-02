@@ -1142,69 +1142,132 @@ void CtrlrLuaMethodProperty::comboBoxChanged(ComboBox *comboBoxThatHasChanged) {
 	}
 }
 
-void CtrlrLuaMethodProperty::buttonClicked(Button *buttonThatWasClicked) {
-	if (buttonThatWasClicked == editMethodButton.get()) {
-		if (methodSelectorCombo->getText() == "" || methodSelectorCombo->getText() == COMBO_NONE_ITEM) {
-			return;
-		}
-		if (owner) {
-			owner->getPanelWindowManager().show(CtrlrPanelWindowManager::LuaMethodEditor);
-			CtrlrLuaMethodEditor *ed = dynamic_cast<CtrlrLuaMethodEditor *>(
-				owner->getPanelWindowManager().getContent(CtrlrPanelWindowManager::LuaMethodEditor));
-			if (ed != nullptr) {
-				ed->setEditedMethod(methodSelectorCombo->getText());
-			}
-		}
-	} else if (buttonThatWasClicked == newMethodButton.get()) {
+void CtrlrLuaMethodProperty::buttonClicked(Button *buttonThatWasClicked) 
+{
+    // --- EDIT METHOD BUTTON ---
+    if (buttonThatWasClicked == editMethodButton.get()) 
+    {
+        const juce::String selectedMethod = methodSelectorCombo->getText();
 
-	} else if (buttonThatWasClicked == newMethodButton.get()) {
+        if (selectedMethod.isEmpty() || selectedMethod == COMBO_NONE_ITEM) 
+        {
+            return;
+        }
 
-	} else if (buttonThatWasClicked == newMethodButton.get()) {
+        if (owner != nullptr) 
+        {
+            owner->getPanelWindowManager().show(CtrlrPanelWindowManager::LuaMethodEditor);
+            
+            auto* ed = dynamic_cast<CtrlrLuaMethodEditor*>(
+                owner->getPanelWindowManager().getContent(CtrlrPanelWindowManager::LuaMethodEditor));
 
-#if JUCE_VERSION >= 0x070000
-		// --- Modern JUCE 7/8 Asynchronous Non-Blocking Approach ---
-		auto *w = new AlertWindow("Method name", "New method name", AlertWindow::QuestionIcon, this);
-		w->addTextEditor("methodName", "myMethod", "Method", false);
-		w->addButton("OK", 1, KeyPress(KeyPress::returnKey));
-		w->addButton("Cancel", 0, KeyPress(KeyPress::escapeKey));
+            if (ed != nullptr) 
+            {
+                ed->setEditedMethod(selectedMethod);
+            }
+        }
+    } 
+    // --- NEW METHOD BUTTON ---
+    else if (buttonThatWasClicked == newMethodButton.get()) 
+    {
+        auto* w = new juce::AlertWindow("Method name", "New method name", juce::AlertWindow::QuestionIcon, this);
+        w->addTextEditor("methodName", "myMethod", "Method", false);
+        w->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+        w->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
 
-		// Fix: Use the exact class type for the safe pointer wrapper
-		Component::SafePointer<CtrlrLuaMethodProperty> safeThis(this);
+        juce::Component::SafePointer<CtrlrLuaMethodProperty> safeThis(this);
 
-		w->enterModalState(true, ModalCallbackFunction::create([safeThis, w](int result) {
-							   // safeThis protects against a crash if the UI changes mid-air
-							   if (safeThis != nullptr && result == 1) {
-								   if (auto *owner = safeThis->owner) {
-									   owner->getCtrlrLuaManager().getMethodManager().addMethod(
-										   ValueTree(), w->getTextEditorContents("methodName"), "",
-										   safeThis->id.toString());
-								   }
-							   }
-						   }),
-						   true); // JUCE automatically handles deleting 'w'
+        w->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, w](int result) 
+        {
+            if (safeThis != nullptr && result == 1) 
+            {
+                if (auto* panelOwner = safeThis->owner) 
+                {
+                    const juce::String newMethodName = w->getTextEditorContents("methodName");
 
-#else
-		// --- Legacy JUCE 6 Synchronous Blocking Approach ---
-		AlertWindow w("Method name", "New method name", AlertWindow::QuestionIcon, this);
-		w.addTextEditor("methodName", "myMethod", "Method", false);
-		w.addButton("OK", 1, KeyPress(KeyPress::returnKey));
-		w.addButton("Cancel", 0, KeyPress(KeyPress::escapeKey));
-		if (w.runModalLoop()) {
-			if (owner) {
-				owner->getCtrlrLuaManager().getMethodManager().addMethod(
-					ValueTree(), w.getTextEditorContents("methodName"), "", id.toString());
-			}
-		}
-#endif
+                    // 1. Add method to MethodManager
+                    panelOwner->getCtrlrLuaManager().getMethodManager().addMethod(
+                        juce::ValueTree(), newMethodName, "", safeThis->id.toString());
 
-		refresh();
-	} else if (buttonThatWasClicked == deleteMethodButton.get()) {
-		if (owner) {
-			owner->getCtrlrLuaManager().getMethodManager().deleteMethod(methodSelectorCombo->getText());
-		}
+                    // 2. Refresh property dropdown AFTER method is created
+                    safeThis->refresh();
 
-		refresh();
-	}
+                    // 3. Set newly created method in the combo box
+                    if (safeThis->methodSelectorCombo != nullptr)
+                    {
+                        safeThis->methodSelectorCombo->setText(newMethodName, juce::sendNotificationAsync);
+                    }
+                }
+            }
+        }), true); // 'true' auto-deletes window 'w' when closed
+    } 
+    // --- DELETE METHOD BUTTON ---
+    else if (buttonThatWasClicked == deleteMethodButton.get()) 
+    {
+        const juce::String selectedMethod = methodSelectorCombo->getText();
+
+        if (selectedMethod.isEmpty() || selectedMethod == COMBO_NONE_ITEM) 
+        {
+            return;
+        }
+
+        if (owner != nullptr) 
+        {
+            owner->getPanelWindowManager().show(CtrlrPanelWindowManager::LuaMethodEditor);
+            
+            auto* ed = dynamic_cast<CtrlrLuaMethodEditor*>(
+                owner->getPanelWindowManager().getContent(CtrlrPanelWindowManager::LuaMethodEditor));
+
+            if (ed != nullptr) 
+            {
+                ed->setEditedMethod(selectedMethod);
+            }
+        }
+    } 
+    // --- NEW METHOD BUTTON ---
+    else if (buttonThatWasClicked == newMethodButton.get()) 
+    {
+        auto* w = new juce::AlertWindow("Method name", "New method name", juce::AlertWindow::QuestionIcon, this);
+        w->addTextEditor("methodName", "myMethod", "Method", false);
+        w->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+        w->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+        juce::Component::SafePointer<CtrlrLuaMethodProperty> safeThis(this);
+
+        w->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, w](int result) 
+        {
+            if (safeThis != nullptr && result == 1) 
+            {
+                if (auto* panelOwner = safeThis->owner) 
+                {
+                    const juce::String newMethodName = w->getTextEditorContents("methodName");
+
+                    // 1. Add method to MethodManager
+                    panelOwner->getCtrlrLuaManager().getMethodManager().addMethod(
+                        juce::ValueTree(), newMethodName, "", safeThis->id.toString());
+
+                    // 2. Refresh property dropdown AFTER method is created
+                    safeThis->refresh();
+
+                    // 3. Set newly created method in the combo box
+                    if (safeThis->methodSelectorCombo != nullptr)
+                    {
+                        safeThis->methodSelectorCombo->setText(newMethodName, juce::sendNotificationAsync);
+                    }
+                }
+            }
+        }), true); // 'true' auto-deletes window 'w' when closed
+    } 
+    // --- DELETE METHOD BUTTON ---
+    else if (buttonThatWasClicked == deleteMethodButton.get()) 
+    {
+        if (owner != nullptr) 
+        {
+            owner->getCtrlrLuaManager().getMethodManager().deleteMethod(methodSelectorCombo->getText());
+        }
+
+        refresh();
+    }
 }
 
 void CtrlrLuaMethodProperty::refresh() {

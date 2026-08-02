@@ -423,80 +423,84 @@ Rectangle<int> CtrlrComponent::getUsableRect()
 }
 
 
-void CtrlrComponent::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
+void CtrlrComponent::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
 {
+    // Helper lambda to fetch the method pointer (or nullptr if empty/invalid)
+    auto getLuaMethodFromProperty = [this](const Identifier& prop) -> CtrlrLuaMethod*
+    {
+        const juce::String methodName = getProperty(prop).toString();
+
+        if (methodName.isEmpty() || isInvalidMethodName(methodName))
+            return nullptr;
+
+        return owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(methodName);
+    };
+
+    // --- Component Label Properties ---
     if (property == Ids::componentVisibleName)
     {
-        componentNameLabel.setText (getVisibleName(), dontSendNotification);
+        componentNameLabel.setText(getVisibleName(), dontSendNotification);
     }
-    else if (property == Ids::componentLabelPosition
-             || property == Ids::componentLabelHeight
-             || property == Ids::componentLabelWidth
-             || property == Ids::componentLabelVisible
-             || property == Ids::componentLabelAlwaysOnTop
-             || property == Ids::componentSentBack
-             || property == Ids::componentLabelJustification
-             )
+    else if (property == Ids::componentLabelPosition   ||
+             property == Ids::componentLabelHeight     ||
+             property == Ids::componentLabelWidth      ||
+             property == Ids::componentLabelVisible    ||
+             property == Ids::componentLabelAlwaysOnTop ||
+             property == Ids::componentSentBack        ||
+             property == Ids::componentLabelJustification)
     {
-        componentNameLabel.setSize (getWidth(), getProperty(Ids::componentLabelHeight));
-        componentNameLabel.setVisible (getProperty(Ids::componentLabelVisible));
-        componentNameLabel.setAlwaysOnTop (getProperty(Ids::componentLabelAlwaysOnTop));
-        componentNameLabel.setText (getVisibleName(), dontSendNotification);
-        componentNameLabel.setJustificationType (justificationFromProperty(getProperty(Ids::componentLabelJustification)));
-        if ((bool)getProperty(Ids::componentLabelAlwaysOnTop) == false)
-        {
-            componentNameLabel.toBack ();
-        }
+        const bool alwaysOnTop = getProperty(Ids::componentLabelAlwaysOnTop);
+
+        componentNameLabel.setSize(getWidth(), getProperty(Ids::componentLabelHeight));
+        componentNameLabel.setVisible(getProperty(Ids::componentLabelVisible));
+        componentNameLabel.setAlwaysOnTop(alwaysOnTop);
+        componentNameLabel.setText(getVisibleName(), dontSendNotification);
+        componentNameLabel.setJustificationType(justificationFromProperty(getProperty(Ids::componentLabelJustification)));
+
+        if (!alwaysOnTop)
+            componentNameLabel.toBack();
         else
-        {
             componentNameLabel.toFront(false);
-        }
-    }
-    else if (property == Ids::componentMouseCursor)
-    {
-        setMouseCursor((MouseCursor::StandardCursorType)(int)getProperty(property));
-        for (int i=0; i<getNumChildComponents(); i++)
-        {
-            getChildComponent(i)->setMouseCursor((MouseCursor::StandardCursorType)(int)getProperty(property));
-        }
     }
     else if (property == Ids::componentLabelColour)
     {
-        componentNameLabel.setColour (Label::textColourId, VAR2COLOUR(getProperty(Ids::componentLabelColour)));
+        componentNameLabel.setColour(Label::textColourId, VAR2COLOUR(getProperty(Ids::componentLabelColour)));
     }
     else if (property == Ids::componentLabelFont)
     {
-        componentNameLabel.setFont (getFontManager().getFontFromString (getProperty(Ids::componentLabelFont)));
+        componentNameLabel.setFont(getFontManager().getFontFromString(getProperty(Ids::componentLabelFont)));
     }
-	else if (property == Ids::componentLayerUid)
+
+    // --- Cursor & Hierarchy ---
+    else if (property == Ids::componentMouseCursor)
     {
-        // Get the new layer's UID from the ValueTree
+        const auto cursorType = static_cast<MouseCursor::StandardCursorType>(static_cast<int>(getProperty(property)));
+        setMouseCursor(cursorType);
+
+        for (auto* child : getChildren())
+            child->setMouseCursor(cursorType);
+    }
+    else if (property == Ids::componentLayerUid)
+    {
         const String newLayerUid = getProperty(Ids::componentLayerUid).toString();
 
-        // Find the new layer using its UID
-        CtrlrPanelCanvasLayer* newLayer = owner.getOwnerPanel().getCanvas()->getLayer(newLayerUid);
-
-        // If the new layer exists, move the component to it
-        if (newLayer != nullptr)
+        if (auto* newLayer = owner.getOwnerPanel().getCanvas()->getLayer(newLayerUid))
         {
-            // Call the existing function to move the component.
-            // This function already handles all the necessary logic.
             owner.getOwnerPanel().getCanvas()->assignToLayer(this, newLayer);
         }
     }
-    else if (property == Ids::componentBubbleHelpEnabled)
-{
-    if (!(bool)getProperty(property) && bubbleMessage != nullptr)
+    else if (property == Ids::componentDisabled)
     {
-        bubbleMessage->setVisible(false);
-        if (auto* p = bubbleMessage->getParentComponent())
-            p->removeChildComponent(bubbleMessage.get());
-        bubbleMessage.reset();
+        const bool disabled = getProperty(property);
+
+        for (auto* child : getChildren())
+            child->setEnabled(!disabled);
     }
-}
+
+    // --- Bounds, Visibility & Grouping ---
     else if (property == Ids::componentRectangle)
     {
-        setBounds (VAR2RECT(getProperty(property)));
+        setBounds(VAR2RECT(getProperty(property)));
     }
     else if (property == Ids::componentRadioGroupId)
     {
@@ -504,104 +508,67 @@ void CtrlrComponent::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasCh
     }
     else if (property == Ids::componentGroupped)
     {
-        setGroupped ((bool)getProperty (property));
-    }
-    else if (property == Ids::componentEffect ||
-        property == Ids::componentEffectColour ||
-        property == Ids::componentEffectOffsetX ||
-        property == Ids::componentEffectOffsetY ||
-        property == Ids::componentEffectRadius)
-    {
-        setEffect();
-    }
-    else if (property == Ids::componentVisibility)
-    {
-        if ((bool)owner.getOwnerPanel().getEditor()->getProperty (Ids::uiPanelEditMode) == true)
-        {
-            if ((bool)getProperty(property) == false)
-            {
-                setAlpha (0.5f);
-            }
-            else
-            {
-                setAlpha (1.0f);
-                setVisible (true);
-            }
-        }
-        else
-        {
-            setAlpha (1.0f);
-            setVisible ((bool)getProperty(property));
-        }
+        setGroupped(getProperty(property));
     }
     else if (property == Ids::componentSnapSize)
     {
         snapDimSize = getProperty(property);
     }
-    else if (property == Ids::componentDisabled)
+    else if (property == Ids::componentVisibility)
     {
-        for (int i=0; i<getNumChildComponents(); i++)
+        const bool isVisibleProp = getProperty(property);
+        const bool isEditMode    = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelEditMode);
+
+        if (isEditMode)
         {
-            getChildComponent(i)->setEnabled (!getProperty(property));
+            setAlpha(isVisibleProp ? 1.0f : 0.5f);
+            if (isVisibleProp)
+                setVisible(true);
+        }
+        else
+        {
+            setAlpha(1.0f);
+            setVisible(isVisibleProp);
         }
     }
-    else if (property == Ids::componentLuaMouseMoved)
-    {
-        if (isInvalidMethodName (getProperty(property)))
-            return;
 
-        mouseMoveCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
-    }
-    else if (property == Ids::componentLuaMouseDown)
+    // --- Visual Effects & Tooltips ---
+    else if (property == Ids::componentEffect        ||
+             property == Ids::componentEffectColour  ||
+             property == Ids::componentEffectOffsetX ||
+             property == Ids::componentEffectOffsetY ||
+             property == Ids::componentEffectRadius)
     {
-        if (isInvalidMethodName (getProperty(property)))
-            return;
-
-        mouseDownCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+        setEffect();
     }
-    else if (property == Ids::componentLuaMouseUp)
+    else if (property == Ids::componentBubbleHelpEnabled)
     {
-        if (isInvalidMethodName (getProperty(property)))
-            return;
+        if (!static_cast<bool>(getProperty(property)) && bubbleMessage != nullptr)
+        {
+            bubbleMessage->setVisible(false);
+            if (auto* p = bubbleMessage->getParentComponent())
+                p->removeChildComponent(bubbleMessage.get());
 
-        mouseUpCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+            bubbleMessage.reset();
+        }
     }
-    else if (property == Ids::componentLuaMouseDrag)
-    {
-        if (isInvalidMethodName (getProperty(property)))
-            return;
 
-        mouseDragCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
-    }
-    else if (property == Ids::componentLuaMouseDoubleClick)
-    {
-        if (isInvalidMethodName (getProperty(property)))
-            return;
+    // --- Lua Mouse Callbacks ---
+    else if (property == Ids::componentLuaMouseDown)        mouseDownCbk        = getLuaMethodFromProperty(property);
+    else if (property == Ids::componentLuaMouseUp)          mouseUpCbk          = getLuaMethodFromProperty(property);
+    else if (property == Ids::componentLuaMouseMoved)       mouseMoveCbk        = getLuaMethodFromProperty(property);
+    else if (property == Ids::componentLuaMouseDrag)        mouseDragCbk        = getLuaMethodFromProperty(property);
+    else if (property == Ids::componentLuaMouseDoubleClick) mouseDoubleClickCbk = getLuaMethodFromProperty(property);
+    else if (property == Ids::componentLuaMouseEnter)       mouseEnterCbk       = getLuaMethodFromProperty(property);
+    else if (property == Ids::componentLuaMouseExit)        mouseExitCbk        = getLuaMethodFromProperty(property);
 
-        mouseDoubleClickCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
-    }
-    else if (property == Ids::componentLuaMouseEnter)
-    {
-        if (isInvalidMethodName (getProperty(property)))
-            return;
-
-        mouseEnterCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
-    }
-    else if (property == Ids::componentLuaMouseExit)
-    {
-        if (isInvalidMethodName (getProperty(property)))
-            return;
-
-        mouseExitCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
-    }
-    
-    if (restoreStateInProgress == false)
+    // --- Final Redraw Triggers ---
+    if (!restoreStateInProgress)
     {
         repaint();
         resized();
     }
 }
-
 void CtrlrComponent::setEffect()
 {
     if (getProperty(Ids::componentEffect) == "No Effect")
