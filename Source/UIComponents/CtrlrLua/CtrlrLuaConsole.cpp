@@ -227,35 +227,43 @@ const PopupMenu CtrlrLuaConsole::getSnipsMenu(const int mask) {
 }
 
 void CtrlrLuaConsole::snipsItemClicked(Button *b) {
-	PopupMenu m;
-	m.addItem(1, "Add input to snips");
-	m.addSubMenu("Run snip", getSnipsMenu(1024));
-	m.addSubMenu("Remove snip", getSnipsMenu(4096));
-	m.addItem(2, "Toggle input removal after run", true, (bool)owner.getProperty(Ids::uiLuaConsoleInputRemoveAfterRun));
-	// const int ret = m.showAt(b); JUCE 8 CODE pass 4 arguments to lambda
+    // 1. Heap-allocate PopupMenu so it survives beyond this function scope
+    auto m = std::make_shared<PopupMenu>();
+    
+    m->addItem(1, "Add input to snips");
+    m->addSubMenu("Run snip", getSnipsMenu(1024));
+    m->addSubMenu("Remove snip", getSnipsMenu(4096));
+    m->addItem(2, "Toggle input removal after run", true, (bool)owner.getProperty(Ids::uiLuaConsoleInputRemoveAfterRun));
 
-	// 1. Open the helper function call
-	PU::showMenuAsyncSafe(
-		m, this,
-		[this](int ret) {
-			// --- Your menu handling code lives inside the lambda body ---
-			if (ret == 1) {
-				snips.add(inputDocument.getAllContent());
-			}
-			if (ret >= 1024 && ret < 4096) {
-				runCode(snips[ret - 1024]);
-			}
-			if (ret >= 4096) {
-				snips.remove(ret - 4096);
-			}
-			if (ret == 2) {
-				owner.setProperty(Ids::uiLuaConsoleInputRemoveAfterRun,
-								  !owner.getProperty(Ids::uiLuaConsoleInputRemoveAfterRun));
-			}
+    // 2. Wrap 'this' in a SafePointer to prevent use-after-free if the Console closes
+    Component::SafePointer<CtrlrLuaConsole> safeThis(this);
 
-			owner.setProperty(Ids::uiLuaConsoleSnips, snips.joinIntoString("$"));
-		},
-		b); // 2. Close the lambda block }, pass 'b' as the 4th argument, and close the function call );
+    // 3. Call showMenuAsyncSafe targeting button 'b'
+    PU::showMenuAsyncSafe(
+        *m, 
+        b, // Target component (Button) passed as 2nd argument
+        [this, safeThis, m](int ret) {
+            // Check component safety before handling result
+            if (safeThis == nullptr || ret == 0)
+                return;
+
+            if (ret == 1) {
+                snips.add(inputDocument.getAllContent());
+            }
+            else if (ret >= 1024 && ret < 4096) {
+                runCode(snips[ret - 1024]);
+            }
+            else if (ret >= 4096) {
+                snips.remove(ret - 4096);
+            }
+            else if (ret == 2) {
+                owner.setProperty(Ids::uiLuaConsoleInputRemoveAfterRun,
+                                  !owner.getProperty(Ids::uiLuaConsoleInputRemoveAfterRun));
+            }
+
+            owner.setProperty(Ids::uiLuaConsoleSnips, snips.joinIntoString("$"));
+        }
+    );
 }
 
 StringArray CtrlrLuaConsole::getMenuBarNames() {

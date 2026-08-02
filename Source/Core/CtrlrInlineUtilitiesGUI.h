@@ -22,20 +22,16 @@ void showCustomDialogAsync(const juce::String &title, juce::Component *content, 
 
 // --- Inline Alert Helpers (defined right here in .h) ---
 static inline void runCustomAlertAsyncSafe(juce::AlertWindow *alert, std::function<void(int)> callback) {
-#if JUCE_VERSION >= 0x070000
+
 	alert->enterModalState(
 		true, juce::ModalCallbackFunction::create([alert, callback](int result) { callback(result); }), true);
-#else
-	int result = alert->runModalLoop();
-	if (callback != nullptr)
-		callback(result);
-#endif
+
 }
 
 // 1. AlertWindow version
 static inline void layoutButtonsJUCE8(juce::AlertWindow *alert, const juce::String &okText,
 									  const juce::String &cancelText, int bW = 100, int bH = 35) {
-#if JUCE_VERSION >= 0x070000
+
 	if (alert == nullptr)
 		return;
 
@@ -50,7 +46,7 @@ static inline void layoutButtonsJUCE8(juce::AlertWindow *alert, const juce::Stri
 			cancelBtn->setBounds(startX + bW + gap, yPos, bW, bH);
 		}
 	}
-#endif
+
 }
 
 // 2. Component* overload (calls the AlertWindow version above)
@@ -63,10 +59,12 @@ static inline void layoutButtonsJUCE8(juce::Component *component, const juce::St
 
 } // namespace AW
 
+#include <juce_gui_basics/juce_gui_basics.h>
+
 class PU {
 public:
     // =========================================================================
-    // SYNCHRONOUS HELPERS (Return selected item ID integer)
+    // SYNCHRONOUS HELPERS (Return selected item ID integer to Lua)
     // =========================================================================
 
     /** Displays a menu synchronously with layout constraints */
@@ -76,7 +74,6 @@ public:
                             int maximumNumColumns = 0,
                             int standardItemHeight = 0) 
     {
-#if JUCE_VERSION >= 0x070000
         auto options = juce::PopupMenu::Options()
             .withMinimumWidth(minimumWidth)
             .withMaximumNumColumns(maximumNumColumns)
@@ -86,9 +83,6 @@ public:
             options = options.withItemThatMustBeVisible(itemIDThatMustBeVisible);
 
         return showSyncWithOptions(menu, options);
-#else
-        return menu.show(itemIDThatMustBeVisible, minimumWidth, maximumNumColumns, standardItemHeight);
-#endif
     }
 
     /** Displays a menu synchronously attached to a target Component */
@@ -99,15 +93,11 @@ public:
         if (componentToAttachTo == nullptr)
             return showMenuSync(menu, 0, 0, 0, standardItemHeight);
 
-#if JUCE_VERSION >= 0x070000
         auto options = juce::PopupMenu::Options()
             .withTargetComponent(componentToAttachTo)
             .withStandardItemHeight(standardItemHeight);
 
         return showSyncWithOptions(menu, options);
-#else
-        return menu.showAt(componentToAttachTo, standardItemHeight);
-#endif
     }
 
     /** Displays a menu synchronously attached to a Screen Area */
@@ -115,74 +105,65 @@ public:
                                   const juce::Rectangle<int> &areaToAttachTo,
                                   int standardItemHeight = 0) 
     {
-#if JUCE_VERSION >= 0x070000
         auto options = juce::PopupMenu::Options()
             .withTargetScreenArea(areaToAttachTo)
             .withStandardItemHeight(standardItemHeight);
 
         return showSyncWithOptions(menu, options);
-#else
-        return menu.showAt(areaToAttachTo, standardItemHeight);
-#endif
     }
 
-	static int showSyncWithOptions(juce::PopupMenu &menu, const juce::PopupMenu::Options &options) {
-#if JUCE_VERSION >= 0x070000
-		// JUCE 8 non-blocking async execution (returns 0 immediately to caller)
-		menu.showMenuAsync(options, nullptr);
-		return 0;
-#else
-		// Legacy JUCE 6 synchronous execution
-		return menu.showWithOptionalTargetComponent(options.getTargetComponent());
-#endif
-	}
-
-	// =========================================================================
-	// ASYNCHRONOUS HELPERS (Non-blocking, uses callback)
-	// =========================================================================
-
-	/** Safely shows a popup menu asynchronously across JUCE versions */
-	static void showMenuAsyncSafe(juce::PopupMenu &menuToDisplay,
-                                  juce::Component *targetComponent,
-                                  std::function<void(int)> callback,
-                                  juce::Component *componentToTargetForShowAt = nullptr) 
+    /** Runs the JUCE 8 async menu synchronously via local message pumping */
+    static int showSyncWithOptions(juce::PopupMenu &menu, const juce::PopupMenu::Options &options) 
     {
-        juce::Component *finalTarget =
-            (componentToTargetForShowAt != nullptr) ? componentToTargetForShowAt : targetComponent;
-
-#if JUCE_VERSION >= 0x070000
-        auto options = juce::PopupMenu::Options();
-        if (finalTarget != nullptr)
-            options = options.withTargetComponent(finalTarget);
-
-        menuToDisplay.showMenuAsync(options, [callback](int result) {
-            if (callback) callback(result);
-        });
-#else
-        int result = 0;
-        if (componentToTargetForShowAt != nullptr) {
-            result = menuToDisplay.showAt(componentToTargetForShowAt);
-        } else {
-            result = menuToDisplay.show();
+        if (! juce::MessageManager::getInstance()->isThisTheMessageThread())
+        {
+            jassertfalse; // Popup menus must be shown from the Message Thread
+            return 0;
         }
 
-        if (callback) callback(result);
-#endif
+        int selectedResult = 0;
+        bool menuFinished = false;
+
+        // Launch JUCE 8 popup asynchronously
+        menu.showMenuAsync(options, [&selectedResult, &menuFinished](int result)
+        {
+            selectedResult = result;
+            menuFinished = true;
+        });
+
+        // Pump event loop until the selection is made or the menu is dismissed
+        while (! menuFinished)
+        {
+            if (! juce::MessageManager::getInstance()->runDispatchLoopUntil(10))
+            {
+                break; // Exit if the message loop stops/shuts down
+            }
+        }
+
+        return selectedResult;
     }
 
-private:
-	// #if JUCE_VERSION >= 0x070000
-	//     /** Private helper to run modern JUCE async menus synchronously */
-	// static void showSyncWithOptions(juce::PopupMenu& menu, const juce::PopupMenu::Options& options,
-	// std::function<void(int)> callback = nullptr)
-	// {
-	//     menu.showMenuAsync(options, juce::ModalComponentManager::Callback::create([callback](int result)
-	//     {
-	//         if (callback)
-	//             callback(result);
-	//     }));
-	// }
-	// #endif
+    // =========================================================================
+    // ASYNCHRONOUS HELPERS (For modern C++ / Lua callbacks)
+    // =========================================================================
+
+    /** Safely shows a popup menu asynchronously */
+    static void showMenuAsyncSafe(juce::PopupMenu &menuToDisplay,
+                                  juce::Component *targetComponent,
+                                  std::function<void(int)> callback) 
+    {
+        auto options = juce::PopupMenu::Options();
+        if (targetComponent != nullptr)
+        {
+            juce::Component::SafePointer<juce::Component> safeTarget(targetComponent);
+            options = options.withTargetComponent(safeTarget.getComponent());
+        }
+
+        menuToDisplay.showMenuAsync(options, [callback](int result) {
+            if (callback) 
+                callback(result);
+        });
+    }
 };
 /**************************************************************************************************/
 namespace AW {
@@ -200,16 +181,11 @@ namespace AW {
 		 */
 		static void showPopupMenuAsync(juce::PopupMenu &menu, const juce::PopupMenu::Options &options,
 									   std::function<void(int)> callback = nullptr) {
-#if JUCE_VERSION >= 0x070000
 			menu.showMenuAsync(options, [callback](int result) {
 				if (callback != nullptr)
 					callback(result);
 			});
-#else
-			int result = menu.showWithOptionalTargetComponent(options.getTargetComponent());
-			if (callback != nullptr)
-				callback(result);
-#endif
+
 		}
 
 		/**************************************************************************************************/
@@ -234,23 +210,6 @@ static bool showNativeDialogBox(Icon icon, const juce::String &title, const juce
 		break;
 	}
 
-#if JUCE_VERSION < 0x070000
-			// --- Legacy JUCE 6 Path (Synchronous) ---
-			if (isOkCancel) {
-				bool result =
-					juce::AlertWindow::showOkCancelBox(juceAlertIcon, title, bodyText, buttonText1, buttonText2);
-
-				if (completionCallback != nullptr)
-					completionCallback(result);
-
-				return result;
-			} else {
-				juce::AlertWindow::showMessageBox(juceAlertIcon, title, bodyText, buttonText1);
-				if (completionCallback != nullptr)
-					completionCallback(true);
-				return true;
-			}
-#else
 			// --- Modern JUCE 7/8 Path (Asynchronous) ---
 			auto juce8NativeIcon = (icon == Question)  ? juce::MessageBoxIconType::QuestionIcon
 								   : (icon == Warning) ? juce::MessageBoxIconType::WarningIcon
@@ -275,13 +234,13 @@ static bool showNativeDialogBox(Icon icon, const juce::String &title, const juce
 					}));
 			}
 			return false;
-#endif
+
 }
 
 		/**************************************************************************************************/
 		static void showMessageBox(Icon icon, const juce::String &title, const juce::String &message,
 								   const juce::String &buttonText = "OK", std::function<void()> callback = nullptr) {
-#if JUCE_VERSION >= 0x070000
+
 			auto juce8Icon = (icon == Question)	 ? juce::MessageBoxIconType::QuestionIcon
 							 : (icon == Warning) ? juce::MessageBoxIconType::WarningIcon
 							 : (icon == Info)	 ? juce::MessageBoxIconType::InfoIcon
@@ -293,17 +252,7 @@ static bool showNativeDialogBox(Icon icon, const juce::String &title, const juce
 													   if (callback != nullptr)
 														   callback();
 												   }));
-#else
-			auto juce6Icon = (icon == Question)	 ? juce::AlertWindow::QuestionIcon
-							 : (icon == Warning) ? juce::AlertWindow::WarningIcon
-							 : (icon == Info)	 ? juce::AlertWindow::InfoIcon
-												 : juce::AlertWindow::NoIcon;
 
-			juce::AlertWindow::showMessageBox(juce6Icon, title, message, buttonText);
-
-			if (callback != nullptr)
-				callback();
-#endif
 		}
 
 		/**************************************************************************************************/
@@ -362,34 +311,6 @@ static bool showNativeDialogBox(Icon icon, const juce::String &title, const juce
 											  });
 		}
 
-		/**************************************************************************************************/
-// 		static void runCustomAlertAsyncSafe(juce::AlertWindow *alert, std::function<void(int)> callback) {
-// #if JUCE_VERSION >= 0x070000
-// 			alert->enterModalState(
-// 				true, juce::ModalCallbackFunction::create([alert, callback](int result) { callback(result); }), true);
-// #else
-// 			int result = alert->runModalLoop();
-// 			callback(result);
-// #endif
-// 		}
-
-		/**************************************************************************************************/
-// 		static void layoutButtonsJUCE8(juce::AlertWindow *alert, const juce::String &okText,
-// 									   const juce::String &cancelText, int bW = 100, int bH = 35) {
-// #if JUCE_VERSION >= 0x070000
-// 			if (auto *okBtn = alert->getButton(okText)) {
-// 				if (auto *cancelBtn = alert->getButton(cancelText)) {
-// 					const int gap = 15;
-// 					const int totalWidth = (bW * 2) + gap;
-// 					const int startX = (alert->getWidth() - totalWidth) / 2;
-// 					const int yPos = alert->getHeight() - bH - 25;
-
-// 					okBtn->setBounds(startX, yPos, bW, bH);
-// 					cancelBtn->setBounds(startX + bW + gap, yPos, bW, bH);
-// 				}
-// 			}
-// #endif
-// 		}
 };
 /**************************************************************************************************/
 /*
@@ -429,7 +350,6 @@ inline void saveFileAsync(const juce::String &dialogTitle, const juce::File &ini
 	int flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles |
 				juce::FileBrowserComponent::warnAboutOverwriting;
 
-#if JUCE_VERSION >= 0x070000
 	auto chooser =
 		std::make_shared<juce::FileChooser>(dialogTitle, initialFileOrDirectory, filePatternsAllowed, useNativeDialog);
 	chooser->launchAsync(flags, [chooser, callback](const juce::FileChooser &fc) {
@@ -437,15 +357,7 @@ inline void saveFileAsync(const juce::String &dialogTitle, const juce::File &ini
 			callback(fc.getResult());
 		}
 	});
-#else
-	auto *chooser = new juce::FileChooser(dialogTitle, initialFileOrDirectory, filePatternsAllowed, useNativeDialog);
-	chooser->launchAsync(flags, [chooser, callback](const juce::FileChooser &fc) {
-		if (callback) {
-			callback(fc.getResult());
-		}
-		delete chooser;
-	});
-#endif
+
 }
 /**************************************************************************************************/
 inline void openFileAsync(const String &dialogTitle, const File &initialFileOrDirectory,
@@ -453,8 +365,7 @@ inline void openFileAsync(const String &dialogTitle, const File &initialFileOrDi
 						  std::function<void(const File &)> callback) {
 	int flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
 
-#if JUCE_MAJOR_VERSION >= 7
-	// --- JUCE 7 & 8 Path ---
+
 	auto chooser =
 		std::make_shared<juce::FileChooser>(dialogTitle, initialFileOrDirectory, filePatternsAllowed, useNativeDialog);
 
@@ -463,17 +374,8 @@ inline void openFileAsync(const String &dialogTitle, const File &initialFileOrDi
 			callback(fc.getResult());
 		}
 	});
-#else
-	// --- JUCE 6 Path ---
-	auto *chooser = new juce::FileChooser(dialogTitle, initialFileOrDirectory, filePatternsAllowed, useNativeDialog);
 
-	chooser->launchAsync(flags, [chooser, callback](const juce::FileChooser &fc) {
-		if (callback) {
-			callback(fc.getResult());
-		}
-		delete chooser;
-	});
-#endif
+
 }
 /**
  * Cross-version helper to open multiple files asynchronously.
@@ -485,7 +387,6 @@ inline void openMultipleFilesAsync(const juce::String &dialogTitle, const juce::
 	int flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles |
 				juce::FileBrowserComponent::canSelectMultipleItems;
 
-#if JUCE_VERSION >= 0x070000
 	auto chooser =
 		std::make_shared<juce::FileChooser>(dialogTitle, initialFileOrDirectory, filePatternsAllowed, useNativeDialog);
 	chooser->launchAsync(flags, [chooser, callback](const juce::FileChooser &fc) {
@@ -493,15 +394,7 @@ inline void openMultipleFilesAsync(const juce::String &dialogTitle, const juce::
 			callback(fc.getResults());
 		}
 	});
-#else
-	auto *chooser = new juce::FileChooser(dialogTitle, initialFileOrDirectory, filePatternsAllowed, useNativeDialog);
-	chooser->launchAsync(flags, [chooser, callback](const juce::FileChooser &fc) {
-		if (callback) {
-			callback(fc.getResults());
-		}
-		delete chooser;
-	});
-#endif
+
 }
 } // namespace FC
 /**************************************************************************************************/

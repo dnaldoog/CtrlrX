@@ -1619,52 +1619,82 @@ void LookAndFeelBase::drawKeymapChangeButton(Graphics &g, int width, int height,
 {
     TRY_CALL(drawKeymapChangeButton, boost::ref(g), width, height, boost::ref(button), keyDescription);
 }
-// Static helper for showAsync
-// --- Sync Helpers ---
-// --- Static Helpers for LPopupMenu Sync Calls ---
 
-static int LPopupMenu_show4(LPopupMenu *self, int itemIDThatMustBeVisible, int minimumWidth, int maximumNumColumns,
-							int standardItemHeight) {
-	return self->show(itemIDThatMustBeVisible, minimumWidth, maximumNumColumns, standardItemHeight);
+static void LPopupMenu_showAsync(PopupMenu& menu, luabind::object luaCallback)
+{
+    auto options = juce::PopupMenu::Options();
+    
+    menu.showMenuAsync(options, [luaCallback](int result) mutable
+    {
+        if (result != 0 && luaCallback.is_valid())
+        {
+            juce::MessageManager::callAsync([luaCallback, result]() mutable
+            {
+                try
+                {
+                    luabind::call_function<void>(luaCallback, result);
+                }
+                catch (const std::exception& e)
+                {
+                    juce::Logger::writeToLog("Lua PopupMenu Callback Error: " + juce::String(e.what()));
+                }
+            });
+        }
+    });
 }
 
-static int LPopupMenu_show1(LPopupMenu *self, int itemHeight) {
-	// Explicitly pass 4 arguments to eliminate C2668 overload ambiguity
-	return self->show(0, 0, 0, itemHeight);
+// Full coordinate showAsync matching show(0,0,0,0, callback)
+static void LPopupMenu_showAsyncWithRect(PopupMenu& menu, 
+                                        int itemIDThatMustBeVisible, 
+                                        int minimumWidth, 
+                                        int maximumNumColumns, 
+                                        int standardItemHeight,
+                                        luabind::object luaCallback)
+{
+    auto options = juce::PopupMenu::Options()
+        .withMinimumWidth(minimumWidth)
+        .withMaximumNumColumns(maximumNumColumns)
+        .withStandardItemHeight(standardItemHeight);
+
+    if (itemIDThatMustBeVisible > 0)
+        options = options.withItemThatMustBeVisible(itemIDThatMustBeVisible);
+
+    menu.showMenuAsync(options, [luaCallback](int result) mutable
+    {
+        if (result != 0 && luaCallback.is_valid())
+        {
+            juce::MessageManager::callAsync([luaCallback, result]() mutable
+            {
+                try
+                {
+                    luabind::call_function<void>(luaCallback, result);
+                }
+                catch (const std::exception& e)
+                {
+                    juce::Logger::writeToLog("Lua PopupMenu Callback Error: " + juce::String(e.what()));
+                }
+            });
+        }
+    });
 }
 
-static int LPopupMenu_show0(LPopupMenu *self) {
-	// Explicitly pass 4 arguments to eliminate C2668 overload ambiguity
-	return self->show(0, 0, 0, 0);
+static void LPopupMenu_showAtAsync(LPopupMenu *self, juce::Component *targetComp, luabind::object cb) 
+{
+    PU::showMenuAsyncSafe(
+        *self, targetComp,
+        [cb](int res) {
+            if (luabind::type(cb) == LUA_TFUNCTION)
+                luabind::call_function<void>(cb, res);
+        });
 }
-
-// --- Static Helpers for LPopupMenu Async Calls ---
-
-static void LPopupMenu_showAsync(LPopupMenu *self, juce::Component *target, luabind::object cb) {
-	PU::showMenuAsyncSafe(*self, target, [cb](int res) {
-		if (luabind::type(cb) == LUA_TFUNCTION)
-			luabind::call_function<void>(cb, res);
-	});
-}
-
-static void LPopupMenu_showAtAsync(LPopupMenu *self, juce::Component *targetComp, luabind::object cb) {
-	PU::showMenuAsyncSafe(
-		*self, nullptr,
-		[cb](int res) {
-			if (luabind::type(cb) == LUA_TFUNCTION)
-				luabind::call_function<void>(cb, res);
-		},
-		targetComp);
-}
-
-// --- Class Implementation ---
 
 LPopupMenu::LPopupMenu() {}
 
 void LPopupMenu::addSubMenu(const juce::String &subMenuName, const LPopupMenu &subMenu, bool isEnabled,
-							const juce::Image &iconToUse, bool isTicked, int itemResultID) {
-	juce::PopupMenu::addSubMenu(subMenuName, subMenu, isEnabled, iconToUse, isTicked, itemResultID);
+                            const juce::Image &iconToUse, bool isTicked, int itemResultID) {
+    juce::PopupMenu::addSubMenu(subMenuName, subMenu, isEnabled, iconToUse, isTicked, itemResultID);
 }
+
 int LPopupMenu::show(int itemIDThatMustBeVisible, int minimumWidth, int maximumNumColumns, int standardItemHeight)
 {
     return PU::showMenuSync(*this, itemIDThatMustBeVisible, minimumWidth, maximumNumColumns, standardItemHeight);
@@ -1684,45 +1714,39 @@ int LPopupMenu::showAt(juce::Component* componentToAttachTo, int standardItemHei
 {
     return PU::showMenuSyncAtComponent(*this, componentToAttachTo, standardItemHeight);
 }
-// static int LPopupMenu_show4(LPopupMenu *self, int itemIDThatMustBeVisible, int minimumWidth, int maximumNumColumns, int standardItemHeight) {
-//     juce::PopupMenu::Options opts = juce::PopupMenu::Options()
-//         .withMinimumWidth(minimumWidth)
-//         .withMaximumNumColumns(maximumNumColumns)
-//         .withStandardItemHeight(standardItemHeight);
 
-//     if (itemIDThatMustBeVisible > 0)
-//         opts = opts.withItemThatMustBeVisible(itemIDThatMustBeVisible);
-
-//     return self->showMenuAsync(opts);
-// }
 void LPopupMenu::wrapForLua(lua_State *L) {
-	using namespace luabind;
+    using namespace luabind;
 
-	module(L)[class_<PopupMenu>("JPopupMenu"),
+    module(L)[
+        class_<PopupMenu>("JPopupMenu"),
 
-			  class_<LPopupMenu, bases<PopupMenu>>("PopupMenu")
-				  .def(constructor<>())
-				  .def("clear", &PopupMenu::clear)
-				  .def("addItem", (void (PopupMenu::*)(int, String, bool, bool, const Image &))&PopupMenu::addItem)
-				  .def("addItem", (void (PopupMenu::*)(int, String, bool, bool))&PopupMenu::addItem)
-				  .def("addColouredItem",
-					   (void (PopupMenu::*)(int, String, Colour, bool, bool, const Image &))&PopupMenu::addColouredItem)
-				  .def("addSubMenu", &LPopupMenu::addSubMenu)
-				  .def("addSeparator", &PopupMenu::addSeparator)
-				  .def("addColumnBreak", &LPopupMenu::addColumnBreak)
-				  .def("addSectionHeader", &PopupMenu::addSectionHeader)
-				  .def("getNumItems", &PopupMenu::getNumItems)
-				  .def("setLookAndFeel", &PopupMenu::setLookAndFeel)
+        class_<LPopupMenu, bases<PopupMenu>>("PopupMenu")
+            .def(constructor<>())
+            .def("clear", &PopupMenu::clear)
+            .def("addItem", (void (PopupMenu::*)(int, String, bool, bool, const Image &))&PopupMenu::addItem)
+            .def("addItem", (void (PopupMenu::*)(int, String, bool, bool))&PopupMenu::addItem)
+            .def("addColouredItem",
+                 (void (PopupMenu::*)(int, String, Colour, bool, bool, const Image &))&PopupMenu::addColouredItem)
+            .def("addSubMenu", &LPopupMenu::addSubMenu)
+            .def("addSeparator", &PopupMenu::addSeparator)
+            .def("addColumnBreak", &LPopupMenu::addColumnBreak)
+            .def("addSectionHeader", &PopupMenu::addSectionHeader)
+            .def("getNumItems", &PopupMenu::getNumItems)
+            .def("setLookAndFeel", &PopupMenu::setLookAndFeel)
 
-				  // --- Synchronous Show Methods ---
-				  .def("show", &LPopupMenu_show4)
-				  .def("show", &LPopupMenu_show1)
-				  .def("show", &LPopupMenu_show0)
+            // --- Synchronous Show Methods ---
+            .def("show", (int (LPopupMenu::*)(int, int, int, int))&LPopupMenu::show)
+            .def("show", (int (LPopupMenu::*)(int))&LPopupMenu::show)
 
-				  // --- Asynchronous Show Methods ---
-				  .def("showAsync", &LPopupMenu_showAsync)
-				  .def("showAtAsync", &LPopupMenu_showAtAsync)];
+            // --- Asynchronous Show Methods ---
+            .def("showAsync", &LPopupMenu_showAsync)
+            .def("showAsync", &LPopupMenu_showAsyncWithRect)
+            .def("showAtAsync", &LPopupMenu_showAtAsync)
+    ];
 }
+
+
 void LSlider::wrapForLua (lua_State *L)
 {
 	using namespace luabind;
