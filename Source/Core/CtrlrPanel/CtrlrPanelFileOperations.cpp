@@ -605,13 +605,9 @@ Result CtrlrPanel::savePanelBin(const File &fileToSave, CtrlrPanel *panel, const
 	}
 	else
 	{
-#if JUCE_VERSION >= 0x070000
-		AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Can't save panel", "I can't write to the specified file",
-										 "OK");
-#else
-		AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Can't save panel", "I can't write to the specified file",
-									"OK");
-#endif
+
+		AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Can't save panel",
+										 "I can't write to the specified file", "OK");
 		return (Result::fail("savePanelBin now write access to file: " + fileToSave.getFullPathName()));
 	}
 }
@@ -674,13 +670,9 @@ Result CtrlrPanel::writeLuaMethod(const File &parentDir, ValueTree *method)
 	}
 	else
 	{
-#if JUCE_VERSION >= 0x070000
-		AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Could not save lua method", "Could not save lua method",
-										 "OK");
-#else
-		AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Could not save lua method", "Could not save lua method",
-									"OK");
-#endif
+
+		AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Could not save lua method",
+										 "Could not save lua method", "OK");
 		return (Result::fail("saveLuaMethod: could not save lua method."));
 	}
 }
@@ -703,13 +695,10 @@ Result CtrlrPanel::writeLuaMethodGroup(const File &parentDir, ValueTree *methodG
 	}
 	else
 	{
-#if JUCE_VERSION >= 0x070000
+
 		AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Could not save lua method group",
 										 "Could not save lua method group", "OK");
-#else
-		AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Could not save lua method group",
-									"Could not save lua method group", "OK");
-#endif
+
 		return (Result::fail("saveLuaMethodGroup: could not save lua method group."));
 	}
 	return res;
@@ -837,16 +826,9 @@ Result CtrlrPanel::savePanelXml(const File &fileToSave, CtrlrPanel *panel, const
 			return (Result::fail("savePanelXml replaceWithData() failed on destination file " +
 								 fileToSave.getFullPathName()));
 		}
-	}
-	else
-	{
-		#if JUCE_VERSION >= 0x070000
-		AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Can't save panel", "I can't write to the specified file",
-										 "OK");
-		#else
-		AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Can't save panel", "I can't write to the specified file",
-									"OK");
-		#endif
+	} else {
+		AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Can't save panel",
+										 "I can't write to the specified file", "OK");
 		return (Result::fail("savePanelXml now write access to file: " + fileToSave.getFullPathName()));
 	}
 }
@@ -873,33 +855,12 @@ const File CtrlrPanel::askForPanelFileToSave(CtrlrPanel *panel, const File &last
 	return juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile(panelFileName);
 }
 
-#if JUCE_VERSION < 0x070000
-bool CtrlrPanel::isPanelFile(const File &fileToCheck, const bool beThorough)
-{
-	if (beThorough)
-	{
-		return (false);
-	}
-	else
-	{
-		if (fileToCheck.hasFileExtension("bpanel;bpanelz;panel;panelz"))
-		{
-			return (true);
-		}
-		else
-		{
-			return (false);
-		}
-	}
-}
-#else
 bool CtrlrPanel::isPanelFile(const File &fileToCheck, const bool beThorough) {
 	if (beThorough)
 		return false;
 
 	return fileToCheck.hasFileExtension("bpanel;bpanelz;panel;panelz");
 }
-#endif
 
 void CtrlrPanel::setSavePoint() { indexOfSavedState = currentActionIndex; }
 
@@ -1030,98 +991,3 @@ void CtrlrPanel::canClose(const bool closePanel, std::function<void(bool)> compl
     if (completionCallback)
         completionCallback(true);
 }
-// void CtrlrPanel::canClose(const bool closePanel, std::function<void(bool)> completionCallback) {
-//     // 1. Check for modified Lua Code first
-//     CtrlrPanelWindowManager &manager = getWindowManager();
-//     if (manager.isCreated(CtrlrPanelWindowManager::LuaMethodEditor)) {
-//         CtrlrChildWindowContent *content = manager.getContent(CtrlrPanelWindowManager::LuaMethodEditor);
-//         if (content != nullptr) {
-//             content->toFront(true);
-//             if (!content->canCloseWindow()) {
-//                 if (completionCallback)
-//                     completionCallback(false);
-//                 return;
-//             }
-//         }
-//     }
-
-//     // 2. Check for panel modifications
-//     if (closePanel && (hasChangedSinceSavePoint() || isPanelDirty())) {
-
-//         // --- JUCE 8 SAFE POINTER RESOLUTION ---
-//         // dynamic_cast ensures correct vtable pointer calculation
-//         juce::Component *compTarget = getEditor() ? dynamic_cast<juce::Component *>(getEditor())
-//                                                   : dynamic_cast<juce::Component *>(this);
-
-//         if (compTarget == nullptr) {
-//             if (completionCallback)
-//                 completionCallback(true);
-//             return;
-//         }
-
-//         juce::Component::SafePointer<juce::Component> safeComp(compTarget);
-//         juce::WeakReference<CtrlrPanel> safePanel(this);
-
-// #if JUCE_VERSION >= 0x070000
-//         juce::NativeMessageBox::showYesNoCancelBox(
-//             juce::MessageBoxIconType::QuestionIcon, 
-//             "Save panel (" + getName() + ")",
-//             "There are unsaved changes in this panel.\nDo you want to save them before closing?", 
-//             nullptr,
-//             juce::ModalCallbackFunction::create([safePanel, safeComp, completionCallback](int result) {
-//                 if (safePanel.wasObjectDeleted() || safeComp == nullptr) {
-//                     if (completionCallback)
-//                         completionCallback(false);
-//                     return;
-//                 }
-
-//                 if (result == 1) // Save ("Yes")
-//                 {
-//                     safePanel->savePanel();
-                    
-//                     // DEFER CLOSING to prevent destroying components mid-dialog cleanup
-//                     juce::MessageManager::callAsync([completionCallback]() {
-//                         if (completionCallback)
-//                             completionCallback(true);
-//                     });
-//                 } 
-//                 else if (result == 2) // Discard ("No")
-//                 {
-//                     // DEFER CLOSING
-//                     juce::MessageManager::callAsync([completionCallback]() {
-//                         if (completionCallback)
-//                             completionCallback(true);
-//                     });
-//                 } 
-//                 else // Cancel (0)
-//                 {
-//                     if (completionCallback)
-//                         completionCallback(false);
-//                 }
-//             }));
-//         return;
-// #else
-//         // Legacy modal dialog fallback for JUCE 6 and below
-//         int result = juce::AlertWindow::showYesNoCancelBox(
-//             juce::AlertWindow::QuestionIcon, "Save panel (" + getName() + ")",
-//             "There are unsaved changes in this panel.\nDo you want to save them before closing?");
-
-//         if (result == 1) { // Save
-//             savePanel();
-//             if (completionCallback)
-//                 completionCallback(true);
-//         } else if (result == 2) { // Discard
-//             if (completionCallback)
-//                 completionCallback(true);
-//         } else { // Cancel
-//             if (completionCallback)
-//                 completionCallback(false);
-//         }
-//         return;
-// #endif
-//     }
-
-//     // 3. No changes needing prompt, proceed to close
-//     if (completionCallback)
-//         completionCallback(true);
-// }

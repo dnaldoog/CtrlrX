@@ -98,7 +98,7 @@ void CtrlrDialogWindow::showCustomDialogAsync(const juce::String &title, juce::C
 											  std::function<void(int)> callback) {
 	auto *dw = new CtrlrTempDialogWindow(title, content, nullptr, backgroundColour, true, resizable, false);
 
-#if JUCE_VERSION >= 0x070000
+
 	dw->enterModalState(true, juce::ModalCallbackFunction::create([dw, callback](int result) {
 							if (callback != nullptr)
 								callback(result);
@@ -106,24 +106,11 @@ void CtrlrDialogWindow::showCustomDialogAsync(const juce::String &title, juce::C
 							delete dw;
 						}),
 						true);
-#else
-	int result = dw->runModalLoop();
-	if (callback != nullptr)
-		callback(result);
-	delete dw;
-#endif
 }
 
 void CtrlrDialogWindow::showModalDialog(const juce::String &title, juce::Component *content, const bool resizable,
 										juce::Component *parent, std::function<void(int)> callback) {
-#if JUCE_VERSION >= 0x070000
 	AW::showCustomDialogAsync(title, content, juce::Colours::lightgrey, resizable, callback);
-#else
-	CtrlrTempDialogWindow dw(title, content, parent, juce::Colours::lightgrey, true, resizable, false);
-	int result = dw.runModalLoop();
-	if (callback != nullptr)
-		callback(result);
-#endif
 }
 
 juce::DialogWindow *CtrlrDialogWindow::showNonModalDialog(const juce::String &title, juce::Component *content,

@@ -10,7 +10,7 @@ CtrlrLuaFile::CtrlrLuaFile(const File &fileToUse) : file(fileToUse) {}
 
 CtrlrLuaFile::~CtrlrLuaFile() {}
 
-#if JUCE_VERSION >= 0x070000
+
 void CtrlrLuaFile::replaceFileContentWithData(CtrlrLuaMemoryBlock &data) {
 	file.replaceWithData(data.getData(), data.getSize());
 }
@@ -27,18 +27,7 @@ CtrlrLuaMemoryBlock CtrlrLuaFile::loadFileAsData() {
 
 	return block;
 }
-#else
 
-void CtrlrLuaFile::replaceFileContentWithData(CtrlrLuaMemoryBlock &data) {
-	file.replaceWithData(data.get(), data.getSize());
-} // I think get() should be getData() ??
-
-CtrlrLuaMemoryBlock CtrlrLuaFile::loadFileAsData() {
-	CtrlrLuaMemoryBlock block;
-	block.append(file);
-	return block;
-}
-#endif
 
 void CtrlrLuaFile::findChildFiles(luabind::object const &table, int whatToLookFor, bool searchRecursively,
 								  const String &wildcardPattern) {

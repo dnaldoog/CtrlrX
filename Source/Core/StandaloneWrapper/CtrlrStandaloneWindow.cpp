@@ -22,13 +22,8 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 		ctrlrProcessor = dynamic_cast<CtrlrProcessor *>(filter);
 
 		if (ctrlrProcessor == nullptr) {
-#if JUCE_VERSION >= 0x070000
 			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "CTRLR",
 											 "The filter object is not a valid Ctrlr Processor");
-#else
-			AlertWindow::showMessageBox(AlertWindow::WarningIcon, "CTRLR",
-										"The filter object is not a valid Ctrlr Processor");
-#endif
 			return;
 		}
 
@@ -85,12 +80,9 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 			setContentOwned(editor, false);
 		} else {
 			_DBG("No appProperties");
-#if JUCE_VERSION >= 0x070000
+
 			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "CTRLR",
 											 "Can't find any application properties");
-#else
-			AlertWindow::showMessageBox(AlertWindow::WarningIcon, "CTRLR", "Can't find any application properties");
-#endif
 		}
 	}
 
@@ -256,13 +248,6 @@ PropertySet *CtrlrStandaloneWindow::getGlobalSettings() {
 	return ctrlrProcessor->getManager().getCtrlrProperties().getProperties().getUserSettings();
 }
 
-#if JUCE_VERSION < 0x070000
-void CtrlrStandaloneWindow::closeButtonPressed() {
-	if (ctrlrProcessor->getManager().canCloseWindow()) {
-		JUCEApplication::quit();
-	}
-}
-#else
 void CtrlrStandaloneWindow::closeButtonPressed() {
 	if (ctrlrProcessor == nullptr) {
 		JUCEApplication::quit();
@@ -276,8 +261,6 @@ void CtrlrStandaloneWindow::closeButtonPressed() {
 		}
 	});
 }
-
-#endif
 
 void CtrlrStandaloneWindow::clearProcessorPointer() // Added JUCE 8
 {

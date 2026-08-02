@@ -119,79 +119,6 @@ LMemoryBlock *CtrlrLuaUtils::packDsiData(MemoryBlock &dataToPack) {
 
 	return (new LMemoryBlock((uint8 *)packed.data, packed.size));
 }
-#if JUCE_VERSION < 0x070000
-void CtrlrLuaUtils::warnWindow(const String title, const String message) {
-	AlertWindow::showMessageBox(AlertWindow::WarningIcon, title, message);
-}
-
-void CtrlrLuaUtils::infoWindow(const String title, const String message) {
-	AlertWindow::showMessageBox(AlertWindow::InfoIcon, title, message);
-}
-
-bool CtrlrLuaUtils::questionWindow(const String title, const String message, const String button1Text,
-								   const String button2Text) {
-	return (AlertWindow::showOkCancelBox(AlertWindow::QuestionIcon, title, message, button1Text, button2Text));
-}
-
-File CtrlrLuaUtils::openFileWindow(const String &dialogBoxTitle, const File &initialFileOrDirectory,
-								   const String &filePatternsAllowed, bool useOSNativeDialogBox) {
-	FileChooser dialog(dialogBoxTitle, initialFileOrDirectory, filePatternsAllowed, useOSNativeDialogBox);
-	if (dialog.browseForFileToOpen(0)) {
-		return (dialog.getResult());
-	} else {
-		return (File());
-	}
-}
-
-void CtrlrLuaUtils::openMultipleFilesWindow(const String &dialogBoxTitle, const File &initialFileOrDirectory,
-											const String &filePatternsAllowed, bool useOSNativeDialogBox,
-											luabind::object const &table) {
-	FileChooser dialog(dialogBoxTitle, initialFileOrDirectory, filePatternsAllowed, useOSNativeDialogBox);
-	if (dialog.browseForMultipleFilesToOpen(nullptr)) {
-		if (luabind::type(table) == LUA_TTABLE) {
-			Array<File> res = dialog.getResults();
-
-			for (int i = 0; i < res.size(); i++) {
-				table[i + 1] = res[i];
-			}
-		}
-	}
-}
-
-File CtrlrLuaUtils::saveFileWindow(const String &dialogBoxTitle, const File &initialFileOrDirectory,
-								   const String &filePatternsAllowed, bool useOSNativeDialogBox) {
-	FileChooser dialog(dialogBoxTitle, initialFileOrDirectory, filePatternsAllowed, useOSNativeDialogBox);
-	if (dialog.browseForFileToSave(true)) {
-		return (dialog.getResult());
-	} else {
-		return (File());
-	}
-}
-
-File CtrlrLuaUtils::getDirectoryWindow(const String &dialogBoxTitle, const File &initialFileOrDirectory) {
-	FileChooser dialog(dialogBoxTitle, initialFileOrDirectory);
-	if (dialog.browseForDirectory()) {
-		return (dialog.getResult());
-	} else {
-		return (File());
-	}
-}
-
-String CtrlrLuaUtils::askForTextInputWindow(const String title, const String message, const String initialInputContent,
-											const String onScreenLabel, const bool isPassword, const String button1Text,
-											const String button2Text) {
-	AlertWindow w(title, message, AlertWindow::QuestionIcon, 0);
-	w.addTextEditor("userInput", initialInputContent, onScreenLabel, isPassword);
-	w.addButton(button1Text, 1);
-	w.addButton(button2Text, 0);
-	if (w.runModalLoop() == 1) // Updated v5.6.34. Thanks to @dobo365
-	{
-		return (w.getTextEditorContents("userInput"));
-	} else {
-		return ("-1");
-	}
-}
-#else
 void CtrlrLuaUtils::warnWindow(const String title, const String message) {
 	AW::showMessageBox(AW::Warning, title, message);
 }
@@ -284,7 +211,6 @@ void CtrlrLuaUtils::getDirectoryWindow(const String &dialogBoxTitle, const File 
 			callback(fc.getResult());
 	});
 }
-#endif
 
 StringArray CtrlrLuaUtils::getMidiInputDevices() // Update v5.6.35. For JUCE 8
 {

@@ -83,16 +83,11 @@ class CtrlrLuaUtils
 			@param	button1Text				text for the first button
 			@param	button2Text				text for the second button
 		*/
-#if JUCE_VERSION < 0x070000
 
-static String askForTextInputWindow (const String title, const String message, const String initialInputContent,
-											const String onScreenLabel, const bool isPassword, const String button1Text,
-											const String button2Text);
-#else
 void askForTextInputWindow(const String title, const String message, const String initialInputContent,
 										  const String onScreenLabel, const bool isPassword, const String button1Text,
 										  const String button2Text, std::function<void(const String &)> callback);
-#endif
+
 		/** @brief Ask for a File to open
 
 			@param dialogBoxTitle

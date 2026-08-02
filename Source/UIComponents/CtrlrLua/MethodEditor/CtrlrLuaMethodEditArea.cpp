@@ -33,18 +33,13 @@
 //==============================================================================
 CtrlrLuaMethodEditArea::CtrlrLuaMethodEditArea(CtrlrLuaMethodEditor &_owner) : owner(_owner), sharedSearchTabsValue() {
 
-#if JUCE_VERSION >= 0x070000
+
 	lowerTabs = std::make_unique<TabbedComponent>(TabbedButtonBar::Orientation::TabsAtBottom);
 	lowerTabs->setName("lowerTabs");
 
 	addAndMakeVisible(lowerTabs.get());
 	lowerTabs->setCurrentTabIndex(-1);
-#else
-	lowerTabs = std::make_unique<TabbedComponent>("lowerTabs", TabbedButtonBar::TabsAtBottom);
-	addAndMakeVisible(lowerTabs.get());
-	lowerTabs->setCurrentTabIndex(-1);
-#endif
-
+	
 	upperTabs = std::make_unique<CtrlrLuaMethodEditorTabs>(owner);
 	addAndMakeVisible(upperTabs.get());
 

@@ -705,13 +705,8 @@ void CtrlrExpressionProperty::resized() {
 void CtrlrExpressionProperty::buttonClicked(Button *buttonThatWasClicked) {
 	if (buttonThatWasClicked == apply.get()) {
 		if (compile(true)) {
-#if JUCE_VERSION >= 0x070000
 			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Expression validation",
 											 "Expression is valid\n\nSee Expressions tab for help and examples");
-#else
-			AlertWindow::showMessageBox(AlertWindow::InfoIcon, "Expression validation",
-										"Expression is valid\n\nSee Expressions tab for help and examples");
-#endif
 		}
 	}
 }
@@ -730,16 +725,9 @@ const bool CtrlrExpressionProperty::compile(const bool setPropertyIfValid) {
 
 	if (!parseError.isEmpty()) {
 		text->setColour(TextEditor::backgroundColourId, Colours::deeppink);
-#if JUCE_VERSION >= 0x070000
 		AlertWindow::showMessageBoxAsync(
 			AlertWindow::WarningIcon, "Expression validation",
 			"Validation failed: " + parseError + "\n\nSee Expressions tab for help and examples", "OK", this);
-#else
-		AlertWindow::showMessageBox(
-			AlertWindow::WarningIcon, "Expression validation",
-			"Validation failed: " + parseError + "\n\nSee Expressions tab for help and examples", "OK", this);
-
-#endif
 		return (false);
 	}
 
@@ -805,33 +793,6 @@ void CtrlrFileProperty::buttonClicked(Button *buttonThatWasClicked) {
 						  });
 	}
 }
-#if 0 // Old code supporting JUCE 6/7/8
-#if JUCE_VERSION >= 0x070000
-		//fileChooser = std::make_unique<FileChooser>("Select a file", File::getSpecialLocation(File::userHomeDirectory),
-													"*.*", false);
-
-		// 2. Launch the dialog box asynchronously
-		fileChooser->launchAsync(FileBrowserComponent::openMode | FileBrowserComponent::canSelectFiles,
-								 [this](const FileChooser &chooser) {
-									 File result = chooser.getResult();
-
-									 // Check if the user actually picked something or hit cancel
-									 if (result.existsAsFile()) {
-										 valueToControl = result.getFullPathName();
-										 path->setText(valueToControl.toString(), dontSendNotification);
-									 }
-								 });
-#else
-		FileChooser myChooser("Select a file", File::getSpecialLocation(File::userHomeDirectory), "*.*", false);
-
-		if (myChooser.browseForFileToOpen()) {
-			valueToControl = myChooser.getResult().getFullPathName();
-			path->setText(valueToControl.toString(), dontSendNotification);
-		}
-#endif
-	}
-	}
-#endif
 
 void CtrlrFileProperty::refresh() { path->setText(valueToControl.toString(), dontSendNotification); }
 

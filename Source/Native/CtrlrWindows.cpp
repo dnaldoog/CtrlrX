@@ -164,11 +164,9 @@ fc->launchAsync(flags, [this, panelToWrite, isRestricted, me, fileExtension, cal
 		MemoryBlock panelExportData, panelResourcesData;
 		String error;
 // 5. Update Win32 Resources (Panel Injection)
-#if JUCE_VERSION < 0x070000
-		HANDLE hResource = BeginUpdateResource(newMe.getFullPathName().toUTF8(), FALSE);
-#else
+
 		HANDLE hResource = BeginUpdateResourceW(newMe.getFullPathName().toWideCharPointer(), FALSE);
-#endif
+
 
 		if (hResource) {
 			if ((error = CtrlrPanel::exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData,

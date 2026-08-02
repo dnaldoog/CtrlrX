@@ -327,12 +327,6 @@ bool CtrlrEditor::perform(
 		break;
 
 	case CtrlrEditor::doClose:
-#if JUCE_VERSION < 0x070000
-		if (getActivePanel()->canClose(true)) {
-			owner.removePanel(getActivePanelEditor());
-		}
-		break;
-#else
 		// 1. Fetch pointers to the active panel and its editor
 		DBG("I clicked on the close button in the menu");
 		if (auto *panel = getActivePanel()) {
@@ -357,8 +351,6 @@ bool CtrlrEditor::perform(
 			});
 		}
 		break;
-#endif
-
 	case CtrlrEditor::doSaveAs:
 		getActivePanel()->savePanelAs(doExportFileText);
 		break;
@@ -477,13 +469,6 @@ bool CtrlrEditor::perform(
 		}
 		break;
 
-#if JUCE_VERSION < 0x070000
-	case CtrlrEditor::doQuit:
-		if (owner.canCloseWindow()) {
-			JUCEApplication::quit();
-		}
-		break;
-#else
 	case CtrlrEditor::doQuit:
 		owner.canCloseWindow([](bool canClose) {
 			if (canClose) {
@@ -491,7 +476,6 @@ bool CtrlrEditor::perform(
 			}
 		});
 		break;
-#endif
 	case CtrlrEditor::doRegisterExtension:
 		tempResult = owner.getNativeObject().registerFileHandler();
 		if (tempResult.wasOk()) {

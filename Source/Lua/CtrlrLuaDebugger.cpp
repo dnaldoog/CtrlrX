@@ -85,15 +85,7 @@ std::string CtrlrLuaDebugger::dbgRead(std::string prompt)
 
 	if (ui)
     {
-#if JUCE_VERSION < 0x070000
-		const int cmdResult = ui->waitForCommand();
-		if (cmdResult) {
-			commandQueue.add("trace");
-			commandQueue.add("vars");
-			commandQueue.add(ui->getCurrentDebuggerCommand(true).toStdString());
-			return (commandQueue.removeAndReturn(commandQueue.size() - 1).toStdString());
-		}
-#else
+
 		int cmdResult = 0;
 		juce::WaitableEvent waiter;
 
@@ -113,7 +105,7 @@ std::string CtrlrLuaDebugger::dbgRead(std::string prompt)
 			commandQueue.add(ui->getCurrentDebuggerCommand(true).toStdString());
 			return (commandQueue.removeAndReturn(commandQueue.size() - 1).toStdString());
 		}
-#endif
+
 		else {
 			_WRN("CtrlrLuaDebugger::dbgRead debugger UI didn't return any commands, continuing");
             return ("run");

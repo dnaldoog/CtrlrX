@@ -158,20 +158,11 @@ void CtrlrWaveform::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChan
 		property == Ids::uiWaveformOutlineThickness) {
 		repaint();
 	} else if (property == Ids::uiWaveformSourceSamplesPerThumbnailSample) {
-#if JUCE_VERSION >= 0x070000
+
 		// --- Modern JUCE 7/8 Approach (Safe Smart Pointer Assignment) ---
 		audioThumbnail = std::make_unique<AudioThumbnail>(
 			getProperty(property), owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager(),
 			owner.getOwnerPanel().getCtrlrManagerOwner().getAudioThumbnailCache());
-#else
-		// --- Legacy JUCE 6 Approach ---
-		if (audioThumbnail)
-			delete audioThumbnail.release();
-
-		audioThumbnail = new AudioThumbnail(getProperty(property),
-											owner.getOwnerPanel().getCtrlrManagerOwner().getAudioFormatManager(),
-											owner.getOwnerPanel().getCtrlrManagerOwner().getAudioThumbnailCache());
-#endif
 
 		// Both versions need to execute these configuration steps on the resulting pointer
 		audioThumbnail->addChangeListener(this);

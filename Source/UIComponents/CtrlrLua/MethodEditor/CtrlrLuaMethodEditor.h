@@ -89,13 +89,8 @@ class CtrlrLuaMethodEditor  : public CtrlrChildWindowContent,
         bool keyPressed (const KeyPress& key, Component* originatingComponent);
         void closeCurrentTab();
         void closeAllTabs();
-#if JUCE_VERSION < 0x070000
-		bool closeTab(const int tabIndex);
-		bool canCloseWindow();
-#else
 		void closeTab(const int tabIndex, std::function<void(bool closed)> callback);
 		void canCloseWindow(std::function<void(bool canClose)> callback);
-#endif
 		void tabChanged(CtrlrLuaMethodCodeEditor *codeEditor, const bool save = false, const bool recompile = false);
 		void updateTabs();
         void valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
@@ -122,11 +117,7 @@ class CtrlrLuaMethodEditor  : public CtrlrChildWindowContent,
         void insertRawDebuggerOutput(const String &debuggerOutput);
         //void setRawDebuggerOutput(const String &debuggerOutput); JG 1/19/2025
         void setJsonDebuggerOutput(const String &jsonData);
-#if JUCE_VERSION < 0x070000
-		int waitForCommand();
-#else
 		void waitForCommand(std::function<void(int commandResult)> callback);
-#endif
 		const String getCurrentDebuggerCommand(const bool clearTheReturnedCommand=true);
         void setOpenSearchTabsEnabled(bool shouldOpen); // used for toggling search closed files
         bool getOpenSearchTabsEnabled() const; // getter

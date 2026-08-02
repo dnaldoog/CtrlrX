@@ -191,11 +191,8 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		void setPanelDirty(const bool dirty);
 		void actionPerformed();
 		void actionUndone();
-		#if JUCE_VERSION < 0x070000
-		bool canClose(const bool closePanel);
-		#else
 		void canClose(const bool closePanel, std::function<void(bool)> completionCallback);
-		#endif
+
 		const String getPanelWindowTitle();
 		void updatePanelWindowTitle();
 		void luaManagerChanged();
@@ -410,13 +407,8 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		Array<CtrlrMidiMessage, CriticalSection, 4> multiMidiQueue;
 		Array<MemoryBlock, CriticalSection> partialMidiQueue;
 		int currentActionIndex, indexOfSavedState;
-#if JUCE_VERSION >= 0x70000
 		void getCodeSigningIdentityFromPopup(std::function<void(juce::String)> completionCallback);
-#else
-		String getCodeSigningIdentityFromPopup(); // Added v5.6.32
-#endif
-
-			bool nrpnLatchEnabled = false;
+		bool nrpnLatchEnabled = false;
 		// allows MIDI controllers that send NRPN messages to use the NRPN number as an index for modulators,
 		// the value will be latched until the next NRPN message is received,
 		// then the modulator with the corresponding index will be updated with the value of the message.
