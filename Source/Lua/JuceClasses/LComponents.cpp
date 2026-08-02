@@ -36,33 +36,94 @@ void LAlertWindow::showMessageBoxAsync (AlertIconType iconType, const String& ti
 // For Lua compatibility, they now fire asynchronously. If scripts depend on the boolean return values immediately, 
 // Lua scripts will need to be adapted to use the instance-based modal handlers below.
 bool LAlertWindow::showOkCancelBox(AlertIconType iconType, const String &title, const String &message,
-								   const String &button1Text, const String &button2Text) {
-	auto alert = std::make_unique<AlertWindow>(title, message, iconType);
-	alert->addButton(button1Text, 1);
-	alert->addButton(button2Text, 0);
-	alert->enterModalState(true, ModalCallbackFunction::create([](int) {}), true);
-	return true;
+								   const String &button1Text, const String &button2Text)
+{
+    auto *mm = juce::MessageManager::getInstance();
+
+    if (!mm->isThisTheMessageThread())
+    {
+        jassertfalse;
+        return false;
+    }
+
+    // Raw pointer, not unique_ptr — JUCE owns/deletes it via deleteWhenDismissed.
+    auto *alert = new AlertWindow(title, message, iconType);
+    alert->addButton(button1Text, 1);
+    alert->addButton(button2Text, 0);
+
+    bool finished = false;
+    int resultCode = 0;
+
+    alert->enterModalState(true, ModalCallbackFunction::create([&finished, &resultCode](int ret)
+    {
+        resultCode = ret;
+        finished = true;
+    }), true); // deleteWhenDismissed = true — JUCE deletes it once, on dismissal
+
+    while (!finished)
+        mm->runDispatchLoopUntil(20);
+
+    return resultCode == 1;
 }
 
-int LAlertWindow::showYesNoCancelBox (AlertIconType iconType, const String& title, const String& message, const String& button1Text, const String& button2Text, const String& button3Text)
+int LAlertWindow::showYesNoCancelBox (AlertIconType iconType, const String& title, const String& message,
+                                       const String& button1Text, const String& button2Text, const String& button3Text)
 {
+    auto *mm = juce::MessageManager::getInstance();
 
-	auto alert = std::make_unique<AlertWindow>(title, message, iconType);
+    if (!mm->isThisTheMessageThread())
+    {
+        jassertfalse;
+        return 0;
+    }
+
+    auto *alert = new AlertWindow(title, message, iconType);
     alert->addButton(button1Text, 1);
     alert->addButton(button2Text, 2);
     alert->addButton(button3Text, 0);
-    alert->enterModalState(true, ModalCallbackFunction::create([](int){}), true);
-    return 0;
+
+    bool finished = false;
+    int resultCode = 0;
+
+    alert->enterModalState(true, ModalCallbackFunction::create([&finished, &resultCode](int ret)
+    {
+        resultCode = ret;
+        finished = true;
+    }), true); // JUCE deletes it once, on dismissal
+
+    while (!finished)
+        mm->runDispatchLoopUntil(20);
+
+    return resultCode;
 }
 
-bool LAlertWindow::showNativeDialogBox(const String &title, const String &bodyText, bool isOkCancel) {
-	AW::showNativeDialogBox(AW::Question, title, bodyText, "OK", isOkCancel ? "Cancel" : "", true,
-							[](bool userClickedYes) {
-								// Callback execution handling result asynchronously
-							});
+bool LAlertWindow::showNativeDialogBox(const String &title, const String &bodyText, bool isOkCancel)
+{
+    auto *mm = juce::MessageManager::getInstance();
 
-	return true; // Indicates the dialog was opened
+    if (!mm->isThisTheMessageThread())
+    {
+        jassertfalse;
+        return false;
+    }
+
+    bool finished = false;
+    bool userClickedYes = false;
+
+    AW::showNativeDialogBox(AW::Question, title, bodyText, "OK", isOkCancel ? "Cancel" : "", true,
+        [&finished, &userClickedYes](bool clickedYes)
+        {
+            userClickedYes = clickedYes;
+            finished = true;
+        });
+
+    while (!finished)
+        mm->runDispatchLoopUntil(20);
+
+    return userClickedYes;
 }
+
+
 
 // #endif
 // --- Asynchronous Context for Luabind Queries ---
