@@ -113,57 +113,48 @@ public:
     }
 
     /** Runs the JUCE 8 async menu synchronously via local message pumping */
-    static int showSyncWithOptions(juce::PopupMenu &menu, const juce::PopupMenu::Options &options) 
-    {
-        if (! juce::MessageManager::getInstance()->isThisTheMessageThread())
-        {
-            jassertfalse; // Popup menus must be shown from the Message Thread
-            return 0;
-        }
+	static int showSyncWithOptions(juce::PopupMenu &menu, const juce::PopupMenu::Options &options) {
+		auto *mm = juce::MessageManager::getInstance();
 
-        int selectedResult = 0;
-        bool menuFinished = false;
+		if (!mm->isThisTheMessageThread()) {
+			jassertfalse; // Popup menus must be shown from the Message Thread
+			return 0;
+		}
 
-        // Launch JUCE 8 popup asynchronously
-        menu.showMenuAsync(options, [&selectedResult, &menuFinished](int result)
-        {
-            selectedResult = result;
-            menuFinished = true;
-        });
+		int selectedResult = 0;
 
-        // Pump event loop until the selection is made or the menu is dismissed
-        while (! menuFinished)
-        {
-            if (! juce::MessageManager::getInstance()->runDispatchLoopUntil(10))
-            {
-                break; // Exit if the message loop stops/shuts down
-            }
-        }
+		// Launch JUCE 8 popup asynchronously
+		menu.showMenuAsync(options, [mm, &selectedResult](int result) {
+			selectedResult = result;
 
-        return selectedResult;
-    }
+			// Stop the local message loop when user makes a selection or dismisses
+			if (mm != nullptr)
+				mm->stopDispatchLoop();
+		});
 
-    // =========================================================================
-    // ASYNCHRONOUS HELPERS (For modern C++ / Lua callbacks)
-    // =========================================================================
+		// Spin the main message thread locally until stopDispatchLoop() is called
+		mm->runDispatchLoop();
 
-    /** Safely shows a popup menu asynchronously */
-    static void showMenuAsyncSafe(juce::PopupMenu &menuToDisplay,
-                                  juce::Component *targetComponent,
-                                  std::function<void(int)> callback) 
-    {
-        auto options = juce::PopupMenu::Options();
-        if (targetComponent != nullptr)
-        {
-            juce::Component::SafePointer<juce::Component> safeTarget(targetComponent);
-            options = options.withTargetComponent(safeTarget.getComponent());
-        }
+		return selectedResult;
+	}
+// =========================================================================
+// ASYNCHRONOUS HELPERS (For modern C++ / Lua callbacks)
+// =========================================================================
 
-        menuToDisplay.showMenuAsync(options, [callback](int result) {
-            if (callback) 
-                callback(result);
-        });
-    }
+/** Safely shows a popup menu asynchronously */
+static void showMenuAsyncSafe(juce::PopupMenu &menuToDisplay, juce::Component *targetComponent,
+							  std::function<void(int)> callback) {
+	auto options = juce::PopupMenu::Options();
+	if (targetComponent != nullptr) {
+		juce::Component::SafePointer<juce::Component> safeTarget(targetComponent);
+		options = options.withTargetComponent(safeTarget.getComponent());
+	}
+
+	menuToDisplay.showMenuAsync(options, [callback](int result) {
+		if (callback)
+			callback(result);
+	});
+}
 };
 /**************************************************************************************************/
 namespace AW {
