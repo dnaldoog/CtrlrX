@@ -599,15 +599,9 @@ void CtrlrProcessor::setStateInformation(const void *data, int sizeInBytes) {
 
 void CtrlrProcessor::setStateInformation(const XmlElement *xmlState) {
 	if (KeyPress::isKeyCurrentlyDown(KeyPress::createFromDescription("ctrl + R").getKeyCode())) {
-#if JUCE_VERSION >= 0x070000
 		// Modern JUCE 7/8 Asynchronous (Non-blocking) call
 		AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Ctrlr v5",
 										 "Ctrl+R key is pressed, resetting to defaults");
-#else
-		// Legacy JUCE 6 and below Synchronous (Blocking) call
-		AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Ctrlr v5",
-									"Ctrl+R key is pressed, resetting to defaults");
-#endif
 		return;
 	}
 

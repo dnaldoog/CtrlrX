@@ -1160,7 +1160,7 @@ void CtrlrPanelCanvas::exportComponent(CtrlrComponent *componentToExport) {
 					  });
 }
 
-#if JUCE_VERSION >= 0x070000
+
 void CtrlrPanelCanvas::importComponent(const File &componentFile, int x, int y) {
 	// Replace ScopedPointer with std::unique_ptr and drop .release()
 	std::unique_ptr<FileInputStream> fileInputStream(componentFile.createInputStream());
@@ -1176,20 +1176,6 @@ void CtrlrPanelCanvas::importComponent(const File &componentFile, int x, int y) 
 		}
 	}
 }
-#else
-void CtrlrPanelCanvas::importComponent(const File &componentFile, int x, int y) {
-	ScopedPointer<FileInputStream> fileInputStream(componentFile.createInputStream().release());
-	if (fileInputStream) {
-		ValueTree cTree = ValueTree::readFromStream(*fileInputStream);
-		if (cTree.isValid()) {
-			CtrlrComponent *c = addNewComponent(cTree);
-			if (c) {
-				c->setTopLeftPosition(x, y);
-			}
-		}
-	}
-}
-#endif
 void CtrlrPanelCanvas::importPanel(const File &panelFile, int x, int y) {}
 
 void CtrlrPanelCanvas::importImage(const File &imageFile, int x, int y) {
@@ -1446,7 +1432,6 @@ CtrlrQuickXmlPreview::CtrlrQuickXmlPreview(ValueTree &_treeToPreview)
 }
 
 void CtrlrQuickXmlPreview::resized() { h.setSize(getWidth(), getHeight()); }
-#if JUCE_VERSION >= 0x070000
 void CtrlrQuickXmlPreview::buttonClicked(Button *) {
 	// 1. Create document and editor
 	CodeDocument doc;
@@ -1474,16 +1459,6 @@ void CtrlrQuickXmlPreview::buttonClicked(Button *) {
 	// 3. Launch asynchronously (non-blocking)
 	options.launchAsync();
 }
-#else
-void CtrlrQuickXmlPreview::buttonClicked(Button *) {
-	CodeDocument doc;
-	CodeEditorComponent ed(doc, 0);
-	ScopedPointer<XmlElement> xml(treeToPreview.createXml().release());
-	doc.replaceAllContent(xml->createDocument(""));
-	ed.setSize(600, 600);
-	DialogWindow::showModalDialog("XML Preview", &ed, this, Colours::white, true, true, true);
-}
-#endif
 
 //static function for drawing icons in right click menu
 std::unique_ptr<juce::Drawable> CtrlrPanelCanvas::createMenuIcon(const char* data, const size_t size)

@@ -506,7 +506,6 @@ Result CtrlrPanelResourceManager::restoreState(const ValueTree &savedState,
 			licenseWindow->addButton("Yes", 1);
 			licenseWindow->addButton("No", 0);
 
-#if JUCE_VERSION < 0x070000
 			bool accepted = (licenseWindow->runModalLoop() == 1);
 			delete licenseWindow;
 
@@ -516,32 +515,6 @@ Result CtrlrPanelResourceManager::restoreState(const ValueTree &savedState,
 					completionCallback(failRes);
 				return failRes;
 			}
-#else
-			licenseWindow->enterModalState(
-				true, ModalCallbackFunction::create([this, savedState, completionCallback, licenseWindow](int result) {
-					bool accepted = (result == 1);
-					delete licenseWindow;
-
-					if (!accepted) {
-						if (completionCallback)
-							completionCallback(Result::fail("User did not agree to embedded license"));
-					} else {
-						// License accepted asynchronously -> proceed to import resources
-						for (int j = 0; j < savedState.getNumChildren(); j++) {
-							const auto resChild = savedState.getChild(j);
-							if (resChild.hasType(Ids::resourceBlob) || resChild.hasType(Ids::resourceImage) ||
-								resChild.hasType(Ids::resource)) {
-								importResource(resChild);
-							}
-						}
-						if (completionCallback)
-							completionCallback(Result::ok());
-					}
-				}),
-				true);
-
-			return Result::ok();
-#endif
 		}
 
 		// --- 2. Import Embedded Resources (Synchronous / standard path) ---

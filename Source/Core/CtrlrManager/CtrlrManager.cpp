@@ -491,7 +491,7 @@ CtrlrPanel *CtrlrManager::getPanel(const String &panelName) {
 	}
 	return (0);
 }
-#if JUCE_VERSION >= 0x070000
+
 void CtrlrManager::canCloseWindow(std::function<void(bool)> completionCallback) {
 	// Helper lambda to process panels sequentially
 	auto checkNextPanel = [this, completionCallback](auto self, int index) -> void {
@@ -525,20 +525,6 @@ void CtrlrManager::canCloseWindow(std::function<void(bool)> completionCallback) 
 	// Start checking from the first panel (index 0)
 	checkNextPanel(checkNextPanel, 0);
 }
-
-#else
-bool CtrlrManager::canCloseWindow() {
-	for (int i = 0; i < getNumPanels(); i++) {
-		CtrlrPanel *panel = getPanel(i);
-		if (panel != nullptr) {
-			if (!panel->canClose(false)) {
-				return false;
-			}
-		}
-	}
-	return true;
-}
-#endif
 
 void CtrlrManager::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
 	if (property == Ids::ctrlrAutoSave) {
@@ -727,8 +713,7 @@ int CtrlrManager::getPanelForModulator(const int modulatorIndex) {
 int CtrlrManager::getNextVstIndex() { return (ctrlrManagerVst->getFirstFree()); }
 
 void CtrlrManager::openPanelFromFile(Component *componentToAttachMenu) {
-#if JUCE_VERSION >= 0x070000
-    // 1. Set the specific file types Ctrlr expects, matching your legacy code
+	// 1. Set the specific file types Ctrlr expects, matching your legacy code
     String wildcards = "*.panel;*.panelz;*.bpanel;*.bpanelz;*.*";
     bool useNativeDialog = (bool)getProperty(Ids::ctrlrNativeFileDialogs);
     
@@ -742,28 +727,16 @@ void CtrlrManager::openPanelFromFile(Component *componentToAttachMenu) {
     );
 
     // 2. Launch the dialog box asynchronously
-    fileChooser->launchAsync(
-        FileBrowserComponent::openMode | FileBrowserComponent::canSelectFiles,
-        [this](const FileChooser &chooser) {
-            File result = chooser.getResult();
+	fileChooser->launchAsync(FileBrowserComponent::openMode | FileBrowserComponent::canSelectFiles,
+							 [this](const FileChooser &chooser) {
+								 File result = chooser.getResult();
 
-            // 3. Process the file using the original Ctrlr engine methods
-            if (result.existsAsFile()) {
-                openPanelInternal(result);
-                panelFileOpened(result);
-            }
-        }
-    );
-#else
-    // --- Legacy JUCE 6 Synchronous Execution ---
-    FileChooser fc("Open panel", File(getProperty(Ids::ctrlrLastBrowsedFileDirectory)),
-                   "*.panel;*.panelz;*.bpanel;*.bpanelz;*.*", (bool)getProperty(Ids::ctrlrNativeFileDialogs));
-    
-    if (fc.browseForFileToOpen()) {
-        openPanelInternal(fc.getResult());
-        panelFileOpened(fc.getResult());
-    }
-#endif
+								 // 3. Process the file using the original Ctrlr engine methods
+								 if (result.existsAsFile()) {
+									 openPanelInternal(result);
+									 panelFileOpened(result);
+								 }
+							 });
 }
 
 void CtrlrManager::panelFileOpened(const File &panelFile) {

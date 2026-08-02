@@ -94,11 +94,7 @@ CtrlrFileListBox::CtrlrFileListBox(CtrlrModulator &owner)
 	// 1. Instantiate the DirectoryContentsList unique_ptr
 	directoryContentsList = std::make_unique<DirectoryContentsList>(nullptr, timeSliceThread);
 	directoryContentsList->setDirectory(folder, true, true);
-#if JUCE_VERSION >= 0x070000
 	timeSliceThread.startThread(Thread::Priority::normal);
-#else
-	timeSliceThread.startThread(3);
-#endif
 	// 2. Instantiate the treeComponent unique_ptr.
 	// We use `*directoryContentsList` to dereference the unique_ptr, passing the underlying object reference.
 	treeComponent = std::make_unique<CtrlrFileTreeComponent>(*this, *directoryContentsList);

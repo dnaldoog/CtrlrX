@@ -49,7 +49,7 @@
 
 #define MENU_OFFSET_PROGRAM_LIST		0x80000
 
-#if JUCE_VERSION >= 0x70000
+#if JUCE_VERSION >= 0x070000
 #define WARN(x)                                                 AlertWindow::showMessageBoxAsync (AlertWindow::WarningIcon, "WARNING", x, "OK", nullptr, ModalCallbackFunction::create([](int){}))
 #define INFO(x,y)                                               AlertWindow::showMessageBoxAsync (AlertWindow::InfoIcon, x, y, "OK", nullptr, ModalCallbackFunction::create([](int){}))
 

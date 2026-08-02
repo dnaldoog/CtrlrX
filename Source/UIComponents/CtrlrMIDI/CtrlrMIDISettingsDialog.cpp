@@ -87,12 +87,9 @@ void CtrlrMIDISettingsDialog::showDialog(CtrlrPanel &_owner)
     opts.useBottomRightCornerResizer = true;
     opts.resizable = true;
     opts.escapeKeyTriggersCloseButton = true;
-#if JUCE_VERSION < 0x070000
-	opts.runModal();
-#else
 	// Modern non-blocking dialog launch
 	opts.launchAsync();
-#endif
+
 }
 //[/MiscUserCode]
 

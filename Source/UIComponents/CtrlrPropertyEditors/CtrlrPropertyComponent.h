@@ -316,9 +316,9 @@ class CtrlrFileProperty : public Component, public Label::Listener, public Butto
 		void resized();
 		void buttonClicked(Button *buttonThatWasClicked);
 		void labelTextChanged(Label *labelThatHasChanged);
-// #if JUCE_VERSION >= 0x070000
+
 // 		std::unique_ptr<juce::FileChooser> fileChooser; -> Now using static FC wrapper code in CtrlrInlineUtilitiesGUI.h
-// #endif
+
 	private:
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrFileProperty);
 		Value valueToControl;
@@ -426,16 +426,11 @@ class MultiMidiAlert : public AlertWindow
 public:
     MultiMidiAlert()
         : AlertWindow("Add Custom MIDI Message",
-#if JUCE_VERSION >= 0x070000
                       String(), // JUCE 7/8: Custom label layout below
-#else
-                      getHelpText(), // JUCE 6: Native area usage
-#endif
                       AlertWindow::QuestionIcon) 
     {
         addTextEditor("customMidi", "F0 00 xx F7", "MIDI Message", false);
 
-#if JUCE_VERSION >= 0x070000
         // --- JUCE 7/8 Setup ---
         messageLabel.setText(getHelpText(), dontSendNotification);
         messageLabel.setFont(Font(15.0f));
@@ -448,11 +443,6 @@ public:
         setSize(560, 400);
         
         AW::layoutButtonsJUCE8(this, "OK", "Cancel", 80, 40);
-#else
-        // --- JUCE 6 Setup ---
-        addButton("OK", 1);
-        addButton("Cancel", 0);
-#endif
     }
 
     static const String getHelpText() {
@@ -465,9 +455,6 @@ public:
                "Tokens: -2=component number, -1=component value, xx etc = SysEx tokens";
     }
 
-#if JUCE_VERSION < 0x070000
-    void buttonClicked(Button* button) override { exitModalState(button->getCommandID()); }
-#endif
 
     const String getValue() {
         if (auto* ed = getTextEditor("customMidi")) {
@@ -479,9 +466,8 @@ public:
     }
 
 private:
-#if JUCE_VERSION >= 0x070000
     Label messageLabel;
-#endif
+
 };
 
 class BubbleConfigAlert : public AlertWindow 
@@ -500,155 +486,16 @@ public:
 
         addTextEditor("bubbleTimeout", String(currentTimeout), "Display timeout (ms):", false);
 
-#if JUCE_VERSION >= 0x070000
+
         addButton("Save Changes", 1, KeyPress(KeyPress::returnKey, 0, 0));
         addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
         setSize(500, 350);
         
         AW::layoutButtonsJUCE8(this, "Save Changes", "Cancel", 120, 35);
-#else
-        addButton("Save Changes", 1);
-        addButton("Cancel", 0);
-#endif
     }
 
-#if JUCE_VERSION < 0x070000
-    void buttonClicked(Button* button) override { exitModalState(button->getCommandID()); }
-#endif
 };
 
-#if 0
-class MultiMidiAlert : public AlertWindow // Updated v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog . Updated by
-										  // dam for juce 6 & Juce 8
-{
-	public:
-		MultiMidiAlert()
-			: AlertWindow("Add Custom MIDI Message",
-#if JUCE_MAJOR_VERSION >= 8
-						  String(), // JUCE 8: Empty to allow custom label layout
-#else
-						  getHelpText(), // JUCE 6: Standard text area
-#endif
-						  AlertWindow::QuestionIcon) {
-#if JUCE_MAJOR_VERSION >= 8
-			// --- JUCE 8: Custom Layout ---
-			messageLabel.setText(getHelpText(), dontSendNotification);
-			messageLabel.setFont(Font(15.0f));
-			messageLabel.setColour(Label::textColourId, findColour(AlertWindow::textColourId));
-			messageLabel.setSize(460, 200);
-
-			addCustomComponent(&messageLabel);
-			addTextEditor("customMidi", "F0 00 xx F7", "MIDI Message", false);
-
-			addButton("OK", 1, KeyPress(KeyPress::returnKey, 0, 0));
-			addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
-			setSize(560, 400);
-
-			if (auto *okBtn = getButton("OK")) {
-				if (auto *cancelBtn = getButton("Cancel")) {
-					const int bW = 80, bH = 40, gap = 20;
-					const int totalWidth = (bW * 2) + gap;
-					const int startX = (getWidth() - totalWidth) / 2;
-					const int yPos = getHeight() - bH - 30;
-					okBtn->setBounds(startX, yPos, bW, bH);
-					cancelBtn->setBounds(startX + bW + gap, yPos, bW, bH);
-				}
-			}
-#else
-			// --- JUCE 6: Standard Layout ---
-			addTextEditor("customMidi", "F0 00 xx F7", "MIDI Message", false);
-			addButton("OK", 1);
-			addButton("Cancel", 0);
-#endif
-		}
-
-		// Static helper to keep the string unified in one place
-		static const String getHelpText() {
-			return "Enter a Raw MIDI message:\n\n"
-				   "Examples:\n"
-				   "  Bn,-2,-1           (CC using component number & value)\n"
-				   "  Cn,-1   (Program change using component value)\n"
-				   "  SysEx,F0 00 xx F7  (SysEx with tokens)\n\n"
-				   "  B4 03 67           (Raw MIDI hex bytes)\n\n"
-				   "Tokens: -2=component number, -1=component value, xx etc = SysEx tokens";
-		}
-		/* This is the old system. Keep in case someone complains and wants it back!*/
-		// MultiMidiAlert ()
-		//	:	AlertWindow ("", "Add a new message to the multi list\n[-1 for parent value setting, -2 for parent
-		// number setting. For SysEx message the formula is the same as in the SysEx editor.]",
-		// AlertWindow::QuestionIcon, 0), 		valueSlider("Controller Value"), numberSlider("Controller Number")
-		//{
-		//	const char *types[] = { "CC", "Aftertouch", "ChannelPressure", "NoteOn", "NoteOff", "SysEx", "--",
-		//"ProgramChange", "PitchWheel", 0 }; 	const char *v[] = { "Direct", "LSB7bit", "MSB7bit", "LSB4bit",
-		//"MSB4bit", 0}; 	addComboBox ("messageType", StringArray(types), "Midi message type"); 	addComboBox
-		// ("value", StringArray(v), "Value mapping"); 	addComboBox ("number", StringArray(v), "Number mapping");
-		// addTextEditor
-		//("sysexFormula", "F0 00 F7", "SysEx Formula", false); 	valueSlider.setSize (300,24);
-		// valueSlider.setSliderStyle (Slider::LinearBar); 	valueSlider.setRange (-2,127,1); 	valueSlider.setValue
-		//(-1);
-
-#if JUCE_MAJOR_VERSION < 8
-		void buttonClicked(Button *button) { exitModalState(button->getCommandID()); }
-#endif
-
-		const String getValue() {
-			if (auto *ed = getTextEditor("customMidi")) {
-				String userInput = ed->getText().trim();
-				if (userInput.isNotEmpty())
-					return "Custom," + userInput;
-			}
-			return String();
-		}
-
-	private:
-#if JUCE_MAJOR_VERSION >= 8
-		Label messageLabel;
-#endif
-		Slider valueSlider, numberSlider;
-};
-/********************New Class for JUCE Bubble native code********************************* */
-class BubbleConfigAlert : public AlertWindow {
-	public:
-		BubbleConfigAlert(const String &currentTitle, const String &currentText, int currentTimeout)
-			: AlertWindow("Configure Tooltip Bubble", String(), AlertWindow::NoIcon) { // Fixed Base Class Call
-
-			// Add text editor for the Bubble Header Title
-			addTextEditor("bubbleTitle", currentTitle, "Bubble Header/Title:", false);
-
-			// Add a larger multi-line text editor for the actual help content
-			addTextEditor("bubbleText", currentText, "Help text description:", false);
-			if (auto *textEd = getTextEditor("bubbleText")) {
-				textEd->setMultiLine(true, true);
-				textEd->setReturnKeyStartsNewLine(true);
-			}
-
-			// Add a text field for timeout duration (in milliseconds)
-			addTextEditor("bubbleTimeout", String(currentTimeout), "Display timeout (ms):", false);
-
-#if JUCE_VERSION >= 0x080000
-			// --- JUCE 8 Custom Button Bounds Layout Logic ---
-			addButton("Save Changes", 1, KeyPress(KeyPress::returnKey, 0, 0));
-			addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
-			setSize(500, 350);
-
-			if (auto *okBtn = getButton("Save Changes")) {
-				if (auto *cancelBtn = getButton("Cancel")) {
-					const int bW = 120, bH = 35, gap = 15;
-					const int totalWidth = (bW * 2) + gap;
-					const int startX = (getWidth() - totalWidth) / 2;
-					const int yPos = getHeight() - bH - 20;
-					okBtn->setBounds(startX, yPos, bW, bH);
-					cancelBtn->setBounds(startX + bW + gap, yPos, bW, bH);
-				}
-			}
-#else
-			// --- JUCE 6/7 Fallback Layout Engine ---
-			addButton("Save Changes", 1);
-			addButton("Cancel", 0);
-#endif
-		}
-};
-#endif
 class CtrlrMultiMidiPropertyComponent : public Component,
 										public ListBoxModel,
 										public Label::Listener,

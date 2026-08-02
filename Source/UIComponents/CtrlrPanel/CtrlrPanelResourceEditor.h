@@ -2,9 +2,7 @@
 #define CTRLR_PANEL_RESOURCE_EDITOR_H
 
 #include "CtrlrMacros.h"
-#if JUCE_VERSION >= 0x070000 
 class CtrlrPanelResource; // forward declaration. Didn't seem to be necessary for JUCE 6
-#endif
 class CtrlrPanelEditor;
 class CtrlrPanelResourceManager;
 

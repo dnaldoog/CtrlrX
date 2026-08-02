@@ -4,7 +4,6 @@
 #include "CtrlrMidiMessage.h"
 
 class CtrlrModulator;
-#if JUCE_VERSION >= 0x070000
 class CtrlrMidiMessageOwner {
 	public:
 		virtual ~CtrlrMidiMessageOwner() = default; // Added a virtual destructor for safe deletion lifecycle
@@ -15,14 +14,6 @@ class CtrlrMidiMessageOwner {
 		// Namespaces added here for JUCE 6/7/8 cross-compatibility
 		virtual juce::Array<int, juce::CriticalSection> &getGlobalVariables() = 0;
 };
-#else
-class CtrlrMidiMessageOwner {
-	public:
-		virtual int getMidiChannelForOwnedMidiMessages() = 0;
-		virtual CtrlrSysexProcessor *getSysexProcessor() = 0;
-		virtual Array<int, CriticalSection> &getGlobalVariables() = 0;
-};
-#endif
 
 class CtrlrOwnedMidiMessage : public CtrlrMidiMessage {
 	public:

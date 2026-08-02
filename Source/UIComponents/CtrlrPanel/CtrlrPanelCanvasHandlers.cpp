@@ -58,8 +58,6 @@ void CtrlrPanelCanvas::handleRightClickOnMultiSelection(const MouseEvent &e) {
 void CtrlrPanelCanvas::handleRightClickOnCanvas(const MouseEvent &e) {
 	const bool em = getOwner().getProperty(Ids::uiPanelEditMode);
 
-#if JUCE_VERSION >= 0x070000
-
 	if (!em) {
 		PopupMenu m = getRightClickComponentMenu(e);
 
@@ -72,14 +70,6 @@ void CtrlrPanelCanvas::handleRightClickOnCanvas(const MouseEvent &e) {
 		return;
 	}
 
-#else
-	if (!em) {
-		PopupMenu m = getRightClickComponentMenu(e);
-		handleComponentPopupMenu(e, m.show());
-		return;
-	}
-
-#endif
 	PopupMenu m; // This should be JUCE 6.0 compatible
 
 	if (em) {

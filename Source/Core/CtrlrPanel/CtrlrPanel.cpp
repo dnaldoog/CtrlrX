@@ -232,13 +232,9 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 
 	owner.addChangeListener(this);
 	midiMessageCollector.reset(SAMPLERATE);
-	// #if JUCE_VERSION_MAJOR >= 7
 	midiInputThread.startThread(juce::Thread::Priority::normal);
 	midiControllerInputThread.startThread(juce::Thread::Priority::normal);
-	// #else
-	//     midiInputThread.startThread(5);
-	//     midiControllerInputThread.startThread(5);
-	// #endif;
+
 }
 
 CtrlrPanel::~CtrlrPanel()
@@ -542,111 +538,6 @@ void CtrlrPanel::setProperty(const Identifier &name, const var &newValue, const 
 	}
 }
 
-#if JUCE_VERSION < 0x70000								   // original JUCE 6 code
-juce::String CtrlrPanel::getCodeSigningIdentityFromPopup() // Updated v5.6.34. FIXED The Apple certificates where not
-														   // showing up properly.
-{
-	juce::String debugType = "MAC_SIGNING";
-
-	juce::StringArray commandParts;
-	commandParts.add("security");
-	commandParts.add("find-identity");
-	commandParts.add("-v");
-	commandParts.add("-p");
-	commandParts.add("codesigning");
-
-	// --- DEBUG: Log the command being executed ---
-	juce::String command = commandParts.joinIntoString(" ");
-	std::cout << debugType << " - Executing command: " << command << std::endl;
-	// ----------------------------------------------
-
-	juce::ChildProcess childProcess;
-	if (childProcess.start(commandParts)) {
-		childProcess.waitForProcessToFinish(-1);
-
-		if (!childProcess.isRunning()) {
-			int exitCode = childProcess.getExitCode();
-			juce::String output = childProcess.readAllProcessOutput();
-
-			// --- DEBUG: Log the result of the command execution ---
-			std::cout << debugType << " - Command finished. Exit Code: " << exitCode << std::endl;
-			std::cout << debugType << " - Full Combined Output (Stdout + Stderr):\n" << output << std::endl;
-			// -----------------------------------------------------
-
-			if (exitCode == 0) {
-				// Parsing logic
-				juce::StringArray identities;
-				juce::StringArray lines;
-				lines.addLines(output);
-
-				for (auto &line : lines) {
-					// CRITICAL FIX: Look for the opening quote which signals the start of the identity name
-					// and ensure the line is not the summary line ("X valid identities found")
-					if (line.contains(" \"") && line.contains(" valid identities found") == false) {
-						// The identity name is always between the first and last double quotes
-						int startIndex = line.indexOf("\"") + 1;
-						int endIndex = line.lastIndexOf("\"");
-
-						if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
-							juce::String identity = line.substring(startIndex, endIndex);
-							identities.add(identity);
-
-							// --- DEBUG: Log the successfully extracted identity ---
-							std::cout << debugType << " - Successfully extracted identity: " << identity << std::endl;
-							// ----------------------------------------------------
-						}
-					}
-				}
-
-				// --- DEBUG: Log found identities or warn if none were found ---
-				if (identities.isEmpty()) {
-					std::cout << debugType
-							  << " - WARNING: Parsing completed, but no identities were extracted. Full output may "
-								 "contain only the fallback identity."
-							  << std::endl;
-
-					// Since no real identities were found, we manually add the fallback identity
-					// This is a necessary step because the original flow expects identities to populate the menu.
-					identities.add("Developer ID Application: Ad-HocSigning (No Certificate)");
-
-					// The menu will now be populated, but we have logged the parsing failure warning.
-				} else {
-					std::cout << debugType << " - Found and parsed " << identities.size()
-							  << " identities. Launching popup." << std::endl;
-				}
-				// -------------------------------------------------------------
-
-				juce::PopupMenu menu;
-				for (int i = 0; i < identities.size(); ++i) {
-					menu.addItem(i + 1, identities[i]);
-				}
-
-				int result = menu.show();
-
-				if (result > 0) {
-					juce::String selected = identities[result - 1];
-					std::cout << debugType << " - Selected Identity: " << selected << std::endl;
-					return selected;
-				}
-			} else {
-				// In case of a non-zero exit code, show the combined output for diagnosis
-				juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon, "Error",
-													   "Failed to retrieve code signing identities. Error code: " +
-														   juce::String(exitCode) + "\nCombined Output:\n" + output);
-			}
-		} else {
-			juce::Result::fail("Error: Code signing identity retrieval process did not finish properly.");
-			return "";
-		}
-	} else {
-		juce::Result::fail("Error: Failed to start the code signing identity retrieval process.");
-		return "";
-	}
-
-	return juce::String();
-}
-#else
-
 // 1. SIGNATURE CHANGE: Changed return type from juce::String to void, and added the callback parameter.
 void CtrlrPanel::getCodeSigningIdentityFromPopup(std::function<void(juce::String)> completionCallback) {
 	juce::String debugType = "MAC_SIGNING";
@@ -741,7 +632,6 @@ void CtrlrPanel::getCodeSigningIdentityFromPopup(std::function<void(juce::String
 			completionCallback("");
 	}
 }
-#endif
 
 void CtrlrPanel::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
 	if (treeWhosePropertyHasChanged.hasType(Ids::modulator)) {
@@ -827,7 +717,6 @@ void CtrlrPanel::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 			// Force the button state back to false immediately
 			setProperty(property, false);
 
-#if JUCE_VERSION >= 0x070000
 			// --- Modern JUCE 7/8 Asynchronous Path ---
 			// We pass a lambda block. The code inside this lambda waits patiently
 			// until the user clicks an item in the popup menu, then executes later.
@@ -840,15 +729,6 @@ void CtrlrPanel::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 					// performSigning(selectedIdentity);
 				}
 			});
-#else
-			// --- Legacy JUCE 6 Synchronous Path ---
-			// This blocks the UI thread immediately, waits for a choice, and returns the string.
-			String selectedIdentity = getCodeSigningIdentityFromPopup();
-
-			if (selectedIdentity.isNotEmpty()) {
-				setProperty(Ids::panelCertificateMacId, selectedIdentity);
-			}
-#endif
 		}
 	}
 	// 2. Handle the change to the certificate identity property (Triggers GUI refresh)

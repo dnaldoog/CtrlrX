@@ -356,53 +356,6 @@ void CtrlrLuaMethodEditor::addMethodFromFile(ValueTree parentGroup) {
     );
 }
 
-#if 0
-void CtrlrLuaMethodEditor::addMethodFromFile(ValueTree parentGroup) {
-	// See if group folder exists
-	File groupFolder = owner.getLuaMethodGroupDir(parentGroup);
-	if (groupFolder.exists() && groupFolder.isDirectory()) {
-		lastBrowsedSourceDir = groupFolder;
-	}
-
-	FileChooser fc("Select LUA files", lastBrowsedSourceDir, "*.lua;*.txt",
-				   owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs));
-
-	if (fc.browseForMultipleFilesToOpen()) {
-		Array<File> results = fc.getResults();
-
-		for (int i = 0; i < results.size(); i++) { // Check that a method with that name does not already exist
-			String methodName = results[i].getFileNameWithoutExtension();
-			bool nameOK = true;
-			for (int j = 0; j < parentGroup.getNumChildren(); j++) {
-				ValueTree child = parentGroup.getChild(j);
-				if (child.hasType(Ids::luaMethod)) {
-					if (methodName == child.getProperty(Ids::luaMethodName).toString()) {
-						nameOK = false;
-						break;
-					}
-				}
-			}
-			if (nameOK) {
-				getMethodManager().addMethodFromFile(parentGroup, results[i]);
-			} else {
-#if JUCE_VERSION >= 0x070000
-				AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Add Files",
-												 "A method named '" + methodName +
-													 "' already exists in this group, file will be ignored.");
-#else
-				AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Add Files",
-											"A method named '" + methodName +
-												"' already exists in this group, file will be ignored.");
-#endif
-			}
-		}
-	}
-
-	updateRootItem();
-
-	saveSettings(); // save settings
-}
-#endif
 void CtrlrLuaMethodEditor::addNewGroup(ValueTree parentGroup) {
 	auto *wnd = new AlertWindow(GROUP_NEW, "", AlertWindow::InfoIcon, this);
 	wnd->addTextEditor("groupName", "New Group", "Group name", false);
@@ -1200,9 +1153,6 @@ const String CtrlrLuaMethodEditor::getCurrentDebuggerCommand(const bool clearThe
 
 	return ("");
 }
-#if JUCE_VERSION < 0x070000
-int CtrlrLuaMethodEditor::waitForCommand() { return (getParentComponent()->runModalLoop()); }
-#else
 void CtrlrLuaMethodEditor::waitForCommand(std::function<void(int commandResult)> callback) {
 	// enterModalState triggers when the modal loop exits via exitModalState(result)
 	getParentComponent()->enterModalState(true, ModalCallbackFunction::create([callback](int result) {
@@ -1210,7 +1160,6 @@ void CtrlrLuaMethodEditor::waitForCommand(std::function<void(int commandResult)>
 												  callback(result);
 										  }));
 }
-#endif
 void CtrlrLuaMethodEditor::setOpenSearchTabsEnabled(bool shouldOpen) { openSearchTabsEnabledState = shouldOpen; }
 
 bool CtrlrLuaMethodEditor::getOpenSearchTabsEnabled() const { return openSearchTabsEnabledState; }
