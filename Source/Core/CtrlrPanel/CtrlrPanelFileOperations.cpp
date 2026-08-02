@@ -210,12 +210,10 @@ void CtrlrPanel::savePanelAs(const CommandID saveOption) {
 
 switch (saveOption) {
 case CtrlrEditor::doExportFileText: {
-    // 1. Generate default target path/filename synchronously
     File defaultFile = askForPanelFileToSave(this, initialDir, true, false);
 
-    // 2. Open non-blocking OS dialog via your FC helper
     FC::saveFileAsync("Export XML Panel", defaultFile, "*.panel", true, [this, handleSaveSuccess](const File &fileToSave) {
-        if (fileToSave == File() || !fileToSave.getSiblingFile(fileToSave.getFileName()).existsAsFile())
+        if (fileToSave == File())
             return;
 
         savePanelXml(fileToSave, this);
