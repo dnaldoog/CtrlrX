@@ -269,55 +269,35 @@ void CtrlrEditor::resized() {
 	owner.setProperty(Ids::ctrlrEditorBounds, getBounds().toString());
 }
 
-// Added v5.6.34. New method to set the main LookAndFeel for the editor and its children
 void CtrlrEditor::setEditorLookAndFeel(const String &lookAndFeelDesc, const var &colourSchemeProperty) {
-	// 1. Create the new LookAndFeel object based on the description (V1, V2, V3, V4 default)
-	// Pass an empty var for colourSchemeProperty to gui::createLookAndFeelFromDescription,
-	// as it will only return the base L&F instance type.
-	// std::unique_ptr<LookAndFeel> newLookAndFeel =
-	// gui::createLookAndFeelFromDescription(lookAndFeelDesc, juce::var()); FIX: Change
-	// ScopedPointer to std::unique_ptr
 	std::unique_ptr<juce::LookAndFeel> newLookAndFeel(
 		gui::createLookAndFeelFromDescription(lookAndFeelDesc, juce::var()));
-	// If a valid LookAndFeel was created, update the current one
+
 	if (newLookAndFeel != nullptr) {
-		// 2. If it's a LookAndFeel_V4, apply the specific ColourScheme from the property.
 		if (LookAndFeel_V4 *lnf4 = dynamic_cast<LookAndFeel_V4 *>(newLookAndFeel.get())) {
-			// Only apply a colour scheme if the property is a valid string
-			if (colourSchemeProperty.isString() && !colourSchemeProperty.toString().isEmpty()) {
-				lnf4->setColourScheme(gui::colourSchemeFromProperty(colourSchemeProperty));
-			}
+			// Fall back to a real scheme rather than silently leaving raw/unscripted defaults
+			var effectiveScheme = (colourSchemeProperty.isString() && !colourSchemeProperty.toString().isEmpty())
+			                           ? colourSchemeProperty
+			                           : var("Dark"); // pick whatever your actual fallback scheme should be
+			lnf4->setColourScheme(gui::colourSchemeFromProperty(effectiveScheme));
 		}
 
-		// Explicitly set the L&F of the editor and menubar to nullptr first
-		// This ensures no components are using the old L&F before we destroy it.
-		// 1. Flush active styling links from components first
 		setLookAndFeel(nullptr);
-		// Explicitly set the L&F of the editor and menubar to nullptr first
 		if (menuBar != nullptr)
 			menuBar->setLookAndFeel(nullptr);
 
-		// FIX: Remove the dangerous static_cast completely.
-		// Simply move the unique_ptr ownership cleanly via std::move!
-		currentLookAndFeel = std::move(newLookAndFeel); // This compiles perfectly!
+		// Point the global default at the NEW instance BEFORE the old one is destroyed —
+		// closes the dangling-pointer window entirely.
+		LookAndFeel::setDefaultLookAndFeel(newLookAndFeel.get());
 
-		// 3. Extract the underlying raw address using .get() to bind the pipeline
+		currentLookAndFeel = std::move(newLookAndFeel); // old instance destroyed here; default already repointed
+
 		setLookAndFeel(currentLookAndFeel.get());
-
-		if (menuBar != nullptr) {
-			// 4. Update the menu bar link safely
+		if (menuBar != nullptr)
 			menuBar->setLookAndFeel(currentLookAndFeel.get());
-		}
 
-		// 5. CASCADE UPDATE: Calling this on 'this' (CtrlrEditor) automatically
-		// triggers lookAndFeelChanged() recursively on the menuBar and all other child components!
 		lookAndFeelChanged();
-
-		// 6. Force a visual refresh across the entire canvas
 		repaint();
-
-		// 7. Bind the global fallback safety anchor
-		LookAndFeel::setDefaultLookAndFeel(currentLookAndFeel.get());
 	}
 }
 
