@@ -541,64 +541,75 @@ void CtrlrCombo::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 }
 
 void CtrlrCombo::handleAsyncUpdate() {
-	if (ctrlrCombo == nullptr || valueMap == nullptr)
-		return;
+    if (ctrlrCombo == nullptr || valueMap == nullptr)
+        return;
 
-	// 1. Capture Caret Position before clearing
-	int caretPos = 0;
-	juce::TextEditor *ed = nullptr;
-	for (int i = 0; i < ctrlrCombo->getNumChildComponents(); ++i) {
-		if (auto *lb = dynamic_cast<juce::Label *>(ctrlrCombo->getChildComponent(i))) {
-			ed = lb->getCurrentTextEditor();
-			if (ed != nullptr) {
-				caretPos = ed->getCaretPosition();
-				break;
-			}
-		}
-	}
+    // 1. Capture Caret Position AND Current Text before clearing!
+    int caretPos = 0;
+    String preservedText = ctrlrCombo->getText(); // <-- JUCE 8 FIX: Preserve the text!
 
-	isUpdating = true;
+    for (int i = 0; i < ctrlrCombo->getNumChildComponents(); ++i) {
+        if (auto *lb = dynamic_cast<juce::Label *>(ctrlrCombo->getChildComponent(i))) {
+            if (auto *ed = lb->getCurrentTextEditor()) {
+                caretPos = ed->getCaretPosition();
+                break;
+            }
+        }
+    }
 
-	// 2. Filter Logic (Keep your existing loop)
-	StringArray matches;
-	Array<int> ids;
-	for (int i = 0; i < valueMap->getNumValues(); ++i) {
-		String item = valueMap->getTextForIndex(i);
-		if (item.containsIgnoreCase(lastSearchText)) {
-			matches.add(item);
-			ids.add(i + 1);
-		}
-	}
+    isUpdating = true;
 
-	// 3. Update UI
-	ctrlrCombo->clear(juce::dontSendNotification);
-	for (int i = 0; i < matches.size(); ++i)
-		ctrlrCombo->addItem(matches[i], ids[i]);
+    // 2. Filter Logic
+    StringArray matches;
+    Array<int> ids;
+    for (int i = 0; i < valueMap->getNumValues(); ++i) {
+        String item = valueMap->getTextForIndex(i);
+        if (item.containsIgnoreCase(lastSearchText)) {
+            matches.add(item);
+            ids.add(i + 1);
+        }
+    }
 
-	if (isSearching) {
-		// ALWAYS dismiss and show to refresh the list correctly
-		juce::PopupMenu::dismissAllActiveMenus();
+    // 3. Update UI
+    ctrlrCombo->clear(juce::dontSendNotification); // JUCE 8 wipes text here!
+    
+    for (int i = 0; i < matches.size(); ++i)
+        ctrlrCombo->addItem(matches[i], ids[i]);
 
-		juce::MessageManager::callAsync([this, caretPos]() {
-			if (ctrlrCombo == nullptr)
-				return;
+    // JUCE 8 FIX: Restore the preserved text back into the ComboBox!
+    if (preservedText.isNotEmpty())
+        ctrlrCombo->setText(preservedText, juce::dontSendNotification);
 
-			ctrlrCombo->showPopup();
+    if (isSearching) {
+        // ALWAYS dismiss and show to refresh the list correctly
+        juce::PopupMenu::dismissAllActiveMenus();
 
-			// Re-grab focus and restore the EXACT cursor position
-			for (int i = 0; i < ctrlrCombo->getNumChildComponents(); ++i) {
-				if (auto *lb = dynamic_cast<juce::Label *>(ctrlrCombo->getChildComponent(i))) {
-					if (auto *currentEd = lb->getCurrentTextEditor()) {
-						currentEd->grabKeyboardFocus();
-						currentEd->setHighlightedRegion(juce::Range<int>(0, 0)); // Fixes "Select All" bug
-						currentEd->setCaretPosition(caretPos);
-					}
-				}
-			}
-		});
-	}
+        juce::MessageManager::callAsync([this, caretPos, preservedText]() {
+            if (ctrlrCombo == nullptr)
+                return;
 
-	isUpdating = false;
+            ctrlrCombo->showPopup();
+
+            // JUCE 8 FIX: Make sure the combo box label enters editing mode if it closed
+            for (int i = 0; i < ctrlrCombo->getNumChildComponents(); ++i) {
+                if (auto *lb = dynamic_cast<juce::Label *>(ctrlrCombo->getChildComponent(i))) {
+                    
+                    // Force the label to show editor if it lost it during showPopup
+                    if (lb->getCurrentTextEditor() == nullptr && lb->isEditable()) {
+                        lb->showEditor();
+                    }
+
+                    if (auto *currentEd = lb->getCurrentTextEditor()) {
+                        currentEd->grabKeyboardFocus();
+                        currentEd->setHighlightedRegion(juce::Range<int>(0, 0)); // Fixes "Select All" bug
+                        currentEd->setCaretPosition(caretPos);
+                    }
+                }
+            }
+        });
+    }
+
+    isUpdating = false;
 }
 
 void CtrlrCombo::findAndAttach(juce::ComboBox *combo) {
