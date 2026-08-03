@@ -288,10 +288,17 @@ const std::string SimpleEmbeddedDataManager::SECTION_DELIMITER = "__END_SECTIONS
 CtrlrLinux::CtrlrLinux(CtrlrManager &_owner) : owner(_owner) {}
 CtrlrLinux::~CtrlrLinux() {}
 
-const Result CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRestricted,
-												const bool signPanel) {
+void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRestricted, const bool signPanel,
+										std::function<void(juce::Result)> callback) {
+
+	auto notifyAndReturn = [callback](const juce::Result &res) {
+		if (callback)
+			callback(res);
+	};
+
 	if (panelToWrite == nullptr) {
-		return Result::fail("Linux native, panel pointer is invalid");
+		notifyAndReturn(Result::fail("Linux native, panel pointer is invalid"));
+		return;
 	}
 
 	File me = getVST3PluginPath();
@@ -309,7 +316,6 @@ const Result CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const 
 
 	String panelName = File::createLegalFileName(panelToWrite->getProperty(Ids::name));
 
-	// Build suggested file and pattern based on plugin type
 	File suggestedFile;
 	String filePattern;
 
@@ -328,12 +334,12 @@ const Result CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const 
 
 	const bool useNativeDialog = panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs);
 
-	// Launch non-blocking file chooser via FC::saveFileAsync
 	FC::saveFileAsync(
 		CTRLR_NEW_INSTANCE_DIALOG_TITLE, suggestedFile, filePattern, useNativeDialog,
-		[this, panelToWrite, me, isVST3, isVST2, isRestricted](const File &chosenFile) {
+		[this, panelToWrite, me, isVST3, isVST2, isRestricted, notifyAndReturn](const File &chosenFile) {
 			if (chosenFile == File()) {
 				_DBG("User cancelled the export operation.");
+				notifyAndReturn(Result::fail("User cancelled the export operation."));
 				return;
 			}
 
@@ -350,11 +356,13 @@ const Result CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const 
 
 				if (!binaryDir.createDirectory()) {
 					_DBG("Failed to create VST3 bundle directory structure");
+					notifyAndReturn(Result::fail("Failed to create VST3 bundle directory structure"));
 					return;
 				}
 
 				if (!me.copyFileTo(binaryFile)) {
 					_DBG("Linux native, VST3 copyFileTo failed");
+					notifyAndReturn(Result::fail("Linux native, VST3 copyFileTo failed"));
 					return;
 				}
 
@@ -373,11 +381,11 @@ const Result CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const 
 
 				if (!me.copyFileTo(newMe)) {
 					_DBG("Linux native, Standalone/VST2 copyFileTo failed");
+					notifyAndReturn(Result::fail("Linux native, Standalone/VST2 copyFileTo failed"));
 					return;
 				}
 			}
 
-			// Export panel data
 			MemoryBlock panelExportData, panelResourcesData;
 			CtrlrPanel p(owner, "", 0);
 			String error =
@@ -385,10 +393,10 @@ const Result CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const 
 
 			if (error.isNotEmpty()) {
 				_DBG("CtrlrPanel::exportPanel failed: " + error);
+				notifyAndReturn(Result::fail("CtrlrPanel::exportPanel failed: " + error));
 				return;
 			}
 
-			// Perform binary patching for VST3 AND VST2
 			if (isVST3 || isVST2) {
 				MemoryBlock binaryData;
 				if (newMe.loadFileAsData(binaryData)) {
@@ -424,44 +432,45 @@ const Result CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const 
 
 					if (!newMe.replaceWithData(binaryData.getData(), binaryData.getSize())) {
 						_DBG("Failed to write patched binary");
+						notifyAndReturn(Result::fail("Failed to write patched binary"));
 						return;
 					}
 				}
 			}
 
-			// Embed data using SimpleEmbeddedDataManager
 			SimpleEmbeddedDataManager dataManager(newMe.getFullPathName().toStdString());
 			dataManager.initialize();
 
 			if (!dataManager.writeSection(CTRLR_INTERNAL_PANEL_SECTION, panelExportData)) {
 				_DBG("Failed to write panel data");
+				notifyAndReturn(Result::fail("Failed to write panel data"));
 				return;
 			}
 
 			if (panelResourcesData.getSize() > 0) {
 				if (!dataManager.writeSection(CTRLR_INTERNAL_RESOURCES_SECTION, panelResourcesData)) {
 					_DBG("Failed to write resources");
+					notifyAndReturn(Result::fail("Failed to write resources"));
 					return;
 				}
 			}
 
-			// Set executable bit for non-VST3 binary targets
 			if (!isVST3) {
 				if (chmod(newMe.getFullPathName().toUTF8().getAddress(),
 						  S_IRUSR | S_IWUSR | S_IXUSR | S_IXOTH | S_IRGRP | S_IXGRP | S_IROTH)) {
 					_DBG("chmod failed");
+					notifyAndReturn(Result::fail("chmod failed"));
 					return;
 				}
 			}
 
 			_DBG("Export succeeded for: " + newMe.getFullPathName());
+			notifyAndReturn(Result::ok());
 		});
-
-	return Result::ok();
 }
 // --- Getter functions (unchanged logic) ---
 
-const Result CtrlrLinux::getDefaultPanel(MemoryBlock &dataToWrite) {
+Result CtrlrLinux::getDefaultPanel(MemoryBlock &dataToWrite) {
 #ifdef DEBUG_INSTANCE
 	File temp("/home/r.kubiak/devel/debug.bpanelz");
 	temp.loadFileAsData(dataToWrite);
@@ -478,7 +487,7 @@ const Result CtrlrLinux::getDefaultPanel(MemoryBlock &dataToWrite) {
 	return Result::fail("Failed to retrieve panel data");
 }
 
-const Result CtrlrLinux::getDefaultResources(MemoryBlock &dataToWrite) {
+Result CtrlrLinux::getDefaultResources(MemoryBlock &dataToWrite) {
 	File pluginBinary = getVST3PluginPath();
 	SimpleEmbeddedDataManager dataManager(pluginBinary.getFullPathName().toStdString());
 
@@ -489,6 +498,12 @@ const Result CtrlrLinux::getDefaultResources(MemoryBlock &dataToWrite) {
 	return Result::fail("Failed to retrieve resources");
 }
 
-const Result CtrlrLinux::sendKeyPressEvent(const KeyPress &event) { return ctrlr_sendKeyPressEvent(event); }
-
+Result CtrlrLinux::sendKeyPressEvent(const KeyPress &event) { return ctrlr_sendKeyPressEvent(event); }
+Result CtrlrLinux::sendKeyPressEvent(const KeyPress &event, const String &targetWindowName) {
+    if (targetWindowName.isNotEmpty()) {
+        _DBG("Linux native: sendKeyPressEvent with a target window name is not yet implemented; "
+             "sending to the currently focused window instead.");
+    }
+    return ctrlr_sendKeyPressEvent(event);
+}
 #endif

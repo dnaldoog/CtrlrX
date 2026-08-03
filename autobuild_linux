@@ -10,6 +10,11 @@ echo "2) Full Debug (Clean + Configure + Build)"
 echo "3) Clean Rebuild (Ninja Clean + Build)"
 echo "4) Quick Build (Ninja Only)"
 read -p "Enter choice [1-4]: " choice
+error_exit() {
+    echo "ERROR: $1" >&2
+    exit 1
+}
+
 
 case $choice in
     1|2)
@@ -21,7 +26,7 @@ case $choice in
         rm -rf "$BUILD_DIR"
         # -G Ninja tells CMake to generate Ninja files instead of Makefiles
         cmake -S "$PROJECT_ROOT" -B "$BUILD_DIR" -G Ninja -DCMAKE_BUILD_TYPE=$BUILD_TYPE
-        cmake --build "$BUILD_DIR" -j$(nproc)
+cmake --build "$BUILD_DIR" -j"$(nproc)" > build_log.txt 2>&1 || error_exit "Build failed — see build_log.txt for details."
         ;;
 
     3)
@@ -29,14 +34,14 @@ case $choice in
         if [ ! -d "$BUILD_DIR" ]; then echo "Run 1 or 2 first."; exit 1; fi
         echo "--- Cleaning and Rebuilding ---"
         cmake --build "$BUILD_DIR" --target clean
-        cmake --build "$BUILD_DIR" -j$(nproc)
+cmake --build "$BUILD_DIR" -j"$(nproc)" > build_log.txt 2>&1 || error_exit "Build failed — see build_log.txt for details."
         ;;
 
     4)
         # Quick Rebuild
         if [ ! -d "$BUILD_DIR" ]; then echo "Run 1 or 2 first."; exit 1; fi
         echo "--- Fast Incremental Build ---"
-        cmake --build "$BUILD_DIR" -j$(nproc)
+cmake --build "$BUILD_DIR" -j"$(nproc)" > build_log.txt 2>&1 || error_exit "Build failed — see build_log.txt for details."
         ;;
 
     *)
