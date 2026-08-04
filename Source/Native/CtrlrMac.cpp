@@ -97,25 +97,30 @@ fileChooser->launchAsync(flags, [this, fileChooser, panelToWrite, isRestricted, 
 		String error;
 
 if (newMe.exists()) {
-    AlertWindow::showOkCancelBoxAsync(
-        AlertWindow::QuestionIcon, "File Already Exists",
+    AlertWindow::showMessageBoxAsync(
+        AlertWindow::QuestionIcon,
+        "File Already Exists",
         "\"" + newMe.getFileName() + "\" already exists. Do you want to overwrite it?",
-        "Cancel", "Overwrite", nullptr,
-        [this, newMe, panelToWrite, isRestricted, me, notifyAndReturn](int result) {
-            if (result == 0) { // User clicked Cancel or closed dialog
-                PluginLogger logger(me);
+        "Overwrite", // Button 1 -> result == 1
+        "Cancel",    // Button 2 -> result == 2 (0 if closed)
+        nullptr,
+        ModalCallbackFunction::create([this, newMe, panelToWrite, isRestricted, me, notifyAndReturn](int result) {
+            PluginLogger logger(me);
+
+            if (result != 1) { // User clicked Cancel (2) or closed the dialog (0)
                 logger.log("MAC native, user cancelled the overwrite operation.");
                 notifyAndReturn(Result::fail("User cancelled the export operation."));
                 return;
             }
 
+            logger.log("MAC native, attempting to delete existing bundle at: " + newMe.getFullPathName());
             if (!newMe.deleteRecursively()) {
                 notifyAndReturn(Result::fail("MAC native, failed to delete existing bundle at: " + newMe.getFullPathName()));
                 return;
             }
 
-            // Continue rest of export routine...
-        }
+            // Continue rest of export routine here if needed...
+        })
     );
     return;
 }
