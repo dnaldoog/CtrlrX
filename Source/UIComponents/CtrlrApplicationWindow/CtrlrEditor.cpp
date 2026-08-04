@@ -186,75 +186,8 @@ DBG("(B) CtrlrEditor DTOR called");
     // 2. Clear the global default LookAndFeel if it was set
     // This is important if you ever call LookAndFeel::setDefaultLookAndFeel()
     LookAndFeel::setDefaultLookAndFeel(nullptr);
-
-    // 3. Now let the ScopedPointer's destructor run, which will safely delete the object.
-    // The ScopedPointer will do this automatically when the destructor finishes,
-    // so no manual 'deleteAndZero' or 'currentLookAndFeel.reset()' is needed.
-
-    // 4. Finally, let the parent component's destructor destroy the child components
-    // and let the weak reference macro clean up
-	
-	
-	// ---
-	// WAS
-	// ---
-	
-	// USELESS : menuBar as a child component to CtrlrEditor with the line addAndMakeVisible(menuBar).
-	// This operation transfers ownership of the menuBar object to its parent, CtrlrEditor.
-	// When a juce::Component (in this case, CtrlrEditor) is destroyed, its destructor automatically calls deleteAllChildren().
-	// This function iterates through all its child components and safely deletes them.
-	// menuBar->setLookAndFeel(nullptr); // Detach LookAndFeel from menuBar first
-	
-	// USELESS : When you use addAndMakeVisible(menuBar), the CtrlrEditor component becomes the parent of menuBar.
-	// This means the CtrlrEditor now owns the menuBar and is responsible for its destruction.
-    // deleteAndZero (menuBar);
-	
-	// USELESS : because JUCE_DECLARE_WEAK_REFERENCEABLE macro is in the header already.
-	// It automatically handles the weak reference master
-	// masterReference.clear();
-}
-/*
-CtrlrEditor::~CtrlrEditor() { DBG("(B) CtrlrEditor DTOR called"); 
-
-
-
-setLookAndFeel(nullptr);
-for (int i = 0; i < getNumChildComponents(); ++i) {
-    if (auto* child = getChildComponent(i)) {
-        child->setLookAndFeel(nullptr);
-    }
 }
 
-}
-
-CtrlrEditor::~CtrlrEditor() {
-	if (tooltipWindow != nullptr) {
-		tooltipWindow.reset();
-	}
-	// 1. Explicitly detach the top-level editor from the layout engine first
-	setLookAndFeel(nullptr);
-
-	// 2. Detach the LookAndFeel from the menu bar while it is guaranteed to be alive
-	if (menuBar != nullptr) {
-		menuBar->setLookAndFeel(nullptr);
-	}
-
-	// 3. Clear the global fallback to ensure no application-wide leaks remain
-	LookAndFeel::setDefaultLookAndFeel(nullptr);
-
-	// 4. FIX THE LIFECYCLE LEAK: Manually clear your unique_ptr look-and-feel tracker
-	if (currentLookAndFeel != nullptr) {
-		currentLookAndFeel.reset();
-	}
-
-	// 5. FIX THE ORIGINAL DEVELOPER'S ERROR: If menuBar was allocated via 'new'
-	// and is a raw pointer in the header, we MUST clean it up here!
-	// (Note: If you already updated menuBar to a std::unique_ptr in CtrlrEditor.h,
-	// you can safely replace this line with menuBar.reset();)
-	// deleteAndZero (menuBar);
-	menuBar.reset();
-}
-*/
 void CtrlrEditor::paint(Graphics &g) { g.fillAll(Component::findColour(DocumentWindow::backgroundColourId)); }
 
 void CtrlrEditor::resized() {
@@ -270,35 +203,51 @@ void CtrlrEditor::resized() {
 }
 
 void CtrlrEditor::setEditorLookAndFeel(const String &lookAndFeelDesc, const var &colourSchemeProperty) {
-	std::unique_ptr<juce::LookAndFeel> newLookAndFeel(
-		gui::createLookAndFeelFromDescription(lookAndFeelDesc, juce::var()));
+    std::unique_ptr<juce::LookAndFeel> newLookAndFeel(
+        gui::createLookAndFeelFromDescription(lookAndFeelDesc, juce::var()));
 
-	if (newLookAndFeel != nullptr) {
-		if (LookAndFeel_V4 *lnf4 = dynamic_cast<LookAndFeel_V4 *>(newLookAndFeel.get())) {
-			// Fall back to a real scheme rather than silently leaving raw/unscripted defaults
-			var effectiveScheme = (colourSchemeProperty.isString() && !colourSchemeProperty.toString().isEmpty())
-			                           ? colourSchemeProperty
-			                           : var("Dark"); // pick whatever your actual fallback scheme should be
-			lnf4->setColourScheme(gui::colourSchemeFromProperty(effectiveScheme));
-		}
+    if (newLookAndFeel != nullptr) {
+        if (LookAndFeel_V4 *lnf4 = dynamic_cast<LookAndFeel_V4 *>(newLookAndFeel.get())) {
+            // Restore "Light" as the default fallback scheme when no scheme is specified in property
+            var effectiveScheme = (colourSchemeProperty.isString() && !colourSchemeProperty.toString().isEmpty())
+                                   ? colourSchemeProperty
+                                   : var("Light"); 
+            
+            lnf4->setColourScheme(gui::colourSchemeFromProperty(effectiveScheme));
 
-		setLookAndFeel(nullptr);
-		if (menuBar != nullptr)
-			menuBar->setLookAndFeel(nullptr);
+            // Populate property and text editor fallbacks to prevent findColour assertions
+            lnf4->setColour(juce::PropertyComponent::labelTextColourId, juce::Colours::black);
+            lnf4->setColour(juce::TextEditor::textColourId, juce::Colours::black);
+            lnf4->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
+        }
 
-		// Point the global default at the NEW instance BEFORE the old one is destroyed —
-		// closes the dangling-pointer window entirely.
-		LookAndFeel::setDefaultLookAndFeel(newLookAndFeel.get());
+        // Flush component styling links before replacing the instance
+        setLookAndFeel(nullptr);
+        if (menuBar != nullptr)
+            menuBar->setLookAndFeel(nullptr);
 
-		currentLookAndFeel = std::move(newLookAndFeel); // old instance destroyed here; default already repointed
+        // Point global default at NEW instance before deleting the old one
+        LookAndFeel::setDefaultLookAndFeel(newLookAndFeel.get());
 
-		setLookAndFeel(currentLookAndFeel.get());
-		if (menuBar != nullptr)
-			menuBar->setLookAndFeel(currentLookAndFeel.get());
+        // Transfer ownership (old currentLookAndFeel destroyed safely here)
+        currentLookAndFeel = std::move(newLookAndFeel); 
 
-		lookAndFeelChanged();
-		repaint();
-	}
+        // Apply new LookAndFeel to Editor and MenuBar
+        setLookAndFeel(currentLookAndFeel.get());
+        if (menuBar != nullptr)
+        {
+            menuBar->setLookAndFeel(currentLookAndFeel.get());
+            
+            // Fix dark menu bar issue: Force MenuBar text & background to track light/dark mode
+            menuBar->setColour(juce::PopupMenu::backgroundColourId, 
+                               currentLookAndFeel->findColour(juce::ResizableWindow::backgroundColourId));
+            menuBar->setColour(juce::PopupMenu::textColourId, 
+                               currentLookAndFeel->findColour(juce::Label::textColourId));
+        }
+
+        lookAndFeelChanged();
+        repaint();
+    }
 }
 
 void CtrlrEditor::activeCtrlrChanged() {

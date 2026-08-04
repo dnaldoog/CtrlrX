@@ -71,7 +71,9 @@ void CtrlrLuaObject::wrapForLua(lua_State *L)
 			.def("setPropertyString", &CtrlrLuaObject::setPropertyString)
 			.def("removeProperty", &CtrlrLuaObject::removeProperty)
 			.def("setProperty", (void (CtrlrLuaObject::*)(const Identifier &, const var &, const bool))&CtrlrLuaObject::setProperty)
-			.def("getProperty", &CtrlrLuaObject::getProperty)
+			// NEW (Explicit signature cast for Clang / JUCE 8):
+			.def("getProperty", (const juce::var& (CtrlrLuaObject::*)(const juce::Identifier &) const)&CtrlrLuaObject::getProperty) // fix for mac
+//			.def("getProperty", &CtrlrLuaObject::getProperty)
 			.def("getObjectTree", &CtrlrLuaObject::getObjectTree)
     ];
 }
