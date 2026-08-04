@@ -10,7 +10,7 @@
 #include "juce_PluginHostType.h"
 
 #include <fstream> // Added v5.6.33. Required for vst3 logger
-
+static const int CTRLR_MAX_PARAMETER_SLOTS = 512;
 class CtrlrLog;
 class CtrlrManager;
 class CtrlrMidiMessage;

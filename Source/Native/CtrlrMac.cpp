@@ -42,10 +42,7 @@ void CtrlrMac::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRes
 	std::cout << "MAC native, launch fileChooser to select export destination path. nameOS : " << nameOS << std::endl;
 	logger.log("MAC native, launch fileChooser to select export destination path. nameOS : " + nameOS);
 
-	bool nativeFileChooser = !(typeOS == juce::SystemStats::OperatingSystemType::MacOSX_10_15
-							   || typeOS == juce::SystemStats::OperatingSystemType::MacOS_11
-							   || typeOS == juce::SystemStats::OperatingSystemType::MacOS_12
-	);
+	bool nativeFileChooser = true;
 
 	File fcInitialDirectory;
 
@@ -81,8 +78,10 @@ void CtrlrMac::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRes
 
 	auto flags = FileBrowserComponent::openMode | FileBrowserComponent::canSelectDirectories;
 
-	fc->launchAsync(flags, [this, panelToWrite, isRestricted, me, fileExtension, notifyAndReturn](const FileChooser &chooser) mutable {
+auto fileChooser = std::make_shared<FileChooser>(CTRLR_NEW_INSTANCE_DIALOG_TITLE, fcInitialDirectory, me.getFileExtension(), nativeFileChooser);
 
+fileChooser->launchAsync(flags, [this, fileChooser, panelToWrite, isRestricted, me, fileExtension, notifyAndReturn](const FileChooser &chooser) mutable {
+    // fileChooser safely stays alive until lambda finishes
 		juce::MessageManager::callAsync([this]() { fc.reset(); });
 
 		if (chooser.getResult() == File()) {
@@ -97,24 +96,29 @@ void CtrlrMac::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRes
 		MemoryBlock panelExportData, panelResourcesData;
 		String error;
 
-		if (newMe.exists()) {
-			bool overwriteCancelled = AlertWindow::showOkCancelBox(
-				AlertWindow::QuestionIcon, "File Already Exists",
-				"\"" + newMe.getFileName() + "\" already exists. Do you want to overwrite it?",
-				"Cancel", "Overwrite", nullptr);
+if (newMe.exists()) {
+    AlertWindow::showOkCancelBoxAsync(
+        AlertWindow::QuestionIcon, "File Already Exists",
+        "\"" + newMe.getFileName() + "\" already exists. Do you want to overwrite it?",
+        "Cancel", "Overwrite", nullptr,
+        [this, newMe, panelToWrite, isRestricted, me, notifyAndReturn](int result) {
+            if (result == 0) { // User clicked Cancel or closed dialog
+                PluginLogger logger(me);
+                logger.log("MAC native, user cancelled the overwrite operation.");
+                notifyAndReturn(Result::fail("User cancelled the export operation."));
+                return;
+            }
 
-			if (overwriteCancelled) {
-				logger.log("MAC native, user cancelled the overwrite operation.");
-				notifyAndReturn(Result::fail("User cancelled the export operation."));
-				return;
-			}
+            if (!newMe.deleteRecursively()) {
+                notifyAndReturn(Result::fail("MAC native, failed to delete existing bundle at: " + newMe.getFullPathName()));
+                return;
+            }
 
-			logger.log("MAC native, attempting to delete existing bundle at: " + newMe.getFullPathName());
-			if (!newMe.deleteRecursively()) {
-				notifyAndReturn(Result::fail("MAC native, failed to delete existing bundle at: " + newMe.getFullPathName()));
-				return;
-			}
-		}
+            // Continue rest of export routine...
+        }
+    );
+    return;
+}
 
 		if (!me.copyDirectoryTo(newMe)) {
 			logger.log("MAC native, copyDirectoryTo from \"" + me.getFullPathName() + "\" to \"" +
@@ -489,11 +493,10 @@ const Result CtrlrMac::codesignFileMac(const juce::String &newMePathName,
 		childProcess.waitForProcessToFinish(-1);
 
 		if (!childProcess.isRunning()) { // Check if process has finished
-			if (childProcess.getExitCode() == 0) {
-				return juce::Result::ok(); // Codesign successful
-				std::cout << "Codesign successful. " << newMePathName << std::endl;
-
-			} else {
+		if (childProcess.getExitCode() == 0) {
+    	std::cout << "Codesign successful. " << newMePathName << std::endl;
+    	return juce::Result::ok();
+		} else {
 				return juce::Result::fail("Codesign failed with exit code: " +
 										  juce::String(childProcess.getExitCode())); // Codesign failed
 			}
@@ -873,7 +876,7 @@ Result CtrlrMac::getDefaultResources(MemoryBlock &dataToWrite) { // const keywor
 	return (Result::fail("MAC native, \"" + meRes.getFullPathName() + "\" does not exist"));
 }
 
-const Result CtrlrMac::setBundleInfo(CtrlrPanel *sourceInfo, const File &bundle) {
+Result CtrlrMac::setBundleInfo(CtrlrPanel *sourceInfo, const File &bundle) {
 	File plist = bundle.getChildFile("Contents/Info.plist");
 
 	if (plist.existsAsFile() && plist.hasWriteAccess()) {
@@ -1075,8 +1078,8 @@ Result CtrlrMac::setBundleInfoCarbon(CtrlrPanel *sourceInfo, const File &bundle)
 											 rsrcFile.getFullPathName()));
 					}
 				} else {
-					Result::fail("MAC native, can't write to bundle's rsrc file at: " + rsrcFile.getFullPathName());
-				}
+   				 return Result::fail("MAC native, can't write to bundle's rsrc file at: " + rsrcFile.getFullPathName());
+			}
 			}
 		}
 	} else {
