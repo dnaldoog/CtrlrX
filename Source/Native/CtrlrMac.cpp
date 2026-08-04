@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "stdafx_luabind.h"
+#include "CtrlrInlineUtilitiesGUI.h"
+
 static const int zero = 0;
 #ifdef __APPLE__
 #include "CtrlrLog.h"
@@ -97,17 +99,14 @@ fileChooser->launchAsync(flags, [this, fileChooser, panelToWrite, isRestricted, 
 		String error;
 
 if (newMe.exists()) {
-    AlertWindow::showMessageBoxAsync(
-        AlertWindow::QuestionIcon,
+    AW::showOkCancelAsyncSafe(
+        AW::Question,
         "File Already Exists",
         "\"" + newMe.getFileName() + "\" already exists. Do you want to overwrite it?",
-        "Overwrite", // Button 1 -> result == 1
-        "Cancel",    // Button 2 -> result == 2 (0 if closed)
-        nullptr,
-        ModalCallbackFunction::create([this, newMe, panelToWrite, isRestricted, me, notifyAndReturn](int result) {
+        [this, newMe, panelToWrite, isRestricted, me, notifyAndReturn](bool userConfirmed) {
             PluginLogger logger(me);
 
-            if (result != 1) { // User clicked Cancel (2) or closed the dialog (0)
+            if (!userConfirmed) { // User clicked No/Cancel or closed the dialog
                 logger.log("MAC native, user cancelled the overwrite operation.");
                 notifyAndReturn(Result::fail("User cancelled the export operation."));
                 return;
@@ -119,12 +118,13 @@ if (newMe.exists()) {
                 return;
             }
 
-            // Continue rest of export routine here if needed...
-        })
+            // Continue rest of export routine here...
+        },
+        "Overwrite", // button1Text (Returns true)
+        "Cancel"     // button2Text (Returns false)
     );
     return;
 }
-
 		if (!me.copyDirectoryTo(newMe)) {
 			logger.log("MAC native, copyDirectoryTo from \"" + me.getFullPathName() + "\" to \"" +
 					   newMe.getFullPathName() + "\" failed");
