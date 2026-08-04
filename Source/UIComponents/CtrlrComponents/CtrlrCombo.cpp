@@ -282,10 +282,10 @@ void CtrlrCombo::parentHierarchyChanged() {
         _DBG("LIFECYCLE: Component re-attached during active search. Refreshing search results.");
         triggerAsyncUpdate();
     }
-	if (getParentComponent() != nullptr) {
-		_DBG("LIFECYCLE: Component attached to parent. Refreshing Search state.");
-		triggerAsyncUpdate();
-	}
+	// if (getParentComponent() != nullptr) {
+	// 	_DBG("LIFECYCLE: Component attached to parent. Refreshing Search state.");
+	// 	triggerAsyncUpdate();
+	// }
 
 	// TRACE: See if the act of attaching triggered a JUCE internal reset
 	if (ctrlrCombo) {

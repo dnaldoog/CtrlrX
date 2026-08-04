@@ -75,7 +75,10 @@ DBG("(Z) ~CtrlrModulator");
 	masterReference.clear();
 
 	if (ctrlrComponent)
+	{
+		ctrlrComponent->setLookAndFeel(nullptr);
 		deleteAndZero (ctrlrComponent);
+	}
 }
 /*
 CtrlrModulator::~CtrlrModulator()
