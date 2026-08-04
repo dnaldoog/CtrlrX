@@ -1,7 +1,5 @@
 #include "stdafx.h"
 #include "stdafx_luabind.h"
-#include "CtrlrInlineUtilitiesGUI.h
-
 static const int zero = 0;
 #ifdef __APPLE__
 #include "CtrlrLog.h"
@@ -99,32 +97,34 @@ fileChooser->launchAsync(flags, [this, fileChooser, panelToWrite, isRestricted, 
 		String error;
 
 if (newMe.exists()) {
-	AW::showOkCancelAsyncSafe(
-		AW::Question, "File Already Exists",
-		"\"" + newMe.getFileName() + "\" already exists. Do you want to overwrite it?",
-		[this, newMe, panelToWrite, isRestricted, me, notifyAndReturn](bool userConfirmed) {
-			PluginLogger logger(me);
+    AlertWindow::showMessageBoxAsync(
+        AlertWindow::QuestionIcon,
+        "File Already Exists",
+        "\"" + newMe.getFileName() + "\" already exists. Do you want to overwrite it?",
+        "Overwrite", // Button 1 -> result == 1
+        "Cancel",    // Button 2 -> result == 2 (0 if closed)
+        nullptr,
+        ModalCallbackFunction::create([this, newMe, panelToWrite, isRestricted, me, notifyAndReturn](int result) {
+            PluginLogger logger(me);
 
-			if (!userConfirmed) { // User clicked No/Cancel or closed the dialog
-				logger.log("MAC native, user cancelled the overwrite operation.");
-				notifyAndReturn(Result::fail("User cancelled the export operation."));
-				return;
-			}
+            if (result != 1) { // User clicked Cancel (2) or closed the dialog (0)
+                logger.log("MAC native, user cancelled the overwrite operation.");
+                notifyAndReturn(Result::fail("User cancelled the export operation."));
+                return;
+            }
 
-			logger.log("MAC native, attempting to delete existing bundle at: " + newMe.getFullPathName());
-			if (!newMe.deleteRecursively()) {
-				notifyAndReturn(
-					Result::fail("MAC native, failed to delete existing bundle at: " + newMe.getFullPathName()));
-				return;
-			}
+            logger.log("MAC native, attempting to delete existing bundle at: " + newMe.getFullPathName());
+            if (!newMe.deleteRecursively()) {
+                notifyAndReturn(Result::fail("MAC native, failed to delete existing bundle at: " + newMe.getFullPathName()));
+                return;
+            }
 
-			// Continue rest of export routine here...
-		},
-		"Overwrite", // button1Text (Returns true)
-		"Cancel"	 // button2Text (Returns false)
-	);
-	return;
+            // Continue rest of export routine here if needed...
+        })
+    );
+    return;
 }
+
 		if (!me.copyDirectoryTo(newMe)) {
 			logger.log("MAC native, copyDirectoryTo from \"" + me.getFullPathName() + "\" to \"" +
 					   newMe.getFullPathName() + "\" failed");
