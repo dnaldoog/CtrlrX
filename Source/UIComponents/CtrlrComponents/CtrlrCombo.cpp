@@ -12,7 +12,7 @@
 
 CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 	: CtrlrComponent(owner),
-	  // lf(*this),          // Keep commented out if you removed the old custom LookAndFeel member
+	  lf(*this),          // Keep commented out if you removed the old custom LookAndFeel member
 	  ctrlrCombo(nullptr), // unique_ptr can safely initialize to nullptr like this in the list
 	  isUpdating(false),
 	  isSearching(false) {
@@ -31,7 +31,7 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 	String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
 
 	// Crucial: Use .get() here because applyCentralLookAndFeel expects a raw pointer address!
-	applyCentralLookAndFeel(ctrlrCombo.get(), panelLnF);
+	applyCentralLookAndFeel(ctrlrCombo.get(), "V3");
 
 	repaint();
 
@@ -461,7 +461,8 @@ void CtrlrCombo::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 			updateInternalComponentStyles();
 		}
 	} else if (property == Ids::uiButtonLookAndFeel || property == Ids::uiSliderLookAndFeel) {
-		applyCentralLookAndFeel(ctrlrCombo.get(), getProperty(property));
+		applyCentralLookAndFeel(ctrlrCombo.get(),  "V3");
+		//applyCentralLookAndFeel(ctrlrCombo.get(), getProperty(property));
 		repaint();
 	} else if (property == Ids::uiComboBgColour) {
 		ctrlrCombo->setColour(ComboBox::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
@@ -516,7 +517,8 @@ void CtrlrCombo::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 
 		// 2. Query what look-and-feel style string the panel currently demands
 		String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
-		applyCentralLookAndFeel(ctrlrCombo.get(), getProperty(property));
+		//applyCentralLookAndFeel(ctrlrCombo.get(), getProperty(property));
+		applyCentralLookAndFeel(ctrlrCombo.get(), "V3");
 		repaint();
 		setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
 		ctrlrCombo->lookAndFeelChanged();
@@ -732,7 +734,8 @@ void CtrlrCombo::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel) {
 		String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
 
 		// FIXED: Pass 'panelLnF' as the second argument instead of 'getProperty(property)'
-		applyCentralLookAndFeel(ctrlrCombo.get(), panelLnF);
+		//applyCentralLookAndFeel(ctrlrCombo.get(), panelLnF);
+		applyCentralLookAndFeel(ctrlrCombo.get(),  "V3");
 
 		repaint();
 	} else {

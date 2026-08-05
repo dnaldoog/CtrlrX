@@ -36,7 +36,6 @@ class CtrlrCombo : public CtrlrComponent,
 		getLookAndFeelFromComponentProperty(const juce::String &lookAndFeelComponentProperty);
 		void resetLookAndFeelOverrides();
 		void updatePropertiesPanel();
-
 		class CtrlrComboLF : public LookAndFeel_V4 {
 			public:
 				CtrlrComboLF(CtrlrCombo &_owner) : owner(_owner) {}
@@ -60,6 +59,7 @@ class CtrlrCombo : public CtrlrComponent,
 				Font getLabelFont(Label &label);
 
 			private:
+
 				CtrlrCombo &owner;
 		};
 
@@ -114,7 +114,7 @@ class CtrlrCombo : public CtrlrComponent,
 		std::unique_ptr<SearchListener> searchListener;
 
 		Array<var> values;
-		// CtrlrComboLF lf;
+		CtrlrComboLF lf;
 		std::unique_ptr<CtrlrValueMap> valueMap;
 		bool isSearching = false;
 		bool isUpdating = false;
