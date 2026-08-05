@@ -389,7 +389,6 @@ DECLARE_ID(uiComboButtonWidthOverride);
 DECLARE_ID(uiComboButtonWidth);
 DECLARE_ID(uiComboSelectedId);
 DECLARE_ID(uiComboSelectedIndex);
-DECLARE_ID(uiComboStyle);
 
 DECLARE_ID(uiListBoxContent);
 DECLARE_ID(uiListBoxRowHeight);

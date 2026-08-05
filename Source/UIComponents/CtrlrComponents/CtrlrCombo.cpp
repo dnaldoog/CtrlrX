@@ -27,8 +27,6 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 	componentTree.addListener(this);
 
 	// 2. Add a property to toggle between V3 (default) and V4/Panel LookAndFeel
-	setProperty(Ids::uiComboStyle, "V3"); // Defaults to V3 to preserve legacy panels
-
 	setProperty(Ids::uiComboSearch, false);
 	setProperty(Ids::uiComboButtonWidthOverride, false);
 	setProperty(Ids::uiComboButtonWidth, 16);
@@ -41,40 +39,33 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 	setProperty(Ids::uiButtonLookAndFeelIsCustom, false);
 
 	// 1. Fetch style or default to V3 for uiCombo
-	String comboStyle = getProperty(Ids::uiComboStyle).toString();
+	// Force the embedded custom LookAndFeel on the inner ComboBox
+	ctrlrCombo->setLookAndFeel(&lf);
+
+	// Read the component's own LookAndFeel choice (Default to V3)
+	String comboStyle = getProperty(Ids::uiButtonLookAndFeel).toString();
 	if (comboStyle.isEmpty()) {
-		setProperty(Ids::uiComboStyle, "V3");
+		setProperty(Ids::uiButtonLookAndFeel, "V3");
 		comboStyle = "V3";
 	}
 
-	// 2. Set default properties and attach appropriate LookAndFeel
+	// Set defaults based on the style choice without touching the parent Panel
 	if (comboStyle == "V3" || comboStyle == "V2" || comboStyle == "V1") {
 		setProperty(Ids::uiComboArrowColour, "0xff0000ff");
 		setProperty(Ids::uiComboOutlineColour, "0xff0000ff");
-
 		setProperty(Ids::uiComboTextJustification, "centred");
 		setProperty(Ids::uiComboFont, FONT2STR(Font(14)));
 		setProperty(Ids::uiComboTextColour, "0xff000000");
-
 		setProperty(Ids::uiComboMenuFont, FONT2STR(Font(16)));
 		setProperty(Ids::uiComboMenuFontColour, "0xff000000");
-
 		setProperty(Ids::uiComboButtonColour, "0xff0000ff");
 		setProperty(Ids::uiComboBgColour, "0xffffffff");
-
 		setProperty(Ids::uiComboMenuBackgroundColour, "0xfff0f0f0");
-
 		setProperty(Ids::uiComboMenuHighlightColour, Colours::lightblue.toString());
 		setProperty(Ids::uiComboMenuFontHighlightedColour, "0xff232323");
-
 		setProperty(Ids::uiComboMenuBackgroundRibbed, true);
-
-		// Crucial: Direct JUCE to your embedded CtrlrComboLF class so drawComboBox fires
-		ctrlrCombo->setLookAndFeel(&lf);
-
 		setSize(88, 32);
 	} else {
-		// V4 Branch
 		setProperty(Ids::uiComboArrowColour, (String)findColour(ComboBox::arrowColourId).toString());
 		setProperty(Ids::uiComboOutlineColour, (String)findColour(ComboBox::outlineColourId).darker(0.5f).toString());
 		setProperty(Ids::uiComboTextJustification, "centred");
@@ -89,10 +80,6 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 		setProperty(Ids::uiComboMenuFontHighlightedColour,
 					(String)findColour(TextEditor::highlightedTextColourId).toString());
 		setProperty(Ids::uiComboMenuBackgroundRibbed, false);
-
-		// Standard central panel look for V4
-		applyCentralLookAndFeel(ctrlrCombo.get(), "V4");
-
 		setSize(120, 40);
 	}
 	setProperty(Ids::uiComboButtonGradient, true);
@@ -391,13 +378,10 @@ void CtrlrCombo::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 	} else if (property == Ids::uiComboSearch) {
 		_DBG("PROP: uiComboSearch changed - starting safety timer");
 		startTimer(250);
-	} else if (property == Ids::uiButtonLookAndFeel || property == Ids::uiSliderLookAndFeel) {
-		String comboStyle = getProperty(Ids::uiComboStyle).toString();
-		if (comboStyle.isEmpty() || comboStyle == "V3") {
-			ctrlrCombo->setLookAndFeel(&lf);
-		} else {
-			applyCentralLookAndFeel(ctrlrCombo.get(), "V4");
-		}
+	} else if (property == Ids::uiButtonLookAndFeel) {
+		// Keep embedded LookAndFeel attached and trigger visual update
+		ctrlrCombo->setLookAndFeel(&lf);
+		ctrlrCombo->lookAndFeelChanged();
 		ctrlrCombo->repaint();
 	} else if (property == Ids::uiComboBgColour) {
 		ctrlrCombo->setColour(ComboBox::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
@@ -430,7 +414,6 @@ void CtrlrCombo::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 		ctrlrCombo->setJustificationType(justificationFromProperty(getProperty(property)));
 		ctrlrCombo->repaint();
 	} else if (property == Ids::uiComboButtonWidthOverride || property == Ids::uiComboButtonWidth) {
-		// Trigger positionComboBoxText in CtrlrComboLF without destroying LookAndFeel
 		ctrlrCombo->resized();
 		ctrlrCombo->repaint();
 	} else if (property == Ids::uiComboFont || property == Ids::uiComboMenuBackgroundColour ||
@@ -438,9 +421,8 @@ void CtrlrCombo::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 			   property == Ids::uiComboMenuHighlightColour || property == Ids::uiComboMenuFontHighlightedColour ||
 			   property == Ids::uiComboButtonGradientColour1 || property == Ids::uiComboButtonGradientColour2) {
 
-		// DO NOT reset setLookAndFeel(nullptr) here! Keep embedded &lf active.
 		if (property == Ids::uiComboFont) {
-			if (auto *label = dynamic_cast<juce::Label *>(ctrlrCombo->findChildWithID(juce::Identifier("label")))) {
+			if (auto *label = dynamic_cast<juce::Label *>(ctrlrCombo->findChildWithID("label"))) {
 				Font f = owner.getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString(
 					getProperty(Ids::uiComboFont));
 				label->setFont(f);
