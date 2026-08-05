@@ -73,9 +73,12 @@ CtrlrButton::~CtrlrButton() {
 }
 
 //==============================================================================
-void CtrlrButton::paint(Graphics &g) {}
+void CtrlrButton::paint(Graphics &g) {
+}
 
-void CtrlrButton::resized() { ctrlrButton->setBounds(getUsableRect()); }
+void CtrlrButton::resized() {
+	ctrlrButton->setBounds(getUsableRect());
+}
 
 void CtrlrButton::buttonClicked(Button *buttonThatWasClicked) {
 	//[UserbuttonClicked_Pre]
@@ -146,19 +149,29 @@ void CtrlrButton::setComponentValue(const double newValue, const bool sendChange
 	}
 }
 
-double CtrlrButton::getComponentMaxValue() { return (valueMap->getNonMappedMax()); }
+double CtrlrButton::getComponentMaxValue() {
+	return (valueMap->getNonMappedMax());
+}
 
-bool CtrlrButton::getToggleState() { return (ctrlrButton->getToggleState()); }
+bool CtrlrButton::getToggleState() {
+	return (ctrlrButton->getToggleState());
+}
 
-const String CtrlrButton::getComponentText() { return (ctrlrButton->getButtonText()); }
+const String CtrlrButton::getComponentText() {
+	return (ctrlrButton->getButtonText());
+}
 
 void CtrlrButton::setComponentText(const String &componentText) {
 	setComponentValue(valueMap->getNonMappedValue(componentText));
 }
 
-double CtrlrButton::getComponentValue() { return (valueMap->getCurrentNonMappedValue()); }
+double CtrlrButton::getComponentValue() {
+	return (valueMap->getCurrentNonMappedValue());
+}
 
-int CtrlrButton::getComponentMidiValue() { return (valueMap->getCurrentMappedValue()); }
+int CtrlrButton::getComponentMidiValue() {
+	return (valueMap->getCurrentMappedValue());
+}
 
 void CtrlrButton::buttonContentChanged() {
 	valueMap->copyFrom(owner.getProcessor().setValueMap(getProperty(Ids::uiButtonContent)));
@@ -166,42 +179,83 @@ void CtrlrButton::buttonContentChanged() {
 }
 
 void CtrlrButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
+	DBG("!!!! valueTreePropertyChanged: " + property.toString());
+
 	if (property == Ids::uiButtonContent) {
 		buttonContentChanged();
-	} else if (property == Ids::uiButtonLookAndFeel) {
-		String LookAndFeelType = getProperty(property);
+	} else if (property == Ids::uiButtonLookAndFeel || property == Ids::uiPanelLookAndFeel) {
+		bool isCustom = getProperty(Ids::uiButtonLookAndFeelIsCustom);
+		String localStyle = getProperty(Ids::uiButtonLookAndFeel).toString();
 
-		// 1. CRITICAL: Unlink JUCE from the current style BEFORE destroying it!
-		if (ctrlrButton != nullptr) {
-			ctrlrButton->setLookAndFeel(nullptr);
+		// If the component has a custom local theme assigned and this update was triggered
+		// by a panel-wide cascade, ignore it to preserve the local theme!
+		if (isCustom && (property == Ids::uiPanelLookAndFeel || localStyle == "Default")) {
+			return;
 		}
 
-		if (LookAndFeelType == "Default") {
-			// 2. Safely wipe out our smart pointer container (deletes old assets)
+		// 1. Unlink JUCE from the current style BEFORE modifying/destroying customLF
+		if (ctrlrButton != nullptr) {
+			ctrlrButton->setLookAndFeel(nullptr);
+
+			// Strip explicit color overrides so the LookAndFeel palette takes full control
+			ctrlrButton->removeColour(TextButton::buttonColourId);
+			ctrlrButton->removeColour(TextButton::buttonOnColourId);
+			ctrlrButton->removeColour(TextButton::textColourOffId);
+			ctrlrButton->removeColour(TextButton::textColourOnId);
+		}
+
+		// 2. Handle theme resolution
+		if (localStyle.isEmpty() || localStyle == "Default") {
 			customLF.reset();
 
-			// Re-apply the default central theme safely
-			applyCentralLookAndFeel(ctrlrButton.get(), LookAndFeelType);
+			String effectiveStyle = localStyle;
+			if (auto *editor = owner.getOwnerPanel().getEditor()) {
+				effectiveStyle = editor->getProperty(Ids::uiPanelLookAndFeel).toString();
+			}
+
+			applyCentralLookAndFeel(ctrlrButton.get(), effectiveStyle);
 			setProperty(Ids::uiButtonLookAndFeelIsCustom, false);
 		} else {
-			// 3. Allocate the new LookAndFeel directly into our tracking unique_ptr
-			customLF = std::move(CtrlrButton::getLookAndFeelFromComponentProperty(LookAndFeelType));
+			// Lock local override flag so future panel theme changes don't overwrite this selection
+			setProperty(Ids::uiButtonLookAndFeelIsCustom, true);
 
-			// 4. Safely expose the underlying raw memory address to your internal button via .get()
+			customLF = std::move(CtrlrButton::getLookAndFeelFromComponentProperty(localStyle));
+
 			if (customLF != nullptr && ctrlrButton != nullptr) {
 				ctrlrButton->setLookAndFeel(customLF.get());
 			}
 		}
 
-		if (!getProperty(Ids::uiButtonLookAndFeelIsCustom)) {
-			CtrlrButton::resetLookAndFeelOverrides();
+		if (ctrlrButton != nullptr) {
+			ctrlrButton->lookAndFeelChanged();
+			ctrlrButton->repaint();
 		}
 
 		repaint();
-	}
+	} else if (property == Ids::uiButtonColourOff || property == Ids::uiButtonColourOn ||
+			   property == Ids::uiButtonTextColourOff || property == Ids::uiButtonTextColourOn) {
+		// If the button is using a custom LookAndFeel theme, ignore raw color property updates coming from the panel
+		if ((bool)getProperty(Ids::uiButtonLookAndFeelIsCustom) &&
+			getProperty(Ids::uiButtonLookAndFeel).toString() != "Default") {
+			return;
+		}
 
-	else if (property == Ids::uiButtonColourOff || property == Ids::uiButtonColourOn ||
-			 property == Ids::uiButtonTextColourOff || property == Ids::uiButtonTextColourOn) {
+		if (ctrlrButton != nullptr) {
+			ctrlrButton->setColour(TextButton::buttonColourId, VAR2COLOUR(getProperty(Ids::uiButtonColourOff)));
+			ctrlrButton->setColour(TextButton::buttonOnColourId, VAR2COLOUR(getProperty(Ids::uiButtonColourOn)));
+			ctrlrButton->setColour(TextButton::textColourOffId, VAR2COLOUR(getProperty(Ids::uiButtonTextColourOff)));
+			ctrlrButton->setColour(TextButton::textColourOnId, VAR2COLOUR(getProperty(Ids::uiButtonTextColourOn)));
+		}
+	} else if (property == Ids::uiButtonTrueValue) {
+		owner.setProperty(Ids::modulatorMax, getProperty(property));
+	} else if (property == Ids::uiButtonFalseValue) {
+		owner.setProperty(Ids::modulatorMin, getProperty(property));
+	} else if (property == Ids::uiButtonRepeat) {
+		if ((bool)getProperty(property) == false) {
+			stopTimer();
+		}
+	} else if (property == Ids::uiButtonColourOff || property == Ids::uiButtonColourOn ||
+			   property == Ids::uiButtonTextColourOff || property == Ids::uiButtonTextColourOn) {
 		ctrlrButton->setColour(TextButton::buttonColourId, VAR2COLOUR(getProperty(Ids::uiButtonColourOff)));
 		ctrlrButton->setColour(TextButton::buttonOnColourId, VAR2COLOUR(getProperty(Ids::uiButtonColourOn)));
 		ctrlrButton->setColour(TextButton::textColourOffId, VAR2COLOUR(getProperty(Ids::uiButtonTextColourOff)));
@@ -237,9 +291,13 @@ void CtrlrButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChange
 	}
 }
 
-void CtrlrButton::click() { ctrlrButton->triggerClick(); }
+void CtrlrButton::click() {
+	ctrlrButton->triggerClick();
+}
 
-bool CtrlrButton::isToggleButton() { return (ctrlrButton->getClickingTogglesState()); }
+bool CtrlrButton::isToggleButton() {
+	return (ctrlrButton->getClickingTogglesState());
+}
 
 void CtrlrButton::setToggleState(const bool toggleState, const bool sendChangeMessage) {
 	ctrlrButton->setToggleState(toggleState, sendChangeMessage ? sendNotification : dontSendNotification);
