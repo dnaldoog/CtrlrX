@@ -29,11 +29,16 @@ class CtrlrCombo : public CtrlrComponent,
 		const String getComponentText();
 		void setComponentText(const String &componentText);
 		void valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
-		void valueTreeChildrenChanged(ValueTree &treeWhoseChildHasChanged) {}
-		void valueTreeParentChanged(ValueTree &treeWhoseParentHasChanged) {}
-		void valueTreeChildAdded(ValueTree &parentTree, ValueTree &childWhichHasBeenAdded) {}
-		void valueTreeChildRemoved(ValueTree &parentTree, ValueTree &childWhichHasBeenRemoved, int) {}
-		void valueTreeChildOrderChanged(ValueTree &parentTreeWhoseChildrenHaveMoved, int, int) {}
+		void valueTreeChildrenChanged(ValueTree &treeWhoseChildHasChanged) {
+		}
+		void valueTreeParentChanged(ValueTree &treeWhoseParentHasChanged) {
+		}
+		void valueTreeChildAdded(ValueTree &parentTree, ValueTree &childWhichHasBeenAdded) {
+		}
+		void valueTreeChildRemoved(ValueTree &parentTree, ValueTree &childWhichHasBeenRemoved, int) {
+		}
+		void valueTreeChildOrderChanged(ValueTree &parentTreeWhoseChildrenHaveMoved, int, int) {
+		}
 		void comboContentChanged();
 		// bool keyPressed (const KeyPress& key, Component* originatingComponent);
 		static std::unique_ptr<juce::LookAndFeel>
@@ -42,7 +47,8 @@ class CtrlrCombo : public CtrlrComponent,
 		void updatePropertiesPanel();
 		class CtrlrComboLF : public LookAndFeel_V4 {
 			public:
-				CtrlrComboLF(CtrlrCombo &_owner) : owner(_owner) {}
+				CtrlrComboLF(CtrlrCombo &_owner) : owner(_owner) {
+				}
 				Font getComboBoxFont(ComboBox &box);
 				Font getPopupMenuFont();
 				void drawPopupMenuBackground(Graphics &g, int width, int height);
@@ -63,7 +69,6 @@ class CtrlrCombo : public CtrlrComponent,
 				Font getLabelFont(Label &label);
 
 			private:
-
 				CtrlrCombo &owner;
 		};
 
@@ -76,9 +81,13 @@ class CtrlrCombo : public CtrlrComponent,
 		void setSelectedItemIndex(const int index, const bool dontNotify);
 		const String getText();
 		void setText(const String &text, const bool dontNotify);
-		ComboBox *getOwnedComboBox() { return (ctrlrCombo.get()); }
+		ComboBox *getOwnedComboBox() {
+			return (ctrlrCombo.get());
+		}
 		void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr);
-		CtrlrValueMap &getValueMap() { return (*valueMap); }
+		CtrlrValueMap &getValueMap() {
+			return (*valueMap);
+		}
 
 		static void wrapForLua(lua_State *L);
 		//[/UserMethods]
@@ -91,10 +100,11 @@ class CtrlrCombo : public CtrlrComponent,
 		// 2. Fuzzy Search Methods
 		//==============================================================================
 		void updateFuzzySearch(const String &searchText);
-
+		bool savedFuzzySearchState = false;
 		// 3. The SearchListener struct (Updated to Label::Listener)
 		struct SearchListener : public juce::Label::Listener {
-				SearchListener(CtrlrCombo &o) : owner(o) {}
+				SearchListener(CtrlrCombo &o) : owner(o) {
+				}
 				void labelTextChanged(juce::Label *label) override {
 					// Direct call is safer for focus management in JUCE 6
 					owner.updateFuzzySearch(label->getText());
