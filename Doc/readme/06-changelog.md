@@ -24,7 +24,7 @@
 
 ## Changelog
 
-#### Version 5.6.36 | 2026.07.28
+#### Version 5.6.36 | 2026.08.05
 
 * **FIXED** CtrlrTabsComponents.cpp and CtrlrGroup.cpp keep component owner group on uiTabs. `CtrlrTabsComponent.cpp`, `CtrlrGroup.cpp`
 * **FIXED** Doubling of menu item causing potential crash. `CtrlrEditor.cpp`. Thanks to [John Goodland](https://github.com/dnaldoog) `CtrlrEditorApplicationCommandsHandlers.cpp`
@@ -50,6 +50,7 @@
 * **FIXED** blank ComboBox display when switching tabs with fuzzy search OFF. `CtrlrCombo.cpp`
 * **FIXED** blank ComboBox display when switching panels with fuzzy search OFF. Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrCombo.cpp`
 * **FIXED** ComboBox field retaining default item text if fuzzy search ON. `CtrlrCombo.cpp`
+* **FIXED** ComboBox not resizable in edit mode when fuzzy search ON. `CtrlrCombo.cpp` & `.h`
 
 #### Version 5.6.35 | 2026.04.20
 

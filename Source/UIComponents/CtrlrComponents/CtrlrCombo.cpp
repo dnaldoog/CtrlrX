@@ -777,6 +777,33 @@ void CtrlrCombo::panelEditModeChanged(const bool isInEditMode)
 {
     _DBG("Combo Edit Mode: " + String(isInEditMode ? "ON" : "OFF"));
     
+    if (isInEditMode)
+    {
+        // 1. Cache the actual user setting before changing it
+        savedFuzzySearchState = (bool) getProperty(Ids::uiComboSearch);
+
+        // 2. Explicitly disable fuzzy search during edit mode
+        setProperty(Ids::uiComboSearch, false);
+
+        // 3. Close active popup if open
+        if (ctrlrCombo != nullptr && ctrlrCombo->isPopupActive())
+        {
+            ctrlrCombo->hidePopup();
+        }
+    }
+    else
+    {
+        // 4. Exiting edit mode: Restore original fuzzy search state
+        setProperty(Ids::uiComboSearch, savedFuzzySearchState);
+    }
+
+    if (ctrlrCombo != nullptr)
+    {
+        // Pass mouse interaction to CtrlrComponent so resize handles work in edit mode
+        ctrlrCombo->setInterceptsMouseClicks(!isInEditMode, !isInEditMode);
+        ctrlrCombo->setEditableText(false);
+    }
+    
     // We always use the timer to decouple from the synchronous mode change.
     // 50ms is enough for 'Entering', 200ms is safer for 'Exiting' (rebuilding UI).
     startTimer (isInEditMode ? 50 : 200);

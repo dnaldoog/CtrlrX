@@ -125,6 +125,7 @@ private:
     // (prevent copy constructor and operator= being generated..)
     CtrlrCombo (const CtrlrCombo&);
     const CtrlrCombo& operator= (const CtrlrCombo&);
+    bool savedFuzzySearchState = false;
 };
 
 
