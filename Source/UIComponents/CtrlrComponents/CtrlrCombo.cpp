@@ -21,7 +21,7 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 	ctrlrCombo->setJustificationType(Justification::centred);
 	ctrlrCombo->addListener(this);
 
-	// Default component tree properties
+	// 1. Default component tree properties
 	setProperty(Ids::uiComboSearch, false);
 	setProperty(Ids::uiComboButtonWidthOverride, false);
 	setProperty(Ids::uiComboButtonWidth, 16);
@@ -30,18 +30,17 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 	setProperty(Ids::uiComboSelectedIndex, -1);
 	setProperty(Ids::uiComboContent, "");
 
-	// 1. Fetch style or initialize default to V3 if empty
+	setProperty(Ids::uiButtonLookAndFeelIsCustom, false);
+
+	// 2. Determine LookAndFeel style (Defaults to V3 if empty)
 	String comboStyle = getProperty(Ids::uiButtonLookAndFeel).toString();
 	if (comboStyle.isEmpty()) {
 		comboStyle = "V3";
 		setProperty(Ids::uiButtonLookAndFeel, "V3");
 	}
 
-	setProperty(Ids::uiButtonLookAndFeelIsCustom, false);
-
-	// 2. Attach LookAndFeel & Set Defaults based on style choice
-	if (comboStyle == "V3" || comboStyle == "V2" || comboStyle == "V1") {
-		// Attach embedded custom LookAndFeel
+	// 3. Attach appropriate LookAndFeel and populate default properties
+	if (comboStyle == "V3" || comboStyle == "V2" || comboStyle == "V1" || comboStyle == "Default") {
 		ctrlrCombo->setLookAndFeel(&lf);
 
 		setProperty(Ids::uiComboArrowColour, "0xff0000ff");
@@ -59,7 +58,7 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 		setProperty(Ids::uiComboMenuBackgroundRibbed, true);
 		setSize(88, 32);
 	} else {
-		// Passing nullptr tells JUCE to inherit the central Panel LookAndFeel automatically
+		// Inherits central Panel LookAndFeel for V4 themes
 		ctrlrCombo->setLookAndFeel(nullptr);
 
 		setProperty(Ids::uiComboArrowColour, (String)findColour(ComboBox::arrowColourId).toString());
@@ -84,13 +83,19 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 	setProperty(Ids::uiComboButtonGradientColour2,
 				(String)findColour(TextButton::buttonColourId).darker(0.2f).toString());
 
-	ctrlrCombo->setColour(ComboBox::textColourId, findColour(ComboBox::textColourId));
-	ctrlrCombo->setColour(ComboBox::backgroundColourId, findColour(ComboBox::backgroundColourId));
-	ctrlrCombo->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId));
-	ctrlrCombo->setColour(TextEditor::highlightColourId, findColour(TextEditor::highlightColourId));
-	ctrlrCombo->setColour(TextEditor::highlightedTextColourId, findColour(TextEditor::highlightedTextColourId));
+	// 4. NOW apply the properties to the actual JUCE ComboBox object
+	ctrlrCombo->setColour(ComboBox::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
+	ctrlrCombo->setColour(ComboBox::textColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
+	ctrlrCombo->setColour(ComboBox::buttonColourId, VAR2COLOUR(getProperty(Ids::uiComboButtonColour)));
+	ctrlrCombo->setColour(ComboBox::outlineColourId, VAR2COLOUR(getProperty(Ids::uiComboOutlineColour)));
+	ctrlrCombo->setColour(ComboBox::arrowColourId, VAR2COLOUR(getProperty(Ids::uiComboArrowColour)));
+
+	ctrlrCombo->setColour(TextEditor::textColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
+	ctrlrCombo->setColour(TextEditor::highlightColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
+	ctrlrCombo->setColour(TextEditor::highlightedTextColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
 	ctrlrCombo->setColour(TextEditor::outlineColourId, Colours::transparentBlack);
 
+	updateInternalComponentStyles();
 	componentTree.addListener(this);
 }
 
@@ -375,26 +380,40 @@ void CtrlrCombo::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 	} else if (property == Ids::uiComboSearch) {
 		_DBG("PROP: uiComboSearch changed - starting safety timer");
 		startTimer(250);
-} else if (property == Ids::uiButtonLookAndFeel) {
-        String comboStyle = getProperty(Ids::uiButtonLookAndFeel).toString();
+	} else if (property == Ids::uiButtonLookAndFeel) {
+		String comboStyle = getProperty(Ids::uiButtonLookAndFeel).toString();
 
-        if (comboStyle == "V3" || comboStyle == "V2" || comboStyle == "V1") {
-            // Use embedded custom LookAndFeel
-            ctrlrCombo->setLookAndFeel(&lf);
-        } else {
-            // Passing nullptr tells JUCE to inherit the Panel's active LookAndFeel (V4/Panel default)
-            ctrlrCombo->setLookAndFeel(nullptr);
-        }
+		if (comboStyle == "V3" || comboStyle == "V2" || comboStyle == "V1") {
+			ctrlrCombo->setLookAndFeel(&lf);
+		} else {
+			// Revert to central Panel LookAndFeel (V4 variants)
+			ctrlrCombo->setLookAndFeel(nullptr);
+		}
 
-        ctrlrCombo->lookAndFeelChanged();
-        ctrlrCombo->repaint();
-   
-	} else if (property == Ids::uiComboBgColour) {
+		// Force re-application of custom property colors over the new LookAndFeel defaults
 		ctrlrCombo->setColour(ComboBox::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
-		ctrlrCombo->setColour(TextEditor::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
-		ctrlrCombo->setColour(TextEditor::highlightColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
-		ctrlrCombo->setColour(Label::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
-		ctrlrCombo->setColour(Label::backgroundWhenEditingColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
+		ctrlrCombo->setColour(ComboBox::textColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
+		ctrlrCombo->setColour(ComboBox::buttonColourId, VAR2COLOUR(getProperty(Ids::uiComboButtonColour)));
+		ctrlrCombo->setColour(ComboBox::outlineColourId, VAR2COLOUR(getProperty(Ids::uiComboOutlineColour)));
+		ctrlrCombo->setColour(ComboBox::arrowColourId, VAR2COLOUR(getProperty(Ids::uiComboArrowColour)));
+
+		updateInternalComponentStyles();
+		ctrlrCombo->lookAndFeelChanged();
+		ctrlrCombo->repaint();
+
+	} else if (property == Ids::uiComboBgColour) {
+		Colour c = VAR2COLOUR(getProperty(Ids::uiComboBgColour));
+		ctrlrCombo->setColour(ComboBox::backgroundColourId, c);
+		ctrlrCombo->setColour(TextEditor::backgroundColourId, c);
+		ctrlrCombo->setColour(Label::backgroundColourId, c);
+
+		updateInternalComponentStyles();
+		ctrlrCombo->repaint();
+	} else if (property == Ids::uiComboTextColour) {
+		Colour c = VAR2COLOUR(getProperty(Ids::uiComboTextColour));
+		ctrlrCombo->setColour(ComboBox::textColourId, c);
+		ctrlrCombo->setColour(TextEditor::textColourId, c);
+		ctrlrCombo->setColour(Label::textColourId, c);
 
 		updateInternalComponentStyles();
 		ctrlrCombo->repaint();

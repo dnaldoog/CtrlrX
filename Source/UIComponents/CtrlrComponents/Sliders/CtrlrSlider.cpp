@@ -22,8 +22,8 @@ CtrlrSlider::CtrlrSlider(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrSl
 	ctrlrSlider.setTextBoxStyle(Slider::TextBoxBelow, false, 64, 12);
 
 	ctrlrSlider.addListener(this);
-	componentTree.addListener(this);
 
+	// 1. Initialize core slider properties
 	setProperty(Ids::uiSliderMin, 0);
 	setProperty(Ids::uiSliderMax, 127);
 	setProperty(Ids::uiSliderInterval, 1);
@@ -50,31 +50,33 @@ CtrlrSlider::CtrlrSlider(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrSl
 	setProperty(Ids::uiSliderPopupBubble, false);
 	setProperty(Ids::uiSliderStyle, "RotaryVerticalDrag");
 
-	// Pull the look and feel setting from the panel manager
-	String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
+	// 2. Fetch look and feel setting safely from the panel editor
+	String panelLnF = "V3";
+	if (auto *editor = owner.getOwnerPanel().getEditor()) {
+		panelLnF = editor->getProperty(Ids::uiPanelLookAndFeel).toString();
+	}
+
 	applyCentralLookAndFeel(&ctrlrSlider, panelLnF);
 
-	// 2. Configure dimensional footprints based on the styling type
+	// 3. Configure dimensional footprints based on the styling type
 	if (panelLnF == "V3" || panelLnF == "V2" || panelLnF == "V1") {
 		setSize(64, 64);
 		setProperty(Ids::uiSliderRotaryOutlineColour, "0xff0000ff");
 		setProperty(Ids::uiSliderRotaryFillColour, "0xff0000ff");
 		setProperty(Ids::uiSliderThumbColour, "0xffff0000");
 		setProperty(Ids::uiSliderTrackColour, "0xff0f0f0f");
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, false);
 
 		// Keep bounds safe from juce_MathsFunctions line 288 range exceptions
 		setProperty(Ids::uiSliderValueWidth, 54);
 		setProperty(Ids::uiSliderValueHeight, 12);
 	} else {
-		// V4/Default layout initialization frame bounds
+		// V4 / Central palette initialization
 		setSize(72, 96);
 		setProperty(Ids::uiSliderRotaryOutlineColour,
 					(String)findColour(Slider::rotarySliderOutlineColourId).toString());
 		setProperty(Ids::uiSliderRotaryFillColour, (String)findColour(Slider::rotarySliderFillColourId).toString());
 		setProperty(Ids::uiSliderThumbColour, (String)findColour(Slider::thumbColourId).toString());
 		setProperty(Ids::uiSliderTrackColour, (String)findColour(Slider::rotarySliderFillColourId).toString());
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, false);
 
 		setProperty(Ids::uiSliderValueWidth, 64);
 		setProperty(Ids::uiSliderValueHeight, 14);
@@ -101,6 +103,9 @@ CtrlrSlider::CtrlrSlider(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrSl
 	setProperty(Ids::uiSliderValueOutlineColour, "0x00ffffff");
 
 	setProperty(Ids::uiSliderLookAndFeelIsCustom, false);
+
+	// 4. Attach listener LAST so initial property assignments do not trigger false valueTreePropertyChanged events
+	componentTree.addListener(this);
 }
 
 CtrlrSlider::~CtrlrSlider() {
@@ -137,11 +142,17 @@ void CtrlrSlider::mouseUp(const MouseEvent &e) {
 	}
 }
 
-double CtrlrSlider::getComponentValue() { return (ctrlrSlider.getValue()); }
+double CtrlrSlider::getComponentValue() {
+	return (ctrlrSlider.getValue());
+}
 
-int CtrlrSlider::getComponentMidiValue() { return ((int)ctrlrSlider.getValue()); }
+int CtrlrSlider::getComponentMidiValue() {
+	return ((int)ctrlrSlider.getValue());
+}
 
-double CtrlrSlider::getComponentMaxValue() { return (ctrlrSlider.getMaximum()); }
+double CtrlrSlider::getComponentMaxValue() {
+	return (ctrlrSlider.getMaximum());
+}
 
 void CtrlrSlider::setComponentValue(const double newValue, const bool sendChangeMessage) {
 	ctrlrSlider.setValue(newValue, dontSendNotification);
@@ -162,128 +173,41 @@ const Array<Font> CtrlrSlider::getFontList() {
 }
 
 void CtrlrSlider::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
-	if (property == Ids::uiSliderStyle) {
-		ctrlrSlider.setSliderStyle(
-			(Slider::SliderStyle)CtrlrComponentTypeManager::sliderStringToStyle(getProperty(Ids::uiSliderStyle)));
-	} else if (property == Ids::uiSliderLookAndFeel) {
-		// 1. Capture the existing geometry parameters
-		const auto currentPos = ctrlrSlider.getTextBoxPosition();
-		const int textBoxWidth = ctrlrSlider.getTextBoxWidth();
-		const int textBoxHeight = ctrlrSlider.getTextBoxHeight();
-		const bool isEditable = ctrlrSlider.isTextBoxEditable();
-
-		// 2. FORCE NUKING THE SUB-COMPONENTS: Switching to NoTextBox completely
-		// destroys the internal V4 Labels/TextEditors that are holding the leaked vector caches!
-		ctrlrSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-
-		// 3. Clear old LookAndFeel assignments completely
-		// 3. Clear old LookAndFeel assignments completely
-		ctrlrSlider.setLookAndFeel(nullptr);
-		const String panelLnF = getProperty(property);
-		applyCentralLookAndFeel(&ctrlrSlider, panelLnF);
-
-		// 5. REBUILD FROM SCRATCH: Now that the new LookAndFeel is active,
-		// restoring the style forces JUCE to spawn brand-new sub-components
-		// natively under the new version's layout pipeline!
-		if (currentPos != juce::Slider::NoTextBox) {
-			ctrlrSlider.setTextBoxStyle(currentPos, isEditable, textBoxWidth, textBoxHeight);
-		}
-
-		// 6. Notify the hierarchy to repaint with the clean pipeline
-		ctrlrSlider.lookAndFeelChanged();
-	} else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin) {
-		const double minValue = getProperty(Ids::uiSliderMin);
-		const double maxValue = getProperty(Ids::uiSliderMax);
-		const double intervalValue = getProperty(Ids::uiSliderInterval);
-
-		if (maxValue > minValue) {
-			ctrlrSlider.setRange(minValue, maxValue, intervalValue);
-		}
-	} else if (property == Ids::uiSliderRotaryFillColour) {
-		ctrlrSlider.setColour(Slider::rotarySliderFillColourId, VAR2COLOUR(getProperty(Ids::uiSliderRotaryFillColour)));
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
-	} else if (property == Ids::uiSliderRotaryOutlineColour) {
-		ctrlrSlider.setColour(Slider::rotarySliderOutlineColourId,
-							  VAR2COLOUR(getProperty(Ids::uiSliderRotaryOutlineColour)));
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
-	} else if (property == Ids::uiSliderTrackColour) {
-		ctrlrSlider.setColour(Slider::trackColourId, VAR2COLOUR(getProperty(Ids::uiSliderTrackColour)));
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
-	} else if (property == Ids::uiSliderThumbColour) {
-		ctrlrSlider.setColour(Slider::thumbColourId, VAR2COLOUR(getProperty(Ids::uiSliderThumbColour)));
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
-	} else if (property == Ids::uiSliderValueTextColour) {
-		ctrlrSlider.setColour(Slider::textBoxTextColourId, VAR2COLOUR(getProperty(Ids::uiSliderValueTextColour)));
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
-	} else if (property == Ids::uiSliderValueHighlightColour) {
-		ctrlrSlider.setColour(Slider::textBoxHighlightColourId,
-							  VAR2COLOUR(getProperty(Ids::uiSliderValueHighlightColour)));
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
-	} else if (property == Ids::uiSliderValueBgColour) {
-		ctrlrSlider.setColour(Slider::textBoxBackgroundColourId, VAR2COLOUR(getProperty(Ids::uiSliderValueBgColour)));
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
-	} else if (property == Ids::uiSliderValueOutlineColour) {
-		ctrlrSlider.setColour(Slider::textBoxOutlineColourId, VAR2COLOUR(getProperty(Ids::uiSliderValueOutlineColour)));
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
-	} else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin) {
-		const double minValue = getProperty(Ids::uiSliderMin);
-		const double maxValue = getProperty(Ids::uiSliderMax);
-		const double intervalValue = getProperty(Ids::uiSliderInterval);
-
-		// Safety Guard: Only update JUCE if we have a valid range.
-		// This prevents the assertion from firing during step-by-step initialization.
-		if (maxValue > minValue) {
-			ctrlrSlider.setRange(minValue, maxValue, intervalValue);
-		}
-	} else if (property == Ids::uiSliderDecimalPlaces) {
-		ctrlrSlider.setNumDecimalPlacesToDisplay((int)getProperty(Ids::uiSliderDecimalPlaces));
-		ctrlrSlider.lookAndFeelChanged();
-	} else if (property == Ids::uiSliderValueSuffix) {
-		ctrlrSlider.setTextValueSuffix(getProperty(Ids::uiSliderValueSuffix).toString());
-		ctrlrSlider.lookAndFeelChanged();
-	} else if (property == Ids::uiSliderValuePosition || property == Ids::uiSliderValueHeight ||
-			   property == Ids::uiSliderValueWidth) {
-		ctrlrSlider.setTextBoxStyle((Slider::TextEntryBoxPosition)(int)getProperty(Ids::uiSliderValuePosition), false,
-									getProperty(Ids::uiSliderValueWidth, 64),
-									getProperty(Ids::uiSliderValueHeight, 12));
-
-		ctrlrSlider.lookAndFeelChanged();
-	} else if (property == Ids::uiSliderSetNotificationOnlyOnRelease) {
-		ctrlrSlider.setChangeNotificationOnlyOnRelease((bool)getProperty(Ids::uiSliderSetNotificationOnlyOnRelease));
-	} else if (property == Ids::uiSliderIncDecButtonColour || property == Ids::uiSliderIncDecTextColour ||
-			   property == Ids::uiSliderValueFont || property == Ids::uiSliderValueTextJustification) {
-		const String panelLnF = getProperty(Ids::uiSliderLookAndFeel);
-		applyCentralLookAndFeel(&ctrlrSlider, panelLnF);
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
-		ctrlrSlider.lookAndFeelChanged();
-	} else if (property == Ids::uiSliderVelocityMode || property == Ids::uiSliderVelocityModeKeyTrigger ||
-			   property == Ids::uiSliderVelocitySensitivity || property == Ids::uiSliderVelocityThreshold ||
-			   property == Ids::uiSliderVelocityOffset) {
-		ctrlrSlider.setVelocityBasedMode((bool)getProperty(Ids::uiSliderVelocityMode));
-		ctrlrSlider.setVelocityModeParameters(
-			(double)getProperty(Ids::uiSliderVelocitySensitivity), (int)getProperty(Ids::uiSliderVelocityThreshold),
-			(double)getProperty(Ids::uiSliderVelocityOffset), (bool)getProperty(Ids::uiSliderVelocityModeKeyTrigger));
-	} else if (property == Ids::uiSliderSpringValue) {
-		ctrlrSlider.setValue(getProperty(property), dontSendNotification);
-	} else if (property == Ids::uiSliderDoubleClickValue || property == Ids::uiSliderDoubleClickEnabled) {
-		ctrlrSlider.setDoubleClickReturnValue((bool)getProperty(Ids::uiSliderDoubleClickEnabled),
-											  getProperty(Ids::uiSliderDoubleClickValue));
-	} else if (property == Ids::uiSliderSpringMode) {
+	if (property == Ids::uiSliderSpringMode) {
 		if ((bool)getProperty(property) == true) {
 			ctrlrSlider.setValue(getProperty(Ids::uiSliderSpringValue), dontSendNotification);
 		}
 	} else if (property == Ids::uiSliderPopupBubble) {
 		ctrlrSlider.setPopupDisplayEnabled((bool)getProperty(property), (bool)getProperty(property),
 										   owner.getOwnerPanel().getEditor());
+	} else if (property == Ids::uiPanelLookAndFeel || property == Ids::uiSliderLookAndFeel) {
+		// Catch when either the component setting OR the panel's central theme updates
+		String activeLnF = getProperty(Ids::uiSliderLookAndFeel).toString();
+
+		// If component is set to "Default", pull theme from the parent panel editor
+		if (activeLnF.isEmpty() || activeLnF == "Default") {
+			if (auto *editor = owner.getOwnerPanel().getEditor()) {
+				activeLnF = editor->getProperty(Ids::uiPanelLookAndFeel).toString();
+			}
+		}
+
+		// Apply theme colors and trigger JUCE redrawing
+		applyCentralLookAndFeel(&ctrlrSlider, activeLnF);
+		ctrlrSlider.lookAndFeelChanged();
+		ctrlrSlider.repaint();
+		repaint();
 	} else {
 		CtrlrComponent::valueTreePropertyChanged(treeWhosePropertyHasChanged, property);
 	}
+
 	if (restoreStateInProgress == false) {
 		resized();
 	}
 }
 
-const String CtrlrSlider::getComponentText() { return (String(getComponentValue())); }
+const String CtrlrSlider::getComponentText() {
+	return (String(getComponentValue()));
+}
 
 void CtrlrSlider::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel) {
 	if (customLookAndFeel == nullptr) {
@@ -298,7 +222,9 @@ void CtrlrSlider::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel) {
 	}
 }
 
-const String CtrlrSlider::getCurrentLF() { return getProperty(Ids::uiSliderLookAndFeel); }
+const String CtrlrSlider::getCurrentLF() {
+	return getProperty(Ids::uiSliderLookAndFeel);
+}
 
 std::unique_ptr<LookAndFeel>
 CtrlrSlider::getLookAndFeelFromComponentProperty(const String &lookAndFeelComponentProperty) {

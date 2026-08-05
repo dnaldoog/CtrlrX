@@ -1,941 +1,849 @@
-#include "stdafx.h"
-#include "stdafx_luabind.h"
 #include "CtrlrComponent.h"
-#include "CtrlrIDs.h"
-#include "CtrlrModulator/CtrlrModulator.h"
-#include "CtrlrFontManager.h"
-#include "CtrlrPanel/CtrlrPanel.h"
-#include "CtrlrLuaManager.h"
 #include "CtrlrComponentSelection.h"
-#include "CtrlrUtilitiesGUI.h"
-#include "CtrlrPanel/CtrlrPanelEditor.h"
 #include "CtrlrComponents/Groups/CtrlrGroup.h"
 #include "CtrlrComponents/Groups/CtrlrTabsComponent.h"
-#include "JuceClasses/LLookAndFeel.h"
+#include "CtrlrFontManager.h"
+#include "CtrlrIDs.h"
+#include "CtrlrLuaManager.h"
+#include "CtrlrModulator/CtrlrModulator.h"
+#include "CtrlrPanel/CtrlrPanel.h"
+#include "CtrlrPanel/CtrlrPanelEditor.h"
+#include "CtrlrUtilitiesGUI.h"
 #include "Deprecated/CtrlrLuaRectangle.h"
+#include "JuceClasses/LLookAndFeel.h"
+#include "stdafx.h"
+#include "stdafx_luabind.h"
 
 /** Border implementation */
-CtrlrComponentResizableBorder::CtrlrComponentResizableBorder(CtrlrComponent *_owner, ComponentBoundsConstrainer *constrainer)
-            : ResizableBorderComponent(_owner, constrainer), owner(_owner)
-{
-    setLookAndFeel (this);
+CtrlrComponentResizableBorder::CtrlrComponentResizableBorder(CtrlrComponent *_owner,
+															 ComponentBoundsConstrainer *constrainer)
+	: ResizableBorderComponent(_owner, constrainer), owner(_owner) {
+	setLookAndFeel(this);
 }
 
-CtrlrComponentResizableBorder::~CtrlrComponentResizableBorder()
-{
-    setLookAndFeel (nullptr);
+CtrlrComponentResizableBorder::~CtrlrComponentResizableBorder() {
+	setLookAndFeel(nullptr);
 }
 
-void CtrlrComponentResizableBorder::paint (Graphics &g)
-{
-    if (owner->getRestoreState())
-        return;
+void CtrlrComponentResizableBorder::paint(Graphics &g) {
+	if (owner->getRestoreState())
+		return;
 
-    ResizableBorderComponent::paint (g);
+	ResizableBorderComponent::paint(g);
 }
 
-void CtrlrComponentResizableBorder::drawResizableFrame (Graphics& g, int w, int h, const BorderSize<int> &bSize)
-{
-    g.setColour (Colours::orange.withAlpha (0.4f));
-    g.fillRect (0, 0, w, bSize.getTop());
-    g.fillRect (0, 0, bSize.getLeft(), h);
-    g.fillRect (0, h - bSize.getBottom(), w, bSize.getBottom());
-    g.fillRect (w - bSize.getRight(), 0, bSize.getRight(), h);
-    g.drawRect (bSize.getLeft() - 1, bSize.getTop() - 1,
-                w - bSize.getRight() - bSize.getLeft() + 2,
-                h - bSize.getTop() - bSize.getBottom() + 2);
+void CtrlrComponentResizableBorder::drawResizableFrame(Graphics &g, int w, int h, const BorderSize<int> &bSize) {
+	g.setColour(Colours::orange.withAlpha(0.4f));
+	g.fillRect(0, 0, w, bSize.getTop());
+	g.fillRect(0, 0, bSize.getLeft(), h);
+	g.fillRect(0, h - bSize.getBottom(), w, bSize.getBottom());
+	g.fillRect(w - bSize.getRight(), 0, bSize.getRight(), h);
+	g.drawRect(bSize.getLeft() - 1, bSize.getTop() - 1, w - bSize.getRight() - bSize.getLeft() + 2,
+			   h - bSize.getTop() - bSize.getBottom() + 2);
 }
 
 /** */
 
 CtrlrComponent::CtrlrComponent(CtrlrModulator &_owner)
-    :    componentTree(Ids::component),
-        owner(_owner),
-        restoreStateInProgress(true),
-        glowEffect(nullptr),
-        shadowEffect(nullptr),
-        snapDimSize(0)
-{
-    owner.getModulatorTree().addChild (componentTree, -1, nullptr);
-    componentTree.addListener (this);
+	: componentTree(Ids::component),
+	  owner(_owner),
+	  restoreStateInProgress(true),
+	  glowEffect(nullptr),
+	  shadowEffect(nullptr),
+	  snapDimSize(0) {
+	owner.getModulatorTree().addChild(componentTree, -1, nullptr);
+	componentTree.addListener(this);
 
-    selectionBorder.reset(new CtrlrComponentResizableBorder(this, 0));
-    selectionBorder->setBorderThickness (BorderSize<int>(6));
-    selectionBorder->setAlwaysOnTop (true);
-    selectionBorder->addComponentListener (this);
-    selectionBorder->addMouseListener (this, true);
-    addChildComponent (selectionBorder.get(), -1);
+	selectionBorder.reset(new CtrlrComponentResizableBorder(this, 0));
+	selectionBorder->setBorderThickness(BorderSize<int>(6));
+	selectionBorder->setAlwaysOnTop(true);
+	selectionBorder->addComponentListener(this);
+	selectionBorder->addMouseListener(this, true);
+	addChildComponent(selectionBorder.get(), -1);
 
-    componentNameLabel.setText (getVisibleName(), dontSendNotification);
-    componentNameLabel.setJustificationType (Justification::centred);
-    componentNameLabel.addMouseListener(this, true);
-    addChildComponent (&componentNameLabel);
-    
-    setProperty (Ids::componentVisibility, true);
-    setProperty (Ids::componentSentBack, false);
-    setProperty (Ids::componentMouseCursor, (int)MouseCursor::NormalCursor);
-    
-    setProperty (Ids::componentDisabled, false);
-    setProperty (Ids::componentIsLocked, false);
-    setProperty (Ids::componentSnapSize, 0);
+	componentNameLabel.setText(getVisibleName(), dontSendNotification);
+	componentNameLabel.setJustificationType(Justification::centred);
+	componentNameLabel.addMouseListener(this, true);
+	addChildComponent(&componentNameLabel);
 
-    setProperty (Ids::componentGroupName, "");
-    setProperty (Ids::componentGroupped, false);
-    
-    setProperty (Ids::componentRadioGroupId, 0);
-    // setProperty (Ids::componentRadioGroupNotifyMidi, true); // Removed v5.6.31. Not assigned yet
+	setProperty(Ids::componentVisibility, true);
+	setProperty(Ids::componentSentBack, false);
+	setProperty(Ids::componentMouseCursor, (int)MouseCursor::NormalCursor);
 
-    setProperty (Ids::componentVisibleName, owner.getProperty(Ids::name));
-    setProperty (Ids::componentLabelVisible, true);
-    setProperty (Ids::componentLabelAlwaysOnTop, true);
-    setProperty (Ids::componentLabelPosition, "top");
-    setProperty (Ids::componentLabelWidth, 0);
-    setProperty (Ids::componentLabelHeight, "14");
-    setProperty (Ids::componentLabelJustification, "centred");
-    setProperty (Ids::componentLabelFont, FONT2STR (Font(12)));
-    setProperty (Ids::componentLabelColour, (String)findColour(Slider::textBoxTextColourId).toString());
-    
-    setProperty (Ids::componentEffect, 0);
-    setProperty (Ids::componentEffectRadius, 1);
-    setProperty (Ids::componentEffectColour, "0xff000000");
-    setProperty (Ids::componentEffectOffsetX, 0);
-    setProperty (Ids::componentEffectOffsetY, 0);
-    setProperty (Ids::componentExcludedFromLabelDisplay, false);
-    setProperty (Ids::componentValueDecimalPlaces, 0);
-    
-    setProperty (Ids::componentLuaMouseMoved, COMBO_ITEM_NONE);
-    setProperty (Ids::componentLuaMouseDown, COMBO_ITEM_NONE);
-    setProperty (Ids::componentLuaMouseUp, COMBO_ITEM_NONE);
-    setProperty (Ids::componentLuaMouseDrag, COMBO_ITEM_NONE);
-    setProperty (Ids::componentLuaMouseDoubleClick, COMBO_ITEM_NONE);
-    setProperty (Ids::componentLuaMouseEnter, COMBO_ITEM_NONE);
-    setProperty (Ids::componentLuaMouseExit, COMBO_ITEM_NONE);
+	setProperty(Ids::componentDisabled, false);
+	setProperty(Ids::componentIsLocked, false);
+	setProperty(Ids::componentSnapSize, 0);
 
-    setProperty (Ids::componentBubbleHelpEnabled, false);
-    setProperty (Ids::componentBubbleHelpTitle, "");
-    setProperty (Ids::componentBubbleHelpText, "");
-    setProperty (Ids::componentBubbleHelpTimeout, 5000);
-    setProperty (Ids::componentBubbleHelpTrigger, 0);
-    setProperty(Ids::componentBubbleHelpDismissOnExit, false);
+	setProperty(Ids::componentGroupName, "");
+	setProperty(Ids::componentGroupped, false);
+
+	setProperty(Ids::componentRadioGroupId, 0);
+	// setProperty (Ids::componentRadioGroupNotifyMidi, true); // Removed v5.6.31. Not assigned yet
+
+	setProperty(Ids::componentVisibleName, owner.getProperty(Ids::name));
+	setProperty(Ids::componentLabelVisible, true);
+	setProperty(Ids::componentLabelAlwaysOnTop, true);
+	setProperty(Ids::componentLabelPosition, "top");
+	setProperty(Ids::componentLabelWidth, 0);
+	setProperty(Ids::componentLabelHeight, "14");
+	setProperty(Ids::componentLabelJustification, "centred");
+	setProperty(Ids::componentLabelFont, FONT2STR(Font(12)));
+	setProperty(Ids::componentLabelColour, (String)findColour(Slider::textBoxTextColourId).toString());
+
+	setProperty(Ids::componentEffect, 0);
+	setProperty(Ids::componentEffectRadius, 1);
+	setProperty(Ids::componentEffectColour, "0xff000000");
+	setProperty(Ids::componentEffectOffsetX, 0);
+	setProperty(Ids::componentEffectOffsetY, 0);
+	setProperty(Ids::componentExcludedFromLabelDisplay, false);
+	setProperty(Ids::componentValueDecimalPlaces, 0);
+
+	setProperty(Ids::componentLuaMouseMoved, COMBO_ITEM_NONE);
+	setProperty(Ids::componentLuaMouseDown, COMBO_ITEM_NONE);
+	setProperty(Ids::componentLuaMouseUp, COMBO_ITEM_NONE);
+	setProperty(Ids::componentLuaMouseDrag, COMBO_ITEM_NONE);
+	setProperty(Ids::componentLuaMouseDoubleClick, COMBO_ITEM_NONE);
+	setProperty(Ids::componentLuaMouseEnter, COMBO_ITEM_NONE);
+	setProperty(Ids::componentLuaMouseExit, COMBO_ITEM_NONE);
+
+	setProperty(Ids::componentBubbleHelpEnabled, false);
+	setProperty(Ids::componentBubbleHelpTitle, "");
+	setProperty(Ids::componentBubbleHelpText, "");
+	setProperty(Ids::componentBubbleHelpTimeout, 5000);
+	setProperty(Ids::componentBubbleHelpTrigger, 0);
+	setProperty(Ids::componentBubbleHelpDismissOnExit, false);
 }
 
-CtrlrComponent::~CtrlrComponent()
-{
-    if (bubbleMessage != nullptr)
-    {
-        bubbleMessage->setVisible(false);
-        if (auto* p = bubbleMessage->getParentComponent())
-            p->removeChildComponent(bubbleMessage.get());
-        bubbleMessage.reset();
-    }
-    if (shadowEffect)
-    {
-        delete (shadowEffect.release());
-    }
-    if (glowEffect)
-    {
-        delete (glowEffect.release());
-    }
-    if (selectionBorder.get())
-        delete selectionBorder.release();
-    componentTree.removeListener (this);
-    masterReference.clear();
+CtrlrComponent::~CtrlrComponent() {
+	if (bubbleMessage != nullptr) {
+		bubbleMessage->setVisible(false);
+		if (auto *p = bubbleMessage->getParentComponent())
+			p->removeChildComponent(bubbleMessage.get());
+		bubbleMessage.reset();
+	}
+	if (shadowEffect) {
+		delete (shadowEffect.release());
+	}
+	if (glowEffect) {
+		delete (glowEffect.release());
+	}
+	if (selectionBorder.get())
+		delete selectionBorder.release();
+	componentTree.removeListener(this);
+	masterReference.clear();
 }
 
-void CtrlrComponent::resized()
-{
-    const int w = getWidth();
-    const int h = getHeight();
+void CtrlrComponent::resized() {
+	const int w = getWidth();
+	const int h = getHeight();
 
-    if (!getTransform().isIdentity())
-        return;
+	if (!getTransform().isIdentity())
+		return;
 
-    if ((bool)getProperty(Ids::componentLabelVisible) == true)
-    {
-        if (getProperty(Ids::componentLabelPosition).toString() == Ids::top.toString())
-        {
-            componentNameLabel.setBounds (    0,
-                                        0,
-                                        (int)getProperty(Ids::componentLabelWidth)    ? (int)getProperty(Ids::componentLabelWidth) : w,
-                                        (int)getProperty(Ids::componentLabelHeight)    ? (int)getProperty(Ids::componentLabelHeight) : h);
-        }
-        else if (getProperty(Ids::componentLabelPosition) == Ids::bottom.toString())
-        {
-            componentNameLabel.setBounds (    0,
-                                        h-(int)((int)getProperty(Ids::componentLabelHeight)        ? (int)getProperty(Ids::componentLabelHeight) : h),
-                                        (int)getProperty(Ids::componentLabelWidth)    ? (int)getProperty(Ids::componentLabelWidth) : w,
-                                        (int)getProperty(Ids::componentLabelHeight)    ? (int)getProperty(Ids::componentLabelHeight) : h);
-        }
-        else if (getProperty(Ids::componentLabelPosition) == Ids::left.toString())
-        {
-            componentNameLabel.setBounds (    0,
-                                        (h/2)-((int)getProperty(Ids::componentLabelHeight)/2),
-                                        (int)getProperty(Ids::componentLabelWidth)    ? (int)getProperty(Ids::componentLabelWidth) : w,
-                                        (int)getProperty(Ids::componentLabelHeight)    ? (int)getProperty(Ids::componentLabelHeight) : h);
-        }
-        else if (getProperty(Ids::componentLabelPosition) == Ids::right.toString())
-        {
-            componentNameLabel.setBounds (    (int)(w-(int)(getProperty(Ids::componentLabelWidth) ? (int)getProperty(Ids::componentLabelWidth) : w)),
-                                        (h/2)-((int)getProperty(Ids::componentLabelHeight)/2),
-                                        (int)getProperty(Ids::componentLabelWidth)  ? (int)getProperty(Ids::componentLabelWidth) : w,
-                                        (int)getProperty(Ids::componentLabelHeight) ? (int)getProperty(Ids::componentLabelHeight) : h);
-        }
-        
-    }
+	if ((bool)getProperty(Ids::componentLabelVisible) == true) {
+		if (getProperty(Ids::componentLabelPosition).toString() == Ids::top.toString()) {
+			componentNameLabel.setBounds(
+				0, 0, (int)getProperty(Ids::componentLabelWidth) ? (int)getProperty(Ids::componentLabelWidth) : w,
+				(int)getProperty(Ids::componentLabelHeight) ? (int)getProperty(Ids::componentLabelHeight) : h);
+		} else if (getProperty(Ids::componentLabelPosition) == Ids::bottom.toString()) {
+			componentNameLabel.setBounds(
+				0,
+				h - (int)((int)getProperty(Ids::componentLabelHeight) ? (int)getProperty(Ids::componentLabelHeight)
+																	  : h),
+				(int)getProperty(Ids::componentLabelWidth) ? (int)getProperty(Ids::componentLabelWidth) : w,
+				(int)getProperty(Ids::componentLabelHeight) ? (int)getProperty(Ids::componentLabelHeight) : h);
+		} else if (getProperty(Ids::componentLabelPosition) == Ids::left.toString()) {
+			componentNameLabel.setBounds(
+				0, (h / 2) - ((int)getProperty(Ids::componentLabelHeight) / 2),
+				(int)getProperty(Ids::componentLabelWidth) ? (int)getProperty(Ids::componentLabelWidth) : w,
+				(int)getProperty(Ids::componentLabelHeight) ? (int)getProperty(Ids::componentLabelHeight) : h);
+		} else if (getProperty(Ids::componentLabelPosition) == Ids::right.toString()) {
+			componentNameLabel.setBounds(
+				(int)(w -
+					  (int)(getProperty(Ids::componentLabelWidth) ? (int)getProperty(Ids::componentLabelWidth) : w)),
+				(h / 2) - ((int)getProperty(Ids::componentLabelHeight) / 2),
+				(int)getProperty(Ids::componentLabelWidth) ? (int)getProperty(Ids::componentLabelWidth) : w,
+				(int)getProperty(Ids::componentLabelHeight) ? (int)getProperty(Ids::componentLabelHeight) : h);
+		}
+	}
 
-    const Rectangle<int> bounds = getBounds ();
-    setProperty (Ids::componentRectangle, getBoundsInParent().toString(), true);
+	const Rectangle<int> bounds = getBounds();
+	setProperty(Ids::componentRectangle, getBoundsInParent().toString(), true);
 
-    if (snapDimSize>0)
-    {
-        setSize (snapDim(w), snapDim(h));
-    }
+	if (snapDimSize > 0) {
+		setSize(snapDim(w), snapDim(h));
+	}
 
-    if (restoreStateInProgress == false)
-    {
-        selectionBorder->setBounds (0, 0, w, h);
-    }
+	if (restoreStateInProgress == false) {
+		selectionBorder->setBounds(0, 0, w, h);
+	}
 }
 
-void CtrlrComponent::mouseDoubleClick(const MouseEvent &e)
-{
-    if (mouseDoubleClickCbk && !mouseDoubleClickCbk.wasObjectDeleted())
-    {
-        if (mouseDoubleClickCbk->isValid())
-        {
-            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseDoubleClickCbk, this, e);
-        }
-    }
+void CtrlrComponent::mouseDoubleClick(const MouseEvent &e) {
+	if (mouseDoubleClickCbk && !mouseDoubleClickCbk.wasObjectDeleted()) {
+		if (mouseDoubleClickCbk->isValid()) {
+			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(mouseDoubleClickCbk, this, e);
+		}
+	}
 }
 
-
-void CtrlrComponent::mouseUp(const MouseEvent &e)
-{
-    if (mouseUpCbk && !mouseUpCbk.wasObjectDeleted())
-    {
-        if (mouseUpCbk->isValid())
-        {
-            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseUpCbk, this, e);
-        }
-    }
+void CtrlrComponent::mouseUp(const MouseEvent &e) {
+	if (mouseUpCbk && !mouseUpCbk.wasObjectDeleted()) {
+		if (mouseUpCbk->isValid()) {
+			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(mouseUpCbk, this, e);
+		}
+	}
 }
 
-void CtrlrComponent::mouseDown(const MouseEvent &e)
-{
-    _DBG("CtrlrComponent::mouseDown fired, cbk=" + String(mouseDownCbk ? 1 : 0));
-    
-    if (mouseDownCbk && !mouseDownCbk.wasObjectDeleted())
-    {
-        _DBG("cbk not deleted, isValid=" + String(mouseDownCbk->isValid() ? 1 : 0));
-        if (mouseDownCbk->isValid())
-        {
-            _DBG("calling Lua method");
-            owner.getOwnerPanel().getCtrlrLuaManager()
-                 .getMethodManager().call(mouseDownCbk, this, e);
-        }
-    }
-    if (e.mods.isAltDown())
-        triggerBubbleHelp(e, 4); // Alt check goes first since on some platforms Alt+Click can also register as a plain click depending on event ordering.
-    if (e.mods.isCtrlDown())
-        triggerBubbleHelp(e, 2);
-    else if (e.mods.isShiftDown())
-        triggerBubbleHelp(e, 3);
-    else
-        triggerBubbleHelp(e, 0);
+void CtrlrComponent::mouseDown(const MouseEvent &e) {
+	_DBG("CtrlrComponent::mouseDown fired, cbk=" + String(mouseDownCbk ? 1 : 0));
+
+	if (mouseDownCbk && !mouseDownCbk.wasObjectDeleted()) {
+		_DBG("cbk not deleted, isValid=" + String(mouseDownCbk->isValid() ? 1 : 0));
+		if (mouseDownCbk->isValid()) {
+			_DBG("calling Lua method");
+			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(mouseDownCbk, this, e);
+		}
+	}
+	if (e.mods.isAltDown())
+		triggerBubbleHelp(e, 4); // Alt check goes first since on some platforms Alt+Click can also register as a plain
+								 // click depending on event ordering.
+	if (e.mods.isCtrlDown())
+		triggerBubbleHelp(e, 2);
+	else if (e.mods.isShiftDown())
+		triggerBubbleHelp(e, 3);
+	else
+		triggerBubbleHelp(e, 0);
 }
 
-void CtrlrComponent::mouseEnter(const MouseEvent &e)
-{
-    if (mouseEnterCbk && !mouseEnterCbk.wasObjectDeleted())
-    {
-        if (mouseEnterCbk->isValid())
-        {
-            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseEnterCbk, this, e);
-        }
-    }
-    triggerBubbleHelp(e, 1);
+void CtrlrComponent::mouseEnter(const MouseEvent &e) {
+	if (mouseEnterCbk && !mouseEnterCbk.wasObjectDeleted()) {
+		if (mouseEnterCbk->isValid()) {
+			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(mouseEnterCbk, this, e);
+		}
+	}
+	triggerBubbleHelp(e, 1);
 }
 
-void CtrlrComponent::mouseExit(const MouseEvent &e)
-{
-    if (mouseExitCbk && !mouseExitCbk.wasObjectDeleted())
-    {
-        if (mouseExitCbk->isValid())
-        {
-            owner.getOwnerPanel().getCtrlrLuaManager()
-                 .getMethodManager().call(mouseExitCbk, this, e);
-        }
-    }
+void CtrlrComponent::mouseExit(const MouseEvent &e) {
+	if (mouseExitCbk && !mouseExitCbk.wasObjectDeleted()) {
+		if (mouseExitCbk->isValid()) {
+			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(mouseExitCbk, this, e);
+		}
+	}
 
-    if ((bool)componentTree.getProperty(Ids::componentBubbleHelpDismissOnExit, false))
-    {
-        if (bubbleMessage != nullptr)
-        {
-            bubbleMessage->setVisible(false);
-            if (auto* p = bubbleMessage->getParentComponent())
-                p->removeChildComponent(bubbleMessage.get());
-            bubbleMessage.reset();
-        }
-    }
+	if ((bool)componentTree.getProperty(Ids::componentBubbleHelpDismissOnExit, false)) {
+		if (bubbleMessage != nullptr) {
+			bubbleMessage->setVisible(false);
+			if (auto *p = bubbleMessage->getParentComponent())
+				p->removeChildComponent(bubbleMessage.get());
+			bubbleMessage.reset();
+		}
+	}
 }
 
-void CtrlrComponent::focusGained (FocusChangeType cause) // Added v5.6.34
+void CtrlrComponent::focusGained(FocusChangeType cause) // Added v5.6.34
 {
-    _DBG("CtrlrComponent focusGained! Name: " + getName() + ", Cause: " + String(cause));
-    Component::focusGained(cause); // IMPORTANT: Call the base class method!
-    // Add any CtrlrComponent specific focus logic here if needed
-    repaint(); // Generally a good idea to repaint on focus change for visual feedback
+	_DBG("CtrlrComponent focusGained! Name: " + getName() + ", Cause: " + String(cause));
+	Component::focusGained(cause); // IMPORTANT: Call the base class method!
+	// Add any CtrlrComponent specific focus logic here if needed
+	repaint(); // Generally a good idea to repaint on focus change for visual feedback
 }
 
-void CtrlrComponent::focusLost (FocusChangeType cause) // Added v5.6.34
+void CtrlrComponent::focusLost(FocusChangeType cause) // Added v5.6.34
 {
-    _DBG("CtrlrComponent focusLost! Name: " + getName() + ", Cause: " + String(cause));
-    Component::focusLost(cause); // IMPORTANT: Call the base class method!
-    // Add any CtrlrComponent specific focus lost logic here if needed
-    repaint(); // Generally a good idea to repaint on focus change for visual feedback
+	_DBG("CtrlrComponent focusLost! Name: " + getName() + ", Cause: " + String(cause));
+	Component::focusLost(cause); // IMPORTANT: Call the base class method!
+	// Add any CtrlrComponent specific focus lost logic here if needed
+	repaint(); // Generally a good idea to repaint on focus change for visual feedback
 }
 
-int CtrlrComponent::snapDim(int dim)
-{
-    if (snapDimSize <= 0)
-        return (dim);
+int CtrlrComponent::snapDim(int dim) {
+	if (snapDimSize <= 0)
+		return (dim);
 
-    dim = ((dim + snapDimSize * 1024 + snapDimSize / 2) / snapDimSize - 1024) * snapDimSize;
-    return (dim);
+	dim = ((dim + snapDimSize * 1024 + snapDimSize / 2) / snapDimSize - 1024) * snapDimSize;
+	return (dim);
 }
 
-void CtrlrComponent::moved()
-{
-    if (!getTransform().isIdentity())
-        return;
+void CtrlrComponent::moved() {
+	if (!getTransform().isIdentity())
+		return;
 
-    setProperty (Ids::componentRectangle, getBoundsInParent().toString(), true);
+	setProperty(Ids::componentRectangle, getBoundsInParent().toString(), true);
 }
 
-void CtrlrComponent::mouseMove (const MouseEvent &e)
-{
-    if (mouseMoveCbk && !mouseMoveCbk.wasObjectDeleted())
-    {
-        if (mouseMoveCbk->isValid())
-        {
-            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseMoveCbk, this, e);
-        }
-    }
+void CtrlrComponent::mouseMove(const MouseEvent &e) {
+	if (mouseMoveCbk && !mouseMoveCbk.wasObjectDeleted()) {
+		if (mouseMoveCbk->isValid()) {
+			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(mouseMoveCbk, this, e);
+		}
+	}
 }
 
-void CtrlrComponent::mouseDrag (const MouseEvent &e)
-{
-    if (mouseDragCbk && !mouseDragCbk.wasObjectDeleted())
-    {
-        if (mouseDragCbk->isValid())
-        {
-            owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (mouseDragCbk, this, e);
-        }
-    }
+void CtrlrComponent::mouseDrag(const MouseEvent &e) {
+	if (mouseDragCbk && !mouseDragCbk.wasObjectDeleted()) {
+		if (mouseDragCbk->isValid()) {
+			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(mouseDragCbk, this, e);
+		}
+	}
 }
 
-void CtrlrComponent::componentMovedOrResized (Component &component, bool wasMoved, bool wasResized)
-{
-    CtrlrComponent::resized();
+void CtrlrComponent::componentMovedOrResized(Component &component, bool wasMoved, bool wasResized) {
+	CtrlrComponent::resized();
 }
 
-void CtrlrComponent::addAndMakeVisible (Component *child, int zOrder)
-{
-    Component::addAndMakeVisible (child, zOrder);
-    child->addMouseListener (this, true);
-    child->addComponentListener (this);
+void CtrlrComponent::addAndMakeVisible(Component *child, int zOrder) {
+	Component::addAndMakeVisible(child, zOrder);
+	child->addMouseListener(this, true);
+	child->addComponentListener(this);
 }
 
-void CtrlrComponent::visibilityChanged()
-{
+void CtrlrComponent::visibilityChanged() {
 }
 
-void CtrlrComponent::changeListenerCallback (ChangeBroadcaster* source)
-{
-    CtrlrComponentSelection *selection = dynamic_cast<CtrlrComponentSelection *>(source);
+void CtrlrComponent::changeListenerCallback(ChangeBroadcaster *source) {
+	CtrlrComponentSelection *selection = dynamic_cast<CtrlrComponentSelection *>(source);
 
-    if (selection != 0)
-    {
-        if (selection->isSelected (this))
-        {
-            if ((bool)getProperty(Ids::componentIsLocked) == true)
-                return;
-            selectionBorder->setVisible (true);
-        }
-        else
-        {
-            selectionBorder->setVisible (false);
-        }
+	if (selection != 0) {
+		if (selection->isSelected(this)) {
+			if ((bool)getProperty(Ids::componentIsLocked) == true)
+				return;
+			selectionBorder->setVisible(true);
+		} else {
+			selectionBorder->setVisible(false);
+		}
 
-        CtrlrComponent::resized();
-    }
+		CtrlrComponent::resized();
+	}
 }
 
-UndoManager* CtrlrComponent::getUndoManager() const
-{
-    return (owner.getOwnerPanel().getPanelUndoManager());
+UndoManager *CtrlrComponent::getUndoManager() const {
+	return (owner.getOwnerPanel().getPanelUndoManager());
 }
 
-void CtrlrComponent::restoreState (const ValueTree &savedState)
-{
-    restoreStateInProgress = true;
+void CtrlrComponent::restoreState(const ValueTree &savedState) {
+	restoreStateInProgress = true;
 
-    restoreProperties (savedState, componentTree, nullptr);
+	restoreProperties(savedState, componentTree, nullptr);
 
-    for (int i=0; i<savedState.getNumChildren(); i++)
-    {
-        componentTree.addChild (savedState.getChild(i).createCopy(), -1, 0);
-    }
+	for (int i = 0; i < savedState.getNumChildren(); i++) {
+		componentTree.addChild(savedState.getChild(i).createCopy(), -1, 0);
+	}
 
-    restoreStateInProgress = false;
-    resized();
+	restoreStateInProgress = false;
+	resized();
 }
 
-Rectangle<int> CtrlrComponent::getUsableRect()
-{
-    Rectangle<int> r = Component::getLocalBounds();
-    if ((bool)getProperty(Ids::componentLabelVisible) == false)
-    {
-        return (r);
-    }
+Rectangle<int> CtrlrComponent::getUsableRect() {
+	Rectangle<int> r = Component::getLocalBounds();
+	if ((bool)getProperty(Ids::componentLabelVisible) == false) {
+		return (r);
+	}
 
-    if (getProperty(Ids::componentLabelPosition) == Ids::top.toString())
-    {
-        return (r.removeFromBottom(componentNameLabel.getHeight()).withTop(componentNameLabel.getHeight()));
-    }
+	if (getProperty(Ids::componentLabelPosition) == Ids::top.toString()) {
+		return (r.removeFromBottom(componentNameLabel.getHeight()).withTop(componentNameLabel.getHeight()));
+	}
 
-    if (getProperty(Ids::componentLabelPosition) == Ids::bottom.toString())
-    {
-        return (r.withHeight(r.getHeight()-componentNameLabel.getHeight()));
-    }
+	if (getProperty(Ids::componentLabelPosition) == Ids::bottom.toString()) {
+		return (r.withHeight(r.getHeight() - componentNameLabel.getHeight()));
+	}
 
-    if (getProperty(Ids::componentLabelPosition) == Ids::left.toString())
-    {
-        return (r.withLeft (componentNameLabel.getWidth()).withWidth(r.getWidth() - componentNameLabel.getWidth()));
-    }
+	if (getProperty(Ids::componentLabelPosition) == Ids::left.toString()) {
+		return (r.withLeft(componentNameLabel.getWidth()).withWidth(r.getWidth() - componentNameLabel.getWidth()));
+	}
 
-    if (getProperty(Ids::componentLabelPosition) == Ids::right.toString())
-    {
-        r.removeFromRight (componentNameLabel.getWidth());
-        return (r);
-    }
-    return (r);
+	if (getProperty(Ids::componentLabelPosition) == Ids::right.toString()) {
+		r.removeFromRight(componentNameLabel.getWidth());
+		return (r);
+	}
+	return (r);
 }
 
+void CtrlrComponent::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
+	// Helper lambda to fetch the method pointer (or nullptr if empty/invalid)
+	auto getLuaMethodFromProperty = [this](const Identifier &prop) -> CtrlrLuaMethod * {
+		const juce::String methodName = getProperty(prop).toString();
 
-void CtrlrComponent::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
-{
-    // Helper lambda to fetch the method pointer (or nullptr if empty/invalid)
-    auto getLuaMethodFromProperty = [this](const Identifier& prop) -> CtrlrLuaMethod*
-    {
-        const juce::String methodName = getProperty(prop).toString();
+		if (methodName.isEmpty() || isInvalidMethodName(methodName))
+			return nullptr;
 
-        if (methodName.isEmpty() || isInvalidMethodName(methodName))
-            return nullptr;
+		return owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(methodName);
+	};
 
-        return owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(methodName);
-    };
+	// --- Component Label Properties ---
+	if (property == Ids::componentVisibleName) {
+		componentNameLabel.setText(getVisibleName(), dontSendNotification);
+	} else if (property == Ids::componentLabelPosition || property == Ids::componentLabelHeight ||
+			   property == Ids::componentLabelWidth || property == Ids::componentLabelVisible ||
+			   property == Ids::componentLabelAlwaysOnTop || property == Ids::componentSentBack ||
+			   property == Ids::componentLabelJustification) {
+		const bool alwaysOnTop = getProperty(Ids::componentLabelAlwaysOnTop);
 
-    // --- Component Label Properties ---
-    if (property == Ids::componentVisibleName)
-    {
-        componentNameLabel.setText(getVisibleName(), dontSendNotification);
-    }
-    else if (property == Ids::componentLabelPosition   ||
-             property == Ids::componentLabelHeight     ||
-             property == Ids::componentLabelWidth      ||
-             property == Ids::componentLabelVisible    ||
-             property == Ids::componentLabelAlwaysOnTop ||
-             property == Ids::componentSentBack        ||
-             property == Ids::componentLabelJustification)
-    {
-        const bool alwaysOnTop = getProperty(Ids::componentLabelAlwaysOnTop);
+		componentNameLabel.setSize(getWidth(), getProperty(Ids::componentLabelHeight));
+		componentNameLabel.setVisible(getProperty(Ids::componentLabelVisible));
+		componentNameLabel.setAlwaysOnTop(alwaysOnTop);
+		componentNameLabel.setText(getVisibleName(), dontSendNotification);
+		componentNameLabel.setJustificationType(
+			justificationFromProperty(getProperty(Ids::componentLabelJustification)));
 
-        componentNameLabel.setSize(getWidth(), getProperty(Ids::componentLabelHeight));
-        componentNameLabel.setVisible(getProperty(Ids::componentLabelVisible));
-        componentNameLabel.setAlwaysOnTop(alwaysOnTop);
-        componentNameLabel.setText(getVisibleName(), dontSendNotification);
-        componentNameLabel.setJustificationType(justificationFromProperty(getProperty(Ids::componentLabelJustification)));
+		if (!alwaysOnTop)
+			componentNameLabel.toBack();
+		else
+			componentNameLabel.toFront(false);
+	} else if (property == Ids::componentLabelColour) {
+		componentNameLabel.setColour(Label::textColourId, VAR2COLOUR(getProperty(Ids::componentLabelColour)));
+	} else if (property == Ids::componentLabelFont) {
+		componentNameLabel.setFont(getFontManager().getFontFromString(getProperty(Ids::componentLabelFont)));
+	}
 
-        if (!alwaysOnTop)
-            componentNameLabel.toBack();
-        else
-            componentNameLabel.toFront(false);
-    }
-    else if (property == Ids::componentLabelColour)
-    {
-        componentNameLabel.setColour(Label::textColourId, VAR2COLOUR(getProperty(Ids::componentLabelColour)));
-    }
-    else if (property == Ids::componentLabelFont)
-    {
-        componentNameLabel.setFont(getFontManager().getFontFromString(getProperty(Ids::componentLabelFont)));
-    }
+	// --- Cursor & Hierarchy ---
+	else if (property == Ids::componentMouseCursor) {
+		const auto cursorType = static_cast<MouseCursor::StandardCursorType>(static_cast<int>(getProperty(property)));
+		setMouseCursor(cursorType);
 
-    // --- Cursor & Hierarchy ---
-    else if (property == Ids::componentMouseCursor)
-    {
-        const auto cursorType = static_cast<MouseCursor::StandardCursorType>(static_cast<int>(getProperty(property)));
-        setMouseCursor(cursorType);
+		for (auto *child : getChildren())
+			child->setMouseCursor(cursorType);
+	} else if (property == Ids::componentLayerUid) {
+		const String newLayerUid = getProperty(Ids::componentLayerUid).toString();
 
-        for (auto* child : getChildren())
-            child->setMouseCursor(cursorType);
-    }
-    else if (property == Ids::componentLayerUid)
-    {
-        const String newLayerUid = getProperty(Ids::componentLayerUid).toString();
+		if (auto *newLayer = owner.getOwnerPanel().getCanvas()->getLayer(newLayerUid)) {
+			owner.getOwnerPanel().getCanvas()->assignToLayer(this, newLayer);
+		}
+	} else if (property == Ids::componentDisabled) {
+		const bool disabled = getProperty(property);
 
-        if (auto* newLayer = owner.getOwnerPanel().getCanvas()->getLayer(newLayerUid))
-        {
-            owner.getOwnerPanel().getCanvas()->assignToLayer(this, newLayer);
-        }
-    }
-    else if (property == Ids::componentDisabled)
-    {
-        const bool disabled = getProperty(property);
+		for (auto *child : getChildren())
+			child->setEnabled(!disabled);
+	}
 
-        for (auto* child : getChildren())
-            child->setEnabled(!disabled);
-    }
+	// --- Bounds, Visibility & Grouping ---
+	else if (property == Ids::componentRectangle) {
+		setBounds(VAR2RECT(getProperty(property)));
+	} else if (property == Ids::componentRadioGroupId) {
+		owner.getOwnerPanel().setRadioGroupId(this, getProperty(property));
+	} else if (property == Ids::componentGroupped) {
+		setGroupped(getProperty(property));
+	} else if (property == Ids::componentSnapSize) {
+		snapDimSize = getProperty(property);
+	} else if (property == Ids::componentVisibility) {
+		const bool isVisibleProp = getProperty(property);
+		const bool isEditMode = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelEditMode);
 
-    // --- Bounds, Visibility & Grouping ---
-    else if (property == Ids::componentRectangle)
-    {
-        setBounds(VAR2RECT(getProperty(property)));
-    }
-    else if (property == Ids::componentRadioGroupId)
-    {
-        owner.getOwnerPanel().setRadioGroupId(this, getProperty(property));
-    }
-    else if (property == Ids::componentGroupped)
-    {
-        setGroupped(getProperty(property));
-    }
-    else if (property == Ids::componentSnapSize)
-    {
-        snapDimSize = getProperty(property);
-    }
-    else if (property == Ids::componentVisibility)
-    {
-        const bool isVisibleProp = getProperty(property);
-        const bool isEditMode    = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelEditMode);
+		if (isEditMode) {
+			setAlpha(isVisibleProp ? 1.0f : 0.5f);
+			if (isVisibleProp)
+				setVisible(true);
+		} else {
+			setAlpha(1.0f);
+			setVisible(isVisibleProp);
+		}
+	}
 
-        if (isEditMode)
-        {
-            setAlpha(isVisibleProp ? 1.0f : 0.5f);
-            if (isVisibleProp)
-                setVisible(true);
-        }
-        else
-        {
-            setAlpha(1.0f);
-            setVisible(isVisibleProp);
-        }
-    }
+	// --- Visual Effects & Tooltips ---
+	else if (property == Ids::componentEffect || property == Ids::componentEffectColour ||
+			 property == Ids::componentEffectOffsetX || property == Ids::componentEffectOffsetY ||
+			 property == Ids::componentEffectRadius) {
+		setEffect();
+	} else if (property == Ids::componentBubbleHelpEnabled) {
+		if (!static_cast<bool>(getProperty(property)) && bubbleMessage != nullptr) {
+			bubbleMessage->setVisible(false);
+			if (auto *p = bubbleMessage->getParentComponent())
+				p->removeChildComponent(bubbleMessage.get());
 
-    // --- Visual Effects & Tooltips ---
-    else if (property == Ids::componentEffect        ||
-             property == Ids::componentEffectColour  ||
-             property == Ids::componentEffectOffsetX ||
-             property == Ids::componentEffectOffsetY ||
-             property == Ids::componentEffectRadius)
-    {
-        setEffect();
-    }
-    else if (property == Ids::componentBubbleHelpEnabled)
-    {
-        if (!static_cast<bool>(getProperty(property)) && bubbleMessage != nullptr)
-        {
-            bubbleMessage->setVisible(false);
-            if (auto* p = bubbleMessage->getParentComponent())
-                p->removeChildComponent(bubbleMessage.get());
+			bubbleMessage.reset();
+		}
+	}
 
-            bubbleMessage.reset();
-        }
-    }
+	// --- Lua Mouse Callbacks ---
+	else if (property == Ids::componentLuaMouseDown)
+		mouseDownCbk = getLuaMethodFromProperty(property);
+	else if (property == Ids::componentLuaMouseUp)
+		mouseUpCbk = getLuaMethodFromProperty(property);
+	else if (property == Ids::componentLuaMouseMoved)
+		mouseMoveCbk = getLuaMethodFromProperty(property);
+	else if (property == Ids::componentLuaMouseDrag)
+		mouseDragCbk = getLuaMethodFromProperty(property);
+	else if (property == Ids::componentLuaMouseDoubleClick)
+		mouseDoubleClickCbk = getLuaMethodFromProperty(property);
+	else if (property == Ids::componentLuaMouseEnter)
+		mouseEnterCbk = getLuaMethodFromProperty(property);
+	else if (property == Ids::componentLuaMouseExit)
+		mouseExitCbk = getLuaMethodFromProperty(property);
 
-    // --- Lua Mouse Callbacks ---
-    else if (property == Ids::componentLuaMouseDown)        mouseDownCbk        = getLuaMethodFromProperty(property);
-    else if (property == Ids::componentLuaMouseUp)          mouseUpCbk          = getLuaMethodFromProperty(property);
-    else if (property == Ids::componentLuaMouseMoved)       mouseMoveCbk        = getLuaMethodFromProperty(property);
-    else if (property == Ids::componentLuaMouseDrag)        mouseDragCbk        = getLuaMethodFromProperty(property);
-    else if (property == Ids::componentLuaMouseDoubleClick) mouseDoubleClickCbk = getLuaMethodFromProperty(property);
-    else if (property == Ids::componentLuaMouseEnter)       mouseEnterCbk       = getLuaMethodFromProperty(property);
-    else if (property == Ids::componentLuaMouseExit)        mouseExitCbk        = getLuaMethodFromProperty(property);
-
-    // --- Final Redraw Triggers ---
-    if (!restoreStateInProgress)
-    {
-        repaint();
-        resized();
-    }
+	// --- Final Redraw Triggers ---
+	if (!restoreStateInProgress) {
+		repaint();
+		resized();
+	}
 }
-void CtrlrComponent::setEffect()
-{
-    if (getProperty(Ids::componentEffect) == "No Effect")
-    {
-        setComponentEffect (nullptr);
-    }
+void CtrlrComponent::setEffect() {
+	if (getProperty(Ids::componentEffect) == "No Effect") {
+		setComponentEffect(nullptr);
+	}
 
-    if (getProperty(Ids::componentEffect) == "Shadow")
-    {
-        if (shadowEffect == nullptr)
-        {
-            shadowEffect = new DropShadowEffect();
-        }
+	if (getProperty(Ids::componentEffect) == "Shadow") {
+		if (shadowEffect == nullptr) {
+			shadowEffect = new DropShadowEffect();
+		}
 
-        DropShadow ds;
-        ds.colour = VAR2COLOUR(getProperty(Ids::componentEffectColour));
-        ds.offset = Point<int> (getProperty(Ids::componentEffectOffsetX), getProperty(Ids::componentEffectOffsetY));
-        ds.radius = getProperty(Ids::componentEffectRadius);
+		DropShadow ds;
+		ds.colour = VAR2COLOUR(getProperty(Ids::componentEffectColour));
+		ds.offset = Point<int>(getProperty(Ids::componentEffectOffsetX), getProperty(Ids::componentEffectOffsetY));
+		ds.radius = getProperty(Ids::componentEffectRadius);
 
-        shadowEffect->setShadowProperties (ds);
-        setComponentEffect (shadowEffect);
-    }
+		shadowEffect->setShadowProperties(ds);
+		setComponentEffect(shadowEffect);
+	}
 
-    if (getProperty(Ids::componentEffect) == "Glow")
-    {
-        glowEffect = new GlowEffect();
-        glowEffect->setGlowProperties (getProperty(Ids::componentEffectRadius), VAR2COLOUR(getProperty(Ids::componentEffectColour)));
-        setComponentEffect (glowEffect);
-    }
+	if (getProperty(Ids::componentEffect) == "Glow") {
+		glowEffect = new GlowEffect();
+		glowEffect->setGlowProperties(getProperty(Ids::componentEffectRadius),
+									  VAR2COLOUR(getProperty(Ids::componentEffectColour)));
+		setComponentEffect(glowEffect);
+	}
 }
 
-void CtrlrComponent::setProperty (const Identifier& name, const var &newValue, const bool isUndoable)
-{
-    if (isUndoable)
-    {
-        componentTree.setProperty (name, newValue, getUndoManager());
-    }
-    else
-    {
-        componentTree.setProperty (name, newValue, 0);
-    }
+void CtrlrComponent::setProperty(const Identifier &name, const var &newValue, const bool isUndoable) {
+	if (isUndoable) {
+		componentTree.setProperty(name, newValue, getUndoManager());
+	} else {
+		componentTree.setProperty(name, newValue, 0);
+	}
 }
 
-void CtrlrComponent::removeProperty (const Identifier &name)
-{
-    componentTree.removeProperty(name, getUndoManager());
+void CtrlrComponent::removeProperty(const Identifier &name) {
+	componentTree.removeProperty(name, getUndoManager());
 }
 
-const String CtrlrComponent::getVisibleName()
-{
-    if (getProperty(Ids::componentVisibleName).toString() != "")
-    {
-        return (getProperty(Ids::componentVisibleName));
-    }
-    else
-    {
-        return (owner.getProperty(Ids::name));
-    }
+const String CtrlrComponent::getVisibleName() {
+	if (getProperty(Ids::componentVisibleName).toString() != "") {
+		return (getProperty(Ids::componentVisibleName));
+	} else {
+		return (owner.getProperty(Ids::name));
+	}
 }
 
-const String CtrlrComponent::getComponentGroup()
-{
-    return (getProperty(Ids::componentGroupName));
+const String CtrlrComponent::getComponentGroup() {
+	return (getProperty(Ids::componentGroupName));
 }
 
-const String CtrlrComponent::getComponentTab()
-{
-    return (getProperty(Ids::componentTabName));
+const String CtrlrComponent::getComponentTab() {
+	return (getProperty(Ids::componentTabName));
 }
 
-void CtrlrComponent::setComponentTab (const String &newTab)
-{
-    if (newTab == "")
-    {
-        componentTree.removeProperty(Ids::componentTabName, 0);
-        componentTree.removeProperty(Ids::componentTabId, 0);
-    }
-    else
-    {
-        setProperty (Ids::componentTabName, newTab, false);
-    }
+void CtrlrComponent::setComponentTab(const String &newTab) {
+	if (newTab == "") {
+		componentTree.removeProperty(Ids::componentTabName, 0);
+		componentTree.removeProperty(Ids::componentTabId, 0);
+	} else {
+		setProperty(Ids::componentTabName, newTab, false);
+	}
 }
 
-void CtrlrComponent::setGroupped (const bool addToGroup)
-{
-    CtrlrGrouppingComponent *groupComponent = nullptr;
-    int groupSubIndex = getProperty (Ids::componentTabId);
+void CtrlrComponent::setGroupped(const bool addToGroup) {
+	CtrlrGrouppingComponent *groupComponent = nullptr;
+	int groupSubIndex = getProperty(Ids::componentTabId);
 
-    if (addToGroup)
-    {
-        /* we need to find the group component based on it's name */
-        groupComponent = dynamic_cast <CtrlrGrouppingComponent*> (owner.getOwnerPanel().getComponent (getProperty(Ids::componentGroupName)));
+	if (addToGroup) {
+		/* we need to find the group component based on it's name */
+		groupComponent = dynamic_cast<CtrlrGrouppingComponent *>(
+			owner.getOwnerPanel().getComponent(getProperty(Ids::componentGroupName)));
 
-        if (groupComponent == nullptr)
-            groupComponent = dynamic_cast <CtrlrGrouppingComponent*> (owner.getOwnerPanel().getComponent (getProperty(Ids::componentTabName)));
-    }
-    else
-    {
-        /* we already are a member of a group, we can just fetch it
-            as it's our parent at some point */
-        groupComponent = findParentComponentOfClass<CtrlrGroup>();
+		if (groupComponent == nullptr)
+			groupComponent = dynamic_cast<CtrlrGrouppingComponent *>(
+				owner.getOwnerPanel().getComponent(getProperty(Ids::componentTabName)));
+	} else {
+		/* we already are a member of a group, we can just fetch it
+			as it's our parent at some point */
+		groupComponent = findParentComponentOfClass<CtrlrGroup>();
 
-        if (groupComponent == nullptr)
-            groupComponent = findParentComponentOfClass<CtrlrTabsComponent>();
-    }
+		if (groupComponent == nullptr)
+			groupComponent = findParentComponentOfClass<CtrlrTabsComponent>();
+	}
 
-    if (groupComponent != nullptr)
-    {
-        groupComponent->setOwned (this, groupSubIndex, addToGroup);
-    }
+	if (groupComponent != nullptr) {
+		groupComponent->setOwned(this, groupSubIndex, addToGroup);
+	}
 }
 
-void CtrlrComponent::removeFromTab ()
-{
-    CtrlrModulator *tabsModulator = owner.getOwnerPanel().getModulator(getProperty(Ids::componentTabName));
-    if (tabsModulator)
-    {
-        CtrlrTabsComponent *tabsComponent = dynamic_cast<CtrlrTabsComponent*>(tabsModulator->getComponent());
-        if (tabsComponent)
-        {
-            tabsComponent->setOwned (this, getProperty(Ids::componentTabId), false);
-        }
-    }
+void CtrlrComponent::removeFromTab() {
+	CtrlrModulator *tabsModulator = owner.getOwnerPanel().getModulator(getProperty(Ids::componentTabName));
+	if (tabsModulator) {
+		CtrlrTabsComponent *tabsComponent = dynamic_cast<CtrlrTabsComponent *>(tabsModulator->getComponent());
+		if (tabsComponent) {
+			tabsComponent->setOwned(this, getProperty(Ids::componentTabId), false);
+		}
+	}
 }
 
-int CtrlrComponent::snapPosition (int pos, int snapSize, const bool allowSnap)
-{
-    if (snapSize <= 0 || allowSnap == false)
-        return pos;
+int CtrlrComponent::snapPosition(int pos, int snapSize, const bool allowSnap) {
+	if (snapSize <= 0 || allowSnap == false)
+		return pos;
 
-    pos = ((pos + snapSize * 1024 + snapSize / 2) / snapSize - 1024) * snapSize;
-    return pos;
+	pos = ((pos + snapSize * 1024 + snapSize / 2) / snapSize - 1024) * snapSize;
+	return pos;
 }
 
-int CtrlrComponent::getComponentRadioGroupId()
-{
-    return (getProperty(Ids::componentRadioGroupId));
+int CtrlrComponent::getComponentRadioGroupId() {
+	return (getProperty(Ids::componentRadioGroupId));
 }
 
-void CtrlrComponent::panelEditModeChanged(const bool isInEditMode)
-{
-    if (isInEditMode)
-    {
-        if ((bool)getProperty(Ids::componentVisibility) == false)
-        {
-            setVisible (true);
-            if (owner.getOwnerPanel().getEditor())
-                setAlpha ((float)owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelInvisibleComponentAlpha));
-            else
-                setAlpha(0.5f);
-        }
-        
-        if (owner.getOwnerPanel().getEditor())
-        {
-            if ((bool)owner.getOwnerPanel().getEditor()->getProperty (Ids::uiPanelDisabledOnEdit) == true)
-            {
-                for (int i=0; i<getNumChildComponents(); i++)
-                {
-                    if (getChildComponent(i) == selectionBorder.get() || getChildComponent(i) == &componentNameLabel)
-                        continue;
-                    
-                    getChildComponent(i)->setEnabled (false);
-                }
-            }
-        }
-    }
-    else
-    {
-        setVisible ((bool)getProperty(Ids::componentVisibility));
-        if ((bool)owner.getOwnerPanel().getEditor()->getProperty (Ids::uiPanelDisabledOnEdit) == true)
-        {
-            for (int i=0; i<getNumChildComponents(); i++)
-            {
-                if (getChildComponent(i) == selectionBorder.get() || getChildComponent(i) == &componentNameLabel)
-                    continue;
-                
-                getChildComponent(i)->setEnabled (true);
-            }
-        }
-    }
+void CtrlrComponent::panelEditModeChanged(const bool isInEditMode) {
+	if (isInEditMode) {
+		if ((bool)getProperty(Ids::componentVisibility) == false) {
+			setVisible(true);
+			if (owner.getOwnerPanel().getEditor())
+				setAlpha((float)owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelInvisibleComponentAlpha));
+			else
+				setAlpha(0.5f);
+		}
+
+		if (owner.getOwnerPanel().getEditor()) {
+			if ((bool)owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelDisabledOnEdit) == true) {
+				for (int i = 0; i < getNumChildComponents(); i++) {
+					if (getChildComponent(i) == selectionBorder.get() || getChildComponent(i) == &componentNameLabel)
+						continue;
+
+					getChildComponent(i)->setEnabled(false);
+				}
+			}
+		}
+	} else {
+		setVisible((bool)getProperty(Ids::componentVisibility));
+		if ((bool)owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelDisabledOnEdit) == true) {
+			for (int i = 0; i < getNumChildComponents(); i++) {
+				if (getChildComponent(i) == selectionBorder.get() || getChildComponent(i) == &componentNameLabel)
+					continue;
+
+				getChildComponent(i)->setEnabled(true);
+			}
+		}
+	}
 }
 
-const String CtrlrComponent::getTextForValue(const double value)
-{
-    if ((int)getProperty(Ids::componentValueDecimalPlaces) > 0)
-        return (String(value, getProperty(Ids::componentValueDecimalPlaces)));
-    else
-        return (String((int)value));
+const String CtrlrComponent::getTextForValue(const double value) {
+	if ((int)getProperty(Ids::componentValueDecimalPlaces) > 0)
+		return (String(value, getProperty(Ids::componentValueDecimalPlaces)));
+	else
+		return (String((int)value));
 }
 
-void CtrlrComponent::setComponentMidiValue (const int newValue, const bool sendChangeMessage)
-{
-    setComponentValue (newValue, sendChangeMessage);
+void CtrlrComponent::setComponentMidiValue(const int newValue, const bool sendChangeMessage) {
+	setComponentValue(newValue, sendChangeMessage);
 }
 
-int CtrlrComponent::getComponentMidiValue ()
-{
-    return (getComponentValue());
+int CtrlrComponent::getComponentMidiValue() {
+	return (getComponentValue());
 }
 
-bool CtrlrComponent::getRestoreState()
-{
-    return (restoreStateInProgress);
+bool CtrlrComponent::getRestoreState() {
+	return (restoreStateInProgress);
 }
 
-CtrlrFontManager &CtrlrComponent::getFontManager()
-{
-    return (owner.getOwnerPanel().getCtrlrManagerOwner().getFontManager());
+CtrlrFontManager &CtrlrComponent::getFontManager() {
+	return (owner.getOwnerPanel().getCtrlrManagerOwner().getFontManager());
 }
 
-double CtrlrComponent::getMaximum()
-{
-    return (owner.getMaxModulatorValue());
+double CtrlrComponent::getMaximum() {
+	return (owner.getMaxModulatorValue());
 }
 
-double CtrlrComponent::getMinimum()
-{
-    return (owner.getMinModulatorValue());
+double CtrlrComponent::getMinimum() {
+	return (owner.getMinModulatorValue());
 }
 
-void CtrlrComponent::setCustomLookAndFeel (LookAndFeelBase *customLookAndFeel)
-{
-    setLookAndFeel (customLookAndFeel);
-    customLookAndFeelChanged (customLookAndFeel);
+void CtrlrComponent::setCustomLookAndFeel(LookAndFeelBase *customLookAndFeel) {
+	setLookAndFeel(customLookAndFeel);
+	customLookAndFeelChanged(customLookAndFeel);
 }
 
-void CtrlrComponent::setCustomLookAndFeel (const luabind::object &_customLookAndFeel)
-{
-    try
-    {
-        setCustomLookAndFeel (luabind::object_cast <LookAndFeelBase*> (_customLookAndFeel));
-    }
-    catch (luabind::error &e)
-    {
-        _WRN("Unable to cast passed LookAndFeel object to anything usable: "+_STR(e.what()));
-    }
+void CtrlrComponent::setCustomLookAndFeel(const luabind::object &_customLookAndFeel) {
+	try {
+		setCustomLookAndFeel(luabind::object_cast<LookAndFeelBase *>(_customLookAndFeel));
+	} catch (luabind::error &e) {
+		_WRN("Unable to cast passed LookAndFeel object to anything usable: " + _STR(e.what()));
+	}
 }
 
-bool CtrlrComponent::isInternal()
-{
-    if (!componentTree.hasProperty(Ids::componentInternalFunction))
-        return (false);
+bool CtrlrComponent::isInternal() {
+	if (!componentTree.hasProperty(Ids::componentInternalFunction))
+		return (false);
 
-    if (getProperty(Ids::componentInternalFunction, "") != COMBO_ITEM_NONE)
-        return (true);
+	if (getProperty(Ids::componentInternalFunction, "") != COMBO_ITEM_NONE)
+		return (true);
 
-    return (false);
+	return (false);
 }
 
-CtrlrLuaRectangle CtrlrComponent::getLuaBounds() const
-{
-    return (CtrlrLuaRectangle(getBounds()));
+CtrlrLuaRectangle CtrlrComponent::getLuaBounds() const {
+	return (CtrlrLuaRectangle(getBounds()));
 }
 
-void CtrlrComponent::wrapForLua (lua_State *L)
-{
-    using namespace luabind;
+void CtrlrComponent::wrapForLua(lua_State *L) {
+	using namespace luabind;
 
-    module(L)
-    [
-        class_<CtrlrComponent, bases<CtrlrLuaObject, Component> >("CtrlrComponent")
-            .def("repaint", (void (Component::*)()) &Component::repaint)
-            .def("getWidth", &Component::getWidth)
-            .def("getHeight", &Component::getHeight)
-            .def("setSize", &Component::setSize)
-            .def("getX", &Component::getX)
-            .def("getY", &Component::getY)
-            .def("isVisible", &Component::isVisible)
-            .def("setVisible", &Component::setVisible)
-            .def("mouseUp", &Component::mouseUp)
-            .def("isMouseButtonDown", &Component::isMouseButtonDown)
-            .def("isMouseOver", &Component::isMouseOver)
-            .def("isMouseOverOrDragging", &Component::isMouseOverOrDragging)
-            .def("mouseEnter", &Component::mouseEnter)
-            .def("mouseExit", &Component::mouseExit)
-            .def("keyPressed", &Component::keyPressed)
-            .def("getBounds", &Component::getBounds)
-            .def("getRect", &CtrlrComponent::getBounds)
-            .def("setBounds", (void (Component::*)(const Rectangle<int> ) )&Component::setBounds)
-            .def("setBounds", (void (Component::*)(int, int, int, int))&CtrlrComponent::setBounds)
-            .def("getComponentText", &CtrlrComponent::getComponentText)
-            .def("setComponentText", &CtrlrComponent::setComponentText)
-            .def("setTransform", &Component::setTransform)
-            .def("getTransform", &Component::getTransform)
-            .def("click", &CtrlrComponent::click)
-            .def("setComponentValue", &CtrlrComponent::setComponentValue)
-            .def("setValue", &CtrlrComponent::setComponentValue)
-            .def("getComponentValue", &CtrlrComponent::getComponentValue)
-            .def("getValue", &CtrlrComponent::getComponentValue)
-            .def("setComponentMidiValue", &CtrlrComponent::setComponentMidiValue)
-            .def("setMidiValue", &CtrlrComponent::setComponentMidiValue)
-            .def("getComponentMidiValue", &CtrlrComponent::getComponentMidiValue)
-            .def("getMidiValue", &CtrlrComponent::getComponentMidiValue)
-            .def("getMaximum", &CtrlrComponent::getMaximum)
-            .def("getMinimum", &CtrlrComponent::getMinimum)
-            .def("getTextForValue", &CtrlrComponent::getTextForValue)
-            .def("getOwner", &CtrlrComponent::getOwner)
-            .def("setCustomLookAndFeel", (void (CtrlrComponent::*)(const luabind::object &)) &CtrlrComponent::setCustomLookAndFeel)
-            .def("getLuaBounds", &CtrlrComponent::getLuaBounds)
-    ];
+	module(L)[class_<CtrlrComponent, bases<CtrlrLuaObject, Component>>("CtrlrComponent")
+				  .def("repaint", (void (Component::*)())&Component::repaint)
+				  .def("getWidth", &Component::getWidth)
+				  .def("getHeight", &Component::getHeight)
+				  .def("setSize", &Component::setSize)
+				  .def("getX", &Component::getX)
+				  .def("getY", &Component::getY)
+				  .def("isVisible", &Component::isVisible)
+				  .def("setVisible", &Component::setVisible)
+				  .def("mouseUp", &Component::mouseUp)
+				  .def("isMouseButtonDown", &Component::isMouseButtonDown)
+				  .def("isMouseOver", &Component::isMouseOver)
+				  .def("isMouseOverOrDragging", &Component::isMouseOverOrDragging)
+				  .def("mouseEnter", &Component::mouseEnter)
+				  .def("mouseExit", &Component::mouseExit)
+				  .def("keyPressed", &Component::keyPressed)
+				  .def("getBounds", &Component::getBounds)
+				  .def("getRect", &CtrlrComponent::getBounds)
+				  .def("setBounds", (void (Component::*)(const Rectangle<int>))&Component::setBounds)
+				  .def("setBounds", (void (Component::*)(int, int, int, int))&CtrlrComponent::setBounds)
+				  .def("getComponentText", &CtrlrComponent::getComponentText)
+				  .def("setComponentText", &CtrlrComponent::setComponentText)
+				  .def("setTransform", &Component::setTransform)
+				  .def("getTransform", &Component::getTransform)
+				  .def("click", &CtrlrComponent::click)
+				  .def("setComponentValue", &CtrlrComponent::setComponentValue)
+				  .def("setValue", &CtrlrComponent::setComponentValue)
+				  .def("getComponentValue", &CtrlrComponent::getComponentValue)
+				  .def("getValue", &CtrlrComponent::getComponentValue)
+				  .def("setComponentMidiValue", &CtrlrComponent::setComponentMidiValue)
+				  .def("setMidiValue", &CtrlrComponent::setComponentMidiValue)
+				  .def("getComponentMidiValue", &CtrlrComponent::getComponentMidiValue)
+				  .def("getMidiValue", &CtrlrComponent::getComponentMidiValue)
+				  .def("getMaximum", &CtrlrComponent::getMaximum)
+				  .def("getMinimum", &CtrlrComponent::getMinimum)
+				  .def("getTextForValue", &CtrlrComponent::getTextForValue)
+				  .def("getOwner", &CtrlrComponent::getOwner)
+				  .def("setCustomLookAndFeel",
+					   (void (CtrlrComponent::*)(const luabind::object &))&CtrlrComponent::setCustomLookAndFeel)
+				  .def("getLuaBounds", &CtrlrComponent::getLuaBounds)];
 }
-void CtrlrComponent::triggerBubbleHelp(const MouseEvent& e, int requiredTrigger)
-{
-    // Don't re-trigger if bubble is already visible
-if (bubbleMessage != nullptr && bubbleMessage->isVisible())
-    return;
-    if (!(bool)componentTree.getProperty(Ids::componentBubbleHelpEnabled, false))
-        return;
+void CtrlrComponent::triggerBubbleHelp(const MouseEvent &e, int requiredTrigger) {
+	// Don't re-trigger if bubble is already visible
+	if (bubbleMessage != nullptr && bubbleMessage->isVisible())
+		return;
+	if (!(bool)componentTree.getProperty(Ids::componentBubbleHelpEnabled, false))
+		return;
 
-    if ((int)componentTree.getProperty(Ids::componentBubbleHelpTrigger, 0) != requiredTrigger)
-        return;
+	if ((int)componentTree.getProperty(Ids::componentBubbleHelpTrigger, 0) != requiredTrigger)
+		return;
 
-    if (restoreStateInProgress)
-        return;
+	if (restoreStateInProgress)
+		return;
 
-    CtrlrPanelEditor* editor = owner.getOwnerPanel().getEditor();
-    if (editor == nullptr)
-        return;
+	CtrlrPanelEditor *editor = owner.getOwnerPanel().getEditor();
+	if (editor == nullptr)
+		return;
 
-    String title   = componentTree.getProperty(Ids::componentBubbleHelpTitle).toString();
-    String body    = componentTree.getProperty(Ids::componentBubbleHelpText).toString();
-    int    timeout = componentTree.getProperty(Ids::componentBubbleHelpTimeout, 5000);
+	String title = componentTree.getProperty(Ids::componentBubbleHelpTitle).toString();
+	String body = componentTree.getProperty(Ids::componentBubbleHelpText).toString();
+	int timeout = componentTree.getProperty(Ids::componentBubbleHelpTimeout, 5000);
 
-    if (body.isEmpty())
-        return;
+	if (body.isEmpty())
+		return;
 
-    if (bubbleMessage != nullptr)
-    {
-        bubbleMessage->setVisible(false);
-        if (auto* p = bubbleMessage->getParentComponent())
-            p->removeChildComponent(bubbleMessage.get());
-        bubbleMessage.reset();
-    }
+	if (bubbleMessage != nullptr) {
+		bubbleMessage->setVisible(false);
+		if (auto *p = bubbleMessage->getParentComponent())
+			p->removeChildComponent(bubbleMessage.get());
+		bubbleMessage.reset();
+	}
 
-    String completeMessage = title.isNotEmpty() ? (title + "\n\n" + body) : body;
+	String completeMessage = title.isNotEmpty() ? (title + "\n\n" + body) : body;
 
-    AttributedString attrStr(completeMessage);
-    attrStr.setJustification(Justification::centred);
-    attrStr.setFont(Font(14.0f));
-    attrStr.setColour(editor->getLookAndFeel().findColour(TextEditor::textColourId));
+	AttributedString attrStr(completeMessage);
+	attrStr.setJustification(Justification::centred);
+	attrStr.setFont(Font(14.0f));
+	attrStr.setColour(editor->getLookAndFeel().findColour(TextEditor::textColourId));
 
-    bubbleMessage.reset(new BubbleMessageComponent(200));
-    editor->addChildComponent(bubbleMessage.get());
-    bubbleMessage->setAlwaysOnTop(true);
-    bubbleMessage->setVisible(true);
+	bubbleMessage.reset(new BubbleMessageComponent(200));
+	editor->addChildComponent(bubbleMessage.get());
+	bubbleMessage->setAlwaysOnTop(true);
+	bubbleMessage->setVisible(true);
 
-    Rectangle<int> boundsInEditor = editor->getLocalArea(this, getLocalBounds());
-    bubbleMessage->showAt(boundsInEditor, attrStr, timeout, true, false);
+	Rectangle<int> boundsInEditor = editor->getLocalArea(this, getLocalBounds());
+	bubbleMessage->showAt(boundsInEditor, attrStr, timeout, true, false);
 }
-void CtrlrComponent::applyCentralLookAndFeel(juce::Component* targetComponent, const String& lookAndFeelType)
-{
-    if (targetComponent == nullptr)
-        return;
+// void CtrlrComponent::applyCentralLookAndFeel(juce::Component* targetComponent, const String& lookAndFeelType)
+// {
+//     if (targetComponent == nullptr)
+//         return;
 
-    targetComponent->setLookAndFeel(nullptr);
+//     targetComponent->setLookAndFeel(nullptr);
 
-    // Use CtrlrPanel (not CtrlrPanelEditor) — panel outlives editor, ensuring
-    // lfV1/V2/V3 are still alive when sliders are destroyed via CtrlrModulator
-    CtrlrPanel* panel = &owner.getOwnerPanel();
+//     CtrlrPanel* panel = &owner.getOwnerPanel();
 
-    if (panel != nullptr)
-    {
-        if (lookAndFeelType == "V3" && panel->lfV3)      { targetComponent->setLookAndFeel(panel->lfV3.get()); }
-        else if (lookAndFeelType == "V2" && panel->lfV2) { targetComponent->setLookAndFeel(panel->lfV2.get()); }
-        else if (lookAndFeelType == "V1" && panel->lfV1) { targetComponent->setLookAndFeel(panel->lfV1.get()); }
-        else                                             { targetComponent->setLookAndFeel(nullptr); }
-    }
+//     if (panel != nullptr)
+//     {
+//         if (lookAndFeelType == "V3" && panel->lfV3)      { targetComponent->setLookAndFeel(panel->lfV3.get()); }
+//         else if (lookAndFeelType == "V2" && panel->lfV2) { targetComponent->setLookAndFeel(panel->lfV2.get()); }
+//         else if (lookAndFeelType == "V1" && panel->lfV1) { targetComponent->setLookAndFeel(panel->lfV1.get()); }
+//         else                                             { targetComponent->setLookAndFeel(nullptr); }
+//     }
 
-    targetComponent->lookAndFeelChanged();
+//     targetComponent->lookAndFeelChanged();
+// }
+
+void CtrlrComponent::applyCentralLookAndFeel(juce::Component *targetComponent, const String &lookAndFeelType) {
+	if (targetComponent == nullptr)
+		return;
+
+	targetComponent->setLookAndFeel(nullptr);
+
+	CtrlrPanel *panel = &owner.getOwnerPanel();
+
+	if (panel != nullptr) {
+		if (lookAndFeelType == "V3" && panel->lfV3) {
+			targetComponent->setLookAndFeel(panel->lfV3.get());
+		} else if (lookAndFeelType == "V2" && panel->lfV2) {
+			targetComponent->setLookAndFeel(panel->lfV2.get());
+		} else if (lookAndFeelType == "V1" && panel->lfV1) {
+			targetComponent->setLookAndFeel(panel->lfV1.get());
+		} else {
+			// Set nullptr so JUCE uses standard V4 rendering
+			targetComponent->setLookAndFeel(nullptr);
+
+			// Extract the actual custom ColourScheme (LexiBlue, YamDX, JetBlack, Dark, etc.)
+			juce::LookAndFeel_V4::ColourScheme scheme = gui::colourSchemeFromProperty(lookAndFeelType);
+
+			Colour bg = scheme.getUIColour(juce::LookAndFeel_V4::ColourScheme::UIColour::widgetBackground);
+			Colour text = scheme.getUIColour(juce::LookAndFeel_V4::ColourScheme::UIColour::defaultText);
+			Colour fill = scheme.getUIColour(juce::LookAndFeel_V4::ColourScheme::UIColour::highlightedFill);
+			Colour outline = scheme.getUIColour(juce::LookAndFeel_V4::ColourScheme::UIColour::outline);
+
+			// 1. If the target component is a JUCE Slider:
+			if (auto *slider = dynamic_cast<juce::Slider *>(targetComponent)) {
+				slider->setColour(juce::Slider::thumbColourId, fill);
+				slider->setColour(juce::Slider::trackColourId, bg);
+				slider->setColour(juce::Slider::rotarySliderFillColourId, fill);
+				slider->setColour(juce::Slider::rotarySliderOutlineColourId, outline);
+				slider->setColour(juce::Slider::textBoxTextColourId, text);
+				slider->setColour(juce::Slider::textBoxBackgroundColourId, bg);
+				slider->setColour(juce::Slider::textBoxOutlineColourId, Colours::transparentBlack);
+			}
+			// 2. If the target component is a JUCE ComboBox:
+			else if (auto *combo = dynamic_cast<juce::ComboBox *>(targetComponent)) {
+				combo->setColour(juce::ComboBox::backgroundColourId, bg);
+				combo->setColour(juce::ComboBox::textColourId, text);
+				combo->setColour(juce::ComboBox::buttonColourId, bg.brighter(0.1f));
+				combo->setColour(juce::ComboBox::outlineColourId, outline);
+				combo->setColour(juce::ComboBox::arrowColourId, text);
+			}
+			// 3. If the target component is a JUCE Button:
+			else if (auto *button = dynamic_cast<juce::Button *>(targetComponent)) {
+				button->setColour(juce::TextButton::buttonColourId, bg);
+				button->setColour(juce::TextButton::textColourOffId, text);
+				button->setColour(juce::TextButton::textColourOnId, fill);
+			}
+		}
+	}
+
+	targetComponent->lookAndFeelChanged();
+	targetComponent->repaint();
 }

@@ -3,10 +3,7 @@
 #include "CtrlrPanel/CtrlrPanelEditor.h"
 #include "stdafx.h"
 
-CtrlrFixedSlider::CtrlrFixedSlider(CtrlrModulator &owner)
-	: CtrlrComponent(owner),
-	  ctrlrSlider(nullptr) // Safe uninitialized raw child component pointer baseline
-{
+CtrlrFixedSlider::CtrlrFixedSlider(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrSlider(nullptr) {
 	valueMap = std::make_unique<CtrlrValueMap>();
 
 	/** Tooltip properties */
@@ -14,19 +11,17 @@ CtrlrFixedSlider::CtrlrFixedSlider(CtrlrModulator &owner)
 	setColour(TooltipWindow::backgroundColourId, findColour(TooltipWindow::backgroundColourId));
 	setColour(TooltipWindow::outlineColourId, findColour(TooltipWindow::outlineColourId));
 
-	// 1. Allocate the object safely into your smart pointer container
+	// 1. Allocate smart pointer container safely
 	ctrlrSlider = std::make_unique<CtrlrSliderInternal>(*this);
 
-	// 2. Fetch the raw pointer out via .get() to register it with JUCE's UI hierarchy
+	// 2. Register child component with UI hierarchy
 	addAndMakeVisible(ctrlrSlider.get());
 
-	// 3. Configure the object normally using the -> operator
+	// 3. Setup internal slider parameters
 	ctrlrSlider->setName("ctrlrSlider");
-	ctrlrSlider->setName("ctrlrSlider");
-
 	ctrlrSlider->addListener(this);
-	componentTree.addListener(this);
 
+	// 4. Default slider properties
 	setProperty(Ids::uiSliderMin, 0);
 	setProperty(Ids::uiSliderMax, 1);
 	setProperty(Ids::uiSliderValueSuffix, "");
@@ -44,7 +39,6 @@ CtrlrFixedSlider::CtrlrFixedSlider(CtrlrModulator &owner)
 	setProperty(Ids::uiSliderSpringValue, 0);
 
 	setProperty(Ids::uiSliderMouseWheelInterval, 1);
-	setProperty(Ids::uiSliderPopupBubble, false);
 	setProperty(Ids::uiFixedSliderContent, "");
 
 	setProperty(Ids::uiSliderLookAndFeel, "Default");
@@ -52,11 +46,15 @@ CtrlrFixedSlider::CtrlrFixedSlider(CtrlrModulator &owner)
 	setProperty(Ids::uiSliderPopupBubble, false);
 	setProperty(Ids::uiSliderStyle, "RotaryVerticalDrag");
 
-	// Safely check what layout the manager panel requires
-	String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
-	applyCentralLookAndFeel(ctrlrSlider.get(), panelLnF);
-	repaint();
+	// 5. Fetch theme safely from panel editor
+	String panelLnF = "V3";
+	if (auto *editor = owner.getOwnerPanel().getEditor()) {
+		panelLnF = editor->getProperty(Ids::uiPanelLookAndFeel).toString();
+	}
 
+	applyCentralLookAndFeel(ctrlrSlider.get(), panelLnF);
+
+	// 6. Theme footprint bounds
 	if (panelLnF == "V3" || panelLnF == "V2" || panelLnF == "V1") {
 		setSize(64, 64);
 		setProperty(Ids::uiSliderRotaryOutlineColour, "0xff0000ff");
@@ -95,6 +93,9 @@ CtrlrFixedSlider::CtrlrFixedSlider(CtrlrModulator &owner)
 	setProperty(Ids::uiSliderValueOutlineColour, "0x00ffffff");
 
 	setProperty(Ids::uiSliderLookAndFeelIsCustom, false);
+
+	// 7. Attach listener LAST so construction doesn't trigger spurious property changes
+	componentTree.addListener(this);
 }
 
 CtrlrFixedSlider::~CtrlrFixedSlider() {
@@ -139,13 +140,21 @@ void CtrlrFixedSlider::mouseUp(const MouseEvent &e) {
 }
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
-double CtrlrFixedSlider::getComponentMaxValue() { return (valueMap->getNonMappedMax()); }
+double CtrlrFixedSlider::getComponentMaxValue() {
+	return (valueMap->getNonMappedMax());
+}
 
-double CtrlrFixedSlider::getComponentValue() { return ((int)ctrlrSlider->getValue()); }
+double CtrlrFixedSlider::getComponentValue() {
+	return ((int)ctrlrSlider->getValue());
+}
 
-int CtrlrFixedSlider::getComponentMidiValue() { return (valueMap->getMappedValue(ctrlrSlider->getValue())); }
+int CtrlrFixedSlider::getComponentMidiValue() {
+	return (valueMap->getMappedValue(ctrlrSlider->getValue()));
+}
 
-const String CtrlrFixedSlider::getComponentText() { return (valueMap->getTextForIndex(ctrlrSlider->getValue())); }
+const String CtrlrFixedSlider::getComponentText() {
+	return (valueMap->getTextForIndex(ctrlrSlider->getValue()));
+}
 
 void CtrlrFixedSlider::setComponentValue(const double newValue, const bool sendChangeMessage) {
 	ctrlrSlider->setValue(newValue, dontSendNotification);
@@ -269,7 +278,9 @@ void CtrlrFixedSlider::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 	}
 }
 
-const String CtrlrFixedSlider::getTextForValue(const double value) { return (valueMap->getTextForIndex(value)); }
+const String CtrlrFixedSlider::getTextForValue(const double value) {
+	return (valueMap->getTextForIndex(value));
+}
 
 void CtrlrFixedSlider::sliderValueChanged(Slider *sliderThatWasMoved) {
 	setComponentValue(ctrlrSlider->getValue(), true);

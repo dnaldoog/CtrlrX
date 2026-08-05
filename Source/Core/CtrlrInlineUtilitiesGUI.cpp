@@ -1,181 +1,157 @@
 // CtrlInlineUtilityGUI.cpp
 #include "CtrlrInlineUtilitiesGUI.h"
+#include "../UIComponents/CtrlrWindowManagers/CtrlrDialogWindow.h"
+#include "CtrlrInlineUtilitiesGUI.h"
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "CtrlrInlineUtilitiesGUI.h"
-#include "../UIComponents/CtrlrWindowManagers/CtrlrDialogWindow.h"
 
-#include "CtrlrInlineUtilitiesGUI.h"
 #include "../UIComponents/CtrlrWindowManagers/CtrlrDialogWindow.h"
+#include "CtrlrInlineUtilitiesGUI.h"
 
 namespace AW {
-    void showCustomDialogAsync(const juce::String& title,
-                               juce::Component* content,
-                               const juce::Colour& backgroundColour,
-                               bool resizable,
-                               std::function<void(int)> callback)
-    {
-        CtrlrDialogWindow::showCustomDialogAsync(title, content, backgroundColour, resizable, callback);
-    }
+void showCustomDialogAsync(const juce::String &title, juce::Component *content, const juce::Colour &backgroundColour,
+						   bool resizable, std::function<void(int)> callback) {
+	CtrlrDialogWindow::showCustomDialogAsync(title, content, backgroundColour, resizable, callback);
 }
-
+} // namespace AW
 
 namespace gui {
 
 // Define your custom ColourScheme getter functions here
-juce::LookAndFeel_V4::ColourScheme getJetBlackColourScheme()
-{
-    return { 0xff0b0b0b, 0xff151515, 0xff111111,
-             0xff666666, 0xffffffff, 0xffd8d8d8,
-             0xffffffff, 0xff606060, 0xffffffff };
+juce::LookAndFeel_V4::ColourScheme getJetBlackColourScheme() {
+	return {0xff0b0b0b, 0xff151515, 0xff111111, 0xff666666, 0xffffffff, 0xffd8d8d8, 0xffffffff, 0xff606060, 0xffffffff};
 }
 
-juce::LookAndFeel_V4::ColourScheme getYamDxColourScheme()
-{
-    return { 0xff0b0b0b, 0xff0f0f0f, 0xff111111,
-             0xff666666, 0xfffffbed, 0xff29cfc1,
-             0xffffffff, 0xff8584bc, 0xfffffdf2 };
+juce::LookAndFeel_V4::ColourScheme getYamDxColourScheme() {
+	return {0xff0b0b0b, 0xff0f0f0f, 0xff111111, 0xff666666, 0xfffffbed, 0xff29cfc1, 0xffffffff, 0xff8584bc, 0xfffffdf2};
 }
 
-juce::LookAndFeel_V4::ColourScheme getAkApcColourScheme()
-{
-    return { 0xff101112, 0xff222326, 0xff101112,
-             0xff666666, 0xffffffff, 0xffb3b3b3,
-             0xffffffff, 0xffd01634, 0xffffffff };
+juce::LookAndFeel_V4::ColourScheme getAkApcColourScheme() {
+	return {0xff101112, 0xff222326, 0xff101112, 0xff666666, 0xffffffff, 0xffb3b3b3, 0xffffffff, 0xffd01634, 0xffffffff};
 }
 
-juce::LookAndFeel_V4::ColourScheme getAkMpcColourScheme()
-{
-    return { 0xffefefef, 0xffffffff, 0xffffffff,
-             0xffdddddd, 0xff000000, 0xffacacbf,
-             0xffffffff, 0xffd01634, 0xff000000 };
+juce::LookAndFeel_V4::ColourScheme getAkMpcColourScheme() {
+	return {0xffefefef, 0xffffffff, 0xffffffff, 0xffdddddd, 0xff000000, 0xffacacbf, 0xffffffff, 0xffd01634, 0xff000000};
 }
 
-juce::LookAndFeel_V4::ColourScheme getLexiBlueColourScheme()
-{
-    return { 0xff0d0f0d, 0xff1a1a1a, 0xff111111,
-             0xff666666, 0xffffffff, 0xff515459,
-             0xffffffff, 0xff5794c7, 0xffffffff };
+juce::LookAndFeel_V4::ColourScheme getLexiBlueColourScheme() {
+	return {0xff0d0f0d, 0xff1a1a1a, 0xff111111, 0xff666666, 0xffffffff, 0xff515459, 0xffffffff, 0xff5794c7, 0xffffffff};
 }
 
-juce::LookAndFeel_V4::ColourScheme getKurzGreenColourScheme()
-{
-    return { 0xff16171a, 0xff111214, 0xff111214,
-             0xff666666, 0xffffffff, 0xffd9d1ad,
-             0xffffffff, 0xff00a66e, 0xffffffff };
+juce::LookAndFeel_V4::ColourScheme getKurzGreenColourScheme() {
+	return {0xff16171a, 0xff111214, 0xff111214, 0xff666666, 0xffffffff, 0xffd9d1ad, 0xffffffff, 0xff00a66e, 0xffffffff};
 }
 
-juce::LookAndFeel_V4::ColourScheme getKorGreyColourScheme()
-{
-    return { 0xffdddddd, 0xffc1c3c7, 0xffdddddd,
-             0xff666666, 0xff0e0e0f, 0xff8c785e,
-             0xffe4e4e4, 0xff4a4a4a, 0xff0e0e0f };
+juce::LookAndFeel_V4::ColourScheme getKorGreyColourScheme() {
+	return {0xffdddddd, 0xffc1c3c7, 0xffdddddd, 0xff666666, 0xff0e0e0f, 0xff8c785e, 0xffe4e4e4, 0xff4a4a4a, 0xff0e0e0f};
 }
 
-juce::LookAndFeel_V4::ColourScheme getKorGoldColourScheme()
-{
-    return { 0xff16171f, 0xff0e0f12, 0xff1b1b21,
-             0xffdddddd, 0xffffffff, 0xff736745,
-             0xffffffff, 0xffa28f57, 0xffffffff };
+juce::LookAndFeel_V4::ColourScheme getKorGoldColourScheme() {
+	return {0xff16171f, 0xff0e0f12, 0xff1b1b21, 0xffdddddd, 0xffffffff, 0xff736745, 0xffffffff, 0xffa28f57, 0xffffffff};
 }
 
-juce::LookAndFeel_V4::ColourScheme getArturOrangeColourScheme()
-{
-    return { 0xff161a1f, 0xff0e1012, 0xff0e1012,
-             0xff666666, 0xffffffff, 0xff46494d,
-             0xffffffff, 0xffe24a21, 0xffffffff };
+juce::LookAndFeel_V4::ColourScheme getArturOrangeColourScheme() {
+	return {0xff161a1f, 0xff0e1012, 0xff0e1012, 0xff666666, 0xffffffff, 0xff46494d, 0xffffffff, 0xffe24a21, 0xffffffff};
 }
 
-juce::LookAndFeel_V4::ColourScheme getAiraGreenColourScheme()
-{
-    return { 0xff191919, 0xff111111, 0xff212121,
-             0xff666666, 0xffffffff, 0xffffffff,
-             0xffffffff, 0xff00955a, 0xffffffff };
+juce::LookAndFeel_V4::ColourScheme getAiraGreenColourScheme() {
+	return {0xff191919, 0xff111111, 0xff212121, 0xff666666, 0xffffffff, 0xffffffff, 0xffffffff, 0xff00955a, 0xffffffff};
 }
 // ADD YOUR CUSTOM LookAndFeel colourScheme HERE -->
 
-
 // colourSchemeFromProperty function
-juce::LookAndFeel_V4::ColourScheme colourSchemeFromProperty(const juce::var &property)
-{
-    // These are still JUCE's default schemes
-    if (property == "Light")        return juce::LookAndFeel_V4::getLightColourScheme();
-    if (property == "Grey")         return juce::LookAndFeel_V4::getGreyColourScheme();
-    if (property == "Dark")         return juce::LookAndFeel_V4::getDarkColourScheme();
-    if (property == "Midnight")     return juce::LookAndFeel_V4::getMidnightColourScheme();
-    // Now calling your local function
-    if (property == "JetBlack")     return getJetBlackColourScheme();
-    if (property == "YamDX")        return getYamDxColourScheme();
-    if (property == "AkAPC")        return getAkApcColourScheme();
-    if (property == "AkMPC")        return getAkMpcColourScheme();
-    if (property == "LexiBlue")     return getLexiBlueColourScheme();
-    if (property == "KurzGreen")    return getKurzGreenColourScheme();
-    if (property == "KorGrey")      return getKorGreyColourScheme();
-    if (property == "KorGold")      return getKorGoldColourScheme();
-    if (property == "ArturOrange")  return getArturOrangeColourScheme();
-    if (property == "AiraGreen")    return getAiraGreenColourScheme();
-    // ADD YOUR CUSTOM LookAndFeel colourScheme HERE -->
+juce::LookAndFeel_V4::ColourScheme colourSchemeFromProperty(const juce::var &property) {
+	String propStr = property.toString();
 
-    return juce::LookAndFeel_V4::getLightColourScheme(); // Default if property is unknown
+	// Strip "V4 " prefix if present (e.g., "V4 YamDX" -> "YamDX")
+	if (propStr.startsWith("V4 "))
+		propStr = propStr.substring(3).trim();
+
+	if (propStr == "Light")
+		return juce::LookAndFeel_V4::getLightColourScheme();
+	if (propStr == "Grey")
+		return juce::LookAndFeel_V4::getGreyColourScheme();
+	if (propStr == "Dark")
+		return juce::LookAndFeel_V4::getDarkColourScheme();
+	if (propStr == "Midnight")
+		return juce::LookAndFeel_V4::getMidnightColourScheme();
+	if (propStr == "JetBlack")
+		return getJetBlackColourScheme();
+	if (propStr == "YamDX")
+		return getYamDxColourScheme();
+	if (propStr == "AkAPC")
+		return getAkApcColourScheme();
+	if (propStr == "AkMPC")
+		return getAkMpcColourScheme();
+	if (propStr == "LexiBlue")
+		return getLexiBlueColourScheme();
+	if (propStr == "KurzGreen")
+		return getKurzGreenColourScheme();
+	if (propStr == "KorGrey")
+		return getKorGreyColourScheme();
+	if (propStr == "KorGold")
+		return getKorGoldColourScheme();
+	if (propStr == "ArturOrange")
+		return getArturOrangeColourScheme();
+	if (propStr == "AiraGreen")
+		return getAiraGreenColourScheme();
+
+	return juce::LookAndFeel_V4::getLightColourScheme(); // Default fallback
 }
 
 // createLookAndFeelFromDescription
-std::unique_ptr<juce::LookAndFeel> createLookAndFeelFromDescription(const juce::String& description,
-                                                                    const juce::var& /*colourSchemeProperty*/, 
-                                                                    bool returnDefaultV4ForUnknown)
-{
-    // Handle specific LookAndFeel versions first
-    if (description == "V3")
-        return std::make_unique<juce::LookAndFeel_V3>();
-    else if (description == "V2")
-        return std::make_unique<juce::LookAndFeel_V2>();
-    else if (description == "V1")
-        return std::make_unique<juce::LookAndFeel_V1>();
+std::unique_ptr<juce::LookAndFeel> createLookAndFeelFromDescription(const juce::String &description,
+																	const juce::var & /*colourSchemeProperty*/,
+																	bool returnDefaultV4ForUnknown) {
+	// Handle specific LookAndFeel versions first
+	if (description == "V3")
+		return std::make_unique<juce::LookAndFeel_V3>();
+	else if (description == "V2")
+		return std::make_unique<juce::LookAndFeel_V2>();
+	else if (description == "V1")
+		return std::make_unique<juce::LookAndFeel_V1>();
 
-    else if (description.startsWith("V4") || description.isEmpty() || description == "Light" || description == "Grey" ||
-             description == "Dark" || description == "Midnight" || description == "JetBlack" ||
-             description == "YamDX" || description == "AkAPC" || description == "AkMPC" ||
-             description == "LexiBlue" || description == "KurzGreen" || description == "KorGrey" ||
-             description == "KorGold" || description == "ArturOrange" || description == "AiraGreen")
-    {
-        if (description == "V4 Light" || description == "Light" || description.isEmpty())
-            return std::make_unique<juce::LookAndFeel_V4>(juce::LookAndFeel_V4::getLightColourScheme());
-        else if (description == "V4 Grey" || description == "Grey")
-            return std::make_unique<juce::LookAndFeel_V4>(juce::LookAndFeel_V4::getGreyColourScheme());
-        else if (description == "V4 Dark" || description == "Dark")
-            return std::make_unique<juce::LookAndFeel_V4>(juce::LookAndFeel_V4::getDarkColourScheme());
-        else if (description == "V4 Midnight" || description == "Midnight")
-            return std::make_unique<juce::LookAndFeel_V4>(juce::LookAndFeel_V4::getMidnightColourScheme());
-        else if (description == "V4 JetBlack" || description == "JetBlack")
-            return std::make_unique<juce::LookAndFeel_V4>(gui::getJetBlackColourScheme());
-        else if (description == "V4 YamDX" || description == "YamDX")
-            return std::make_unique<juce::LookAndFeel_V4>(gui::getYamDxColourScheme());
-        else if (description == "V4 AkAPC" || description == "AkAPC")
-            return std::make_unique<juce::LookAndFeel_V4>(gui::getAkApcColourScheme());
-        else if (description == "V4 AkMPC" || description == "AkMPC")
-            return std::make_unique<juce::LookAndFeel_V4>(gui::getAkMpcColourScheme());
-        else if (description == "V4 LexiBlue" || description == "LexiBlue")
-            return std::make_unique<juce::LookAndFeel_V4>(gui::getLexiBlueColourScheme());
-        else if (description == "V4 KurzGreen" || description == "KurzGreen")
-            return std::make_unique<juce::LookAndFeel_V4>(gui::getKurzGreenColourScheme());
-        else if (description == "V4 KorGrey" || description == "KorGrey")
-            return std::make_unique<juce::LookAndFeel_V4>(gui::getKorGreyColourScheme());
-        else if (description == "V4 KorGold" || description == "KorGold")
-            return std::make_unique<juce::LookAndFeel_V4>(gui::getKorGoldColourScheme());
-        else if (description == "V4 ArturOrange" || description == "ArturOrange")
-            return std::make_unique<juce::LookAndFeel_V4>(gui::getArturOrangeColourScheme());
-        else if (description == "V4 AiraGreen" || description == "AiraGreen")
-            return std::make_unique<juce::LookAndFeel_V4>(gui::getAiraGreenColourScheme());
-        else
-            return std::make_unique<juce::LookAndFeel_V4>(juce::LookAndFeel_V4::getLightColourScheme());
-    }
+	else if (description.startsWith("V4") || description.isEmpty() || description == "Light" || description == "Grey" ||
+			 description == "Dark" || description == "Midnight" || description == "JetBlack" ||
+			 description == "YamDX" || description == "AkAPC" || description == "AkMPC" || description == "LexiBlue" ||
+			 description == "KurzGreen" || description == "KorGrey" || description == "KorGold" ||
+			 description == "ArturOrange" || description == "AiraGreen") {
+		if (description == "V4 Light" || description == "Light" || description.isEmpty())
+			return std::make_unique<juce::LookAndFeel_V4>(juce::LookAndFeel_V4::getLightColourScheme());
+		else if (description == "V4 Grey" || description == "Grey")
+			return std::make_unique<juce::LookAndFeel_V4>(juce::LookAndFeel_V4::getGreyColourScheme());
+		else if (description == "V4 Dark" || description == "Dark")
+			return std::make_unique<juce::LookAndFeel_V4>(juce::LookAndFeel_V4::getDarkColourScheme());
+		else if (description == "V4 Midnight" || description == "Midnight")
+			return std::make_unique<juce::LookAndFeel_V4>(juce::LookAndFeel_V4::getMidnightColourScheme());
+		else if (description == "V4 JetBlack" || description == "JetBlack")
+			return std::make_unique<juce::LookAndFeel_V4>(gui::getJetBlackColourScheme());
+		else if (description == "V4 YamDX" || description == "YamDX")
+			return std::make_unique<juce::LookAndFeel_V4>(gui::getYamDxColourScheme());
+		else if (description == "V4 AkAPC" || description == "AkAPC")
+			return std::make_unique<juce::LookAndFeel_V4>(gui::getAkApcColourScheme());
+		else if (description == "V4 AkMPC" || description == "AkMPC")
+			return std::make_unique<juce::LookAndFeel_V4>(gui::getAkMpcColourScheme());
+		else if (description == "V4 LexiBlue" || description == "LexiBlue")
+			return std::make_unique<juce::LookAndFeel_V4>(gui::getLexiBlueColourScheme());
+		else if (description == "V4 KurzGreen" || description == "KurzGreen")
+			return std::make_unique<juce::LookAndFeel_V4>(gui::getKurzGreenColourScheme());
+		else if (description == "V4 KorGrey" || description == "KorGrey")
+			return std::make_unique<juce::LookAndFeel_V4>(gui::getKorGreyColourScheme());
+		else if (description == "V4 KorGold" || description == "KorGold")
+			return std::make_unique<juce::LookAndFeel_V4>(gui::getKorGoldColourScheme());
+		else if (description == "V4 ArturOrange" || description == "ArturOrange")
+			return std::make_unique<juce::LookAndFeel_V4>(gui::getArturOrangeColourScheme());
+		else if (description == "V4 AiraGreen" || description == "AiraGreen")
+			return std::make_unique<juce::LookAndFeel_V4>(gui::getAiraGreenColourScheme());
+		else
+			return std::make_unique<juce::LookAndFeel_V4>(juce::LookAndFeel_V4::getLightColourScheme());
+	}
 
-    if (returnDefaultV4ForUnknown)
-    {
-        return std::make_unique<juce::LookAndFeel_V4>(juce::LookAndFeel_V4::getLightColourScheme());
-    }
+	if (returnDefaultV4ForUnknown) {
+		return std::make_unique<juce::LookAndFeel_V4>(juce::LookAndFeel_V4::getLightColourScheme());
+	}
 
-    return nullptr; 
+	return nullptr;
 }
-
 
 } // namespace gui
