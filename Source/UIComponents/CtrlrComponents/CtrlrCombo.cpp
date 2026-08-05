@@ -11,31 +11,23 @@
 #include <rapidfuzz/fuzz.hpp> // Added v5.6.35. Support for rapidfuzz
 
 CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
-	: CtrlrComponent(owner),
-	  lf(*this),          // Keep commented out if you removed the old custom LookAndFeel member
-	  ctrlrCombo(nullptr), // unique_ptr can safely initialize to nullptr like this in the list
-	  isUpdating(false),
-	  isSearching(false) {
+	: CtrlrComponent(owner), lf(*this), ctrlrCombo(nullptr), isUpdating(false), isSearching(false) {
 
 	valueMap = std::make_unique<CtrlrValueMap>();
 	ctrlrCombo = std::make_unique<juce::ComboBox>("ctrlrCombo");
 	addAndMakeVisible(ctrlrCombo.get());
 
-	// 3. Configure the component using the -> operator just like before
 	ctrlrCombo->setEditableText(false);
 	ctrlrCombo->setJustificationType(Justification::centred);
 	ctrlrCombo->addListener(this);
-	// ctrlrCombo->setLookAndFeel (&lf); // Kept legacy code commented out
 
-	// 4. Resolve the panel's theme lookups cleanly via .get()
-	String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
-
-	// Crucial: Use .get() here because applyCentralLookAndFeel expects a raw pointer address!
-	applyCentralLookAndFeel(ctrlrCombo.get(), "V3");
-
-	repaint();
+	// 1. Assign the custom nested LookAndFeel instance to the ComboBox
+	ctrlrCombo->setLookAndFeel(&lf);
 
 	componentTree.addListener(this);
+
+	// 2. Add a property to toggle between V3 (default) and V4/Panel LookAndFeel
+	setProperty(Ids::uiComboStyle, "V3"); // Defaults to V3 to preserve legacy panels
 
 	setProperty(Ids::uiComboSearch, false);
 	setProperty(Ids::uiComboButtonWidthOverride, false);
@@ -43,15 +35,20 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 	setProperty(Ids::uiComboDynamicContent, 0);
 	setProperty(Ids::uiComboSelectedId, -1);
 	setProperty(Ids::uiComboSelectedIndex, -1);
-
 	setProperty(Ids::uiComboContent, "");
 
 	setProperty(Ids::uiButtonLookAndFeel, "Default");
 	setProperty(Ids::uiButtonLookAndFeelIsCustom, false);
 
-	if (owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V3" ||
-		owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V2" ||
-		owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V1") {
+	// 1. Fetch style or default to V3 for uiCombo
+	String comboStyle = getProperty(Ids::uiComboStyle).toString();
+	if (comboStyle.isEmpty()) {
+		setProperty(Ids::uiComboStyle, "V3");
+		comboStyle = "V3";
+	}
+
+	// 2. Set default properties and attach appropriate LookAndFeel
+	if (comboStyle == "V3" || comboStyle == "V2" || comboStyle == "V1") {
 		setProperty(Ids::uiComboArrowColour, "0xff0000ff");
 		setProperty(Ids::uiComboOutlineColour, "0xff0000ff");
 
@@ -72,32 +69,32 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 
 		setProperty(Ids::uiComboMenuBackgroundRibbed, true);
 
+		// Crucial: Direct JUCE to your embedded CtrlrComboLF class so drawComboBox fires
+		ctrlrCombo->setLookAndFeel(&lf);
+
 		setSize(88, 32);
 	} else {
+		// V4 Branch
 		setProperty(Ids::uiComboArrowColour, (String)findColour(ComboBox::arrowColourId).toString());
 		setProperty(Ids::uiComboOutlineColour, (String)findColour(ComboBox::outlineColourId).darker(0.5f).toString());
-
 		setProperty(Ids::uiComboTextJustification, "centred");
 		setProperty(Ids::uiComboFont, FONT2STR(Font(14)));
 		setProperty(Ids::uiComboTextColour, (String)findColour(ComboBox::textColourId).toString());
-
 		setProperty(Ids::uiComboMenuFont, FONT2STR(Font(16)));
 		setProperty(Ids::uiComboMenuFontColour, (String)findColour(ComboBox::textColourId).toString());
-
 		setProperty(Ids::uiComboButtonColour, (String)findColour(ComboBox::buttonColourId).toString());
 		setProperty(Ids::uiComboBgColour, (String)findColour(ComboBox::backgroundColourId).toString());
-
 		setProperty(Ids::uiComboMenuBackgroundColour, (String)findColour(ComboBox::backgroundColourId).toString());
-
 		setProperty(Ids::uiComboMenuHighlightColour, (String)findColour(TextEditor::highlightColourId).toString());
 		setProperty(Ids::uiComboMenuFontHighlightedColour,
 					(String)findColour(TextEditor::highlightedTextColourId).toString());
-
 		setProperty(Ids::uiComboMenuBackgroundRibbed, false);
+
+		// Standard central panel look for V4
+		applyCentralLookAndFeel(ctrlrCombo.get(), "V4");
 
 		setSize(120, 40);
 	}
-
 	setProperty(Ids::uiComboButtonGradient, true);
 	setProperty(Ids::uiComboButtonGradientColour1, (String)findColour(TextButton::buttonColourId).toString());
 	setProperty(Ids::uiComboButtonGradientColour2,
@@ -105,25 +102,12 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 
 	setProperty(Ids::uiButtonLookAndFeelIsCustom, false);
 
-	// Explicitly set the TextEditor colors to match the Combo background/text
-	// ComboBox level
 	ctrlrCombo->setColour(ComboBox::textColourId, findColour(ComboBox::textColourId));
 	ctrlrCombo->setColour(ComboBox::backgroundColourId, findColour(ComboBox::backgroundColourId));
-
-	// TextEditor level (for active typing)
 	ctrlrCombo->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId));
 	ctrlrCombo->setColour(TextEditor::highlightColourId, findColour(TextEditor::highlightColourId));
 	ctrlrCombo->setColour(TextEditor::highlightedTextColourId, findColour(TextEditor::highlightedTextColourId));
 	ctrlrCombo->setColour(TextEditor::outlineColourId, Colours::transparentBlack);
-
-	// Label level (the bridge between Combo and Editor)
-	/* creates infinite recursion loop
-	ctrlrCombo->setColour(Label::textColourId, findColour(Label::textColourId));
-	ctrlrCombo->setColour(Label::backgroundColourId, Colours::transparentBlack); // Keep transparent to see the Combo bg
-	ctrlrCombo->setColour(Label::textWhenEditingColourId, findColour(Label::textWhenEditingColourId));
-	ctrlrCombo->setColour(Label::backgroundWhenEditingColourId, findColour(Label::backgroundWhenEditingColourId));
-*/
-	_DBG("--- CONSTRUCTION PHASE END ---");
 }
 
 CtrlrCombo::~CtrlrCombo() {
@@ -146,7 +130,6 @@ CtrlrCombo::~CtrlrCombo() {
 }
 
 void CtrlrCombo::resized() {
-	// ctrlrCombo->setBounds (2, 2, getWidth() - 4, getHeight() - 4);
 	if (restoreStateInProgress)
 		return;
 
@@ -187,8 +170,7 @@ void CtrlrCombo::mouseDown(const MouseEvent &e) {
 	CtrlrComponent::mouseDown(e);
 }
 
-bool CtrlrCombo::keyPressed(const KeyPress &key) // Updated v5.6.35. Combined methods
-{
+bool CtrlrCombo::keyPressed(const KeyPress &key) {
 	// 1. Handle the Fuzzy Search UI (New Logic)
 	if (key == KeyPress::returnKey) {
 		// If the menu is open and has items, select the first one
@@ -205,18 +187,16 @@ bool CtrlrCombo::keyPressed(const KeyPress &key) // Updated v5.6.35. Combined me
 	}
 
 	// 2. Fallback to the Legacy Canvas behavior
-	// We don't need 'originatingComponent' because 'this' is the source.
 	if (getParentComponent()) {
 		if (auto *canvas = dynamic_cast<CtrlrPanelCanvas *>(getParentComponent())) {
 			return canvas->keyPressed(key, this);
 		}
 	}
 
-	return false; // Return true if your handler uses this key event, or false to allow it to be passed-on.
+	return false;
 }
 
 void CtrlrCombo::visibilityChanged() {
-	// TRACE: Check UI state at the moment visibility is triggered
 	if (ctrlrCombo) {
 		_DBG("GUI_TRACE [" + owner.getName() + "] visibilityChanged ENTER | isVisible: " + String((int)isVisible()) +
 			 " | UI Index: " + String(ctrlrCombo->getSelectedItemIndex()) + " | UI Text: '" + ctrlrCombo->getText() +
@@ -231,38 +211,28 @@ void CtrlrCombo::visibilityChanged() {
 
 void CtrlrCombo::focusLost(FocusChangeType cause) {
 	if (ctrlrCombo) {
-		// This ensures the menu disappears if you click on another modulator or the background
 		ctrlrCombo->hidePopup();
 
 		if (getProperty(Ids::uiComboSearch)) {
 			isSearching = false;
-			// Optional: reset to non-editable so the next click starts fresh
 			ctrlrCombo->setEditableText(false);
 		}
 	}
 }
 
 void CtrlrCombo::lookAndFeelChanged() {
-	// TRACE: Capture state before any JUCE reconstruction happens
 	if (ctrlrCombo) {
 		_DBG("GUI_TRACE [" + owner.getName() + "] lookAndFeelChanged ENTER | Current Index: " +
 			 String(ctrlrCombo->getSelectedItemIndex()) + " | Text: '" + ctrlrCombo->getText() + "'");
 	}
 
-	// Call the base class first
 	CtrlrComponent::lookAndFeelChanged();
 
 	if (getProperty(Ids::uiComboSearch)) {
 		_DBG("LIFECYCLE: LookAndFeel changed. This usually wipes the Label state. Re-attaching...");
-
-		// We use a slight delay because JUCE's lookAndFeelChanged
-		// often happens before the internal Label is re-configured.
-		// Use the safe class timer instead of callAfterDelay
 		startTimer(100);
 	}
 
-	// TRACE: Capture state after the base class call.
-	// Added Text trace here to see if the GUI wiped while the Index stayed.
 	if (ctrlrCombo) {
 		_DBG("GUI_TRACE [" + owner.getName() + "] lookAndFeelChanged EXIT | Current Index: " +
 			 String(ctrlrCombo->getSelectedItemIndex()) + " | Text: '" + ctrlrCombo->getText() + "'");
@@ -270,40 +240,29 @@ void CtrlrCombo::lookAndFeelChanged() {
 }
 
 void CtrlrCombo::parentHierarchyChanged() {
-	// TRACE: Capture the state at the exact moment of attachment
 	if (ctrlrCombo) {
 		_DBG("GUI_TRACE [" + owner.getName() + "] parentHierarchyChanged ENTER | UI Index: " +
 			 String(ctrlrCombo->getSelectedItemIndex()) + " | UI Text: '" + ctrlrCombo->getText() + "'");
 	}
-    // Only refresh if we are actively in the middle of a search session 
-    // when attached/re-parented. Otherwise, leave the saved combo selection alone!
-    if (getParentComponent() != nullptr && isSearching)
-    {
-        _DBG("LIFECYCLE: Component re-attached during active search. Refreshing search results.");
-        triggerAsyncUpdate();
-    }
-	// if (getParentComponent() != nullptr) {
-	// 	_DBG("LIFECYCLE: Component attached to parent. Refreshing Search state.");
-	// 	triggerAsyncUpdate();
-	// }
 
-	// TRACE: See if the act of attaching triggered a JUCE internal reset
+	if (getParentComponent() != nullptr && isSearching) {
+		_DBG("LIFECYCLE: Component re-attached during active search. Refreshing search results.");
+		triggerAsyncUpdate();
+	}
+
 	if (ctrlrCombo) {
 		_DBG("GUI_TRACE [" + owner.getName() + "] parentHierarchyChanged EXIT | UI Index: " +
 			 String(ctrlrCombo->getSelectedItemIndex()) + " | UI Text: '" + ctrlrCombo->getText() + "'");
 	}
-	if (isVisible() && getWidth() > 0 &&
-		getHeight() > 0) // Added v5.6.36. Prevents ComboBox internal label from blanking out when embedded inside
-						 // uiTabs with fuzzy search disabled.
-	{
-		startTimer(50); // Quick check to re-sync display text
+
+	if (isVisible() && getWidth() > 0 && getHeight() > 0) {
+		startTimer(50);
 	}
 }
 
 void CtrlrCombo::timerCallback() {
 	stopTimer();
 
-	// TRACE: Check state when the timer wakes up
 	if (ctrlrCombo) {
 		_DBG("GUI_TRACE [" + owner.getName() + "] timerCallback FIRED | UI Index: " +
 			 String(ctrlrCombo->getSelectedItemIndex()) + " | UI Text: '" + ctrlrCombo->getText() + "'");
@@ -315,7 +274,6 @@ void CtrlrCombo::timerCallback() {
 		_DBG("LIFECYCLE: Cleaning up Search for Edit Mode...");
 		if (ctrlrCombo != nullptr) {
 			ctrlrCombo->setEditableText(false);
-			// Clear callbacks to prevent the 0x1000000000 crash
 			for (int i = 0; i < ctrlrCombo->getNumChildComponents(); ++i) {
 				if (auto *lb = dynamic_cast<juce::Label *>(ctrlrCombo->getChildComponent(i))) {
 					lb->onEditorShow = nullptr;
@@ -330,44 +288,30 @@ void CtrlrCombo::timerCallback() {
 		if (ctrlrCombo != nullptr && (bool)getProperty(Ids::uiComboSearch)) {
 			_DBG("LIFECYCLE: Restoring Fuzzy Search for User Mode...");
 
-			// Re-enable editability so findAndAttach sees the Label
 			ctrlrCombo->setEditableText(true);
-
 			findAndAttach(ctrlrCombo.get());
 
-			// Ensure the list is fresh
 			if (valueMap != nullptr) {
 				_DBG("GUI_TRACE [" + owner.getName() + "] timerCallback | Refilling Combo list");
 				valueMap->fillCombo(*ctrlrCombo, true);
 			}
 
-			// UPDATE: Capture both Index AND Text here.
-			// If Index is valid but Text is empty, the UI "wipe" happened right here.
 			_DBG("GUI_TRACE [" + owner.getName() + "] timerCallback | Post-Refill Index: " +
 				 String(ctrlrCombo->getSelectedItemIndex()) + " | Text: '" + ctrlrCombo->getText() + "'");
 		}
-		// Only refresh if we are actively in the middle of a search session
-		// when attached/re-parented. Otherwise, leave the saved combo selection alone!
-		if (getParentComponent() != nullptr) // && isSearching) // Updated v5.6.36. Thanks to @dnaldoog
-		{
+
+		if (getParentComponent() != nullptr) {
 			_DBG("LIFECYCLE: Component re-attached during active search. Refreshing search results.");
 			triggerAsyncUpdate();
 		}
 	}
 
-	// --- FINAL SYNC ---
-	// This overcomes the late property restoration (where uiComboSelectedId was set to -1).
-	// It forces the UI to match the actual processor value after all layout/styles are settled.
 	if (ctrlrCombo != nullptr && !isInEditMode) {
 		const double modulatorValue = owner.getProcessor().getValue();
-
 		_DBG("GUI_SYNC [" + owner.getName() + "] Re-applying processor value: " + String(modulatorValue));
-
-		// Use dontSendNotification to prevent feedback loops back to the processor
 		ctrlrCombo->setSelectedId(modulatorValue + 1, dontSendNotification);
 	}
 
-	// FINAL TRACE
 	if (ctrlrCombo) {
 		_DBG("GUI_TRACE [" + owner.getName() + "] timerCallback EXIT | Final UI Index: " +
 			 String(ctrlrCombo->getSelectedItemIndex()) + " | Final UI Text: '" + ctrlrCombo->getText() + "'");
@@ -382,27 +326,32 @@ void CtrlrCombo::comboBoxChanged(ComboBox *comboBoxThatHasChanged) {
 		if (id > 0) {
 			isSearching = false;
 			setComponentValue(id - 1, true);
-			ctrlrCombo->setEditableText(false); // Reset for next interaction
+			ctrlrCombo->setEditableText(false);
 		}
 	}
 }
 
-double CtrlrCombo::getComponentMaxValue() { return (valueMap->getNonMappedMax()); }
+double CtrlrCombo::getComponentMaxValue() {
+	return (valueMap->getNonMappedMax());
+}
 
-double CtrlrCombo::getComponentValue() { return (ctrlrCombo->getSelectedId() - 1); }
+double CtrlrCombo::getComponentValue() {
+	return (ctrlrCombo->getSelectedId() - 1);
+}
 
-int CtrlrCombo::getComponentMidiValue() { return (valueMap->getMappedValue(ctrlrCombo->getSelectedId() - 1)); }
+int CtrlrCombo::getComponentMidiValue() {
+	return (valueMap->getMappedValue(ctrlrCombo->getSelectedId() - 1));
+}
 
-const String CtrlrCombo::getComponentText() { return (ctrlrCombo->getText()); }
+const String CtrlrCombo::getComponentText() {
+	return (ctrlrCombo->getText());
+}
 
 void CtrlrCombo::setComponentValue(const double newValue, const bool sendChangeMessage) {
-	// TRACE START
 	_DBG("GUI_TRACE [" + owner.getName() + "] setComponentValue START | newValue: " + String(newValue));
 
 	if (ctrlrCombo) {
-		// ADD THIS: Check if the list is actually populated yet
 		_DBG("   -> Current Item Count in List: " + String(ctrlrCombo->getNumItems()));
-
 		ctrlrCombo->setSelectedId(newValue + 1, sendChangeMessage ? sendNotificationSync : dontSendNotification);
 
 		_DBG("GUI_TRACE [" + owner.getName() + "] Post-Selection | UI Index: " +
@@ -430,10 +379,8 @@ void CtrlrCombo::comboContentChanged() {
 }
 
 void CtrlrCombo::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
-	// Log EVERY property change during load
 	_DBG("PROP CHANGE: " + property.toString() + " = " + getProperty(property).toString());
 
-	// ADD THIS: Detect if a property change is forcing a blank state
 	if (property == Ids::uiComboSelectedIndex || property == Ids::uiComboSelectedId) {
 		_DBG("GUI_TRACE [" + owner.getName() + "] ValueTree Property Change: " + property.toString() +
 			 " is now: " + treeWhosePropertyHasChanged.getProperty(property).toString());
@@ -441,87 +388,66 @@ void CtrlrCombo::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 
 	if (property == Ids::uiComboContent) {
 		comboContentChanged();
-	}
-	// PATH 1: User toggles search ON/OFF
-	if (property == Ids::uiComboSearch) {
+	} else if (property == Ids::uiComboSearch) {
 		_DBG("PROP: uiComboSearch changed - starting safety timer");
 		startTimer(250);
-	}
-	// PATH 2: Background/Font color changes
-	else if (property.toString().startsWith("uiCombo") && property != Ids::uiComboSearch) {
-		if (ctrlrCombo && (bool)getProperty(Ids::uiComboSearch)) {
-			_DBG("STYLE_CHANGE: " + property.toString() + " - Resetting engine.");
-
-			// We set it false here immediately to clear the old state
-			ctrlrCombo->setEditableText(false);
-
-			// Then let the timer handle the "Turn back ON"
-			startTimer(250);
-		} else {
-			updateInternalComponentStyles();
-		}
 	} else if (property == Ids::uiButtonLookAndFeel || property == Ids::uiSliderLookAndFeel) {
-		applyCentralLookAndFeel(ctrlrCombo.get(),  "V3");
-		//applyCentralLookAndFeel(ctrlrCombo.get(), getProperty(property));
-		repaint();
+		String comboStyle = getProperty(Ids::uiComboStyle).toString();
+		if (comboStyle.isEmpty() || comboStyle == "V3") {
+			ctrlrCombo->setLookAndFeel(&lf);
+		} else {
+			applyCentralLookAndFeel(ctrlrCombo.get(), "V4");
+		}
+		ctrlrCombo->repaint();
 	} else if (property == Ids::uiComboBgColour) {
 		ctrlrCombo->setColour(ComboBox::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
-
 		ctrlrCombo->setColour(TextEditor::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
 		ctrlrCombo->setColour(TextEditor::highlightColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
-
 		ctrlrCombo->setColour(Label::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
 		ctrlrCombo->setColour(Label::backgroundWhenEditingColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
 
 		updateInternalComponentStyles();
-
-		setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+		ctrlrCombo->repaint();
 	} else if (property == Ids::uiComboButtonColour) {
 		ctrlrCombo->setColour(ComboBox::buttonColourId, VAR2COLOUR(getProperty(Ids::uiComboButtonColour)));
-		setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+		ctrlrCombo->repaint();
 	} else if (property == Ids::uiComboTextColour) {
 		ctrlrCombo->setColour(ComboBox::textColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
-
 		ctrlrCombo->setColour(TextEditor::textColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
 		ctrlrCombo->setColour(TextEditor::highlightedTextColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
-
 		ctrlrCombo->setColour(Label::textColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
 		ctrlrCombo->setColour(Label::textWhenEditingColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
 
 		updateInternalComponentStyles();
-
-		setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+		ctrlrCombo->repaint();
 	} else if (property == Ids::uiComboOutlineColour) {
 		ctrlrCombo->setColour(ComboBox::outlineColourId, VAR2COLOUR(getProperty(Ids::uiComboOutlineColour)));
-		setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+		ctrlrCombo->repaint();
 	} else if (property == Ids::uiComboArrowColour) {
 		ctrlrCombo->setColour(ComboBox::arrowColourId, VAR2COLOUR(getProperty(Ids::uiComboArrowColour)));
-		setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+		ctrlrCombo->repaint();
 	} else if (property == Ids::uiComboTextJustification) {
 		ctrlrCombo->setJustificationType(justificationFromProperty(getProperty(property)));
-	}
-	// SHOULD WE PUT ALL COMPONENTS COLOUR PROPERTIES IN THE FOLLOWING CONDITION ??? >>> uiButtonLookAndFeelIsCustom
-	// true
-	else if (property == Ids::uiComboFont || property == Ids::uiComboTextColour // Added v5.6.35
-			 || property == Ids::uiComboBgColour								// Added v5.6.35
-			 || property == Ids::uiComboOutlineColour							// Added v5.6.35
-			 || property == Ids::uiComboMenuBackgroundColour || property == Ids::uiComboMenuFont ||
-			 property == Ids::uiComboMenuFontColour || property == Ids::uiComboMenuHighlightColour ||
-			 property == Ids::uiComboMenuFontHighlightedColour || property == Ids::uiComboButtonWidthOverride ||
-			 property == Ids::uiComboButtonWidth || property == Ids::uiComboButtonColour // Added v5.6.35
-			 || property == Ids::uiComboArrowColour			  // Added v5.6.35. Not sure if needed?
-			 || property == Ids::uiComboButtonGradientColour1 // Added v5.6.35. Not sure if needed?
-			 || property == Ids::uiComboButtonGradientColour2 // Added v5.6.35. Not sure if needed?
-	) {
-		ctrlrCombo->setLookAndFeel(nullptr);
+		ctrlrCombo->repaint();
+	} else if (property == Ids::uiComboButtonWidthOverride || property == Ids::uiComboButtonWidth) {
+		// Trigger positionComboBoxText in CtrlrComboLF without destroying LookAndFeel
+		ctrlrCombo->resized();
+		ctrlrCombo->repaint();
+	} else if (property == Ids::uiComboFont || property == Ids::uiComboMenuBackgroundColour ||
+			   property == Ids::uiComboMenuFont || property == Ids::uiComboMenuFontColour ||
+			   property == Ids::uiComboMenuHighlightColour || property == Ids::uiComboMenuFontHighlightedColour ||
+			   property == Ids::uiComboButtonGradientColour1 || property == Ids::uiComboButtonGradientColour2) {
 
-		// 2. Query what look-and-feel style string the panel currently demands
-		String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
-		//applyCentralLookAndFeel(ctrlrCombo.get(), getProperty(property));
-		applyCentralLookAndFeel(ctrlrCombo.get(), "V3");
-		repaint();
-		setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
-		ctrlrCombo->lookAndFeelChanged();
+		// DO NOT reset setLookAndFeel(nullptr) here! Keep embedded &lf active.
+		if (property == Ids::uiComboFont) {
+			if (auto *label = dynamic_cast<juce::Label *>(ctrlrCombo->findChildWithID(juce::Identifier("label")))) {
+				Font f = owner.getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString(
+					getProperty(Ids::uiComboFont));
+				label->setFont(f);
+			}
+		}
+		updateInternalComponentStyles();
+		ctrlrCombo->repaint();
 		repaint();
 	} else if (property == Ids::uiComboDynamicContent) {
 		fillContent(getProperty(property));
@@ -533,85 +459,86 @@ void CtrlrCombo::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 		if ((int)getProperty(property) != -1) {
 			ctrlrCombo->setSelectedItemIndex(getProperty(property), sendNotificationSync);
 		}
+	} else if (property.toString().startsWith("uiCombo")) {
+		if (ctrlrCombo && (bool)getProperty(Ids::uiComboSearch)) {
+			_DBG("STYLE_CHANGE: " + property.toString() + " - Resetting engine.");
+			ctrlrCombo->setEditableText(false);
+			startTimer(250);
+		} else {
+			updateInternalComponentStyles();
+			ctrlrCombo->repaint();
+		}
 	} else {
 		CtrlrComponent::valueTreePropertyChanged(treeWhosePropertyHasChanged, property);
 	}
 
-	if (restoreStateInProgress == false) {
+	if (!restoreStateInProgress) {
 		resized();
 	}
 }
 
 void CtrlrCombo::handleAsyncUpdate() {
-    if (ctrlrCombo == nullptr || valueMap == nullptr)
-        return;
+	if (ctrlrCombo == nullptr || valueMap == nullptr)
+		return;
 
-    // 1. Capture Caret Position AND Current Text before clearing!
-    int caretPos = 0;
-    String preservedText = ctrlrCombo->getText(); // <-- JUCE 8 FIX: Preserve the text!
+	int caretPos = 0;
+	String preservedText = ctrlrCombo->getText();
 
-    for (int i = 0; i < ctrlrCombo->getNumChildComponents(); ++i) {
-        if (auto *lb = dynamic_cast<juce::Label *>(ctrlrCombo->getChildComponent(i))) {
-            if (auto *ed = lb->getCurrentTextEditor()) {
-                caretPos = ed->getCaretPosition();
-                break;
-            }
-        }
-    }
+	for (int i = 0; i < ctrlrCombo->getNumChildComponents(); ++i) {
+		if (auto *lb = dynamic_cast<juce::Label *>(ctrlrCombo->getChildComponent(i))) {
+			if (auto *ed = lb->getCurrentTextEditor()) {
+				caretPos = ed->getCaretPosition();
+				break;
+			}
+		}
+	}
 
-    isUpdating = true;
+	isUpdating = true;
 
-    // 2. Filter Logic
-    StringArray matches;
-    Array<int> ids;
-    for (int i = 0; i < valueMap->getNumValues(); ++i) {
-        String item = valueMap->getTextForIndex(i);
-        if (item.containsIgnoreCase(lastSearchText)) {
-            matches.add(item);
-            ids.add(i + 1);
-        }
-    }
+	StringArray matches;
+	Array<int> ids;
+	for (int i = 0; i < valueMap->getNumValues(); ++i) {
+		String item = valueMap->getTextForIndex(i);
+		if (item.containsIgnoreCase(lastSearchText)) {
+			matches.add(item);
+			ids.add(i + 1);
+		}
+	}
 
-    // 3. Update UI
-    ctrlrCombo->clear(juce::dontSendNotification); // JUCE 8 wipes text here!
-    
-    for (int i = 0; i < matches.size(); ++i)
-        ctrlrCombo->addItem(matches[i], ids[i]);
+	ctrlrCombo->clear(juce::dontSendNotification);
 
-    // JUCE 8 FIX: Restore the preserved text back into the ComboBox!
-    if (preservedText.isNotEmpty())
-        ctrlrCombo->setText(preservedText, juce::dontSendNotification);
+	for (int i = 0; i < matches.size(); ++i)
+		ctrlrCombo->addItem(matches[i], ids[i]);
 
-    if (isSearching) {
-        // ALWAYS dismiss and show to refresh the list correctly
-        juce::PopupMenu::dismissAllActiveMenus();
+	if (preservedText.isNotEmpty())
+		ctrlrCombo->setText(preservedText, juce::dontSendNotification);
 
-        juce::MessageManager::callAsync([this, caretPos, preservedText]() {
-            if (ctrlrCombo == nullptr)
-                return;
+	if (isSearching) {
+		juce::PopupMenu::dismissAllActiveMenus();
 
-            ctrlrCombo->showPopup();
+		juce::MessageManager::callAsync([this, caretPos, preservedText]() {
+			if (ctrlrCombo == nullptr)
+				return;
 
-            // JUCE 8 FIX: Make sure the combo box label enters editing mode if it closed
-            for (int i = 0; i < ctrlrCombo->getNumChildComponents(); ++i) {
-                if (auto *lb = dynamic_cast<juce::Label *>(ctrlrCombo->getChildComponent(i))) {
-                    
-                    // Force the label to show editor if it lost it during showPopup
-                    if (lb->getCurrentTextEditor() == nullptr && lb->isEditable()) {
-                        lb->showEditor();
-                    }
+			ctrlrCombo->showPopup();
 
-                    if (auto *currentEd = lb->getCurrentTextEditor()) {
-                        currentEd->grabKeyboardFocus();
-                        currentEd->setHighlightedRegion(juce::Range<int>(0, 0)); // Fixes "Select All" bug
-                        currentEd->setCaretPosition(caretPos);
-                    }
-                }
-            }
-        });
-    }
+			for (int i = 0; i < ctrlrCombo->getNumChildComponents(); ++i) {
+				if (auto *lb = dynamic_cast<juce::Label *>(ctrlrCombo->getChildComponent(i))) {
+					if (lb->getCurrentTextEditor() == nullptr && lb->isEditable()) {
+						lb->showEditor();
+					}
 
-    isUpdating = false;
+					if (auto *currentEd = lb->getCurrentTextEditor()) {
+						currentEd->grabKeyboardFocus();
+						currentEd->setHighlightedRegion(juce::Range<int>(0, 0));
+						currentEd->setCaretPosition(caretPos);
+					}
+				}
+			}
+		});
+	}
+
+	isUpdating = false;
 }
 
 void CtrlrCombo::findAndAttach(juce::ComboBox *combo) {
@@ -634,12 +561,9 @@ void CtrlrCombo::findAndAttach(juce::ComboBox *combo) {
 					return;
 
 				if (auto *ed = safeLabel->getCurrentTextEditor()) {
-					// This line is the most important for smooth backspacing
 					ed->setSelectAllWhenFocused(false);
-
 					ed->moveCaretToEnd();
 
-					// 3. FORCE COLORS (From previous step)
 					_DBG("UI EVENT: Applying colors to active TextEditor");
 
 					ed->setColour(juce::TextEditor::backgroundColourId,
@@ -660,7 +584,9 @@ void CtrlrCombo::findAndAttach(juce::ComboBox *combo) {
 	}
 }
 
-void CtrlrCombo::setComponentText(const String &componentText) { ctrlrCombo->setText(componentText); }
+void CtrlrCombo::setComponentText(const String &componentText) {
+	ctrlrCombo->setText(componentText);
+}
 
 void CtrlrCombo::fillContent(const int contentType) {
 	Array<File> files;
@@ -694,11 +620,8 @@ void CtrlrCombo::fillContent(const int contentType) {
 void CtrlrCombo::panelEditModeChanged(const bool isInEditMode) {
 	_DBG("Combo Edit Mode: " + String(isInEditMode ? "ON" : "OFF"));
 
-	// We always use the timer to decouple from the synchronous mode change.
-	// 50ms is enough for 'Entering', 200ms is safer for 'Exiting' (rebuilding UI).
 	startTimer(isInEditMode ? 50 : 200);
 
-	// Standard Ctrlr enablement logic
 	if ((bool)owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelDisabledOnEdit)) {
 		if (ctrlrCombo != nullptr)
 			ctrlrCombo->setEnabled(!isInEditMode);
@@ -707,9 +630,13 @@ void CtrlrCombo::panelEditModeChanged(const bool isInEditMode) {
 	resized();
 }
 
-int CtrlrCombo::getSelectedId() { return (ctrlrCombo->getSelectedId()); }
+int CtrlrCombo::getSelectedId() {
+	return (ctrlrCombo->getSelectedId());
+}
 
-int CtrlrCombo::getSelectedItemIndex() { return (ctrlrCombo->getSelectedItemIndex()); }
+int CtrlrCombo::getSelectedItemIndex() {
+	return (ctrlrCombo->getSelectedItemIndex());
+}
 
 void CtrlrCombo::setSelectedId(const int id, const bool dontNotify) {
 	ctrlrCombo->setSelectedId(id, dontNotify ? dontSendNotification : sendNotificationSync);
@@ -719,7 +646,9 @@ void CtrlrCombo::setSelectedItemIndex(const int index, const bool dontNotify) {
 	ctrlrCombo->setSelectedItemIndex(index, dontNotify ? dontSendNotification : sendNotificationSync);
 }
 
-const String CtrlrCombo::getText() { return (ctrlrCombo->getText()); }
+const String CtrlrCombo::getText() {
+	return (ctrlrCombo->getText());
+}
 
 void CtrlrCombo::setText(const String &text, const bool dontNotify) {
 	return (ctrlrCombo->setText(text, dontNotify ? dontSendNotification : sendNotificationSync));
@@ -727,15 +656,11 @@ void CtrlrCombo::setText(const String &text, const bool dontNotify) {
 
 void CtrlrCombo::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel) {
 	if (customLookAndFeel == nullptr) {
-		// Clear previous assignment
 		ctrlrCombo->setLookAndFeel(nullptr);
 
-		// Find the current active style from the editor panel
 		String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
-
-		// FIXED: Pass 'panelLnF' as the second argument instead of 'getProperty(property)'
-		//applyCentralLookAndFeel(ctrlrCombo.get(), panelLnF);
-		applyCentralLookAndFeel(ctrlrCombo.get(),  "V3");
+		// applyCentralLookAndFeel(ctrlrCombo.get(), panelLnF.isNotEmpty() ? panelLnF : "V3");
+		applyCentralLookAndFeel(ctrlrCombo.get(), "V3");
 
 		repaint();
 	} else {
@@ -746,14 +671,9 @@ void CtrlrCombo::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel) {
 std::unique_ptr<juce::LookAndFeel>
 CtrlrCombo::getLookAndFeelFromComponentProperty(const String &lookAndFeelComponentProperty) {
 	if (lookAndFeelComponentProperty == "Default") {
-		// This case still means "use the default LookAndFeel (which might be the global one)"
-		// so returning nullptr is appropriate if that's the desired behavior.
 		return nullptr;
 	}
 
-	// Call your new generic factory function
-	// We pass 'false' for the second argument here, as 'Default' is handled separately
-	// and an unknown string should likely result in nullptr to fall back to the global L&F.
 	return gui::createLookAndFeelFromDescription(lookAndFeelComponentProperty, false);
 }
 
@@ -761,10 +681,7 @@ void CtrlrCombo::resetLookAndFeelOverrides() {
 	_DBG("RESET_LF: Start - restoreStateInProgress = " + String(restoreStateInProgress ? "TRUE" : "FALSE"));
 
 	if (restoreStateInProgress == false) {
-		// 1. Log the current LookAndFeel state
 		_DBG("RESET_LF: Overriding UI properties from LookAndFeel defaults");
-
-		// Let's see if findColour is actually returning what we expect
 		_DBG("RESET_LF: Current Text Colour: " + findColour(ComboBox::textColourId).toDisplayString(true));
 
 		setProperty(Ids::componentLabelColour, (String)findColour(Label::textColourId).toString());
@@ -773,7 +690,6 @@ void CtrlrCombo::resetLookAndFeelOverrides() {
 		setProperty(Ids::uiComboOutlineColour, (String)findColour(ComboBox::outlineColourId).darker(0.5f).toString());
 
 		setProperty(Ids::uiComboTextColour, (String)findColour(ComboBox::textColourId).toString());
-
 		setProperty(Ids::uiComboMenuFontColour, (String)findColour(ComboBox::textColourId).toString());
 
 		setProperty(Ids::uiComboButtonColour, (String)findColour(ComboBox::buttonColourId).toString());
@@ -790,22 +706,18 @@ void CtrlrCombo::resetLookAndFeelOverrides() {
 					(String)findColour(TextButton::buttonColourId).darker(0.2f).toString());
 
 		setProperty(Ids::uiComboArrowColour, (String)findColour(ComboBox::arrowColourId).toString());
-
-		// setProperty(Ids::uiComboLookAndFeelIsCustom, was this right? I added a new identifier for this property to
-		// track if the LookAndFeel is custom or default.
-		setProperty(Ids::uiComboLookAndFeelIsCustom,
-					false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
+		setProperty(Ids::uiComboLookAndFeelIsCustom, false);
 
 		_DBG("RESET_LF: End");
 
-		updatePropertiesPanel(); // Refreshes property pane
+		updatePropertiesPanel();
 	}
 }
 
 void CtrlrCombo::updatePropertiesPanel() {
 	CtrlrPanelProperties *props = owner.getCtrlrManagerOwner().getActivePanel()->getEditor(false)->getPropertiesPanel();
 	if (props) {
-		props->refreshAll(); // Needs extra code to prevent scrolling back to top on refresh
+		props->refreshAll();
 	}
 }
 
@@ -817,24 +729,18 @@ void CtrlrCombo::updateInternalComponentStyles() {
 	const Colour bg = VAR2COLOUR(getProperty(Ids::uiComboBgColour));
 	const Colour txt = VAR2COLOUR(getProperty(Ids::uiComboTextColour));
 
-	// 1. Force the ComboBox itself to update its internal color IDs
 	ctrlrCombo->setColour(ComboBox::backgroundColourId, bg);
 	ctrlrCombo->setColour(ComboBox::textColourId, txt);
-
-	// For good measure, sync the button color too if you use it
 	ctrlrCombo->setColour(ComboBox::buttonColourId, VAR2COLOUR(getProperty(Ids::uiComboButtonColour)));
 
-	// 2. Iterate through children to force the change on existing sub-components
 	for (int i = 0; i < ctrlrCombo->getNumChildComponents(); ++i) {
 		auto *child = ctrlrCombo->getChildComponent(i);
 
-		// If the Label exists (idle state), force its color
 		if (auto *lb = dynamic_cast<juce::Label *>(child)) {
 			lb->setColour(Label::backgroundColourId, Colours::transparentBlack);
 			lb->setColour(Label::textColourId, txt);
 		}
 
-		// If the TextEditor exists (active search state), force its colors
 		if (auto *ed = dynamic_cast<juce::TextEditor *>(child)) {
 			ed->setColour(TextEditor::backgroundColourId, bg);
 			ed->setColour(TextEditor::textColourId, txt);
@@ -853,11 +759,10 @@ void CtrlrCombo::updateFuzzySearch(const String &searchText) {
 	if (isUpdating)
 		return;
 
-	isUpdating = true; // LOCK
+	isUpdating = true;
 	lastSearchText = searchText;
 	isSearching = searchText.isNotEmpty();
 
-	// 1. Capture Editor and Caret for focus recovery
 	juce::TextEditor *ed = nullptr;
 	for (int i = 0; i < ctrlrCombo->getNumChildComponents(); ++i) {
 		if (auto *lb = dynamic_cast<juce::Label *>(ctrlrCombo->getChildComponent(i))) {
@@ -868,7 +773,6 @@ void CtrlrCombo::updateFuzzySearch(const String &searchText) {
 	}
 	const int caretPos = (ed != nullptr) ? ed->getCaretPosition() : 0;
 
-	// 2. Clear and Refill based on search
 	ctrlrCombo->clear(juce::dontSendNotification);
 
 	if (isSearching) {
@@ -885,7 +789,6 @@ void CtrlrCombo::updateFuzzySearch(const String &searchText) {
 		if (matchCount == 0)
 			ctrlrCombo->addItem("(no matches)", -1);
 
-		// ALWAYS dismiss first so the popup can "refresh"
 		juce::PopupMenu::dismissAllActiveMenus();
 
 		juce::MessageManager::callAsync([this, ed, caretPos]() {
@@ -898,11 +801,9 @@ void CtrlrCombo::updateFuzzySearch(const String &searchText) {
 			}
 		});
 	} else {
-		// EMPTY SEARCH: Restore full list
 		_DBG("FUZZY: Search cleared, showing full list");
 		valueMap->fillCombo(*ctrlrCombo, true);
 
-		// If they just backspaced the last character, keep the list open
 		if (!ctrlrCombo->isPopupActive())
 			ctrlrCombo->showPopup();
 
@@ -912,7 +813,7 @@ void CtrlrCombo::updateFuzzySearch(const String &searchText) {
 		}
 	}
 
-	isUpdating = false; // UNLOCK
+	isUpdating = false;
 	_DBG("FUZZY_STEP 7: Logic Finished");
 }
 
@@ -934,7 +835,6 @@ void CtrlrCombo::CtrlrComboLF::drawPopupMenuBackground(Graphics &g, int width, i
 	}
 }
 
-// Updated v5.6.35. Custom LookAndFeel Class and methods moved at the bottom for clarity
 void CtrlrCombo::CtrlrComboLF::drawPopupMenuItem(Graphics &g, const Rectangle<int> &area, bool isSeparator,
 												 bool isActive, bool isHighlighted, bool isTicked, bool hasSubMenu,
 												 const String &text, const String &shortcutKeyText,
@@ -947,10 +847,10 @@ void CtrlrCombo::CtrlrComboLF::drawPopupMenuItem(Graphics &g, const Rectangle<in
 	if (isSeparator) {
 		const float separatorIndent = 5.5f;
 
-		g.setColour(findColour(ComboBox::textColourId).withAlpha(0.3f)); // Colour (0x33000000));
+		g.setColour(findColour(ComboBox::textColourId).withAlpha(0.3f));
 		g.drawLine(separatorIndent, halfH, width - separatorIndent, halfH);
 
-		g.setColour(findColour(ComboBox::textColourId).withAlpha(0.6f)); // Colour (0x66ffffff));
+		g.setColour(findColour(ComboBox::textColourId).withAlpha(0.6f));
 		g.drawLine(separatorIndent, halfH + 1.0f, width - separatorIndent, halfH + 1.0f);
 	} else {
 		Colour textColour = VAR2COLOUR(owner.getProperty(Ids::uiComboMenuFontColour));
@@ -1021,6 +921,7 @@ void CtrlrCombo::CtrlrComboLF::drawPopupMenuItem(Graphics &g, const Rectangle<in
 
 void CtrlrCombo::CtrlrComboLF::drawComboBox(Graphics &g, int width, int height, bool isButtonDown, int buttonX,
 											int buttonY, int buttonW, int buttonH, ComboBox &box) {
+	DBG("!!!! CtrlrComboLF::drawComboBox");
 	int bw = buttonW;
 	int bx = buttonX;
 	const float outlineThickness = isButtonDown ? 1.2f : 0.5f;
@@ -1030,26 +931,31 @@ void CtrlrCombo::CtrlrComboLF::drawComboBox(Graphics &g, int width, int height, 
 	g.drawRect(0, 0, width, height);
 
 	if ((bool)owner.getProperty(Ids::uiComboButtonWidthOverride) == true) {
-		bw = owner.getProperty(Ids::uiComboButtonWidth);
+		// Clamp to at least 1px so thickness calculations never yield negative width
+		bw = jmax(1, (int)owner.getProperty(Ids::uiComboButtonWidth));
 		bx = width - bw;
 	}
 
-	const Colour baseColour(
-		createBaseColour(box.findColour(ComboBox::buttonColourId), box.hasKeyboardFocus(true), false, isButtonDown)
-			.withMultipliedAlpha(1.0f));
+	// Safety guard: Don't attempt to draw glass lozenge/gradients if effective width is smaller than borders
+	const float fillWidth = bw - outlineThickness * 2.0f;
+	const float fillHeight = buttonH - outlineThickness * 2.0f;
 
-	if ((bool)owner.getProperty(Ids::uiComboButtonGradient) == true) {
-		g.setGradientFill(ColourGradient(
-			VAR2COLOUR(owner.getProperty(Ids::uiComboButtonGradientColour1)), buttonX + outlineThickness,
-			buttonY + outlineThickness, VAR2COLOUR(owner.getProperty(Ids::uiComboButtonGradientColour2)),
-			buttonX + outlineThickness, (buttonY + outlineThickness) + (buttonH - outlineThickness * 2.0f), false));
+	if (fillWidth > 0.0f && fillHeight > 0.0f) {
+		const Colour baseColour(
+			createBaseColour(box.findColour(ComboBox::buttonColourId), box.hasKeyboardFocus(true), false, isButtonDown)
+				.withMultipliedAlpha(1.0f));
 
-		g.fillRect(buttonX + outlineThickness, buttonY + outlineThickness, buttonW - outlineThickness * 2.0f,
-				   buttonH - outlineThickness * 2.0f);
-	} else {
-		drawGlassLozenge(g, bx + outlineThickness, buttonY + outlineThickness, bw - outlineThickness * 2.0f,
-						 buttonH - outlineThickness * 2.0f, baseColour, outlineThickness, -1.0f, true, true, true,
-						 true);
+		if ((bool)owner.getProperty(Ids::uiComboButtonGradient) == true) {
+			g.setGradientFill(ColourGradient(
+				VAR2COLOUR(owner.getProperty(Ids::uiComboButtonGradientColour1)), buttonX + outlineThickness,
+				buttonY + outlineThickness, VAR2COLOUR(owner.getProperty(Ids::uiComboButtonGradientColour2)),
+				buttonX + outlineThickness, (buttonY + outlineThickness) + fillHeight, false));
+
+			g.fillRect(buttonX + outlineThickness, buttonY + outlineThickness, fillWidth, fillHeight);
+		} else {
+			drawGlassLozenge(g, bx + outlineThickness, buttonY + outlineThickness, fillWidth, fillHeight, baseColour,
+							 outlineThickness, -1.0f, true, true, true, true);
+		}
 	}
 
 	const float arrowX = 0.3f;
@@ -1092,10 +998,8 @@ void CtrlrCombo::CtrlrComboLF::positionComboBoxText(ComboBox &box, Label &label)
 }
 
 void CtrlrCombo::CtrlrComboLF::fillLabelTextEditorBackground(Graphics &g, TextEditor &editor) {
-	// Force the background to match your ComboBox background property
 	g.fillAll(VAR2COLOUR(owner.getProperty(Ids::uiComboBgColour)));
 
-	// Draw an outline if you want one
 	g.setColour(VAR2COLOUR(owner.getProperty(Ids::uiComboOutlineColour)));
 	g.drawRect(0, 0, editor.getWidth(), editor.getHeight());
 }
@@ -1110,8 +1014,7 @@ Font CtrlrCombo::CtrlrComboLF::getPopupMenuFont() {
 		owner.getProperty(Ids::uiComboMenuFont)));
 }
 
-Font CtrlrCombo::CtrlrComboLF::getLabelFont(Label &label) // Added v5.6.35. Font styling sans Colour
-{
+Font CtrlrCombo::CtrlrComboLF::getLabelFont(Label &label) {
 	return owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString(
 		owner.getProperty(Ids::uiComboFont));
 }

@@ -4,6 +4,10 @@
 #include "CtrlrComponents/CtrlrComponent.h"
 #include <rapidfuzz/fuzz.hpp> // Added v5.6.35. Support for rapidfuzz
 
+#ifndef VAR2FONT
+#define VAR2FONT(varFontString) (Font(varFontString.toString()))
+#endif
+
 class CtrlrValueMap;
 
 class CtrlrCombo : public CtrlrComponent,

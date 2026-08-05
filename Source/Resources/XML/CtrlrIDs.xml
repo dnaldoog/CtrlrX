@@ -309,6 +309,7 @@
   <id name="uiImageResource" text="Image resource" type="VarText"/>
     
   <!-- Combo box -->
+  <id name="uiComboStyle" text="Combo style" type="Text" defaults="V3"/>
   <id name="uiComboSearch" text="Combo search item" type="Bool" defaults="enabled/Disabled"/>
   <id name="uiComboSearchFont" text="Combo search text" type="Font"/>
   <id name="uiComboSearchTextColour" text="Combo search text colour" type="Colour"/>
