@@ -44,7 +44,9 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 		comboStyle = "V3";
 		setProperty(Ids::uiButtonLookAndFeel, "V3");
 	}
-
+	if (comboStyle == "Default") { // this ensures the theme changes with panel theme unless set to a specific style
+		comboStyle = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel).toString();
+	}
 	if (comboStyle == "V3" || comboStyle == "V2" || comboStyle == "V1") {
 		setProperty(Ids::uiComboArrowColour, "0xff000000");
 		setProperty(Ids::uiComboOutlineColour, "0xff808080");
