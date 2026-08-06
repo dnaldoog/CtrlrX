@@ -29,16 +29,11 @@ class CtrlrCombo : public CtrlrComponent,
 		const String getComponentText();
 		void setComponentText(const String &componentText);
 		void valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
-		void valueTreeChildrenChanged(ValueTree &treeWhoseChildHasChanged) {
-		}
-		void valueTreeParentChanged(ValueTree &treeWhoseParentHasChanged) {
-		}
-		void valueTreeChildAdded(ValueTree &parentTree, ValueTree &childWhichHasBeenAdded) {
-		}
-		void valueTreeChildRemoved(ValueTree &parentTree, ValueTree &childWhichHasBeenRemoved, int) {
-		}
-		void valueTreeChildOrderChanged(ValueTree &parentTreeWhoseChildrenHaveMoved, int, int) {
-		}
+		void valueTreeChildrenChanged(ValueTree &treeWhoseChildHasChanged) {}
+		void valueTreeParentChanged(ValueTree &treeWhoseParentHasChanged) {}
+		void valueTreeChildAdded(ValueTree &parentTree, ValueTree &childWhichHasBeenAdded) {}
+		void valueTreeChildRemoved(ValueTree &parentTree, ValueTree &childWhichHasBeenRemoved, int) {}
+		void valueTreeChildOrderChanged(ValueTree &parentTreeWhoseChildrenHaveMoved, int, int) {}
 		void comboContentChanged();
 		// bool keyPressed (const KeyPress& key, Component* originatingComponent);
 		static std::unique_ptr<juce::LookAndFeel>
@@ -49,10 +44,7 @@ class CtrlrCombo : public CtrlrComponent,
 			public:
 				void drawComboBox(juce::Graphics &g, int width, int height, bool isButtonDown, int buttonX, int buttonY,
 								  int buttonW, int buttonH, juce::ComboBox &box) override;
-				CtrlrComboLF(CtrlrCombo &_owner) : owner(_owner) {
-				}
-				Font getComboBoxFont(ComboBox &box);
-				Font getPopupMenuFont();
+				CtrlrComboLF(CtrlrCombo &_owner) : owner(_owner) {}
 				void drawPopupMenuBackground(Graphics &g, int width, int height);
 				// void drawPopupMenuItem (Graphics &g, int width, int height, bool isSeparator, bool isActive, bool
 				// isHighlighted, bool isTicked, bool hasSubMenu, const String &text, const String &shortcutKeyText,
@@ -65,10 +57,11 @@ class CtrlrCombo : public CtrlrComponent,
 				// 				  int buttonW, int buttonH, ComboBox &box);
 				const Colour createBaseColour(const Colour &buttonColour, const bool hasKeyboardFocus,
 											  const bool isMouseOverButton, const bool isButtonDown);
-				void positionComboBoxText(ComboBox &box, Label &label);
-
 				void fillLabelTextEditorBackground(Graphics &g, TextEditor &editor);
-				Font getLabelFont(Label &label);
+				juce::Font getComboBoxFont(juce::ComboBox &box) override;
+				juce::Font getLabelFont(juce::Label &label) override;
+				juce::Font getPopupMenuFont() override;
+				void positionComboBoxText(juce::ComboBox &box, juce::Label &label) override;
 
 			private:
 				CtrlrCombo &owner;
@@ -105,8 +98,7 @@ class CtrlrCombo : public CtrlrComponent,
 		bool savedFuzzySearchState = false;
 		// 3. The SearchListener struct (Updated to Label::Listener)
 		struct SearchListener : public juce::Label::Listener {
-				SearchListener(CtrlrCombo &o) : owner(o) {
-				}
+				SearchListener(CtrlrCombo &o) : owner(o) {}
 				void labelTextChanged(juce::Label *label) override {
 					// Direct call is safer for focus management in JUCE 6
 					owner.updateFuzzySearch(label->getText());
@@ -127,6 +119,7 @@ class CtrlrCombo : public CtrlrComponent,
 		void handleAsyncUpdate() override;		   // Handles the safe UI transition
 		void updateInternalComponentStyles();
 		void applyComboLookAndFeel(const String &panelLnF);
+
 		std::unique_ptr<SearchListener> searchListener;
 
 		Array<var> values;

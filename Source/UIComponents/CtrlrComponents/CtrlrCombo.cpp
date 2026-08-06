@@ -696,21 +696,6 @@ void CtrlrCombo::setText(const String &text, const bool dontNotify) {
 	return (ctrlrCombo->setText(text, dontNotify ? dontSendNotification : sendNotificationSync));
 }
 
-void CtrlrCombo::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel) {
-	if (customLookAndFeel == nullptr) {
-		ctrlrCombo->setLookAndFeel(nullptr);
-
-		String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
-		// applyCentralLookAndFeel(ctrlrCombo.get(), panelLnF.isNotEmpty() ? panelLnF : "V3");
-		// applyCentralLookAndFeel(ctrlrCombo.get(), "V3");
-		applyComboLookAndFeel(panelLnF);
-
-		repaint();
-	} else {
-		ctrlrCombo->setLookAndFeel(customLookAndFeel);
-	}
-}
-
 std::unique_ptr<juce::LookAndFeel>
 CtrlrCombo::getLookAndFeelFromComponentProperty(const String &lookAndFeelComponentProperty) {
 	if (lookAndFeelComponentProperty == "Default") {
@@ -977,12 +962,23 @@ void CtrlrCombo::CtrlrComboLF::drawPopupMenuItem(Graphics &g, const Rectangle<in
 	}
 }
 
+void CtrlrCombo::applyComboLookAndFeel(const String &panelLnF) {
+	ctrlrCombo->setLookAndFeel(&lf);
+
+	if (panelLnF != "V3" && panelLnF != "V2" && panelLnF != "V1") {
+		applyCentralLookAndFeel(ctrlrCombo.get(), panelLnF);
+	}
+
+	ctrlrCombo->lookAndFeelChanged();
+	repaint();
+}
+
 void CtrlrCombo::CtrlrComboLF::drawComboBox(Graphics &g, int width, int height, bool isButtonDown, int buttonX,
 											int buttonY, int buttonW, int buttonH, ComboBox &box) {
 	// 1. Fetch the active panel theme name
 	String comboStyle = owner.getProperty(Ids::uiButtonLookAndFeel).toString();
 	if (comboStyle.isEmpty() || comboStyle == "Default") {
-		comboStyle = owner.getProperty(Ids::uiPanelLookAndFeel).toString();
+		comboStyle = owner.getOwner().getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel).toString();
 	}
 
 	// 2. If the active theme is "V4 Modern" / "Modern", fall back to JUCE's native V4 single-chevron renderer!
@@ -1039,4 +1035,37 @@ void CtrlrCombo::CtrlrComboLF::drawComboBox(Graphics &g, int width, int height, 
 
 	g.setColour(box.findColour(ComboBox::arrowColourId));
 	g.fillPath(p);
+}
+
+// --- CtrlrComboLF Implementations ---
+
+const Colour CtrlrCombo::CtrlrComboLF::createBaseColour(const Colour &buttonColour, bool hasFocus, bool isMouseOver,
+														bool isButtonDown) {
+	if (isButtonDown)
+		return buttonColour.darker(0.2f);
+	if (isMouseOver)
+		return buttonColour.brighter(0.1f);
+	return buttonColour;
+}
+
+juce::Font CtrlrCombo::CtrlrComboLF::getComboBoxFont(juce::ComboBox &box) {
+	return owner.getOwner().getOwnerPanel().getOwner().getFontManager().getFont(owner.getProperty(Ids::uiComboFont));
+}
+juce::Font CtrlrCombo::CtrlrComboLF::getLabelFont(juce::Label &label) {
+	return owner.getOwner().getOwnerPanel().getOwner().getFontManager().getFont(owner.getProperty(Ids::uiComboFont));
+}
+
+juce::Font CtrlrCombo::CtrlrComboLF::getPopupMenuFont() {
+	return owner.getOwner().getOwnerPanel().getOwner().getFontManager().getFont(
+		owner.getProperty(Ids::uiComboMenuFont));
+}
+
+void CtrlrCombo::CtrlrComboLF::positionComboBoxText(juce::ComboBox &box, juce::Label &label) {
+	label.setBounds(1, 1, box.getWidth() - 30, box.getHeight() - 2);
+	int justFlags = owner.getProperty(Ids::uiComboTextJustification);
+	label.setJustificationType(juce::Justification(justFlags));
+}
+void CtrlrCombo::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel) {
+	// If you need custom LookAndFeel update logic when themes change, put it here.
+	// E.g., redrawing or re-applying properties.
 }

@@ -1,0 +1,28 @@
+{
+    "configurations": [
+        {
+            "name": "CtrlrX",
+            "compilerPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/../JuceLibraryCode",
+                "${workspaceFolder}/../JUCE/modules",
+                "${workspaceFolder}/Source",
+                "C:/Users/zan64/Documents/CtrlrX/JUCE/modules"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+                "JUCE_APP_VERSION=1.0.0",
+                "JUCE_APP_VERSION_HEX=0x10000"
+            ],
+            "windowsSdkVersion": "10.0.26100.0",
+            "cStandard": "c17",
+            "cppStandard": "c++20",
+            "intelliSenseMode": "windows-msvc-x64"
+        }
+    ],
+    "version": 4
+}
