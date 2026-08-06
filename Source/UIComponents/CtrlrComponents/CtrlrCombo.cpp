@@ -771,15 +771,19 @@ void CtrlrCombo::updateInternalComponentStyles() {
 
 	String comboStyle = getProperty(Ids::uiButtonLookAndFeel).toString();
 
-	// If using central panel themes (not explicit V1/V2/V3 LookAndFeel),
-	// let central LookAndFeel / scheme handle the colors
-	if (comboStyle != "V3" && comboStyle != "V2" && comboStyle != "V1" && comboStyle != "Default") {
-		String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
-		applyCentralLookAndFeel(ctrlrCombo.get(), panelLnF);
-		return; // Early return to prevent property overrides from stomping theme colors
+	// 1. If set to "Default", fall back to panel's look and feel
+	if (comboStyle.isEmpty() || comboStyle == "Default") {
+		comboStyle = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel).toString();
 	}
 
-	// Standard behavior for local/explicit properties:
+	// 2. If it's a V4 / custom scheme (LexiBlue, YamDX, JetBlack, Dark, etc.)
+	if (comboStyle != "V3" && comboStyle != "V2" && comboStyle != "V1") {
+		// Pass the COMBO's style directly so individual overrides work!
+		applyCentralLookAndFeel(ctrlrCombo.get(), comboStyle);
+		return;
+	}
+
+	// 3. Fallback for custom per-component manual color overrides (V1/V2/V3)
 	const Colour bg = VAR2COLOUR(getProperty(Ids::uiComboBgColour));
 	const Colour txt = VAR2COLOUR(getProperty(Ids::uiComboTextColour));
 
