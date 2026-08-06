@@ -32,72 +32,70 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 
 	setProperty(Ids::uiButtonLookAndFeelIsCustom, false);
 
-	// 2. Determine LookAndFeel style (Defaults to V3 if empty)
+	// Keep custom double-arrow renderer attached
+	ctrlrCombo->setLookAndFeel(&lf);
+
+	// Set consistent footprint
+	setSize(120, 40);
+
+	// 2. Determine LookAndFeel style
 	String comboStyle = getProperty(Ids::uiButtonLookAndFeel).toString();
 	if (comboStyle.isEmpty()) {
 		comboStyle = "V3";
 		setProperty(Ids::uiButtonLookAndFeel, "V3");
 	}
 
-	applyComboLookAndFeel(comboStyle); // pass it in — one source of truth, no duplicate/stale reads
-
-	if (comboStyle == "V3" || comboStyle == "V2" || comboStyle == "V1" || comboStyle == "Default") {
-		setProperty(Ids::uiComboArrowColour, "0xff0000ff");
-		setProperty(Ids::uiComboOutlineColour, "0xff0000ff");
+	if (comboStyle == "V3" || comboStyle == "V2" || comboStyle == "V1") {
+		setProperty(Ids::uiComboArrowColour, "0xff000000");
+		setProperty(Ids::uiComboOutlineColour, "0xff808080");
 		setProperty(Ids::uiComboTextJustification, "centred");
 		setProperty(Ids::uiComboFont, FONT2STR(Font(14)));
 		setProperty(Ids::uiComboTextColour, "0xff000000");
 		setProperty(Ids::uiComboMenuFont, FONT2STR(Font(16)));
 		setProperty(Ids::uiComboMenuFontColour, "0xff000000");
-		setProperty(Ids::uiComboButtonColour, "0xff0000ff");
+		setProperty(Ids::uiComboButtonColour, "0xffe0e0e0"); // Soft light gray instead of bright blue
 		setProperty(Ids::uiComboBgColour, "0xffffffff");
 		setProperty(Ids::uiComboMenuBackgroundColour, "0xfff0f0f0");
 		setProperty(Ids::uiComboMenuHighlightColour, Colours::lightblue.toString());
 		setProperty(Ids::uiComboMenuFontHighlightedColour, "0xff232323");
 		setProperty(Ids::uiComboMenuBackgroundRibbed, true);
-		setSize(88, 32);
 	} else {
-		// Inherits central Panel LookAndFeel for V4 themes
-		ctrlrCombo->setLookAndFeel(nullptr);
+		// V4 Panel Themes (LexiBlue, YamDX, Dark, Light, etc.)
+		String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel).toString();
+		if (panelLnF.isEmpty())
+			panelLnF = comboStyle;
 
-		setProperty(Ids::uiComboArrowColour, (String)findColour(ComboBox::arrowColourId).toString());
-		setProperty(Ids::uiComboOutlineColour, (String)findColour(ComboBox::outlineColourId).darker(0.5f).toString());
+		applyCentralLookAndFeel(ctrlrCombo.get(), panelLnF);
+
+		setProperty(Ids::uiComboArrowColour, (String)ctrlrCombo->findColour(ComboBox::arrowColourId).toString());
+		setProperty(Ids::uiComboOutlineColour, (String)ctrlrCombo->findColour(ComboBox::outlineColourId).toString());
 		setProperty(Ids::uiComboTextJustification, "centred");
 		setProperty(Ids::uiComboFont, FONT2STR(Font(14)));
-		setProperty(Ids::uiComboTextColour, (String)findColour(ComboBox::textColourId).toString());
+		setProperty(Ids::uiComboTextColour, (String)ctrlrCombo->findColour(ComboBox::textColourId).toString());
 		setProperty(Ids::uiComboMenuFont, FONT2STR(Font(16)));
-		setProperty(Ids::uiComboMenuFontColour, (String)findColour(ComboBox::textColourId).toString());
-		setProperty(Ids::uiComboButtonColour, (String)findColour(ComboBox::buttonColourId).toString());
-		setProperty(Ids::uiComboBgColour, (String)findColour(ComboBox::backgroundColourId).toString());
-		setProperty(Ids::uiComboMenuBackgroundColour, (String)findColour(ComboBox::backgroundColourId).toString());
-		setProperty(Ids::uiComboMenuHighlightColour, (String)findColour(TextEditor::highlightColourId).toString());
+		setProperty(Ids::uiComboMenuFontColour, (String)ctrlrCombo->findColour(ComboBox::textColourId).toString());
+		setProperty(Ids::uiComboButtonColour, (String)ctrlrCombo->findColour(ComboBox::buttonColourId).toString());
+		setProperty(Ids::uiComboBgColour, (String)ctrlrCombo->findColour(ComboBox::backgroundColourId).toString());
+		setProperty(Ids::uiComboMenuBackgroundColour,
+					(String)ctrlrCombo->findColour(ComboBox::backgroundColourId).toString());
+		setProperty(Ids::uiComboMenuHighlightColour,
+					(String)ctrlrCombo->findColour(PopupMenu::highlightedBackgroundColourId).toString());
 		setProperty(Ids::uiComboMenuFontHighlightedColour,
-					(String)findColour(TextEditor::highlightedTextColourId).toString());
+					(String)ctrlrCombo->findColour(PopupMenu::highlightedTextColourId).toString());
 		setProperty(Ids::uiComboMenuBackgroundRibbed, false);
-		setSize(120, 40);
 	}
 
-	setProperty(Ids::uiComboButtonGradient, true);
-	setProperty(Ids::uiComboButtonGradientColour1, (String)findColour(TextButton::buttonColourId).toString());
-	setProperty(Ids::uiComboButtonGradientColour2,
-				(String)findColour(TextButton::buttonColourId).darker(0.2f).toString());
+	setProperty(Ids::uiComboButtonGradient, false); // Disable force-gradient to keep theme button color clean
 
-	// 4. NOW apply the properties to the actual JUCE ComboBox object
+	// 3. Sync colors onto internal ComboBox
 	ctrlrCombo->setColour(ComboBox::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
 	ctrlrCombo->setColour(ComboBox::textColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
 	ctrlrCombo->setColour(ComboBox::buttonColourId, VAR2COLOUR(getProperty(Ids::uiComboButtonColour)));
 	ctrlrCombo->setColour(ComboBox::outlineColourId, VAR2COLOUR(getProperty(Ids::uiComboOutlineColour)));
 	ctrlrCombo->setColour(ComboBox::arrowColourId, VAR2COLOUR(getProperty(Ids::uiComboArrowColour)));
 
-	ctrlrCombo->setColour(TextEditor::textColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
-	ctrlrCombo->setColour(TextEditor::highlightColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
-	ctrlrCombo->setColour(TextEditor::highlightedTextColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
-	ctrlrCombo->setColour(TextEditor::outlineColourId, Colours::transparentBlack);
-
-	updateInternalComponentStyles();
 	componentTree.addListener(this);
 }
-
 CtrlrCombo::~CtrlrCombo() {
 	if (ctrlrCombo != nullptr) {
 		// Unlink from the shared look and feel pipeline before tearing down components
@@ -771,19 +769,19 @@ void CtrlrCombo::updateInternalComponentStyles() {
 
 	String comboStyle = getProperty(Ids::uiButtonLookAndFeel).toString();
 
-	// 1. If set to "Default", fall back to panel's look and feel
 	if (comboStyle.isEmpty() || comboStyle == "Default") {
 		comboStyle = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel).toString();
 	}
 
-	// 2. If it's a V4 / custom scheme (LexiBlue, YamDX, JetBlack, Dark, etc.)
+	// Always enforce the local LookAndFeel object so double-arrow drawing is preserved
+	ctrlrCombo->setLookAndFeel(&lf);
+
 	if (comboStyle != "V3" && comboStyle != "V2" && comboStyle != "V1") {
-		// Pass the COMBO's style directly so individual overrides work!
 		applyCentralLookAndFeel(ctrlrCombo.get(), comboStyle);
 		return;
 	}
 
-	// 3. Fallback for custom per-component manual color overrides (V1/V2/V3)
+	// Standard fallback logic for manual V1/V2/V3 color properties
 	const Colour bg = VAR2COLOUR(getProperty(Ids::uiComboBgColour));
 	const Colour txt = VAR2COLOUR(getProperty(Ids::uiComboTextColour));
 
@@ -1078,24 +1076,53 @@ Font CtrlrCombo::CtrlrComboLF::getLabelFont(Label &label) {
 }
 
 void CtrlrCombo::applyComboLookAndFeel(const String &panelLnF) {
-	if (panelLnF == "V3" || panelLnF == "V2" || panelLnF == "V1") {
-		const int colourIds[] = {
-			ComboBox::backgroundColourId,	   ComboBox::outlineColourId,	  ComboBox::buttonColourId,
-			ComboBox::arrowColourId,		   ComboBox::textColourId,		  Label::textColourId,
-			PopupMenu::textColourId,		   PopupMenu::backgroundColourId, PopupMenu::highlightedBackgroundColourId,
-			PopupMenu::highlightedTextColourId};
+	// 1. Always attach the custom LookAndFeel so CtrlrComboLF::drawComboBox renders the double arrows
+	ctrlrCombo->setLookAndFeel(&lf);
 
-		for (int i = 0; i < sizeof(colourIds) / sizeof(colourIds[0]); ++i) {
-			int colourId = colourIds[i];
-			lf.setColour(colourId, ctrlrCombo->findColour(colourId));
-		}
-		ctrlrCombo->setLookAndFeel(&lf);
-	} else {
-		// For custom schemes (LexiBlue, YamDX, etc.), keep local LookAndFeel off!
-		ctrlrCombo->setLookAndFeel(nullptr);
+	// 2. Apply theme colors to the component if it's a V4 / custom scheme
+	if (panelLnF != "V3" && panelLnF != "V2" && panelLnF != "V1") {
 		applyCentralLookAndFeel(ctrlrCombo.get(), panelLnF);
 	}
 
 	ctrlrCombo->lookAndFeelChanged();
 	repaint();
 }
+
+// void CtrlrCombo::CtrlrComboLF::drawComboBox(juce::Graphics &g, int width, int height, bool isButtonDown, int buttonX,
+// 											int buttonY, int buttonW, int buttonH, juce::ComboBox &box) {
+// 	// 1. Draw standard background box & border
+// 	const auto outlineColour = box.findColour(juce::ComboBox::outlineColourId);
+// 	const bool hasOutline = !outlineColour.isTransparent();
+// 	const float cornerSize = hasOutline ? 3.0f : 0.0f;
+
+// 	juce::Rectangle<int> boxBounds(0, 0, width, height);
+
+// 	g.setColour(box.findColour(juce::ComboBox::backgroundColourId));
+// 	g.fillRoundedRectangle(boxBounds.toFloat(), cornerSize);
+
+// 	if (hasOutline) {
+// 		g.setColour(outlineColour);
+// 		g.drawRoundedRectangle(boxBounds.toFloat().reduced(0.5f), cornerSize, 1.0f);
+// 	}
+
+// 	// 2. Draw Dual Arrows (Up/Down Triangles)
+// 	const auto arrowColour = box.findColour(juce::ComboBox::arrowColourId);
+// 	g.setColour(arrowColour.withMultipliedAlpha(box.isEnabled() ? 1.0f : 0.5f));
+
+// 	const float arrowW = 8.0f;
+// 	const float arrowH = 4.0f;
+// 	const float centerX = buttonX + buttonW * 0.5f;
+// 	const float centerY = buttonY + buttonH * 0.5f;
+
+// 	// Up Arrow Triangle
+// 	juce::Path upArrow;
+// 	upArrow.addTriangle(centerX - arrowW * 0.5f, centerY - 2.0f, centerX + arrowW * 0.5f, centerY - 2.0f, centerX,
+// 						centerY - 2.0f - arrowH);
+// 	g.fillPath(upArrow);
+
+// 	// Down Arrow Triangle
+// 	juce::Path downArrow;
+// 	downArrow.addTriangle(centerX - arrowW * 0.5f, centerY + 2.0f, centerX + arrowW * 0.5f, centerY + 2.0f, centerX,
+// 						  centerY + 2.0f + arrowH);
+// 	g.fillPath(downArrow);
+// }

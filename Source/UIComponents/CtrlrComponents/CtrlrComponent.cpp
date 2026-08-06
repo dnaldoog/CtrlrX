@@ -784,9 +784,7 @@ void CtrlrComponent::applyCentralLookAndFeel(juce::Component *targetComponent, c
 		} else if (lookAndFeelType == "V1" && panel->lfV1) {
 			targetComponent->setLookAndFeel(panel->lfV1.get());
 		} else {
-			// For V4 / Custom Themes: Reset local LookAndFeel so it inherits from Panel
-			targetComponent->setLookAndFeel(nullptr);
-
+			// Extract the custom ColourScheme (LexiBlue, YamDX, JetBlack, Dark, etc.)
 			juce::LookAndFeel_V4::ColourScheme scheme = gui::colourSchemeFromProperty(lookAndFeelType);
 
 			Colour bg = scheme.getUIColour(juce::LookAndFeel_V4::ColourScheme::UIColour::widgetBackground);
@@ -794,22 +792,52 @@ void CtrlrComponent::applyCentralLookAndFeel(juce::Component *targetComponent, c
 			Colour fill = scheme.getUIColour(juce::LookAndFeel_V4::ColourScheme::UIColour::highlightedFill);
 			Colour outline = scheme.getUIColour(juce::LookAndFeel_V4::ColourScheme::UIColour::outline);
 
-			if (auto *combo = dynamic_cast<juce::ComboBox *>(targetComponent)) {
+			// 1. If target is Slider:
+			if (auto *slider = dynamic_cast<juce::Slider *>(targetComponent)) {
+				slider->setLookAndFeel(nullptr);
+				slider->setColour(juce::Slider::thumbColourId, fill);
+				slider->setColour(juce::Slider::trackColourId, bg);
+				slider->setColour(juce::Slider::rotarySliderFillColourId, fill);
+				slider->setColour(juce::Slider::rotarySliderOutlineColourId, outline);
+				slider->setColour(juce::Slider::textBoxTextColourId, text);
+				slider->setColour(juce::Slider::textBoxBackgroundColourId, bg);
+				slider->setColour(juce::Slider::textBoxOutlineColourId, Colours::transparentBlack);
+			}
+			// 2. If target is ComboBox:
+			else if (auto *combo = dynamic_cast<juce::ComboBox *>(targetComponent)) {
 				combo->setColour(juce::ComboBox::backgroundColourId, bg);
 				combo->setColour(juce::ComboBox::textColourId, text);
-				combo->setColour(juce::ComboBox::buttonColourId, bg.brighter(0.15f));
-				combo->setColour(juce::ComboBox::outlineColourId, outline);
-				combo->setColour(juce::ComboBox::arrowColourId, text);
 
-				// Ensure internal popup menu respects the theme palette
+				// Check if background is dark using JUCE's brightness calculation (< 0.5f means dark)
+				const bool isDarkBg = bg.getPerceivedBrightness() < 0.5f;
+
+				// Set button fill to match theme background or widget accent
+				combo->setColour(juce::ComboBox::buttonColourId, isDarkBg ? bg.brighter(0.12f) : bg.darker(0.08f));
+				combo->setColour(juce::ComboBox::outlineColourId, outline);
+
+				// High-contrast arrows: light arrows for dark button, dark arrows for light button
+				Colour buttonCol = combo->findColour(juce::ComboBox::buttonColourId);
+				const bool isDarkButton = buttonCol.getPerceivedBrightness() < 0.5f;
+				combo->setColour(juce::ComboBox::arrowColourId, isDarkButton ? Colours::white : Colours::black);
+
+				// Popup menu themes
+				const bool isDarkFill = fill.getPerceivedBrightness() < 0.5f;
 				combo->setColour(juce::PopupMenu::backgroundColourId, bg);
 				combo->setColour(juce::PopupMenu::textColourId, text);
 				combo->setColour(juce::PopupMenu::highlightedBackgroundColourId, fill);
-				combo->setColour(juce::PopupMenu::highlightedTextColourId, text);
+				combo->setColour(juce::PopupMenu::highlightedTextColourId,
+								 isDarkFill ? Colours::white : Colours::black);
+			}
+			// 3. If target is Button:
+			else if (auto *button = dynamic_cast<juce::Button *>(targetComponent)) {
+				button->setLookAndFeel(nullptr);
+				button->setColour(juce::TextButton::buttonColourId, bg);
+				button->setColour(juce::TextButton::textColourOffId, text);
+				button->setColour(juce::TextButton::textColourOnId, fill);
 			}
 		}
-	}
 
-	targetComponent->lookAndFeelChanged();
-	targetComponent->repaint();
+		targetComponent->lookAndFeelChanged();
+		targetComponent->repaint();
+	}
 }

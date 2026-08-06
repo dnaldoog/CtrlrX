@@ -47,6 +47,8 @@ class CtrlrCombo : public CtrlrComponent,
 		void updatePropertiesPanel();
 		class CtrlrComboLF : public LookAndFeel_V4 {
 			public:
+				void drawComboBox(juce::Graphics &g, int width, int height, bool isButtonDown, int buttonX, int buttonY,
+								  int buttonW, int buttonH, juce::ComboBox &box) override;
 				CtrlrComboLF(CtrlrCombo &_owner) : owner(_owner) {
 				}
 				Font getComboBoxFont(ComboBox &box);
@@ -59,8 +61,8 @@ class CtrlrCombo : public CtrlrComponent,
 									   bool isHighlighted, bool isTicked, bool hasSubMenu, const String &text,
 									   const String &shortcutKeyText, const Drawable *icon,
 									   const Colour *textColourToUse);
-				void drawComboBox(Graphics &g, int width, int height, bool isButtonDown, int buttonX, int buttonY,
-								  int buttonW, int buttonH, ComboBox &box);
+				// void drawComboBox(Graphics &g, int width, int height, bool isButtonDown, int buttonX, int buttonY,
+				// 				  int buttonW, int buttonH, ComboBox &box);
 				const Colour createBaseColour(const Colour &buttonColour, const bool hasKeyboardFocus,
 											  const bool isMouseOverButton, const bool isButtonDown);
 				void positionComboBoxText(ComboBox &box, Label &label);
