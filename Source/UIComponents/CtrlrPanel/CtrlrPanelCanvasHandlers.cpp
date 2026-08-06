@@ -58,19 +58,7 @@ void CtrlrPanelCanvas::handleRightClickOnMultiSelection(const MouseEvent &e) {
 void CtrlrPanelCanvas::handleRightClickOnCanvas(const MouseEvent &e) {
 	const bool em = getOwner().getProperty(Ids::uiPanelEditMode);
 
-	if (!em) {
-		PopupMenu m = getRightClickComponentMenu(e);
-
-		// Pass 'e' into the capture list so the lambda can use it asynchronously
-		PU::showMenuAsyncSafe(m, this, [this, e](int ret) {
-			// This replaces the old handleComponentPopupMenu(e, m.show());
-			handleComponentPopupMenu(e, ret);
-		});
-
-		return;
-	}
-
-	PopupMenu m; // This should be JUCE 6.0 compatible
+	PopupMenu m;
 
 	if (em) {
 		m = CtrlrComponentTypeManager::getComponentMenu(em);
@@ -79,35 +67,34 @@ void CtrlrPanelCanvas::handleRightClickOnCanvas(const MouseEvent &e) {
 		m = getRightClickComponentMenu(e);
 	}
 
-	// Explicitly make a local copy outside the lambda for absolute compatibility
-	PopupMenu menuCopy(m);
+	// Target mouse screen coordinates precisely
+	juce::Rectangle<int> clickArea(e.getScreenX(), e.getScreenY(), 1, 1);
+	const int ret = PU::showMenuSyncAtArea(m, clickArea);
 
-	PU::showMenuAsyncSafe(m, this, [this, e, em, menuCopy](int ret) {
-		if (ret >= 4096) {
-			handleComponentPopupMenu(e, ret);
-		} else if (ret == 1024) {
-			getOwner().setProperty(Ids::uiPanelEditMode, !em);
-			getOwner().editModeChanged();
-		} else if (ret < 1024 && ret > 10) {
-			// Use the captured copy safely
-			PopupMenu::MenuItemIterator iterator((const PopupMenu &)menuCopy);
-			while (iterator.next()) {
-				if (iterator.getItem().subMenu) {
-					PopupMenu::MenuItemIterator iterator2(*iterator.getItem().subMenu);
-					while (iterator2.next()) {
-						if (iterator2.getItem().itemID == ret) {
-							addNewComponent(iterator2.getItem().text, e.getPosition(), e.eventComponent);
-						}
+	if (ret >= 4096) {
+		handleComponentPopupMenu(e, ret);
+	} else if (ret == 1024) {
+		getOwner().setProperty(Ids::uiPanelEditMode, !em);
+		getOwner().editModeChanged();
+	} else if (ret < 1024 && ret > 10) {
+		PopupMenu::MenuItemIterator iterator((const PopupMenu &)m);
+		while (iterator.next()) {
+			if (iterator.getItem().subMenu) {
+				PopupMenu::MenuItemIterator iterator2(*iterator.getItem().subMenu);
+				while (iterator2.next()) {
+					if (iterator2.getItem().itemID == ret) {
+						addNewComponent(iterator2.getItem().text, e.getPosition(), e.eventComponent);
 					}
 				}
 			}
-		} else if (ret >= 2048 && ret < 4096) {
-			handleEditMenu(ret, e);
 		}
-	});
+	} else if (ret >= 2048 && ret < 4096) {
+		handleEditMenu(ret, e);
+	}
 }
 
-void CtrlrPanelCanvas::handleRightClickOnTabs(const MouseEvent &e) {}
+void CtrlrPanelCanvas::handleRightClickOnTabs(const MouseEvent &e) {
+}
 
 void CtrlrPanelCanvas::handleRightClickOnComponent(const MouseEvent &e) {
 	CtrlrComponent *c = findEventComponent(e);
@@ -141,46 +128,44 @@ void CtrlrPanelCanvas::handleRightClickOnComponent(const MouseEvent &e) {
 		m.addItem(1027, "Copy with children");
 	}
 
-	// const int ret = m.show(); JUCE 6 code
-	//  Explicitly copying the submenu structure inside the capture keeps it safe from scope changes
-	PU::showMenuAsyncSafe(m, this, [this, c, e, componentSubMenu](int ret) {
-		if (ret == 512) {
-			exportSelectedComponents();
-		} else if (ret == 513) {
-			c->setProperty(Ids::componentIsLocked, !c->getProperty(Ids::componentIsLocked));
-		}
-		// Changed this to an "else if" just to keep your logic tree unified
-		else if (ret == 1024) {
-			c->toBack();
-			c->setProperty(Ids::componentSentBack, true);
-		} else if (ret == 1025) {
-			c->toFront(false);
-			c->setProperty(Ids::componentSentBack, false);
-		} else if (ret == 1026) {
-			deleteWithChildren(c);
-		} else if (ret == 1027) {
-			copyWithChildren(c);
-		} else if (ret >= 2048 && ret < 4096) {
-			handleEditMenu(ret, e);
-		} else if (ret >= 4096 && ret < 8192) {
-			handleLayerMenu(ret, e);
-		} else if (ret < 1024 && ret > 10) {
-			PopupMenu::MenuItemIterator iterator((const PopupMenu &)componentSubMenu);
-			while (iterator.next()) {
-				if (iterator.getItem().subMenu) {
-					PopupMenu::MenuItemIterator iterator2(*iterator.getItem().subMenu);
-					while (iterator2.next()) {
-						if (iterator2.getItem().itemID == ret) {
-							if (c) {
-								replaceComponent(c->getOwner(), iterator2.getItem().text);
-								return; // Exits the lambda safely
-							}
+	// Pass exact mouse screen coordinates to PU::showMenuSyncAtArea
+	juce::Rectangle<int> clickArea(e.getScreenX(), e.getScreenY(), 1, 1);
+	const int ret = PU::showMenuSyncAtArea(m, clickArea);
+
+	if (ret == 512) {
+		exportSelectedComponents();
+	} else if (ret == 513) {
+		c->setProperty(Ids::componentIsLocked, !c->getProperty(Ids::componentIsLocked));
+	} else if (ret == 1024) {
+		c->toBack();
+		c->setProperty(Ids::componentSentBack, true);
+	} else if (ret == 1025) {
+		c->toFront(false);
+		c->setProperty(Ids::componentSentBack, false);
+	} else if (ret == 1026) {
+		deleteWithChildren(c);
+	} else if (ret == 1027) {
+		copyWithChildren(c);
+	} else if (ret >= 2048 && ret < 4096) {
+		handleEditMenu(ret, e);
+	} else if (ret >= 4096 && ret < 8192) {
+		handleLayerMenu(ret, e);
+	} else if (ret < 1024 && ret > 10) {
+		PopupMenu::MenuItemIterator iterator((const PopupMenu &)componentSubMenu);
+		while (iterator.next()) {
+			if (iterator.getItem().subMenu) {
+				PopupMenu::MenuItemIterator iterator2(*iterator.getItem().subMenu);
+				while (iterator2.next()) {
+					if (iterator2.getItem().itemID == ret) {
+						if (c) {
+							replaceComponent(c->getOwner(), iterator2.getItem().text);
+							return;
 						}
 					}
 				}
 			}
 		}
-	});
+	}
 }
 
 void CtrlrPanelCanvas::replaceComponent(CtrlrModulator &modulator, const String &targetComponentType) {
@@ -264,9 +249,8 @@ void CtrlrPanelCanvas::getEditMenu(PopupMenu &m) {
 	// --- Center Section (Works on 1+ objects) ---
 	m.addSectionHeader("Position");
 
-	m.addItem(
-		CenterX, "Centre X", true, false,
-		createMenuIcon(BinaryData::boundingboxcentersymbolic_svg, BinaryData::boundingboxcentersymbolic_svgSize));
+	m.addItem(CenterX, "Centre X", true, false,
+			  createMenuIcon(BinaryData::boundingboxcentersymbolic_svg, BinaryData::boundingboxcentersymbolic_svgSize));
 
 	m.addItem(CenterY, "Centre Y", true, false,
 			  createMenuIcon(BinaryData::snapnodesmidpointsymbolic_svg, BinaryData::snapnodesmidpointsymbolic_svgSize));
@@ -343,8 +327,8 @@ void CtrlrPanelCanvas::handleEditMenu(const int returnCode, const MouseEvent &e)
 	case AlignToRight:
 	case DistributeHorizontally:
 	case DistributeVertically:
-		case CenterX:
-		case CenterY:
+	case CenterX:
+	case CenterY:
 	case MatchHeight:
 	case MatchWidth:
 	case MatchSize:
