@@ -991,6 +991,16 @@ void CtrlrCombo::CtrlrComboLF::drawComboBox(Graphics &g, int width, int height, 
 	_DBG("!!!! CtrlrComboLF::drawComboBox (Custom Double Arrows)");
 	int bw = buttonW;
 	int bx = buttonX;
+
+	if ((bool)owner.getProperty(Ids::uiComboButtonWidthOverride) == true) {
+		bw = owner.getProperty(Ids::uiComboButtonWidth);
+		bx = width - bw;
+	} else {
+		// Default (non-override) button is square and scales with the box,
+		// matching the legacy appearance shown in the old version.
+		bw = buttonH;
+		bx = width - bw;
+	}
 	const float outlineThickness = isButtonDown ? 1.2f : 0.5f;
 
 	g.fillAll(box.findColour(ComboBox::backgroundColourId));
@@ -1054,24 +1064,33 @@ const Colour CtrlrCombo::CtrlrComboLF::createBaseColour(const Colour &buttonColo
 	return buttonColour;
 }
 
-juce::Font CtrlrCombo::CtrlrComboLF::getComboBoxFont(juce::ComboBox &box) {
-	return owner.getOwner().getOwnerPanel().getOwner().getFontManager().getFont(owner.getProperty(Ids::uiComboFont));
-}
-juce::Font CtrlrCombo::CtrlrComboLF::getLabelFont(juce::Label &label) {
-	return owner.getOwner().getOwnerPanel().getOwner().getFontManager().getFont(owner.getProperty(Ids::uiComboFont));
-}
-
-juce::Font CtrlrCombo::CtrlrComboLF::getPopupMenuFont() {
-	return owner.getOwner().getOwnerPanel().getOwner().getFontManager().getFont(
-		owner.getProperty(Ids::uiComboMenuFont));
-}
-
 void CtrlrCombo::CtrlrComboLF::positionComboBoxText(juce::ComboBox &box, juce::Label &label) {
-	label.setBounds(1, 1, box.getWidth() - 30, box.getHeight() - 2);
+	int buttonWidth = box.getHeight(); // matches drawComboBox's default (square button)
+
+	if ((bool)owner.getProperty(Ids::uiComboButtonWidthOverride) == true) {
+		buttonWidth = owner.getProperty(Ids::uiComboButtonWidth);
+	}
+
+	label.setBounds(1, 1, box.getWidth() - buttonWidth - 2, box.getHeight() - 2);
 	int justFlags = owner.getProperty(Ids::uiComboTextJustification);
 	label.setJustificationType(juce::Justification(justFlags));
 }
+
 void CtrlrCombo::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel) {
 	// If you need custom LookAndFeel update logic when themes change, put it here.
 	// E.g., redrawing or re-applying properties.
+}
+
+juce::Font CtrlrCombo::CtrlrComboLF::getComboBoxFont(juce::ComboBox &box) {
+	return owner.getOwner().getOwnerPanel().getOwner().getFontManager().getFontFromString(
+		owner.getProperty(Ids::uiComboFont));
+}
+juce::Font CtrlrCombo::CtrlrComboLF::getLabelFont(juce::Label &label) {
+	return owner.getOwner().getOwnerPanel().getOwner().getFontManager().getFontFromString(
+		owner.getProperty(Ids::uiComboFont));
+}
+
+juce::Font CtrlrCombo::CtrlrComboLF::getPopupMenuFont() {
+	return owner.getOwner().getOwnerPanel().getOwner().getFontManager().getFontFromString(
+		owner.getProperty(Ids::uiComboMenuFont));
 }
