@@ -1026,12 +1026,18 @@ void CtrlrCombo::CtrlrComboLF::drawComboBox(Graphics &g, int width, int height, 
 	const float arrowX = 0.3f;
 	const float arrowH = 0.2f;
 
-	Path p;
-	p.addTriangle(bx + bw * 0.5f, buttonY + buttonH * (0.45f - arrowH), bx + bw * (1.0f - arrowX),
-				  buttonY + buttonH * 0.45f, bx + bw * arrowX, buttonY + buttonH * 0.45f);
+	// Use a single square region so the chevrons keep their proportions
+	// regardless of the button's actual width/height aspect ratio.
+	const float size = jmin((float)bw, (float)buttonH);
+	const float offsetX = bx + (bw - size) * 0.5f;
+	const float offsetY = buttonY + (buttonH - size) * 0.5f;
 
-	p.addTriangle(bx + bw * 0.5f, buttonY + buttonH * (0.55f + arrowH), bx + bw * (1.0f - arrowX),
-				  buttonY + buttonH * 0.55f, bx + bw * arrowX, buttonY + buttonH * 0.55f);
+	Path p;
+	p.addTriangle(offsetX + size * 0.5f, offsetY + size * (0.45f - arrowH), offsetX + size * (1.0f - arrowX),
+				  offsetY + size * 0.45f, offsetX + size * arrowX, offsetY + size * 0.45f);
+
+	p.addTriangle(offsetX + size * 0.5f, offsetY + size * (0.55f + arrowH), offsetX + size * (1.0f - arrowX),
+				  offsetY + size * 0.55f, offsetX + size * arrowX, offsetY + size * 0.55f);
 
 	g.setColour(box.findColour(ComboBox::arrowColourId));
 	g.fillPath(p);
