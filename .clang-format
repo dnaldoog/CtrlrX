@@ -53,8 +53,8 @@ AlignConsecutiveDeclarations: false
 ColumnLimit: 120
 
 # --- FUNCTION WRAPPING ---
-# Prevents VS/Xcode from collapsing short functions onto a single line
-AllowShortFunctionsOnASingleLine: None
+# Allows empty functions like void foo() {} to stay on a single line
+AllowShortFunctionsOnASingleLine: Empty
 AllowShortBlocksOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
