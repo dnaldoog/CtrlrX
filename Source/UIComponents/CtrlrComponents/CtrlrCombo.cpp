@@ -979,7 +979,20 @@ void CtrlrCombo::CtrlrComboLF::drawPopupMenuItem(Graphics &g, const Rectangle<in
 
 void CtrlrCombo::CtrlrComboLF::drawComboBox(Graphics &g, int width, int height, bool isButtonDown, int buttonX,
 											int buttonY, int buttonW, int buttonH, ComboBox &box) {
-	DBG("!!!! CtrlrComboLF::drawComboBox");
+	// 1. Fetch the active panel theme name
+	String comboStyle = owner.getProperty(Ids::uiButtonLookAndFeel).toString();
+	if (comboStyle.isEmpty() || comboStyle == "Default") {
+		comboStyle = owner.getProperty(Ids::uiPanelLookAndFeel).toString();
+	}
+
+	// 2. If the active theme is "V4 Modern" / "Modern", fall back to JUCE's native V4 single-chevron renderer!
+	if (comboStyle == "V4 Modern" || comboStyle == "Modern") {
+		juce::LookAndFeel_V4::drawComboBox(g, width, height, isButtonDown, buttonX, buttonY, buttonW, buttonH, box);
+		return;
+	}
+
+	// 3. Otherwise, draw the classic sharp Ctrlr box with double-arrows:
+	_DBG("!!!! CtrlrComboLF::drawComboBox (Custom Double Arrows)");
 	int bw = buttonW;
 	int bx = buttonX;
 	const float outlineThickness = isButtonDown ? 1.2f : 0.5f;
@@ -989,12 +1002,10 @@ void CtrlrCombo::CtrlrComboLF::drawComboBox(Graphics &g, int width, int height, 
 	g.drawRect(0, 0, width, height);
 
 	if ((bool)owner.getProperty(Ids::uiComboButtonWidthOverride) == true) {
-		// Clamp to at least 1px so thickness calculations never yield negative width
 		bw = jmax(1, (int)owner.getProperty(Ids::uiComboButtonWidth));
 		bx = width - bw;
 	}
 
-	// Safety guard: Don't attempt to draw glass lozenge/gradients if effective width is smaller than borders
 	const float fillWidth = bw - outlineThickness * 2.0f;
 	const float fillHeight = buttonH - outlineThickness * 2.0f;
 
@@ -1029,102 +1040,3 @@ void CtrlrCombo::CtrlrComboLF::drawComboBox(Graphics &g, int width, int height, 
 	g.setColour(box.findColour(ComboBox::arrowColourId));
 	g.fillPath(p);
 }
-
-const Colour CtrlrCombo::CtrlrComboLF::createBaseColour(const Colour &buttonColour, const bool hasKeyboardFocus,
-														const bool isMouseOverButton, const bool isButtonDown) {
-	const float sat = hasKeyboardFocus ? 1.3f : 0.9f;
-	const Colour baseColour(buttonColour.withMultipliedSaturation(sat));
-
-	if (isButtonDown)
-		return baseColour.contrasting(0.2f);
-	else if (isMouseOverButton)
-		return baseColour.contrasting(0.1f);
-
-	return baseColour;
-}
-
-void CtrlrCombo::CtrlrComboLF::positionComboBoxText(ComboBox &box, Label &label) {
-	int bw = owner.getProperty(Ids::uiComboButtonWidth);
-
-	if ((bool)owner.getProperty(Ids::uiComboButtonWidthOverride) == true) {
-		label.setBounds(1, 1, box.getWidth() - bw, box.getHeight() - 2);
-	} else {
-		label.setBounds(1, 1, box.getWidth() + 3 - box.getHeight(), box.getHeight() - 2);
-	}
-
-	label.setFont(getComboBoxFont(box));
-}
-
-void CtrlrCombo::CtrlrComboLF::fillLabelTextEditorBackground(Graphics &g, TextEditor &editor) {
-	g.fillAll(VAR2COLOUR(owner.getProperty(Ids::uiComboBgColour)));
-
-	g.setColour(VAR2COLOUR(owner.getProperty(Ids::uiComboOutlineColour)));
-	g.drawRect(0, 0, editor.getWidth(), editor.getHeight());
-}
-
-Font CtrlrCombo::CtrlrComboLF::getComboBoxFont(ComboBox &box) {
-	return (owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString(
-		owner.getProperty(Ids::uiComboFont)));
-}
-
-Font CtrlrCombo::CtrlrComboLF::getPopupMenuFont() {
-	return (owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString(
-		owner.getProperty(Ids::uiComboMenuFont)));
-}
-
-Font CtrlrCombo::CtrlrComboLF::getLabelFont(Label &label) {
-	return owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString(
-		owner.getProperty(Ids::uiComboFont));
-}
-
-void CtrlrCombo::applyComboLookAndFeel(const String &panelLnF) {
-	// 1. Always attach the custom LookAndFeel so CtrlrComboLF::drawComboBox renders the double arrows
-	ctrlrCombo->setLookAndFeel(&lf);
-
-	// 2. Apply theme colors to the component if it's a V4 / custom scheme
-	if (panelLnF != "V3" && panelLnF != "V2" && panelLnF != "V1") {
-		applyCentralLookAndFeel(ctrlrCombo.get(), panelLnF);
-	}
-
-	ctrlrCombo->lookAndFeelChanged();
-	repaint();
-}
-
-// void CtrlrCombo::CtrlrComboLF::drawComboBox(juce::Graphics &g, int width, int height, bool isButtonDown, int buttonX,
-// 											int buttonY, int buttonW, int buttonH, juce::ComboBox &box) {
-// 	// 1. Draw standard background box & border
-// 	const auto outlineColour = box.findColour(juce::ComboBox::outlineColourId);
-// 	const bool hasOutline = !outlineColour.isTransparent();
-// 	const float cornerSize = hasOutline ? 3.0f : 0.0f;
-
-// 	juce::Rectangle<int> boxBounds(0, 0, width, height);
-
-// 	g.setColour(box.findColour(juce::ComboBox::backgroundColourId));
-// 	g.fillRoundedRectangle(boxBounds.toFloat(), cornerSize);
-
-// 	if (hasOutline) {
-// 		g.setColour(outlineColour);
-// 		g.drawRoundedRectangle(boxBounds.toFloat().reduced(0.5f), cornerSize, 1.0f);
-// 	}
-
-// 	// 2. Draw Dual Arrows (Up/Down Triangles)
-// 	const auto arrowColour = box.findColour(juce::ComboBox::arrowColourId);
-// 	g.setColour(arrowColour.withMultipliedAlpha(box.isEnabled() ? 1.0f : 0.5f));
-
-// 	const float arrowW = 8.0f;
-// 	const float arrowH = 4.0f;
-// 	const float centerX = buttonX + buttonW * 0.5f;
-// 	const float centerY = buttonY + buttonH * 0.5f;
-
-// 	// Up Arrow Triangle
-// 	juce::Path upArrow;
-// 	upArrow.addTriangle(centerX - arrowW * 0.5f, centerY - 2.0f, centerX + arrowW * 0.5f, centerY - 2.0f, centerX,
-// 						centerY - 2.0f - arrowH);
-// 	g.fillPath(upArrow);
-
-// 	// Down Arrow Triangle
-// 	juce::Path downArrow;
-// 	downArrow.addTriangle(centerX - arrowW * 0.5f, centerY + 2.0f, centerX + arrowW * 0.5f, centerY + 2.0f, centerX,
-// 						  centerY + 2.0f + arrowH);
-// 	g.fillPath(downArrow);
-// }
