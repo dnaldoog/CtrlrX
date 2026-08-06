@@ -770,31 +770,9 @@ void CtrlrComponent::triggerBubbleHelp(const MouseEvent &e, int requiredTrigger)
 	Rectangle<int> boundsInEditor = editor->getLocalArea(this, getLocalBounds());
 	bubbleMessage->showAt(boundsInEditor, attrStr, timeout, true, false);
 }
-// void CtrlrComponent::applyCentralLookAndFeel(juce::Component* targetComponent, const String& lookAndFeelType)
-// {
-//     if (targetComponent == nullptr)
-//         return;
-
-//     targetComponent->setLookAndFeel(nullptr);
-
-//     CtrlrPanel* panel = &owner.getOwnerPanel();
-
-//     if (panel != nullptr)
-//     {
-//         if (lookAndFeelType == "V3" && panel->lfV3)      { targetComponent->setLookAndFeel(panel->lfV3.get()); }
-//         else if (lookAndFeelType == "V2" && panel->lfV2) { targetComponent->setLookAndFeel(panel->lfV2.get()); }
-//         else if (lookAndFeelType == "V1" && panel->lfV1) { targetComponent->setLookAndFeel(panel->lfV1.get()); }
-//         else                                             { targetComponent->setLookAndFeel(nullptr); }
-//     }
-
-//     targetComponent->lookAndFeelChanged();
-// }
-
 void CtrlrComponent::applyCentralLookAndFeel(juce::Component *targetComponent, const String &lookAndFeelType) {
 	if (targetComponent == nullptr)
 		return;
-
-	targetComponent->setLookAndFeel(nullptr);
 
 	CtrlrPanel *panel = &owner.getOwnerPanel();
 
@@ -806,10 +784,9 @@ void CtrlrComponent::applyCentralLookAndFeel(juce::Component *targetComponent, c
 		} else if (lookAndFeelType == "V1" && panel->lfV1) {
 			targetComponent->setLookAndFeel(panel->lfV1.get());
 		} else {
-			// Set nullptr so JUCE uses standard V4 rendering
+			// For V4 / Custom Themes: Reset local LookAndFeel so it inherits from Panel
 			targetComponent->setLookAndFeel(nullptr);
 
-			// Extract the actual custom ColourScheme (LexiBlue, YamDX, JetBlack, Dark, etc.)
 			juce::LookAndFeel_V4::ColourScheme scheme = gui::colourSchemeFromProperty(lookAndFeelType);
 
 			Colour bg = scheme.getUIColour(juce::LookAndFeel_V4::ColourScheme::UIColour::widgetBackground);
@@ -817,29 +794,18 @@ void CtrlrComponent::applyCentralLookAndFeel(juce::Component *targetComponent, c
 			Colour fill = scheme.getUIColour(juce::LookAndFeel_V4::ColourScheme::UIColour::highlightedFill);
 			Colour outline = scheme.getUIColour(juce::LookAndFeel_V4::ColourScheme::UIColour::outline);
 
-			// 1. If the target component is a JUCE Slider:
-			if (auto *slider = dynamic_cast<juce::Slider *>(targetComponent)) {
-				slider->setColour(juce::Slider::thumbColourId, fill);
-				slider->setColour(juce::Slider::trackColourId, bg);
-				slider->setColour(juce::Slider::rotarySliderFillColourId, fill);
-				slider->setColour(juce::Slider::rotarySliderOutlineColourId, outline);
-				slider->setColour(juce::Slider::textBoxTextColourId, text);
-				slider->setColour(juce::Slider::textBoxBackgroundColourId, bg);
-				slider->setColour(juce::Slider::textBoxOutlineColourId, Colours::transparentBlack);
-			}
-			// 2. If the target component is a JUCE ComboBox:
-			else if (auto *combo = dynamic_cast<juce::ComboBox *>(targetComponent)) {
+			if (auto *combo = dynamic_cast<juce::ComboBox *>(targetComponent)) {
 				combo->setColour(juce::ComboBox::backgroundColourId, bg);
 				combo->setColour(juce::ComboBox::textColourId, text);
-				combo->setColour(juce::ComboBox::buttonColourId, bg.brighter(0.1f));
+				combo->setColour(juce::ComboBox::buttonColourId, bg.brighter(0.15f));
 				combo->setColour(juce::ComboBox::outlineColourId, outline);
 				combo->setColour(juce::ComboBox::arrowColourId, text);
-			}
-			// 3. If the target component is a JUCE Button:
-			else if (auto *button = dynamic_cast<juce::Button *>(targetComponent)) {
-				button->setColour(juce::TextButton::buttonColourId, bg);
-				button->setColour(juce::TextButton::textColourOffId, text);
-				button->setColour(juce::TextButton::textColourOnId, fill);
+
+				// Ensure internal popup menu respects the theme palette
+				combo->setColour(juce::PopupMenu::backgroundColourId, bg);
+				combo->setColour(juce::PopupMenu::textColourId, text);
+				combo->setColour(juce::PopupMenu::highlightedBackgroundColourId, fill);
+				combo->setColour(juce::PopupMenu::highlightedTextColourId, text);
 			}
 		}
 	}

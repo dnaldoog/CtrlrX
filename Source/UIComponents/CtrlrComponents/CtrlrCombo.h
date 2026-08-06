@@ -124,7 +124,7 @@ class CtrlrCombo : public CtrlrComponent,
 		void findAndAttach(juce::ComboBox *combo); // Method must be declared here
 		void handleAsyncUpdate() override;		   // Handles the safe UI transition
 		void updateInternalComponentStyles();
-
+		void applyComboLookAndFeel(const String &panelLnF);
 		std::unique_ptr<SearchListener> searchListener;
 
 		Array<var> values;

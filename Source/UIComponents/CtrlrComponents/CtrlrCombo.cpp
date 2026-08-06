@@ -39,10 +39,9 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 		setProperty(Ids::uiButtonLookAndFeel, "V3");
 	}
 
-	// 3. Attach appropriate LookAndFeel and populate default properties
-	if (comboStyle == "V3" || comboStyle == "V2" || comboStyle == "V1" || comboStyle == "Default") {
-		ctrlrCombo->setLookAndFeel(&lf);
+	applyComboLookAndFeel(comboStyle); // pass it in — one source of truth, no duplicate/stale reads
 
+	if (comboStyle == "V3" || comboStyle == "V2" || comboStyle == "V1" || comboStyle == "Default") {
 		setProperty(Ids::uiComboArrowColour, "0xff0000ff");
 		setProperty(Ids::uiComboOutlineColour, "0xff0000ff");
 		setProperty(Ids::uiComboTextJustification, "centred");
@@ -703,7 +702,8 @@ void CtrlrCombo::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel) {
 
 		String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
 		// applyCentralLookAndFeel(ctrlrCombo.get(), panelLnF.isNotEmpty() ? panelLnF : "V3");
-		applyCentralLookAndFeel(ctrlrCombo.get(), "V3");
+		// applyCentralLookAndFeel(ctrlrCombo.get(), "V3");
+		applyComboLookAndFeel(panelLnF);
 
 		repaint();
 	} else {
@@ -769,6 +769,17 @@ void CtrlrCombo::updateInternalComponentStyles() {
 	if (ctrlrCombo == nullptr)
 		return;
 
+	String comboStyle = getProperty(Ids::uiButtonLookAndFeel).toString();
+
+	// If using central panel themes (not explicit V1/V2/V3 LookAndFeel),
+	// let central LookAndFeel / scheme handle the colors
+	if (comboStyle != "V3" && comboStyle != "V2" && comboStyle != "V1" && comboStyle != "Default") {
+		String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
+		applyCentralLookAndFeel(ctrlrCombo.get(), panelLnF);
+		return; // Early return to prevent property overrides from stomping theme colors
+	}
+
+	// Standard behavior for local/explicit properties:
 	const Colour bg = VAR2COLOUR(getProperty(Ids::uiComboBgColour));
 	const Colour txt = VAR2COLOUR(getProperty(Ids::uiComboTextColour));
 
@@ -1060,4 +1071,27 @@ Font CtrlrCombo::CtrlrComboLF::getPopupMenuFont() {
 Font CtrlrCombo::CtrlrComboLF::getLabelFont(Label &label) {
 	return owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString(
 		owner.getProperty(Ids::uiComboFont));
+}
+
+void CtrlrCombo::applyComboLookAndFeel(const String &panelLnF) {
+	if (panelLnF == "V3" || panelLnF == "V2" || panelLnF == "V1") {
+		const int colourIds[] = {
+			ComboBox::backgroundColourId,	   ComboBox::outlineColourId,	  ComboBox::buttonColourId,
+			ComboBox::arrowColourId,		   ComboBox::textColourId,		  Label::textColourId,
+			PopupMenu::textColourId,		   PopupMenu::backgroundColourId, PopupMenu::highlightedBackgroundColourId,
+			PopupMenu::highlightedTextColourId};
+
+		for (int i = 0; i < sizeof(colourIds) / sizeof(colourIds[0]); ++i) {
+			int colourId = colourIds[i];
+			lf.setColour(colourId, ctrlrCombo->findColour(colourId));
+		}
+		ctrlrCombo->setLookAndFeel(&lf);
+	} else {
+		// For custom schemes (LexiBlue, YamDX, etc.), keep local LookAndFeel off!
+		ctrlrCombo->setLookAndFeel(nullptr);
+		applyCentralLookAndFeel(ctrlrCombo.get(), panelLnF);
+	}
+
+	ctrlrCombo->lookAndFeelChanged();
+	repaint();
 }
