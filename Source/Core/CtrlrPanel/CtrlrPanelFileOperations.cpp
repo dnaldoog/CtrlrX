@@ -9,12 +9,10 @@
 #include "CtrlrUtilities.h"
 #include "stdafx.h"
 
-ValueTree CtrlrPanel::getCleanPanelTree()
-{
+ValueTree CtrlrPanel::getCleanPanelTree() {
 	ValueTree exportTree = panelTree.createCopy();
 
-	for (int i = 0; i < exportTree.getNumProperties(); i++)
-	{
+	for (int i = 0; i < exportTree.getNumProperties(); i++) {
 		exportTree.removeProperty(Ids::panelMidiOutputDevice, 0);
 		exportTree.removeProperty(Ids::panelMidiInputDevice, 0);
 		exportTree.removeProperty(Ids::panelMidiControllerDevice, 0);
@@ -24,15 +22,13 @@ ValueTree CtrlrPanel::getCleanPanelTree()
 	}
 
 	// Remove custom data
-	if (exportTree.getChildWithName(Ids::panelCustomData).isValid())
-	{
+	if (exportTree.getChildWithName(Ids::panelCustomData).isValid()) {
 		exportTree.removeChild(exportTree.getChildWithName(Ids::panelCustomData), nullptr);
 	}
 
 	ValueTree ed = exportTree.getChildWithName(Ids::uiPanelEditor);
 
-	if (ed.isValid())
-	{
+	if (ed.isValid()) {
 		bool hideMenuBar = (bool)ed.getProperty(Ids::uiPanelMenuBarHideOnExport);
 		ed.setProperty(Ids::uiPanelMenuBarVisible, !hideMenuBar, nullptr);
 	}
@@ -43,83 +39,77 @@ ValueTree CtrlrPanel::getCleanPanelTree()
 	return (exportTree);
 }
 
-String CtrlrPanel::getPanelContentDirPath()
-{
+String CtrlrPanel::getPanelContentDirPath() {
 	const String filePath = getProperty(Ids::panelFilePath);
 	return filePath.upToLastOccurrenceOf(".", false, false);
 }
 
-File CtrlrPanel::getPanelContentDir() { return File(getPanelContentDirPath()); }
+File CtrlrPanel::getPanelContentDir() {
+	return File(getPanelContentDirPath());
+}
 
-File CtrlrPanel::getPanelLuaDir() { return getPanelContentDir().getChildFile("lua"); }
+File CtrlrPanel::getPanelLuaDir() {
+	return getPanelContentDir().getChildFile("lua");
+}
 
-String CtrlrPanel::getPanelLuaDirPath() { return getPanelLuaDir().getFullPathName(); }
+String CtrlrPanel::getPanelLuaDirPath() {
+	return getPanelLuaDir().getFullPathName();
+}
 
-File CtrlrPanel::getPanelResourcesDir() { return getPanelContentDir().getChildFile("resources"); }
+File CtrlrPanel::getPanelResourcesDir() {
+	return getPanelContentDir().getChildFile("resources");
+}
 
-String CtrlrPanel::getPanelResourcesDirPath() { return getPanelResourcesDir().getFullPathName(); }
+String CtrlrPanel::getPanelResourcesDirPath() {
+	return getPanelResourcesDir().getFullPathName();
+}
 
-File CtrlrPanel::getLuaMethodGroupDir(const ValueTree &methodGroup)
-{
+File CtrlrPanel::getLuaMethodGroupDir(const ValueTree &methodGroup) {
 	ValueTree currentItem = methodGroup;
 	StringArray temp;
-	while (currentItem.isValid() && currentItem.hasType(Ids::luaMethodGroup))
-	{
+	while (currentItem.isValid() && currentItem.hasType(Ids::luaMethodGroup)) {
 		String currentPath = currentItem.getProperty(Ids::name);
-		if (!currentPath.isEmpty())
-		{
+		if (!currentPath.isEmpty()) {
 			temp.add(currentPath);
 		}
 		currentItem = currentItem.getParent();
 	}
 	File result(getPanelLuaDirPath());
-	for (int i = temp.size(); i >= 0; i--)
-	{
+	for (int i = temp.size(); i >= 0; i--) {
 		result = result.getChildFile(temp[i]);
 	}
 	return result;
 }
 
-Result CtrlrPanel::convertLuaMethodsToFiles(const String dirPath)
-{
+Result CtrlrPanel::convertLuaMethodsToFiles(const String dirPath) {
 	Result res = Result::ok();
 	// Try and get access to panel directory
 	File panelLuaDirectory(dirPath);
-	if (panelLuaDirectory.existsAsFile())
-	{ // A directory with that name already exists
+	if (panelLuaDirectory.existsAsFile()) { // A directory with that name already exists
 		res =
 			Result::fail("Convert to files can't create directory (a file with that name already exists): " + dirPath);
-	}
-	else if (!panelLuaDirectory.exists())
-	{
+	} else if (!panelLuaDirectory.exists()) {
 		res = panelLuaDirectory.createDirectory();
 	}
-	if (res.ok())
-	{
-		if (panelLuaDirectory.hasWriteAccess())
-		{ // Save lua code
+	if (res.ok()) {
+		if (panelLuaDirectory.hasWriteAccess()) { // Save lua code
 			res = saveLuaCode(panelLuaDirectory, this);
-		}
-		else
-		{
+		} else {
 			res = Result::fail("Convert to XML can't write in panel directory: " + dirPath);
 		}
 	}
 	return res;
 }
 
-void CtrlrPanel::convertLuaMethodsToPropeties(const File &panelLuaDir, ValueTree &panelTree)
-{
+void CtrlrPanel::convertLuaMethodsToPropeties(const File &panelLuaDir, ValueTree &panelTree) {
 	ValueTree luaManager = panelTree.getChildWithName(Ids::luaManager);
-	if (luaManager.isValid())
-	{
+	if (luaManager.isValid()) {
 		ValueTree luaMethods = luaManager.getChildWithName(Ids::luaManagerMethods);
 		CtrlrPanel::convertLuaChildrenToProperties(panelLuaDir, &luaMethods);
 	}
 }
 
-Result CtrlrPanel::savePanel()
-{
+Result CtrlrPanel::savePanel() {
 	_DBG("CtrlrPanel::savePanel");
 
 	bool panelWasDirty = isPanelDirty();
@@ -197,106 +187,119 @@ Result CtrlrPanel::savePanel()
 void CtrlrPanel::savePanelAs(const CommandID saveOption) {
 	File initialDir(getProperty(Ids::panelLastSaveDir));
 
-	auto handleSaveSuccess = [this](const File &fileToSave) {
-		setProperty(Ids::panelFilePath, fileToSave.getFullPathName());
-		setProperty(Ids::panelLastSaveDir, fileToSave.getParentDirectory().getFullPathName());
+	// Helper to handle property updates AND notification
+	auto handleSaveSuccess = [this](const File &fileToSave, const Result &res) {
+		if (getEditor()) {
+			if (res.failed())
+				notify("Panel save: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
+			else
+				notify("Panel saved: [" + fileToSave.getFullPathName() + "]", nullptr, NotifySuccess);
+		}
 
-		setPanelDirty(false);
-		if (auto *um = getUndoManager())
-			um->clearUndoHistory();
+		if (res.wasOk()) {
+			setProperty(Ids::panelFilePath, fileToSave.getFullPathName());
+			setProperty(Ids::panelLastSaveDir, fileToSave.getParentDirectory().getFullPathName());
 
-		updatePanelWindowTitle();
+			setPanelDirty(false);
+			if (auto *um = getUndoManager())
+				um->clearUndoHistory();
+
+			updatePanelWindowTitle();
+		}
 	};
 
-switch (saveOption) {
-case CtrlrEditor::doExportFileText: {
-    File defaultFile = askForPanelFileToSave(this, initialDir, true, false);
+	switch (saveOption) {
+	case CtrlrEditor::doExportFileText: {
+		File defaultFile = askForPanelFileToSave(this, initialDir, true, false);
 
-    FC::saveFileAsync("Export XML Panel", defaultFile, "*.panel", true, [this, handleSaveSuccess](const File &fileToSave) {
-        if (fileToSave == File())
-            return;
+		FC::saveFileAsync("Export XML Panel", defaultFile, "*.panel", true,
+						  [this, handleSaveSuccess](const File &fileToSave) {
+							  if (fileToSave == File())
+								  return;
 
-        savePanelXml(fileToSave, this);
-        handleSaveSuccess(fileToSave);
-    });
-    break;
-}
+							  Result res = savePanelXml(fileToSave, this);
+							  handleSaveSuccess(fileToSave, res);
+						  });
+		break;
+	}
 
-case CtrlrEditor::doExportFileZText: {
-    File defaultFile = askForPanelFileToSave(this, initialDir, true, true);
+	case CtrlrEditor::doExportFileZText: {
+		File defaultFile = askForPanelFileToSave(this, initialDir, true, true);
 
-    FC::saveFileAsync("Export Compressed XML Panel", defaultFile, "*.panelz", true, [this, handleSaveSuccess](const File &fileToSave) {
-        if (fileToSave == File())
-            return;
+		FC::saveFileAsync("Export Compressed XML Panel", defaultFile, "*.panelz", true,
+						  [this, handleSaveSuccess](const File &fileToSave) {
+							  if (fileToSave == File())
+								  return;
 
-        savePanelXml(fileToSave, this, true);
-        handleSaveSuccess(fileToSave);
-    });
-    break;
-}
+							  Result res = savePanelXml(fileToSave, this, true);
+							  handleSaveSuccess(fileToSave, res);
+						  });
+		break;
+	}
 
-case CtrlrEditor::doExportFileBin: {
-    File defaultFile = askForPanelFileToSave(this, initialDir, false, false);
+	case CtrlrEditor::doExportFileBin: {
+		File defaultFile = askForPanelFileToSave(this, initialDir, false, false);
 
-    FC::saveFileAsync("Export Binary Panel", defaultFile, "*.bpanel", true, [this](const File &fileToSave) {
-        if (fileToSave == File())
-            return;
+		FC::saveFileAsync("Export Binary Panel", defaultFile, "*.bpanel", true, [this](const File &fileToSave) {
+			if (fileToSave == File())
+				return;
 
-        savePanelBin(fileToSave, this, false);
-    });
-    break;
-}
+			Result res = savePanelBin(fileToSave, this, false);
+			if (getEditor()) {
+				if (res.failed())
+					notify("Panel export: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
+				else
+					notify("Panel exported: [" + fileToSave.getFullPathName() + "]", nullptr, NotifySuccess);
+			}
+		});
+		break;
+	}
 
-case CtrlrEditor::doExportFileZBin: {
-    File defaultFile = askForPanelFileToSave(this, initialDir, false, true);
+	case CtrlrEditor::doExportFileZBin: {
+		File defaultFile = askForPanelFileToSave(this, initialDir, false, true);
 
-    FC::saveFileAsync("Export Compressed Binary Panel", defaultFile, "*.bpanelz", true, [this](const File &fileToSave) {
-        if (fileToSave == File())
-            return;
+		FC::saveFileAsync(
+			"Export Compressed Binary Panel", defaultFile, "*.bpanelz", true, [this](const File &fileToSave) {
+				if (fileToSave == File())
+					return;
 
-        savePanelBin(fileToSave, this, true);
-    });
-    break;
-}
+				Result res = savePanelBin(fileToSave, this, true);
+				if (getEditor()) {
+					if (res.failed())
+						notify("Panel export: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
+					else
+						notify("Panel exported: [" + fileToSave.getFullPathName() + "]", nullptr, NotifySuccess);
+				}
+			});
+		break;
+	}
 
 	case CtrlrEditor::doExportFileZBinRes: {
 		exportPanel(this, initialDir);
 		break;
 	}
 
-case CtrlrEditor::doExportFileInstance:
-case CtrlrEditor::doExportFileInstanceRestricted:
-{
-    const bool isRestricted = (saveOption == CtrlrEditor::doExportFileInstanceRestricted);
+	case CtrlrEditor::doExportFileInstance:
+	case CtrlrEditor::doExportFileInstanceRestricted: {
+		const bool isRestricted = (saveOption == CtrlrEditor::doExportFileInstanceRestricted);
 
-    owner.getNativeObject().exportWithDefaultPanel(
-        this, 
-        isRestricted, 
-        isRestricted, 
-        [this](juce::Result res)
-        {
-            if (res.failed())
-            {
-                if (res.getErrorMessage() == "User cancelled the export operation.")
-                {
-                    notify("Panel instance export: Cancelled by user.", nullptr, NotifyFailure);
-                }
-                else
-                {
-                    notify("Panel instance export: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
-                    AW::showMessageBox(AW::Warning, "Panel export", 
-                        "Failed to export panel as standalone instance.\n" + res.getErrorMessage());
-                }
-            }
-            else
-            {
-                notify("Panel instance export: Wrote new panel instance.", nullptr, NotifySuccess);
-                AW::showMessageBox(AW::Info, "Panel export", "Wrote new panel instance");
-            }
-        });
+		owner.getNativeObject().exportWithDefaultPanel(this, isRestricted, isRestricted, [this](juce::Result res) {
+			if (res.failed()) {
+				if (res.getErrorMessage() == "User cancelled the export operation.") {
+					notify("Panel instance export: Cancelled by user.", nullptr, NotifyFailure);
+				} else {
+					notify("Panel instance export: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
+					AW::showMessageBox(AW::Warning, "Panel export",
+									   "Failed to export panel as standalone instance.\n" + res.getErrorMessage());
+				}
+			} else {
+				notify("Panel instance export: Wrote new panel instance.", nullptr, NotifySuccess);
+				AW::showMessageBox(AW::Info, "Panel export", "Wrote new panel instance");
+			}
+		});
 
-    break;
-}
+		break;
+	}
 
 	case CtrlrEditor::doExportGenerateUID: {
 		setProperty(Ids::panelUID, generateRandomUnique(juce::String(juce::Time::currentTimeMillis())));
@@ -308,27 +311,31 @@ case CtrlrEditor::doExportFileInstanceRestricted:
 	}
 }
 
-void CtrlrPanel::savePanelVersioned()
-{
+void CtrlrPanel::savePanelVersioned() {
 	File panelFile(getProperty(Ids::panelFilePath));
 
-	if (panelFile.existsAsFile() && panelFile.hasWriteAccess())
-	{
+	if (panelFile.existsAsFile() && panelFile.hasWriteAccess()) {
 		setProperty(Ids::panelVersionMinor, (int)getProperty(Ids::panelVersionMinor) + 1);
 
-		if (panelFile != File())
-		{
-			savePanelXml(
-				File(panelFile.getParentDirectory()
-						 .getChildFile(getProperty(Ids::name).toString() +
-									   owner.getProperty(Ids::ctrlrVersionSeparator).toString() + getVersionString())
-						 .withFileExtension((bool)owner.getProperty(Ids::ctrlrVersionCompressed) ? "panelz" : "panel")),
-				this, owner.getProperty(Ids::ctrlrVersionCompressed));
+		if (panelFile != File()) {
+			File targetFile =
+				panelFile.getParentDirectory()
+					.getChildFile(getProperty(Ids::name).toString() +
+								  owner.getProperty(Ids::ctrlrVersionSeparator).toString() + getVersionString())
+					.withFileExtension((bool)owner.getProperty(Ids::ctrlrVersionCompressed) ? "panelz" : "panel");
+
+			Result res = savePanelXml(targetFile, this, owner.getProperty(Ids::ctrlrVersionCompressed));
+
+			// ADD NOTIFICATION HERE
+			if (getEditor()) {
+				if (res.failed())
+					notify("Versioned save: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
+				else
+					notify("Versioned save: [" + targetFile.getFullPathName() + "]", nullptr, NotifySuccess);
+			}
 		}
-	}
-	else
-	{
-		savePanel();
+	} else {
+		savePanel(); // Fallback already notifies inside savePanel()
 	}
 }
 
@@ -338,34 +345,27 @@ const String CtrlrPanel::exportPanel(CtrlrPanel *panel, const File &lastBrowsedD
 	if (panel == nullptr)
 		return "Undefined panel passed to exporter";
 
-if (destinationFile == File())
-{
-    // 1. Generate default target path/filename synchronously
-    File defaultFile = askForPanelFileToSave(panel, lastBrowsedDir, false, true);
+	if (destinationFile == File()) {
+		// 1. Generate default target path/filename synchronously
+		File defaultFile = askForPanelFileToSave(panel, lastBrowsedDir, false, true);
 
-    // 2. Determine native dialog preference
-    bool useNativeDialog = panel ? (bool)panel->getOwner().getProperty(Ids::ctrlrNativeFileDialogs, true) : true;
+		// 2. Determine native dialog preference
+		bool useNativeDialog = panel ? (bool)panel->getOwner().getProperty(Ids::ctrlrNativeFileDialogs, true) : true;
 
-    // 3. Trigger async file chooser via your FC helper
-    FC::saveFileAsync(
-        "Export Compressed Binary Panel",
-        defaultFile,
-        "*.bpanelz",
-        useNativeDialog,
-        [panel, lastBrowsedDir, isRestricted](const File &exportedFile)
-        {
-            if (exportedFile != File())
-            {
-                String err = exportPanel(panel, lastBrowsedDir, exportedFile, nullptr, nullptr, isRestricted);
-                if (err.isNotEmpty())
-                {
-                    AW::showMessageBox(AW::Warning, "Panel Export", err);
-                }
-            }
-        });
+		// 3. Trigger async file chooser via your FC helper
+		FC::saveFileAsync("Export Compressed Binary Panel", defaultFile, "*.bpanelz", useNativeDialog,
+						  [panel, lastBrowsedDir, isRestricted](const File &exportedFile) {
+							  if (exportedFile != File()) {
+								  String err =
+									  exportPanel(panel, lastBrowsedDir, exportedFile, nullptr, nullptr, isRestricted);
+								  if (err.isNotEmpty()) {
+									  AW::showMessageBox(AW::Warning, "Panel Export", err);
+								  }
+							  }
+						  });
 
-    return juce::String();
-}
+		return juce::String();
+	}
 
 	panel->luaSavePanel(PanelFileExport, destinationFile);
 
@@ -447,25 +447,19 @@ if (destinationFile == File())
 	return "Can't export panel, unable to write to the specified destination";
 }
 
-const ValueTree CtrlrPanel::openBinPanel(const File &panelFile)
-{
+const ValueTree CtrlrPanel::openBinPanel(const File &panelFile) {
 	ValueTree tree;
 
-	if (panelFile.hasFileExtension(".bpanelz"))
-	{
+	if (panelFile.hasFileExtension(".bpanelz")) {
 		std::unique_ptr<FileInputStream> fileInputStream(panelFile.createInputStream().release());
 
-		if (fileInputStream)
-		{
+		if (fileInputStream) {
 			GZIPDecompressorInputStream gzFileInputStream(*fileInputStream);
 			return (ValueTree::readFromStream(gzFileInputStream));
 		}
-	}
-	else if (panelFile.hasFileExtension(".bpanel"))
-	{
+	} else if (panelFile.hasFileExtension(".bpanel")) {
 		std::unique_ptr<FileInputStream> fileInputStream(panelFile.createInputStream().release());
-		if (fileInputStream)
-		{
+		if (fileInputStream) {
 			return (ValueTree::readFromStream(*fileInputStream));
 		}
 	}
@@ -473,12 +467,10 @@ const ValueTree CtrlrPanel::openBinPanel(const File &panelFile)
 	return (ValueTree());
 }
 
-const ValueTree CtrlrPanel::openBinPanel(const MemoryBlock &panelData, const bool isCompressed)
-{
+const ValueTree CtrlrPanel::openBinPanel(const MemoryBlock &panelData, const bool isCompressed) {
 	ValueTree tree;
 
-	if (isCompressed)
-	{
+	if (isCompressed) {
 		MemoryInputStream mi(panelData, false);
 
 		{
@@ -487,9 +479,7 @@ const ValueTree CtrlrPanel::openBinPanel(const MemoryBlock &panelData, const boo
 
 			return (tree);
 		}
-	}
-	else
-	{
+	} else {
 		{
 			MemoryInputStream mi(panelData, false);
 			return (ValueTree::readFromStream(mi));
@@ -497,48 +487,33 @@ const ValueTree CtrlrPanel::openBinPanel(const MemoryBlock &panelData, const boo
 	}
 }
 
-const ValueTree CtrlrPanel::openXmlPanel(const File &panelFile)
-{
+const ValueTree CtrlrPanel::openXmlPanel(const File &panelFile) {
 	String xmlData;
 
-	if (panelFile.hasFileExtension("panelz"))
-	{
+	if (panelFile.hasFileExtension("panelz")) {
 		std::unique_ptr<FileInputStream> fz(panelFile.createInputStream().release());
-		if (fz)
-		{
+		if (fz) {
 			GZIPDecompressorInputStream gzInput(fz.get(), false);
 			xmlData = gzInput.readEntireStreamAsString();
-		}
-		else
-		{
+		} else {
 			_ERR("CtrlrPanel::openXmlPanel can't create input stream for file: " + panelFile.getFullPathName());
 		}
 
 		std::unique_ptr<XmlElement> xml(XmlDocument::parse(xmlData).release());
 
-		if (xml)
-		{
+		if (xml) {
 			return (ValueTree::fromXml(*xml));
-		}
-		else
-		{
+		} else {
 			_ERR("CtrlrPanel::openXmlPanel can't parse file contents as XML");
 		}
-	}
-	else if (panelFile.hasFileExtension("panel"))
-	{
+	} else if (panelFile.hasFileExtension("panel")) {
 		std::unique_ptr<XmlElement> xml(XmlDocument::parse(panelFile).release());
-		if (xml)
-		{
+		if (xml) {
 			return (ValueTree::fromXml(*xml));
-		}
-		else
-		{
+		} else {
 			_ERR("CtrlrPanel::openXmlPanel can't parse file contents as XML");
 		}
-	}
-	else
-	{
+	} else {
 		_ERR("CtrlrPanel::openXmlPanel unknown file type");
 	}
 
@@ -546,19 +521,13 @@ const ValueTree CtrlrPanel::openXmlPanel(const File &panelFile)
 	return (ValueTree());
 }
 
-const ValueTree CtrlrPanel::openPanel(const File &panelFile)
-{
+const ValueTree CtrlrPanel::openPanel(const File &panelFile) {
 	ValueTree result;
-	if (panelFile.hasFileExtension("panelz;panel"))
-	{
+	if (panelFile.hasFileExtension("panelz;panel")) {
 		result = openXmlPanel(panelFile);
-	}
-	else if (panelFile.hasFileExtension("bpanelz;bpanel"))
-	{
+	} else if (panelFile.hasFileExtension("bpanelz;bpanel")) {
 		result = openBinPanel(panelFile);
-	}
-	else
-	{
+	} else {
 		result = ValueTree();
 	}
 	// Patch panelFilePath property to match the actual file
@@ -566,8 +535,7 @@ const ValueTree CtrlrPanel::openPanel(const File &panelFile)
 	return result;
 }
 
-Result CtrlrPanel::savePanelBin(const File &fileToSave, CtrlrPanel *panel, const bool compressPanel)
-{
+Result CtrlrPanel::savePanelBin(const File &fileToSave, CtrlrPanel *panel, const bool compressPanel) {
 	MemoryOutputStream panelBinData;
 
 	if (panel == nullptr)
@@ -575,34 +543,25 @@ Result CtrlrPanel::savePanelBin(const File &fileToSave, CtrlrPanel *panel, const
 
 	panel->sync();
 
-	if (compressPanel)
-	{
+	if (compressPanel) {
 		panel->luaSavePanel(PanelFileBinaryCompressed, fileToSave);
 
 		GZIPCompressorOutputStream gzOutputStream(&panelBinData);
 		panel->getPanelTree().writeToStream(gzOutputStream);
 		gzOutputStream.flush();
-	}
-	else
-	{
+	} else {
 		panel->luaSavePanel(PanelFileBinary, fileToSave);
 		panel->getPanelTree().writeToStream(panelBinData);
 	}
 
-	if (fileToSave.hasWriteAccess())
-	{
-		if (fileToSave.replaceWithData(panelBinData.getData(), panelBinData.getDataSize()))
-		{
+	if (fileToSave.hasWriteAccess()) {
+		if (fileToSave.replaceWithData(panelBinData.getData(), panelBinData.getDataSize())) {
 			return (Result::ok());
-		}
-		else
-		{
+		} else {
 			return (Result::fail("savePanelBin replaceWithData() failed on destination file " +
 								 fileToSave.getFullPathName()));
 		}
-	}
-	else
-	{
+	} else {
 
 		AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Can't save panel",
 										 "I can't write to the specified file", "OK");
@@ -610,8 +569,7 @@ Result CtrlrPanel::savePanelBin(const File &fileToSave, CtrlrPanel *panel, const
 	}
 }
 
-void CtrlrPanel::writePanelXml(OutputStream &outputStream, CtrlrPanel *panel, const bool compressPanel)
-{
+void CtrlrPanel::writePanelXml(OutputStream &outputStream, CtrlrPanel *panel, const bool compressPanel) {
 	if (panel == nullptr)
 		return;
 
@@ -619,35 +577,28 @@ void CtrlrPanel::writePanelXml(OutputStream &outputStream, CtrlrPanel *panel, co
 
 	std::unique_ptr<XmlElement> panelXml(panel->getPanelTree().createXml().release());
 
-	if (compressPanel && panelXml)
-	{
+	if (compressPanel && panelXml) {
 		String xml = panelXml->createDocument("");
 		{
 			GZIPCompressorOutputStream gzipOutputStream(&outputStream, 9, false);
 			gzipOutputStream.writeString(xml);
 		}
 	}
-	if (!compressPanel && panelXml)
-	{
+	if (!compressPanel && panelXml) {
 		panelXml->writeToStream(outputStream, "");
 	}
 }
 
-File CtrlrPanel::getLuaMethodSourceFile(const ValueTree *method)
-{
+File CtrlrPanel::getLuaMethodSourceFile(const ValueTree *method) {
 	String path = method->getProperty(Ids::luaMethodSourcePath);
-	if (File::isAbsolutePath(path))
-	{
+	if (File::isAbsolutePath(path)) {
 		return File(path);
-	}
-	else
-	{
+	} else {
 		return getPanelLuaDir().getChildFile(path);
 	}
 }
 
-Result CtrlrPanel::writeLuaMethod(const File &parentDir, ValueTree *method)
-{
+Result CtrlrPanel::writeLuaMethod(const File &parentDir, ValueTree *method) {
 	if (method == nullptr)
 		return Result::fail("Method name is missing");
 
@@ -658,16 +609,13 @@ Result CtrlrPanel::writeLuaMethod(const File &parentDir, ValueTree *method)
 
 	// Create file
 	const File methodFile = parentDir.getNonexistentChildFile(methodName, ".lua", false);
-	if (methodFile.replaceWithText(methodCode))
-	{
+	if (methodFile.replaceWithText(methodCode)) {
 		method->setProperty(Ids::luaMethodName, methodFile.getFileNameWithoutExtension(), nullptr);
 		method->setProperty(Ids::luaMethodSourcePath, methodFile.getRelativePathFrom(getPanelLuaDir()), nullptr);
 		method->setProperty(Ids::luaMethodSource, (int)CtrlrLuaMethod::codeInFile, nullptr);
 		method->removeProperty(Ids::luaMethodCode, nullptr);
 		return Result::ok();
-	}
-	else
-	{
+	} else {
 
 		AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Could not save lua method",
 										 "Could not save lua method", "OK");
@@ -675,8 +623,7 @@ Result CtrlrPanel::writeLuaMethod(const File &parentDir, ValueTree *method)
 	}
 }
 
-Result CtrlrPanel::writeLuaMethodGroup(const File &parentDir, ValueTree *methodGroup)
-{
+Result CtrlrPanel::writeLuaMethodGroup(const File &parentDir, ValueTree *methodGroup) {
 	if (methodGroup == nullptr)
 		return Result::fail("Method group is missing");
 
@@ -687,12 +634,9 @@ Result CtrlrPanel::writeLuaMethodGroup(const File &parentDir, ValueTree *methodG
 	// Create file
 	const File methodGroupFile = parentDir.getChildFile(methodGroupName);
 	Result res = methodGroupFile.createDirectory();
-	if (res.wasOk())
-	{ // Save contained methods and groups
+	if (res.wasOk()) { // Save contained methods and groups
 		return CtrlrPanel::writeLuaChildren(methodGroupFile, methodGroup);
-	}
-	else
-	{
+	} else {
 
 		AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Could not save lua method group",
 										 "Could not save lua method group", "OK");
@@ -702,32 +646,24 @@ Result CtrlrPanel::writeLuaMethodGroup(const File &parentDir, ValueTree *methodG
 	return res;
 }
 
-Result CtrlrPanel::writeLuaChildren(const File &parentDir, ValueTree *parentElement)
-{
+Result CtrlrPanel::writeLuaChildren(const File &parentDir, ValueTree *parentElement) {
 	if (parentElement == nullptr)
 		return Result::fail("Parent element is missing");
 
 	Result res = Result::ok();
-	for (int i = 0; i < parentElement->getNumChildren(); i++)
-	{
+	for (int i = 0; i < parentElement->getNumChildren(); i++) {
 		ValueTree child = parentElement->getChild(i);
-		if (child.hasType(Ids::luaMethod))
-		{
+		if (child.hasType(Ids::luaMethod)) {
 			if ((int)child.getProperty(Ids::luaMethodSource) !=
-				CtrlrLuaMethod::codeInFile)
-			{ // Only process methods that are not already saved in files
+				CtrlrLuaMethod::codeInFile) { // Only process methods that are not already saved in files
 				res = CtrlrPanel::writeLuaMethod(parentDir, &child);
-				if (res.failed())
-				{ // Break on first error
+				if (res.failed()) { // Break on first error
 					return res;
 				}
 			}
-		}
-		else if (child.hasType(Ids::luaMethodGroup))
-		{
+		} else if (child.hasType(Ids::luaMethodGroup)) {
 			res = CtrlrPanel::writeLuaMethodGroup(parentDir, &child);
-			if (res.failed())
-			{ // Break on first error
+			if (res.failed()) { // Break on first error
 				return res;
 			}
 		}
@@ -735,22 +671,17 @@ Result CtrlrPanel::writeLuaChildren(const File &parentDir, ValueTree *parentElem
 	return res;
 }
 
-Result CtrlrPanel::saveLuaCode(const File &panelLuaDir, CtrlrPanel *panel)
-{
+Result CtrlrPanel::saveLuaCode(const File &panelLuaDir, CtrlrPanel *panel) {
 	ValueTree luaManager = panel->getPanelTree().getChildWithName(Ids::luaManager);
-	if (luaManager.isValid())
-	{
+	if (luaManager.isValid()) {
 		ValueTree luaMethods = luaManager.getChildWithName(Ids::luaManagerMethods);
 		return CtrlrPanel::writeLuaChildren(panelLuaDir, &luaMethods);
-	}
-	else
-	{
+	} else {
 		return (Result::fail("saveLuaCode failed due to missing luaManager"));
 	}
 }
 
-void CtrlrPanel::convertLuaMethodToProperty(const File &panelLuaDir, ValueTree *method)
-{
+void CtrlrPanel::convertLuaMethodToProperty(const File &panelLuaDir, ValueTree *method) {
 	if (method == nullptr)
 		return;
 
@@ -760,12 +691,9 @@ void CtrlrPanel::convertLuaMethodToProperty(const File &panelLuaDir, ValueTree *
 		return;
 	// Get file path
 	File methodFile;
-	if (File::isAbsolutePath(methodFilePath))
-	{
+	if (File::isAbsolutePath(methodFilePath)) {
 		methodFile = File(methodFilePath);
-	}
-	else
-	{
+	} else {
 		methodFile = panelLuaDir.getChildFile(methodFilePath);
 	}
 
@@ -775,52 +703,38 @@ void CtrlrPanel::convertLuaMethodToProperty(const File &panelLuaDir, ValueTree *
 	method->setProperty(Ids::luaMethodCode, methodFile.loadFileAsString(), nullptr);
 }
 
-void CtrlrPanel::convertLuaChildrenToProperties(const File &panelLuaDir, ValueTree *parentElement)
-{
+void CtrlrPanel::convertLuaChildrenToProperties(const File &panelLuaDir, ValueTree *parentElement) {
 	if (parentElement == nullptr)
 		return;
 
-	for (int i = 0; i < parentElement->getNumChildren(); i++)
-	{
+	for (int i = 0; i < parentElement->getNumChildren(); i++) {
 		ValueTree child = parentElement->getChild(i);
-		if (child.hasType(Ids::luaMethod))
-		{ // This is a method, check if it's on file
+		if (child.hasType(Ids::luaMethod)) { // This is a method, check if it's on file
 			if ((int)child.getProperty(Ids::luaMethodSource) ==
-				CtrlrLuaMethod::codeInFile)
-			{ // Only process methods that are saved in files
+				CtrlrLuaMethod::codeInFile) { // Only process methods that are saved in files
 				CtrlrPanel::convertLuaMethodToProperty(panelLuaDir, &child);
 			}
-		}
-		else if (child.hasType(Ids::luaMethodGroup))
-		{ // This is a group => recursive call
+		} else if (child.hasType(Ids::luaMethodGroup)) { // This is a group => recursive call
 			CtrlrPanel::convertLuaChildrenToProperties(panelLuaDir, &child);
 		}
 	}
 }
 
-Result CtrlrPanel::savePanelXml(const File &fileToSave, CtrlrPanel *panel, const bool compressPanel)
-{
+Result CtrlrPanel::savePanelXml(const File &fileToSave, CtrlrPanel *panel, const bool compressPanel) {
 	MemoryOutputStream dataToSave;
 
-	if (compressPanel)
-	{
+	if (compressPanel) {
 		panel->luaSavePanel(PanelFileXMLCompressed, fileToSave);
-	}
-	else
-	{
+	} else {
 		panel->luaSavePanel(PanelFileXML, fileToSave);
 	}
 
 	writePanelXml(dataToSave, panel, compressPanel);
 
-	if (fileToSave.hasWriteAccess())
-	{
-		if (fileToSave.replaceWithData(dataToSave.getData(), dataToSave.getDataSize()))
-		{
+	if (fileToSave.hasWriteAccess()) {
+		if (fileToSave.replaceWithData(dataToSave.getData(), dataToSave.getDataSize())) {
 			return (Result::ok());
-		}
-		else
-		{
+		} else {
 			return (Result::fail("savePanelXml replaceWithData() failed on destination file " +
 								 fileToSave.getFullPathName()));
 		}
@@ -860,34 +774,38 @@ bool CtrlrPanel::isPanelFile(const File &fileToCheck, const bool beThorough) {
 	return fileToCheck.hasFileExtension("bpanel;bpanelz;panel;panelz");
 }
 
-void CtrlrPanel::setSavePoint() { indexOfSavedState = currentActionIndex; }
+void CtrlrPanel::setSavePoint() {
+	indexOfSavedState = currentActionIndex;
+}
 
-bool CtrlrPanel::hasChangedSinceSavePoint() { return currentActionIndex != indexOfSavedState; }
+bool CtrlrPanel::hasChangedSinceSavePoint() {
+	return currentActionIndex != indexOfSavedState;
+}
 
-bool CtrlrPanel::isPanelDirty() { return getProperty(Ids::panelIsDirty, false); }
+bool CtrlrPanel::isPanelDirty() {
+	return getProperty(Ids::panelIsDirty, false);
+}
 
-void CtrlrPanel::setPanelDirty(const bool dirty) { setProperty(Ids::panelIsDirty, dirty); }
+void CtrlrPanel::setPanelDirty(const bool dirty) {
+	setProperty(Ids::panelIsDirty, dirty);
+}
 
-void CtrlrPanel::actionPerformed()
-{
+void CtrlrPanel::actionPerformed() {
 	currentActionIndex++;
 	updatePanelWindowTitle();
 }
 
-void CtrlrPanel::actionUndone()
-{
+void CtrlrPanel::actionUndone() {
 	currentActionIndex--;
 	updatePanelWindowTitle();
 }
 
-const String CtrlrPanel::getPanelWindowTitle()
-{
+const String CtrlrPanel::getPanelWindowTitle() {
 	String name = getProperty(Ids::name);
 	if (JUCEApplication::isStandaloneApp()) // Updated v5.6.31b. For Standalone APP/EXE Only. Was crashing VST Hosts on
 											// load in v5.6.30 & v5.6.31
 	{
-		if (isPanelDirty() || hasChangedSinceSavePoint())
-		{
+		if (isPanelDirty() || hasChangedSinceSavePoint()) {
 			name = name + "*";
 		}
 
@@ -903,14 +821,11 @@ const String CtrlrPanel::getPanelWindowTitle()
 	return name;
 }
 
-void CtrlrPanel::updatePanelWindowTitle()
-{
+void CtrlrPanel::updatePanelWindowTitle() {
 	CtrlrPanelEditor *editor = getEditor(false);
-	if (editor)
-	{
+	if (editor) {
 		String newName = getPanelWindowTitle();
-		if (newName != editor->getName())
-		{
+		if (newName != editor->getName()) {
 			editor->setName(newName);
 			// Trigger editor window title update
 			owner.getEditor()->activeCtrlrChanged();
@@ -918,74 +833,65 @@ void CtrlrPanel::updatePanelWindowTitle()
 	}
 }
 
-void CtrlrPanel::luaManagerChanged()
-{
-	if (!getRestoreState())
-	{
+void CtrlrPanel::luaManagerChanged() {
+	if (!getRestoreState()) {
 		setPanelDirty(true);
 		updatePanelWindowTitle();
 	}
 }
 
-void CtrlrPanel::panelResourcesChanged()
-{
-	if (!getRestoreState())
-	{
+void CtrlrPanel::panelResourcesChanged() {
+	if (!getRestoreState()) {
 		setPanelDirty(true);
 		updatePanelWindowTitle();
 	}
 }
-void CtrlrPanel::canClose(const bool closePanel, std::function<void(bool)> completionCallback) 
-{
-    CtrlrPanelWindowManager &manager = getWindowManager();
-    if (manager.isCreated(CtrlrPanelWindowManager::LuaMethodEditor)) {
-        CtrlrChildWindowContent *content = manager.getContent(CtrlrPanelWindowManager::LuaMethodEditor);
-        if (content != nullptr) {
-            content->toFront(true);
-            if (!content->canCloseWindow()) {
-                if (completionCallback)
-                    completionCallback(false);
-                return;
-            }
-        }
-    }
+void CtrlrPanel::canClose(const bool closePanel, std::function<void(bool)> completionCallback) {
+	CtrlrPanelWindowManager &manager = getWindowManager();
+	if (manager.isCreated(CtrlrPanelWindowManager::LuaMethodEditor)) {
+		CtrlrChildWindowContent *content = manager.getContent(CtrlrPanelWindowManager::LuaMethodEditor);
+		if (content != nullptr) {
+			content->toFront(true);
+			if (!content->canCloseWindow()) {
+				if (completionCallback)
+					completionCallback(false);
+				return;
+			}
+		}
+	}
 
-    if (closePanel && (hasChangedSinceSavePoint() || isPanelDirty())) {
+	if (closePanel && (hasChangedSinceSavePoint() || isPanelDirty())) {
 
-        juce::WeakReference<CtrlrPanel> safePanel(this);
+		juce::WeakReference<CtrlrPanel> safePanel(this);
 
-        juce::NativeMessageBox::showYesNoCancelBox(
-            juce::MessageBoxIconType::QuestionIcon, 
-            "Save panel (" + getName() + ")",
-            "There are unsaved changes in this panel.\nDo you want to save them before closing?", 
-            nullptr,
-            juce::ModalCallbackFunction::create([safePanel, completionCallback](int result) {
-                if (safePanel.wasObjectDeleted()) {
-                    if (completionCallback)
-                        completionCallback(false);
-                    return;
-                }
+		juce::NativeMessageBox::showYesNoCancelBox(
+			juce::MessageBoxIconType::QuestionIcon, "Save panel (" + getName() + ")",
+			"There are unsaved changes in this panel.\nDo you want to save them before closing?", nullptr,
+			juce::ModalCallbackFunction::create([safePanel, completionCallback](int result) {
+				if (safePanel.wasObjectDeleted()) {
+					if (completionCallback)
+						completionCallback(false);
+					return;
+				}
 
-                if (result == 1) // Save ("Yes")
-                {
-                    safePanel->savePanel();
-                    if (completionCallback)
-                        completionCallback(true);
-                } 
-                else if (result == 2) // Discard ("No")
-                {
-                    if (completionCallback)
-                        completionCallback(true);
-                } 
-                else // Cancel (0)
-                {
-                    if (completionCallback)
-                        completionCallback(false);
-                }
-            }));
-        return;
-    }
+				if (result == 1) // Save ("Yes")
+				{
+					safePanel->savePanel();
+					if (completionCallback)
+						completionCallback(true);
+				} else if (result == 2) // Discard ("No")
+				{
+					if (completionCallback)
+						completionCallback(true);
+				} else // Cancel (0)
+				{
+					if (completionCallback)
+						completionCallback(false);
+				}
+			}));
+		return;
+	}
 
-    if (completionCallback)
-        completionCallback(true);
+	if (completionCallback)
+		completionCallback(true);
 }
