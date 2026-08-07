@@ -61,52 +61,54 @@ void CtrlrEditor::performLuaEditorCommand(
 				luaMethodEditor->getMethodEditArea()->showConsoleTab();
 			} else if (commandID == LuaMethodEditorCommandIDs::editClearOutput) {
 				luaMethodEditor->getMethodEditArea()->clearOutputText();
-			} else if (commandID == LuaMethodEditorCommandIDs::editPreferences) 
-{
-    if (luaMethodEditor != nullptr)
-    {
-        // 1. Instanced settings component
-        auto settings = std::make_unique<CtrlrLuaMethodCodeEditorSettings>(*luaMethodEditor, SharedValues::getSearchTabsValue());
-        
-        // Ensure explicit size before passing ownership
-        settings->setSize(550, 586);
-        // settings->setSize(600, 500);
+			} else if (commandID == LuaMethodEditorCommandIDs::editPreferences) {
+				if (luaMethodEditor != nullptr) {
+					// 1. Instanced settings component
+					auto settings = std::make_unique<CtrlrLuaMethodCodeEditorSettings>(
+						*luaMethodEditor, SharedValues::getSearchTabsValue());
 
-        // Keep raw pointer for property extraction on close
-        auto* settingsPtr = settings.get();
-        auto* editorPtr = luaMethodEditor;
+					// Ensure explicit size before passing ownership
+					settings->setSize(550, 586);
+					// settings->setSize(600, 500);
 
-        // 2. Configure launch options
-        juce::DialogWindow::LaunchOptions options;
-        options.content.setOwned(settings.release());
-        options.dialogTitle = "Code editor preferences";
-        options.resizable = false;
-        options.useNativeTitleBar = false; // Prevents Linux GTK window manager glitches
-        options.dialogBackgroundColour = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
-        options.escapeKeyTriggersCloseButton = true;
-        options.componentToCentreAround = editorPtr;
+					// Keep raw pointer for property extraction on close
+					auto *settingsPtr = settings.get();
+					auto *editorPtr = luaMethodEditor;
 
-        // 3. Launch asynchronously
-        options.launchAsync();
+					// 2. Configure launch options
+					juce::DialogWindow::LaunchOptions options;
+					options.content.setOwned(settings.release());
+					options.dialogTitle = "Code editor preferences";
+					options.resizable = false;
+					options.useNativeTitleBar = false; // Prevents Linux GTK window manager glitches
+					options.dialogBackgroundColour =
+						getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
+					options.escapeKeyTriggersCloseButton = true;
+					options.componentToCentreAround = editorPtr;
 
-        // 4. Save/Apply properties when modified or on dialog dismiss
-        if (activePanel != nullptr) 
-        {
-            auto& manager = activePanel->getCtrlrManagerOwner();
+					// 3. Launch asynchronously
+					options.launchAsync();
 
-            editorPtr->getComponentTree().setProperty(
-                Ids::luaMethodEditorFont, manager.getFontManager().getStringFromFont(settingsPtr->getFont()), nullptr);
-            editorPtr->getComponentTree().setProperty(
-                Ids::luaMethodEditorBgColour, COLOUR2STR(settingsPtr->getBgColour()), nullptr);
-            editorPtr->getComponentTree().setProperty(
-                Ids::luaMethodEditorLineNumbersBgColour, COLOUR2STR(settingsPtr->getLineNumbersBgColour()), nullptr);
-            editorPtr->getComponentTree().setProperty(
-                Ids::luaMethodEditorLineNumbersColour, COLOUR2STR(settingsPtr->getLineNumbersColour()), nullptr);
+					// 4. Save/Apply properties when modified or on dialog dismiss
+					if (activePanel != nullptr) {
+						auto &manager = activePanel->getCtrlrManagerOwner();
 
-            editorPtr->updateTabs();
-        }
-    }
-}
+						editorPtr->getComponentTree().setProperty(
+							Ids::luaMethodEditorFont,
+							manager.getFontManager().getStringFromFont(settingsPtr->getFont()), nullptr);
+						editorPtr->getComponentTree().setProperty(Ids::luaMethodEditorBgColour,
+																  COLOUR2STR(settingsPtr->getBgColour()), nullptr);
+						editorPtr->getComponentTree().setProperty(Ids::luaMethodEditorLineNumbersBgColour,
+																  COLOUR2STR(settingsPtr->getLineNumbersBgColour()),
+																  nullptr);
+						editorPtr->getComponentTree().setProperty(Ids::luaMethodEditorLineNumbersColour,
+																  COLOUR2STR(settingsPtr->getLineNumbersColour()),
+																  nullptr);
+
+						editorPtr->updateTabs();
+					}
+				}
+			}
 
 			else if (commandID == LuaMethodEditorCommandIDs::editSingleLineComment) {
 				if (auto *editor = luaMethodEditor->getCurrentEditor())
@@ -354,7 +356,10 @@ bool CtrlrEditor::perform(
 	case CtrlrEditor::doSaveAs:
 		getActivePanel()->savePanelAs(doExportFileText);
 		break;
-
+	case CtrlrEditor::doSave:
+		if (getActivePanel())
+			getActivePanel()->savePanel();
+		break;
 	case CtrlrEditor::doSaveVersioned:
 		getActivePanel()->savePanelVersioned();
 		break;
@@ -626,4 +631,6 @@ void CtrlrEditor::sliderValueChanged(Slider *slider) {
 	}
 }
 
-void CtrlrEditor::performMidiDeviceRefresh() { owner.getCtrlrMidiDeviceManager().refreshDevices(); }
+void CtrlrEditor::performMidiDeviceRefresh() {
+	owner.getCtrlrMidiDeviceManager().refreshDevices();
+}

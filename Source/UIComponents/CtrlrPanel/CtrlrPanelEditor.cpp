@@ -109,9 +109,17 @@ Colour CtrlrPanelNotifier::getBackgroundColourForNotification(
 //--------------------------------------------------------------------------------------------------
 // CtrlrPanelEditor
 //--------------------------------------------------------------------------------------------------
-
+/*
+In JUCE 7/8, MultiDocumentPanel refactored its tab component integration.
+It grabs component->getName() once at the exact moment addDocument() is called to build the tab title.
+If the component's name hasn't been updated before it gets registered to the panel,
+JUCE 8 caches "Ctrlr Panel Editor" and won't re-query getName() when the XML finishes parsing later.
+i.e. use panelname not
 CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManager, const juce::String &panelName)
 	: juce::Component(L"Ctrlr Panel Editor"),
+*/
+CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManager, const juce::String &panelName)
+	: juce::Component(panelName),
 	  lastEditMode(true),
 	  ctrlrManager(_ctrlrManager),
 	  owner(_owner),
@@ -416,8 +424,7 @@ if (ctrlrPanelViewport != nullptr) {
 
 }
 */
-void CtrlrPanelEditor::visibilityChanged() {
-}
+void CtrlrPanelEditor::visibilityChanged() {}
 
 void CtrlrPanelEditor::resized() {
 	ctrlrPanelViewport->setBounds(0, 0, getWidth() - 608, getHeight());
