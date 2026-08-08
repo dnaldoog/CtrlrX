@@ -299,8 +299,7 @@ void CtrlrComponent::addAndMakeVisible(Component *child, int zOrder) {
 	child->addComponentListener(this);
 }
 
-void CtrlrComponent::visibilityChanged() {
-}
+void CtrlrComponent::visibilityChanged() {}
 
 void CtrlrComponent::changeListenerCallback(ChangeBroadcaster *source) {
 	CtrlrComponentSelection *selection = dynamic_cast<CtrlrComponentSelection *>(source);

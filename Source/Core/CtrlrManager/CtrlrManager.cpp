@@ -32,9 +32,25 @@ CtrlrManager::CtrlrManager(CtrlrProcessor *_owner, CtrlrLog &_ctrlrLog)
 	nullPanel = new CtrlrPanel(*this);
 	nullModulator = new CtrlrModulator(*nullPanel);
 	ctrlrFontManager.reset(new CtrlrFontManager(*this));
+
+	// Register safe default fallback colors on the global LookAndFeel instance
+	auto &defaultLF = LookAndFeel::getDefaultLookAndFeel();
+
+	// Standard Label Defaults
+	defaultLF.setColour(Label::textColourId, Colours::white);
+	defaultLF.setColour(Label::backgroundColourId, Colours::transparentBlack);
+	defaultLF.setColour(Label::outlineColourId, Colours::transparentBlack);
+
+	// Text Editor Defaults
+	defaultLF.setColour(TextEditor::textColourId, Colours::white);
+	defaultLF.setColour(TextEditor::backgroundColourId, Colours::black);
+	defaultLF.setColour(TextEditor::highlightColourId, Colours::blue);
+
+	// Slider Defaults
+	defaultLF.setColour(Slider::thumbColourId, Colours::white);
+	defaultLF.setColour(Slider::trackColourId, Colours::grey);
 }
-CtrlrManager::~CtrlrManager()
-{
+CtrlrManager::~CtrlrManager() {
 	DBG("(C) CtrlrManager DTOR called");
 
 	// 1. Set shutdown flags immediately
@@ -134,7 +150,9 @@ void CtrlrManager::setDefaults() {
 	setProperty(Ids::luaCtrlrRestoreState, COMBO_ITEM_NONE);
 }
 
-CtrlrManagerVst &CtrlrManager::getVstManager() { return (*ctrlrManagerVst); }
+CtrlrManagerVst &CtrlrManager::getVstManager() {
+	return (*ctrlrManagerVst);
+}
 
 void CtrlrManager::addModulator(CtrlrModulator *modulatorToAdd) {
 	_DBG("CtrlrManager::addModulator [PRE] vstIndex==" + modulatorToAdd->getProperty(Ids::vstIndex).toString());
@@ -195,33 +213,30 @@ void CtrlrManager::allPanelsInitialized() {
 	}
 }
 
-CtrlrPanel *CtrlrManager::addPanel(const ValueTree &savedState, const bool showUI) 
-{
-    // 1. Instantiate the panel
-    CtrlrPanel *panel = new CtrlrPanel(*this, getUniquePanelName("Ctrlr Panel"), ctrlrPanels.size());
+CtrlrPanel *CtrlrManager::addPanel(const ValueTree &savedState, const bool showUI) {
+	// 1. Instantiate the panel
+	CtrlrPanel *panel = new CtrlrPanel(*this, getUniquePanelName("Ctrlr Panel"), ctrlrPanels.size());
 
-    // 2. Add to internal panel list
-    ctrlrPanels.add(panel);
+	// 2. Add to internal panel list
+	ctrlrPanels.add(panel);
 
-    // 3. Restore state from ValueTree
-    panel->restoreState(savedState.createCopy());
+	// 3. Restore state from ValueTree
+	panel->restoreState(savedState.createCopy());
 
-    // 4. Register in manager tree
-    managerTree.addChild(panel->getPanelTree(), -1, 0);
+	// 4. Register in manager tree
+	managerTree.addChild(panel->getPanelTree(), -1, 0);
 
-    // 5. Open/Show UI via Ctrlr's dedicated editor helper
-    if (showUI) 
-    {
-        if (auto *editor = panel->getEditor(true)) 
-        {
-            // Delegate tab addition to Ctrlr's editor handler to prevent duplicate entries
-            addPanel(editor); 
-        }
-    }
+	// 5. Open/Show UI via Ctrlr's dedicated editor helper
+	if (showUI) {
+		if (auto *editor = panel->getEditor(true)) {
+			// Delegate tab addition to Ctrlr's editor handler to prevent duplicate entries
+			addPanel(editor);
+		}
+	}
 
-    organizePanels();
+	organizePanels();
 
-    return panel;
+	return panel;
 }
 
 void CtrlrManager::addPanel(CtrlrPanelEditor *panelToAdd) {
@@ -283,36 +298,32 @@ void CtrlrManager::restoreState(const ValueTree &savedTree) {
 	ctrlrManagerRestoring = true;
 	const juce::ScopedValueSetter<bool> restoringGuard(ctrlrManagerRestoring, true, false);
 	// Safely close documents backward using JUCE's Component* API
-// =================================================================
-    // STEP 1 & 2: CLEANUP PREVIOUS STATE & UI DETACHMENT
-    // =================================================================
-    if (ctrlrDocumentPanel != nullptr) 
-    {
-        // 1. Hide document panel during teardown to avoid unwanted repaints
-        ctrlrDocumentPanel->setVisible(false);
+	// =================================================================
+	// STEP 1 & 2: CLEANUP PREVIOUS STATE & UI DETACHMENT
+	// =================================================================
+	if (ctrlrDocumentPanel != nullptr) {
+		// 1. Hide document panel during teardown to avoid unwanted repaints
+		ctrlrDocumentPanel->setVisible(false);
 
-        // 2. Remove document components from MultiDocumentPanel cleanly
-        //    Using getNumDocuments() + closeDocument with force=false 
-        //    or removing child components without explicit setActiveDocument(nullptr)
-        for (int i = 0; i < ctrlrPanels.size(); ++i)
-        {
-            if (auto* panel = ctrlrPanels.getUnchecked(i))
-            {
-                if (auto* editor = panel->getEditor(false)) 
-                {
-                    ctrlrDocumentPanel->removeChildComponent(editor);
-                }
-            }
-        }
-        
-        // DO NOT call ctrlrDocumentPanel->setActiveDocument(nullptr); 
-        // JUCE handles active document clearing internally when components are detached.
-    }
+		// 2. Remove document components from MultiDocumentPanel cleanly
+		//    Using getNumDocuments() + closeDocument with force=false
+		//    or removing child components without explicit setActiveDocument(nullptr)
+		for (int i = 0; i < ctrlrPanels.size(); ++i) {
+			if (auto *panel = ctrlrPanels.getUnchecked(i)) {
+				if (auto *editor = panel->getEditor(false)) {
+					ctrlrDocumentPanel->removeChildComponent(editor);
+				}
+			}
+		}
 
-    // 3. Clear data models safely
-    ctrlrPanels.clear(true); 
-    ctrlrModulators.clear();
-    managerTree.removeAllChildren(nullptr);
+		// DO NOT call ctrlrDocumentPanel->setActiveDocument(nullptr);
+		// JUCE handles active document clearing internally when components are detached.
+	}
+
+	// 3. Clear data models safely
+	ctrlrPanels.clear(true);
+	ctrlrModulators.clear();
+	managerTree.removeAllChildren(nullptr);
 
 	// =================================================================
 	// STEP 3: RESTORE PROPERTIES & MANAGERS
@@ -530,7 +541,6 @@ CtrlrPanel *CtrlrManager::getActivePanel() {
 	return nullptr;
 }
 
-
 void CtrlrManager::removePanel(CtrlrPanelEditor *editor) {
 	if (editor == nullptr)
 		return;
@@ -567,16 +577,16 @@ void CtrlrManager::removePanel(CtrlrPanelEditor *editor) {
 	organizePanels();
 }
 void CtrlrManager::restoreEditorState() {
-    if (ctrlrEditor != nullptr && ctrlrDocumentPanel != nullptr) {
-        // Only attempt to set/restore active document if documents actually exist
-        if (ctrlrDocumentPanel->getNumDocuments() > 0) {
-            // Set the active document safely
-            if (auto *currentDoc = ctrlrDocumentPanel->getDocument(0)) {
-                ctrlrDocumentPanel->setActiveDocument(currentDoc);
-            }
-        }
-        // No 'else' block needed! If getNumDocuments() is 0, JUCE has no active document by default.
-    }
+	if (ctrlrEditor != nullptr && ctrlrDocumentPanel != nullptr) {
+		// Only attempt to set/restore active document if documents actually exist
+		if (ctrlrDocumentPanel->getNumDocuments() > 0) {
+			// Set the active document safely
+			if (auto *currentDoc = ctrlrDocumentPanel->getDocument(0)) {
+				ctrlrDocumentPanel->setActiveDocument(currentDoc);
+			}
+		}
+		// No 'else' block needed! If getNumDocuments() is 0, JUCE has no active document by default.
+	}
 }
 void CtrlrManager::setEditor(CtrlrEditor *editorToSet) {
 	ctrlrEditor = editorToSet;
@@ -641,23 +651,21 @@ int CtrlrManager::getPanelForModulator(const int modulatorIndex) {
 	return (-1);
 }
 
-int CtrlrManager::getNextVstIndex() { return (ctrlrManagerVst->getFirstFree()); }
+int CtrlrManager::getNextVstIndex() {
+	return (ctrlrManagerVst->getFirstFree());
+}
 
 void CtrlrManager::openPanelFromFile(Component *componentToAttachMenu) {
 	// 1. Set the specific file types Ctrlr expects, matching your legacy code
-    String wildcards = "*.panel;*.panelz;*.bpanel;*.bpanelz;*.*";
-    bool useNativeDialog = (bool)getProperty(Ids::ctrlrNativeFileDialogs);
-    
-    // Make sure fileChooser is declared as a std::unique_ptr<juce::FileChooser> 
-    // either in your CtrlrManager class header file, or as a static/tracked instance.
-    fileChooser = std::make_unique<FileChooser>(
-        "Open panel", 
-        File(getProperty(Ids::ctrlrLastBrowsedFileDirectory)),
-        wildcards, 
-        useNativeDialog
-    );
+	String wildcards = "*.panel;*.panelz;*.bpanel;*.bpanelz;*.*";
+	bool useNativeDialog = (bool)getProperty(Ids::ctrlrNativeFileDialogs);
 
-    // 2. Launch the dialog box asynchronously
+	// Make sure fileChooser is declared as a std::unique_ptr<juce::FileChooser>
+	// either in your CtrlrManager class header file, or as a static/tracked instance.
+	fileChooser = std::make_unique<FileChooser>("Open panel", File(getProperty(Ids::ctrlrLastBrowsedFileDirectory)),
+												wildcards, useNativeDialog);
+
+	// 2. Launch the dialog box asynchronously
 	fileChooser->launchAsync(FileBrowserComponent::openMode | FileBrowserComponent::canSelectFiles,
 							 [this](const FileChooser &chooser) {
 								 File result = chooser.getResult();
@@ -739,9 +747,10 @@ CtrlrManager::getPanelForEditor(CtrlrPanelEditor *editorToFind) // Added v5.6.34
 	return nullptr; // No matching CtrlrPanel found for the given editor
 }
 
-int CtrlrManager::getNumPanels() { 
-	DBG("!!!! NUMBER  OF PANELS = " << ctrlrPanels.size() );
-	return (ctrlrPanels.size()); }
+int CtrlrManager::getNumPanels() {
+	DBG("!!!! NUMBER  OF PANELS = " << ctrlrPanels.size());
+	return (ctrlrPanels.size());
+}
 
 CtrlrModulator *CtrlrManager::getModulatorByVstIndex(const int index) {
 	if (ctrlrManagerVst)
@@ -777,19 +786,18 @@ const File CtrlrManager::getCtrlrPropertiesDirectory() {
 	return (getCtrlrProperties().getProperties().getUserSettings()->getFile().getParentDirectory());
 }
 
-CtrlrPanel* CtrlrManager::getPanelBySessionId(const String& sessionId)
-{
-    for (auto* panel : ctrlrPanels)
-    {
-        if (panel != nullptr && panel->getSessionId().toString() == sessionId)
-        {
-            return panel;
-        }
-    }
-    return nullptr;
+CtrlrPanel *CtrlrManager::getPanelBySessionId(const String &sessionId) {
+	for (auto *panel : ctrlrPanels) {
+		if (panel != nullptr && panel->getSessionId().toString() == sessionId) {
+			return panel;
+		}
+	}
+	return nullptr;
 }
 
-CtrlrProperties &CtrlrManager::getCtrlrProperties() { return (*ctrlrProperties); }
+CtrlrProperties &CtrlrManager::getCtrlrProperties() {
+	return (*ctrlrProperties);
+}
 
 ApplicationProperties *CtrlrManager::getApplicationProperties() {
 	if (ctrlrProperties) {
