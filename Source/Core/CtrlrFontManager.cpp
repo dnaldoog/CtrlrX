@@ -318,6 +318,9 @@ const Font CtrlrFontManager::getBuiltInFont(const int fontIndex) {
 	case 10:
 		f = getBuiltInFont("FONT_WarenhausStandard_ttf");
 		break;
+	case 11:
+		f = getBuiltInFont("5x8_lcd_hd44780u_a02_ttf");
+		break;
 
 	default:
 		break;
