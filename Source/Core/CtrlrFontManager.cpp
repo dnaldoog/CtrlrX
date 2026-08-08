@@ -31,9 +31,9 @@ void CtrlrFontManager::reloadOSFonts() {
 void CtrlrFontManager::reloadJuceFonts() {
 	juceFonts.clear();
 
-	juceFonts.add(Font(Font::getDefaultMonospacedFontName(), 14.0f, Font::plain));
-	juceFonts.add(Font(Font::getDefaultSansSerifFontName(), 14.0f, Font::plain));
-	juceFonts.add(Font(Font::getDefaultSerifFontName(), 14.0f, Font::plain));
+	juceFonts.add(Font(Font::getDefaultMonospacedFontName(), 12.0f, Font::plain));
+	juceFonts.add(Font("Tahoma", 14.0f, Font::plain)); // <--- Forces Arial instead of system Verdana
+	juceFonts.add(Font(Font::getDefaultSerifFontName(), 12.0f, Font::plain));
 }
 
 int CtrlrFontManager::getNumBuiltInFonts() {
@@ -139,46 +139,38 @@ Font CtrlrFontManager::getBuiltInFont(const String &fontResourceName) {
 	const char *dataPointer = BinaryData::getNamedResource(fontResourceName.toUTF8(), dataSize);
 
 	if (dataSize <= 0 || dataPointer == nullptr)
-		return Font(Font::getDefaultSansSerifFontName(), 14.0f, Font::plain);
+		return Font(); // was: Font(Font::getDefaultSansSerifFontName(), 12.0f, Font::plain)
 
 	auto tf = Typeface::createSystemTypefaceFor(dataPointer, (size_t)dataSize);
 
 	if (tf != nullptr)
-		return Font(FontOptions(tf).withPointHeight(14.0f));
+		return Font(FontOptions(tf).withPointHeight(12.0f));
 
-	// Fallback on corrupt font data to prevent Apple Silicon crash
-	return Font(Font::getDefaultSansSerifFontName(), 14.0f, Font::plain);
+	return Font();
 }
-
 const Font CtrlrFontManager::getFont(const char *fontData, const size_t fontDataSize) {
 	if (fontData == nullptr || fontDataSize == 0)
-		return Font(Font::getDefaultSansSerifFontName(), 14.0f, Font::plain);
-
+		return Font();
 	auto tf = Typeface::createSystemTypefaceFor(fontData, fontDataSize);
-
 	if (tf != nullptr)
-		return Font(FontOptions(tf).withPointHeight(14.0f));
-
-	return Font(Font::getDefaultSansSerifFontName(), 14.0f, Font::plain);
+		return Font(FontOptions(tf).withPointHeight(12.0f));
+	return Font();
 }
 
 Font CtrlrFontManager::getFont(const File &fontFile) {
 	MemoryBlock data;
 	if (!fontFile.loadFileAsData(data) || data.getSize() == 0)
-		return Font(Font::getDefaultSansSerifFontName(), 14.0f, Font::plain);
-
+		return Font();
 	auto tf = Typeface::createSystemTypefaceFor(data.getData(), data.getSize());
-
 	if (tf != nullptr)
-		return Font(FontOptions(tf).withPointHeight(14.0f));
-
-	return Font(Font::getDefaultSansSerifFontName(), 14.0f, Font::plain);
+		return Font(FontOptions(tf).withPointHeight(12.0f));
+	return Font();
 }
 
 const Font CtrlrFontManager::getFontFromString(const String &string) {
 	if (!string.contains(";")) {
 		if (string.isEmpty()) {
-			return Font(FontOptions(15.0f));
+			return Font(FontOptions(12.0f));
 		}
 		return Font::fromString(string);
 	}
@@ -190,7 +182,13 @@ const Font CtrlrFontManager::getFontFromString(const String &string) {
 	if (fontProps[fontTypefaceName].isNotEmpty()) {
 		String typefaceName = fontProps[fontTypefaceName];
 
-		// 1. Resolve Font Set and Typeface
+		// 1. Map generic <sans-serif> directly to Arial so modern OS doesn't render Verdana
+		if (typefaceName.isEmpty() || typefaceName == "<sans-serif>" || typefaceName == "<Sans-Serif>" ||
+			typefaceName == Font::getDefaultSansSerifFontName()) {
+			typefaceName = "Arial";
+		}
+
+		// 2. Resolve Font Set and Typeface
 		if (fontProps[fontSet].isNotEmpty() && fontProps[fontSet].getIntValue() >= 0) {
 			int setIdx = fontProps[fontSet].getIntValue();
 			Array<Font> &fontSetToUse = getFontSet((const FontSet)setIdx);
@@ -206,15 +204,15 @@ const Font CtrlrFontManager::getFontFromString(const String &string) {
 			font.setTypefaceName(typefaceName);
 		}
 
-		// 2. Parse Height with Safe Default
-		float fontHeight = 14.0f;
+		// 3. Parse Height with Safe Default (12.0f keeps text unclipped)
+		float fontHeight = 12.0f;
 		if (fontProps[fontHeight].isNotEmpty()) {
 			float parsedHeight = fontProps[fontHeight].getFloatValue();
 			if (parsedHeight > 0.0f)
 				fontHeight = parsedHeight;
 		}
 
-		// 3. Extract Styles
+		// 4. Extract Styles and Declare styleName
 		bool isBold = (fontProps[fontBold].isNotEmpty() && fontProps[fontBold].getIntValue() != 0);
 		bool isItalic = (fontProps[fontItalic].isNotEmpty() && fontProps[fontItalic].getIntValue() != 0);
 		bool isUnderline = (fontProps[fontUnderline].isNotEmpty() && fontProps[fontUnderline].getIntValue() != 0);
@@ -227,19 +225,24 @@ const Font CtrlrFontManager::getFontFromString(const String &string) {
 		else if (isItalic)
 			styleName = "Italic";
 
-		// 4. Construct Font via FontOptions (JUCE 8 Safe)
+		// 5. Construct Font via FontOptions
 		FontOptions options;
-		if (font.getTypefacePtr() != nullptr) {
-			// If typeface pointer exists, do NOT call .withStyle() on it!
+
+		bool isCustomEmbeddedFont =
+			(fontProps[fontSet].isNotEmpty() && (fontProps[fontSet].getIntValue() == builtInFontSet ||
+												 fontProps[fontSet].getIntValue() == importedFontSet));
+
+		if (isCustomEmbeddedFont && font.getTypefacePtr() != nullptr) {
+			// Embedded/Built-in fonts: use binary typeface pointer safely
 			options = FontOptions(font.getTypefacePtr()).withPointHeight(fontHeight);
 		} else {
-			// If no typeface pointer, construct via name string and set style safely
+			// Standard OS fonts: use typeface name & style string
 			options = FontOptions(typefaceName, fontHeight, Font::plain).withStyle(styleName);
 		}
 
 		font = Font(options);
 
-		// 5. Apply Underline & Kerning
+		// 6. Apply Underline & Kerning
 		font.setUnderline(isUnderline);
 
 		if (fontProps[fontKerning].isNotEmpty())
@@ -254,6 +257,7 @@ const Font CtrlrFontManager::getFontFromString(const String &string) {
 
 	return font;
 }
+
 const String CtrlrFontManager::getStringFromFont(const Font &_font) {
 	Font font(_font);
 	StringArray fontProps;
