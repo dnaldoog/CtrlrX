@@ -196,6 +196,26 @@ void CtrlrSlider::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChange
 		ctrlrSlider.lookAndFeelChanged();
 		ctrlrSlider.repaint();
 		repaint();
+	}
+	// --- COLOR PROPERTY HANDLERS ---
+	else if (property == Ids::uiSliderTrackColour) {
+		ctrlrSlider.setColour(Slider::trackColourId, VAR2COLOUR(getProperty(property)));
+		ctrlrSlider.repaint();
+	} else if (property == Ids::uiSliderThumbColour) {
+		ctrlrSlider.setColour(Slider::thumbColourId, VAR2COLOUR(getProperty(property)));
+		ctrlrSlider.repaint();
+	} else if (property == Ids::uiSliderRotaryOutlineColour) {
+		ctrlrSlider.setColour(Slider::rotarySliderOutlineColourId, VAR2COLOUR(getProperty(property)));
+		ctrlrSlider.repaint();
+	} else if (property == Ids::uiSliderRotaryFillColour) {
+		ctrlrSlider.setColour(Slider::rotarySliderFillColourId, VAR2COLOUR(getProperty(property)));
+		ctrlrSlider.repaint();
+	} else if (property == Ids::uiSliderIncDecButtonColour) {
+		ctrlrSlider.setColour(Slider::textBoxOutlineColourId, VAR2COLOUR(getProperty(property)));
+		ctrlrSlider.repaint();
+	} else if (property == Ids::uiSliderIncDecTextColour) {
+		ctrlrSlider.setColour(Slider::textBoxTextColourId, VAR2COLOUR(getProperty(property)));
+		ctrlrSlider.repaint();
 	} else {
 		CtrlrComponent::valueTreePropertyChanged(treeWhosePropertyHasChanged, property);
 	}

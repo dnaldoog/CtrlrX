@@ -117,7 +117,9 @@ class CtrlrEditor : public AudioProcessorEditor,
 
 		void activeCtrlrChanged();
 		const WeakReference<CtrlrEditor>::SharedRef &getWeakReference();
-		CtrlrManager &getOwner() { return (owner); }
+		CtrlrManager &getOwner() {
+			return (owner);
+		}
 
 		// WeakReference<CtrlrEditor>::Master masterReference;
 
@@ -157,6 +159,7 @@ class CtrlrEditor : public AudioProcessorEditor,
 		void performMidiDeviceRefresh();
 		void setMenuBarVisible(const bool shouldBeVisible = true);
 		void recreateTooltipEngine();
+		void applyThemeToCombosDirectly(const String &themeName);
 
 		// New method to set the main LookAndFeel for the editor and its children
 		void setEditorLookAndFeel(const String &lookAndFeelDesc,

@@ -174,21 +174,22 @@ CtrlrEditor::CtrlrEditor(CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
 		hideMidiChannelMenu = owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelMidiChannelMenuHideOnExport);
 	}
 }
-CtrlrEditor::~CtrlrEditor()
-{
-DBG("(B) CtrlrEditor DTOR called"); 
-    // 1. First, make sure all child components are detached from the LookAndFeel
+CtrlrEditor::~CtrlrEditor() {
+	DBG("(B) CtrlrEditor DTOR called");
+	// 1. First, make sure all child components are detached from the LookAndFeel
 	setLookAndFeel(nullptr);
-	
-    if (menuBar != nullptr)
-        menuBar->setLookAndFeel(nullptr);
-	
-    // 2. Clear the global default LookAndFeel if it was set
-    // This is important if you ever call LookAndFeel::setDefaultLookAndFeel()
-    LookAndFeel::setDefaultLookAndFeel(nullptr);
+
+	if (menuBar != nullptr)
+		menuBar->setLookAndFeel(nullptr);
+
+	// 2. Clear the global default LookAndFeel if it was set
+	// This is important if you ever call LookAndFeel::setDefaultLookAndFeel()
+	LookAndFeel::setDefaultLookAndFeel(nullptr);
 }
 
-void CtrlrEditor::paint(Graphics &g) { g.fillAll(Component::findColour(DocumentWindow::backgroundColourId)); }
+void CtrlrEditor::paint(Graphics &g) {
+	g.fillAll(Component::findColour(DocumentWindow::backgroundColourId));
+}
 
 void CtrlrEditor::resized() {
 	if (menuBar->isVisible()) {
@@ -203,51 +204,50 @@ void CtrlrEditor::resized() {
 }
 
 void CtrlrEditor::setEditorLookAndFeel(const String &lookAndFeelDesc, const var &colourSchemeProperty) {
-    std::unique_ptr<juce::LookAndFeel> newLookAndFeel(
-        gui::createLookAndFeelFromDescription(lookAndFeelDesc, juce::var()));
+	std::unique_ptr<juce::LookAndFeel> newLookAndFeel(
+		gui::createLookAndFeelFromDescription(lookAndFeelDesc, juce::var()));
 
-    if (newLookAndFeel != nullptr) {
-        if (LookAndFeel_V4 *lnf4 = dynamic_cast<LookAndFeel_V4 *>(newLookAndFeel.get())) {
-            // Restore "Light" as the default fallback scheme when no scheme is specified in property
-            var effectiveScheme = (colourSchemeProperty.isString() && !colourSchemeProperty.toString().isEmpty())
-                                   ? colourSchemeProperty
-                                   : var("Light"); 
-            
-            lnf4->setColourScheme(gui::colourSchemeFromProperty(effectiveScheme));
+	if (newLookAndFeel != nullptr) {
+		if (LookAndFeel_V4 *lnf4 = dynamic_cast<LookAndFeel_V4 *>(newLookAndFeel.get())) {
+			// Restore "Light" as the default fallback scheme when no scheme is specified in property
+			var effectiveScheme = (colourSchemeProperty.isString() && !colourSchemeProperty.toString().isEmpty())
+									  ? colourSchemeProperty
+									  : var("Light");
 
-            // Populate property and text editor fallbacks to prevent findColour assertions
-            lnf4->setColour(juce::PropertyComponent::labelTextColourId, juce::Colours::black);
-            lnf4->setColour(juce::TextEditor::textColourId, juce::Colours::black);
-            lnf4->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
-        }
+			lnf4->setColourScheme(gui::colourSchemeFromProperty(effectiveScheme));
 
-        // Flush component styling links before replacing the instance
-        setLookAndFeel(nullptr);
-        if (menuBar != nullptr)
-            menuBar->setLookAndFeel(nullptr);
+			// Populate property and text editor fallbacks to prevent findColour assertions
+			lnf4->setColour(juce::PropertyComponent::labelTextColourId, juce::Colours::black);
+			lnf4->setColour(juce::TextEditor::textColourId, juce::Colours::black);
+			lnf4->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
+		}
 
-        // Point global default at NEW instance before deleting the old one
-        LookAndFeel::setDefaultLookAndFeel(newLookAndFeel.get());
+		// Flush component styling links before replacing the instance
+		setLookAndFeel(nullptr);
+		if (menuBar != nullptr)
+			menuBar->setLookAndFeel(nullptr);
 
-        // Transfer ownership (old currentLookAndFeel destroyed safely here)
-        currentLookAndFeel = std::move(newLookAndFeel); 
+		// Point global default at NEW instance before deleting the old one
+		LookAndFeel::setDefaultLookAndFeel(newLookAndFeel.get());
 
-        // Apply new LookAndFeel to Editor and MenuBar
-        setLookAndFeel(currentLookAndFeel.get());
-        if (menuBar != nullptr)
-        {
-            menuBar->setLookAndFeel(currentLookAndFeel.get());
-            
-            // Fix dark menu bar issue: Force MenuBar text & background to track light/dark mode
-            menuBar->setColour(juce::PopupMenu::backgroundColourId, 
-                               currentLookAndFeel->findColour(juce::ResizableWindow::backgroundColourId));
-            menuBar->setColour(juce::PopupMenu::textColourId, 
-                               currentLookAndFeel->findColour(juce::Label::textColourId));
-        }
+		// Transfer ownership (old currentLookAndFeel destroyed safely here)
+		currentLookAndFeel = std::move(newLookAndFeel);
 
-        lookAndFeelChanged();
-        repaint();
-    }
+		// Apply new LookAndFeel to Editor and MenuBar
+		setLookAndFeel(currentLookAndFeel.get());
+		if (menuBar != nullptr) {
+			menuBar->setLookAndFeel(currentLookAndFeel.get());
+
+			// Fix dark menu bar issue: Force MenuBar text & background to track light/dark mode
+			menuBar->setColour(juce::PopupMenu::backgroundColourId,
+							   currentLookAndFeel->findColour(juce::ResizableWindow::backgroundColourId));
+			menuBar->setColour(juce::PopupMenu::textColourId,
+							   currentLookAndFeel->findColour(juce::Label::textColourId));
+		}
+
+		lookAndFeelChanged();
+		repaint();
+	}
 }
 
 void CtrlrEditor::activeCtrlrChanged() {
@@ -331,11 +331,17 @@ void CtrlrEditor::activeCtrlrChanged() {
 	}
 }
 
-MenuBarComponent *CtrlrEditor::getMenuBar() { return (menuBar.get()); }
+MenuBarComponent *CtrlrEditor::getMenuBar() {
+	return (menuBar.get());
+}
 
-CtrlrPanel *CtrlrEditor::getActivePanel() { return (owner.getActivePanel()); }
+CtrlrPanel *CtrlrEditor::getActivePanel() {
+	return (owner.getActivePanel());
+}
 
-bool CtrlrEditor::isRestricted() { return (owner.getInstanceMode() == InstanceSingleRestricted); }
+bool CtrlrEditor::isRestricted() {
+	return (owner.getInstanceMode() == InstanceSingleRestricted);
+}
 
 CtrlrPanelEditor *CtrlrEditor::getActivePanelEditor() {
 	if (owner.getActivePanel()) {
@@ -375,3 +381,59 @@ void CtrlrEditor::recreateTooltipEngine() {
 	// 2. Spawn a fresh, brand-new tooltip instance under the updated layout pipeline context
 	tooltipWindow = std::make_unique<juce::TooltipWindow>(this);
 }
+void CtrlrEditor::applyThemeToCombosDirectly(const String &themeName) {}
+// 	String highlightHex = "0xff42a2c8"; // Default fallback
+// 	String menuBgHex = "0xfff0f0f0";
+// 	String menuTextHex = "0xff000000";
+
+// 	if (themeName == "ArturOrange") {
+// 		highlightHex = "0xffe24a21";
+// 		menuBgHex = "0xff0e1012";
+// 		menuTextHex = "0xffffffff";
+// 	} else if (themeName == "AiraGreen") {
+// 		highlightHex = "0xff00955a";
+// 		menuBgHex = "0xff111111";
+// 		menuTextHex = "0xffffffff";
+// 	} else if (themeName == "LexiBlue") {
+// 		highlightHex = "0xff5794c7";
+// 		menuBgHex = "0xff1a1a1a";
+// 		menuTextHex = "0xffffffff";
+// 	} else if (themeName == "YamDx") {
+// 		highlightHex = "0xff8584bc";
+// 		menuBgHex = "0xff0f0f0f";
+// 		menuTextHex = "0xfffffbed";
+// 	} else if (themeName == "KurzGreen") {
+// 		highlightHex = "0xff00a66e";
+// 		menuBgHex = "0xff111214";
+// 		menuTextHex = "0xffffffff";
+// 	} else if (themeName == "AkApc" || themeName == "AkMpc") {
+// 		highlightHex = "0xffd01634";
+// 		menuBgHex = "0xff222326";
+// 		menuTextHex = "0xffffffff";
+// 	}
+
+// 	// Access the active CtrlrPanel
+// 	CtrlrPanel *panel = owner.getActivePanel();
+// 	if (panel == nullptr)
+// 		return;
+
+// 	const int numModulators = panel->getNumModulators();
+// 	for (int i = 0; i < numModulators; ++i) {
+// 		CtrlrModulator *mod = panel->getModulatorByIndex(i);
+
+// 		if (mod != nullptr) {
+// 			CtrlrComponent *comp = mod->getComponent();
+// 			if (comp != nullptr) {
+// 				// Target components containing combo menu properties
+// 				if (!comp->getProperty(Ids::uiComboMenuHighlightColour).isVoid()) {
+// 					comp->setProperty(Ids::uiComboMenuHighlightColour, highlightHex);
+// 					comp->setProperty(Ids::uiComboMenuBackgroundColour, menuBgHex);
+// 					comp->setProperty(Ids::uiComboMenuFontColour, menuTextHex);
+// 					comp->setProperty(Ids::uiComboMenuBackgroundRibbed, false);
+
+// 					comp->repaint();
+// 				}
+// 			}
+// 		}
+// 	}
+// }

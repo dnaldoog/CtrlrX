@@ -601,6 +601,8 @@
       </GROUP>
       <GROUP id="{A473FE32-72A8-D607-99DF-96F6BF23D1C7}" name="Resources">
         <GROUP id="{5425C584-8B65-E29D-5410-23D72492F06C}" name="Fonts">
+          <FILE id="GYiDwF" name="5x8_lcd_hd44780u_a02.ttf" compile="0" resource="1"
+                file="Source/Resources/Fonts/5x8_lcd_hd44780u_a02.ttf"/>
           <FILE id="iMatU9" name="FONT_60sekuntia.ttf" compile="0" resource="1"
                 file="Source/Resources/Fonts/FONT_60sekuntia.ttf"/>
           <FILE id="TmWNX0" name="FONT_Computerfont.ttf" compile="0" resource="1"
