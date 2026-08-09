@@ -367,16 +367,119 @@ void CtrlrCombo::comboContentChanged() {
 }
 
 void CtrlrCombo::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
-	if (property == Ids::uiComboMenuHighlightColour) {
-		ctrlrCombo->setColour(PopupMenu::highlightedBackgroundColourId, VAR2COLOUR(getProperty(property)));
+	_DBG("PROP CHANGE: " + property.toString() + " = " + getProperty(property).toString());
+
+	if (property == Ids::uiComboSelectedIndex || property == Ids::uiComboSelectedId) {
+		_DBG("GUI_TRACE [" + owner.getName() + "] ValueTree Property Change: " + property.toString() +
+			 " is now: " + treeWhosePropertyHasChanged.getProperty(property).toString());
+	}
+
+	if (property == Ids::uiComboContent) {
+		comboContentChanged();
+	} else if (property == Ids::uiComboSearch) {
+		_DBG("PROP: uiComboSearch changed - starting safety timer");
+		startTimer(250);
+	} else if (property == Ids::uiButtonLookAndFeel) {
+		String comboStyle = getProperty(Ids::uiButtonLookAndFeel).toString();
+
+		if (comboStyle == "V3" || comboStyle == "V2" || comboStyle == "V1") {
+			ctrlrCombo->setLookAndFeel(&lf);
+		} else {
+			// Revert to central Panel LookAndFeel (V4 variants)
+			ctrlrCombo->setLookAndFeel(nullptr);
+		}
+
+		// Force re-application of custom property colors over the new LookAndFeel defaults
+		ctrlrCombo->setColour(ComboBox::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
+		ctrlrCombo->setColour(ComboBox::textColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
+		ctrlrCombo->setColour(ComboBox::buttonColourId, VAR2COLOUR(getProperty(Ids::uiComboButtonColour)));
+		ctrlrCombo->setColour(ComboBox::outlineColourId, VAR2COLOUR(getProperty(Ids::uiComboOutlineColour)));
+		ctrlrCombo->setColour(ComboBox::arrowColourId, VAR2COLOUR(getProperty(Ids::uiComboArrowColour)));
+
+		updateInternalComponentStyles();
 		ctrlrCombo->lookAndFeelChanged();
 		ctrlrCombo->repaint();
-	} else if (property == Ids::uiComboMenuBackgroundColour) {
-		ctrlrCombo->setColour(PopupMenu::backgroundColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrCombo->lookAndFeelChanged();
+
+	} else if (property == Ids::uiComboBgColour) {
+		Colour c = VAR2COLOUR(getProperty(Ids::uiComboBgColour));
+		ctrlrCombo->setColour(ComboBox::backgroundColourId, c);
+		ctrlrCombo->setColour(TextEditor::backgroundColourId, c);
+		ctrlrCombo->setColour(Label::backgroundColourId, c);
+
+		updateInternalComponentStyles();
 		ctrlrCombo->repaint();
+	} else if (property == Ids::uiComboTextColour) {
+		Colour c = VAR2COLOUR(getProperty(Ids::uiComboTextColour));
+		ctrlrCombo->setColour(ComboBox::textColourId, c);
+		ctrlrCombo->setColour(TextEditor::textColourId, c);
+		ctrlrCombo->setColour(Label::textColourId, c);
+
+		updateInternalComponentStyles();
+		ctrlrCombo->repaint();
+	} else if (property == Ids::uiComboButtonColour) {
+		ctrlrCombo->setColour(ComboBox::buttonColourId, VAR2COLOUR(getProperty(Ids::uiComboButtonColour)));
+		ctrlrCombo->repaint();
+	} else if (property == Ids::uiComboTextColour) {
+		ctrlrCombo->setColour(ComboBox::textColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
+		ctrlrCombo->setColour(TextEditor::textColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
+		ctrlrCombo->setColour(TextEditor::highlightedTextColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
+		ctrlrCombo->setColour(Label::textColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
+		ctrlrCombo->setColour(Label::textWhenEditingColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
+
+		updateInternalComponentStyles();
+		ctrlrCombo->repaint();
+	} else if (property == Ids::uiComboOutlineColour) {
+		ctrlrCombo->setColour(ComboBox::outlineColourId, VAR2COLOUR(getProperty(Ids::uiComboOutlineColour)));
+		ctrlrCombo->repaint();
+	} else if (property == Ids::uiComboArrowColour) {
+		ctrlrCombo->setColour(ComboBox::arrowColourId, VAR2COLOUR(getProperty(Ids::uiComboArrowColour)));
+		ctrlrCombo->repaint();
+	} else if (property == Ids::uiComboTextJustification) {
+		ctrlrCombo->setJustificationType(justificationFromProperty(getProperty(property)));
+		ctrlrCombo->repaint();
+	} else if (property == Ids::uiComboButtonWidthOverride || property == Ids::uiComboButtonWidth) {
+		ctrlrCombo->resized();
+		ctrlrCombo->repaint();
+	} else if (property == Ids::uiComboFont || property == Ids::uiComboMenuBackgroundColour ||
+			   property == Ids::uiComboMenuFont || property == Ids::uiComboMenuFontColour ||
+			   property == Ids::uiComboMenuHighlightColour || property == Ids::uiComboMenuFontHighlightedColour ||
+			   property == Ids::uiComboButtonGradientColour1 || property == Ids::uiComboButtonGradientColour2) {
+
+		if (property == Ids::uiComboFont) {
+			if (auto *label = dynamic_cast<juce::Label *>(ctrlrCombo->findChildWithID("label"))) {
+				Font f = owner.getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString(
+					getProperty(Ids::uiComboFont));
+				label->setFont(f);
+			}
+		}
+		updateInternalComponentStyles();
+		ctrlrCombo->repaint();
+		repaint();
+	} else if (property == Ids::uiComboDynamicContent) {
+		fillContent(getProperty(property));
+	} else if (property == Ids::uiComboSelectedId) {
+		if ((int)getProperty(property) != -1) {
+			ctrlrCombo->setSelectedId(getProperty(property), sendNotificationSync);
+		}
+	} else if (property == Ids::uiComboSelectedIndex) {
+		if ((int)getProperty(property) != -1) {
+			ctrlrCombo->setSelectedItemIndex(getProperty(property), sendNotificationSync);
+		}
+	} else if (property.toString().startsWith("uiCombo")) {
+		if (ctrlrCombo && (bool)getProperty(Ids::uiComboSearch)) {
+			_DBG("STYLE_CHANGE: " + property.toString() + " - Resetting engine.");
+			ctrlrCombo->setEditableText(false);
+			startTimer(250);
+		} else {
+			updateInternalComponentStyles();
+			ctrlrCombo->repaint();
+		}
 	} else {
 		CtrlrComponent::valueTreePropertyChanged(treeWhosePropertyHasChanged, property);
+	}
+
+	if (!restoreStateInProgress) {
+		resized();
 	}
 }
 
