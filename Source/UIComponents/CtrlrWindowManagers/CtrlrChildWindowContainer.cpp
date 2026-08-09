@@ -25,7 +25,7 @@ CtrlrChildWindowContainer::~CtrlrChildWindowContainer()
 
 void CtrlrChildWindowContainer::paint (Graphics& g)
 {
-    g.fillAll(findColour(DocumentWindow::backgroundColourId)); // Added v5.6.31
+    g.fillAll (findColour (DocumentWindow::backgroundColourId)); // Added v5.6.31
 }
 
 void CtrlrChildWindowContainer::resized()
