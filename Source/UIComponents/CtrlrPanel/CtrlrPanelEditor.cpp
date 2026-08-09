@@ -660,33 +660,6 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 				   property == Ids::uiPanelUIColourOutline || property == Ids::uiPanelUIColourDefaultText ||
 				   property == Ids::uiPanelUIColourDefaultFill || property == Ids::uiPanelUIColourHighlightedText ||
 				   property == Ids::uiPanelUIColourHighlightedFill || property == Ids::uiPanelUIColourMenuText) {
-			// return; // Do nothing for now, as the following code is commented out and not working yet
-			//             /** Not working yet, need to be fixed */
-			//             auto* customLookAndFeel = dynamic_cast<LookAndFeel_V4*>(&getLookAndFeel());
-			//             auto customLookAndFeelScheme = customLookAndFeel->getCurrentColourScheme();
-			//
-			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::windowBackground, VAR2COLOUR
-			//             (owner.getProperty(Ids::uiPanelUIColourWindowBackground)));
-			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::widgetBackground, VAR2COLOUR
-			//             (owner.getProperty(Ids::uiPanelUIColourWidgetBackground)));
-			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::menuBackground, VAR2COLOUR
-			//             (owner.getProperty(Ids::uiPanelUIColourMenuBackground)));
-			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::outline, VAR2COLOUR
-			//             (owner.getProperty(Ids::uiPanelUIColourOutline)));
-			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::defaultText, VAR2COLOUR
-			//             (owner.getProperty(Ids::uiPanelUIColourDefaultText)));
-			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::defaultFill, VAR2COLOUR
-			//             (owner.getProperty(Ids::uiPanelUIColourDefaultFill)));
-			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::highlightedText, VAR2COLOUR
-			//             (owner.getProperty(Ids::uiPanelUIColourHighlightedText)));
-			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::highlightedFill, VAR2COLOUR
-			//             (owner.getProperty(Ids::uiPanelUIColourHighlightedFill)));
-			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::menuText, VAR2COLOUR
-			//             (owner.getProperty(Ids::uiPanelUIColourMenuText)));
-			//
-			//             setLookAndFeel(customLookAndFeel);
-			//             getCanvas()->setLookAndFeel(customLookAndFeel);
-			//             LookAndFeel::setDefaultLookAndFeel(customLookAndFeel);
 		} else if (property == Ids::uiPanelLookAndFeel) {
 			static bool handlingLookAndFeelChange = false;
 			if (handlingLookAndFeelChange)
@@ -724,7 +697,7 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 
 			// Propagates to all children via normal inheritance
 			lookAndFeelChanged();
-
+			DBG("!!!I changed the L&F on a combo" << Ids::uiComboBgColour);
 			if (!getProperty(Ids::uiPanelLegacyMode)) {
 				setProperty(
 					Ids::uiPanelViewPortBackgroundColour,
@@ -740,39 +713,6 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 				setProperty(Ids::uiPanelTooltipOutlineColour,
 							(String)Component::findColour(BubbleComponent::outlineColourId).toString());
 				setProperty(Ids::uiPanelTooltipColour, (String)Component::findColour(Label::textColourId).toString());
-				//            /** Stores the updated LnF ColourScheme **/
-				//            auto* currentLookAndFeel =
-				//            dynamic_cast<LookAndFeel_V4*>(&getLookAndFeel()); auto
-				//            currentLookAndFeelScheme = currentLookAndFeel->getCurrentColourScheme();
-				//
-				//            /** Updates Default UIColours  property fields for the new ColourScheme
-				//            **/ setProperty(Ids::uiPanelUIColourWindowBackground, (String)
-				//            currentLookAndFeelScheme.getUIColour
-				//            (ColourScheme::UIColour::windowBackground).toString());
-				//            setProperty(Ids::uiPanelUIColourWidgetBackground, (String)
-				//            currentLookAndFeelScheme.getUIColour
-				//            (ColourScheme::UIColour::widgetBackground).toString());
-				//            setProperty(Ids::uiPanelUIColourMenuBackground, (String)
-				//            currentLookAndFeelScheme.getUIColour
-				//            (ColourScheme::UIColour::menuBackground).toString());
-				//            setProperty(Ids::uiPanelUIColourOutline, (String)
-				//            currentLookAndFeelScheme.getUIColour
-				//            (ColourScheme::UIColour::outline).toString());
-				//            setProperty(Ids::uiPanelUIColourDefaultText, (String)
-				//            currentLookAndFeelScheme.getUIColour
-				//            (ColourScheme::UIColour::defaultText).toString());
-				//            setProperty(Ids::uiPanelUIColourDefaultFill, (String)
-				//            currentLookAndFeelScheme.getUIColour
-				//            (ColourScheme::UIColour::defaultFill).toString());
-				//            setProperty(Ids::uiPanelUIColourHighlightedText, (String)
-				//            currentLookAndFeelScheme.getUIColour
-				//            (ColourScheme::UIColour::highlightedText).toString());
-				//            setProperty(Ids::uiPanelUIColourHighlightedFill, (String)
-				//            currentLookAndFeelScheme.getUIColour
-				//            (ColourScheme::UIColour::highlightedFill).toString());
-				//            setProperty(Ids::uiPanelUIColourMenuText, (String) (String)
-				//            currentLookAndFeelScheme.getUIColour
-				//            (ColourScheme::UIColour::menuText).toString());
 			}
 
 			if (owner.getCtrlrManagerOwner().getEditor())
@@ -787,6 +727,7 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 				if (auto *mod = owner.getModulatorByIndex(i)) {
 					if (auto *comp = mod->getComponent()) {
 						// Notify the component to refresh its style/colors against the new Panel LnF
+
 						comp->valueTreePropertyChanged(comp->getComponentTree(), Ids::uiSliderStyle);
 						comp->valueTreePropertyChanged(comp->getComponentTree(), Ids::uiButtonLookAndFeel);
 						comp->lookAndFeelChanged();

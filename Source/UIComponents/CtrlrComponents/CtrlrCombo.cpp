@@ -763,11 +763,27 @@ void CtrlrCombo::updateInternalComponentStyles() {
 	// Always enforce the local LookAndFeel object so double-arrow drawing is preserved
 	ctrlrCombo->setLookAndFeel(&lf);
 
+	// if (comboStyle != "V3" && comboStyle != "V2" && comboStyle != "V1") {
+	// 	applyCentralLookAndFeel(ctrlrCombo.get(), comboStyle);
+	// 	return;
+	// }
+	/* Here we can apply LNF colouring to uiCombo*/
 	if (comboStyle != "V3" && comboStyle != "V2" && comboStyle != "V1") {
 		applyCentralLookAndFeel(ctrlrCombo.get(), comboStyle);
+		auto scheme = gui::colourSchemeFromProperty(comboStyle);
+
+		Colour highlight = scheme.getUIColour(LookAndFeel_V4::ColourScheme::UIColour::highlightedFill);
+		Colour highlightText = highlight.getPerceivedBrightness() < 0.5f ? Colours::white : Colours::black;
+
+		Colour menuBackground = scheme.getUIColour(LookAndFeel_V4::ColourScheme::UIColour::menuBackground);
+		Colour menuText = menuBackground.getPerceivedBrightness() < 0.5f ? Colours::white : Colours::black;
+
+		setProperty(Ids::uiComboMenuHighlightColour, highlight.toString());
+		setProperty(Ids::uiComboMenuFontHighlightedColour, highlightText.toString());
+		setProperty(Ids::uiComboMenuBackgroundColour, menuBackground.toString());
+		setProperty(Ids::uiComboMenuFontColour, menuText.toString());
 		return;
 	}
-
 	// Standard fallback logic for manual V1/V2/V3 color properties
 	const Colour bg = VAR2COLOUR(getProperty(Ids::uiComboBgColour));
 	const Colour txt = VAR2COLOUR(getProperty(Ids::uiComboTextColour));
