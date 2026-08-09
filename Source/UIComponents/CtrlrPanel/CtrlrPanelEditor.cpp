@@ -41,25 +41,6 @@ CtrlrPanelNotifier::~CtrlrPanelNotifier() // Added v5.6.34. Thanks to @dnaldoog
 	// No manual cleanup is needed. But...
 	text = nullptr; // Force ScopedPointer cleanup
 }
-/*
-CtrlrPanelNotifier::~CtrlrPanelNotifier() {
-	DBG("(F) ~CtrlrPanelNotifier()");
-	// if (text != nullptr) {
-	// 	// Detach the mouse listener explicitly before text is freed
-	// 	text->removeMouseListener(this);
-
-	// 	// Remove text from JUCE's internal child list
-	// 	removeChildComponent(text.get());
-
-	// 	// Clear the smart pointer
-	// 	text.reset();
-	// }
-
-	if (text != nullptr)
-		text->removeMouseListener(this);
-
-}
-*/
 void CtrlrPanelNotifier::paint(Graphics &g) // Added back v5.6.31 for file management bottom notification bar
 {
 	gui::drawSelectionRectangle(g, getWidth(), getHeight(), background); // Updated v5.6.31 (link to GUI class)
@@ -261,28 +242,6 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 		setProperty(Ids::uiPanelLookAndFeel, lookAndFeelDesc);
 	}
 
-	// setProperty(Ids::uiPanelLegacyMode, false);
-	// setProperty(Ids::uiPanelLookAndFeel, "V4 Light");
-
-	//    /** displays the current LookAndFeel colourScheme UIColours */
-	//    LookAndFeel_V4::setColourScheme(getLightColourScheme());
-	//
-	//    setProperty(Ids::uiPanelUIColourWindowBackground, (String)
-	//    LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::windowBackground).toString());
-	//    setProperty(Ids::uiPanelUIColourWidgetBackground, (String)
-	//    LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::widgetBackground).toString());
-	//    setProperty(Ids::uiPanelUIColourMenuBackground, (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour
-	//    (ColourScheme::UIColour::menuBackground).toString()); setProperty(Ids::uiPanelUIColourOutline, (String)
-	//    LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::outline).toString());
-	//    setProperty(Ids::uiPanelUIColourDefaultText, (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour
-	//    (ColourScheme::UIColour::defaultText).toString()); setProperty(Ids::uiPanelUIColourDefaultFill, (String)
-	//    LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::defaultFill).toString());
-	//    setProperty(Ids::uiPanelUIColourHighlightedText, (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour
-	//    (ColourScheme::UIColour::highlightedText).toString()); setProperty(Ids::uiPanelUIColourHighlightedFill,
-	//    (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour
-	//    (ColourScheme::UIColour::highlightedFill).toString()); setProperty(Ids::uiPanelUIColourMenuText, (String)
-	//    LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::menuText).toString());
-
 	ctrlrComponentSelection->addChangeListener(ctrlrPanelProperties.get());
 
 	setSize(600, 400);
@@ -323,107 +282,7 @@ CtrlrPanelEditor::~CtrlrPanelEditor() {
 		ctrlrPanelViewport.reset();
 	}
 }
-// CtrlrPanelEditor::~CtrlrPanelEditor()
-// {
-//  DBG("(E) ~CtrlrPanelEditor Destructor Called");
-//     // Check if the component selection object is valid before trying to use it
-//     if (ctrlrComponentSelection)
-//     {
-//         // Remove the listener before the objects are destroyed
-//         ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
-//     }
 
-//     getPanelEditorTree().removeListener(this);
-//     owner.getPanelTree().removeListener(this);
-//     owner.getPanelTree().removeChild(getPanelEditorTree(), 0);
-
-//     componentAnimator.removeChangeListener(this);
-
-//     // Set look and feel to null to clean up
-//     setLookAndFeel(nullptr);
-//     if (getCanvas())
-//     {
-//         getCanvas()->setLookAndFeel(nullptr);
-//     }
-//     // This is important: JUCE's default look and feel can also be a source of leaks if not managed
-//     juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
-
-// 	// USELESS : because JUCE_DECLARE_WEAK_REFERENCEABLE macro is in the header already.
-// 	// It automatically handles the weak reference master
-// 	// masterReference.clear();
-
-//     // The ScopedPointers will now automatically delete the components they own
-//     // (ctrlrPanelViewport, ctrlrPanelProperties, spacerComponent, ctrlrPanelNotifier).
-// }
-/*
-CtrlrPanelEditor::~CtrlrPanelEditor() {
-		DBG("(E) ~CtrlrPanelEditor Destructor Called");
-
-	DBG("=== CtrlrPanelEditor Destructor Called ===");
-
-	// =========================================================================
-	// STEP 0: UNHOOK CANVAS LISTENERS (DO NOT CALL 'delete canvas;')
-	// =========================================================================
-	if (auto* canvas = getCanvas()) {
-		// Unhook listener safely while getPanelEditorTree() is valid
-		if (getPanelEditorTree().isValid()) {
-			getPanelEditorTree().removeListener(canvas);
-		}
-
-		// Unmount canvas from parent component hierarchy so JUCE doesn't route events
-		removeChildComponent(canvas);
-
-		// DO NOT call 'delete canvas;' here!
-		// The panel viewport / unique_ptr manages the actual memory deletion.
-	}
-
-	// =========================================================================
-	// STEP 1: FORCE-CANCEL ANIMATIONS & LISTENERS
-	// =========================================================================
-	componentAnimator.cancelAllAnimations(true);
-	componentAnimator.removeChangeListener(this);
-
-	if (owner.getPanelTree().isValid()) {
-		owner.getPanelTree().removeListener(this);
-	}
-
-	if (getPanelEditorTree().isValid()) {
-		getPanelEditorTree().removeListener(this);
-	}
-
-	if (ctrlrComponentSelection != nullptr) {
-		ctrlrComponentSelection->deselectAll();
-
-		if (ctrlrPanelProperties != nullptr) {
-			ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
-		}
-	}
-
-	if (ctrlrPanelProperties != nullptr) {
-		ctrlrPanelProperties.reset();
-	}
-
-	// =========================================================================
-	// STEP 2: DETACH LOOKANDFEEL SAFELY
-	// =========================================================================
-	setLookAndFeel(nullptr);
-
-	// =========================================================================
-// STEP 3: CLEAR VIEWPORT CONTAINER
-// =========================================================================
-if (ctrlrPanelViewport != nullptr) {
-	// Unmount from editor children so events stop routing to it
-	removeChildComponent(ctrlrPanelViewport.get());
-
-	// Clear LookAndFeel on the viewport
-	ctrlrPanelViewport->setLookAndFeel(nullptr);
-
-	// Destroy the viewport container cleanly
-	ctrlrPanelViewport.reset();
-}
-
-}
-*/
 void CtrlrPanelEditor::visibilityChanged() {}
 
 void CtrlrPanelEditor::resized() {
@@ -697,7 +556,6 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 
 			// Propagates to all children via normal inheritance
 			lookAndFeelChanged();
-			DBG("!!!I changed the L&F on a combo" << Ids::uiComboBgColour);
 			if (!getProperty(Ids::uiPanelLegacyMode)) {
 				setProperty(
 					Ids::uiPanelViewPortBackgroundColour,

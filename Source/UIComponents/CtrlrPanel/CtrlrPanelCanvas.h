@@ -223,9 +223,7 @@ class CtrlrPanelCanvas : public CtrlrChildWindowContent,
 		OwnedArray<CtrlrPanelCanvasLayer> layers;
 		ResizableBorderComponent *ctrlrPanelCanvasResizableBorder;
 		CtrlrPanelCanvas(const CtrlrPanelCanvas &);
-		// static std::unique_ptr<juce::Drawable> createMenuIcon(const char* data, size_t size);
-		static std::unique_ptr<juce::Drawable> createMenuIcon(const char *data, const size_t size,
-															  juce::Colour iconColour = juce::Colours::black);
+		static std::unique_ptr<juce::Drawable> createMenuIcon(const char *data, size_t size);
 		const CtrlrPanelCanvas &operator=(const CtrlrPanelCanvas &);
 };
 
