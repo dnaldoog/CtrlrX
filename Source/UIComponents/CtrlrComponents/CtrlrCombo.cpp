@@ -310,7 +310,7 @@ void CtrlrCombo::parentHierarchyChanged()
 
     // Only refresh if we are actively in the middle of a search session
     // when attached/re-parented. Otherwise, leave the saved combo selection alone!
-    if (getParentComponent() != nullptr) // && isSearching) // Updated v5.6.36. Thanks to @dnaldoog
+    if (getParentComponent() != nullptr && isSearching) // Updated v5.6.36. Thanks to @dnaldoog
     {
         _DBG("LIFECYCLE: Component re-attached during active search. Refreshing search results.");
         triggerAsyncUpdate();
@@ -499,8 +499,13 @@ void CtrlrCombo::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChange
 	// PATH 1: User toggles search ON/OFF
 	if (property == Ids::uiComboSearch)
 	{
-		_DBG("PROP: uiComboSearch changed - starting safety timer");
-		startTimer(250);
+		// Keep saved state aligned if property changes outside of edit mode
+        if (!owner.getOwnerPanel().getEditor()->getMode())
+        {
+			savedFuzzySearchState = (bool) getProperty (Ids::uiComboSearch); // Added v5.6.36. FIX to prevent the comboBox resize from being locked if the panel is open in Edit Mode
+			_DBG("PROP: uiComboSearch changed - starting safety timer");
+			startTimer(250);
+		}
 	}
 	// PATH 2: Background/Font color changes
 	else if (property.toString().startsWith("uiCombo") && property != Ids::uiComboSearch)
