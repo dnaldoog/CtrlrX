@@ -1,12 +1,21 @@
 #include "CtrlrMIDIMon.h"
 #include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrManager/CtrlrManager.h"
+#include "CtrlrPanel/CtrlrPanel.h"
 #include "CtrlrProcessor.h"
 #include "CtrlrUtilities.h"
 #include "stdafx.h"
 
 CtrlrMIDIMon::CtrlrMIDIMon(CtrlrManager &_owner)
-	: owner(_owner), logIn(false), logOut(false), resizer(0), outMon(0), inMon(0), outLabel(0), inLabel(0) {
+	: owner(_owner),
+	  logIn(false),
+	  logOut(false),
+	  resizer(nullptr),
+	  outMon(nullptr),
+	  inMon(nullptr),
+	  outLabel(nullptr),
+	  inLabel(nullptr) {
+
 	addAndMakeVisible(resizer = new StretchableLayoutResizerBar(&layoutManager, 1, false));
 
 	// addAndMakeVisible(outMon = new CodeEditorComponent(outputDocument, 0));
@@ -17,21 +26,41 @@ CtrlrMIDIMon::CtrlrMIDIMon(CtrlrManager &_owner)
 
 	addAndMakeVisible(outMon = new MidiMonitorEditor(outputDocument, 0));
 	outMon->setName(L"outMon");
+	outMon->setFont(Font(owner.getFontManager().getDefaultMonoFontName(), 12, Font::bold));
+	outMon->setColour(CodeEditorComponent::backgroundColourId, Colours::powderblue);
+	outMon->setColour(CodeEditorComponent::backgroundColourId, Colours::powderblue);
+	outMon->setColour(CodeEditorComponent::lineNumberTextId, Colours::black); // Line numbers text
+	outMon->setColour(
+		CodeEditorComponent::lineNumberBackgroundId,
+		Colours::antiquewhite); // Line numbers margin background
+								// outMon->setColour(CodeEditorComponent::backgroundColourId, Colour(0xffffacac));
 
 	addAndMakeVisible(inMon = new MidiMonitorEditor(inputDocument, 0));
 	inMon->setName(L"inMon");
+	inMon->setFont(Font(owner.getFontManager().getDefaultMonoFontName(), 12, Font::bold));
+	inMon->setColour(CodeEditorComponent::backgroundColourId, Colours::palegreen);
+	// inMon->setColour(CodeEditorComponent::backgroundColourId, Colour(0xffb3ffac));
+
+	// --- Configure Input Monitor Colors ---
+	inMon->setColour(CodeEditorComponent::backgroundColourId, Colours::palegreen);
+	inMon->setColour(CodeEditorComponent::lineNumberTextId, Colours::black); // Line numbers text
+	inMon->setColour(CodeEditorComponent::lineNumberBackgroundId, Colours::antiquewhite);
+	// inMon->setColour(CodeEditorComponent::lineNumberBackgroundId,
+	//  Colours::palegreen.darker(0.1f)); // Line numbers margin background
 
 	addAndMakeVisible(outLabel = new Label("outLabel", "MIDI OUT"));
 	outLabel->setFont(Font(14, Font::bold));
 	outLabel->setJustificationType(Justification::centred);
-	outLabel->setColour(Label::backgroundColourId, Colour(0xffffacac).darker(0.1f));
-	outLabel->setColour(Label::textColourId, Colours::black);
+	// outLabel->setColour(Label::backgroundColourId, Colour(0xffffacac).darker(0.1f));
+	outLabel->setColour(Label::backgroundColourId, Colours::black);
+	outLabel->setColour(Label::textColourId, Colours::white);
 
 	addAndMakeVisible(inLabel = new Label("inLabel", "MIDI IN"));
 	inLabel->setFont(Font(14, Font::bold));
 	inLabel->setJustificationType(Justification::centred);
-	inLabel->setColour(Label::backgroundColourId, Colour(0xffb3ffac).darker(0.1f));
-	inLabel->setColour(Label::textColourId, Colours::black);
+	// inLabel->setColour(Label::backgroundColourId, Colour(0xffb3ffac).darker(0.1f));
+	inLabel->setColour(Label::backgroundColourId, Colours::black);
+	inLabel->setColour(Label::textColourId, Colours::white);
 
 	layoutManager.setItemLayout(0, -0.001, -1.0, -0.49);
 	layoutManager.setItemLayout(1, -0.001, -0.01, -0.01);
@@ -39,19 +68,17 @@ CtrlrMIDIMon::CtrlrMIDIMon(CtrlrManager &_owner)
 
 	owner.getCtrlrLog().addListener(this);
 
-	inMon->setFont(Font(owner.getFontManager().getDefaultMonoFontName(), 12, Font::bold));
-	inMon->setColour(CodeEditorComponent::backgroundColourId, Colour(0xffb3ffac));
-	outMon->setFont(Font(owner.getFontManager().getDefaultMonoFontName(), 12, Font::bold));
-	outMon->setColour(CodeEditorComponent::backgroundColourId, Colour(0xffffacac));
+	// --- Configure Output Monitor Colors ---
 
 	// inMon->addMouseListener(this, false);
 	// outMon->addMouseListener(this, false);
-
+	updateDeviceLabels();
 	setSize(500, 400);
 }
 
 CtrlrMIDIMon::~CtrlrMIDIMon() {
 	owner.getCtrlrLog().removeListener(this);
+
 	deleteAndZero(resizer);
 	deleteAndZero(outMon);
 	deleteAndZero(inMon);
@@ -62,6 +89,17 @@ CtrlrMIDIMon::~CtrlrMIDIMon() {
 }
 
 void CtrlrMIDIMon::paint(Graphics &g) {}
+
+void CtrlrMIDIMon::visibilityChanged() {
+	if (isVisible()) {
+		updateDeviceLabels();
+	}
+}
+
+// Fired whenever the window or component gains focus
+void CtrlrMIDIMon::focusGained(FocusChangeType cause) {
+	updateDeviceLabels();
+}
 
 void CtrlrMIDIMon::resized() {
 	const int labelHeight = 20; // Height for the labels
@@ -301,6 +339,44 @@ void CtrlrMIDIMon::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 			DBG("Filter toggled. Bit: " + String(bitToToggle) + " New mask: " + String(filters));
 		}
 	}
+}
+
+void CtrlrMIDIMon::valueTreePropertyChanged(juce::ValueTree &treeWhosePropertyHasChanged,
+											const juce::Identifier &property) {
+	if (property == Ids::panelMidiInputDevice || property == Ids::panelMidiOutputDevice)
+
+	// ||
+	// property == Ids::panelMidiInputDevice || property == Ids::ctrlrMidiOutputDevice ||
+	// property == Ids::ctrlrActivePanel			 // Fired when active panel changes
+	// || property == Ids::ctrlrManagerActivePanel) // Fired on panel tab switch
+	{
+		updateDeviceLabels();
+	}
+}
+
+void CtrlrMIDIMon::updateDeviceLabels() {
+	if (inLabel == nullptr || outLabel == nullptr)
+		return;
+
+	String inDev = "-- NONE --";
+	String outDev = "-- NONE --";
+
+	// Snapshot current active panel's MIDI devices on launch
+	if (CtrlrPanel *activePanel = owner.getActivePanel()) {
+		inDev = activePanel->getProperty(Ids::panelMidiInputDevice).toString();
+		outDev = activePanel->getProperty(Ids::panelMidiOutputDevice).toString();
+	} else {
+		inDev = owner.getProperty(Ids::panelMidiInputDevice).toString();
+		outDev = owner.getProperty(Ids::panelMidiOutputDevice).toString();
+	}
+
+	if (inDev.trim().isEmpty())
+		inDev = "-- NONE --";
+	if (outDev.trim().isEmpty())
+		outDev = "-- NONE --";
+
+	inLabel->setText("MIDI IN (" + inDev + ")", dontSendNotification);
+	outLabel->setText("MIDI OUT (" + outDev + ")", dontSendNotification);
 }
 // void CtrlrMIDIMon::mouseDown(const juce::MouseEvent &e) {
 // 	if (e.mods.isPopupMenu()) // Right-click or Ctrl+click
