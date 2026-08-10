@@ -173,10 +173,16 @@ const Array<Font> CtrlrSlider::getFontList() {
 }
 
 void CtrlrSlider::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
-	if (property == Ids::uiSliderSpringMode) {
+	DBG("Value Tree Property Changed ::" << property);
+	if (property == Ids::uiSliderStyle) {
+		ctrlrSlider.setSliderStyle(
+			(Slider::SliderStyle)CtrlrComponentTypeManager::sliderStringToStyle(getProperty(Ids::uiSliderStyle)));
+	} else if (property == Ids::uiSliderSpringMode) {
 		if ((bool)getProperty(property) == true) {
 			ctrlrSlider.setValue(getProperty(Ids::uiSliderSpringValue), dontSendNotification);
 		}
+	} else if (property == Ids::uiSliderSpringValue) {
+		ctrlrSlider.setValue(getProperty(property), dontSendNotification);
 	} else if (property == Ids::uiSliderPopupBubble) {
 		ctrlrSlider.setPopupDisplayEnabled((bool)getProperty(property), (bool)getProperty(property),
 										   owner.getOwnerPanel().getEditor());
@@ -216,6 +222,61 @@ void CtrlrSlider::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChange
 	} else if (property == Ids::uiSliderIncDecTextColour) {
 		ctrlrSlider.setColour(Slider::textBoxTextColourId, VAR2COLOUR(getProperty(property)));
 		ctrlrSlider.repaint();
+	} else if (property == Ids::uiSliderValueTextColour) {
+		ctrlrSlider.setColour(Slider::textBoxTextColourId, VAR2COLOUR(getProperty(property)));
+		ctrlrSlider.repaint();
+	} else if (property == Ids::uiSliderValueHighlightColour) {
+		ctrlrSlider.setColour(Slider::textBoxHighlightColourId, VAR2COLOUR(getProperty(property)));
+		ctrlrSlider.repaint();
+	} else if (property == Ids::uiSliderValueBgColour) {
+		ctrlrSlider.setColour(Slider::textBoxBackgroundColourId, VAR2COLOUR(getProperty(property)));
+		ctrlrSlider.repaint();
+	} else if (property == Ids::uiSliderValueOutlineColour) {
+		ctrlrSlider.setColour(Slider::textBoxOutlineColourId, VAR2COLOUR(getProperty(property)));
+		ctrlrSlider.repaint();
+	}
+	// --- SLIDER RANGE & METRICS ---
+	else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin) {
+		double max = getProperty(Ids::uiSliderMax);
+		double min = getProperty(Ids::uiSliderMin);
+		double interval = getProperty(Ids::uiSliderInterval);
+
+		if (interval == 0)
+			interval = std::abs(max - min) + 1;
+
+		if (max <= min) {
+			max = min + interval * 0.66;
+		}
+
+		ctrlrSlider.setRange(min, max, interval);
+		owner.setProperty(Ids::modulatorMin, ctrlrSlider.getMinimum());
+		owner.setProperty(Ids::modulatorMax, ctrlrSlider.getMaximum());
+		lookAndFeelChanged();
+	} else if (property == Ids::uiSliderDecimalPlaces) {
+		ctrlrSlider.setNumDecimalPlacesToDisplay((int)getProperty(Ids::uiSliderDecimalPlaces));
+		ctrlrSlider.lookAndFeelChanged();
+	} else if (property == Ids::uiSliderValueSuffix) {
+		ctrlrSlider.setTextValueSuffix(getProperty(Ids::uiSliderValueSuffix).toString());
+		ctrlrSlider.lookAndFeelChanged();
+	} else if (property == Ids::uiSliderValuePosition || property == Ids::uiSliderValueHeight ||
+			   property == Ids::uiSliderValueWidth) {
+		ctrlrSlider.setTextBoxStyle((Slider::TextEntryBoxPosition)(int)getProperty(Ids::uiSliderValuePosition), false,
+									getProperty(Ids::uiSliderValueWidth, 64),
+									getProperty(Ids::uiSliderValueHeight, 12));
+
+		ctrlrSlider.lookAndFeelChanged();
+	} else if (property == Ids::uiSliderSetNotificationOnlyOnRelease) {
+		ctrlrSlider.setChangeNotificationOnlyOnRelease((bool)getProperty(Ids::uiSliderSetNotificationOnlyOnRelease));
+	} else if (property == Ids::uiSliderVelocityMode || property == Ids::uiSliderVelocityModeKeyTrigger ||
+			   property == Ids::uiSliderVelocitySensitivity || property == Ids::uiSliderVelocityThreshold ||
+			   property == Ids::uiSliderVelocityOffset) {
+		ctrlrSlider.setVelocityBasedMode((bool)getProperty(Ids::uiSliderVelocityMode));
+		ctrlrSlider.setVelocityModeParameters(
+			(double)getProperty(Ids::uiSliderVelocitySensitivity), (int)getProperty(Ids::uiSliderVelocityThreshold),
+			(double)getProperty(Ids::uiSliderVelocityOffset), (bool)getProperty(Ids::uiSliderVelocityModeKeyTrigger));
+	} else if (property == Ids::uiSliderDoubleClickValue || property == Ids::uiSliderDoubleClickEnabled) {
+		ctrlrSlider.setDoubleClickReturnValue((bool)getProperty(Ids::uiSliderDoubleClickEnabled),
+											  getProperty(Ids::uiSliderDoubleClickValue));
 	} else {
 		CtrlrComponent::valueTreePropertyChanged(treeWhosePropertyHasChanged, property);
 	}
