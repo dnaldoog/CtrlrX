@@ -160,7 +160,7 @@ void CtrlrCombo::resized()
 
 void CtrlrCombo::mouseDown (const MouseEvent& e)
 {
-    if (getProperty(Ids::uiComboSearch))
+    if (canPerformFuzzySearch())
     {
         if (!isSearching)
         {
@@ -198,6 +198,8 @@ void CtrlrCombo::mouseDown (const MouseEvent& e)
             return;
         }
     }
+    
+    // Crucial: Passes mouse click to CtrlrComponent so resize handles can be grabbed in Edit Mode
     CtrlrComponent::mouseDown (e);
 }
 
@@ -363,7 +365,16 @@ void CtrlrCombo::timerCallback()
     }
     else
     {
-        if (ctrlrCombo != nullptr && (bool)getProperty(Ids::uiComboSearch))
+        // 1. ALWAYS restore the complete list when in user mode,
+        // regardless of whether search is enabled/disabled or was filtered previously.
+        if (ctrlrCombo != nullptr && valueMap != nullptr)
+        {
+            _DBG("GUI_TRACE [" + owner.getName() + "] timerCallback | Refilling Combo list");
+            valueMap->fillCombo(*ctrlrCombo, true);
+        }
+
+        // 2. Attach listeners & set editable text ONLY if fuzzy search is active
+        if (ctrlrCombo != nullptr && canPerformFuzzySearch())
         {
             _DBG("LIFECYCLE: Restoring Fuzzy Search for User Mode...");
             
@@ -371,18 +382,16 @@ void CtrlrCombo::timerCallback()
             ctrlrCombo->setEditableText(true);
             
             findAndAttach(ctrlrCombo);
-            
-            // Ensure the list is fresh
-            if (valueMap != nullptr)
-            {
-                _DBG("GUI_TRACE [" + owner.getName() + "] timerCallback | Refilling Combo list");
-                valueMap->fillCombo(*ctrlrCombo, true);
-            }
 
             // UPDATE: Capture both Index AND Text here.
             // If Index is valid but Text is empty, the UI "wipe" happened right here.
             _DBG("GUI_TRACE [" + owner.getName() + "] timerCallback | Post-Refill Index: "
                  + String(ctrlrCombo->getSelectedItemIndex()) + " | Text: '" + ctrlrCombo->getText() + "'");
+        }
+        else if (ctrlrCombo != nullptr)
+        {
+            // Ensure search editability is disabled if fuzzy search is OFF
+            ctrlrCombo->setEditableText(false);
         }
     }
 
@@ -499,13 +508,8 @@ void CtrlrCombo::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChange
 	// PATH 1: User toggles search ON/OFF
 	if (property == Ids::uiComboSearch)
 	{
-		// Keep saved state aligned if property changes outside of edit mode
-        if (!owner.getOwnerPanel().getEditor()->getMode())
-        {
-			savedFuzzySearchState = (bool) getProperty (Ids::uiComboSearch); // Added v5.6.36. FIX to prevent the comboBox resize from being locked if the panel is open in Edit Mode
-			_DBG("PROP: uiComboSearch changed - starting safety timer");
-			startTimer(250);
-		}
+		_DBG("PROP: uiComboSearch changed - starting safety timer");
+		startTimer(250);
 	}
 	// PATH 2: Background/Font color changes
 	else if (property.toString().startsWith("uiCombo") && property != Ids::uiComboSearch)
@@ -782,24 +786,13 @@ void CtrlrCombo::panelEditModeChanged(const bool isInEditMode)
 {
     _DBG("Combo Edit Mode: " + String(isInEditMode ? "ON" : "OFF"));
     
+    // Close active popup if open when entering edit mode
     if (isInEditMode)
     {
-        // 1. Cache the actual user setting before changing it
-        savedFuzzySearchState = (bool) getProperty(Ids::uiComboSearch);
-
-        // 2. Explicitly disable fuzzy search during edit mode
-        setProperty(Ids::uiComboSearch, false);
-
-        // 3. Close active popup if open
         if (ctrlrCombo != nullptr && ctrlrCombo->isPopupActive())
         {
             ctrlrCombo->hidePopup();
         }
-    }
-    else
-    {
-        // 4. Exiting edit mode: Restore original fuzzy search state
-        setProperty(Ids::uiComboSearch, savedFuzzySearchState);
     }
 
     if (ctrlrCombo != nullptr)
@@ -925,6 +918,15 @@ void CtrlrCombo::updatePropertiesPanel()
     {
         props->refreshAll(); // Needs extra code to prevent scrolling back to top on refresh
     }
+}
+
+bool CtrlrCombo::canPerformFuzzySearch() const
+{
+    const bool isEnabledInInspector = (bool) getProperty(Ids::uiComboSearch);
+    const bool isEditingLayout      = owner.getOwnerPanel().getEditor()->getMode();
+
+    // Search ONLY works if enabled in inspector AND NOT in edit mode
+    return isEnabledInInspector && !isEditingLayout;
 }
 
 void CtrlrCombo::updateInternalComponentStyles()

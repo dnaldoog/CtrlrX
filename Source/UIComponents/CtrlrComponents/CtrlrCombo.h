@@ -126,6 +126,7 @@ private:
     CtrlrCombo (const CtrlrCombo&);
     const CtrlrCombo& operator= (const CtrlrCombo&);
     bool savedFuzzySearchState = false;
+    bool canPerformFuzzySearch() const;
 };
 
 
