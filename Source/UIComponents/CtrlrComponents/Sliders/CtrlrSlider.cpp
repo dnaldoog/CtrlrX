@@ -157,6 +157,7 @@ double CtrlrSlider::getComponentMaxValue() {
 void CtrlrSlider::setComponentValue(const double newValue, const bool sendChangeMessage) {
 	ctrlrSlider.setValue(newValue, dontSendNotification);
 	if (sendChangeMessage) {
+		// DBG("Sending MIDI from uiSlider okay!");
 		owner.getProcessor().setValueGeneric(CtrlrModulatorValue(newValue, CtrlrModulatorValue::changedByGUI));
 	}
 }
