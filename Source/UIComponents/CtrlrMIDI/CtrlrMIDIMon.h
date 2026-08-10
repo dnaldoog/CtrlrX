@@ -4,6 +4,7 @@
 #include "CtrlrMacros.h"
 #include "CtrlrLog.h"
 #include "CtrlrWindowManagers/CtrlrChildWindowContent.h"
+#include "CtrlrWindowManagers/CtrlrManagerWindowManager.h" // Ensure this include is present
 class CtrlrManager;
 
 class CtrlrMIDIMon  : public CtrlrChildWindowContent,
@@ -15,7 +16,7 @@ class CtrlrMIDIMon  : public CtrlrChildWindowContent,
 		~CtrlrMIDIMon();
 		void messageLogged (CtrlrLog::CtrlrLogMessage _message);
 		String getContentName()					{ return ("MIDI Monitor"); }
-		uint8 getType()							{ return (CtrlrManagerWindowManager::MidiMonWindow); }
+		uint8 getType() override { return static_cast<uint8>(CtrlrManagerWindowManager::WindowType::MidiMonWindow); }
 
 		void paint (Graphics& g);
 		void resized();
@@ -40,7 +41,9 @@ class CtrlrMIDIMon  : public CtrlrChildWindowContent,
 
 			// Filter menu
 			FilterMenuBase = 10000,
-			SelectAllFilters = 99999
+			ClearAllFilters = 99999,
+			SelectAllFilters = 99998
+			
 		};
 		CtrlrManager &owner;
 		CodeDocument docOut, docIn;
