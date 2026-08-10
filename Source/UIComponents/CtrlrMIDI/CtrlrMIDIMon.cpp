@@ -1,4 +1,5 @@
 #include "CtrlrMIDIMon.h"
+#include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrManager/CtrlrManager.h"
 #include "CtrlrProcessor.h"
 #include "CtrlrUtilities.h"
@@ -8,10 +9,16 @@ CtrlrMIDIMon::CtrlrMIDIMon(CtrlrManager &_owner)
 	: owner(_owner), logIn(false), logOut(false), resizer(0), outMon(0), inMon(0), outLabel(0), inLabel(0) {
 	addAndMakeVisible(resizer = new StretchableLayoutResizerBar(&layoutManager, 1, false));
 
-	addAndMakeVisible(outMon = new CodeEditorComponent(outputDocument, 0));
+	// addAndMakeVisible(outMon = new CodeEditorComponent(outputDocument, 0));
+	// outMon->setName(L"outMon");
+
+	// addAndMakeVisible(inMon = new CodeEditorComponent(inputDocument, 0));
+	// inMon->setName(L"inMon");
+
+	addAndMakeVisible(outMon = new MidiMonitorEditor(outputDocument, 0));
 	outMon->setName(L"outMon");
 
-	addAndMakeVisible(inMon = new CodeEditorComponent(inputDocument, 0));
+	addAndMakeVisible(inMon = new MidiMonitorEditor(inputDocument, 0));
 	inMon->setName(L"inMon");
 
 	addAndMakeVisible(outLabel = new Label("outLabel", "MIDI OUT"));
@@ -37,6 +44,9 @@ CtrlrMIDIMon::CtrlrMIDIMon(CtrlrManager &_owner)
 	outMon->setFont(Font(owner.getFontManager().getDefaultMonoFontName(), 12, Font::bold));
 	outMon->setColour(CodeEditorComponent::backgroundColourId, Colour(0xffffacac));
 
+	// inMon->addMouseListener(this, false);
+	// outMon->addMouseListener(this, false);
+
 	setSize(500, 400);
 }
 
@@ -47,6 +57,8 @@ CtrlrMIDIMon::~CtrlrMIDIMon() {
 	deleteAndZero(inMon);
 	deleteAndZero(outLabel);
 	deleteAndZero(inLabel);
+	// inMon->removeMouseListener(this);
+	// outMon->removeMouseListener(this);
 }
 
 void CtrlrMIDIMon::paint(Graphics &g) {}
@@ -290,3 +302,30 @@ void CtrlrMIDIMon::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 		}
 	}
 }
+// void CtrlrMIDIMon::mouseDown(const juce::MouseEvent &e) {
+// 	if (e.mods.isPopupMenu()) // Right-click or Ctrl+click
+// 	{
+// 		juce::PopupMenu menu;
+
+// 		// Determine which monitor component was clicked
+// 		if (e.eventComponent == inMon || e.originalComponent == inMon) {
+// 			menu.addItem(1, "Clear Input Monitor");
+// 		} else if (e.eventComponent == outMon || e.originalComponent == outMon) {
+// 			menu.addItem(2, "Clear Output Monitor");
+// 		} else {
+// 			return; // Not clicked on either editor
+// 		}
+
+// 		// Configure options to target the exact component where the user clicked
+// 		auto options = juce::PopupMenu::Options().withTargetComponent(e.eventComponent);
+
+// 		// Display the menu using your AW wrapper
+// 		AW::showPopupMenuAsync(menu, options, [this](int result) {
+// 			if (result == 1) {
+// 				inputDocument.replaceAllContent("");
+// 			} else if (result == 2) {
+// 				outputDocument.replaceAllContent("");
+// 			}
+// 		});
+// 	}
+// }
