@@ -204,6 +204,19 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings(CtrlrLuaMetho
 	syntaxTokenColor->setJustificationType(Justification::centredLeft);
 	syntaxTokenColor->addListener(this);
 
+	if (!owner.getComponentTree().hasProperty(Ids::luaMethodEditorAutoComplete))
+		owner.getComponentTree().setProperty(Ids::luaMethodEditorAutoComplete, true, nullptr);
+
+	autoCompleteButton = std::make_unique<ToggleButton>(SharedValues::getAutoCompleteLabel());
+	addAndMakeVisible(autoCompleteButton.get());
+
+	// Bind directly to the ValueTree property this is what persists across sessions
+	autoCompleteButton->getToggleStateValue().referTo(
+		owner.getComponentTree().getPropertyAsValue(Ids::luaMethodEditorAutoComplete, nullptr));
+
+	// addAndMakeVisible(autoCompleteOptionsButton = new ToggleButton(""));
+	// autoCompleteOptionsButton->setButtonText(SharedValues::getAutoCompleteOptionsLabel());
+
 	resetButton = std::make_unique<TextButton>("Reset");
 	addAndMakeVisible(resetButton.get());
 	resetButton->addListener(this);
@@ -296,9 +309,10 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings(CtrlrLuaMetho
 	originalBgColour = getBgColour();
 	originalLineNumbersBgColour = getLineNumbersBgColour();
 	originalLineNumbersColour = getLineNumbersColour();
+	originalAutoComplete = autoCompleteButton->getToggleState();
 	originalOpenSearchTabs = openSearchTabs->getToggleState();
 
-	setSize(550, 586);
+	setSize(334, 600);
 	updateSyntaxColors();
 }
 
@@ -309,33 +323,6 @@ CtrlrLuaMethodCodeEditorSettings::~CtrlrLuaMethodCodeEditorSettings() {
 	if (openSearchTabs) {
 		openSearchTabs->getToggleStateValue().referTo(juce::Value());
 	}
-
-	// Now it's safe to delete the components.
-	// deleteAndZero(fontTest);
-
-	// deleteAndZero(fontTypeface);
-	// deleteAndZero(fontBold);
-	// deleteAndZero(fontItalic);
-	// deleteAndZero(resetToPreviousButton);
-	// deleteAndZero(fontSize);
-
-	// Useless for labels since the scopedPointer handles it.
-	// deleteAndZero(label0);
-	// deleteAndZero(label1);
-	// deleteAndZero(label2);
-	// deleteAndZero(label3);
-	// deleteAndZero(syntaxLabel);
-
-	// deleteAndZero(bgColour);
-	// deleteAndZero(lineNumbersBgColour);
-	// deleteAndZero(lineNumbersColour);
-
-	// deleteAndZero(syntaxTokenType);
-	// deleteAndZero(syntaxTokenColor);
-
-	// deleteAndZero(openSearchTabs);
-	// deleteAndZero(resetButton);
-	// deleteAndZero(applyButton);
 }
 
 void CtrlrLuaMethodCodeEditorSettings::paint(Graphics &g) {
@@ -387,8 +374,14 @@ void CtrlrLuaMethodCodeEditorSettings::resized() {
 	// Open search tab  check box
 	openSearchTabs->setBounds(marginLeft + 0, syntaxY + 64, sampleWidth, 24);
 
+	// Autocomplete toggle
+	autoCompleteButton->setBounds(marginLeft + 0, syntaxY + 88, sampleWidth, 24);
+
+	// Autocomplete toggle
+	// autoCompleteOptionsButton->setBounds(marginLeft + 0, syntaxY + 112, sampleWidth, 24);
+
 	// Add horizontal line above buttons
-	int buttonY = syntaxY + 104;
+	int buttonY = syntaxY + 128 + 24;
 
 	// Position the three buttons in a row: RESET  APPLY  CANCEL
 	int buttonWidth = (sampleWidth - 16) / 2; // Account for spacing between buttons
@@ -463,47 +456,49 @@ void CtrlrLuaMethodCodeEditorSettings::buttonClicked(Button *buttonThatWasClicke
 	} else if (buttonThatWasClicked == applyButton.get()) {
 		applySettings();
 		closeWindow(); // Added to apply and close settings window
-	}  else if (buttonThatWasClicked == resetButton.get()) {
-    // Capture a SafePointer to prevent accessing a destroyed 'this'
-    juce::Component::SafePointer<CtrlrLuaMethodCodeEditorSettings> safeThis(this);
+	} else if (buttonThatWasClicked == resetButton.get()) {
+		// Capture a SafePointer to prevent accessing a destroyed 'this'
+		juce::Component::SafePointer<CtrlrLuaMethodCodeEditorSettings> safeThis(this);
 
-    AW::showOkCancelAsyncSafe(AW::Question, "Reset Editor", "Reset Editor to default", [safeThis](int result) {
-        // Ensure 'this' component hasn't been deleted by parent while waiting for user click
-        if (safeThis == nullptr)
-            return;
+		AW::showOkCancelAsyncSafe(AW::Question, "Reset Editor", "Reset Editor to default", [safeThis](int result) {
+			// Ensure 'this' component hasn't been deleted by parent while waiting for user click
+			if (safeThis == nullptr)
+				return;
 
-        if (result == 1) {
-            // Reset to defaults
-            safeThis->fontTypeface->setText("<Monospaced>", dontSendNotification);
-            safeThis->fontBold->setToggleState(false, dontSendNotification);
-            safeThis->fontItalic->setToggleState(false, dontSendNotification);
-            safeThis->openSearchTabs->setToggleState(false, dontSendNotification);
-            safeThis->fontSize->setValue(14.0f, dontSendNotification);
-            safeThis->bgColour->setSelectedId(safeThis->findColourIndex(Colours::white), dontSendNotification);
-            safeThis->lineNumbersBgColour->setSelectedId(safeThis->findColourIndex(Colours::cornflowerblue), dontSendNotification);
-            safeThis->lineNumbersColour->setSelectedId(safeThis->findColourIndex(Colours::black), dontSendNotification);
+			if (result == 1) {
+				// Reset to defaults
+				safeThis->fontTypeface->setText("<Monospaced>", dontSendNotification);
+				safeThis->fontBold->setToggleState(false, dontSendNotification);
+				safeThis->fontItalic->setToggleState(false, dontSendNotification);
+				safeThis->openSearchTabs->setToggleState(false, dontSendNotification);
+				safeThis->fontSize->setValue(14.0f, dontSendNotification);
+				safeThis->bgColour->setSelectedId(safeThis->findColourIndex(Colours::white), dontSendNotification);
+				safeThis->lineNumbersBgColour->setSelectedId(safeThis->findColourIndex(Colours::cornflowerblue),
+															 dontSendNotification);
+				safeThis->lineNumbersColour->setSelectedId(safeThis->findColourIndex(Colours::black),
+														   dontSendNotification);
 
-            safeThis->customSyntaxColors.clear();
-            safeThis->clearSyntaxColorSettings();
-            String currentToken = safeThis->getCurrentSelectedTokenType();
-            safeThis->updateTokenColorDisplay(currentToken);
-            safeThis->updateSyntaxColors();
+				safeThis->customSyntaxColors.clear();
+				safeThis->clearSyntaxColorSettings();
+				String currentToken = safeThis->getCurrentSelectedTokenType();
+				safeThis->updateTokenColorDisplay(currentToken);
+				safeThis->updateSyntaxColors();
 
-            safeThis->previousFont = safeThis->getFont();
-            safeThis->resetToPreviousButton->setEnabled(true);
+				safeThis->previousFont = safeThis->getFont();
+				safeThis->resetToPreviousButton->setEnabled(true);
 
-            safeThis->changeListenerCallback(nullptr);
+				safeThis->changeListenerCallback(nullptr);
 
-            // DEFER WINDOW CLOSE: Allows the AW async dialog to finish completely before deleting 'this'
-            juce::MessageManager::callAsync([safeThis]() {
-                if (safeThis != nullptr) {
-                    safeThis->closeWindow();
-                }
-            });
-        }
-    });
+				// DEFER WINDOW CLOSE: Allows the AW async dialog to finish completely before deleting 'this'
+				juce::MessageManager::callAsync([safeThis]() {
+					if (safeThis != nullptr) {
+						safeThis->closeWindow();
+					}
+				});
+			}
+		});
 
-    return;
+		return;
 
 	} else if (buttonThatWasClicked == fontBold.get() || buttonThatWasClicked == fontItalic.get()) {
 		// For style changes, also enable reset and store previous
@@ -515,6 +510,9 @@ void CtrlrLuaMethodCodeEditorSettings::buttonClicked(Button *buttonThatWasClicke
 		bool currentState = openSearchTabs->getToggleState();
 		owner.setOpenSearchTabsEnabled(currentState);
 		owner.getComponentTree().setProperty(Ids::openSearchTabsState, currentState, nullptr);
+	} else if (buttonThatWasClicked == autoCompleteButton.get()) {
+		bool currentState = autoCompleteButton->getToggleState();
+		owner.getComponentTree().setProperty(Ids::luaMethodEditorAutoComplete, currentState, nullptr);
 	}
 
 	// Runs immediately for non-async button clicks
@@ -552,7 +550,9 @@ const Font CtrlrLuaMethodCodeEditorSettings::getFont() {
 	return (font);
 }
 
-const Colour CtrlrLuaMethodCodeEditorSettings::getBgColour() { return getColourFromCombo(bgColour.get()); }
+const Colour CtrlrLuaMethodCodeEditorSettings::getBgColour() {
+	return getColourFromCombo(bgColour.get());
+}
 
 const Colour CtrlrLuaMethodCodeEditorSettings::getLineNumbersBgColour() {
 	return getColourFromCombo(lineNumbersBgColour.get());
@@ -764,7 +764,9 @@ bool CtrlrLuaMethodCodeEditorSettings::hasUnsavedChanges() const {
 	return false;
 }
 
-void CtrlrLuaMethodCodeEditorSettings::markAsChanged() { hasChanges = true; }
+void CtrlrLuaMethodCodeEditorSettings::markAsChanged() {
+	hasChanges = true;
+}
 
 void CtrlrLuaMethodCodeEditorSettings::markAsSaved() {
 	hasChanges = false;
