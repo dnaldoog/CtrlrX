@@ -125,7 +125,7 @@ void CtrlrCombo::resized() {
 }
 
 void CtrlrCombo::mouseDown(const MouseEvent &e) {
-	if (getProperty(Ids::uiComboSearch)) {
+	if (canPerformFuzzySearch()) {
 		if (!isSearching) {
 			_DBG("STARTING SEARCH MODE: Showing list + forcing caret");
 
@@ -273,37 +273,43 @@ void CtrlrCombo::timerCallback() {
 		if (searchListener != nullptr)
 			searchListener.reset();
 	} else {
-		if (ctrlrCombo != nullptr && (bool)getProperty(Ids::uiComboSearch)) {
+		// 1. ALWAYS restore the complete list when in user mode,
+		// regardless of whether search is enabled/disabled or was filtered previously.
+		if (ctrlrCombo != nullptr && valueMap != nullptr) {
+			_DBG("GUI_TRACE [" + owner.getName() + "] timerCallback | Refilling Combo list");
+			valueMap->fillCombo(*ctrlrCombo, true);
+		}
+
+		// 2. Attach listeners & set editable text ONLY if fuzzy search is active
+		if (ctrlrCombo != nullptr && canPerformFuzzySearch()) {
 			_DBG("LIFECYCLE: Restoring Fuzzy Search for User Mode...");
 
+			// Re-enable editability so findAndAttach sees the Label
 			ctrlrCombo->setEditableText(true);
+
 			findAndAttach(ctrlrCombo.get());
 
-			if (valueMap != nullptr) {
-				_DBG("GUI_TRACE [" + owner.getName() + "] timerCallback | Refilling Combo list");
-				valueMap->fillCombo(*ctrlrCombo, true);
-			}
-
+			// UPDATE: Capture both Index AND Text here.
+			// If Index is valid but Text is empty, the UI "wipe" happened right here.
 			_DBG("GUI_TRACE [" + owner.getName() + "] timerCallback | Post-Refill Index: " +
 				 String(ctrlrCombo->getSelectedItemIndex()) + " | Text: '" + ctrlrCombo->getText() + "'");
-		}
-
-		if (getParentComponent() != nullptr) {
-			_DBG("LIFECYCLE: Component re-attached during active search. Refreshing search results.");
-			triggerAsyncUpdate();
+		} else if (ctrlrCombo != nullptr) {
+			// Ensure search editability is disabled if fuzzy search is OFF
+			ctrlrCombo->setEditableText(false);
 		}
 	}
 
-	if (ctrlrCombo != nullptr && !isInEditMode) {
-		const double modulatorValue = owner.getProcessor().getValue();
-		_DBG("GUI_SYNC [" + owner.getName() + "] Re-applying processor value: " + String(modulatorValue));
-		ctrlrCombo->setSelectedId(modulatorValue + 1, dontSendNotification);
-	}
 
-	if (ctrlrCombo) {
-		_DBG("GUI_TRACE [" + owner.getName() + "] timerCallback EXIT | Final UI Index: " +
-			 String(ctrlrCombo->getSelectedItemIndex()) + " | Final UI Text: '" + ctrlrCombo->getText() + "'");
-	}
+if (ctrlrCombo != nullptr && !isInEditMode) {
+	const double modulatorValue = owner.getProcessor().getValue();
+	_DBG("GUI_SYNC [" + owner.getName() + "] Re-applying processor value: " + String(modulatorValue));
+	ctrlrCombo->setSelectedId(modulatorValue + 1, dontSendNotification);
+}
+
+if (ctrlrCombo) {
+	_DBG("GUI_TRACE [" + owner.getName() + "] timerCallback EXIT | Final UI Index: " +
+		 String(ctrlrCombo->getSelectedItemIndex()) + " | Final UI Text: '" + ctrlrCombo->getText() + "'");
+}
 }
 
 void CtrlrCombo::comboBoxChanged(ComboBox *comboBoxThatHasChanged) {
@@ -1109,4 +1115,12 @@ juce::Font CtrlrCombo::CtrlrComboLF::getLabelFont(juce::Label &label) {
 juce::Font CtrlrCombo::CtrlrComboLF::getPopupMenuFont() {
 	return owner.getOwner().getOwnerPanel().getOwner().getFontManager().getFontFromString(
 		owner.getProperty(Ids::uiComboMenuFont));
+}
+
+bool CtrlrCombo::canPerformFuzzySearch() const {
+	const bool isEnabledInInspector = (bool)getProperty(Ids::uiComboSearch);
+	const bool isEditingLayout = owner.getOwnerPanel().getEditor()->getMode();
+
+	// Search ONLY works if enabled in inspector AND NOT in edit mode
+	return isEnabledInInspector && !isEditingLayout;
 }

@@ -88,6 +88,7 @@ class CtrlrCombo : public CtrlrComponent,
 		//[/UserMethods]
 		void resized();
 		void comboBoxChanged(ComboBox *comboBoxThatHasChanged);
+		bool canPerformFuzzySearch() const;
 		void mouseDown(const MouseEvent &e);
 		bool keyPressed(const KeyPress &key);
 
