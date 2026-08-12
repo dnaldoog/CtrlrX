@@ -299,17 +299,16 @@ void CtrlrCombo::timerCallback() {
 		}
 	}
 
+	if (ctrlrCombo != nullptr && !isInEditMode) {
+		const double modulatorValue = owner.getProcessor().getValue();
+		_DBG("GUI_SYNC [" + owner.getName() + "] Re-applying processor value: " + String(modulatorValue));
+		ctrlrCombo->setSelectedId(modulatorValue + 1, dontSendNotification);
+	}
 
-if (ctrlrCombo != nullptr && !isInEditMode) {
-	const double modulatorValue = owner.getProcessor().getValue();
-	_DBG("GUI_SYNC [" + owner.getName() + "] Re-applying processor value: " + String(modulatorValue));
-	ctrlrCombo->setSelectedId(modulatorValue + 1, dontSendNotification);
-}
-
-if (ctrlrCombo) {
-	_DBG("GUI_TRACE [" + owner.getName() + "] timerCallback EXIT | Final UI Index: " +
-		 String(ctrlrCombo->getSelectedItemIndex()) + " | Final UI Text: '" + ctrlrCombo->getText() + "'");
-}
+	if (ctrlrCombo) {
+		_DBG("GUI_TRACE [" + owner.getName() + "] timerCallback EXIT | Final UI Index: " +
+			 String(ctrlrCombo->getSelectedItemIndex()) + " | Final UI Text: '" + ctrlrCombo->getText() + "'");
+	}
 }
 
 void CtrlrCombo::comboBoxChanged(ComboBox *comboBoxThatHasChanged) {
@@ -631,33 +630,22 @@ void CtrlrCombo::fillContent(const int contentType) {
 void CtrlrCombo::panelEditModeChanged(const bool isInEditMode) {
 	_DBG("!!!! Combo Edit Mode: " + String(isInEditMode ? "ON" : "OFF"));
 
-	if (isInEditMode) {
-		// 1. Cache the actual user setting before changing it
-		savedFuzzySearchState = (bool)getProperty(Ids::uiComboSearch);
+	// NEVER touch Ids::uiComboSearch here. It is the user's persisted
+	// inspector setting and must survive mode switches and saves untouched.
+	// canPerformFuzzySearch() is the single source of truth for whether
+	// search is *actually active right now*.
 
-		// 2. Explicitly disable fuzzy search during edit mode
-		setProperty(Ids::uiComboSearch, false);
-
-		// 3. Close active popup if open
-		if (ctrlrCombo != nullptr && ctrlrCombo->isPopupActive()) {
-			ctrlrCombo->hidePopup();
-		}
-	} else {
-		// 4. Exiting edit mode: Restore original fuzzy search state
-		setProperty(Ids::uiComboSearch, savedFuzzySearchState);
+	if (ctrlrCombo != nullptr && ctrlrCombo->isPopupActive()) {
+		ctrlrCombo->hidePopup();
 	}
 
 	if (ctrlrCombo != nullptr) {
-		// Pass mouse interaction to CtrlrComponent so resize handles work in edit mode
 		ctrlrCombo->setInterceptsMouseClicks(!isInEditMode, !isInEditMode);
-		ctrlrCombo->setEditableText(false);
+		ctrlrCombo->setEditableText(false); // timerCallback() re-enables it if canPerformFuzzySearch()
 	}
 
-	// We always use the timer to decouple from the synchronous mode change.
-	// 50ms is enough for 'Entering', 200ms is safer for 'Exiting' (rebuilding UI).
 	startTimer(isInEditMode ? 50 : 200);
 
-	// Standard Ctrlr enablement logic
 	if ((bool)owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelDisabledOnEdit)) {
 		if (ctrlrCombo != nullptr)
 			ctrlrCombo->setEnabled(!isInEditMode);
