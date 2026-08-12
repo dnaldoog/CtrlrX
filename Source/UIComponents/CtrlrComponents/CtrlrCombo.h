@@ -96,7 +96,6 @@ class CtrlrCombo : public CtrlrComponent,
 		// 2. Fuzzy Search Methods
 		//==============================================================================
 		void updateFuzzySearch(const String &searchText);
-		bool savedFuzzySearchState = false;
 		// 3. The SearchListener struct (Updated to Label::Listener)
 		struct SearchListener : public juce::Label::Listener {
 				SearchListener(CtrlrCombo &o) : owner(o) {}
