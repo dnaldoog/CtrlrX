@@ -77,13 +77,13 @@
  #define JucePlugin_EditorRequiresKeyboardFocus  1
 #endif
 #ifndef  JucePlugin_Version
- #define JucePlugin_Version                8 BETA
+ #define JucePlugin_Version                8.0
 #endif
 #ifndef  JucePlugin_VersionCode
  #define JucePlugin_VersionCode            0x80000
 #endif
 #ifndef  JucePlugin_VersionString
- #define JucePlugin_VersionString          "8 BETA"
+ #define JucePlugin_VersionString          "8.0"
 #endif
 #ifndef  JucePlugin_VSTUniqueID
  #define JucePlugin_VSTUniqueID            JucePlugin_PluginCode
@@ -155,7 +155,7 @@
  #define JucePlugin_ARAFactoryID           "com.CtrlrX.CtrlrX.factory"
 #endif
 #ifndef  JucePlugin_ARADocumentArchiveID
- #define JucePlugin_ARADocumentArchiveID   "com.CtrlrX.CtrlrX.aradocumentarchive.8.0.12"
+ #define JucePlugin_ARADocumentArchiveID   "com.CtrlrX.CtrlrX.aradocumentarchive.8.0 BETA"
 #endif
 #ifndef  JucePlugin_ARACompatibleArchiveIDs
  #define JucePlugin_ARACompatibleArchiveIDs  ""
