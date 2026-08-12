@@ -139,8 +139,16 @@ void CtrlrPanelLayerList::paintOverChildren(Graphics &g) {
 	if (dropInsertionIndex >= 0) {
 		int lineY = headerComponent->getHeight() + dropInsertionIndex * layerList->getRowHeight() -
 					layerList->getViewport()->getViewPositionY();
-		g.setColour(Colours::white);
+
+		g.setColour(Colours::forestgreen);
 		g.fillRect(layerList->getX(), lineY - 1, layerList->getWidth(), 2);
+
+		// Small arrowhead pointing right, sitting on the line
+		Path arrow;
+		int arrowSize = 6;
+		arrow.addTriangle((float)layerList->getX(), (float)(lineY - arrowSize), (float)layerList->getX(),
+						  (float)(lineY + arrowSize), (float)(layerList->getX() + arrowSize), (float)lineY);
+		g.fillPath(arrow);
 	}
 }
 void CtrlrPanelLayerList::paint(Graphics &g) {
