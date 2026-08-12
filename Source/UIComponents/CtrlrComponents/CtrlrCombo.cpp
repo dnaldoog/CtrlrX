@@ -782,38 +782,31 @@ void CtrlrCombo::fillContent(const int contentType)
 	}
 }
 
-void CtrlrCombo::panelEditModeChanged(const bool isInEditMode)
-{
-    _DBG("Combo Edit Mode: " + String(isInEditMode ? "ON" : "OFF"));
-    
-    // Close active popup if open when entering edit mode
-    if (isInEditMode)
-    {
-        if (ctrlrCombo != nullptr && ctrlrCombo->isPopupActive())
-        {
-            ctrlrCombo->hidePopup();
-        }
-    }
+void CtrlrCombo::panelEditModeChanged(const bool isInEditMode) {
+	_DBG("!!!! Combo Edit Mode: " + String(isInEditMode ? "ON" : "OFF"));
 
-    if (ctrlrCombo != nullptr)
-    {
-        // Pass mouse interaction to CtrlrComponent so resize handles work in edit mode
-        ctrlrCombo->setInterceptsMouseClicks(!isInEditMode, !isInEditMode);
-        ctrlrCombo->setEditableText(false);
-    }
-    
-    // We always use the timer to decouple from the synchronous mode change.
-    // 50ms is enough for 'Entering', 200ms is safer for 'Exiting' (rebuilding UI).
-    startTimer (isInEditMode ? 50 : 200);
+	// NEVER touch Ids::uiComboSearch here. It is the user's persisted
+	// inspector setting and must survive mode switches and saves untouched.
+	// canPerformFuzzySearch() is the single source of truth for whether
+	// search is *actually active right now*.
 
-    // Standard Ctrlr enablement logic
-    if ((bool)owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelDisabledOnEdit))
-    {
-        if (ctrlrCombo != nullptr)
-            ctrlrCombo->setEnabled (!isInEditMode);
-    }
+	if (ctrlrCombo != nullptr && ctrlrCombo->isPopupActive()) {
+		ctrlrCombo->hidePopup();
+	}
 
-    resized();
+	if (ctrlrCombo != nullptr) {
+		ctrlrCombo->setInterceptsMouseClicks(!isInEditMode, !isInEditMode);
+		ctrlrCombo->setEditableText(false); // timerCallback() re-enables it if canPerformFuzzySearch()
+	}
+
+	startTimer(isInEditMode ? 50 : 200);
+
+	if ((bool)owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelDisabledOnEdit)) {
+		if (ctrlrCombo != nullptr)
+			ctrlrCombo->setEnabled(!isInEditMode);
+	}
+
+	resized();
 }
 
 int CtrlrCombo::getSelectedId()
