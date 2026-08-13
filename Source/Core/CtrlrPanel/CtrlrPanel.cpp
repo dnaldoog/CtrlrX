@@ -1,6 +1,7 @@
 #include "CtrlrPanel.h"
 #include "CtrlrComponents/CtrlrComponent.h"
 #include "CtrlrComponents/CtrlrComponentTypeManager.h"
+#include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrLog.h"
 #include "CtrlrLuaManager.h"
 #include "CtrlrMIDI/CtrlrMIDISettingsDialog.h"
@@ -58,7 +59,9 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 	lfV1 = std::make_unique<juce::LookAndFeel_V1>();
 	gui::initLookAndFeelDefaults(*lfV1);
 	lfV2 = std::make_unique<juce::LookAndFeel_V2>();
+	gui::initLookAndFeelDefaults(*lfV2);
 	lfV3 = std::make_unique<juce::LookAndFeel_V3>();
+	gui::initLookAndFeelDefaults(*lfV3);
 	if ((bool)getCtrlrManagerOwner().getProperty(Ids::ctrlrLuaDisabled) == false) {
 		ctrlrLuaManager->getMethodManager().setDebug((bool)owner.getProperty(Ids::ctrlrLuaDebug));
 	}

@@ -155,7 +155,7 @@
  #define JucePlugin_ARAFactoryID           "com.CtrlrX.CtrlrX.factory"
 #endif
 #ifndef  JucePlugin_ARADocumentArchiveID
- #define JucePlugin_ARADocumentArchiveID   "com.CtrlrX.CtrlrX.aradocumentarchive.8.0 BETA"
+ #define JucePlugin_ARADocumentArchiveID   "com.CtrlrX.CtrlrX.aradocumentarchive.8.0"
 #endif
 #ifndef  JucePlugin_ARACompatibleArchiveIDs
  #define JucePlugin_ARACompatibleArchiveIDs  ""
