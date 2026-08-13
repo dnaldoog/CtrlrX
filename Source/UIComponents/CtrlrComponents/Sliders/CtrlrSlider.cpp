@@ -175,6 +175,7 @@ const Array<Font> CtrlrSlider::getFontList() {
 
 void CtrlrSlider::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
 	DBG("Value Tree Property Changed ::" << property);
+
 	if (property == Ids::uiSliderStyle) {
 		ctrlrSlider.setSliderStyle(
 			(Slider::SliderStyle)CtrlrComponentTypeManager::sliderStringToStyle(getProperty(Ids::uiSliderStyle)));
@@ -203,38 +204,41 @@ void CtrlrSlider::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChange
 		ctrlrSlider.lookAndFeelChanged();
 		ctrlrSlider.repaint();
 		repaint();
-	}
-	// --- COLOR PROPERTY HANDLERS ---
-	else if (property == Ids::uiSliderTrackColour) {
-		ctrlrSlider.setColour(Slider::trackColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
-	} else if (property == Ids::uiSliderThumbColour) {
-		ctrlrSlider.setColour(Slider::thumbColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
-	} else if (property == Ids::uiSliderRotaryOutlineColour) {
-		ctrlrSlider.setColour(Slider::rotarySliderOutlineColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
 	} else if (property == Ids::uiSliderRotaryFillColour) {
-		ctrlrSlider.setColour(Slider::rotarySliderFillColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
-	} else if (property == Ids::uiSliderIncDecButtonColour) {
-		ctrlrSlider.setColour(Slider::textBoxOutlineColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
-	} else if (property == Ids::uiSliderIncDecTextColour) {
-		ctrlrSlider.setColour(Slider::textBoxTextColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
+		ctrlrSlider.setColour(Slider::rotarySliderFillColourId, VAR2COLOUR(getProperty(Ids::uiSliderRotaryFillColour)));
+		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
+	} else if (property == Ids::uiSliderRotaryOutlineColour) {
+		ctrlrSlider.setColour(Slider::rotarySliderOutlineColourId,
+							  VAR2COLOUR(getProperty(Ids::uiSliderRotaryOutlineColour)));
+		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
+	} else if (property == Ids::uiSliderTrackColour) {
+		ctrlrSlider.setColour(Slider::trackColourId, VAR2COLOUR(getProperty(Ids::uiSliderTrackColour)));
+		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
+	} else if (property == Ids::uiSliderThumbColour) {
+		ctrlrSlider.setColour(Slider::thumbColourId, VAR2COLOUR(getProperty(Ids::uiSliderThumbColour)));
+		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
 	} else if (property == Ids::uiSliderValueTextColour) {
-		ctrlrSlider.setColour(Slider::textBoxTextColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
+		const Colour c = VAR2COLOUR(getProperty(Ids::uiSliderValueTextColour));
+		ctrlrSlider.setColour(Slider::textBoxTextColourId, c);
+
+		// Sync internal Label children so value text changes visually right away
+		for (int i = 0; i < ctrlrSlider.getNumChildComponents(); ++i) {
+			if (auto *lb = dynamic_cast<Label *>(ctrlrSlider.getChildComponent(i))) {
+				lb->setColour(Label::textColourId, c);
+				lb->setColour(Label::textWhenEditingColourId, c);
+			}
+		}
+		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
 	} else if (property == Ids::uiSliderValueHighlightColour) {
-		ctrlrSlider.setColour(Slider::textBoxHighlightColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
+		ctrlrSlider.setColour(Slider::textBoxHighlightColourId,
+							  VAR2COLOUR(getProperty(Ids::uiSliderValueHighlightColour)));
+		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
 	} else if (property == Ids::uiSliderValueBgColour) {
-		ctrlrSlider.setColour(Slider::textBoxBackgroundColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
+		ctrlrSlider.setColour(Slider::textBoxBackgroundColourId, VAR2COLOUR(getProperty(Ids::uiSliderValueBgColour)));
+		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
 	} else if (property == Ids::uiSliderValueOutlineColour) {
-		ctrlrSlider.setColour(Slider::textBoxOutlineColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
+		ctrlrSlider.setColour(Slider::textBoxOutlineColourId, VAR2COLOUR(getProperty(Ids::uiSliderValueOutlineColour)));
+		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
 	}
 	// --- SLIDER RANGE & METRICS ---
 	else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin) {
