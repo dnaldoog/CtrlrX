@@ -65,18 +65,31 @@ CtrlrLuaConsole::CtrlrLuaConsole (CtrlrPanel &_owner)
  	layoutManager.setItemLayout (1, -0.001, -0.01, -0.01);
  	layoutManager.setItemLayout (2, -0.001, -1.0, -0.30);
 
-	luaConsoleInput->setFont (Font(owner.getCtrlrManagerOwner().getFontManager().getDefaultMonoFontName(), 15, Font::plain));
-	luaConsoleOutput->setFont (Font(owner.getCtrlrManagerOwner().getFontManager().getDefaultMonoFontName(), 15, Font::plain));
-    luaConsoleInput->setColour (CodeEditorComponent::backgroundColourId, Colour(0xffffffff)); // findColour(CodeEditorComponent::backgroundColourId)); // was Colour(0xffffffff));
-	luaConsoleOutput->setColour (CodeEditorComponent::backgroundColourId, Colour(0xffffffff)); // findColour(CodeEditorComponent::backgroundColourId)); // was Colour(0xffffffff));
-    luaConsoleInput->setColour (CodeEditorComponent::highlightColourId, findColour(CodeEditorComponent::highlightColourId));
-    luaConsoleOutput->setColour (CodeEditorComponent::highlightColourId, findColour(CodeEditorComponent::highlightColourId));
-    luaConsoleInput->setColour (CodeEditorComponent::defaultTextColourId, Colour(0xff000000)); // findColour(CodeEditorComponent::defaultTextColourId));
-    luaConsoleOutput->setColour (CodeEditorComponent::defaultTextColourId, Colour(0xff000000)); // findColour(CodeEditorComponent::defaultTextColourId));
-    luaConsoleInput->setColour (CodeEditorComponent::lineNumberBackgroundId, findColour(CodeEditorComponent::lineNumberBackgroundId));
-    luaConsoleOutput->setColour (CodeEditorComponent::lineNumberBackgroundId, findColour(CodeEditorComponent::lineNumberBackgroundId));
-    luaConsoleInput->setColour (CodeEditorComponent::lineNumberTextId, findColour(CodeEditorComponent::defaultTextColourId));
-    luaConsoleOutput->setColour (CodeEditorComponent::lineNumberTextId, findColour(CodeEditorComponent::defaultTextColourId));
+	luaConsoleInput->setFont(
+		Font(owner.getCtrlrManagerOwner().getFontManager().getDefaultMonoFontName(), 15, Font::plain));
+	luaConsoleOutput->setFont(
+		Font(owner.getCtrlrManagerOwner().getFontManager().getDefaultMonoFontName(), 15, Font::plain));
+	luaConsoleInput->setColour(
+		CodeEditorComponent::backgroundColourId,
+		Colour(0xffffffff)); // findColour(CodeEditorComponent::backgroundColourId)); // was Colour(0xffffffff));
+	luaConsoleOutput->setColour(
+		CodeEditorComponent::backgroundColourId,
+		Colour(0xffffffff)); // findColour(CodeEditorComponent::backgroundColourId)); // was Colour(0xffffffff));
+	luaConsoleInput->setColour(CodeEditorComponent::highlightColourId,
+							   findColour(CodeEditorComponent::highlightColourId));
+	luaConsoleOutput->setColour(CodeEditorComponent::highlightColourId,
+								findColour(CodeEditorComponent::highlightColourId));
+	luaConsoleInput->setColour(CodeEditorComponent::defaultTextColourId,
+							   Colour(0xff000000)); // findColour(CodeEditorComponent::defaultTextColourId));
+	luaConsoleOutput->setColour(CodeEditorComponent::defaultTextColourId,
+								Colour(0xff000000)); // findColour(CodeEditorComponent::defaultTextColourId));
+	luaConsoleInput->setColour(CodeEditorComponent::lineNumberBackgroundId,
+							   findColour(CodeEditorComponent::lineNumberBackgroundId));
+	luaConsoleOutput->setColour(CodeEditorComponent::lineNumberBackgroundId,
+								findColour(CodeEditorComponent::lineNumberBackgroundId));
+	luaConsoleInput->setColour(CodeEditorComponent::backgroundColourId, Colour(0xfffdf6e3));
+	luaConsoleOutput->setColour(CodeEditorComponent::lineNumberTextId,
+								findColour(CodeEditorComponent::defaultTextColourId));
 
 	luaConsoleInput->addKeyListener (this);
 	owner.getCtrlrManagerOwner().getCtrlrLog().addListener (this);
@@ -84,7 +97,15 @@ CtrlrLuaConsole::CtrlrLuaConsole (CtrlrPanel &_owner)
 	lastCommandNumInHistory = -1;
 	lastMoveDirection = NONE;
 	currentInputString = "";
-
+	// constructor, near the other addAndMakeVisible calls
+	// constructor — replace the previous inputHintLabel setup with this
+	addAndMakeVisible(inputHintLabel);
+	inputHintLabel.setText("RUN CODE WINDOW :: Enter: Run    Ctrl+Enter: New line", dontSendNotification);
+	inputHintLabel.setJustificationType(Justification::centredRight);
+	inputHintLabel.setFont(Font(12.0f, Font::plain));
+	inputHintLabel.setColour(Label::textColourId, Colours::grey.withAlpha(0.8f));
+	inputHintLabel.setColour(Label::backgroundColourId, Colours::transparentBlack);
+	inputHintLabel.setInterceptsMouseClicks(false, false); // clicks pass through to the editor underneath
 	//luaConsoleOutput->setWantsKeyboardFocus(false);
 	//luaConsoleInput->grabKeyboardFocus();
     //[/UserPreSize]
@@ -111,7 +132,15 @@ CtrlrLuaConsole::~CtrlrLuaConsole()
     //[Destructor]. You can add your own custom destruction code here..
     //[/Destructor]
 }
+void CtrlrLuaConsole::clearConsoleOutput() {
+	outputDocument.replaceAllContent("");
+	luaConsoleOutput->moveCaretToEnd(false);
+}
 
+void CtrlrLuaConsole::clearConsoleInput() {
+	inputDocument.replaceAllContent("");
+	luaConsoleInput->moveCaretToEnd(false);
+}
 //==============================================================================
 void CtrlrLuaConsole::paint (Graphics& g)
 {
@@ -130,7 +159,10 @@ void CtrlrLuaConsole::resized()
     //[UserResized] Add your own custom resize handling here..
 	Component* comps[] = { luaConsoleOutput, resizer, luaConsoleInput  };
  	layoutManager.layOutComponents (comps, 3, 0, 0, getWidth(), getHeight(), true, true);
-    //[/UserResized]
+
+	// Overlay the hint in the top-right corner of the input editor, on top of it
+	inputHintLabel.setBounds(luaConsoleInput->getRight() - 220, luaConsoleInput->getY() + 2, 216, 16);
+	inputHintLabel.toFront(false);
 }
 
 bool CtrlrLuaConsole::keyPressed (const KeyPress& key)
@@ -269,53 +301,55 @@ void CtrlrLuaConsole::snipsItemClicked(Button *b)
 	owner.setProperty (Ids::uiLuaConsoleSnips, snips.joinIntoString("$"));
 }
 
-StringArray CtrlrLuaConsole::getMenuBarNames()
-{
-	const char* const names[] = { "File", "View", nullptr };
+StringArray CtrlrLuaConsole::getMenuBarNames() {
+	const char *const names[] = {"File", "View", "Actions", nullptr};
 	return StringArray (names);
 }
 
-PopupMenu CtrlrLuaConsole::getMenuForIndex(int topLevelMenuIndex, const String &menuName)
-{
+PopupMenu CtrlrLuaConsole::getMenuForIndex(int topLevelMenuIndex, const String &menuName) {
 	PopupMenu menu;
-	if (topLevelMenuIndex == 0)
-	{
+	if (topLevelMenuIndex == 0) {
 		menu.addItem (2, "Add input to snips");
 		menu.addSubMenu ("Run snip", getSnipsMenu(1024));
 		menu.addSubMenu ("Remove snip", getSnipsMenu(4096));
 		// menu.addSeparator(); Updated v5.6.31
 		// menu.addItem (1, "Close", false); // Updated v5.6.31
-	}
-	else if(topLevelMenuIndex == 1)
-	{
-		menu.addItem (3, "Toggle input removal after run", true, (bool)owner.getProperty(Ids::uiLuaConsoleInputRemoveAfterRun));
+	} else if (topLevelMenuIndex == 1) {
+		menu.addItem(3, "Remove test code after run?", true,
+					 (bool)owner.getProperty(Ids::uiLuaConsoleInputRemoveAfterRun));
+	} else if (topLevelMenuIndex == 2) {
+		menu.addItem(10, "Clear Console");
+		menu.addItem(11, "Clear Input");
 	}
 
 	return (menu);
 }
 
-void CtrlrLuaConsole::menuItemSelected(int menuItemID, int topLevelMenuIndex)
-{
-	if (topLevelMenuIndex == 0 && menuItemID==1)
-	{
+void CtrlrLuaConsole::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
+	if (topLevelMenuIndex == 0 && menuItemID == 1) {
         // close handle
         // owner.getWindowManager().toggle (CtrlrPanelWindowManager::LuaConsole, false); // Crashes
 	}
-	if (menuItemID == 2)
-	{
+	if (menuItemID == 2) {
 		snips.add (inputDocument.getAllContent());
 	}
-	if (menuItemID >= 1024 && menuItemID < 4096)
-	{
+	if (menuItemID >= 1024 && menuItemID < 4096) {
 		runCode (snips[menuItemID-1024]);
 	}
-	if (menuItemID >= 4096)
-	{
+	if (menuItemID >= 4096) {
 		snips.remove (menuItemID-4096);
 	}
-	if (menuItemID == 3)
-	{
-		owner.setProperty (Ids::uiLuaConsoleInputRemoveAfterRun, !owner.getProperty(Ids::uiLuaConsoleInputRemoveAfterRun));
+	if (menuItemID == 3) {
+		owner.setProperty(Ids::uiLuaConsoleInputRemoveAfterRun,
+						  !owner.getProperty(Ids::uiLuaConsoleInputRemoveAfterRun));
+	}
+	if (menuItemID == 10) {
+		clearConsoleOutput();
+		return; // skip the trailing setProperty(uiLuaConsoleSnips...) call below, it doesn't apply here
+	}
+	if (menuItemID == 11) {
+		clearConsoleInput();
+		return;
 	}
 	owner.setProperty (Ids::uiLuaConsoleSnips, snips.joinIntoString("$"));
 }

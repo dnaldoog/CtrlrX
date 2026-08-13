@@ -85,8 +85,10 @@ public:
 	PopupMenu getMenuForIndex(int topLevelMenuIndex, const String &menuName);
 	void menuItemSelected(int menuItemID, int topLevelMenuIndex);
 	void focusGained(FocusChangeType cause);
+		Label inputHintLabel;
     //[/UserMethods]
-
+		void clearConsoleOutput();
+		void clearConsoleInput();
     void paint (Graphics& g);
     void resized();
     bool keyPressed (const KeyPress& key);
