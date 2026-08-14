@@ -115,6 +115,7 @@ private:
     bool isSearching = false;
     bool isUpdating = false;
     String lastSearchText;
+	juce::Label* getComboLabel() const;
     //[/UserVariables]
 
     //==============================================================================

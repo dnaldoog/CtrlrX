@@ -205,7 +205,11 @@ void CtrlrCombo::mouseDown (const MouseEvent& e)
 
 bool CtrlrCombo::keyPressed (const KeyPress& key) // Updated v5.6.35. Combined methods
 {
-    // 1. Handle the Fuzzy Search UI (New Logic)
+	_DBG ("CtrlrCombo::keyPressed - Key: " + key.getTextDescription()
+		  + " | KeyCode: " + juce::String (key.getKeyCode())
+		  );
+	
+	// 1. Handle the Fuzzy Search UI (New Logic)
     if (key == KeyPress::returnKey)
     {
         // If the menu is open and has items, select the first one
@@ -968,8 +972,58 @@ void CtrlrCombo::updateInternalComponentStyles()
     ctrlrCombo->repaint();
 }
 
+juce::Label* CtrlrCombo::getComboLabel() const
+{
+    if (ctrlrCombo == nullptr) return nullptr;
+
+    for (int i = 0; i < ctrlrCombo->getNumChildComponents(); ++i)
+    {
+        if (auto* lb = dynamic_cast<juce::Label*>(ctrlrCombo->getChildComponent(i)))
+            return lb;
+    }
+    return nullptr;
+}
+
+
 void CtrlrCombo::updateFuzzySearch(const String& searchText)
 {
+	// Track previous length across search updates to detect backspaces
+    static int lastSearchLength = 0;
+    const int currentLength = searchText.length();
+
+    // BACKSPACE DETECTED: String length shrunk while typing
+    if (currentLength < lastSearchLength && currentLength > 0)
+    {
+        lastSearchLength = 0; // Reset length tracker
+
+        // 1. Hide the popup immediately so "no matches" never flashes
+        if (ctrlrCombo != nullptr)
+            ctrlrCombo->hidePopup();
+
+        // 2. Wipe the active TextEditor directly and retain focus
+        if (auto* lb = getComboLabel())
+        {
+            if (auto* ed = lb->getCurrentTextEditor())
+            {
+                ed->setText ("", false); // false = don't send notification back
+                ed->grabKeyboardFocus();
+            }
+        }
+
+        // 3. Reset the ComboBox text & restore full list
+        if (ctrlrCombo != nullptr)
+        {
+            ctrlrCombo->setText ("", juce::dontSendNotification);
+
+            if (valueMap != nullptr)
+                valueMap->fillCombo (*ctrlrCombo, true);
+        }
+
+        return; // Halt further fuzzy evaluation
+    }
+
+    lastSearchLength = currentLength;
+	
     _DBG("FUZZY_STEP 1: Enter updateFuzzySearch with '" + searchText + "'");
 
     if (ctrlrCombo == nullptr || valueMap == nullptr) return;
