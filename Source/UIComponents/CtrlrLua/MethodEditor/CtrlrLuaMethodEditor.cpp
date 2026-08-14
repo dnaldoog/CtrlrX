@@ -825,7 +825,16 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 			m.addItem(7, "Sort by size");
 
 			// const int ret = m.show(); JUCE 6 LEGACY CODE
-			PU::showMenuAsyncSafe(m, this, [this, item, isMethodGroup](int ret) {
+			juce::Point<int> screenPt = e.getEventRelativeTo(this).getMouseDownScreenPosition();
+
+			// Fallback: If event is synthetic or missing screen context, query Desktop directly
+			if (screenPt.x == 0 && screenPt.y == 0) {
+				screenPt = juce::Desktop::getInstance().getMousePosition();
+			}
+
+			juce::Rectangle<int> clickArea(screenPt.x, screenPt.y, 1, 1);
+
+			PU::showMenuAsyncAtArea(m, clickArea, this, [this, item, isMethodGroup](int ret) {
 				if (ret == 1) {
 					addNewMethod(item);
 				} else if (ret == 2) {
@@ -865,7 +874,15 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 			m.addItem(2, "Remove method");
 
 			//  const int ret = m.show(); JUCE 6 code
-			PU::showMenuAsyncSafe(m, this, [this, item](int ret) {
+			juce::Point<int> screenPt = e.getEventRelativeTo(this).getMouseDownScreenPosition();
+
+			// Fallback: If event is synthetic or missing screen context, query Desktop directly
+			if (screenPt.x == 0 && screenPt.y == 0) {
+				screenPt = juce::Desktop::getInstance().getMousePosition();
+			}
+
+			juce::Rectangle<int> clickArea2(screenPt.x, screenPt.y, 1, 1);
+			PU::showMenuAsyncAtArea(m, clickArea2, this, [this, item](int ret) {
 				if (ret == 11) {
 					/* convert a in-memory method to a file based one */
 				} else if (ret == 12) {

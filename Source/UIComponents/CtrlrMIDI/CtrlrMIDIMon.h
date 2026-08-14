@@ -77,6 +77,12 @@ class CtrlrMIDIMon : public CtrlrChildWindowContent, public CtrlrLog::Listener {
 			SelectAllFilters = 99998,
 			ClearAllFilters = 99999
 		};
+		static inline const juce::Colour outMonitorColour{Colours::powderblue};
+		static inline const juce::Colour inMonitorColour{Colours::palegreen};
+		/* Original Colours Were
+				"Monitor input", Colour(0xff21c630)
+				"Monitor output", Colour(0xffc62121)
+		*/
 		CtrlrManager &owner;
 		CodeDocument docOut, docIn;
 		StretchableLayoutManager layoutManager;
