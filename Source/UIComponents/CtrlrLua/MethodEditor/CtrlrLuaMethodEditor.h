@@ -62,15 +62,18 @@ class CtrlrLuaMethodEditor  : public CtrlrChildWindowContent,
         void setPositionLabelText (const String &text);
 
         void addNewMethod(ValueTree parentGroup=ValueTree());
-        //void addNewClass(ValueTree parentGroup=ValueTree()); JG 1/19/2025
-        void addMethodFromFile(ValueTree parentGroup=ValueTree());
+		void addNewTable(ValueTree parentGroup);
+		void addNewClass(ValueTree parentGroup);
+		// void addNewClass(ValueTree parentGroup=ValueTree()); JG 1/19/2025
+		void addMethodFromFile(ValueTree parentGroup = ValueTree());
 
-        void addNewGroup(ValueTree parentGroup=ValueTree());
+		void addNewGroup(ValueTree parentGroup=ValueTree());
         void removeGroup(ValueTree parentGroup=ValueTree());
         void renameGroup(ValueTree parentGroup=ValueTree());
 
-        const String getUniqueName(const ValueTree &item) const;
-        Drawable* getIconForItem(const ValueTree &item)    const;
+
+		const String getUniqueName(const ValueTree &item) const;
+		Drawable* getIconForItem(const ValueTree &item)    const;
         void itemClicked (const MouseEvent &e, ValueTree &item);
         void itemDoubleClicked (const MouseEvent &e, ValueTree &item);
         const bool renameItem(const ValueTree &item, const String &newName) const;
