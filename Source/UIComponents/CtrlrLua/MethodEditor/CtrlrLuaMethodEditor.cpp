@@ -290,190 +290,195 @@ void CtrlrLuaMethodEditor::addNewMethod(ValueTree parentGroup) {
 						 }));
 }
 void CtrlrLuaMethodEditor::addNewTable(ValueTree parentGroup) {
-    auto wnd = std::make_shared<juce::AlertWindow>("New Lua Table", "Create a new Lua table file", juce::AlertWindow::InfoIcon, this);
+	auto wnd = std::make_shared<juce::AlertWindow>("New Lua Table", "Create a new Lua table file",
+												   juce::AlertWindow::InfoIcon, this);
 
-    wnd->addTextEditor("tableName", "myTable", "Table name", false);
+	wnd->addTextEditor("tableName", "myTable", "Table name", false);
 
-    // Optional table type preset selector
-StringArray tableTypes;
-tableTypes.add("Empty Table ({})");
-tableTypes.add("Key-Value Map ({ [1] = 'Value' })");
-tableTypes.add("2D Array / Grid");
-tableTypes.add("Class / Object with Metatable (__index & rawset)"); // <--- NEW OPTION
-wnd->addComboBox("tableType", tableTypes, "Table Template");
+	// Optional table type preset selector
+	StringArray tableTypes;
+	tableTypes.add("Empty Table ({})");
+	tableTypes.add("Key-Value Map ({ [1] = 'Value' })");
+	tableTypes.add("2D Array / Grid");
+	tableTypes.add("Class / Object with Metatable (__index & rawset)"); // <--- NEW OPTION
+	wnd->addComboBox("tableType", tableTypes, "Table Template");
 
-    wnd->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
-    wnd->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+	wnd->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+	wnd->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
 
-    Component::SafePointer<CtrlrLuaMethodEditor> safeThis(this);
+	Component::SafePointer<CtrlrLuaMethodEditor> safeThis(this);
 
-    wnd->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, wnd, parentGroup](int result) {
-        if (safeThis == nullptr || result != 1)
-            return;
+	wnd->enterModalState(
+		true, juce::ModalCallbackFunction::create([safeThis, wnd, parentGroup](int result) {
+			if (safeThis == nullptr || result != 1)
+				return;
 
-        const String tableName = wnd->getTextEditorContents("tableName");
+			const String tableName = wnd->getTextEditorContents("tableName");
 
-        if (safeThis->getMethodManager().isValidMethodName(tableName)) {
-            int templateChoice = 1;
-            if (auto *combo = wnd->getComboBoxComponent("tableType")) {
-                templateChoice = combo->getSelectedId();
-            }
+			if (safeThis->getMethodManager().isValidMethodName(tableName)) {
+				int templateChoice = 1;
+				if (auto *combo = wnd->getComboBoxComponent("tableType")) {
+					templateChoice = combo->getSelectedId();
+				}
 
-            // Build initial Lua table code
-// Build initial Lua table code
-String initialCode;
-if (templateChoice == 2) {
-    initialCode << tableName << " = {\n";
-    initialCode << "    [0] = \"Default\",\n";
-    initialCode << "    [1] = \"Option 1\",\n";
-    initialCode << "    [2] = \"Option 2\"\n";
-    initialCode << "}\n";
-} else if (templateChoice == 3) {
-    initialCode << tableName << " = {\n";
-    initialCode << "    { 0, 0, 0 },\n";
-    initialCode << "    { 0, 0, 0 }\n";
-    initialCode << "}\n";
-} else if (templateChoice == 4) { // <--- METATABLE / OOP BOILERPLATE
-    initialCode << "-- ====================================================================\n";
-    initialCode << "-- " << tableName << " Object / Metatable Definition\n";
-    initialCode << "-- ====================================================================\n\n";
-    initialCode << tableName << " = {}\n";
-    initialCode << tableName << ".__index = " << tableName << "\n\n";
+				// Build initial Lua table code
+				// Build initial Lua table code
+				String initialCode;
+				if (templateChoice == 2) {
+					initialCode << tableName << " = {\n";
+					initialCode << "    [0] = \"Default\",\n";
+					initialCode << "    [1] = \"Option 1\",\n";
+					initialCode << "    [2] = \"Option 2\"\n";
+					initialCode << "}\n";
+				} else if (templateChoice == 3) {
+					initialCode << tableName << " = {\n";
+					initialCode << "    { 0, 0, 0 },\n";
+					initialCode << "    { 0, 0, 0 }\n";
+					initialCode << "}\n";
+				} else if (templateChoice == 4) { // <--- METATABLE / OOP BOILERPLATE
+					initialCode << "-- ====================================================================\n";
+					initialCode << "-- " << tableName << " Object / Metatable Definition\n";
+					initialCode << "-- ====================================================================\n\n";
+					initialCode << tableName << " = {}\n";
+					initialCode << tableName << ".__index = " << tableName << "\n\n";
 
-    initialCode << "-- Constructor\n";
-    initialCode << "function " << tableName << ":new(initData)\n";
-    initialCode << "    local instance = setmetatable({}, " << tableName << ")\n";
-    initialCode << "    \n";
-    initialCode << "    -- Safe raw initialization using rawset\n";
-    initialCode << "    rawset(instance, \"id\", 1)\n";
-    initialCode << "    rawset(instance, \"data\", initData or {})\n";
-    initialCode << "    \n";
-    initialCode << "    return instance\n";
-    initialCode << "end\n\n";
+					initialCode << "-- Constructor\n";
+					initialCode << "function " << tableName << ":new(initData)\n";
+					initialCode << "    local instance = setmetatable({}, " << tableName << ")\n";
+					initialCode << "    \n";
+					initialCode << "    -- Safe raw initialization using rawset\n";
+					initialCode << "    rawset(instance, \"id\", 1)\n";
+					initialCode << "    rawset(instance, \"data\", initData or {})\n";
+					initialCode << "    \n";
+					initialCode << "    return instance\n";
+					initialCode << "end\n\n";
 
-    initialCode << "-- Safe Property Setter using rawset\n";
-    initialCode << "function " << tableName << ":set(key, value)\n";
-    initialCode << "    rawset(self, key, value)\n";
-    initialCode << "end\n\n";
+					initialCode << "-- Safe Property Setter using rawset\n";
+					initialCode << "function " << tableName << ":set(key, value)\n";
+					initialCode << "    rawset(self, key, value)\n";
+					initialCode << "end\n\n";
 
-    initialCode << "-- Safe Property Getter using rawget\n";
-    initialCode << "function " << tableName << ":get(key)\n";
-    initialCode << "    return rawget(self, key)\n";
-    initialCode << "end\n";
-} else {
-    initialCode << tableName << " = {}\n";
-}
+					initialCode << "-- Safe Property Getter using rawget\n";
+					initialCode << "function " << tableName << ":get(key)\n";
+					initialCode << "    return rawget(self, key)\n";
+					initialCode << "end\n";
+				} else {
+					initialCode << tableName << " = {}\n";
+				}
 
-            // Register as a Lua file/method in the manager
-            safeThis->getMethodManager().addMethod(parentGroup, tableName, initialCode, "");
-        } else {
-            WARN("Invalid table name, please correct");
-        }
+				// Register as a Lua file/method in the manager
+				safeThis->getMethodManager().addMethod(parentGroup, tableName, initialCode, "");
+			} else {
+				WARN("Invalid table name, please correct");
+			}
 
-        safeThis->updateRootItem();
-        safeThis->saveSettings();
-    }));
+			safeThis->updateRootItem();
+			safeThis->saveSettings();
+		}));
 }
 
 void CtrlrLuaMethodEditor::addNewClass(ValueTree parentGroup) {
-    auto wnd = std::make_shared<juce::AlertWindow>("New Lua Class", "Create a callable Lua class structure", juce::AlertWindow::InfoIcon, this);
+	auto wnd = std::make_shared<juce::AlertWindow>("New Lua Class", "Create a callable Lua class structure",
+												   juce::AlertWindow::InfoIcon, this);
 
-    wnd->addTextEditor("className", "MyClass", "Class name", false);
+	wnd->addTextEditor("className", "MyClass", "Class name", false);
 
-    StringArray classTypes;
-    classTypes.add("Callable Factory Object (__call -> creates instance)");
-    classTypes.add("Direct Callable Object (__call -> executes main logic)");
-    classTypes.add("Base Inheritable Class (__index & constructor)");
-    wnd->addComboBox("classType", classTypes, "Class Pattern");
+	StringArray classTypes;
+	classTypes.add("Callable Factory Object (__call -> creates instance)");
+	classTypes.add("Direct Callable Object (__call -> executes main logic)");
+	classTypes.add("Base Inheritable Class (__index & constructor)");
+	wnd->addComboBox("classType", classTypes, "Class Pattern");
 
-    wnd->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
-    wnd->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+	wnd->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+	wnd->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
 
-    Component::SafePointer<CtrlrLuaMethodEditor> safeThis(this);
+	Component::SafePointer<CtrlrLuaMethodEditor> safeThis(this);
 
-    wnd->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, wnd, parentGroup](int result) {
-        if (safeThis == nullptr || result != 1)
-            return;
+	wnd->enterModalState(
+		true, juce::ModalCallbackFunction::create([safeThis, wnd, parentGroup](int result) {
+			if (safeThis == nullptr || result != 1)
+				return;
 
-							 // 1. Fetch whatever the user typed into the box (e.g. "myNewClass" or " myFilter ")
-							 String rawInputName = wnd->getTextEditorContents("className");
+			// 1. Fetch whatever the user typed into the box (e.g. "myNewClass" or " myFilter ")
+			String rawInputName = wnd->getTextEditorContents("className");
 
-							 // 2. Convert user input to PascalCase ("myNewClass" -> "MyNewClass")
-							 const String className = sanitizeClassName(rawInputName);
+			// 2. Convert user input to PascalCase ("myNewClass" -> "MyNewClass")
+			const String className = sanitizeClassName(rawInputName);
 
-        if (safeThis->getMethodManager().isValidMethodName(className)) {
-            int typeChoice = 1;
-            if (auto *combo = wnd->getComboBoxComponent("classType")) {
-                typeChoice = combo->getSelectedId();
-            }
+			if (safeThis->getMethodManager().isValidMethodName(className)) {
+				int typeChoice = 1;
+				if (auto *combo = wnd->getComboBoxComponent("classType")) {
+					typeChoice = combo->getSelectedId();
+				}
 
-            String code;
-            code << "-- ====================================================================\n";
-            code << "-- " << className << " Class Definition\n";
-            code << "-- ====================================================================\n\n";
+				String code;
+				code << "-- ====================================================================\n";
+				code << "-- " << className << " Class Definition\n";
+				code << "-- ====================================================================\n\n";
 
-            if (typeChoice == 1) { 
-                // 1. CALLABLE FACTORY: MyClass(args) creates a new instance automatically
-                code << className << " = {}\n";
-                code << className << ".__index = " << className << "\n\n";
+				if (typeChoice == 1) {
+					// 1. CALLABLE FACTORY: MyClass(args) creates a new instance automatically
+					code << className << " = {}\n";
+					code << className << ".__index = " << className << "\n\n";
 
-                code << "-- Constructor\n";
-                code << "function " << className << ":new(initValue)\n";
-                code << "    local instance = setmetatable({}, " << className << ")\n";
-                code << "    rawset(instance, \"value\", initValue or 0)\n";
-                code << "    return instance\n";
-                code << "end\n\n";
+					code << "-- Constructor\n";
+					code << "function " << className << ":new(initValue)\n";
+					code << "    local instance = setmetatable({}, " << className << ")\n";
+					code << "    rawset(instance, \"value\", initValue or 0)\n";
+					code << "    return instance\n";
+					code << "end\n\n";
 
-                code << "-- Make the class table callable as a factory constructor (e.g. local obj = " << className << "(42))\n";
-                code << "setmetatable(" << className << ", {\n";
-                code << "    __call = function(cls, ...)\n";
-                code << "        return cls:new(...)\n";
-                code << "    end\n";
-                code << "})\n\n";
+					code << "-- Make the class table callable as a factory constructor (e.g. local obj = " << className
+						 << "(42))\n";
+					code << "setmetatable(" << className << ", {\n";
+					code << "    __call = function(cls, ...)\n";
+					code << "        return cls:new(...)\n";
+					code << "    end\n";
+					code << "})\n\n";
 
-                code << "-- Instance Methods\n";
-                code << "function " << className << ":getValue()\n";
-                code << "    return rawget(self, \"value\")\n";
-                code << "end\n";
+					code << "-- Instance Methods\n";
+					code << "function " << className << ":getValue()\n";
+					code << "    return rawget(self, \"value\")\n";
+					code << "end\n";
 
-            } else if (typeChoice == 2) {
-                // 2. DIRECT CALLABLE: Invoking MyClass(...) triggers main execution logic
-                code << className << " = {}\n";
-                code << className << ".__index = " << className << "\n\n";
+				} else if (typeChoice == 2) {
+					// 2. DIRECT CALLABLE: Invoking MyClass(...) triggers main execution logic
+					code << className << " = {}\n";
+					code << className << ".__index = " << className << "\n\n";
 
-                code << "-- Executed directly when calling " << className << "(...)\n";
-                code << "setmetatable(" << className << ", {\n";
-                code << "    __call = function(self, ...)\n";
-                code << "        return self:execute(...)\n";
-                code << "    end\n";
-                code << "})\n\n";
+					code << "-- Executed directly when calling " << className << "(...)\n";
+					code << "setmetatable(" << className << ", {\n";
+					code << "    __call = function(self, ...)\n";
+					code << "        return self:execute(...)\n";
+					code << "    end\n";
+					code << "})\n\n";
 
-                code << "function " << className << ":execute(...)\n";
-                code << "    -- Add execution logic here\n";
-                code << "    console(\"Executing " << className << " with args: \" .. tostring(...))\n";
-                code << "end\n";
+					code << "function " << className << ":execute(...)\n";
+					code << "    -- Add execution logic here\n";
+					code << "    console(\"Executing " << className << " with args: \" .. tostring(...))\n";
+					code << "end\n";
 
-            } else {
-                // 3. BASE INHERITABLE CLASS
-                code << className << " = {}\n";
-                code << className << ".__index = " << className << "\n\n";
+				} else {
+					// 3. BASE INHERITABLE CLASS
+					code << className << " = {}\n";
+					code << className << ".__index = " << className << "\n\n";
 
-                code << "function " << className << ":new(o)\n";
-                code << "    o = o or {}\n";
-                code << "    setmetatable(o, self)\n";
-                code << "    self.__index = self\n";
-                code << "    return o\n";
-                code << "end\n";
-            }
+					code << "function " << className << ":new(o)\n";
+					code << "    o = o or {}\n";
+					code << "    setmetatable(o, self)\n";
+					code << "    self.__index = self\n";
+					code << "    return o\n";
+					code << "end\n";
+				}
 
-            safeThis->getMethodManager().addMethod(parentGroup, className, code, "");
-        } else {
-            WARN("Invalid class name, please correct");
-        }
+				safeThis->getMethodManager().addMethod(parentGroup, className, code, "");
+			} else {
+				WARN("Invalid class name, please correct");
+			}
 
-        safeThis->updateRootItem();
-        safeThis->saveSettings();
-    }));
+			safeThis->updateRootItem();
+			safeThis->saveSettings();
+		}));
 }
 
 #if 0
