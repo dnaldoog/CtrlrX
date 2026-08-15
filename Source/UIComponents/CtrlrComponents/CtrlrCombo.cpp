@@ -358,7 +358,9 @@ void CtrlrCombo::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChange
 		}
 		startTimer(250);
 	}
-	else if (property.toString().startsWith("uiCombo") && property != Ids::uiComboSearch)
+	else if (property.toString().startsWith("uiCombo")
+			 && property != Ids::uiComboSearch
+			 && property != Ids::uiComboTextJustification)
 	{
 		updateInternalComponentStyles();
 	}
@@ -843,8 +845,13 @@ void CtrlrCombo::FuzzySearchPanel::visibilityChanged() {
 }
 
 void CtrlrCombo::FuzzySearchPanel::focusSearchField() {
-	searchBox.grabKeyboardFocus();
-	searchBox.moveCaretToEnd();
+    // Queue focus request so the CallOutBox has finished its desktop/parent attachment
+    juce::MessageManager::callAsync([safeThis = juce::Component::SafePointer<FuzzySearchPanel>(this)]() {
+        if (safeThis != nullptr && safeThis->isShowing()) {
+            safeThis->searchBox.grabKeyboardFocus();
+            safeThis->searchBox.moveCaretToEnd();
+        }
+    });
 }
 
 void CtrlrCombo::FuzzySearchPanel::paintOverChildren(juce::Graphics &g) {
