@@ -126,6 +126,32 @@ class PU {
 
 			return selectedResult;
 		}
+		
+static void showMenuAsyncAtArea(juce::PopupMenu &menuToDisplay, 
+                                const juce::Rectangle<int> &screenArea,
+                                juce::Component *targetComponent,
+                                std::function<void(int)> callback)
+{
+    // Adding 2-4 pixels to the Y position moves the anchor slightly below the cursor
+    juce::Rectangle<int> adjustedArea = screenArea.translated(0, 4);
+
+    auto options = juce::PopupMenu::Options()
+                       .withTargetScreenArea(adjustedArea);
+
+    if (targetComponent != nullptr)
+    {
+        juce::Component::SafePointer<juce::Component> safeTarget(targetComponent);
+        if (safeTarget != nullptr)
+        {
+            options = options.withParentComponent(safeTarget.getComponent());
+        }
+    }
+
+    menuToDisplay.showMenuAsync(options, [callback](int result) {
+        if (callback)
+            callback(result);
+    });
+}
 		// =========================================================================
 		// ASYNCHRONOUS HELPERS (For modern C++ / Lua callbacks)
 		// =========================================================================
