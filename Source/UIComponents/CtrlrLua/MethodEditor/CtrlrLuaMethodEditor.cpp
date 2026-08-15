@@ -15,6 +15,16 @@
 #include "stdafx.h"
 #include <memory>
 
+String sanitizeClassName(String name) {
+	name = name.trim();
+	if (name.isNotEmpty()) {
+		// Capitalize the first letter for standard class convention
+		name = name.substring(0, 1).toUpperCase() + name.substring(1);
+	}
+	DBG("Sanitized " << name);
+	return name;
+}
+
 CtrlrLuaMethodEditor::CtrlrLuaMethodEditor(CtrlrPanel &_owner)
 	: owner(_owner),
 	  methodEditArea(nullptr),
@@ -385,7 +395,11 @@ void CtrlrLuaMethodEditor::addNewClass(ValueTree parentGroup) {
         if (safeThis == nullptr || result != 1)
             return;
 
-        const String className = wnd->getTextEditorContents("className");
+							 // 1. Fetch whatever the user typed into the box (e.g. "myNewClass" or " myFilter ")
+							 String rawInputName = wnd->getTextEditorContents("className");
+
+							 // 2. Convert user input to PascalCase ("myNewClass" -> "MyNewClass")
+							 const String className = sanitizeClassName(rawInputName);
 
         if (safeThis->getMethodManager().isValidMethodName(className)) {
             int typeChoice = 1;
@@ -991,8 +1005,8 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 			PopupMenu m;
 			m.addSectionHeader("Group operations");
 			m.addItem(1, "Add method");
-			m.addItem(10, "Add Table");
-			m.addItem(11, "Add Class");
+			m.addItem(10, "Add table");
+			m.addItem(11, "Add class");
 			m.addItem(2, "Add files");
 			m.addItem(3, "Add group");
 			m.addSeparator();
