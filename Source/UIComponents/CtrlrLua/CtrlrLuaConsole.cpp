@@ -1,35 +1,11 @@
 #include "stdafx.h"
-/*
-  ==============================================================================
-
-  This is an automatically generated file created by the Jucer!
-
-  Creation date:  3 Apr 2012 10:45:28pm
-
-  Be careful when adding custom code to these files, as only the code within
-  the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
-  and re-saved.
-
-  Jucer version: 1.12
-
-  ------------------------------------------------------------------------------
-
-  The Jucer is part of the JUCE library - "Jules' Utility Class Extensions"
-  Copyright 2004-6 by Raw Material Software ltd.
-
-  ==============================================================================
-*/
-
-//[Headers] You can add your own extra header files here...
 #include "CtrlrLuaManager.h"
 #include "CtrlrManager/CtrlrManager.h"
 #include "CtrlrPanel/CtrlrPanel.h"
-//[/Headers]
 
 #include "CtrlrLuaConsole.h"
 
 
-//[MiscUserDefs] You can add your own user definitions and misc code here...
 const StringArray joinFileArray (const Array<File> ar)
 {
 	StringArray s;
@@ -40,7 +16,6 @@ const StringArray joinFileArray (const Array<File> ar)
 	}
 	return (s);
 }
-//[/MiscUserDefs]
 
 //==============================================================================
 CtrlrLuaConsole::CtrlrLuaConsole (CtrlrPanel &_owner)
@@ -59,20 +34,18 @@ CtrlrLuaConsole::CtrlrLuaConsole (CtrlrPanel &_owner)
 
     addAndMakeVisible (resizer = new StretchableLayoutResizerBar (&layoutManager, 1, false));
 
-
-    //[UserPreSize]
 	layoutManager.setItemLayout (0, -0.001, -1.0, -0.69);
  	layoutManager.setItemLayout (1, -0.001, -0.01, -0.01);
  	layoutManager.setItemLayout (2, -0.001, -1.0, -0.30);
 
 	luaConsoleInput->setFont (Font(owner.getCtrlrManagerOwner().getFontManager().getDefaultMonoFontName(), 15, Font::plain));
 	luaConsoleOutput->setFont (Font(owner.getCtrlrManagerOwner().getFontManager().getDefaultMonoFontName(), 15, Font::plain));
-    luaConsoleInput->setColour (CodeEditorComponent::backgroundColourId, Colour(0xffffffff)); // findColour(CodeEditorComponent::backgroundColourId)); // was Colour(0xffffffff));
-	luaConsoleOutput->setColour (CodeEditorComponent::backgroundColourId, Colour(0xffffffff)); // findColour(CodeEditorComponent::backgroundColourId)); // was Colour(0xffffffff));
-    luaConsoleInput->setColour (CodeEditorComponent::highlightColourId, findColour(CodeEditorComponent::highlightColourId));
-    luaConsoleOutput->setColour (CodeEditorComponent::highlightColourId, findColour(CodeEditorComponent::highlightColourId));
-    luaConsoleInput->setColour (CodeEditorComponent::defaultTextColourId, Colour(0xff000000)); // findColour(CodeEditorComponent::defaultTextColourId));
-    luaConsoleOutput->setColour (CodeEditorComponent::defaultTextColourId, Colour(0xff000000)); // findColour(CodeEditorComponent::defaultTextColourId));
+	luaConsoleInput->setColour (CodeEditorComponent::backgroundColourId, Colour(0xffffffff)); // findColour(CodeEditorComponent::backgroundColourId));
+	luaConsoleOutput->setColour (CodeEditorComponent::backgroundColourId, Colour(0xffffffff)); // findColour(CodeEditorComponent::backgroundColourId));
+	luaConsoleInput->setColour (CodeEditorComponent::highlightColourId, findColour(CodeEditorComponent::highlightColourId));
+	luaConsoleOutput->setColour (CodeEditorComponent::highlightColourId, findColour(CodeEditorComponent::highlightColourId));
+	luaConsoleInput->setColour (CodeEditorComponent::defaultTextColourId, Colour(0xff000000)); // findColour(CodeEditorComponent::defaultTextColourId));
+	luaConsoleOutput->setColour (CodeEditorComponent::defaultTextColourId, Colour(0xff000000)); // findColour(CodeEditorComponent::defaultTextColourId));
     luaConsoleInput->setColour (CodeEditorComponent::lineNumberBackgroundId, findColour(CodeEditorComponent::lineNumberBackgroundId));
     luaConsoleOutput->setColour (CodeEditorComponent::lineNumberBackgroundId, findColour(CodeEditorComponent::lineNumberBackgroundId));
     luaConsoleInput->setColour (CodeEditorComponent::lineNumberTextId, findColour(CodeEditorComponent::defaultTextColourId));
@@ -84,42 +57,46 @@ CtrlrLuaConsole::CtrlrLuaConsole (CtrlrPanel &_owner)
 	lastCommandNumInHistory = -1;
 	lastMoveDirection = NONE;
 	currentInputString = "";
-
-	//luaConsoleOutput->setWantsKeyboardFocus(false);
-	//luaConsoleInput->grabKeyboardFocus();
-    //[/UserPreSize]
+	
+	 // inputHintLabel. Added v5.6.36. Thanks to @dnaldoog
+	addAndMakeVisible(inputHintLabel);
+	inputHintLabel.setText("RUN CODE WINDOW :: Enter: Run    Ctrl+Enter: New line", dontSendNotification);
+	inputHintLabel.setJustificationType(Justification::centredRight);
+	inputHintLabel.setFont(Font(12.0f, Font::plain));
+	inputHintLabel.setColour(Label::textColourId, Colours::grey.withAlpha(0.8f));
+	inputHintLabel.setColour(Label::backgroundColourId, Colours::transparentBlack);
+	inputHintLabel.setInterceptsMouseClicks(false, false); // clicks pass through to the editor underneath
 
     setSize (600, 400);
 
-
-    //[Constructor] You can add your own custom stuff here..
 	snips.addTokens (owner.getProperty(Ids::uiLuaConsoleSnips).toString(), "$", "\'\"");
-    //[/Constructor]
 }
 
 CtrlrLuaConsole::~CtrlrLuaConsole()
 {
-    //[Destructor_pre]. You can add your own custom destruction code here..
 	owner.getCtrlrManagerOwner().getCtrlrLog().removeListener (this);
-    //[/Destructor_pre]
 
     deleteAndZero (luaConsoleOutput);
     deleteAndZero (luaConsoleInput);
     deleteAndZero (resizer);
-
-
-    //[Destructor]. You can add your own custom destruction code here..
-    //[/Destructor]
 }
 
 //==============================================================================
+
+void CtrlrLuaConsole::clearConsoleOutput() // Added v5.6.36. Thanks to @dnaldoog
+{
+    outputDocument.replaceAllContent("");
+    luaConsoleOutput->moveCaretToEnd(false);
+}
+
+void CtrlrLuaConsole::clearConsoleInput() // Added v5.6.36. Thanks to @dnaldoog
+{
+    inputDocument.replaceAllContent("");
+    luaConsoleInput->moveCaretToEnd(false);
+}
+
 void CtrlrLuaConsole::paint (Graphics& g)
 {
-    //[UserPrePaint] Add your own custom painting code here..
-    //[/UserPrePaint]
-
-    //[UserPaint] Add your own custom painting code here..
-    //[/UserPaint]
 }
 
 void CtrlrLuaConsole::resized()
@@ -127,22 +104,20 @@ void CtrlrLuaConsole::resized()
     luaConsoleOutput->setBounds (0, 0, getWidth() - 0, proportionOfHeight (0.6900f));
     luaConsoleInput->setBounds (0, proportionOfHeight (0.7000f), getWidth() - 0, proportionOfHeight (0.3000f));
     resizer->setBounds (0, proportionOfHeight (0.6900f), getWidth() - 0, proportionOfHeight (0.0100f));
-    //[UserResized] Add your own custom resize handling here..
-	Component* comps[] = { luaConsoleOutput, resizer, luaConsoleInput  };
- 	layoutManager.layOutComponents (comps, 3, 0, 0, getWidth(), getHeight(), true, true);
-    //[/UserResized]
+    
+    Component* comps[] = { luaConsoleOutput, resizer, luaConsoleInput  };
+    layoutManager.layOutComponents (comps, 3, 0, 0, getWidth(), getHeight(), true, true);
+    
+    // Overlay the hint in the top-right corner of the input editor, on top of it. Added v5.6.36. Thanks to @dnaldoog
+    inputHintLabel.setBounds(luaConsoleInput->getRight() - 220, luaConsoleInput->getY() + 2, 216, 16);
+    inputHintLabel.toFront(false);
 }
 
 bool CtrlrLuaConsole::keyPressed (const KeyPress& key)
 {
-    //[UserCode_keyPressed] -- Add your code here...
     return false;  // Return true if your handler uses this key event, or false to allow it to be passed-on.
-    //[/UserCode_keyPressed]
 }
 
-
-
-//[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 bool CtrlrLuaConsole::keyPressed (const KeyPress& key, Component* originatingComponent)
 {
 	if (key.getKeyCode() == 13 && originatingComponent == luaConsoleInput && !key.getModifiers().isCtrlDown())
@@ -290,6 +265,11 @@ PopupMenu CtrlrLuaConsole::getMenuForIndex(int topLevelMenuIndex, const String &
 	{
 		menu.addItem (3, "Toggle input removal after run", true, (bool)owner.getProperty(Ids::uiLuaConsoleInputRemoveAfterRun));
 	}
+	else if (topLevelMenuIndex == 2)
+	{
+		menu.addItem(10, "Clear Console"); // Added v5.6.36. Thanks to @dnaldoog
+		menu.addItem(11, "Clear Input"); // Added v5.6.36. Thanks to @dnaldoog
+	}
 
 	return (menu);
 }
@@ -317,6 +297,17 @@ void CtrlrLuaConsole::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 	{
 		owner.setProperty (Ids::uiLuaConsoleInputRemoveAfterRun, !owner.getProperty(Ids::uiLuaConsoleInputRemoveAfterRun));
 	}
+	if (menuItemID == 10) // Added v5.6.36. Thanks to @dnaldoog
+	{
+		clearConsoleOutput();
+		return; // skip the trailing setProperty(uiLuaConsoleSnips...) call below, it doesn't apply here
+	}
+	if (menuItemID == 11) // Added v5.6.36. Thanks to @dnaldoog
+	{
+		clearConsoleInput();
+		return;
+	}
+	
 	owner.setProperty (Ids::uiLuaConsoleSnips, snips.joinIntoString("$"));
 }
 
@@ -324,37 +315,3 @@ void CtrlrLuaConsole::focusGained(FocusChangeType cause)
 {
 	luaConsoleInput->grabKeyboardFocus();
 }
-//[/MiscUserCode]
-
-
-//==============================================================================
-#if 0
-/*  -- Jucer information section --
-
-    This is where the Jucer puts all of its metadata, so don't change anything in here!
-
-BEGIN_JUCER_METADATA
-
-<JUCER_COMPONENT documentType="Component" className="CtrlrLuaConsole" componentName=""
-                 parentClasses="public CtrlrChildWindowContent, public CtrlrLog::Listener, public KeyListener"
-                 constructorParams="CtrlrPanel &amp;_owner" variableInitialisers="owner(_owner)"
-                 snapPixels="8" snapActive="1" snapShown="1" overlayOpacity="0.330000013"
-                 fixedSize="1" initialWidth="600" initialHeight="400">
-  <METHODS>
-    <METHOD name="keyPressed (const KeyPress&amp; key)"/>
-  </METHODS>
-  <BACKGROUND backgroundColour="0"/>
-  <GENERICCOMPONENT name="luaConsoleOutput" id="cf0696d15c4f91e3" memberName="luaConsoleOutput"
-                    virtualName="" explicitFocusOrder="0" pos="0 0 0M 69%" class="CodeEditorComponent"
-                    params="outputDocument, 0"/>
-  <GENERICCOMPONENT name="luaConsoleInput" id="9630267470906dc" memberName="luaConsoleInput"
-                    virtualName="" explicitFocusOrder="0" pos="0 70% 0M 30%" class="CodeEditorComponent"
-                    params="inputDocument, 0"/>
-  <GENERICCOMPONENT name="" id="f4fe604fd1cb0e52" memberName="resizer" virtualName=""
-                    explicitFocusOrder="0" pos="0 69% 0M 1%" class="StretchableLayoutResizerBar"
-                    params="&amp;layoutManager, 1, false"/>
-</JUCER_COMPONENT>
-
-END_JUCER_METADATA
-*/
-#endif
