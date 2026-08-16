@@ -1720,7 +1720,31 @@ static void LPopupMenu_showAtAsync(LPopupMenu *self, juce::Component *targetComp
                 luabind::call_function<void>(cb, res);
         });
 }
+static void LPopupMenu_showAtAsyncWithHeight(LPopupMenu *self, juce::Component *targetComp, int standardItemHeight,
+											 luabind::object cb) {
+	if (self == nullptr)
+		return;
 
+	auto options = juce::PopupMenu::Options().withStandardItemHeight(standardItemHeight);
+
+	if (targetComp != nullptr) {
+		juce::Component::SafePointer<juce::Component> safeTarget(targetComp);
+		if (safeTarget != nullptr)
+			options = options.withTargetComponent(safeTarget.getComponent());
+	}
+
+	self->showMenuAsync(options, [cb](int res) {
+		if (cb.is_valid() && luabind::type(cb) == LUA_TFUNCTION) {
+			juce::MessageManager::callAsync([cb, res]() mutable {
+				try {
+					luabind::call_function<void>(cb, res);
+				} catch (const std::exception &e) {
+					juce::Logger::writeToLog("Lua PopupMenu Callback Error: " + juce::String(e.what()));
+				}
+			});
+		}
+	});
+}
 LPopupMenu::LPopupMenu() {}
 
 void LPopupMenu::addSubMenu(const juce::String &subMenuName, const LPopupMenu &subMenu, bool isEnabled,
@@ -1751,35 +1775,52 @@ int LPopupMenu::showAt(juce::Component* componentToAttachTo, int standardItemHei
 void LPopupMenu::wrapForLua(lua_State *L) {
     using namespace luabind;
 
-    module(L)[
-        class_<PopupMenu>("JPopupMenu"),
+	module(L)[class_<PopupMenu>("JPopupMenu"),
 
-        class_<LPopupMenu, bases<PopupMenu>>("PopupMenu")
-            .def(constructor<>())
-            .def("clear", &PopupMenu::clear)
-            .def("addItem", (void (PopupMenu::*)(int, String, bool, bool, const Image &))&PopupMenu::addItem)
-            .def("addItem", (void (PopupMenu::*)(int, String, bool, bool))&PopupMenu::addItem)
-            .def("addColouredItem",
-                 (void (PopupMenu::*)(int, String, Colour, bool, bool, const Image &))&PopupMenu::addColouredItem)
-            .def("addSubMenu", &LPopupMenu::addSubMenu)
-            .def("addSeparator", &PopupMenu::addSeparator)
-            .def("addColumnBreak", &LPopupMenu::addColumnBreak)
-            .def("addSectionHeader", &PopupMenu::addSectionHeader)
-            .def("getNumItems", &PopupMenu::getNumItems)
-            .def("setLookAndFeel", &PopupMenu::setLookAndFeel)
+			  class_<LPopupMenu, bases<PopupMenu>>("PopupMenu")
+				  .def(constructor<>())
+				  .def("clear", &PopupMenu::clear)
+				  .def("addItem", (void (PopupMenu::*)(int, String, bool, bool, const Image &))&PopupMenu::addItem)
+				  .def("addItem", (void (PopupMenu::*)(int, String, bool, bool))&PopupMenu::addItem)
+				  .def("addColouredItem",
+					   (void (PopupMenu::*)(int, String, Colour, bool, bool, const Image &))&PopupMenu::addColouredItem)
+				  .def("addSubMenu", &LPopupMenu::addSubMenu)
+				  .def("addSeparator", &PopupMenu::addSeparator)
+				  .def("addColumnBreak", &LPopupMenu::addColumnBreak)
+				  .def("addSectionHeader", &PopupMenu::addSectionHeader)
+				  .def("getNumItems", &PopupMenu::getNumItems)
+				  .def("setLookAndFeel", &PopupMenu::setLookAndFeel)
 
-            // --- Synchronous Show Methods ---
-            .def("show", (int (LPopupMenu::*)(int, int, int, int))&LPopupMenu::show)
-            .def("show", (int (LPopupMenu::*)(int))&LPopupMenu::show)
+				  // --- Synchronous Show Methods ---
+				  .def("show", (int (LPopupMenu::*)(int, int, int, int))&LPopupMenu::show)
+				  .def("show", (int (LPopupMenu::*)(int))&LPopupMenu::show)
 
-            // --- Asynchronous Show Methods ---
-            .def("showAsync", &LPopupMenu_showAsync)
-            .def("showAsync", &LPopupMenu_showAsyncWithRect)
-            .def("showAtAsync", &LPopupMenu_showAtAsync)
-    ];
+				  // FIX: Add these two synchronous showAt overloads for legacy Lua panels!
+				  .def("showAt", (int (LPopupMenu::*)(juce::Component *, int))&LPopupMenu::showAt)
+				  .def("showAt", (int (LPopupMenu::*)(juce::Rectangle<int> &, int))&LPopupMenu::showAt)
+
+				  // --- Asynchronous Show Methods ---
+				  .def("showAsync", &LPopupMenu_showAsync)
+				  .def("showAsync", &LPopupMenu_showAsyncWithRect)
+				  .def("showAtAsync", &LPopupMenu_showAtAsync)
+				  .def("showAtAsync", &LPopupMenu_showAtAsyncWithHeight) // Added for explicit height async
+	];
 }
+/*
+Method,Target / Placement,How JUCE Position Calculations Work
 
+m:show(),Mouse Cursor Position,"Displays the popup menu aligned directly
+under the mouse pointer's current screen coordinates (X,Y)."
 
+"m:showAt(0, 0, 0, height)","Top-Left Screen Corner (0,0)","Points JUCE options to a
+target area at screen location (0,0). Because coordinate (0,0) is often off-screen or at
+the primary display boundary, JUCE's collision-avoidance logic automatically shifts it to
+keep the menu visible."
+
+"m:showAt(comp, height)",Anchor to Component Bounds,Anchors the menu directly underneath
+the component's visible bounds on screen (targetComp->getScreenBounds()).
+
+*/
 void LSlider::wrapForLua (lua_State *L)
 {
 	using namespace luabind;
