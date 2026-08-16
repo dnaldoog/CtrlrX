@@ -15,6 +15,16 @@
 #include "stdafx.h"
 #include <memory>
 
+String sanitizeClassName(String name) {
+	name = name.trim();
+	if (name.isNotEmpty()) {
+		// Capitalize the first letter for standard class convention
+		name = name.substring(0, 1).toUpperCase() + name.substring(1);
+	}
+	DBG("Sanitized " << name);
+	return name;
+}
+
 CtrlrLuaMethodEditor::CtrlrLuaMethodEditor(CtrlrPanel &_owner)
 	: owner(_owner),
 	  methodEditArea(nullptr),
@@ -53,7 +63,9 @@ CtrlrLuaMethodEditor::~CtrlrLuaMethodEditor() {
 	deleteAndZero(resizer);
 }
 
-void CtrlrLuaMethodEditor::paint(Graphics &g) { g.fillAll(Colours::lightgrey.brighter(0.2f)); }
+void CtrlrLuaMethodEditor::paint(Graphics &g) {
+	g.fillAll(Colours::lightgrey.brighter(0.2f));
+}
 
 TabbedComponent *CtrlrLuaMethodEditor::getTabs() {
 	if (methodEditArea) {
@@ -241,42 +253,233 @@ CtrlrLuaMethod *CtrlrLuaMethodEditor::setEditedMethod(const Uuid &methodUuid) {
 }
 
 void CtrlrLuaMethodEditor::addNewMethod(ValueTree parentGroup) {
-    // Allocate the custom AlertWindow on the heap
-    auto wnd = std::make_shared<juce::AlertWindow>(METHOD_NEW, "", juce::AlertWindow::InfoIcon, this);
-    
-    wnd->addTextEditor("methodName", "myNewMethod", "Method name", false);
-    wnd->addComboBox("templateList", getMethodManager().getTemplateList(), "Initialize from template");
+	// Allocate the custom AlertWindow on the heap
+	auto wnd = std::make_shared<juce::AlertWindow>(METHOD_NEW, "", juce::AlertWindow::InfoIcon, this);
 
-    wnd->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
-    wnd->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+	wnd->addTextEditor("methodName", "myNewMethod", "Method name", false);
+	wnd->addComboBox("templateList", getMethodManager().getTemplateList(), "Initialize from template");
 
-    Component::SafePointer<CtrlrLuaMethodEditor> safeThis(this);
+	wnd->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+	wnd->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
 
-    // Launch non-blockingly
-    wnd->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, wnd, parentGroup](int result) {
-        if (safeThis == nullptr || result != 1)
-            return; // User cancelled or window closed
+	Component::SafePointer<CtrlrLuaMethodEditor> safeThis(this);
 
-        const String methodName = wnd->getTextEditorContents("methodName");
+	// Launch non-blockingly
+	wnd->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, wnd, parentGroup](int result) {
+							 if (safeThis == nullptr || result != 1)
+								 return; // User cancelled or window closed
 
-        if (safeThis->getMethodManager().isValidMethodName(methodName)) {
-            String templateText;
-            if (auto* combo = wnd->getComboBoxComponent("templateList")) {
-                templateText = combo->getText();
-            }
+							 const String methodName = wnd->getTextEditorContents("methodName");
 
-            const String initialCode = safeThis->getMethodManager().getDefaultMethodCode(methodName, templateText);
+							 if (safeThis->getMethodManager().isValidMethodName(methodName)) {
+								 String templateText;
+								 if (auto *combo = wnd->getComboBoxComponent("templateList")) {
+									 templateText = combo->getText();
+								 }
 
-            safeThis->getMethodManager().addMethod(parentGroup, methodName, initialCode, "");
-        } else {
-            WARN("Invalid method name, please correct");
-        }
+								 const String initialCode =
+									 safeThis->getMethodManager().getDefaultMethodCode(methodName, templateText);
 
-        safeThis->updateRootItem();
-        safeThis->saveSettings();
-    }));
+								 safeThis->getMethodManager().addMethod(parentGroup, methodName, initialCode, "");
+							 } else {
+								 WARN("Invalid method name, please correct");
+							 }
+
+							 safeThis->updateRootItem();
+							 safeThis->saveSettings();
+						 }));
+}
+void CtrlrLuaMethodEditor::addNewTable(ValueTree parentGroup) {
+	auto wnd = std::make_shared<juce::AlertWindow>("New Lua Table", "Create a new Lua table file",
+												   juce::AlertWindow::InfoIcon, this);
+
+	wnd->addTextEditor("tableName", "myTable", "Table name", false);
+
+	// Optional table type preset selector
+	StringArray tableTypes;
+	tableTypes.add("Empty Table ({})");
+	tableTypes.add("Key-Value Map ({ [1] = 'Value' })");
+	tableTypes.add("2D Array / Grid");
+	tableTypes.add("Class / Object with Metatable (__index & rawset)"); // <--- NEW OPTION
+	wnd->addComboBox("tableType", tableTypes, "Table Template");
+
+	wnd->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+	wnd->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+	Component::SafePointer<CtrlrLuaMethodEditor> safeThis(this);
+
+	wnd->enterModalState(
+		true, juce::ModalCallbackFunction::create([safeThis, wnd, parentGroup](int result) {
+			if (safeThis == nullptr || result != 1)
+				return;
+
+			const String tableName = wnd->getTextEditorContents("tableName");
+
+			if (safeThis->getMethodManager().isValidMethodName(tableName)) {
+				int templateChoice = 1;
+				if (auto *combo = wnd->getComboBoxComponent("tableType")) {
+					templateChoice = combo->getSelectedId();
+				}
+
+				// Build initial Lua table code
+				// Build initial Lua table code
+				String initialCode;
+				if (templateChoice == 2) {
+					initialCode << tableName << " = {\n";
+					initialCode << "    [0] = \"Default\",\n";
+					initialCode << "    [1] = \"Option 1\",\n";
+					initialCode << "    [2] = \"Option 2\"\n";
+					initialCode << "}\n";
+				} else if (templateChoice == 3) {
+					initialCode << tableName << " = {\n";
+					initialCode << "    { 0, 0, 0 },\n";
+					initialCode << "    { 0, 0, 0 }\n";
+					initialCode << "}\n";
+				} else if (templateChoice == 4) { // <--- METATABLE / OOP BOILERPLATE
+					initialCode << "-- ====================================================================\n";
+					initialCode << "-- " << tableName << " Object / Metatable Definition\n";
+					initialCode << "-- ====================================================================\n\n";
+					initialCode << tableName << " = {}\n";
+					initialCode << tableName << ".__index = " << tableName << "\n\n";
+
+					initialCode << "-- Constructor\n";
+					initialCode << "function " << tableName << ":new(initData)\n";
+					initialCode << "    local instance = setmetatable({}, " << tableName << ")\n";
+					initialCode << "    \n";
+					initialCode << "    -- Safe raw initialization using rawset\n";
+					initialCode << "    rawset(instance, \"id\", 1)\n";
+					initialCode << "    rawset(instance, \"data\", initData or {})\n";
+					initialCode << "    \n";
+					initialCode << "    return instance\n";
+					initialCode << "end\n\n";
+
+					initialCode << "-- Safe Property Setter using rawset\n";
+					initialCode << "function " << tableName << ":set(key, value)\n";
+					initialCode << "    rawset(self, key, value)\n";
+					initialCode << "end\n\n";
+
+					initialCode << "-- Safe Property Getter using rawget\n";
+					initialCode << "function " << tableName << ":get(key)\n";
+					initialCode << "    return rawget(self, key)\n";
+					initialCode << "end\n";
+				} else {
+					initialCode << tableName << " = {}\n";
+				}
+
+				// Register as a Lua file/method in the manager
+				safeThis->getMethodManager().addMethod(parentGroup, tableName, initialCode, "");
+			} else {
+				WARN("Invalid table name, please correct");
+			}
+
+			safeThis->updateRootItem();
+			safeThis->saveSettings();
+		}));
 }
 
+void CtrlrLuaMethodEditor::addNewClass(ValueTree parentGroup) {
+	auto wnd = std::make_shared<juce::AlertWindow>("New Lua Class", "Create a callable Lua class structure",
+												   juce::AlertWindow::InfoIcon, this);
+
+	wnd->addTextEditor("className", "MyClass", "Class name", false);
+
+	StringArray classTypes;
+	classTypes.add("Callable Factory Object (__call -> creates instance)");
+	classTypes.add("Direct Callable Object (__call -> executes main logic)");
+	classTypes.add("Base Inheritable Class (__index & constructor)");
+	wnd->addComboBox("classType", classTypes, "Class Pattern");
+
+	wnd->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+	wnd->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+	Component::SafePointer<CtrlrLuaMethodEditor> safeThis(this);
+
+	wnd->enterModalState(
+		true, juce::ModalCallbackFunction::create([safeThis, wnd, parentGroup](int result) {
+			if (safeThis == nullptr || result != 1)
+				return;
+
+			// 1. Fetch whatever the user typed into the box (e.g. "myNewClass" or " myFilter ")
+			String rawInputName = wnd->getTextEditorContents("className");
+
+			// 2. Convert user input to PascalCase ("myNewClass" -> "MyNewClass")
+			const String className = sanitizeClassName(rawInputName);
+
+			if (safeThis->getMethodManager().isValidMethodName(className)) {
+				int typeChoice = 1;
+				if (auto *combo = wnd->getComboBoxComponent("classType")) {
+					typeChoice = combo->getSelectedId();
+				}
+
+				String code;
+				code << "-- ====================================================================\n";
+				code << "-- " << className << " Class Definition\n";
+				code << "-- ====================================================================\n\n";
+
+				if (typeChoice == 1) {
+					// 1. CALLABLE FACTORY: MyClass(args) creates a new instance automatically
+					code << className << " = {}\n";
+					code << className << ".__index = " << className << "\n\n";
+
+					code << "-- Constructor\n";
+					code << "function " << className << ":new(initValue)\n";
+					code << "    local instance = setmetatable({}, " << className << ")\n";
+					code << "    rawset(instance, \"value\", initValue or 0)\n";
+					code << "    return instance\n";
+					code << "end\n\n";
+
+					code << "-- Make the class table callable as a factory constructor (e.g. local obj = " << className
+						 << "(42))\n";
+					code << "setmetatable(" << className << ", {\n";
+					code << "    __call = function(cls, ...)\n";
+					code << "        return cls:new(...)\n";
+					code << "    end\n";
+					code << "})\n\n";
+
+					code << "-- Instance Methods\n";
+					code << "function " << className << ":getValue()\n";
+					code << "    return rawget(self, \"value\")\n";
+					code << "end\n";
+
+				} else if (typeChoice == 2) {
+					// 2. DIRECT CALLABLE: Invoking MyClass(...) triggers main execution logic
+					code << className << " = {}\n";
+					code << className << ".__index = " << className << "\n\n";
+
+					code << "-- Executed directly when calling " << className << "(...)\n";
+					code << "setmetatable(" << className << ", {\n";
+					code << "    __call = function(self, ...)\n";
+					code << "        return self:execute(...)\n";
+					code << "    end\n";
+					code << "})\n\n";
+
+					code << "function " << className << ":execute(...)\n";
+					code << "    -- Add execution logic here\n";
+					code << "    console(\"Executing " << className << " with args: \" .. tostring(...))\n";
+					code << "end\n";
+
+				} else {
+					// 3. BASE INHERITABLE CLASS
+					code << className << " = {}\n";
+					code << className << ".__index = " << className << "\n\n";
+
+					code << "function " << className << ":new(o)\n";
+					code << "    o = o or {}\n";
+					code << "    setmetatable(o, self)\n";
+					code << "    self.__index = self\n";
+					code << "    return o\n";
+					code << "end\n";
+				}
+
+				safeThis->getMethodManager().addMethod(parentGroup, className, code, "");
+			} else {
+				WARN("Invalid class name, please correct");
+			}
+
+			safeThis->updateRootItem();
+			safeThis->saveSettings();
+		}));
+}
 
 #if 0
 void CtrlrLuaMethodEditor::addNewMethod(ValueTree parentGroup) {
@@ -305,55 +508,49 @@ void CtrlrLuaMethodEditor::addNewMethod(ValueTree parentGroup) {
 }
 #endif
 void CtrlrLuaMethodEditor::addMethodFromFile(ValueTree parentGroup) {
-    // See if group folder exists
-    File groupFolder = owner.getLuaMethodGroupDir(parentGroup);
-    if (groupFolder.exists() && groupFolder.isDirectory()) {
-        lastBrowsedSourceDir = groupFolder;
-    }
+	// See if group folder exists
+	File groupFolder = owner.getLuaMethodGroupDir(parentGroup);
+	if (groupFolder.exists() && groupFolder.isDirectory()) {
+		lastBrowsedSourceDir = groupFolder;
+	}
 
-    bool useNative = (bool)owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs);
+	bool useNative = (bool)owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrNativeFileDialogs);
 
-    Component::SafePointer<CtrlrLuaMethodEditor> safeThis(this);
+	Component::SafePointer<CtrlrLuaMethodEditor> safeThis(this);
 
-    FC::openMultipleFilesAsync(
-        "Select LUA files",
-        lastBrowsedSourceDir,
-        "*.lua;*.txt",
-        useNative,
-        [safeThis, parentGroup](const Array<File>& results) {
-            if (safeThis == nullptr || results.isEmpty())
-                return;
+	FC::openMultipleFilesAsync("Select LUA files", lastBrowsedSourceDir, "*.lua;*.txt", useNative,
+							   [safeThis, parentGroup](const Array<File> &results) {
+								   if (safeThis == nullptr || results.isEmpty())
+									   return;
 
-            for (const auto& file : results) {
-                String methodName = file.getFileNameWithoutExtension();
-                bool nameOK = true;
+								   for (const auto &file : results) {
+									   String methodName = file.getFileNameWithoutExtension();
+									   bool nameOK = true;
 
-                // Check that a method with that name does not already exist
-                for (int j = 0; j < parentGroup.getNumChildren(); j++) {
-                    ValueTree child = parentGroup.getChild(j);
-                    if (child.hasType(Ids::luaMethod)) {
-                        if (methodName == child.getProperty(Ids::luaMethodName).toString()) {
-                            nameOK = false;
-                            break;
-                        }
-                    }
-                }
+									   // Check that a method with that name does not already exist
+									   for (int j = 0; j < parentGroup.getNumChildren(); j++) {
+										   ValueTree child = parentGroup.getChild(j);
+										   if (child.hasType(Ids::luaMethod)) {
+											   if (methodName == child.getProperty(Ids::luaMethodName).toString()) {
+												   nameOK = false;
+												   break;
+											   }
+										   }
+									   }
 
-                if (nameOK) {
-                    safeThis->getMethodManager().addMethodFromFile(parentGroup, file);
-                } else {
-                    AW::showMessageBox(
-                        AW::Warning,
-                        "Add Files",
-                        "A method named '" + methodName + "' already exists in this group, file will be ignored."
-                    );
-                }
-            }
+									   if (nameOK) {
+										   safeThis->getMethodManager().addMethodFromFile(parentGroup, file);
+									   } else {
+										   AW::showMessageBox(
+											   AW::Warning, "Add Files",
+											   "A method named '" + methodName +
+												   "' already exists in this group, file will be ignored.");
+									   }
+								   }
 
-            safeThis->updateRootItem();
-            safeThis->saveSettings();
-        }
-    );
+								   safeThis->updateRootItem();
+								   safeThis->saveSettings();
+							   });
 }
 
 void CtrlrLuaMethodEditor::addNewGroup(ValueTree parentGroup) {
@@ -428,7 +625,9 @@ CtrlrLuaMethodCodeEditor *CtrlrLuaMethodEditor::getCurrentEditor() {
 
 void CtrlrLuaMethodEditor::setPositionLabelText(const String &text) {}
 
-CtrlrPanel &CtrlrLuaMethodEditor::getOwner() { return (owner); }
+CtrlrPanel &CtrlrLuaMethodEditor::getOwner() {
+	return (owner);
+}
 
 CtrlrLuaMethodManager &CtrlrLuaMethodEditor::getMethodManager() {
 	return (owner.getCtrlrLuaManager().getMethodManager());
@@ -811,6 +1010,8 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 			PopupMenu m;
 			m.addSectionHeader("Group operations");
 			m.addItem(1, "Add method");
+			m.addItem(10, "Add table");
+			m.addItem(11, "Add class");
 			m.addItem(2, "Add files");
 			m.addItem(3, "Add group");
 			m.addSeparator();
@@ -827,11 +1028,24 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 			m.addItem(7, "Sort by size");
 
 			// const int ret = m.show(); JUCE 6 LEGACY CODE
-			PU::showMenuAsyncSafe(m, this, [this, item, isMethodGroup](int ret) {
+			juce::Point<int> screenPt = e.getEventRelativeTo(this).getMouseDownScreenPosition();
+
+			// Fallback: If event is synthetic or missing screen context, query Desktop directly
+			if (screenPt.x == 0 && screenPt.y == 0) {
+				screenPt = juce::Desktop::getInstance().getMousePosition();
+			}
+
+			juce::Rectangle<int> clickArea(screenPt.x, screenPt.y, 1, 1);
+
+			PU::showMenuAsyncAtArea(m, clickArea, this, [this, item, isMethodGroup](int ret) {
 				if (ret == 1) {
 					addNewMethod(item);
 				} else if (ret == 2) {
 					addMethodFromFile(item);
+				} else if (ret == 10) {
+					addNewTable(item);
+				} else if (ret == 11) {
+					addNewClass(item);
 				} else if (ret == 3) {
 					addNewGroup(item);
 				} else if (ret == 4) {
@@ -867,7 +1081,15 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 			m.addItem(2, "Remove method");
 
 			//  const int ret = m.show(); JUCE 6 code
-			PU::showMenuAsyncSafe(m, this, [this, item](int ret) {
+			juce::Point<int> screenPt = e.getEventRelativeTo(this).getMouseDownScreenPosition();
+
+			// Fallback: If event is synthetic or missing screen context, query Desktop directly
+			if (screenPt.x == 0 && screenPt.y == 0) {
+				screenPt = juce::Desktop::getInstance().getMousePosition();
+			}
+
+			juce::Rectangle<int> clickArea2(screenPt.x, screenPt.y, 1, 1);
+			PU::showMenuAsyncAtArea(m, clickArea2, this, [this, item](int ret) {
 				if (ret == 11) {
 					/* convert a in-memory method to a file based one */
 				} else if (ret == 12) {
@@ -894,7 +1116,9 @@ void CtrlrLuaMethodEditor::itemDoubleClicked(const MouseEvent &e, ValueTree &ite
 	setEditedMethod(Uuid(item.getProperty(Ids::uuid).toString()));
 }
 
-const bool CtrlrLuaMethodEditor::renameItem(const ValueTree &item, const String &newName) const { return (true); }
+const bool CtrlrLuaMethodEditor::renameItem(const ValueTree &item, const String &newName) const {
+	return (true);
+}
 
 const bool CtrlrLuaMethodEditor::canBeRenamed(const ValueTree &item) const {
 	if (item.getType() == Ids::luaMethod &&
@@ -954,7 +1178,9 @@ void CtrlrLuaMethodEditor::itemDropped(ValueTree &targetItem, const DragAndDropT
 	}
 }
 
-void CtrlrLuaMethodEditor::handleAsyncUpdate() { updateRootItem(); }
+void CtrlrLuaMethodEditor::handleAsyncUpdate() {
+	updateRootItem();
+}
 
 ChildSorter::ChildSorter(const bool _sortByName, CtrlrLuaMethodEditor &_parent)
 	: sortByName(_sortByName), parent(_parent) {}
@@ -1115,9 +1341,13 @@ void CtrlrLuaMethodEditor::convertToFiles() {
 							  });
 }
 
-ValueTree &CtrlrLuaMethodEditor::getComponentTree() { return (componentTree); }
+ValueTree &CtrlrLuaMethodEditor::getComponentTree() {
+	return (componentTree);
+}
 
-CtrlrLuaMethodEditArea *CtrlrLuaMethodEditor::getMethodEditArea() { return (methodEditArea); }
+CtrlrLuaMethodEditArea *CtrlrLuaMethodEditor::getMethodEditArea() {
+	return (methodEditArea);
+}
 
 void CtrlrLuaMethodEditor::searchResultClicked(const String &methodName, const int lineNumber,
 											   const int resultPositionStart, const int resultPositionEnd) {
@@ -1160,6 +1390,10 @@ void CtrlrLuaMethodEditor::waitForCommand(std::function<void(int commandResult)>
 												  callback(result);
 										  }));
 }
-void CtrlrLuaMethodEditor::setOpenSearchTabsEnabled(bool shouldOpen) { openSearchTabsEnabledState = shouldOpen; }
+void CtrlrLuaMethodEditor::setOpenSearchTabsEnabled(bool shouldOpen) {
+	openSearchTabsEnabledState = shouldOpen;
+}
 
-bool CtrlrLuaMethodEditor::getOpenSearchTabsEnabled() const { return openSearchTabsEnabledState; }
+bool CtrlrLuaMethodEditor::getOpenSearchTabsEnabled() const {
+	return openSearchTabsEnabledState;
+}

@@ -41,25 +41,6 @@ CtrlrPanelNotifier::~CtrlrPanelNotifier() // Added v5.6.34. Thanks to @dnaldoog
 	// No manual cleanup is needed. But...
 	text = nullptr; // Force ScopedPointer cleanup
 }
-/*
-CtrlrPanelNotifier::~CtrlrPanelNotifier() {
-	DBG("(F) ~CtrlrPanelNotifier()");
-	// if (text != nullptr) {
-	// 	// Detach the mouse listener explicitly before text is freed
-	// 	text->removeMouseListener(this);
-
-	// 	// Remove text from JUCE's internal child list
-	// 	removeChildComponent(text.get());
-
-	// 	// Clear the smart pointer
-	// 	text.reset();
-	// }
-
-	if (text != nullptr)
-		text->removeMouseListener(this);
-
-}
-*/
 void CtrlrPanelNotifier::paint(Graphics &g) // Added back v5.6.31 for file management bottom notification bar
 {
 	gui::drawSelectionRectangle(g, getWidth(), getHeight(), background); // Updated v5.6.31 (link to GUI class)
@@ -261,28 +242,6 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 		setProperty(Ids::uiPanelLookAndFeel, lookAndFeelDesc);
 	}
 
-	// setProperty(Ids::uiPanelLegacyMode, false);
-	// setProperty(Ids::uiPanelLookAndFeel, "V4 Light");
-
-	//    /** displays the current LookAndFeel colourScheme UIColours */
-	//    LookAndFeel_V4::setColourScheme(getLightColourScheme());
-	//
-	//    setProperty(Ids::uiPanelUIColourWindowBackground, (String)
-	//    LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::windowBackground).toString());
-	//    setProperty(Ids::uiPanelUIColourWidgetBackground, (String)
-	//    LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::widgetBackground).toString());
-	//    setProperty(Ids::uiPanelUIColourMenuBackground, (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour
-	//    (ColourScheme::UIColour::menuBackground).toString()); setProperty(Ids::uiPanelUIColourOutline, (String)
-	//    LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::outline).toString());
-	//    setProperty(Ids::uiPanelUIColourDefaultText, (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour
-	//    (ColourScheme::UIColour::defaultText).toString()); setProperty(Ids::uiPanelUIColourDefaultFill, (String)
-	//    LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::defaultFill).toString());
-	//    setProperty(Ids::uiPanelUIColourHighlightedText, (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour
-	//    (ColourScheme::UIColour::highlightedText).toString()); setProperty(Ids::uiPanelUIColourHighlightedFill,
-	//    (String) LookAndFeel_V4::getCurrentColourScheme().getUIColour
-	//    (ColourScheme::UIColour::highlightedFill).toString()); setProperty(Ids::uiPanelUIColourMenuText, (String)
-	//    LookAndFeel_V4::getCurrentColourScheme().getUIColour (ColourScheme::UIColour::menuText).toString());
-
 	ctrlrComponentSelection->addChangeListener(ctrlrPanelProperties.get());
 
 	setSize(600, 400);
@@ -323,107 +282,7 @@ CtrlrPanelEditor::~CtrlrPanelEditor() {
 		ctrlrPanelViewport.reset();
 	}
 }
-// CtrlrPanelEditor::~CtrlrPanelEditor()
-// {
-//  DBG("(E) ~CtrlrPanelEditor Destructor Called");
-//     // Check if the component selection object is valid before trying to use it
-//     if (ctrlrComponentSelection)
-//     {
-//         // Remove the listener before the objects are destroyed
-//         ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
-//     }
 
-//     getPanelEditorTree().removeListener(this);
-//     owner.getPanelTree().removeListener(this);
-//     owner.getPanelTree().removeChild(getPanelEditorTree(), 0);
-
-//     componentAnimator.removeChangeListener(this);
-
-//     // Set look and feel to null to clean up
-//     setLookAndFeel(nullptr);
-//     if (getCanvas())
-//     {
-//         getCanvas()->setLookAndFeel(nullptr);
-//     }
-//     // This is important: JUCE's default look and feel can also be a source of leaks if not managed
-//     juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
-
-// 	// USELESS : because JUCE_DECLARE_WEAK_REFERENCEABLE macro is in the header already.
-// 	// It automatically handles the weak reference master
-// 	// masterReference.clear();
-
-//     // The ScopedPointers will now automatically delete the components they own
-//     // (ctrlrPanelViewport, ctrlrPanelProperties, spacerComponent, ctrlrPanelNotifier).
-// }
-/*
-CtrlrPanelEditor::~CtrlrPanelEditor() {
-		DBG("(E) ~CtrlrPanelEditor Destructor Called");
-
-	DBG("=== CtrlrPanelEditor Destructor Called ===");
-
-	// =========================================================================
-	// STEP 0: UNHOOK CANVAS LISTENERS (DO NOT CALL 'delete canvas;')
-	// =========================================================================
-	if (auto* canvas = getCanvas()) {
-		// Unhook listener safely while getPanelEditorTree() is valid
-		if (getPanelEditorTree().isValid()) {
-			getPanelEditorTree().removeListener(canvas);
-		}
-
-		// Unmount canvas from parent component hierarchy so JUCE doesn't route events
-		removeChildComponent(canvas);
-
-		// DO NOT call 'delete canvas;' here!
-		// The panel viewport / unique_ptr manages the actual memory deletion.
-	}
-
-	// =========================================================================
-	// STEP 1: FORCE-CANCEL ANIMATIONS & LISTENERS
-	// =========================================================================
-	componentAnimator.cancelAllAnimations(true);
-	componentAnimator.removeChangeListener(this);
-
-	if (owner.getPanelTree().isValid()) {
-		owner.getPanelTree().removeListener(this);
-	}
-
-	if (getPanelEditorTree().isValid()) {
-		getPanelEditorTree().removeListener(this);
-	}
-
-	if (ctrlrComponentSelection != nullptr) {
-		ctrlrComponentSelection->deselectAll();
-
-		if (ctrlrPanelProperties != nullptr) {
-			ctrlrComponentSelection->removeChangeListener(ctrlrPanelProperties.get());
-		}
-	}
-
-	if (ctrlrPanelProperties != nullptr) {
-		ctrlrPanelProperties.reset();
-	}
-
-	// =========================================================================
-	// STEP 2: DETACH LOOKANDFEEL SAFELY
-	// =========================================================================
-	setLookAndFeel(nullptr);
-
-	// =========================================================================
-// STEP 3: CLEAR VIEWPORT CONTAINER
-// =========================================================================
-if (ctrlrPanelViewport != nullptr) {
-	// Unmount from editor children so events stop routing to it
-	removeChildComponent(ctrlrPanelViewport.get());
-
-	// Clear LookAndFeel on the viewport
-	ctrlrPanelViewport->setLookAndFeel(nullptr);
-
-	// Destroy the viewport container cleanly
-	ctrlrPanelViewport.reset();
-}
-
-}
-*/
 void CtrlrPanelEditor::visibilityChanged() {}
 
 void CtrlrPanelEditor::resized() {
@@ -660,33 +519,6 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 				   property == Ids::uiPanelUIColourOutline || property == Ids::uiPanelUIColourDefaultText ||
 				   property == Ids::uiPanelUIColourDefaultFill || property == Ids::uiPanelUIColourHighlightedText ||
 				   property == Ids::uiPanelUIColourHighlightedFill || property == Ids::uiPanelUIColourMenuText) {
-			// return; // Do nothing for now, as the following code is commented out and not working yet
-			//             /** Not working yet, need to be fixed */
-			//             auto* customLookAndFeel = dynamic_cast<LookAndFeel_V4*>(&getLookAndFeel());
-			//             auto customLookAndFeelScheme = customLookAndFeel->getCurrentColourScheme();
-			//
-			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::windowBackground, VAR2COLOUR
-			//             (owner.getProperty(Ids::uiPanelUIColourWindowBackground)));
-			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::widgetBackground, VAR2COLOUR
-			//             (owner.getProperty(Ids::uiPanelUIColourWidgetBackground)));
-			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::menuBackground, VAR2COLOUR
-			//             (owner.getProperty(Ids::uiPanelUIColourMenuBackground)));
-			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::outline, VAR2COLOUR
-			//             (owner.getProperty(Ids::uiPanelUIColourOutline)));
-			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::defaultText, VAR2COLOUR
-			//             (owner.getProperty(Ids::uiPanelUIColourDefaultText)));
-			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::defaultFill, VAR2COLOUR
-			//             (owner.getProperty(Ids::uiPanelUIColourDefaultFill)));
-			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::highlightedText, VAR2COLOUR
-			//             (owner.getProperty(Ids::uiPanelUIColourHighlightedText)));
-			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::highlightedFill, VAR2COLOUR
-			//             (owner.getProperty(Ids::uiPanelUIColourHighlightedFill)));
-			//             getCurrentColourScheme().setUIColour(ColourScheme::UIColour::menuText, VAR2COLOUR
-			//             (owner.getProperty(Ids::uiPanelUIColourMenuText)));
-			//
-			//             setLookAndFeel(customLookAndFeel);
-			//             getCanvas()->setLookAndFeel(customLookAndFeel);
-			//             LookAndFeel::setDefaultLookAndFeel(customLookAndFeel);
 		} else if (property == Ids::uiPanelLookAndFeel) {
 			static bool handlingLookAndFeelChange = false;
 			if (handlingLookAndFeelChange)
@@ -724,7 +556,6 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 
 			// Propagates to all children via normal inheritance
 			lookAndFeelChanged();
-
 			if (!getProperty(Ids::uiPanelLegacyMode)) {
 				setProperty(
 					Ids::uiPanelViewPortBackgroundColour,
@@ -740,39 +571,6 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 				setProperty(Ids::uiPanelTooltipOutlineColour,
 							(String)Component::findColour(BubbleComponent::outlineColourId).toString());
 				setProperty(Ids::uiPanelTooltipColour, (String)Component::findColour(Label::textColourId).toString());
-				//            /** Stores the updated LnF ColourScheme **/
-				//            auto* currentLookAndFeel =
-				//            dynamic_cast<LookAndFeel_V4*>(&getLookAndFeel()); auto
-				//            currentLookAndFeelScheme = currentLookAndFeel->getCurrentColourScheme();
-				//
-				//            /** Updates Default UIColours  property fields for the new ColourScheme
-				//            **/ setProperty(Ids::uiPanelUIColourWindowBackground, (String)
-				//            currentLookAndFeelScheme.getUIColour
-				//            (ColourScheme::UIColour::windowBackground).toString());
-				//            setProperty(Ids::uiPanelUIColourWidgetBackground, (String)
-				//            currentLookAndFeelScheme.getUIColour
-				//            (ColourScheme::UIColour::widgetBackground).toString());
-				//            setProperty(Ids::uiPanelUIColourMenuBackground, (String)
-				//            currentLookAndFeelScheme.getUIColour
-				//            (ColourScheme::UIColour::menuBackground).toString());
-				//            setProperty(Ids::uiPanelUIColourOutline, (String)
-				//            currentLookAndFeelScheme.getUIColour
-				//            (ColourScheme::UIColour::outline).toString());
-				//            setProperty(Ids::uiPanelUIColourDefaultText, (String)
-				//            currentLookAndFeelScheme.getUIColour
-				//            (ColourScheme::UIColour::defaultText).toString());
-				//            setProperty(Ids::uiPanelUIColourDefaultFill, (String)
-				//            currentLookAndFeelScheme.getUIColour
-				//            (ColourScheme::UIColour::defaultFill).toString());
-				//            setProperty(Ids::uiPanelUIColourHighlightedText, (String)
-				//            currentLookAndFeelScheme.getUIColour
-				//            (ColourScheme::UIColour::highlightedText).toString());
-				//            setProperty(Ids::uiPanelUIColourHighlightedFill, (String)
-				//            currentLookAndFeelScheme.getUIColour
-				//            (ColourScheme::UIColour::highlightedFill).toString());
-				//            setProperty(Ids::uiPanelUIColourMenuText, (String) (String)
-				//            currentLookAndFeelScheme.getUIColour
-				//            (ColourScheme::UIColour::menuText).toString());
 			}
 
 			if (owner.getCtrlrManagerOwner().getEditor())
@@ -787,6 +585,7 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 				if (auto *mod = owner.getModulatorByIndex(i)) {
 					if (auto *comp = mod->getComponent()) {
 						// Notify the component to refresh its style/colors against the new Panel LnF
+
 						comp->valueTreePropertyChanged(comp->getComponentTree(), Ids::uiSliderStyle);
 						comp->valueTreePropertyChanged(comp->getComponentTree(), Ids::uiButtonLookAndFeel);
 						comp->lookAndFeelChanged();

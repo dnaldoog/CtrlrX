@@ -62,6 +62,8 @@ class CtrlrLuaMethodEditor  : public CtrlrChildWindowContent,
         void setPositionLabelText (const String &text);
 
         void addNewMethod(ValueTree parentGroup=ValueTree());
+        void addNewTable(ValueTree parentGroup);
+        void addNewClass(ValueTree parentGroup);
         //void addNewClass(ValueTree parentGroup=ValueTree()); JG 1/19/2025
         void addMethodFromFile(ValueTree parentGroup=ValueTree());
 
@@ -162,6 +164,16 @@ public:
     static const String& getSearchTabsLabel()
     {
         static const String label("Keep methods opened after a match");
+        return label;
+    }
+    static const String& getAutoCompleteLabel()
+    {
+        static const String label("Autocomplete lua methods");
+        return label;
+    }
+    static const String& getAutoCompleteOptionsLabel()
+    {
+        static const String label("Autocomplete Full (on)/Light (off)");
         return label;
     }
 };

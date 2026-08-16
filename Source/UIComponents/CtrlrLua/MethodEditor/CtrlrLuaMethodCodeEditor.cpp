@@ -587,7 +587,15 @@ void CtrlrLuaMethodCodeEditor::hideCallTip() {
 }
 void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String &newText, int insertIndex) {
 	// --- 1. AGGRESSIVE GUARD ---
-	if (isReplacingText) {
+	
+    const bool autoCompleteEnabled = ((int)owner.getComponentTree()
+        .getProperty(Ids::luaMethodEditorAutoComplete, 1)) != 0;
+    const bool autoCompleteOpts = ((int)owner.getComponentTree()
+        .getProperty(Ids::luaMethodEditorAutoCompleteOpt, 1)) != 0;
+
+    if (!autoCompleteEnabled)
+        return;
+if (isReplacingText) {
 		if (newText != ":" && newText != ".")
 			return;
 

@@ -68,8 +68,7 @@ void CtrlrEditor::performLuaEditorCommand(
 						*luaMethodEditor, SharedValues::getSearchTabsValue());
 
 					// Ensure explicit size before passing ownership
-					settings->setSize(550, 586);
-					// settings->setSize(600, 500);
+					settings->setSize(334, 660);
 
 					// Keep raw pointer for property extraction on close
 					auto *settingsPtr = settings.get();

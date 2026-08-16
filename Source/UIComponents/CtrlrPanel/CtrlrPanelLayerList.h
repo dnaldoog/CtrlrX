@@ -47,10 +47,15 @@ class CtrlrPanelLayerList : // public juce::Component, causing BUILD FAIL
 		// Your existing public methods
 		int getNumRows() override;
 		void paintListBoxItem(int rowNumber, juce::Graphics &g, int width, int height, bool rowIsSelected) override;
-	    juce::Component* refreshComponentForRow (int rowNumber, bool isRowSelected, juce::Component* existingComponentToUpdate) override;
+		juce::Component *refreshComponentForRow(int rowNumber, bool isRowSelected,
+												juce::Component *existingComponentToUpdate) override;
 		void setSelectedRow(const int rowToSelect);
-		juce::String getContentName() override { return "Panel layers"; }
-		uint8 getType() override { return CtrlrPanelWindowManager::LayerEditor; }
+		juce::String getContentName() override {
+			return "Panel layers";
+		}
+		uint8 getType() override {
+			return CtrlrPanelWindowManager::LayerEditor;
+		}
 		void buttonClicked(juce::Button *button) override;
 		CtrlrPanel &getOwner();
 		juce::StringArray getMenuBarNames() override;
@@ -64,6 +69,9 @@ class CtrlrPanelLayerList : // public juce::Component, causing BUILD FAIL
 
 		// Drag and drop methods
 		bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override;
+		int getVisualRowForDrag(const SourceDetails &dragSourceDetails);
+		int getInsertionGapForDrag(const SourceDetails &dragSourceDetails);
+		void paintOverChildren(Graphics &g);
 		void itemDropped(const SourceDetails &dragSourceDetails) override;
 		void itemDragEnter(const SourceDetails &dragSourceDetails) override;
 		void itemDragExit(const SourceDetails &dragSourceDetails) override;
@@ -71,7 +79,9 @@ class CtrlrPanelLayerList : // public juce::Component, causing BUILD FAIL
 		void moveLayerToPosition(int sourceIndex, int targetIndex);
 		void isolateLayer(int layerIndex);
 		void restoreLayerVisibility();
-		bool isLayerIsolationActive() const { return layerIsolationActive; }
+		bool isLayerIsolationActive() const {
+			return layerIsolationActive;
+		}
 		void updateAllButtonStates();
 
 		void paint(juce::Graphics &g) override;
