@@ -58,43 +58,46 @@ void CtrlrPanelCanvas::handleRightClickOnMultiSelection(const MouseEvent &e) {
 void CtrlrPanelCanvas::handleRightClickOnCanvas(const MouseEvent &e) {
 	const bool em = getOwner().getProperty(Ids::uiPanelEditMode);
 
-	PopupMenu m;
+	auto menu = std::make_shared<PopupMenu>();
 
 	if (em) {
-		m = CtrlrComponentTypeManager::getComponentMenu(em);
-		getEditMenu(m);
+		*menu = CtrlrComponentTypeManager::getComponentMenu(em);
+		getEditMenu(*menu);
 	} else {
-		m = getRightClickComponentMenu(e);
+		*menu = getRightClickComponentMenu(e);
 	}
 
-	// Target mouse screen coordinates precisely
 	juce::Rectangle<int> clickArea(e.getScreenX(), e.getScreenY(), 1, 1);
-	const int ret = PU::showMenuSyncAtArea(m, clickArea);
+	juce::Component::SafePointer<CtrlrPanelCanvas> safeThis(this);
 
-	if (ret >= 4096) {
-		handleComponentPopupMenu(e, ret);
-	} else if (ret == 1024) {
-		getOwner().setProperty(Ids::uiPanelEditMode, !em);
-		getOwner().editModeChanged();
-	} else if (ret < 1024 && ret > 10) {
-		PopupMenu::MenuItemIterator iterator((const PopupMenu &)m);
-		while (iterator.next()) {
-			if (iterator.getItem().subMenu) {
-				PopupMenu::MenuItemIterator iterator2(*iterator.getItem().subMenu);
-				while (iterator2.next()) {
-					if (iterator2.getItem().itemID == ret) {
-						addNewComponent(iterator2.getItem().text, e.getPosition(), e.eventComponent);
+	PU::showMenuAsyncAtArea(*menu, clickArea, this, [safeThis, menu, em, e](int ret) {
+		if (safeThis == nullptr)
+			return; // canvas was closed/destroyed before the user picked anything
+
+		if (ret >= 4096) {
+			safeThis->handleComponentPopupMenu(e, ret);
+		} else if (ret == 1024) {
+			safeThis->getOwner().setProperty(Ids::uiPanelEditMode, !em);
+			safeThis->getOwner().editModeChanged();
+		} else if (ret < 1024 && ret > 10) {
+			PopupMenu::MenuItemIterator iterator(*menu);
+			while (iterator.next()) {
+				if (iterator.getItem().subMenu) {
+					PopupMenu::MenuItemIterator iterator2(*iterator.getItem().subMenu);
+					while (iterator2.next()) {
+						if (iterator2.getItem().itemID == ret) {
+							safeThis->addNewComponent(iterator2.getItem().text, e.getPosition(), e.eventComponent);
+						}
 					}
 				}
 			}
+		} else if (ret >= 2048 && ret < 4096) {
+			safeThis->handleEditMenu(ret, e);
 		}
-	} else if (ret >= 2048 && ret < 4096) {
-		handleEditMenu(ret, e);
-	}
+	});
 }
 
-void CtrlrPanelCanvas::handleRightClickOnTabs(const MouseEvent &e) {
-}
+void CtrlrPanelCanvas::handleRightClickOnTabs(const MouseEvent &e) {}
 
 void CtrlrPanelCanvas::handleRightClickOnComponent(const MouseEvent &e) {
 	CtrlrComponent *c = findEventComponent(e);
