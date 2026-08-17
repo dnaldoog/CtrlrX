@@ -396,7 +396,7 @@ void CtrlrCombo::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 	} else if (property.toString().startsWith("uiCombo") && property != Ids::uiComboSearch) {
 		_DBG("STYLE_CHANGE: " + property.toString() + " - Updating styles.");
 
-			updateInternalComponentStyles();
+		updateInternalComponentStyles();
 
 		if (ctrlrCombo != nullptr) {
 			ctrlrCombo->repaint();
@@ -445,17 +445,32 @@ void CtrlrCombo::fillContent(const int contentType) {
 void CtrlrCombo::panelEditModeChanged(const bool isInEditMode) {
 	_DBG("!!!! Combo Edit Mode: " + String(isInEditMode ? "ON" : "OFF"));
 
+	// 1. Force close any active menus globally to clear orphan windows
 	if (ctrlrCombo != nullptr && ctrlrCombo->isPopupActive()) {
 		ctrlrCombo->hidePopup();
 	}
+	juce::PopupMenu::dismissAllActiveMenus();
 
 	if (isInEditMode)
 		closeFuzzySearchPopupIfOpen();
 
 	if (ctrlrCombo != nullptr) {
-		// IF fuzzy search is enabled in user mode, pass clicks THROUGH to CtrlrCombo
-		const bool allowComboClicks = !isInEditMode && !canPerformFuzzySearch();
-		ctrlrCombo->setInterceptsMouseClicks(allowComboClicks, allowComboClicks);
+		const bool disableCombosOnEdit =
+			(bool)owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelDisableCombosOnEdit);
+
+		if (isInEditMode) {
+			if (disableCombosOnEdit) {
+				// In Edit Mode with combos disabled: block clicks on combo so parent handles dragging
+				ctrlrCombo->setInterceptsMouseClicks(false, false);
+			} else {
+				// In Edit Mode with combos enabled: allow mouse clicks so the popup content can render & receive events
+				ctrlrCombo->setInterceptsMouseClicks(true, true);
+			}
+		} else {
+			// Panel/User Mode
+			const bool allowComboClicks = !canPerformFuzzySearch();
+			ctrlrCombo->setInterceptsMouseClicks(allowComboClicks, allowComboClicks);
+		}
 	}
 
 	startTimer(isInEditMode ? 50 : 200);
