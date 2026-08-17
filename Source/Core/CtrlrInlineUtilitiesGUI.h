@@ -126,32 +126,33 @@ class PU {
 
 			return selectedResult;
 		}
-		
-static void showMenuAsyncAtArea(juce::PopupMenu &menuToDisplay, 
-                                const juce::Rectangle<int> &screenArea,
-                                juce::Component *targetComponent,
-                                std::function<void(int)> callback)
-{
-    // Adding 2-4 pixels to the Y position moves the anchor slightly below the cursor
-    juce::Rectangle<int> adjustedArea = screenArea.translated(0, 4);
+		static void showMenuAsyncAtArea(juce::PopupMenu &menuToDisplay, const juce::Rectangle<int> &screenArea,
+										std::function<void(int)> callback) {
+			auto options = juce::PopupMenu::Options().withTargetScreenArea(screenArea);
+			menuToDisplay.showMenuAsync(options, [callback](int result) {
+				if (callback)
+					callback(result);
+			});
+		}
+		static void showMenuAsyncAtArea(juce::PopupMenu &menuToDisplay, const juce::Rectangle<int> &screenArea,
+										juce::Component *targetComponent, std::function<void(int)> callback) {
+			// Adding 2-4 pixels to the Y position moves the anchor slightly below the cursor
+			juce::Rectangle<int> adjustedArea = screenArea.translated(0, 4);
 
-    auto options = juce::PopupMenu::Options()
-                       .withTargetScreenArea(adjustedArea);
+			auto options = juce::PopupMenu::Options().withTargetScreenArea(adjustedArea);
 
-    if (targetComponent != nullptr)
-    {
-        juce::Component::SafePointer<juce::Component> safeTarget(targetComponent);
-        if (safeTarget != nullptr)
-        {
-            options = options.withParentComponent(safeTarget.getComponent());
-        }
-    }
+			if (targetComponent != nullptr) {
+				juce::Component::SafePointer<juce::Component> safeTarget(targetComponent);
+				if (safeTarget != nullptr) {
+					options = options.withParentComponent(safeTarget.getComponent());
+				}
+			}
 
-    menuToDisplay.showMenuAsync(options, [callback](int result) {
-        if (callback)
-            callback(result);
-    });
-}
+			menuToDisplay.showMenuAsync(options, [callback](int result) {
+				if (callback)
+					callback(result);
+			});
+		}
 		// =========================================================================
 		// ASYNCHRONOUS HELPERS (For modern C++ / Lua callbacks)
 		// =========================================================================
@@ -489,7 +490,7 @@ inline void initLookAndFeelDefaults(juce::LookAndFeel &lf) {
 	lf.setColour(juce::ScrollBar::thumbColourId, juce::Colour(0xffababab));
 	lf.setColour(juce::ScrollBar::trackColourId, juce::Colour(0xffff0000));
 
-	lf.setColour(juce::TextEditor::highlightColourId, juce::Colour(0xff0000ff));
+	lf.setColour(juce::TextEditor::highlightColourId, juce::Colours::antiquewhite);
 	lf.setColour(juce::TextEditor::highlightedTextColourId, juce::Colour(0xff000000));
 	lf.setColour(juce::TextEditor::outlineColourId, juce::Colour(0xff000000));
 

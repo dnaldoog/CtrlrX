@@ -17,7 +17,7 @@ extern "C" {
 CtrlrAbout::CtrlrAbout(CtrlrManager &_owner) : owner(_owner) {
 	// CTRLRX LOGO SVG
 	// 1. Wrap the raw pointer returned by the factory function into your unique_ptr
-	ctrlrLogo = std::unique_ptr<DrawableButton>(gui::createDrawableButton("CtrlrX", BIN2STR(ctrlrx_logo_svg)));
+	ctrlrLogo = std::unique_ptr<DrawableButton>(gui::createDrawableButton("CtrlrX", BIN2STR(ctrlrx_8_logo_svg)));
 
 	// 2. Make it visible using .get()
 	addAndMakeVisible(ctrlrLogo.get());
