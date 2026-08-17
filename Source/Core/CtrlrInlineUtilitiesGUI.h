@@ -490,7 +490,7 @@ inline void initLookAndFeelDefaults(juce::LookAndFeel &lf) {
 	lf.setColour(juce::ScrollBar::thumbColourId, juce::Colour(0xffababab));
 	lf.setColour(juce::ScrollBar::trackColourId, juce::Colour(0xffff0000));
 
-	lf.setColour(juce::TextEditor::highlightColourId, juce::Colours::lightcoral);
+	lf.setColour(juce::TextEditor::highlightColourId, juce::Colours::antiquewhite);
 	lf.setColour(juce::TextEditor::highlightedTextColourId, juce::Colour(0xff000000));
 	lf.setColour(juce::TextEditor::outlineColourId, juce::Colour(0xff000000));
 
