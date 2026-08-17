@@ -51,7 +51,8 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 	if (comboStyle == "V3" || comboStyle == "V2" || comboStyle == "V1") {
 		setProperty(Ids::uiComboArrowColour, "0xff000000");
 		setProperty(Ids::uiComboOutlineColour, "0xff808080");
-		setProperty(Ids::uiComboTextJustification, "centred");
+		setProperty(Ids::uiComboTextJustification,
+					(int)juce::Justification::centred); // writing "centred" here defaulted to 0 = left
 		setProperty(Ids::uiComboFont, FONT2STR(Font(14)));
 		setProperty(Ids::uiComboTextColour, "0xff000000");
 		setProperty(Ids::uiComboMenuFont, FONT2STR(Font(16)));
@@ -392,15 +393,14 @@ void CtrlrCombo::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 		if ((int)getProperty(property) != -1) {
 			ctrlrCombo->setSelectedItemIndex(getProperty(property), sendNotificationSync);
 		}
-	} else if (property.toString().startsWith("uiCombo") && property != Ids::uiComboSearch &&
-			   property != Ids::uiComboTextJustification) {
-		// if (ctrlrCombo && (bool)getProperty(Ids::uiComboSearch)) {
-		_DBG("STYLE_CHANGE: " + property.toString() + " - Resetting engine.");
-		startTimer(250);
-		//} else {
+	} else if (property.toString().startsWith("uiCombo") && property != Ids::uiComboSearch) {
+		_DBG("STYLE_CHANGE: " + property.toString() + " - Updating styles.");
+
 		updateInternalComponentStyles();
-		ctrlrCombo->repaint();
-		//}
+
+		if (ctrlrCombo != nullptr) {
+			ctrlrCombo->repaint();
+		}
 	} else {
 		CtrlrComponent::valueTreePropertyChanged(treeWhosePropertyHasChanged, property);
 	}
@@ -610,48 +610,48 @@ void CtrlrCombo::updateInternalComponentStyles() {
 // CtrlrCombo - fuzzy search popup open/close
 //==============================================================================
 void CtrlrCombo::openFuzzySearchPopup() {
-    if (ctrlrCombo == nullptr || valueMap == nullptr)
-        return;
-    if (activeSearchPanel != nullptr) // already open
-        return;
+	if (ctrlrCombo == nullptr || valueMap == nullptr)
+		return;
+	if (activeSearchPanel != nullptr) // already open
+		return;
 
-    _DBG("FUZZY: Opening search popup");
+	_DBG("FUZZY: Opening search popup");
 
-    // Force JUCE's native ComboBox popup to hide if open
-    ctrlrCombo->hidePopup();
+	// Force JUCE's native ComboBox popup to hide if open
+	ctrlrCombo->hidePopup();
 
-    // Prevent ctrlrCombo from receiving mouse events while fuzzy search is active
-    ctrlrCombo->setInterceptsMouseClicks(false, false);
+	// Prevent ctrlrCombo from receiving mouse events while fuzzy search is active
+	ctrlrCombo->setInterceptsMouseClicks(false, false);
 
-    // Steal keyboard focus away from ctrlrCombo onto the wrapper component
-    grabKeyboardFocus();
+	// Steal keyboard focus away from ctrlrCombo onto the wrapper component
+	grabKeyboardFocus();
 
-    auto panel = std::make_unique<FuzzySearchPanel>(*this);
-    activeSearchPanel = panel.get();
+	auto panel = std::make_unique<FuzzySearchPanel>(*this);
+	activeSearchPanel = panel.get();
 
-    auto &box = juce::CallOutBox::launchAsynchronously(std::move(panel), ctrlrCombo->getScreenBounds(), nullptr);
-    box.setDismissalMouseClicksAreAlwaysConsumed(true);
+	auto &box = juce::CallOutBox::launchAsynchronously(std::move(panel), ctrlrCombo->getScreenBounds(), nullptr);
+	box.setDismissalMouseClicksAreAlwaysConsumed(true);
 
-    isSearching = true;
+	isSearching = true;
 
-    if (activeSearchPanel != nullptr)
-        activeSearchPanel->focusSearchField();
+	if (activeSearchPanel != nullptr)
+		activeSearchPanel->focusSearchField();
 }
 
 void CtrlrCombo::closeFuzzySearchPopupIfOpen() {
-    if (activeSearchPanel == nullptr)
-        return;
+	if (activeSearchPanel == nullptr)
+		return;
 
-    if (auto *box = activeSearchPanel->findParentComponentOfClass<juce::CallOutBox>())
-        box->dismiss();
+	if (auto *box = activeSearchPanel->findParentComponentOfClass<juce::CallOutBox>())
+		box->dismiss();
 
-    isSearching = false;
+	isSearching = false;
 
-    // Restore combo click interception ONLY if search is turned off
-    if (ctrlrCombo != nullptr) {
-        const bool allowComboClicks = !canPerformFuzzySearch();
-        ctrlrCombo->setInterceptsMouseClicks(allowComboClicks, allowComboClicks);
-    }
+	// Restore combo click interception ONLY if search is turned off
+	if (ctrlrCombo != nullptr) {
+		const bool allowComboClicks = !canPerformFuzzySearch();
+		ctrlrCombo->setInterceptsMouseClicks(allowComboClicks, allowComboClicks);
+	}
 }
 
 //==============================================================================
@@ -690,13 +690,13 @@ CtrlrCombo::FuzzySearchPanel::FuzzySearchPanel(CtrlrCombo &ownerCombo) : owner(o
 }
 
 CtrlrCombo::FuzzySearchPanel::~FuzzySearchPanel() {
-    owner.activeSearchPanel = nullptr;
-    owner.isSearching = false;
+	owner.activeSearchPanel = nullptr;
+	owner.isSearching = false;
 
-    if (owner.ctrlrCombo != nullptr) {
-        const bool allowComboClicks = !owner.canPerformFuzzySearch();
-        owner.ctrlrCombo->setInterceptsMouseClicks(allowComboClicks, allowComboClicks);
-    }
+	if (owner.ctrlrCombo != nullptr) {
+		const bool allowComboClicks = !owner.canPerformFuzzySearch();
+		owner.ctrlrCombo->setInterceptsMouseClicks(allowComboClicks, allowComboClicks);
+	}
 }
 
 void CtrlrCombo::FuzzySearchPanel::resized() {
@@ -1054,15 +1054,27 @@ const Colour CtrlrCombo::CtrlrComboLF::createBaseColour(const Colour &buttonColo
 }
 
 void CtrlrCombo::CtrlrComboLF::positionComboBoxText(juce::ComboBox &box, juce::Label &label) {
-	int buttonWidth = box.getHeight(); // matches drawComboBox's default (square button)
+	int buttonWidth = box.getHeight();
 
-	if ((bool)owner.getProperty(Ids::uiComboButtonWidthOverride) == true) {
+	if ((bool)owner.getProperty(Ids::uiComboButtonWidthOverride)) {
 		buttonWidth = owner.getProperty(Ids::uiComboButtonWidth);
 	}
 
 	label.setBounds(1, 1, box.getWidth() - buttonWidth - 2, box.getHeight() - 2);
-	int justFlags = owner.getProperty(Ids::uiComboTextJustification);
-	label.setJustificationType(juce::Justification(justFlags));
+
+	const var justVar = owner.getProperty(Ids::uiComboTextJustification);
+
+	if (justVar.isString()) {
+		const String justStr = justVar.toString();
+		if (justStr == "centred" || justStr == "centered" || justStr == "center")
+			label.setJustificationType(juce::Justification::centred);
+		else if (justStr == "right" || justStr == "topRight" || justStr == "bottomRight")
+			label.setJustificationType(juce::Justification::centredRight);
+		else
+			label.setJustificationType(juce::Justification::centredLeft);
+	} else {
+		label.setJustificationType(juce::Justification((int)justVar));
+	}
 }
 
 void CtrlrCombo::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel) {
