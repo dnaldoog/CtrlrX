@@ -624,6 +624,8 @@
           <FILE id="OOpHQ2" name="FONT_ZX81.ttf" compile="0" resource="1" file="Source/Resources/Fonts/FONT_ZX81.ttf"/>
         </GROUP>
         <GROUP id="{57CA4634-99B0-23FB-F19C-154181EAAE85}" name="Icons">
+          <FILE id="EgredL" name="ctrlrx_8_logo.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/ctrlrx_8_logo.svg"/>
           <FILE id="a8RgYD" name="alignhorizontalleftsymbolic.svg" compile="0"
                 resource="1" file="Source/Resources/Icons/alignhorizontalleftsymbolic.svg"/>
           <FILE id="r3dLsN" name="alignhorizontalrightsymbolic.svg" compile="0"
