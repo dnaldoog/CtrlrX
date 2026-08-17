@@ -445,24 +445,45 @@ void CtrlrCombo::fillContent(const int contentType) {
 void CtrlrCombo::panelEditModeChanged(const bool isInEditMode) {
 	_DBG("!!!! Combo Edit Mode: " + String(isInEditMode ? "ON" : "OFF"));
 
+	// 1. Force close any active menus globally to clear orphan windows
 	if (ctrlrCombo != nullptr && ctrlrCombo->isPopupActive()) {
 		ctrlrCombo->hidePopup();
 	}
+	juce::PopupMenu::dismissAllActiveMenus();
 
 	if (isInEditMode)
 		closeFuzzySearchPopupIfOpen();
 
 	if (ctrlrCombo != nullptr) {
-		// IF fuzzy search is enabled in user mode, pass clicks THROUGH to CtrlrCombo
-		const bool allowComboClicks = !isInEditMode && !canPerformFuzzySearch();
-		ctrlrCombo->setInterceptsMouseClicks(allowComboClicks, allowComboClicks);
+		// Safe check for Editor nullness during panel initialization
+		bool disableCombosOnEdit = false;
+		if (auto *editor = owner.getOwnerPanel().getEditor()) {
+			disableCombosOnEdit = (bool)editor->getProperty(Ids::uiPanelDisableCombosOnEdit);
+		}
+
+		if (isInEditMode) {
+			if (disableCombosOnEdit) {
+				// In Edit Mode with combos disabled: block clicks on combo so parent handles dragging
+				ctrlrCombo->setInterceptsMouseClicks(false, false);
+			} else {
+				// In Edit Mode with combos enabled: allow mouse clicks so the popup content can render & receive events
+				ctrlrCombo->setInterceptsMouseClicks(true, true);
+			}
+		} else {
+			// Panel/User Mode
+			const bool allowComboClicks = !canPerformFuzzySearch();
+			ctrlrCombo->setInterceptsMouseClicks(allowComboClicks, allowComboClicks);
+		}
 	}
 
 	startTimer(isInEditMode ? 50 : 200);
 
-	if ((bool)owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelDisabledOnEdit)) {
-		if (ctrlrCombo != nullptr)
-			ctrlrCombo->setEnabled(!isInEditMode);
+	// Safe check for Editor nullness here as well
+	if (auto *editor = owner.getOwnerPanel().getEditor()) {
+		if ((bool)editor->getProperty(Ids::uiPanelDisabledOnEdit)) {
+			if (ctrlrCombo != nullptr)
+				ctrlrCombo->setEnabled(!isInEditMode);
+		}
 	}
 
 	resized();
@@ -617,15 +638,6 @@ void CtrlrCombo::openFuzzySearchPopup() {
 
 	_DBG("FUZZY: Opening search popup");
 
-	// Force JUCE's native ComboBox popup to hide if open
-	ctrlrCombo->hidePopup();
-
-	// Prevent ctrlrCombo from receiving mouse events while fuzzy search is active
-	ctrlrCombo->setInterceptsMouseClicks(false, false);
-
-	// Steal keyboard focus away from ctrlrCombo onto the wrapper component
-	grabKeyboardFocus();
-
 	auto panel = std::make_unique<FuzzySearchPanel>(*this);
 	activeSearchPanel = panel.get();
 
@@ -647,11 +659,10 @@ void CtrlrCombo::closeFuzzySearchPopupIfOpen() {
 
 	isSearching = false;
 
-	// Restore combo click interception ONLY if search is turned off
-	if (ctrlrCombo != nullptr) {
-		const bool allowComboClicks = !canPerformFuzzySearch();
-		ctrlrCombo->setInterceptsMouseClicks(allowComboClicks, allowComboClicks);
-	}
+	// Search only ever opens in normal (non-edit) mode, so it's always correct
+	// to hand normal click-handling back to the ComboBox here.
+	if (ctrlrCombo != nullptr)
+		ctrlrCombo->setInterceptsMouseClicks(true, true);
 }
 
 //==============================================================================
@@ -693,10 +704,8 @@ CtrlrCombo::FuzzySearchPanel::~FuzzySearchPanel() {
 	owner.activeSearchPanel = nullptr;
 	owner.isSearching = false;
 
-	if (owner.ctrlrCombo != nullptr) {
-		const bool allowComboClicks = !owner.canPerformFuzzySearch();
-		owner.ctrlrCombo->setInterceptsMouseClicks(allowComboClicks, allowComboClicks);
-	}
+	if (owner.ctrlrCombo != nullptr)
+		owner.ctrlrCombo->setInterceptsMouseClicks(true, true);
 }
 
 void CtrlrCombo::FuzzySearchPanel::resized() {
@@ -711,18 +720,9 @@ void CtrlrCombo::FuzzySearchPanel::visibilityChanged() {
 		focusSearchField();
 }
 
-// void CtrlrCombo::FuzzySearchPanel::focusSearchField() {
-// 	searchBox.grabKeyboardFocus();
-// 	searchBox.moveCaretToEnd();
-// }
 void CtrlrCombo::FuzzySearchPanel::focusSearchField() {
-	// Queue focus request so the CallOutBox has finished its desktop/parent attachment
-	juce::MessageManager::callAsync([safeThis = juce::Component::SafePointer<FuzzySearchPanel>(this)]() {
-		if (safeThis != nullptr && safeThis->isShowing()) {
-			safeThis->searchBox.grabKeyboardFocus();
-			safeThis->searchBox.moveCaretToEnd();
-		}
-	});
+	searchBox.grabKeyboardFocus();
+	searchBox.moveCaretToEnd();
 }
 
 void CtrlrCombo::FuzzySearchPanel::paintOverChildren(juce::Graphics &g) {
@@ -830,20 +830,11 @@ void CtrlrCombo::FuzzySearchPanel::commitRow(int row) {
 	if (!isPositiveAndBelow(row, (int)matches.size()))
 		return;
 
-	// 1. Commit selection
 	owner.setSelectedId(matches[(size_t)row].id, false);
-
-	// 2. Unfocus searchBox so keyboard focus isn't trapped or passed back to ctrlrCombo
-	searchBox.unfocusAllComponents();
-
-	// 3. Dismiss popup
 	closePopup();
 }
 
 void CtrlrCombo::FuzzySearchPanel::closePopup() {
-	// Clear keyboard focus before closing
-	searchBox.unfocusAllComponents();
-
 	if (auto *box = findParentComponentOfClass<juce::CallOutBox>())
 		box->dismiss();
 }
@@ -1054,9 +1045,9 @@ const Colour CtrlrCombo::CtrlrComboLF::createBaseColour(const Colour &buttonColo
 }
 
 void CtrlrCombo::CtrlrComboLF::positionComboBoxText(juce::ComboBox &box, juce::Label &label) {
-	int buttonWidth = box.getHeight();
+	int buttonWidth = box.getHeight(); // matches drawComboBox's default (square button)
 
-	if ((bool)owner.getProperty(Ids::uiComboButtonWidthOverride)) {
+	if ((bool)owner.getProperty(Ids::uiComboButtonWidthOverride) == true) {
 		buttonWidth = owner.getProperty(Ids::uiComboButtonWidth);
 	}
 
