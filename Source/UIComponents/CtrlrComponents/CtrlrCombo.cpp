@@ -51,7 +51,8 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 	if (comboStyle == "V3" || comboStyle == "V2" || comboStyle == "V1") {
 		setProperty(Ids::uiComboArrowColour, "0xff000000");
 		setProperty(Ids::uiComboOutlineColour, "0xff808080");
-		setProperty(Ids::uiComboTextJustification, "centred");
+		setProperty(Ids::uiComboTextJustification,
+					(int)juce::Justification::centred); // writing "centred" here defaulted to 0 = left
 		setProperty(Ids::uiComboFont, FONT2STR(Font(14)));
 		setProperty(Ids::uiComboTextColour, "0xff000000");
 		setProperty(Ids::uiComboMenuFont, FONT2STR(Font(16)));
@@ -392,12 +393,12 @@ void CtrlrCombo::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 		if ((int)getProperty(property) != -1) {
 			ctrlrCombo->setSelectedItemIndex(getProperty(property), sendNotificationSync);
 		}
-	} else if (property.toString().startsWith("uiCombo")) {
-		if (ctrlrCombo && (bool)getProperty(Ids::uiComboSearch)) {
-			_DBG("STYLE_CHANGE: " + property.toString() + " - Resetting engine.");
-			startTimer(250);
-		} else {
+	} else if (property.toString().startsWith("uiCombo") && property != Ids::uiComboSearch) {
+		_DBG("STYLE_CHANGE: " + property.toString() + " - Updating styles.");
+
 			updateInternalComponentStyles();
+
+		if (ctrlrCombo != nullptr) {
 			ctrlrCombo->repaint();
 		}
 	} else {
@@ -1030,8 +1031,20 @@ void CtrlrCombo::CtrlrComboLF::positionComboBoxText(juce::ComboBox &box, juce::L
 	}
 
 	label.setBounds(1, 1, box.getWidth() - buttonWidth - 2, box.getHeight() - 2);
-	int justFlags = owner.getProperty(Ids::uiComboTextJustification);
-	label.setJustificationType(juce::Justification(justFlags));
+
+	const var justVar = owner.getProperty(Ids::uiComboTextJustification);
+
+	if (justVar.isString()) {
+		const String justStr = justVar.toString();
+		if (justStr == "centred" || justStr == "centered" || justStr == "center")
+			label.setJustificationType(juce::Justification::centred);
+		else if (justStr == "right" || justStr == "topRight" || justStr == "bottomRight")
+			label.setJustificationType(juce::Justification::centredRight);
+		else
+			label.setJustificationType(juce::Justification::centredLeft);
+	} else {
+		label.setJustificationType(juce::Justification((int)justVar));
+	}
 }
 
 void CtrlrCombo::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel) {
