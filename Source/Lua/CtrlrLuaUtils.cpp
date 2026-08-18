@@ -126,11 +126,7 @@ void CtrlrLuaUtils::warnWindow(const String title, const String message) {
 void CtrlrLuaUtils::infoWindow(const String title, const String message) {
 	AW::showMessageBox(AW::Info, title, message);
 }
-
-void CtrlrLuaUtils::questionWindow(const String title, const String message, const String button1Text,
-								   const String button2Text, std::function<void(bool)> callback) {
-	AW::showOkCancelAsyncSafe(AW::Question, title, message, callback, button1Text, button2Text);
-}
+// CtrlrLuaUtils.h / .cpp
 
 // For text input using AW::runCustomAlertAsyncSafe
 void CtrlrLuaUtils::askForTextInputWindow(const String title, const String message, const String initialInputContent,
@@ -248,69 +244,103 @@ juce::String CtrlrLuaUtils::base64_decode(const juce::String &base64String) // A
 }
 
 File CtrlrLuaUtils::saveFileWindowSync(const String &dialogBoxTitle, const File &initialFileOrDirectory,
-                                        const String &filePatternsAllowed, bool useOSNativeDialogBox)
-{
-    auto *mm = juce::MessageManager::getInstance();
+									   const String &filePatternsAllowed, bool useOSNativeDialogBox) {
+	auto *mm = juce::MessageManager::getInstance();
 
-    if (!mm->isThisTheMessageThread())
-    {
-        jassertfalse;
-        return File();
-    }
+	if (!mm->isThisTheMessageThread()) {
+		jassertfalse;
+		return File();
+	}
 
-    auto dialog = std::make_shared<juce::FileChooser>(dialogBoxTitle, initialFileOrDirectory,
-                                                        filePatternsAllowed, useOSNativeDialogBox);
-    auto flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles |
-                 juce::FileBrowserComponent::warnAboutOverwriting;
+	auto dialog = std::make_shared<juce::FileChooser>(dialogBoxTitle, initialFileOrDirectory, filePatternsAllowed,
+													  useOSNativeDialogBox);
+	auto flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles |
+				 juce::FileBrowserComponent::warnAboutOverwriting;
 
-    bool finished = false;
-    File result;
+	bool finished = false;
+	File result;
 
-    dialog->launchAsync(flags, [dialog, &finished, &result](const juce::FileChooser &fc)
-    {
-        result = fc.getResult();
-        finished = true;
-    });
+	dialog->launchAsync(flags, [dialog, &finished, &result](const juce::FileChooser &fc) {
+		result = fc.getResult();
+		finished = true;
+	});
 
-    while (!finished)
-        mm->runDispatchLoopUntil(20);
+	while (!finished)
+		mm->runDispatchLoopUntil(20);
 
-    return result;
+	return result;
 }
 
 File CtrlrLuaUtils::openFileWindowSync(const String &dialogBoxTitle, const File &initialFileOrDirectory,
-                                        const String &filePatternsAllowed, bool useOSNativeDialogBox)
-{
-    auto *mm = juce::MessageManager::getInstance();
+									   const String &filePatternsAllowed, bool useOSNativeDialogBox) {
+	auto *mm = juce::MessageManager::getInstance();
 
-    if (!mm->isThisTheMessageThread())
-    {
-        jassertfalse;
-        return File();
-    }
+	if (!mm->isThisTheMessageThread()) {
+		jassertfalse;
+		return File();
+	}
 
-    auto dialog = std::make_shared<juce::FileChooser>(dialogBoxTitle, initialFileOrDirectory,
-                                                        filePatternsAllowed, useOSNativeDialogBox);
-    auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+	auto dialog = std::make_shared<juce::FileChooser>(dialogBoxTitle, initialFileOrDirectory, filePatternsAllowed,
+													  useOSNativeDialogBox);
+	auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
 
-    bool finished = false;
-    File result;
+	bool finished = false;
+	File result;
 
-    dialog->launchAsync(flags, [dialog, &finished, &result](const juce::FileChooser &fc)
-    {
-        result = fc.getResult();
-        finished = true;
-    });
+	dialog->launchAsync(flags, [dialog, &finished, &result](const juce::FileChooser &fc) {
+		result = fc.getResult();
+		finished = true;
+	});
 
-    while (!finished)
-        mm->runDispatchLoopUntil(20);
+	while (!finished)
+		mm->runDispatchLoopUntil(20);
 
-    return result;
+	return result;
 }
 
+bool CtrlrLuaUtils::questionWindow(const String title, const String message, const String button1Text, const String button2Text) {
+	auto *mm = juce::MessageManager::getInstance();
 
+	if (!mm->isThisTheMessageThread()) {
+		jassertfalse;
+		return false;
+	}
+
+	bool finished = false;
+	bool userClickedYes = false;
+
+	AW::showOkCancelAsyncSafe(AW::Question, title, message,
+		[&finished, &userClickedYes](bool result) {
+			userClickedYes = result;
+			finished = true;
+		},
+		button1Text, button2Text);
+
+	while (!finished)
+		mm->runDispatchLoopUntil(20);
+
+	return userClickedYes;
+}
+
+void CtrlrLuaUtils::questionWindowAsync(const String title, const String message,
+                                        const String button1Text, const String button2Text, luabind::object callback) {
+	std::function<void(bool)> juceCallback = [callback](bool result) mutable {
+		if (callback.is_valid() && luabind::type(callback) == LUA_TFUNCTION) {
+			try {
+				callback(result);
+			} catch (const luabind::error &e) {
+				_DBG("Lua callback exception in questionWindowAsync: " + String(e.what()));
+			}
+		}
+	};
+
+	AW::showOkCancelAsyncSafe(AW::Question, title, message, juceCallback, button1Text, button2Text);
+}
 void CtrlrLuaUtils::wrapForLua(lua_State *L) {
 	using namespace luabind;
+	// typedef bool (CtrlrLuaUtils::*SyncQuestionWin)(const String, const String, const String, const String);
+	// typedef void (CtrlrLuaUtils::*AsyncQuestionWin)(const String, const String, const String, const String,
+	// 												luabind::object);
 
 	module(L)[class_<CtrlrLuaUtils>("CtrlrLuaUtils")
 				  .def("unpackDsiData", &CtrlrLuaUtils::unpackDsiData, adopt(result))
@@ -318,6 +348,7 @@ void CtrlrLuaUtils::wrapForLua(lua_State *L) {
 				  .def("warnWindow", &CtrlrLuaUtils::warnWindow)
 				  .def("infoWindow", &CtrlrLuaUtils::infoWindow)
 				  .def("questionWindow", &CtrlrLuaUtils::questionWindow)
+				  .def("questionWindowAsync", &CtrlrLuaUtils::questionWindowAsync)
 				  .def("openFileWindow", &CtrlrLuaUtils::openFileWindowSync)
 				  .def("openMultipleFilesWindow", &CtrlrLuaUtils::openMultipleFilesWindow)
 				  .def("saveFileWindow", &CtrlrLuaUtils::saveFileWindowSync)

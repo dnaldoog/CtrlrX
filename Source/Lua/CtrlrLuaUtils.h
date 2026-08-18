@@ -2,54 +2,52 @@
 #define __CTRLR_LUA_UTILS__
 
 #ifdef _WIN32
-#pragma warning(disable:4100)
+#pragma warning(disable : 4100)
 #endif // _WIN32
 
 #include "CtrlrMacros.h"
 #include "CtrlrRevision.h"
 #include "luabind/object_fwd.hpp"
 
-//#include <eh.h> 
+// #include <eh.h>
 
-extern "C"
-{
-	#include "lua.h"
+extern "C" {
+#include "lua.h"
 }
 
 class LMemoryBlock;
 /*! \class CtrlrModulator
-    \brief Modulator class
+	\brief Modulator class
 
-    Blah blah
+	Blah blah
 */
 
 //==============================================================================
 /** \brief A collection of utility methods.
 
 */
-class CtrlrLuaUtils
-{
+class CtrlrLuaUtils {
 	public:
-// ---------------------------------------------------------------------------
-// JUCE 8 backward-compatibility wrapper.
-//
-// JUCE 8 made this API asynchronous-only (was synchronous in JUCE 6/7).
-// Hundreds of existing panel Lua scripts call this expecting a direct,
-// blocking return value (the old idiom: `local x = utils.someCall(...)`).
-//
-// This wrapper fakes that synchronous behaviour by locally pumping the
-// message loop (MessageManager::runDispatchLoopUntil) against our own
-// flag, checked in a loop, rather than the real async callback API.
-//
-// IMPORTANT: never use MessageManager::runDispatchLoop()/stopDispatchLoop()
-// for this — stopDispatchLoop() posts a real quit message and will
-// terminate the *entire application's* top-level loop, not just this
-// local one. See: <link to your notes/commit/issue if you keep one>.
-// ---------------------------------------------------------------------------
-static File openFileWindowSync(const String &dialogBoxTitle, const File &initialFileOrDirectory,
-                                const String &filePatternsAllowed, bool useOSNativeDialogBox);
-static File saveFileWindowSync(const String &dialogBoxTitle, const File &initialFileOrDirectory,
-                                const String &filePatternsAllowed, bool useOSNativeDialogBox);
+		// ---------------------------------------------------------------------------
+		// JUCE 8 backward-compatibility wrapper.
+		//
+		// JUCE 8 made this API asynchronous-only (was synchronous in JUCE 6/7).
+		// Hundreds of existing panel Lua scripts call this expecting a direct,
+		// blocking return value (the old idiom: `local x = utils.someCall(...)`).
+		//
+		// This wrapper fakes that synchronous behaviour by locally pumping the
+		// message loop (MessageManager::runDispatchLoopUntil) against our own
+		// flag, checked in a loop, rather than the real async callback API.
+		//
+		// IMPORTANT: never use MessageManager::runDispatchLoop()/stopDispatchLoop()
+		// for this — stopDispatchLoop() posts a real quit message and will
+		// terminate the *entire application's* top-level loop, not just this
+		// local one. See: <link to your notes/commit/issue if you keep one>.
+		// ---------------------------------------------------------------------------
+		static File openFileWindowSync(const String &dialogBoxTitle, const File &initialFileOrDirectory,
+									   const String &filePatternsAllowed, bool useOSNativeDialogBox);
+		static File saveFileWindowSync(const String &dialogBoxTitle, const File &initialFileOrDirectory,
+									   const String &filePatternsAllowed, bool useOSNativeDialogBox);
 		/** @brief Internal
 
 		*/
@@ -60,37 +58,44 @@ static File saveFileWindowSync(const String &dialogBoxTitle, const File &initial
 			@param dataToUnpack		the data to unpack (this must not include the MIDI SysEx prefix or suffix,
 									and must be a multiple of 8)
 		*/
-		static LMemoryBlock *unpackDsiData (MemoryBlock &dataToUnpack);
+		static LMemoryBlock *unpackDsiData(MemoryBlock &dataToUnpack);
 
 		/** @brief Pack bytes from a SysEx message using the DSI method (Mopho, Evolver, Tetra)
 
 			@param dataToUnpack		the data to pack
 		*/
-		static LMemoryBlock *packDsiData (MemoryBlock &dataToUnpack);
+		static LMemoryBlock *packDsiData(MemoryBlock &dataToUnpack);
 
 		/** @brief Show a messge window with a warning icon
 
 			@param title	Window title
 			@param message	Window message
 		*/
-		static void warnWindow (const String title, const String message);
+		static void warnWindow(const String title, const String message);
 
 		/** @brief Show a messge window with a info icon
 
 			@param title	Window title
 			@param message	Window message
 		*/
-		static void infoWindow (const String title, const String message);
+		static void infoWindow(const String title, const String message);
 
-		/** @brief Show a messge window with a message, and return a value that represents what the user clicked in that window (OK/Cancel, Yes/No)
+		/** @brief Show a messge window with a message, and return a value that represents what the user clicked in that
+		   window (OK/Cancel, Yes/No)
 
 			@param	title		Window title
 			@param	message		Window message
 			@param	button1Text	text for the first button
 			@param	button2Text	text for the second button
+			@param	callback	Async callback returns bool
 		*/
-		static void questionWindow(const juce::String title, const juce::String message, const juce::String button1Text,
-								   const juce::String button2Text, std::function<void(bool)> callback);
+		// static void questionWindow(const juce::String title, const juce::String message, const juce::String
+		// button1Text, 						   const juce::String button2Text, std::function<void(bool)> callback);
+		static bool questionWindow(const String title, const String message, const String button1Text,
+								   const String button2Text);
+		static void questionWindowAsync(const String title, const String message, const String button1Text,
+										const String button2Text, luabind::object callback);
+
 		/** @brief Show a messge window with a text input field for the user to type in
 
 			@return Contents of the text input field
@@ -104,9 +109,9 @@ static File saveFileWindowSync(const String &dialogBoxTitle, const File &initial
 			@param	button2Text				text for the second button
 		*/
 
-void askForTextInputWindow(const String title, const String message, const String initialInputContent,
-										  const String onScreenLabel, const bool isPassword, const String button1Text,
-										  const String button2Text, std::function<void(const String &)> callback);
+		void askForTextInputWindow(const String title, const String message, const String initialInputContent,
+								   const String onScreenLabel, const bool isPassword, const String button1Text,
+								   const String button2Text, std::function<void(const String &)> callback);
 
 		/** @brief Ask for a File to open
 
@@ -131,49 +136,59 @@ void askForTextInputWindow(const String title, const String message, const Strin
 
 			@return A lua array of File objects selected
 		*/
-	static void openMultipleFilesWindow(const juce::String &title, const juce::File &fileToSelect,
-										const juce::String &pattern, bool browseForDirectory, luabind::object callback);
+		static void openMultipleFilesWindow(const juce::String &title, const juce::File &fileToSelect,
+											const juce::String &pattern, bool browseForDirectory,
+											luabind::object callback);
 
-	/** @brief Ask for a File to save
+		/** @brief Ask for a File to save
 
-		@param dialogBoxTitle
-		@param initialFileOrDirectory
-		@param filePatternsAllowed
-		@param useOSNativeDialogBox
-	*/
-	static void saveFileWindow(const juce::String &title, const juce::File &fileToSelect, const juce::String &pattern,
-							   bool browseForDirectory, std::function<void(const juce::File &)> callback);
-
-	/** @brief Ask for a directory
-
-	*/
-	static void getDirectoryWindow(const juce::String &title, const juce::File &fileToSelect,
+			@param dialogBoxTitle
+			@param initialFileOrDirectory
+			@param filePatternsAllowed
+			@param useOSNativeDialogBox
+		*/
+		static void saveFileWindow(const juce::String &title, const juce::File &fileToSelect,
+								   const juce::String &pattern, bool browseForDirectory,
 								   std::function<void(const juce::File &)> callback);
 
-	static int getVersionMajor() { return (_STR(ctrlrRevision).upToFirstOccurrenceOf(".", false, true).getIntValue()); }
-	static int getVersionMinor() { return (_STR(ctrlrRevision).fromFirstOccurrenceOf(".", false, true).getIntValue()); }
-	static int getVersionRevision() {
-		return (_STR(ctrlrRevision).fromLastOccurrenceOf(".", false, true).getIntValue());
-	}
-        static double getPi() { return (double_Pi); }
-        static int16_t get16bitSigned(uint16_t val) { // Added v5.6.34. Thanks to @dnaldoog
-            // return a signed 16bit integer from an unsigned 16bit integer
-            if (val > 32767) {
-                return val - 65536;
-            }
-            return val;
-        }
-        static int8_t get8bitSigned(uint8_t val) {
-            // return a signed 8bit integer from an unsigned 8bit integer
-            if (val > 127) {
-                return val - 256;
-            }
-            return val;
-        }
-        static juce::String base64_encode(const juce::String& stringToEncode); // Added v5.6.34. Thanks to @dnaldoog
-        static juce::String base64_decode(const juce::String& base64String); // Added v5.6.34. Thanks to @dnaldoog
-    
-        static String getVersionString() { return (_STR(ctrlrRevision)); }
+		/** @brief Ask for a directory
+
+		*/
+		static void getDirectoryWindow(const juce::String &title, const juce::File &fileToSelect,
+									   std::function<void(const juce::File &)> callback);
+
+		static int getVersionMajor() {
+			return (_STR(ctrlrRevision).upToFirstOccurrenceOf(".", false, true).getIntValue());
+		}
+		static int getVersionMinor() {
+			return (_STR(ctrlrRevision).fromFirstOccurrenceOf(".", false, true).getIntValue());
+		}
+		static int getVersionRevision() {
+			return (_STR(ctrlrRevision).fromLastOccurrenceOf(".", false, true).getIntValue());
+		}
+		static double getPi() {
+			return (double_Pi);
+		}
+		static int16_t get16bitSigned(uint16_t val) { // Added v5.6.34. Thanks to @dnaldoog
+			// return a signed 16bit integer from an unsigned 16bit integer
+			if (val > 32767) {
+				return val - 65536;
+			}
+			return val;
+		}
+		static int8_t get8bitSigned(uint8_t val) {
+			// return a signed 8bit integer from an unsigned 8bit integer
+			if (val > 127) {
+				return val - 256;
+			}
+			return val;
+		}
+		static juce::String base64_encode(const juce::String &stringToEncode); // Added v5.6.34. Thanks to @dnaldoog
+		static juce::String base64_decode(const juce::String &base64String);   // Added v5.6.34. Thanks to @dnaldoog
+
+		static String getVersionString() {
+			return (_STR(ctrlrRevision));
+		}
 		static StringArray getMidiInputDevices();
 		static StringArray getMidiOutputDevices();
 		void testMethod(const String &haystack, const String &needle);
