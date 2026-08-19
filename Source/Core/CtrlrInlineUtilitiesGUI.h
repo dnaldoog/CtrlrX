@@ -504,4 +504,54 @@ inline void initLookAndFeelDefaults(juce::LookAndFeel &lf) {
 				 juce::Colours::black); // placeholder lf.setColour(CtrlrPropertyComponent::labelTextColourId)
 }
 } // namespace gui
+
+namespace LNF {
+
+inline void applyLookAndFeelState(juce::Component &targetComp, juce::ValueTree &ownerTree,
+								  const juce::Identifier &customFlagId, const juce::Identifier &colourOnId,
+								  const juce::Identifier &colourOffId, int juceColourOnId, int juceColourOffId) {
+	const bool useUserSettings = (bool)ownerTree.getProperty(customFlagId);
+
+	const String backupOnKey = colourOnId.toString() + "_UserBackup";
+	const String backupOffKey = colourOffId.toString() + "_UserBackup";
+
+	if (useUserSettings) {
+		// Restore explicit user settings if backed up
+		if (ownerTree.hasProperty(backupOnKey)) {
+			ownerTree.setProperty(colourOnId, ownerTree.getProperty(backupOnKey), nullptr);
+			ownerTree.setProperty(colourOffId, ownerTree.getProperty(backupOffKey), nullptr);
+			ownerTree.removeProperty(backupOnKey, nullptr);
+			ownerTree.removeProperty(backupOffKey, nullptr);
+		}
+
+		juce::Colour colOn = VAR2COLOUR(ownerTree.getProperty(colourOnId));
+		juce::Colour colOff = VAR2COLOUR(ownerTree.getProperty(colourOffId));
+
+		targetComp.setColour(juceColourOnId, colOn);
+		targetComp.setColour(juceColourOffId, colOff);
+	} else {
+		// Backup user settings before switching to LNF values
+		if (!ownerTree.hasProperty(backupOnKey)) {
+			ownerTree.setProperty(backupOnKey, ownerTree.getProperty(colourOnId), nullptr);
+			ownerTree.setProperty(backupOffKey, ownerTree.getProperty(colourOffId), nullptr);
+		}
+
+		// Remove local overrides so component uses active LookAndFeel theme
+		targetComp.removeColour(juceColourOnId);
+		targetComp.removeColour(juceColourOffId);
+
+		// Sync property inspector display to current active LNF colors
+		juce::LookAndFeel &currentLNF = targetComp.getLookAndFeel();
+		juce::Colour lnfOn = currentLNF.findColour(juceColourOnId);
+		juce::Colour lnfOff = currentLNF.findColour(juceColourOffId);
+
+		ownerTree.setProperty(colourOnId, lnfOn.toDisplayString(true), nullptr);
+		ownerTree.setProperty(colourOffId, lnfOff.toDisplayString(true), nullptr);
+	}
+
+	targetComp.repaint();
+}
+
+} // namespace LNF
+
 #endif
