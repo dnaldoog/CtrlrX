@@ -286,19 +286,19 @@ void CtrlrButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChange
 }
 
 void CtrlrButton::updateComponentColors() {
-    if (ctrlrButton == nullptr)
-        return;
+	if (ctrlrButton == nullptr)
+		return;
 
-    LNF::applyLookAndFeelState(*ctrlrButton, 
-                               getComponentTree(), 
-                               Ids::uiButtonLookAndFeelIsCustom,
-                               Ids::uiButtonColourOn, 
-                               Ids::uiButtonColourOff, 
-                               juce::TextButton::buttonOnColourId, 
-                               juce::TextButton::buttonColourId);
+	LNF::applyLookAndFeelState(*ctrlrButton, getComponentTree(), Ids::uiButtonLookAndFeelIsCustom,
+							   Ids::uiButtonColourOn, Ids::uiButtonColourOff, juce::TextButton::buttonOnColourId,
+							   juce::TextButton::buttonColourId),
+		Ids::uiButtonTextColourOn,	// Text color ON property
+		Ids::uiButtonTextColourOff, // Text color OFF property
+		juce::TextButton::textColourOnId, juce::TextButton::textColourOffId;
 
-    // Refresh the Property Inspector so the colour pickers reflect the updated tree values!
-    updatePropertiesPanel();
+	// Refresh the Property Inspector so the colour pickers reflect the updated tree values!
+	//updatePropertiesPanel(); // this returns the screen to top - it's a bit annoying
+	ctrlrButton->repaint();
 }
 
 void CtrlrButton::click() {
@@ -347,16 +347,16 @@ void CtrlrButton::resetLookAndFeelOverrides() {
 }
 
 void CtrlrButton::updatePropertiesPanel() {
-    // 1. Don't trigger panel updates while restoring state or initializing
-    if (restoreStateInProgress)
-        return;
+	// 1. Don't trigger panel updates while restoring state or initializing
+	if (restoreStateInProgress)
+		return;
 
-    // 2. Safely check every pointer in the chain
-    if (auto* panel = owner.getOwnerPanel().getEditor(false)) {
-        if (auto* props = panel->getPropertiesPanel()) {
-            props->refreshAll();
-        }
-    }
+	// 2. Safely check every pointer in the chain
+	if (auto *panel = owner.getOwnerPanel().getEditor(false)) {
+		if (auto *props = panel->getPropertiesPanel()) {
+			props->refreshAll();
+		}
+	}
 }
 
 // #endif
