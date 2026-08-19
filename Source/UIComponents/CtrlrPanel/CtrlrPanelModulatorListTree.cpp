@@ -391,6 +391,7 @@ void CtrlrPanelModulatorListTree::resized()
 
 void CtrlrPanelModulatorListTree::itemChanged (ValueTree &itemTreeThatChanged)
 {
+	DBG("!*!*!*!* Item changed");
 	propertyPanel.setSelectedTree (itemTreeThatChanged);
 }
 
