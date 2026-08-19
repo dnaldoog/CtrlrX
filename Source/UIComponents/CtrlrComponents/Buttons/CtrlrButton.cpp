@@ -286,12 +286,19 @@ void CtrlrButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChange
 }
 
 void CtrlrButton::updateComponentColors() {
-	if (ctrlrButton == nullptr)
-		return;
+    if (ctrlrButton == nullptr)
+        return;
 
-	LNF::applyLookAndFeelState(*ctrlrButton, getComponentTree(), Ids::uiButtonLookAndFeelIsCustom,
-							   Ids::uiButtonColourOn, Ids::uiButtonColourOff, juce::TextButton::buttonOnColourId,
-							   juce::TextButton::buttonColourId);
+    LNF::applyLookAndFeelState(*ctrlrButton, 
+                               getComponentTree(), 
+                               Ids::uiButtonLookAndFeelIsCustom,
+                               Ids::uiButtonColourOn, 
+                               Ids::uiButtonColourOff, 
+                               juce::TextButton::buttonOnColourId, 
+                               juce::TextButton::buttonColourId);
+
+    // Refresh the Property Inspector so the colour pickers reflect the updated tree values!
+    updatePropertiesPanel();
 }
 
 void CtrlrButton::click() {
@@ -340,10 +347,16 @@ void CtrlrButton::resetLookAndFeelOverrides() {
 }
 
 void CtrlrButton::updatePropertiesPanel() {
-	CtrlrPanelProperties *props = owner.getCtrlrManagerOwner().getActivePanel()->getEditor(false)->getPropertiesPanel();
-	if (props) {
-		props->refreshAll(); // Needs extra code to prevent scrolling back to top on refresh
-	}
+    // 1. Don't trigger panel updates while restoring state or initializing
+    if (restoreStateInProgress)
+        return;
+
+    // 2. Safely check every pointer in the chain
+    if (auto* panel = owner.getOwnerPanel().getEditor(false)) {
+        if (auto* props = panel->getPropertiesPanel()) {
+            props->refreshAll();
+        }
+    }
 }
 
 // #endif
