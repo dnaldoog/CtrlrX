@@ -507,50 +507,104 @@ inline void initLookAndFeelDefaults(juce::LookAndFeel &lf) {
 
 namespace LNF {
 
-inline void applyLookAndFeelState(juce::Component &targetComp, juce::ValueTree &ownerTree,
-								  const juce::Identifier &customFlagId, const juce::Identifier &colourOnId,
-								  const juce::Identifier &colourOffId, int juceColourOnId, int juceColourOffId) {
-	const bool useUserSettings = (bool)ownerTree.getProperty(customFlagId);
+inline void applyLookAndFeelState(juce::Component& targetComp,
+                                      juce::ValueTree& ownerTree,
+                                      const juce::Identifier& customFlagId,
+                                      const juce::Identifier& colourOnId,
+                                      const juce::Identifier& colourOffId,
+                                      int juceColourOnId,
+                                      int juceColourOffId)
+    {
+        const bool useUserSettings = (bool)ownerTree.getProperty(customFlagId);
 
-	const String backupOnKey = colourOnId.toString() + "_UserBackup";
-	const String backupOffKey = colourOffId.toString() + "_UserBackup";
+        const String backupOnKey  = colourOnId.toString() + "_UserBackup";
+        const String backupOffKey = colourOffId.toString() + "_UserBackup";
 
-	if (useUserSettings) {
-		// Restore explicit user settings if backed up
-		if (ownerTree.hasProperty(backupOnKey)) {
-			ownerTree.setProperty(colourOnId, ownerTree.getProperty(backupOnKey), nullptr);
-			ownerTree.setProperty(colourOffId, ownerTree.getProperty(backupOffKey), nullptr);
-			ownerTree.removeProperty(backupOnKey, nullptr);
-			ownerTree.removeProperty(backupOffKey, nullptr);
-		}
+        if (useUserSettings) {
+            // --- USE MY COLOURS MODE ---
+            
+            // 1. Restore user's explicit colors if they were backed up
+            if (ownerTree.hasProperty(backupOnKey)) {
+                const var savedOn  = ownerTree.getProperty(backupOnKey);
+                const var savedOff = ownerTree.getProperty(backupOffKey);
 
-		juce::Colour colOn = VAR2COLOUR(ownerTree.getProperty(colourOnId));
-		juce::Colour colOff = VAR2COLOUR(ownerTree.getProperty(colourOffId));
+                ownerTree.removeProperty(backupOnKey, nullptr);
+                ownerTree.removeProperty(backupOffKey, nullptr);
 
-		targetComp.setColour(juceColourOnId, colOn);
-		targetComp.setColour(juceColourOffId, colOff);
-	} else {
-		// Backup user settings before switching to LNF values
-		if (!ownerTree.hasProperty(backupOnKey)) {
-			ownerTree.setProperty(backupOnKey, ownerTree.getProperty(colourOnId), nullptr);
-			ownerTree.setProperty(backupOffKey, ownerTree.getProperty(colourOffId), nullptr);
-		}
+                ownerTree.setProperty(colourOnId, savedOn, nullptr);
+                ownerTree.setProperty(colourOffId, savedOff, nullptr);
+            }
 
-		// Remove local overrides so component uses active LookAndFeel theme
-		targetComp.removeColour(juceColourOnId);
-		targetComp.removeColour(juceColourOffId);
+            // 2. Fetch the colors from tree and force local override on JUCE component
+            juce::Colour colOn  = VAR2COLOUR(ownerTree.getProperty(colourOnId));
+            juce::Colour colOff = VAR2COLOUR(ownerTree.getProperty(colourOffId));
 
-		// Sync property inspector display to current active LNF colors
-		juce::LookAndFeel &currentLNF = targetComp.getLookAndFeel();
-		juce::Colour lnfOn = currentLNF.findColour(juceColourOnId);
-		juce::Colour lnfOff = currentLNF.findColour(juceColourOffId);
+            targetComp.setColour(juceColourOnId, colOn);
+            targetComp.setColour(juceColourOffId, colOff);
+        } else {
+            // --- USE LNF MODE ---
 
-		ownerTree.setProperty(colourOnId, lnfOn.toDisplayString(true), nullptr);
-		ownerTree.setProperty(colourOffId, lnfOff.toDisplayString(true), nullptr);
-	}
+            // 1. Backup explicit user settings BEFORE stripping overrides
+            if (!ownerTree.hasProperty(backupOnKey) && ownerTree.hasProperty(colourOnId)) {
+                ownerTree.setProperty(backupOnKey, ownerTree.getProperty(colourOnId), nullptr);
+                ownerTree.setProperty(backupOffKey, ownerTree.getProperty(colourOffId), nullptr);
+            }
 
-	targetComp.repaint();
-}
+            // 2. Remove local overrides so JUCE falls back to active LookAndFeel palette
+            targetComp.removeColour(juceColourOnId);
+            targetComp.removeColour(juceColourOffId);
+
+            // 3. Query the LIVE active LookAndFeel (now updated) for display
+            juce::LookAndFeel& currentLNF = targetComp.getLookAndFeel();
+            juce::Colour lnfOn  = currentLNF.findColour(juceColourOnId);
+            juce::Colour lnfOff = currentLNF.findColour(juceColourOffId);
+
+            // 4. Update tree properties silently without triggering valueTreePropertyChanged recursions
+            ownerTree.setProperty(colourOnId, lnfOn.toDisplayString(true), nullptr);
+            ownerTree.setProperty(colourOffId, lnfOff.toDisplayString(true), nullptr);
+        }
+
+        targetComp.repaint();
+    }
+/************************************************************************************** */
+
+    /**
+     * Reads current active LNF colors from targetComp, overwrites the user's 
+     * custom property tree values with them, clears any backup keys, and sets 
+     * the custom flag to TRUE ("Use User Settings").
+     */
+    inline void freezeLnfToUserSettings(juce::Component& targetComp,
+                                        juce::ValueTree& ownerTree,
+                                        const juce::Identifier& customFlagId,
+                                        const juce::Identifier& colourOnId,
+                                        const juce::Identifier& colourOffId,
+                                        int juceColourOnId,
+                                        int juceColourOffId)
+    {
+        // 1. Fetch current live LNF theme colors
+        juce::LookAndFeel& currentLNF = targetComp.getLookAndFeel();
+        juce::Colour lnfOn  = currentLNF.findColour(juceColourOnId);
+        juce::Colour lnfOff = currentLNF.findColour(juceColourOffId);
+
+        // 2. Overwrite the user's custom tree properties with these values
+        ownerTree.setProperty(colourOnId, lnfOn.toDisplayString(true), nullptr);
+        ownerTree.setProperty(colourOffId, lnfOff.toDisplayString(true), nullptr);
+
+        // 3. Remove stale backups since user explicitly wants this as their new baseline
+        const String backupOnKey  = colourOnId.toString() + "_UserBackup";
+        const String backupOffKey = colourOffId.toString() + "_UserBackup";
+        ownerTree.removeProperty(backupOnKey, nullptr);
+        ownerTree.removeProperty(backupOffKey, nullptr);
+
+        // 4. Set mode to "Use User Settings" so the user can now edit them directly
+        ownerTree.setProperty(customFlagId, true, nullptr);
+
+        // 5. Apply the newly frozen colors explicitly
+        targetComp.setColour(juceColourOnId, lnfOn);
+        targetComp.setColour(juceColourOffId, lnfOff);
+        targetComp.repaint();
+    }
+
 
 } // namespace LNF
 

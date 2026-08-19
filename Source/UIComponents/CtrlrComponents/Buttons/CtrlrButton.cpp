@@ -56,7 +56,11 @@ CtrlrButton::CtrlrButton(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrBu
 	setProperty(Ids::uiButtonConnectedTop, false);
 	setProperty(Ids::uiButtonConnectedBottom, false);
 
-	setProperty(Ids::uiButtonLookAndFeelIsCustom, false);
+	setProperty(Ids::uiButtonLookAndFeel, "Default");
+	setProperty(Ids::uiButtonLookAndFeelIsCustom, false); // Default to Use LNF Settings
+	// DO NOT set explicit uiButtonColourOn / uiButtonColourOff properties here!
+	// Instead, call updateComponentColors() at the end of constructor:
+	updateComponentColors();
 }
 
 CtrlrButton::~CtrlrButton() {
@@ -73,8 +77,7 @@ CtrlrButton::~CtrlrButton() {
 }
 
 //==============================================================================
-void CtrlrButton::paint(Graphics &g) {
-}
+void CtrlrButton::paint(Graphics &g) {}
 
 void CtrlrButton::resized() {
 	ctrlrButton->setBounds(getUsableRect());
@@ -181,30 +184,20 @@ void CtrlrButton::buttonContentChanged() {
 void CtrlrButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
 	DBG("!!!! valueTreePropertyChanged: " + property.toString());
 
+	if (ctrlrButton == nullptr) {
+		CtrlrComponent::valueTreePropertyChanged(treeWhosePropertyHasChanged, property);
+		return;
+	}
+
 	if (property == Ids::uiButtonContent) {
 		buttonContentChanged();
 	} else if (property == Ids::uiButtonLookAndFeel || property == Ids::uiPanelLookAndFeel) {
-		bool isCustom = getProperty(Ids::uiButtonLookAndFeelIsCustom);
 		String localStyle = getProperty(Ids::uiButtonLookAndFeel).toString();
 
-		// If the component has a custom local theme assigned and this update was triggered
-		// by a panel-wide cascade, ignore it to preserve the local theme!
-		if (isCustom && (property == Ids::uiPanelLookAndFeel || localStyle == "Default")) {
-			return;
-		}
+		// 1. Unlink existing LookAndFeel
+		ctrlrButton->setLookAndFeel(nullptr);
 
-		// 1. Unlink JUCE from the current style BEFORE modifying/destroying customLF
-		if (ctrlrButton != nullptr) {
-			ctrlrButton->setLookAndFeel(nullptr);
-
-			// Strip explicit color overrides so the LookAndFeel palette takes full control
-			ctrlrButton->removeColour(TextButton::buttonColourId);
-			ctrlrButton->removeColour(TextButton::buttonOnColourId);
-			ctrlrButton->removeColour(TextButton::textColourOffId);
-			ctrlrButton->removeColour(TextButton::textColourOnId);
-		}
-
-		// 2. Handle theme resolution
+		// 2. Assign the new LookAndFeel theme FIRST
 		if (localStyle.isEmpty() || localStyle == "Default") {
 			customLF.reset();
 
@@ -214,65 +207,66 @@ void CtrlrButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChange
 			}
 
 			applyCentralLookAndFeel(ctrlrButton.get(), effectiveStyle);
-			setProperty(Ids::uiButtonLookAndFeelIsCustom, false);
 		} else {
-			// Lock local override flag so future panel theme changes don't overwrite this selection
-			setProperty(Ids::uiButtonLookAndFeelIsCustom, true);
-
 			customLF = std::move(CtrlrButton::getLookAndFeelFromComponentProperty(localStyle));
 
-			if (customLF != nullptr && ctrlrButton != nullptr) {
+			if (customLF != nullptr) {
 				ctrlrButton->setLookAndFeel(customLF.get());
 			}
 		}
 
-		if (ctrlrButton != nullptr) {
-			ctrlrButton->lookAndFeelChanged();
+		// 3. Notify JUCE that LookAndFeel changed
+		ctrlrButton->lookAndFeelChanged();
+
+		// 4. NOW apply/clear color overrides against the NEW LookAndFeel
+		updateComponentColors();
+
+		ctrlrButton->repaint();
+		repaint();
+	} else if (property == Ids::uiButtonLookAndFeelIsCustom) {
+		// Mode toggle changed ("Use My Colours" <-> "Use LNF")
+		updateComponentColors();
+	} else if (property == Ids::uiButtonColourOff || property == Ids::uiButtonColourOn) {
+		const String backupKey = property.toString() + "_UserBackup";
+
+		// Check if this property change was caused by LNF sync vs manual user picker edit
+		const bool isCustomMode = (bool)getProperty(Ids::uiButtonLookAndFeelIsCustom);
+
+		if (isCustomMode) {
+			// User explicitly edited a color picker while in "Use My Colours" mode
+			ctrlrButton->setColour(TextButton::buttonOnColourId, VAR2COLOUR(getProperty(Ids::uiButtonColourOn)));
+			ctrlrButton->setColour(TextButton::buttonColourId, VAR2COLOUR(getProperty(Ids::uiButtonColourOff)));
 			ctrlrButton->repaint();
 		}
 
-		repaint();
-	} else if (property == Ids::uiButtonColourOff || property == Ids::uiButtonColourOn ||
-			   property == Ids::uiButtonTextColourOff || property == Ids::uiButtonTextColourOn) {
-		// If the button is using a custom LookAndFeel theme, ignore raw color property updates coming from the panel
-		if ((bool)getProperty(Ids::uiButtonLookAndFeelIsCustom) &&
-			getProperty(Ids::uiButtonLookAndFeel).toString() != "Default") {
-			return;
-		}
+	} else if (property == Ids::uiButtonLookAndFeelIsCustom) {
+		// Toggled between "Use User Settings" and "Use LNF Settings"
+		updateComponentColors();
+	} else if (property == Ids::uiButtonColourOff || property == Ids::uiButtonColourOn) {
+		const bool isCustomMode = (bool)getProperty(Ids::uiButtonLookAndFeelIsCustom);
 
-		if (ctrlrButton != nullptr) {
-			ctrlrButton->setColour(TextButton::buttonColourId, VAR2COLOUR(getProperty(Ids::uiButtonColourOff)));
-			ctrlrButton->setColour(TextButton::buttonOnColourId, VAR2COLOUR(getProperty(Ids::uiButtonColourOn)));
-			ctrlrButton->setColour(TextButton::textColourOffId, VAR2COLOUR(getProperty(Ids::uiButtonTextColourOff)));
-			ctrlrButton->setColour(TextButton::textColourOnId, VAR2COLOUR(getProperty(Ids::uiButtonTextColourOn)));
+		if (!isCustomMode) {
+			// Scenario 3: User edited a color picker while in "LNF Settings" mode!
+			// Freeze current LNF colors into user properties and switch mode to "Use User Settings"
+			LNF::freezeLnfToUserSettings(*ctrlrButton, getComponentTree(), Ids::uiButtonLookAndFeelIsCustom,
+										 Ids::uiButtonColourOn, Ids::uiButtonColourOff,
+										 juce::TextButton::buttonOnColourId, juce::TextButton::buttonColourId);
+		} else {
+			// User explicitly edited color in Custom Mode
+			updateComponentColors();
 		}
-	} else if (property == Ids::uiButtonTrueValue) {
-		owner.setProperty(Ids::modulatorMax, getProperty(property));
-	} else if (property == Ids::uiButtonFalseValue) {
-		owner.setProperty(Ids::modulatorMin, getProperty(property));
-	} else if (property == Ids::uiButtonRepeat) {
-		if ((bool)getProperty(property) == false) {
-			stopTimer();
-		}
-	} else if (property == Ids::uiButtonColourOff || property == Ids::uiButtonColourOn ||
-			   property == Ids::uiButtonTextColourOff || property == Ids::uiButtonTextColourOn) {
-		ctrlrButton->setColour(TextButton::buttonColourId, VAR2COLOUR(getProperty(Ids::uiButtonColourOff)));
-		ctrlrButton->setColour(TextButton::buttonOnColourId, VAR2COLOUR(getProperty(Ids::uiButtonColourOn)));
+	} else if (property == Ids::uiButtonTextColourOff || property == Ids::uiButtonTextColourOn) {
 		ctrlrButton->setColour(TextButton::textColourOffId, VAR2COLOUR(getProperty(Ids::uiButtonTextColourOff)));
 		ctrlrButton->setColour(TextButton::textColourOnId, VAR2COLOUR(getProperty(Ids::uiButtonTextColourOn)));
-		setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
-	}
-
-	else if (property == Ids::uiButtonIsToggle) {
+	} else if (property == Ids::uiButtonIsToggle) {
 		ctrlrButton->setClickingTogglesState((bool)getProperty(property));
-	}
-
-	else if (property == Ids::uiButtonConnectedLeft || property == Ids::uiButtonConnectedRight ||
-			 property == Ids::uiButtonConnectedTop || property == Ids::uiButtonConnectedBottom) {
+	} else if (property == Ids::uiButtonConnectedLeft || property == Ids::uiButtonConnectedRight ||
+			   property == Ids::uiButtonConnectedTop || property == Ids::uiButtonConnectedBottom) {
 		const int leftFlag = (bool)getProperty(Ids::uiButtonConnectedLeft) ? Button::ConnectedOnLeft : 0;
 		const int rightFlag = (bool)getProperty(Ids::uiButtonConnectedRight) ? Button::ConnectedOnRight : 0;
 		const int topFlag = (bool)getProperty(Ids::uiButtonConnectedTop) ? Button::ConnectedOnTop : 0;
 		const int bottomFlag = (bool)getProperty(Ids::uiButtonConnectedBottom) ? Button::ConnectedOnBottom : 0;
+
 		ctrlrButton->setConnectedEdges(leftFlag | rightFlag | topFlag | bottomFlag);
 	} else if (property == Ids::uiButtonTrueValue) {
 		owner.setProperty(Ids::modulatorMax, getProperty(property));
@@ -286,9 +280,18 @@ void CtrlrButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChange
 		CtrlrComponent::valueTreePropertyChanged(treeWhosePropertyHasChanged, property);
 	}
 
-	if (restoreStateInProgress == false) {
+	if (!restoreStateInProgress) {
 		resized();
 	}
+}
+
+void CtrlrButton::updateComponentColors() {
+	if (ctrlrButton == nullptr)
+		return;
+
+	LNF::applyLookAndFeelState(*ctrlrButton, getComponentTree(), Ids::uiButtonLookAndFeelIsCustom,
+							   Ids::uiButtonColourOn, Ids::uiButtonColourOff, juce::TextButton::buttonOnColourId,
+							   juce::TextButton::buttonColourId);
 }
 
 void CtrlrButton::click() {
