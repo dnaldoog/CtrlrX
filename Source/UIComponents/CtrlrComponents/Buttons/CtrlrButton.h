@@ -35,7 +35,10 @@ class CtrlrButton : public CtrlrComponent, public Button::Listener, public Timer
 		void resetLookAndFeelOverrides();
 		void updatePropertiesPanel();
 		void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr) {}
-		CtrlrValueMap &getValueMap() { return (*valueMap); }
+		void updateComponentColors();
+		CtrlrValueMap &getValueMap() {
+			return (*valueMap);
+		}
 
 		static void wrapForLua(lua_State *L);
 		//[/UserMethods]

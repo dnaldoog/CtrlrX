@@ -235,7 +235,7 @@
   <id name="componentBubbleHelpTrigger" text="Bubble Help: Trigger Condition" type="VarNumeric" defaults="Mouse Down=0,Mouse Hover=1,Ctrl + Click=2,Shift + Click=3,Alt + Click=4" />
   <id name="componentBubbleHelpDismissOnExit" text="Bubble Help: Dismiss on mouse exit" type="Bool" />
   <id name="componentLookAndFeel"                 text="Component LookAndFeel type" type="VarText" defaults="@componentlookandfeel" />
-  <id name="componentLookAndFeelIsCustom"         text="Component LookAndFeel is customized" type="Bool" defaults="Custom Colours/Default Colours" />
+  <id name="componentLookAndFeelIsCustom"         text="Component LookAndFeel is customized" type="Bool" defaults="Use my colours/Use LNF colours" />
   
   <id name="componentValueDecimalPlaces"          text="Decimal places to print if using floating point numbers" type="Numeric" min="0" max="10" int="1" />
   
@@ -252,7 +252,7 @@
   <!-- Slider -->
   
   <id name="uiSliderLookAndFeel"            text="LookAndFeel type" type="VarText" defaults="@componentlookandfeel" />
-  <id name="uiSliderLookAndFeelIsCustom"    text="LookAndFeel is customized" type="Bool" defaults="Custom Colours/Default Colours" />
+  <id name="uiSliderLookAndFeelIsCustom"    text="LookAndFeel is customized" type="Bool" defaults="Use my colours/Use LNF colours" />
   <id name="uiSliderStyle" 					text="Slider style"     type="VarNumeric" defaults="LinearHorizontal,LinearVertical,LinearBar,LinearBarVertical,Rotary,RotaryHorizontalDrag,RotaryVerticalDrag,RotaryHorizontalVerticalDrag,IncDecButtons,TwoValueHorizontal,TwoValueVertical,ThreeValueHorizontal,ThreeValueVertical"/>
   
   <!-- Updated v5.6.32 -->
@@ -435,7 +435,7 @@
 
   <!-- Text button -->
   <id name="uiButtonLookAndFeel"        text="Button LookAndFeel type" type="VarText" defaults="@componentlookandfeel" />
-  <id name="uiButtonLookAndFeelIsCustom" text="Button LookAndFeel is customized" type="Bool" defaults="Custom Colours/Default Colours" />
+  <id name="uiButtonLookAndFeelIsCustom" text="Button LookAndFeel is customized" type="Bool" defaults="Use my colours/Use LNF colours" />
   <id name="uiButtonTextColourOff"      text="Button text colour [off]" type="Colour"/>
   <id name="uiButtonTextColourOn"       text="Button text colour [on]" type="Colour"/>
   <id name="uiButtonTextFont"           text="Button text font" type="Font"/>

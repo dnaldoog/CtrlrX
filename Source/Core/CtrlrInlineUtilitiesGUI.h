@@ -504,4 +504,61 @@ inline void initLookAndFeelDefaults(juce::LookAndFeel &lf) {
 				 juce::Colours::black); // placeholder lf.setColour(CtrlrPropertyComponent::labelTextColourId)
 }
 } // namespace gui
+
+namespace LNF {
+
+inline void applyLookAndFeelState(juce::Component &targetComp, juce::ValueTree &ownerTree,
+								  const juce::Identifier &customFlagId, const juce::Identifier &colourOnId,
+								  const juce::Identifier &colourOffId, int juceColourOnId, int juceColourOffId) {
+	const bool useUserSettings = (bool)ownerTree.getProperty(customFlagId);
+
+	if (useUserSettings) {
+		// --- USER MODE ---
+		// Apply the user's custom choice stored in the ValueTree directly to the JUCE component
+		if (ownerTree.hasProperty(colourOnId)) {
+			juce::Colour colOn = VAR2COLOUR(ownerTree.getProperty(colourOnId));
+			targetComp.setColour(juceColourOnId, colOn);
+		}
+
+		if (ownerTree.hasProperty(colourOffId)) {
+			juce::Colour colOff = VAR2COLOUR(ownerTree.getProperty(colourOffId));
+			targetComp.setColour(juceColourOffId, colOff);
+		}
+	} else {
+		// --- LNF MODE ---
+		// Strip component-level colour overrides so JUCE automatically falls back
+		// to whatever LookAndFeel skin is currently active in the app.
+		// DO NOT overwrite ownerTree properties here!
+		targetComp.removeColour(juceColourOnId);
+		targetComp.removeColour(juceColourOffId);
+	}
+
+	targetComp.repaint();
+}
+
+/**
+ * Call this ONLY when the user clicks "Freeze LNF to User Settings"
+ * or when initializing default properties on a brand-new component.
+ */
+inline void freezeLnfToUserSettings(juce::Component &targetComp, juce::ValueTree &ownerTree,
+									const juce::Identifier &customFlagId, const juce::Identifier &colourOnId,
+									const juce::Identifier &colourOffId, int juceColourOnId, int juceColourOffId) {
+	juce::LookAndFeel &currentLNF = targetComp.getLookAndFeel();
+	juce::Colour lnfOn = currentLNF.findColour(juceColourOnId);
+	juce::Colour lnfOff = currentLNF.findColour(juceColourOffId);
+
+	// Save current LNF colors into the tree as user's starting point
+	ownerTree.setProperty(colourOnId, lnfOn.toDisplayString(true), nullptr);
+	ownerTree.setProperty(colourOffId, lnfOff.toDisplayString(true), nullptr);
+
+	// Turn ON custom mode
+	ownerTree.setProperty(customFlagId, true, nullptr);
+
+	targetComp.setColour(juceColourOnId, lnfOn);
+	targetComp.setColour(juceColourOffId, lnfOff);
+	targetComp.repaint();
+}
+
+} // namespace LNF
+
 #endif

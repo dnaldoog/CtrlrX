@@ -605,6 +605,7 @@ int CtrlrComponent::getComponentRadioGroupId() {
 }
 
 void CtrlrComponent::panelEditModeChanged(const bool isInEditMode) {
+	DBG("!*!*!*! Edit mode changed");
 	if (isInEditMode) {
 		if ((bool)getProperty(Ids::componentVisibility) == false) {
 			setVisible(true);

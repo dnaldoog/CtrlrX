@@ -339,7 +339,6 @@ CtrlrPanelCanvas *CtrlrPanelEditor::getCanvas() {
 
 	return (0);
 }
-
 void CtrlrPanelEditor::editModeChanged() {
 	const bool editMode = getProperty(Ids::uiPanelEditMode);
 	owner.editModeChanged(editMode);
@@ -351,8 +350,22 @@ void CtrlrPanelEditor::editModeChanged() {
 		ctrlrPanelProperties->setVisible(true);
 		getCanvas()->getResizableBorder()->setVisible(true);
 
+		// Notify the property inspector so it can display the current selection.
+		// CtrlrPanelProperties does not expose a setTargetObject() method.
+		if (getSelection() != nullptr)
+			getSelection()->sendChangeMessage();
+
 		if ((bool)getProperty(Ids::uiPanelDisableCombosOnEdit))
 			setAllCombosDisabled();
+		// if (editMode) {
+		// 	layoutManager.setItemLayout(0, -0.001, -1.0, getProperty(Ids::uiPanelViewPortSize, -0.7));
+		// 	layoutManager.setItemLayout(2, -0.001, -1.0, getProperty(Ids::uiPanelPropertiesSize, -0.3));
+		// 	spacerComponent->setVisible(true);
+		// 	ctrlrPanelProperties->setVisible(true);
+		// 	getCanvas()->getResizableBorder()->setVisible(true);
+
+		// 	if ((bool)getProperty(Ids::uiPanelDisableCombosOnEdit))
+		// 		setAllCombosDisabled();
 	} else {
 		if (getSelection())
 			getSelection()->deselectAll();

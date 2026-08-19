@@ -507,6 +507,10 @@ void CtrlrPanel::bootstrapPanel(const bool setInitialProgram) {
 
 CtrlrPanelEditor *CtrlrPanel::getEditor(const bool createNewEditorIfNeeded) {
 	// 1. Never instantiate a new editor if shutting down!
+	if (!createNewEditorIfNeeded) {
+        return ctrlrPanelEditor.get();
+    }
+	
 	if (owner.isShuttingDown()) {
 		return ctrlrPanelEditor.get();
 	}
