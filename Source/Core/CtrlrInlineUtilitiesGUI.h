@@ -512,10 +512,14 @@ struct ColourMapping {
 		int juceColourId;
 };
 
-// --- Overload 1: Flexible version using initializer list (Great for Sliders with many colors) ---
+// --- Overload 1: Core Logic ---
 inline void applyLookAndFeelState(juce::Component &targetComp, juce::ValueTree &ownerTree,
 								  const juce::Identifier &customFlagId, std::initializer_list<ColourMapping> mappings) {
-	const bool useUserSettings = !(bool)ownerTree.getProperty(customFlagId);
+	// If missing from tree, default to 0 (User Mode)
+	const var propVal = ownerTree.getProperty(customFlagId, 0);
+
+	// Matches XML: 0 (or false) = "Using my colours", 1 (or true) = "Using LookAndFeel colours"
+	const bool useUserSettings = !(propVal.equals(var(0)) || propVal.equals(var(false)));
 
 	if (useUserSettings) {
 		// --- USER MODE ---
@@ -530,13 +534,15 @@ inline void applyLookAndFeelState(juce::Component &targetComp, juce::ValueTree &
 		for (const auto &map : mappings) {
 			targetComp.removeColour(map.juceColourId);
 		}
+
+		// Tells JUCE to flush cached colors and fetch from active LNF theme
 		targetComp.sendLookAndFeelChange();
 	}
 
 	targetComp.repaint();
 }
 
-// --- Overload 2: Positional 11-argument version (Fixes CtrlrButton compilation error) ---
+// --- Overload 2: Positional Parameter Version ---
 inline void applyLookAndFeelState(juce::Component &targetComp, juce::ValueTree &ownerTree,
 								  const juce::Identifier &customFlagId, const juce::Identifier &bgColourOnId,
 								  const juce::Identifier &bgColourOffId, int juceBgColourOnId, int juceBgColourOffId,
