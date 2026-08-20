@@ -291,7 +291,6 @@ void CtrlrPanelCanvas::wrapForLua(lua_State *L) {
 				  .def("getLayerFromArray", &CtrlrPanelCanvas::getLayerFromArray)
 				  .def("getNumLayers", &CtrlrPanelCanvas::getNumLayers)
 				  .def("getLayerName", &CtrlrPanelCanvas::getLayerName)
-				  .def("setFileDropHandler", &CtrlrPanelCanvas::setFileDropHandler)
 				  .def("setCustomLookAndFeel",
 					   (void (CtrlrPanelCanvas::*)(const luabind::object &))&CtrlrPanelCanvas::setCustomLookAndFeel)];
 }
@@ -1277,7 +1276,6 @@ void CtrlrPanel::wrapForLua(lua_State *L) {
 			 .def("getFixedSlider", &CtrlrPanel::getFixedSliderComponent)
 			 .def("getImageSliderComponent", &CtrlrPanel::getImageSliderComponent)
 			 .def("getImageSlider", &CtrlrPanel::getImageSliderComponent)
-			 //.def("setFileDropHandler", &CtrlrPanelCanvas::setFileDropHandler)
 			 .def("getModulatorWithProperty",
 				  (CtrlrModulator * (CtrlrPanel::*)(const String &, const int)) & CtrlrPanel::getModulatorWithProperty)
 			 .def("getModulatorWithProperty", (CtrlrModulator * (CtrlrPanel::*)(const String &, const String &)) &
