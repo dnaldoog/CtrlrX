@@ -1,6 +1,5 @@
 #include "CtrlrSlider.h"
 #include "../CtrlrComponentTypeManager.h"
-// #include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrLuaManager.h"
 #include "CtrlrModulator/CtrlrModulator.h"
 #include "CtrlrPanel/CtrlrPanelComponentProperties.h"
@@ -46,7 +45,6 @@ CtrlrSlider::CtrlrSlider(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrSl
 	setProperty(Ids::uiSliderMouseWheelInterval, 1);
 
 	setProperty(Ids::uiSliderLookAndFeel, "Default");
-	setProperty(Ids::uiSliderLookAndFeelIsCustom, false);
 
 	setProperty(Ids::uiSliderPopupBubble, false);
 	setProperty(Ids::uiSliderStyle, "RotaryVerticalDrag");
@@ -175,76 +173,19 @@ const Array<Font> CtrlrSlider::getFontList() {
 }
 void CtrlrSlider::updateComponentColors() {
 	LNF::applyLookAndFeelState(ctrlrSlider, getComponentTree(), Ids::uiSliderLookAndFeelIsCustom,
-							   {
-								   {Ids::uiSliderValueTextColour, juce::Slider::textBoxTextColourId},
-								   {Ids::uiSliderValueBgColour, juce::Slider::textBoxBackgroundColourId},
-								   {Ids::uiSliderRotaryOutlineColour, juce::Slider::rotarySliderOutlineColourId},
-								   {Ids::uiSliderRotaryFillColour, juce::Slider::rotarySliderFillColourId},
-								   {Ids::uiSliderThumbColour, juce::Slider::thumbColourId},
-								   {Ids::uiSliderValueHighlightColour, juce::Slider::textBoxHighlightColourId},
-								   {Ids::uiSliderValueOutlineColour, juce::Slider::textBoxOutlineColourId},
-								   {Ids::uiSliderTrackColour, juce::Slider::trackColourId},
-								   // Inc/Dec button colors (Note: Check if these are custom Ctrlr LNF IDs
-								   // or standard JUCE ones like juce::TextButton::buttonColourId)
-								   //{ Ids::uiSliderIncDecButtonColour,    juce::Slider::incDecButtonColourId },
-								   //{ Ids::uiSliderIncDecTextColour,      juce::Slider::incDecButtonTextColourId }
-							   });
+							   {{Ids::uiSliderValueTextColour, juce::Slider::textBoxTextColourId},
+								{Ids::uiSliderValueBgColour, juce::Slider::textBoxBackgroundColourId},
+								{Ids::uiSliderRotaryOutlineColour, juce::Slider::rotarySliderOutlineColourId},
+								{Ids::uiSliderRotaryFillColour, juce::Slider::rotarySliderFillColourId},
+								{Ids::uiSliderThumbColour, juce::Slider::thumbColourId},
+								{Ids::uiSliderValueHighlightColour, juce::Slider::textBoxHighlightColourId},
+								{Ids::uiSliderValueOutlineColour, juce::Slider::textBoxOutlineColourId},
+								{Ids::uiSliderTrackColour, juce::Slider::trackColourId}});
 
+	// Force internal sub-components (like Label text boxes inside the Slider) to update theme colors
+	ctrlrSlider.lookAndFeelChanged();
 	ctrlrSlider.repaint();
 }
-/*
-
-DECLARE_ID(uiSliderLookAndFeel);
-DECLARE_ID(uiSliderLookAndFeelIsCustom);
-DECLARE_ID(uiSliderStyle);
-DECLARE_ID(uiSliderMin);
-DECLARE_ID(uiSliderMax);
-DECLARE_ID(uiSliderInterval);
-DECLARE_ID(uiSliderValueSuffix);
-DECLARE_ID(uiSliderValuePosition);
-DECLARE_ID(uiSliderValueHeight);
-DECLARE_ID(uiSliderValueWidth);
-DECLARE_ID(uiSliderTrackCornerSize);
-DECLARE_ID(uiSliderThumbCornerSize);
-DECLARE_ID(uiSliderThumbWidth);
-DECLARE_ID(uiSliderThumbHeight);
-DECLARE_ID(uiSliderThumbFlatOnLeft);
-DECLARE_ID(uiSliderThumbFlatOnRight);
-DECLARE_ID(uiSliderThumbFlatOnTop);
-DECLARE_ID(uiSliderThumbFlatOnBottom);
-DECLARE_ID(uiSliderValueTextColour);
-DECLARE_ID(uiSliderValueBgColour);
-DECLARE_ID(uiSliderRotaryOutlineColour);
-DECLARE_ID(uiSliderRotaryFillColour);
-DECLARE_ID(uiSliderThumbColour);
-DECLARE_ID(uiSliderValueHighlightColour);
-DECLARE_ID(uiSliderValueOutlineColour);
-DECLARE_ID(uiSliderTrackColour);
-DECLARE_ID(uiSliderIncDecButtonColour);
-DECLARE_ID(uiSliderIncDecTextColour);
-DECLARE_ID(uiSliderValueFont);
-DECLARE_ID(uiSliderValueTextJustification);
-DECLARE_ID(uiSliderVelocityMode);
-DECLARE_ID(uiSliderVelocityModeKeyTrigger);
-DECLARE_ID(uiSliderVelocitySensitivity);
-DECLARE_ID(uiSliderVelocityThreshold);
-DECLARE_ID(uiSliderVelocityOffset);
-DECLARE_ID(uiSliderSpringMode);
-DECLARE_ID(uiSliderSpringValue);
-DECLARE_ID(uiSliderMouseWheelInterval);
-DECLARE_ID(uiSliderPopupBubble);
-DECLARE_ID(uiSliderPopupBubbleFont);
-DECLARE_ID(uiSliderPopupBubbleBgColour);
-DECLARE_ID(uiSliderPopupBubbleFgColour);
-DECLARE_ID(uiSliderPopupBubbleOutlineColour);
-DECLARE_ID(uiSliderPopupBubblePlacement);
-DECLARE_ID(uiSliderDoubleClickEnabled);
-DECLARE_ID(uiSliderDoubleClickValue);
-DECLARE_ID(uiSliderDecimalPlaces);
-DECLARE_ID(uiSliderSetNotificationOnlyOnRelease);
-
-*/
-
 void CtrlrSlider::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
 	DBG("Value Tree Property Changed ::" << property);
 
@@ -260,57 +201,54 @@ void CtrlrSlider::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChange
 	} else if (property == Ids::uiSliderPopupBubble) {
 		ctrlrSlider.setPopupDisplayEnabled((bool)getProperty(property), (bool)getProperty(property),
 										   owner.getOwnerPanel().getEditor());
+	} else if (property == Ids::uiSliderLookAndFeelIsCustom) {
+		updateComponentColors();
 	} else if (property == Ids::uiPanelLookAndFeel || property == Ids::uiSliderLookAndFeel) {
-		// Catch when either the component setting OR the panel's central theme updates
-		String activeLnF = getProperty(Ids::uiSliderLookAndFeel).toString();
 
-		// If component is set to "Default", pull theme from the parent panel editor
+		String activeLnF = getProperty(Ids::uiSliderLookAndFeel).toString();
+		DBG("!!! Look and feel changed for uiSlider : " << activeLnF);
+		// 1. Fallback to panel editor's global theme if component is set to "Default"
 		if (activeLnF.isEmpty() || activeLnF == "Default") {
 			if (auto *editor = owner.getOwnerPanel().getEditor()) {
 				activeLnF = editor->getProperty(Ids::uiPanelLookAndFeel).toString();
 			}
 		}
 
-		// Apply theme colors and trigger JUCE redrawing
+		// 2. Clear any local raw pointer assignment so JUCE doesn't crash on dangling pointers
+		ctrlrSlider.setLookAndFeel(nullptr);
+
+		// 3. Let Ctrlr's central engine apply the persistent theme instance
 		applyCentralLookAndFeel(&ctrlrSlider, activeLnF);
-		ctrlrSlider.lookAndFeelChanged();
+
+		// 4. Update component colors (strips local hexes if in LNF mode, or re-applies if in User Mode)
+		updateComponentColors();
+
+		// 5. Force JUCE to invalidate its color cache and redraw
+		ctrlrSlider.sendLookAndFeelChange();
 		ctrlrSlider.repaint();
 		repaint();
-	} else if (property == Ids::uiSliderRotaryFillColour) {
-		ctrlrSlider.setColour(Slider::rotarySliderFillColourId, VAR2COLOUR(getProperty(Ids::uiSliderRotaryFillColour)));
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
-	} else if (property == Ids::uiSliderRotaryOutlineColour) {
-		ctrlrSlider.setColour(Slider::rotarySliderOutlineColourId,
-							  VAR2COLOUR(getProperty(Ids::uiSliderRotaryOutlineColour)));
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
-	} else if (property == Ids::uiSliderTrackColour) {
-		ctrlrSlider.setColour(Slider::trackColourId, VAR2COLOUR(getProperty(Ids::uiSliderTrackColour)));
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
-	} else if (property == Ids::uiSliderThumbColour) {
-		ctrlrSlider.setColour(Slider::thumbColourId, VAR2COLOUR(getProperty(Ids::uiSliderThumbColour)));
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
-	} else if (property == Ids::uiSliderValueTextColour) {
-		const Colour c = VAR2COLOUR(getProperty(Ids::uiSliderValueTextColour));
-		ctrlrSlider.setColour(Slider::textBoxTextColourId, c);
 
-		// Sync internal Label children so value text changes visually right away
-		for (int i = 0; i < ctrlrSlider.getNumChildComponents(); ++i) {
-			if (auto *lb = dynamic_cast<Label *>(ctrlrSlider.getChildComponent(i))) {
-				lb->setColour(Label::textColourId, c);
-				lb->setColour(Label::textWhenEditingColourId, c);
-			}
+	} else if (property == Ids::uiSliderRotaryFillColour || property == Ids::uiSliderRotaryOutlineColour ||
+			   property == Ids::uiSliderTrackColour || property == Ids::uiSliderThumbColour ||
+			   property == Ids::uiSliderValueHighlightColour || property == Ids::uiSliderValueBgColour ||
+			   property == Ids::uiSliderValueOutlineColour) {
+		if (!restoreStateInProgress) {
+			// Set custom mode to active (0 = User Mode)
+			setProperty(Ids::uiSliderLookAndFeelIsCustom, 0);
 		}
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
-	} else if (property == Ids::uiSliderValueHighlightColour) {
-		ctrlrSlider.setColour(Slider::textBoxHighlightColourId,
-							  VAR2COLOUR(getProperty(Ids::uiSliderValueHighlightColour)));
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
-	} else if (property == Ids::uiSliderValueBgColour) {
-		ctrlrSlider.setColour(Slider::textBoxBackgroundColourId, VAR2COLOUR(getProperty(Ids::uiSliderValueBgColour)));
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
-	} else if (property == Ids::uiSliderValueOutlineColour) {
-		ctrlrSlider.setColour(Slider::textBoxOutlineColourId, VAR2COLOUR(getProperty(Ids::uiSliderValueOutlineColour)));
-		setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
+		updateComponentColors();
+	} else if (property == Ids::uiSliderValueTextColour) {
+		if (!restoreStateInProgress) {
+			const Colour c = VAR2COLOUR(getProperty(Ids::uiSliderValueTextColour));
+			for (int i = 0; i < ctrlrSlider.getNumChildComponents(); ++i) {
+				if (auto *lb = dynamic_cast<Label *>(ctrlrSlider.getChildComponent(i))) {
+					lb->setColour(Label::textColourId, c);
+					lb->setColour(Label::textWhenEditingColourId, c);
+				}
+			}
+			setProperty(Ids::uiSliderLookAndFeelIsCustom, 0);
+		}
+		updateComponentColors();
 	}
 	// --- SLIDER RANGE & METRICS ---
 	else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin) {
@@ -368,16 +306,25 @@ const String CtrlrSlider::getComponentText() {
 }
 
 void CtrlrSlider::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel) {
-	if (customLookAndFeel == nullptr) {
+	if (customLookAndFeel != nullptr) {
+		// Apply the active custom LookAndFeel instance directly to the child slider
+		ctrlrSlider.setLookAndFeel(customLookAndFeel);
+	} else {
+		// Fall back to null so it inherits from parent, or fetch panel central theme
 		ctrlrSlider.setLookAndFeel(nullptr);
 
-		const String panelLnF = getProperty(Ids::uiSliderLookAndFeel);
+		String panelLnF = getProperty(Ids::uiSliderLookAndFeel).toString();
+		if (panelLnF.isEmpty() || panelLnF == "Default") {
+			if (auto *editor = owner.getOwnerPanel().getEditor()) {
+				panelLnF = editor->getProperty(Ids::uiPanelLookAndFeel).toString();
+			}
+		}
 		applyCentralLookAndFeel(&ctrlrSlider, panelLnF);
 	}
 
-	else {
-		ctrlrSlider.setLookAndFeel(nullptr);
-	}
+	// Force JUCE to invalidate cached draw calls and repaint
+	ctrlrSlider.sendLookAndFeelChange();
+	ctrlrSlider.repaint();
 }
 
 const String CtrlrSlider::getCurrentLF() {
