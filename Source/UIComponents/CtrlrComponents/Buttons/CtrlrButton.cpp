@@ -17,7 +17,6 @@ CtrlrButton::CtrlrButton(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrBu
 	ctrlrButton->addListener(this);
 
 	setProperty(Ids::uiButtonLookAndFeel, "Default");
-	setProperty(Ids::uiButtonLookAndFeelIsCustom, false);
 
 	ctrlrButton->addMouseListener(this, true);
 	ctrlrButton->setBufferedToImage(true);
@@ -57,9 +56,8 @@ CtrlrButton::CtrlrButton(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrBu
 	setProperty(Ids::uiButtonConnectedBottom, false);
 
 	setProperty(Ids::uiButtonLookAndFeel, "Default");
-	setProperty(Ids::uiButtonLookAndFeelIsCustom, false); // Default to Use LNF Settings
-	// DO NOT set explicit uiButtonColourOn / uiButtonColourOff properties here!
-	// Instead, call updateComponentColors() at the end of constructor:
+	setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Default to User Settings
+
 	updateComponentColors();
 }
 

@@ -510,7 +510,7 @@ namespace LNF {
 inline void applyLookAndFeelState(juce::Component &targetComp, juce::ValueTree &ownerTree,
 								  const juce::Identifier &customFlagId, const juce::Identifier &colourOnId,
 								  const juce::Identifier &colourOffId, int juceColourOnId, int juceColourOffId) {
-	const bool useUserSettings = (bool)ownerTree.getProperty(customFlagId);
+	const bool useUserSettings = !(bool)ownerTree.getProperty(customFlagId);
 
 	if (useUserSettings) {
 		// --- USER MODE ---

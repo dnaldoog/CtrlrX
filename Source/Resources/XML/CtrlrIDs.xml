@@ -435,7 +435,7 @@
 
   <!-- Text button -->
   <id name="uiButtonLookAndFeel"        text="Button LookAndFeel type" type="VarText" defaults="@componentlookandfeel" />
-  <id name="uiButtonLookAndFeelIsCustom" text="Button LookAndFeel is customized" type="Bool" defaults="Use my colours/Use LNF colours" />
+  <id name="uiButtonLookAndFeelIsCustom" text="Button LookAndFeel mode"  type="Bool"  defaults="Using my theme/Using LookAndFeel theme" Default="0" />
   <id name="uiButtonTextColourOff"      text="Button text colour [off]" type="Colour"/>
   <id name="uiButtonTextColourOn"       text="Button text colour [on]" type="Colour"/>
   <id name="uiButtonTextFont"           text="Button text font" type="Font"/>
