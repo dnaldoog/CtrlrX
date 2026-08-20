@@ -1100,6 +1100,9 @@ void CtrlrPanelCanvas::fileDragExit(const StringArray &files) {
 		}
 	}
 }
+void CtrlrPanelCanvas::setFileDropHandler(const String &methodName) {
+	setProperty(Ids::luaPanelFileDragDropHandler, methodName);
+}
 
 void CtrlrPanelCanvas::filesDropped(const StringArray &files, int x, int y) {
 	StringArray unhandledFiles;

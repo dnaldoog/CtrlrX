@@ -507,33 +507,46 @@ inline void initLookAndFeelDefaults(juce::LookAndFeel &lf) {
 
 namespace LNF {
 
+struct ColourMapping {
+		juce::Identifier treePropId;
+		int juceColourId;
+};
+
+// --- Overload 1: Flexible version using initializer list (Great for Sliders with many colors) ---
 inline void applyLookAndFeelState(juce::Component &targetComp, juce::ValueTree &ownerTree,
-								  const juce::Identifier &customFlagId, const juce::Identifier &colourOnId,
-								  const juce::Identifier &colourOffId, int juceColourOnId, int juceColourOffId) {
+								  const juce::Identifier &customFlagId, std::initializer_list<ColourMapping> mappings) {
 	const bool useUserSettings = !(bool)ownerTree.getProperty(customFlagId);
 
 	if (useUserSettings) {
 		// --- USER MODE ---
-		// Apply the user's custom choice stored in the ValueTree directly to the JUCE component
-		if (ownerTree.hasProperty(colourOnId)) {
-			juce::Colour colOn = VAR2COLOUR(ownerTree.getProperty(colourOnId));
-			targetComp.setColour(juceColourOnId, colOn);
-		}
-
-		if (ownerTree.hasProperty(colourOffId)) {
-			juce::Colour colOff = VAR2COLOUR(ownerTree.getProperty(colourOffId));
-			targetComp.setColour(juceColourOffId, colOff);
+		for (const auto &map : mappings) {
+			if (ownerTree.hasProperty(map.treePropId)) {
+				juce::Colour col = VAR2COLOUR(ownerTree.getProperty(map.treePropId));
+				targetComp.setColour(map.juceColourId, col);
+			}
 		}
 	} else {
 		// --- LNF MODE ---
-		// Strip component-level colour overrides so JUCE automatically falls back
-		// to whatever LookAndFeel skin is currently active in the app.
-		// DO NOT overwrite ownerTree properties here!
-		targetComp.removeColour(juceColourOnId);
-		targetComp.removeColour(juceColourOffId);
+		for (const auto &map : mappings) {
+			targetComp.removeColour(map.juceColourId);
+		}
+		targetComp.sendLookAndFeelChange();
 	}
 
 	targetComp.repaint();
+}
+
+// --- Overload 2: Positional 11-argument version (Fixes CtrlrButton compilation error) ---
+inline void applyLookAndFeelState(juce::Component &targetComp, juce::ValueTree &ownerTree,
+								  const juce::Identifier &customFlagId, const juce::Identifier &bgColourOnId,
+								  const juce::Identifier &bgColourOffId, int juceBgColourOnId, int juceBgColourOffId,
+								  const juce::Identifier &textColourOnId, const juce::Identifier &textColourOffId,
+								  int juceTextColourOnId, int juceTextColourOffId) {
+	applyLookAndFeelState(targetComp, ownerTree, customFlagId,
+						  {{bgColourOnId, juceBgColourOnId},
+						   {bgColourOffId, juceBgColourOffId},
+						   {textColourOnId, juceTextColourOnId},
+						   {textColourOffId, juceTextColourOffId}});
 }
 
 /**

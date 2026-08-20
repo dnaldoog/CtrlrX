@@ -1,5 +1,6 @@
 #include "CtrlrSlider.h"
 #include "../CtrlrComponentTypeManager.h"
+// #include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrLuaManager.h"
 #include "CtrlrModulator/CtrlrModulator.h"
 #include "CtrlrPanel/CtrlrPanelComponentProperties.h"
@@ -102,7 +103,7 @@ CtrlrSlider::CtrlrSlider(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrSl
 	setProperty(Ids::uiSliderValueBgColour, "0x00ffffff");
 	setProperty(Ids::uiSliderValueOutlineColour, "0x00ffffff");
 
-	setProperty(Ids::uiSliderLookAndFeelIsCustom, false);
+	setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
 
 	// 4. Attach listener LAST so initial property assignments do not trigger false valueTreePropertyChanged events
 	componentTree.addListener(this);
@@ -172,6 +173,77 @@ const Array<Font> CtrlrSlider::getFontList() {
 	}
 	return (ret);
 }
+void CtrlrSlider::updateComponentColors() {
+	LNF::applyLookAndFeelState(ctrlrSlider, getComponentTree(), Ids::uiSliderLookAndFeelIsCustom,
+							   {
+								   {Ids::uiSliderValueTextColour, juce::Slider::textBoxTextColourId},
+								   {Ids::uiSliderValueBgColour, juce::Slider::textBoxBackgroundColourId},
+								   {Ids::uiSliderRotaryOutlineColour, juce::Slider::rotarySliderOutlineColourId},
+								   {Ids::uiSliderRotaryFillColour, juce::Slider::rotarySliderFillColourId},
+								   {Ids::uiSliderThumbColour, juce::Slider::thumbColourId},
+								   {Ids::uiSliderValueHighlightColour, juce::Slider::textBoxHighlightColourId},
+								   {Ids::uiSliderValueOutlineColour, juce::Slider::textBoxOutlineColourId},
+								   {Ids::uiSliderTrackColour, juce::Slider::trackColourId},
+								   // Inc/Dec button colors (Note: Check if these are custom Ctrlr LNF IDs
+								   // or standard JUCE ones like juce::TextButton::buttonColourId)
+								   //{ Ids::uiSliderIncDecButtonColour,    juce::Slider::incDecButtonColourId },
+								   //{ Ids::uiSliderIncDecTextColour,      juce::Slider::incDecButtonTextColourId }
+							   });
+
+	ctrlrSlider.repaint();
+}
+/*
+
+DECLARE_ID(uiSliderLookAndFeel);
+DECLARE_ID(uiSliderLookAndFeelIsCustom);
+DECLARE_ID(uiSliderStyle);
+DECLARE_ID(uiSliderMin);
+DECLARE_ID(uiSliderMax);
+DECLARE_ID(uiSliderInterval);
+DECLARE_ID(uiSliderValueSuffix);
+DECLARE_ID(uiSliderValuePosition);
+DECLARE_ID(uiSliderValueHeight);
+DECLARE_ID(uiSliderValueWidth);
+DECLARE_ID(uiSliderTrackCornerSize);
+DECLARE_ID(uiSliderThumbCornerSize);
+DECLARE_ID(uiSliderThumbWidth);
+DECLARE_ID(uiSliderThumbHeight);
+DECLARE_ID(uiSliderThumbFlatOnLeft);
+DECLARE_ID(uiSliderThumbFlatOnRight);
+DECLARE_ID(uiSliderThumbFlatOnTop);
+DECLARE_ID(uiSliderThumbFlatOnBottom);
+DECLARE_ID(uiSliderValueTextColour);
+DECLARE_ID(uiSliderValueBgColour);
+DECLARE_ID(uiSliderRotaryOutlineColour);
+DECLARE_ID(uiSliderRotaryFillColour);
+DECLARE_ID(uiSliderThumbColour);
+DECLARE_ID(uiSliderValueHighlightColour);
+DECLARE_ID(uiSliderValueOutlineColour);
+DECLARE_ID(uiSliderTrackColour);
+DECLARE_ID(uiSliderIncDecButtonColour);
+DECLARE_ID(uiSliderIncDecTextColour);
+DECLARE_ID(uiSliderValueFont);
+DECLARE_ID(uiSliderValueTextJustification);
+DECLARE_ID(uiSliderVelocityMode);
+DECLARE_ID(uiSliderVelocityModeKeyTrigger);
+DECLARE_ID(uiSliderVelocitySensitivity);
+DECLARE_ID(uiSliderVelocityThreshold);
+DECLARE_ID(uiSliderVelocityOffset);
+DECLARE_ID(uiSliderSpringMode);
+DECLARE_ID(uiSliderSpringValue);
+DECLARE_ID(uiSliderMouseWheelInterval);
+DECLARE_ID(uiSliderPopupBubble);
+DECLARE_ID(uiSliderPopupBubbleFont);
+DECLARE_ID(uiSliderPopupBubbleBgColour);
+DECLARE_ID(uiSliderPopupBubbleFgColour);
+DECLARE_ID(uiSliderPopupBubbleOutlineColour);
+DECLARE_ID(uiSliderPopupBubblePlacement);
+DECLARE_ID(uiSliderDoubleClickEnabled);
+DECLARE_ID(uiSliderDoubleClickValue);
+DECLARE_ID(uiSliderDecimalPlaces);
+DECLARE_ID(uiSliderSetNotificationOnlyOnRelease);
+
+*/
 
 void CtrlrSlider::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
 	DBG("Value Tree Property Changed ::" << property);

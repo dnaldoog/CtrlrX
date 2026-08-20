@@ -204,6 +204,7 @@ class CtrlrPanelCanvas : public CtrlrChildWindowContent,
 		void itemDragExit(const SourceDetails &dragSourceDetails);
 		void itemDragEnter(const SourceDetails &dragSourceDetails);
 		void replaceComponent(CtrlrModulator &modulator, const String &targetComponentType);
+		void setFileDropHandler(const String &methodName);
 		PopupMenu getLayerMenu();
 		void setCustomLookAndFeel(const luabind::object &customLookAndFeel);
 		void setCustomLookAndFeel(LookAndFeelBase *customLookAndFeel);

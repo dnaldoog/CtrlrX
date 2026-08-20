@@ -35,10 +35,11 @@ class CtrlrSlider : public CtrlrComponent, public SettableTooltipClient, public 
     getLookAndFeelFromComponentProperty(const String& lookAndFeelComponentProperty);
     void resetLookAndFeelOverrides();
     void updatePropertiesPanel();
+	void updateComponentColors();
 
-    JUCE_LEAK_DETECTOR(CtrlrSlider)
+	JUCE_LEAK_DETECTOR(CtrlrSlider)
 
-  private:
+private:
     // CtrlrSliderLookAndFeel_V2 lf;
     // CtrlrSliderLookAndFeel_V2 lfV2;
     // CtrlrSliderLookAndFeel_V3 lfV3;
