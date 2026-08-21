@@ -18,11 +18,17 @@ void CtrlrPanelCanvas::handleRightClickOnMultiSelection(const MouseEvent &e) {
 	m.addSeparator();
 	m.addSubMenu("Replace with", componentSubMenu, true);
 
-	PU::showMenuAsyncSafe(m, this, [this, e, componentSubMenu](int ret) {
+	juce::Rectangle<int> clickArea(e.getScreenX(), e.getScreenY(), 1, 1);
+	juce::Component::SafePointer<CtrlrPanelCanvas> safeThis(this);
+
+	PU::showMenuAsyncAtArea(m, clickArea, [safeThis, e, componentSubMenu](int ret) {
+		if (safeThis == nullptr)
+			return;
+
 		if (ret >= 2048 && ret < 4096) {
-			handleEditMenu(ret, e);
+			safeThis->handleEditMenu(ret, e);
 		} else if (ret >= 4096 && ret < 8192) {
-			handleLayerMenu(ret, e);
+			safeThis->handleLayerMenu(ret, e);
 		} else if (ret < 1024 && ret > 10) {
 			String replaceWithComponentName;
 			PopupMenu::MenuItemIterator iterator((const PopupMenu &)componentSubMenu);
@@ -40,14 +46,12 @@ void CtrlrPanelCanvas::handleRightClickOnMultiSelection(const MouseEvent &e) {
 
 			if (!replaceWithComponentName.isEmpty()) {
 				Array<CtrlrComponent *> items;
-
-				// 2. Change 'owner' to 'owner()' here to call the class function!
-				if (owner.getSelection())
-					items = owner.getSelection()->getItemArray();
+				if (safeThis->owner.getSelection())
+					items = safeThis->owner.getSelection()->getItemArray();
 
 				for (int i = 0; i < items.size(); i++) {
 					if (items[i]) {
-						replaceComponent(items[i]->getOwner(), replaceWithComponentName);
+						safeThis->replaceComponent(items[i]->getOwner(), replaceWithComponentName);
 					}
 				}
 			}
@@ -58,43 +62,48 @@ void CtrlrPanelCanvas::handleRightClickOnMultiSelection(const MouseEvent &e) {
 void CtrlrPanelCanvas::handleRightClickOnCanvas(const MouseEvent &e) {
 	const bool em = getOwner().getProperty(Ids::uiPanelEditMode);
 
-	PopupMenu m;
+	PopupMenu menu;
 
 	if (em) {
-		m = CtrlrComponentTypeManager::getComponentMenu(em);
-		getEditMenu(m);
+		menu = CtrlrComponentTypeManager::getComponentMenu(em);
+		getEditMenu(menu);
 	} else {
-		m = getRightClickComponentMenu(e);
+		menu = getRightClickComponentMenu(e);
 	}
 
-	// Target mouse screen coordinates precisely
 	juce::Rectangle<int> clickArea(e.getScreenX(), e.getScreenY(), 1, 1);
-	const int ret = PU::showMenuSyncAtArea(m, clickArea);
+	juce::Component::SafePointer<CtrlrPanelCanvas> safeThis(this);
 
-	if (ret >= 4096) {
-		handleComponentPopupMenu(e, ret);
-	} else if (ret == 1024) {
-		getOwner().setProperty(Ids::uiPanelEditMode, !em);
-		getOwner().editModeChanged();
-	} else if (ret < 1024 && ret > 10) {
-		PopupMenu::MenuItemIterator iterator((const PopupMenu &)m);
-		while (iterator.next()) {
-			if (iterator.getItem().subMenu) {
-				PopupMenu::MenuItemIterator iterator2(*iterator.getItem().subMenu);
-				while (iterator2.next()) {
-					if (iterator2.getItem().itemID == ret) {
-						addNewComponent(iterator2.getItem().text, e.getPosition(), e.eventComponent);
+	// Fix: capture menu by reference in the lambda capture list
+	PU::showMenuAsyncAtArea(menu, clickArea, [safeThis, e, em, menu](int ret) {
+		if (safeThis == nullptr)
+			return; // canvas was closed/destroyed before the user picked anything
+
+		if (ret >= 4096) {
+			safeThis->handleComponentPopupMenu(e, ret);
+		} else if (ret == 1024) {
+			safeThis->getOwner().setProperty(Ids::uiPanelEditMode, !em);
+			safeThis->getOwner().editModeChanged();
+		} else if (ret < 1024 && ret > 10) {
+			// Fix: do not dereference menu, just use it directly
+			PopupMenu::MenuItemIterator iterator(menu);
+			while (iterator.next()) {
+				if (iterator.getItem().subMenu) {
+					PopupMenu::MenuItemIterator iterator2(*iterator.getItem().subMenu);
+					while (iterator2.next()) {
+						if (iterator2.getItem().itemID == ret) {
+							safeThis->addNewComponent(iterator2.getItem().text, e.getPosition(), e.eventComponent);
+						}
 					}
 				}
 			}
+		} else if (ret >= 2048 && ret < 4096) {
+			safeThis->handleEditMenu(ret, e);
 		}
-	} else if (ret >= 2048 && ret < 4096) {
-		handleEditMenu(ret, e);
-	}
+	});
 }
 
-void CtrlrPanelCanvas::handleRightClickOnTabs(const MouseEvent &e) {
-}
+void CtrlrPanelCanvas::handleRightClickOnTabs(const MouseEvent &e) {}
 
 void CtrlrPanelCanvas::handleRightClickOnComponent(const MouseEvent &e) {
 	CtrlrComponent *c = findEventComponent(e);
@@ -128,46 +137,52 @@ void CtrlrPanelCanvas::handleRightClickOnComponent(const MouseEvent &e) {
 		m.addItem(1027, "Copy with children");
 	}
 
-	// Pass exact mouse screen coordinates to PU::showMenuSyncAtArea
 	juce::Rectangle<int> clickArea(e.getScreenX(), e.getScreenY(), 1, 1);
-	const int ret = PU::showMenuSyncAtArea(m, clickArea);
+	juce::Component::SafePointer<CtrlrPanelCanvas> safeThis(this);
+	juce::Component::SafePointer<CtrlrComponent> safeC(c);
 
-	if (ret == 512) {
-		exportSelectedComponents();
-	} else if (ret == 513) {
-		c->setProperty(Ids::componentIsLocked, !c->getProperty(Ids::componentIsLocked));
-	} else if (ret == 1024) {
-		c->toBack();
-		c->setProperty(Ids::componentSentBack, true);
-	} else if (ret == 1025) {
-		c->toFront(false);
-		c->setProperty(Ids::componentSentBack, false);
-	} else if (ret == 1026) {
-		deleteWithChildren(c);
-	} else if (ret == 1027) {
-		copyWithChildren(c);
-	} else if (ret >= 2048 && ret < 4096) {
-		handleEditMenu(ret, e);
-	} else if (ret >= 4096 && ret < 8192) {
-		handleLayerMenu(ret, e);
-	} else if (ret < 1024 && ret > 10) {
-		PopupMenu::MenuItemIterator iterator((const PopupMenu &)componentSubMenu);
-		while (iterator.next()) {
-			if (iterator.getItem().subMenu) {
-				PopupMenu::MenuItemIterator iterator2(*iterator.getItem().subMenu);
-				while (iterator2.next()) {
-					if (iterator2.getItem().itemID == ret) {
-						if (c) {
-							replaceComponent(c->getOwner(), iterator2.getItem().text);
-							return;
+	PU::showMenuAsyncAtArea(m, clickArea, [safeThis, safeC, e, m, componentSubMenu](int ret) {
+		if (safeThis == nullptr || safeC == nullptr)
+			return;
+
+		CtrlrComponent *c = safeC.getComponent();
+
+		if (ret == 512) {
+			safeThis->exportSelectedComponents();
+		} else if (ret == 513) {
+			c->setProperty(Ids::componentIsLocked, !c->getProperty(Ids::componentIsLocked));
+		} else if (ret == 1024) {
+			c->toBack();
+			c->setProperty(Ids::componentSentBack, true);
+		} else if (ret == 1025) {
+			c->toFront(false);
+			c->setProperty(Ids::componentSentBack, false);
+		} else if (ret == 1026) {
+			safeThis->deleteWithChildren(c);
+		} else if (ret == 1027) {
+			safeThis->copyWithChildren(c);
+		} else if (ret >= 2048 && ret < 4096) {
+			safeThis->handleEditMenu(ret, e);
+		} else if (ret >= 4096 && ret < 8192) {
+			safeThis->handleLayerMenu(ret, e);
+		} else if (ret < 1024 && ret > 10) {
+			PopupMenu::MenuItemIterator iterator((const PopupMenu &)componentSubMenu);
+			while (iterator.next()) {
+				if (iterator.getItem().subMenu) {
+					PopupMenu::MenuItemIterator iterator2(*iterator.getItem().subMenu);
+					while (iterator2.next()) {
+						if (iterator2.getItem().itemID == ret) {
+							if (c) {
+								safeThis->replaceComponent(c->getOwner(), iterator2.getItem().text);
+								return;
+							}
 						}
 					}
 				}
 			}
 		}
-	}
+	});
 }
-
 void CtrlrPanelCanvas::replaceComponent(CtrlrModulator &modulator, const String &targetComponentType) {
 	CtrlrComponent *oldComponent = modulator.getComponent();
 	CtrlrComponent *newComponent = nullptr;
@@ -363,6 +378,7 @@ void CtrlrPanelCanvas::copyWithChildren(CtrlrComponent *c) {
 
 		Array<CtrlrComponent *> children = c->getOwnedChildren();
 		for (int i = 0; i < children.size(); i++) {
+			// Fix for C2819, C2232, E3364: Use '.' instead of '->' when calling a method on a reference
 			ValueTree childTreeCopy = children[i]->getOwner().getObjectTree().createCopy();
 			childTreeCopy.removeProperty(Ids::vstIndex, nullptr);
 			groupTree.addChild(childTreeCopy, -1, 0);

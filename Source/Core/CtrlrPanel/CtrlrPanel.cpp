@@ -1,6 +1,7 @@
 #include "CtrlrPanel.h"
 #include "CtrlrComponents/CtrlrComponent.h"
 #include "CtrlrComponents/CtrlrComponentTypeManager.h"
+#include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrLog.h"
 #include "CtrlrLuaManager.h"
 #include "CtrlrMIDI/CtrlrMIDISettingsDialog.h"
@@ -56,8 +57,11 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 	ctrlrLuaManager = new CtrlrLuaManager(*this);
 	// ctrlrLuaManager = std::make_unique<CtrlrLuaManager>(*this);
 	lfV1 = std::make_unique<juce::LookAndFeel_V1>();
+	gui::initLookAndFeelDefaults(*lfV1);
 	lfV2 = std::make_unique<juce::LookAndFeel_V2>();
+	gui::initLookAndFeelDefaults(*lfV2);
 	lfV3 = std::make_unique<juce::LookAndFeel_V3>();
+	gui::initLookAndFeelDefaults(*lfV3);
 	if ((bool)getCtrlrManagerOwner().getProperty(Ids::ctrlrLuaDisabled) == false) {
 		ctrlrLuaManager->getMethodManager().setDebug((bool)owner.getProperty(Ids::ctrlrLuaDebug));
 	}
@@ -234,59 +238,52 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 	midiMessageCollector.reset(SAMPLERATE);
 	midiInputThread.startThread(juce::Thread::Priority::normal);
 	midiControllerInputThread.startThread(juce::Thread::Priority::normal);
-
 }
 
-CtrlrPanel::~CtrlrPanel()
-{
-    DBG("(G) CtrlrPanel DTOR");
+CtrlrPanel::~CtrlrPanel() {
+	DBG("(G) CtrlrPanel DTOR");
 
-    // 1. FORCE STOP THREADS FIRST
-    // Must complete before any panel members or memory structures are invalidated
-    midiInputThread.signalThreadShouldExit();
-    midiInputThread.stopThread(3000);
+	// 1. FORCE STOP THREADS FIRST
+	// Must complete before any panel members or memory structures are invalidated
+	midiInputThread.signalThreadShouldExit();
+	midiInputThread.stopThread(3000);
 
-    midiControllerInputThread.signalThreadShouldExit();
-    midiControllerInputThread.stopThread(3000);
+	midiControllerInputThread.signalThreadShouldExit();
+	midiControllerInputThread.stopThread(3000);
 
+	if (ctrlrPanelEditor != nullptr) {
+		ctrlrPanelEditor.release();
+	}
 
-	if (ctrlrPanelEditor != nullptr)
-    {
-        ctrlrPanelEditor.release(); 
-    }
+	// 2. UNHOOK EXTERNAL LISTENERS
+	// Prevent incoming changes/events from triggering callbacks into this panel
+	owner.removeChangeListener(this);
+	panelTree.removeListener(this);
 
-	
-    // 2. UNHOOK EXTERNAL LISTENERS
-    // Prevent incoming changes/events from triggering callbacks into this panel
-    owner.removeChangeListener(this);
-    panelTree.removeListener(this);
+	// 3. DESTROY UI EDITOR FIRST
+	// Synchronously destroys CtrlrPanelEditor, unbinding all UI child controls,
+	// properties views, and notifiers while Modulators are still 100% alive
+	ctrlrPanelEditor.reset();
 
-    // 3. DESTROY UI EDITOR FIRST
-    // Synchronously destroys CtrlrPanelEditor, unbinding all UI child controls, 
-    // properties views, and notifiers while Modulators are still 100% alive
-    ctrlrPanelEditor.reset(); 
+	// 4. CLEAR MODULATORS
+	// Synchronously runs ~CtrlrModulator and ~CtrlrSlider now
+	ctrlrModulators.clear();
+	DBG("(G) >> modulators cleared OK");
 
-    // 4. CLEAR MODULATORS
-    // Synchronously runs ~CtrlrModulator and ~CtrlrSlider now
-    ctrlrModulators.clear();
-    DBG("(G) >> modulators cleared OK");
+	// 5. CLEAN UP SUBSYSTEMS (LUA MANAGER)
+	if (ctrlrLuaManager != nullptr) {
+		deleteAndZero(ctrlrLuaManager); // Or ctrlrLuaManager.reset() if std::unique_ptr
+	}
 
-    // 5. CLEAN UP SUBSYSTEMS (LUA MANAGER)
-    if (ctrlrLuaManager != nullptr)
-    {
-        deleteAndZero(ctrlrLuaManager); // Or ctrlrLuaManager.reset() if std::unique_ptr
-    }
+	// 6. TREE DETACHMENT
+	// Avoid tree mutations during application shutdown to prevent use-after-free
+	if (!owner.isShuttingDown()) {
+		owner.getManagerTree().removeChild(panelTree, nullptr);
+	}
 
-    // 6. TREE DETACHMENT
-    // Avoid tree mutations during application shutdown to prevent use-after-free
-    if (!owner.isShuttingDown())
-    {
-        owner.getManagerTree().removeChild(panelTree, nullptr);
-    }
-
-    // 7. CLEAR MASTER REFERENCE LAST
-    // Keep 'this' valid via WeakReference until all child teardowns complete
-    masterReference.clear();
+	// 7. CLEAR MASTER REFERENCE LAST
+	// Keep 'this' valid via WeakReference until all child teardowns complete
+	masterReference.clear();
 }
 /*
 CtrlrPanel::~CtrlrPanel() {
@@ -294,73 +291,73 @@ CtrlrPanel::~CtrlrPanel() {
 DBG("(G) CtrlrPanel DTOR");
 }
 
-CtrlrPanel::~CtrlrPanel() 
+CtrlrPanel::~CtrlrPanel()
 {
-    DBG("!!! TRACKING: CtrlrPanel Destructor has been entered !!!");
+	DBG("!!! TRACKING: CtrlrPanel Destructor has been entered !!!");
 
-    // =========================================================================
-    // 1. STANDARD JUCE THREAD SHUTDOWN
-    // =========================================================================
-    // Step A: Signal both threads that they ought to exit
-    midiInputThread.signalThreadShouldExit();
-    midiControllerInputThread.signalThreadShouldExit();
+	// =========================================================================
+	// 1. STANDARD JUCE THREAD SHUTDOWN
+	// =========================================================================
+	// Step A: Signal both threads that they ought to exit
+	midiInputThread.signalThreadShouldExit();
+	midiControllerInputThread.signalThreadShouldExit();
 
-    // Step B: Wake them up if they are sleeping inside juce::Thread::wait()
-    midiInputThread.notify();
-    midiControllerInputThread.notify();
+	// Step B: Wake them up if they are sleeping inside juce::Thread::wait()
+	midiInputThread.notify();
+	midiControllerInputThread.notify();
 
-    // Step C: Wait for them to actually exit their run() loops.
-    // Use a longer timeout (e.g. 3000ms) so slow debug builds don't hit the timeout.
-    midiInputThread.stopThread(3000);
-    midiControllerInputThread.stopThread(3000);
+	// Step C: Wait for them to actually exit their run() loops.
+	// Use a longer timeout (e.g. 3000ms) so slow debug builds don't hit the timeout.
+	midiInputThread.stopThread(3000);
+	midiControllerInputThread.stopThread(3000);
 
-    // =========================================================================
-    // 2. CLEAR LISTENERS & DETACH PANEL TREE
-    // =========================================================================
-    panelTree.removeListener(this);
-    owner.removeChangeListener(this);
+	// =========================================================================
+	// 2. CLEAR LISTENERS & DETACH PANEL TREE
+	// =========================================================================
+	panelTree.removeListener(this);
+	owner.removeChangeListener(this);
 
-    // =========================================================================
-    // 2. CLEAR LISTENERS & DETACH PANEL TREE SAFELY
-    // =========================================================================
-    panelTree.removeListener(this);
-    owner.removeChangeListener(this);
+	// =========================================================================
+	// 2. CLEAR LISTENERS & DETACH PANEL TREE SAFELY
+	// =========================================================================
+	panelTree.removeListener(this);
+	owner.removeChangeListener(this);
 
-    if (!owner.isShuttingDown()) {
-        juce::ValueTree managerTree = owner.getManagerTree();
-        if (managerTree.isValid() && managerTree.indexOf(panelTree) >= 0) {
-            managerTree.removeChild(panelTree, nullptr);
-        }
-    }
+	if (!owner.isShuttingDown()) {
+		juce::ValueTree managerTree = owner.getManagerTree();
+		if (managerTree.isValid() && managerTree.indexOf(panelTree) >= 0) {
+			managerTree.removeChild(panelTree, nullptr);
+		}
+	}
 
-    // =========================================================================
-    // 3. IMMEDIATE EDITOR & UI TEARDOWN
-    // =========================================================================
-    if (ctrlrPanelEditor != nullptr) {
-        ctrlrPanelEditor->setVisible(false);
-        ctrlrPanelEditor->setLookAndFeel(nullptr);
+	// =========================================================================
+	// 3. IMMEDIATE EDITOR & UI TEARDOWN
+	// =========================================================================
+	if (ctrlrPanelEditor != nullptr) {
+		ctrlrPanelEditor->setVisible(false);
+		ctrlrPanelEditor->setLookAndFeel(nullptr);
 
-        if (auto *parent = ctrlrPanelEditor->getParentComponent()) {
-            parent->removeChildComponent(ctrlrPanelEditor.get());
-        }
+		if (auto *parent = ctrlrPanelEditor->getParentComponent()) {
+			parent->removeChildComponent(ctrlrPanelEditor.get());
+		}
 
-        // Destroy editor cleanly
-        ctrlrPanelEditor.reset();
-    }
+		// Destroy editor cleanly
+		ctrlrPanelEditor.reset();
+	}
 
-    // Clear member LookAndFeel handles
-    lfV1 = nullptr;
-    lfV2 = nullptr;
-    lfV3 = nullptr;
+	// Clear member LookAndFeel handles
+	lfV1 = nullptr;
+	lfV2 = nullptr;
+	lfV3 = nullptr;
 
-    // =========================================================================
-    // 4. DESTROY MODULATORS & LUA
-    // =========================================================================
-    ctrlrModulators.clear(true);
-    deleteAndZero(ctrlrLuaManager);
+	// =========================================================================
+	// 4. DESTROY MODULATORS & LUA
+	// =========================================================================
+	ctrlrModulators.clear(true);
+	deleteAndZero(ctrlrLuaManager);
 
-    masterReference.clear();
-    panelTree.removeAllChildren(nullptr);
+	masterReference.clear();
+	panelTree.removeAllChildren(nullptr);
 }
 */
 
@@ -508,26 +505,26 @@ void CtrlrPanel::bootstrapPanel(const bool setInitialProgram) {
 	isBootstrapTimerActive = true;
 }
 
-CtrlrPanelEditor *CtrlrPanel::getEditor(const bool createNewEditorIfNeeded) 
-{
-    // 1. Never instantiate a new editor if shutting down!
-    if (owner.isShuttingDown())
-    {
+CtrlrPanelEditor *CtrlrPanel::getEditor(const bool createNewEditorIfNeeded) {
+	// 1. Never instantiate a new editor if shutting down!
+	if (!createNewEditorIfNeeded) {
         return ctrlrPanelEditor.get();
     }
+	
+	if (owner.isShuttingDown()) {
+		return ctrlrPanelEditor.get();
+	}
 
-    if (ctrlrPanelEditor == nullptr) 
-    {
-        if (createNewEditorIfNeeded) 
-        {
-            // std::make_unique handles memory ownership cleanly
-            ctrlrPanelEditor = std::make_unique<CtrlrPanelEditor>(*this, owner, getPanelWindowTitle());
-            
-            getPanelTree().addChild(ctrlrPanelEditor->getPanelEditorTree(), -1, nullptr);
-        }
-    }
+	if (ctrlrPanelEditor == nullptr) {
+		if (createNewEditorIfNeeded) {
+			// std::make_unique handles memory ownership cleanly
+			ctrlrPanelEditor = std::make_unique<CtrlrPanelEditor>(*this, owner, getPanelWindowTitle());
 
-    return ctrlrPanelEditor.get();
+			getPanelTree().addChild(ctrlrPanelEditor->getPanelEditorTree(), -1, nullptr);
+		}
+	}
+
+	return ctrlrPanelEditor.get();
 }
 
 void CtrlrPanel::setProperty(const Identifier &name, const var &newValue, const bool isUndoable) {
@@ -1145,13 +1142,21 @@ void CtrlrPanel::setProgram(ValueTree programTree, const bool sendSnapshotNow) {
 	}
 }
 
-int CtrlrPanel::getCurrentProgramNumber() { return (3); }
+int CtrlrPanel::getCurrentProgramNumber() {
+	return (3);
+}
 
-int CtrlrPanel::getCurrentBankNumber() { return (4); }
+int CtrlrPanel::getCurrentBankNumber() {
+	return (4);
+}
 
-int CtrlrPanel::getPanelIndex() { return (getProperty(Ids::panelIndex)); }
+int CtrlrPanel::getPanelIndex() {
+	return (getProperty(Ids::panelIndex));
+}
 
-bool CtrlrPanel::getEditMode() { return editMode; }
+bool CtrlrPanel::getEditMode() {
+	return editMode;
+}
 
 void CtrlrPanel::editModeChanged(const bool isInEditMode) {
 	midiInputThread.panelEditModeChanged(isInEditMode);
@@ -1192,7 +1197,9 @@ const String CtrlrPanel::getVersionString(const bool includeVersionName, const b
 	return (r);
 }
 
-int CtrlrPanel::cleanBogusProperties() { return (cleanBogusPropertiesFromChild(panelTree)); }
+int CtrlrPanel::cleanBogusProperties() {
+	return (cleanBogusPropertiesFromChild(panelTree));
+}
 
 int CtrlrPanel::cleanBogusPropertiesFromChild(ValueTree &treeToClean) {
 	int removedProperties = 0;
@@ -1230,7 +1237,9 @@ CtrlrPanelCanvas *CtrlrPanel::getCanvas() {
 	return (0);
 }
 
-CtrlrPanelWindowManager &CtrlrPanel::getWindowManager() { return (panelWindowManager); }
+CtrlrPanelWindowManager &CtrlrPanel::getWindowManager() {
+	return (panelWindowManager);
+}
 
 void CtrlrPanel::panelReceivedMidi(const MidiBuffer &buffer, const CtrlrMIDIDeviceType source) {
 	MidiBuffer::Iterator i(buffer);
@@ -1458,7 +1467,9 @@ bool CtrlrPanel::checkRadioGroup(CtrlrComponent *c, const bool componentToggleSt
 	return (true);
 }
 
-void CtrlrPanel::sendSnapshot() { snapshot.sendSnapshot(); }
+void CtrlrPanel::sendSnapshot() {
+	snapshot.sendSnapshot();
+}
 
 bool CtrlrPanel::getRestoreState() {
 	const ScopedReadLock lock(panelLock);
@@ -1582,9 +1593,13 @@ void CtrlrPanel::sendMidi(CtrlrMidiMessage &m, double millisecondCounterToStartA
 	}
 }
 
-bool CtrlrPanel::isMidiOutPaused() { return (getProperty(Ids::panelMidiPauseOut)); }
+bool CtrlrPanel::isMidiOutPaused() {
+	return (getProperty(Ids::panelMidiPauseOut));
+}
 
-bool CtrlrPanel::isMidiInPaused() { return (getProperty(Ids::panelMidiPauseIn)); }
+bool CtrlrPanel::isMidiInPaused() {
+	return (getProperty(Ids::panelMidiPauseIn));
+}
 
 void CtrlrPanel::luaSavePanel(const CtrlrPanelFileType fileType, const File &file) {
 	if (luaPanelSavedCbk && !luaPanelSavedCbk.wasObjectDeleted()) {
@@ -1699,7 +1714,9 @@ void CtrlrPanel::setInstanceProperties(const ValueTree &instanceState) {
 	}
 }
 
-void CtrlrPanel::initEmbeddedInstance() { bootstrapPanel(false); }
+void CtrlrPanel::initEmbeddedInstance() {
+	bootstrapPanel(false);
+}
 
 void CtrlrPanel::dumpComparatorTables() {
 	_INF("\n----------------- MIDI INPUT START");
@@ -1722,19 +1739,29 @@ void CtrlrPanel::removePanelResource(const int hashCode) {
 	setProperty(Ids::panelResources, globalsToString(panelResources));
 }
 
-bool CtrlrPanel::isPanelResource(const int hashCode) { return (panelResources.contains(hashCode)); }
+bool CtrlrPanel::isPanelResource(const int hashCode) {
+	return (panelResources.contains(hashCode));
+}
 
 const File CtrlrPanel::getPanelDirectory() {
 	return (owner.getCtrlrPropertiesDirectory().getChildFile(getProperty(Ids::panelUID).toString()));
 }
 
-CtrlrPanelResourceManager &CtrlrPanel::getResourceManager() { return (resourceManager); }
+CtrlrPanelResourceManager &CtrlrPanel::getResourceManager() {
+	return (resourceManager);
+}
 
-const String CtrlrPanel::getName() { return (getProperty(Ids::name)); }
+const String CtrlrPanel::getName() {
+	return (getProperty(Ids::name));
+}
 
-void CtrlrPanel::undo() { getUndoManager()->undo(); }
+void CtrlrPanel::undo() {
+	getUndoManager()->undo();
+}
 
-void CtrlrPanel::redo() { getUndoManager()->redo(); }
+void CtrlrPanel::redo() {
+	getUndoManager()->redo();
+}
 
 bool CtrlrPanel::isSchemeAtLeast(const int minimumLevel) {
 	if ((int)getProperty(Ids::panelScheme) >= minimumLevel) {
@@ -1761,11 +1788,15 @@ void CtrlrPanel::notify(const String &notification, CtrlrNotificationCallback *c
 	}
 }
 
-bool CtrlrPanel::getDialogStatus() { return ((bool)getProperty(Ids::panelShowDialogs)); }
+bool CtrlrPanel::getDialogStatus() {
+	return ((bool)getProperty(Ids::panelShowDialogs));
+}
 
 void CtrlrPanel::upgradeScheme() {}
 
-void CtrlrPanel::hashName(CtrlrModulator *modulator) { modulatorsByName.set(modulator->getName(), modulator); }
+void CtrlrPanel::hashName(CtrlrModulator *modulator) {
+	modulatorsByName.set(modulator->getName(), modulator);
+}
 
 void CtrlrPanel::modulatorNameChanged(CtrlrModulator *modulatorThatChanged, const String &newName) {
 	modulatorsByName.removeValue(modulatorThatChanged);
@@ -1818,11 +1849,17 @@ const Identifier CtrlrPanel::getMidiOptionIdentifier(const CtrlrPanelMidiOption 
 	return (Ids::null);
 }
 
-int CtrlrPanel::getMidiChannelForOwnedMidiMessages() { return (getProperty(Ids::panelMidiOutputChannelDevice)); }
+int CtrlrPanel::getMidiChannelForOwnedMidiMessages() {
+	return (getProperty(Ids::panelMidiOutputChannelDevice));
+}
 
-CtrlrSysexProcessor *CtrlrPanel::getSysexProcessor() { return (&ctrlrSysexProcessor); }
+CtrlrSysexProcessor *CtrlrPanel::getSysexProcessor() {
+	return (&ctrlrSysexProcessor);
+}
 
-Array<int, CriticalSection> &CtrlrPanel::getGlobalVariables() { return (globalVariables); }
+Array<int, CriticalSection> &CtrlrPanel::getGlobalVariables() {
+	return (globalVariables);
+}
 
 void CtrlrPanel::resourceImportFinished() {
 	owner.getFontManager().reloadImportedFonts(this);
@@ -1850,13 +1887,21 @@ const String CtrlrPanel::getPanelInstanceManufacturerID() {
 	return (getProperty(Ids::panelInstanceManufacturerID).toString());
 }
 
-const String CtrlrPanel::getPanelInstanceVersionString() { return (getVersionString(false, false, ".")); }
+const String CtrlrPanel::getPanelInstanceVersionString() {
+	return (getVersionString(false, false, "."));
+}
 
-int CtrlrPanel::getPanelInstanceVersionInt() { return (getVersionAsHexInteger(getVersionString(false, false, "."))); }
+int CtrlrPanel::getPanelInstanceVersionInt() {
+	return (getVersionAsHexInteger(getVersionString(false, false, ".")));
+}
 
-const String CtrlrPanel::getPanelInstanceName() { return (getProperty(Ids::name).toString()); }
+const String CtrlrPanel::getPanelInstanceName() {
+	return (getProperty(Ids::name).toString());
+}
 
-const String CtrlrPanel::getPanelInstanceManufacturer() { return (getProperty(Ids::panelAuthorName).toString()); }
+const String CtrlrPanel::getPanelInstanceManufacturer() {
+	return (getProperty(Ids::panelAuthorName).toString());
+}
 
 void CtrlrPanel::addMIDIControllerListener(CtrlrMIDIDevice::Listener *listenerToAdd) {}
 

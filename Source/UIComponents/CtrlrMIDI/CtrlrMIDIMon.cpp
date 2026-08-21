@@ -27,8 +27,7 @@ CtrlrMIDIMon::CtrlrMIDIMon(CtrlrManager &_owner)
 	addAndMakeVisible(outMon = new MidiMonitorEditor(outputDocument, 0));
 	outMon->setName(L"outMon");
 	outMon->setFont(Font(owner.getFontManager().getDefaultMonoFontName(), 12, Font::bold));
-	outMon->setColour(CodeEditorComponent::backgroundColourId, Colours::powderblue);
-	outMon->setColour(CodeEditorComponent::backgroundColourId, Colours::powderblue);
+	outMon->setColour(CodeEditorComponent::backgroundColourId, outMonitorColour);
 	outMon->setColour(CodeEditorComponent::lineNumberTextId, Colours::black); // Line numbers text
 	outMon->setColour(
 		CodeEditorComponent::lineNumberBackgroundId,
@@ -38,7 +37,7 @@ CtrlrMIDIMon::CtrlrMIDIMon(CtrlrManager &_owner)
 	addAndMakeVisible(inMon = new MidiMonitorEditor(inputDocument, 0));
 	inMon->setName(L"inMon");
 	inMon->setFont(Font(owner.getFontManager().getDefaultMonoFontName(), 12, Font::bold));
-	inMon->setColour(CodeEditorComponent::backgroundColourId, Colours::palegreen);
+	inMon->setColour(CodeEditorComponent::backgroundColourId, inMonitorColour);
 	// inMon->setColour(CodeEditorComponent::backgroundColourId, Colour(0xffb3ffac));
 
 	// --- Configure Input Monitor Colors ---
@@ -255,10 +254,11 @@ PopupMenu CtrlrMIDIMon::getMenuForIndex(int topLevelMenuIndex, const String &men
 		menu.addItem(ViewMenuBase + midiLogDevice, "Show device name", true, getBitOption(opts, midiLogDevice));
 		menu.addItem(ViewMenuBase + midiLogDataSize, "Show RAW data size", true, getBitOption(opts, midiLogDataSize));
 		menu.addSeparator();
-		menu.addColouredItem(ViewMenuBase + midiLogInput, "Monitor input", Colour(0xff21c630), true,
-							 getBitOption(opts, midiLogInput));
-		menu.addColouredItem(ViewMenuBase + midiLogOutput, "Monitor output", Colour(0xffc62121), true,
+		menu.addColouredItem(ViewMenuBase + midiLogOutput, "Monitor output", outMonitorColour.darker(0.6f), true,
 							 getBitOption(opts, midiLogOutput));
+		menu.addColouredItem(ViewMenuBase + midiLogInput, "Monitor input", inMonitorColour.darker(0.6f), true,
+							 getBitOption(opts, midiLogInput));
+
 	} else if (topLevelMenuIndex == 2) {
 
 		menu.addSectionHeader("Active filters");
@@ -281,7 +281,7 @@ PopupMenu CtrlrMIDIMon::getMenuForIndex(int topLevelMenuIndex, const String &men
 		menu.addSeparator();
 		menu.addItem(SelectAllFilters, "Select All", true, false); // Changed from "Clear All"
 		menu.addSeparator();
-		menu.addItem(ClearAllFilters, "Clear All", true, false);
+		menu.addItem(ClearAllFilters, "Deselect All", true, false);
 	}
 
 	return menu;

@@ -45,7 +45,6 @@ CtrlrSlider::CtrlrSlider(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrSl
 	setProperty(Ids::uiSliderMouseWheelInterval, 1);
 
 	setProperty(Ids::uiSliderLookAndFeel, "Default");
-	setProperty(Ids::uiSliderLookAndFeelIsCustom, false);
 
 	setProperty(Ids::uiSliderPopupBubble, false);
 	setProperty(Ids::uiSliderStyle, "RotaryVerticalDrag");
@@ -102,7 +101,7 @@ CtrlrSlider::CtrlrSlider(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrSl
 	setProperty(Ids::uiSliderValueBgColour, "0x00ffffff");
 	setProperty(Ids::uiSliderValueOutlineColour, "0x00ffffff");
 
-	setProperty(Ids::uiSliderLookAndFeelIsCustom, false);
+	setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
 
 	// 4. Attach listener LAST so initial property assignments do not trigger false valueTreePropertyChanged events
 	componentTree.addListener(this);
@@ -172,9 +171,23 @@ const Array<Font> CtrlrSlider::getFontList() {
 	}
 	return (ret);
 }
+void CtrlrSlider::updateComponentColors() {
+	LNF::applyLookAndFeelState(ctrlrSlider, getComponentTree(), Ids::uiSliderLookAndFeelIsCustom,
+							   {{Ids::uiSliderValueTextColour, juce::Slider::textBoxTextColourId},
+								{Ids::uiSliderValueBgColour, juce::Slider::textBoxBackgroundColourId},
+								{Ids::uiSliderRotaryOutlineColour, juce::Slider::rotarySliderOutlineColourId},
+								{Ids::uiSliderRotaryFillColour, juce::Slider::rotarySliderFillColourId},
+								{Ids::uiSliderThumbColour, juce::Slider::thumbColourId},
+								{Ids::uiSliderValueHighlightColour, juce::Slider::textBoxHighlightColourId},
+								{Ids::uiSliderValueOutlineColour, juce::Slider::textBoxOutlineColourId},
+								{Ids::uiSliderTrackColour, juce::Slider::trackColourId}});
 
+	ctrlrSlider.lookAndFeelChanged();
+	ctrlrSlider.repaint();
+}
 void CtrlrSlider::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
 	DBG("Value Tree Property Changed ::" << property);
+
 	if (property == Ids::uiSliderStyle) {
 		ctrlrSlider.setSliderStyle(
 			(Slider::SliderStyle)CtrlrComponentTypeManager::sliderStringToStyle(getProperty(Ids::uiSliderStyle)));
@@ -187,54 +200,67 @@ void CtrlrSlider::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChange
 	} else if (property == Ids::uiSliderPopupBubble) {
 		ctrlrSlider.setPopupDisplayEnabled((bool)getProperty(property), (bool)getProperty(property),
 										   owner.getOwnerPanel().getEditor());
+	} else if (property == Ids::uiSliderLookAndFeelIsCustom) {
+		updateComponentColors();
+		/*
+		 *
+		 *  uiPanelLookAndFeel and uiSliderLookAndFeel are handled together in the same block below, because they are
+		 * interdependent. The slider's LNF can be set to "Default" to inherit the panel's LNF, or it can be set to a
+		 * specific LNF string to override the panel's LNF. When either property changes, we need to re-evaluate the
+		 * effective LNF for the slider and apply it accordingly.
+		 *
+		 */
 	} else if (property == Ids::uiPanelLookAndFeel || property == Ids::uiSliderLookAndFeel) {
-		// Catch when either the component setting OR the panel's central theme updates
 		String activeLnF = getProperty(Ids::uiSliderLookAndFeel).toString();
-
-		// If component is set to "Default", pull theme from the parent panel editor
 		if (activeLnF.isEmpty() || activeLnF == "Default") {
-			if (auto *editor = owner.getOwnerPanel().getEditor()) {
+			if (auto *editor = owner.getOwnerPanel().getEditor())
 				activeLnF = editor->getProperty(Ids::uiPanelLookAndFeel).toString();
-			}
 		}
 
-		// Apply theme colors and trigger JUCE redrawing
-		applyCentralLookAndFeel(&ctrlrSlider, activeLnF);
-		ctrlrSlider.lookAndFeelChanged();
+		// 1. Detach EVERY pointer to the current LookAndFeel object first —
+		//    this must happen before customLF is reset/reassigned below.
+		ctrlrSlider.setLookAndFeel(nullptr);
+		setLookAndFeel(nullptr);
+
+		// 2. Only now is it safe to destroy/replace the old customLF
+		if (activeLnF == "V1" || activeLnF == "V2" || activeLnF == "V3" || activeLnF.isEmpty() ||
+			activeLnF == "Default") {
+			customLF.reset();
+			applyCentralLookAndFeel(this, activeLnF);
+		} else {
+			customLF = std::move(getLookAndFeelFromComponentProperty(activeLnF));
+			if (customLF != nullptr)
+				setLookAndFeel(customLF.get());
+		}
+
+		// 3. Re-attach the internal slider to whatever 'this' resolved to
+		ctrlrSlider.setLookAndFeel(&getLookAndFeel());
+
+		updateComponentColors();
+		ctrlrSlider.sendLookAndFeelChange();
 		ctrlrSlider.repaint();
 		repaint();
-	}
-	// --- COLOR PROPERTY HANDLERS ---
-	else if (property == Ids::uiSliderTrackColour) {
-		ctrlrSlider.setColour(Slider::trackColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
-	} else if (property == Ids::uiSliderThumbColour) {
-		ctrlrSlider.setColour(Slider::thumbColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
-	} else if (property == Ids::uiSliderRotaryOutlineColour) {
-		ctrlrSlider.setColour(Slider::rotarySliderOutlineColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
-	} else if (property == Ids::uiSliderRotaryFillColour) {
-		ctrlrSlider.setColour(Slider::rotarySliderFillColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
-	} else if (property == Ids::uiSliderIncDecButtonColour) {
-		ctrlrSlider.setColour(Slider::textBoxOutlineColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
-	} else if (property == Ids::uiSliderIncDecTextColour) {
-		ctrlrSlider.setColour(Slider::textBoxTextColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
+	} else if (property == Ids::uiSliderRotaryFillColour || property == Ids::uiSliderRotaryOutlineColour ||
+			   property == Ids::uiSliderTrackColour || property == Ids::uiSliderThumbColour ||
+			   property == Ids::uiSliderValueHighlightColour || property == Ids::uiSliderValueBgColour ||
+			   property == Ids::uiSliderValueOutlineColour) {
+		if (!restoreStateInProgress) {
+			// Set custom mode to active (0 = User Mode)
+			setProperty(Ids::uiSliderLookAndFeelIsCustom, 0);
+		}
+		updateComponentColors();
 	} else if (property == Ids::uiSliderValueTextColour) {
-		ctrlrSlider.setColour(Slider::textBoxTextColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
-	} else if (property == Ids::uiSliderValueHighlightColour) {
-		ctrlrSlider.setColour(Slider::textBoxHighlightColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
-	} else if (property == Ids::uiSliderValueBgColour) {
-		ctrlrSlider.setColour(Slider::textBoxBackgroundColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
-	} else if (property == Ids::uiSliderValueOutlineColour) {
-		ctrlrSlider.setColour(Slider::textBoxOutlineColourId, VAR2COLOUR(getProperty(property)));
-		ctrlrSlider.repaint();
+		if (!restoreStateInProgress) {
+			const Colour c = VAR2COLOUR(getProperty(Ids::uiSliderValueTextColour));
+			for (int i = 0; i < ctrlrSlider.getNumChildComponents(); ++i) {
+				if (auto *lb = dynamic_cast<Label *>(ctrlrSlider.getChildComponent(i))) {
+					lb->setColour(Label::textColourId, c);
+					lb->setColour(Label::textWhenEditingColourId, c);
+				}
+			}
+			setProperty(Ids::uiSliderLookAndFeelIsCustom, 0);
+		}
+		updateComponentColors();
 	}
 	// --- SLIDER RANGE & METRICS ---
 	else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin) {
@@ -290,18 +316,48 @@ void CtrlrSlider::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChange
 const String CtrlrSlider::getComponentText() {
 	return (String(getComponentValue()));
 }
+void CtrlrSlider::lookAndFeelChanged() {
+	DBG("CtrlrSlider::lookAndFeelChanged() called");
+	// 1. Sync internal slider pointer with the wrapper's LookAndFeel
+	ctrlrSlider.setLookAndFeel(&getLookAndFeel());
 
+	// 2. Clear local hex overrides if in LNF mode, or re-apply if in User mode
+	updateComponentColors();
+
+	// 3. Notify internal JUCE child components (labels, textboxes)
+	ctrlrSlider.sendLookAndFeelChange();
+
+	// 4. Call base class implementation
+	CtrlrComponent::lookAndFeelChanged();
+}
 void CtrlrSlider::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel) {
-	if (customLookAndFeel == nullptr) {
+	DBG("Custom look and feel changed for CtrlrSlider: ");
+	if (customLookAndFeel != nullptr) {
+		// Direct custom LookAndFeel assignment
+		ctrlrSlider.setLookAndFeel(customLookAndFeel);
+	} else {
+		// 1. Clear internal slider pointer so it can accept parent theme
 		ctrlrSlider.setLookAndFeel(nullptr);
 
-		const String panelLnF = getProperty(Ids::uiSliderLookAndFeel);
-		applyCentralLookAndFeel(&ctrlrSlider, panelLnF);
+		// 2. Fetch active theme string
+		String panelLnF = getProperty(Ids::uiSliderLookAndFeel).toString();
+		if (panelLnF.isEmpty() || panelLnF == "Default") {
+			if (auto *editor = owner.getOwnerPanel().getEditor()) {
+				panelLnF = editor->getProperty(Ids::uiPanelLookAndFeel).toString();
+			}
+		}
+
+		// 3. Apply theme string to 'this' (the CtrlrComponent wrapper!), NOT &ctrlrSlider
+		applyCentralLookAndFeel(this, panelLnF);
+
+		// 4. Bind the wrapper's newly resolved LookAndFeel object to the internal member slider
+		ctrlrSlider.setLookAndFeel(&getLookAndFeel());
 	}
 
-	else {
-		ctrlrSlider.setLookAndFeel(nullptr);
-	}
+	// 5. Refresh colors and force redraw
+	updateComponentColors();
+	ctrlrSlider.sendLookAndFeelChange();
+	ctrlrSlider.repaint();
 }
 
 const String CtrlrSlider::getCurrentLF() {

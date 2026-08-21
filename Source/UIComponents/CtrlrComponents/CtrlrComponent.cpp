@@ -273,10 +273,26 @@ void CtrlrComponent::moved() {
 	setProperty(Ids::componentRectangle, getBoundsInParent().toString(), true);
 }
 
+// void CtrlrComponent::mouseMove(const MouseEvent &e) {
+// 	if (mouseMoveCbk && !mouseMoveCbk.wasObjectDeleted()) {
+// 		if (mouseMoveCbk->isValid()) {
+// 			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(mouseMoveCbk, this, e);
+// 		}
+// 	}
+// }
 void CtrlrComponent::mouseMove(const MouseEvent &e) {
+	// Prevent recursive loop if Lua script or JUCE 8 message dispatch re-triggers mouseMove
+	static bool isExecutingCbk = false;
+	if (isExecutingCbk)
+		return;
+
 	if (mouseMoveCbk && !mouseMoveCbk.wasObjectDeleted()) {
 		if (mouseMoveCbk->isValid()) {
+			isExecutingCbk = true;
+
 			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(mouseMoveCbk, this, e);
+
+			isExecutingCbk = false;
 		}
 	}
 }
@@ -589,6 +605,7 @@ int CtrlrComponent::getComponentRadioGroupId() {
 }
 
 void CtrlrComponent::panelEditModeChanged(const bool isInEditMode) {
+	DBG("!*!*!*! Edit mode changed");
 	if (isInEditMode) {
 		if ((bool)getProperty(Ids::componentVisibility) == false) {
 			setVisible(true);

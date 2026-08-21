@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="hrcYoO" name="CtrlrX" reportAppUsage="1" projectType="audioplug"
-              version="8.0 BETA" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
+              version="8.0" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
               buildVST="0" buildVST3="1" buildAU="1" buildAUv3="0" buildRTAS="0"
               buildAAX="0" buildStandalone="1" enableIAA="0" pluginName="CtrlrX                          "
               pluginManufacturer="CtrlrX Project                  " pluginManufacturerCode="cTrX"
@@ -624,6 +624,8 @@
           <FILE id="OOpHQ2" name="FONT_ZX81.ttf" compile="0" resource="1" file="Source/Resources/Fonts/FONT_ZX81.ttf"/>
         </GROUP>
         <GROUP id="{57CA4634-99B0-23FB-F19C-154181EAAE85}" name="Icons">
+          <FILE id="EgredL" name="ctrlrx_8_logo.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/ctrlrx_8_logo.svg"/>
           <FILE id="a8RgYD" name="alignhorizontalleftsymbolic.svg" compile="0"
                 resource="1" file="Source/Resources/Icons/alignhorizontalleftsymbolic.svg"/>
           <FILE id="r3dLsN" name="alignhorizontalrightsymbolic.svg" compile="0"

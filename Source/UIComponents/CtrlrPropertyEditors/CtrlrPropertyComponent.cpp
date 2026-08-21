@@ -49,9 +49,13 @@ CtrlrPropertyComponent::~CtrlrPropertyComponent() {
 	deleteAllChildren();
 }
 
-const String CtrlrPropertyComponent::getPropertyName() { return propertyName.toString(); }
+const String CtrlrPropertyComponent::getPropertyName() {
+	return propertyName.toString();
+}
 
-const String CtrlrPropertyComponent::getVisibleText() { return visibleText; }
+const String CtrlrPropertyComponent::getVisibleText() {
+	return visibleText;
+}
 void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 {
 	getLookAndFeel().drawPropertyComponentBackground(
@@ -391,7 +395,9 @@ void CtrlrBooleanPropertyComponent::refresh() {
 	button.setButtonText(button.getToggleState() ? onText : offText);
 }
 
-void CtrlrBooleanPropertyComponent::resized() { button.setBounds(0, 0, getWidth(), getHeight()); }
+void CtrlrBooleanPropertyComponent::resized() {
+	button.setBounds(0, 0, getWidth(), getHeight());
+}
 
 void CtrlrBooleanPropertyComponent::buttonClicked(Button *) {
 	button.setButtonText(button.getToggleState() ? onText : offText);
@@ -407,11 +413,15 @@ CtrlrButtonPropertyComponent::CtrlrButtonPropertyComponent(const Value &_valueTo
 
 CtrlrButtonPropertyComponent::~CtrlrButtonPropertyComponent() {}
 
-void CtrlrButtonPropertyComponent::resized() { button.setBounds(0, 0, getWidth(), getHeight()); }
+void CtrlrButtonPropertyComponent::resized() {
+	button.setBounds(0, 0, getWidth(), getHeight());
+}
 
 void CtrlrButtonPropertyComponent::refresh() {}
 
-void CtrlrButtonPropertyComponent::buttonClicked(Button *_button) { valueToControl = true; }
+void CtrlrButtonPropertyComponent::buttonClicked(Button *_button) {
+	valueToControl = true;
+}
 
 CtrlrButtonTextPropertyComponent::CtrlrButtonTextPropertyComponent(const Value &_valueToControl,
 																   const String &_propertyName,
@@ -485,9 +495,13 @@ CtrlrChoicePropertyComponent::~CtrlrChoicePropertyComponent() // Updated v5.6.34
 	}
 }
 
-void CtrlrChoicePropertyComponent::resized() { combo->setBounds(0, 0, getWidth(), getHeight()); }
+void CtrlrChoicePropertyComponent::resized() {
+	combo->setBounds(0, 0, getWidth(), getHeight());
+}
 
-void CtrlrChoicePropertyComponent::comboBoxChanged(ComboBox *comboBoxThatHasChanged) { changed(); }
+void CtrlrChoicePropertyComponent::comboBoxChanged(ComboBox *comboBoxThatHasChanged) {
+	changed();
+}
 
 void CtrlrChoicePropertyComponent::refresh() {
 	if (numeric) {
@@ -627,13 +641,17 @@ CtrlrColourPropertyComponent::CtrlrColourPropertyComponent(const Value &_valueTo
 
 CtrlrColourPropertyComponent::~CtrlrColourPropertyComponent() {}
 
-void CtrlrColourPropertyComponent::refresh() { cs.setColour(Colour::fromString(valueToControl.toString())); }
+void CtrlrColourPropertyComponent::refresh() {
+	cs.setColour(Colour::fromString(valueToControl.toString()));
+}
 
 void CtrlrColourPropertyComponent::changeListenerCallback(ChangeBroadcaster *source) {
 	valueToControl = cs.getColour().toString();
 }
 
-void CtrlrColourPropertyComponent::resized() { cs.setBounds(0, 0, getWidth(), getHeight()); }
+void CtrlrColourPropertyComponent::resized() {
+	cs.setBounds(0, 0, getWidth(), getHeight());
+}
 
 /** A read-only component **/
 
@@ -657,7 +675,9 @@ void CtrlrReadOnlyProperty::refresh() {
 	value.setText(displayValue, dontSendNotification); // Added v5.6.34. Thanks to @dnaldoog
 }
 
-void CtrlrReadOnlyProperty::resized() { value.setBounds(0, 2, getWidth(), getHeight() - 4); }
+void CtrlrReadOnlyProperty::resized() {
+	value.setBounds(0, 2, getWidth(), getHeight() - 4);
+}
 
 CtrlrExpressionProperty::CtrlrExpressionProperty(const Value &_valueToControl)
 	: valueToControl(_valueToControl), externalEditorWindow(nullptr) {
@@ -711,13 +731,19 @@ void CtrlrExpressionProperty::buttonClicked(Button *buttonThatWasClicked) {
 	}
 }
 
-void CtrlrExpressionProperty::refresh() { text->setText(valueToControl.toString(), false); }
+void CtrlrExpressionProperty::refresh() {
+	text->setText(valueToControl.toString(), false);
+}
 
 void CtrlrExpressionProperty::textEditorTextChanged(TextEditor &editor) {}
 
-void CtrlrExpressionProperty::textEditorReturnKeyPressed(TextEditor &editor) { compile(true); }
+void CtrlrExpressionProperty::textEditorReturnKeyPressed(TextEditor &editor) {
+	compile(true);
+}
 
-void CtrlrExpressionProperty::textEditorFocusLost(TextEditor &editor) { compile(true); }
+void CtrlrExpressionProperty::textEditorFocusLost(TextEditor &editor) {
+	compile(true);
+}
 
 const bool CtrlrExpressionProperty::compile(const bool setPropertyIfValid) {
 	String parseError;
@@ -794,7 +820,9 @@ void CtrlrFileProperty::buttonClicked(Button *buttonThatWasClicked) {
 	}
 }
 
-void CtrlrFileProperty::refresh() { path->setText(valueToControl.toString(), dontSendNotification); }
+void CtrlrFileProperty::refresh() {
+	path->setText(valueToControl.toString(), dontSendNotification);
+}
 
 void CtrlrFileProperty::labelTextChanged(Label *labelThatHasChanged) {
 	valueToControl = labelThatHasChanged->getText();
@@ -1103,132 +1131,115 @@ void CtrlrLuaMethodProperty::comboBoxChanged(ComboBox *comboBoxThatHasChanged) {
 	}
 }
 
-void CtrlrLuaMethodProperty::buttonClicked(Button *buttonThatWasClicked) 
-{
-    // --- EDIT METHOD BUTTON ---
-    if (buttonThatWasClicked == editMethodButton.get()) 
-    {
-        const juce::String selectedMethod = methodSelectorCombo->getText();
+void CtrlrLuaMethodProperty::buttonClicked(Button *buttonThatWasClicked) {
+	// --- EDIT METHOD BUTTON ---
+	if (buttonThatWasClicked == editMethodButton.get()) {
+		const juce::String selectedMethod = methodSelectorCombo->getText();
 
-        if (selectedMethod.isEmpty() || selectedMethod == COMBO_NONE_ITEM) 
-        {
-            return;
-        }
+		if (selectedMethod.isEmpty() || selectedMethod == COMBO_NONE_ITEM) {
+			return;
+		}
 
-        if (owner != nullptr) 
-        {
-            owner->getPanelWindowManager().show(CtrlrPanelWindowManager::LuaMethodEditor);
-            
-            auto* ed = dynamic_cast<CtrlrLuaMethodEditor*>(
-                owner->getPanelWindowManager().getContent(CtrlrPanelWindowManager::LuaMethodEditor));
+		if (owner != nullptr) {
+			owner->getPanelWindowManager().show(CtrlrPanelWindowManager::LuaMethodEditor);
 
-            if (ed != nullptr) 
-            {
-                ed->setEditedMethod(selectedMethod);
-            }
-        }
-    } 
-    // --- NEW METHOD BUTTON ---
-    else if (buttonThatWasClicked == newMethodButton.get()) 
-    {
-        auto* w = new juce::AlertWindow("Method name", "New method name", juce::AlertWindow::QuestionIcon, this);
-        w->addTextEditor("methodName", "myMethod", "Method", false);
-        w->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
-        w->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+			auto *ed = dynamic_cast<CtrlrLuaMethodEditor *>(
+				owner->getPanelWindowManager().getContent(CtrlrPanelWindowManager::LuaMethodEditor));
 
-        juce::Component::SafePointer<CtrlrLuaMethodProperty> safeThis(this);
+			if (ed != nullptr) {
+				ed->setEditedMethod(selectedMethod);
+			}
+		}
+	}
+	// --- NEW METHOD BUTTON ---
+	else if (buttonThatWasClicked == newMethodButton.get()) {
+		auto *w = new juce::AlertWindow("Method name", "New method name", juce::AlertWindow::QuestionIcon, this);
+		w->addTextEditor("methodName", "myMethod", "Method", false);
+		w->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+		w->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
 
-        w->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, w](int result) 
-        {
-            if (safeThis != nullptr && result == 1) 
-            {
-                if (auto* panelOwner = safeThis->owner) 
-                {
-                    const juce::String newMethodName = w->getTextEditorContents("methodName");
+		juce::Component::SafePointer<CtrlrLuaMethodProperty> safeThis(this);
 
-                    // 1. Add method to MethodManager
-                    panelOwner->getCtrlrLuaManager().getMethodManager().addMethod(
-                        juce::ValueTree(), newMethodName, "", safeThis->id.toString());
+		w->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, w](int result) {
+							   if (safeThis != nullptr && result == 1) {
+								   if (auto *panelOwner = safeThis->owner) {
+									   const juce::String newMethodName = w->getTextEditorContents("methodName");
 
-                    // 2. Refresh property dropdown AFTER method is created
-                    safeThis->refresh();
+									   // 1. Add method to MethodManager
+									   panelOwner->getCtrlrLuaManager().getMethodManager().addMethod(
+										   juce::ValueTree(), newMethodName, "", safeThis->id.toString());
 
-                    // 3. Set newly created method in the combo box
-                    if (safeThis->methodSelectorCombo != nullptr)
-                    {
-                        safeThis->methodSelectorCombo->setText(newMethodName, juce::sendNotificationAsync);
-                    }
-                }
-            }
-        }), true); // 'true' auto-deletes window 'w' when closed
-    } 
-    // --- DELETE METHOD BUTTON ---
-    else if (buttonThatWasClicked == deleteMethodButton.get()) 
-    {
-        const juce::String selectedMethod = methodSelectorCombo->getText();
+									   // 2. Refresh property dropdown AFTER method is created
+									   safeThis->refresh();
 
-        if (selectedMethod.isEmpty() || selectedMethod == COMBO_NONE_ITEM) 
-        {
-            return;
-        }
+									   // 3. Set newly created method in the combo box
+									   if (safeThis->methodSelectorCombo != nullptr) {
+										   safeThis->methodSelectorCombo->setText(newMethodName,
+																				  juce::sendNotificationAsync);
+									   }
+								   }
+							   }
+						   }),
+						   true); // 'true' auto-deletes window 'w' when closed
+	}
+	// --- DELETE METHOD BUTTON ---
+	else if (buttonThatWasClicked == deleteMethodButton.get()) {
+		const juce::String selectedMethod = methodSelectorCombo->getText();
 
-        if (owner != nullptr) 
-        {
-            owner->getPanelWindowManager().show(CtrlrPanelWindowManager::LuaMethodEditor);
-            
-            auto* ed = dynamic_cast<CtrlrLuaMethodEditor*>(
-                owner->getPanelWindowManager().getContent(CtrlrPanelWindowManager::LuaMethodEditor));
+		if (selectedMethod.isEmpty() || selectedMethod == COMBO_NONE_ITEM) {
+			return;
+		}
 
-            if (ed != nullptr) 
-            {
-                ed->setEditedMethod(selectedMethod);
-            }
-        }
-    } 
-    // --- NEW METHOD BUTTON ---
-    else if (buttonThatWasClicked == newMethodButton.get()) 
-    {
-        auto* w = new juce::AlertWindow("Method name", "New method name", juce::AlertWindow::QuestionIcon, this);
-        w->addTextEditor("methodName", "myMethod", "Method", false);
-        w->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
-        w->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+		if (owner != nullptr) {
+			owner->getPanelWindowManager().show(CtrlrPanelWindowManager::LuaMethodEditor);
 
-        juce::Component::SafePointer<CtrlrLuaMethodProperty> safeThis(this);
+			auto *ed = dynamic_cast<CtrlrLuaMethodEditor *>(
+				owner->getPanelWindowManager().getContent(CtrlrPanelWindowManager::LuaMethodEditor));
 
-        w->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, w](int result) 
-        {
-            if (safeThis != nullptr && result == 1) 
-            {
-                if (auto* panelOwner = safeThis->owner) 
-                {
-                    const juce::String newMethodName = w->getTextEditorContents("methodName");
+			if (ed != nullptr) {
+				ed->setEditedMethod(selectedMethod);
+			}
+		}
+	}
+	// --- NEW METHOD BUTTON ---
+	else if (buttonThatWasClicked == newMethodButton.get()) {
+		auto *w = new juce::AlertWindow("Method name", "New method name", juce::AlertWindow::QuestionIcon, this);
+		w->addTextEditor("methodName", "myMethod", "Method", false);
+		w->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+		w->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
 
-                    // 1. Add method to MethodManager
-                    panelOwner->getCtrlrLuaManager().getMethodManager().addMethod(
-                        juce::ValueTree(), newMethodName, "", safeThis->id.toString());
+		juce::Component::SafePointer<CtrlrLuaMethodProperty> safeThis(this);
 
-                    // 2. Refresh property dropdown AFTER method is created
-                    safeThis->refresh();
+		w->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, w](int result) {
+							   if (safeThis != nullptr && result == 1) {
+								   if (auto *panelOwner = safeThis->owner) {
+									   const juce::String newMethodName = w->getTextEditorContents("methodName");
 
-                    // 3. Set newly created method in the combo box
-                    if (safeThis->methodSelectorCombo != nullptr)
-                    {
-                        safeThis->methodSelectorCombo->setText(newMethodName, juce::sendNotificationAsync);
-                    }
-                }
-            }
-        }), true); // 'true' auto-deletes window 'w' when closed
-    } 
-    // --- DELETE METHOD BUTTON ---
-    else if (buttonThatWasClicked == deleteMethodButton.get()) 
-    {
-        if (owner != nullptr) 
-        {
-            owner->getCtrlrLuaManager().getMethodManager().deleteMethod(methodSelectorCombo->getText());
-        }
+									   // 1. Add method to MethodManager
+									   panelOwner->getCtrlrLuaManager().getMethodManager().addMethod(
+										   juce::ValueTree(), newMethodName, "", safeThis->id.toString());
 
-        refresh();
-    }
+									   // 2. Refresh property dropdown AFTER method is created
+									   safeThis->refresh();
+
+									   // 3. Set newly created method in the combo box
+									   if (safeThis->methodSelectorCombo != nullptr) {
+										   safeThis->methodSelectorCombo->setText(newMethodName,
+																				  juce::sendNotificationAsync);
+									   }
+								   }
+							   }
+						   }),
+						   true); // 'true' auto-deletes window 'w' when closed
+	}
+	// --- DELETE METHOD BUTTON ---
+	else if (buttonThatWasClicked == deleteMethodButton.get()) {
+		if (owner != nullptr) {
+			owner->getCtrlrLuaManager().getMethodManager().deleteMethod(methodSelectorCombo->getText());
+		}
+
+		refresh();
+	}
 }
 
 void CtrlrLuaMethodProperty::refresh() {
@@ -1256,7 +1267,9 @@ CtrlrModulatorListProperty::CtrlrModulatorListProperty(const Value &_valueToCont
 
 CtrlrModulatorListProperty::~CtrlrModulatorListProperty() {}
 
-void CtrlrModulatorListProperty::resized() { combo->setBounds(0, 0, getWidth(), getHeight()); }
+void CtrlrModulatorListProperty::resized() {
+	combo->setBounds(0, 0, getWidth(), getHeight());
+}
 
 void CtrlrModulatorListProperty::refresh() {
 	if (choices.contains(valueToControl.toString())) {
@@ -1295,9 +1308,13 @@ void CtrlrModulatorListProperty::listChanged() {
 
 void CtrlrModulatorListProperty::modulatorChanged(CtrlrModulator *modulatorThatChanged) {}
 
-void CtrlrModulatorListProperty::modulatorAdded(CtrlrModulator *modulatorThatWasAdded) { listChanged(); }
+void CtrlrModulatorListProperty::modulatorAdded(CtrlrModulator *modulatorThatWasAdded) {
+	listChanged();
+}
 
-void CtrlrModulatorListProperty::modulatorRemoved(CtrlrModulator *modulatorRemoved) { listChanged(); }
+void CtrlrModulatorListProperty::modulatorRemoved(CtrlrModulator *modulatorRemoved) {
+	listChanged();
+}
 /**********************************************************************
 
 
@@ -1351,7 +1368,6 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent(const Value &_v
 	helpMmidi->setTooltip(L"Click to see Multi MIDI message syntax");
 	helpMmidi->addListener(this);
 	helpMmidi->setMouseCursor(MouseCursor::PointingHandCursor);
-
 
 	loadAdditionalTemplates(File());
 	setSize(256, 96);
@@ -1592,7 +1608,9 @@ void CtrlrMultiMidiPropertyComponent::mouseDoubleClick(const MouseEvent &e) {
 	}
 }
 
-int CtrlrMultiMidiPropertyComponent::getNumRows() { return (values.size()); }
+int CtrlrMultiMidiPropertyComponent::getNumRows() {
+	return (values.size());
+}
 
 void CtrlrMultiMidiPropertyComponent::refresh() {
 	values.clear();
@@ -1648,16 +1666,22 @@ CtrlrSliderPropertyComponent::~CtrlrSliderPropertyComponent() {}
 
 void CtrlrSliderPropertyComponent::setValue(const double newValue) {}
 
-double CtrlrSliderPropertyComponent::getValue() const { return slider.getValue(); }
+double CtrlrSliderPropertyComponent::getValue() const {
+	return slider.getValue();
+}
 
-void CtrlrSliderPropertyComponent::refresh() { slider.setValue(getValue(), dontSendNotification); }
+void CtrlrSliderPropertyComponent::refresh() {
+	slider.setValue(getValue(), dontSendNotification);
+}
 
 void CtrlrSliderPropertyComponent::sliderValueChanged(Slider *sliderThatChanged) {
 	if (getValue() != slider.getValue())
 		setValue(slider.getValue());
 }
 
-void CtrlrSliderPropertyComponent::resized() { slider.setBounds(0, 0, getWidth(), getHeight()); }
+void CtrlrSliderPropertyComponent::resized() {
+	slider.setBounds(0, 0, getWidth(), getHeight());
+}
 
 //==============================================================================
 // Constructor
@@ -1791,7 +1815,9 @@ Label *CtrlrSysExEditor::addByte(const String &byteAsString) {
 
 //==============================================================================
 // Label focus tracking
-void CtrlrSysExEditor::labelTextChanged(Label *labelThatHasChanged) { sendChangeMessage(); }
+void CtrlrSysExEditor::labelTextChanged(Label *labelThatHasChanged) {
+	sendChangeMessage();
+}
 
 //==============================================================================
 // Mouse down for token menu
@@ -2177,7 +2203,9 @@ void CtrlrSysExPropertyComponent::changeListenerCallback(ChangeBroadcaster *sour
 	}
 }
 
-void CtrlrSysExPropertyComponent::refresh() { sysexPreview->setText(valueToControl.toString(), dontSendNotification); }
+void CtrlrSysExPropertyComponent::refresh() {
+	sysexPreview->setText(valueToControl.toString(), dontSendNotification);
+}
 
 class CtrlrTextPropLabel : public Label // Text Box for Type In Properties such as Panel Name etc
 {
@@ -2216,18 +2244,16 @@ class CtrlrTextPropLabel : public Label // Text Box for Type In Properties such 
 			{
 				textEditor->setColour(juce::TextEditor::backgroundColourId, juce::Colour(0xffffffff)); // white
 				textEditor->setColour(juce::TextEditor::textColourId, juce::Colour(0xff000000));	   // black
-				textEditor->setColour(juce::TextEditor::highlightColourId,
-									  juce::Colour(0xffF5F5F5)); //  CSS WhiteSmoke. Added v5.6.34
-				textEditor->setColour(juce::TextEditor::highlightedTextColourId,
-									  juce::Colour(0xff000000)); // black. Added v5.6.34
+				textEditor->setColour(juce::TextEditor::highlightColourId, Colours::darkmagenta);
+				textEditor->setColour(juce::TextEditor::highlightedTextColourId, Colours::white);
 			} else {
 				textEditor->setColour(juce::TextEditor::backgroundColourId,
 									  findColour(juce::Slider::backgroundColourId));
+				textEditor->setColour(juce::TextEditor::backgroundColourId,
+									  findColour(juce::Slider::backgroundColourId));
 				textEditor->setColour(juce::TextEditor::textColourId, findColour(juce::Slider::textBoxTextColourId));
-				textEditor->setColour(juce::TextEditor::highlightColourId,
-									  findColour(juce::TextEditor::highlightColourId));
-				textEditor->setColour(juce::TextEditor::highlightedTextColourId,
-									  findColour(juce::TextEditor::highlightColourId));
+				textEditor->setColour(juce::TextEditor::highlightColourId, Colours::darkmagenta);
+				textEditor->setColour(juce::TextEditor::highlightedTextColourId, Colours::white);
 				textEditor->setColour(juce::TextEditor::outlineColourId,
 									  findColour(juce::Slider::textBoxOutlineColourId));
 			}
@@ -2241,7 +2267,9 @@ class CtrlrTextPropLabel : public Label // Text Box for Type In Properties such 
 			return textEditor;
 		}
 
-		void textWasEdited() { owner.textWasEdited(); }
+		void textWasEdited() {
+			owner.textWasEdited();
+		}
 
 	private:
 		CtrlrTextPropertyComponent &owner;
@@ -2270,9 +2298,13 @@ CtrlrTextPropertyComponent::CtrlrTextPropertyComponent(
 
 CtrlrTextPropertyComponent::~CtrlrTextPropertyComponent() {}
 
-void CtrlrTextPropertyComponent::setText(const String &newText) { textEditor->setText(newText, sendNotification); }
+void CtrlrTextPropertyComponent::setText(const String &newText) {
+	textEditor->setText(newText, sendNotification);
+}
 
-String CtrlrTextPropertyComponent::getText() const { return textEditor->getText(); }
+String CtrlrTextPropertyComponent::getText() const {
+	return textEditor->getText();
+}
 
 void CtrlrTextPropertyComponent::createEditor(const int maxNumChars, const bool isMultiLine) {
 	textEditor = std::make_unique<CtrlrTextPropLabel>(*this, maxNumChars, isMultiLine, useImprovedLegibility);
@@ -2332,7 +2364,9 @@ CtrlrUnknownPropertyComponent::CtrlrUnknownPropertyComponent(const Identifier &_
 
 CtrlrUnknownPropertyComponent::~CtrlrUnknownPropertyComponent() {}
 
-void CtrlrUnknownPropertyComponent::resized() { l.setBounds(0, 0, getWidth(), getHeight()); }
+void CtrlrUnknownPropertyComponent::resized() {
+	l.setBounds(0, 0, getWidth(), getHeight());
+}
 
 void CtrlrUnknownPropertyComponent::refresh() {
 	l.setText(propertyElement.getPropertyAsValue(propertyName, 0).toString(), dontSendNotification);

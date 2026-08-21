@@ -22,6 +22,7 @@ CtrlrEditor::CtrlrEditor(CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
 	// currentLookAndFeel = new LookAndFeel_V4(juce::LookAndFeel_V4::getLightColourScheme());
 	// setLookAndFeel(currentLookAndFeel); // Set the editor's LookAndFeel initially
 	currentLookAndFeel = std::make_unique<juce::LookAndFeel_V4>(juce::LookAndFeel_V4::getLightColourScheme());
+	gui::initLookAndFeelDefaults(*currentLookAndFeel);
 	tooltipWindow = std::make_unique<juce::TooltipWindow>(this);
 	setLookAndFeel(currentLookAndFeel.get());
 
@@ -185,6 +186,7 @@ CtrlrEditor::~CtrlrEditor() {
 	// 2. Clear the global default LookAndFeel if it was set
 	// This is important if you ever call LookAndFeel::setDefaultLookAndFeel()
 	LookAndFeel::setDefaultLookAndFeel(nullptr);
+	_CrtDumpMemoryLeaks();
 }
 
 void CtrlrEditor::paint(Graphics &g) {
@@ -232,7 +234,7 @@ void CtrlrEditor::setEditorLookAndFeel(const String &lookAndFeelDesc, const var 
 
 		// Transfer ownership (old currentLookAndFeel destroyed safely here)
 		currentLookAndFeel = std::move(newLookAndFeel);
-
+		gui::initLookAndFeelDefaults(*currentLookAndFeel);
 		// Apply new LookAndFeel to Editor and MenuBar
 		setLookAndFeel(currentLookAndFeel.get());
 		if (menuBar != nullptr) {
