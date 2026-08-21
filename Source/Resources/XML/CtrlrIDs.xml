@@ -335,6 +335,7 @@
   <id name="uiComboButtonWidth" text="Button width" type="Text"/>
   <id name="uiComboSelectedId" text="Current selected item ID" type="Readonly " />
   <id name="uiComboSelectedIndex" text="Current selected item index" type="Readonly" />
+  <id name="uiComboLookAndFeelIsCustom" text="Combo LookAndFeel mode"  type="Bool"  defaults="Using my colours/Using LNF colours" Default="0" />
 
   <!-- List box -->
   <id name="uiListBoxContent"             text="ListBox contents"                   type="MultiLine"/>

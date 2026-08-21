@@ -36,6 +36,7 @@ class CtrlrCombo : public CtrlrComponent,
 		void valueTreeChildRemoved(ValueTree &parentTree, ValueTree &childWhichHasBeenRemoved, int) {}
 		void valueTreeChildOrderChanged(ValueTree &parentTreeWhoseChildrenHaveMoved, int, int) {}
 		void comboContentChanged();
+		void updateComponentColors();
 		// bool keyPressed (const KeyPress& key, Component* originatingComponent);
 		static std::unique_ptr<juce::LookAndFeel>
 		getLookAndFeelFromComponentProperty(const juce::String &lookAndFeelComponentProperty);
