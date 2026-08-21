@@ -179,19 +179,17 @@ CtrlrLuaMethodDebuggerPrompt::CtrlrLuaMethodDebuggerPrompt(CtrlrLuaMethodEditor 
 		1.000f, Colour(0x00000000));
 	debugStepOut->setMouseCursor(MouseCursor::PointingHandCursor);
 
-	debugStop->setImages(false, true, true, ImageCache::getFromMemory(BinaryData::stop_svg, BinaryData::stop_svgSize),
-						 0.550f, Colour(0x00000000),
-						 ImageCache::getFromMemory(BinaryData::stop_svg, BinaryData::stop_svgSize), 0.850f,
-						 Colour(0x00000000), ImageCache::getFromMemory(BinaryData::stop_svg, BinaryData::stop_svgSize),
-						 1.000f, Colour(0x00000000));
-	debugStop->setMouseCursor(MouseCursor::PointingHandCursor);
+    debugStop->setImages (false, true, true,
+								ImageCache::getFromMemory(BinaryData::appbar_debug_stop_png, BinaryData::appbar_debug_stop_pngSize), 0.550f, Colour (0x00000000),
+								ImageCache::getFromMemory(BinaryData::appbar_debug_stop_png, BinaryData::appbar_debug_stop_pngSize), 0.850f, Colour (0x00000000),
+								ImageCache::getFromMemory(BinaryData::appbar_debug_stop_png, BinaryData::appbar_debug_stop_pngSize), 1.000f, Colour (0x00000000));
+    debugStop->setMouseCursor (MouseCursor::PointingHandCursor);
 
-	clearOutput->setImages(
-		false, true, true, ImageCache::getFromMemory(BinaryData::cleanup_svg, BinaryData::cleanup_svgSize), 0.550f,
-		Colour(0x00000000), ImageCache::getFromMemory(BinaryData::cleanup_svg, BinaryData::cleanup_svgSize), 0.850f,
-		Colour(0x00000000), ImageCache::getFromMemory(BinaryData::cleanup_svg, BinaryData::cleanup_svgSize), 1.000f,
-		Colour(0x00000000));
-	clearOutput->setMouseCursor(MouseCursor::PointingHandCursor);
+    clearOutput->setImages (false, true, true,
+								ImageCache::getFromMemory(BinaryData::appbar_debug_clean_png, BinaryData::appbar_debug_clean_pngSize), 0.550f, Colour (0x00000000),
+								ImageCache::getFromMemory(BinaryData::appbar_debug_clean_png, BinaryData::appbar_debug_clean_pngSize), 0.850f, Colour (0x00000000),
+								ImageCache::getFromMemory(BinaryData::appbar_debug_clean_png, BinaryData::appbar_debug_clean_pngSize), 1.000f, Colour (0x00000000));
+    clearOutput->setMouseCursor (MouseCursor::PointingHandCursor);
 
 	//[/UserPreSize]
 

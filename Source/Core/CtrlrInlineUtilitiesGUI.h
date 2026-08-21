@@ -507,34 +507,76 @@ inline void initLookAndFeelDefaults(juce::LookAndFeel &lf) {
 
 namespace LNF {
 
+struct ColourMapping {
+		juce::Identifier treePropId;
+		int juceColourId;
+};
+
+// --- Overload 1: Core Logic ---
 inline void applyLookAndFeelState(juce::Component &targetComp, juce::ValueTree &ownerTree,
-								  const juce::Identifier &customFlagId, const juce::Identifier &colourOnId,
-								  const juce::Identifier &colourOffId, int juceColourOnId, int juceColourOffId) {
-	const bool useUserSettings = (bool)ownerTree.getProperty(customFlagId);
+								  const juce::Identifier &customFlagId, std::initializer_list<ColourMapping> mappings) {
+	// If missing from tree, default to 0 (User Mode)
+	const var propVal = ownerTree.getProperty(customFlagId, 0);
+
+	// Matches XML: 0 (or false) = "Using my colours", 1 (or true) = "Using LookAndFeel colours"
+	const bool useUserSettings = !(propVal.equals(var(0)) || propVal.equals(var(false)));
 
 	if (useUserSettings) {
 		// --- USER MODE ---
-		// Apply the user's custom choice stored in the ValueTree directly to the JUCE component
-		if (ownerTree.hasProperty(colourOnId)) {
-			juce::Colour colOn = VAR2COLOUR(ownerTree.getProperty(colourOnId));
-			targetComp.setColour(juceColourOnId, colOn);
-		}
-
-		if (ownerTree.hasProperty(colourOffId)) {
-			juce::Colour colOff = VAR2COLOUR(ownerTree.getProperty(colourOffId));
-			targetComp.setColour(juceColourOffId, colOff);
+		for (const auto &map : mappings) {
+			if (ownerTree.hasProperty(map.treePropId)) {
+				juce::Colour col = VAR2COLOUR(ownerTree.getProperty(map.treePropId));
+				targetComp.setColour(map.juceColourId, col);
+			}
 		}
 	} else {
 		// --- LNF MODE ---
-		// Strip component-level colour overrides so JUCE automatically falls back
-		// to whatever LookAndFeel skin is currently active in the app.
-		// DO NOT overwrite ownerTree properties here!
-		targetComp.removeColour(juceColourOnId);
-		targetComp.removeColour(juceColourOffId);
+		for (const auto &map : mappings) {
+			targetComp.removeColour(map.juceColourId);
+		}
+
+		// Tells JUCE to flush cached colors and fetch from active LNF theme
+		targetComp.sendLookAndFeelChange();
 	}
 
 	targetComp.repaint();
 }
+
+// --- Overload 2: Positional Parameter Version ---
+inline void applyLookAndFeelState(juce::Component &targetComp, juce::ValueTree &ownerTree,
+								  const juce::Identifier &customFlagId, const juce::Identifier &bgColourOnId,
+								  const juce::Identifier &bgColourOffId, int juceBgColourOnId, int juceBgColourOffId,
+								  const juce::Identifier &textColourOnId, const juce::Identifier &textColourOffId,
+								  int juceTextColourOnId, int juceTextColourOffId) {
+	applyLookAndFeelState(targetComp, ownerTree, customFlagId,
+						  {{bgColourOnId, juceBgColourOnId},
+						   {bgColourOffId, juceBgColourOffId},
+						   {textColourOnId, juceTextColourOnId},
+						   {textColourOffId, juceTextColourOffId}});
+}
+/*************************************************
+ *
+ *
+ *
+ ************************************************/
+// Font-equivalent of applyLookAndFeelState. Same custom-flag-driven idea, but
+// since JUCE has no generic "font ID" the way it has ColourId, each font target
+// needs its own setter callback instead of a plain int.
+// inline void applyFontState(
+// 	juce::Component &targetComp, juce::ValueTree &ownerTree, const juce::Identifier &customFlagId,
+// 	std::initializer_list<std::pair<juce::Identifier, std::function<void(const juce::Font &)>>> fontMappings) {
+// 	const bool isCustom = (bool)ownerTree.getProperty(customFlagId, false);
+
+// 	for (auto &mapping : fontMappings) {
+// 		if (isCustom && ownerTree.hasProperty(mapping.first)) {
+// 			juce::String descriptor = ownerTree.getProperty(mapping.first).toString();
+// 			DBG("Applying custom font for property " << mapping.first.toString() << ": " << descriptor);
+// 			// juce::Font font = CtrlrFontManager::getInstance()->getFontFromString(descriptor);
+// 			// mapping.second(font); // call whatever setter this target needs
+// 		}
+// 		// else: leave it alone — same "let the theme own it" behavior as colours
+// 	}
+// }
 
 /**
  * Call this ONLY when the user clicks "Freeze LNF to User Settings"

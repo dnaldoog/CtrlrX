@@ -36,6 +36,7 @@ class CtrlrButton : public CtrlrComponent, public Button::Listener, public Timer
 		void updatePropertiesPanel();
 		void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr) {}
 		void updateComponentColors();
+		// void updateComponentFonts();
 		CtrlrValueMap &getValueMap() {
 			return (*valueMap);
 		}

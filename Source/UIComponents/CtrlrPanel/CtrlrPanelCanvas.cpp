@@ -1102,6 +1102,8 @@ void CtrlrPanelCanvas::fileDragExit(const StringArray &files) {
 }
 
 void CtrlrPanelCanvas::filesDropped(const StringArray &files, int x, int y) {
+	StringArray unhandledFiles;
+
 	for (int i = 0; i < files.size(); i++) {
 		const File f = File(files[i]);
 		if (f != File()) {
@@ -1113,19 +1115,47 @@ void CtrlrPanelCanvas::filesDropped(const StringArray &files, int x, int y) {
 				Image img = ImageFileFormat::loadFrom(f);
 				if (img != Image()) {
 					importImage(f, x, y);
+				} else {
+					unhandledFiles.add(files[i]);
 				}
 			}
 		}
 	}
 
-	if (luaPanelFileDragDropHandlerCbk && !luaPanelFileDragDropHandlerCbk.wasObjectDeleted()) {
+	if (unhandledFiles.size() > 0 && luaPanelFileDragDropHandlerCbk &&
+		!luaPanelFileDragDropHandlerCbk.wasObjectDeleted()) {
 		if (luaPanelFileDragDropHandlerCbk->isValid()) {
-			owner.getOwner().getCtrlrLuaManager().getMethodManager().call(luaPanelFileDragDropHandlerCbk, files, x, y);
-
-			return;
+			owner.getOwner().getCtrlrLuaManager().getMethodManager().call(luaPanelFileDragDropHandlerCbk,
+																		  unhandledFiles, x, y);
 		}
 	}
 }
+
+// void CtrlrPanelCanvas::filesDropped(const StringArray &files, int x, int y) {
+// 	for (int i = 0; i < files.size(); i++) {
+// 		const File f = File(files[i]);
+// 		if (f != File()) {
+// 			if (f.hasFileExtension(".component")) {
+// 				importComponent(f, x, y);
+// 			} else if (CtrlrPanel::isPanelFile(f)) {
+// 				importPanel(f, x, y);
+// 			} else {
+// 				Image img = ImageFileFormat::loadFrom(f);
+// 				if (img != Image()) {
+// 					importImage(f, x, y);
+// 				}
+// 			}
+// 		}
+// 	}
+
+// 	if (luaPanelFileDragDropHandlerCbk && !luaPanelFileDragDropHandlerCbk.wasObjectDeleted()) {
+// 		if (luaPanelFileDragDropHandlerCbk->isValid()) {
+// 			owner.getOwner().getCtrlrLuaManager().getMethodManager().call(luaPanelFileDragDropHandlerCbk, files, x, y);
+
+// 			return;
+// 		}
+// 	}
+// }
 
 void CtrlrPanelCanvas::exportSelectedComponents() {
 	if (owner.getSelection() == nullptr)

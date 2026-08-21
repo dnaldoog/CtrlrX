@@ -17,8 +17,7 @@ CtrlrButton::CtrlrButton(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrBu
 	ctrlrButton->addListener(this);
 
 	setProperty(Ids::uiButtonLookAndFeel, "Default");
-	setProperty(Ids::uiButtonLookAndFeelIsCustom, false);
-
+	setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Default to User Settings
 	ctrlrButton->addMouseListener(this, true);
 	ctrlrButton->setBufferedToImage(true);
 	setProperty(Ids::uiButtonIsToggle, true);
@@ -57,7 +56,7 @@ CtrlrButton::CtrlrButton(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrBu
 	setProperty(Ids::uiButtonConnectedBottom, false);
 
 	setProperty(Ids::uiButtonLookAndFeel, "Default");
-	setProperty(Ids::uiButtonLookAndFeelIsCustom, false); // Default to Use LNF Settings
+
 	// DO NOT set explicit uiButtonColourOn / uiButtonColourOff properties here!
 	// Instead, call updateComponentColors() at the end of constructor:
 	updateComponentColors();
@@ -285,19 +284,29 @@ void CtrlrButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChange
 	}
 }
 
+// void CtrlrButton::updateComponentFonts() {
+// 	if (ctrlrButton == nullptr)
+// 		return;
+
+// 	// juce::Button does not expose setFont(); the active LookAndFeel supplies
+// 	// the button font, so apply the font state without a component callback.
+// 	LNF::applyFontState(*ctrlrButton, getComponentTree(), Ids::uiButtonLookAndFeelIsCustom, {});
+
+// 	ctrlrButton->repaint();
+// }
+
 void CtrlrButton::updateComponentColors() {
 	if (ctrlrButton == nullptr)
 		return;
 
 	LNF::applyLookAndFeelState(*ctrlrButton, getComponentTree(), Ids::uiButtonLookAndFeelIsCustom,
+							   // Background colours
 							   Ids::uiButtonColourOn, Ids::uiButtonColourOff, juce::TextButton::buttonOnColourId,
-							   juce::TextButton::buttonColourId),
-		Ids::uiButtonTextColourOn,	// Text color ON property
-		Ids::uiButtonTextColourOff, // Text color OFF property
-		juce::TextButton::textColourOnId, juce::TextButton::textColourOffId;
+							   juce::TextButton::buttonColourId,
+							   // Text colours
+							   Ids::uiButtonTextColourOn, Ids::uiButtonTextColourOff, juce::TextButton::textColourOnId,
+							   juce::TextButton::textColourOffId);
 
-	// Refresh the Property Inspector so the colour pickers reflect the updated tree values!
-	//updatePropertiesPanel(); // this returns the screen to top - it's a bit annoying
 	ctrlrButton->repaint();
 }
 
