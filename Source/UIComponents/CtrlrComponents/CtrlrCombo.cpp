@@ -42,7 +42,6 @@ CtrlrCombo::CtrlrCombo (CtrlrModulator &owner)
     setProperty (Ids::uiComboContent, "");
     
     setProperty (Ids::uiButtonLookAndFeel, "Default");
-    setProperty (Ids::uiButtonLookAndFeelIsCustom, false);
     
     if ( owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V3"
         || owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V2"
@@ -98,8 +97,6 @@ CtrlrCombo::CtrlrCombo (CtrlrModulator &owner)
     setProperty (Ids::uiComboButtonGradient, false); // Updated v5.6.36. It looks less 2010s
     setProperty (Ids::uiComboButtonGradientColour1, (String)findColour(TextButton::buttonColourId).toString());
     setProperty (Ids::uiComboButtonGradientColour2, (String)findColour(TextButton::buttonColourId).darker(0.2f).toString());
-
-    setProperty (Ids::uiButtonLookAndFeelIsCustom, false);
     
     // Explicitly set the TextEditor colors to match the Combo background/text
     // ComboBox level
@@ -374,19 +371,6 @@ void CtrlrCombo::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChange
 	{
 		// 1. Update colors, font sizes, justification, and force repaints
 		updateInternalComponentStyles();
-
-		// 2. Lock to custom scheme ONLY if a color/style property was edited by the user
-		if (!updatingLookAndFeel)
-		{
-			const String propName = property.toString();
-			
-			// Checks if the property explicitly targets colors or custom fonts/justifications
-			if (propName.containsIgnoreCase("Colour")
-				|| propName.containsIgnoreCase("Color"))
-			{
-				setProperty(Ids::uiButtonLookAndFeelIsCustom, true);
-			}
-		}
 	}
 	else if (property == Ids::uiComboDynamicContent)
 	{
@@ -633,9 +617,7 @@ void CtrlrCombo::resetLookAndFeelOverrides()
         setProperty (Ids::uiComboButtonGradientColour1, (String)findColour(TextButton::buttonColourId).toString());
         setProperty (Ids::uiComboButtonGradientColour2, (String)findColour(TextButton::buttonColourId).darker(0.2f).toString());
         
-        setProperty (Ids::uiButtonLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
-        
-		_DBG("RESET_LF: End");
+        _DBG("RESET_LF: End");
 		
         updatePropertiesPanel(); // Refreshes property pane
     }

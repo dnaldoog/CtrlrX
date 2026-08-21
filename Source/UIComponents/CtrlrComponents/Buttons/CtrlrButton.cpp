@@ -15,7 +15,6 @@ CtrlrButton::CtrlrButton (CtrlrModulator &owner)
     ctrlrButton->addListener (this);
     
     setProperty (Ids::uiButtonLookAndFeel, "Default");
-    setProperty (Ids::uiButtonLookAndFeelIsCustom, false);
     
     ctrlrButton->addMouseListener(this, true);
     ctrlrButton->setBufferedToImage (true);
@@ -73,9 +72,6 @@ CtrlrButton::CtrlrButton (CtrlrModulator &owner)
     setProperty (Ids::uiButtonConnectedRight, false);
     setProperty (Ids::uiButtonConnectedTop, false);
     setProperty (Ids::uiButtonConnectedBottom, false);
-    
-    setProperty (Ids::uiButtonLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
-
 }
 
 CtrlrButton::~CtrlrButton()
@@ -244,13 +240,6 @@ void CtrlrButton::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
 		ctrlrButton->setColour (TextButton::buttonOnColourId, VAR2COLOUR(getProperty(Ids::uiButtonColourOn)));
 		ctrlrButton->setColour (TextButton::textColourOffId, VAR2COLOUR(getProperty(Ids::uiButtonTextColourOff)));
 		ctrlrButton->setColour (TextButton::textColourOnId, VAR2COLOUR(getProperty(Ids::uiButtonTextColourOn)));
-        
-		// Only lock it as custom if the user is actually tweaking colors,
-		// not when we are programmatically updating themes!
-		if (!updatingLookAndFeel)
-		{
-			setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
-		}
 	}
 
 	else if (property == Ids::uiButtonIsToggle)
@@ -337,9 +326,7 @@ void CtrlrButton::resetLookAndFeelOverrides()
         setProperty (Ids::uiButtonColourOn,  (String)findColour(TextButton::buttonOnColourId).toString());
         setProperty (Ids::uiButtonColourOff, (String)findColour(TextButton::buttonColourId).toString());
         setProperty (Ids::uiButtonTextColourOn, (String)findColour(TextButton::textColourOnId).toString());
-        setProperty (Ids::uiButtonTextColourOff, (String)findColour(TextButton::textColourOffId).toString());        
-        
-        setProperty (Ids::uiButtonLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
+        setProperty (Ids::uiButtonTextColourOff, (String)findColour(TextButton::textColourOffId).toString());
         
         updatePropertiesPanel(); // Refreshes property pane
     }

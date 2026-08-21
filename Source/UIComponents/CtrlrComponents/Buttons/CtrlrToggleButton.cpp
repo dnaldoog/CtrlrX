@@ -15,8 +15,6 @@ CtrlrToggleButton::CtrlrToggleButton (CtrlrModulator &owner)
     ctrlrButton->setButtonText ("Button");
     ctrlrButton->addListener (this);
 
-
-    //[UserPreSize]
 	ctrlrButton->setBufferedToImage (true);
 	setProperty (Ids::uiToggleButtonText, "Button");
 	setProperty (Ids::uiButtonTrueValue, 1);
@@ -25,9 +23,6 @@ CtrlrToggleButton::CtrlrToggleButton (CtrlrModulator &owner)
 	owner.setProperty (Ids::modulatorMin, 0);
     
     setProperty (Ids::uiButtonLookAndFeel, "Default");
-    setProperty (Ids::uiButtonLookAndFeelIsCustom, false);
-
-    //[/UserPreSize]
 
     if ( owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V3"
         || owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V2"
@@ -53,45 +48,25 @@ CtrlrToggleButton::CtrlrToggleButton (CtrlrModulator &owner)
         setProperty (Ids::uiToggleButtontickColour, (String)LookAndFeel::findColour(ToggleButton::tickColourId).toString()); // Tick colour
     }
     setSize (88, 48);
-    
-    setProperty (Ids::uiButtonLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
-
-    //[Constructor] You can add your own custom stuff here..
-	//owner.getProcessor().setValueFromGUI (0, true);
-    //[/Constructor]
 }
 
 CtrlrToggleButton::~CtrlrToggleButton()
 {
-    //[Destructor_pre]. You can add your own custom destruction code here..
-    //[/Destructor_pre]
-
     deleteAndZero (ctrlrButton);
-
-    //[Destructor]. You can add your own custom destruction code here..
-    //[/Destructor]
 }
 
 //==============================================================================
 void CtrlrToggleButton::paint (Graphics& g)
 {
-    //[UserPrePaint] Add your own custom painting code here..
-    //[/UserPrePaint]
-
-    //[UserPaint] Add your own custom painting code here..
-    //[/UserPaint]
 }
 
 void CtrlrToggleButton::resized()
 {
     ctrlrButton->setBounds (0, 0, getWidth() - 0, getHeight() - 0);
-    //[UserResized] Add your own custom resize handling here..
-    //[/UserResized]
 }
 
 void CtrlrToggleButton::buttonClicked (Button* buttonThatWasClicked)
 {
-    //[UserbuttonClicked_Pre]
     if (isInternal())
 	{
 		owner.getOwnerPanel().performInternalComponentFunction(this);
@@ -100,29 +75,19 @@ void CtrlrToggleButton::buttonClicked (Button* buttonThatWasClicked)
 
 	if (!owner.getOwnerPanel().checkRadioGroup(this, buttonThatWasClicked->getToggleState()))
 		return;
-    //[/UserbuttonClicked_Pre]
 
     if (buttonThatWasClicked == ctrlrButton)
     {
-        //[UserButtonCode_ctrlrButton] -- add your button handler code here..
 		setComponentValue (ctrlrButton->getToggleState(), true);
-        //[/UserButtonCode_ctrlrButton]
     }
-
-    //[UserbuttonClicked_Post]
-    //[/UserbuttonClicked_Post]
 }
 
 void CtrlrToggleButton::mouseDown (const MouseEvent& e)
 {
-    //[UserCode_mouseDown] -- Add your code here...
     CtrlrComponent::mouseDown(e);
-    //[/UserCode_mouseDown]
 }
 
 
-
-//[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 void CtrlrToggleButton::setComponentValue (const double newValue, const bool sendChangeMessage)
 {
 	if (!owner.getOwnerPanel().checkRadioGroup(this, ctrlrButton->getToggleState()))
@@ -202,43 +167,19 @@ void CtrlrToggleButton::valueTreePropertyChanged (ValueTree &treeWhosePropertyHa
 	if (property == Ids::uiButtonTextColourOn)
 	{
 		ctrlrButton->setColour (ToggleButton::textColourId, VAR2COLOUR(getProperty(Ids::uiButtonTextColourOn)));
-		// Only lock it as custom if the user is actually tweaking colors,
-		// not when we are programmatically updating themes!
-		if (!updatingLookAndFeel)
-		{
-			setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
-		}
 	}
     if (property == Ids::uiButtonColourOff)
     {
         ctrlrButton->setColour (TextButton::buttonColourId, VAR2COLOUR(getProperty(Ids::uiButtonColourOff)));
-		// Only lock it as custom if the user is actually tweaking colors,
-		// not when we are programmatically updating themes!
-		if (!updatingLookAndFeel)
-		{
-			setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
-		}
     }
     else if (property == Ids::uiToggleButtontickColour)
     {
         ctrlrButton->setColour (ToggleButton::tickColourId, VAR2COLOUR(getProperty(Ids::uiToggleButtontickColour)));
-		// Only lock it as custom if the user is actually tweaking colors,
-		// not when we are programmatically updating themes!
-		if (!updatingLookAndFeel)
-		{
-			setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
-		}
     }
 	else if (property == Ids::uiToggleButtonFocusOutline)
     {
         ctrlrButton->setColour (ToggleButton::tickDisabledColourId, VAR2COLOUR(getProperty(Ids::uiToggleButtonFocusOutline)));
         ctrlrButton->setColour (TextEditor::focusedOutlineColourId, VAR2COLOUR(getProperty(Ids::uiToggleButtonFocusOutline)));
-		// Only lock it as custom if the user is actually tweaking colors,
-		// not when we are programmatically updating themes!
-		if (!updatingLookAndFeel)
-		{
-			setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
-		}
     }
     else if (property == Ids::uiToggleButtonText)
     {
@@ -313,9 +254,7 @@ void CtrlrToggleButton::resetLookAndFeelOverrides()
             setProperty (Ids::uiToggleButtonFocusOutline, (String)LookAndFeel::findColour(ToggleButton::tickDisabledColourId).withAlpha(0.5f).toString()); // Tick colour
             setProperty (Ids::uiToggleButtontickColour, (String)LookAndFeel::findColour(ToggleButton::tickColourId).toString()); // Tick colour
         }
-        
-        setProperty (Ids::uiButtonLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
-        
+		
         updatePropertiesPanel(); // Refreshes property pane
     }
 }

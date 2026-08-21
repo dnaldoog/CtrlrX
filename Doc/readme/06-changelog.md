@@ -24,7 +24,7 @@
 
 ## Changelog
 
-#### Version 5.6.36 | 2026.08.16
+#### Version 5.6.36 | 2026.08.21
 
 * **FIXED** CtrlrTabsComponents.cpp and CtrlrGroup.cpp keep component owner group on uiTabs. `CtrlrTabsComponent.cpp`, `CtrlrGroup.cpp`
 * **FIXED** Doubling of menu item causing potential crash. `CtrlrEditor.cpp`. Thanks to [John Goodland](https://github.com/dnaldoog) `CtrlrEditorApplicationCommandsHandlers.cpp`
@@ -49,6 +49,8 @@
 * **ADDED** Align/Space/Resize components on canvas. Thanks to [John Goodland](https://github.com/dnaldoog).`CtrlrPanelCanvas.cpp` & `.h`, `CtrlrPanelCanvasHandlers.cpp`
 * **FIXED** ComboBox fuzzy search. Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrCombo.cpp` & `.h`
 * **ADDED** new templates for LUA table and class on right-click menu in LUA editor. Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrLuaMethodEditor.cpp` & `.h`
+* **UPDATED** Custom colours LnF logic to remove ui_Component_LookAndFeelIsCustom for sliders, buttons, group and combo.
+
 
 #### Version 5.6.35 | 2026.04.20
 

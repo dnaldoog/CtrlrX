@@ -28,9 +28,7 @@ void CtrlrGroupContentComponent::customLookAndFeelChanged(LookAndFeelBase *custo
         }
     }
 }
-//[/MiscUserDefs]
 
-//==============================================================================
 CtrlrGroup::CtrlrGroup (CtrlrModulator &owner)
     : CtrlrComponent(owner), content(*this)
 	// , label (0) // Updated v5.6.34. Thanks to @dnaldoog
@@ -43,7 +41,6 @@ CtrlrGroup::CtrlrGroup (CtrlrModulator &owner)
     label->setColour (TextEditor::textColourId, findColour(Label::textColourId)); // Colours::black
     label->setColour (TextEditor::backgroundColourId, Colour (0x0)); // Colour (0x0)
 
-    //[UserPreSize]
 	addAndMakeVisible(&content);
 	componentTree.addListener (this);
 
@@ -57,7 +54,6 @@ CtrlrGroup::CtrlrGroup (CtrlrModulator &owner)
     setProperty (Ids::componentLabelVisible, true);
     
     setProperty (Ids::uiButtonLookAndFeel, "Default");
-    setProperty (Ids::uiButtonLookAndFeelIsCustom, false);
     
     if ( owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V3"
         || owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V2"
@@ -94,16 +90,10 @@ CtrlrGroup::CtrlrGroup (CtrlrModulator &owner)
     setProperty (Ids::uiGroupBackgroundImageLayout, 36);
     setProperty (Ids::uiGroupBackgroundImageAlpha, 255);
 	setProperty (Ids::uiGroupBackgroundGradientType, 1);
-
-    setProperty (Ids::uiButtonLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
     
 	owner.getModulatorTree().addListener (this);
-    //[/UserPreSize]
 
     setSize (128, 128);
-
-    //[Constructor] You can add your own custom stuff here..
-    //[/Constructor]
 }
 
 CtrlrGroup::~CtrlrGroup()
@@ -116,10 +106,6 @@ CtrlrGroup::~CtrlrGroup()
 //==============================================================================
 void CtrlrGroup::paint (Graphics& g)
 {
-    //[UserPrePaint] Add your own custom painting code here..
-    //[/UserPrePaint]
-
-    //[UserPaint] Add your own custom painting code here..
 	Rectangle<int> r = getUsableRect();
 
 	gradientFromProperty(g, getBounds(), getObjectTree(), Ids::uiGroupOutlineGradientType, Ids::uiGroupOutlineColour1, Ids::uiGroupOutlineColour2);
@@ -146,21 +132,15 @@ void CtrlrGroup::paint (Graphics& g)
 								RectanglePlacement(getProperty (Ids::uiGroupBackgroundImageLayout)));
 		}
 	}
-    //[/UserPaint]
 }
 
 void CtrlrGroup::resized()
 {
-    //label->setBounds (0, 0, getWidth() - 0, getHeight() - 0);
-    //[UserResized] Add your own custom resize handling here..
 	label->setBounds (textMargin, textMargin, getWidth() - (textMargin*2), getHeight() - (textMargin*2));
 	content.setBounds(getUsableRect());
-    //[/UserResized]
 }
 
 
-
-//[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 void CtrlrGroup::setComponentValue (const double newValue, const bool sendChangeMessage)
 {
 }
@@ -228,13 +208,6 @@ void CtrlrGroup::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChange
 	else if (property == Ids::uiGroupTextColour)
 	{
 		label->setColour (Label::textColourId, VAR2COLOUR(getProperty(Ids::uiGroupTextColour)));
-        
-		// Only lock it as custom if the user is actually tweaking colors,
-		// not when we are programmatically updating themes!
-		if (!updatingLookAndFeel)
-		{
-			setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
-		}
 	}
 	else if (property == Ids::uiGroupText)
 	{
@@ -503,8 +476,6 @@ void CtrlrGroup::resetLookAndFeelOverrides()
         setProperty (Ids::uiGroupOutlineGradientType, "SolidColour");
         setProperty (Ids::uiGroupOutlineColour1, (String)findColour(DocumentWindow::backgroundColourId).darker(0.2f).toString());
         setProperty (Ids::uiGroupOutlineColour2, (String)findColour(DocumentWindow::backgroundColourId).toString());
-        
-        setProperty (Ids::uiButtonLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
         
         updatePropertiesPanel(); // Refreshes property pane
     }
