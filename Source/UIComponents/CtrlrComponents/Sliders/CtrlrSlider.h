@@ -30,10 +30,10 @@ class CtrlrSlider : public CtrlrComponent, public SettableTooltipClient, public 
     void resized();
     void sliderValueChanged(Slider* sliderThatWasMoved);
     void mouseUp(const MouseEvent& e);
-    void customLookAndFeelChanged(LookAndFeelBase* customLookAndFeel = nullptr);
-    std::unique_ptr<juce::LookAndFeel>
-    getLookAndFeelFromComponentProperty(const String& lookAndFeelComponentProperty);
-    void resetLookAndFeelOverrides();
+	void lookAndFeelChanged();
+	void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr);
+	std::unique_ptr<juce::LookAndFeel> getLookAndFeelFromComponentProperty(const String &lookAndFeelComponentProperty);
+	void resetLookAndFeelOverrides();
     void updatePropertiesPanel();
 	void updateComponentColors();
 

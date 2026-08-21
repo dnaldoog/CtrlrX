@@ -182,7 +182,6 @@ void CtrlrSlider::updateComponentColors() {
 								{Ids::uiSliderValueOutlineColour, juce::Slider::textBoxOutlineColourId},
 								{Ids::uiSliderTrackColour, juce::Slider::trackColourId}});
 
-	// Force internal sub-components (like Label text boxes inside the Slider) to update theme colors
 	ctrlrSlider.lookAndFeelChanged();
 	ctrlrSlider.repaint();
 }
@@ -203,31 +202,41 @@ void CtrlrSlider::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChange
 										   owner.getOwnerPanel().getEditor());
 	} else if (property == Ids::uiSliderLookAndFeelIsCustom) {
 		updateComponentColors();
+		/*
+		 *
+		 *  uiPanelLookAndFeel and uiSliderLookAndFeel are handled together in the same block below, because they are
+		 * interdependent. The slider's LNF can be set to "Default" to inherit the panel's LNF, or it can be set to a
+		 * specific LNF string to override the panel's LNF. When either property changes, we need to re-evaluate the
+		 * effective LNF for the slider and apply it accordingly.
+		 *
+		 */
 	} else if (property == Ids::uiPanelLookAndFeel || property == Ids::uiSliderLookAndFeel) {
-
 		String activeLnF = getProperty(Ids::uiSliderLookAndFeel).toString();
-		DBG("!!! Look and feel changed for uiSlider : " << activeLnF);
-		// 1. Fallback to panel editor's global theme if component is set to "Default"
+
+		// 1. Fallback to panel editor's global theme if set to "Default" or empty
 		if (activeLnF.isEmpty() || activeLnF == "Default") {
 			if (auto *editor = owner.getOwnerPanel().getEditor()) {
 				activeLnF = editor->getProperty(Ids::uiPanelLookAndFeel).toString();
 			}
 		}
 
-		// 2. Clear any local raw pointer assignment so JUCE doesn't crash on dangling pointers
+		// 2. Clear old pointers to break JUCE's internal LookAndFeel pointer cache
+		setLookAndFeel(nullptr);
 		ctrlrSlider.setLookAndFeel(nullptr);
 
-		// 3. Let Ctrlr's central engine apply the persistent theme instance
-		applyCentralLookAndFeel(&ctrlrSlider, activeLnF);
+		// 3. Let Ctrlr resolve and apply the active theme string onto 'this' (the wrapper)
+		applyCentralLookAndFeel(this, activeLnF);
 
-		// 4. Update component colors (strips local hexes if in LNF mode, or re-applies if in User Mode)
+		// 4. Pass the newly resolved LookAndFeel object directly to the internal member slider
+		ctrlrSlider.setLookAndFeel(&getLookAndFeel());
+
+		// 5. Strip local hex overrides (LNF mode) or restore hexes (User mode)
 		updateComponentColors();
 
-		// 5. Force JUCE to invalidate its color cache and redraw
+		// 6. Force JUCE layout and color cache refresh
 		ctrlrSlider.sendLookAndFeelChange();
 		ctrlrSlider.repaint();
 		repaint();
-
 	} else if (property == Ids::uiSliderRotaryFillColour || property == Ids::uiSliderRotaryOutlineColour ||
 			   property == Ids::uiSliderTrackColour || property == Ids::uiSliderThumbColour ||
 			   property == Ids::uiSliderValueHighlightColour || property == Ids::uiSliderValueBgColour ||
@@ -304,25 +313,46 @@ void CtrlrSlider::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChange
 const String CtrlrSlider::getComponentText() {
 	return (String(getComponentValue()));
 }
+void CtrlrSlider::lookAndFeelChanged() {
+	DBG("CtrlrSlider::lookAndFeelChanged() called");
+	// 1. Sync internal slider pointer with the wrapper's LookAndFeel
+	ctrlrSlider.setLookAndFeel(&getLookAndFeel());
 
+	// 2. Clear local hex overrides if in LNF mode, or re-apply if in User mode
+	updateComponentColors();
+
+	// 3. Notify internal JUCE child components (labels, textboxes)
+	ctrlrSlider.sendLookAndFeelChange();
+
+	// 4. Call base class implementation
+	CtrlrComponent::lookAndFeelChanged();
+}
 void CtrlrSlider::customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel) {
+	DBG("Custom look and feel changed for CtrlrSlider: ");
 	if (customLookAndFeel != nullptr) {
-		// Apply the active custom LookAndFeel instance directly to the child slider
+		// Direct custom LookAndFeel assignment
 		ctrlrSlider.setLookAndFeel(customLookAndFeel);
 	} else {
-		// Fall back to null so it inherits from parent, or fetch panel central theme
+		// 1. Clear internal slider pointer so it can accept parent theme
 		ctrlrSlider.setLookAndFeel(nullptr);
 
+		// 2. Fetch active theme string
 		String panelLnF = getProperty(Ids::uiSliderLookAndFeel).toString();
 		if (panelLnF.isEmpty() || panelLnF == "Default") {
 			if (auto *editor = owner.getOwnerPanel().getEditor()) {
 				panelLnF = editor->getProperty(Ids::uiPanelLookAndFeel).toString();
 			}
 		}
-		applyCentralLookAndFeel(&ctrlrSlider, panelLnF);
+
+		// 3. Apply theme string to 'this' (the CtrlrComponent wrapper!), NOT &ctrlrSlider
+		applyCentralLookAndFeel(this, panelLnF);
+
+		// 4. Bind the wrapper's newly resolved LookAndFeel object to the internal member slider
+		ctrlrSlider.setLookAndFeel(&getLookAndFeel());
 	}
 
-	// Force JUCE to invalidate cached draw calls and repaint
+	// 5. Refresh colors and force redraw
+	updateComponentColors();
 	ctrlrSlider.sendLookAndFeelChange();
 	ctrlrSlider.repaint();
 }
