@@ -6,59 +6,58 @@
 
 class CtrlrValueMap;
 class CtrlrSliderLookAndFeel;
+struct lua_State;
 
-class CtrlrFixedSlider : public CtrlrComponent, public SettableTooltipClient, public Slider::Listener {
+class CtrlrFixedSlider : public CtrlrComponent, public juce::SettableTooltipClient, public juce::Slider::Listener {
 	public:
 		//==============================================================================
 		CtrlrFixedSlider(CtrlrModulator &owner);
-		~CtrlrFixedSlider();
+		~CtrlrFixedSlider() override;
 
 		//==============================================================================
-		//[UserMethods]     -- You can add your own custom methods in this section.
-		void sliderValueChanged(Slider *sliderThatWasMoved);
+		// Methods
+		void sliderValueChanged(juce::Slider *sliderThatWasMoved) override;
 		void setComponentValue(const double newValue, const bool sendChangeMessage = false);
 		double getComponentValue();
 		int getComponentMidiValue();
 		double getComponentMaxValue();
-		const String getComponentText();
+		const juce::String getComponentText();
 		void sliderContentChanged();
-		const String getTextForValue(const double value);
-		void valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
-		void valueTreeChildrenChanged(ValueTree &treeWhoseChildHasChanged) {}
-		void valueTreeParentChanged(ValueTree &treeWhoseParentHasChanged) {}
-		void valueTreeChildAdded(ValueTree &parentTree, ValueTree &childWhichHasBeenAdded) {}
-		void valueTreeChildRemoved(ValueTree &parentTree, ValueTree &childWhichHasBeenRemoved, int) {}
-		void valueTreeChildOrderChanged(ValueTree &parentTreeWhoseChildrenHaveMoved, int, int) {}
-		Slider *getOwnedSlider() { return (ctrlrSlider.get()); }
-		CtrlrValueMap &getValueMap() { return (*valueMap); }
-		void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr) {}; // trailing ; unnecessary
+		const juce::String getTextForValue(const double value);
+
+		// ValueTree Property Listener
+		void valueTreePropertyChanged(juce::ValueTree &treeWhosePropertyHasChanged,
+									  const juce::Identifier &property) override;
+
+		juce::Slider *getOwnedSlider() {
+			return ctrlrSlider.get();
+		}
+		CtrlrValueMap &getValueMap() {
+			return *valueMap;
+		}
+
+		// LookAndFeel & Properties
 		static std::unique_ptr<juce::LookAndFeel>
-		getLookAndFeelFromComponentProperty(const String &lookAndFeelComponentProperty);
+		getLookAndFeelFromComponentProperty(const juce::String &lookAndFeelComponentProperty);
 		void resetLookAndFeelOverrides();
 		void updatePropertiesPanel();
-#endif
+		void lookAndFeelChanged() override;
+		void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr);
+		void updateComponentColors();
+		const juce::String getCurrentLF();
+
 		static void wrapForLua(lua_State *L);
-		//[/UserMethods]
 
-		void paint(Graphics &g);
-		void resized();
-		void mouseUp(const MouseEvent &e);
+		void paint(juce::Graphics &g) override;
+		void resized() override;
+		void mouseUp(const juce::MouseEvent &e) override;
 
-		//==============================================================================
-	juce_UseDebuggingNewOperator
-
-		private :
-		//[UserVariables]   -- You can add your own custom variables in this section.
-
-		std::unique_ptr<CtrlrValueMap>
-			valueMap;
-		//==============================================================================
-		std::unique_ptr<Slider> ctrlrSlider;
+	private:
+		std::unique_ptr<CtrlrValueMap> valueMap;
 		std::unique_ptr<juce::LookAndFeel> customLF;
-		//==============================================================================
-		// (prevent copy constructor and operator= being generated..)
-		CtrlrFixedSlider(const CtrlrFixedSlider &);
-		const CtrlrFixedSlider &operator=(const CtrlrFixedSlider &);
+		std::unique_ptr<CtrlrSliderInternal> ctrlrSlider;
+
+		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrFixedSlider)
 };
 
-// __JUCER_HEADER_CTRLRFIXEDSLIDER_CTRLRFIXEDSLIDER_AD4513E7__
+#endif // __JUCER_HEADER_CTRLRFIXEDSLIDER_CTRLRFIXEDSLIDER_AD4513E7__
