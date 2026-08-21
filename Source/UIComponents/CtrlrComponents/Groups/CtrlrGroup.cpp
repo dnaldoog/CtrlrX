@@ -215,22 +215,26 @@ void CtrlrGroup::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChange
 	}
     else if (property == Ids::uiButtonLookAndFeel)
     {
+        updatingLookAndFeel = true; // Set guard flag
+        
         String LookAndFeelType = getProperty(property);
         setLookAndFeel(getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
         
-        if (LookAndFeelType == "Default")
-        {
-            setProperty(Ids::uiButtonLookAndFeelIsCustom, false); // Resets the Customized Flag to False to allow Global L&F to apply
-        }
+        resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
         
-        if (!getProperty(Ids::uiButtonLookAndFeelIsCustom))
-        {
-            resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
-        }
+        updatingLookAndFeel = false; // Clear guard flag
+
     }
 	else if (property == Ids::uiGroupTextColour)
 	{
 		label->setColour (Label::textColourId, VAR2COLOUR(getProperty(Ids::uiGroupTextColour)));
+        
+		// Only lock it as custom if the user is actually tweaking colors,
+		// not when we are programmatically updating themes!
+		if (!updatingLookAndFeel)
+		{
+			setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+		}
 	}
 	else if (property == Ids::uiGroupText)
 	{
@@ -514,34 +518,3 @@ void CtrlrGroup::updatePropertiesPanel()
         props->refreshAll(); // Needs extra code to prevent scrolling back to top on refresh
     }
 }
-
-
-
-
-//[/MiscUserCode]
-
-
-//==============================================================================
-#if 0
-/*  -- Jucer information section --
-
-    This is where the Jucer puts all of its metadata, so don't change anything in here!
-
-BEGIN_JUCER_METADATA
-
-<JUCER_COMPONENT documentType="Component" className="CtrlrGroup" componentName=""
-                 parentClasses="public CtrlrComponent" constructorParams="CtrlrModulator &amp;owner"
-                 variableInitialisers="CtrlrComponent(owner), content(*this)"
-                 snapPixels="8" snapActive="1" snapShown="1" overlayOpacity="0.330000013"
-                 fixedSize="1" initialWidth="128" initialHeight="128">
-  <BACKGROUND backgroundColour="ffffff"/>
-  <LABEL name="new label" id="20a4cb0ec13b8efc" memberName="label" virtualName=""
-         explicitFocusOrder="0" pos="0 0 0M 0M" edTextCol="ff000000" edBkgCol="0"
-         labelText="Group Text" editableSingleClick="0" editableDoubleClick="0"
-         focusDiscardsChanges="0" fontname="Default font" fontsize="14"
-         bold="1" italic="0" justification="36"/>
-</JUCER_COMPONENT>
-
-END_JUCER_METADATA
-*/
-#endif

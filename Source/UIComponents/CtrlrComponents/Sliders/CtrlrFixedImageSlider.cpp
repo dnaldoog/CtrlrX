@@ -166,18 +166,14 @@ void CtrlrFixedImageSlider::valueTreePropertyChanged (ValueTree &treeWhoseProper
     }
     else if (property == Ids::uiSliderLookAndFeel)
     {
+        updatingLookAndFeel = true; // Set guard flag
+        
         String LookAndFeelType = getProperty(property);
         setLookAndFeel(getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
         
-        if (LookAndFeelType == "Default")
-        {
-            setProperty(Ids::uiSliderLookAndFeelIsCustom, false); // Resets the Customized Flag to False to allow Global L&F to apply
-        }
-        
-        if (!getProperty(Ids::uiSliderLookAndFeelIsCustom))
-        {
-            resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
-        }
+        resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
+		
+        updatingLookAndFeel = false; // Clear guard flag
     }
     else if (property == Ids::resourceImageWidth)
     {
@@ -202,22 +198,42 @@ void CtrlrFixedImageSlider::valueTreePropertyChanged (ValueTree &treeWhoseProper
     else if (property == Ids::uiSliderValueTextColour)
     {
         ctrlrSlider->setColour (Slider::textBoxTextColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueTextColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        // Only lock it as custom if the user is actually tweaking colors,
+        // not when we are programmatically updating themes!
+        if (!updatingLookAndFeel)
+        {
+            setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        }
     }
     else if (property == Ids::uiSliderValueHighlightColour)
     {
         ctrlrSlider->setColour (Slider::textBoxHighlightColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueHighlightColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        // Only lock it as custom if the user is actually tweaking colors,
+        // not when we are programmatically updating themes!
+        if (!updatingLookAndFeel)
+        {
+            setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        }
     }
     else if (property == Ids::uiSliderValueBgColour)
     {
         ctrlrSlider->setColour (Slider::textBoxBackgroundColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueBgColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        // Only lock it as custom if the user is actually tweaking colors,
+        // not when we are programmatically updating themes!
+        if (!updatingLookAndFeel)
+        {
+            setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        }
     }
     else if (property == Ids::uiSliderValueOutlineColour)
     {
         ctrlrSlider->setColour (Slider::textBoxOutlineColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueOutlineColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        // Only lock it as custom if the user is actually tweaking colors,
+        // not when we are programmatically updating themes!
+        if (!updatingLookAndFeel)
+        {
+            setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        }
     }
     else if (property == Ids::uiFixedSliderContent)
     {

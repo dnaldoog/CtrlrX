@@ -43,6 +43,7 @@ class CtrlrSlider  : public CtrlrComponent,
         CtrlrSliderLookAndFeel_V3 lfV3;
         CtrlrSliderLookAndFeel_V4 lfV4;
         CtrlrSliderInternal ctrlrSlider;
+        bool updatingLookAndFeel = false;
 };
 
 #endif

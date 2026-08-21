@@ -65,6 +65,7 @@ private:
     // (prevent copy constructor and operator= being generated..)
     CtrlrFixedImageSlider (const CtrlrFixedImageSlider&);
     const CtrlrFixedImageSlider& operator= (const CtrlrFixedImageSlider&);
+    bool updatingLookAndFeel = false;
 };
 
 

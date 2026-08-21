@@ -218,63 +218,105 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
     }
     else if (property == Ids::uiSliderLookAndFeel)
     {
+        updatingLookAndFeel = true; // Set guard flag
+        
         String LookAndFeelType = getProperty(property);
-        setLookAndFeel(CtrlrSlider::getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
+        setLookAndFeel(getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
         
-        if (LookAndFeelType == "Default")
-        {
-            setProperty(Ids::uiSliderLookAndFeelIsCustom, false); // Resets the Customized Flag to False to allow Global L&F to apply
-        }
-        
-        if (!getProperty(Ids::uiSliderLookAndFeelIsCustom))
-        {
-            CtrlrSlider::resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
-        }
+        resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme. Safe to call because it has a condition for restore state.
+		
+        updatingLookAndFeel = false; // Clear guard flag
     }
     else if (property == Ids::uiSliderRotaryFillColour)
     {
         ctrlrSlider.setColour (Slider::rotarySliderFillColourId, VAR2COLOUR(getProperty (Ids::uiSliderRotaryFillColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+		
+        // Only lock it as custom if the user is actually tweaking colors,
+        // not when we are programmatically updating themes!
+        if (!updatingLookAndFeel)
+        {
+            setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        }
     }
     else if (property == Ids::uiSliderRotaryOutlineColour)
     {
         ctrlrSlider.setColour (Slider::rotarySliderOutlineColourId, VAR2COLOUR(getProperty (Ids::uiSliderRotaryOutlineColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+		// Only lock it as custom if the user is actually tweaking colors,
+        // not when we are programmatically updating themes!
+        if (!updatingLookAndFeel)
+        {
+            setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        }
     }
     else if (property == Ids::uiSliderTrackColour)
     {
         ctrlrSlider.setColour (Slider::trackColourId, VAR2COLOUR(getProperty (Ids::uiSliderTrackColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+		// Only lock it as custom if the user is actually tweaking colors,
+        // not when we are programmatically updating themes!
+        if (!updatingLookAndFeel)
+        {
+            setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        }
     }
     else if (property == Ids::uiSliderBackgroundColour) // Added v5.5.36 for linear bar slider
     {
         ctrlrSlider.setColour (Slider::backgroundColourId, VAR2COLOUR(getProperty (Ids::uiSliderBackgroundColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+		// Only lock it as custom if the user is actually tweaking colors,
+        // not when we are programmatically updating themes!
+        if (!updatingLookAndFeel)
+        {
+            setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        }
     }
     else if (property == Ids::uiSliderThumbColour)
     {
         ctrlrSlider.setColour (Slider::thumbColourId, VAR2COLOUR(getProperty (Ids::uiSliderThumbColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+		// Only lock it as custom if the user is actually tweaking colors,
+        // not when we are programmatically updating themes!
+        if (!updatingLookAndFeel)
+        {
+            setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        }
     }
     else if (property == Ids::uiSliderValueTextColour)
     {
         ctrlrSlider.setColour (Slider::textBoxTextColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueTextColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+		// Only lock it as custom if the user is actually tweaking colors,
+        // not when we are programmatically updating themes!
+        if (!updatingLookAndFeel)
+        {
+            setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        }
     }
     else if (property == Ids::uiSliderValueHighlightColour)
     {
         ctrlrSlider.setColour (Slider::textBoxHighlightColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueHighlightColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        // Only lock it as custom if the user is actually tweaking colors,
+        // not when we are programmatically updating themes!
+        if (!updatingLookAndFeel)
+        {
+            setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        }
     }
     else if (property == Ids::uiSliderValueBgColour)
     {
         ctrlrSlider.setColour (Slider::textBoxBackgroundColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueBgColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        // Only lock it as custom if the user is actually tweaking colors,
+        // not when we are programmatically updating themes!
+        if (!updatingLookAndFeel)
+        {
+            setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        }
     }
     else if (property == Ids::uiSliderValueOutlineColour)
     {
         ctrlrSlider.setColour (Slider::textBoxOutlineColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueOutlineColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        // Only lock it as custom if the user is actually tweaking colors,
+        // not when we are programmatically updating themes!
+        if (!updatingLookAndFeel)
+        {
+            setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+        }
     }
     else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin)
     {

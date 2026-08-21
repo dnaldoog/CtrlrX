@@ -193,32 +193,52 @@ void CtrlrToggleButton::valueTreePropertyChanged (ValueTree &treeWhosePropertyHa
         String LookAndFeelType = getProperty(property);
         setLookAndFeel(CtrlrToggleButton::getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
         
-        if (LookAndFeelType == "Default")
-        {
-            setProperty(Ids::uiButtonLookAndFeelIsCustom, false); // Resets the Customized Flag to False to allow Global L&F to apply
-        }
+        updatingLookAndFeel = true; // Set guard flag
+
+        CtrlrToggleButton::resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
         
-        if (!getProperty(Ids::uiButtonLookAndFeelIsCustom))
-        {
-            CtrlrToggleButton::resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
-        }
+        updatingLookAndFeel = false; // Clear guard flag
     }
 	if (property == Ids::uiButtonTextColourOn)
 	{
 		ctrlrButton->setColour (ToggleButton::textColourId, VAR2COLOUR(getProperty(Ids::uiButtonTextColourOn)));
+		// Only lock it as custom if the user is actually tweaking colors,
+		// not when we are programmatically updating themes!
+		if (!updatingLookAndFeel)
+		{
+			setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+		}
 	}
     if (property == Ids::uiButtonColourOff)
     {
         ctrlrButton->setColour (TextButton::buttonColourId, VAR2COLOUR(getProperty(Ids::uiButtonColourOff)));
+		// Only lock it as custom if the user is actually tweaking colors,
+		// not when we are programmatically updating themes!
+		if (!updatingLookAndFeel)
+		{
+			setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+		}
     }
     else if (property == Ids::uiToggleButtontickColour)
     {
         ctrlrButton->setColour (ToggleButton::tickColourId, VAR2COLOUR(getProperty(Ids::uiToggleButtontickColour)));
+		// Only lock it as custom if the user is actually tweaking colors,
+		// not when we are programmatically updating themes!
+		if (!updatingLookAndFeel)
+		{
+			setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+		}
     }
 	else if (property == Ids::uiToggleButtonFocusOutline)
     {
         ctrlrButton->setColour (ToggleButton::tickDisabledColourId, VAR2COLOUR(getProperty(Ids::uiToggleButtonFocusOutline)));
         ctrlrButton->setColour (TextEditor::focusedOutlineColourId, VAR2COLOUR(getProperty(Ids::uiToggleButtonFocusOutline)));
+		// Only lock it as custom if the user is actually tweaking colors,
+		// not when we are programmatically updating themes!
+		if (!updatingLookAndFeel)
+		{
+			setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+		}
     }
     else if (property == Ids::uiToggleButtonText)
     {
@@ -308,36 +328,3 @@ void CtrlrToggleButton::updatePropertiesPanel()
         props->refreshAll(); // Needs extra code to prevent scrolling back to top on refresh
     }
 }
-
-
-
-
-
-//[/MiscUserCode]
-
-
-//==============================================================================
-#if 0
-/*  -- Jucer information section --
-
-    This is where the Jucer puts all of its metadata, so don't change anything in here!
-
-BEGIN_JUCER_METADATA
-
-<JUCER_COMPONENT documentType="Component" className="CtrlrToggleButton" componentName=""
-                 parentClasses="public CtrlrComponent" constructorParams="CtrlrModulator &amp;owner"
-                 variableInitialisers="CtrlrComponent(owner)" snapPixels="8" snapActive="1"
-                 snapShown="1" overlayOpacity="0.330000013" fixedSize="1" initialWidth="88"
-                 initialHeight="32">
-  <METHODS>
-    <METHOD name="mouseDown (const MouseEvent&amp; e)"/>
-  </METHODS>
-  <BACKGROUND backgroundColour="ffffff"/>
-  <TOGGLEBUTTON name="ctrlrButton" id="ece5e33c201d706e" memberName="ctrlrButton"
-                virtualName="" explicitFocusOrder="0" pos="0 0 0M 0M" buttonText="Button"
-                connectedEdges="0" needsCallback="1" radioGroupId="0" state="0"/>
-</JUCER_COMPONENT>
-
-END_JUCER_METADATA
-*/
-#endif

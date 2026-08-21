@@ -230,7 +230,6 @@ void CtrlrButton::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
         String LookAndFeelType = getProperty(property);
         setLookAndFeel(CtrlrButton::getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
         
-        setProperty(Ids::uiButtonLookAndFeelIsCustom, false); // Resets the Customized Flag to False to allow Global L&F to apply
         CtrlrButton::resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
         
         updatingLookAndFeel = false; // Clear guard flag

@@ -95,7 +95,7 @@ CtrlrCombo::CtrlrCombo (CtrlrModulator &owner)
         setSize (120, 40);
     }
     
-    setProperty (Ids::uiComboButtonGradient, true);
+    setProperty (Ids::uiComboButtonGradient, false); // Updated v5.6.36. It looks less 2010s
     setProperty (Ids::uiComboButtonGradientColour1, (String)findColour(TextButton::buttonColourId).toString());
     setProperty (Ids::uiComboButtonGradientColour2, (String)findColour(TextButton::buttonColourId).darker(0.2f).toString());
 
@@ -358,95 +358,35 @@ void CtrlrCombo::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChange
 		}
 		startTimer(250);
 	}
-	else if (property.toString().startsWith("uiCombo")
-			 && property != Ids::uiComboSearch
-			 && property != Ids::uiComboTextJustification)
-	{
-		updateInternalComponentStyles();
-	}
 	else if (property == Ids::uiButtonLookAndFeel)
 	{
+		updatingLookAndFeel = true; // Set guard flag
+        
 		String LookAndFeelType = getProperty(property);
         setLookAndFeel(getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
+
+        resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
         
-        if (LookAndFeelType == "Default")
-        {
-            setProperty(Ids::uiButtonLookAndFeelIsCustom, false); // Resets the Customized Flag to False to allow Global L&F to apply
-        }
-        
-        if (!getProperty(Ids::uiButtonLookAndFeelIsCustom))
-        {
-            resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
-        }
+        updatingLookAndFeel = false; // Clear guard flag
     }
-	else if (property == Ids::uiComboBgColour)
+	// Single catch-all for all uiCombo visual property changes
+	else if (property.toString().startsWith("uiCombo"))
 	{
-		ctrlrCombo->setColour (ComboBox::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
-        
-        ctrlrCombo->setColour (TextEditor::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
-        ctrlrCombo->setColour (TextEditor::highlightColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
-        
-        ctrlrCombo->setColour (Label::backgroundColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
-        ctrlrCombo->setColour (Label::backgroundWhenEditingColourId, VAR2COLOUR(getProperty(Ids::uiComboBgColour)));
-        
-        updateInternalComponentStyles();
-        
-        setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
-	}
-	else if (property == Ids::uiComboButtonColour)
-	{
-		ctrlrCombo->setColour (ComboBox::buttonColourId, VAR2COLOUR(getProperty(Ids::uiComboButtonColour)));
-        setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
-	}
-	else if (property == Ids::uiComboTextColour)
-	{
-		ctrlrCombo->setColour (ComboBox::textColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
-        
-        ctrlrCombo->setColour (TextEditor::textColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
-        ctrlrCombo->setColour (TextEditor::highlightedTextColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
-        
-        ctrlrCombo->setColour (Label::textColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
-        ctrlrCombo->setColour (Label::textWhenEditingColourId, VAR2COLOUR(getProperty(Ids::uiComboTextColour)));
-        
-        updateInternalComponentStyles();
-        
-        setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
-	}
-	else if (property == Ids::uiComboOutlineColour)
-	{
-		ctrlrCombo->setColour (ComboBox::outlineColourId, VAR2COLOUR(getProperty(Ids::uiComboOutlineColour)));
-        setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
-	}
-	else if (property == Ids::uiComboArrowColour)
-	{
-		ctrlrCombo->setColour (ComboBox::arrowColourId, VAR2COLOUR(getProperty(Ids::uiComboArrowColour)));
-        setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
-	}
-	else if (property == Ids::uiComboTextJustification)
-	{
-		ctrlrCombo->setJustificationType (justificationFromProperty(getProperty(property)));
-	}
-	// SHOULD WE PUT ALL COMPONENTS COLOUR PROPERTIES IN THE FOLLOWING CONDITION ??? >>> uiButtonLookAndFeelIsCustom true
-	else if (property == Ids::uiComboFont
-             || property == Ids::uiComboTextColour // Added v5.6.35
-             || property == Ids::uiComboBgColour // Added v5.6.35
-             || property == Ids::uiComboOutlineColour // Added v5.6.35
-             || property == Ids::uiComboMenuBackgroundColour
-             || property == Ids::uiComboMenuFont
-             || property == Ids::uiComboMenuFontColour
-             || property == Ids::uiComboMenuHighlightColour
-             || property == Ids::uiComboMenuFontHighlightedColour
-             || property == Ids::uiComboButtonWidthOverride
-             || property == Ids::uiComboButtonWidth
-             || property == Ids::uiComboButtonColour // Added v5.6.35
-             || property == Ids::uiComboArrowColour // Added v5.6.35. Not sure if needed?
-             || property == Ids::uiComboButtonGradientColour1 // Added v5.6.35. Not sure if needed?
-             || property == Ids::uiComboButtonGradientColour2 // Added v5.6.35. Not sure if needed?
-             )
-	{
-		ctrlrCombo->setLookAndFeel(nullptr);
-		ctrlrCombo->setLookAndFeel(&lf);
-		setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
+		// 1. Update colors, font sizes, justification, and force repaints
+		updateInternalComponentStyles();
+
+		// 2. Lock to custom scheme ONLY if a color/style property was edited by the user
+		if (!updatingLookAndFeel)
+		{
+			const String propName = property.toString();
+			
+			// Checks if the property explicitly targets colors or custom fonts/justifications
+			if (propName.containsIgnoreCase("Colour")
+				|| propName.containsIgnoreCase("Color"))
+			{
+				setProperty(Ids::uiButtonLookAndFeelIsCustom, true);
+			}
+		}
 	}
 	else if (property == Ids::uiComboDynamicContent)
 	{
@@ -693,8 +633,6 @@ void CtrlrCombo::resetLookAndFeelOverrides()
         setProperty (Ids::uiComboButtonGradientColour1, (String)findColour(TextButton::buttonColourId).toString());
         setProperty (Ids::uiComboButtonGradientColour2, (String)findColour(TextButton::buttonColourId).darker(0.2f).toString());
         
-        setProperty (Ids::uiComboArrowColour, (String)findColour(ComboBox::arrowColourId).toString());
-        
         setProperty (Ids::uiButtonLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
         
 		_DBG("RESET_LF: End");
@@ -731,11 +669,26 @@ void CtrlrCombo::updateInternalComponentStyles()
 
     // 1. Force the ComboBox itself to update its internal color IDs
     ctrlrCombo->setColour(ComboBox::backgroundColourId, bg);
+    ctrlrCombo->setColour(TextEditor::backgroundColourId, bg);
+    ctrlrCombo->setColour(TextEditor::highlightColourId, bg);
+    ctrlrCombo->setColour(Label::backgroundColourId, bg);
+    ctrlrCombo->setColour(Label::backgroundWhenEditingColourId, bg);
+    
     ctrlrCombo->setColour(ComboBox::textColourId, txt);
+    ctrlrCombo->setColour(TextEditor::textColourId, txt);
+    ctrlrCombo->setColour(TextEditor::highlightedTextColourId, txt);
+    ctrlrCombo->setColour(Label::textColourId, txt);
+    ctrlrCombo->setColour(Label::textWhenEditingColourId, txt);
     
     // For good measure, sync the button color too if you use it
     ctrlrCombo->setColour(ComboBox::buttonColourId, VAR2COLOUR(getProperty(Ids::uiComboButtonColour)));
 
+    ctrlrCombo->setColour(ComboBox::arrowColourId, VAR2COLOUR(getProperty(Ids::uiComboArrowColour)));
+    ctrlrCombo->setColour(ComboBox::outlineColourId, VAR2COLOUR(getProperty(Ids::uiComboOutlineColour)));
+
+    // Apply justification
+    ctrlrCombo->setJustificationType(justificationFromProperty(getProperty(Ids::uiComboTextJustification)));
+	
     // 2. Iterate through children to force the change on existing sub-components
     for (int i = 0; i < ctrlrCombo->getNumChildComponents(); ++i)
     {

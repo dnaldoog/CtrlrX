@@ -183,7 +183,7 @@ private:
     juce::Component::SafePointer<FuzzySearchPanel> activeSearchPanel;
     //==============================================================================
     ComboBox* ctrlrCombo;
-
+    bool updatingLookAndFeel = false;
 
     //==============================================================================
     // (prevent copy constructor and operator= being generated..)
