@@ -45,7 +45,8 @@ private:
     // CtrlrSliderLookAndFeel_V3 lfV3;
     // CtrlrSliderLookAndFeel_V4 lfV4;
     CtrlrSliderInternal ctrlrSlider;
-    // std::unique_ptr<LookAndFeel> legacyLookAndFeel;
+	std::unique_ptr<juce::LookAndFeel> customLF;
+	// std::unique_ptr<LookAndFeel> legacyLookAndFeel;
 };
 
 #endif // __CTRLR_SLIDER__

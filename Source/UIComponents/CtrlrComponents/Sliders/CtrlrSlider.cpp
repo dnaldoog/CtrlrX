@@ -212,28 +212,31 @@ void CtrlrSlider::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChange
 		 */
 	} else if (property == Ids::uiPanelLookAndFeel || property == Ids::uiSliderLookAndFeel) {
 		String activeLnF = getProperty(Ids::uiSliderLookAndFeel).toString();
-
-		// 1. Fallback to panel editor's global theme if set to "Default" or empty
 		if (activeLnF.isEmpty() || activeLnF == "Default") {
-			if (auto *editor = owner.getOwnerPanel().getEditor()) {
+			if (auto *editor = owner.getOwnerPanel().getEditor())
 				activeLnF = editor->getProperty(Ids::uiPanelLookAndFeel).toString();
-			}
 		}
 
-		// 2. Clear old pointers to break JUCE's internal LookAndFeel pointer cache
-		setLookAndFeel(nullptr);
+		// 1. Detach EVERY pointer to the current LookAndFeel object first —
+		//    this must happen before customLF is reset/reassigned below.
 		ctrlrSlider.setLookAndFeel(nullptr);
+		setLookAndFeel(nullptr);
 
-		// 3. Let Ctrlr resolve and apply the active theme string onto 'this' (the wrapper)
-		applyCentralLookAndFeel(this, activeLnF);
+		// 2. Only now is it safe to destroy/replace the old customLF
+		if (activeLnF == "V1" || activeLnF == "V2" || activeLnF == "V3" || activeLnF.isEmpty() ||
+			activeLnF == "Default") {
+			customLF.reset();
+			applyCentralLookAndFeel(this, activeLnF);
+		} else {
+			customLF = std::move(getLookAndFeelFromComponentProperty(activeLnF));
+			if (customLF != nullptr)
+				setLookAndFeel(customLF.get());
+		}
 
-		// 4. Pass the newly resolved LookAndFeel object directly to the internal member slider
+		// 3. Re-attach the internal slider to whatever 'this' resolved to
 		ctrlrSlider.setLookAndFeel(&getLookAndFeel());
 
-		// 5. Strip local hex overrides (LNF mode) or restore hexes (User mode)
 		updateComponentColors();
-
-		// 6. Force JUCE layout and color cache refresh
 		ctrlrSlider.sendLookAndFeelChange();
 		ctrlrSlider.repaint();
 		repaint();
