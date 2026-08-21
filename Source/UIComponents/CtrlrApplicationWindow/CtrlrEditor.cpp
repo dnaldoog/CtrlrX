@@ -186,7 +186,6 @@ CtrlrEditor::~CtrlrEditor() {
 	// 2. Clear the global default LookAndFeel if it was set
 	// This is important if you ever call LookAndFeel::setDefaultLookAndFeel()
 	LookAndFeel::setDefaultLookAndFeel(nullptr);
-	_CrtDumpMemoryLeaks();
 }
 
 void CtrlrEditor::paint(Graphics &g) {
