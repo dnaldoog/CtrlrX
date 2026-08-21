@@ -50,7 +50,7 @@
 * **FIXED** ComboBox fuzzy search. Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrCombo.cpp` & `.h`
 * **ADDED** new templates for LUA table and class on right-click menu in LUA editor. Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrLuaMethodEditor.cpp` & `.h`
 * **UPDATED** Custom colours LnF logic to remove ui_Component_LookAndFeelIsCustom for sliders, buttons, group and combo.
-
+* **UPDATED** play, stop, clear missing icons added to CtrlrLuaMethodDebuggerPrompt.cpp. Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrLuaMethodDebuggerPrompt.cpp`
 
 #### Version 5.6.35 | 2026.04.20
 
