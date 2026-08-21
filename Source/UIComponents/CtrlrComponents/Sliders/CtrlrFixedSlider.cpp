@@ -121,6 +121,15 @@ void CtrlrFixedSlider::updateComponentColors() {
 		ctrlrSlider->repaint();
 	}
 }
+// void CtrlrFixedSlider::updateComponentFonts() {
+// 	if (ctrlrSlider == nullptr)
+// 		return;
+
+// 	LNF::applyFontState(*ctrlrSlider, getComponentTree(), Ids::uiSliderLookAndFeelIsCustom,
+// 						{{Ids::uiSliderValueFont, [](const juce::Font &) {}}});
+
+// 	ctrlrSlider->repaint();
+// }
 
 void CtrlrFixedSlider::lookAndFeelChanged() {
 	if (ctrlrSlider != nullptr) {

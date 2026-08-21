@@ -44,6 +44,7 @@ class CtrlrFixedSlider : public CtrlrComponent, public juce::SettableTooltipClie
 		void lookAndFeelChanged() override;
 		void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr);
 		void updateComponentColors();
+		// void updateComponentFonts();
 		const juce::String getCurrentLF();
 
 		static void wrapForLua(lua_State *L);

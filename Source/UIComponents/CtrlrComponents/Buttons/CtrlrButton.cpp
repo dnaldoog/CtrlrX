@@ -17,7 +17,7 @@ CtrlrButton::CtrlrButton(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrBu
 	ctrlrButton->addListener(this);
 
 	setProperty(Ids::uiButtonLookAndFeel, "Default");
-
+	setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Default to User Settings
 	ctrlrButton->addMouseListener(this, true);
 	ctrlrButton->setBufferedToImage(true);
 	setProperty(Ids::uiButtonIsToggle, true);
@@ -56,7 +56,7 @@ CtrlrButton::CtrlrButton(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrBu
 	setProperty(Ids::uiButtonConnectedBottom, false);
 
 	setProperty(Ids::uiButtonLookAndFeel, "Default");
-	setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Default to User Settings
+
 	// DO NOT set explicit uiButtonColourOn / uiButtonColourOff properties here!
 	// Instead, call updateComponentColors() at the end of constructor:
 	updateComponentColors();
@@ -283,6 +283,17 @@ void CtrlrButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChange
 		resized();
 	}
 }
+
+// void CtrlrButton::updateComponentFonts() {
+// 	if (ctrlrButton == nullptr)
+// 		return;
+
+// 	// juce::Button does not expose setFont(); the active LookAndFeel supplies
+// 	// the button font, so apply the font state without a component callback.
+// 	LNF::applyFontState(*ctrlrButton, getComponentTree(), Ids::uiButtonLookAndFeelIsCustom, {});
+
+// 	ctrlrButton->repaint();
+// }
 
 void CtrlrButton::updateComponentColors() {
 	if (ctrlrButton == nullptr)

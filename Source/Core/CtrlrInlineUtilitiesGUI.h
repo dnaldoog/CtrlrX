@@ -554,6 +554,29 @@ inline void applyLookAndFeelState(juce::Component &targetComp, juce::ValueTree &
 						   {textColourOnId, juceTextColourOnId},
 						   {textColourOffId, juceTextColourOffId}});
 }
+/*************************************************
+ *
+ *
+ *
+ ************************************************/
+// Font-equivalent of applyLookAndFeelState. Same custom-flag-driven idea, but
+// since JUCE has no generic "font ID" the way it has ColourId, each font target
+// needs its own setter callback instead of a plain int.
+// inline void applyFontState(
+// 	juce::Component &targetComp, juce::ValueTree &ownerTree, const juce::Identifier &customFlagId,
+// 	std::initializer_list<std::pair<juce::Identifier, std::function<void(const juce::Font &)>>> fontMappings) {
+// 	const bool isCustom = (bool)ownerTree.getProperty(customFlagId, false);
+
+// 	for (auto &mapping : fontMappings) {
+// 		if (isCustom && ownerTree.hasProperty(mapping.first)) {
+// 			juce::String descriptor = ownerTree.getProperty(mapping.first).toString();
+// 			DBG("Applying custom font for property " << mapping.first.toString() << ": " << descriptor);
+// 			// juce::Font font = CtrlrFontManager::getInstance()->getFontFromString(descriptor);
+// 			// mapping.second(font); // call whatever setter this target needs
+// 		}
+// 		// else: leave it alone — same "let the theme own it" behavior as colours
+// 	}
+// }
 
 /**
  * Call this ONLY when the user clicks "Freeze LNF to User Settings"
