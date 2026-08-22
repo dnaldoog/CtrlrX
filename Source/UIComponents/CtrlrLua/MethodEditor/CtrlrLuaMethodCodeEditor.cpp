@@ -1717,7 +1717,8 @@ void CtrlrLuaMethodCodeEditor::toggleLineComment() // Updated v5.6.34
 
 	// Check if we should comment or uncomment
 	bool allLinesCommented = true;
-	for (int lineNum = startLine; lineNum <= endLine; ++lineNum) {
+	for (int lineNum = startLine; lineNum < endLine - 1; ++lineNum) {
+		// for (int lineNum = startLine; lineNum <= endLine; ++lineNum) {
 		String line = document.getLine(lineNum);
 		if (line.trimStart().isEmpty() || !line.trimStart().startsWith("--")) {
 			allLinesCommented = false;
