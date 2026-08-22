@@ -9,25 +9,23 @@
 #endif
 
 #include "mock_MidiDevice.h"
-#if JUCE_MAC
+// JUCE 8 only: this mock shadows the MIDIEventList / protocol-aware CoreMIDI API
+// (MIDIInputPortCreateWithProtocol, MIDISendEventList, ...) that JUCE 8 uses, and leans on JUCE's
+// universal_midi_packets converters. JUCE 6 drives CoreMIDI through the older MIDIPacketList API and
+// ships no ump/ headers at all, so on those branches this file compiles out; hasSubsystemMock() then
+// reports false and the device-level tests GTEST_SKIP instead of failing to build.
+#if JUCE_MAC && JUCE_MAJOR_VERSION >= 8
 
 InformMockMidiOfSubsystem mockMidiSubsystem;
 
-// JUCE's universal_midi_packets headers are included only inside juce_audio_devices.cpp, so they
-// are not visible through <JuceHeader.h>. Pull the (header-only) converter chain in directly; the
-// few out-of-line symbols (View::size, SysEx7 helpers) link from the already-compiled JUCE module.
-#include <juce_audio_devices/midi_io/ump/juce_UMPProtocols.h>
-#include <juce_audio_devices/midi_io/ump/juce_UMPUtils.h>
-#include <juce_audio_devices/midi_io/ump/juce_UMPacket.h>
-#include <juce_audio_devices/midi_io/ump/juce_UMPSysEx7.h>
-#include <juce_audio_devices/midi_io/ump/juce_UMPView.h>
-#include <juce_audio_devices/midi_io/ump/juce_UMPIterator.h>
-#include <juce_audio_devices/midi_io/ump/juce_UMPackets.h>
-#include <juce_audio_devices/midi_io/ump/juce_UMPFactory.h>
-#include <juce_audio_devices/midi_io/ump/juce_UMPConversion.h>
-#include <juce_audio_devices/midi_io/ump/juce_UMPMidi1ToBytestreamTranslator.h>
-#include <juce_audio_devices/midi_io/ump/juce_UMPMidi1ToMidi2DefaultTranslator.h>
-#include <juce_audio_devices/midi_io/ump/juce_UMPConverters.h>
+// JUCE 8 exposes the universal_midi_packets converter chain publicly: juce_audio_basics.h includes
+// midi/ump/juce_UMP.h and declares `namespace juce { namespace ump = universal_midi_packets; }`, so
+// <JuceHeader.h> (pulled in by mock_MidiDevice.h above) is all this file needs.
+//
+// It used to include the chain by hand from <juce_audio_devices/midi_io/ump/...>. That was the JUCE 7
+// / early-JUCE 8 layout; as of 8.0.12 those headers live in juce_audio_basics/midi/ump/ while that
+// old directory holds unrelated files (juce_UMPEndpoint.h, juce_UMPSession.h, ...), so the explicit
+// includes stopped resolving and this translation unit no longer compiled.
 
 #include <algorithm>
 #include <cstdio>
@@ -371,4 +369,4 @@ OSStatus MIDISourceCreateWithProtocol (MIDIClientRef, CFStringRef, MIDIProtocolI
 
 #pragma clang diagnostic pop
 
-#endif // JUCE_MAC
+#endif // JUCE_MAC && JUCE 8
