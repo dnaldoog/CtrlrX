@@ -235,7 +235,7 @@
   <id name="componentBubbleHelpTrigger" text="Bubble Help: Trigger Condition" type="VarNumeric" defaults="Mouse Down=0,Mouse Hover=1,Ctrl + Click=2,Shift + Click=3,Alt + Click=4" />
   <id name="componentBubbleHelpDismissOnExit" text="Bubble Help: Dismiss on mouse exit" type="Bool" />
   <id name="componentLookAndFeel"                 text="Component LookAndFeel type" type="VarText" defaults="@componentlookandfeel" />
-  <id name="componentLookAndFeelIsCustom"         text="Component LookAndFeel is customized" type="Bool" defaults="Use my colours/Use LNF colours" />
+  <id name="componentLookAndFeelIsCustom"         text="Component LookAndFeel is customized" type="Bool" defaults="Using my colours/Using LNF colours" default="0"/>
   
   <id name="componentValueDecimalPlaces"          text="Decimal places to print if using floating point numbers" type="Numeric" min="0" max="10" int="1" />
   
@@ -252,7 +252,7 @@
   <!-- Slider -->
   
   <id name="uiSliderLookAndFeel"            text="LookAndFeel type" type="VarText" defaults="@componentlookandfeel" />
-  <id name="uiSliderLookAndFeelIsCustom"    text="LookAndFeel is customized" type="Bool" defaults="Use my colours/Use LNF colours" />
+  <id name="uiSliderLookAndFeelIsCustom"    text="LookAndFeel is customized" type="Bool" defaults="Using my colours/Using LNF colours" default="0"/>
   <id name="uiSliderStyle" 					text="Slider style"     type="VarNumeric" defaults="LinearHorizontal,LinearVertical,LinearBar,LinearBarVertical,Rotary,RotaryHorizontalDrag,RotaryVerticalDrag,RotaryHorizontalVerticalDrag,IncDecButtons,TwoValueHorizontal,TwoValueVertical,ThreeValueHorizontal,ThreeValueVertical"/>
   
   <!-- Updated v5.6.32 -->
@@ -263,7 +263,7 @@
   <id name="uiSliderValueSuffix"            text="Value suffix"     type="Text" />
   
   <id name="uiSliderDoubleClickValue" 		text="The value to set when double clicked" type="Numeric" min="-32768" max="65535" int="0.0001" />
-  <id name="uiSliderDoubleClickEnabled" 	text="Double clicked setting" type="Bool" defaults="Enabled/Disabled"/>
+  <id name="uiSliderDoubleClickEnabled" 	text="Double clicked setting" type="Bool" defaults="Using my colours/Using LNF colours" default="0"/>
   <id name="uiSliderValuePosition" 			text="Value position" type="VarNumeric" defaults="NoTextBox=0,TextBoxLeft=1,TextBoxRight=2,TextBoxAbove=3,TextBoxBelow=4"/>
   <id name="uiSliderValueHeight" 			text="Value height" type="Text"/>
   <id name="uiSliderValueWidth" 			text="Value width" type="Text"/>
@@ -335,6 +335,7 @@
   <id name="uiComboButtonWidth" text="Button width" type="Text"/>
   <id name="uiComboSelectedId" text="Current selected item ID" type="Readonly " />
   <id name="uiComboSelectedIndex" text="Current selected item index" type="Readonly" />
+  <id name="uiComboLookAndFeelIsCustom" text="Combo LookAndFeel mode"  type="Bool"  defaults="Using my colours/Using LNF colours" Default="0" />
 
   <!-- List box -->
   <id name="uiListBoxContent"             text="ListBox contents"                   type="MultiLine"/>
@@ -435,7 +436,7 @@
 
   <!-- Text button -->
   <id name="uiButtonLookAndFeel"        text="Button LookAndFeel type" type="VarText" defaults="@componentlookandfeel" />
-  <id name="uiButtonLookAndFeelIsCustom" text="Button LookAndFeel mode"  type="Bool"  defaults="Using my theme/Using LNF theme" Default="0" />
+  <id name="uiButtonLookAndFeelIsCustom" text="Button LookAndFeel mode"  type="Bool"  defaults="Using my colours/Using LNF colours" Default="0" />
   <id name="uiButtonTextColourOff"      text="Button text colour [off]" type="Colour"/>
   <id name="uiButtonTextColourOn"       text="Button text colour [on]" type="Colour"/>
   <id name="uiButtonTextFont"           text="Button text font" type="Font"/>

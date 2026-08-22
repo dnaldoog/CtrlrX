@@ -1,5 +1,5 @@
 #ifndef __CTRLR_SLIDER__
-#define __CTRL_SLIDER__
+#define __CTRLR_SLIDER__
 
 #include "../CtrlrComponent.h"
 #include "CtrlrSliderInternal.h"
@@ -25,11 +25,10 @@ class CtrlrSlider : public CtrlrComponent, public SettableTooltipClient, public 
     void valueTreeChildAdded(ValueTree& parentTree, ValueTree& childWhichHasBeenAdded) {}
     void valueTreeChildRemoved(ValueTree& parentTree, ValueTree& childWhichHasBeenRemoved, int) {}
     void valueTreeChildOrderChanged(ValueTree& parentTreeWhoseChildrenHaveMoved, int, int) {}
-
-    static void wrapForLua(lua_State* L);
-    void resized();
-    void sliderValueChanged(Slider* sliderThatWasMoved);
-    void mouseUp(const MouseEvent& e);
+	static void wrapForLua(lua_State *L);
+	void resized();
+	void sliderValueChanged(Slider *sliderThatWasMoved);
+	void mouseUp(const MouseEvent &e);
 	void lookAndFeelChanged();
 	void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr);
 	std::unique_ptr<juce::LookAndFeel> getLookAndFeelFromComponentProperty(const String &lookAndFeelComponentProperty);

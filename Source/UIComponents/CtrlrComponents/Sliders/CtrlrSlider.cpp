@@ -45,7 +45,7 @@ CtrlrSlider::CtrlrSlider(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrSl
 	setProperty(Ids::uiSliderMouseWheelInterval, 1);
 
 	setProperty(Ids::uiSliderLookAndFeel, "Default");
-
+	setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
 	setProperty(Ids::uiSliderPopupBubble, false);
 	setProperty(Ids::uiSliderStyle, "RotaryVerticalDrag");
 
@@ -100,8 +100,6 @@ CtrlrSlider::CtrlrSlider(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrSl
 	setProperty(Ids::uiSliderValueHighlightColour, (String)findColour(Slider::textBoxHighlightColourId).toString());
 	setProperty(Ids::uiSliderValueBgColour, "0x00ffffff");
 	setProperty(Ids::uiSliderValueOutlineColour, "0x00ffffff");
-
-	setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
 
 	// 4. Attach listener LAST so initial property assignments do not trigger false valueTreePropertyChanged events
 	componentTree.addListener(this);
