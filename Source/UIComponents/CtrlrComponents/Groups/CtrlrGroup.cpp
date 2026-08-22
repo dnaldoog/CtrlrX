@@ -25,83 +25,88 @@ void CtrlrGroupContentComponent::customLookAndFeelChanged(LookAndFeelBase *custo
 //[/MiscUserDefs]
 
 //==============================================================================
-CtrlrGroup::CtrlrGroup(CtrlrModulator &owner)
-	: CtrlrComponent(owner),
-	  content(*this)
-// , label (0) // Updated v5.6.34. Thanks to @dnaldoog
-{
-
-	// 1. Allocate the TextButton inside the unique_ptr container using std::make_unique
+CtrlrGroup::CtrlrGroup(CtrlrModulator &owner) : CtrlrComponent(owner), content(*this) {
 	label = std::make_unique<Label>("label");
-	// 2. Pass the underlying raw address to JUCE's UI tree via .get()
 	addAndMakeVisible(label.get());
-	label->setFont(Font(14.0000f, Font::plain)); // Was bold
+	label->setFont(Font(14.0000f, Font::plain));
 	label->setJustificationType(Justification::centred);
 	label->setEditable(false, false, false);
-	label->setColour(TextEditor::textColourId, findColour(Label::textColourId)); // Colours::black
-	label->setColour(TextEditor::backgroundColourId, Colour(0x0));				 // Colour (0x0)
+	label->setColour(TextEditor::textColourId, findColour(Label::textColourId));
+	label->setColour(TextEditor::backgroundColourId, Colour(0x0));
 
-	//[UserPreSize]
 	addAndMakeVisible(&content);
 	componentTree.addListener(this);
 
 	owner.setProperty(Ids::modulatorIsStatic, true);
 	owner.setProperty(Ids::modulatorVstExported, false);
 
-	setProperty(Ids::uiGroupText, "Group Text");
-	setProperty(Ids::uiGroupTextPlacement, "top");
-	setProperty(Ids::uiGroupTextFont, FONT2STR(Font(14)));
-	setProperty(Ids::uiGroupTextMargin, 18);
-	setProperty(Ids::componentLabelVisible, true);
+	// Ensure initial dimensions are set so Ctrlr can place multiple instances
+	setSize(120, 100);
 
-	setProperty(Ids::uiButtonLookAndFeel, "Default");
-	setProperty(Ids::uiButtonLookAndFeelIsCustom, false);
+	// Only seed initial values for NEW components (when property is missing from XML/ValueTree)
+	if (!componentTree.hasProperty(Ids::uiGroupText))
+		setProperty(Ids::uiGroupText, "Group Text");
 
-	if (owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V3" ||
-		owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V2" ||
-		owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V1") {
-		setProperty(Ids::uiGroupTextColour, "0xff000000");
+	if (!componentTree.hasProperty(Ids::uiGroupTextPlacement))
+		setProperty(Ids::uiGroupTextPlacement, "top");
 
-		setProperty(Ids::uiGroupBackgroundGradientType, 1); // 0 for solidcolour, 1 for vertical etc
-		setProperty(Ids::uiGroupBackgroundColour1, "0xffa3a3a3");
-		setProperty(Ids::uiGroupBackgroundColour2, "0xffffffff");
+	if (!componentTree.hasProperty(Ids::uiGroupTextFont))
+		setProperty(Ids::uiGroupTextFont, FONT2STR(Font(14)));
 
-		setProperty(Ids::uiGroupOutlineGradientType, "Vertical");
-		setProperty(Ids::uiGroupOutlineColour1, "0xffa3a3a3");
-		setProperty(Ids::uiGroupOutlineColour2, "0xffffffff");
-	} else {
-		setProperty(Ids::uiGroupTextColour, (String)findColour(Label::textColourId).toString());
+	if (!componentTree.hasProperty(Ids::uiGroupTextMargin))
+		setProperty(Ids::uiGroupTextMargin, 18);
 
-		setProperty(Ids::uiGroupBackgroundGradientType, 0); // 0 for solidcolour, 1 for vertical etc
-		setProperty(Ids::uiGroupBackgroundColour1,
-					(String)findColour(DocumentWindow::backgroundColourId).darker(0.1f).toString());
-		setProperty(Ids::uiGroupBackgroundColour2, (String)findColour(DocumentWindow::backgroundColourId).toString());
+	if (!componentTree.hasProperty(Ids::componentLabelVisible))
+		setProperty(Ids::componentLabelVisible, true);
 
-		setProperty(Ids::uiGroupOutlineGradientType, "SolidColour");
-		setProperty(Ids::uiGroupOutlineColour1,
-					(String)findColour(DocumentWindow::textColourId).darker(0.2f).toString());
-		setProperty(Ids::uiGroupOutlineColour2, (String)findColour(DocumentWindow::textColourId).toString());
+	if (!componentTree.hasProperty(Ids::uiGroupLookAndFeel))
+		setProperty(Ids::uiGroupLookAndFeel, "Default");
+
+	if (!componentTree.hasProperty(Ids::uiGroupLookAndFeelIsCustom))
+		setProperty(Ids::uiGroupLookAndFeelIsCustom, false);
+
+	if (!componentTree.hasProperty(Ids::uiGroupOutlineThickness))
+		setProperty(Ids::uiGroupOutlineThickness, 2.0);
+
+	if (!componentTree.hasProperty(Ids::uiGroupOutlineRoundAngle))
+		setProperty(Ids::uiGroupOutlineRoundAngle, 5.0);
+
+	if (!componentTree.hasProperty(Ids::uiGroupBackgroundImage))
+		setProperty(Ids::uiGroupBackgroundImage, "");
+
+	if (!componentTree.hasProperty(Ids::uiGroupBackgroundImageLayout))
+		setProperty(Ids::uiGroupBackgroundImageLayout, 36);
+
+	if (!componentTree.hasProperty(Ids::uiGroupBackgroundImageAlpha))
+		setProperty(Ids::uiGroupBackgroundImageAlpha, 255);
+
+	if (!componentTree.hasProperty(Ids::uiGroupBackgroundGradientType))
+		setProperty(Ids::uiGroupBackgroundGradientType, 1);
+
+	// Apply default scheme only if no colors are saved in the tree
+	if (!componentTree.hasProperty(Ids::uiGroupBackgroundColour1)) {
+		if (owner.getOwnerPanel().getEditor() &&
+			(owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V3" ||
+			 owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V2" ||
+			 owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V1")) {
+			setProperty(Ids::uiGroupTextColour, "0xff000000");
+			setProperty(Ids::uiGroupBackgroundColour1, "0xffa3a3a3");
+			setProperty(Ids::uiGroupBackgroundColour2, "0xffffffff");
+			setProperty(Ids::uiGroupOutlineGradientType, "Vertical");
+			setProperty(Ids::uiGroupOutlineColour1, "0xffa3a3a3");
+			setProperty(Ids::uiGroupOutlineColour2, "0xffffffff");
+		} else {
+			setProperty(Ids::uiGroupTextColour, (String)findColour(Label::textColourId).toString());
+			setProperty(Ids::uiGroupBackgroundColour1,
+						(String)findColour(DocumentWindow::backgroundColourId).darker(0.1f).toString());
+			setProperty(Ids::uiGroupBackgroundColour2,
+						(String)findColour(DocumentWindow::backgroundColourId).toString());
+			setProperty(Ids::uiGroupOutlineGradientType, "SolidColour");
+			setProperty(Ids::uiGroupOutlineColour1,
+						(String)findColour(DocumentWindow::textColourId).darker(0.2f).toString());
+			setProperty(Ids::uiGroupOutlineColour2, (String)findColour(DocumentWindow::textColourId).toString());
+		}
 	}
-
-	setProperty(Ids::uiGroupOutlineThickness, 2.0);	 // 2.0
-	setProperty(Ids::uiGroupOutlineRoundAngle, 5.0); // 8.0
-
-	setProperty(Ids::uiGroupBackgroundImage, "");
-
-	setProperty(Ids::uiGroupBackgroundImageLayout, 36);
-	setProperty(Ids::uiGroupBackgroundImageAlpha, 255);
-	setProperty(Ids::uiGroupBackgroundGradientType, 1);
-
-	setProperty(Ids::uiButtonLookAndFeelIsCustom,
-				false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
-
-	owner.getModulatorTree().addListener(this);
-	//[/UserPreSize]
-
-	setSize(128, 128);
-
-	//[Constructor] You can add your own custom stuff here..
-	//[/Constructor]
 }
 
 CtrlrGroup::~CtrlrGroup() {
@@ -173,39 +178,61 @@ double CtrlrGroup::getComponentMaxValue() { return (1); }
 double CtrlrGroup::getComponentValue() { return (1); }
 
 int CtrlrGroup::getComponentMidiValue() { return (1); }
+void CtrlrGroup::updateComponentColors() {
+	if (customLF != nullptr) {
+		// Extract palette from active LookAndFeel and apply to Group properties
+		setProperty(Ids::uiGroupTextColour, customLF->findColour(juce::GroupComponent::textColourId).toString(), false);
+
+		setProperty(Ids::uiGroupOutlineColour1, customLF->findColour(juce::GroupComponent::outlineColourId).toString(),
+					false);
+
+		setProperty(Ids::uiGroupBackgroundColour1,
+					customLF->findColour(juce::ResizableWindow::backgroundColourId).toString(), false);
+	}
+
+	label->setColour(juce::Label::textColourId, VAR2COLOUR(getProperty(Ids::uiGroupTextColour)));
+	repaint();
+}
 
 void CtrlrGroup::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
+	if (restoreStateInProgress)
+		return;
+
 	if (property == Ids::uiGroupOutlineColour1 || property == Ids::uiGroupOutlineColour2 ||
 		property == Ids::uiGroupBackgroundColour1 || property == Ids::uiGroupBackgroundColour2 ||
 		property == Ids::uiGroupBackgroundGradientType || property == Ids::uiGroupOutlineGradientType ||
 		property == Ids::uiGroupOutlineRoundAngle || property == Ids::uiGroupOutlineThickness) {
+		setProperty(Ids::uiGroupLookAndFeelIsCustom, true);
 		repaint();
-	} else if (property == Ids::uiButtonLookAndFeel) {
+	} else if (property == Ids::uiGroupLookAndFeel) {
 		String LookAndFeelType = getProperty(property);
 
-		// 1. CRITICAL: Unlink the current style from JUCE first before destroying anything!
 		setLookAndFeel(nullptr);
 
 		if (LookAndFeelType == "Default") {
-			// 2. Safely wipe out our smart pointer container (deletes old V4 assets)
 			customLF.reset();
-
-			setProperty(Ids::uiButtonLookAndFeelIsCustom, false); // Resets the Customized Flag to False
 		} else {
-			// 3. Request the new look and feel into your class member unique_ptr
 			customLF = getLookAndFeelFromComponentProperty(LookAndFeelType);
 
-			// 4. Expose the safe raw memory address to JUCE using .get()
 			if (customLF != nullptr) {
-				setLookAndFeel(customLF.get()); // Updates the current component LookAndFeel
+				setLookAndFeel(customLF.get());
 			}
 		}
 
-		if (!getProperty(Ids::uiButtonLookAndFeelIsCustom)) {
-			resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
+		if (!getProperty(Ids::uiGroupLookAndFeelIsCustom)) {
+			resetLookAndFeelOverrides();
 		}
+
+		updateComponentColors();
+	} else if (property == Ids::uiGroupLookAndFeelIsCustom) {
+		if (!getProperty(Ids::uiGroupLookAndFeelIsCustom)) {
+			resetLookAndFeelOverrides();
+		}
+		updateComponentColors();
 	} else if (property == Ids::uiGroupTextColour) {
+		setProperty(Ids::uiGroupLookAndFeelIsCustom, true);
 		label->setColour(Label::textColourId, VAR2COLOUR(getProperty(Ids::uiGroupTextColour)));
+		updateComponentColors();
 	} else if (property == Ids::uiGroupText) {
 		label->setText(getProperty(Ids::uiGroupText), dontSendNotification);
 	} else if (property == Ids::uiGroupTextFont) {
@@ -214,18 +241,14 @@ void CtrlrGroup::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 		label->setJustificationType(justificationFromProperty(getProperty(Ids::uiGroupTextPlacement)));
 	} else if (property == Ids::uiGroupTextMargin) {
 		textMargin = getProperty(Ids::uiGroupTextMargin);
-	}
-
-	else if (property == Ids::uiGroupBackgroundImage || property == Ids::uiGroupBackgroundImageAlpha ||
-			 property == Ids::uiGroupBackgroundImageLayout) {
+	} else if (property == Ids::uiGroupBackgroundImage || property == Ids::uiGroupBackgroundImageAlpha ||
+			   property == Ids::uiGroupBackgroundImageLayout) {
 		setResource();
 	} else {
 		CtrlrComponent::valueTreePropertyChanged(treeWhosePropertyHasChanged, property);
 	}
 
-	if (restoreStateInProgress == false) {
-		resized();
-	}
+	resized();
 }
 
 const CtrlrGroup::GradientType CtrlrGroup::gradientFromString(const String &str) {
@@ -394,26 +417,38 @@ CtrlrGroup::getLookAndFeelFromComponentProperty(const String &lookAndFeelCompone
 
 void CtrlrGroup::resetLookAndFeelOverrides() {
 	if (restoreStateInProgress ==
-		false) // To prevent the prop lines stacking up from top and keeping their original position
+		false) // To prevent the props lines position stacking up to top and keep their original position
 	{
-		setProperty(Ids::componentLabelColour, (String)findColour(Label::textColourId).toString());
+		// Do not wipe out custom colors if the component is set to Custom mode
+		// if (getProperty(Ids::uiGroupLookAndFeelIsCustom) || restoreStateInProgress)
+		// 	return;
 
-		setProperty(Ids::uiGroupTextColour, (String)findColour(Label::textColourId).toString());
+		restoreStateInProgress = true; // Lock property callbacks temporarily
 
-		setProperty(Ids::uiGroupBackgroundGradientType, 0); // 0 for solidcolour, 1 for vertical etc
-		setProperty(Ids::uiGroupBackgroundColour1,
-					(String)findColour(DocumentWindow::backgroundColourId).darker(0.1f).toString());
-		setProperty(Ids::uiGroupBackgroundColour2, (String)findColour(DocumentWindow::backgroundColourId).toString());
+		String activeLnF = getProperty(Ids::uiGroupLookAndFeel);
 
-		setProperty(Ids::uiGroupOutlineGradientType, "SolidColour");
-		setProperty(Ids::uiGroupOutlineColour1,
-					(String)findColour(DocumentWindow::backgroundColourId).darker(0.2f).toString());
-		setProperty(Ids::uiGroupOutlineColour2, (String)findColour(DocumentWindow::backgroundColourId).toString());
+		if (activeLnF == "V1" || activeLnF == "V2" || activeLnF == "V3") {
+			setProperty(Ids::uiGroupTextColour, "0xff000000");
+			setProperty(Ids::uiGroupBackgroundGradientType, 1);
+			setProperty(Ids::uiGroupBackgroundColour1, "0xffa3a3a3");
+			setProperty(Ids::uiGroupBackgroundColour2, "0xffffffff");
+			setProperty(Ids::uiGroupOutlineGradientType, "Vertical");
+			setProperty(Ids::uiGroupOutlineColour1, "0xffa3a3a3");
+			setProperty(Ids::uiGroupOutlineColour2, "0xffffffff");
+		} else {
+			setProperty(Ids::uiGroupTextColour, (String)findColour(Label::textColourId).toString());
+			setProperty(Ids::uiGroupBackgroundGradientType, 0);
+			setProperty(Ids::uiGroupBackgroundColour1,
+						(String)findColour(DocumentWindow::backgroundColourId).darker(0.1f).toString());
+			setProperty(Ids::uiGroupBackgroundColour2,
+						(String)findColour(DocumentWindow::backgroundColourId).toString());
+			setProperty(Ids::uiGroupOutlineGradientType, "SolidColour");
+			setProperty(Ids::uiGroupOutlineColour1,
+						(String)findColour(DocumentWindow::textColourId).darker(0.2f).toString());
+			setProperty(Ids::uiGroupOutlineColour2, (String)findColour(DocumentWindow::textColourId).toString());
+		}
 
-		setProperty(Ids::uiButtonLookAndFeelIsCustom,
-					false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
-
-		updatePropertiesPanel(); // Refreshes property pane
+		restoreStateInProgress = false; // Unlock callbacks
 	}
 }
 
