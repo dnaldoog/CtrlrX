@@ -35,7 +35,7 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrPanelLayerListHeader)
 };
 
-class CtrlrPanelLayerList : public juce::Component,
+class CtrlrPanelLayerList : public juce::Component, // Component -> should be removed for JUCE 8, causing BUILD FAIL
                              public juce::ListBoxModel,
                              public juce::DragAndDropContainer,
                              public juce::DragAndDropTarget,
@@ -46,7 +46,6 @@ public:
     CtrlrPanelLayerList (CtrlrPanel &_owner);
     ~CtrlrPanelLayerList() override; // Add 'override' for clarity
 
-    // Your existing public methods
     int getNumRows() override;
     void paintListBoxItem (int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected) override;
     juce::Component* refreshComponentForRow (int rowNumber, bool isRowSelected, juce::Component* existingComponentToUpdate) override;
@@ -66,6 +65,9 @@ public:
     
     // Drag and drop methods
     bool isInterestedInDragSource(const SourceDetails& dragSourceDetails) override;
+    int getVisualRowForDrag(const SourceDetails &dragSourceDetails);
+    int getInsertionGapForDrag(const SourceDetails &dragSourceDetails);
+    void paintOverChildren(Graphics &g);
     void itemDropped(const SourceDetails& dragSourceDetails) override;
     void itemDragEnter(const SourceDetails& dragSourceDetails) override;
     void itemDragExit(const SourceDetails& dragSourceDetails) override;
