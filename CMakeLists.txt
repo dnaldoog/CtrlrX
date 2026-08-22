@@ -76,17 +76,11 @@ else()
 endif()
 
 if(CTRLRX_USE_LUAJIT)
+    # Source/Misc/luajit/CMakeLists.txt defines the `libluajit` target and already
+    # does the per-OS routing (IMPORTED lua51.lib on Windows, IMPORTED libluajit.a
+    # on macOS, pkg-config INTERFACE target on Linux). It also carries the LuaJIT
+    # include directory as INTERFACE_INCLUDE_DIRECTORIES, so linking it is enough.
     add_subdirectory(Source/Misc/luajit)
-    
-    # Locate the static LuaJIT library manually based on OS
-    if(WIN32)
-        set(LUAJIT_STATIC_LIB "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/lua51.lib")
-    elseif(APPLE)
-        set(LUAJIT_STATIC_LIB "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/libluajit.a")
-    else()
-        # Fixed: Fallback onto the target built by the subdirectory instead of a magic string
-        set(LUAJIT_STATIC_LIB "libluajit") 
-    endif()
 else()
     # Add your standard Lua fallback path here if needed
 endif()
@@ -244,7 +238,7 @@ target_link_libraries(SharedCode INTERFACE
 )
 
 if(CTRLRX_USE_LUAJIT)
-    target_link_libraries(SharedCode INTERFACE ${LUAJIT_STATIC_LIB})
+    target_link_libraries(SharedCode INTERFACE libluajit)
 endif()
 
 # Linux specific library linking to resolve XSendEvent and graphics dependencies
