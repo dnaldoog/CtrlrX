@@ -455,6 +455,8 @@ DECLARE_ID(uiLabelInputHighlightColour);
 DECLARE_ID(uiLCDLabelFont);
 DECLARE_ID(uiLCDLabelFontHeight);
 
+DECLARE_ID(uiGroupLookAndFeel);
+DECLARE_ID(uiGroupLookAndFeelIsCustom);
 DECLARE_ID(uiGroupOutlineColour1);
 DECLARE_ID(uiGroupOutlineColour2);
 DECLARE_ID(uiGroupOutlineGradientType);

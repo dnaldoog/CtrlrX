@@ -412,6 +412,8 @@
   <id name="uiLCDLabelFontHeight" text="LCD Font size" type="Numeric" min="1" max="512" int="1"/>
 
   <!-- Group -->
+   <id name="uiGroupLookAndFeel" text="Look and Feel" type="VarText" defaults="@componentlookandfeel"/>
+  <id name="uiGroupLookAndFeelIsCustom" text="Group LookAndFeel mode"  type="Bool"  defaults="Using my colours/Using LNF colours" Default="0" />
   <id name="uiGroupOutlineColour1" text="Outline colour [1]" type="Colour"/>
   <id name="uiGroupOutlineColour2" text="Outline colour [2]" type="Colour"/>
   <id name="uiGroupOutlineGradientType" text="Outline Gradient Style" type="VarNumeric" defaults="@gradient"/>

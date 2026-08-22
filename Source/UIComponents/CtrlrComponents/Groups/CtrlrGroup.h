@@ -72,7 +72,8 @@ public:
     void itemDropped (const SourceDetails &dragSourceDetails);
     void itemDragExit (const SourceDetails &dragSourceDetails);
     void itemDragEnter (const SourceDetails &dragSourceDetails);
-    bool isOwned(CtrlrComponent *componentToCheck);
+	void updateComponentColors();
+	bool isOwned(CtrlrComponent *componentToCheck);
     Array <CtrlrComponent*> getOwnedChildren();
     void reloadResources(Array <CtrlrPanelResource*> resourcesThatChanged);
     void setResource();

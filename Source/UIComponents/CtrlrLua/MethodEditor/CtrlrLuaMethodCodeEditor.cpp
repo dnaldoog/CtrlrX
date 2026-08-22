@@ -54,9 +54,13 @@ class LuaSuggestionPopup : public juce::Component, public juce::ListBoxModel {
 			g.drawRect(getLocalBounds().toFloat(), 1.0f);
 		}
 
-		void resized() override { listBox.setBounds(getLocalBounds().reduced(1)); }
+		void resized() override {
+			listBox.setBounds(getLocalBounds().reduced(1));
+		}
 
-		int getNumRows() override { return (int)activeItems.size(); }
+		int getNumRows() override {
+			return (int)activeItems.size();
+		}
 
 		void paintListBoxItem(int rowNumber, juce::Graphics &g, int width, int height, bool rowIsSelected) override {
 			if (rowNumber >= (int)activeItems.size())
@@ -150,7 +154,9 @@ class LuaSuggestionPopup : public juce::Component, public juce::ListBoxModel {
 		}
 
 		// Fixed the error: currentMatches -> activeItems
-		void listBoxItemClicked(int row, const juce::MouseEvent &) override { commit(row); }
+		void listBoxItemClicked(int row, const juce::MouseEvent &) override {
+			commit(row);
+		}
 
 		void moveSelection(int delta) {
 			int nextRow = juce::jlimit(0, (int)activeItems.size() - 1, listBox.getSelectedRow() + delta);
@@ -158,7 +164,9 @@ class LuaSuggestionPopup : public juce::Component, public juce::ListBoxModel {
 			listBox.scrollToEnsureRowIsOnscreen(nextRow);
 		}
 
-		void commitCurrent() { commit(listBox.getSelectedRow()); }
+		void commitCurrent() {
+			commit(listBox.getSelectedRow());
+		}
 
 	private:
 		void commit(int row) {
@@ -187,7 +195,9 @@ class LuaCallTip : public juce::Component {
 		}
 
 		// ADD THIS GETTER:
-		juce::String getTipText() const { return tipText; }
+		juce::String getTipText() const {
+			return tipText;
+		}
 
 		void showTip(const juce::String &text, juce::Point<int> pos) {
 			tipText = text;
@@ -415,9 +425,7 @@ bool CtrlrLuaMethodCodeEditor::keyPressed(const juce::KeyPress &key, juce::Compo
 			if (targetPos != -1) {
 				editorComponent->moveCaretTo(juce::CodeDocument::Position(document, targetPos), false);
 
-				juce::MessageManager::callAsync([this]() { 
-
-					updateCallTipHighlight(); });
+				juce::MessageManager::callAsync([this]() { updateCallTipHighlight(); });
 
 				return true; // Stop the editor from inserting a '\t'
 			}
@@ -587,15 +595,15 @@ void CtrlrLuaMethodCodeEditor::hideCallTip() {
 }
 void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String &newText, int insertIndex) {
 	// --- 1. AGGRESSIVE GUARD ---
-	
-    const bool autoCompleteEnabled = ((int)owner.getComponentTree()
-        .getProperty(Ids::luaMethodEditorAutoComplete, 1)) != 0;
-    const bool autoCompleteOpts = ((int)owner.getComponentTree()
+
+	const bool autoCompleteEnabled =
+		((int)owner.getComponentTree().getProperty(Ids::luaMethodEditorAutoComplete, 1)) != 0;
+	const bool autoCompleteOpts = ((int)owner.getComponentTree()
         .getProperty(Ids::luaMethodEditorAutoCompleteOpt, 1)) != 0;
 
     if (!autoCompleteEnabled)
         return;
-if (isReplacingText) {
+	if (isReplacingText) {
 		if (newText != ":" && newText != ".")
 			return;
 
@@ -1281,7 +1289,9 @@ class GenericCodeEditorComponent::FindPanel : public Component,
 			}
 		}
 
-		void setSearchText(const String &s) { editor.setText(s); }
+		void setSearchText(const String &s) {
+			editor.setText(s);
+		}
 
 		void addReplaceComponents() {
 			// 1. Instantiate and configure the Editor FIRST
@@ -1717,7 +1727,8 @@ void CtrlrLuaMethodCodeEditor::toggleLineComment() // Updated v5.6.34
 
 	// Check if we should comment or uncomment
 	bool allLinesCommented = true;
-	for (int lineNum = startLine; lineNum <= endLine; ++lineNum) {
+	for (int lineNum = startLine; lineNum < endLine; ++lineNum) {
+		// for (int lineNum = startLine; lineNum <= endLine; ++lineNum) {
 		String line = document.getLine(lineNum);
 		if (line.trimStart().isEmpty() || !line.trimStart().startsWith("--")) {
 			allLinesCommented = false;
@@ -1726,7 +1737,7 @@ void CtrlrLuaMethodCodeEditor::toggleLineComment() // Updated v5.6.34
 	}
 
 	// Comment or uncomment
-	for (int lineNum = startLine; lineNum <= endLine; ++lineNum) {
+	for (int lineNum = startLine; lineNum < endLine; ++lineNum) {
 		CodeDocument::Position lineStart(document, lineNum, 0);
 		String line = document.getLine(lineNum);
 
