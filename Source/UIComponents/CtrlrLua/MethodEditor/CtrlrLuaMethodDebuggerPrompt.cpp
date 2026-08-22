@@ -133,9 +133,12 @@ CtrlrLuaMethodDebuggerPrompt::CtrlrLuaMethodDebuggerPrompt(CtrlrLuaMethodEditor 
 	debuggerInput->addListener(this);
 
 	debugContinue->setImages(
-		false, true, true, ImageCache::getFromMemory(BinaryData::play_svg, BinaryData::play_svgSize), 0.550f,
-		Colour(0x00000000), ImageCache::getFromMemory(BinaryData::play_svg, BinaryData::play_svgSize), 0.850f,
-		Colour(0x00000000), ImageCache::getFromMemory(BinaryData::play_svg, BinaryData::play_svgSize), 1.000f,
+		false, true, true,
+		ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize), 0.550f,
+		Colour(0x00000000),
+		ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize), 0.850f,
+		Colour(0x00000000),
+		ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize), 1.000f,
 		Colour(0x00000000));
 	debugContinue->setMouseCursor(MouseCursor::PointingHandCursor);
 

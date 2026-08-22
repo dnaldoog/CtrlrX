@@ -30,9 +30,7 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 	setProperty(Ids::uiComboSelectedId, -1);
 	setProperty(Ids::uiComboSelectedIndex, -1);
 	setProperty(Ids::uiComboContent, "");
-
-	setProperty(Ids::uiButtonLookAndFeelIsCustom, false);
-
+	setProperty(Ids::uiComboLookAndFeelIsCustom, true);
 	// Keep custom double-arrow renderer attached
 	ctrlrCombo->setLookAndFeel(&lf);
 
@@ -290,6 +288,26 @@ void CtrlrCombo::comboContentChanged() {
 	valueMap->fillCombo(*ctrlrCombo, true);
 }
 
+void CtrlrCombo::updateComponentColors() {
+	if (ctrlrCombo == nullptr)
+		return;
+
+	LNF::applyLookAndFeelState(*ctrlrCombo, getComponentTree(), Ids::uiComboLookAndFeelIsCustom,
+							   {{Ids::uiComboArrowColour, juce::ComboBox::arrowColourId},
+								{Ids::uiComboOutlineColour, juce::ComboBox::outlineColourId},
+								{Ids::uiComboTextColour, juce::ComboBox::textColourId},
+								{Ids::uiComboTextColour, juce::TextEditor::textColourId},
+								{Ids::uiComboTextColour, juce::TextEditor::highlightedTextColourId},
+								{Ids::uiComboTextColour, juce::Label::textColourId},
+								{Ids::uiComboTextColour, juce::Label::textWhenEditingColourId},
+								{Ids::uiComboButtonColour, juce::ComboBox::buttonColourId},
+								{Ids::uiComboBgColour, juce::ComboBox::backgroundColourId},
+								{Ids::uiComboBgColour, juce::TextEditor::backgroundColourId},
+								{Ids::uiComboBgColour, juce::Label::backgroundColourId}});
+
+	ctrlrCombo->repaint();
+}
+
 void CtrlrCombo::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
 	_DBG("PROP CHANGE: " + property.toString() + " = " + getProperty(property).toString());
 
@@ -329,21 +347,9 @@ void CtrlrCombo::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 		ctrlrCombo->repaint();
 
 	} else if (property == Ids::uiComboBgColour) {
-		Colour c = VAR2COLOUR(getProperty(Ids::uiComboBgColour));
-		ctrlrCombo->setColour(ComboBox::backgroundColourId, c);
-		ctrlrCombo->setColour(TextEditor::backgroundColourId, c);
-		ctrlrCombo->setColour(Label::backgroundColourId, c);
-
-		updateInternalComponentStyles();
-		ctrlrCombo->repaint();
-	} else if (property == Ids::uiComboTextColour) {
-		Colour c = VAR2COLOUR(getProperty(Ids::uiComboTextColour));
-		ctrlrCombo->setColour(ComboBox::textColourId, c);
-		ctrlrCombo->setColour(TextEditor::textColourId, c);
-		ctrlrCombo->setColour(Label::textColourId, c);
-
-		updateInternalComponentStyles();
-		ctrlrCombo->repaint();
+		if (!restoreStateInProgress)
+			setProperty(Ids::uiComboLookAndFeelIsCustom, true);
+		updateComponentColors();
 	} else if (property == Ids::uiComboButtonColour) {
 		ctrlrCombo->setColour(ComboBox::buttonColourId, VAR2COLOUR(getProperty(Ids::uiComboButtonColour)));
 		ctrlrCombo->repaint();
@@ -579,26 +585,23 @@ void CtrlrCombo::updateInternalComponentStyles() {
 
 	// Always enforce the local LookAndFeel object so double-arrow drawing is preserved
 	ctrlrCombo->setLookAndFeel(&lf);
-
-	// if (comboStyle != "V3" && comboStyle != "V2" && comboStyle != "V1") {
-	// 	applyCentralLookAndFeel(ctrlrCombo.get(), comboStyle);
-	// 	return;
-	// }
 	/* Here we can apply LNF colouring to uiCombo*/
 	if (comboStyle != "V3" && comboStyle != "V2" && comboStyle != "V1") {
 		applyCentralLookAndFeel(ctrlrCombo.get(), comboStyle);
-		auto scheme = gui::colourSchemeFromProperty(comboStyle);
+		updateComponentColors(); // re-applies USER colours over the fresh theme defaults, if locked
 
-		Colour highlight = scheme.getUIColour(LookAndFeel_V4::ColourScheme::UIColour::highlightedFill);
-		Colour highlightText = highlight.getPerceivedBrightness() < 0.5f ? Colours::white : Colours::black;
+		if (!(bool)getProperty(Ids::uiComboLookAndFeelIsCustom)) {
+			auto scheme = gui::colourSchemeFromProperty(comboStyle);
+			Colour highlight = scheme.getUIColour(LookAndFeel_V4::ColourScheme::UIColour::highlightedFill);
+			Colour highlightText = highlight.getPerceivedBrightness() < 0.5f ? Colours::white : Colours::black;
+			Colour menuBackground = scheme.getUIColour(LookAndFeel_V4::ColourScheme::UIColour::menuBackground);
+			Colour menuText = menuBackground.getPerceivedBrightness() < 0.5f ? Colours::white : Colours::black;
 
-		Colour menuBackground = scheme.getUIColour(LookAndFeel_V4::ColourScheme::UIColour::menuBackground);
-		Colour menuText = menuBackground.getPerceivedBrightness() < 0.5f ? Colours::white : Colours::black;
-
-		setProperty(Ids::uiComboMenuHighlightColour, highlight.toString());
-		setProperty(Ids::uiComboMenuFontHighlightedColour, highlightText.toString());
-		setProperty(Ids::uiComboMenuBackgroundColour, menuBackground.toString());
-		setProperty(Ids::uiComboMenuFontColour, menuText.toString());
+			setProperty(Ids::uiComboMenuHighlightColour, highlight.toString());
+			setProperty(Ids::uiComboMenuFontHighlightedColour, highlightText.toString());
+			setProperty(Ids::uiComboMenuBackgroundColour, menuBackground.toString());
+			setProperty(Ids::uiComboMenuFontColour, menuText.toString());
+		}
 		return;
 	}
 	// Standard fallback logic for manual V1/V2/V3 color properties
