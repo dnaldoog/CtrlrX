@@ -1705,61 +1705,62 @@ void CtrlrLuaMethodCodeEditor::toggleLineComment() // Updated v5.6.34
 	CodeDocument::Position startPos(document, selection.getStart());
 	CodeDocument::Position endPos(document, selection.getEnd());
 
-	// If there is no selection, use the current line
-	if (selection.isEmpty()) {
-		startPos = CodeDocument::Position(document, startPos.getLineNumber(), 0);
-		endPos = CodeDocument::Position(document, startPos.getLineNumber() + 1, 0);
-	} else {
-		// Adjust selection to span full lines
-		startPos = CodeDocument::Position(document, startPos.getLineNumber(), 0);
-
-		// Correctly get the start position of the line after the selection ends
-		endPos = CodeDocument::Position(document, endPos.getLineNumber(), 0);
-		if (endPos.getIndexInLine() != 0) {
-			endPos = CodeDocument::Position(document, endPos.getLineNumber() + 1, 0);
-		}
-	}
-
 	int startLine = startPos.getLineNumber();
 	int endLine = endPos.getLineNumber();
 
+	if (selection.isEmpty()) {
+		// Single cursor/no selection -> process just this one line
+		endLine = startLine + 1;
+	} else {
+		// Multi-line selection: only include the end line if the selection extends past column 0
+		if (endPos.getIndexInLine() > 0) {
+			endLine++;
+		}
+	}
+
+	// Set normalized character boundaries for restoring the selection highlight later
+	startPos = CodeDocument::Position(document, startLine, 0);
+	endPos = CodeDocument::Position(document, endLine, 0);
+
 	document.newTransaction();
 
-	// Check if we should comment or uncomment
+	// 1. Check if all non-empty selected lines are already commented
 	bool allLinesCommented = true;
 	for (int lineNum = startLine; lineNum < endLine; ++lineNum) {
-		// for (int lineNum = startLine; lineNum <= endLine; ++lineNum) {
 		String line = document.getLine(lineNum);
-		if (line.trimStart().isEmpty() || !line.trimStart().startsWith("--")) {
+		String trimmed = line.trimStart();
+
+		// Ignore empty lines when evaluating if everything is commented
+		if (trimmed.isNotEmpty() && !trimmed.startsWith("--")) {
 			allLinesCommented = false;
 			break;
 		}
 	}
 
-	// Comment or uncomment
+	// 2. Apply comment or uncomment action
 	for (int lineNum = startLine; lineNum < endLine; ++lineNum) {
 		CodeDocument::Position lineStart(document, lineNum, 0);
 		String line = document.getLine(lineNum);
 
 		if (allLinesCommented) {
 			// Uncomment: Find and remove the first "--"
-			int commentPos = line.trimStart().indexOf("--");
+			int commentPos = line.indexOf("--");
 			if (commentPos >= 0) {
-				int actualCommentPos = line.indexOf("--");
-				document.deleteSection(lineStart.getPosition() + actualCommentPos,
-									   lineStart.getPosition() + actualCommentPos + 2);
+				document.deleteSection(lineStart.getPosition() + commentPos, lineStart.getPosition() + commentPos + 2);
 			}
 		} else {
 			// Comment: Find the first non-whitespace character and insert "--"
 			int firstNonWhitespace = 0;
-			while (firstNonWhitespace < line.length() && iswspace(line[firstNonWhitespace]))
+			// Option 2: Standard C++
+			while (firstNonWhitespace < line.length() && std::isspace(line[firstNonWhitespace])) {
 				++firstNonWhitespace;
+			}
 
 			document.insertText(lineStart.getPosition() + firstNonWhitespace, "--");
 		}
 	}
 
-	// Restore caret position and selection
+	// Restore caret selection spanning all targeted lines cleanly
 	editorComponent->setHighlightedRegion(Range<int>(startPos.getPosition(), endPos.getPosition()));
 	documentChanged(false, false);
 }
