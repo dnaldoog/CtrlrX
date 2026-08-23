@@ -109,9 +109,14 @@ class CtrlrLuaUtils {
 			@param	button2Text				text for the second button
 		*/
 
-		void askForTextInputWindow(const String title, const String message, const String initialInputContent,
-								   const String onScreenLabel, const bool isPassword, const String button1Text,
-								   const String button2Text, std::function<void(const String &)> callback);
+		static String askForTextInputWindow(const String title, const String message, const String initialInputContent,
+											const String onScreenLabel, const bool isPassword, const String button1Text,
+											const String button2Text);
+
+		static void askForTextInputWindowAsync(const String title, const String message,
+											   const String initialInputContent, const String onScreenLabel,
+											   const bool isPassword, const String button1Text,
+											   const String button2Text, luabind::object callback);
 
 		/** @brief Ask for a File to open
 
