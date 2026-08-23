@@ -144,6 +144,9 @@ class CtrlrLuaUtils {
 		static void openMultipleFilesWindow(const juce::String &title, const juce::File &fileToSelect,
 											const juce::String &pattern, bool browseForDirectory,
 											luabind::object callback);
+		// static void openMultipleFilesWindow(const juce::String &title, const juce::File &fileToSelect,
+		// 									const juce::String &pattern, bool browseForDirectory,
+		// 									luabind::object table);
 
 		/** @brief Ask for a File to save
 
