@@ -5,6 +5,10 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.31.0")
     cmake_policy(SET CMP0175 NEW)
 endif()
 
+# allows clang-based tools to work with the source:
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# This tells cmake we have goodies in the /cmake folder
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(PamplejuceVersion)
 
@@ -72,19 +76,18 @@ else()
 endif()
 
 if(CTRLRX_USE_LUAJIT)
+    # Source/Misc/luajit/CMakeLists.txt builds the vendored LuaJIT source and
+    # defines the `libluajit` target. It carries the LuaJIT include directories
+    # (both the source tree and the generated headers) as INTERFACE include
+    # directories, so linking it is enough.
     add_subdirectory(Source/Misc/luajit)
-    
-    # Locate the static LuaJIT library manually based on OS
-    if(WIN32)
-        set(LUAJIT_STATIC_LIB "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/lua51.lib")
-    elseif(APPLE)
-        set(LUAJIT_STATIC_LIB "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/libluajit.a")
-    else()
-        # Fixed: Fallback onto the target built by the subdirectory instead of a magic string
-        set(LUAJIT_STATIC_LIB "libluajit") 
-    endif()
 else()
-    # Add your standard Lua fallback path here if needed
+    message(FATAL_ERROR
+        "CTRLRX_USE_LUAJIT=OFF is not supported: the vendored Source/Misc/lua "
+        "tree is incomplete, and Source/Misc/luajit/src is on the include path "
+        "unconditionally further down this file. To build against a system "
+        "LuaJIT instead of the vendored source, configure with "
+        "-DCTRLRX_LUAJIT_USE_SYSTEM=ON.")
 endif()
 
 # -----------------------------------------------------------------------
@@ -175,6 +178,9 @@ target_include_directories(SharedCode INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/vst2sdk"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/MIDI"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/CtrlrManager"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/CtrlrModulator"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/CtrlrPanel"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Native"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Plugin"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/UIComponents"
@@ -237,7 +243,7 @@ target_link_libraries(SharedCode INTERFACE
 )
 
 if(CTRLRX_USE_LUAJIT)
-    target_link_libraries(SharedCode INTERFACE ${LUAJIT_STATIC_LIB})
+    target_link_libraries(SharedCode INTERFACE libluajit)
 endif()
 
 # Linux specific library linking to resolve XSendEvent and graphics dependencies
@@ -258,4 +264,14 @@ target_link_libraries("${PROJECT_NAME}" PRIVATE
 )
 
 include(PamplejuceIPP)
+
+# Everything related to the tests target
+#include(Tests) # This would use the Catch2 framework and recompile the source-code...
+enable_testing()
+add_subdirectory(Tests)
+
+# A separate target for Benchmarks (keeps the Tests target fast)
+#include(Benchmarks) # enable once we have benchmarks...
+
+# Output some config for CI (like our PRODUCT_NAME)
 include(GitHubENV)
