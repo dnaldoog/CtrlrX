@@ -126,24 +126,54 @@ void CtrlrLuaUtils::warnWindow(const String title, const String message) {
 void CtrlrLuaUtils::infoWindow(const String title, const String message) {
 	AW::showMessageBox(AW::Info, title, message);
 }
-// CtrlrLuaUtils.h / .cpp
 
-// For text input using AW::runCustomAlertAsyncSafe
-void CtrlrLuaUtils::askForTextInputWindow(const String title, const String message, const String initialInputContent,
-										  const String onScreenLabel, const bool isPassword, const String button1Text,
-										  const String button2Text, std::function<void(const String &)> callback) {
+String CtrlrLuaUtils::askForTextInputWindow(const String title, const String message, const String initialInputContent,
+											const String onScreenLabel, const bool isPassword, const String button1Text,
+											const String button2Text) {
+	auto *mm = juce::MessageManager::getInstance();
+
+	if (!mm->isThisTheMessageThread()) {
+		jassertfalse;
+		return String();
+	}
+
 	auto *w = new juce::AlertWindow(title, message, juce::AlertWindow::QuestionIcon, nullptr);
 	w->addTextEditor("userInput", initialInputContent, onScreenLabel, isPassword);
 	w->addButton(button1Text, 1);
 	w->addButton(button2Text, 0);
 
-	// Pass takeOwnership=true (last param in enterModalState via AW) so w auto-deletes when closed!
-	AW::runCustomAlertAsyncSafe(w, [w, callback](int result) {
-		if (callback) {
-			if (result == 1)
-				callback(w->getTextEditorContents("userInput"));
-			else
-				callback("-1");
+	bool finished = false;
+	String result;
+
+	AW::runCustomAlertAsyncSafe(w, [w, &finished, &result](int res) {
+		result = (res == 1) ? w->getTextEditorContents("userInput") : "-1";
+		finished = true;
+	});
+
+	while (!finished)
+		mm->runDispatchLoopUntil(20);
+
+	return result;
+}
+void CtrlrLuaUtils::askForTextInputWindowAsync(const String title, const String message,
+											   const String initialInputContent, const String onScreenLabel,
+											   const bool isPassword, const String button1Text,
+											   const String button2Text, luabind::object callback) {
+	auto *w = new juce::AlertWindow(title, message, juce::AlertWindow::QuestionIcon, nullptr);
+	w->addTextEditor("userInput", initialInputContent, onScreenLabel, isPassword);
+	w->addButton(button1Text, 1);
+	w->addButton(button2Text, 0);
+
+	AW::runCustomAlertAsyncSafe(w, [w, callback](int result) mutable {
+		if (callback.is_valid() && luabind::type(callback) == LUA_TFUNCTION) {
+			try {
+				if (result == 1)
+					callback(w->getTextEditorContents("userInput"));
+				else
+					callback(String("-1"));
+			} catch (const luabind::error &e) {
+				_DBG("Lua callback exception in askForTextInputWindowAsync: " + String(e.what()));
+			}
 		}
 	});
 }
@@ -167,17 +197,28 @@ void CtrlrLuaUtils::openFileWindow(const String &dialogBoxTitle, const File &ini
 
 void CtrlrLuaUtils::openMultipleFilesWindow(const String &dialogBoxTitle, const File &initialFileOrDirectory,
 											const String &filePatternsAllowed, bool useOSNativeDialogBox,
-											luabind::object table) { // Pass luabind::object by value for async safety
+											luabind::object callback) {
 	auto dialog = std::make_shared<juce::FileChooser>(dialogBoxTitle, initialFileOrDirectory, filePatternsAllowed,
 													  useOSNativeDialogBox);
 	auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles |
 				 juce::FileBrowserComponent::canSelectMultipleItems;
 
-	dialog->launchAsync(flags, [dialog, table](const juce::FileChooser &fc) {
-		if (luabind::type(table) == LUA_TTABLE) {
+	dialog->launchAsync(flags, [dialog, callback](const juce::FileChooser &fc) mutable {
+		if (luabind::type(callback) == LUA_TFUNCTION) {
 			Array<File> res = fc.getResults();
+			lua_State *L = callback.interpreter();
+
+			// Create a native Lua table
+			luabind::object fileTable = luabind::newtable(L);
 			for (int i = 0; i < res.size(); i++) {
-				table[i + 1] = res[i];
+				fileTable[i + 1] = res[i];
+			}
+
+			// Call the Lua function directly passing fileTable as an argument
+			try {
+				callback(fileTable); // <--- Direct operator() invocation!
+			} catch (const luabind::error &e) {
+				// Log Lua error
 			}
 		}
 	});
@@ -354,6 +395,7 @@ void CtrlrLuaUtils::wrapForLua(lua_State *L) {
 				  .def("saveFileWindow", &CtrlrLuaUtils::saveFileWindowSync)
 				  .def("getDirectoryWindow", &CtrlrLuaUtils::getDirectoryWindow)
 				  .def("askForTextInputWindow", &CtrlrLuaUtils::askForTextInputWindow)
+				  .def("askForTextInputWindowAsync", &CtrlrLuaUtils::askForTextInputWindowAsync)
 				  .def("getMidiInputDevices", &CtrlrLuaUtils::getMidiInputDevices)
 				  .def("getMidiOutputDevices", &CtrlrLuaUtils::getMidiOutputDevices)
 				  .def("getVersionMajor", &CtrlrLuaUtils::getVersionMajor)
