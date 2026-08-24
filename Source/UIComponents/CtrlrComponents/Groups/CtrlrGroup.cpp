@@ -111,6 +111,7 @@ CtrlrGroup::CtrlrGroup(CtrlrModulator &owner) : CtrlrComponent(owner), content(*
 		}
 	}
 	applyLabelProperties();
+	restoreStateInProgress = false;
 }
 
 CtrlrGroup::~CtrlrGroup() {
@@ -262,63 +263,65 @@ void CtrlrGroup::resized() {
 			if (property == Ids::uiGroupText || property == Ids::uiGroupTextFont ||
 				property == Ids::uiGroupTextColour || property == Ids::uiGroupTextPlacement ||
 				property == Ids::uiGroupTextMargin || property == Ids::componentLabelVisible) {
-				// Allow these through during panel restoration.
+				// Allow through
 			} else {
 				return;
 			}
 		}
 
-		if (property == Ids::uiGroupOutlineColour1 || property == Ids::uiGroupOutlineColour2 ||
-			property == Ids::uiGroupBackgroundColour1 || property == Ids::uiGroupBackgroundColour2 ||
-			property == Ids::uiGroupBackgroundGradientType || property == Ids::uiGroupOutlineGradientType ||
-			property == Ids::uiGroupOutlineRoundAngle || property == Ids::uiGroupOutlineThickness) {
-			setProperty(Ids::uiGroupLookAndFeelIsCustom, true);
-			repaint();
-		} else if (property == Ids::uiGroupLookAndFeel) {
-			String LookAndFeelType = getProperty(property);
+	if (property == Ids::uiGroupOutlineColour1 || property == Ids::uiGroupOutlineColour2 ||
+		property == Ids::uiGroupBackgroundColour1 || property == Ids::uiGroupBackgroundColour2 ||
+		property == Ids::uiGroupBackgroundGradientType || property == Ids::uiGroupOutlineGradientType ||
+		property == Ids::uiGroupOutlineRoundAngle || property == Ids::uiGroupOutlineThickness) {
+		setProperty(Ids::uiGroupLookAndFeelIsCustom, true);
+		repaint();
+	} else if (property == Ids::uiGroupLookAndFeel) {
+		String LookAndFeelType = getProperty(property);
 
-			setLookAndFeel(nullptr);
+		setLookAndFeel(nullptr);
 
-			if (LookAndFeelType == "Default") {
-				customLF.reset();
-			} else {
-				customLF = getLookAndFeelFromComponentProperty(LookAndFeelType);
-
-				if (customLF != nullptr) {
-					setLookAndFeel(customLF.get());
-				}
-			}
-
-			if (!getProperty(Ids::uiGroupLookAndFeelIsCustom)) {
-				resetLookAndFeelOverrides();
-			}
-
-			updateComponentColors();
-		} else if (property == Ids::uiGroupLookAndFeelIsCustom) {
-			if (!getProperty(Ids::uiGroupLookAndFeelIsCustom)) {
-				resetLookAndFeelOverrides();
-			}
-			updateComponentColors();
-		} else if (property == Ids::uiGroupTextColour) {
-			setProperty(Ids::uiGroupLookAndFeelIsCustom, true);
-			label->setColour(Label::textColourId, VAR2COLOUR(getProperty(Ids::uiGroupTextColour)));
-			updateComponentColors();
-		} else if (property == Ids::uiGroupText) {
-			label->setText(getProperty(Ids::uiGroupText), dontSendNotification);
-		} else if (property == Ids::uiGroupTextFont) {
-			label->setFont(STR2FONT(getProperty(Ids::uiGroupTextFont)));
-		} else if (property == Ids::uiGroupTextPlacement) {
-			label->setJustificationType(justificationFromProperty(getProperty(Ids::uiGroupTextPlacement)));
-		} else if (property == Ids::uiGroupTextMargin) {
-			textMargin = getProperty(Ids::uiGroupTextMargin);
-		} else if (property == Ids::uiGroupBackgroundImage || property == Ids::uiGroupBackgroundImageAlpha ||
-				   property == Ids::uiGroupBackgroundImageLayout) {
-			setResource();
+		if (LookAndFeelType == "Default") {
+			customLF.reset();
 		} else {
-			CtrlrComponent::valueTreePropertyChanged(treeWhosePropertyHasChanged, property);
+			customLF = getLookAndFeelFromComponentProperty(LookAndFeelType);
+
+			if (customLF != nullptr) {
+				setLookAndFeel(customLF.get());
+			}
 		}
 
+		if (!getProperty(Ids::uiGroupLookAndFeelIsCustom)) {
+			resetLookAndFeelOverrides();
+		}
+
+		updateComponentColors();
+	} else if (property == Ids::uiGroupLookAndFeelIsCustom) {
+		if (!getProperty(Ids::uiGroupLookAndFeelIsCustom)) {
+			resetLookAndFeelOverrides();
+		}
+		updateComponentColors();
+	} else if (property == Ids::uiGroupTextColour) {
+		setProperty(Ids::uiGroupLookAndFeelIsCustom, true);
+		label->setColour(Label::textColourId, VAR2COLOUR(getProperty(Ids::uiGroupTextColour)));
+		updateComponentColors();
+	} else if (property == Ids::uiGroupText) {
+		// FORCE LABEL UPDATE AND REPAINT
+		label->setText(getProperty(Ids::uiGroupText).toString(), dontSendNotification);
+		label->repaint();
+	} else if (property == Ids::uiGroupTextFont) {
+		label->setFont(STR2FONT(getProperty(Ids::uiGroupTextFont)));
+		label->repaint();
+	} else if (property == Ids::uiGroupTextPlacement) {
+		label->setJustificationType(justificationFromProperty(getProperty(Ids::uiGroupTextPlacement)));
+	} else if (property == Ids::uiGroupTextMargin) {
+		textMargin = getProperty(Ids::uiGroupTextMargin);
 		resized();
+	} else if (property == Ids::uiGroupBackgroundImage || property == Ids::uiGroupBackgroundImageAlpha ||
+			   property == Ids::uiGroupBackgroundImageLayout) {
+		setResource();
+	} else {
+		CtrlrComponent::valueTreePropertyChanged(treeWhosePropertyHasChanged, property);
+	}
 	}
 
 	const CtrlrGroup::GradientType CtrlrGroup::gradientFromString(const String &str) {
