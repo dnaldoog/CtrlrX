@@ -13,10 +13,15 @@ CtrlrPropertyComponent::CtrlrPropertyComponent(const Identifier &_propertyName, 
 	  identifierDefinition(_identifierDefinition),
 	  propertyName(_propertyName),
 	  propertyElement(_propertyElement),
-	  panel(_panel),
-	  possibleChoices(_possibleChoices),
-	  possibleValues(_possibleValues) {
+	  panel(_panel)
+// possibleChoices(_possibleChoices),
+// possibleValues(_possibleValues) {
+{
+	if (_possibleChoices != nullptr)
+		possibleChoices = *_possibleChoices;
 
+	if (_possibleValues != nullptr)
+		possibleValues = *_possibleValues;
 	//    if (propertyName == Ids::midiMessageCtrlrValue) // ADDED v5.6.35. For Multi MIDI Message. Thanks to @dnaldoog
 	//    {
 	//        setVisible(false); // this hides the midi message ctrlr value slider because @dnaldoog doesn't think it
@@ -122,16 +127,16 @@ Component *CtrlrPropertyComponent::getPropertyComponent() {
 	_DBG("Property Name: " + propertyName.toString() + " | XML Type: " +
 		 identifierDefinition.getProperty("type").toString() + " | Mapped Type: " + String(propertyType));
 	if (propertyName == Ids::componentLayerUid) {
-		possibleChoices = new StringArray();
-		possibleValues = new Array<var>();
+		possibleChoices.clear();
+		possibleValues.clear();
 
 		if (panel != nullptr && panel->getCanvas() != nullptr) {
 			CtrlrPanelCanvas *canvas = panel->getCanvas();
 			for (int i = 0; i < canvas->getNumLayers(); i++) {
 				CtrlrPanelCanvasLayer *layer = canvas->getLayerFromArray(i);
 				if (layer != nullptr) {
-					possibleChoices->add(layer->getProperty(Ids::uiPanelCanvasLayerName).toString());
-					possibleValues->add(layer->getProperty(Ids::uiPanelCanvasLayerUid).toString());
+					possibleChoices.add(layer->getProperty(Ids::uiPanelCanvasLayerName).toString());
+					possibleValues.add(layer->getProperty(Ids::uiPanelCanvasLayerUid).toString());
 				}
 			}
 		}
@@ -152,8 +157,8 @@ Component *CtrlrPropertyComponent::getPropertyComponent() {
 			Ids::ctrlrPropertyLineImprovedLegibility, false); // Added v5.6.34.
 	}
 	if (propertyName == Ids::componentBubbleHelpTrigger) {
-		possibleChoices = new StringArray();
-		possibleValues = new Array<var>();
+		possibleChoices.clear();
+		possibleValues.clear();
 
 		// Automatically parse the "defaults" attribute from the XML line
 		String defaultsString = identifierDefinition.getProperty("defaults").toString();
@@ -164,8 +169,8 @@ Component *CtrlrPropertyComponent::getPropertyComponent() {
 			StringArray kv;
 			kv.addTokens(pairs[i], "=", "");
 			if (kv.size() == 2) {
-				possibleChoices->add(kv[0].trim());
-				possibleValues->add(kv[1].trim().getIntValue());
+				possibleChoices.add(kv[0].trim());
+				possibleValues.add(kv[1].trim().getIntValue());
 			}
 		}
 	}
@@ -279,12 +284,12 @@ Component *CtrlrPropertyComponent::getPropertyComponent() {
 	case CtrlrIDManager::VarNumeric:
 		// preferredHeight = 36;
 		preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
-		return (new CtrlrChoicePropertyComponent(valueToControl, possibleChoices, possibleValues, true));
+		return (new CtrlrChoicePropertyComponent(valueToControl, &possibleChoices, &possibleValues, true));
 
 	case CtrlrIDManager::VarText:
 		// preferredHeight = 36;
 		preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
-		return (new CtrlrChoicePropertyComponent(valueToControl, possibleChoices, possibleValues, false));
+		return (new CtrlrChoicePropertyComponent(valueToControl, &possibleChoices, &possibleValues, false));
 
 	case CtrlrIDManager::FileProperty:
 		// preferredHeight = 36;
