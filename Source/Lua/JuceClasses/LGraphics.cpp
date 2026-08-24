@@ -384,105 +384,125 @@ void LGraphics::wrapForLua (lua_State *L)
 	using namespace luabind;
 
 	module(L)
-    [
-		class_<Graphics>("Graphics")
-			.def(constructor<Image &>())
-			.def("setColour", &Graphics::setColour)
-			.def("setOpacity", &Graphics::setOpacity)
+		[class_<Graphics>("Graphics")
+			 .def(constructor<Image &>())
+			 .def("setColour", &Graphics::setColour)
+			 .def("setOpacity", &Graphics::setOpacity)
 
-			.def("setGradientFill", (void (Graphics::*)(const ColourGradient &))&Graphics::setGradientFill)
-			.def("setTiledImageFill", &Graphics::setTiledImageFill)
-			.def("setFillType", &Graphics::setFillType)
+			 .def("setGradientFill", (void (Graphics::*)(const ColourGradient &))&Graphics::setGradientFill)
+			 .def("setTiledImageFill", &Graphics::setTiledImageFill)
+			 .def("setFillType", &Graphics::setFillType)
 
-			.def("setFont", (void (Graphics::*)(const Font &))&Graphics::setFont)
-			.def("setFont", (void (Graphics::*)(float))&Graphics::setFont)
-			.def("getCurrentFont", &Graphics::getCurrentFont)
+			 .def("setFont", (void (Graphics::*)(const Font &))&Graphics::setFont)
+			 .def("setFont", (void (Graphics::*)(float))&Graphics::setFont)
+			 .def("getCurrentFont", &Graphics::getCurrentFont)
 
-			.def("drawSingleLineText", &Graphics::drawSingleLineText)
-			.def("drawMultiLineText", &Graphics::drawMultiLineText)
+			 .def("drawSingleLineText", &Graphics::drawSingleLineText)
+			 .def("drawMultiLineText", &Graphics::drawMultiLineText)
 
-			.def("drawText", (void (Graphics::*)(const String &, int, int, int, int, Justification , bool) const)&Graphics::drawText)
-			.def("drawText", (void (Graphics::*)(const String &, const Rectangle<int>, Justification , bool) const)&Graphics::drawText)
-			.def("drawText", (void (Graphics::*)(const String &, const Rectangle<float>, Justification, bool) const)&Graphics::drawText)
+			 .def("drawText", (void (Graphics::*)(const String &, int, int, int, int, Justification, bool) const) &
+								  Graphics::drawText)
+			 .def("drawText", (void (Graphics::*)(const String &, const Rectangle<int>, Justification, bool) const) &
+								  Graphics::drawText)
+			 .def("drawText", (void (Graphics::*)(const String &, const Rectangle<float>, Justification, bool) const) &
+								  Graphics::drawText)
 
-			// .def("drawFittedText", (void (Graphics::*)(const String &, int, int, int, int, Justification , int, float) const)&Graphics::drawFittedText)
-			// .def("drawFittedText", (void (Graphics::*)(const String &, Rectangle<int>, Justification , int, float) const)&Graphics::drawFittedText)
-        
-            .def("drawFittedText", (void (Graphics::*)(const String &, int, int, int, int, Justification, int, float, GlyphArrangementOptions) const)&Graphics::drawFittedText)
-            .def("drawFittedText", (void (Graphics::*)(const String &, Rectangle<int>, Justification, int, float, GlyphArrangementOptions) const)&Graphics::drawFittedText)
+			 // Wrapper for 8-argument version (what your Lua scripts actually call)
+			 .def(
+				 "drawFittedText",
+				 +[](const Graphics *g, const String &text, int x, int y, int w, int h, Justification j, int maxLines,
+					 float minScale) {
+					 if (g != nullptr)
+						 g->drawFittedText(text, x, y, w, h, j, maxLines, minScale);
+				 })
 
-			.def("fillAll", (void (Graphics::*)() const)&Graphics::fillAll)
-			.def("fillAll", (void (Graphics::*)(const Colour) const)&Graphics::fillAll)
+			 // Wrapper for Rectangle version
+			 .def(
+				 "drawFittedText",
+				 +[](const Graphics *g, const String &text, const Rectangle<int> &area, Justification j, int maxLines,
+					 float minScale) {
+					 if (g != nullptr)
+						 g->drawFittedText(text, area, j, maxLines, minScale);
+				 })
 
-			.def("fillRect", (void (Graphics::*)(int,int,int,int) const)&Graphics::fillRect)
-			.def("fillRect", (void (Graphics::*)(const Rectangle<int>) const)&Graphics::fillRect)
+			 .def("fillAll", (void (Graphics::*)() const) & Graphics::fillAll)
+			 .def("fillAll", (void (Graphics::*)(const Colour) const) & Graphics::fillAll)
 
-			.def("fillRoundedRectangle", (void (Graphics::*)(float, float, float, float, float) const)&Graphics::fillRoundedRectangle)
-			.def("fillRoundedRectangle", (void (Graphics::*)(const Rectangle<float>, float) const)&Graphics::fillRoundedRectangle)
+			 .def("fillRect", (void (Graphics::*)(int, int, int, int) const) & Graphics::fillRect)
+			 .def("fillRect", (void (Graphics::*)(const Rectangle<int>) const) & Graphics::fillRect)
 
-			.def("fillCheckerBoard", &Graphics::fillCheckerBoard)
+			 .def("fillRoundedRectangle",
+				  (void (Graphics::*)(float, float, float, float, float) const) & Graphics::fillRoundedRectangle)
+			 .def("fillRoundedRectangle",
+				  (void (Graphics::*)(const Rectangle<float>, float) const) & Graphics::fillRoundedRectangle)
 
-			.def("drawRect", (void (Graphics::*)(int, int, int, int, int) const)&Graphics::drawRect)
-			.def("drawRect", (void (Graphics::*)(const Rectangle<int>, int) const)&Graphics::drawRect)
+			 .def("fillCheckerBoard", &Graphics::fillCheckerBoard)
 
-			.def("drawRoundedRectangle", (void (Graphics::*)(float, float, float, float, float, float) const)&Graphics::drawRoundedRectangle)
-			.def("drawRoundedRectangle", (void (Graphics::*)(const Rectangle<float>, float, float) const)&Graphics::drawRoundedRectangle)
+			 .def("drawRect", (void (Graphics::*)(int, int, int, int, int) const) & Graphics::drawRect)
+			 .def("drawRect", (void (Graphics::*)(const Rectangle<int>, int) const) & Graphics::drawRect)
 
-			//.def("setPixel", &Graphics::setPixel)
+			 .def("drawRoundedRectangle",
+				  (void (Graphics::*)(float, float, float, float, float, float) const) & Graphics::drawRoundedRectangle)
+			 .def("drawRoundedRectangle",
+				  (void (Graphics::*)(const Rectangle<float>, float, float) const) & Graphics::drawRoundedRectangle)
 
-			.def("fillEllipse", (void (Graphics::*)(float, float, float, float) const)&Graphics::fillEllipse)
-			.def("fillEllipse", (void (Graphics::*)(const Rectangle<float>) const)&Graphics::fillEllipse)
+			 //.def("setPixel", &Graphics::setPixel)
 
-			.def("drawEllipse", (void (Graphics::*)(float, float, float, float, float) const)&Graphics::drawEllipse)
-			.def("drawEllipse", (void (Graphics::*)(const Rectangle<float>, float) const)&Graphics::drawEllipse)
+			 .def("fillEllipse", (void (Graphics::*)(float, float, float, float) const) & Graphics::fillEllipse)
+			 .def("fillEllipse", (void (Graphics::*)(const Rectangle<float>) const) & Graphics::fillEllipse)
 
-			.def("drawLine", (void (Graphics::*)(float, float, float, float) const)&Graphics::drawLine)
-			.def("drawLine", (void (Graphics::*)(float, float, float, float, float) const)&Graphics::drawLine)
-			//.def("drawLine", (void (Graphics::*)(const Line<float> &) const)&Graphics::drawLine)
-			//.def("drawLine", (void (Graphics::*)(const Line<float> &, float) const)&Graphics::drawLine)
-			.def("drawDashedLine", (void (Graphics::*)(const Line<float> &, const float *, int, float, int) const)&Graphics::drawDashedLine)
-			.def("drawVerticalLine", (void (Graphics::*)(int, float, float) const)&Graphics::drawVerticalLine)
-			.def("drawHorizontalLine", (void (Graphics::*)(int, float, float) const)&Graphics::drawHorizontalLine)
+			 .def("drawEllipse", (void (Graphics::*)(float, float, float, float, float) const) & Graphics::drawEllipse)
+			 .def("drawEllipse", (void (Graphics::*)(const Rectangle<float>, float) const) & Graphics::drawEllipse)
 
-			.def("fillPath", (void (Graphics::*)(const Path &, const AffineTransform &) const)&Graphics::fillPath)
-			.def("fillPath", (void (Graphics::*)(const Path &) const)&Graphics::fillPath)
-			.def("strokePath", (void (Graphics::*)(const Path &, const PathStrokeType &, const AffineTransform &) const)&Graphics::strokePath)
+			 .def("drawLine", (void (Graphics::*)(float, float, float, float) const) & Graphics::drawLine)
+			 .def("drawLine", (void (Graphics::*)(float, float, float, float, float) const) & Graphics::drawLine)
+			 //.def("drawLine", (void (Graphics::*)(const Line<float> &) const)&Graphics::drawLine)
+			 //.def("drawLine", (void (Graphics::*)(const Line<float> &, float) const)&Graphics::drawLine)
+			 .def("drawDashedLine", (void (Graphics::*)(const Line<float> &, const float *, int, float, int) const) &
+										Graphics::drawDashedLine)
+			 .def("drawVerticalLine", (void (Graphics::*)(int, float, float) const) & Graphics::drawVerticalLine)
+			 .def("drawHorizontalLine", (void (Graphics::*)(int, float, float) const) & Graphics::drawHorizontalLine)
 
-			.def("drawArrow", &Graphics::drawArrow)
+			 .def("fillPath", (void (Graphics::*)(const Path &, const AffineTransform &) const) & Graphics::fillPath)
+			 .def("fillPath", (void (Graphics::*)(const Path &) const) & Graphics::fillPath)
+			 .def("strokePath",
+				  (void (Graphics::*)(const Path &, const PathStrokeType &, const AffineTransform &) const) &
+					  Graphics::strokePath)
 
-			.def("setImageResamplingQuality", &Graphics::setImageResamplingQuality)
-			.def("drawImageAt", &Graphics::drawImageAt)
-			.def("drawImage", (void (Graphics::*)(const Image &, int, int, int, int, int, int, int, int, bool) const)&Graphics::drawImage)
-			.def("drawImage", (void (Graphics::*)(const Image &, Rectangle<float>, RectanglePlacement, bool) const)&Graphics::drawImage)
-			.def("drawImageTransformed", &Graphics::drawImageTransformed)
-			.def("drawImageWithin", &Graphics::drawImageWithin)
+			 .def("drawArrow", &Graphics::drawArrow)
 
-			.def("getClipBounds", &Graphics::getClipBounds)
-			.def("clipRegionIntersects", &Graphics::clipRegionIntersects)
-			.def("reduceClipRegion", (bool (Graphics::*)(int,int,int,int))&Graphics::reduceClipRegion)
-			.def("reduceClipRegion", (bool (Graphics::*)(const Rectangle<int>))&Graphics::reduceClipRegion)
-			.def("reduceClipRegion", (bool (Graphics::*)(const RectangleList<int> &))&Graphics::reduceClipRegion)
-			.def("reduceClipRegion", (bool (Graphics::*)(const Path &path, const AffineTransform &))&Graphics::reduceClipRegion)
-			.def("reduceClipRegion", (bool (Graphics::*)(const Image &, const AffineTransform &))&Graphics::reduceClipRegion)
-			.def("excludeClipRegion", (bool (Graphics::*)(const Rectangle<int>))&Graphics::excludeClipRegion)
-			.def("isClipEmpty", &Graphics::isClipEmpty)
-			.def("saveState", &Graphics::saveState)
-			.def("restoreState", &Graphics::restoreState)
-			.def("beginTransparencyLayer", &Graphics::beginTransparencyLayer)
-			.def("endTransparencyLayer", &Graphics::endTransparencyLayer)
-			.def("setOrigin", (void (Graphics::*)(int, int))&Graphics::setOrigin)
-			.def("setOrigin", (void (Graphics::*)(Point<int>))&Graphics::setOrigin)
-			.def("addTransform", &Graphics::addTransform)
-			.def("resetToDefaultState", &Graphics::resetToDefaultState)
-			.def("isVectorDevice", &Graphics::isVectorDevice)
+			 .def("setImageResamplingQuality", &Graphics::setImageResamplingQuality)
+			 .def("drawImageAt", &Graphics::drawImageAt)
+			 .def("drawImage", (void (Graphics::*)(const Image &, int, int, int, int, int, int, int, int, bool) const) &
+								   Graphics::drawImage)
+			 .def("drawImage", (void (Graphics::*)(const Image &, Rectangle<float>, RectanglePlacement, bool) const) &
+								   Graphics::drawImage)
+			 .def("drawImageTransformed", &Graphics::drawImageTransformed)
+			 .def("drawImageWithin", &Graphics::drawImageWithin)
 
-			.enum_("ResamplingQuality")
-			[
-				value("lowResamplingQuality", 0),
-				value("mediumResamplingQuality", 1),
-				value("highResamplingQuality", 2)
-			]
-	];
+			 .def("getClipBounds", &Graphics::getClipBounds)
+			 .def("clipRegionIntersects", &Graphics::clipRegionIntersects)
+			 .def("reduceClipRegion", (bool (Graphics::*)(int, int, int, int))&Graphics::reduceClipRegion)
+			 .def("reduceClipRegion", (bool (Graphics::*)(const Rectangle<int>))&Graphics::reduceClipRegion)
+			 .def("reduceClipRegion", (bool (Graphics::*)(const RectangleList<int> &))&Graphics::reduceClipRegion)
+			 .def("reduceClipRegion",
+				  (bool (Graphics::*)(const Path &path, const AffineTransform &))&Graphics::reduceClipRegion)
+			 .def("reduceClipRegion",
+				  (bool (Graphics::*)(const Image &, const AffineTransform &))&Graphics::reduceClipRegion)
+			 .def("excludeClipRegion", (bool (Graphics::*)(const Rectangle<int>))&Graphics::excludeClipRegion)
+			 .def("isClipEmpty", &Graphics::isClipEmpty)
+			 .def("saveState", &Graphics::saveState)
+			 .def("restoreState", &Graphics::restoreState)
+			 .def("beginTransparencyLayer", &Graphics::beginTransparencyLayer)
+			 .def("endTransparencyLayer", &Graphics::endTransparencyLayer)
+			 .def("setOrigin", (void (Graphics::*)(int, int))&Graphics::setOrigin)
+			 .def("setOrigin", (void (Graphics::*)(Point<int>))&Graphics::setOrigin)
+			 .def("addTransform", &Graphics::addTransform)
+			 .def("resetToDefaultState", &Graphics::resetToDefaultState)
+			 .def("isVectorDevice", &Graphics::isVectorDevice)
+
+			 .enum_("ResamplingQuality")[value("lowResamplingQuality", 0), value("mediumResamplingQuality", 1),
+										 value("highResamplingQuality", 2)]];
 }
 
 void LImage::wrapForLua (lua_State *L)
