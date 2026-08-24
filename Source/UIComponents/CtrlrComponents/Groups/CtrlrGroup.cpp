@@ -110,6 +110,7 @@ CtrlrGroup::CtrlrGroup(CtrlrModulator &owner) : CtrlrComponent(owner), content(*
 			setProperty(Ids::uiGroupOutlineColour2, (String)findColour(DocumentWindow::textColourId).toString());
 		}
 	}
+	applyLabelProperties();
 }
 
 CtrlrGroup::~CtrlrGroup() {
@@ -257,8 +258,15 @@ void CtrlrGroup::resized() {
 	}
 
 	void CtrlrGroup::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
-		if (restoreStateInProgress)
-			return;
+		if (restoreStateInProgress) {
+			if (property == Ids::uiGroupText || property == Ids::uiGroupTextFont ||
+				property == Ids::uiGroupTextColour || property == Ids::uiGroupTextPlacement ||
+				property == Ids::uiGroupTextMargin || property == Ids::componentLabelVisible) {
+				// Allow these through during panel restoration.
+			} else {
+				return;
+			}
+		}
 
 		if (property == Ids::uiGroupOutlineColour1 || property == Ids::uiGroupOutlineColour2 ||
 			property == Ids::uiGroupBackgroundColour1 || property == Ids::uiGroupBackgroundColour2 ||
@@ -384,6 +392,8 @@ void CtrlrGroup::resized() {
 	}
 
 	void CtrlrGroup::canvasStateRestored() {
+		// applyRestoredProperties();
+		// DBG("CtrlrGroup::canvasStateRestored() called for group: " + owner.getName());
 		Array<CtrlrModulator *> children =
 			owner.getOwnerPanel().getModulatorsWithProperty(Ids::componentGroupName, owner.getName());
 
@@ -522,10 +532,78 @@ void CtrlrGroup::resized() {
 			props->refreshAll(); // Needs extra code to prevent scrolling back to top on refresh
 		}
 	}
+	void CtrlrGroup::applyLabelProperties() {
+		if (label == nullptr)
+			return;
 
-//[/MiscUserCode]
+		if (componentTree.hasProperty(Ids::uiGroupText))
+			label->setText(getProperty(Ids::uiGroupText), dontSendNotification);
 
-//==============================================================================
+		if (componentTree.hasProperty(Ids::uiGroupTextFont))
+			label->setFont(STR2FONT(getProperty(Ids::uiGroupTextFont)));
+
+		if (componentTree.hasProperty(Ids::uiGroupTextColour))
+			label->setColour(Label::textColourId, VAR2COLOUR(getProperty(Ids::uiGroupTextColour)));
+
+		if (componentTree.hasProperty(Ids::uiGroupTextPlacement))
+			label->setJustificationType(justificationFromProperty(getProperty(Ids::uiGroupTextPlacement)));
+
+		if (componentTree.hasProperty(Ids::uiGroupTextMargin))
+			textMargin = getProperty(Ids::uiGroupTextMargin);
+
+		if (componentTree.hasProperty(Ids::componentLabelVisible))
+			label->setVisible((bool)getProperty(Ids::componentLabelVisible));
+
+		resized();
+	}
+	// void CtrlrGroup::applyRestoredProperties() {
+	// 	if (label == nullptr)
+	// 		return;
+
+	// 	label->setText(getProperty(Ids::uiGroupText), dontSendNotification);
+
+	// 	label->setFont(STR2FONT(getProperty(Ids::uiGroupTextFont)));
+
+	// 	label->setJustificationType(justificationFromProperty(getProperty(Ids::uiGroupTextPlacement)));
+
+	// 	textMargin = getProperty(Ids::uiGroupTextMargin);
+
+	// 	label->setVisible((bool)getProperty(Ids::componentLabelVisible));
+
+	// 	updateComponentColors();
+
+	// 	resized();
+	// }
+	//[/MiscUserCode]
+
+	//==============================================================================
+#if 0
+/*  -- Jucer information section --
+
+    This is where the Jucer puts all of its metadata, so don't change anything in here!
+
+BEGIN_JUCER_METADATA
+
+<JUCER_COMPONENT documentType="Component" className="CtrlrGroup" componentName=""
+                 parentClasses="public CtrlrComponent" constructorParams="CtrlrModulator &amp;owner"
+                 variableInitialisers="CtrlrComponent(owner), content(*this)"
+                 snapPixels="8" snapActive="1" snapShown="1" overlayOpacity="0.330000013"
+                 fixedSize="1" initialWidth="128" initialHeight="128">
+  <BACKGROUND backgroundColour="ffffff"/>
+  <LABEL name="new label" id="20a4cb0ec13b8efc" memberName="label" virtualName=""
+         explicitFocusOrder="0" pos="0 0 0M 0M" edTextCol="ff000000" edBkgCol="0"
+         labelText="Group Text" editableSingleClick="0" editableDoubleClick="0"
+         focusDiscardsChanges="0" fontname="Default font" fontsize="14"
+         bold="1" italic="0" justification="36"/>
+</JUCER_COMPONENT>
+
+END_JUCER_METADATA
+*/
+#endif
+
+	//[/MiscUserCode]
+
+	//==============================================================================
 #if 0
 /*  -- Jucer information section --
 

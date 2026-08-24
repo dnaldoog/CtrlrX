@@ -80,7 +80,6 @@ public:
     void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr);
     static std::unique_ptr<juce::LookAndFeel> getLookAndFeelFromComponentProperty(const String &lookAndFeelComponentProperty); // Modern signature match
     void resetLookAndFeelOverrides();
-    void updatePropertiesPanel();
     static void wrapForLua (lua_State *L);
     //[/UserMethods]
 
@@ -101,8 +100,10 @@ private:
     int textMargin;
     Image groupBackgroundImage;
     CtrlrGroupContentComponent content;
-    
-    // Manage your custom layout scheme lifetime securely:
+	void updatePropertiesPanel();
+	void applyLabelProperties();
+    // void applyRestoredProperties();
+	// Manage your custom layout scheme lifetime securely:
     std::unique_ptr<juce::LookAndFeel> customLF; 
     //[/UserVariables]
 
