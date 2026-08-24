@@ -381,10 +381,49 @@ void LGlyphArrangement::wrapForLua(lua_State *L)
 
 void LGraphics::wrapForLua (lua_State *L)
 {
-	using namespace luabind;
+    using namespace luabind;
 
-	module(L)
-		[class_<Graphics>("Graphics")
+    module(L)
+    [
+        // 1. REGISTER GlyphArrangementOptions CLASS
+        class_<GlyphArrangementOptions>("GlyphArrangementOptions")
+            .def(constructor<>()),
+
+        // 2. REGISTER Graphics CLASS
+        class_<Graphics>("Graphics")
+            .def(constructor<Image &>())
+
+            // 8-argument version (backwards compatible for existing Lua code)
+            .def("drawFittedText",
+                +[](const Graphics *g, const String &text, int x, int y, int w, int h, 
+                    Justification j, int maxLines, float minScale) {
+		if (g != nullptr)
+			g->drawFittedText(text, x, y, w, h, j, maxLines, minScale);
+                })
+
+            // 9-argument version (accepts GlyphArrangementOptions)
+            .def("drawFittedText",
+                +[](const Graphics *g, const String &text, int x, int y, int w, int h, 
+                    Justification j, int maxLines, float minScale, GlyphArrangementOptions options) {
+		if (g != nullptr)
+			g->drawFittedText(text, x, y, w, h, j, maxLines, minScale, options);
+                })
+
+            // Rectangle version (8-argument)
+            .def("drawFittedText",
+                +[](const Graphics *g, const String &text, const Rectangle<int> &area, 
+                    Justification j, int maxLines, float minScale) {
+		if (g != nullptr)
+			g->drawFittedText(text, area, j, maxLines, minScale);
+                })
+
+            // Rectangle version (9-argument)
+            .def("drawFittedText",
+                +[](const Graphics *g, const String &text, const Rectangle<int> &area, 
+                    Justification j, int maxLines, float minScale, GlyphArrangementOptions options) {
+		if (g != nullptr)
+			g->drawFittedText(text, area, j, maxLines, minScale, options);
+                })
 			 .def(constructor<Image &>())
 			 .def("setColour", &Graphics::setColour)
 			 .def("setOpacity", &Graphics::setOpacity)
@@ -406,24 +445,6 @@ void LGraphics::wrapForLua (lua_State *L)
 								  Graphics::drawText)
 			 .def("drawText", (void (Graphics::*)(const String &, const Rectangle<float>, Justification, bool) const) &
 								  Graphics::drawText)
-
-			 // Wrapper for 8-argument version (what your Lua scripts actually call)
-			 .def(
-				 "drawFittedText",
-				 +[](const Graphics *g, const String &text, int x, int y, int w, int h, Justification j, int maxLines,
-					 float minScale) {
-					 if (g != nullptr)
-						 g->drawFittedText(text, x, y, w, h, j, maxLines, minScale);
-				 })
-
-			 // Wrapper for Rectangle version
-			 .def(
-				 "drawFittedText",
-				 +[](const Graphics *g, const String &text, const Rectangle<int> &area, Justification j, int maxLines,
-					 float minScale) {
-					 if (g != nullptr)
-						 g->drawFittedText(text, area, j, maxLines, minScale);
-				 })
 
 			 .def("fillAll", (void (Graphics::*)() const) & Graphics::fillAll)
 			 .def("fillAll", (void (Graphics::*)(const Colour) const) & Graphics::fillAll)
@@ -503,6 +524,7 @@ void LGraphics::wrapForLua (lua_State *L)
 
 			 .enum_("ResamplingQuality")[value("lowResamplingQuality", 0), value("mediumResamplingQuality", 1),
 										 value("highResamplingQuality", 2)]];
+										 
 }
 
 void LImage::wrapForLua (lua_State *L)
