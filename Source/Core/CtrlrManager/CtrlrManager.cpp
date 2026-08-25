@@ -328,6 +328,7 @@ void CtrlrManager::restoreState(const ValueTree &savedTree) {
 	// =================================================================
 	// STEP 3: RESTORE PROPERTIES & MANAGERS
 	// =================================================================
+
 	_DBG("CtrlrManager::restoreState: Calling restoreProperties.");
 	restoreProperties(savedTree, managerTree, nullptr, juce::String());
 	_DBG("CtrlrManager::restoreState: restoreProperties returned.");
@@ -408,7 +409,24 @@ void CtrlrManager::restoreState(const ValueTree &savedTree) {
 	_DBG("CtrlrManager::restoreState: Non-AAX build - calling restoreEditorState directly.");
 	restoreEditorUI();
 #endif
+#if JUCE_LINUX
+    _DBG("CtrlrManager::restoreState: Refreshing ALSA/JACK devices post-load...");
+    getCtrlrMidiDeviceManager().refreshDevices();
 
+    // Force every restored panel to re-evaluate its saved MIDI input/output settings
+    for (int i = 0; i < ctrlrPanels.size(); ++i) {
+        if (auto *panel = ctrlrPanels.getUnchecked(i)) {
+            const String inDev = panel->getProperty(Ids::panelMidiInputDevice);
+            const String outDev = panel->getProperty(Ids::panelMidiOutputDevice);
+
+            if (inDev.isNotEmpty())
+                panel->setProperty(Ids::panelMidiInputDevice, inDev, true);
+
+            if (outDev.isNotEmpty())
+                panel->setProperty(Ids::panelMidiOutputDevice, outDev, true);
+        }
+    }
+#endif
 	_DBG("CtrlrManager::restoreState (ValueTree) exit");
 }
 

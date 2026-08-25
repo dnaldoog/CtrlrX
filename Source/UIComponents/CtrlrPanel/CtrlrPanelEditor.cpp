@@ -242,6 +242,40 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 		setProperty(Ids::uiPanelLookAndFeel, lookAndFeelDesc);
 	}
 
+#if JUCE_LINUX
+    juce::Timer::callAfterDelay(1250, [this]()
+    {
+        DBG("!*! Linux Deferred MIDI Refresh Triggered !*!");
+
+        // 1. Force ALSA/JACK device enumeration
+        auto& devMgr = this->owner.getCtrlrManagerOwner().getCtrlrMidiDeviceManager();
+        devMgr.refreshDevices();
+
+        // 2. Fetch active saved device properties
+        const String inDev   = this->owner.getProperty(Ids::panelMidiInputDevice).toString();
+        const String outDev  = this->owner.getProperty(Ids::panelMidiOutputDevice).toString();
+        const String ctrlDev = this->owner.getProperty(Ids::panelMidiControllerDevice).toString();
+
+        // 3. Re-trigger properties to force open streams and re-bind device indices
+        if (inDev.isNotEmpty())
+            this->owner.setProperty(Ids::panelMidiInputDevice, inDev, true);
+
+        if (outDev.isNotEmpty())
+            this->owner.setProperty(Ids::panelMidiOutputDevice, outDev, true);
+
+        if (ctrlDev.isNotEmpty())
+            this->owner.setProperty(Ids::panelMidiControllerDevice, ctrlDev, true);
+
+        // 4. Force property panel / menu bar UI components to refresh their dropdown models & checkmarks
+        if (auto* props = this->getPropertiesPanel()) {
+            props->refreshAll();
+        }
+
+        // Force editor menu bar redraw
+        this->getOwner().getEditor()->repaint();
+    });
+#endif
+
 	ctrlrComponentSelection->addChangeListener(ctrlrPanelProperties.get());
 
 	setSize(600, 400);
@@ -249,6 +283,31 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 	ctrlrComponentSelection->sendChangeMessage();
 }
 
+
+void CtrlrPanelEditor::timerCallback()
+{
+    // Stop the timer immediately so it acts as a single-shot trigger
+#if JUCE_LINUX
+    DBG("!*! Linux Deferred MIDI Refresh Triggered !*!");
+
+    // 1. Force the global device scan once the window handle & event queue are fully active
+    owner.getCtrlrManagerOwner().getCtrlrMidiDeviceManager().refreshDevices();
+
+    // 2. Re-apply saved MIDI properties to trigger setMidiDeviceFromProperty and open streams
+    const String inDev  = owner.getProperty(Ids::panelMidiInputDevice).toString();
+    const String outDev = owner.getProperty(Ids::panelMidiOutputDevice).toString();
+    const String ctrlDev = owner.getProperty(Ids::panelMidiControllerDevice).toString();
+
+    if (inDev.isNotEmpty())
+        owner.setProperty(Ids::panelMidiInputDevice, inDev, true);
+
+    if (outDev.isNotEmpty())
+        owner.setProperty(Ids::panelMidiOutputDevice, outDev, true);
+
+    if (ctrlDev.isNotEmpty())
+        owner.setProperty(Ids::panelMidiControllerDevice, ctrlDev, true);
+#endif
+}
 void CtrlrPanelEditor::panelWillClose() {
 	// 1. Detach and destroy notifier while manager/trees are 100% alive
 	if (ctrlrPanelNotifier != nullptr) {
