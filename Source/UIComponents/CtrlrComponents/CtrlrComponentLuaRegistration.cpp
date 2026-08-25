@@ -158,14 +158,13 @@ void CtrlrLabel::wrapForLua (lua_State *L)
 {
 	using namespace luabind;
 
-	module(L)
-		[
-			class_<CtrlrLabel, bases<CtrlrComponent, CtrlrLuaObject> >("CtrlrLabel")
-			.def("setText", &CtrlrLabel::setLabelText)
-		.def("appendText", &CtrlrLabel::appendText)
-		.def("append", &CtrlrLabel::appendText)
-		.def("getText", &CtrlrLabel::getText)
-		];
+	module(L)[class_<CtrlrLabel, bases<CtrlrComponent, CtrlrLuaObject>>("CtrlrLabel")
+				  .def("setText", &CtrlrLabel::setLabelText)
+				  .def("appendText", &CtrlrLabel::appendText)
+				  .def("append", &CtrlrLabel::appendText)
+				  .def("getText", &CtrlrLabel::getText)
+				  .def("showTextEditor", &CtrlrLabel::showTextEditor) // Added v5.6.36. Display the label editor field
+	];
 }
 
 void CtrlrTabsComponent::wrapForLua (lua_State *L)
@@ -185,7 +184,7 @@ void CtrlrGroup::wrapForLua (lua_State *L)
 	module(L)
 		[
 			class_<GroupComponent>("GroupComponent")
-			.def(constructor<const String &, const String &>())
+		.def(constructor<const String &, const String &>())
 		.def("setText", &GroupComponent::setText)
 		.def("getText", &GroupComponent::getText)
 		];
