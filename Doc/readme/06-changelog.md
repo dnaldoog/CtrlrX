@@ -24,7 +24,7 @@
 
 ## Changelog
 
-#### Version 5.6.36 | 2026.08.23
+#### Version 5.6.36 | 2026.08.25
 
 * **FIXED** CtrlrTabsComponents.cpp and CtrlrGroup.cpp keep component owner group on uiTabs. `CtrlrTabsComponent.cpp`, `CtrlrGroup.cpp`
 * **FIXED** Doubling of menu item causing potential crash. `CtrlrEditor.cpp`. Thanks to [John Goodland](https://github.com/dnaldoog) `CtrlrEditorApplicationCommandsHandlers.cpp`
@@ -52,8 +52,9 @@
 * **UPDATED** Custom colours LnF logic to remove ui_Component_LookAndFeelIsCustom for sliders, buttons, group and combo.
 * **UPDATED** play, stop, clear missing icons added to CtrlrLuaMethodDebuggerPrompt.cpp. Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrLuaMethodDebuggerPrompt.cpp`
 * **FIXED** layer drag/drop in Layer Editor. Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrPanel/CtrlrPanelLayerList.cpp` & `.h`
-* **FIXED** leak in CtrlrPropertyComponent. Thanks to [Sgorpi](https://github.com/sgorpi) `CtrlrPanel/CtrlrPropertyComponent.cpp` & `.h`
+* **FIXED** leak in CtrlrPropertyComponent. Thanks to [Sgorpi](https://github.com/sgorpi) `CtrlrPropertyComponent.cpp` & `.h`
 * **UPDATED** CI/CD test files for JUCE 8 compatibility. Thanks to [Sgorpi](https://github.com/sgorpi)
+* **ADDED** uiLabel showTextEditor() to display the text field editor. `CtrlrLabel.cpp` & `.h`, `CtrlrComponentLuaRegistration.cpp`, `CtrlrComponentLuaRegistration.cpp`
 
 #### Version 5.6.35 | 2026.04.20
 
