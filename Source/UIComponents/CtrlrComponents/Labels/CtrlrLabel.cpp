@@ -300,6 +300,13 @@ bool CtrlrLabel::keyPressed(const KeyPress &key)
 {
 	return (false);
 }
+void CtrlrLabel::showTextEditor()
+{
+	if (ctrlrLabel != nullptr)
+	{
+		ctrlrLabel->showEditor();
+	}
+}
 //[/MiscUserCode]
 
 //==============================================================================

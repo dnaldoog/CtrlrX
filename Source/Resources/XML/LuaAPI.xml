@@ -862,6 +862,7 @@
       <method name="setText" args="(String newText)" type="instance"/>
       <method name="setText" args="(String text, bool dontNotify)" type="instance"/>
       <method name="setText" args="(String)" type="instance"/>
+      <method name="showTextEditor" args="()" type="instance"/>
     </methods>
   </class>
   <class name="CtrlrListBox" cpp_name="CtrlrListBox" inherits="CtrlrComponent">
