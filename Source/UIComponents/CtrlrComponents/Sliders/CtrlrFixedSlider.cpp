@@ -94,42 +94,6 @@ CtrlrFixedSlider::~CtrlrFixedSlider() {
 	}
 	setLookAndFeel(nullptr);
 }
-// CtrlrFixedSlider::~CtrlrFixedSlider() {
-// 	// 2. Clear out the look and feel reference before deleting the child sub-component
-// 	if (ctrlrSlider != nullptr) {
-// 		ctrlrSlider->setLookAndFeel(nullptr);
-// 		customLF.reset();
-// 	}
-
-// 	// deleteAndZero(ctrlrSlider);
-// }
-
-//==============================================================================
-void CtrlrFixedSlider::updateComponentColors() {
-	if (ctrlrSlider != nullptr) {
-		LNF::applyLookAndFeelState(*ctrlrSlider, getComponentTree(), Ids::uiSliderLookAndFeelIsCustom,
-								   {{Ids::uiSliderValueTextColour, juce::Slider::textBoxTextColourId},
-									{Ids::uiSliderValueBgColour, juce::Slider::textBoxBackgroundColourId},
-									{Ids::uiSliderRotaryOutlineColour, juce::Slider::rotarySliderOutlineColourId},
-									{Ids::uiSliderRotaryFillColour, juce::Slider::rotarySliderFillColourId},
-									{Ids::uiSliderThumbColour, juce::Slider::thumbColourId},
-									{Ids::uiSliderValueHighlightColour, juce::Slider::textBoxHighlightColourId},
-									{Ids::uiSliderValueOutlineColour, juce::Slider::textBoxOutlineColourId},
-									{Ids::uiSliderTrackColour, juce::Slider::trackColourId}});
-
-		ctrlrSlider->lookAndFeelChanged();
-		ctrlrSlider->repaint();
-	}
-}
-// void CtrlrFixedSlider::updateComponentFonts() {
-// 	if (ctrlrSlider == nullptr)
-// 		return;
-
-// 	LNF::applyFontState(*ctrlrSlider, getComponentTree(), Ids::uiSliderLookAndFeelIsCustom,
-// 						{{Ids::uiSliderValueFont, [](const juce::Font &) {}}});
-
-// 	ctrlrSlider->repaint();
-// }
 
 void CtrlrFixedSlider::lookAndFeelChanged() {
 	if (ctrlrSlider != nullptr) {
@@ -281,7 +245,8 @@ void CtrlrFixedSlider::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 	} else if (property == Ids::uiSliderRotaryFillColour || property == Ids::uiSliderRotaryOutlineColour ||
 			   property == Ids::uiSliderTrackColour || property == Ids::uiSliderThumbColour ||
 			   property == Ids::uiSliderValueHighlightColour || property == Ids::uiSliderValueBgColour ||
-			   property == Ids::uiSliderValueOutlineColour || property == Ids::uiSliderValueTextColour) {
+			   property == Ids::uiSliderValueOutlineColour || property == Ids::uiSliderIncDecButtonColour ||
+			   property == Ids::uiSliderIncDecTextColour) {
 		if (!restoreStateInProgress) {
 			setProperty(Ids::uiSliderLookAndFeelIsCustom, true);
 		}
@@ -396,7 +361,54 @@ void CtrlrFixedSlider::updatePropertiesPanel() {
 		props->refreshAll(); // Needs extra code to prevent scrolling back to top on refresh
 	}
 }
+void CtrlrFixedSlider::updateComponentColors() {
+	if (ctrlrSlider == nullptr)
+		return;
 
+	// Use arrow syntax (->) for std::unique_ptr
+	auto &lf = ctrlrSlider->getLookAndFeel();
+	const bool isCustom = (bool)getProperty(Ids::uiSliderLookAndFeelIsCustom);
+
+	// Dereference with * for reference parameters
+	LNF::applyLookAndFeelState(*ctrlrSlider, getComponentTree(), Ids::uiSliderLookAndFeelIsCustom,
+							   {{Ids::uiSliderValueTextColour, juce::Slider::textBoxTextColourId},
+								{Ids::uiSliderValueBgColour, juce::Slider::textBoxBackgroundColourId},
+								{Ids::uiSliderRotaryOutlineColour, juce::Slider::rotarySliderOutlineColourId},
+								{Ids::uiSliderRotaryFillColour, juce::Slider::rotarySliderFillColourId},
+								{Ids::uiSliderThumbColour, juce::Slider::thumbColourId},
+								{Ids::uiSliderValueHighlightColour, juce::Slider::textBoxHighlightColourId},
+								{Ids::uiSliderValueOutlineColour, juce::Slider::textBoxOutlineColourId},
+								{Ids::uiSliderTrackColour, juce::Slider::trackColourId}});
+
+	if (isCustom) {
+		// USER MODE: Apply custom user-chosen property colors
+		const Colour btnBg = VAR2COLOUR(getProperty(Ids::uiSliderIncDecButtonColour));
+		const Colour btnText = VAR2COLOUR(getProperty(Ids::uiSliderIncDecTextColour));
+
+		lf.setColour(juce::TextButton::buttonColourId, btnBg);
+		lf.setColour(juce::TextButton::buttonOnColourId, btnBg);
+		lf.setColour(juce::TextButton::textColourOffId, btnText);
+		lf.setColour(juce::TextButton::textColourOnId, btnText);
+	} else {
+		// LNF MODE: Fetch panel theme colors to restore theme defaults
+		String panelLnF = "V3";
+		if (auto *editor = owner.getOwnerPanel().getEditor()) {
+			panelLnF = editor->getProperty(Ids::uiPanelLookAndFeel).toString();
+		}
+
+		// Pull default theme colors from the central L&F system
+		const Colour defaultBg = findColour(Slider::backgroundColourId);
+		const Colour defaultText = findColour(Label::textColourId);
+
+		lf.setColour(juce::TextButton::buttonColourId, defaultBg);
+		lf.setColour(juce::TextButton::buttonOnColourId, defaultBg);
+		lf.setColour(juce::TextButton::textColourOffId, defaultText);
+		lf.setColour(juce::TextButton::textColourOnId, defaultText);
+	}
+
+	ctrlrSlider->lookAndFeelChanged();
+	ctrlrSlider->repaint();
+}
 //[/MiscUserCode]
 
 //==============================================================================
