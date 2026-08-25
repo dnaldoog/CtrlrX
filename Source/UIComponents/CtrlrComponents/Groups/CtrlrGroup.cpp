@@ -395,8 +395,8 @@ void CtrlrGroup::resized() {
 	}
 
 	void CtrlrGroup::canvasStateRestored() {
-		// applyRestoredProperties();
-		// DBG("CtrlrGroup::canvasStateRestored() called for group: " + owner.getName());
+		setResource(); // We need this in JUCE 8 to successfully load background image on load.
+					   // Otherwise, the image will not be displayed until the group is resized or repainted.
 		Array<CtrlrModulator *> children =
 			owner.getOwnerPanel().getModulatorsWithProperty(Ids::componentGroupName, owner.getName());
 
