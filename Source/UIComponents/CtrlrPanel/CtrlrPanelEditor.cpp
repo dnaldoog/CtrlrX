@@ -241,6 +241,41 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 		// Set the uiPanelLookAndFeel property with the determined string
 		setProperty(Ids::uiPanelLookAndFeel, lookAndFeelDesc);
 	}
+#if JUCE_LINUX
+    juce::Component::SafePointer<CtrlrPanelEditor> safeThis(this);
+
+    juce::Timer::callAfterDelay(1250, [safeThis]()
+    {
+        if (safeThis == nullptr)
+            return;
+
+        DBG("!*! Linux Deferred MIDI Refresh Triggered !*!");
+
+        safeThis->owner.getCtrlrManagerOwner().getCtrlrMidiDeviceManager().refreshDevices();
+
+        const String inDev   = safeThis->owner.getProperty(Ids::panelMidiInputDevice).toString();
+        const String outDev  = safeThis->owner.getProperty(Ids::panelMidiOutputDevice).toString();
+        const String ctrlDev = safeThis->owner.getProperty(Ids::panelMidiControllerDevice).toString();
+
+        if (inDev.isNotEmpty())
+        {
+            safeThis->owner.setProperty(Ids::panelMidiInputDevice, String(), true);   // force a real change
+            safeThis->owner.setProperty(Ids::panelMidiInputDevice, inDev, true);      // fires valueTreePropertyChanged, reopens
+        }
+
+        if (outDev.isNotEmpty())
+        {
+            safeThis->owner.setProperty(Ids::panelMidiOutputDevice, String(), true);
+            safeThis->owner.setProperty(Ids::panelMidiOutputDevice, outDev, true);
+        }
+
+        if (ctrlDev.isNotEmpty())
+        {
+            safeThis->owner.setProperty(Ids::panelMidiControllerDevice, String(), true);
+            safeThis->owner.setProperty(Ids::panelMidiControllerDevice, ctrlDev, true);
+        }
+    });
+#endif
 
 	ctrlrComponentSelection->addChangeListener(ctrlrPanelProperties.get());
 
@@ -249,6 +284,37 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 	ctrlrComponentSelection->sendChangeMessage();
 }
 
+void CtrlrPanelEditor::timerCallback() {
+#if JUCE_LINUX
+	DBG("!*! Linux Deferred MIDI Refresh Triggered !*!");
+
+	// 1. Force the global device scan once the window handle & event queue are fully active
+	owner.getCtrlrManagerOwner().getCtrlrMidiDeviceManager().refreshDevices();
+
+	// 2. Re-apply saved MIDI properties to trigger CtrlrPanel::valueTreePropertyChanged and open streams.
+	//    setProperty() is a no-op if the new value equals the current value (JUCE ValueTree behavior),
+	//    which is exactly what happens on panel close/reopen — the property never actually changed,
+	//    so the listener never fires and the device never reopens. Clearing first forces a real transition.
+	const String inDev = owner.getProperty(Ids::panelMidiInputDevice).toString();
+	const String outDev = owner.getProperty(Ids::panelMidiOutputDevice).toString();
+	const String ctrlDev = owner.getProperty(Ids::panelMidiControllerDevice).toString();
+
+	if (inDev.isNotEmpty()) {
+		owner.setProperty(Ids::panelMidiInputDevice, String(), true);
+		owner.setProperty(Ids::panelMidiInputDevice, inDev, true);
+	}
+
+	if (outDev.isNotEmpty()) {
+		owner.setProperty(Ids::panelMidiOutputDevice, String(), true);
+		owner.setProperty(Ids::panelMidiOutputDevice, outDev, true);
+	}
+
+	if (ctrlDev.isNotEmpty()) {
+		owner.setProperty(Ids::panelMidiControllerDevice, String(), true);
+		owner.setProperty(Ids::panelMidiControllerDevice, ctrlDev, true);
+	}
+#endif
+}
 void CtrlrPanelEditor::panelWillClose() {
 	// 1. Detach and destroy notifier while manager/trees are 100% alive
 	if (ctrlrPanelNotifier != nullptr) {
