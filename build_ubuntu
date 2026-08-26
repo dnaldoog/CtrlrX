@@ -1,0 +1,14 @@
+#!/usr/bin/bash
+#set -e
+
+# Change directory or exit if path doesn't exist
+#cd ~/Documents/CtrlrX || exit 1
+
+# Clean and recreate build directory
+rm -rf build
+mkdir build
+cd build
+
+# Configure and compile with capped threads
+cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+make -j6
