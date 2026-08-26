@@ -13,6 +13,7 @@
 #include "CtrlrPanelProperties.h"
 #include "CtrlrPanelViewport.h"
 #include "CtrlrUtilities.h"
+#include <juce_gui_basics/juce_gui_basics.h> // Or #include "JuceHeader.h"
 #include <memory>
 
 class CtrlrLuaMethod;
@@ -52,7 +53,7 @@ class CtrlrPanelEditor : public Component,
 
 		// Use the JUCE_DECLARE_WEAK_REFERENCEABLE macro for safe weak pointers
 		JUCE_DECLARE_WEAK_REFERENCEABLE(CtrlrPanelEditor)
-
+		void timerCallback();
 		enum BackgroundImageLayout { Stretched, Center, Tile };
 
 		void restoreState(const ValueTree &savedSate);
