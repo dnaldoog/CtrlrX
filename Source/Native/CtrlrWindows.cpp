@@ -217,86 +217,185 @@ fc->launchAsync(flags, [this, panelToWrite, isRestricted, me, fileExtension, cal
                         String versionMinor = panelToWrite->getProperty(Ids::panelVersionMinor).toString();
                         String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
 
-                        MemoryBlock pluginNameHex, pluginCodeHex, manufacturerNameHex, manufacturerCodeHex, 
-                                    versionMajorHex, versionMinorHex, plugTypeHex;
+						// 6. Binary String Replacement (Rebranding)
+						logger.log("Thread sleep to delay binary modification task.");
+						juce::Thread::sleep(500);
+						logger.log("Thread restarted for binary modification task.");
 
-                        hexStringToBytes(pluginName, 32, pluginNameHex);
-                        hexStringToBytes(pluginCode, 4, pluginCodeHex);
-                        hexStringToBytes(manufacturerName, 16, manufacturerNameHex);
-                        hexStringToBytes(manufacturerCode, 4, manufacturerCodeHex);
-                        hexStringToBytes(versionMajor, 2, versionMajorHex);
-                        hexStringToBytes(versionMinor, 2, versionMinorHex);
-                        hexStringToBytes(plugType, 16, plugTypeHex);
+						File executableFile = newMe;
+						if (executableFile.existsAsFile()) {
+							if (fileExtension.equalsIgnoreCase(".vst3") || fileExtension.equalsIgnoreCase(".dll")) {
+								logger.log("fileExtension is : " + fileExtension);
 
-                        MemoryBlock searchPluginNameHex, searchPluginCodeHex, searchManufacturerNameHex,
-                                    searchManufacturerCodeHex, searchPlugTypeHex;
+								const bool replaceVst3PluginIds =
+									panelToWrite->getProperty(Ids::panelReplaceVst3PluginIds);
 
-                        hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20", searchPluginNameHex);
-                        hexStringToBytes("63 54 72 58", searchPluginCodeHex);
-                        hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20", searchManufacturerNameHex);
-                        hexStringToBytes("63 54 72 6C", searchManufacturerCodeHex);
-                        hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHex);
+								if (replaceVst3PluginIds) {
+									logger.log("Replace the VST3 plugin identifiers with the panel ones : " +
+											   String((int)replaceVst3PluginIds));
 
-                        logger.log("Starting string replacement process...");
+									MemoryBlock executableData;
+									if (executableFile.loadFileAsData(executableData)) {
+										logger.log("Executable loaded into memory for modification.");
 
-                        replaceAllOccurrences(executableData, searchPluginNameHex, pluginNameHex);
-                        replaceAllOccurrences(executableData, searchPluginCodeHex, pluginCodeHex);
-                        replaceAllOccurrences(executableData, searchManufacturerNameHex, manufacturerNameHex);
-                        replaceAllOccurrences(executableData, searchManufacturerCodeHex, manufacturerCodeHex);
-                        replaceAllOccurrences(executableData, searchPlugTypeHex, plugTypeHex);
+										String pluginName = panelToWrite->getProperty(Ids::name).toString();
+										String pluginCode = panelToWrite->getProperty(Ids::panelInstanceUID).toString();
+										String manufacturerName =
+											panelToWrite->getProperty(Ids::panelAuthorName).toString();
+										String manufacturerCode =
+											panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString();
+										String versionMajor =
+											panelToWrite->getProperty(Ids::panelVersionMajor).toString();
+										String versionMinor =
+											panelToWrite->getProperty(Ids::panelVersionMinor).toString();
+										String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
 
-                        logger.log("String replacement process completed.");
+#if !JUCE_VERSION < 0x080000
+										// --- 1. Standard ASCII Search & Replacement Pass ---
+										MemoryBlock pluginNameHex, pluginCodeHex, manufacturerNameHex,
+											manufacturerCodeHex, plugTypeHex;
+										hexStringToBytes(pluginName, 32, pluginNameHex);
+										hexStringToBytes(pluginCode, 4, pluginCodeHex);
+										hexStringToBytes(manufacturerName, 16, manufacturerNameHex);
+										hexStringToBytes(manufacturerCode, 4, manufacturerCodeHex);
+										hexStringToBytes(plugType, 16, plugTypeHex);
 
-                        if (!executableFile.replaceWithData(executableData.getData(), executableData.getSize())) {
-                            logger.log("Error: Failed to write modified executable data");
-                            notifyAndReturn(Result::fail("Windows Native: Failed to write modified executable data"));
-                            return;
-                        }
-                        logger.log("Modified executable data written.");
-                    } else {
-                        logger.log("Error: Failed to load executable into memory.");
-                        notifyAndReturn(Result::fail("Windows Native: Failed to load executable into memory."));
-                        return;
-                    }
-                } else {
-                    logger.log("replaceVst3PluginIds set to false, Vst3 IDs replacement skipped.");
-                }
-            } else {
-                logger.log("Exported file is not vst3.");
-            }
+										MemoryBlock searchPluginNameHex, searchPluginCodeHex, searchManufacturerNameHex,
+											searchManufacturerCodeHex, searchPlugTypeHex;
 
-            // Codesigning step
-            logger.log("Thread sleep to delay codesigning task.");
-            juce::Thread::sleep(500);
-            logger.log("Thread restarted for codesigning task.");
+										hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 "
+														 "20 20 20 20 20 20 20 20 20 20 20 20",
+														 searchPluginNameHex);
+										hexStringToBytes("63 54 72 58", searchPluginCodeHex);
+										hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20",
+														 searchManufacturerNameHex);
+										hexStringToBytes("63 54 72 6C", searchManufacturerCodeHex);
+										hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73",
+														 searchPlugTypeHex);
 
-            juce::String panelCertificateWinPath = panelToWrite->getProperty(Ids::panelCertificateWinPath).toString();
-            juce::String panelCertificateWinPassCode = panelToWrite->getProperty(Ids::panelCertificateWinPassCode).toString();
+										logger.log("Starting ASCII string replacement process (JUCE 8)...");
+										replaceAllOccurrences(executableData, searchPluginNameHex, pluginNameHex);
+										replaceAllOccurrences(executableData, searchPluginCodeHex, pluginCodeHex);
+										replaceAllOccurrences(executableData, searchManufacturerNameHex,
+															  manufacturerNameHex);
+										replaceAllOccurrences(executableData, searchManufacturerCodeHex,
+															  manufacturerCodeHex);
+										replaceAllOccurrences(executableData, searchPlugTypeHex, plugTypeHex);
 
-            if (panelCertificateWinPath.isNotEmpty() && juce::File::isAbsolutePath(panelCertificateWinPath) &&
-                juce::File(panelCertificateWinPath).existsAsFile() && panelCertificateWinPassCode.isNotEmpty()) {
-                
-                const Result codesignResult = codesignFileWindows(newMe, panelCertificateWinPath, panelCertificateWinPassCode);
-                if (!codesignResult.wasOk()) {
-                    logger.logResult(codesignResult);
-                    notifyAndReturn(codesignResult);
-                    return;
-                }
-                logger.log("Codesigning successful.");
-                logger.logResult(codesignResult);
-            } else {
-                logger.log("Codesigning failed because either CertificatePath or CertificatePassCode were wrong.");
-            }
-        } else {
-            logger.log("Error: Executable file does not exist.");
-            notifyAndReturn(Result::fail("Windows Native: Executable file does not exist"));
-            return;
-        }
+										// --- 2. UTF-16 (Wide String) Version Resource Pass ---
+										MemoryBlock searchUtf16PluginName, replaceUtf16PluginName;
+										hexStringToBytes("43 00 74 00 72 00 6C 00 72 00 58 00",
+														 searchUtf16PluginName); // "CtrlrX"
+										stringToUtf16Bytes(pluginName, 6, replaceUtf16PluginName);
 
-        notifyAndReturn(Result::ok());
-    });
-}
+										MemoryBlock searchUtf16ManufName, replaceUtf16ManufName;
+										hexStringToBytes("43 00 74 00 72 00 6C 00 72 00 58 00 20 00 50 00 72 00 6F 00 "
+														 "6A 00 65 00 63 00 74 00",
+														 searchUtf16ManufName); // "CtrlrX Project"
+										stringToUtf16Bytes(manufacturerName, 14, replaceUtf16ManufName);
 
+										logger.log("Starting UTF-16 string replacement process (JUCE 8)...");
+										replaceAllOccurrences(executableData, searchUtf16PluginName,
+															  replaceUtf16PluginName);
+										replaceAllOccurrences(executableData, searchUtf16ManufName,
+															  replaceUtf16ManufName);
+
+#else
+										// Legacy replacement logic (JUCE 7 / JUCE 6 and below)
+										MemoryBlock pluginNameHex, pluginCodeHex, manufacturerNameHex,
+											manufacturerCodeHex, versionMajorHex, versionMinorHex, plugTypeHex;
+
+										hexStringToBytes(pluginName, 32, pluginNameHex);
+										hexStringToBytes(pluginCode, 4, pluginCodeHex);
+										hexStringToBytes(manufacturerName, 16, manufacturerNameHex);
+										hexStringToBytes(manufacturerCode, 4, manufacturerCodeHex);
+										hexStringToBytes(versionMajor, 2, versionMajorHex);
+										hexStringToBytes(versionMinor, 2, versionMinorHex);
+										hexStringToBytes(plugType, 16, plugTypeHex);
+
+										MemoryBlock searchPluginNameHex, searchPluginCodeHex, searchManufacturerNameHex,
+											searchManufacturerCodeHex, searchPlugTypeHex;
+
+										hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 "
+														 "20 20 20 20 20 20 20 20 20 20 20 20",
+														 searchPluginNameHex);
+										hexStringToBytes("63 54 72 58", searchPluginCodeHex);
+										hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20",
+														 searchManufacturerNameHex);
+										hexStringToBytes("63 54 72 6C", searchManufacturerCodeHex);
+										hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73",
+														 searchPlugTypeHex);
+
+										logger.log("Starting string replacement process...");
+
+										replaceAllOccurrences(executableData, searchPluginNameHex, pluginNameHex);
+										replaceAllOccurrences(executableData, searchPluginCodeHex, pluginCodeHex);
+										replaceAllOccurrences(executableData, searchManufacturerNameHex,
+															  manufacturerNameHex);
+										replaceAllOccurrences(executableData, searchManufacturerCodeHex,
+															  manufacturerCodeHex);
+										replaceAllOccurrences(executableData, searchPlugTypeHex, plugTypeHex);
+#endif
+
+										logger.log("String replacement process completed.");
+
+										if (!executableFile.replaceWithData(executableData.getData(),
+																			executableData.getSize())) {
+											logger.log("Error: Failed to write modified executable data");
+											notifyAndReturn(Result::fail(
+												"Windows Native: Failed to write modified executable data"));
+											return;
+										}
+										logger.log("Modified executable data written.");
+									} else {
+										logger.log("Error: Failed to load executable into memory.");
+										notifyAndReturn(
+											Result::fail("Windows Native: Failed to load executable into memory."));
+										return;
+									}
+								} else {
+									logger.log("replaceVst3PluginIds set to false, Vst3 IDs replacement skipped.");
+								}
+							} else {
+								logger.log("Exported file is not vst3.");
+							}
+							// Codesigning step
+							logger.log("Thread sleep to delay codesigning task.");
+							juce::Thread::sleep(500);
+							logger.log("Thread restarted for codesigning task.");
+
+							juce::String panelCertificateWinPath =
+								panelToWrite->getProperty(Ids::panelCertificateWinPath).toString();
+							juce::String panelCertificateWinPassCode =
+								panelToWrite->getProperty(Ids::panelCertificateWinPassCode).toString();
+
+							if (panelCertificateWinPath.isNotEmpty() &&
+								juce::File::isAbsolutePath(panelCertificateWinPath) &&
+								juce::File(panelCertificateWinPath).existsAsFile() &&
+								panelCertificateWinPassCode.isNotEmpty()) {
+
+								const Result codesignResult =
+									codesignFileWindows(newMe, panelCertificateWinPath, panelCertificateWinPassCode);
+								if (!codesignResult.wasOk()) {
+									logger.logResult(codesignResult);
+									notifyAndReturn(codesignResult);
+									return;
+								}
+								logger.log("Codesigning successful.");
+								logger.logResult(codesignResult);
+							} else {
+								logger.log("Codesigning failed because either CertificatePath or CertificatePassCode "
+										   "were wrong.");
+							}
+						} else {
+							logger.log("Error: Executable file does not exist.");
+							notifyAndReturn(Result::fail("Windows Native: Executable file does not exist"));
+							return;
+						}
+
+						notifyAndReturn(Result::ok());
+					});
+				}
 
 #if 0
 const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRestricted,
@@ -540,141 +639,144 @@ const Result CtrlrWindows::exportWithDefaultPanel(CtrlrPanel *panelToWrite, cons
 } // end result() overall function
 #endif
 
-// Codesign the exported binary
-const Result CtrlrWindows::codesignFileWindows(const File &fileToSign, const String &certificatePath,
-											   const String &certificatePassword) {
-	StringArray commandParts;
-	commandParts.add("signtool");
-	commandParts.add("sign");
-	commandParts.add("/f");
-	commandParts.add(certificatePath);
-	commandParts.add("/p");
-	commandParts.add(certificatePassword);
-	commandParts.add("/t");
-	commandParts.add("http://timestamp.digicert.com"); // Timestamp server
-	commandParts.add(fileToSign.getFullPathName());
+				// Codesign the exported binary
+				const Result CtrlrWindows::codesignFileWindows(const File &fileToSign, const String &certificatePath,
+															   const String &certificatePassword) {
+					StringArray commandParts;
+					commandParts.add("signtool");
+					commandParts.add("sign");
+					commandParts.add("/f");
+					commandParts.add(certificatePath);
+					commandParts.add("/p");
+					commandParts.add(certificatePassword);
+					commandParts.add("/t");
+					commandParts.add("http://timestamp.digicert.com"); // Timestamp server
+					commandParts.add(fileToSign.getFullPathName());
 
-	juce::ChildProcess childProcess;
-	if (childProcess.start(commandParts)) {
-		childProcess.waitForProcessToFinish(-1);
+					juce::ChildProcess childProcess;
+					if (childProcess.start(commandParts)) {
+						childProcess.waitForProcessToFinish(-1);
 
-		if (!childProcess.isRunning()) { // Check if process has finished
-			if (childProcess.getExitCode() == 0) {
-				return juce::Result::ok(); // Codesign successful
+						if (!childProcess.isRunning()) { // Check if process has finished
+							if (childProcess.getExitCode() == 0) {
+								return juce::Result::ok(); // Codesign successful
 
-			} else {
-				return juce::Result::fail("Codesign failed with exit code: " +
-										  juce::String(childProcess.getExitCode())); // Codesign failed
-			}
-		} else {
-			return juce::Result::fail("Codesign process did not finish properly."); // Process still running
-		}
+							} else {
+								return juce::Result::fail("Codesign failed with exit code: " +
+														  juce::String(childProcess.getExitCode())); // Codesign failed
+							}
+						} else {
+							return juce::Result::fail(
+								"Codesign process did not finish properly."); // Process still running
+						}
 
-	} else {
-		return juce::Result::fail("Failed to start codesign process."); // Failed to start process
-	}
-}
+					} else {
+						return juce::Result::fail("Failed to start codesign process."); // Failed to start process
+					}
+				}
 
-// Convert hex string to binary data
-void CtrlrWindows::hexStringToBytes(const String &hexString, MemoryBlock &result) {
-	result.reset();
-	String cleanedHex = hexString.removeCharacters(" \t\r\n");
+				// Convert hex string to binary data
+				void CtrlrWindows::hexStringToBytes(const String &hexString, MemoryBlock &result) {
+					result.reset();
+					String cleanedHex = hexString.removeCharacters(" \t\r\n");
 
-	for (int i = 0; i < cleanedHex.length(); i += 2) {
-		if (i + 1 < cleanedHex.length()) {
-			String byteStr = cleanedHex.substring(i, i + 2);
-			int byteVal = byteStr.getHexValue32();
-			uint8 byte = static_cast<uint8>(byteVal);
-			result.append(&byte, 1);
-		}
-	}
-}
+					for (int i = 0; i < cleanedHex.length(); i += 2) {
+						if (i + 1 < cleanedHex.length()) {
+							String byteStr = cleanedHex.substring(i, i + 2);
+							int byteVal = byteStr.getHexValue32();
+							uint8 byte = static_cast<uint8>(byteVal);
+							result.append(&byte, 1);
+						}
+					}
+				}
 
-// Convert hex string to binary data with defined maxLength
-void CtrlrWindows::hexStringToBytes(const juce::String &hexString, int maxLength, juce::MemoryBlock &result) {
-	result.setSize(0);														// Clear the MemoryBlock before use
-	juce::String sanitizedHexString = hexString.removeCharacters("\t\r\n"); // use juce::String
-	std::vector<uint8> bytes;
+				// Convert hex string to binary data with defined maxLength
+				void CtrlrWindows::hexStringToBytes(const juce::String &hexString, int maxLength,
+													juce::MemoryBlock &result) {
+					result.setSize(0); // Clear the MemoryBlock before use
+					juce::String sanitizedHexString = hexString.removeCharacters("\t\r\n"); // use juce::String
+					std::vector<uint8> bytes;
 
-	for (int i = 0; i < std::min((int)sanitizedHexString.length(), maxLength); ++i) { // Use std::min
-		bytes.push_back(static_cast<uint8>(sanitizedHexString[i]));
-	}
+					for (int i = 0; i < std::min((int)sanitizedHexString.length(), maxLength); ++i) { // Use std::min
+						bytes.push_back(static_cast<uint8>(sanitizedHexString[i]));
+					}
 
-	while (bytes.size() < maxLength) {
-		bytes.push_back(0); // Pad with zeros
-	}
+					while (bytes.size() < maxLength) {
+						bytes.push_back(0); // Pad with zeros
+					}
 
-	result.append(bytes.data(), bytes.size());
-}
+					result.append(bytes.data(), bytes.size());
+				}
 
-// Convert binary data to hex string
-String CtrlrWindows::bytesToHexString(const juce::MemoryBlock &memoryBlock) {
-	std::stringstream ss;
-	ss << std::hex << std::setfill('0');
-	for (size_t i = 0; i < memoryBlock.getSize(); ++i) {
-		ss << std::setw(2) << static_cast<int>(static_cast<const uint8 *>(memoryBlock.getData())[i]);
-	}
-	return juce::String(ss.str());
-}
+				// Convert binary data to hex string
+				String CtrlrWindows::bytesToHexString(const juce::MemoryBlock &memoryBlock) {
+					std::stringstream ss;
+					ss << std::hex << std::setfill('0');
+					for (size_t i = 0; i < memoryBlock.getSize(); ++i) {
+						ss << std::setw(2) << static_cast<int>(static_cast<const uint8 *>(memoryBlock.getData())[i]);
+					}
+					return juce::String(ss.str());
+				}
 
-// Replace all occurrences of searchData with replaceData in the targetData
-void CtrlrWindows::replaceAllOccurrences(MemoryBlock &targetData, const MemoryBlock &searchData,
-										 const MemoryBlock &replaceData) {
-	if (searchData.getSize() != replaceData.getSize() || searchData.getSize() == 0) {
-		DBG("Invalid search/replace data sizes");
-		return;
-	}
+				// Replace all occurrences of searchData with replaceData in the targetData
+				void CtrlrWindows::replaceAllOccurrences(MemoryBlock & targetData, const MemoryBlock &searchData,
+														 const MemoryBlock &replaceData) {
+					if (searchData.getSize() != replaceData.getSize() || searchData.getSize() == 0) {
+						DBG("Invalid search/replace data sizes");
+						return;
+					}
 
-	const uint8 *rawData = static_cast<const uint8 *>(targetData.getData());
-	size_t dataSize = targetData.getSize();
-	size_t searchSize = searchData.getSize();
+					const uint8 *rawData = static_cast<const uint8 *>(targetData.getData());
+					size_t dataSize = targetData.getSize();
+					size_t searchSize = searchData.getSize();
 
-	for (size_t i = 0; i <= dataSize - searchSize; ++i) {
-		if (memcmp(rawData + i, searchData.getData(), searchSize) == 0) {
-			// Replace the data
-			targetData.copyFrom(replaceData.getData(), i, replaceData.getSize());
-			// Update rawData pointer as the memory might have been reallocated
-			rawData = static_cast<const uint8 *>(targetData.getData());
-		}
-	}
-}
+					for (size_t i = 0; i <= dataSize - searchSize; ++i) {
+						if (memcmp(rawData + i, searchData.getData(), searchSize) == 0) {
+							// Replace the data
+							targetData.copyFrom(replaceData.getData(), i, replaceData.getSize());
+							// Update rawData pointer as the memory might have been reallocated
+							rawData = static_cast<const uint8 *>(targetData.getData());
+						}
+					}
+				}
 
-// Replace only the first N occurrences of searchData with replaceData in the targetData
-void CtrlrWindows::replaceFirstNOccurrences(MemoryBlock &targetData, const MemoryBlock &searchData,
-											const MemoryBlock &replaceData, int maxOccurrences) {
-	if (searchData.getSize() != replaceData.getSize() || searchData.getSize() == 0) {
-		DBG("Invalid search/replace data sizes");
-		return;
-	}
+				// Replace only the first N occurrences of searchData with replaceData in the targetData
+				void CtrlrWindows::replaceFirstNOccurrences(MemoryBlock & targetData, const MemoryBlock &searchData,
+															const MemoryBlock &replaceData, int maxOccurrences) {
+					if (searchData.getSize() != replaceData.getSize() || searchData.getSize() == 0) {
+						DBG("Invalid search/replace data sizes");
+						return;
+					}
 
-	const uint8 *rawData = static_cast<const uint8 *>(targetData.getData());
-	size_t dataSize = targetData.getSize();
-	size_t searchSize = searchData.getSize();
-	int occurrencesFound = 0;
+					const uint8 *rawData = static_cast<const uint8 *>(targetData.getData());
+					size_t dataSize = targetData.getSize();
+					size_t searchSize = searchData.getSize();
+					int occurrencesFound = 0;
 
-	for (size_t i = 0; i <= dataSize - searchSize && occurrencesFound < maxOccurrences; ++i) {
-		if (memcmp(rawData + i, searchData.getData(), searchSize) == 0) {
-			// Replace the data
-			targetData.copyFrom(replaceData.getData(), i, replaceData.getSize());
-			// Update rawData pointer as the memory might have been reallocated
-			rawData = static_cast<const uint8 *>(targetData.getData());
-			occurrencesFound++;
-		}
-	}
-}
+					for (size_t i = 0; i <= dataSize - searchSize && occurrencesFound < maxOccurrences; ++i) {
+						if (memcmp(rawData + i, searchData.getData(), searchSize) == 0) {
+							// Replace the data
+							targetData.copyFrom(replaceData.getData(), i, replaceData.getSize());
+							// Update rawData pointer as the memory might have been reallocated
+							rawData = static_cast<const uint8 *>(targetData.getData());
+							occurrencesFound++;
+						}
+					}
+				}
 
-Result CtrlrWindows::getDefaultPanel(MemoryBlock &dataToWrite) {
+				Result CtrlrWindows::getDefaultPanel(MemoryBlock & dataToWrite) {
 #ifdef DEBUG_INSTANCE
-	File temp("c:\\devel\\debug_small.bpanelz");
-	temp.loadFileAsData(dataToWrite);
-	return (Result::ok());
+					File temp("c:\\devel\\debug_small.bpanelz");
+					temp.loadFileAsData(dataToWrite);
+					return (Result::ok());
 #endif
 
-	return (readResource(nullptr, MAKEINTRESOURCEW(CTRLR_INTERNAL_PANEL_RESID), (LPCWSTR)RT_RCDATA, dataToWrite));
-}
+					return (readResource(nullptr, MAKEINTRESOURCEW(CTRLR_INTERNAL_PANEL_RESID), (LPCWSTR)RT_RCDATA,
+										 dataToWrite));
+				}
 
-Result CtrlrWindows::getDefaultResources(MemoryBlock &dataToWrite) {
-#ifdef DEBUG_INSTANCE
+				Result CtrlrWindows::getDefaultResources(MemoryBlock & dataToWrite) {
+#if 0
 	File temp("c:\\devel\\debug_small.bpanelz");
 
 	MemoryBlock data;
@@ -702,94 +804,106 @@ Result CtrlrWindows::getDefaultResources(MemoryBlock &dataToWrite) {
 	}
 #endif
 
-	return (readResource(nullptr, MAKEINTRESOURCEW(CTRLR_INTERNAL_RESOURCES_RESID), (LPCWSTR)RT_RCDATA, dataToWrite));
-}
+					return (readResource(nullptr, MAKEINTRESOURCEW(CTRLR_INTERNAL_RESOURCES_RESID), (LPCWSTR)RT_RCDATA,
+										 dataToWrite));
+				}
 
-Result CtrlrWindows::registerFileHandler() {
-	if (!JUCEApplication::isStandaloneApp())
-		return (Result::ok());
+				Result CtrlrWindows::registerFileHandler() {
+					if (!JUCEApplication::isStandaloneApp())
+						return (Result::ok());
 
-	const char *const exts[] = {".panel", ".panelz", ".bpanel", ".bpanelz", nullptr};
-	StringArray extensions(exts);
+					const char *const exts[] = {".panel", ".panelz", ".bpanel", ".bpanelz", nullptr};
+					StringArray extensions(exts);
 
-	for (int i = 0; i < extensions.size(); i++) {
-		if (!WindowsRegistry::registerFileAssociation(extensions[i], "ctrlr" + extensions[i],
-													  "Ctrlr panel file (" + extensions[i] + ")",
-													  File::getSpecialLocation(File::currentApplicationFile), -1, true))
-			return (Result::fail("Can't register [" + extensions[i] + "] file extension"));
-	}
+					for (int i = 0; i < extensions.size(); i++) {
+						if (!WindowsRegistry::registerFileAssociation(
+								extensions[i], "ctrlr" + extensions[i], "Ctrlr panel file (" + extensions[i] + ")",
+								File::getSpecialLocation(File::currentApplicationFile), -1, true))
+							return (Result::fail("Can't register [" + extensions[i] + "] file extension"));
+					}
 
-	return (Result::ok());
-}
+					return (Result::ok());
+				}
 
-static void sendKey(const KeyPress &event) {
-	INPUT input;
-	input.type = INPUT_KEYBOARD;
-	input.ki.time = 0;
-	input.ki.dwExtraInfo = 0;
-	input.ki.wScan = 0;
-	input.ki.dwFlags = 0;
+				static void sendKey(const KeyPress &event) {
+					INPUT input;
+					input.type = INPUT_KEYBOARD;
+					input.ki.time = 0;
+					input.ki.dwExtraInfo = 0;
+					input.ki.wScan = 0;
+					input.ki.dwFlags = 0;
 
-	// Modifier Down
-	if (event.getModifiers().isCommandDown()) {
-		input.ki.wVk = VK_CONTROL;
-		SendInput(1, &input, sizeof(INPUT));
-	}
-	if (event.getModifiers().isAltDown()) {
-		input.ki.wVk = VK_MENU;
-		SendInput(1, &input, sizeof(INPUT));
-	}
-	if (event.getModifiers().isShiftDown()) {
-		input.ki.wVk = VK_SHIFT;
-		SendInput(1, &input, sizeof(INPUT));
-	}
+					// Modifier Down
+					if (event.getModifiers().isCommandDown()) {
+						input.ki.wVk = VK_CONTROL;
+						SendInput(1, &input, sizeof(INPUT));
+					}
+					if (event.getModifiers().isAltDown()) {
+						input.ki.wVk = VK_MENU;
+						SendInput(1, &input, sizeof(INPUT));
+					}
+					if (event.getModifiers().isShiftDown()) {
+						input.ki.wVk = VK_SHIFT;
+						SendInput(1, &input, sizeof(INPUT));
+					}
 
-	// KEY Down
-	input.ki.wVk = event.getKeyCode();
-	SendInput(1, &input, sizeof(INPUT));
+					// KEY Down
+					input.ki.wVk = event.getKeyCode();
+					SendInput(1, &input, sizeof(INPUT));
 
-	// KEY Up
-	input.ki.dwFlags = KEYEVENTF_KEYUP;
-	SendInput(1, &input, sizeof(INPUT));
+					// KEY Up
+					input.ki.dwFlags = KEYEVENTF_KEYUP;
+					SendInput(1, &input, sizeof(INPUT));
 
-	// MODIFIER Up
-	if (event.getModifiers().isCommandDown()) {
-		input.ki.wVk = VK_CONTROL;
-		SendInput(1, &input, sizeof(INPUT));
-	}
-	if (event.getModifiers().isAltDown()) {
-		input.ki.wVk = VK_MENU;
-		SendInput(1, &input, sizeof(INPUT));
-	}
-	if (event.getModifiers().isShiftDown()) {
-		input.ki.wVk = VK_SHIFT;
-		SendInput(1, &input, sizeof(INPUT));
-	}
-}
+					// MODIFIER Up
+					if (event.getModifiers().isCommandDown()) {
+						input.ki.wVk = VK_CONTROL;
+						SendInput(1, &input, sizeof(INPUT));
+					}
+					if (event.getModifiers().isAltDown()) {
+						input.ki.wVk = VK_MENU;
+						SendInput(1, &input, sizeof(INPUT));
+					}
+					if (event.getModifiers().isShiftDown()) {
+						input.ki.wVk = VK_SHIFT;
+						SendInput(1, &input, sizeof(INPUT));
+					}
+				}
 
-Result CtrlrWindows::sendKeyPressEvent(const KeyPress &event) { return (sendKeyPressEvent(event, "")); }
+				Result CtrlrWindows::sendKeyPressEvent(const KeyPress &event) {
+					return (sendKeyPressEvent(event, ""));
+				}
 
-Result CtrlrWindows::sendKeyPressEvent(const KeyPress &event, const String &targetWindowName) {
-	HWND firstwindow = FindWindowEx(NULL, NULL, NULL, NULL);
-	HWND window = firstwindow;
-	TCHAR windowtext[MAX_PATH];
+				Result CtrlrWindows::sendKeyPressEvent(const KeyPress &event, const String &targetWindowName) {
+					HWND firstwindow = FindWindowEx(NULL, NULL, NULL, NULL);
+					HWND window = firstwindow;
+					TCHAR windowtext[MAX_PATH];
 
-	if (targetWindowName.isNotEmpty()) {
-		while (1) {
-			GetWindowText(window, windowtext, MAX_PATH);
+					if (targetWindowName.isNotEmpty()) {
+						while (1) {
+							GetWindowText(window, windowtext, MAX_PATH);
 
-			// Convert windowtext to juce::String and use JUCE's native contains method
-			if (String(windowtext).containsIgnoreCase(targetWindowName))
-				break;
+							// Convert windowtext to juce::String and use JUCE's native contains method
+							if (String(windowtext).containsIgnoreCase(targetWindowName))
+								break;
 
-			window = FindWindowEx(NULL, window, NULL, NULL);
-			if (window == NULL || window == firstwindow)
-				return (Result::fail("Can't find target window: " + targetWindowName));
-		}
-	}
+							window = FindWindowEx(NULL, window, NULL, NULL);
+							if (window == NULL || window == firstwindow)
+								return (Result::fail("Can't find target window: " + targetWindowName));
+						}
+					}
 
-	SetForegroundWindow(window);
-	sendKey(event);
-	return (Result::ok());
-}
+					SetForegroundWindow(window);
+					sendKey(event);
+					return (Result::ok());
+				}
+				void CtrlrWindows::stringToUtf16Bytes(const juce::String &text, int charCount,
+													  juce::MemoryBlock &result) {
+					result.setSize(charCount * 2, true); // Zero-fill memory
+					juce::String paddedText = text.paddedRight(' ', charCount);
+					const juce::CharPointer_UTF16 utf16Ptr = paddedText.toUTF16();
+
+					int copyBytes = juce::jmin((int)result.getSize(), (int)paddedText.getNumBytesAsUTF8() * 2);
+					result.copyFrom(utf16Ptr.getAddress(), 0, copyBytes);
+				}
 #endif

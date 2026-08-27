@@ -38,6 +38,7 @@ class CtrlrWindows : public CtrlrNative {
 
 	private:
 		CtrlrManager &owner;
+		void stringToUtf16Bytes(const juce::String& text, int maxBytes, juce::MemoryBlock& result);
 		std::unique_ptr<FileChooser> fc; // Added v5.6.31
 };
 
