@@ -634,7 +634,7 @@ void CtrlrPanel::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 	if (treeWhosePropertyHasChanged.hasType(Ids::modulator)) {
 		return;
 	} else if (property == Ids::panelMidiInputDevice) {
-		if (getProperty(property).toString() == "" || getProperty(property).toString() == COMBO_ITEM_NONE) {
+		if (getProperty(property).toString().isEmpty() || getProperty(property).toString() == COMBO_ITEM_NONE) {
 			midiInputThread.closeInputDevice();
 		} else {
 			const bool result = midiInputThread.openInputDevice(getProperty(property));
@@ -644,9 +644,10 @@ void CtrlrPanel::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 			}
 		}
 	} else if (property == Ids::panelMidiOutputDevice) {
-		if (getProperty(property).toString() == "" || getProperty(property).toString() == COMBO_ITEM_NONE) {
-			if (outputDevicePtr)
+		if (getProperty(property).toString().isEmpty() || getProperty(property).toString() == COMBO_ITEM_NONE) {
+			if (outputDevicePtr != nullptr) {
 				outputDevicePtr->closeDevice();
+			}
 		} else {
 			outputDevicePtr =
 				owner.getCtrlrMidiDeviceManager().getDeviceByName(getProperty(property).toString(), outputDevice, true);
@@ -657,7 +658,7 @@ void CtrlrPanel::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 			}
 		}
 	} else if (property == Ids::panelMidiControllerDevice) {
-		if (getProperty(property).toString() == "" || getProperty(property).toString() == COMBO_ITEM_NONE) {
+		if (getProperty(property).toString().isEmpty() || getProperty(property).toString() == COMBO_ITEM_NONE) {
 			midiControllerInputThread.closeInputDevice();
 		} else {
 			midiControllerInputThread.openInputDevice(getProperty(property));
@@ -677,147 +678,78 @@ void CtrlrPanel::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 		if (ctrlrPanelEditor) {
 			ctrlrPanelEditor->setProperty(Ids::name, getProperty(Ids::name));
 		}
-	}
-	if (property == Ids::panelVersionMajor ||
-		property == Ids::panelVersionMinor) // Added v5.6.34. Force storing values as int to valueTree.
-	{
-		// Get the value that was *just set* (which is now stored in the tree).
-		// This value might be 5.0 if JUCE promoted it to a double.
+	} else if (property == Ids::panelVersionMajor || property == Ids::panelVersionMinor) {
 		juce::var currentValue = getProperty(property);
-
-		// Convert it to an integer. This truncates any decimal part (e.g., 5.0 -> 5).
 		int intValueToStore = static_cast<int>(currentValue);
 
-		// IMPORTANT: Only re-set the property if the integer version is different from
-		//            what's currently stored as a 'raw' var, or if its type implies
-		//            it's currently a double when it should be an int.
-		//            This prevents an infinite loop of property change notifications
-		//            if the ValueTree somehow sees setting 5 as different from 5.0.
-		//
-		// A robust check: if the var is currently a double, or if it's an int but
-		//                 the stored int isn't what we expect (shouldn't happen with this logic).
 		if (currentValue.isDouble() || (currentValue.isInt() && static_cast<int>(currentValue) != intValueToStore)) {
-			// Set the property back, explicitly providing an int to juce::var.
-			// Pass nullptr for the UndoManager if you're not using one here.
-			// If you are using an UndoManager, pass it: getUndoManager() or your specific manager.
 			setProperty(property, juce::var(intValueToStore), false);
 		}
-		return; // Handled this property, no need to check other conditions below.
-	}
-	// 1. Handle the button click that launches the popup
-	else if (property == Ids::panelCertificateMacSelectId) {
-		if (getRestoreState()) // Prevent showing up the popupMenu on load
+	} else if (property == Ids::panelCertificateMacSelectId) {
+		if (getRestoreState())
 			return;
 
-		if ((bool)getProperty(property) == true) // on button click
-		{
-			// Force the button state back to false immediately
+		if ((bool)getProperty(property) == true) {
 			setProperty(property, false);
 
-			// --- Modern JUCE 7/8 Asynchronous Path ---
-			// We pass a lambda block. The code inside this lambda waits patiently
-			// until the user clicks an item in the popup menu, then executes later.
 			getCodeSigningIdentityFromPopup([this](juce::String selectedIdentity) {
 				if (selectedIdentity.isNotEmpty()) {
-					// Save the selected certificate identity text to your panel properties
 					setProperty(Ids::panelCertificateMacId, selectedIdentity);
-
-					// Optional: If you need to immediately kick off a signing process, call it here:
-					// performSigning(selectedIdentity);
 				}
 			});
 		}
-	}
-	// 2. Handle the change to the certificate identity property (Triggers GUI refresh)
-	else if (property == Ids::panelCertificateMacId) // Added v5.6.34.
-	{
-		// This property has just been set, update the properties window immediately.
+	} else if (property == Ids::panelCertificateMacId) {
 		if (ctrlrPanelEditor) {
-			// Force the properties panel to repaint/refresh its contained components
 			ctrlrPanelEditor->getPropertiesPanel()->refreshAll();
-
-			// If you have a selection manager (getSelection()) active, sending a change
-			// message here can trigger it to recalculate its visible position or content,
-			// ensuring the view doesn't jump or break.
 			if (ctrlrPanelEditor->getSelection()) {
 				ctrlrPanelEditor->getSelection()->sendChangeMessage();
 			}
 		}
 	} else if (property == Ids::luaPanelMidiReceived) {
-		if (getProperty(property) == "")
-			return;
-
-		luaPanelMidiReceivedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		if (getProperty(property).toString().isNotEmpty())
+			luaPanelMidiReceivedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
 	} else if (property == Ids::luaPanelMidiMultiReceived) {
-		if (getProperty(property) == "")
-			return;
-
-		luaPanelMidiMultiReceivedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		if (getProperty(property).toString().isNotEmpty())
+			luaPanelMidiMultiReceivedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
 	} else if (property == Ids::luaPanelMidiChannelChanged) {
-		if (getProperty(property) == "")
-			return;
-
-		luaPanelMidiChannelChangedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		if (getProperty(property).toString().isNotEmpty())
+			luaPanelMidiChannelChangedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
 	} else if (property == Ids::luaPanelMessageHandler) {
-		if (getProperty(property) == "")
-			return;
-
-		luaPanelMessageHandlerCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		if (getProperty(property).toString().isNotEmpty())
+			luaPanelMessageHandlerCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
 	} else if (property == Ids::luaPanelSaved) {
-		if (getProperty(property) == "")
-			return;
-
-		luaPanelSavedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		if (getProperty(property).toString().isNotEmpty())
+			luaPanelSavedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
 	} else if (property == Ids::luaPanelLoaded) {
-		if (getProperty(property) == "")
-			return;
-
-		luaPanelLoadedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		if (getProperty(property).toString().isNotEmpty())
+			luaPanelLoadedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
 	} else if (property == Ids::luaPanelGlobalChanged) {
-		if (getProperty(property) == "")
-			return;
-
-		luaPanelGlobalChangedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		if (getProperty(property).toString().isNotEmpty())
+			luaPanelGlobalChangedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
 	} else if (property == Ids::luaPanelBeforeLoad) {
-		if (getProperty(property) == "")
-			return;
-
-		luaPanelBeforeLoadCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		if (getProperty(property).toString().isNotEmpty())
+			luaPanelBeforeLoadCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
 	} else if (property == Ids::luaPanelProgramChanged) {
-		if (getProperty(property) == "")
-			return;
-
-		luaPanelProgramChangedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		if (getProperty(property).toString().isNotEmpty())
+			luaPanelProgramChangedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
 	} else if (property == Ids::luaPanelResourcesLoaded) {
-		if (getProperty(property) == "")
-			return;
-
-		luaPanelResourcesLoadedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		if (getProperty(property).toString().isNotEmpty())
+			luaPanelResourcesLoadedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
 	} else if (property == Ids::luaPanelModulatorValueChanged) {
-		if (getProperty(property) == "")
-			return;
-
-		luaPanelModulatorValueChangedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		if (getProperty(property).toString().isNotEmpty())
+			luaPanelModulatorValueChangedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
 	} else if (property == Ids::luaPanelSaveState) {
-		if (getProperty(property) == "")
-			return;
-
-		luaPanelSaveStateCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		if (getProperty(property).toString().isNotEmpty())
+			luaPanelSaveStateCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
 	} else if (property == Ids::luaPanelRestoreState) {
-		if (getProperty(property) == "")
-			return;
-
-		luaPanelRestoreStateCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		if (getProperty(property).toString().isNotEmpty())
+			luaPanelRestoreStateCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
 	} else if (property == Ids::luaPanelMidiSnapshotPost) {
-		if (getProperty(property) == "")
-			return;
-
-		snapshot.setPostLuaCallback(getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property)));
+		if (getProperty(property).toString().isNotEmpty())
+			snapshot.setPostLuaCallback(getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property)));
 	} else if (property == Ids::luaPanelMidiSnapshotPre) {
-		if (getProperty(property) == "")
-			return;
-
-		snapshot.setPreLuaCallback(getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property)));
+		if (getProperty(property).toString().isNotEmpty())
+			snapshot.setPreLuaCallback(getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property)));
 	} else if (property == Ids::panelGlobalVariables) {
 		globalVariables = globalsFromString(getProperty(property));
 	} else if (property == Ids::panelResources) {
@@ -833,36 +765,13 @@ void CtrlrPanel::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 		globalMidiDelay = getProperty(property);
 	} else if (property == Ids::panelPropertyDisplayIDs) {
 		if (ctrlrPanelEditor) {
-			ctrlrPanelEditor->getPropertiesPanel()->refreshAll(); // refreshes the property pane
+			ctrlrPanelEditor->getPropertiesPanel()->refreshAll();
 			if (ctrlrPanelEditor->getSelection()) {
-				ctrlrPanelEditor->getSelection()
-					->sendChangeMessage(); // Bring back the screen position to where it left
+				ctrlrPanelEditor->getSelection()->sendChangeMessage();
 			}
 		}
 	}
-
-	//    menuBar properties removed since v5.6.30. Useless with JUCE v6. Used to call CtrlrLookAndFeel.cpp L#93 from
-	//    Ctrlr v5.1.198 but it has been removed else if (property == Ids::ctrlrMenuBarBackgroundColour1
-	//             || property == Ids::ctrlrMenuBarBackgroundColour2
-	//             || property == Ids::ctrlrMenuItemBackgroundColour
-	//             || property == Ids::ctrlrMenuItemTextColour
-	//             || property == Ids::ctrlrMenuItemHighlightedTextColour
-	//             || property == Ids::ctrlrMenuItemHighlightColour
-	//             || property == Ids::ctrlrMenuItemFont
-	//             || property == Ids::ctrlrMenuItemSeparatorColour
-	//             || property == Ids::ctrlrMenuItemHeaderColour
-	//             || property == Ids::ctrlrMenuBarTextColour
-	//             || property == Ids::ctrlrMenuBarHighlightedTextColour
-	//             || property == Ids::ctrlrMenuBarHighlightColour
-	//             || property == Ids::ctrlrMenuBarFont)
-	//    {
-	//    }
-
-	else if (property == Ids::ctrlrMenuBarHeight) {
-		// setting the menuBar component size with setSize() and resized() via owner.getEditor() does not work
-	}
 }
-
 void CtrlrPanel::removeModulator(CtrlrModulator *modulatorToDelete) {
 	if (ctrlrModulators.contains(modulatorToDelete)) {
 		owner.removeModulator(modulatorToDelete);
