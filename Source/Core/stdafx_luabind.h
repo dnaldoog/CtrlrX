@@ -151,15 +151,18 @@ namespace luabind
 
 		String from(lua_State* L, int index)
 		{
-			object obj(luabind::from_stack(L, index));
-			std::string name = obj_name(obj);
+    object obj(luabind::from_stack(L, index));
+    std::string name = obj_name(obj);
 
-			if (name == "String")
-			{
-				String* wp = object_cast<String*>(obj);
-				return String(*wp);
-			}
-			return String(lua_tostring(L, index));
+    if (name == "String")
+    {
+        String* wp = object_cast<String*>(obj);
+        return String(*wp);
+    }
+
+    size_t len = 0;
+    const char* s = lua_tolstring(L, index, &len);
+    return String::fromUTF8(s, (int) len);
 		}
 
 		void to(lua_State* L, String const &value)
@@ -187,18 +190,18 @@ namespace luabind
 			return (lua_type(L, index) == LUA_TSTRING) ? 0 : -1;
 		}
 
-		StringRef from(lua_State* L, int index)
-		{
-			object obj(luabind::from_stack(L, index));
-			std::string name = obj_name(obj);
+StringRef from(lua_State* L, int index)
+{
+    object obj(luabind::from_stack(L, index));
+    std::string name = obj_name(obj);
 
-			if (name == "StringRef")
-			{
-				StringRef* wp = object_cast<StringRef*>(obj);
-				return StringRef(*wp);
-			}
-			return StringRef(lua_tostring(L, index));
-		}
+    if (name == "StringRef")
+    {
+        StringRef* wp = object_cast<StringRef*>(obj);
+        return StringRef(*wp);
+    }
+    return StringRef(lua_tostring(L, index));
+}
 
 		void to(lua_State* L, StringRef const &value)
 		{

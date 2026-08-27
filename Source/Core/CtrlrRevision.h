@@ -1,7 +1,7 @@
 #ifndef __CTRLR_REVISION__
 #define __CTRLR_REVISION__
 
-static const char *ctrlrRevision = "8.34"; // JucePlugin_VersionString;
+static const char *ctrlrRevision = "8.35"; // JucePlugin_VersionString;
 
 #ifdef JUCE_MAC
 // macOS build: Use build script-generated timestamp
