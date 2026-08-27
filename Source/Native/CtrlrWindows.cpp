@@ -216,25 +216,11 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
                         String versionMinor = panelToWrite->getProperty(Ids::panelVersionMinor).toString();
                         String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
 
-#if JUCE_WINDOWS
-                        // Helper to generate UTF-16 Little Endian byte buffer for JUCE 8 wide-string metadata
-                        auto stringToUtf16Block = [](const String& text, int charCount) -> MemoryBlock {
-                            MemoryBlock block(charCount * 2, true); // Zero-initialized UTF-16 buffer
-                            String paddedText = text.paddedRight(' ', charCount);
-                            const CharPointer_UTF16 utf16Ptr = paddedText.toUTF16();
-                            
-                            int copyBytes = juce::jmin((int)block.getSize(), (int)paddedText.getNumBytesAsUTF8() * 2);
-                            block.copyFrom(utf16Ptr.getAddress(), 0, copyBytes);
-                            return block;
-                        };
-
-                        // Helper to parse hex pairs into MemoryBlock
-                        auto hexStringToBytesJUCE8 = [this](const String& hexString, MemoryBlock& destBlock) {
-                            hexStringToBytes(hexString, destBlock);
-                        };
-
-                        // --- 1. ASCII Search & Replacement Pass ---
-                        MemoryBlock pluginNameHex, pluginCodeHex, manufacturerNameHex, manufacturerCodeHex, plugTypeHex;
+						// #if JUCE_WINDOWS :: Damien: This code won't work on JUCE 6 - use the commented code below
+						// 8/27/2026 ;) Helper to generate UTF-16 Little Endian byte buffer for JUCE 8 wide-string
+						// metadata
+						// --- 1. ASCII Search & Replacement Pass ---
+						MemoryBlock pluginNameHex, pluginCodeHex, manufacturerNameHex, manufacturerCodeHex, plugTypeHex;
                         hexStringToBytes(pluginName, 32, pluginNameHex);
                         hexStringToBytes(pluginCode, 4, pluginCodeHex);
                         hexStringToBytes(manufacturerName, 16, manufacturerNameHex);
@@ -244,64 +230,92 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
                         MemoryBlock searchPluginNameHex, searchPluginCodeHex, searchManufacturerNameHex,
                                     searchManufacturerCodeHex, searchPlugTypeHex;
 
-                        hexStringToBytesJUCE8("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20", searchPluginNameHex);
-                        hexStringToBytesJUCE8("63 54 72 58", searchPluginCodeHex);
-                        hexStringToBytesJUCE8("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20", searchManufacturerNameHex);
-                        hexStringToBytesJUCE8("63 54 72 6C", searchManufacturerCodeHex);
-                        hexStringToBytesJUCE8("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHex);
+						hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 "
+										 "20 20 20 20 20 20 20",
+										 searchPluginNameHex);
+						hexStringToBytes("63 54 72 58", searchPluginCodeHex);
+						hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20", searchManufacturerNameHex);
+						hexStringToBytes("63 54 72 6C", searchManufacturerCodeHex);
+						hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHex);
 
-                        logger.log("Starting ASCII string replacement process (JUCE 8)...");
+						logger.log("Starting ASCII string replacement process (JUCE 8)...");
                         replaceAllOccurrences(executableData, searchPluginNameHex, pluginNameHex);
                         replaceAllOccurrences(executableData, searchPluginCodeHex, pluginCodeHex);
                         replaceAllOccurrences(executableData, searchManufacturerNameHex, manufacturerNameHex);
                         replaceAllOccurrences(executableData, searchManufacturerCodeHex, manufacturerCodeHex);
                         replaceAllOccurrences(executableData, searchPlugTypeHex, plugTypeHex);
 
-                        // --- 2. UTF-16 (Wide String) Version Resource Pass ---
-                        MemoryBlock searchUtf16PluginName;
-                        hexStringToBytesJUCE8("43 00 74 00 72 00 6C 00 72 00 58 00", searchUtf16PluginName);
-                        MemoryBlock replaceUtf16PluginName = stringToUtf16Block(pluginName, 6);
+						// --- 2. Robust UTF-16 (Wide String) Version Resource Pass ---
+						// Helper to generate EXACT byte-length UTF-16 buffers with right-padding
+						auto makeUtf16Buffer = [](const String &text, const String &templateText) -> MemoryBlock {
+							int targetCharCount = templateText.length();
+							MemoryBlock block(targetCharCount * 2, true); // Exact wide-char byte length
 
-                        MemoryBlock searchUtf16ManufName;
-                        hexStringToBytesJUCE8("43 00 74 00 72 00 6C 00 72 00 58 00 20 00 50 00 72 00 6F 00 6A 00 65 00 63 00 74 00", searchUtf16ManufName);
-                        MemoryBlock replaceUtf16ManufName = stringToUtf16Block(manufacturerName, 14);
+							String paddedText = text.length() > targetCharCount
+													? text.substring(0, targetCharCount)
+													: text.paddedRight(' ', targetCharCount);
 
-                        logger.log("Starting UTF-16 string replacement process (JUCE 8)...");
-                        replaceAllOccurrences(executableData, searchUtf16PluginName, replaceUtf16PluginName);
-                        replaceAllOccurrences(executableData, searchUtf16ManufName, replaceUtf16ManufName);
+							const CharPointer_UTF16 utf16Ptr = paddedText.toUTF16();
+							block.copyFrom(utf16Ptr.getAddress(), 0, targetCharCount * 2);
+							return block;
+						};
 
-#else
-                        // Legacy replacement logic (JUCE 7 / JUCE 6 and below)
-                        MemoryBlock pluginNameHex, pluginCodeHex, manufacturerNameHex, manufacturerCodeHex, 
-                                    versionMajorHex, versionMinorHex, plugTypeHex;
+						// Target 1: "CtrlrX Project" (14 wide chars -> 28 bytes)
+						MemoryBlock searchUtf16ManufName, replaceUtf16ManufName;
+						hexStringToBytes(
+							"43 00 74 00 72 00 6C 00 72 00 58 00 20 00 50 00 72 00 6F 00 6A 00 65 00 63 00 74 00",
+							searchUtf16ManufName);
+						replaceUtf16ManufName = makeUtf16Buffer(manufacturerName, "CtrlrX Project");
 
-                        hexStringToBytes(pluginName, 32, pluginNameHex);
-                        hexStringToBytes(pluginCode, 4, pluginCodeHex);
-                        hexStringToBytes(manufacturerName, 16, manufacturerNameHex);
-                        hexStringToBytes(manufacturerCode, 4, manufacturerCodeHex);
-                        hexStringToBytes(versionMajor, 2, versionMajorHex);
-                        hexStringToBytes(versionMinor, 2, versionMinorHex);
-                        hexStringToBytes(plugType, 16, plugTypeHex);
+						// Target 2: "CtrlrX" (6 wide chars -> 12 bytes)
+						MemoryBlock searchUtf16PluginName, replaceUtf16PluginName;
+						hexStringToBytes("43 00 74 00 72 00 6C 00 72 00 58 00", searchUtf16PluginName);
+						replaceUtf16PluginName = makeUtf16Buffer(pluginName, "CtrlrX");
 
-                        MemoryBlock searchPluginNameHex, searchPluginCodeHex, searchManufacturerNameHex,
-                                    searchManufacturerCodeHex, searchPlugTypeHex;
+						logger.log("Starting UTF-16 string replacement process (JUCE 8)...");
+						// Replace longer target ("CtrlrX Project") FIRST to prevent partial matching
+						replaceAllOccurrences(executableData, searchUtf16ManufName, replaceUtf16ManufName);
+						replaceAllOccurrences(executableData, searchUtf16PluginName, replaceUtf16PluginName);
 
-                        hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20", searchPluginNameHex);
-                        hexStringToBytes("63 54 72 58", searchPluginCodeHex);
-                        hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20", searchManufacturerNameHex);
-                        hexStringToBytes("63 54 72 6C", searchManufacturerCodeHex);
-                        hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHex);
+						// #else JUCE 6 code (I don't want to delete it. We worked too hard to get here!)
+						//                         // Legacy replacement logic (JUCE 7 / JUCE 6 and below)
+						//                         MemoryBlock pluginNameHex, pluginCodeHex, manufacturerNameHex,
+						//                         manufacturerCodeHex,
+						//                                     versionMajorHex, versionMinorHex, plugTypeHex;
 
-                        logger.log("Starting string replacement process...");
+						//                         hexStringToBytes(pluginName, 32, pluginNameHex);
+						//                         hexStringToBytes(pluginCode, 4, pluginCodeHex);
+						//                         hexStringToBytes(manufacturerName, 16, manufacturerNameHex);
+						//                         hexStringToBytes(manufacturerCode, 4, manufacturerCodeHex);
+						//                         hexStringToBytes(versionMajor, 2, versionMajorHex);
+						//                         hexStringToBytes(versionMinor, 2, versionMinorHex);
+						//                         hexStringToBytes(plugType, 16, plugTypeHex);
 
-                        replaceAllOccurrences(executableData, searchPluginNameHex, pluginNameHex);
-                        replaceAllOccurrences(executableData, searchPluginCodeHex, pluginCodeHex);
-                        replaceAllOccurrences(executableData, searchManufacturerNameHex, manufacturerNameHex);
-                        replaceAllOccurrences(executableData, searchManufacturerCodeHex, manufacturerCodeHex);
-                        replaceAllOccurrences(executableData, searchPlugTypeHex, plugTypeHex);
-#endif
+						//                         MemoryBlock searchPluginNameHex, searchPluginCodeHex,
+						//                         searchManufacturerNameHex,
+						//                                     searchManufacturerCodeHex, searchPlugTypeHex;
 
-                        logger.log("String replacement process completed.");
+						//                         hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20
+						//                         20 20 20 20 20 20 20 20 20 20 20 20 20 20 20", searchPluginNameHex);
+						//                         hexStringToBytes("63 54 72 58", searchPluginCodeHex);
+						//                         hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20",
+						//                         searchManufacturerNameHex); hexStringToBytes("63 54 72 6C",
+						//                         searchManufacturerCodeHex); hexStringToBytes("49 6E 73 74 72 75 6D 65
+						//                         6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHex);
+
+						//                         logger.log("Starting string replacement process...");
+
+						//                         replaceAllOccurrences(executableData, searchPluginNameHex,
+						//                         pluginNameHex); replaceAllOccurrences(executableData,
+						//                         searchPluginCodeHex, pluginCodeHex);
+						//                         replaceAllOccurrences(executableData, searchManufacturerNameHex,
+						//                         manufacturerNameHex); replaceAllOccurrences(executableData,
+						//                         searchManufacturerCodeHex, manufacturerCodeHex);
+						//                         replaceAllOccurrences(executableData, searchPlugTypeHex,
+						//                         plugTypeHex);
+						// #endif
+
+						logger.log("String replacement process completed.");
 
                         if (!executableFile.replaceWithData(executableData.getData(), executableData.getSize())) {
                             logger.log("Error: Failed to write modified executable data");
