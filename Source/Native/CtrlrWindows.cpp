@@ -352,7 +352,27 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
         notifyAndReturn(Result::ok());
     });
 }
-
+/*
+ * ==============================================================================
+ * JUCE 8 Metadata & Resource Encoding Changes (PE/VST3 Binary Patching)
+ * ==============================================================================
+ *
+ * 1. String Encoding in Windows Resources:
+ *    - In JUCE 7 and below, binary metadata strings (such as ProductName and
+ *      CompanyName inside VS_VERSION_INFO / PE .rsrc sections) were primary target
+ *      candidates for single-byte ASCII/UTF-8 replacements (e.g. "43 74 72 6C 72 58").
+ *    - In JUCE 8 (MSVC / Windows builds), wide string version metadata is stored
+ *      as UTF-16 Little Endian (2 bytes per character, e.g. 'C\0t\0r\0l\0r\0X\0').
+ *
+ * 2. Replacement Strategy Update:
+ *    - Plain ASCII search blocks fail to match UTF-16 strings because of
+ *      interleaved null bytes (`0x00`).
+ *    - JUCE 8 logic now performs two replacement passes:
+ *        a) Standard ASCII pass for embedded C-string/plugin identifier tokens.
+ *        b) Dedicated UTF-16 pass to patch wide-character Windows version resources.
+ *
+ * ==============================================================================
+ */
 void CtrlrWindows::stringToUtf16Bytes(const juce::String &text, int charCount, juce::MemoryBlock &result) {
     result.setSize(charCount * 2, true); // Zero-fill memory
     juce::String paddedText = text.paddedRight(' ', charCount);
