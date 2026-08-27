@@ -10,38 +10,55 @@ echo "2) Full Debug (Clean + Configure + Build)"
 echo "3) Clean Rebuild (Ninja Clean + Build)"
 echo "4) Quick Build (Ninja Only)"
 read -p "Enter choice [1-4]: " choice
+
 error_exit() {
     echo "ERROR: $1" >&2
     exit 1
 }
 
+# Unified build engine with clean, regex-filtered console output
+run_build() {
+    # 1. Run cmake build with full verbosity (-v)
+    # 2. Duplicate output to build_log.txt using tee
+    # 3. Filter stdout on-the-fly to show only the progress and source file path
+    cmake --build "$BUILD_DIR" -j"$(nproc)" -- -v 2>&1 \
+        | tee build_log.txt \
+        | sed -E -n '
+            # Pattern match for standard C/C++ source compilation steps
+            s/^(\[[0-9]+\/[0-9]+\]).* -c (.+\.(cpp|c|cc|cxx|h|hpp)).*/\1 Compiling: \2/p
+            # Pattern match for linking targets
+            s/^(\[[0-9]+\/[0-9]+\]) Linking.*/\1 Linking.../p
+            # Always pass through errors, warnings, and standard summaries
+            /error|warning|FAILED|ninja:/p
+          '
+
+    if [ ${PIPESTATUS[0]} -ne 0 ]; then
+        error_exit "Build failed — see build_log.txt for details."
+    fi
+}
 
 case $choice in
     1|2)
-        # Determine build type
         BUILD_TYPE="Release"
         [ "$choice" == "2" ] && BUILD_TYPE="Debug"
 
         echo "--- Starting Full $BUILD_TYPE Build ---"
         rm -rf "$BUILD_DIR"
-        # -G Ninja tells CMake to generate Ninja files instead of Makefiles
-        cmake -S "$PROJECT_ROOT" -B "$BUILD_DIR" -G Ninja -DCMAKE_BUILD_TYPE=$BUILD_TYPE
-cmake --build "$BUILD_DIR" -j"$(nproc)" > build_log.txt 2>&1 || error_exit "Build failed — see build_log.txt for details."
+        cmake -S "$PROJECT_ROOT" -B "$BUILD_DIR" -G Ninja -DCMAKE_BUILD_TYPE=$BUILD_TYPE || error_exit "CMake configuration failed."
+        run_build
         ;;
 
     3)
-        # Incremental Clean
         if [ ! -d "$BUILD_DIR" ]; then echo "Run 1 or 2 first."; exit 1; fi
         echo "--- Cleaning and Rebuilding ---"
-        cmake --build "$BUILD_DIR" --target clean
-cmake --build "$BUILD_DIR" -j"$(nproc)" > build_log.txt 2>&1 || error_exit "Build failed — see build_log.txt for details."
+        cmake --build "$BUILD_DIR" --target clean || error_exit "Clean target failed."
+        run_build
         ;;
 
     4)
-        # Quick Rebuild
         if [ ! -d "$BUILD_DIR" ]; then echo "Run 1 or 2 first."; exit 1; fi
         echo "--- Fast Incremental Build ---"
-cmake --build "$BUILD_DIR" -j"$(nproc)" > build_log.txt 2>&1 || error_exit "Build failed — see build_log.txt for details."
+        run_build
         ;;
 
     *)

@@ -171,13 +171,18 @@ void LGlobalFunctions::debug(const String &argument) { _LUA(argument); }
 void LGlobalFunctions::debug(const std::string &argument) { _LUA(_STR(argument.c_str())); }
 
 std::string LGlobalFunctions::stringToLua(const String &string) { return (string.toUTF8().getAddress()); }
+void LGlobalFunctions::console(const String &arg) {
+	_LUA(removeInvalidChars(arg, true));
+}
 
-String LGlobalFunctions::toJuceString(const std::string &string) { return (String(string.c_str())); }
+void LGlobalFunctions::console(const std::string &arg) {
+	console(String::fromUTF8(arg.c_str(), (int)arg.size()));
+}
+// String LGlobalFunctions::toJuceString(const std::string &string) { return (String(string.c_str())); }
 
-void LGlobalFunctions::console(const String &arg) { _LUA(removeInvalidChars(arg, true)); }
-
-void LGlobalFunctions::console(const std::string &arg) { _LUA(removeInvalidChars(_STR(arg), true)); }
-
+String LGlobalFunctions::toJuceString(const std::string &string) {
+	return String::fromUTF8(string.c_str(), (int)string.size());
+}
 void LGlobalFunctions::sleep(const int milliseconds) { Thread::sleep(milliseconds); }
 
 const double LGlobalFunctions::int64ToDouble(const int64 value) { return (static_cast<double>(value)); }
@@ -189,8 +194,10 @@ void LGlobalFunctions::wrapForLua(lua_State *L) {
 
 	module(
 		L)[def("getNativeKeyMapping", &getNativeKeyMapping),
+		   def("console", (void (*)(const std::string &))&LGlobalFunctions::console),
 		   // def("console", (void (*) (const std::string &)) &LGlobalFunctions::console),
-		   def("console", (void (*)(const String &))&LGlobalFunctions::console),
+		   //    def("console", (void (*)(const String &))&LGlobalFunctions::console),
+		   // def("console", (void (*)(const std::string &))&LGlobalFunctions::console),
 		   def("J", (const String (*)(const std::string &))&LGlobalFunctions::toJuceString),
 		   def("toJuceString", (const String (*)(const std::string &))&LGlobalFunctions::toJuceString),
 		   def("L", &LGlobalFunctions::stringToLua), def("toLuaString", &LGlobalFunctions::stringToLua),
