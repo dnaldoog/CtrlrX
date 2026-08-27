@@ -216,7 +216,7 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
                         String versionMinor = panelToWrite->getProperty(Ids::panelVersionMinor).toString();
                         String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
 
-#if JUCE_VERSION >= 0x080000
+#if JUCE_WINDOWS
                         // Helper to generate UTF-16 Little Endian byte buffer for JUCE 8 wide-string metadata
                         auto stringToUtf16Block = [](const String& text, int charCount) -> MemoryBlock {
                             MemoryBlock block(charCount * 2, true); // Zero-initialized UTF-16 buffer
