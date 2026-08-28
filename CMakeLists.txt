@@ -5,6 +5,10 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.31.0")
     cmake_policy(SET CMP0175 NEW)
 endif()
 
+# allows clang-based tools to work with the source:
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# This tells cmake we have goodies in the /cmake folder
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(PamplejuceVersion)
 
@@ -71,6 +75,9 @@ else()
     add_subdirectory(JUCE)
 endif()
 
+# -----------------------------------------------------------------------
+# Lua / LuaJIT Architecture Routing (Isolated cleanly)
+# -----------------------------------------------------------------------
 if(CTRLRX_USE_LUAJIT)
     add_subdirectory(Source/Misc/luajit)
     
@@ -111,11 +118,28 @@ juce_add_plugin("${PROJECT_NAME}"
     PLUGIN_CODE cTrl
     FORMATS "${FORMATS}"
     IS_SYNTH TRUE
+    IS_MIDI_EFFECT FALSE
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT TRUE
     EDITOR_WANTS_KEYBOARD_FOCUS TRUE
     PRODUCT_NAME "${PRODUCT_NAME}"
 )
+
+# --- Format Specific Overrides ---
+if ("VST3" IN_LIST FORMATS)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        JUCE_PLUGIN_NAME "CtrlrX                          "
+        JUCE_COMPANY_NAME "CtrlrX Project                  "
+    )
+endif()
+
+if ("AU" IN_LIST FORMATS)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        JUCE_AU_MAIN_TYPE kAudioUnitType_MusicDevice
+        JUCE_PLUGIN_NAME "CtrlrX                          "
+        JUCE_COMPANY_NAME "CtrlrX Project                  "
+    )
+endif()
 
 # -----------------------------------------------------------------------
 # SharedCode Library & Source Files
@@ -168,6 +192,7 @@ target_include_directories(SharedCode INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/rapidfuzz"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/libusb/include"
