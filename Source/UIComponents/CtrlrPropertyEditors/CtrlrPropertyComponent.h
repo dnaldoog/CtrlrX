@@ -45,6 +45,7 @@ class CtrlrPropertyComponent : public PropertyComponent, public ValueTree::Liste
 		void valueTreeChildOrderChanged(ValueTree &parentTreeWhoseChildrenHaveMoved, int oldIndex,
 										int newIndex) override {}
 		void valueTreeParentChanged(ValueTree &treeWhoseParentHasChanged) override {}
+				juce::String getComponentTitle() const;
 
 	private:
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrPropertyComponent);
@@ -255,6 +256,7 @@ class CtrlrColourPropertyComponent : public Component, public ChangeListener, pu
 
 		void refresh() override;
 		void changeListenerCallback(ChangeBroadcaster *source) override;
+
 		void resized() override;
 
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrColourPropertyComponent)

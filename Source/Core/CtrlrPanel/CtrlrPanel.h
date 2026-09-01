@@ -61,6 +61,56 @@ class CtrlrFixedImageSlider;
 class CtrlrImageSlider;
 class CtrlrFixedSlider;
 
+// Custom LookAndFeel for HTML-style circular radio buttons
+class CustomRadioButtonLNF : public juce::LookAndFeel_V4 {
+	public:
+		CustomRadioButtonLNF() = default;
+
+		void drawToggleButton(juce::Graphics &g, juce::ToggleButton &button, bool shouldDrawButtonAsHighlighted,
+							  bool shouldDrawButtonAsDown) {
+			auto bounds = button.getLocalBounds().toFloat();
+
+			// 1. Add 5px padding on the left edge so the outer stroke isn't clipped
+			bounds.removeFromLeft(5.0f);
+
+			auto fontSize = juce::jmin(15.0f, bounds.getHeight() * 0.75f);
+			auto tickWidth = fontSize;
+
+			auto radioBounds = bounds.removeFromLeft(tickWidth).withSizeKeepingCentre(tickWidth, tickWidth);
+
+			// Fetch Colors
+			juce::Colour rimAndDotColor = button.findColour(juce::ToggleButton::tickColourId);
+			juce::Colour textColor = button.findColour(juce::ToggleButton::textColourId);
+			juce::Colour bgColor = button.findColour(juce::ResizableWindow::backgroundColourId);
+
+			if (shouldDrawButtonAsHighlighted)
+				rimAndDotColor = rimAndDotColor.brighter(0.2f);
+
+			// 2. Draw Outer Fill
+			g.setColour(bgColor);
+			g.fillEllipse(radioBounds);
+
+			// 3. Draw Rim Stroke
+			g.setColour(button.isEnabled() ? rimAndDotColor : rimAndDotColor.withAlpha(0.3f));
+			g.drawEllipse(radioBounds, 1.5f);
+
+			// 4. Draw Center Active Dot
+			if (button.getToggleState()) {
+				auto dotBounds = radioBounds.reduced(3.5f);
+				g.setColour(button.isEnabled() ? rimAndDotColor : rimAndDotColor.withAlpha(0.3f));
+				g.fillEllipse(dotBounds);
+			}
+
+			// 5. Label Text
+			if (button.getButtonText().isNotEmpty()) {
+				g.setColour(textColor.withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.5f));
+				g.setFont(fontSize);
+				bounds.removeFromLeft(6.0f); // Gap between radio circle and text
+				g.drawFittedText(button.getButtonText(), bounds.toNearestInt(), juce::Justification::centredLeft, 1);
+			}
+		}
+};
+
 //==============================================================================
 /** @brief Class that represents a Ctrlr Panel
 
@@ -177,6 +227,9 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		File getPanelContentDir();
 		File getPanelLuaDir();
 		File getPanelResourcesDir();
+		CustomRadioButtonLNF &getCustomRadioLNF() {
+			return customRadioLNF;
+		}
 		Result convertLuaMethodsToFiles(const String dirPath);
 		File getLuaMethodGroupDir(const ValueTree &methodGroup);
 
@@ -406,6 +459,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		HashMap<String, CtrlrModulator *> modulatorsByName;
 		Array<CtrlrMidiMessage, CriticalSection, 4> multiMidiQueue;
 		Array<MemoryBlock, CriticalSection> partialMidiQueue;
+		CustomRadioButtonLNF customRadioLNF;
 		int currentActionIndex, indexOfSavedState;
 		void getCodeSigningIdentityFromPopup(std::function<void(juce::String)> completionCallback);
 		bool nrpnLatchEnabled = false;

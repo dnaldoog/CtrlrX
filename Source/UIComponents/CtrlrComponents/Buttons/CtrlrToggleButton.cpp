@@ -23,8 +23,8 @@ CtrlrToggleButton::CtrlrToggleButton(CtrlrModulator &owner)
     setProperty(Ids::uiButtonFalseValue, 0);
     owner.setProperty(Ids::modulatorMax, 1);
     owner.setProperty(Ids::modulatorMin, 0);
-
-    setProperty(Ids::uiButtonLookAndFeel, "Default");
+	setProperty(Ids::uiButtonIsRadioButton, false);
+	setProperty(Ids::uiButtonLookAndFeel, "Default");
 	setProperty(Ids::uiButtonLookAndFeelIsCustom, true);
 
 	//[/UserPreSize]
@@ -183,12 +183,22 @@ void CtrlrToggleButton::updateComponentColors() {
 	if (ctrlrButton == nullptr)
 		return;
 
-	LNF::applyLookAndFeelState(*ctrlrButton, getComponentTree(), Ids::uiButtonLookAndFeelIsCustom,
-							   {{Ids::uiButtonTextColourOn, juce::ToggleButton::textColourId},
-								{Ids::uiButtonColourOff, juce::TextButton::buttonColourId},
-								{Ids::uiButtonColourOff, juce::ToggleButton::tickDisabledColourId},
-								{Ids::uiToggleButtontickColour, juce::ToggleButton::tickColourId},
-								{Ids::uiToggleButtonFocusOutline, juce::TextEditor::focusedOutlineColourId}});
+	// Check if this component is rendered as a radio button vs a standard square toggle
+	const bool isRadioButton = (bool)getProperty(Ids::uiButtonIsRadioButton);
+
+	if (isRadioButton) {
+		LNF::applyLookAndFeelState(
+			*ctrlrButton, getComponentTree(), Ids::uiButtonLookAndFeelIsCustom,
+			{{Ids::uiButtonTextColourOn, juce::ToggleButton::textColourId},
+			 {Ids::uiButtonColourOff, juce::ResizableWindow::backgroundColourId}, // Radio inner background
+			 {Ids::uiToggleButtontickColour, juce::ToggleButton::tickColourId},	  // Rim & Active Dot Accent
+			 {Ids::uiToggleButtonFocusOutline, juce::ToggleButton::tickDisabledColourId}});
+	} else {
+		LNF::applyLookAndFeelState(*ctrlrButton, getComponentTree(), Ids::uiButtonLookAndFeelIsCustom,
+								   {{Ids::uiButtonTextColourOn, juce::ToggleButton::textColourId},
+									{Ids::uiButtonColourOff, juce::ToggleButton::tickDisabledColourId},
+									{Ids::uiToggleButtontickColour, juce::ToggleButton::tickColourId}});
+	}
 
 	ctrlrButton->repaint();
 }
@@ -198,6 +208,27 @@ void CtrlrToggleButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHas
     if (property == Ids::componentRadioGroupId)
     {
         ctrlrButton->setToggleState(false, dontSendNotification);
+
+		// getOwnerPanel() returns CtrlrPanel& — direct reference call
+		owner.getOwnerPanel().setRadioGroupId(this, getProperty(Ids::componentRadioGroupId));
+
+	} else if (property == Ids::uiButtonIsRadioButton) {
+		// Toggle custom circular radio button LookAndFeel vs default square checkbox
+		if ((bool)getProperty(Ids::uiButtonIsRadioButton)) {
+			ctrlrButton->setLookAndFeel(&owner.getOwnerPanel().getCustomRadioLNF());
+		} else {
+			// Revert to panel/component default
+			ctrlrButton->setLookAndFeel(nullptr);
+
+			// Re-apply property-based custom LookAndFeel if one was selected
+			String LookAndFeelType = getProperty(Ids::uiButtonLookAndFeel);
+			if (LookAndFeelType != "Default" && customLF != nullptr) {
+				setLookAndFeel(customLF.get());
+			}
+		}
+
+		updateComponentColors();
+
 	} else if (property == Ids::uiButtonLookAndFeel) {
 		String LookAndFeelType = getProperty(property);
 		setLookAndFeel(nullptr);
@@ -215,9 +246,7 @@ void CtrlrToggleButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHas
 		}
 
 		updateComponentColors();
-	}
-	// ADDED: Handle toggling "using my colours" (uiButtonLookAndFeelIsCustom)
-	else if (property == Ids::uiButtonLookAndFeelIsCustom) {
+	} else if (property == Ids::uiButtonLookAndFeelIsCustom) {
 		if (!getProperty(Ids::uiButtonLookAndFeelIsCustom) && !restoreStateInProgress) {
 			resetLookAndFeelOverrides();
 		}

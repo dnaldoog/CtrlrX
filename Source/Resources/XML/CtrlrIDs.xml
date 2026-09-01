@@ -435,6 +435,7 @@
   <id name="uiToggleButtonText"         text="Button text" type="Text"/>
   <id name="uiToggleButtontickColour"   text="Button tick mark colour" type="Colour" />
   <id name="uiToggleButtonFocusOutline" text="Button outline when focused" type="Colour" />
+  <id name="uiButtonIsRadioButton"      text="HTML radio button style" type="Bool"/>
 
   <!-- Text button -->
   <id name="uiButtonLookAndFeel"        text="Button LookAndFeel type" type="VarText" defaults="@componentlookandfeel" />

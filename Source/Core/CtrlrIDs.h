@@ -480,6 +480,7 @@ DECLARE_ID(uiToggleButtontickColour);
 DECLARE_ID(uiToggletickDisabledColour);
 
 DECLARE_ID(uiButtonLookAndFeel);
+DECLARE_ID(uiButtonIsRadioButton);
 DECLARE_ID(uiButtonLookAndFeelIsCustom);
 DECLARE_ID(uiButtonTextColourOff);
 DECLARE_ID(uiButtonTextColourOn);
