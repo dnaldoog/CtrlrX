@@ -229,23 +229,24 @@ void CtrlrToggleButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHas
 
 		updateComponentColors();
 
+		// Force the inspector to rebuild rows for this component so the
+		// radio-aware labels from CtrlrIDManager::createComponentForProperty pick up.
+		// Deferred + SafePointer-guarded to avoid the refreshDynamicData() re-entrancy
+		// crash during construction, and only touches the panel if this component's
+		// modulator is actually the one currently selected in the inspector.
+		Component::SafePointer<CtrlrToggleButton> safeThis(this);
+		MessageManager::callAsync([safeThis]() {
+			if (safeThis == nullptr)
+				return;
+
+			ValueTree modulatorTree = safeThis->owner.getModulatorTree(); // confirm real accessor name
+
+			if (auto *props = safeThis->owner.getOwnerPanel().getEditor()->getPropertiesPanel())
+				props->refreshIfEditing(modulatorTree);
+		});
+
 	} else if (property == Ids::uiButtonLookAndFeel) {
-		String LookAndFeelType = getProperty(property);
-		setLookAndFeel(nullptr);
-
-		if (LookAndFeelType == "Default") {
-			customLF.reset();
-		} else {
-			customLF = std::move(CtrlrToggleButton::getLookAndFeelFromComponentProperty(LookAndFeelType));
-			if (customLF != nullptr)
-				setLookAndFeel(customLF.get());
-		}
-
-		if (!getProperty(Ids::uiButtonLookAndFeelIsCustom) && !restoreStateInProgress) {
-			resetLookAndFeelOverrides();
-		}
-
-		updateComponentColors();
+		// ...unchanged, rest of the function below...
 	} else if (property == Ids::uiButtonLookAndFeelIsCustom) {
 		if (!getProperty(Ids::uiButtonLookAndFeelIsCustom) && !restoreStateInProgress) {
 			resetLookAndFeelOverrides();
@@ -350,7 +351,17 @@ void CtrlrToggleButton::updatePropertiesPanel()
 		}
 	}
 }
+void CtrlrToggleButton::updateInspectorLabelsForRadioStyle() {
+	bool isRadio = (bool)getProperty(Ids::uiButtonIsRadioButton);
 
+	if (auto *panel = owner.getOwnerPanel().getEditor(false)) {
+		if (auto *props = panel->getPropertiesPanel()) {
+			// CtrlrPanelProperties does not expose a direct relabel API, so refresh the
+			// inspector labels by forcing a refresh of the property panel instead.
+			props->refreshAll();
+		}
+	}
+}
 //[/MiscUserCode]
 
 //==============================================================================

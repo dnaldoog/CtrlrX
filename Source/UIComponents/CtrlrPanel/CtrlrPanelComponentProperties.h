@@ -23,10 +23,11 @@ class CtrlrPanelComponentProperties : public Component,
 		PropertyComponent *getPropertyEditor(const Value &valueToEdit, const Identifier &valueIdentifier);
 		void refreshDynamicData();
 		void refreshAll();
+		bool isCurrentlyEditing (const ValueTree &tree) const { return treeToEdit == tree; }
+
 		void copyProperties(ValueTree &sourceTree, ValueTree &destinationTree);
 		void managerStateChanged(const CtrlrManager::CtrlrManagerState newState);
 		void refreshTargetModulationPropertyList(const ValueTree &sourceModulationTree);
-
 		void buttonClicked(Button *button);
 		void getAllToolbarItemIds(Array<int> &ids);
 		void getDefaultItemSet(Array<int> &ids);

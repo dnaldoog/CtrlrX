@@ -61,6 +61,7 @@ juce_UseDebuggingNewOperator
 	// (prevent copy constructor and operator= being generated..)
 	CtrlrToggleButton(const CtrlrToggleButton &);
 	const CtrlrToggleButton &operator=(const CtrlrToggleButton &);
+	 void updateInspectorLabelsForRadioStyle();
 };
 
 #endif // __JUCER_HEADER_CTRLRTOGGLEBUTTON_CTRLRTOGGLEBUTTON_74F5E916__

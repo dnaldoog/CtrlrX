@@ -6,6 +6,7 @@
 #include "CtrlrIDManager.h"
 #include "CtrlrLog.h"
 #include "CtrlrPropertyEditors/CtrlrPropertyComponent.h"
+#include <map>
 
 CtrlrIDManager::CtrlrIDManager() : ctrlrIdTree(Ids::ctrlr)
 {
@@ -148,6 +149,17 @@ PropertyComponent *CtrlrIDManager::createComponentForProperty (const Identifier 
     {
 		values = toValueList(getValuesArray(identifierDefinition));
     }
+	static const std::map<String, String> radioLabelOverrides = {
+		{"uiToggleButtontickColour", "Radio outline colour"},
+		{"uiButtonTextColourOn", "Radio dot / text colour"},
+		{"uiButtonColourOff", "Radio background colour"},
+		{"uiToggleButtonFocusOutline", "Unused in radio style"}};
+
+	auto it = radioLabelOverrides.find(propertyName.toString());
+	if (it != radioLabelOverrides.end() && (bool)propertyElement.getProperty(Ids::uiButtonIsRadioButton)) {
+		identifierDefinition = identifierDefinition.createCopy();
+		identifierDefinition.setProperty("text", it->second, nullptr);
+	}
 
 	return (new CtrlrPropertyComponent (propertyName, propertyElement, identifierDefinition, panel, &choices, &values));
 }
