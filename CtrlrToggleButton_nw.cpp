@@ -200,7 +200,7 @@ void CtrlrToggleButton::updateComponentColors() {
 									{Ids::uiToggleButtontickColour, juce::ToggleButton::tickColourId}});
 	}
 
-	// ctrlrButton->repaint();
+	ctrlrButton->repaint();
 }
 
 void CtrlrToggleButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
@@ -211,46 +211,42 @@ void CtrlrToggleButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHas
 
 		// getOwnerPanel() returns CtrlrPanel& — direct reference call
 		owner.getOwnerPanel().setRadioGroupId(this, getProperty(Ids::componentRadioGroupId));
+
 	} else if (property == Ids::uiButtonIsRadioButton) {
 		// Toggle custom circular radio button LookAndFeel vs default square checkbox
 		if ((bool)getProperty(Ids::uiButtonIsRadioButton)) {
 			ctrlrButton->setLookAndFeel(&owner.getOwnerPanel().getCustomRadioLNF());
 		} else {
-			// Revert to default square toggle rendering
+			// Revert to panel/component default
 			ctrlrButton->setLookAndFeel(nullptr);
 
-			// Re-apply component-level custom LookAndFeel if a specific one was selected
+			// Re-apply property-based custom LookAndFeel if one was selected
 			String LookAndFeelType = getProperty(Ids::uiButtonLookAndFeel);
 			if (LookAndFeelType != "Default" && customLF != nullptr) {
-				ctrlrButton->setLookAndFeel(customLF.get());
-			}
-		}
-
-	} else if (property == Ids::uiButtonLookAndFeel) {
-		String LookAndFeelType = getProperty(property);
-
-		// 1. Explicitly clear LNF pointers from BOTH parent and child component FIRST
-		setLookAndFeel(nullptr);
-		if (ctrlrButton != nullptr)
-			ctrlrButton->setLookAndFeel(nullptr);
-
-		// 2. Now safe to reset or assign the unique_ptr
-		if (LookAndFeelType == "Default") {
-			customLF.reset();
-		} else {
-			customLF = std::move(CtrlrToggleButton::getLookAndFeelFromComponentProperty(LookAndFeelType));
-			if (customLF != nullptr) {
 				setLookAndFeel(customLF.get());
-				if (ctrlrButton != nullptr && !(bool)getProperty(Ids::uiButtonIsRadioButton))
-					ctrlrButton->setLookAndFeel(customLF.get());
 			}
-		}
-
-		if (!getProperty(Ids::uiButtonLookAndFeelIsCustom) && !restoreStateInProgress) {
-			resetLookAndFeelOverrides();
 		}
 
 		updateComponentColors();
+
+		// Force the inspector to rebuild rows for this component so the
+		// radio-aware labels from CtrlrIDManager::createComponentForProperty pick up.
+		// Deferred + SafePointer-guarded to avoid the refreshDynamicData() re-entrancy
+		// crash during construction, and only touches the panel if this component's
+		// modulator is actually the one currently selected in the inspector.
+		Component::SafePointer<CtrlrToggleButton> safeThis(this);
+		MessageManager::callAsync([safeThis]() {
+			if (safeThis == nullptr)
+				return;
+
+			ValueTree modulatorTree = safeThis->owner.getModulatorTree(); // confirm real accessor name
+
+			if (auto *props = safeThis->owner.getOwnerPanel().getEditor()->getPropertiesPanel())
+				props->refreshIfEditing(modulatorTree);
+		});
+
+	} else if (property == Ids::uiButtonLookAndFeel) {
+		// ...unchanged, rest of the function below...
 	} else if (property == Ids::uiButtonLookAndFeelIsCustom) {
 		if (!getProperty(Ids::uiButtonLookAndFeelIsCustom) && !restoreStateInProgress) {
 			resetLookAndFeelOverrides();
@@ -344,18 +340,28 @@ void CtrlrToggleButton::updatePropertiesPanel()
 {
 	if (restoreStateInProgress)
 		return;
-
+	/*  CtrlrPanelProperties *props =
+	  owner.getCtrlrManagerOwner().getActivePanel()->getEditor(false)->getPropertiesPanel(); if (props)
+	  {
+		  props->refreshAll(); // Needs extra code to prevent scrolling back to top on refresh
+	  }*/
 	if (auto *panel = owner.getOwnerPanel().getEditor(false)) {
 		if (auto *props = panel->getPropertiesPanel()) {
-			// Refreshes values inside existing rows without rebuilding the panel layout/scroll position
-			props->refreshIfEditing(owner.getModulatorTree());
+			props->refreshAll();
 		}
 	}
 }
-	// bool isRadio = (bool)getProperty(Ids::uiButtonIsRadioButton);
+void CtrlrToggleButton::updateInspectorLabelsForRadioStyle() {
+	bool isRadio = (bool)getProperty(Ids::uiButtonIsRadioButton);
 
-// CtrlrPanelProperties does not expose a direct relabel API, so refresh the
-// inspector labels by forcing a refresh of the property panel instead.
+	if (auto *panel = owner.getOwnerPanel().getEditor(false)) {
+		if (auto *props = panel->getPropertiesPanel()) {
+			// CtrlrPanelProperties does not expose a direct relabel API, so refresh the
+			// inspector labels by forcing a refresh of the property panel instead.
+			props->refreshAll();
+		}
+	}
+}
 //[/MiscUserCode]
 
 //==============================================================================
