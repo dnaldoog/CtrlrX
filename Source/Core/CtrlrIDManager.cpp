@@ -150,8 +150,8 @@ PropertyComponent *CtrlrIDManager::createComponentForProperty (const Identifier 
 		values = toValueList(getValuesArray(identifierDefinition));
     }
 	static const std::map<String, String> radioLabelOverrides = {
-		{"uiToggleButtontickColour", "Radio outline colour"},
-		{"uiButtonTextColourOn", "Radio dot / text colour"},
+		{"uiToggleButtontickColour", "Radio button colour"},
+		{"uiButtonTextColourOn", "Radio button text colour"},
 		{"uiButtonColourOff", "Radio background colour"},
 		{"uiToggleButtonFocusOutline", "Unused in radio style"}};
 
