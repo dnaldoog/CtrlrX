@@ -183,16 +183,29 @@ void CtrlrToggleButton::updateComponentColors() {
 	if (ctrlrButton == nullptr)
 		return;
 
-	// Check if this component is rendered as a radio button vs a standard square toggle
 	const bool isRadioButton = (bool)getProperty(Ids::uiButtonIsRadioButton);
 
+	// 1. Re-enforce LookAndFeel pointer state based on Radio mode
 	if (isRadioButton) {
-		LNF::applyLookAndFeelState(
-			*ctrlrButton, getComponentTree(), Ids::uiButtonLookAndFeelIsCustom,
-			{{Ids::uiButtonTextColourOn, juce::ToggleButton::textColourId},
-			 {Ids::uiButtonColourOff, juce::ResizableWindow::backgroundColourId}, // Radio inner background
-			 {Ids::uiToggleButtontickColour, juce::ToggleButton::tickColourId},	  // Rim & Active Dot Accent
-			 {Ids::uiToggleButtonFocusOutline, juce::ToggleButton::tickDisabledColourId}});
+		// ALWAYS re-apply custom radio LNF so panel theme switches don't override it to square
+		ctrlrButton->setLookAndFeel(&owner.getOwnerPanel().getCustomRadioLNF());
+	} else {
+		// If a component-level custom LNF string is defined, use it; otherwise clear to inherit panel LNF
+		String lookType = getProperty(Ids::uiButtonLookAndFeel);
+		if (lookType != "Default" && customLF != nullptr) {
+			ctrlrButton->setLookAndFeel(customLF.get());
+		} else {
+			ctrlrButton->setLookAndFeel(nullptr);
+		}
+	}
+
+	// 2. Apply Custom vs. Theme colors using the exact helper signature
+	if (isRadioButton) {
+		LNF::applyLookAndFeelState(*ctrlrButton, getComponentTree(), Ids::uiButtonLookAndFeelIsCustom,
+								   {{Ids::uiButtonTextColourOn, juce::ToggleButton::textColourId},
+									{Ids::uiButtonColourOff, juce::ResizableWindow::backgroundColourId},
+									{Ids::uiToggleButtontickColour, juce::ToggleButton::tickColourId},
+									{Ids::uiToggleButtonFocusOutline, juce::ToggleButton::tickDisabledColourId}});
 	} else {
 		LNF::applyLookAndFeelState(*ctrlrButton, getComponentTree(), Ids::uiButtonLookAndFeelIsCustom,
 								   {{Ids::uiButtonTextColourOn, juce::ToggleButton::textColourId},
@@ -200,7 +213,7 @@ void CtrlrToggleButton::updateComponentColors() {
 									{Ids::uiToggleButtontickColour, juce::ToggleButton::tickColourId}});
 	}
 
-	// ctrlrButton->repaint();
+	//   ctrlrButton->repaint(); stop changing property jusmps to top of editor panel
 }
 
 void CtrlrToggleButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
