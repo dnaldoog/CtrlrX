@@ -239,6 +239,16 @@ void CtrlrToggleButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHas
 			}
 		}
 
+		Component::SafePointer<CtrlrToggleButton> safeThis(this);
+		MessageManager::callAsync([safeThis]() {
+			if (safeThis == nullptr)
+				return;
+
+			ValueTree modulatorTree = safeThis->owner.getModulatorTree(); // confirm real accessor name
+
+			if (auto *props = safeThis->owner.getOwnerPanel().getEditor()->getPropertiesPanel())
+				props->refreshIfEditing(modulatorTree);
+		});
 	} else if (property == Ids::uiButtonLookAndFeel) {
 		String LookAndFeelType = getProperty(property);
 
@@ -264,6 +274,7 @@ void CtrlrToggleButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHas
 		}
 
 		updateComponentColors();
+
 	} else if (property == Ids::uiButtonLookAndFeelIsCustom) {
 		if (!getProperty(Ids::uiButtonLookAndFeelIsCustom) && !restoreStateInProgress) {
 			resetLookAndFeelOverrides();
