@@ -352,7 +352,7 @@ void CtrlrToggleButton::updatePropertiesPanel()
 	}
 }
 void CtrlrToggleButton::updateInspectorLabelsForRadioStyle() {
-	bool isRadio = (bool)getProperty(Ids::uiButtonIsRadioButton);
+	// bool isRadio = (bool)getProperty(Ids::uiButtonIsRadioButton);
 
 	if (auto *panel = owner.getOwnerPanel().getEditor(false)) {
 		if (auto *props = panel->getPropertiesPanel()) {
