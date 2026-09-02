@@ -349,7 +349,7 @@ void CtrlrToggleButton::resetLookAndFeelOverrides()
 		setProperty(Ids::uiButtonLookAndFeelIsCustom,
 					false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
 
-		updatePropertiesPanel(); // Refreshes property pane
+		// updatePropertiesPanel(); // I commented out to stop jump to top of page
 	}
 }
 
