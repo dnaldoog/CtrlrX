@@ -66,6 +66,12 @@ class CustomRadioButtonLNF : public juce::LookAndFeel_V4 {
 	public:
 		CustomRadioButtonLNF() = default;
 
+		void applyThemeColours(const Colour &tick, const Colour &text, const Colour &background) {
+			setColour(juce::ToggleButton::tickColourId, tick);
+			setColour(juce::ToggleButton::textColourId, text);
+			setColour(juce::ResizableWindow::backgroundColourId, background);
+		}
+
 		void drawToggleButton(juce::Graphics &g, juce::ToggleButton &button, bool shouldDrawButtonAsHighlighted,
 							  bool shouldDrawButtonAsDown) {
 			auto bounds = button.getLocalBounds().toFloat();

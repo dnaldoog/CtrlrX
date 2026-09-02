@@ -602,5 +602,38 @@ inline void freezeLnfToUserSettings(juce::Component &targetComp, juce::ValueTree
 }
 
 } // namespace LNF
+/**************************************************************************************** */
 
+namespace CtrlrThemeLookup {
+
+struct PanelThemePalette {
+		juce::Colour textColour;	// Text / Label colour
+		juce::Colour outlineColour; // Toggle box / Border outline
+		juce::Colour tickAccent;	// Checkmark / Radio dot accent
+};
+
+static PanelThemePalette getPaletteForScheme(const juce::String &schemeName) {
+	if (schemeName == "V4 Light") {
+		return {juce::Colour(0xff000000), juce::Colour(0x60000000), juce::Colour(0xff000000)};
+	} else if (schemeName == "Lexi Blue") {
+		return {juce::Colour(0xffffffff), juce::Colour(0xff515459), juce::Colour(0xff5794c7)};
+	} else if (schemeName == "Kurz Green") {
+		return {juce::Colour(0xffffffff), juce::Colour(0xff515459), juce::Colour(0xff00a66e)};
+	} else if (schemeName == "Artur Orange") {
+		return {juce::Colour(0xffffffff), juce::Colour(0xff515459), juce::Colour(0xffe24a21)};
+	} else if (schemeName == "V3" || schemeName == "V2" || schemeName == "V1") {
+		return {juce::Colour(0xff000000), juce::Colour(0xff0000ff), juce::Colour(0xff0000ff)};
+	}
+
+	// Default Dark Fallback
+	return {juce::Colour(0xffffffff), juce::Colour(0xff666666), juce::Colour(0xffffffff)};
+}
+} // namespace CtrlrThemeLookup
+/* USAGE */
+// PanelThemePalette palette = CtrlrThemeLookup::getPanelThemePaletteForScheme(activeScheme);
+
+// // Apply explicitly
+// ctrlrButton->setColour(juce::ToggleButton::textColourId, palette.textColour);
+// ctrlrButton->setColour(juce::ToggleButton::tickDisabledColourId, palette.outlineColour);
+// ctrlrButton->setColour(juce::ToggleButton::tickColourId, palette.tickAccent);
 #endif

@@ -1,28 +1,26 @@
-#include "stdafx.h"
 #include "CtrlrToggleButton.h"
-#include "CtrlrValueMap.h"
-#include "CtrlrModulator/CtrlrModulator.h"
-
 #include "CtrlrIDs.h"
+#include "CtrlrInlineUtilitiesGUI.h"
+#include "CtrlrModulator/CtrlrModulator.h"
 #include "CtrlrPanel/CtrlrPanel.h"
 #include "CtrlrPanel/CtrlrPanelEditor.h"
+#include "CtrlrValueMap.h"
+#include "stdafx.h"
 
-CtrlrToggleButton::CtrlrToggleButton(CtrlrModulator &owner)
-    : CtrlrComponent(owner)
-{
-    valueMap = std::make_unique<CtrlrValueMap>();
-    ctrlrButton = std::make_unique<ToggleButton>("ctrlrButton");
-    addAndMakeVisible(ctrlrButton.get());
-    ctrlrButton->setButtonText("Button");
-    ctrlrButton->addListener(this);
+CtrlrToggleButton::CtrlrToggleButton(CtrlrModulator &owner) : CtrlrComponent(owner) {
+	valueMap = std::make_unique<CtrlrValueMap>();
+	ctrlrButton = std::make_unique<ToggleButton>("ctrlrButton");
+	addAndMakeVisible(ctrlrButton.get());
+	ctrlrButton->setButtonText("Button");
+	ctrlrButton->addListener(this);
 
-    //[UserPreSize]
-    ctrlrButton->setBufferedToImage(true);
-    setProperty(Ids::uiToggleButtonText, "Button");
-    setProperty(Ids::uiButtonTrueValue, 1);
-    setProperty(Ids::uiButtonFalseValue, 0);
-    owner.setProperty(Ids::modulatorMax, 1);
-    owner.setProperty(Ids::modulatorMin, 0);
+	//[UserPreSize]
+	ctrlrButton->setBufferedToImage(true);
+	setProperty(Ids::uiToggleButtonText, "Button");
+	setProperty(Ids::uiButtonTrueValue, 1);
+	setProperty(Ids::uiButtonFalseValue, 0);
+	owner.setProperty(Ids::modulatorMax, 1);
+	owner.setProperty(Ids::modulatorMin, 0);
 	setProperty(Ids::uiButtonIsRadioButton, false);
 	setProperty(Ids::uiButtonLookAndFeel, "Default");
 	setProperty(Ids::uiButtonLookAndFeelIsCustom, true);
@@ -65,118 +63,98 @@ CtrlrToggleButton::CtrlrToggleButton(CtrlrModulator &owner)
 	//[/Constructor]
 }
 
-CtrlrToggleButton::~CtrlrToggleButton()
-{
+CtrlrToggleButton::~CtrlrToggleButton() {
 
-    customLF.reset(); // Safely delete the custom LookAndFeel object if it exists
+	customLF.reset(); // Safely delete the custom LookAndFeel object if it exists
 }
 
 //==============================================================================
-void CtrlrToggleButton::paint(Graphics &g)
-{
-    //[UserPrePaint] Add your own custom painting code here..
-    //[/UserPrePaint]
+void CtrlrToggleButton::paint(Graphics &g) {
+	//[UserPrePaint] Add your own custom painting code here..
+	//[/UserPrePaint]
 
-    //[UserPaint] Add your own custom painting code here..
-    //[/UserPaint]
+	//[UserPaint] Add your own custom painting code here..
+	//[/UserPaint]
 }
 
-void CtrlrToggleButton::resized()
-{
-    ctrlrButton->setBounds(0, 0, getWidth() - 0, getHeight() - 0);
-    //[UserResized] Add your own custom resize handling here..
-    //[/UserResized]
+void CtrlrToggleButton::resized() {
+	ctrlrButton->setBounds(0, 0, getWidth() - 0, getHeight() - 0);
+	//[UserResized] Add your own custom resize handling here..
+	//[/UserResized]
 }
 
-void CtrlrToggleButton::buttonClicked(Button *buttonThatWasClicked)
-{
-    //[UserbuttonClicked_Pre]
-    if (isInternal())
-    {
-        owner.getOwnerPanel().performInternalComponentFunction(this);
-        return;
-    }
+void CtrlrToggleButton::buttonClicked(Button *buttonThatWasClicked) {
+	//[UserbuttonClicked_Pre]
+	if (isInternal()) {
+		owner.getOwnerPanel().performInternalComponentFunction(this);
+		return;
+	}
 
-    if (!owner.getOwnerPanel().checkRadioGroup(this, buttonThatWasClicked->getToggleState()))
-        return;
-    //[/UserbuttonClicked_Pre]
+	if (!owner.getOwnerPanel().checkRadioGroup(this, buttonThatWasClicked->getToggleState()))
+		return;
+	//[/UserbuttonClicked_Pre]
 
-    if (buttonThatWasClicked == ctrlrButton.get())
-    {
-        //[UserButtonCode_ctrlrButton] -- add your button handler code here..
-        setComponentValue(ctrlrButton->getToggleState(), true);
-        //[/UserButtonCode_ctrlrButton]
-    }
+	if (buttonThatWasClicked == ctrlrButton.get()) {
+		//[UserButtonCode_ctrlrButton] -- add your button handler code here..
+		setComponentValue(ctrlrButton->getToggleState(), true);
+		//[/UserButtonCode_ctrlrButton]
+	}
 
-    //[UserbuttonClicked_Post]
-    //[/UserbuttonClicked_Post]
+	//[UserbuttonClicked_Post]
+	//[/UserbuttonClicked_Post]
 }
 
-void CtrlrToggleButton::mouseDown(const MouseEvent &e)
-{
-    //[UserCode_mouseDown] -- Add your code here...
-    CtrlrComponent::mouseDown(e);
-    //[/UserCode_mouseDown]
+void CtrlrToggleButton::mouseDown(const MouseEvent &e) {
+	//[UserCode_mouseDown] -- Add your code here...
+	CtrlrComponent::mouseDown(e);
+	//[/UserCode_mouseDown]
 }
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
-void CtrlrToggleButton::setComponentValue(const double newValue, const bool sendChangeMessage)
-{
-    if (!owner.getOwnerPanel().checkRadioGroup(this, ctrlrButton->getToggleState()))
-        return;
+void CtrlrToggleButton::setComponentValue(const double newValue, const bool sendChangeMessage) {
+	if (!owner.getOwnerPanel().checkRadioGroup(this, ctrlrButton->getToggleState()))
+		return;
 
-    if (ctrlrButton->getClickingTogglesState())
-    {
-        ctrlrButton->setToggleState(newValue ? true : false, dontSendNotification);
-    }
+	if (ctrlrButton->getClickingTogglesState()) {
+		ctrlrButton->setToggleState(newValue ? true : false, dontSendNotification);
+	}
 
-    if (sendChangeMessage)
-    {
-        owner.getProcessor().setValueGeneric(CtrlrModulatorValue(newValue, CtrlrModulatorValue::changedByGUI), true);
-    }
+	if (sendChangeMessage) {
+		owner.getProcessor().setValueGeneric(CtrlrModulatorValue(newValue, CtrlrModulatorValue::changedByGUI), true);
+	}
 }
 
-void CtrlrToggleButton::setComponentMidiValue(const int newValue, const bool sendChangeMessage)
-{
-    if (!owner.getOwnerPanel().checkRadioGroup(this, ctrlrButton->getToggleState()))
-        return;
+void CtrlrToggleButton::setComponentMidiValue(const int newValue, const bool sendChangeMessage) {
+	if (!owner.getOwnerPanel().checkRadioGroup(this, ctrlrButton->getToggleState()))
+		return;
 
-    if (ctrlrButton->getClickingTogglesState())
-    {
-        ctrlrButton->setToggleState(valueMap->getIndexForValue(newValue) ? true : false, dontSendNotification);
-    }
+	if (ctrlrButton->getClickingTogglesState()) {
+		ctrlrButton->setToggleState(valueMap->getIndexForValue(newValue) ? true : false, dontSendNotification);
+	}
 
-    if (sendChangeMessage)
-    {
-        owner.getProcessor().setValueGeneric(CtrlrModulatorValue(newValue, CtrlrModulatorValue::changedByGUI), true);
-    }
+	if (sendChangeMessage) {
+		owner.getProcessor().setValueGeneric(CtrlrModulatorValue(newValue, CtrlrModulatorValue::changedByGUI), true);
+	}
 }
 
-double CtrlrToggleButton::getComponentMaxValue()
-{
-    return (1);
+double CtrlrToggleButton::getComponentMaxValue() {
+	return (1);
 }
 
-bool CtrlrToggleButton::getToggleState()
-{
-    return (ctrlrButton->getToggleState());
+bool CtrlrToggleButton::getToggleState() {
+	return (ctrlrButton->getToggleState());
 }
 
-double CtrlrToggleButton::getComponentValue()
-{
-    if (ctrlrButton->getToggleState())
-    {
-        return (1);
-    }
-    else
-    {
-        return (0);
-    }
+double CtrlrToggleButton::getComponentValue() {
+	if (ctrlrButton->getToggleState()) {
+		return (1);
+	} else {
+		return (0);
+	}
 }
 
-int CtrlrToggleButton::getComponentMidiValue()
-{
-    return (valueMap->getMappedValue(ctrlrButton->getToggleState()));
+int CtrlrToggleButton::getComponentMidiValue() {
+	return (valueMap->getMappedValue(ctrlrButton->getToggleState()));
 }
 
 void CtrlrToggleButton::updateComponentColors() {
@@ -216,11 +194,9 @@ void CtrlrToggleButton::updateComponentColors() {
 	//   ctrlrButton->repaint(); stop changing property jusmps to top of editor panel
 }
 
-void CtrlrToggleButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
-{
-    if (property == Ids::componentRadioGroupId)
-    {
-        ctrlrButton->setToggleState(false, dontSendNotification);
+void CtrlrToggleButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
+	if (property == Ids::componentRadioGroupId) {
+		ctrlrButton->setToggleState(false, dontSendNotification);
 
 		// getOwnerPanel() returns CtrlrPanel& — direct reference call
 		owner.getOwnerPanel().setRadioGroupId(this, getProperty(Ids::componentRadioGroupId));
@@ -260,12 +236,19 @@ void CtrlrToggleButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHas
 		// 2. Now safe to reset or assign the unique_ptr
 		if (LookAndFeelType == "Default") {
 			customLF.reset();
+			if (ctrlrButton != nullptr && (bool)getProperty(Ids::uiButtonIsRadioButton))
+				ctrlrButton->setLookAndFeel(&owner.getOwnerPanel().getCustomRadioLNF());
 		} else {
 			customLF = std::move(CtrlrToggleButton::getLookAndFeelFromComponentProperty(LookAndFeelType));
 			if (customLF != nullptr) {
 				setLookAndFeel(customLF.get());
-				if (ctrlrButton != nullptr && !(bool)getProperty(Ids::uiButtonIsRadioButton))
-					ctrlrButton->setLookAndFeel(customLF.get());
+
+				if (ctrlrButton != nullptr) {
+					if ((bool)getProperty(Ids::uiButtonIsRadioButton))
+						ctrlrButton->setLookAndFeel(&owner.getOwnerPanel().getCustomRadioLNF());
+					else
+						ctrlrButton->setLookAndFeel(customLF.get());
+				}
 			}
 		}
 
@@ -339,11 +322,12 @@ void CtrlrToggleButton::resetLookAndFeelOverrides()
 
         if (getProperty(Ids::uiButtonLookAndFeel) == "V4 Light") // Because V4 Light scheme returns white on white colours
         {
-            setProperty(Ids::uiButtonTextColourOn, "0xff000000");       // Text colour
+			DBG("Resetting LookAndFeel overrides for V4 Light scheme");
+			setProperty(Ids::uiButtonTextColourOn, "0xff000000");       // Text colour
             setProperty(Ids::uiButtonColourOff, "0x80000000");          // V2 specific Colour
             setProperty(Ids::uiToggleButtonFocusOutline, "0x60000000"); // Tick box colour
             setProperty(Ids::uiToggleButtontickColour, "0xff000000");   // Tick colour
-        }
+		}
 		/*      else
 			  {
 				  setProperty(Ids::uiButtonTextColourOn,
@@ -357,11 +341,11 @@ void CtrlrToggleButton::resetLookAndFeelOverrides()
 		   colour
 			  }
 	  */
-		setProperty(Ids::uiButtonLookAndFeelIsCustom,
-					false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
-
-		// updatePropertiesPanel(); // I commented out to stop jump to top of page
 	}
+	setProperty(Ids::uiButtonLookAndFeelIsCustom,
+				false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
+
+	// updatePropertiesPanel(); // I commented out to stop jump to top of page
 }
 
 void CtrlrToggleButton::updatePropertiesPanel()
@@ -375,8 +359,7 @@ void CtrlrToggleButton::updatePropertiesPanel()
 			props->refreshIfEditing(owner.getModulatorTree());
 		}
 	}
-}
-	// bool isRadio = (bool)getProperty(Ids::uiButtonIsRadioButton);
+} // bool isRadio = (bool)getProperty(Ids::uiButtonIsRadioButton);
 
 // CtrlrPanelProperties does not expose a direct relabel API, so refresh the
 // inspector labels by forcing a refresh of the property panel instead.
