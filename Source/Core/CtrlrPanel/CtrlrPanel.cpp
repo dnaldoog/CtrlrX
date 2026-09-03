@@ -53,15 +53,19 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 		outputDevicePtr(nullptr),
 		ctrlrPanelUndoManager(nullptr),
 		currentActionIndex(0),
-		indexOfSavedState(-1)
-{
-    ctrlrPanelUndoManager	= new CtrlrPanelUndoManager(*this);
-    ctrlrLuaManager 		= new CtrlrLuaManager(*this);
-
-    if ((bool)getCtrlrManagerOwner().getProperty (Ids::ctrlrLuaDisabled) == false)
-    {
-        ctrlrLuaManager->getMethodManager().setDebug ((bool)owner.getProperty(Ids::ctrlrLuaDebug));
-    }
+		indexOfSavedState(-1) {
+	ctrlrPanelUndoManager.reset(new CtrlrPanelUndoManager(*this));
+	ctrlrLuaManager = new CtrlrLuaManager(*this);
+	// ctrlrLuaManager = std::make_unique<CtrlrLuaManager>(*this);
+	lfV1 = std::make_unique<juce::LookAndFeel_V1>();
+	gui::initLookAndFeelDefaults(*lfV1);
+	lfV2 = std::make_unique<juce::LookAndFeel_V2>();
+	gui::initLookAndFeelDefaults(*lfV2);
+	lfV3 = std::make_unique<juce::LookAndFeel_V3>();
+	gui::initLookAndFeelDefaults(*lfV3);
+	if ((bool)getCtrlrManagerOwner().getProperty(Ids::ctrlrLuaDisabled) == false) {
+		ctrlrLuaManager->getMethodManager().setDebug((bool)owner.getProperty(Ids::ctrlrLuaDebug));
+	}
 
     ctrlrPanelUndoManager->addChangeListener (this);
 

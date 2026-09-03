@@ -127,6 +127,11 @@ class CtrlrPanel:	public ValueTree::Listener,
 		CtrlrPanel(CtrlrManager &_owner);
 		CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int idx);
 		~CtrlrPanel();
+		// Unique ID for this specific running panel session
+		
+		std::unique_ptr<juce::LookAndFeel_V1> lfV1;
+		std::unique_ptr<juce::LookAndFeel_V2> lfV2;
+		std::unique_ptr<juce::LookAndFeel_V3> lfV3;
 		Result restoreState (const ValueTree &savedState);
 		CtrlrPanelEditor *getEditor(const bool createNewEditorIfNeeded=true);
 		CtrlrPanelCanvas *getCanvas();
@@ -457,6 +462,7 @@ class CtrlrPanel:	public ValueTree::Listener,
 		HashMap<String,CtrlrModulator*> modulatorsByName;
 		Array<CtrlrMidiMessage,CriticalSection,4> multiMidiQueue;
 		Array<MemoryBlock,CriticalSection> partialMidiQueue;
+		CustomRadioButtonLNF customRadioLNF;
 		int currentActionIndex, indexOfSavedState;
         String getCodeSigningIdentityFromPopup(); // Added v5.6.32
         bool nrpnLatchEnabled = false;

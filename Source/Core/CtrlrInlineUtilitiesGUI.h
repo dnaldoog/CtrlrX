@@ -108,6 +108,24 @@ namespace gui {
     // Your existing colourSchemeFromProperty function (can now call createLookAndFeelFromDescription if it uses properties
     // that map directly to the names used in createLookAndFeelFromDescription)
     juce::LookAndFeel_V4::ColourScheme colourSchemeFromProperty(const juce::var &property);
+inline void initLookAndFeelDefaults(juce::LookAndFeel &lf) {
+	lf.setColour(juce::ScrollBar::backgroundColourId, juce::Colour(0xffffffff));
+	lf.setColour(juce::ScrollBar::thumbColourId, juce::Colour(0xffababab));
+	lf.setColour(juce::ScrollBar::trackColourId, juce::Colour(0xffff0000));
+
+	lf.setColour(juce::TextEditor::highlightColourId, juce::Colours::antiquewhite);
+	lf.setColour(juce::TextEditor::highlightedTextColourId, juce::Colour(0xff000000));
+	lf.setColour(juce::TextEditor::outlineColourId, juce::Colour(0xff000000));
+
+	lf.setColour(juce::TextButton::textColourOffId, juce::Colour(0xff000000));
+	lf.setColour(juce::ProgressBar::foregroundColourId, juce::Colour(0xff0f0f0f));
+
+	lf.setColour(juce::CodeEditorComponent::backgroundColourId, juce::Colours::white);
+	lf.setColour(juce::CodeEditorComponent::defaultTextColourId, juce::Colours::black);
+
+	lf.setColour(0x1007001,
+				 juce::Colours::black); // placeholder lf.setColour(CtrlrPropertyComponent::labelTextColourId)
+}
 }
 
 namespace LNF {
