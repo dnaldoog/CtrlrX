@@ -59,6 +59,23 @@ int main()
     try
     {
         luaL_openlibs(L);
+        #if JUCE_MAC
+// Disable LuaJIT compiler on macOS to prevent W^X memory protection crashes
+lua_getglobal(L, "jit");
+if (lua_istable(L, -1))
+{
+    lua_getfield(L, -1, "off");
+    if (lua_isfunction(L, -1))
+    {
+        lua_pcall(L, 0, 0, 0); // Calls jit.off()
+    }
+    lua_pop(L, 1); // Pop "jit" table
+}
+else
+{
+    lua_pop(L, 1); // Pop non-table if jit library was missing
+}
+#endif
         luabind::open(L);
 
         luabind::module(L) [

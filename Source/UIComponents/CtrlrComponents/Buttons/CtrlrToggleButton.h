@@ -2,6 +2,7 @@
 #define __JUCER_HEADER_CTRLRTOGGLEBUTTON_CTRLRTOGGLEBUTTON_74F5E916__
 
 #include "CtrlrComponents/CtrlrComponent.h"
+
 class CtrlrValueMap;
 
 class CtrlrToggleButton : public CtrlrComponent, public Button::Listener, public LookAndFeel_V4
@@ -32,6 +33,7 @@ public:
 	static std::unique_ptr<juce::LookAndFeel>
 	getLookAndFeelFromComponentProperty(const String &lookAndFeelComponentProperty);
 	void resetLookAndFeelOverrides();
+	void lookAndFeelChanged() override;
 	void updatePropertiesPanel();
 	CtrlrValueMap &getValueMap() { return (*valueMap); }
 	void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr) {}
@@ -50,6 +52,7 @@ juce_UseDebuggingNewOperator
 
 	private :
 	//[UserVariables]   -- You can add your own custom variables in this section.
+	bool applyingLNFDefaults = false;
 	std::unique_ptr<CtrlrValueMap>
 		valueMap;
 	//[/UserVariables]
@@ -61,6 +64,7 @@ juce_UseDebuggingNewOperator
 	// (prevent copy constructor and operator= being generated..)
 	CtrlrToggleButton(const CtrlrToggleButton &);
 	const CtrlrToggleButton &operator=(const CtrlrToggleButton &);
+	 void updateInspectorLabelsForRadioStyle();
 };
 
 #endif // __JUCER_HEADER_CTRLRTOGGLEBUTTON_CTRLRTOGGLEBUTTON_74F5E916__

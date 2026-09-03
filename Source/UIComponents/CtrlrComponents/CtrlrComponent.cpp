@@ -787,6 +787,7 @@ void CtrlrComponent::triggerBubbleHelp(const MouseEvent &e, int requiredTrigger)
 	bubbleMessage->showAt(boundsInEditor, attrStr, timeout, true, false);
 }
 void CtrlrComponent::applyCentralLookAndFeel(juce::Component *targetComponent, const String &lookAndFeelType) {
+		DBG("!*!*!*!*! CtrlrComponent::applyCentralLookAndFeel() called");
 	if (targetComponent == nullptr)
 		return;
 
@@ -844,7 +845,20 @@ void CtrlrComponent::applyCentralLookAndFeel(juce::Component *targetComponent, c
 				combo->setColour(juce::PopupMenu::highlightedTextColourId,
 								 isDarkFill ? Colours::white : Colours::black);
 			}
-			// 3. If target is Button:
+			// 3. If target is ToggleButton:
+			else if (auto *toggle = dynamic_cast<juce::ToggleButton *>(targetComponent)) {
+				if ((bool)getProperty(Ids::uiButtonIsRadioButton)) {
+					panel->getCustomRadioLNF().applyThemeColours(fill, text, bg);
+					// no setColour on toggle itself -- let it fall through to the LNF
+				} else {
+					toggle->setLookAndFeel(nullptr);
+					toggle->setColour(juce::TextButton::buttonColourId, bg);
+					toggle->setColour(juce::TextButton::textColourOffId, text);
+					toggle->setColour(juce::TextButton::textColourOnId, fill);
+				}
+				toggle->repaint();
+			}
+			// 4. If target is Button:
 			else if (auto *button = dynamic_cast<juce::Button *>(targetComponent)) {
 				button->setLookAndFeel(nullptr);
 				button->setColour(juce::TextButton::buttonColourId, bg);

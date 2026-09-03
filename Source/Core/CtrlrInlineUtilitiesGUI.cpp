@@ -155,3 +155,9 @@ std::unique_ptr<juce::LookAndFeel> createLookAndFeelFromDescription(const juce::
 }
 
 } // namespace gui
+
+struct PanelThemePalette {
+		juce::Colour textColour;	// Text / Label colour
+		juce::Colour outlineColour; // Toggle box / Border outline
+		juce::Colour tickAccent;	// Checkmark / Radio dot accent
+};

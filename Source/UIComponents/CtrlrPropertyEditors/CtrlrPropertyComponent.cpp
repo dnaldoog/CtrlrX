@@ -233,7 +233,10 @@ Component *CtrlrPropertyComponent::getPropertyComponent() {
 		if (propertyName == Ids::midiMessageCtrlrNumberSize) {
 			return (new CtrlrBooleanPropertyComponent(valueToControl, String("14-bit"), String("7-bit")));
 		}
-
+		if (propertyName == Ids::uiButtonIsRadioButton) {
+			return (new CtrlrBooleanPropertyComponent(valueToControl, String("HTML Circular Radio"),
+													  String("Square Checkbox")));
+		}
 		return (new CtrlrBooleanPropertyComponent(valueToControl, identifierDefinition.getProperty("defaults")));
 
 	case CtrlrIDManager::MultiMidi:
