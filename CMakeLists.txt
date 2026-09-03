@@ -4,6 +4,12 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.31.0")
   cmake_policy(SET CMP0175 NEW)
 endif()
 
+<<<<<<< HEAD
+=======
+# allows clang-based tools to work with the source:
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+>>>>>>> 6fb8865914413685bfecccbba741aafa5ca2eb51
 # This tells cmake we have goodies in the /cmake folder
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include (PamplejuceVersion)
@@ -65,9 +71,52 @@ project(${PROJECT_NAME} VERSION ${CURRENT_VERSION})
 # On Github Actions, this is done as a part of actions/checkout
 add_subdirectory(JUCE)
 
+<<<<<<< HEAD
 # ---------------------------------------------------
 if ("VST" IN_LIST FORMATS)
     # Set VST2 path relative to the project root
+=======
+    include_directories(SYSTEM
+        ${gtk3_INCLUDE_DIRS}
+        ${webkit_INCLUDE_DIRS}
+        ${x11_INCLUDE_DIRS}
+    )
+    set(JUCE_USE_WEBKIT_4_1 ON CACHE INTERNAL "")
+endif()
+
+# -----------------------------------------------------------------------
+# Subdirectories (JUCE + Lua Engine)
+# -----------------------------------------------------------------------
+if(CTRLRX_USE_SYSTEM_JUCE)
+    find_package(JUCE CONFIG REQUIRED)
+else()
+    add_subdirectory(JUCE)
+endif()
+
+# -----------------------------------------------------------------------
+# Lua / LuaJIT Architecture Routing (Isolated cleanly)
+# -----------------------------------------------------------------------
+if(CTRLRX_USE_LUAJIT)
+    add_subdirectory(Source/Misc/luajit)
+    
+    # Locate the static LuaJIT library manually based on OS
+    if(WIN32)
+        set(LUAJIT_STATIC_LIB "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/lua51.lib")
+    elseif(APPLE)
+        set(LUAJIT_STATIC_LIB "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit/src/libluajit.a")
+    else()
+        # Fixed: Fallback onto the target built by the subdirectory instead of a magic string
+        set(LUAJIT_STATIC_LIB "libluajit") 
+    endif()
+else()
+    # Add your standard Lua fallback path here if needed
+endif()
+
+# -----------------------------------------------------------------------
+# SDK Paths
+# -----------------------------------------------------------------------
+if("VST" IN_LIST FORMATS)
+>>>>>>> 6fb8865914413685bfecccbba741aafa5ca2eb51
     juce_set_vst2_sdk_path("${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/vst2sdk")
 endif()
 # ---------------------------------------------------
@@ -128,6 +177,7 @@ juce_add_plugin("${PROJECT_NAME}"
     PRODUCT_NAME "${PRODUCT_NAME}"
 )
 
+<<<<<<< HEAD
 
 # ---------------------------------------------------
 
@@ -140,10 +190,17 @@ if ("VST3" IN_LIST FORMATS)
         # Overwrite the name property for VST3 compilation (includes trailing space)
         JUCE_PLUGIN_NAME "CtrlrX                          "
         # Overwrite the manufacturer property for VST3 compilation
+=======
+# --- Format Specific Overrides ---
+if ("VST3" IN_LIST FORMATS)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        JUCE_PLUGIN_NAME "CtrlrX                          "
+>>>>>>> 6fb8865914413685bfecccbba741aafa5ca2eb51
         JUCE_COMPANY_NAME "CtrlrX Project                  "
     )
 endif()
 
+<<<<<<< HEAD
 # ---------------------------------------------------
 
 # --- Audio Unit (AU) Specific Overrides to match Projucer ---
@@ -156,10 +213,17 @@ if ("AU" IN_LIST FORMATS)
         JUCE_PLUGIN_NAME "CtrlrX                          "
         
         # Matches the Manufacturer name from your .jucer file
+=======
+if ("AU" IN_LIST FORMATS)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        JUCE_AU_MAIN_TYPE kAudioUnitType_MusicDevice
+        JUCE_PLUGIN_NAME "CtrlrX                          "
+>>>>>>> 6fb8865914413685bfecccbba741aafa5ca2eb51
         JUCE_COMPANY_NAME "CtrlrX Project                  "
     )
 endif()
 
+<<<<<<< HEAD
 # ---------------------------------------------------
 
 # If you had any *other* necessary, non-category format overrides here, they should 
@@ -168,6 +232,11 @@ endif()
 
 # This lets us use our code in both the JUCE targets and our Test target
 # Without running into ODR violations
+=======
+# -----------------------------------------------------------------------
+# SharedCode Library & Source Files
+# -----------------------------------------------------------------------
+>>>>>>> 6fb8865914413685bfecccbba741aafa5ca2eb51
 add_library(SharedCode INTERFACE)
 
 
