@@ -91,7 +91,7 @@ if(CTRLRX_USE_LUAJIT)
         set(LUAJIT_STATIC_LIB "libluajit") 
     endif()
 else()
-    # Add your standard Lua fallback path here if needed
+    # Add your standard Lua fallback path here if needed #
 endif()
 
 # -----------------------------------------------------------------------
