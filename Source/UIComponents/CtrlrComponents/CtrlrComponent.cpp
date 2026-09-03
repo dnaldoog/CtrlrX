@@ -787,6 +787,7 @@ void CtrlrComponent::triggerBubbleHelp(const MouseEvent &e, int requiredTrigger)
 	bubbleMessage->showAt(boundsInEditor, attrStr, timeout, true, false);
 }
 void CtrlrComponent::applyCentralLookAndFeel(juce::Component *targetComponent, const String &lookAndFeelType) {
+		DBG("!*!*!*!*! CtrlrComponent::applyCentralLookAndFeel() called");
 	if (targetComponent == nullptr)
 		return;
 

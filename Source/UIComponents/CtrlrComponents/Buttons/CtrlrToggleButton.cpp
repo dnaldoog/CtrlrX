@@ -8,6 +8,7 @@
 #include "stdafx.h"
 
 CtrlrToggleButton::CtrlrToggleButton(CtrlrModulator &owner) : CtrlrComponent(owner) {
+	DBG("!*!*!*!*! CtrlrToggleButton::CtrlrToggleButton() Constructor called");
 	valueMap = std::make_unique<CtrlrValueMap>();
 	ctrlrButton = std::make_unique<ToggleButton>("ctrlrButton");
 	addAndMakeVisible(ctrlrButton.get());
@@ -191,7 +192,7 @@ void CtrlrToggleButton::updateComponentColors() {
 									{Ids::uiToggleButtontickColour, juce::ToggleButton::tickColourId}});
 	}
 
-	//   ctrlrButton->repaint(); stop changing property jusmps to top of editor panel
+	//   ctrlrButton->repaint(); stop changing property jumps to top of editor panel
 }
 
 void CtrlrToggleButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
@@ -252,23 +253,23 @@ void CtrlrToggleButton::valueTreePropertyChanged(ValueTree &treeWhosePropertyHas
 			}
 		}
 
-		if (!getProperty(Ids::uiButtonLookAndFeelIsCustom) && !restoreStateInProgress) {
-			resetLookAndFeelOverrides();
-		}
+		// if (!getProperty(Ids::uiButtonLookAndFeelIsCustom) && !restoreStateInProgress) {
+		// 	resetLookAndFeelOverrides();
+		// }
 
 		updateComponentColors();
 
 	} else if (property == Ids::uiButtonLookAndFeelIsCustom) {
-		if (!getProperty(Ids::uiButtonLookAndFeelIsCustom) && !restoreStateInProgress) {
-			resetLookAndFeelOverrides();
-		}
+		// if (!getProperty(Ids::uiButtonLookAndFeelIsCustom) && !restoreStateInProgress) {
+		// 	resetLookAndFeelOverrides();
+		// }
 		updateComponentColors();
-	} else if (property == Ids::uiButtonTextColourOn || property == Ids::uiButtonColourOff ||
-			   property == Ids::uiToggleButtontickColour || property == Ids::uiToggleButtonFocusOutline) {
-		if (!restoreStateInProgress)
-			setProperty(Ids::uiButtonLookAndFeelIsCustom, true);
-		updateComponentColors();
-	} else if (property == Ids::uiToggleButtonText) {
+	}  else if (property == Ids::uiButtonTextColourOn || property == Ids::uiButtonColourOff ||
+           property == Ids::uiToggleButtontickColour || property == Ids::uiToggleButtonFocusOutline) {
+    // if (!restoreStateInProgress && !applyingLNFDefaults)
+        setProperty(Ids::uiButtonLookAndFeelIsCustom, true);
+    updateComponentColors();
+} else if (property == Ids::uiToggleButtonText) {
 		ctrlrButton->setButtonText(getProperty(Ids::uiToggleButtonText));
 	} else if (property == Ids::uiButtonTrueValue || property == Ids::uiButtonFalseValue) {
 		valueMap->setPair(0, getProperty(Ids::uiButtonFalseValue), "");
@@ -316,38 +317,33 @@ std::unique_ptr<juce::LookAndFeel> CtrlrToggleButton::getLookAndFeelFromComponen
 
 void CtrlrToggleButton::resetLookAndFeelOverrides()
 {
-    if (restoreStateInProgress == false) // To prevent the props lines position stacking up to top and keep their original position
-    {
-        setProperty(Ids::componentLabelColour, (String)LookAndFeel::findColour(Label::textColourId).toString());
+	DBG("!*!*!*!*! CtrlrToggleButton::resetLookAndFeelOverrides() called");
+//     if (restoreStateInProgress == false)
+//     {
+//         setProperty(Ids::componentLabelColour, (String)LookAndFeel::findColour(Label::textColourId).toString());
 
-        if (getProperty(Ids::uiButtonLookAndFeel) == "V4 Light") // Because V4 Light scheme returns white on white colours
-        {
-			DBG("Resetting LookAndFeel overrides for V4 Light scheme");
-			setProperty(Ids::uiButtonTextColourOn, "0xff000000");       // Text colour
-            setProperty(Ids::uiButtonColourOff, "0x80000000");          // V2 specific Colour
-            setProperty(Ids::uiToggleButtonFocusOutline, "0x60000000"); // Tick box colour
-            setProperty(Ids::uiToggleButtontickColour, "0xff000000");   // Tick colour
-		}
-		/*      else
-			  {
-				  setProperty(Ids::uiButtonTextColourOn,
-		   (String)LookAndFeel::findColour(ToggleButton::textColourId).toString());                               //
-		   Text colour setProperty(Ids::uiButtonColourOff,
-		   (String)LookAndFeel::findColour(ToggleButton::textColourId).withAlpha(0.7f).toString());                  //
-		   V2 specific Colour setProperty(Ids::uiToggleButtonFocusOutline,
-		   (String)LookAndFeel::findColour(ToggleButton::tickDisabledColourId).withAlpha(0.5f).toString()); // Tick
-		   colour setProperty(Ids::uiToggleButtontickColour,
-		   (String)LookAndFeel::findColour(ToggleButton::tickColourId).toString());                           // Tick
-		   colour
-			  }
-	  */
-	}
-	setProperty(Ids::uiButtonLookAndFeelIsCustom,
-				false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
+//         applyingLNFDefaults = true;
 
-	// updatePropertiesPanel(); // I commented out to stop jump to top of page
+//         if (getProperty(Ids::uiButtonLookAndFeel) == "V4 Light")
+//         {
+//             setProperty(Ids::uiButtonTextColourOn, "0xff000000");
+//             setProperty(Ids::uiButtonColourOff, "0x80000000");
+//             setProperty(Ids::uiToggleButtonFocusOutline, "0x60000000");
+//             setProperty(Ids::uiToggleButtontickColour, "0xff000000");
+//         }
+//         else
+//         {
+//             setProperty(Ids::uiButtonTextColourOn, (String)LookAndFeel::findColour(ToggleButton::textColourId).toString());
+//             setProperty(Ids::uiButtonColourOff, (String)LookAndFeel::findColour(ToggleButton::textColourId).withAlpha(0.7f).toString());
+//             setProperty(Ids::uiToggleButtonFocusOutline, (String)LookAndFeel::findColour(ToggleButton::tickDisabledColourId).withAlpha(0.5f).toString());
+//             setProperty(Ids::uiToggleButtontickColour, (String)LookAndFeel::findColour(ToggleButton::tickColourId).toString());
+//         }
+
+//         applyingLNFDefaults = false;
+//     }
+
+//     setProperty(Ids::uiButtonLookAndFeelIsCustom, false);
 }
-
 void CtrlrToggleButton::updatePropertiesPanel()
 {
 	if (restoreStateInProgress)
@@ -360,6 +356,28 @@ void CtrlrToggleButton::updatePropertiesPanel()
 		}
 	}
 } // bool isRadio = (bool)getProperty(Ids::uiButtonIsRadioButton);
+
+
+void CtrlrToggleButton::lookAndFeelChanged() {
+	DBG("!*!*!*! (B) LookAndFeelChanged called");
+	if (ctrlrButton != nullptr)
+		ctrlrButton->sendLookAndFeelChange();
+
+	if ((bool)getProperty(Ids::uiButtonIsRadioButton)) {
+		String panelLnF = getProperty(Ids::uiButtonLookAndFeel).toString();
+		if (panelLnF.isEmpty() || panelLnF == "Default") {
+			if (auto *editor = owner.getOwnerPanel().getEditor()) {
+				panelLnF = editor->getProperty(Ids::uiPanelLookAndFeel).toString();
+			}
+		}
+		applyCentralLookAndFeel(ctrlrButton.get(), panelLnF);
+	}
+
+	updateComponentColors();
+
+	CtrlrComponent::lookAndFeelChanged();
+}
+
 
 // CtrlrPanelProperties does not expose a direct relabel API, so refresh the
 // inspector labels by forcing a refresh of the property panel instead.
