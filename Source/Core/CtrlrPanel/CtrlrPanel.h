@@ -451,6 +451,7 @@ class CtrlrPanel:	public ValueTree::Listener,
 		ScopedPointer <CtrlrPanelUndoManager> ctrlrPanelUndoManager;
 		CtrlrPanelEvaluationScope panelEvaluationScope;
 		CtrlrGlobalEvaluationScope globalEvaluationScope;
+				CustomRadioButtonLNF customRadioButtonLNF;
 		Array <int,CriticalSection> panelResources;
 		CtrlrPanelResourceManager resourceManager;
 		HashMap<String,CtrlrModulator*> modulatorsByName;
