@@ -157,14 +157,26 @@ void CtrlrPanelProperties::refreshAll()
 	}
 }
 
+
 void CtrlrPanelProperties::layoutChanged()
 {
-	if ((bool)owner.getProperty(Ids::uiPanelPropertiesOnRight) == true)
-	{
-		tabbedComponent->setOrientation(TabbedButtonBar::TabsAtLeft);
-	}
-	else
-	{
-		tabbedComponent->setOrientation(TabbedButtonBar::TabsAtRight);
-	}
+    if ((bool)owner.getProperty(Ids::uiPanelPropertiesOnRight) == true)
+    {
+        tabbedComponent->setOrientation(TabbedButtonBar::TabsAtLeft);
+    }
+    else
+    {
+        tabbedComponent->setOrientation(TabbedButtonBar::TabsAtRight);
+    }
+}
+void CtrlrPanelProperties::refreshIfEditing (const ValueTree &tree)
+{
+    for (int i = 0; i < tabbedComponent->getNumTabs(); i++)
+    {
+        CtrlrPanelComponentProperties* cp = dynamic_cast<CtrlrPanelComponentProperties*>(tabbedComponent->getTabContentComponent(i));
+        if (cp != 0 && cp->isCurrentlyEditing(tree))
+        {
+            cp->setTree(tree, true);
+        }
+    }
 }

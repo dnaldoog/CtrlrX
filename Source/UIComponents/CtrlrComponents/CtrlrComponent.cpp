@@ -902,7 +902,91 @@ void CtrlrComponent::triggerBubbleHelp(const MouseEvent& e, int requiredTrigger)
     Rectangle<int> boundsInEditor = editor->getLocalArea(this, getLocalBounds());
     bubbleMessage->showAt(boundsInEditor, attrStr, timeout, true, false);
 }
+void CtrlrComponent::applyCentralLookAndFeel(juce::Component *targetComponent, const String &lookAndFeelType) {
+		DBG("!*!*!*!*! CtrlrComponent::applyCentralLookAndFeel() called");
+	if (targetComponent == nullptr)
+		return;
 
+	CtrlrPanel *panel = &owner.getOwnerPanel();
+
+	if (panel != nullptr) {
+		if (lookAndFeelType == "V3" && panel->lfV3) {
+			targetComponent->setLookAndFeel(panel->lfV3.get());
+		} else if (lookAndFeelType == "V2" && panel->lfV2) {
+			targetComponent->setLookAndFeel(panel->lfV2.get());
+		} else if (lookAndFeelType == "V1" && panel->lfV1) {
+			targetComponent->setLookAndFeel(panel->lfV1.get());
+		} else {
+			// Extract the custom ColourScheme (LexiBlue, YamDX, JetBlack, Dark, etc.)
+			juce::LookAndFeel_V4::ColourScheme scheme = gui::colourSchemeFromProperty(lookAndFeelType);
+
+			Colour bg = scheme.getUIColour(juce::LookAndFeel_V4::ColourScheme::UIColour::widgetBackground);
+			Colour text = scheme.getUIColour(juce::LookAndFeel_V4::ColourScheme::UIColour::defaultText);
+			Colour fill = scheme.getUIColour(juce::LookAndFeel_V4::ColourScheme::UIColour::highlightedFill);
+			Colour outline = scheme.getUIColour(juce::LookAndFeel_V4::ColourScheme::UIColour::outline);
+
+			// 1. If target is Slider:
+			if (auto *slider = dynamic_cast<juce::Slider *>(targetComponent)) {
+				slider->setLookAndFeel(nullptr);
+				slider->setColour(juce::Slider::thumbColourId, fill);
+				slider->setColour(juce::Slider::trackColourId, bg);
+				slider->setColour(juce::Slider::rotarySliderFillColourId, fill);
+				slider->setColour(juce::Slider::rotarySliderOutlineColourId, outline);
+				slider->setColour(juce::Slider::textBoxTextColourId, text);
+				slider->setColour(juce::Slider::textBoxBackgroundColourId, bg);
+				slider->setColour(juce::Slider::textBoxOutlineColourId, Colours::transparentBlack);
+			}
+			// 2. If target is ComboBox:
+			else if (auto *combo = dynamic_cast<juce::ComboBox *>(targetComponent)) {
+				combo->setColour(juce::ComboBox::backgroundColourId, bg);
+				combo->setColour(juce::ComboBox::textColourId, text);
+
+				// Check if background is dark using JUCE's brightness calculation (< 0.5f means dark)
+				const bool isDarkBg = bg.getPerceivedBrightness() < 0.5f;
+
+				// Set button fill to match theme background or widget accent
+				combo->setColour(juce::ComboBox::buttonColourId, isDarkBg ? bg.brighter(0.12f) : bg.darker(0.08f));
+				combo->setColour(juce::ComboBox::outlineColourId, outline);
+
+				// High-contrast arrows: light arrows for dark button, dark arrows for light button
+				Colour buttonCol = combo->findColour(juce::ComboBox::buttonColourId);
+				const bool isDarkButton = buttonCol.getPerceivedBrightness() < 0.5f;
+				combo->setColour(juce::ComboBox::arrowColourId, isDarkButton ? Colours::white : Colours::black);
+
+				// Popup menu themes
+				const bool isDarkFill = fill.getPerceivedBrightness() < 0.5f;
+				combo->setColour(juce::PopupMenu::backgroundColourId, bg);
+				combo->setColour(juce::PopupMenu::textColourId, text);
+				combo->setColour(juce::PopupMenu::highlightedBackgroundColourId, fill);
+				combo->setColour(juce::PopupMenu::highlightedTextColourId,
+								 isDarkFill ? Colours::white : Colours::black);
+			}
+			// 3. If target is ToggleButton:
+			else if (auto *toggle = dynamic_cast<juce::ToggleButton *>(targetComponent)) {
+				if ((bool)getProperty(Ids::uiButtonIsRadioButton)) {
+					panel->getCustomRadioLNF().applyThemeColours(fill, text, bg);
+					// no setColour on toggle itself -- let it fall through to the LNF
+				} else {
+					toggle->setLookAndFeel(nullptr);
+					toggle->setColour(juce::TextButton::buttonColourId, bg);
+					toggle->setColour(juce::TextButton::textColourOffId, text);
+					toggle->setColour(juce::TextButton::textColourOnId, fill);
+				}
+				toggle->repaint();
+			}
+			// 4. If target is Button:
+			else if (auto *button = dynamic_cast<juce::Button *>(targetComponent)) {
+				button->setLookAndFeel(nullptr);
+				button->setColour(juce::TextButton::buttonColourId, bg);
+				button->setColour(juce::TextButton::textColourOffId, text);
+				button->setColour(juce::TextButton::textColourOnId, fill);
+			}
+		}
+
+		targetComponent->lookAndFeelChanged();
+		targetComponent->repaint();
+	}
+}
 void CtrlrComponent::wrapForLua (lua_State *L)
 {
     using namespace luabind;

@@ -1,8 +1,15 @@
 #ifndef CTRLR_INLINE_UTILITIES_GUI
 #define CTRLR_INLINE_UTILITIES_GUI
 
+#include "../UIComponents/CtrlrWindowManagers/CtrlrDialogWindow.h"
 #include "CtrlrMacros.h"
+#include <JuceHeader.h>
+#include <functional>
 #include <juce_gui_basics/juce_gui_basics.h> // Make sure this is included for LookAndFeel_V4
+
+#pragma once
+
+#include <JuceHeader.h> // or your standard JUCE include
 
 namespace gui {
 
@@ -102,4 +109,136 @@ namespace gui {
     // that map directly to the names used in createLookAndFeelFromDescription)
     juce::LookAndFeel_V4::ColourScheme colourSchemeFromProperty(const juce::var &property);
 }
+
+namespace LNF {
+
+struct ColourMapping {
+		juce::Identifier treePropId;
+		int juceColourId;
+};
+
+// --- Overload 1: Core Logic ---
+inline void applyLookAndFeelState(juce::Component &targetComp, juce::ValueTree &ownerTree,
+								  const juce::Identifier &customFlagId, std::initializer_list<ColourMapping> mappings) {
+	// If missing from tree, default to 0 (User Mode)
+	const var propVal = ownerTree.getProperty(customFlagId, 0);
+
+	// Matches XML: 0 (or false) = "Using my colours", 1 (or true) = "Using LookAndFeel colours"
+	const bool useUserSettings = !(propVal.equals(var(0)) || propVal.equals(var(false)));
+
+	if (useUserSettings) {
+		// --- USER MODE ---
+		for (const auto &map : mappings) {
+			if (ownerTree.hasProperty(map.treePropId)) {
+				juce::Colour col = VAR2COLOUR(ownerTree.getProperty(map.treePropId));
+				targetComp.setColour(map.juceColourId, col);
+			}
+		}
+	} else {
+		// --- LNF MODE ---
+		for (const auto &map : mappings) {
+			targetComp.removeColour(map.juceColourId);
+		}
+
+		// Tells JUCE to flush cached colors and fetch from active LNF theme
+		targetComp.sendLookAndFeelChange();
+	}
+
+	targetComp.repaint();
+}
+
+// --- Overload 2: Positional Parameter Version ---
+inline void applyLookAndFeelState(juce::Component &targetComp, juce::ValueTree &ownerTree,
+								  const juce::Identifier &customFlagId, const juce::Identifier &bgColourOnId,
+								  const juce::Identifier &bgColourOffId, int juceBgColourOnId, int juceBgColourOffId,
+								  const juce::Identifier &textColourOnId, const juce::Identifier &textColourOffId,
+								  int juceTextColourOnId, int juceTextColourOffId) {
+	applyLookAndFeelState(targetComp, ownerTree, customFlagId,
+						  {{bgColourOnId, juceBgColourOnId},
+						   {bgColourOffId, juceBgColourOffId},
+						   {textColourOnId, juceTextColourOnId},
+						   {textColourOffId, juceTextColourOffId}});
+}
+/*************************************************
+ *
+ *
+ *
+ ************************************************/
+// Font-equivalent of applyLookAndFeelState. Same custom-flag-driven idea, but
+// since JUCE has no generic "font ID" the way it has ColourId, each font target
+// needs its own setter callback instead of a plain int.
+// inline void applyFontState(
+// 	juce::Component &targetComp, juce::ValueTree &ownerTree, const juce::Identifier &customFlagId,
+// 	std::initializer_list<std::pair<juce::Identifier, std::function<void(const juce::Font &)>>> fontMappings) {
+// 	const bool isCustom = (bool)ownerTree.getProperty(customFlagId, false);
+
+// 	for (auto &mapping : fontMappings) {
+// 		if (isCustom && ownerTree.hasProperty(mapping.first)) {
+// 			juce::String descriptor = ownerTree.getProperty(mapping.first).toString();
+// 			DBG("Applying custom font for property " << mapping.first.toString() << ": " << descriptor);
+// 			// juce::Font font = CtrlrFontManager::getInstance()->getFontFromString(descriptor);
+// 			// mapping.second(font); // call whatever setter this target needs
+// 		}
+// 		// else: leave it alone — same "let the theme own it" behavior as colours
+// 	}
+// }
+
+/**
+ * Call this ONLY when the user clicks "Freeze LNF to User Settings"
+ * or when initializing default properties on a brand-new component.
+ */
+inline void freezeLnfToUserSettings(juce::Component &targetComp, juce::ValueTree &ownerTree,
+									const juce::Identifier &customFlagId, const juce::Identifier &colourOnId,
+									const juce::Identifier &colourOffId, int juceColourOnId, int juceColourOffId) {
+	juce::LookAndFeel &currentLNF = targetComp.getLookAndFeel();
+	juce::Colour lnfOn = currentLNF.findColour(juceColourOnId);
+	juce::Colour lnfOff = currentLNF.findColour(juceColourOffId);
+
+	// Save current LNF colors into the tree as user's starting point
+	ownerTree.setProperty(colourOnId, lnfOn.toDisplayString(true), nullptr);
+	ownerTree.setProperty(colourOffId, lnfOff.toDisplayString(true), nullptr);
+
+	// Turn ON custom mode
+	ownerTree.setProperty(customFlagId, true, nullptr);
+
+	targetComp.setColour(juceColourOnId, lnfOn);
+	targetComp.setColour(juceColourOffId, lnfOff);
+	targetComp.repaint();
+}
+
+} // namespace LNF
+/**************************************************************************************** */
+
+namespace CtrlrThemeLookup {
+
+struct PanelThemePalette {
+		juce::Colour textColour;	// Text / Label colour
+		juce::Colour outlineColour; // Toggle box / Border outline
+		juce::Colour tickAccent;	// Checkmark / Radio dot accent
+};
+
+static PanelThemePalette getPaletteForScheme(const juce::String &schemeName) {
+	if (schemeName == "V4 Light") {
+		return {juce::Colour(0xff000000), juce::Colour(0x60000000), juce::Colour(0xff000000)};
+	} else if (schemeName == "Lexi Blue") {
+		return {juce::Colour(0xffffffff), juce::Colour(0xff515459), juce::Colour(0xff5794c7)};
+	} else if (schemeName == "Kurz Green") {
+		return {juce::Colour(0xffffffff), juce::Colour(0xff515459), juce::Colour(0xff00a66e)};
+	} else if (schemeName == "Artur Orange") {
+		return {juce::Colour(0xffffffff), juce::Colour(0xff515459), juce::Colour(0xffe24a21)};
+	} else if (schemeName == "V3" || schemeName == "V2" || schemeName == "V1") {
+		return {juce::Colour(0xff000000), juce::Colour(0xff0000ff), juce::Colour(0xff0000ff)};
+	}
+
+	// Default Dark Fallback
+	return {juce::Colour(0xffffffff), juce::Colour(0xff666666), juce::Colour(0xffffffff)};
+}
+} // namespace CtrlrThemeLookup
+/* USAGE */
+// PanelThemePalette palette = CtrlrThemeLookup::getPanelThemePaletteForScheme(activeScheme);
+
+// // Apply explicitly
+// ctrlrButton->setColour(juce::ToggleButton::textColourId, palette.textColour);
+// ctrlrButton->setColour(juce::ToggleButton::tickDisabledColourId, palette.outlineColour);
+// ctrlrButton->setColour(juce::ToggleButton::tickColourId, palette.tickAccent);
 #endif

@@ -18,7 +18,8 @@ public:
     void paint (Graphics& g);
     void resized();
     void lookAndFeelChanged(); // Added v5.6.31
-    JUCE_LEAK_DETECTOR(CtrlrPanelProperties)
+	void refreshIfEditing(const ValueTree &tree);
+	JUCE_LEAK_DETECTOR(CtrlrPanelProperties)
 
 private:
 	CtrlrPanelEditor &owner;

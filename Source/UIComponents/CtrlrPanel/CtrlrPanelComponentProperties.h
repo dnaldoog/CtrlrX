@@ -31,6 +31,7 @@ public:
 	void copyProperties(ValueTree &sourceTree, ValueTree &destinationTree);
 	void managerStateChanged (const CtrlrManager::CtrlrManagerState newState);
 	void refreshTargetModulationPropertyList(const ValueTree &sourceModulationTree);
+        bool isCurrentlyEditing (const ValueTree &tree) const { return treeToEdit == tree; }
 
 	void buttonClicked (Button *button);
 	void getAllToolbarItemIds (Array< int > &ids);
