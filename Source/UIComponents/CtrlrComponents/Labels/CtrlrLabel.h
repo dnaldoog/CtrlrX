@@ -47,6 +47,7 @@ public:
 	CtrlrLabel &setLabelText(const String &text);
 	CtrlrLabel &appendText(const String &text);
 	const String getText();
+	void showTextEditor(); // Added v5.6.36. Display the label editor field
 	void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr);
     //[/UserMethods]
 

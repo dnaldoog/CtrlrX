@@ -131,23 +131,29 @@ void CtrlrPanelCanvas::handleRightClickOnTabs(const MouseEvent &e)
 void CtrlrPanelCanvas::handleRightClickOnComponent(const MouseEvent &e)
 {
 	CtrlrComponent *c = findEventComponent(e);
-
-	if (c == 0)
+	if (c == nullptr)
 		return;
 
-	if (dynamic_cast<ResizableBorderComponent*>(e.eventComponent) == 0 && getOwner().getSelection())
-	{
-		getOwner().getSelection()->selectOnly (c);
+	const bool isLocked = (bool)c->getProperty(Ids::componentIsLocked);
+
+	if (dynamic_cast<ResizableBorderComponent *>(e.eventComponent) == nullptr && getOwner().getSelection()) {
+		getOwner().getSelection()->selectOnly(c);
 	}
 
 	PopupMenu m;
 	PopupMenu componentSubMenu = CtrlrComponentTypeManager::getComponentMenu(true);
-	m.addSectionHeader ("Actions");
-	m.addItem (512, "Export component");
-	m.addItem (513, "Lock", true, c->getProperty(Ids::componentIsLocked));
 
-	m.addSectionHeader ("Layout");
-	m.addItem (1024, "Send to back");
+	m.addSectionHeader("Actions");
+	m.addItem(512, "Export component");
+
+	// Pass 'false' for isTicked so JUCE renders the icon instead of the checkmark!
+	m.addItem(513, isLocked ? "Unlock" : "Lock", true, false,
+			  createMenuIcon(isLocked ? BinaryData::objectlockedsymbolic_svg : BinaryData::objectunlockedsymbolic_svg,
+							 isLocked ? BinaryData::objectlockedsymbolic_svgSize
+									  : BinaryData::objectunlockedsymbolic_svgSize));
+
+	m.addSectionHeader("Layout");
+	m.addItem(1024, "Send to back");
 	m.addItem (1025, "Send to front");
 	m.addSubMenu ("Send to layer", getLayerMenu());
 	m.addSeparator();
@@ -284,27 +290,80 @@ void CtrlrPanelCanvas::replaceComponent (CtrlrModulator &modulator, const String
 	}
 }
 
-void CtrlrPanelCanvas::getEditMenu(PopupMenu &m)
-{
-	m.addSectionHeader ("Edit");
-	m.addItem (Copy, "Copy", getSelection().getNumSelected() ? true : false);
-	m.addItem (Paste, "Paste");
-	m.addItem (Cut, "Cut", getSelection().getNumSelected() ? true : false);
-	m.addItem (Delete, "Delete", getSelection().getNumSelected() ? true : false);
+void CtrlrPanelCanvas::getEditMenu(PopupMenu &m) {
+	const bool hasSelection = getSelection().getNumSelected() > 0;
 
-	if (getSelection().getNumSelected() > 1)
-	{
-		m.addSectionHeader ("Align");
-		m.addItem (AlignToTop, "Align to top", true, false);
-		m.addItem (AlignToBottom, "Align to bottom", true, false);
-		m.addItem (AlignToLeft, "Align to left", true, false);
-		m.addItem (AlignToRight, "Align to right", true, false);
-		m.addItem (DistributeHorizontally, "Distribute horizontally", true, false); // Added v5.6.36. Thanks to @dnaldoog. Align/Resize to first selection between components
-		m.addItem (DistributeVertically, "Distribute vertically", true, false);
+	// --- Edit Section ---
+	m.addSectionHeader("Edit");
+
+	m.addItem(Copy, "Copy", hasSelection, false,
+			  createMenuIcon(BinaryData::editduplicatesymbolic_svg, BinaryData::editduplicatesymbolic_svgSize));
+
+	m.addItem(Paste, "Paste", true, false,
+			  createMenuIcon(BinaryData::editpastestylesymbolic_svg, BinaryData::editpastestylesymbolic_svgSize));
+
+	m.addItem(Cut, "Cut", hasSelection, false,
+			  createMenuIcon(BinaryData::editcutsymbolic_svg, BinaryData::editcutsymbolic_svgSize));
+
+	m.addItem(Delete, "Delete", hasSelection, false,
+			  createMenuIcon(BinaryData::editdeletesymbolic_svg, BinaryData::editdeletesymbolic_svgSize));
+
+	m.addSeparator();
+
+	// --- Center Section (Works on 1+ objects) ---
+	m.addSectionHeader("Position");
+
+	m.addItem(
+		CenterX, "Centre X", true, false,
+		createMenuIcon(BinaryData::boundingboxcentersymbolic_svg, BinaryData::boundingboxcentersymbolic_svgSize));
+
+	m.addItem(CenterY, "Centre Y", true, false,
+			  createMenuIcon(BinaryData::snapnodesmidpointsymbolic_svg, BinaryData::snapnodesmidpointsymbolic_svgSize));
+
+	// --- Alignment Section (2+ objects) ---
+	if (getSelection().getNumSelected() > 1) {
 		m.addSeparator();
-		m.addItem(MatchWidth, "Match width to first selected", true, false);
-		m.addItem(MatchHeight, "Match height to first selected", true, false);
-		m.addItem(MatchSize, "Match height/width to first selected", true, false);
+		m.addSectionHeader("Align");
+
+		m.addItem(
+			AlignToTop, "Align to top", true, false,
+			createMenuIcon(BinaryData::alignverticaltopsymbolic_svg, BinaryData::alignverticaltopsymbolic_svgSize));
+
+		m.addItem(AlignToBottom, "Align to bottom", true, false,
+				  createMenuIcon(BinaryData::alignverticalbottomsymbolic_svg,
+								 BinaryData::alignverticalbottomsymbolic_svgSize));
+
+		m.addItem(AlignToLeft, "Align to left", true, false,
+				  createMenuIcon(BinaryData::alignhorizontalleftsymbolic_svg,
+								 BinaryData::alignhorizontalleftsymbolic_svgSize));
+
+		m.addItem(AlignToRight, "Align to right", true, false,
+				  createMenuIcon(BinaryData::alignhorizontalrightsymbolic_svg,
+								 BinaryData::alignhorizontalrightsymbolic_svgSize));
+
+		m.addSeparator();
+		m.addItem(MatchWidth, "Match width to first selected", true, false,
+				  createMenuIcon(BinaryData::transformscalehorizontalsymbolic_svg,
+								 BinaryData::transformscalehorizontalsymbolic_svgSize));
+		m.addItem(MatchHeight, "Match height to first selected", true, false,
+				  createMenuIcon(BinaryData::transformscaleverticalsymbolic_svg,
+								 BinaryData::transformscaleverticalsymbolic_svgSize));
+		m.addItem(MatchSize, "Match height/width to first selected", true, false,
+				  createMenuIcon(BinaryData::transformrotatesymbolic_svg, BinaryData::transformrotatesymbolic_svgSize));
+	}
+
+	// --- Distribution Section (3+ objects) ---
+	if (getSelection().getNumSelected() > 2) {
+		m.addSeparator();
+		m.addSectionHeader("Distribute");
+
+		m.addItem(DistributeHorizontally, "Distribute horizontally", true, false,
+				  createMenuIcon(BinaryData::distributehorizontalgapssymbolic_svg,
+								 BinaryData::distributehorizontalgapssymbolic_svgSize));
+
+		m.addItem(DistributeVertically, "Distribute vertically", true, false,
+				  createMenuIcon(BinaryData::distributeverticalgapssymbolic_svg,
+								 BinaryData::distributeverticalgapssymbolic_svgSize));
 	}
 }
 
@@ -335,6 +394,8 @@ void CtrlrPanelCanvas::handleEditMenu (const int returnCode, const MouseEvent &e
 		case AlignToRight:
 		case DistributeHorizontally: // Added v5.6.36. Thanks to @dnaldoog. Align/Resize to first selection between components
 		case DistributeVertically:
+		case CenterX:
+		case CenterY:
 		case MatchHeight:
 		case MatchWidth:
 		case MatchSize:

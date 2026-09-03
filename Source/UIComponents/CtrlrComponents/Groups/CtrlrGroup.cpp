@@ -28,9 +28,7 @@ void CtrlrGroupContentComponent::customLookAndFeelChanged(LookAndFeelBase *custo
         }
     }
 }
-//[/MiscUserDefs]
 
-//==============================================================================
 CtrlrGroup::CtrlrGroup (CtrlrModulator &owner)
     : CtrlrComponent(owner), content(*this)
 	// , label (0) // Updated v5.6.34. Thanks to @dnaldoog
@@ -43,7 +41,6 @@ CtrlrGroup::CtrlrGroup (CtrlrModulator &owner)
     label->setColour (TextEditor::textColourId, findColour(Label::textColourId)); // Colours::black
     label->setColour (TextEditor::backgroundColourId, Colour (0x0)); // Colour (0x0)
 
-    //[UserPreSize]
 	addAndMakeVisible(&content);
 	componentTree.addListener (this);
 
@@ -57,7 +54,6 @@ CtrlrGroup::CtrlrGroup (CtrlrModulator &owner)
     setProperty (Ids::componentLabelVisible, true);
     
     setProperty (Ids::uiButtonLookAndFeel, "Default");
-    setProperty (Ids::uiButtonLookAndFeelIsCustom, false);
     
     if ( owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V3"
         || owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V2"
@@ -94,16 +90,10 @@ CtrlrGroup::CtrlrGroup (CtrlrModulator &owner)
     setProperty (Ids::uiGroupBackgroundImageLayout, 36);
     setProperty (Ids::uiGroupBackgroundImageAlpha, 255);
 	setProperty (Ids::uiGroupBackgroundGradientType, 1);
-
-    setProperty (Ids::uiButtonLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
     
 	owner.getModulatorTree().addListener (this);
-    //[/UserPreSize]
 
     setSize (128, 128);
-
-    //[Constructor] You can add your own custom stuff here..
-    //[/Constructor]
 }
 
 CtrlrGroup::~CtrlrGroup()
@@ -116,10 +106,6 @@ CtrlrGroup::~CtrlrGroup()
 //==============================================================================
 void CtrlrGroup::paint (Graphics& g)
 {
-    //[UserPrePaint] Add your own custom painting code here..
-    //[/UserPrePaint]
-
-    //[UserPaint] Add your own custom painting code here..
 	Rectangle<int> r = getUsableRect();
 
 	gradientFromProperty(g, getBounds(), getObjectTree(), Ids::uiGroupOutlineGradientType, Ids::uiGroupOutlineColour1, Ids::uiGroupOutlineColour2);
@@ -146,21 +132,15 @@ void CtrlrGroup::paint (Graphics& g)
 								RectanglePlacement(getProperty (Ids::uiGroupBackgroundImageLayout)));
 		}
 	}
-    //[/UserPaint]
 }
 
 void CtrlrGroup::resized()
 {
-    //label->setBounds (0, 0, getWidth() - 0, getHeight() - 0);
-    //[UserResized] Add your own custom resize handling here..
 	label->setBounds (textMargin, textMargin, getWidth() - (textMargin*2), getHeight() - (textMargin*2));
 	content.setBounds(getUsableRect());
-    //[/UserResized]
 }
 
 
-
-//[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 void CtrlrGroup::setComponentValue (const double newValue, const bool sendChangeMessage)
 {
 }
@@ -215,18 +195,15 @@ void CtrlrGroup::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChange
 	}
     else if (property == Ids::uiButtonLookAndFeel)
     {
+        updatingLookAndFeel = true; // Set guard flag
+        
         String LookAndFeelType = getProperty(property);
         setLookAndFeel(getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
         
-        if (LookAndFeelType == "Default")
-        {
-            setProperty(Ids::uiButtonLookAndFeelIsCustom, false); // Resets the Customized Flag to False to allow Global L&F to apply
-        }
+        resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
         
-        if (!getProperty(Ids::uiButtonLookAndFeelIsCustom))
-        {
-            resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
-        }
+        updatingLookAndFeel = false; // Clear guard flag
+
     }
 	else if (property == Ids::uiGroupTextColour)
 	{
@@ -500,8 +477,6 @@ void CtrlrGroup::resetLookAndFeelOverrides()
         setProperty (Ids::uiGroupOutlineColour1, (String)findColour(DocumentWindow::backgroundColourId).darker(0.2f).toString());
         setProperty (Ids::uiGroupOutlineColour2, (String)findColour(DocumentWindow::backgroundColourId).toString());
         
-        setProperty (Ids::uiButtonLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
-        
         updatePropertiesPanel(); // Refreshes property pane
     }
 }
@@ -514,34 +489,3 @@ void CtrlrGroup::updatePropertiesPanel()
         props->refreshAll(); // Needs extra code to prevent scrolling back to top on refresh
     }
 }
-
-
-
-
-//[/MiscUserCode]
-
-
-//==============================================================================
-#if 0
-/*  -- Jucer information section --
-
-    This is where the Jucer puts all of its metadata, so don't change anything in here!
-
-BEGIN_JUCER_METADATA
-
-<JUCER_COMPONENT documentType="Component" className="CtrlrGroup" componentName=""
-                 parentClasses="public CtrlrComponent" constructorParams="CtrlrModulator &amp;owner"
-                 variableInitialisers="CtrlrComponent(owner), content(*this)"
-                 snapPixels="8" snapActive="1" snapShown="1" overlayOpacity="0.330000013"
-                 fixedSize="1" initialWidth="128" initialHeight="128">
-  <BACKGROUND backgroundColour="ffffff"/>
-  <LABEL name="new label" id="20a4cb0ec13b8efc" memberName="label" virtualName=""
-         explicitFocusOrder="0" pos="0 0 0M 0M" edTextCol="ff000000" edBkgCol="0"
-         labelText="Group Text" editableSingleClick="0" editableDoubleClick="0"
-         focusDiscardsChanges="0" fontname="Default font" fontsize="14"
-         bold="1" italic="0" justification="36"/>
-</JUCER_COMPONENT>
-
-END_JUCER_METADATA
-*/
-#endif

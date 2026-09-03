@@ -24,7 +24,7 @@
 
 ## Changelog
 
-#### Version 5.6.36 | 2026.08.05
+#### Version 5.6.36 | 2026.08.25
 
 * **FIXED** CtrlrTabsComponents.cpp and CtrlrGroup.cpp keep component owner group on uiTabs. `CtrlrTabsComponent.cpp`, `CtrlrGroup.cpp`
 * **FIXED** Doubling of menu item causing potential crash. `CtrlrEditor.cpp`. Thanks to [John Goodland](https://github.com/dnaldoog) `CtrlrEditorApplicationCommandsHandlers.cpp`
@@ -46,11 +46,15 @@
 * **ADDED** Bubble Help for component triggered from mouse events. `CtrlrIDs.h`, `CtrlrIDs.xml`, `CtrlrComponent.cpp` &`.h`, `CtrlrPropertyComponent.cpp` & `.h`. Thanks to [John Goodland](https://github.com/dnaldoog)
 * **ADDED** uiSliderBackgroundColour property to uiSlider & uiFixedSlider for linear bar background colour. `CtrlrIDs.h`, `CtrlrIDs.xml`, `CtrlrSlider.cpp`, `CtrlrFixedSlider.cpp` , `CtrlSliderInternal.cpp` & `.h`
 * **ADDED** Centralized documentation as .md file. Thanks to [Sgorpi](https://github.com/sgorpi)
-* **ADDED** Align/Resize to first selection between components. Thanks to [John Goodland](https://github.com/dnaldoog).`CtrlrPanelCanvas.cpp` & `.h`, `CtrlrPanelCanvasHandlers.cpp`
-* **FIXED** blank ComboBox display when switching tabs with fuzzy search OFF. `CtrlrCombo.cpp`
-* **FIXED** blank ComboBox display when switching panels with fuzzy search OFF. Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrCombo.cpp`
-* **FIXED** ComboBox field retaining default item text if fuzzy search ON. `CtrlrCombo.cpp`
-* **FIXED** ComboBox not resizable in edit mode when fuzzy search ON. `CtrlrCombo.cpp` & `.h`
+* **ADDED** Align/Space/Resize components on canvas. Thanks to [John Goodland](https://github.com/dnaldoog).`CtrlrPanelCanvas.cpp` & `.h`, `CtrlrPanelCanvasHandlers.cpp`
+* **FIXED** ComboBox fuzzy search. Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrCombo.cpp` & `.h`
+* **ADDED** new templates for LUA table and class on right-click menu in LUA editor. Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrLuaMethodEditor.cpp` & `.h`
+* **UPDATED** Custom colours LnF logic to remove ui_Component_LookAndFeelIsCustom for sliders, buttons, group and combo.
+* **UPDATED** play, stop, clear missing icons added to CtrlrLuaMethodDebuggerPrompt.cpp. Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrLuaMethodDebuggerPrompt.cpp`
+* **FIXED** layer drag/drop in Layer Editor. Thanks to [John Goodland](https://github.com/dnaldoog). `CtrlrPanel/CtrlrPanelLayerList.cpp` & `.h`
+* **FIXED** leak in CtrlrPropertyComponent. Thanks to [Sgorpi](https://github.com/sgorpi) `CtrlrPropertyComponent.cpp` & `.h`
+* **UPDATED** CI/CD test files for JUCE 8 compatibility. Thanks to [Sgorpi](https://github.com/sgorpi)
+* **ADDED** uiLabel showTextEditor() to display the text field editor. `CtrlrLabel.cpp` & `.h`, `CtrlrComponentLuaRegistration.cpp`, `CtrlrComponentLuaRegistration.cpp`
 
 #### Version 5.6.35 | 2026.04.20
 

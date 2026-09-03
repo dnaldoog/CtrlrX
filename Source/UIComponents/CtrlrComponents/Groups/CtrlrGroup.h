@@ -108,6 +108,7 @@ private:
     // (prevent copy constructor and operator= being generated..)
     CtrlrGroup (const CtrlrGroup&);
     const CtrlrGroup& operator= (const CtrlrGroup&);
+    bool updatingLookAndFeel = false;
 };
 
 

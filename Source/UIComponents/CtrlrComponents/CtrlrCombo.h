@@ -59,6 +59,69 @@ public:
 			CtrlrCombo &owner;
 	};
 
+	//==============================================================================
+	// Fuzzy search popup.
+	//
+	// Deliberately NOT built on top of ComboBox's own popup/editable-Label
+	// mechanism. That combination destroys and recreates its internal
+	// TextEditor every time the popup is hidden/shown, which is exactly
+	// what the old implementation did on every keystroke (dismissAllActiveMenus()
+	// + showPopup()) - fatal on Windows, where the native popup teardown/rebuild
+	// and focus handoff isn't synchronous enough to survive back-to-back key
+	// events, causing dropped characters and a broken Backspace.
+	//
+	// Instead this owns a single long-lived TextEditor + ListBox inside a
+	// CallOutBox, so the input field is never torn down while the user types.
+	//==============================================================================
+	class FuzzySearchPanel : public juce::Component,
+							 private juce::TextEditor::Listener,
+							 private juce::ListBoxModel,
+							 private juce::KeyListener {
+		public:
+			explicit FuzzySearchPanel(CtrlrCombo &ownerCombo);
+			~FuzzySearchPanel() override;
+
+			void resized() override;
+			void visibilityChanged() override;
+			void paintOverChildren(juce::Graphics &g) override;
+			
+			// Called once, right after the CallOutBox has been launched.
+			void focusSearchField();
+
+		private:
+			// juce::TextEditor::Listener
+			void textEditorTextChanged(juce::TextEditor &) override;
+			void textEditorReturnKeyPressed(juce::TextEditor &) override;
+			void textEditorEscapeKeyPressed(juce::TextEditor &) override;
+
+			// juce::ListBoxModel
+			int getNumRows() override;
+			void paintListBoxItem(int rowNumber, juce::Graphics &g, int width, int height, bool rowIsSelected) override;
+			void listBoxItemClicked(int row, const juce::MouseEvent &) override;
+
+			// juce::KeyListener (attached to searchBox only, so typing/backspace/caret
+			// movement always fall through untouched to the TextEditor; only Up/Down
+			// are intercepted here for list navigation)
+			bool keyPressed(const juce::KeyPress &key, juce::Component *originatingComponent) override;
+
+			void refreshMatches();
+			void commitRow(int row);
+			void closePopup();
+
+			CtrlrCombo &owner;
+			juce::TextEditor searchBox;
+			juce::ListBox resultsList{"FuzzySearchResults", this};
+
+			struct Match {
+				int id;
+				juce::String text;
+				double score;
+			};
+			std::vector<Match> matches;
+
+			JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FuzzySearchPanel)
+	};
+
 	void fillContent(const int contentType);
 	void panelEditModeChanged(const bool isInEditMode);
 
@@ -103,11 +166,11 @@ public:
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
-    void findAndAttach (juce::ComboBox* combo); // Method must be declared here
     void handleAsyncUpdate() override; // Handles the safe UI transition
-	void updateInternalComponentStyles();
-	
-    std::unique_ptr<SearchListener> searchListener;
+    void updateInternalComponentStyles();
+    void applyComboLookAndFeel(const String &panelLnF);
+    void openFuzzySearchPopup();
+    void closeFuzzySearchPopupIfOpen();
     
     Array <var> values;
     CtrlrComboLF lf;
@@ -115,17 +178,19 @@ private:
     bool isSearching = false;
     bool isUpdating = false;
     String lastSearchText;
+    juce::Label* getComboLabel() const;
     //[/UserVariables]
-
+    juce::Component::SafePointer<FuzzySearchPanel> activeSearchPanel;
     //==============================================================================
     ComboBox* ctrlrCombo;
-
+    bool updatingLookAndFeel = false;
 
     //==============================================================================
     // (prevent copy constructor and operator= being generated..)
     CtrlrCombo (const CtrlrCombo&);
     const CtrlrCombo& operator= (const CtrlrCombo&);
     bool savedFuzzySearchState = false;
+    bool canPerformFuzzySearch() const;
 };
 
 

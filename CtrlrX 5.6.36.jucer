@@ -3,15 +3,15 @@
 <JUCERPROJECT id="hrcYoO" name="CtrlrX" reportAppUsage="1" projectType="audioplug"
               version="5.6.36" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
               buildVST="1" buildVST3="1" buildAU="1" buildAUv3="0" buildRTAS="0"
-              buildAAX="0" buildStandalone="1" enableIAA="0" pluginName="CtrlrX                          "
+              buildAAX="1" buildStandalone="1" enableIAA="0" pluginName="CtrlrX                          "
               pluginManufacturer="CtrlrX Project                  " pluginManufacturerCode="cTrX"
               pluginCode="cTrl" pluginIsSynth="1" pluginWantsMidiIn="1" pluginProducesMidiOut="1"
               pluginIsMidiEffectPlugin="0" pluginEditorRequiresKeys="1" pluginAUExportPrefix="CtrlrXAU"
               pluginRTASCategory="" aaxIdentifier="com.CtrlrX.CtrlrX" companyName="CtrlrX"
-              pluginFormats="buildAU,buildStandalone,buildVST,buildVST3" jucerFormatVersion="1"
-              pluginAUMainType="'aumu'" displaySplashScreen="1" pluginRTASDisableBypass="0"
-              pluginRTASDisableMultiMono="0" pluginAAXDisableBypass="0" pluginAAXDisableMultiMono="0"
-              cppLanguageStandard="14" pluginVST3Category="Instrument,Tools"
+              pluginFormats="buildAAX,buildAU,buildStandalone,buildVST,buildVST3"
+              jucerFormatVersion="1" pluginAUMainType="'aumu'" displaySplashScreen="1"
+              pluginRTASDisableBypass="0" pluginRTASDisableMultiMono="0" pluginAAXDisableBypass="0"
+              pluginAAXDisableMultiMono="0" cppLanguageStandard="14" pluginVST3Category="Instrument,Tools"
               pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn,pluginProducesMidiOut,pluginEditorRequiresKeys"
               pluginAAXCategory="2048">
   <MAINGROUP id="SRLsFb" name="CtrlrX">
@@ -623,6 +623,56 @@
           <FILE id="OOpHQ2" name="FONT_ZX81.ttf" compile="0" resource="1" file="Source/Resources/Fonts/FONT_ZX81.ttf"/>
         </GROUP>
         <GROUP id="{57CA4634-99B0-23FB-F19C-154181EAAE85}" name="Icons">
+          <FILE id="J8fX6Q" name="appbar.control.play.png" compile="0" resource="1"
+                file="Source/Resources/Icons/appbar.control.play.png"/>
+          <FILE id="Clqrt4" name="appbar.debug.clean.png" compile="0" resource="1"
+                file="Source/Resources/Icons/appbar.debug.clean.png"/>
+          <FILE id="m2KpzW" name="appbar.debug.stop.png" compile="0" resource="1"
+                file="Source/Resources/Icons/appbar.debug.stop.png"/>
+          <FILE id="a8RgYD" name="alignhorizontalleftsymbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/alignhorizontalleftsymbolic.svg"/>
+          <FILE id="r3dLsN" name="alignhorizontalrightsymbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/alignhorizontalrightsymbolic.svg"/>
+          <FILE id="zUfnwO" name="alignverticalbottomsymbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/alignverticalbottomsymbolic.svg"/>
+          <FILE id="TqRj6f" name="alignverticaltopsymbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/alignverticaltopsymbolic.svg"/>
+          <FILE id="y0lKmA" name="boundingboxcentersymbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/boundingboxcentersymbolic.svg"/>
+          <FILE id="EfUSBf" name="distributehorizontalgapssymbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/distributehorizontalgapssymbolic.svg"/>
+          <FILE id="BO1hSN" name="distributeverticalgapssymbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/distributeverticalgapssymbolic.svg"/>
+          <FILE id="phbDEB" name="editcutsymbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/editcutsymbolic.svg"/>
+          <FILE id="yfgkQU" name="editdeletesymbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/editdeletesymbolic.svg"/>
+          <FILE id="kuWoep" name="editduplicatesymbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/editduplicatesymbolic.svg"/>
+          <FILE id="a11mCk" name="editpastestylesymbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/editpastestylesymbolic.svg"/>
+          <FILE id="mhdBbp" name="objectlockedsymbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/objectlockedsymbolic.svg"/>
+          <FILE id="i0vJeP" name="objectunlockedsymbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/objectunlockedsymbolic.svg"/>
+          <FILE id="aVhV6c" name="snapnodesmidpointsymbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/snapnodesmidpointsymbolic.svg"/>
+          <FILE id="vKat5a" name="transformrotatesymbolic.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/transformrotatesymbolic.svg"/>
+          <FILE id="GTrWS2" name="transformscalehorizontalsymbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/transformscalehorizontalsymbolic.svg"/>
+          <FILE id="NZPoO5" name="transformscaleverticalsymbolic.svg" compile="0"
+                resource="1" file="Source/Resources/Icons/transformscaleverticalsymbolic.svg"/>
+          <FILE id="MbvLqw" name="CtrlrX-Logo-512x512-DEF.png" compile="0" resource="1"
+                file="Source/Resources/Icons/CtrlrX-Logo-512x512-DEF.png"/>
+          <FILE id="BNY1ib" name="CtrlrX-Logo-vector-DEF.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/CtrlrX-Logo-vector-DEF.svg"/>
+          <FILE id="HYJkXa" name="CtrlrX-README-250x315-02.png" compile="0" resource="1"
+                file="Source/Resources/Icons/CtrlrX-README-250x315-02.png"/>
+          <FILE id="BuMQI7" name="CtrlrX-README-250x315.png" compile="0" resource="1"
+                file="Source/Resources/Icons/CtrlrX-README-250x315.png"/>
+          <FILE id="khMNvB" name="happy.svg" compile="0" resource="1" file="Source/Resources/Icons/happy.svg"/>
+          <FILE id="gGsRTp" name="sad.svg" compile="0" resource="1" file="Source/Resources/Icons/sad.svg"/>
           <FILE id="d8Ox7r" name="kofi.svg" compile="0" resource="1" file="Source/Resources/Icons/kofi.svg"/>
           <FILE id="hvQjEJ" name="github_line.svg" compile="0" resource="1" file="Source/Resources/Icons/github_line.svg"/>
           <FILE id="tsirkk" name="paypal_colour.svg" compile="0" resource="1"

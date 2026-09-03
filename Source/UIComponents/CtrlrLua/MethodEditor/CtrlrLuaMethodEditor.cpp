@@ -14,6 +14,17 @@
 #include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrLua/MethodEditor/CtrlrLuaMethodEditorCommandIDs.h" // Added v5.6.34.
 
+String sanitizeClassName(String name)
+{
+	name = name.trim();
+	if (name.isNotEmpty()) {
+		// Capitalize the first letter for standard class convention
+		name = name.substring(0, 1).toUpperCase() + name.substring(1);
+	}
+	DBG("Sanitized " << name);
+	return name;
+}
+
 CtrlrLuaMethodEditor::CtrlrLuaMethodEditor (CtrlrPanel &_owner)
     : owner(_owner),
       methodEditArea (nullptr),
@@ -288,6 +299,192 @@ void CtrlrLuaMethodEditor::addNewMethod(ValueTree parentGroup)
     updateRootItem();
 
     saveSettings(); // save settings
+}
+
+void CtrlrLuaMethodEditor::addNewTable(ValueTree parentGroup)
+{
+	auto wnd = std::make_shared<juce::AlertWindow>("New Lua Table", "Create a new Lua table file",
+												   juce::AlertWindow::InfoIcon, this);
+
+	wnd->addTextEditor("tableName", "myTable", "Table name", false);
+
+	// Optional table type preset selector
+	StringArray tableTypes;
+	tableTypes.add("Empty Table ({})");
+	tableTypes.add("Key-Value Map ({ [1] = 'Value' })");
+	tableTypes.add("2D Array / Grid");
+	tableTypes.add("Class / Object with Metatable (__index & rawset)"); // <--- NEW OPTION
+	wnd->addComboBox("tableType", tableTypes, "Table Template");
+
+	wnd->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+	wnd->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+	Component::SafePointer<CtrlrLuaMethodEditor> safeThis(this);
+
+	wnd->enterModalState(
+		true, juce::ModalCallbackFunction::create([safeThis, wnd, parentGroup](int result) {
+			if (safeThis == nullptr || result != 1)
+				return;
+
+			const String tableName = wnd->getTextEditorContents("tableName");
+
+			if (safeThis->getMethodManager().isValidMethodName(tableName)) {
+				int templateChoice = 1;
+				if (auto *combo = wnd->getComboBoxComponent("tableType")) {
+					templateChoice = combo->getSelectedId();
+				}
+
+				// Build initial Lua table code
+				// Build initial Lua table code
+				String initialCode;
+				if (templateChoice == 2) {
+					initialCode << tableName << " = {\n";
+					initialCode << "    [0] = \"Default\",\n";
+					initialCode << "    [1] = \"Option 1\",\n";
+					initialCode << "    [2] = \"Option 2\"\n";
+					initialCode << "}\n";
+				} else if (templateChoice == 3) {
+					initialCode << tableName << " = {\n";
+					initialCode << "    { 0, 0, 0 },\n";
+					initialCode << "    { 0, 0, 0 }\n";
+					initialCode << "}\n";
+				} else if (templateChoice == 4) { // <--- METATABLE / OOP BOILERPLATE
+					initialCode << "-- ====================================================================\n";
+					initialCode << "-- " << tableName << " Object / Metatable Definition\n";
+					initialCode << "-- ====================================================================\n\n";
+					initialCode << tableName << " = {}\n";
+					initialCode << tableName << ".__index = " << tableName << "\n\n";
+
+					initialCode << "-- Constructor\n";
+					initialCode << "function " << tableName << ":new(initData)\n";
+					initialCode << "    local instance = setmetatable({}, " << tableName << ")\n";
+					initialCode << "    \n";
+					initialCode << "    -- Safe raw initialization using rawset\n";
+					initialCode << "    rawset(instance, \"id\", 1)\n";
+					initialCode << "    rawset(instance, \"data\", initData or {})\n";
+					initialCode << "    \n";
+					initialCode << "    return instance\n";
+					initialCode << "end\n\n";
+
+					initialCode << "-- Safe Property Setter using rawset\n";
+					initialCode << "function " << tableName << ":set(key, value)\n";
+					initialCode << "    rawset(self, key, value)\n";
+					initialCode << "end\n\n";
+
+					initialCode << "-- Safe Property Getter using rawget\n";
+					initialCode << "function " << tableName << ":get(key)\n";
+					initialCode << "    return rawget(self, key)\n";
+					initialCode << "end\n";
+				} else {
+					initialCode << tableName << " = {}\n";
+				}
+
+				// Register as a Lua file/method in the manager
+				safeThis->getMethodManager().addMethod(parentGroup, tableName, initialCode, "");
+			} else {
+				WARN("Invalid table name, please correct");
+			}
+
+			safeThis->updateRootItem();
+			safeThis->saveSettings();
+		}));
+}
+
+void CtrlrLuaMethodEditor::addNewClass(ValueTree parentGroup)
+{
+	auto wnd = std::make_shared<juce::AlertWindow>("New Lua Class", "Create a callable Lua class structure",
+												   juce::AlertWindow::InfoIcon, this);
+
+	// Default text shown to the user
+	wnd->addTextEditor("className", "MyNewClass", "Class name", false);
+
+	StringArray classTypes;
+	classTypes.add("Callable Factory Object (__call -> creates instance)");
+	classTypes.add("Direct Callable Object (__call -> executes main logic)");
+	classTypes.add("Base Inheritable Class (__index & constructor)");
+	wnd->addComboBox("classType", classTypes, "Class Pattern");
+
+	wnd->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+	wnd->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+	Component::SafePointer<CtrlrLuaMethodEditor> safeThis(this);
+
+	wnd->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, wnd, parentGroup](int result) {
+							 if (safeThis == nullptr || result != 1)
+								 return;
+
+							 // 1. Fetch whatever the user typed into the box (e.g. "myNewClass" or " myFilter ")
+							 String rawInputName = wnd->getTextEditorContents("className");
+
+							 // 2. Convert user input to PascalCase ("myNewClass" -> "MyNewClass")
+							 const String className = sanitizeClassName(rawInputName);
+
+							 if (safeThis->getMethodManager().isValidMethodName(className)) {
+								 int typeChoice = 1;
+								 if (auto *combo = wnd->getComboBoxComponent("classType")) {
+									 typeChoice = combo->getSelectedId();
+								 }
+
+								 String code;
+								 code << "-- ====================================================================\n";
+								 code << "-- " << className << " Class Definition\n";
+								 code << "-- ====================================================================\n\n";
+
+								 if (typeChoice == 1) {
+									 code << className << " = {}\n";
+									 code << className << ".__index = " << className << "\n\n";
+
+									 code << "-- Constructor\n";
+									 code << "function " << className << ":new(initValue)\n";
+									 code << "    local instance = setmetatable({}, " << className << ")\n";
+									 code << "    rawset(instance, \"value\", initValue or 0)\n";
+									 code << "    return instance\n";
+									 code << "end\n\n";
+
+									 code << "setmetatable(" << className << ", {\n";
+									 code << "    __call = function(cls, ...)\n";
+									 code << "        return cls:new(...)\n";
+									 code << "    end\n";
+									 code << "})\n\n";
+
+									 code << "function " << className << ":getValue()\n";
+									 code << "    return rawget(self, \"value\")\n";
+									 code << "end\n";
+
+								 } else if (typeChoice == 2) {
+									 code << className << " = {}\n";
+									 code << className << ".__index = " << className << "\n\n";
+
+									 code << "setmetatable(" << className << ", {\n";
+									 code << "    __call = function(self, ...)\n";
+									 code << "        return self:execute(...)\n";
+									 code << "    end\n";
+									 code << "})\n\n";
+
+									 code << "function " << className << ":execute(...)\n";
+									 code << "    console(\"Executing " << className << "\")\n";
+									 code << "end\n";
+
+								 } else {
+									 code << className << " = {}\n";
+									 code << className << ".__index = " << className << "\n\n";
+
+									 code << "function " << className << ":new(o)\n";
+									 code << "    o = o or {}\n";
+									 code << "    setmetatable(o, self)\n";
+									 code << "    self.__index = self\n";
+									 code << "    return o\n";
+									 code << "end\n";
+								 }
+
+								 safeThis->getMethodManager().addMethod(parentGroup, className, code, "");
+							 } else {
+								 WARN("Invalid class name, please correct");
+							 }
+
+							 safeThis->updateRootItem();
+							 safeThis->saveSettings();
+						 }));
 }
 
 void CtrlrLuaMethodEditor::addMethodFromFile(ValueTree parentGroup)
@@ -815,6 +1012,8 @@ void CtrlrLuaMethodEditor::itemClicked (const MouseEvent &e, ValueTree &item)
             PopupMenu m;
             m.addSectionHeader ("Group operations");
             m.addItem (1, "Add method");
+            m.addItem(10, "Add table");
+            m.addItem(11, "Add class");
             m.addItem (2, "Add files");
             m.addItem (3, "Add group");
             m.addSeparator();
@@ -842,6 +1041,14 @@ void CtrlrLuaMethodEditor::itemClicked (const MouseEvent &e, ValueTree &item)
             else if (ret == 2)
             {
                 addMethodFromFile (item);
+            }
+            else if (ret == 10)
+            {
+                addNewTable(item);
+            }
+            else if (ret == 11)
+            {
+                addNewClass(item);
             }
             else if (ret == 3)
             {

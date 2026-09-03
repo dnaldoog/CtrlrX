@@ -14,7 +14,6 @@ public:
     ~CtrlrButton();
 
     //==============================================================================
-    //[UserMethods]     -- You can add your own custom methods in this section.
 	void setComponentValue (const double newValue, const bool sendChangeMessage=false);
 	double getComponentValue();
 	int getComponentMidiValue();
@@ -52,14 +51,12 @@ public:
     juce_UseDebuggingNewOperator
 
 private:
-    //[UserVariables]   -- You can add your own custom variables in this section.
-	ScopedPointer <CtrlrValueMap> valueMap;
-    //[/UserVariables]
 
-    //==============================================================================
+	ScopedPointer <CtrlrValueMap> valueMap;
+	bool updatingLookAndFeel = false;
+
     TextButton* ctrlrButton;
 
-    //==============================================================================
     // (prevent copy constructor and operator= being generated..)
     CtrlrButton (const CtrlrButton&);
     const CtrlrButton& operator= (const CtrlrButton&);

@@ -1099,7 +1099,43 @@ void CtrlrPanelCanvas::alignSelection(const EditMenuItems direction) // Updated 
 				
 				break;
 			}
-				
+			case CenterX: {
+				if (getSelection().getNumSelected() < 1)
+					break;
+
+				// Get the canvas component directly from the owner panel
+				if (auto *canvas = owner.getCanvas()) {
+					const int canvasWidth = canvas->getWidth();
+
+					for (int i = 0; i < getSelection().getNumSelected(); ++i) {
+						if (auto *item = getSelection().getSelectedItem(i)) {
+							const int newX = (canvasWidth - item->getWidth()) / 2;
+
+							// Set bounds directly on the item or through Ctrlr's property system
+							item->setTopLeftPosition(newX, item->getY());
+						}
+					}
+				}
+				break;
+			}
+
+			case CenterY: {
+				if (getSelection().getNumSelected() < 1)
+					break;
+
+				if (auto *canvas = owner.getCanvas()) {
+					const int canvasHeight = canvas->getHeight();
+
+					for (int i = 0; i < getSelection().getNumSelected(); ++i) {
+						if (auto *item = getSelection().getSelectedItem(i)) {
+							const int newY = (canvasHeight - item->getHeight()) / 2;
+
+							item->setTopLeftPosition(item->getX(), newY);
+						}
+					}
+				}
+				break;
+			}
 			case MatchWidth: {
 				const int numSelected = getSelection().getNumSelected();
 				if (numSelected < 2)
@@ -1645,4 +1681,25 @@ void CtrlrQuickXmlPreview::buttonClicked(Button *)
 	doc.replaceAllContent(xml->createDocument(""));
 	ed.setSize (600, 600);
 	DialogWindow::showModalDialog ("XML Preview", &ed, this, Colours::white, true, true, true);
+}
+//static function for drawing icons in right click menu
+std::unique_ptr<juce::Drawable> CtrlrPanelCanvas::createMenuIcon(const char* data, const size_t size)
+{
+    if (auto svg = juce::Drawable::createFromImageData(data, size)) {
+        svg->setBounds(0, 0, 24, 24); 
+
+        // 1. Calculate standard centered transform using getDrawableBounds()
+        auto transform = juce::RectanglePlacement(
+            juce::RectanglePlacement::centred | juce::RectanglePlacement::onlyReduceInSize
+        ).getTransformToFit(
+            svg->getDrawableBounds(), 
+            juce::Rectangle<float>(0, 0, 24.0f, 24.0f)
+        );
+
+        // 2. Nudge the draw transform slightly up (-Y) or down (+Y) to align with text height
+        svg->setTransform(transform.translated(0.0f, -3.0f));
+
+        return svg;
+    }
+    return nullptr;
 }

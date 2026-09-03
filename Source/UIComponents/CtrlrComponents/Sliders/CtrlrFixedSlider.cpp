@@ -52,10 +52,6 @@ CtrlrFixedSlider::CtrlrFixedSlider (CtrlrModulator &owner)
     setProperty (Ids::uiFixedSliderContent, "");
     
     setProperty (Ids::uiSliderLookAndFeel, "Default");
-    setProperty (Ids::uiSliderLookAndFeelIsCustom, false);
-     
-    setProperty (Ids::uiSliderPopupBubble, false);
-     
     setProperty (Ids::uiSliderStyle, "RotaryVerticalDrag");
     
     bool LegacyMode = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLegacyMode);  // Legacy mode flag for version before 5.6.29
@@ -123,49 +119,27 @@ CtrlrFixedSlider::CtrlrFixedSlider (CtrlrModulator &owner)
     setProperty (Ids::uiSliderValueHighlightColour, (String)findColour (Slider::textBoxHighlightColourId).toString());
     setProperty (Ids::uiSliderValueBgColour, "0x00ffffff"); // (String)findColour (Slider::textBoxBackgroundColourId).toString());
     setProperty (Ids::uiSliderValueOutlineColour, "0x00ffffff"); //(String)findColour (Slider::textBoxOutlineColourId).toString());
-
-    
-    setProperty (Ids::uiSliderLookAndFeelIsCustom, false);
-    //[/UserPreSize]
-
-    //[Constructor] You can add your own custom stuff here..
-    //[/Constructor]
 }
 
 CtrlrFixedSlider::~CtrlrFixedSlider()
 {
-    //[Destructor_pre]. You can add your own custom destruction code here..
-    //[/Destructor_pre]
-
     deleteAndZero (ctrlrSlider);
-
-    //[Destructor]. You can add your own custom destruction code here..
-    //[/Destructor]
 }
 
 //==============================================================================
 void CtrlrFixedSlider::paint (Graphics& g)
 {
-    //[UserPrePaint] Add your own custom painting code here..
-    //[/UserPrePaint]
-
-    //[UserPaint] Add your own custom painting code here..
-    //[/UserPaint]
 }
 
 void CtrlrFixedSlider::resized()
 {
-    //ctrlrSlider->setBounds (0, 0, getWidth() - 0, getHeight() - 0);
-    //[UserResized] Add your own custom resize handling here..
     if (restoreStateInProgress)
         return;
     ctrlrSlider->setBounds (getUsableRect());
-    //[/UserResized]
 }
 
 void CtrlrFixedSlider::mouseUp (const MouseEvent& e)
 {
-    //[UserCode_mouseUp] -- Add your code here...
     if (mouseUpCbk && !mouseUpCbk.wasObjectDeleted())
     {
         if (mouseUpCbk->isValid())
@@ -177,10 +151,9 @@ void CtrlrFixedSlider::mouseUp (const MouseEvent& e)
     {
         ctrlrSlider->setValue ((double)getProperty(Ids::uiSliderSpringValue), sendNotificationSync);
     }
-    //[/UserCode_mouseUp]
 }
 
-//[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
+
 double CtrlrFixedSlider::getComponentMaxValue()
 {
     return (valueMap->getNonMappedMax());
@@ -239,63 +212,50 @@ void CtrlrFixedSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
     }
     else if (property == Ids::uiSliderLookAndFeel)
     {
+        updatingLookAndFeel = true; // Set guard flag
+        
         String LookAndFeelType = getProperty(property);
         setLookAndFeel(getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
         
-        if (LookAndFeelType == "Default")
-        {
-            setProperty(Ids::uiSliderLookAndFeelIsCustom, false); // Resets the Customized Flag to False to allow Global L&F to apply
-        }
-        
-        if (!getProperty(Ids::uiSliderLookAndFeelIsCustom))
-        {
-            resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
-        }
+        resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
+		
+        updatingLookAndFeel = false; // Clear guard flag
     }
     else if (property == Ids::uiSliderRotaryFillColour)
     {
         ctrlrSlider->setColour (Slider::rotarySliderFillColourId, VAR2COLOUR(getProperty (Ids::uiSliderRotaryFillColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderRotaryOutlineColour)
     {
         ctrlrSlider->setColour (Slider::rotarySliderOutlineColourId, VAR2COLOUR(getProperty (Ids::uiSliderRotaryOutlineColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderTrackColour)
     {
         ctrlrSlider->setColour (Slider::trackColourId, VAR2COLOUR(getProperty (Ids::uiSliderTrackColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderBackgroundColour) // Added v5.5.36 for linear bar slider
     {
         ctrlrSlider->setColour (Slider::backgroundColourId, VAR2COLOUR(getProperty (Ids::uiSliderBackgroundColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderThumbColour)
     {
         ctrlrSlider->setColour (Slider::thumbColourId, VAR2COLOUR(getProperty (Ids::uiSliderThumbColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderValueTextColour)
     {
         ctrlrSlider->setColour (Slider::textBoxTextColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueTextColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderValueHighlightColour)
     {
         ctrlrSlider->setColour (Slider::textBoxHighlightColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueHighlightColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderValueBgColour)
     {
         ctrlrSlider->setColour (Slider::textBoxBackgroundColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueBgColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderValueOutlineColour)
     {
         ctrlrSlider->setColour (Slider::textBoxOutlineColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueOutlineColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiFixedSliderContent)
     {
@@ -336,7 +296,6 @@ void CtrlrFixedSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
             //ctrlrSlider->setLookAndFeel (nullptr); // Warning, it resets the LnF on loading
             //ctrlrSlider->setLookAndFeel (&lfV4); // V5.6.28+
         }
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderVelocityMode
         || property == Ids::uiSliderVelocityModeKeyTrigger
@@ -428,8 +387,6 @@ void CtrlrFixedSlider::resetLookAndFeelOverrides()
         setProperty (Ids::uiSliderValueBgColour, "0x00ffffff"); // (String)findColour (Slider::textBoxBackgroundColourId).toString());
         setProperty (Ids::uiSliderValueOutlineColour, "0x00ffffff"); //(String)findColour (Slider::textBoxOutlineColourId).toString());
         
-        setProperty (Ids::uiSliderLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
-        
         updatePropertiesPanel(); // Refreshes property pane
     }
 }
@@ -442,34 +399,3 @@ void CtrlrFixedSlider::updatePropertiesPanel()
         props->refreshAll(); // Needs extra code to prevent scrolling back to top on refresh
     }
 }
-
-
-//[/MiscUserCode]
-
-
-//==============================================================================
-#if 0
-/*  -- Jucer information section --
-
-    This is where the Jucer puts all of its metadata, so don't change anything in here!
-
-BEGIN_JUCER_METADATA
-
-<JUCER_COMPONENT documentType="Component" className="CtrlrFixedSlider" componentName=""
-                 parentClasses="public CtrlrComponent, public SettableTooltipClient, public Slider::Listener"
-                 constructorParams="CtrlrModulator &amp;owner" variableInitialisers="CtrlrComponent(owner), lf(componentTree)"
-                 snapPixels="8" snapActive="1" snapShown="1" overlayOpacity="0.330000013"
-                 fixedSize="1" initialWidth="64" initialHeight="64">
-  <METHODS>
-    <METHOD name="mouseUp (const MouseEvent&amp; e)"/>
-    <METHOD name="mouseDoubleClick (const MouseEvent&amp; e)"/>
-  </METHODS>
-  <BACKGROUND backgroundColour="0"/>
-  <GENERICCOMPONENT name="ctrlrSlider" id="725ab5397cee0647" memberName="ctrlrSlider"
-                    virtualName="" explicitFocusOrder="0" pos="0 0 0M 0M" class="CtrlrOwnSlider"
-                    params="*this, &quot;ctrlrSlider&quot;"/>
-</JUCER_COMPONENT>
-
-END_JUCER_METADATA
-*/
-#endif

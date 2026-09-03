@@ -15,7 +15,6 @@ CtrlrButton::CtrlrButton (CtrlrModulator &owner)
     ctrlrButton->addListener (this);
     
     setProperty (Ids::uiButtonLookAndFeel, "Default");
-    setProperty (Ids::uiButtonLookAndFeelIsCustom, false);
     
     ctrlrButton->addMouseListener(this, true);
     ctrlrButton->setBufferedToImage (true);
@@ -73,9 +72,6 @@ CtrlrButton::CtrlrButton (CtrlrModulator &owner)
     setProperty (Ids::uiButtonConnectedRight, false);
     setProperty (Ids::uiButtonConnectedTop, false);
     setProperty (Ids::uiButtonConnectedBottom, false);
-    
-    setProperty (Ids::uiButtonLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
-
 }
 
 CtrlrButton::~CtrlrButton()
@@ -225,19 +221,16 @@ void CtrlrButton::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
 	}
     else if (property == Ids::uiButtonLookAndFeel)
     {
+        updatingLookAndFeel = true; // Set guard flag
+        
         String LookAndFeelType = getProperty(property);
         setLookAndFeel(CtrlrButton::getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
         
-        if (LookAndFeelType == "Default")
-        {
-            setProperty(Ids::uiButtonLookAndFeelIsCustom, false); // Resets the Customized Flag to False to allow Global L&F to apply
-        }
+        CtrlrButton::resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
         
-        if (!getProperty(Ids::uiButtonLookAndFeelIsCustom))
-        {
-            CtrlrButton::resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
-        }
+        updatingLookAndFeel = false; // Clear guard flag
     }
+	
 	else if (property == Ids::uiButtonColourOff
 		|| property == Ids::uiButtonColourOn
 		|| property == Ids::uiButtonTextColourOff
@@ -247,7 +240,6 @@ void CtrlrButton::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
 		ctrlrButton->setColour (TextButton::buttonOnColourId, VAR2COLOUR(getProperty(Ids::uiButtonColourOn)));
 		ctrlrButton->setColour (TextButton::textColourOffId, VAR2COLOUR(getProperty(Ids::uiButtonTextColourOff)));
 		ctrlrButton->setColour (TextButton::textColourOnId, VAR2COLOUR(getProperty(Ids::uiButtonTextColourOn)));
-        setProperty(Ids::uiButtonLookAndFeelIsCustom, true); // Locks the component custom colourScheme
 	}
 
 	else if (property == Ids::uiButtonIsToggle)
@@ -334,9 +326,7 @@ void CtrlrButton::resetLookAndFeelOverrides()
         setProperty (Ids::uiButtonColourOn,  (String)findColour(TextButton::buttonOnColourId).toString());
         setProperty (Ids::uiButtonColourOff, (String)findColour(TextButton::buttonColourId).toString());
         setProperty (Ids::uiButtonTextColourOn, (String)findColour(TextButton::textColourOnId).toString());
-        setProperty (Ids::uiButtonTextColourOff, (String)findColour(TextButton::textColourOffId).toString());        
-        
-        setProperty (Ids::uiButtonLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
+        setProperty (Ids::uiButtonTextColourOff, (String)findColour(TextButton::textColourOffId).toString());
         
         updatePropertiesPanel(); // Refreshes property pane
     }
@@ -350,34 +340,3 @@ void CtrlrButton::updatePropertiesPanel()
         props->refreshAll(); // Needs extra code to prevent scrolling back to top on refresh
     }
 }
-
-
-
-//[/MiscUserCode]
-
-
-//==============================================================================
-#if 0
-/*  -- Jucer information section --
-
-    This is where the Jucer puts all of its metadata, so don't change anything in here!
-
-BEGIN_JUCER_METADATA
-
-<JUCER_COMPONENT documentType="Component" className="CtrlrButton" componentName=""
-                 parentClasses="public CtrlrComponent" constructorParams="CtrlrModulator &amp;owner"
-                 variableInitialisers="CtrlrComponent(owner)" snapPixels="8" snapActive="1"
-                 snapShown="1" overlayOpacity="0.330000013" fixedSize="1" initialWidth="88"
-                 initialHeight="32">
-  <METHODS>
-    <METHOD name="mouseDown (const MouseEvent&amp; e)"/>
-  </METHODS>
-  <BACKGROUND backgroundColour="ffffff"/>
-  <TEXTBUTTON name="ctrlrButton" id="d906fca95b2d6ff7" memberName="ctrlrButton"
-              virtualName="" explicitFocusOrder="0" pos="0 0 0M 0M" buttonText="Button"
-              connectedEdges="0" needsCallback="1" radioGroupId="0"/>
-</JUCER_COMPONENT>
-
-END_JUCER_METADATA
-*/
-#endif

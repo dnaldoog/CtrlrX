@@ -15,8 +15,6 @@ CtrlrToggleButton::CtrlrToggleButton (CtrlrModulator &owner)
     ctrlrButton->setButtonText ("Button");
     ctrlrButton->addListener (this);
 
-
-    //[UserPreSize]
 	ctrlrButton->setBufferedToImage (true);
 	setProperty (Ids::uiToggleButtonText, "Button");
 	setProperty (Ids::uiButtonTrueValue, 1);
@@ -25,9 +23,6 @@ CtrlrToggleButton::CtrlrToggleButton (CtrlrModulator &owner)
 	owner.setProperty (Ids::modulatorMin, 0);
     
     setProperty (Ids::uiButtonLookAndFeel, "Default");
-    setProperty (Ids::uiButtonLookAndFeelIsCustom, false);
-
-    //[/UserPreSize]
 
     if ( owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V3"
         || owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel) == "V2"
@@ -53,45 +48,25 @@ CtrlrToggleButton::CtrlrToggleButton (CtrlrModulator &owner)
         setProperty (Ids::uiToggleButtontickColour, (String)LookAndFeel::findColour(ToggleButton::tickColourId).toString()); // Tick colour
     }
     setSize (88, 48);
-    
-    setProperty (Ids::uiButtonLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
-
-    //[Constructor] You can add your own custom stuff here..
-	//owner.getProcessor().setValueFromGUI (0, true);
-    //[/Constructor]
 }
 
 CtrlrToggleButton::~CtrlrToggleButton()
 {
-    //[Destructor_pre]. You can add your own custom destruction code here..
-    //[/Destructor_pre]
-
     deleteAndZero (ctrlrButton);
-
-    //[Destructor]. You can add your own custom destruction code here..
-    //[/Destructor]
 }
 
 //==============================================================================
 void CtrlrToggleButton::paint (Graphics& g)
 {
-    //[UserPrePaint] Add your own custom painting code here..
-    //[/UserPrePaint]
-
-    //[UserPaint] Add your own custom painting code here..
-    //[/UserPaint]
 }
 
 void CtrlrToggleButton::resized()
 {
     ctrlrButton->setBounds (0, 0, getWidth() - 0, getHeight() - 0);
-    //[UserResized] Add your own custom resize handling here..
-    //[/UserResized]
 }
 
 void CtrlrToggleButton::buttonClicked (Button* buttonThatWasClicked)
 {
-    //[UserbuttonClicked_Pre]
     if (isInternal())
 	{
 		owner.getOwnerPanel().performInternalComponentFunction(this);
@@ -100,29 +75,19 @@ void CtrlrToggleButton::buttonClicked (Button* buttonThatWasClicked)
 
 	if (!owner.getOwnerPanel().checkRadioGroup(this, buttonThatWasClicked->getToggleState()))
 		return;
-    //[/UserbuttonClicked_Pre]
 
     if (buttonThatWasClicked == ctrlrButton)
     {
-        //[UserButtonCode_ctrlrButton] -- add your button handler code here..
 		setComponentValue (ctrlrButton->getToggleState(), true);
-        //[/UserButtonCode_ctrlrButton]
     }
-
-    //[UserbuttonClicked_Post]
-    //[/UserbuttonClicked_Post]
 }
 
 void CtrlrToggleButton::mouseDown (const MouseEvent& e)
 {
-    //[UserCode_mouseDown] -- Add your code here...
     CtrlrComponent::mouseDown(e);
-    //[/UserCode_mouseDown]
 }
 
 
-
-//[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 void CtrlrToggleButton::setComponentValue (const double newValue, const bool sendChangeMessage)
 {
 	if (!owner.getOwnerPanel().checkRadioGroup(this, ctrlrButton->getToggleState()))
@@ -193,15 +158,11 @@ void CtrlrToggleButton::valueTreePropertyChanged (ValueTree &treeWhosePropertyHa
         String LookAndFeelType = getProperty(property);
         setLookAndFeel(CtrlrToggleButton::getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
         
-        if (LookAndFeelType == "Default")
-        {
-            setProperty(Ids::uiButtonLookAndFeelIsCustom, false); // Resets the Customized Flag to False to allow Global L&F to apply
-        }
+        updatingLookAndFeel = true; // Set guard flag
+
+        CtrlrToggleButton::resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
         
-        if (!getProperty(Ids::uiButtonLookAndFeelIsCustom))
-        {
-            CtrlrToggleButton::resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
-        }
+        updatingLookAndFeel = false; // Clear guard flag
     }
 	if (property == Ids::uiButtonTextColourOn)
 	{
@@ -293,9 +254,7 @@ void CtrlrToggleButton::resetLookAndFeelOverrides()
             setProperty (Ids::uiToggleButtonFocusOutline, (String)LookAndFeel::findColour(ToggleButton::tickDisabledColourId).withAlpha(0.5f).toString()); // Tick colour
             setProperty (Ids::uiToggleButtontickColour, (String)LookAndFeel::findColour(ToggleButton::tickColourId).toString()); // Tick colour
         }
-        
-        setProperty (Ids::uiButtonLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
-        
+		
         updatePropertiesPanel(); // Refreshes property pane
     }
 }
@@ -308,36 +267,3 @@ void CtrlrToggleButton::updatePropertiesPanel()
         props->refreshAll(); // Needs extra code to prevent scrolling back to top on refresh
     }
 }
-
-
-
-
-
-//[/MiscUserCode]
-
-
-//==============================================================================
-#if 0
-/*  -- Jucer information section --
-
-    This is where the Jucer puts all of its metadata, so don't change anything in here!
-
-BEGIN_JUCER_METADATA
-
-<JUCER_COMPONENT documentType="Component" className="CtrlrToggleButton" componentName=""
-                 parentClasses="public CtrlrComponent" constructorParams="CtrlrModulator &amp;owner"
-                 variableInitialisers="CtrlrComponent(owner)" snapPixels="8" snapActive="1"
-                 snapShown="1" overlayOpacity="0.330000013" fixedSize="1" initialWidth="88"
-                 initialHeight="32">
-  <METHODS>
-    <METHOD name="mouseDown (const MouseEvent&amp; e)"/>
-  </METHODS>
-  <BACKGROUND backgroundColour="ffffff"/>
-  <TOGGLEBUTTON name="ctrlrButton" id="ece5e33c201d706e" memberName="ctrlrButton"
-                virtualName="" explicitFocusOrder="0" pos="0 0 0M 0M" buttonText="Button"
-                connectedEdges="0" needsCallback="1" radioGroupId="0" state="0"/>
-</JUCER_COMPONENT>
-
-END_JUCER_METADATA
-*/
-#endif

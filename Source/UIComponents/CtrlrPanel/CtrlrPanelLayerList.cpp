@@ -143,6 +143,24 @@ CtrlrPanelLayerList::~CtrlrPanelLayerList()
 }
 
 //==============================================================================
+void CtrlrPanelLayerList::paintOverChildren(Graphics &g)
+{
+    if (dropInsertionIndex >= 0) {
+        int lineY = headerComponent->getHeight() + dropInsertionIndex * layerList->getRowHeight() -
+					layerList->getViewport()->getViewPositionY();
+
+        g.setColour(Colours::forestgreen);
+        g.fillRect(layerList->getX(), lineY - 1, layerList->getWidth(), 2);
+
+        // Small arrowhead pointing right, sitting on the line
+        Path arrow;
+        int arrowSize = 6;
+        arrow.addTriangle((float)layerList->getX(), (float)(lineY - arrowSize), (float)layerList->getX(),
+						  (float)(lineY + arrowSize), (float)(layerList->getX() + arrowSize), (float)lineY);
+        g.fillPath(arrow);
+    }
+}
+
 void CtrlrPanelLayerList::paint (Graphics& g)
 {
     // Draw drop insertion indicator
@@ -389,30 +407,46 @@ void CtrlrPanelLayerList::itemDragEnter(const SourceDetails& dragSourceDetails)
     CtrlrChildWindowContent::repaint();
 }
 
+void CtrlrPanelLayerList::itemDragExit(const SourceDetails &dragSourceDetails)
+{
+	dropInsertionIndex = -1;
+	CtrlrChildWindowContent::repaint();
+}
+
 void CtrlrPanelLayerList::itemDragMove(const SourceDetails& dragSourceDetails)
 {
     // Get the mouse position relative to the ListBox's content area
     Point<int> localPos = layerList->getLocalPoint(static_cast<CtrlrChildWindowContent*>(this), dragSourceDetails.localPosition);
     
-    // Correct for the header row
-    int yPosRelativeToListBox = localPos.y - headerComponent->getHeight();
-    
-    // Calculate which row the mouse is over
-    int visualRow = yPosRelativeToListBox / layerList->getRowHeight();
 
-    // Clamp to valid range
-    visualRow = jmax(0, jmin(visualRow, getNumRows() - 1));
+	if (auto *vp = layerList->getViewport()) {
+		Point<int> vpPos = vp->getLocalPoint(layerList.get(), localPos);
+		vp->autoScroll(vpPos.x, vpPos.y, 20, 8);
+	}
 
-    // Store the visual row (we'll convert to actual layer index later)
-    dropInsertionIndex = visualRow;
-
-    CtrlrChildWindowContent::repaint();
+	dropInsertionIndex = getInsertionGapForDrag(dragSourceDetails);
+	
+	CtrlrChildWindowContent::repaint();
 }
 
-void CtrlrPanelLayerList::itemDragExit(const SourceDetails& dragSourceDetails)
+int CtrlrPanelLayerList::getVisualRowForDrag(const SourceDetails &dragSourceDetails)
 {
-    dropInsertionIndex = -1;
-    CtrlrChildWindowContent::repaint();
+	Point<int> localPos =
+		layerList->getLocalPoint(static_cast<CtrlrChildWindowContent *>(this), dragSourceDetails.localPosition);
+
+	int yPosRelativeToListBox = localPos.y - headerComponent->getHeight();
+
+	int row = layerList->getInsertionIndexForPosition(localPos.x, yPosRelativeToListBox);
+	return jmax(0, jmin(row, getNumRows() - 1));
+}
+
+int CtrlrPanelLayerList::getInsertionGapForDrag(const SourceDetails &dragSourceDetails)
+{
+	Point<int> localPos =
+		layerList->getLocalPoint(static_cast<CtrlrChildWindowContent *>(this), dragSourceDetails.localPosition);
+
+	int gap = layerList->getInsertionIndexForPosition(localPos.x, localPos.y); // no header subtraction
+	return jmax(0, jmin(gap, getNumRows()));
 }
 
 void CtrlrPanelLayerList::itemDropped(const SourceDetails& dragSourceDetails)
@@ -420,29 +454,30 @@ void CtrlrPanelLayerList::itemDropped(const SourceDetails& dragSourceDetails)
     if (!isInterestedInDragSource(dragSourceDetails))
         return;
 
-    // Extract the source row index from the description
-    String desc = dragSourceDetails.description.toString();
-    int sourceVisualRow = desc.getTrailingIntValue();
+	
+	String desc = dragSourceDetails.description.toString();
+	int sourceVisualRow = desc.getTrailingIntValue();
 
-    // Calculate target position relative to the ListBox
-    Point<int> localPos = layerList->getLocalPoint(static_cast<CtrlrChildWindowContent*>(this), dragSourceDetails.localPosition);
+	int gap = dropInsertionIndex >= 0 ? dropInsertionIndex : getInsertionGapForDrag(dragSourceDetails);
 
-    // Correct for the header row
-    int yPosRelativeToListBox = localPos.y - headerComponent->getHeight();
-    
-    int targetVisualRow = yPosRelativeToListBox / layerList->getRowHeight();
-    targetVisualRow = jmax(0, jmin(targetVisualRow, getNumRows() - 1));
+	if (sourceVisualRow >= 0 && sourceVisualRow < getNumRows()) {
+		// Convert the gap to a final visual row for an item that's already in the list:
+		// dropping "before" a gap that's past the source's current row means the
+		// source's own removal shifts everything above the gap up by one.
+		int targetVisualRow = (gap <= sourceVisualRow) ? gap : gap - 1;
+		targetVisualRow = jmax(0, jmin(targetVisualRow, getNumRows() - 1));
 
-    if (targetVisualRow != sourceVisualRow && sourceVisualRow >= 0 && sourceVisualRow < getNumRows())
-    {
-        // Convert visual rows to actual layer indices
-        int totalLayers = getNumRows();
-        int sourceActualIndex = totalLayers - 1 - sourceVisualRow;
-        int targetActualIndex = totalLayers - 1 - targetVisualRow;
+		if (targetVisualRow != sourceVisualRow && sourceVisualRow >= 0 && sourceVisualRow < getNumRows())
+		{
+			// Convert visual rows to actual layer indices
+			int totalLayers = getNumRows();
+			int sourceActualIndex = totalLayers - 1 - sourceVisualRow;
+			int targetActualIndex = totalLayers - 1 - targetVisualRow;
 
-        moveLayerToPosition(sourceActualIndex, targetActualIndex);
-    }
-
+			moveLayerToPosition(sourceActualIndex, targetActualIndex);
+		}
+	}
+	
     dropInsertionIndex = -1;
     CtrlrChildWindowContent::repaint();
 }

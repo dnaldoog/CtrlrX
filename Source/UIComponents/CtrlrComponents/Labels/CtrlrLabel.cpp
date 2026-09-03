@@ -307,6 +307,14 @@ bool CtrlrLabel::keyPressed (const KeyPress &key)
 //[/MiscUserCode]
 
 
+void CtrlrLabel::showTextEditor()
+{
+	if (ctrlrLabel != nullptr)
+	{
+		ctrlrLabel->showEditor();
+	}
+}
+
 //==============================================================================
 #if 0
 /*  -- Jucer information section --

@@ -60,6 +60,7 @@ private:
     // (prevent copy constructor and operator= being generated..)
     CtrlrToggleButton (const CtrlrToggleButton&);
     const CtrlrToggleButton& operator= (const CtrlrToggleButton&);
+    bool updatingLookAndFeel = false;
 };
 
 

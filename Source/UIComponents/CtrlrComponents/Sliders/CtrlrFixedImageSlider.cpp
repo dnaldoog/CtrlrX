@@ -46,12 +46,10 @@ CtrlrFixedImageSlider::CtrlrFixedImageSlider (CtrlrModulator &owner)
     setProperty (Ids::uiSliderMouseWheelInterval, 1);
     
     setProperty (Ids::uiFixedSliderContent, "");
-
-    setProperty (Ids::uiSliderLookAndFeel, "Default");
-    setProperty (Ids::uiSliderLookAndFeelIsCustom, false);
     
     setProperty (Ids::uiSliderPopupBubble, false);
-    
+	
+    setProperty (Ids::uiSliderLookAndFeel, "Default");
     setProperty (Ids::uiSliderStyle, "RotaryVerticalDrag");
          
     setProperty (Ids::uiImageSliderResource, COMBO_ITEM_NONE);
@@ -71,8 +69,6 @@ CtrlrFixedImageSlider::CtrlrFixedImageSlider (CtrlrModulator &owner)
     setProperty (Ids::uiSliderValueHighlightColour, (String)findColour (Slider::textBoxHighlightColourId).toString());
     setProperty (Ids::uiSliderValueBgColour, "0x00ffffff"); // (String)findColour (Slider::textBoxBackgroundColourId).toString());
     setProperty (Ids::uiSliderValueOutlineColour, "0x00ffffff"); //(String)findColour (Slider::textBoxOutlineColourId).toString());
-    
-    setProperty (Ids::uiSliderLookAndFeelIsCustom, false);
     
     setSize (64, 90);
 }
@@ -166,18 +162,14 @@ void CtrlrFixedImageSlider::valueTreePropertyChanged (ValueTree &treeWhoseProper
     }
     else if (property == Ids::uiSliderLookAndFeel)
     {
+        updatingLookAndFeel = true; // Set guard flag
+        
         String LookAndFeelType = getProperty(property);
         setLookAndFeel(getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
         
-        if (LookAndFeelType == "Default")
-        {
-            setProperty(Ids::uiSliderLookAndFeelIsCustom, false); // Resets the Customized Flag to False to allow Global L&F to apply
-        }
-        
-        if (!getProperty(Ids::uiSliderLookAndFeelIsCustom))
-        {
-            resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
-        }
+        resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
+		
+        updatingLookAndFeel = false; // Clear guard flag
     }
     else if (property == Ids::resourceImageWidth)
     {
@@ -202,22 +194,18 @@ void CtrlrFixedImageSlider::valueTreePropertyChanged (ValueTree &treeWhoseProper
     else if (property == Ids::uiSliderValueTextColour)
     {
         ctrlrSlider->setColour (Slider::textBoxTextColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueTextColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderValueHighlightColour)
     {
         ctrlrSlider->setColour (Slider::textBoxHighlightColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueHighlightColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderValueBgColour)
     {
         ctrlrSlider->setColour (Slider::textBoxBackgroundColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueBgColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderValueOutlineColour)
     {
         ctrlrSlider->setColour (Slider::textBoxOutlineColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueOutlineColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiFixedSliderContent)
     {
@@ -357,8 +345,6 @@ void CtrlrFixedImageSlider::resetLookAndFeelOverrides()
         setProperty (Ids::uiSliderValueHighlightColour, (String)findColour(Slider::textBoxHighlightColourId).toString());
         setProperty (Ids::uiSliderValueBgColour, "0x00ffffff"); // (String)findColour (Slider::textBoxBackgroundColourId).toString());
         setProperty (Ids::uiSliderValueOutlineColour, "0x00ffffff"); //(String)findColour (Slider::textBoxOutlineColourId).toString());
-        
-        setProperty (Ids::uiSliderLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
         
         updatePropertiesPanel(); // Refreshes property pane
     }

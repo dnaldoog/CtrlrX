@@ -60,6 +60,7 @@ private:
     // (prevent copy constructor and operator= being generated..)
     CtrlrImageSlider (const CtrlrImageSlider&);
     const CtrlrImageSlider& operator= (const CtrlrImageSlider&);
+    bool updatingLookAndFeel = false;
 };
 
 

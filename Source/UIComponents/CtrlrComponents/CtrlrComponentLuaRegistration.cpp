@@ -165,6 +165,7 @@ void CtrlrLabel::wrapForLua (lua_State *L)
 		.def("appendText", &CtrlrLabel::appendText)
 		.def("append", &CtrlrLabel::appendText)
 		.def("getText", &CtrlrLabel::getText)
+		.def("showTextEditor", &CtrlrLabel::showTextEditor) // Added v5.6.36. Display the label editor field
 		];
 }
 

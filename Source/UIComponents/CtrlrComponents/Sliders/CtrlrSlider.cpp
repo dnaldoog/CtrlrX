@@ -55,12 +55,10 @@ CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
     setProperty (Ids::uiSliderSpringValue, 0);
     
     setProperty (Ids::uiSliderMouseWheelInterval, 1);
-    
-    setProperty (Ids::uiSliderLookAndFeel, "Default");
-    setProperty (Ids::uiSliderLookAndFeelIsCustom, false);
-    
+
     setProperty (Ids::uiSliderPopupBubble, false);
-    
+	
+    setProperty (Ids::uiSliderLookAndFeel, "Default");
     setProperty (Ids::uiSliderStyle, "RotaryVerticalDrag");
     
     bool LegacyMode = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLegacyMode);  // Legacy mode flag for version before 5.6.29
@@ -94,7 +92,6 @@ CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
         setProperty (Ids::uiSliderThumbColour, "0xffff0000"); // 0xffff0000
         setProperty (Ids::uiSliderTrackColour, "0xff0f0f0f"); // 0xff0f0f0f
         setProperty (Ids::uiSliderBackgroundColour, "0x00000000"); // Added v5.5.36 for linear bar slider
-        setProperty (Ids::uiSliderLookAndFeelIsCustom, false);
     }
     else
     {
@@ -104,7 +101,6 @@ CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
         setProperty (Ids::uiSliderThumbColour, (String)findColour(Slider::thumbColourId).toString());
         setProperty (Ids::uiSliderTrackColour, (String)findColour(Slider::rotarySliderFillColourId).toString());
         setProperty (Ids::uiSliderBackgroundColour, (String)findColour(Slider::backgroundColourId).toString()); // Added v5.5.36 for linear bar slider
-        setProperty (Ids::uiSliderLookAndFeelIsCustom, false);
     }
     
     setProperty (Ids::uiSliderIncDecButtonColour, (String)findColour(Slider::backgroundColourId).toString());
@@ -129,8 +125,6 @@ CtrlrSlider::CtrlrSlider (CtrlrModulator &owner)
     setProperty (Ids::uiSliderValueHighlightColour, (String)findColour(Slider::textBoxHighlightColourId).toString());
     setProperty (Ids::uiSliderValueBgColour, "0x00ffffff"); // (String)findColour(Slider::textBoxBackgroundColourId).toString());
     setProperty (Ids::uiSliderValueOutlineColour, "0x00ffffff"); //(String)findColour(Slider::textBoxOutlineColourId).toString());
-    
-    setProperty (Ids::uiSliderLookAndFeelIsCustom, false);
 }
 
 CtrlrSlider::~CtrlrSlider()
@@ -218,63 +212,50 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
     }
     else if (property == Ids::uiSliderLookAndFeel)
     {
+        updatingLookAndFeel = true; // Set guard flag
+        
         String LookAndFeelType = getProperty(property);
-        setLookAndFeel(CtrlrSlider::getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
+        setLookAndFeel(getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
         
-        if (LookAndFeelType == "Default")
-        {
-            setProperty(Ids::uiSliderLookAndFeelIsCustom, false); // Resets the Customized Flag to False to allow Global L&F to apply
-        }
-        
-        if (!getProperty(Ids::uiSliderLookAndFeelIsCustom))
-        {
-            CtrlrSlider::resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
-        }
+        resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme. Safe to call because it has a condition for restore state.
+		
+        updatingLookAndFeel = false; // Clear guard flag
     }
     else if (property == Ids::uiSliderRotaryFillColour)
     {
         ctrlrSlider.setColour (Slider::rotarySliderFillColourId, VAR2COLOUR(getProperty (Ids::uiSliderRotaryFillColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderRotaryOutlineColour)
     {
         ctrlrSlider.setColour (Slider::rotarySliderOutlineColourId, VAR2COLOUR(getProperty (Ids::uiSliderRotaryOutlineColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderTrackColour)
     {
         ctrlrSlider.setColour (Slider::trackColourId, VAR2COLOUR(getProperty (Ids::uiSliderTrackColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderBackgroundColour) // Added v5.5.36 for linear bar slider
     {
         ctrlrSlider.setColour (Slider::backgroundColourId, VAR2COLOUR(getProperty (Ids::uiSliderBackgroundColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderThumbColour)
     {
         ctrlrSlider.setColour (Slider::thumbColourId, VAR2COLOUR(getProperty (Ids::uiSliderThumbColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderValueTextColour)
     {
         ctrlrSlider.setColour (Slider::textBoxTextColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueTextColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderValueHighlightColour)
     {
         ctrlrSlider.setColour (Slider::textBoxHighlightColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueHighlightColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderValueBgColour)
     {
         ctrlrSlider.setColour (Slider::textBoxBackgroundColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueBgColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderValueOutlineColour)
     {
         ctrlrSlider.setColour (Slider::textBoxOutlineColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueOutlineColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderInterval || property == Ids::uiSliderMax || property == Ids::uiSliderMin)
     {
@@ -344,7 +325,6 @@ void CtrlrSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChang
             ctrlrSlider.setLookAndFeel (nullptr); // Warning, it resets the LnF on loading. Uncommented v5.6.32
             ctrlrSlider.setLookAndFeel (&lfV4); // V5.6.28+. Uncommented v5.6.32
         }
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
         ctrlrSlider.lookAndFeelChanged(); // Added v5.6.32
     }
     else if (property == Ids::uiSliderVelocityMode
@@ -453,8 +433,6 @@ void CtrlrSlider::resetLookAndFeelOverrides()
         setProperty (Ids::uiSliderValueHighlightColour, (String)findColour(Slider::textBoxHighlightColourId).toString());
         setProperty (Ids::uiSliderValueBgColour, "0x00ffffff"); // (String)findColour(Slider::textBoxBackgroundColourId).toString());
         setProperty (Ids::uiSliderValueOutlineColour, "0x00ffffff"); //(String)findColour(Slider::textBoxOutlineColourId).toString());
-        
-        setProperty (Ids::uiSliderLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
         
         updatePropertiesPanel(); // Refreshes property pane
     }

@@ -46,11 +46,9 @@ CtrlrImageSlider::CtrlrImageSlider (CtrlrModulator &owner)
     
     setProperty (Ids::uiSliderMouseWheelInterval, 1);
     
-    setProperty (Ids::uiSliderLookAndFeel, "Default");
-    setProperty (Ids::uiSliderLookAndFeelIsCustom, false);
-    
     setProperty (Ids::uiSliderPopupBubble, false);
     
+    setProperty (Ids::uiSliderLookAndFeel, "Default");
     setProperty (Ids::uiSliderStyle, "RotaryVerticalDrag");
          
     setProperty (Ids::uiImageSliderResource, COMBO_ITEM_NONE);
@@ -68,8 +66,6 @@ CtrlrImageSlider::CtrlrImageSlider (CtrlrModulator &owner)
     setProperty (Ids::uiSliderValueHighlightColour, (String)findColour (Slider::textBoxHighlightColourId).toString());
     setProperty (Ids::uiSliderValueBgColour, "0x00ffffff"); // (String)findColour (Slider::textBoxBackgroundColourId).toString());
     setProperty (Ids::uiSliderValueOutlineColour, "0x00ffffff"); //(String)findColour (Slider::textBoxOutlineColourId).toString());
-    
-    setProperty (Ids::uiSliderLookAndFeelIsCustom, false);
     
     setSize (64, 90);
 }
@@ -139,18 +135,14 @@ void CtrlrImageSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
     }
     else if (property == Ids::uiSliderLookAndFeel)
     {
+        updatingLookAndFeel = true; // Set guard flag
+        
         String LookAndFeelType = getProperty(property);
         setLookAndFeel(getLookAndFeelFromComponentProperty(LookAndFeelType)); // Updates the current component LookAndFeel
         
-        if (LookAndFeelType == "Default")
-        {
-            setProperty(Ids::uiSliderLookAndFeelIsCustom, false); // Resets the Customized Flag to False to allow Global L&F to apply
-        }
-        
-        if (!getProperty(Ids::uiSliderLookAndFeelIsCustom))
-        {
-            resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
-        }
+        resetLookAndFeelOverrides(); // Retrieves LookAndFeel colours from selected ColourScheme
+		
+        updatingLookAndFeel = false; // Clear guard flag
     }
     else if (property == Ids::uiImageSliderResource)
     {
@@ -193,22 +185,18 @@ void CtrlrImageSlider::valueTreePropertyChanged (ValueTree &treeWhosePropertyHas
     else if (property == Ids::uiSliderValueTextColour)
     {
         ctrlrSlider->setColour (Slider::textBoxTextColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueTextColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderValueHighlightColour)
     {
         ctrlrSlider->setColour (Slider::textBoxHighlightColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueHighlightColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderValueBgColour)
     {
         ctrlrSlider->setColour (Slider::textBoxBackgroundColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueBgColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderValueOutlineColour)
     {
         ctrlrSlider->setColour (Slider::textBoxOutlineColourId, VAR2COLOUR(getProperty (Ids::uiSliderValueOutlineColour)) );
-        setProperty(Ids::uiSliderLookAndFeelIsCustom, true); // Locks the component custom colourScheme
     }
     else if (property == Ids::uiSliderValuePosition || property == Ids::uiSliderValueHeight || property == Ids::uiSliderValueWidth)
     {
@@ -328,8 +316,6 @@ void CtrlrImageSlider::resetLookAndFeelOverrides()
         setProperty (Ids::uiSliderValueBgColour, "0x00ffffff"); // (String)findColour (Slider::textBoxBackgroundColourId).toString());
         setProperty (Ids::uiSliderValueOutlineColour, "0x00ffffff"); //(String)findColour (Slider::textBoxOutlineColourId).toString());
         
-        setProperty (Ids::uiSliderLookAndFeelIsCustom, false); // Resets the component colourScheme if a new default colourScheme is selected from the menu
-        
         updatePropertiesPanel(); // Refreshes property pane
     }
 }
@@ -342,37 +328,3 @@ void CtrlrImageSlider::updatePropertiesPanel()
         props->refreshAll(); // Needs extra code to prevent scrolling back to top on refresh
     }
 }
-
-
-
-
-//[/MiscUserCode]
-
-
-//==============================================================================
-#if 0
-/*  -- Jucer information section --
-
-    This is where the Jucer puts all of its metadata, so don't change anything in here!
-
-BEGIN_JUCER_METADATA
-
-<JUCER_COMPONENT documentType="Component" className="CtrlrImageSlider" componentName=""
-                 parentClasses="public CtrlrComponent, public SettableTooltipClient"
-                 constructorParams="CtrlrModulator &amp;owner" variableInitialisers="CtrlrComponent(owner), lf(*this)"
-                 snapPixels="8" snapActive="1" snapShown="1" overlayOpacity="0.330000013"
-                 fixedSize="1" initialWidth="64" initialHeight="64">
-  <METHODS>
-    <METHOD name="mouseUp (const MouseEvent&amp; e)"/>
-    <METHOD name="mouseDoubleClick (const MouseEvent&amp; e)"/>
-  </METHODS>
-  <BACKGROUND backgroundColour="0"/>
-  <SLIDER name="ctrlrSlider" id="9d33c05c00f3fd09" memberName="ctrlrSlider"
-          virtualName="" explicitFocusOrder="0" pos="0 0 0M 0M" min="0"
-          max="10" int="0" style="LinearHorizontal" textBoxPos="TextBoxBelow"
-          textBoxEditable="1" textBoxWidth="80" textBoxHeight="20" skewFactor="1"/>
-</JUCER_COMPONENT>
-
-END_JUCER_METADATA
-*/
-#endif
