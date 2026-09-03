@@ -36,7 +36,7 @@ public:
 	void lookAndFeelChanged() override;
 	void updatePropertiesPanel();
 	CtrlrValueMap &getValueMap() { return (*valueMap); }
-	// void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr) {}
+	void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr) {}
 
 	static void wrapForLua(lua_State *L);
 	//[/UserMethods]

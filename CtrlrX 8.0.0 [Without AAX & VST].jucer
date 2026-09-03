@@ -624,6 +624,8 @@
           <FILE id="OOpHQ2" name="FONT_ZX81.ttf" compile="0" resource="1" file="Source/Resources/Fonts/FONT_ZX81.ttf"/>
         </GROUP>
         <GROUP id="{57CA4634-99B0-23FB-F19C-154181EAAE85}" name="Icons">
+          <FILE id="BiLLpE" name="ctrlrx_logo - org.svg" compile="0" resource="1"
+                file="Source/Resources/Icons/ctrlrx_logo - org.svg"/>
           <FILE id="yHfj7x" name="appbar.control.play.png" compile="0" resource="1"
                 file="Source/Resources/Icons/appbar.control.play.png"/>
           <FILE id="nNmsqF" name="appbar.debug.clean.png" compile="0" resource="1"
