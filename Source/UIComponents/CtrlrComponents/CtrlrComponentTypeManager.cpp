@@ -38,7 +38,7 @@ CtrlrComponent *CtrlrComponentTypeManager::createComponent (const Identifier& ui
 	if (uiType == Ids::uiCombo)
 		return (new CtrlrCombo(owner));
 	if (uiType == Ids::uiToggleButton)
-		return (new CtrlrToggleButton(owner));
+		return (new CtrlrButton(owner));
 	if (uiType == Ids::uiButton)
 		return (new CtrlrButton(owner));
 	if (uiType == Ids::uiImageButton)
