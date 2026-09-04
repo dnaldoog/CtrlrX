@@ -59,7 +59,7 @@ int main()
     try
     {
         luaL_openlibs(L);
-        #if JUCE_MAC
+#if 0 //JUCE_MAC
 // Disable LuaJIT compiler on macOS to prevent W^X memory protection crashes
 lua_getglobal(L, "jit");
 if (lua_istable(L, -1))
