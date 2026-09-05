@@ -70,9 +70,9 @@ endif()
 # -----------------------------------------------------------------------
 # Subdirectories (JUCE)
 # -----------------------------------------------------------------------
-# Prevent JUCE from attaching header install targets to CPack
+# Prevent JUCE from installing its own tools/headers into your package
+set(JUCE_INSTALL_HELPER_TARGETS OFF CACHE BOOL "" FORCE)
 set(JUCE_BUILD_HELPER_TARGETS OFF CACHE BOOL "" FORCE)
-set(JUCE_INSTALL_DESTINATION "" CACHE STRING "" FORCE)
 
 if(CTRLRX_USE_SYSTEM_JUCE)
     find_package(JUCE CONFIG REQUIRED)
@@ -435,6 +435,7 @@ if(LINUX)
     set(CPACK_RPM_PACKAGE_AUTOREQPROV ON)
     set(CPACK_RPM_PACKAGE_VENDOR "${CPACK_PACKAGE_VENDOR}")
     set(CPACK_RPM_PACKAGE_URL "${CPACK_PACKAGE_HOMEPAGE_URL}")
+    set(CPACK_GENERATOR "DEB;RPM;TGZ")
 
     include(CPack)
 endif()
