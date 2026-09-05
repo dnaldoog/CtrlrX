@@ -239,11 +239,11 @@ jobs:
             EXTRA_MAC_FLAGS="-DCTRLRX_FORCE_JIT_OFF=ON"
           fi
           
-          cmake -B ${{ env.BUILD_DIR }}
-          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-          -DCMAKE_C_COMPILER_LAUNCHER=sccache
-          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
-          -DCTRLRX_USE_LUAJIT=ON
+          cmake -B ${{ env.BUILD_DIR }} \
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+          -DCMAKE_C_COMPILER_LAUNCHER=sccache \
+          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+          -DCTRLRX_USE_LUAJIT=ON \
           ${{ matrix.extra-flags }} .
 
       - name: Build Project
