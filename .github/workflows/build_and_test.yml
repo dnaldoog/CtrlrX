@@ -231,7 +231,6 @@ jobs:
       # Build Execution Steps (Explicitly defining Core Macro Flag)
       # -----------------------------------------------------------------------
       - name: Configure CMake
-
         run: |
           EXTRA_MAC_FLAGS=""
           if [ "${{ env.HAVE_MACOS_SIGNING_SECRETS }}" != "true" ]; then
@@ -239,12 +238,12 @@ jobs:
             EXTRA_MAC_FLAGS="-DCTRLRX_FORCE_JIT_OFF=ON"
           fi
           
-          cmake -B ${{ env.BUILD_DIR }}
-          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-          -DCMAKE_C_COMPILER_LAUNCHER=sccache
-          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
-          -DCTRLRX_USE_LUAJIT=ON
-          ${{ matrix.extra-flags }} .
+          cmake -B ${{ env.BUILD_DIR }} \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            -DCMAKE_C_COMPILER_LAUNCHER=sccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+            -DCTRLRX_USE_LUAJIT=ON \
+            ${{ matrix.extra-flags }} .
 
       - name: Build Project
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }}
