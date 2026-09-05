@@ -372,14 +372,18 @@ if(LINUX)
         install(TARGETS "${PROJECT_NAME}" DESTINATION "${CMAKE_INSTALL_BINDIR}")
     endif()
 
-# 5. Install VST3 Plugin Bundle Directory (.vst3 folder layout)
+# 5. Install VST3 Plugin Bundle Directory
     if(NOT DEFINED VST3_INSTALL_DIR)
-        if(CPACK_GENERATOR OR CMAKE_INSTALL_PREFIX)
-            set(VST3_INSTALL_DIR "lib/vst3")
-        else()
-            set(VST3_INSTALL_DIR "$ENV{HOME}/.vst3")
-        endif()
+        set(VST3_INSTALL_DIR "lib/vst3")
     endif()
+
+    set(VST3_BUNDLE_SOURCE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}_artefacts/$<CONFIG>/VST3/${PRODUCT_NAME}.vst3")
+
+    install(DIRECTORY "${VST3_BUNDLE_SOURCE}"
+            DESTINATION "${VST3_INSTALL_DIR}"
+            FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+            DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+            FILES_MATCHING PATTERN "*")
 
     set(VST3_BUNDLE_SOURCE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}_artefacts/$<CONFIG>/VST3/${PRODUCT_NAME}.vst3")
 
@@ -408,17 +412,17 @@ endif()
 # Packaging & Distribution (CPack for Linux .deb / .rpm)
 # -----------------------------------------------------------------------
 if(LINUX)
-    # Prevent juceaide or auxiliary tools from being packaged
-    set_target_properties(juceaide PROPERTIES EXCLUDE_FROM_ALL TRUE)
+    # Exclude juceaide and build debris
     set(CPACK_EXCLUDE_FILES_FROM_ALL
+        "/JUCE/"
+        "/juceaide"
         "/include/"
         "/cmake/"
-        "/JUCE/"
         "\\\\.h$"
         "\\\\.hpp$"
         "\\\\.cmake$"
     )
-    # General CPack Information
+
     set(CPACK_PACKAGE_NAME "ctrlrx")
     set(CPACK_PACKAGE_VENDOR "CtrlrX Project")
     set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "MIDI Control Surface Framework & Editor")
@@ -427,10 +431,9 @@ if(LINUX)
     set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/ctrlrx/ctrlrx")
     set(CPACK_PACKAGE_LICENSE "GPL-3.0")
 
-    # Install Directory Structure
     set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local")
 
-    # Package all components (Standalone + VST3) into a single installer package
+    # Force single-package bundling across all components
     set(CPACK_MONOLITHIC_INSTALL ON)
 
     # DEB Metadata
@@ -446,6 +449,7 @@ if(LINUX)
     set(CPACK_RPM_PACKAGE_AUTOREQPROV ON)
     set(CPACK_RPM_PACKAGE_VENDOR "${CPACK_PACKAGE_VENDOR}")
     set(CPACK_RPM_PACKAGE_URL "${CPACK_PACKAGE_HOMEPAGE_URL}")
+
     set(CPACK_GENERATOR "DEB;RPM;TGZ")
 
     include(CPack)
