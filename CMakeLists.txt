@@ -70,6 +70,10 @@ endif()
 # -----------------------------------------------------------------------
 # Subdirectories (JUCE)
 # -----------------------------------------------------------------------
+# Prevent JUCE from attaching header install targets to CPack
+set(JUCE_BUILD_HELPER_TARGETS OFF CACHE BOOL "" FORCE)
+set(JUCE_INSTALL_DESTINATION "" CACHE STRING "" FORCE)
+
 if(CTRLRX_USE_SYSTEM_JUCE)
     find_package(JUCE CONFIG REQUIRED)
 else()
@@ -395,7 +399,14 @@ endif()
 if(LINUX)
     # Prevent juceaide or auxiliary tools from being packaged
     set_target_properties(juceaide PROPERTIES EXCLUDE_FROM_ALL TRUE)
-
+    set(CPACK_EXCLUDE_FILES_FROM_ALL
+        "/include/"
+        "/cmake/"
+        "/JUCE/"
+        "\\\\.h$"
+        "\\\\.hpp$"
+        "\\\\.cmake$"
+    )
     # General CPack Information
     set(CPACK_PACKAGE_NAME "ctrlrx")
     set(CPACK_PACKAGE_VENDOR "CtrlrX Project")
@@ -430,7 +441,9 @@ endif()
 
 include(PamplejuceIPP)
 
-enable_testing()
-add_subdirectory(Tests)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Tests/CMakeLists.txt")
+    enable_testing()
+    add_subdirectory(Tests)
+endif()
 
 include(GitHubENV)
