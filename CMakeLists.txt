@@ -317,7 +317,7 @@ endif()
 target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
 
 # -----------------------------------------------------------------------
-# Universal FreeDesktop Linux Icon, Launcher & VST3 Installation
+# Packaging & Distribution (CPack for Linux .deb / .rpm)
 # -----------------------------------------------------------------------
 if(LINUX)
     include(GNUInstallDirs)
@@ -372,19 +372,17 @@ if(LINUX)
         install(TARGETS "${PROJECT_NAME}" DESTINATION "${CMAKE_INSTALL_BINDIR}")
     endif()
 
-# 5. Install VST3 Plugin Bundle Directory
+    # 5. Install VST3 Plugin Bundle Directory
     if(NOT DEFINED VST3_INSTALL_DIR)
         set(VST3_INSTALL_DIR "lib/vst3")
     endif()
 
-    # Determine build type explicitly without using generator expressions
     if(CMAKE_BUILD_TYPE)
         set(CURRENT_BUILD_CONFIG "${CMAKE_BUILD_TYPE}")
     else()
         set(CURRENT_BUILD_CONFIG "Release")
     endif()
 
-    # Fixed path replacing $<CONFIG> with actual build type variable
     set(VST3_BUNDLE_SOURCE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}_artefacts/${CURRENT_BUILD_CONFIG}/VST3/${PRODUCT_NAME}.vst3")
 
     install(DIRECTORY "${VST3_BUNDLE_SOURCE}"
@@ -403,17 +401,8 @@ if(LINUX)
         execute_process(COMMAND gtk-update-icon-cache -f -q \"\${HICOLOR_DIR}\" ERROR_QUIET)
         execute_process(COMMAND update-desktop-database -q \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/applications\" ERROR_QUIET)
     ")
-endif()
 
-# -----------------------------------------------------------------------
-# Packaging & Distribution (CPack for Linux .deb / .rpm)
-# -----------------------------------------------------------------------
-if(LINUX)
-    # Explicitly exclude juceaide binary from any packaging rules
-    if(TARGET juceaide)
-        set_target_properties(juceaide PROPERTIES EXCLUDE_FROM_ALL TRUE)
-    endif()
-
+    # CPack Configuration
     set(CPACK_PACKAGE_NAME "ctrlrx")
     set(CPACK_PACKAGE_VENDOR "CtrlrX Project")
     set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "MIDI Control Surface Framework & Editor")
@@ -425,15 +414,22 @@ if(LINUX)
     set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local")
     set(CPACK_MONOLITHIC_INSTALL ON)
 
-    # Ignore build artifacts and helper directories
     set(CPACK_EXCLUDE_FILES_FROM_ALL
-        "/juceaide"
         "/JUCE/"
-        "/include/"
+        "/Source/"
+        "/Tests/"
         "/cmake/"
+        "/include/"
+        "/juceaide"
+        "\\\\.cpp$"
         "\\\\.h$"
         "\\\\.hpp$"
+        "\\\\.c$"
+        "\\\\.o$"
+        "\\\\.a$"
         "\\\\.cmake$"
+        "CMakeCache.txt"
+        "CMakeFiles"
     )
 
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "CtrlrX Team <support@ctrlrx.org>")

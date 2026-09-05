@@ -497,97 +497,30 @@ jobs:
           cd build
           cpack -G "DEB;RPM;TGZ"
 
-      - name: Upload Debian Package
+      - name: Upload DEB Package
         if: ${{ matrix.name == 'Linux' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ctrlrx-linux-deb
+          name: ctrlrx-debian-package
           path: build/*.deb
+          archive: false
 
       - name: Upload RPM Package
         if: ${{ matrix.name == 'Linux' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ctrlrx-linux-rpm
+          name: ctrlrx-rpm-package
           path: build/*.rpm
+          archive: false
 
       - name: Upload Tarball Package
         if: ${{ matrix.name == 'Linux' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ctrlrx-linux-tarball
+          name: ctrlrx-tarball-package
           path: build/*.tar.gz
-
-      # -----------------------------------------------------------------
-      # WINDOWS CODESIGNING & ASSET STRUCTURING
-      # -----------------------------------------------------------------
-      - name: Codesign with Azure Trusted Signing (Windows Plugins .EXE & .VST3)
-        if: ${{ matrix.name == 'Windows' && env.HAVE_AZURE_CLIENT_SECRET == 'true' }}
-        uses: azure/trusted-signing-action@v0.5.1
-        with:
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
-          endpoint: ${{ secrets.AZURE_ENDPOINT }}
-          trusted-signing-account-name: ${{ secrets.AZURE_CODE_SIGNING_NAME }}
-          certificate-profile-name: ${{ secrets.AZURE_CERT_PROFILE_NAME }}
-          files-folder: ${{ env.ARTIFACTS_PATH }}
-          files-folder-filter: exe,dll,vst3
-          files-folder-recurse: true
-
-      - name: Generate Installer (Windows)
-        if: ${{ matrix.name == 'Windows' }}
-        run: |
-          iscc "Packaging\Windows\installer.iss"
-          find -iname "*.exe"
-          mv "Packaging/Windows/Output/${{ env.ARTIFACT_NAME }}.exe" "${{ env.ARTIFACTS_PATH }}/"
-
-      - name: Codesign with Azure Trusted Signing (Windows Installer)
-        if: ${{ matrix.name == 'Windows' && env.HAVE_AZURE_CLIENT_SECRET == 'true' }}
-        uses: azure/trusted-signing-action@v0.5.1
-        with:
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
-          endpoint: ${{ secrets.AZURE_ENDPOINT }}
-          trusted-signing-account-name: ${{ secrets.AZURE_CODE_SIGNING_NAME }}
-          certificate-profile-name: ${{ secrets.AZURE_CERT_PROFILE_NAME }}
-          files-folder: ${{ env.ARTIFACTS_PATH }}
-          files-folder-filter: "${{ env.ARTIFACT_NAME }}.exe"
-          files-folder-recurse: false
-
-      # -----------------------------------------------------------------
-      # ARTIFACT DEPLOYMENT UPLOADS
-      # -----------------------------------------------------------------
-      - name: Upload Exe (Windows)
-        if: ${{ matrix.name == 'Windows' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_NAME }}.exe
-          path: "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.exe"
-
-      - name: Upload Packages (Linux)
-        if: ${{ matrix.name == 'Linux' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_NAME }}-Packages
-          path: |
-            ${{ env.BUILD_DIR }}/*.deb
-            ${{ env.BUILD_DIR }}/*.rpm
-            ${{ env.BUILD_DIR }}/*.tar.gz
-            ${{ env.ARTIFACTS_PATH }}/Standalone/${{ env.PRODUCT_NAME }}.sig
-
-      - name: Upload pkg (macOS)
-        if: ${{ matrix.name == 'macOS' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_NAME }}
-          path: Packaging/${{ env.ARTIFACT_NAME }}.pkg
-
-      - name: Setup tmate session if failed
-        uses: mxschmitt/action-tmate@v3
-        if: ${{ failure() && (github.event_name == 'workflow_dispatch' && inputs.debug_enabled) || (runner.debug) }}
-
+          archive: false
+          
   # -----------------------------------------------------------------
   # RELEASE DISTRIBUTION
   # -----------------------------------------------------------------
