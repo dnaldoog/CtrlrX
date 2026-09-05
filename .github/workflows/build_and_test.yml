@@ -497,7 +497,8 @@ jobs:
           cd build
           cpack -G "DEB;RPM;TGZ"
 
-            - name: Upload Artifacts
+            - name: Upload Linux Packages
+              if: ${{ matrix.name == 'Linux' }} 
               uses: actions/upload-artifact@v4
               with:
                 name: linux-packages
