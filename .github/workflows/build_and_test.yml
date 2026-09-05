@@ -251,8 +251,15 @@ jobs:
 
       - name: Read in .env from CMake
         run: |
-          cat .env
-          cat .env >> $GITHUB_ENV
+          if [ -f .env ]; then
+            cat .env
+            cat .env >> $GITHUB_ENV
+          elif [ -f ${{ env.BUILD_DIR }}/.env ]; then
+            cat ${{ env.BUILD_DIR }}/.env
+            cat ${{ env.BUILD_DIR }}/.env >> $GITHUB_ENV
+          else
+            echo "Warning: .env file not found, skipping..."
+          fi
 
       - name: Set additional env vars for next steps
         run: |
