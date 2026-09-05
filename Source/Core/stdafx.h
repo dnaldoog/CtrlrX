@@ -2,19 +2,14 @@
 #define __STDAFX_H__
 
 #ifdef __cplusplus
-
-// Force standard C/C++ type definitions into global scope BEFORE JUCE/Lua
+// Ensure standard C/C++ types exist before JUCE or system headers
 #include <stddef.h>
 #include <stdint.h>
 #include <cstddef>
 #include <cstdint>
-#include <array>
-#include <vector>
 
-// Include JUCE
 #include "JuceHeader.h"
 
-// Include Lua inside extern "C"
 extern "C"
 {
 #include "lua.h"
