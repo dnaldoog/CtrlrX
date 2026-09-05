@@ -18,7 +18,9 @@ include(PamplejuceVersion)
 option(CTRLRX_ENABLE_CPM "Enable CPM-based optional dependencies" OFF)
 option(CTRLRX_USE_SYSTEM_JUCE "Use system-installed JUCE instead of vendored JUCE submodule" OFF)
 option(CTRLRX_COPY_PLUGIN_AFTER_BUILD "Copy plugin artefacts to user/system plugin folders after build" OFF)
-option(CTRLRX_USE_LUAJIT "Use LuaJIT instead of standard Lua" ON)
+option(CTRLRX_USE_LUAJIT "Use LuaJIT instead of standard Lua" ON) 
+option(CTRLRX_ENABLE_MACOS_LUAJIT "Allow LuaJIT on macOS builds" ON) 
+#cmake -B build -DCTRLRX_ENABLE_MACOS_LUAJIT=ON
 option(CTRLRX_FORCE_JIT_OFF "Force disable LuaJIT compiler on macOS for unsigned builds" OFF)
 
 if(CTRLRX_ENABLE_CPM)
@@ -83,7 +85,14 @@ endif()
 # -----------------------------------------------------------------------
 # Lua / LuaJIT Architecture Routing (Isolated cleanly)
 # -----------------------------------------------------------------------
-if(CTRLRX_USE_LUAJIT)
+# Determine whether LuaJIT should actually be active for this build
+if(APPLE AND NOT CTRLRX_ENABLE_MACOS_LUAJIT)
+    set(USE_LUAJIT_FOR_BUILD OFF)
+else()
+    set(USE_LUAJIT_FOR_BUILD ${CTRLRX_USE_LUAJIT})
+endif()
+
+if(USE_LUAJIT_FOR_BUILD)
     set(LUAJIT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luajit")
     set(LUAJIT_INCLUDE_TARGET "${LUAJIT_DIR}/src")
     
@@ -227,7 +236,7 @@ target_include_directories(SharedCode INTERFACE
 )
 
 # Conditional Engine Include Routing
-if(CTRLRX_USE_LUAJIT)
+if(USE_LUAJIT_FOR_BUILD)
     target_include_directories(SharedCode INTERFACE "${LUAJIT_INCLUDE_TARGET}")
 else()
     target_include_directories(SharedCode INTERFACE "${LUA_INCLUDE_TARGET}")
@@ -255,7 +264,7 @@ if(UNIX)
     target_compile_options(SharedCode INTERFACE -w -Wno-implicit-fallthrough -Wno-maybe-uninitialized -Wno-missing-field-initializers -Wno-free-nonheap-object)
 endif()
 
-if(CTRLRX_USE_LUAJIT)
+if(USE_LUAJIT_FOR_BUILD)
     target_compile_definitions(SharedCode INTERFACE CTRLRX_USE_LUAJIT=1)
 endif()
 
@@ -290,7 +299,7 @@ target_link_libraries(SharedCode INTERFACE
 )
 
 # Explicit static engine binary targeting
-if(CTRLRX_USE_LUAJIT)
+if(USE_LUAJIT_FOR_BUILD)
     target_link_libraries(SharedCode INTERFACE "${LUA_STATIC_LIB_TARGET}")
 endif()
 
@@ -366,7 +375,7 @@ if(LINUX)
 # 5. Install VST3 Plugin Bundle Directory (.vst3 folder layout)
     if(NOT DEFINED VST3_INSTALL_DIR)
         if(CPACK_GENERATOR OR CMAKE_INSTALL_PREFIX)
-            set(VST3_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/vst3")
+            set(VST3_INSTALL_DIR "lib/vst3")
         else()
             set(VST3_INSTALL_DIR "$ENV{HOME}/.vst3")
         endif()
@@ -374,23 +383,13 @@ if(LINUX)
 
     set(VST3_BUNDLE_SOURCE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}_artefacts/$<CONFIG>/VST3/${PRODUCT_NAME}.vst3")
 
-if(NOT DEFINED VST3_INSTALL_DIR)
-    if(CPACK_GENERATOR OR CMAKE_INSTALL_PREFIX)
-        set(VST3_INSTALL_DIR "lib/vst3")
-    else()
-        set(VST3_INSTALL_DIR "$ENV{HOME}/.vst3")
-    endif()
-endif()
-
-set(VST3_BUNDLE_SOURCE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}_artefacts/$<CONFIG>/VST3/${PRODUCT_NAME}.vst3")
-
-# Ensure the destination parent directory is created before copying files
-install(DIRECTORY "${VST3_BUNDLE_SOURCE}"
-        DESTINATION "${VST3_INSTALL_DIR}"
-        COMPONENT VST3
-        FILES_MATCHING PATTERN "*"
-        FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-        DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+    # Ensure permissions are placed before PATTERN/REGEX clauses
+    install(DIRECTORY "${VST3_BUNDLE_SOURCE}"
+            DESTINATION "${VST3_INSTALL_DIR}"
+            COMPONENT VST3
+            FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+            DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+            FILES_MATCHING PATTERN "*")
 
     # 6. Post-install hooks for GTK Icon Cache and Desktop Database
     install(CODE "
