@@ -110,6 +110,25 @@ else()
 endif()
 
 # -----------------------------------------------------------------------
+# macOS Hardened Runtime & JIT Entitlements
+# -----------------------------------------------------------------------
+if(APPLE)
+    set(MACOS_ENTITLEMENTS "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/MacOS/Entitlements.plist")
+
+    if(TARGET "${PROJECT_NAME}")
+        set_target_properties("${PROJECT_NAME}" PROPERTIES
+            XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${MACOS_ENTITLEMENTS}"
+        )
+    endif()
+
+    if(TARGET "${PROJECT_NAME}_Standalone")
+        set_target_properties("${PROJECT_NAME}_Standalone" PROPERTIES
+            XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${MACOS_ENTITLEMENTS}"
+        )
+    endif()
+endif()
+
+# -----------------------------------------------------------------------
 # SDK Paths
 # -----------------------------------------------------------------------
 if("VST" IN_LIST FORMATS)
