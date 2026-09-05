@@ -497,15 +497,15 @@ jobs:
           cd build
           cpack -G "DEB;RPM;TGZ"
 
-            - name: Upload Linux Packages
-              if: ${{ matrix.name == 'Linux' }} 
-              uses: actions/upload-artifact@v4
-              with:
-                name: linux-packages
-                path: |
-                  build/*.deb
-                  build/*.rpm
-                  build/*.tar.gz
+      - name: Upload Linux Packages
+        if: ${{ matrix.name == 'Linux' }} 
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: |
+            build/*.deb
+            build/*.rpm
+            build/*.tar.gz
 
       # -----------------------------------------------------------------
       # WINDOWS CODESIGNING & ASSET STRUCTURING
