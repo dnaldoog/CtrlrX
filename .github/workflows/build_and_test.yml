@@ -491,11 +491,15 @@ jobs:
         env:
           GPG_PASSPHRASE: ${{ secrets.GPG_SIGNING_PASSPHRASE }}
 
-      - name: Package with CPack
+      - name: Package with CPack (DEB/RPM)
         if: ${{ matrix.name == 'Linux' }}
         run: |
           cd build
-          cpack -G "DEB;RPM;TGZ"
+          cpack -G "DEB;RPM"
+
+      - name: Build portable tarball
+        if: ${{ matrix.name == 'Linux' }}
+        run: cmake --build build --target portable_tarball
 
       - name: Upload DEB Package
         if: ${{ matrix.name == 'Linux' }}

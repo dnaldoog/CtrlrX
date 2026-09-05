@@ -372,9 +372,15 @@ if(LINUX)
         install(TARGETS "${PROJECT_NAME}" DESTINATION "${CMAKE_INSTALL_BINDIR}")
     endif()
 
-    # 5. Install VST3 Plugin Bundle Directory
-    if(NOT DEFINED VST3_INSTALL_DIR)
-        set(VST3_INSTALL_DIR "lib/vst3")
+    # 5. Stage the VST3 bundle in a package-owned, non-scanned location.
+    #    We deliberately do NOT install straight into /usr/lib/vst3 or
+    #    /usr/local/lib/vst3: JG wants the plugin to live in ~/.vst3, which is
+    #    a per-user path that dpkg/rpm cannot target directly at install time
+    #    (there is no single $HOME while a package's file list is being laid
+    #    down as root). Instead we ship the bundle under a fixed package path
+    #    and have postinst (below) copy it into the invoking user's ~/.vst3.
+    if(NOT DEFINED VST3_STAGE_DIR)
+        set(VST3_STAGE_DIR "share/ctrlrx/vst3")
     endif()
 
     if(CMAKE_BUILD_TYPE)
@@ -386,7 +392,7 @@ if(LINUX)
     set(VST3_BUNDLE_SOURCE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}_artefacts/${CURRENT_BUILD_CONFIG}/VST3/${PRODUCT_NAME}.vst3")
 
     install(DIRECTORY "${VST3_BUNDLE_SOURCE}"
-            DESTINATION "${VST3_INSTALL_DIR}"
+            DESTINATION "${VST3_STAGE_DIR}"
             FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
             DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
@@ -414,35 +420,62 @@ if(LINUX)
     set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local")
     set(CPACK_MONOLITHIC_INSTALL ON)
 
-    set(CPACK_EXCLUDE_FILES_FROM_ALL
-        "/JUCE/"
-        "/Source/"
-        "/Tests/"
-        "/cmake/"
-        "/include/"
-        "/juceaide"
-        "\\\\.cpp$"
-        "\\\\.h$"
-        "\\\\.hpp$"
-        "\\\\.c$"
-        "\\\\.o$"
-        "\\\\.a$"
-        "\\\\.cmake$"
-        "CMakeCache.txt"
-        "CMakeFiles"
-    )
+    # NOTE: CPACK_EXCLUDE_FILES_FROM_ALL is a CPACK_SOURCE_IGNORE_FILES-style
+    # variable — it only affects `make package_source`, not the DEB/RPM/TGZ
+    # binary generators used here, so it was never actually filtering
+    # anything out of those packages. It has been removed. The binary
+    # packages only ever contain what an install() rule above puts in the
+    # staging tree, so there is nothing left here that needs excluding.
 
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "CtrlrX Team <support@ctrlrx.org>")
     set(CPACK_DEBIAN_PACKAGE_SECTION "sound")
     set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
     set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 
+    # postinst copies the staged VST3 bundle into the invoking user's
+    # ~/.vst3; postrm removes it again on package removal/purge.
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+        "${CMAKE_CURRENT_SOURCE_DIR}/Packaging/Linux/postinst;${CMAKE_CURRENT_SOURCE_DIR}/Packaging/Linux/postrm-deb")
+
     set(CPACK_RPM_PACKAGE_LICENSE "GPLv3")
     set(CPACK_RPM_PACKAGE_GROUP "Applications/Multimedia")
+    set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Packaging/Linux/postinst")
+    set(CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Packaging/Linux/postrm-rpm")
 
-    set(CPACK_GENERATOR "DEB;RPM;TGZ")
+    # Only DEB/RPM go through CPack. The .tar.gz is built separately below
+    # by the `portable_tarball` target: CPack's TGZ generator repackages the
+    # exact same install() tree as DEB/RPM (full /usr/local/bin,
+    # /usr/local/share/... layout, plus whatever else the wider CMake project
+    # graph — including JUCE's own subdirectory — happens to register via
+    # install()), which is what was pulling the whole JUCE artefact tree and
+    # things like juceaide into the tarball. A hand-built archive avoids that
+    # class of problem entirely rather than trying to filter it after the fact.
+    set(CPACK_GENERATOR "DEB;RPM")
 
     include(CPack)
+
+    # -----------------------------------------------------------------------
+    # Portable tarball: exactly two things — the standalone executable and a
+    # vst3/ folder containing the .vst3 bundle. No FHS paths, no build tools.
+    # -----------------------------------------------------------------------
+    set(PORTABLE_TARBALL_NAME "${CPACK_PACKAGE_NAME}-${CURRENT_VERSION}-linux-x86_64")
+    set(PORTABLE_TARBALL_STAGE "${CMAKE_BINARY_DIR}/portable_tarball_stage")
+
+    add_custom_target(portable_tarball
+        COMMAND ${CMAKE_COMMAND} -E remove_directory "${PORTABLE_TARBALL_STAGE}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${PORTABLE_TARBALL_STAGE}/${PORTABLE_TARBALL_NAME}/vst3"
+        COMMAND ${CMAKE_COMMAND} -E copy
+                "$<TARGET_FILE:${PROJECT_NAME}_Standalone>"
+                "${PORTABLE_TARBALL_STAGE}/${PORTABLE_TARBALL_NAME}/${PRODUCT_NAME}"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${VST3_BUNDLE_SOURCE}"
+                "${PORTABLE_TARBALL_STAGE}/${PORTABLE_TARBALL_NAME}/vst3/${PRODUCT_NAME}.vst3"
+        COMMAND ${CMAKE_COMMAND} -E chdir "${PORTABLE_TARBALL_STAGE}"
+                ${CMAKE_COMMAND} -E tar cfz "${CMAKE_BINARY_DIR}/${PORTABLE_TARBALL_NAME}.tar.gz" "${PORTABLE_TARBALL_NAME}"
+        DEPENDS "${PROJECT_NAME}_Standalone"
+        COMMENT "Building portable tarball (executable + vst3/ only)"
+        VERBATIM
+    )
 endif()
 
 include(PamplejuceIPP)
