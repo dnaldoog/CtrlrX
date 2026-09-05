@@ -396,16 +396,23 @@ if(LINUX)
             FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
             DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
-    # 6. Post-install hooks for GTK Icon Cache and Desktop Database
+    # 6. Fallback index.theme only — NOT icon cache generation.
+    #    IMPORTANT: gtk-update-icon-cache must never run here. install(CODE)
+    #    executes while CPack is staging the package payload, when the
+    #    hicolor dir only contains CtrlrX's own icons — running the cache
+    #    tool at this point bakes a real icon-theme.cache binary into the
+    #    package, which then OVERWRITES the real system-wide hicolor cache
+    #    on the end user's machine when the package installs, breaking icon
+    #    lookups for every other app that shares that theme. Cache
+    #    regeneration now happens live on the target machine instead, from
+    #    postinst/postrm (see Packaging/Linux/), and is never itself a
+    #    package-tracked file.
     install(CODE "
         set(HICOLOR_DIR \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/icons/hicolor\")
         if(NOT EXISTS \"\${HICOLOR_DIR}/index.theme\")
             file(WRITE \"\${HICOLOR_DIR}/index.theme\"
                 \"[Icon Theme]\\nName=Hicolor\\nComment=Fallback icon theme\\nHidden=true\\nDirectories=scalable/apps,16x16/apps,32x32/apps,48x48/apps,64x64/apps,128x128/apps,256x256/apps,512x512/apps\\n\")
         endif()
-        
-        execute_process(COMMAND gtk-update-icon-cache -f -q \"\${HICOLOR_DIR}\" ERROR_QUIET)
-        execute_process(COMMAND update-desktop-database -q \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/applications\" ERROR_QUIET)
     ")
 
     # CPack Configuration

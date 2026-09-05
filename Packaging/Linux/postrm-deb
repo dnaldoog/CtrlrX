@@ -21,4 +21,15 @@ case "$1" in
         ;;
 esac
 
+HICOLOR_DIR="/usr/local/share/icons/hicolor"
+APPS_DIR="/usr/local/share/applications"
+
+if command -v gtk-update-icon-cache >/dev/null 2>&1 && [ -d "$HICOLOR_DIR" ]; then
+    gtk-update-icon-cache -f -q "$HICOLOR_DIR" || true
+fi
+
+if command -v update-desktop-database >/dev/null 2>&1 && [ -d "$APPS_DIR" ]; then
+    update-desktop-database -q "$APPS_DIR" || true
+fi
+
 exit 0

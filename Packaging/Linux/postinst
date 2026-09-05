@@ -41,4 +41,21 @@ chown -R "$REAL_USER:$REAL_USER" "$REAL_HOME/.vst3/CtrlrX.vst3" 2>/dev/null || t
 
 echo "ctrlrx: installed VST3 plugin to $REAL_HOME/.vst3/CtrlrX.vst3"
 
+# Refresh the shared GTK icon cache and desktop database now that our
+# files actually exist on this machine's real hicolor tree. This must
+# happen here, live, on install — never at package-build time, since a
+# cache generated from a build-time staging tree (containing only
+# CtrlrX's own icons) would overwrite the real system-wide cache instead
+# of merging with it.
+HICOLOR_DIR="/usr/local/share/icons/hicolor"
+APPS_DIR="/usr/local/share/applications"
+
+if command -v gtk-update-icon-cache >/dev/null 2>&1 && [ -d "$HICOLOR_DIR" ]; then
+    gtk-update-icon-cache -f -q "$HICOLOR_DIR" || true
+fi
+
+if command -v update-desktop-database >/dev/null 2>&1 && [ -d "$APPS_DIR" ]; then
+    update-desktop-database -q "$APPS_DIR" || true
+fi
+
 exit 0
