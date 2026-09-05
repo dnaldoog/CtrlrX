@@ -347,6 +347,125 @@ jobs:
           envsubst < ./Mac/distribution.xml.template > distribution.xml
           productbuild --resources ./resources --distribution distribution.xml "${{ env.ARTIFACT_NAME }}.pkg"
 
+# -----------------------------------------------------------------------
+      # Build Execution Steps (Explicitly defining Core Macro Flag)
+      # -----------------------------------------------------------------------
+      - name: Configure CMake
+        run: |
+          EXTRA_MAC_FLAGS=""
+          if [ "${{ env.HAVE_MACOS_SIGNING_SECRETS }}" != "true" ]; then
+            echo "Signing secrets missing. Forcing LuaJIT off for unsigned macOS build."
+            EXTRA_MAC_FLAGS="-DCTRLRX_FORCE_JIT_OFF=ON"
+          fi
+          
+          cmake -B ${{ env.BUILD_DIR }} \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            -DCMAKE_C_COMPILER_LAUNCHER=sccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+            -DCTRLRX_USE_LUAJIT=ON \
+            ${{ matrix.extra-flags }} .
+
+      - name: Build Project
+        run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }}
+
+      - name: Read in .env from CMake
+        run: |
+          cat .env
+          cat .env >> $GITHUB_ENV
+
+      - name: Set additional env vars for next steps
+        run: |
+          ARTIFACTS_PATH=${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}
+          echo "ARTIFACTS_PATH=$ARTIFACTS_PATH" >> $GITHUB_ENV
+          echo "VST3_PATH=$ARTIFACTS_PATH/VST3/${{ env.PRODUCT_NAME }}.vst3" >> $GITHUB_ENV
+          echo "AU_PATH=$ARTIFACTS_PATH/AU/${{ env.PRODUCT_NAME }}.component" >> $GITHUB_ENV
+          echo "AUV3_PATH=$ARTIFACTS_PATH/AUv3/${{ env.PRODUCT_NAME }}.appex" >> $GITHUB_ENV
+          echo "CLAP_PATH=$ARTIFACTS_PATH/CLAP/${{ env.PRODUCT_NAME }}.clap" >> $GITHUB_ENV
+          echo "STANDALONE_PATH=$ARTIFACTS_PATH/Standalone/${{ env.PRODUCT_NAME }}.app" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=${{ env.PRODUCT_NAME }}-${{ env.VERSION }}-${{ matrix.name }}" >> $GITHUB_ENV
+
+      - name: Pluginval Verification Pass
+        run: |
+          curl -LO "https://github.com/Tracktion/pluginval/releases/download/v1.0.3/pluginval_${{ matrix.name }}.zip"
+          7z x pluginval_${{ matrix.name }}.zip
+          ${{ matrix.pluginval-binary }} --strictness-level 10 --verbose --validate "${{ env.VST3_PATH }}"
+
+      # -----------------------------------------------------------------
+      # APPLE CODESIGNING STEPS (Your original fully certified workspace)
+      # -----------------------------------------------------------------
+      - name: Import Merged Developer ID Certificates
+        if: ${{ matrix.name == 'macOS' && env.HAVE_MACOS_SIGNING_SECRETS == 'true' }}
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.DEV_ID_COMBO_CERT }}
+          p12-password: ${{ secrets.DEV_ID_COMBO_PASSWORD }}
+          keychain-password: gha_temp_password
+          create-keychain: true 
+          keychain: signing_temp
+
+      - name: Final Keychain Configuration (Bypass Trust Anchor Import)
+        if: ${{ matrix.name == 'macOS' && env.HAVE_MACOS_SIGNING_SECRETS == 'true' }}
+        run: |
+          KEYCHAIN_NAME="signing_temp"
+          KEYCHAIN_ABS_PATH="/Users/runner/Library/Keychains/${KEYCHAIN_NAME}.keychain-db"
+          /usr/bin/security list-keychains -d user -s "$KEYCHAIN_ABS_PATH" login.keychain
+
+      - name: Codesign (macOS)
+        if: ${{ matrix.name == 'macOS' && env.HAVE_MACOS_SIGNING_SECRETS == 'true' }}
+        run: |
+          APP_IDENTITY="${{ secrets.DEVELOPER_ID_APPLICATION }}"
+          echo "--- AVAILABLE SIGNING IDENTITIES ---"
+          security find-identity -p codesigning -v
+          echo "------------------------------------"
+          codesign --force -s "$APP_IDENTITY" -v "${{ env.VST3_PATH }}" --deep --strict --options=runtime --timestamp
+          codesign --force -s "$APP_IDENTITY" -v "${{ env.AU_PATH }}" --deep --strict --options=runtime --timestamp
+          if [ -f "${{ env.CLAP_PATH }}" ]; then
+            codesign --force -s "$APP_IDENTITY" -v "${{ env.CLAP_PATH }}" --deep --strict --options=runtime --timestamp
+          fi
+          codesign --force -s "$APP_IDENTITY" -v "${{ env.STANDALONE_PATH }}" --deep --strict --options=runtime --timestamp
+
+      - name: Add Custom Icons (macOS)
+        if: ${{ matrix.name == 'macOS' }}
+        run: |
+          sips -i Packaging/Mac/Icon.icns
+          DeRez -only icns Packaging/Mac/Icon.icns > /tmp/icons
+          Rez -a /tmp/icons -o "${{ env.VST3_PATH }}/Icon"$'\r'
+          Rez -a /tmp/icons -o "${{ env.AU_PATH }}/Icon"$'\r'
+          SetFile -a C "${{ env.VST3_PATH }}"
+          SetFile -a C "${{ env.AU_PATH }}"
+
+      # -----------------------------------------------------------------
+      # PACKAGING & NOTARIZATION PROCEDURES
+      # -----------------------------------------------------------------
+      - name: Signed Packaging and Notarization (macOS)
+        if: ${{ matrix.name == 'macOS' && env.HAVE_MACOS_SIGNING_SECRETS == 'true' }}
+        timeout-minutes: 30
+        run: |
+          pkgbuild --identifier "${{ env.BUNDLE_ID }}.au.pkg" --version $VERSION --component "${{ env.AU_PATH }}" --install-location "/Library/Audio/Plug-Ins/Components"  "Packaging/${{ env.PRODUCT_NAME }}.au.pkg"
+          pkgbuild --identifier "${{ env.BUNDLE_ID }}.vst3.pkg" --version $VERSION --component "${{ env.VST3_PATH }}" --install-location "/Library/Audio/Plug-Ins/VST3" "Packaging/${{ env.PRODUCT_NAME }}.vst3.pkg"
+          pkgbuild --analyze --root "$(dirname "${{ env.STANDALONE_PATH }}")" standalone.plist
+          plutil -replace BundleIsRelocatable -bool NO standalone.plist
+          pkgbuild --identifier "${{ env.BUNDLE_ID }}.app.pkg" --version $VERSION --root "$(dirname "${{ env.STANDALONE_PATH }}")" --component-plist standalone.plist --install-location "/Applications" "Packaging/${{ env.PRODUCT_NAME }}.app.pkg"
+          cd Packaging
+          envsubst < ./Mac/distribution.xml.template > distribution.xml
+          productbuild --resources ./resources --distribution distribution.xml --sign "${{ secrets.DEVELOPER_ID_INSTALLER }}" --timestamp "${{ env.ARTIFACT_NAME }}.pkg"
+          xcrun notarytool submit "${{ env.ARTIFACT_NAME }}.pkg" --apple-id ${{ secrets.NOTARIZATION_USERNAME }} --password ${{ secrets.NOTARIZATION_PASSWORD }} --team-id ${{ secrets.TEAM_ID }} --wait
+          xcrun stapler staple "${{ env.ARTIFACT_NAME }}.pkg"
+
+      - name: Unsigned Packaging (macOS Fallback)
+        if: ${{ matrix.name == 'macOS' && env.HAVE_MACOS_SIGNING_SECRETS != 'true' }}
+        timeout-minutes: 30
+        run: |
+          echo "WARNING: Codesigning secrets not found. Building unsigned package only."
+          pkgbuild --identifier "${{ env.BUNDLE_ID }}.au.pkg" --version $VERSION --component "${{ env.AU_PATH }}" --install-location "/Library/Audio/Plug-Ins/Components"  "Packaging/${{ env.PRODUCT_NAME }}.au.pkg"
+          pkgbuild --identifier "${{ env.BUNDLE_ID }}.vst3.pkg" --version $VERSION --component "${{ env.VST3_PATH }}" --install-location "/Library/Audio/Plug-Ins/VST3" "Packaging/${{ env.PRODUCT_NAME }}.vst3.pkg"
+          pkgbuild --analyze --root "$(dirname "${{ env.STANDALONE_PATH }}")" standalone.plist
+          plutil -replace BundleIsRelocatable -bool NO standalone.plist
+          pkgbuild --identifier "${{ env.BUNDLE_ID }}.app.pkg" --version $VERSION --root "$(dirname "${{ env.STANDALONE_PATH }}")" --component-plist standalone.plist --install-location "/Applications" "Packaging/${{ env.PRODUCT_NAME }}.app.pkg"
+          cd Packaging
+          envsubst < ./Mac/distribution.xml.template > distribution.xml
+          productbuild --resources ./resources --distribution distribution.xml "${{ env.ARTIFACT_NAME }}.pkg"
+
       # -----------------------------------------------------------------
       # LINUX CODESIGNING, SIGNATURE VERIFICATION & CPACK
       # -----------------------------------------------------------------
@@ -372,6 +491,7 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.GPG_SIGNING_PASSPHRASE }}
 
       - name: Package with CPack
+        if: ${{ matrix.name == 'Linux' }}
         run: |
           cd build
           cpack -G "DEB;RPM;TGZ"
