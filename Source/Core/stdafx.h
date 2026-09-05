@@ -3,17 +3,18 @@
 
 #ifdef __cplusplus
 
-// 1. Force standard C++ types to resolve BEFORE anything else
+// Force standard C/C++ type definitions into global scope BEFORE JUCE/Lua
+#include <stddef.h>
+#include <stdint.h>
 #include <cstddef>
 #include <cstdint>
 #include <array>
 #include <vector>
-#include <string>
 
-// 2. Include JUCE Header for both pure C++ and Objective-C++ (.mm) files
+// Include JUCE
 #include "JuceHeader.h"
 
-// 3. Include Lua cleanly wrapped in extern "C"
+// Include Lua inside extern "C"
 extern "C"
 {
 #include "lua.h"

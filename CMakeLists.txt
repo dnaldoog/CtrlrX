@@ -61,7 +61,15 @@ set(FORMATS Standalone AU VST3)
 # OR Users or builders can just override /usr/lib/vst3 at configure time without modifying any files:
 # cmake -B build -DVST3_INSTALL_DIR="$HOME/.vst3"
 project(${PROJECT_NAME} VERSION ${CURRENT_VERSION})
-
+# =======================================================================
+# Global Fix for Xcode 16 / Clang C++20 Header Ordering (ptrdiff_t fix)
+# =======================================================================
+if(APPLE)
+    add_compile_options(
+        $<$<COMPILE_LANGUAGE:CXX>:-include> $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/stdafx.h>
+        $<$<COMPILE_LANGUAGE:OBJCXX>:-include> $<$<COMPILE_LANGUAGE:OBJCXX>:${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/stdafx.h>
+    )
+endif()
 # -----------------------------------------------------------------------
 # Linux System Packages
 # -----------------------------------------------------------------------
