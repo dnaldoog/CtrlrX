@@ -377,23 +377,20 @@ if(LINUX)
         set(VST3_INSTALL_DIR "lib/vst3")
     endif()
 
-    set(VST3_BUNDLE_SOURCE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}_artefacts/$<CONFIG>/VST3/${PRODUCT_NAME}.vst3")
+    # Determine build type explicitly without using generator expressions
+    if(CMAKE_BUILD_TYPE)
+        set(CURRENT_BUILD_CONFIG "${CMAKE_BUILD_TYPE}")
+    else()
+        set(CURRENT_BUILD_CONFIG "Release")
+    endif()
+
+    # Fixed path replacing $<CONFIG> with actual build type variable
+    set(VST3_BUNDLE_SOURCE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}_artefacts/${CURRENT_BUILD_CONFIG}/VST3/${PRODUCT_NAME}.vst3")
 
     install(DIRECTORY "${VST3_BUNDLE_SOURCE}"
             DESTINATION "${VST3_INSTALL_DIR}"
             FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-            DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-            FILES_MATCHING PATTERN "*")
-
-    set(VST3_BUNDLE_SOURCE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}_artefacts/$<CONFIG>/VST3/${PRODUCT_NAME}.vst3")
-
-    # Ensure permissions are placed before PATTERN/REGEX clauses
-    install(DIRECTORY "${VST3_BUNDLE_SOURCE}"
-            DESTINATION "${VST3_INSTALL_DIR}"
-            COMPONENT VST3
-            FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-            DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-            FILES_MATCHING PATTERN "*")
+            DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
     # 6. Post-install hooks for GTK Icon Cache and Desktop Database
     install(CODE "
@@ -412,16 +409,10 @@ endif()
 # Packaging & Distribution (CPack for Linux .deb / .rpm)
 # -----------------------------------------------------------------------
 if(LINUX)
-    # Exclude juceaide and build debris
-    set(CPACK_EXCLUDE_FILES_FROM_ALL
-        "/JUCE/"
-        "/juceaide"
-        "/include/"
-        "/cmake/"
-        "\\\\.h$"
-        "\\\\.hpp$"
-        "\\\\.cmake$"
-    )
+    # Explicitly exclude juceaide binary from any packaging rules
+    if(TARGET juceaide)
+        set_target_properties(juceaide PROPERTIES EXCLUDE_FROM_ALL TRUE)
+    endif()
 
     set(CPACK_PACKAGE_NAME "ctrlrx")
     set(CPACK_PACKAGE_VENDOR "CtrlrX Project")
@@ -432,23 +423,26 @@ if(LINUX)
     set(CPACK_PACKAGE_LICENSE "GPL-3.0")
 
     set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local")
-
-    # Force single-package bundling across all components
     set(CPACK_MONOLITHIC_INSTALL ON)
 
-    # DEB Metadata
+    # Ignore build artifacts and helper directories
+    set(CPACK_EXCLUDE_FILES_FROM_ALL
+        "/juceaide"
+        "/JUCE/"
+        "/include/"
+        "/cmake/"
+        "\\\\.h$"
+        "\\\\.hpp$"
+        "\\\\.cmake$"
+    )
+
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "CtrlrX Team <support@ctrlrx.org>")
     set(CPACK_DEBIAN_PACKAGE_SECTION "sound")
     set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
     set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-    set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "${CPACK_PACKAGE_HOMEPAGE_URL}")
 
-    # RPM Metadata
     set(CPACK_RPM_PACKAGE_LICENSE "GPLv3")
     set(CPACK_RPM_PACKAGE_GROUP "Applications/Multimedia")
-    set(CPACK_RPM_PACKAGE_AUTOREQPROV ON)
-    set(CPACK_RPM_PACKAGE_VENDOR "${CPACK_PACKAGE_VENDOR}")
-    set(CPACK_RPM_PACKAGE_URL "${CPACK_PACKAGE_HOMEPAGE_URL}")
 
     set(CPACK_GENERATOR "DEB;RPM;TGZ")
 
