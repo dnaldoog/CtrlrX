@@ -15,6 +15,33 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 	filter = createPluginFilter();
 	setTitleBarButtonsRequired(DocumentWindow::allButtons, false);
 	setUsingNativeTitleBar(true);
+
+#if JUCE_LINUX
+    // Parse and render the SVG for native window title bar
+    if (auto svgXml = juce::XmlDocument::parse(juce::String::createStringFromData(
+            BinaryData::ctrlrx_logo_svg, 
+            BinaryData::ctrlr_logo_svgSize)))
+    {
+        if (auto drawable = juce::Drawable::createFromSVG(*svgXml))
+        {
+            juce::Image iconImage(juce::Image::ARGB, 64, 64, true);
+            juce::Graphics g(iconImage);
+            
+            drawable->drawWithin(
+                g, 
+                juce::Rectangle<float>(0, 0, 64, 64), 
+                juce::RectanglePlacement::centred, 
+                1.0f
+            );
+            
+            if (iconImage.isValid())
+            {
+                setIcon(iconImage);
+            }
+        }
+    }
+#endif
+
 	setResizable(true, true); // default. Set to false, false to lock, hide the corner resizer
 	centreWithSize(800, 600); // set Size of the whole app with title bar included H22px and borders 2x1px
 

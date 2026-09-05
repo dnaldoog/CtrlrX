@@ -19,6 +19,7 @@ option(CTRLRX_ENABLE_CPM "Enable CPM-based optional dependencies" OFF)
 option(CTRLRX_USE_SYSTEM_JUCE "Use system-installed JUCE instead of vendored JUCE submodule" OFF)
 option(CTRLRX_COPY_PLUGIN_AFTER_BUILD "Copy plugin artefacts to user/system plugin folders after build" OFF)
 option(CTRLRX_USE_LUAJIT "Use LuaJIT instead of standard Lua" ON)
+option(CTRLRX_FORCE_JIT_OFF "Force disable LuaJIT compiler on macOS for unsigned builds" OFF)
 
 if(CTRLRX_ENABLE_CPM)
     include(CPM)
@@ -44,7 +45,21 @@ set(PRODUCT_NAME "CtrlrX")
 set(COMPANY_NAME "CtrlrX Project")
 set(BUNDLE_ID "com.${BASE_ID_NAME}.${PROJECT_NAME}")
 set(FORMATS Standalone AU VST3)
-
+# =======================================================================
+# Build & Installation Options
+# =======================================================================
+# To override the default installation directory for VST3 plugins:
+# Pass -DVST3_INSTALL_DIR="/custom/path" during cmake configuration.
+# Example: cmake -B build -DVST3_INSTALL_DIR="$HOME/.vst3"
+# Example inside build.sh when running CMake configuration:
+# cmake -S "$PROJECT_ROOT" -B "$BUILD_DIR" \
+#       -G Ninja \
+#       -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+#       -DVST3_INSTALL_DIR="$HOME/.vst3"
+# UNCOMMENT the line below to set a custom installation path for VST3 plugin bundle
+# set(VST3_INSTALL_DIR "" CACHE PATH "Custom installation path for VST3 plugin bundle")
+# OR Users or builders can just override /usr/lib/vst3 at configure time without modifying any files:
+# cmake -B build -DVST3_INSTALL_DIR="$HOME/.vst3"
 project(${PROJECT_NAME} VERSION ${CURRENT_VERSION})
 
 # -----------------------------------------------------------------------
@@ -109,7 +124,7 @@ endif()
 # JUCE Plugin Target Configuration
 # -----------------------------------------------------------------------
 juce_add_plugin("${PROJECT_NAME}"
-    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resources/Icons/ctrlrx_logo.svg"
+    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resources/Icons/ctrlr_logo.svg"
     PLUGIN_NAME "${PLUGIN_DISPLAY_NAME}"
     COMPANY_NAME "${COMPANY_NAME}"
     BUNDLE_ID "${BUNDLE_ID}"
@@ -146,6 +161,11 @@ endif()
 # -----------------------------------------------------------------------
 add_library(SharedCode INTERFACE)
 include(SharedCodeDefaults)
+
+# macOS LuaJIT JIT Force-Off Override (applied after target creation)
+if(CTRLRX_FORCE_JIT_OFF)
+    target_compile_definitions(SharedCode INTERFACE CTRLRX_FORCE_JIT_OFF=1)
+endif()
 
 # Optimization fix for LuaBind
 set_source_files_properties(
@@ -228,7 +248,9 @@ target_compile_options(SharedCode INTERFACE
 )
 
 if(CTRLRX_USE_LUAJIT)
-    target_compile_definitions(SharedCode INTERFACE CTRLRX_USE_LUAJIT=1)
+    target_include_directories(SharedCode INTERFACE "${LUAJIT_INCLUDE_TARGET}")
+else()
+    target_include_directories(SharedCode INTERFACE "${LUA_INCLUDE_TARGET}")
 endif()
 
 # -----------------------------------------------------------------------
@@ -282,5 +304,131 @@ target_link_libraries("${PROJECT_NAME}" PRIVATE
     Assets 
 )
 
+# -----------------------------------------------------------------------
+# Universal FreeDesktop Linux Icon, Launcher & VST3 Installation
+# -----------------------------------------------------------------------
+if(LINUX)
+    include(GNUInstallDirs)
+
+    set(CTRLR_SVG_ICON "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resources/Icons/ctrlrx_logo.svg")
+    set(ICON_NAME "ctrlr-x")
+
+    # 1. Install scalable SVG icon
+    install(FILES "${CTRLR_SVG_ICON}"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps"
+            RENAME "${ICON_NAME}.svg")
+
+    # 2. Rasterize and install PNG icons across standard desktop sizes with an off-white background
+    set(ICON_SIZES 16 32 48 64 128 256 512)
+    find_program(RSVG_CONVERT_EXECUTABLE rsvg-convert)
+
+    if(RSVG_CONVERT_EXECUTABLE)
+        foreach(SIZE ${ICON_SIZES})
+            set(PNG_OUT "${CMAKE_BINARY_DIR}/icons/${SIZE}x${SIZE}/${ICON_NAME}.png")
+            
+            add_custom_command(
+                OUTPUT "${PNG_OUT}"
+                COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/icons/${SIZE}x${SIZE}"
+                COMMAND ${RSVG_CONVERT_EXECUTABLE} -w ${SIZE} -h ${SIZE} -b "#f7f8f9" -f png -o "${PNG_OUT}" "${CTRLR_SVG_ICON}"
+                DEPENDS "${CTRLR_SVG_ICON}"
+                COMMENT "Generating ${SIZE}x${SIZE} PNG icon with off-white background..."
+            )
+
+            add_custom_target(ctrlrx_icon_${SIZE} ALL DEPENDS "${PNG_OUT}")
+
+            install(FILES "${PNG_OUT}"
+                    DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/${SIZE}x${SIZE}/apps")
+        endforeach()
+    endif()
+
+    # 3. Desktop Application Entry
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resources/Linux/ctrlr-x.desktop.in")
+        configure_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resources/Linux/ctrlr-x.desktop.in"
+            "${CMAKE_BINARY_DIR}/ctrlr-x.desktop"
+            @ONLY
+        )
+
+        install(FILES "${CMAKE_BINARY_DIR}/ctrlr-x.desktop"
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
+    endif()
+
+    # 4. Install Standalone executable target to system bin path
+    if(TARGET "${PROJECT_NAME}_Standalone")
+        install(TARGETS "${PROJECT_NAME}_Standalone" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+    elseif(TARGET "${PROJECT_NAME}")
+        install(TARGETS "${PROJECT_NAME}" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+    endif()
+
+    # 5. Install VST3 Plugin Bundle Directory (.vst3 folder layout)
+    # Default local manual builds to ~/.vst3; CPack package builds will fall back to /usr/lib/vst3
+    if(NOT DEFINED VST3_INSTALL_DIR)
+        if(CPACK_GENERATOR)
+            set(VST3_INSTALL_DIR "/usr/lib/vst3")
+        else()
+            set(VST3_INSTALL_DIR "$ENV{HOME}/.vst3")
+        endif()
+    endif()
+
+    set(VST3_BUNDLE_SOURCE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}_artefacts/$<CONFIG>/VST3/${PRODUCT_NAME}.vst3")
+
+    install(DIRECTORY "${VST3_BUNDLE_SOURCE}"
+            DESTINATION "${VST3_INSTALL_DIR}"
+            COMPONENT VST3
+            FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+            DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
+    # 6. Post-install hooks for GTK Icon Cache and Desktop Database
+    install(CODE "
+        set(HICOLOR_DIR \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/icons/hicolor\")
+        if(NOT EXISTS \"\${HICOLOR_DIR}/index.theme\")
+            file(WRITE \"\${HICOLOR_DIR}/index.theme\"
+                \"[Icon Theme]\\nName=Hicolor\\nComment=Fallback icon theme\\nHidden=true\\nDirectories=scalable/apps,16x16/apps,32x32/apps,48x48/apps,64x64/apps,128x128/apps,256x256/apps,512x512/apps\\n\")
+        endif()
+        
+        execute_process(COMMAND gtk-update-icon-cache -f -q \"\${HICOLOR_DIR}\" ERROR_QUIET)
+        execute_process(COMMAND update-desktop-database -q \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/applications\" ERROR_QUIET)
+    ")
+endif()
+# -----------------------------------------------------------------------
+# Packaging & Distribution (CPack for Linux .deb / .rpm)
+# -----------------------------------------------------------------------
+if(LINUX)
+    # Prevent juceaide or auxiliary tools from being packaged
+    set_target_properties(juceaide PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
+    # General CPack Information
+    set(CPACK_PACKAGE_NAME "ctrlrx")
+    set(CPACK_PACKAGE_VENDOR "CtrlrX Project")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "MIDI Control Surface Framework & Editor")
+    set(CPACK_PACKAGE_VERSION "${CURRENT_VERSION}")
+    set(CPACK_PACKAGE_CONTACT "CtrlrX Team <support@ctrlrx.org>")
+    set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/ctrlrx/ctrlrx")
+    set(CPACK_PACKAGE_LICENSE "GPL-3.0")
+
+    # Install Directory Structure
+    set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local")
+
+    # -------------------------------------------------------------------
+    # DEB Specific Metadata (Debian / Ubuntu / Mint)
+    # -------------------------------------------------------------------
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "CtrlrX Team <support@ctrlrx.org>")
+    set(CPACK_DEBIAN_PACKAGE_SECTION "sound")
+    set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON) # Auto-detects shared library dependencies
+    set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "${CPACK_PACKAGE_HOMEPAGE_URL}")
+
+    # -------------------------------------------------------------------
+    # RPM Specific Metadata (Fedora / RHEL / OpenSUSE)
+    # -------------------------------------------------------------------
+    set(CPACK_RPM_PACKAGE_LICENSE "GPLv3")
+    set(CPACK_RPM_PACKAGE_GROUP "Applications/Multimedia")
+    set(CPACK_RPM_PACKAGE_AUTOREQPROV ON) # Auto-generates RPM library requirements
+    set(CPACK_RPM_PACKAGE_VENDOR "${CPACK_PACKAGE_VENDOR}")
+    set(CPACK_RPM_PACKAGE_URL "${CPACK_PACKAGE_HOMEPAGE_URL}")
+
+    # Includes standard CPack logic
+    include(CPack)
+endif()
 include(PamplejuceIPP)
 include(GitHubENV)

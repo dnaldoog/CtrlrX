@@ -67,11 +67,12 @@ class CtrlrApplication : public JUCEApplication {
 			Logger::writeToLog("CTRLR:initialise params \"" + commandLineParameters + "\"");
 
 #if JUCE_LINUX
-			const double linuxScale = ctrlrx_get_linux_scale_factor();
-			if (std::abs(linuxScale - 1.0) > 0.001)
-				Desktop::getInstance().setGlobalScaleFactor((float)linuxScale);
+    // 1. Set global scale factor
+    const double linuxScale = ctrlrx_get_linux_scale_factor();
+    if (std::abs(linuxScale - 1.0) > 0.001)
+        Desktop::getInstance().setGlobalScaleFactor((float)linuxScale);
 
-			Logger::writeToLog("CTRLR:linux scale factor \"" + String(linuxScale, 3) + "\"");
+    Logger::writeToLog("CTRLR:linux scale factor \"" + String(linuxScale, 3) + "\"");
 #endif
 
 			if (!commandLineParameters.isEmpty()) {
@@ -148,9 +149,18 @@ class CtrlrApplication : public JUCEApplication {
 			}
 		}
 
-		const String getApplicationName() override { return ProjectInfo::projectName; }
-		const String getApplicationVersion() override { return ProjectInfo::versionString; }
-		bool moreThanOneInstanceAllowed() override { return true; }
+const String getApplicationName() override 
+{ 
+#if JUCE_LINUX
+    // Lowercase string ensures GNOME maps the window to ctrlr-x.desktop
+    return "ctrlr-x"; 
+#else
+    // Windows and macOS continue using the standard clean name ("CtrlrX")
+    return ProjectInfo::projectName; 
+#endif
+}
+const String getApplicationVersion() override { return ProjectInfo::versionString; }
+bool moreThanOneInstanceAllowed() override { return true; }
 
 	private:
 		Component::SafePointer<CtrlrStandaloneWindow> filterWindow;

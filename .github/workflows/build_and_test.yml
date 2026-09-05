@@ -85,7 +85,8 @@ jobs:
             binutils-dev libboost-dev libcurl4-gnutls-dev libgl1-mesa-dev \
             libglapi-mesa libiberty-dev libsframe1 libudev-dev \
             libxcursor-dev libxrandr-dev xorg-dev \
-            libgtk-3-dev libwebkit2gtk-4.1-dev libluajit-5.1-dev unzip
+            libgtk-3-dev libwebkit2gtk-4.1-dev libluajit-5.1-dev unzip \
+            rpm
           # Alias webkit 4.1 to 4.0 so CMake finds it
           sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc \
                       /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc
@@ -230,7 +231,14 @@ jobs:
       # Build Execution Steps (Explicitly defining Core Macro Flag)
       # -----------------------------------------------------------------------
       - name: Configure CMake
-        run: >
+
+        run: |
+          EXTRA_MAC_FLAGS=""
+          if [ "${{ env.HAVE_MACOS_SIGNING_SECRETS }}" != "true" ]; then
+            echo "Signing secrets missing. Forcing LuaJIT off for unsigned macOS build."
+            EXTRA_MAC_FLAGS="-DCTRLRX_FORCE_JIT_OFF=ON"
+          fi
+          
           cmake -B ${{ env.BUILD_DIR }}
           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
           -DCMAKE_C_COMPILER_LAUNCHER=sccache
@@ -340,7 +348,7 @@ jobs:
           productbuild --resources ./resources --distribution distribution.xml "${{ env.ARTIFACT_NAME }}.pkg"
 
       # -----------------------------------------------------------------
-      # LINUX CODESIGNING & SIGNATURE VERIFICATION
+      # LINUX CODESIGNING, SIGNATURE VERIFICATION & CPACK
       # -----------------------------------------------------------------
       - name: Set up GnuPG and Import Key
         if: ${{ matrix.name == 'Linux' && env.HAVE_GPG_KEY == 'true' }}
@@ -362,35 +370,12 @@ jobs:
           gpg --verify "$SIGNATURE_PATH" "$BINARY_PATH"
         env:
           GPG_PASSPHRASE: ${{ secrets.GPG_SIGNING_PASSPHRASE }}
-                    
-      - name: Zip (Linux) - GPG Signed
-        if: ${{ matrix.name == 'Linux' && env.HAVE_GPG_KEY == 'true' }}
-        id: create_archive_signed
-        run: |
-          INTERNAL_FOLDER_NAME="${{ env.ARTIFACT_NAME }}-Signed"
-          FINAL_ZIP_NAME="${{ env.ARTIFACT_NAME }}.zip"
-          ABSOLUTE_ZIP_PATH="${{ github.workspace }}/$FINAL_ZIP_NAME"
-          mkdir -p "tmp_linux_archive/$INTERNAL_FOLDER_NAME"
-          cp "${{ env.ARTIFACTS_PATH }}/Standalone/${{ env.PRODUCT_NAME }}" "tmp_linux_archive/$INTERNAL_FOLDER_NAME/"
-          cp "${{ env.ARTIFACTS_PATH }}/Standalone/${{ env.PRODUCT_NAME }}.sig" "tmp_linux_archive/$INTERNAL_FOLDER_NAME/"
-          cp -r "build/CtrlrX_artefacts/Release/VST3/CtrlrX.vst3" "tmp_linux_archive/$INTERNAL_FOLDER_NAME/"
-          cd tmp_linux_archive
-          zip -r "$ABSOLUTE_ZIP_PATH" *    
-          echo "ARCHIVE_PATH=$FINAL_ZIP_NAME" >> $GITHUB_OUTPUT
 
-      - name: Zip (Linux) - GPG Unsigned Fallback
-        if: ${{ matrix.name == 'Linux' && env.HAVE_GPG_KEY != 'true' }}
-        id: create_archive_unsigned
+      - name: Package with CPack (Linux DEB, RPM, TGZ)
+        if: ${{ matrix.name == 'Linux' }}
         run: |
-          INTERNAL_FOLDER_NAME="${{ env.ARTIFACT_NAME }}"
-          FINAL_ZIP_NAME="${{ env.ARTIFACT_NAME }}.zip"
-          ABSOLUTE_ZIP_PATH="${{ github.workspace }}/$FINAL_ZIP_NAME"
-          mkdir -p "tmp_linux_archive/$INTERNAL_FOLDER_NAME"
-          cp "${{ env.ARTIFACTS_PATH }}/Standalone/${{ env.PRODUCT_NAME }}" "tmp_linux_archive/$INTERNAL_FOLDER_NAME/"
-          cp -r "${{ env.ARTIFACTS_PATH }}/VST3/CtrlrX.vst3" "tmp_linux_archive/$INTERNAL_FOLDER_NAME/"
-          cd tmp_linux_archive
-          zip -r "$ABSOLUTE_ZIP_PATH" *    
-          echo "ARCHIVE_PATH=$FINAL_ZIP_NAME" >> $GITHUB_OUTPUT
+          cd ${{ env.BUILD_DIR }}
+          cpack -G "DEB;RPM;TGZ"
 
       # -----------------------------------------------------------------
       # WINDOWS CODESIGNING & ASSET STRUCTURING
@@ -440,12 +425,16 @@ jobs:
           name: ${{ env.ARTIFACT_NAME }}.exe
           path: "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.exe"
 
-      - name: Upload Zip (Linux)
+      - name: Upload Packages (Linux)
         if: ${{ matrix.name == 'Linux' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.ARTIFACT_NAME }}
-          path: ${{ github.workspace }}/${{ env.ARTIFACT_NAME }}.zip
+          name: ${{ env.ARTIFACT_NAME }}-Packages
+          path: |
+            ${{ env.BUILD_DIR }}/*.deb
+            ${{ env.BUILD_DIR }}/*.rpm
+            ${{ env.BUILD_DIR }}/*.tar.gz
+            ${{ env.ARTIFACTS_PATH }}/Standalone/${{ env.PRODUCT_NAME }}.sig
 
       - name: Upload pkg (macOS)
         if: ${{ matrix.name == 'macOS' }}
@@ -492,6 +481,8 @@ jobs:
           prerelease: true
           files: |
             */*.exe
-            **/*/*.zip
+            **/*/*.deb
+            **/*/*.rpm
+            **/*/*.tar.gz
             */*.pkg
             **/*Standalone/*.sig
