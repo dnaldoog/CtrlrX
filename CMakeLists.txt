@@ -365,20 +365,20 @@ if(LINUX)
                 DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
     endif()
 
-    # 4. Install Standalone executable target to system bin path
+    # 4. AppStream MetaInfo for GNOME Software / KDE Discover
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resources/Linux/com.ctrlrx.CtrlrX.metainfo.xml")
+        install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resources/Linux/com.ctrlrx.CtrlrX.metainfo.xml"
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/metainfo")
+    endif()
+
+    # 5. Install Standalone executable target to system bin path
     if(TARGET "${PROJECT_NAME}_Standalone")
         install(TARGETS "${PROJECT_NAME}_Standalone" DESTINATION "${CMAKE_INSTALL_BINDIR}")
     elseif(TARGET "${PROJECT_NAME}")
         install(TARGETS "${PROJECT_NAME}" DESTINATION "${CMAKE_INSTALL_BINDIR}")
     endif()
 
-    # 5. Stage the VST3 bundle in a package-owned, non-scanned location.
-    #    We deliberately do NOT install straight into /usr/lib/vst3 or
-    #    /usr/local/lib/vst3: JG wants the plugin to live in ~/.vst3, which is
-    #    a per-user path that dpkg/rpm cannot target directly at install time
-    #    (there is no single $HOME while a package's file list is being laid
-    #    down as root). Instead we ship the bundle under a fixed package path
-    #    and have postinst (below) copy it into the invoking user's ~/.vst3.
+    # 6. Stage VST3 bundle for postinst rollout
     if(NOT DEFINED VST3_STAGE_DIR)
         set(VST3_STAGE_DIR "share/ctrlrx/vst3")
     endif()
@@ -396,17 +396,7 @@ if(LINUX)
             FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
             DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
-    # 6. Fallback index.theme only — NOT icon cache generation.
-    #    IMPORTANT: gtk-update-icon-cache must never run here. install(CODE)
-    #    executes while CPack is staging the package payload, when the
-    #    hicolor dir only contains CtrlrX's own icons — running the cache
-    #    tool at this point bakes a real icon-theme.cache binary into the
-    #    package, which then OVERWRITES the real system-wide hicolor cache
-    #    on the end user's machine when the package installs, breaking icon
-    #    lookups for every other app that shares that theme. Cache
-    #    regeneration now happens live on the target machine instead, from
-    #    postinst/postrm (see Packaging/Linux/), and is never itself a
-    #    package-tracked file.
+    # 7. Fallback index.theme setup
     install(CODE "
         set(HICOLOR_DIR \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/icons/hicolor\")
         if(NOT EXISTS \"\${HICOLOR_DIR}/index.theme\")
@@ -415,55 +405,43 @@ if(LINUX)
         endif()
     ")
 
-    # CPack Configuration
+    # -----------------------------------------------------------------------
+    # CPack Variable Definitions (MUST BE BEFORE include(CPack))
+    # -----------------------------------------------------------------------
     set(CPACK_PACKAGE_NAME "ctrlrx")
     set(CPACK_PACKAGE_VENDOR "CtrlrX Project")
     set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "MIDI Control Surface Framework & Editor")
+    set(CPACK_PACKAGE_DESCRIPTION "With CtrlrX, control any MIDI enabled hardware")
     set(CPACK_PACKAGE_VERSION "${CURRENT_VERSION}")
-    set(CPACK_PACKAGE_CONTACT "CtrlrX Team <support@ctrlrx.org>")
-    set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/ctrlrx/ctrlrx")
-    set(CPACK_PACKAGE_LICENSE "GPL-3.0")
+    set(CPACK_PACKAGE_CONTACT "CtrlrX Team <https://github.com/damiensellier/CtrlrX>")
+    set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/damiensellier/CtrlrX")
+    set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resources/Icons/ctrlrx_logo.svg")
 
     set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local")
     set(CPACK_MONOLITHIC_INSTALL ON)
 
-    # NOTE: CPACK_EXCLUDE_FILES_FROM_ALL is a CPACK_SOURCE_IGNORE_FILES-style
-    # variable — it only affects `make package_source`, not the DEB/RPM/TGZ
-    # binary generators used here, so it was never actually filtering
-    # anything out of those packages. It has been removed. The binary
-    # packages only ever contain what an install() rule above puts in the
-    # staging tree, so there is nothing left here that needs excluding.
-
-    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "CtrlrX Team <support@ctrlrx.org>")
+    # Debian Specific Graphical Metadata
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "CtrlrX Team <https://github.com/damiensellier/CtrlrX>")
     set(CPACK_DEBIAN_PACKAGE_SECTION "sound")
     set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
     set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-
-    # postinst copies the staged VST3 bundle into the invoking user's
-    # ~/.vst3; postrm removes it again on package removal/purge.
+    set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/damiensellier/CtrlrX")
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
         "${CMAKE_CURRENT_SOURCE_DIR}/Packaging/Linux/postinst;${CMAKE_CURRENT_SOURCE_DIR}/Packaging/Linux/postrm-deb")
 
-    set(CPACK_RPM_PACKAGE_LICENSE "GPLv3")
+    # RPM Specific Graphical Metadata
+    set(CPACK_RPM_PACKAGE_LICENSE "GPLv3 and BSD")
     set(CPACK_RPM_PACKAGE_GROUP "Applications/Multimedia")
+    set(CPACK_RPM_PACKAGE_URL "https://github.com/damiensellier/CtrlrX")
     set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Packaging/Linux/postinst")
     set(CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Packaging/Linux/postrm-rpm")
 
-    # Only DEB/RPM go through CPack. The .tar.gz is built separately below
-    # by the `portable_tarball` target: CPack's TGZ generator repackages the
-    # exact same install() tree as DEB/RPM (full /usr/local/bin,
-    # /usr/local/share/... layout, plus whatever else the wider CMake project
-    # graph — including JUCE's own subdirectory — happens to register via
-    # install()), which is what was pulling the whole JUCE artefact tree and
-    # things like juceaide into the tarball. A hand-built archive avoids that
-    # class of problem entirely rather than trying to filter it after the fact.
     set(CPACK_GENERATOR "DEB;RPM")
 
     include(CPack)
 
     # -----------------------------------------------------------------------
-    # Portable tarball: exactly two things — the standalone executable and a
-    # vst3/ folder containing the .vst3 bundle. No FHS paths, no build tools.
+    # Portable tarball target
     # -----------------------------------------------------------------------
     set(PORTABLE_TARBALL_NAME "${CPACK_PACKAGE_NAME}-${CURRENT_VERSION}-linux-x86_64")
     set(PORTABLE_TARBALL_STAGE "${CMAKE_BINARY_DIR}/portable_tarball_stage")
