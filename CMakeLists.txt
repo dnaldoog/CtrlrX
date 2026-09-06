@@ -423,7 +423,7 @@ if(LINUX)
     set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/damiensellier/CtrlrX")
     set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resources/Icons/ctrlrx_logo.svg")
 
-    set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local")
+    set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
     set(CPACK_MONOLITHIC_INSTALL ON)
 
     # Debian Specific Graphical Metadata

@@ -1,11 +1,11 @@
 #!/bin/sh
 # Copies the VST3 bundle CtrlrX ships under a package-owned path
-# (/usr/local/share/ctrlrx/vst3) into the invoking (non-root) user's
+# (/usr/share/ctrlrx/vst3) into the invoking (non-root) user's
 # ~/.vst3, since dpkg/rpm run this as root and cannot target a specific
 # user's home directly from the package's own file list.
 set -e
 
-VST3_STAGE_DIR="/usr/local/share/ctrlrx/vst3/CtrlrX.vst3"
+VST3_STAGE_DIR="/usr/share/ctrlrx/vst3/CtrlrX.vst3"
 
 # Figure out who actually ran the install, not root.
 REAL_USER="${SUDO_USER:-}"
@@ -47,8 +47,8 @@ echo "ctrlrx: installed VST3 plugin to $REAL_HOME/.vst3/CtrlrX.vst3"
 # cache generated from a build-time staging tree (containing only
 # CtrlrX's own icons) would overwrite the real system-wide cache instead
 # of merging with it.
-HICOLOR_DIR="/usr/local/share/icons/hicolor"
-APPS_DIR="/usr/local/share/applications"
+HICOLOR_DIR="/usr/share/icons/hicolor"
+APPS_DIR="/usr/share/applications"
 
 if command -v gtk-update-icon-cache >/dev/null 2>&1 && [ -d "$HICOLOR_DIR" ]; then
     gtk-update-icon-cache -f -q "$HICOLOR_DIR" || true
