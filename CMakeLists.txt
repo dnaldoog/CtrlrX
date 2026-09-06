@@ -396,14 +396,20 @@ if(LINUX)
             FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
             DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
-    # 7. Fallback index.theme setup
-    install(CODE "
-        set(HICOLOR_DIR \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/icons/hicolor\")
-        if(NOT EXISTS \"\${HICOLOR_DIR}/index.theme\")
-            file(WRITE \"\${HICOLOR_DIR}/index.theme\"
-                \"[Icon Theme]\\nName=Hicolor\\nComment=Fallback icon theme\\nHidden=true\\nDirectories=scalable/apps,16x16/apps,32x32/apps,48x48/apps,64x64/apps,128x128/apps,256x256/apps,512x512/apps\\n\")
-        endif()
-    ")
+    # 7. NOTE: we deliberately do NOT ship our own hicolor index.theme.
+    #    A previous version wrote a minimal fallback here, but it only
+    #    listed Directories= without a [<dir>] section + Size= key for
+    #    each one, which is invalid per the freedesktop icon theme spec.
+    #    Worse, because /usr/local/share ranks ahead of /usr/share in
+    #    XDG_DATA_DIRS, GTK picked *our* broken index.theme as the
+    #    authoritative metadata for the whole merged "hicolor" theme
+    #    instead of the correct, complete one hicolor-icon-theme ships at
+    #    /usr/share/icons/hicolor/index.theme — breaking icon resolution
+    #    system-wide, not just for CtrlrX. hicolor-icon-theme is a base
+    #    dependency of any GTK desktop, so it's always present; our own
+    #    icon files under /usr/local/share/icons/hicolor/<size>/apps/
+    #    still merge into that theme correctly without us shipping any
+    #    index.theme of our own.
 
     # -----------------------------------------------------------------------
     # CPack Variable Definitions (MUST BE BEFORE include(CPack))
