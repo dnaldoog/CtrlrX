@@ -8,19 +8,28 @@
   <summary>MIDI Control Surface Framework &amp; Editor</summary>
   <description>
     <p>
-    With CtrlrX, control any MIDI enabled hardware: synthesizers, drum machines, effects, samplers.
-	Create custom user interfaces for your favorite MIDI devices.
-	Host your device as VST or AU plugins in your favorite DAW or as standalone software.
-	  
-	CtrlrX is based on JUCE audio framework by PACE Anti-Piracy Inc.
-	Audio Unit is a trademark of Apple Computer Inc.
-	VST is a trademark of Steinberg Media Technologies GmbH.
+      With CtrlrX, control any MIDI enabled hardware: synthesizers, drum machines, effects,
+      and samplers. Create custom user interfaces for your favorite MIDI devices, and host
+      your device as VST or AU plugins in your favorite DAW, or run it as standalone software.
+    </p>
+    <p>
+      CtrlrX is based on the JUCE audio framework by PACE Anti-Piracy Inc. Audio Unit is a
+      trademark of Apple Computer Inc. VST is a trademark of Steinberg Media Technologies GmbH.
     </p>
   </description>
-  <launchable type="desktop-id">ctrlr-x.desktop</launchable>
+  <launchable type="desktop-id">com.ctrlrx.CtrlrX.desktop</launchable>
   <url type="homepage">https://github.com/damiensellier/CtrlrX</url>
+  <categories>
+    <category>Audio</category>
+    <category>AudioVideo</category>
+  </categories>
   <provides>
     <binary>CtrlrX</binary>
   </provides>
-  <developer_name>Damien Sellier</developer_name>
+  <developer id="com.ctrlrx">
+    <name>Damien Sellier</name>
+  </developer>
+  <content_rating type="oars-1.1" />
+  <!-- FIX: Dropped the invalid stock icon tag completely. The AppStream engine will map the file automatically using the com.ctrlrx.CtrlrX ID mapping instead -->
 </component>
+
