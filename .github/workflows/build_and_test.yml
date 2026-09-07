@@ -269,12 +269,12 @@ jobs:
           SetFile -a C "${{ env.VST3_PATH }}"
           SetFile -a C "${{ env.AU_PATH }}"
 
-      # PACKAGING & NOTARIZATION PROCEDURES
+      # PACKAGING & NOTARIZATION PROCEDURES (macOS Single Installer)
       - name: Signed Packaging and Notarization (macOS)
         if: ${{ matrix.name == 'macOS' && env.HAVE_MACOS_SIGNING_SECRETS == 'true' }}
         timeout-minutes: 30
         run: |
-          pkgbuild --identifier "${{ env.BUNDLE_ID }}.au.pkg" --version $VERSION --component "${{ env.AU_PATH }}" --install-location "/Library/Audio/Plug-Ins/Components"  "Packaging/${{ env.PRODUCT_NAME }}.au.pkg"
+          pkgbuild --identifier "${{ env.BUNDLE_ID }}.au.pkg" --version $VERSION --component "${{ env.AU_PATH }}" --install-location "/Library/Audio/Plug-Ins/Components" "Packaging/${{ env.PRODUCT_NAME }}.au.pkg"
           pkgbuild --identifier "${{ env.BUNDLE_ID }}.vst3.pkg" --version $VERSION --component "${{ env.VST3_PATH }}" --install-location "/Library/Audio/Plug-Ins/VST3" "Packaging/${{ env.PRODUCT_NAME }}.vst3.pkg"
           pkgbuild --analyze --root "$(dirname "${{ env.STANDALONE_PATH }}")" standalone.plist
           plutil -replace BundleIsRelocatable -bool NO standalone.plist
@@ -289,7 +289,7 @@ jobs:
         timeout-minutes: 30
         run: |
           echo "WARNING: Codesigning secrets not found. Building unsigned package only."
-          pkgbuild --identifier "${{ env.BUNDLE_ID }}.au.pkg" --version $VERSION --component "${{ env.AU_PATH }}" --install-location "/Library/Audio/Plug-Ins/Components"  "Packaging/${{ env.PRODUCT_NAME }}.au.pkg"
+          pkgbuild --identifier "${{ env.BUNDLE_ID }}.au.pkg" --version $VERSION --component "${{ env.AU_PATH }}" --install-location "/Library/Audio/Plug-Ins/Components" "Packaging/${{ env.PRODUCT_NAME }}.au.pkg"
           pkgbuild --identifier "${{ env.BUNDLE_ID }}.vst3.pkg" --version $VERSION --component "${{ env.VST3_PATH }}" --install-location "/Library/Audio/Plug-Ins/VST3" "Packaging/${{ env.PRODUCT_NAME }}.vst3.pkg"
           pkgbuild --analyze --root "$(dirname "${{ env.STANDALONE_PATH }}")" standalone.plist
           plutil -replace BundleIsRelocatable -bool NO standalone.plist
@@ -328,14 +328,40 @@ jobs:
         if: ${{ matrix.name == 'Linux' }}
         run: cmake --build build --target portable_tarball
 
-      # WINDOWS PACKAGING
-      - name: Zip Windows Binaries
+      # WINDOWS CODESIGNING & INNO SETUP INSTALLER
+      - name: Codesign with Azure Trusted Signing (Windows Plugins .EXE & .VST3)
+        if: ${{ matrix.name == 'Windows' && env.HAVE_AZURE_CLIENT_SECRET == 'true' }}
+        uses: azure/trusted-signing-action@v0.5.1
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_ENDPOINT }}
+          trusted-signing-account-name: ${{ secrets.AZURE_CODE_SIGNING_NAME }}
+          certificate-profile-name: ${{ secrets.AZURE_CERT_PROFILE_NAME }}
+          files-folder: ${{ env.ARTIFACTS_PATH }}
+          files-folder-filter: exe,dll,vst3
+          files-folder-recurse: true
+
+      - name: Generate Installer (Windows)
         if: ${{ matrix.name == 'Windows' }}
         run: |
-          ARTIFACT_DIR="./${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}"
-          7z a "${{ env.BUILD_DIR }}/CtrlrX-Windows.zip" \
-            "$ARTIFACT_DIR/VST3" \
-            "$ARTIFACT_DIR/Standalone/${{ env.PRODUCT_NAME }}.exe"
+          iscc "Packaging\Windows\installer.iss"
+          mv "Packaging/Windows/Output/${{ env.ARTIFACT_NAME }}.exe" "${{ env.ARTIFACTS_PATH }}/"
+
+      - name: Codesign with Azure Trusted Signing (Windows Installer)
+        if: ${{ matrix.name == 'Windows' && env.HAVE_AZURE_CLIENT_SECRET == 'true' }}
+        uses: azure/trusted-signing-action@v0.5.1
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_ENDPOINT }}
+          trusted-signing-account-name: ${{ secrets.AZURE_CODE_SIGNING_NAME }}
+          certificate-profile-name: ${{ secrets.AZURE_CERT_PROFILE_NAME }}
+          files-folder: ${{ env.ARTIFACTS_PATH }}
+          files-folder-filter: "${{ env.ARTIFACT_NAME }}.exe"
+          files-folder-recurse: false
 
       # ARTIFACT UPLOADS
       - name: Upload DEB Package
@@ -370,12 +396,12 @@ jobs:
           path: Packaging/*-macOS.pkg
           archive: false
 
-      - name: Upload Windows Package
+      - name: Upload Windows Installer Exe
         if: ${{ matrix.name == 'Windows' }}
         uses: actions/upload-artifact@v4
         with:
           name: ctrlrx-windows-package
-          path: build/CtrlrX-Windows.zip
+          path: ${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.exe
           archive: false
 
   # RELEASE DISTRIBUTION
@@ -411,7 +437,7 @@ jobs:
           overwrite: true
           files: |
             **/*-macOS.pkg
-            **/CtrlrX-Windows.zip
+            **/*-Windows.exe
             **/*.deb
             **/*.rpm
             **/*.tar.gz
