@@ -150,12 +150,13 @@ PropertyComponent *CtrlrIDManager::createComponentForProperty (const Identifier 
 		values = toValueList(getValuesArray(identifierDefinition));
     }
 // 1. Override Label and Dropdown Choices for uiPanelJitMode on Non-Mac
-#if !JUCE_MAC
-	if (propertyName.toString() == "uiPanelJitMode") {
-		identifierDefinition = identifierDefinition.createCopy();
-		identifierDefinition.setProperty("text", "LuaJIT Mode", nullptr);
-		identifierDefinition.setProperty("defaults", "Enabled/Disabled", nullptr); // Simplifies dropdown text
-	}
+#if ! JUCE_MAC
+if (propertyName.toString() == "uiPanelJitMode")
+{
+    identifierDefinition = identifierDefinition.createCopy();
+    identifierDefinition.setProperty("text", "LuaJIT Mode", nullptr);
+    identifierDefinition.setProperty("defaults", "Enable Compiler/Disable Compiler", nullptr);
+}
 #endif
 
 	// 2. Build choices and values from the (possibly updated) identifierDefinition
