@@ -149,6 +149,23 @@ PropertyComponent *CtrlrIDManager::createComponentForProperty (const Identifier 
     {
 		values = toValueList(getValuesArray(identifierDefinition));
     }
+// 1. Override Label and Dropdown Choices for uiPanelJitMode on Non-Mac
+#if !JUCE_MAC
+	if (propertyName.toString() == "uiPanelJitMode") {
+		identifierDefinition = identifierDefinition.createCopy();
+		identifierDefinition.setProperty("text", "LuaJIT Mode", nullptr);
+		identifierDefinition.setProperty("defaults", "Enabled/Disabled", nullptr); // Simplifies dropdown text
+	}
+#endif
+
+	// 2. Build choices and values from the (possibly updated) identifierDefinition
+	if (possibleValues != nullptr && possibleValues->size() > 0) {
+		values = toValueList(*possibleValues);
+	} else {
+		values = toValueList(getValuesArray(identifierDefinition));
+	}
+
+	// 3. Radio Button overrides (unchanged)
 	static const std::map<String, String> radioLabelOverrides = {
 		{"uiToggleButtontickColour", "Radio button colour"},
 		{"uiButtonTextColourOn", "Radio button text colour"},
@@ -161,7 +178,9 @@ PropertyComponent *CtrlrIDManager::createComponentForProperty (const Identifier 
 		identifierDefinition.setProperty("text", it->second, nullptr);
 	}
 
-	return (new CtrlrPropertyComponent (propertyName, propertyElement, identifierDefinition, panel, &choices, &values));
+	return (new CtrlrPropertyComponent(propertyName, propertyElement, identifierDefinition, panel, &choices, &values));
+
+	return (new CtrlrPropertyComponent(propertyName, propertyElement, identifierDefinition, panel, &choices, &values));
 }
 
 const String CtrlrIDManager::typeToString (const PropertyType t)
