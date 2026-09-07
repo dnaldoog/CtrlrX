@@ -279,11 +279,10 @@ jobs:
           pkgbuild --analyze --root "$(dirname "${{ env.STANDALONE_PATH }}")" standalone.plist
           plutil -replace BundleIsRelocatable -bool NO standalone.plist
           pkgbuild --identifier "${{ env.BUNDLE_ID }}.app.pkg" --version $VERSION --root "$(dirname "${{ env.STANDALONE_PATH }}")" --component-plist standalone.plist --install-location "/Applications" "Packaging/${{ env.PRODUCT_NAME }}.app.pkg"
-          cd Packaging
-          envsubst < ./Mac/distribution.xml.template > distribution.xml
-          productbuild --resources ./resources --distribution distribution.xml --sign "${{ secrets.DEVELOPER_ID_INSTALLER }}" --timestamp "${{ env.ARTIFACT_NAME }}.pkg"
-          xcrun notarytool submit "${{ env.ARTIFACT_NAME }}.pkg" --apple-id ${{ secrets.NOTARIZATION_USERNAME }} --password ${{ secrets.NOTARIZATION_PASSWORD }} --team-id ${{ secrets.TEAM_ID }} --wait
-          xcrun stapler staple "${{ env.ARTIFACT_NAME }}.pkg"
+          envsubst < ./Packaging/Mac/distribution.xml.template > ./Packaging/distribution.xml
+          productbuild --resources ./Packaging/resources --package-path ./Packaging --distribution ./Packaging/distribution.xml --sign "${{ secrets.DEVELOPER_ID_INSTALLER }}" --timestamp "Packaging/${{ env.ARTIFACT_NAME }}.pkg"
+          xcrun notarytool submit "Packaging/${{ env.ARTIFACT_NAME }}.pkg" --apple-id ${{ secrets.NOTARIZATION_USERNAME }} --password ${{ secrets.NOTARIZATION_PASSWORD }} --team-id ${{ secrets.TEAM_ID }} --wait
+          xcrun stapler staple "Packaging/${{ env.ARTIFACT_NAME }}.pkg"
 
       - name: Unsigned Packaging (macOS Fallback)
         if: ${{ matrix.name == 'macOS' && env.HAVE_MACOS_SIGNING_SECRETS != 'true' }}
@@ -296,7 +295,7 @@ jobs:
           plutil -replace BundleIsRelocatable -bool NO standalone.plist
           pkgbuild --identifier "${{ env.BUNDLE_ID }}.app.pkg" --version $VERSION --root "$(dirname "${{ env.STANDALONE_PATH }}")" --component-plist standalone.plist --install-location "/Applications" "Packaging/${{ env.PRODUCT_NAME }}.app.pkg"
           envsubst < ./Packaging/Mac/distribution.xml.template > ./Packaging/distribution.xml
-          productbuild --resources ./Packaging/resources --distribution ./Packaging/distribution.xml "Packaging/${{ env.ARTIFACT_NAME }}.pkg"
+          productbuild --resources ./Packaging/resources --package-path ./Packaging --distribution ./Packaging/distribution.xml "Packaging/${{ env.ARTIFACT_NAME }}.pkg"
 
       # LINUX CODESIGNING, SIGNATURE VERIFICATION & CPACK
       - name: Set up GnuPG and Import Key
@@ -329,6 +328,13 @@ jobs:
         if: ${{ matrix.name == 'Linux' }}
         run: cmake --build build --target portable_tarball
 
+      # WINDOWS PACKAGING
+      - name: Zip Windows Binaries
+        if: ${{ matrix.name == 'Windows' }}
+        run: |
+          7z a "${{ env.BUILD_DIR }}/CtrlrX-Windows.zip" "./${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/*"
+
+      # ARTIFACT UPLOADS
       - name: Upload DEB Package
         if: ${{ matrix.name == 'Linux' }}
         uses: actions/upload-artifact@v4
@@ -353,20 +359,21 @@ jobs:
           path: build/*.tar.gz
           archive: false
 
-      - name: Upload macOS Package 
+      - name: Upload macOS Single Package 
         if: ${{ matrix.name == 'macOS' }}
         uses: actions/upload-artifact@v4
         with:
           name: ctrlrx-macos-package
-          path: Packaging/*.pkg
+          path: Packaging/*-macOS.pkg
           archive: false
 
-      - name: Upload Windows VST3 & Standalone
+      - name: Upload Windows Package
         if: ${{ matrix.name == 'Windows' }}
         uses: actions/upload-artifact@v4
         with:
           name: ctrlrx-windows-package
-          path: ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/
+          path: build/CtrlrX-Windows.zip
+          archive: false
 
   # RELEASE DISTRIBUTION
   release:
@@ -398,11 +405,10 @@ jobs:
         with:
           body_path: release_notes.txt
           prerelease: true
+          overwrite: true
           files: |
-            **/*.exe
-            **/*.pkg
+            **/*-macOS.pkg
+            **/CtrlrX-Windows.zip
             **/*.deb
             **/*.rpm
             **/*.tar.gz
-            **/*.vst3
-            **/*.sig
