@@ -332,7 +332,10 @@ jobs:
       - name: Zip Windows Binaries
         if: ${{ matrix.name == 'Windows' }}
         run: |
-          7z a "${{ env.BUILD_DIR }}/CtrlrX-Windows.zip" "./${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/*"
+          ARTIFACT_DIR="./${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}"
+          7z a "${{ env.BUILD_DIR }}/CtrlrX-Windows.zip" \
+            "$ARTIFACT_DIR/VST3" \
+            "$ARTIFACT_DIR/Standalone/${{ env.PRODUCT_NAME }}.exe"
 
       # ARTIFACT UPLOADS
       - name: Upload DEB Package
