@@ -295,9 +295,8 @@ jobs:
           pkgbuild --analyze --root "$(dirname "${{ env.STANDALONE_PATH }}")" standalone.plist
           plutil -replace BundleIsRelocatable -bool NO standalone.plist
           pkgbuild --identifier "${{ env.BUNDLE_ID }}.app.pkg" --version $VERSION --root "$(dirname "${{ env.STANDALONE_PATH }}")" --component-plist standalone.plist --install-location "/Applications" "Packaging/${{ env.PRODUCT_NAME }}.app.pkg"
-          cd Packaging
-          envsubst < ./Mac/distribution.xml.template > distribution.xml
-          productbuild --resources ./resources --distribution distribution.xml "${{ env.ARTIFACT_NAME }}.pkg"
+          envsubst < ./Packaging/Mac/distribution.xml.template > ./Packaging/distribution.xml
+          productbuild --resources ./Packaging/resources --distribution ./Packaging/distribution.xml "Packaging/${{ env.ARTIFACT_NAME }}.pkg"
 
       # LINUX CODESIGNING, SIGNATURE VERIFICATION & CPACK
       - name: Set up GnuPG and Import Key
@@ -354,6 +353,21 @@ jobs:
           path: build/*.tar.gz
           archive: false
 
+      - name: Upload macOS Package 
+        if: ${{ matrix.name == 'macOS' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ctrlrx-macos-package
+          path: Packaging/*.pkg
+          archive: false
+
+      - name: Upload Windows VST3 & Standalone
+        if: ${{ matrix.name == 'Windows' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ctrlrx-windows-package
+          path: ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/
+
   # RELEASE DISTRIBUTION
   release:
     if: contains(github.ref, 'tags/v')
@@ -385,9 +399,10 @@ jobs:
           body_path: release_notes.txt
           prerelease: true
           files: |
-            */*.exe
-            **/*/*.deb
-            **/*/*.rpm
-            **/*/*.tar.gz
-            */*.pkg
-            **/*Standalone/*.sig
+            **/*.exe
+            **/*.pkg
+            **/*.deb
+            **/*.rpm
+            **/*.tar.gz
+            **/*.vst3
+            **/*.sig
