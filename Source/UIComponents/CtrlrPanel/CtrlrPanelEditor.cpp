@@ -216,7 +216,7 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 		setProperty(Ids::uiPanelJitMode,
 					isAppSignedWithEntitlements()); // Added v5.6.36. Set LuaJIT to Interpretor only OR Full mode with
 													// compilator (requires macOS deep codesigning to prevent crash)
-	} else {
+	} else {git
 		// Windows, Linux, etc. default to full JIT mode
 		setProperty(Ids::uiPanelJitMode, true);
 	}
