@@ -54,9 +54,10 @@ CtrlrLuaConsole::CtrlrLuaConsole(CtrlrPanel &_owner)
 	addAndMakeVisible(resizer = new StretchableLayoutResizerBar(&layoutManager, 1, false));
 
 	//[UserPreSize]
-	layoutManager.setItemLayout(0, -0.001, -1.0, -0.69);
-	layoutManager.setItemLayout(1, -0.001, -0.01, -0.01);
-	layoutManager.setItemLayout(2, -0.001, -1.0, -0.30);
+	// Constructor — Update the resizer bar height
+	layoutManager.setItemLayout(0, -0.001, -1.0, -0.65); // Output window (e.g., 65%)
+	layoutManager.setItemLayout(1, 12, 22, 24);			 // Resizer Bar: min 12px, preferred 22px, max 24px
+	layoutManager.setItemLayout(2, -0.001, -1.0, -0.30); // Input window (e.g., ~30%)
 
 	luaConsoleInput->setFont(
 		Font(owner.getCtrlrManagerOwner().getFontManager().getDefaultMonoFontName(), 15, Font::plain));
@@ -92,13 +93,16 @@ CtrlrLuaConsole::CtrlrLuaConsole(CtrlrPanel &_owner)
 	currentInputString = "";
 	// constructor, near the other addAndMakeVisible calls
 	// constructor — replace the previous inputHintLabel setup with this
+	// Constructor setup:
 	addAndMakeVisible(inputHintLabel);
-	inputHintLabel.setText("RUN CODE WINDOW :: Enter: Run    Ctrl+Enter: New line", dontSendNotification);
-	inputHintLabel.setJustificationType(Justification::centredRight);
-	inputHintLabel.setFont(Font(12.0f, Font::plain));
-	inputHintLabel.setColour(Label::textColourId, Colours::grey.withAlpha(0.8f));
+	inputHintLabel.setText("lua editor - commands: Run [Enter]   New Line [Shift + Enter]", dontSendNotification);
+	// inputHintLabel.setText("Run [Enter ↵]   New Line [Shift ⇧ + Enter ↵]", dontSendNotification);
+	inputHintLabel.setFont(Font(Font::getDefaultSansSerifFontName(), 12.0f, Font::bold));
+	inputHintLabel.setJustificationType(Justification::centred);
+	// inputHintLabel.setFont(Font(11.0f, Font::bold));
+	inputHintLabel.setColour(Label::textColourId, Colours::darkgrey);
 	inputHintLabel.setColour(Label::backgroundColourId, Colours::transparentBlack);
-	inputHintLabel.setInterceptsMouseClicks(false, false); // clicks pass through to the editor underneath
+	inputHintLabel.setInterceptsMouseClicks(false, false);
 	// luaConsoleOutput->setWantsKeyboardFocus(false);
 	// luaConsoleInput->grabKeyboardFocus();
 	//[/UserPreSize]
@@ -141,15 +145,11 @@ void CtrlrLuaConsole::paint(Graphics &g) {
 }
 
 void CtrlrLuaConsole::resized() {
-	luaConsoleOutput->setBounds(0, 0, getWidth() - 0, proportionOfHeight(0.6900f));
-	luaConsoleInput->setBounds(0, proportionOfHeight(0.7000f), getWidth() - 0, proportionOfHeight(0.3000f));
-	resizer->setBounds(0, proportionOfHeight(0.6900f), getWidth() - 0, proportionOfHeight(0.0100f));
-
 	Component *comps[] = {luaConsoleOutput, resizer, luaConsoleInput};
 	layoutManager.layOutComponents(comps, 3, 0, 0, getWidth(), getHeight(), true, true);
 
-	// Overlay the hint in the top-right corner of the input editor, on top of it
-	inputHintLabel.setBounds(luaConsoleInput->getRight() - 220, luaConsoleInput->getY() + 2, 216, 16);
+	// Give the hint text a clean padded area inside the thicker resizer bar
+	inputHintLabel.setBounds(resizer->getX() + 8, resizer->getY(), resizer->getWidth() - 16, resizer->getHeight());
 	inputHintLabel.toFront(false);
 }
 
@@ -161,50 +161,63 @@ bool CtrlrLuaConsole::keyPressed(const KeyPress &key) {
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 bool CtrlrLuaConsole::keyPressed(const KeyPress &key, Component *originatingComponent) {
-	if (key.getKeyCode() == 13 && originatingComponent == luaConsoleInput && !key.getModifiers().isCtrlDown()) {
-		runCode(inputDocument.getAllContent());
+	// Ignore key presses originating from anywhere other than the console input
+	if (originatingComponent != luaConsoleInput) {
+		return false;
+	}
 
-		if ((bool)owner.getProperty(Ids::uiLuaConsoleInputRemoveAfterRun)) {
-			inputDocument.replaceAllContent("");
+	const int keyCode = key.getKeyCode();
+	const ModifierKeys mods = key.getModifiers();
+
+	// 1. Enter key handling (Run vs Newline)
+	if (keyCode == KeyPress::returnKey) {
+		if (mods.isShiftDown()) {
+			luaConsoleInput->insertTextAtCaret("\n");
+			return true;
 		}
-		return (true);
-	} else if (key.getKeyCode() == 13 && originatingComponent == luaConsoleInput && key.getModifiers().isCtrlDown()) {
-		luaConsoleInput->insertTextAtCaret("\n");
-		return (true);
-	} else if (key.getKeyCode() == KeyPress::upKey && key.getModifiers().isCtrlDown() &&
-			   originatingComponent == luaConsoleInput) {
-		if (inputHistory.size()) {
-			// Prev command
+
+		if (!mods.isAnyModifierKeyDown()) {
+			runCode(inputDocument.getAllContent());
+
+			if (static_cast<bool>(owner.getProperty(Ids::uiLuaConsoleInputRemoveAfterRun))) {
+				inputDocument.replaceAllContent("");
+			}
+			return true;
+		}
+	}
+
+	// 2. Command History navigation (Ctrl + Up / Ctrl + Down)
+	if (mods.isCtrlDown() && !inputHistory.isEmpty()) {
+		if (keyCode == KeyPress::upKey) {
 			if (nextUpKeyPressWillbeFirst) {
 				currentInputString = inputDocument.getAllContent();
 				nextUpKeyPressWillbeFirst = false;
 			}
 
-			luaConsoleInput->loadContent(inputHistory[lastCommandNumInHistory]); /* Put text at pointer into console */
-			lastCommandNumInHistory = (((lastCommandNumInHistory - 1) < 0) ? 0 : (lastCommandNumInHistory - 1));
+			luaConsoleInput->loadContent(inputHistory[lastCommandNumInHistory]);
+			lastCommandNumInHistory = jmax(0, lastCommandNumInHistory - 1);
 			lastMoveDirection = UP;
+			return true;
 		}
-		return (true);
-	} else if (key.getKeyCode() == KeyPress::downKey && key.getModifiers().isCtrlDown() &&
-			   originatingComponent == luaConsoleInput) {
-		if (inputHistory.size()) {
-			// next command
-			if (lastCommandNumInHistory == (inputHistory.size() - 1)) // at last command only
-			{
-				if (!currentInputString.isEmpty()) {
+
+		if (keyCode == KeyPress::downKey) {
+			// At the end of history: restore unsaved typing buffer
+			if (lastCommandNumInHistory >= inputHistory.size() - 1) {
+				if (currentInputString.isNotEmpty()) {
 					luaConsoleInput->loadContent(currentInputString);
-					nextUpKeyPressWillbeFirst =
-						true; // if user changes this restored text we need to capture it at up key again
+					nextUpKeyPressWillbeFirst = true;
 				}
 				return true;
 			}
-			lastCommandNumInHistory += 1;
-			luaConsoleInput->loadContent(inputHistory[lastCommandNumInHistory]); /* Put text at pointer into console */
+
+			lastCommandNumInHistory = jmin(inputHistory.size() - 1, lastCommandNumInHistory + 1);
+			luaConsoleInput->loadContent(inputHistory[lastCommandNumInHistory]);
 			lastMoveDirection = DOWN;
+			return true;
 		}
-		return (true);
 	}
-	return (false);
+
+	return false;
 }
 
 void CtrlrLuaConsole::runCode(const String &code) {

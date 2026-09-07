@@ -165,9 +165,8 @@ namespace luabind
     return String::fromUTF8(s, (int) len);
 		}
 
-		void to(lua_State* L, String const &value)
-		{
-			lua_pushlstring(L, value.toUTF8(), value.length());
+		void to(lua_State *L, String const &value) {
+			lua_pushlstring(L, value.toUTF8(), value.getNumBytesAsUTF8());
 		}
 	};
 
@@ -203,10 +202,9 @@ StringRef from(lua_State* L, int index)
     return StringRef(lua_tostring(L, index));
 }
 
-		void to(lua_State* L, StringRef const &value)
-		{
-			lua_pushlstring(L, value, value.length());
-		}
+void to(lua_State *L, StringRef const &value) {
+	lua_pushstring(L, value.text); // StringRef is already null-terminated C-string
+}
 	};
 
 	template <> struct default_converter<StringRef const&> : default_converter<StringRef>
