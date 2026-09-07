@@ -113,3 +113,8 @@ vs/
 Source/JUCE/modules
 JUCE/extras
 build_log.txt
+build/
+CMakeCache.txt
+CMakeFiles/
+*.cmake
+!CMakeLists.txt
