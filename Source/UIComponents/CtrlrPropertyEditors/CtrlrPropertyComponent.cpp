@@ -61,10 +61,45 @@ const String CtrlrPropertyComponent::getPropertyName() {
 const String CtrlrPropertyComponent::getVisibleText() {
 	return visibleText;
 }
+
 void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 {
-	getLookAndFeel().drawPropertyComponentBackground(
-		g, getLookAndFeel().getPropertyComponentContentPosition(*this).getX(), getHeight(), *this);
+	static const std::map<String, Colour> customHighlights = {
+		{"name", Colour(0x33ffaa00)},					// Amber/Gold for Modulator Name
+		{"midiMessageType", Colour(0x44ff69b4)},		// Pink for MIDI Message Type
+		{"luaModulatorValueChange", Colour(0x33007acc)} // Soft Blue for luaModulatorValueChange
+	};
+
+	const String propStr = propertyName.toString();
+	auto it = customHighlights.find(propStr);
+
+	// Check if the property element itself is a modulator (or component)
+	const bool isModulatorProperty = propertyElement.hasType(Ids::modulator) || propertyElement.hasType(Ids::component);
+
+	// Only highlight "name" if it belongs to a Modulator, not a Panel
+	bool shouldHighlight = false;
+	if (it != customHighlights.end()) {
+		if (propertyName == Ids::name)
+			shouldHighlight = isModulatorProperty; // Ignore if owner is panel
+		else
+			shouldHighlight = true;
+	}
+
+	if (shouldHighlight) {
+		const Colour fillColour = it->second;
+
+		// Fill custom row background
+		g.setColour(fillColour);
+		g.fillRect(getLocalBounds());
+
+		// Draw matching solid left accent strip
+		g.setColour(fillColour.withAlpha(1.0f));
+		g.fillRect(0, 0, 4, getHeight());
+	} else {
+		getLookAndFeel().drawPropertyComponentBackground(
+			g, getLookAndFeel().getPropertyComponentContentPosition(*this).getX(), getHeight(), *this);
+	}
+
 	if (isMouseOver(false) && !currentFont.isUnderlined()) {
 		currentFont.setUnderline(true);
 	} else if (currentFont.isUnderlined()) {
@@ -76,7 +111,6 @@ void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 	g.drawFittedText(visibleText, 6, 0, getLookAndFeel().getPropertyComponentContentPosition(*this).getX() - 12,
 					 getHeight(), Justification::centredLeft, 2, 1.0f);
 }
-
 void CtrlrPropertyComponent::resized() {
 	// currentFont.setHeight (jmin (getHeight(), 24) * 0.55f);
 
