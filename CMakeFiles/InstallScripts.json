@@ -1,0 +1,11 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/john2/Documents/CtrlrX/cmake_install.cmake",
+		"/home/john2/Documents/CtrlrX/JUCE/cmake_install.cmake",
+		"/home/john2/Documents/CtrlrX/JUCE/modules/cmake_install.cmake",
+		"/home/john2/Documents/CtrlrX/JUCE/extras/Build/cmake_install.cmake",
+		"/home/john2/Documents/CtrlrX/JUCE/extras/Build/juceaide/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

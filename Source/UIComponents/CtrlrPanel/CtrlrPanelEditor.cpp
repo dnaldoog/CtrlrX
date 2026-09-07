@@ -18,6 +18,11 @@
 #include "JuceClasses/LMemoryBlock.h"
 #include "stdafx.h"
 
+#if JUCE_MAC
+#define Point MacTypes_Point
+#import <Security/Security.h>
+#undef Point
+#endif
 //--------------------------------------------------------------------------------------------------
 // CtrlrPanelNotifier
 //--------------------------------------------------------------------------------------------------
@@ -206,7 +211,16 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 	setProperty(Ids::uiPanelTooltipOutlineColour,
 				(String)Component::findColour(BubbleComponent::outlineColourId).toString()); // 0xff000000
 	setProperty(Ids::uiPanelTooltipCornerRound, 1.0);
-
+	if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) != 0) {
+		// On macOS, default to true only if the running app has the correct JIT entitlements, otherwise false
+		setProperty(Ids::uiPanelJitMode,
+					isAppSignedWithEntitlements()); // Added v5.6.36. Set LuaJIT to Interpretor only OR Full mode with
+													// compilator (requires macOS deep codesigning to prevent crash)
+	} else {git
+		// Windows, Linux, etc. default to full JIT mode
+		setProperty(Ids::uiPanelJitMode, true);
+	}
+	// setProperty(Ids::uiPanelJitMode, false); // comment out code above to view in Windows/Linux when testing
 	ValueTree ed = owner.getCtrlrManagerOwner().getManagerTree();
 
 	if (ed.getProperty(Ids::ctrlrLegacyMode) == "1" || ed.getProperty(Ids::ctrlrLookAndFeel) == "V3" ||
@@ -598,6 +612,64 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 				   property == Ids::uiPanelUIColourOutline || property == Ids::uiPanelUIColourDefaultText ||
 				   property == Ids::uiPanelUIColourDefaultFill || property == Ids::uiPanelUIColourHighlightedText ||
 				   property == Ids::uiPanelUIColourHighlightedFill || property == Ids::uiPanelUIColourMenuText) {
+		} else if (property == Ids::uiPanelJitMode) {
+			// Retrieve the lua_State using the panel's Lua manager pattern
+			lua_State *L = owner.getCtrlrLuaManager().getLuaState();
+
+			if (L != nullptr) {
+				bool jitRequested = (bool)getProperty(property);
+
+				if (jitRequested) {
+#if JUCE_MAC
+					// On macOS, verify if the binary has the required Hardened Runtime entitlement
+					if (!isAppSignedWithEntitlements()) {
+						luaL_dostring(L, "jit.off()");
+						String warningMsg = "Cannot enable JIT. Missing entitlement on this macOS build.";
+						_DBG("LuaJIT Warning: " + warningMsg);
+
+						juce::NativeMessageBox::showMessageBoxAsync(juce::AlertWindow::WarningIcon, "LuaJIT Warning",
+																	warningMsg);
+
+						// Prevent updating property if in restricted single mode
+						bool isRestricted = owner.getCtrlrManagerOwner().getInstanceMode() == InstanceSingleRestricted;
+						if (isRestricted) {
+							_DBG("Instance is restricted; uiPanelJitMode value not updated.");
+						} else {
+							setProperty(Ids::uiPanelJitMode, false);
+							if (ctrlrPanelProperties != nullptr) {
+								ctrlrPanelProperties->refreshAll();
+							}
+							if (getSelection() != nullptr) {
+								getSelection()->sendChangeMessage();
+							}
+							_DBG("Instance is not restricted; uiPanelJitMode value reset to false.");
+						}
+					} else {
+						luaL_dostring(L, "jit.on()");
+					}
+#else
+					// Windows / Linux don't enforce entitlement lockdown
+					luaL_dostring(L, "jit.on()");
+#endif
+				} else {
+					luaL_dostring(L, "jit.off()");
+				}
+
+				// Verify execution state directly from Lua runtime
+				lua_getglobal(L, "jit");
+				lua_getfield(L, -1, "status");
+				bool isJitActive = false;
+
+				if (lua_isfunction(L, -1)) {
+					if (lua_pcall(L, 0, 1, 0) == 0) {
+						isJitActive = lua_toboolean(L, -1);
+					}
+				}
+				lua_pop(L, 2); // Clean stack (pop function result & 'jit' table)
+
+				String modeStr = isJitActive ? "Full mode (Interpreter + Compiler)" : "Interpreter only";
+				_DBG("LuaJIT mode: " + modeStr);
+			}
 		} else if (property == Ids::uiPanelLookAndFeel) {
 			static bool handlingLookAndFeelChange = false;
 			if (handlingLookAndFeelChange)
@@ -816,5 +888,51 @@ bool CtrlrPanelEditor::luaEditorExistsAndIsFocused() // Added v5.6.34. Required 
 		return true;
 	}
 
+	return false;
+}
+bool CtrlrPanelEditor::isAppSignedWithEntitlements() {
+#if JUCE_MAC
+	SecCodeRef selfCode = NULL;
+	if (SecCodeCopySelf(kSecCSDefaultFlags, &selfCode) != errSecSuccess)
+		return false;
+
+	CFDictionaryRef info = NULL;
+	if (SecCodeCopySigningInformation(selfCode, kSecCSDefaultFlags, &info) == errSecSuccess && info) {
+		CFDictionaryRef entitlements = NULL;
+
+		// 1. Try grabbing the dictionary directly via modern macOS key
+		CFTypeRef dictObj = CFDictionaryGetValue(info, kSecCodeInfoEntitlementsDict);
+		if (dictObj && CFGetTypeID(dictObj) == CFDictionaryGetTypeID()) {
+			entitlements = (CFDictionaryRef)dictObj;
+			CFRetain(entitlements);
+		} else {
+			// 2. Fall back to parsing the raw binary/XML data blob
+			CFTypeRef dataObj = CFDictionaryGetValue(info, kSecCodeInfoEntitlements);
+			if (dataObj && CFGetTypeID(dataObj) == CFDataGetTypeID()) {
+				entitlements = (CFDictionaryRef)CFPropertyListCreateWithData(kCFAllocatorDefault, (CFDataRef)dataObj,
+																			 kCFPropertyListImmutable, NULL, NULL);
+			}
+		}
+
+		if (entitlements && CFGetTypeID(entitlements) == CFDictionaryGetTypeID()) {
+			CFBooleanRef allowUnsignedMem = (CFBooleanRef)CFDictionaryGetValue(
+				entitlements, CFSTR("com.apple.security.cs.allow-unsigned-executable-memory"));
+			bool isEnabled = false;
+
+			if (allowUnsignedMem && CFGetTypeID(allowUnsignedMem) == CFBooleanGetTypeID()) {
+				isEnabled = CFBooleanGetValue(allowUnsignedMem);
+			}
+
+			CFRelease(entitlements);
+			CFRelease(info);
+			CFRelease(selfCode);
+			return isEnabled;
+		}
+
+		CFRelease(info);
+	}
+	if (selfCode)
+		CFRelease(selfCode);
+#endif
 	return false;
 }

@@ -2,15 +2,20 @@
 #define __STDAFX_H__
 
 #ifdef __cplusplus
-#ifndef __OBJC__
+// Ensure standard C/C++ types exist before JUCE or system headers
+#include <stddef.h>
+#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
+
+#include "JuceHeader.h"
 
 extern "C"
 {
 #include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
 }
 
-#include "JuceHeader.h"
-
-#endif // !__OBJC__
 #endif // __cplusplus
-#endif
+#endif // __STDAFX_H__

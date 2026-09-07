@@ -66,3 +66,20 @@ case $choice in
         exit 1
         ;;
 esac
+
+# -----------------------------------------------------------------------
+# Optional System Installation Prompt
+# -----------------------------------------------------------------------
+echo ""
+read -p "Install to system using sudo? [y/N]: " install_choice
+
+case "$install_choice" in
+    [yY][eE][sS]|[yY])
+        echo "--- Installing Target System-Wide ---"
+        sudo cmake --build "$BUILD_DIR" --target install || error_exit "Installation failed."
+        echo "Installation complete!"
+        ;;
+    *)
+        echo "Skipping installation. Build artifacts remain in $BUILD_DIR"
+        ;;
+esac
