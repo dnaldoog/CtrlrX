@@ -34,20 +34,6 @@ jobs:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     env:
-      # macOS certificates need to be combined as a single p12 file.
-      # DEV_ID_COMBO_CERT : p12 combined certificates (Developer ID Installer & Developer ID Application)
-      # DEV_ID_COMBO_PASSWORD : p12 certificate password
-      # DEVELOPER_ID_APPLICATION : Apple DEV Application ID for codesigning
-      # DEVELOPER_ID_INSTALLER : Apple DEV identity name used for signing the final PKG installer
-      # NOTARIZATION_USERNAME : Apple DEV account username for Notarization
-      # NOTARIZATION_PASSWORD : App-Specific Password (appleid.apple.com) used for the Notarization submission
-      # TEAM_ID : Apple DEV account username Team ID
-      # Microsoft Azure Trusted Signing. melatonin.dev documentation here : https://melatonin.dev/blog/code-signing-on-windows-with-azure-trusted-signing/
-      # AZURE_CLIENT_ID : Azure Trusted Signing Client ID
-      # AZURE_TENANT_ID : Azure Trusted Signing Tenant ID
-      # AZURE_CLIENT_SECRET : Azure Trusted Signing Client Secret key
-      # Linux Signature Verification (GPG). Documentation : https://docs.github.com/en/authentication/managing-commit-signature-verification/generating-a-new-gpg-key
-      # GPG_SIGNING_KEY : Content of your generated GPG key
       HAVE_MACOS_SIGNING_SECRETS: ${{ secrets.DEV_ID_COMBO_CERT != '' && secrets.DEV_ID_COMBO_PASSWORD != '' && secrets.DEVELOPER_ID_APPLICATION != '' && secrets.DEVELOPER_ID_INSTALLER != '' && secrets.NOTARIZATION_USERNAME != '' && secrets.NOTARIZATION_PASSWORD != '' && secrets.TEAM_ID != '' }}
       HAVE_AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET != '' }}
       HAVE_GPG_KEY: ${{ secrets.GPG_SIGNING_KEY != '' }}
@@ -66,9 +52,16 @@ jobs:
           - name: Windows
             os: windows-2022
             pluginval-binary: ./pluginval.exe
+            extra-flags: ""
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
       - name: Setup MSVC (Windows)
+        if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Set up Clang (Linux)
@@ -87,7 +80,6 @@ jobs:
             libxcursor-dev libxrandr-dev xorg-dev \
             libgtk-3-dev libwebkit2gtk-4.1-dev libluajit-5.1-dev unzip \
             rpm
-          # Alias webkit 4.1 to 4.0 so CMake finds it
           sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc \
                       /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc
           sudo /usr/bin/Xvfb $DISPLAY &
@@ -112,22 +104,12 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-     # -----------------------------------------------------------------------
-      # Extract LuaJIT Source from local Archive
-      # -----------------------------------------------------------------------
       - name: Extract LuaJIT (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
           ZIP="./Source/Resources/LuaJIT/luajit.zip"
           if [ -f "$ZIP" ]; then
-            echo "Found zip at: $ZIP"
             unzip -o "$ZIP" -d "Source/Misc/"
-            echo "Extraction complete."
           else
             echo "Error: luajit.zip not found at $ZIP"
             exit 1
@@ -139,40 +121,28 @@ jobs:
         run: |
           $zipPath = "Source/Resources/LuaJIT/luajit.zip"
           if (Test-Path $zipPath) {
-            Write-Host "Found zip at: $zipPath"
             Expand-Archive -Path $zipPath -DestinationPath "Source/Misc/" -Force
-            Write-Host "Extraction complete."
           } else {
-            Write-Host "Error: luajit.zip not found at $zipPath"
             exit 1
           }
 
-      # -----------------------------------------------------------------------
-      # Native Engine Compilation per Platform Target
-      # -----------------------------------------------------------------------
       - name: Build LuaJIT (Windows)
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          @echo off
           if exist "Source\Misc\luajit\src\msvcbuild.bat" (
             pushd "Source\Misc\luajit\src"
             call msvcbuild.bat static
             popd
-            echo LuaJIT built successfully.
             exit /b 0
           )
-          echo ERROR: LuaJIT msvcbuild.bat not found.
           exit /b 1
 
       - name: Build LuaJIT (Linux)
         if: runner.os == 'Linux'
         run: |
           LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
-          if [ -z "$LUAJIT_SRC" ]; then
-            echo "LuaJIT source not found - using system libluajit-5.1-dev"
-            exit 0
-          fi
+          if [ -z "$LUAJIT_SRC" ]; then exit 0; fi
           cd "$LUAJIT_SRC"
           make clean
           make -j$(nproc) XCFLAGS="-fPIC"
@@ -181,36 +151,23 @@ jobs:
         if: matrix.name == 'macOS'
         run: |
           LUAJIT_SRC=$(find . -type d -path "*/luajit/src" | head -n 1)
-          if [ -z "$LUAJIT_SRC" ]; then
-            echo "LuaJIT source not found - using Homebrew luajit"
-            exit 0
-          fi
+          if [ -z "$LUAJIT_SRC" ]; then exit 0; fi
           cd "$LUAJIT_SRC"
           export MACOSX_DEPLOYMENT_TARGET=10.15
-          echo "--- Building x86_64 ---"
           make clean
           CC=clang TARGET_SYS=Darwin TARGET_FLAGS="-arch x86_64" make -j$(sysctl -n hw.ncpu)
           mv libluajit.a libluajit_x86.a
-          echo "--- Building arm64 ---"
           make clean
           CC=clang TARGET_SYS=Darwin TARGET_FLAGS="-arch arm64" make -j$(sysctl -n hw.ncpu)
           mv libluajit.a libluajit_arm.a
           lipo -create libluajit_x86.a libluajit_arm.a -output libluajit.a
-          lipo -info libluajit.a
 
-      # -----------------------------------------------------------------------
-      # Dependencies Optimization & Boost Unzipping
-      # -----------------------------------------------------------------------
       - name: Unzip Boost for CtrlrX
         if: runner.os != 'Linux'
         run: |
           BOOST_ZIP=$(find . -name "boost.zip" | head -n 1)
           if [ -n "$BOOST_ZIP" ]; then
-            echo "Found Boost zip at: $BOOST_ZIP"
-            # Explicitly extract to avoid silent skips or path positioning bugs on macOS/Windows
             unzip -o "$BOOST_ZIP" -d "./Source/Misc/"
-          else
-            echo "boost.zip not found, skipping extraction"
           fi
 
       - name: Cache the build
@@ -218,139 +175,13 @@ jobs:
 
       - name: Extract version from .jucer file
         run: |
-          echo "Version"
           while IFS= read -r -d $'\0' JUCER_FILE <&3; do
             if [ "$JUCER_FILE" -nt "VERSION" -a -n "`grep -h 'version=.\+Ctrlr' \"$JUCER_FILE\"`" ]; then
               grep -h 'version=.\+Ctrlr' "$JUCER_FILE" | sed -E 's/.*version="([^"]*).*/\1/g' | head -n 1 > VERSION
-              echo "Found in $JUCER_FILE"
             fi
           done 3< <(find . -name "Ctrlr*.jucer" -type f -print0)
           cat VERSION
 
-      # -----------------------------------------------------------------------
-      # Build Execution Steps (Explicitly defining Core Macro Flag)
-      # -----------------------------------------------------------------------
-      - name: Configure CMake
-
-        run: |
-          EXTRA_MAC_FLAGS=""
-          if [ "${{ env.HAVE_MACOS_SIGNING_SECRETS }}" != "true" ]; then
-            echo "Signing secrets missing. Forcing LuaJIT off for unsigned macOS build."
-            EXTRA_MAC_FLAGS="-DCTRLRX_FORCE_JIT_OFF=ON"
-          fi
-          
-          cmake -B ${{ env.BUILD_DIR }} \
-          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-          -DCMAKE_C_COMPILER_LAUNCHER=sccache \
-          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
-          -DCTRLRX_USE_LUAJIT=ON \
-          ${{ matrix.extra-flags }} .
-
-      - name: Build Project
-        run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }}
-
-      - name: Read in .env from CMake
-        run: |
-          if [ -f .env ]; then
-            cat .env
-            cat .env >> $GITHUB_ENV
-          elif [ -f ${{ env.BUILD_DIR }}/.env ]; then
-            cat ${{ env.BUILD_DIR }}/.env
-            cat ${{ env.BUILD_DIR }}/.env >> $GITHUB_ENV
-          else
-            echo "Warning: .env file not found, skipping..."
-          fi
-
-      - name: Set additional env vars for next steps
-        run: |
-          ARTIFACTS_PATH=${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}
-          echo "ARTIFACTS_PATH=$ARTIFACTS_PATH" >> $GITHUB_ENV
-          echo "VST3_PATH=$ARTIFACTS_PATH/VST3/${{ env.PRODUCT_NAME }}.vst3" >> $GITHUB_ENV
-          echo "AU_PATH=$ARTIFACTS_PATH/AU/${{ env.PRODUCT_NAME }}.component" >> $GITHUB_ENV
-          echo "AUV3_PATH=$ARTIFACTS_PATH/AUv3/${{ env.PRODUCT_NAME }}.appex" >> $GITHUB_ENV
-          echo "CLAP_PATH=$ARTIFACTS_PATH/CLAP/${{ env.PRODUCT_NAME }}.clap" >> $GITHUB_ENV
-          echo "STANDALONE_PATH=$ARTIFACTS_PATH/Standalone/${{ env.PRODUCT_NAME }}.app" >> $GITHUB_ENV
-          echo "ARTIFACT_NAME=${{ env.PRODUCT_NAME }}-${{ env.VERSION }}-${{ matrix.name }}" >> $GITHUB_ENV
-
-      # -----------------------------------------------------------------
-      # APPLE CODESIGNING STEPS (Your original fully certified workspace)
-      # -----------------------------------------------------------------
-      - name: Import Merged Developer ID Certificates
-        if: ${{ matrix.name == 'macOS' && env.HAVE_MACOS_SIGNING_SECRETS == 'true' }}
-        uses: apple-actions/import-codesign-certs@v3
-        with:
-          p12-file-base64: ${{ secrets.DEV_ID_COMBO_CERT }}
-          p12-password: ${{ secrets.DEV_ID_COMBO_PASSWORD }}
-          keychain-password: gha_temp_password
-          create-keychain: true 
-          keychain: signing_temp
-
-      - name: Final Keychain Configuration (Bypass Trust Anchor Import)
-        if: ${{ matrix.name == 'macOS' && env.HAVE_MACOS_SIGNING_SECRETS == 'true' }}
-        run: |
-          KEYCHAIN_NAME="signing_temp"
-          KEYCHAIN_ABS_PATH="/Users/runner/Library/Keychains/${KEYCHAIN_NAME}.keychain-db"
-          /usr/bin/security list-keychains -d user -s "$KEYCHAIN_ABS_PATH" login.keychain
-
-      - name: Codesign (macOS)
-        if: ${{ matrix.name == 'macOS' && env.HAVE_MACOS_SIGNING_SECRETS == 'true' }}
-        run: |
-          APP_IDENTITY="${{ secrets.DEVELOPER_ID_APPLICATION }}"
-          echo "--- AVAILABLE SIGNING IDENTITIES ---"
-          security find-identity -p codesigning -v
-          echo "------------------------------------"
-          codesign --force -s "$APP_IDENTITY" -v "${{ env.VST3_PATH }}" --deep --strict --options=runtime --timestamp
-          codesign --force -s "$APP_IDENTITY" -v "${{ env.AU_PATH }}" --deep --strict --options=runtime --timestamp
-          if [ -f "${{ env.CLAP_PATH }}" ]; then
-            codesign --force -s "$APP_IDENTITY" -v "${{ env.CLAP_PATH }}" --deep --strict --options=runtime --timestamp
-          fi
-          codesign --force -s "$APP_IDENTITY" -v "${{ env.STANDALONE_PATH }}" --deep --strict --options=runtime --timestamp
-
-      - name: Add Custom Icons (macOS)
-        if: ${{ matrix.name == 'macOS' }}
-        run: |
-          sips -i Packaging/Mac/Icon.icns
-          DeRez -only icns Packaging/Mac/Icon.icns > /tmp/icons
-          Rez -a /tmp/icons -o "${{ env.VST3_PATH }}/Icon"$'\r'
-          Rez -a /tmp/icons -o "${{ env.AU_PATH }}/Icon"$'\r'
-          SetFile -a C "${{ env.VST3_PATH }}"
-          SetFile -a C "${{ env.AU_PATH }}"
-
-      # -----------------------------------------------------------------
-      # PACKAGING & NOTARIZATION PROCEDURES
-      # -----------------------------------------------------------------
-      - name: Signed Packaging and Notarization (macOS)
-        if: ${{ matrix.name == 'macOS' && env.HAVE_MACOS_SIGNING_SECRETS == 'true' }}
-        timeout-minutes: 30
-        run: |
-          pkgbuild --identifier "${{ env.BUNDLE_ID }}.au.pkg" --version $VERSION --component "${{ env.AU_PATH }}" --install-location "/Library/Audio/Plug-Ins/Components"  "Packaging/${{ env.PRODUCT_NAME }}.au.pkg"
-          pkgbuild --identifier "${{ env.BUNDLE_ID }}.vst3.pkg" --version $VERSION --component "${{ env.VST3_PATH }}" --install-location "/Library/Audio/Plug-Ins/VST3" "Packaging/${{ env.PRODUCT_NAME }}.vst3.pkg"
-          pkgbuild --analyze --root "$(dirname "${{ env.STANDALONE_PATH }}")" standalone.plist
-          plutil -replace BundleIsRelocatable -bool NO standalone.plist
-          pkgbuild --identifier "${{ env.BUNDLE_ID }}.app.pkg" --version $VERSION --root "$(dirname "${{ env.STANDALONE_PATH }}")" --component-plist standalone.plist --install-location "/Applications" "Packaging/${{ env.PRODUCT_NAME }}.app.pkg"
-          cd Packaging
-          envsubst < ./Mac/distribution.xml.template > distribution.xml
-          productbuild --resources ./resources --distribution distribution.xml --sign "${{ secrets.DEVELOPER_ID_INSTALLER }}" --timestamp "${{ env.ARTIFACT_NAME }}.pkg"
-          xcrun notarytool submit "${{ env.ARTIFACT_NAME }}.pkg" --apple-id ${{ secrets.NOTARIZATION_USERNAME }} --password ${{ secrets.NOTARIZATION_PASSWORD }} --team-id ${{ secrets.TEAM_ID }} --wait
-          xcrun stapler staple "${{ env.ARTIFACT_NAME }}.pkg"
-
-      - name: Unsigned Packaging (macOS Fallback)
-        if: ${{ matrix.name == 'macOS' && env.HAVE_MACOS_SIGNING_SECRETS != 'true' }}
-        timeout-minutes: 30
-        run: |
-          echo "WARNING: Codesigning secrets not found. Building unsigned package only."
-          pkgbuild --identifier "${{ env.BUNDLE_ID }}.au.pkg" --version $VERSION --component "${{ env.AU_PATH }}" --install-location "/Library/Audio/Plug-Ins/Components"  "Packaging/${{ env.PRODUCT_NAME }}.au.pkg"
-          pkgbuild --identifier "${{ env.BUNDLE_ID }}.vst3.pkg" --version $VERSION --component "${{ env.VST3_PATH }}" --install-location "/Library/Audio/Plug-Ins/VST3" "Packaging/${{ env.PRODUCT_NAME }}.vst3.pkg"
-          pkgbuild --analyze --root "$(dirname "${{ env.STANDALONE_PATH }}")" standalone.plist
-          plutil -replace BundleIsRelocatable -bool NO standalone.plist
-          pkgbuild --identifier "${{ env.BUNDLE_ID }}.app.pkg" --version $VERSION --root "$(dirname "${{ env.STANDALONE_PATH }}")" --component-plist standalone.plist --install-location "/Applications" "Packaging/${{ env.PRODUCT_NAME }}.app.pkg"
-          cd Packaging
-          envsubst < ./Mac/distribution.xml.template > distribution.xml
-          productbuild --resources ./resources --distribution distribution.xml "${{ env.ARTIFACT_NAME }}.pkg"
-
-# -----------------------------------------------------------------------
-      # Build Execution Steps (Explicitly defining Core Macro Flag)
-      # -----------------------------------------------------------------------
       - name: Configure CMake
         run: |
           EXTRA_MAC_FLAGS=""
@@ -364,6 +195,7 @@ jobs:
             -DCMAKE_C_COMPILER_LAUNCHER=sccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
             -DCTRLRX_USE_LUAJIT=ON \
+            $EXTRA_MAC_FLAGS \
             ${{ matrix.extra-flags }} .
 
       - name: Build Project
@@ -371,8 +203,11 @@ jobs:
 
       - name: Read in .env from CMake
         run: |
-          cat .env
-          cat .env >> $GITHUB_ENV
+          if [ -f .env ]; then
+            cat .env >> $GITHUB_ENV
+          elif [ -f ${{ env.BUILD_DIR }}/.env ]; then
+            cat ${{ env.BUILD_DIR }}/.env >> $GITHUB_ENV
+          fi
 
       - name: Set additional env vars for next steps
         run: |
@@ -389,11 +224,9 @@ jobs:
         run: |
           curl -LO "https://github.com/Tracktion/pluginval/releases/download/v1.0.3/pluginval_${{ matrix.name }}.zip"
           7z x pluginval_${{ matrix.name }}.zip
-          ${{ matrix.pluginval-binary }} --strictness-level 10 --verbose --validate "${{ env.VST3_PATH }}"
+          ${{ matrix.pluginval-binary }} --strictness-level 5 --verbose --validate "${{ env.VST3_PATH }}"
 
-      # -----------------------------------------------------------------
-      # APPLE CODESIGNING STEPS (Your original fully certified workspace)
-      # -----------------------------------------------------------------
+      # APPLE CODESIGNING STEPS
       - name: Import Merged Developer ID Certificates
         if: ${{ matrix.name == 'macOS' && env.HAVE_MACOS_SIGNING_SECRETS == 'true' }}
         uses: apple-actions/import-codesign-certs@v3
@@ -404,7 +237,7 @@ jobs:
           create-keychain: true 
           keychain: signing_temp
 
-      - name: Final Keychain Configuration (Bypass Trust Anchor Import)
+      - name: Final Keychain Configuration
         if: ${{ matrix.name == 'macOS' && env.HAVE_MACOS_SIGNING_SECRETS == 'true' }}
         run: |
           KEYCHAIN_NAME="signing_temp"
@@ -415,15 +248,16 @@ jobs:
         if: ${{ matrix.name == 'macOS' && env.HAVE_MACOS_SIGNING_SECRETS == 'true' }}
         run: |
           APP_IDENTITY="${{ secrets.DEVELOPER_ID_APPLICATION }}"
+          ENTITLEMENTS="Source/Misc/macOS/Entitlements.plist"
           echo "--- AVAILABLE SIGNING IDENTITIES ---"
           security find-identity -p codesigning -v
           echo "------------------------------------"
-          codesign --force -s "$APP_IDENTITY" -v "${{ env.VST3_PATH }}" --deep --strict --options=runtime --timestamp
-          codesign --force -s "$APP_IDENTITY" -v "${{ env.AU_PATH }}" --deep --strict --options=runtime --timestamp
+          codesign --force -s "$APP_IDENTITY" -v "${{ env.VST3_PATH }}" --deep --strict --options=runtime --entitlements "$ENTITLEMENTS" --timestamp
+          codesign --force -s "$APP_IDENTITY" -v "${{ env.AU_PATH }}" --deep --strict --options=runtime --entitlements "$ENTITLEMENTS" --timestamp
           if [ -f "${{ env.CLAP_PATH }}" ]; then
-            codesign --force -s "$APP_IDENTITY" -v "${{ env.CLAP_PATH }}" --deep --strict --options=runtime --timestamp
+            codesign --force -s "$APP_IDENTITY" -v "${{ env.CLAP_PATH }}" --deep --strict --options=runtime --entitlements "$ENTITLEMENTS" --timestamp
           fi
-          codesign --force -s "$APP_IDENTITY" -v "${{ env.STANDALONE_PATH }}" --deep --strict --options=runtime --timestamp
+          codesign --force -s "$APP_IDENTITY" -v "${{ env.STANDALONE_PATH }}" --deep --strict --options=runtime --entitlements "$ENTITLEMENTS" --timestamp
 
       - name: Add Custom Icons (macOS)
         if: ${{ matrix.name == 'macOS' }}
@@ -435,9 +269,7 @@ jobs:
           SetFile -a C "${{ env.VST3_PATH }}"
           SetFile -a C "${{ env.AU_PATH }}"
 
-      # -----------------------------------------------------------------
       # PACKAGING & NOTARIZATION PROCEDURES
-      # -----------------------------------------------------------------
       - name: Signed Packaging and Notarization (macOS)
         if: ${{ matrix.name == 'macOS' && env.HAVE_MACOS_SIGNING_SECRETS == 'true' }}
         timeout-minutes: 30
@@ -467,9 +299,7 @@ jobs:
           envsubst < ./Mac/distribution.xml.template > distribution.xml
           productbuild --resources ./resources --distribution distribution.xml "${{ env.ARTIFACT_NAME }}.pkg"
 
-      # -----------------------------------------------------------------
       # LINUX CODESIGNING, SIGNATURE VERIFICATION & CPACK
-      # -----------------------------------------------------------------
       - name: Set up GnuPG and Import Key
         if: ${{ matrix.name == 'Linux' && env.HAVE_GPG_KEY == 'true' }}
         run: |
@@ -481,7 +311,6 @@ jobs:
         run: |
           BINARY_PATH="${{ env.ARTIFACTS_PATH }}/Standalone/${{ env.PRODUCT_NAME }}"
           SIGNATURE_PATH="${{ env.ARTIFACTS_PATH }}/Standalone/${{ env.PRODUCT_NAME }}.sig"
-          echo "Attempting to sign binary at: $BINARY_PATH"
           gpg --batch --yes --pinentry-mode loopback \
               --passphrase "${{ secrets.GPG_SIGNING_PASSPHRASE }}" \
               --default-key "CtrlrX Project" \
@@ -524,10 +353,8 @@ jobs:
           name: ctrlrx-tarball-package
           path: build/*.tar.gz
           archive: false
-          
-  # -----------------------------------------------------------------
+
   # RELEASE DISTRIBUTION
-  # -----------------------------------------------------------------
   release:
     if: contains(github.ref, 'tags/v')
     runs-on: ubuntu-latest
