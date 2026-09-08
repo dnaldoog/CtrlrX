@@ -494,7 +494,7 @@
   <id name="uiTabsDepth" text="Tabs depth" type="Numeric" min="0" max="1024" int="1" />
   <id name="uiTabsOutlineThickness" text="Outline thickness component" type="Numeric" min="0" max="1024" int="1" />
   <id name="uiTabsFrontTabOutline" text="Outline thickness (current tab)" type="Numeric" min="0" max="1024" int="1" />
-  <id name="uiTabsTabOutline" text="Outline thickness (other tab)" type="Numeric"  min="0" max="1024" int="1" />
+  <!--<id name="uiTabsTabOutline" text="Outline thickness (other tab)" type="Numeric"  min="0" max="1024" int="1" />-->
   <id name="uiTabsIndentThickness" text="Gap around the content component" type="Numeric" min="0" max="1024" int="1" />
   <id name="uiTabsAddTab" text="Add tab" type="ActionButton"/>
   <id name="uiTabsRemoveTab" text="Remove tab" type="ActionButton"/>
