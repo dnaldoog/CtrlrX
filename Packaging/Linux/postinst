@@ -37,7 +37,7 @@ fi
 mkdir -p "$REAL_HOME/.vst3"
 rm -rf "${REAL_HOME:?}/.vst3/CtrlrX.vst3"
 cp -r "$VST3_STAGE_DIR" "$REAL_HOME/.vst3/"
-chown -R "$REAL_USER:$REAL_USER" "$REAL_HOME/.vst3/CtrlrX.vst3" 2>/dev/null || true
+chown -R "$REAL_USER:$REAL_USER" "$REAL_HOME/.vst3" 2>/dev/null || true
 
 echo "ctrlrx: installed VST3 plugin to $REAL_HOME/.vst3/CtrlrX.vst3"
 
