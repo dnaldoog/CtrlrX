@@ -13,7 +13,7 @@ CtrlrTabsLF::CtrlrTabsLF(CtrlrTabsComponent &_owner) : owner(_owner) {}
 int CtrlrTabsLF::getTabButtonBestWidth(int tabIndex, const String &text, int tabDepth, Button &button) {
 	Font f = owner.getOwner().getOwnerPanel().getCtrlrManagerOwner().getFontManager().getFontFromString(
 		owner.getProperty(Ids::uiTabsTabFont));
-	return f.getStringWidth(text.trim()) + getTabButtonOverlap(tabDepth) * 2;
+	return f.getStringWidth(text.trim()) + getTabButtonOverlap(tabDepth) * 2 + 10;
 }
 
 void CtrlrTabsLF::drawTabButtonText(TabBarButton &button, Graphics &g, bool isMouseOver, bool isMouseDown) {
@@ -35,7 +35,7 @@ void CtrlrTabsLF::drawTabButtonText(TabBarButton &button, Graphics &g, bool isMo
 
 	GlyphArrangement textLayout;
 	textLayout.addFittedText(button.isFrontTab() ? activeTabFont : otherTabFont, button.getButtonText().trim(), 0.0f,
-							 0.0f, (float)length, (float)depth, Justification::centred, jmax<int>(1, depth / 12));
+							 0.0f, (float)length, (float)depth, Justification::centred, jmax<int>(1, (int)depth / 12));
 	AffineTransform t;
 
 	switch (button.getTabbedButtonBar().getOrientation()) {
@@ -56,14 +56,12 @@ void CtrlrTabsLF::drawTabButtonText(TabBarButton &button, Graphics &g, bool isMo
 
 	Colour col;
 
-	if (button.isFrontTab() && (button.isColourSpecified(TabbedButtonBar::frontTextColourId) ||
-								isColourSpecified(TabbedButtonBar::frontTextColourId)))
-		col = findColour(TabbedButtonBar::frontTextColourId);
-	else if (button.isColourSpecified(TabbedButtonBar::tabTextColourId) ||
-			 isColourSpecified(TabbedButtonBar::tabTextColourId))
-		col = findColour(TabbedButtonBar::tabTextColourId);
-	else
-		col = button.getTabBackgroundColour().contrasting();
+	// FIX: Read colors directly from button or bar hierarchy
+	if (button.isFrontTab()) {
+		col = button.findColour(TabbedButtonBar::frontTextColourId, true);
+	} else {
+		col = button.findColour(TabbedButtonBar::tabTextColourId, true);
+	}
 
 	const float alpha = button.isEnabled() ? ((isMouseOver || isMouseDown) ? 1.0f : 0.8f) : 0.3f;
 
@@ -157,15 +155,22 @@ void CtrlrTabsInternal::currentTabChanged(int newCurrentTabIndex, const String &
 //[/MiscUserDefs]
 
 //==============================================================================
-CtrlrTabsComponent::CtrlrTabsComponent(CtrlrModulator &owner) : CtrlrComponent(owner), ctrlrTabs(0) {
+CtrlrTabsComponent::CtrlrTabsComponent(CtrlrModulator &owner)
+	: CtrlrComponent(owner),
+	  lf(*this),
+	  ctrlrTabs(0)
+
+{
 	addAndMakeVisible(ctrlrTabs = new CtrlrTabsInternal(*this));
 	ctrlrTabs->setName(L"ctrlrTabs");
 
 	//[UserPreSize]
 	auto *editor = owner.getOwnerPanel().getEditor();
 	String panelLnF = owner.getOwnerPanel().getEditor()->getProperty(Ids::uiPanelLookAndFeel);
-
+	ctrlrTabs->setLookAndFeel(&lf); // Ensure 'lf' instance is set on ctrlrTabs
+	ctrlrTabs->getTabbedButtonBar().setLookAndFeel(&lf);
 	applyCentralLookAndFeel(ctrlrTabs, panelLnF);
+
 	repaint();
 	owner.setProperty(Ids::modulatorVstExported, false);
 
@@ -242,11 +247,17 @@ void CtrlrTabsComponent::setComponentValue(const double newValue, const bool sen
 	}
 }
 
-double CtrlrTabsComponent::getComponentValue() { return (ctrlrTabs->getCurrentTabIndex()); }
+double CtrlrTabsComponent::getComponentValue() {
+	return (ctrlrTabs->getCurrentTabIndex());
+}
 
-int CtrlrTabsComponent::getComponentMidiValue() { return (getComponentValue()); }
+int CtrlrTabsComponent::getComponentMidiValue() {
+	return (getComponentValue());
+}
 
-double CtrlrTabsComponent::getComponentMaxValue() { return (ctrlrTabs->getNumTabs() - 1); }
+double CtrlrTabsComponent::getComponentMaxValue() {
+	return (ctrlrTabs->getNumTabs() - 1);
+}
 
 void CtrlrTabsComponent::modulatorChanged(CtrlrModulator *modulatorThatChanged) {}
 
@@ -263,46 +274,38 @@ void CtrlrTabsComponent::valueTreePropertyChanged(ValueTree &treeWhosePropertyHa
 			return;
 
 		tabChangedCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
-	}
-
-	else if (property == Ids::uiTabsCurrentTab) {
-		if (ctrlrTabs->getCurrentTabIndex() != (int)getProperty(property)) {
-			ctrlrTabs->setCurrentTabIndex(getProperty(property), false);
-		}
-
-		if (tabChangedCbk && !tabChangedCbk.wasObjectDeleted()) {
-			if (tabChangedCbk->isValid()) {
-				owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(tabChangedCbk, &owner,
-																				   (int)getProperty(property));
-			}
-		}
+	} else if (property == Ids::uiTabsFrontTabFont || property == Ids::uiTabsTabFont ||
+			   property == Ids::uiTabsFrontTabOutline || property == Ids::uiTabsTabOutline) {
+		// FIX: Re-calculate tab widths and trigger redraw on the child bar
+		ctrlrTabs->getTabbedButtonBar().setLookAndFeel(nullptr);
+		ctrlrTabs->getTabbedButtonBar().setLookAndFeel(&lf);
+		ctrlrTabs->getTabbedButtonBar().resized();
+		ctrlrTabs->getTabbedButtonBar().repaint();
+		ctrlrTabs->repaint();
 	}
 
 	else if (property == Ids::uiTabsOutlineGlobalColour || property == Ids::uiTabsOutlineGlobalBackgroundColour ||
 			 property == Ids::uiTabsOutlineTabColour || property == Ids::uiTabsTextTabColour ||
 			 property == Ids::uiTabsFrontTabOutlineColour || property == Ids::uiTabsFrontTabTextColour) {
+
+		// Background and Container Outline
 		ctrlrTabs->setColour(TabbedComponent::backgroundColourId,
 							 VAR2COLOUR(getProperty(Ids::uiTabsOutlineGlobalColour)));
 		ctrlrTabs->setColour(TabbedComponent::outlineColourId,
 							 VAR2COLOUR(getProperty(Ids::uiTabsOutlineGlobalBackgroundColour)));
 
-		ctrlrTabs->setColour(TabbedButtonBar::tabOutlineColourId, VAR2COLOUR(getProperty(Ids::uiTabsOutlineTabColour)));
-		ctrlrTabs->setColour(TabbedButtonBar::tabTextColourId, VAR2COLOUR(getProperty(Ids::uiTabsTextTabColour)));
-		ctrlrTabs->setColour(TabbedButtonBar::frontOutlineColourId,
-							 VAR2COLOUR(getProperty(Ids::uiTabsFrontTabOutlineColour)));
-		ctrlrTabs->setColour(TabbedButtonBar::frontTextColourId,
-							 VAR2COLOUR(getProperty(Ids::uiTabsFrontTabTextColour)));
+		// Tab Button Text and Outlines applied directly to the internal TabbedButtonBar
+		auto &bar = ctrlrTabs->getTabbedButtonBar();
+		bar.setColour(TabbedButtonBar::tabOutlineColourId, VAR2COLOUR(getProperty(Ids::uiTabsOutlineTabColour)));
+		bar.setColour(TabbedButtonBar::tabTextColourId, VAR2COLOUR(getProperty(Ids::uiTabsTextTabColour)));
+		bar.setColour(TabbedButtonBar::frontOutlineColourId, VAR2COLOUR(getProperty(Ids::uiTabsFrontTabOutlineColour)));
+		bar.setColour(TabbedButtonBar::frontTextColourId, VAR2COLOUR(getProperty(Ids::uiTabsFrontTabTextColour)));
 
-		repaint();
-	}
-
-	else if (property == Ids::uiTabsFrontTabFont || property == Ids::uiTabsTabFont ||
-			 property == Ids::uiTabsFrontTabOutline || property == Ids::uiTabsTabOutline) {
-		applyCentralLookAndFeel(ctrlrTabs, getProperty(property));
-		repaint();
-	}
-
-	else if (property == Ids::uiTabsDepth) {
+		// Force all children buttons to update their color cache
+		bar.sendLookAndFeelChange();
+		bar.repaint();
+		ctrlrTabs->repaint();
+	} else if (property == Ids::uiTabsDepth) {
 		ctrlrTabs->setTabBarDepth(getProperty(property));
 	}
 

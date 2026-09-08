@@ -22,24 +22,25 @@ class CtrlrTabsLF : public LookAndFeel_V4
 		CtrlrTabsComponent &owner;
 };
 
-class CtrlrTabsContentComponent : public Component, public ValueTree::Listener
-{
+class CtrlrTabsContentComponent : public Component, public ValueTree::Listener {
 	public:
 		CtrlrTabsContentComponent(const ValueTree &_tabTree, CtrlrTabsComponent &_owner);
 		~CtrlrTabsContentComponent();
 		void resized();
 		void paint(Graphics &g);
-		const var &getProperty (const Identifier& name) const;
-		void setBackgroundImage (const Image &_tabBackgroundImage) { tabBackgroundImage = _tabBackgroundImage; }
+		const var &getProperty(const Identifier &name) const;
+		void setBackgroundImage(const Image &_tabBackgroundImage) {
+			tabBackgroundImage = _tabBackgroundImage;
+		}
 		const Array<int> getResourceList();
-		void valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
-		void valueTreeChildrenChanged (ValueTree &treeWhoseChildHasChanged){}
-		void valueTreeParentChanged (ValueTree &treeWhoseParentHasChanged){}
-		void valueTreeChildAdded (ValueTree& parentTree, ValueTree& childWhichHasBeenAdded){}
-        void valueTreeChildRemoved (ValueTree& parentTree, ValueTree& childWhichHasBeenRemoved, int){}
-        void valueTreeChildOrderChanged (ValueTree& parentTreeWhoseChildrenHaveMoved, int, int){}
+		void valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
+		void valueTreeChildrenChanged(ValueTree &treeWhoseChildHasChanged) {}
+		void valueTreeParentChanged(ValueTree &treeWhoseParentHasChanged) {}
+		void valueTreeChildAdded(ValueTree &parentTree, ValueTree &childWhichHasBeenAdded) {}
+		void valueTreeChildRemoved(ValueTree &parentTree, ValueTree &childWhichHasBeenRemoved, int) {}
+		void valueTreeChildOrderChanged(ValueTree &parentTreeWhoseChildrenHaveMoved, int, int) {}
 		void parentNameChanged(const String &newName);
-        void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr);
+		void customLookAndFeelChanged(LookAndFeelBase *customLookAndFeel = nullptr);
 
 	private:
 		ValueTree tabTree;
@@ -49,12 +50,11 @@ class CtrlrTabsContentComponent : public Component, public ValueTree::Listener
 
 class CtrlrTabsComponent;
 
-class CtrlrTabsInternal : public TabbedComponent
-{
+class CtrlrTabsInternal : public TabbedComponent {
 	public:
 		CtrlrTabsInternal(CtrlrTabsComponent &_owner);
 		~CtrlrTabsInternal();
-		void currentTabChanged (int newCurrentTabIndex, const String &newCurrentTabName);
+		void currentTabChanged(int newCurrentTabIndex, const String &newCurrentTabName);
 
 	private:
 		CtrlrTabsComponent &owner;
@@ -119,11 +119,12 @@ public:
 
 
     //==============================================================================
-    juce_UseDebuggingNewOperator
+juce_UseDebuggingNewOperator
 
-private:
-    //[UserVariables]   -- You can add your own custom variables in this section.
-	//CtrlrTabsLF lf;
+	private :
+	//[UserVariables]   -- You can add your own custom variables in this section.
+
+	CtrlrTabsLF lf; // Add LookAndFeel instance
 	WeakReference <CtrlrLuaMethod> tabChangedCbk;
     //[/UserVariables]
 
@@ -137,5 +138,21 @@ private:
     const CtrlrTabsComponent& operator= (const CtrlrTabsComponent&);
 };
 
+// class CustomTabLookAndFeel : public juce::LookAndFeel_V4
+// {
+// public:
+//     void setTabFont (const juce::FontOptions& newFont)
+//     {
+//         currentFont = newFont;
+//     }
 
+//     juce::Font getTabBarButtonFont (juce::TabBarButton&, float height) override
+//     {
+//         // Return your font, setting the target height
+//         return juce::Font (currentFont).withHeight (height * 0.6f);
+//     }
+
+// private:
+//     juce::FontOptions currentFont { "Arial", 14.0f, juce::Font::plain };
+// };
 #endif   // __JUCER_HEADER_CTRLRTABSCOMPONENT_CTRLRTABSCOMPONENT_C6ADFA92__
