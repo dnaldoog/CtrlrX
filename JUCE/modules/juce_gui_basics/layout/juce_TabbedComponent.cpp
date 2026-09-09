@@ -121,7 +121,8 @@ TabbedButtonBar::Orientation TabbedComponent::getOrientation() const noexcept
 
 void TabbedComponent::setTabBarDepth (int newDepth)
 {
-    if (tabDepth != newDepth)
+	DBG(">>>TabbedComponent::setTabBarDepth: " + String(newDepth));
+	if (tabDepth != newDepth)
     {
         tabDepth = newDepth;
         resized();

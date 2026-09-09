@@ -70,15 +70,16 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 							 doRegisterExtension,
 							 doKeyGenerator,
 							 doProgramWizard,
+							 showExpressionHelp,
 							 doQuit
-							 #if 0
+#if 0
 							 showDumpByLuaHelp,
 							 showExpressionHelp,
 							 showMidiProgrammingHelp,
 							 showLuaUsefulCommandsHelp,
 							 showLuaFileOperationsHelp,
 							 showMenuLuaClassBrowser
-							 #endif
+#endif
 
 	};
 
@@ -168,6 +169,12 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 	case showAboutDialog:
 		result.setInfo("About", "About CTRLR", globalCategory, 0);
 		result.addDefaultKeypress('a', ModifierKeys::commandModifier);
+		break;
+
+	case showExpressionHelp:
+		result.setInfo("Expression Help", "Show help for writing Lua expressions", globalCategory, 0);
+		result.addDefaultKeypress('e', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
+
 		break;
 #if 0
 	case showDumpByLuaHelp:
@@ -540,7 +547,8 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 		break;
 
 	case doDumpVstTables:
-		result.setInfo("Dump Memory Info", "Dump information stored in memory in some readable format", globalCategory, 0);
+		result.setInfo("Dump Memory Info (See Log viewer - Ctrlr+L)",
+					   "Dump information stored in memory in some readable format", globalCategory, 0);
 		result.setActive(true);
 		break;
 

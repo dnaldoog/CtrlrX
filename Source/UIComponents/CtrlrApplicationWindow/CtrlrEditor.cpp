@@ -1,4 +1,5 @@
 #include "CtrlrEditor.h"
+#include "CtrlrGenericHelp.h"
 #include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrLog.h"
 #include "CtrlrManager/CtrlrManager.h"

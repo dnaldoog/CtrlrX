@@ -44,3 +44,4 @@ is set, false otherwise.
 returns the modified value with the bit set.
 - `setGlobal (globalIndex, newValueToSet)` : This sets the value of one of the global
 variables in the panel, and returns that set value so the expression can continue.
+

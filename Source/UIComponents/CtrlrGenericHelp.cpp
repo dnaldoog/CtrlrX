@@ -29,24 +29,25 @@ void CtrlrGenericHelp::paint(juce::Graphics& g)
 {
     g.fillAll(juce::Colours::white);
 
-    juce::Rectangle<float> textBounds(
-        12.0f, 12.0f,
-        (float)getWidth() - LEFTMARGIN,
-        contentHeight);
+	// Subtract 24.0f (LEFTMARGIN + RIGHTMARGIN) so text fits within bounds
+	const float availableWidth = (float)getWidth() - (LEFTMARGIN + RIGHTMARGIN);
 
-    attributedContent.draw(g, textBounds);
+	juce::Rectangle<float> textBounds(LEFTMARGIN, LINEHEIGHT, availableWidth, contentHeight);
+
+	attributedContent.draw(g, textBounds);
 }
+
 void CtrlrGenericHelp::resized()
 {
-    const float textWidth = (float)getWidth() - LEFTMARGIN;
+	const float availableWidth = (float)getWidth() - (LEFTMARGIN + RIGHTMARGIN);
 
-    juce::TextLayout layout;
-    layout.createLayout(attributedContent, textWidth);
+	juce::TextLayout layout;
+	layout.createLayout(attributedContent, availableWidth);
 
-    contentHeight = layout.getHeight() + LINEHEIGHT;
-    setSize(getWidth(), (int)contentHeight);
+	contentHeight = layout.getHeight() + LINEHEIGHT;
 
-    repaint();
+	// Repaint without calling setSize() recursively inside resized()
+	repaint();
 }
 
 void CtrlrGenericHelp::mouseDown(const juce::MouseEvent& e)
