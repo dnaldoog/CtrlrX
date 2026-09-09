@@ -1,7 +1,8 @@
 #ifndef __CTRLR_EDITOR__
 #define __CTRLR_EDITOR__
 
-// #include "CtrlrHelpWindow.h"
+#include "CtrlrHelpWindow.h"
+
 #include "CtrlrMacros.h"
 #include "CtrlrSettings.h"
 #include "CtrlrWindowManagers/CtrlrChildWindowContainer.h"
@@ -106,9 +107,9 @@ class CtrlrEditor : public AudioProcessorEditor,
 			doRegisterExtension = 0x22,
 			doKeyGenerator = 0x23,
 			doProgramWizard = 0x24,
-			doQuit = 0x00fffffe
+			doQuit = 0x00fffffe,
 			// showDumpByLuaHelp = 0x7100,
-			// showExpressionHelp = 0x7101,
+			showExpressionHelp = 0x7101
 			// showMidiProgrammingHelp = 0x7102,
 			// showLuaUsefulCommandsHelp = 0x7103,
 			// showLuaFileOperationsHelp = 0x7104,

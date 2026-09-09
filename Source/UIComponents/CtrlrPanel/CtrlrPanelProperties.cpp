@@ -36,8 +36,8 @@ CtrlrPanelProperties::CtrlrPanelProperties(CtrlrPanelEditor& _owner)
         new CtrlrPanelUtilities(owner),
         true
     );
-    /*MOVED TO CtrlrEditor.h Propably needs a separate file h/cpp*/
-    // NEW: Add Expressions tab
+	/*MOVED TO CtrlrEditor.h Probably needs a separate file h/cpp*/
+	// NEW: Add Expressions tab
     // tabbedComponent->addTab("Expressions",
     //     getLookAndFeel().findColour(TabbedComponent::backgroundColourId),
     //     new CtrlrExpressionsHelp(),

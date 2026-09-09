@@ -514,12 +514,35 @@ const Result CtrlrMac::codesignFileMac(const juce::String &newMePathName,
 	}
 }
 
-// CodeSign exported instance 5.6.33
-const Result CtrlrMac::codesignFileMac(const juce::String &newMePathName,
-									   const juce::String &panelCertificateMacIdentity, juce::String &logOutput) {
+
+// CodeSign exported instance 5.6.36
+const Result CtrlrMac::codesignFileMac(const juce::String& newMePathName, const juce::String& panelCertificateMacIdentity, juce::String& logOutput) {
+    // Generate the entitlements plist dynamically so it's always available and correct
+    juce::File tempEntitlements = juce::File::getSpecialLocation(juce::File::tempDirectory)
+    .getChildFile("CtrlrX_DynamicEntitlements.plist");
+    
+    juce::String plistContent =
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n"
+    "<plist version=\"1.0\">\n"
+    "<dict>\n"
+    "    <key>com.apple.security.cs.allow-jit</key>\n"
+    "    <true/>\n"
+    "    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>\n"
+    "    <true/>\n"
+    "</dict>\n"
+    "</plist>\n";
+    
+    tempEntitlements.replaceWithText(plistContent);
+    
 	juce::StringArray commandParts;
-	commandParts.add("/usr/bin/codesign"); // Use full path
-	commandParts.add("-f");
+    commandParts.add("/usr/bin/codesign");
+    commandParts.add("--force");
+    commandParts.add("--options");
+    commandParts.add("runtime");
+    commandParts.add("--timestamp");
+    commandParts.add("--entitlements");
+    commandParts.add(tempEntitlements.getFullPathName());
 	commandParts.add("-s");
 
 	if (panelCertificateMacIdentity.isNotEmpty()) {
@@ -533,27 +556,38 @@ const Result CtrlrMac::codesignFileMac(const juce::String &newMePathName,
 	juce::ChildProcess childProcess;
 
 	logOutput = ("Codesign command: " + commandParts.joinIntoString(" "));
-	if (childProcess.start(commandParts)) {
-		const bool finished = childProcess.waitForProcessToFinish(-1); // Wait for infinity
-		// const bool finished = childProcess.waitForProcessToFinish(500); // Wait for up to 500ms
+    
+    bool success = false;
 
-		if (finished) {
-			int exitCode = childProcess.getExitCode();
-			logOutput += "\nCodesign process finished with exit code: " + String(exitCode);
-			if (exitCode == 0) {
-				return Result::ok();
-			} else {
-				logOutput += "\nCodesign failed with output:\n" + childProcess.readAllProcessOutput();
-				return Result::fail(logOutput);
-			}
-		} else {
-			logOutput += "\nCodesign process timed out.";
-			return Result::fail(logOutput);
-		}
-	} else {
-		logOutput = "Failed to start codesign process. Command: " + commandParts.joinIntoString(" ");
-		return Result::fail(logOutput);
-	}
+    if (childProcess.start(commandParts)) {
+        const bool finished = childProcess.waitForProcessToFinish(-1); // Wait for infinity
+        //const bool finished = childProcess.waitForProcessToFinish(500); // Wait for up to 500ms
+
+        if (finished) {
+            int exitCode = childProcess.getExitCode();
+            logOutput += "\nCodesign process finished with exit code: " + String(exitCode);
+            if (exitCode == 0) {
+                success = true;
+            } else {
+                logOutput += "\nCodesign failed with output:\n" + childProcess.readAllProcessOutput();
+            }
+        } else {
+            logOutput += "\nCodesign process timed out.";
+        }
+    } else {
+        logOutput = "Failed to start codesign process. Command: " + commandParts.joinIntoString(" ");
+    }
+    
+    // Clean up temporary entitlements file
+    tempEntitlements.deleteFile();
+    
+    return success ? Result::ok() : Result::fail(logOutput);
+}
+    
+    // Clean up temporary entitlements file
+    tempEntitlements.deleteFile();
+    
+    return success ? Result::ok() : Result::fail(logOutput);
 }
 
 // CodeSign exported instance 5.6.33 ALTERNATE METHOD

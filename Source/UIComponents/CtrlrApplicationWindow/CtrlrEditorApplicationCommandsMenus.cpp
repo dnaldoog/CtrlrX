@@ -268,6 +268,9 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 			 " restricted=" + String(isRestricted() ? "true" : "false"));
 
 		menu.addCommandItem(commandManager, showAboutDialog);
+		menu.addSeparator();
+		menu.addCommandItem(commandManager, showExpressionHelp);
+		menu.addSeparator();
 #if 0	
 		if (!isRestricted()){
 			menu.addCommandItem(commandManager, showDumpByLuaHelp);
@@ -278,10 +281,10 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 			menu.addCommandItem(commandManager, showMenuLuaClassBrowser);
 			menu.addSeparator();
 		}
-		menu.addSeparator();
+
 #endif
 #ifdef JUCE_DEBUG
-		menu.addCommandItem(commandManager, doCrash);
+		// menu.addCommandItem(commandManager, doCrash);
 		menu.addCommandItem(commandManager, doDumpVstTables);
 #endif
 	}

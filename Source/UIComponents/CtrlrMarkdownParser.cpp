@@ -1,7 +1,7 @@
 ﻿#include "CtrlrMarkdownParser.h"
 namespace
 {
-    constexpr float LINE_SPACING = 20.0f;  // Increase from 4.0f to 8.0f for more space
+constexpr float LINE_SPACING = 4.0f; // Increase from 4.0f to 8.0f for more space
 }
 // ----------------------------- Fonts ---------------------------------
 juce::Font CtrlrMarkdownParser::normalFont(float h)
@@ -110,9 +110,11 @@ void CtrlrMarkdownParser::appendInlineStyled(juce::AttributedString& as, const j
         case Normal: as.append(buffer, normalFont(), currentColour); break;
         case Bold:   as.append(buffer, boldFont(), currentColour); break;
         case Italic: as.append(buffer, italicFont(), currentColour); break;
-        case Code:   as.append(buffer, getMonospaceFont(13.0f), juce::Colours::darkorange); break;
-        }
-        buffer.clear();
+		case Code:
+			as.append(buffer, getMonospaceFont(16.0f), juce::Colours::purple);
+			break;
+		}
+		buffer.clear();
         };
 
     int i = 0;
@@ -199,18 +201,18 @@ void CtrlrMarkdownParser::appendInlineStyled(juce::AttributedString& as, const j
         if (s[i] == '\n')
         {
             flush();
-            as.append("\n", normalFont());
-            ++i;
-            continue;
-        }
+			as.append("\n", normalFont());
+			++i;
+			continue;
+		}
 
-        buffer += s[i];
-        ++i;
-    }
+		buffer += s[i];
+		++i;
+	}
 
-    flush();
-    // ensure a newline end-of-line in layout
-    as.append("\n", normalFont());
+	flush();
+	// ensure a newline end-of-line in layout
+	as.append("\n", normalFont());
 }
 
 // ----------------------------- Block parser ----------------------------------
@@ -337,19 +339,19 @@ std::vector<CtrlrMarkdownParser::MarkdownBlock> CtrlrMarkdownParser::parseToBloc
                 paragraph.getText().trim().isNotEmpty())
 
             {
-                paragraph = tmp;
-            }
-            else
-            {
-                flushParagraph();
-                MarkdownBlock tb; tb.isHorizontalRule = false; tb.content = tmp;
-                blocks.push_back(std::move(tb));
-            }
-        }
-    }
+				paragraph.append(tmp);
+			} else {
+				flushParagraph();
+				MarkdownBlock tb;
+				tb.isHorizontalRule = false;
+				tb.content = tmp;
+				blocks.push_back(std::move(tb));
+			}
+		}
+	}
 
-    flushParagraph();
-    return blocks;
+	flushParagraph();
+	return blocks;
 }
 
 // ----------------------------- Convenience parse -> single AttributedString ----------------

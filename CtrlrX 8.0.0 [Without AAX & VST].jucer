@@ -600,6 +600,9 @@
               resource="0" file="Source/Plugin/CtrlrProcessorEditorForLive.h"/>
       </GROUP>
       <GROUP id="{A473FE32-72A8-D607-99DF-96F6BF23D1C7}" name="Resources">
+        <GROUP id="{65EC9C15-6A63-DAAE-2AA9-AD09AB114162}" name="Doc">
+          <FILE id="CiV3x1" name="Expressions.md" compile="0" resource="1" file="Source/Resources/Doc/Expressions.md"/>
+        </GROUP>
         <GROUP id="{5425C584-8B65-E29D-5410-23D72492F06C}" name="Fonts">
           <FILE id="GYiDwF" name="5x8_lcd_hd44780u_a02.ttf" compile="0" resource="1"
                 file="Source/Resources/Fonts/5x8_lcd_hd44780u_a02.ttf"/>
@@ -1128,10 +1131,18 @@
               file="Source/UIComponents/CtrlrComponentSelection.cpp"/>
         <FILE id="Q0Bt0V" name="CtrlrComponentSelection.h" compile="0" resource="0"
               file="Source/UIComponents/CtrlrComponentSelection.h"/>
+        <FILE id="zZ9DFu" name="CtrlrGenericHelp.cpp" compile="1" resource="0"
+              file="Source/UIComponents/CtrlrGenericHelp.cpp"/>
+        <FILE id="XfBaHk" name="CtrlrGenericHelp.h" compile="0" resource="0"
+              file="Source/UIComponents/CtrlrGenericHelp.h"/>
         <FILE id="T5Q5Dn" name="CtrlrLogViewer.cpp" compile="1" resource="0"
               file="Source/UIComponents/CtrlrLogViewer.cpp"/>
         <FILE id="FEt5Md" name="CtrlrLogViewer.h" compile="0" resource="0"
               file="Source/UIComponents/CtrlrLogViewer.h"/>
+        <FILE id="QqbcID" name="CtrlrMarkdownParser.cpp" compile="1" resource="0"
+              file="Source/UIComponents/CtrlrMarkdownParser.cpp"/>
+        <FILE id="CwnjMu" name="CtrlrMarkdownParser.h" compile="0" resource="0"
+              file="Source/UIComponents/CtrlrMarkdownParser.h"/>
         <FILE id="gztFGK" name="CtrlrTextEditor.cpp" compile="1" resource="0"
               file="Source/UIComponents/CtrlrTextEditor.cpp"/>
         <FILE id="u8bCOy" name="CtrlrTextEditor.h" compile="0" resource="0"
@@ -1145,6 +1156,10 @@
               file="Source/UIComponents/CtrlrValueTreeEditor.h"/>
       </GROUP>
     </GROUP>
+    <FILE id="XfJRMR" name="CtrlrHelpWindow.cpp" compile="1" resource="0"
+          file="Source/UIComponents/CtrlrHelpWindow.cpp"/>
+    <FILE id="H3imwd" name="CtrlrHelpWindow.h" compile="0" resource="0"
+          file="Source/UIComponents/CtrlrHelpWindow.h"/>
   </MAINGROUP>
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX" extraDefs="JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1 BOOST_BIND_GLOBAL_PLACEHOLDERS=1 CTRLRX_USE_LUAJIT=1 LUAJIT_ENABLE_LUA52COMPAT=1"

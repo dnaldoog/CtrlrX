@@ -217,13 +217,13 @@ bool CtrlrEditor::perform(
 		}
 #endif
 		break;
-		/*
-			case showDumpByLuaHelp:
-				new CtrlrHelpWindow("Bulk Read/Write Dump Help",
-									new CtrlrGenericHelp(BinaryData::BulkReadWriteDump_md,
-														 BinaryData::BulkReadWriteDump_mdSize));
-				return true;
-				break;
+
+		// case showDumpByLuaHelp:
+		// 	new CtrlrHelpWindow("Bulk Read/Write Dump Help",
+		// 						new CtrlrGenericHelp(BinaryData::BulkReadWriteDump_md,
+		// 											 BinaryData::BulkReadWriteDump_mdSize));
+		// 	return true;
+		// 	break;
 
 			case showExpressionHelp:
 				new CtrlrHelpWindow("Expressions Help",
@@ -231,39 +231,39 @@ bool CtrlrEditor::perform(
 														 BinaryData::Expressions_mdSize));
 				return true;
 
-			case showMidiProgrammingHelp:
-				new CtrlrHelpWindow("MIDI programming Help",
-									new CtrlrGenericHelp(BinaryData::MidiProgramming_md,
-														 BinaryData::MidiProgramming_mdSize));
-				return true;
+				// case showMidiProgrammingHelp:
+				// 	new CtrlrHelpWindow("MIDI programming Help",
+				// 						new CtrlrGenericHelp(BinaryData::MidiProgramming_md,
+				// 											 BinaryData::MidiProgramming_mdSize));
+				// 	return true;
+
+				// 	break;
+				// case showLuaUsefulCommandsHelp:
+				// 	new CtrlrHelpWindow("lua programming Help",
+				// 						new CtrlrGenericHelp(BinaryData::LuaUsefulCommands_md,
+				// 											 BinaryData::LuaUsefulCommands_mdSize));
+				// 	return true;
+
+				// case showLuaFileOperationsHelp:
+				// 	new CtrlrHelpWindow("Lua File Save/Load Help",
+				// 						new CtrlrGenericHelp(BinaryData::LuaFileOperations_md,
+				// 											 BinaryData::LuaFileOperations_mdSize));
+				// 	return true;
+
+				// case showMenuLuaClassBrowser: {
+				// 	CtrlrPanel *panel = getActivePanel();
+				// 	if (panel) {
+				// 		auto *browser = new CtrlrLuaClassBrowser(&panel->getCtrlrLuaManager());
+
+				// 		browser->setLuaApiXml(panel->getCtrlrLuaManager().getLuaApiDatabase().getXmlRoot());
+
+				// 		browser->setSize(1200, 1000);
+				// 		new CtrlrHelpWindow("Lua Class API", browser);
+				// 	}
+				// 	return true;
 
 				break;
-			case showLuaUsefulCommandsHelp:
-				new CtrlrHelpWindow("lua programming Help",
-									new CtrlrGenericHelp(BinaryData::LuaUsefulCommands_md,
-														 BinaryData::LuaUsefulCommands_mdSize));
-				return true;
 
-			case showLuaFileOperationsHelp:
-				new CtrlrHelpWindow("Lua File Save/Load Help",
-									new CtrlrGenericHelp(BinaryData::LuaFileOperations_md,
-														 BinaryData::LuaFileOperations_mdSize));
-				return true;
-
-	case showMenuLuaClassBrowser: {
-		CtrlrPanel *panel = getActivePanel();
-		if (panel) {
-			auto *browser = new CtrlrLuaClassBrowser(&panel->getCtrlrLuaManager());
-
-			browser->setLuaApiXml(panel->getCtrlrLuaManager().getLuaApiDatabase().getXmlRoot());
-
-			browser->setSize(1200, 1000);
-			new CtrlrHelpWindow("Lua Class API", browser);
-		}
-		return true;
-	}
-*/
-		// break;
 	case CtrlrEditor::doZoomIn:
 		if (getActivePanelEditor()) {
 			double newZoomFactor = (double)getActivePanelEditor()->getProperty(Ids::uiPanelZoom) + 0.1;
