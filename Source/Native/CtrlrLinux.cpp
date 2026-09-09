@@ -1,6 +1,6 @@
 #include "stdafx.h"
-#ifdef __linux__ // Updated v5.6.35. Thanks to @dnaldoog. SEE:
-				 // https://github.com/damiensellier/CtrlrX/pull/193#issuecomment-3561230356
+#ifdef __linux__
+
 #define PACKAGE "Ctrlr"
 
 #include "CtrlrInlineUtilitiesGUI.h"
@@ -9,7 +9,7 @@
 #include "CtrlrManager/CtrlrManager.h"
 #include "CtrlrPanel/CtrlrPanel.h"
 #include "keys.h"
-#include <cstring> // For strlen, memcpy
+#include <cstring>
 #include <fstream>
 #include <sstream>
 #include <sys/stat.h>
@@ -43,6 +43,18 @@ static MemoryBlock stringToFixedBytes(const String &str, int fixedSize) {
 	return result;
 }
 
+static MemoryBlock makeUtf16Buffer(const String &text, const String &templateText) {
+	int targetCharCount = templateText.length();
+	MemoryBlock block(targetCharCount * 2, true);
+
+	String paddedText =
+		text.length() > targetCharCount ? text.substring(0, targetCharCount) : text.paddedRight(' ', targetCharCount);
+
+	const CharPointer_UTF16 utf16Ptr = paddedText.toUTF16();
+	block.copyFrom(utf16Ptr.getAddress(), 0, targetCharCount * 2);
+	return block;
+}
+
 static int replaceAllOccurrences(MemoryBlock &target, const MemoryBlock &search, const MemoryBlock &replace) {
 	if (search.getSize() != replace.getSize() || search.getSize() == 0) {
 		return 0;
@@ -64,12 +76,10 @@ static int replaceAllOccurrences(MemoryBlock &target, const MemoryBlock &search,
 	return count;
 }
 
-// FIX: Improved detection logic for VST2 .so files on Linux
 static File getVST3PluginPath() {
 	std::ifstream maps("/proc/self/maps");
 	std::string line;
 
-	// Get the path of the host executable (REAPER in this case)
 	File hostExe = File::getSpecialLocation(File::currentApplicationFile);
 
 	while (std::getline(maps, line)) {
@@ -83,16 +93,12 @@ static File getVST3PluginPath() {
 					path = path.substr(0, soEnd + 3);
 					File currentFile = File(String(path));
 
-					// 1. VST3 detection (high confidence, return immediately)
 					if (path.find(".vst3/Contents/") != std::string::npos) {
 						_DBG("Detection: Found VST3 path: " + currentFile.getFullPathName());
 						return currentFile;
 					}
 
-					// 2. VST2 detection: It must be a loaded .so file and NOT the host executable.
 					if (currentFile != hostExe) {
-						// Check if the path contains common VST paths or user paths (to exclude system libs like
-						// libc.so)
 						if (currentFile.getFullPathName().contains("/.vst/") ||
 							currentFile.getFullPathName().contains("/vst/") ||
 							currentFile.getFullPathName().contains("/plugins/") ||
@@ -106,7 +112,6 @@ static File getVST3PluginPath() {
 		}
 	}
 
-	// Fallback: Returns the host executable path if no plugin is found (this is the standalone case).
 	return hostExe;
 }
 
@@ -114,7 +119,6 @@ static bool isVST2Plugin() {
 	File me = getVST3PluginPath();
 	bool hasSOExtension = me.hasFileExtension(".so");
 	bool notInVST3 = !me.getFullPathName().contains(".vst3/");
-	// Also explicitly check if the path is NOT the host executable path
 	bool isNotHost = (me != File::getSpecialLocation(File::currentApplicationFile));
 
 	return isNotHost && hasSOExtension && notInVST3;
@@ -303,7 +307,6 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 
 	File me = getVST3PluginPath();
 
-	// Check if the current binary is running as VST3 or VST2/Standalone
 	File parentDir = me.getParentDirectory();
 	File contentsDir = parentDir.getParentDirectory();
 	File bundleDir = contentsDir.getParentDirectory();
@@ -366,6 +369,23 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 					return;
 				}
 
+				File sourceModuleInfo =
+					me.getParentDirectory().getParentDirectory().getChildFile("Resources/moduleinfo.json");
+
+				if (sourceModuleInfo.existsAsFile()) {
+					File resourcesDir = bundleDir.getChildFile("Contents/Resources");
+					if (resourcesDir.createDirectory()) {
+						File destModuleInfo = resourcesDir.getChildFile("moduleinfo.json");
+						if (!sourceModuleInfo.copyFileTo(destModuleInfo)) {
+							_DBG("Warning: failed to copy moduleinfo.json into exported VST3 bundle");
+						}
+					} else {
+						_DBG("Warning: failed to create Contents/Resources for exported VST3 bundle");
+					}
+				} else {
+					_DBG("Warning: source moduleinfo.json not found at " + sourceModuleInfo.getFullPathName());
+				}
+
 				newMe = binaryFile;
 			} else {
 				newMe = chosenFile;
@@ -406,6 +426,7 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 					String manufacturerCode = panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString();
 					String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
 
+					// --- 1. ASCII Binary Patch ---
 					MemoryBlock pluginNameBytes = stringToFixedBytes(pluginName, 32);
 					MemoryBlock pluginCodeBytes = stringToFixedBytes(pluginCode, 4);
 					MemoryBlock manufacturerNameBytes = stringToFixedBytes(manufacturerName, 16);
@@ -414,9 +435,9 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 
 					MemoryBlock searchPluginName = hexToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 "
 															  "20 20 20 20 20 20 20 20 20 20 20 20 20 20");
-					MemoryBlock searchPluginCode = hexToBytes("63 54 78 58");
+					MemoryBlock searchManufacturerCode = hexToBytes("63 54 72 58"); // "cTrX"
 					MemoryBlock searchManufacturerName = hexToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20");
-					MemoryBlock searchManufacturerCode = hexToBytes("63 54 72 6C");
+					MemoryBlock searchPluginCode = hexToBytes("63 54 72 6C"); // "cTrl"
 					MemoryBlock searchPlugTypeHex = hexToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73");
 
 					int totalReplacements = 0;
@@ -428,12 +449,61 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 						replaceAllOccurrences(binaryData, searchManufacturerCode, manufacturerCodeBytes);
 					totalReplacements += replaceAllOccurrences(binaryData, searchPlugTypeHex, plugTypeBytes);
 
+					// --- 2. JUCE 8 UTF-16 Wide-String Patch ---
+					MemoryBlock searchUtf16ManufName = hexToBytes(
+						"43 00 74 00 72 00 6C 00 72 00 58 00 20 00 50 00 72 00 6F 00 6A 00 65 00 63 00 74 00");
+					MemoryBlock replaceUtf16ManufName = makeUtf16Buffer(manufacturerName, "CtrlrX Project");
+
+					MemoryBlock searchUtf16PluginName = hexToBytes("43 00 74 00 72 00 6C 00 72 00 58 00");
+					MemoryBlock replaceUtf16PluginName = makeUtf16Buffer(pluginName, "CtrlrX");
+
+					totalReplacements += replaceAllOccurrences(binaryData, searchUtf16ManufName, replaceUtf16ManufName);
+					totalReplacements +=
+						replaceAllOccurrences(binaryData, searchUtf16PluginName, replaceUtf16PluginName);
+
 					_DBG("Binary patching complete: " + String(totalReplacements) + " replacements");
 
 					if (!newMe.replaceWithData(binaryData.getData(), binaryData.getSize())) {
 						_DBG("Failed to write patched binary");
 						notifyAndReturn(Result::fail("Failed to write patched binary"));
 						return;
+					}
+
+					// --- 3. JSON Metadata Patch ---
+					// --- 3. JSON Metadata Patch ---
+					if (isVST3) {
+						File moduleInfoFile =
+							newMe.getParentDirectory().getParentDirectory().getChildFile("Resources/moduleinfo.json");
+
+						if (moduleInfoFile.existsAsFile()) {
+							String moduleInfoText = moduleInfoFile.loadFileAsString();
+
+							auto bytesToHexUpper = [](const MemoryBlock &block) {
+								String hex;
+								auto *data = static_cast<const uint8 *>(block.getData());
+								for (size_t i = 0; i < block.getSize(); ++i)
+									hex += String::toHexString((int)data[i]).paddedLeft('0', 2).toUpperCase();
+								return hex;
+							};
+
+							// Rewrite CID Suffix
+							const String defaultCidSuffix = "635472586354726C";
+							String newCidSuffix =
+								bytesToHexUpper(manufacturerCodeBytes) + bytesToHexUpper(pluginCodeBytes);
+							moduleInfoText = moduleInfoText.replace(defaultCidSuffix, newCidSuffix, true);
+
+							// --- FIXED: Replace padded targets with clean unpadded strings ---
+							const String defaultPluginName = "CtrlrX                          ";
+							const String defaultVendorName = "CtrlrX Project                  ";
+
+							// Pass raw pluginName/manufacturerName without right padding
+							moduleInfoText = moduleInfoText.replace(defaultPluginName, pluginName, true);
+							moduleInfoText = moduleInfoText.replace(defaultVendorName, manufacturerName, true);
+
+							if (!moduleInfoFile.replaceWithText(moduleInfoText)) {
+								_DBG("Warning: failed to rewrite moduleinfo.json metadata for exported bundle");
+							}
+						}
 					}
 				}
 			}
@@ -455,20 +525,19 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 				}
 			}
 
-			if (!isVST3) {
-				if (chmod(newMe.getFullPathName().toUTF8().getAddress(),
-						  S_IRUSR | S_IWUSR | S_IXUSR | S_IXOTH | S_IRGRP | S_IXGRP | S_IROTH)) {
-					_DBG("chmod failed");
-					notifyAndReturn(Result::fail("chmod failed"));
-					return;
-				}
+			if (chmod(newMe.getFullPathName().toUTF8().getAddress(),
+					  S_IRUSR | S_IWUSR | S_IXUSR | S_IXOTH | S_IRGRP | S_IXGRP | S_IROTH)) {
+				_DBG("chmod failed");
+				notifyAndReturn(Result::fail("chmod failed"));
+				return;
 			}
 
 			_DBG("Export succeeded for: " + newMe.getFullPathName());
 			notifyAndReturn(Result::ok());
 		});
 }
-// --- Getter functions (unchanged logic) ---
+
+// --- Getter functions ---
 
 Result CtrlrLinux::getDefaultPanel(MemoryBlock &dataToWrite) {
 #ifdef DEBUG_INSTANCE
@@ -500,10 +569,11 @@ Result CtrlrLinux::getDefaultResources(MemoryBlock &dataToWrite) {
 
 Result CtrlrLinux::sendKeyPressEvent(const KeyPress &event) { return ctrlr_sendKeyPressEvent(event); }
 Result CtrlrLinux::sendKeyPressEvent(const KeyPress &event, const String &targetWindowName) {
-    if (targetWindowName.isNotEmpty()) {
-        _DBG("Linux native: sendKeyPressEvent with a target window name is not yet implemented; "
-             "sending to the currently focused window instead.");
-    }
-    return ctrlr_sendKeyPressEvent(event);
+	if (targetWindowName.isNotEmpty()) {
+		_DBG("Linux native: sendKeyPressEvent with a target window name is not yet implemented; "
+			 "sending to the currently focused window instead.");
+	}
+	return ctrlr_sendKeyPressEvent(event);
 }
+
 #endif
