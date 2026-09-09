@@ -1,0 +1,68 @@
+#!/bin/sh
+# CtrlrX Linux build helper.
+#
+# Usage:
+#   ./build.sh              # native/bare-metal: full parallelism, minus 1 core
+#   ./build.sh vm           # VirtualBox/VM-safe: capped job count (avoids
+#                            # RAM-exhaustion lockups from too many parallel
+#                            # compiler jobs on a memory-constrained VM)
+#   ./build.sh vm 2         # VM mode with an explicit job count instead of
+#                            # the default cap
+#   ./build.sh native 4     # native mode with an explicit job count instead
+#                            # of auto-detected core count
+#
+# Background, for future reference:
+#   - `cmake --build build --parallel` (no number) lets CMake auto-detect
+#     core count itself, portable across generators (Ninja/Make/etc).
+#   - `-j$(nproc)` is a lower-level, tool-specific (Ninja/Make) flag; only
+#     valid on Linux since `nproc` is a GNU coreutils command.
+#   - `nproc --ignore=1` reports core count minus 1 directly — cleaner than
+#     `$(nproc-1)`, which isn't a real command and will just error.
+#   - VM lockups are usually a RAM problem, not a CPU one: JUCE + webkit2gtk
+#     + LuaJIT compiles can each use 1GB+ at peak, so matching a VM's full
+#     core count with `-j` can push it into heavy swapping. Capping the job
+#     count well below core count is the fix, not clever core-count math.
+
+set -e
+
+MODE="${1:-native}"
+JOBS_OVERRIDE="${2:-}"
+
+case "$MODE" in
+    native)
+        if [ -n "$JOBS_OVERRIDE" ]; then
+            JOBS="$JOBS_OVERRIDE"
+        else
+            JOBS="$(nproc --ignore=1)"
+        fi
+        echo "Building native (bare-metal): using $JOBS parallel job(s)"
+        ;;
+    vm)
+        if [ -n "$JOBS_OVERRIDE" ]; then
+            JOBS="$JOBS_OVERRIDE"
+        else
+            JOBS=2
+        fi
+        echo "Building in VM-safe mode: capped at $JOBS parallel job(s)"
+        echo "(RAM, not CPU, is usually what locks up a VM build — raise this"
+        echo " only if the VM has plenty of RAM/swap to spare.)"
+        ;;
+    *)
+        echo "Usage: $0 [native|vm] [job-count]" >&2
+        exit 1
+        ;;
+esac
+
+rm -rf build
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCTRLRX_USE_LUAJIT=ON
+cmake --build build --parallel "$JOBS"
+
+cd build
+cpack -G "DEB;RPM"
+cd ..
+
+cmake --build build --target portable_tarball
+
+echo ""
+echo "Done. Packages in build/:"
+ls -1 build/*.deb build/*.rpm build/*.tar.gz 2>/dev/null

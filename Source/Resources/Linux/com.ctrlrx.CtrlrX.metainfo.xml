@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
   <id>com.ctrlrx.CtrlrX</id>
-  <!-- FIX: Tells uninstalled file parsers to look for both the case-sensitive and lowercased package ID name layouts -->
-  <common_id>ctrlrx</common_id>
-  
   <metadata_license>CC0-1.0</metadata_license>
   <!-- Combined SPDX License Identifiers -->
   <project_license>GPL-3.0-only AND BSD-3-Clause</project_license>
@@ -33,5 +30,5 @@
     <name>Damien Sellier</name>
   </developer>
   <content_rating type="oars-1.1" />
+  <icon type="stock">com.ctrlrx.CtrlrX</icon>
 </component>
-
