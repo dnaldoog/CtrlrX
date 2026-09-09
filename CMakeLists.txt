@@ -325,36 +325,35 @@ target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
 # -----------------------------------------------------------------------
 # Packaging & Distribution (CPack for Linux .deb / .rpm)
 # -----------------------------------------------------------------------
+# -----------------------------------------------------------------------
+# Packaging & Distribution (CPack for Linux .deb / .rpm)
+# -----------------------------------------------------------------------
 if(LINUX)
     include(GNUInstallDirs)
 
     set(CTRLR_SVG_ICON "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resources/Icons/ctrlrx_logo.svg")
-    set(ICON_NAME "ctrlr-x")
-    set(APPSTREAM_ID "com.ctrlrx.CtrlrX")
+    set(APPSTREAM_ID "com.ctrlrx.CtrlrX") # This is our primary, case-sensitive ID
 
-    # 1. Install scalable SVG icons under BOTH required desktop names
-    install(FILES "${CTRLR_SVG_ICON}"
-            DESTINATION "share/icons/hicolor/scalable/apps"
-            RENAME "${ICON_NAME}.svg")
-            
+    # 1. Install scalable SVG icon using the exact AppStream ID
     install(FILES "${CTRLR_SVG_ICON}"
             DESTINATION "share/icons/hicolor/scalable/apps"
             RENAME "${APPSTREAM_ID}.svg")
 
-    # 2. Rasterize and install PNG icons for standard sizes and AppStream mapping
+    # 2. Rasterize and install PNG icons using the exact AppStream ID
     set(ICON_SIZES 16 32 48 64 128 256 512)
     find_program(RSVG_CONVERT_EXECUTABLE rsvg-convert)
 
     if(RSVG_CONVERT_EXECUTABLE)
         foreach(SIZE ${ICON_SIZES})
-            set(PNG_OUT "${CMAKE_BINARY_DIR}/icons/${SIZE}x${SIZE}/${ICON_NAME}.png")
+            # FIX: Changed file output target naming to use APPSTREAM_ID instead of a custom nickname
+            set(PNG_OUT "${CMAKE_BINARY_DIR}/icons/${SIZE}x${SIZE}/${APPSTREAM_ID}.png")
             
             add_custom_command(
                 OUTPUT "${PNG_OUT}"
                 COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/icons/${SIZE}x${SIZE}"
-                COMMAND ${RSVG_CONVERT_EXECUTABLE} -w ${SIZE} -h ${SIZE} -b "white" -f png -o "${PNG_OUT}" "${CTRLR_SVG_ICON}"
+                COMMAND ${RSVG_CONVERT_EXECUTABLE} -w ${SIZE} -h ${SIZE} -f png -o "${PNG_OUT}" "${CTRLR_SVG_ICON}"
                 DEPENDS "${CTRLR_SVG_ICON}"
-                COMMENT "Generating ${SIZE}x${SIZE} PNG icon with white background..."
+                COMMENT "Generating transparent ${SIZE}x${SIZE} AppStream-compliant PNG icon..."
             )
 
             add_custom_target(ctrlrx_icon_${SIZE} ALL DEPENDS "${PNG_OUT}")
@@ -363,6 +362,8 @@ if(LINUX)
                     DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/${SIZE}x${SIZE}/apps")
         endforeach()
     endif()
+
+
 
     # 3. Desktop Application Entry
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resources/Linux/com.ctrlrx.CtrlrX.desktop.in")
