@@ -361,6 +361,17 @@ if(LINUX)
             install(FILES "${PNG_OUT}"
                     DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/${SIZE}x${SIZE}/apps")
         endforeach()
+    else()
+        # Without rsvg-convert, only the raw scalable SVG (item 1 above) gets
+        # installed and every raster hicolor size (16..512) is silently
+        # missing from the package. That's easy to miss since the build
+        # still succeeds — fail configure loudly instead so it's caught
+        # before packaging, not after someone installs it and finds a
+        # half-populated icon theme.
+        message(FATAL_ERROR
+            "rsvg-convert not found — required to generate hicolor PNG icons for Linux packaging. "
+            "Install it first: 'sudo apt install librsvg2-bin' (Debian/Ubuntu) or "
+            "'sudo dnf install librsvg2-tools' (Fedora).")
     endif()
 
 

@@ -6,5 +6,5 @@ Exec=CtrlrX %U
 Icon=com.ctrlrx.CtrlrX
 Terminal=false
 Categories=AudioVideo;Audio;
-StartupWMClass=CtrlrX
+StartupWMClass=ctrlr-x
 
