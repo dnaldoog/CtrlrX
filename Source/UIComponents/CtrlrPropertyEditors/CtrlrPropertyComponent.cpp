@@ -69,7 +69,8 @@ void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 		{"componentVisibleName", Colour(0x33ffaa00)},	 // ComponentVisibleName
 		{"midiMessageType", Colour(0x44ff69b4)},		 // Pink for MIDI Message Type
 		{"midiMessageSysExFormula", Colour(0x44ff69b4)}, // Pink for MIDI Message Type
-		{"luaModulatorValueChange", Colour(0x33007acc)}	 // Soft Blue for luaModulatorValueChange
+		{"luaModulatorValueChange", Colour(0x33007acc)},	 // Soft Blue for luaModulatorValueChange
+		{"uiPanelIconResource", Colours::olivedrab}		 // Soft Blue for uiPanelIconResource
 	};
 
 	const String propStr = propertyName.toString();

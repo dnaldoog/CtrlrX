@@ -81,7 +81,7 @@ void CtrlrPanelComponentProperties::setTree(const ValueTree &_treeToEdit, const 
 	// uiPanelIconResource picker so it only offers vector icons.
 	StringArray svgResourceList;
 	for (auto *res : owner.getOwner().getResourceManager().getResourcesCopy()) {
-		if (res != nullptr && res->getName().endsWithIgnoreCase(".svg"))
+		if (res != nullptr && res->getSourceFile().hasFileExtension("svg"))
 			svgResourceList.add(res->getName());
 	}
 	ScopedPointer<XmlElement> xml(propertyPanel->getOpennessState().release());
