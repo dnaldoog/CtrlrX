@@ -187,6 +187,7 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 												   .toString()); // Canvas Colour2 if gradient
 	setProperty(Ids::uiPanelBackgroundGradientType, 0);			 // Default set to SolidColor [No background gradient]
 	setProperty(Ids::uiPanelImageResource, COMBO_ITEM_NONE);
+	// setProperty(Ids::uiPanelIconResource, COMBO_ITEM_NONE); not working yet
 	setProperty(Ids::uiPanelImageAlpha, 255);
 	setProperty(Ids::uiPanelImageLayout, 64);
 	setProperty(Ids::uiPanelSnapActive, true);
