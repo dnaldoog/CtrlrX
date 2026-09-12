@@ -696,14 +696,6 @@ void CtrlrPanelCanvas::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 	if (property == Ids::uiPanelBackgroundColour) {
 		repaint();
 	}
-	if (property == Ids::luaPanelFileDragDropHandler) {
-		if (getProperty(property) == "")
-			return;
-
-		luaPanelFileDragDropHandlerCbk =
-			owner.getOwner().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
-		warnIfKnownPlatformLimitation(property);
-	}
 	if (property == Ids::luaPanelPaintBackground) {
 		if (getProperty(property) == "")
 			return;
@@ -724,6 +716,7 @@ void CtrlrPanelCanvas::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 
 		luaPanelFileDragDropHandlerCbk =
 			owner.getOwner().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		warnIfKnownPlatformLimitation(property);
 	}
 
 	if (property == Ids::luaPanelFileDragEnterHandler) {
@@ -732,6 +725,7 @@ void CtrlrPanelCanvas::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 
 		luaPanelFileDragEnterHandlerCbk =
 			owner.getOwner().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		warnIfKnownPlatformLimitation(property);
 	}
 
 	if (property == Ids::luaPanelFileDragExitHandler) {
@@ -740,6 +734,8 @@ void CtrlrPanelCanvas::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 
 		luaPanelFileDragExitHandlerCbk =
 			owner.getOwner().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		DBG("CtrlrPanelCanvas::valueTreePropertyChanged:");
+		warnIfKnownPlatformLimitation(property);
 	}
 	if (property == Ids::uiPanelEditMode) {
 		editModeChanged((bool)getProperty(property));
