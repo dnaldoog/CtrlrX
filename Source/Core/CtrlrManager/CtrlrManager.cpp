@@ -489,7 +489,9 @@ void CtrlrManager::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChang
 		}
 	} else if (property == Ids::ctrlrLogOptions) {
 		ctrlrLog.setMidiLogOptions(getProperty(property));
-	} else if (property == Ids::uiPanelLookAndFeel) // Or whichever ID tracks your global look and feel style sheet
+		
+	} 
+	else if (property == Ids::uiPanelLookAndFeel) // Or whichever ID tracks your global look and feel style sheet
 	{
 		if (auto *editor = getEditor()) {
 			// Call the public bridge method to safely swap the tooltip engine tracking state

@@ -65,9 +65,11 @@ const String CtrlrPropertyComponent::getVisibleText() {
 void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 {
 	static const std::map<String, Colour> customHighlights = {
-		{"name", Colour(0x33ffaa00)},					// Amber/Gold for Modulator Name
-		{"midiMessageType", Colour(0x44ff69b4)},		// Pink for MIDI Message Type
-		{"luaModulatorValueChange", Colour(0x33007acc)} // Soft Blue for luaModulatorValueChange
+		{"name", Colour(0x33ffaa00)},					 // Amber/Gold for Modulator Name
+		{"componentVisibleName", Colour(0x33ffaa00)},	 // ComponentVisibleName
+		{"midiMessageType", Colour(0x44ff69b4)},		 // Pink for MIDI Message Type
+		{"midiMessageSysExFormula", Colour(0x44ff69b4)}, // Pink for MIDI Message Type
+		{"luaModulatorValueChange", Colour(0x33007acc)}	 // Soft Blue for luaModulatorValueChange
 	};
 
 	const String propStr = propertyName.toString();
