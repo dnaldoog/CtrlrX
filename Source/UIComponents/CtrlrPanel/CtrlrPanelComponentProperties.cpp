@@ -77,7 +77,13 @@ void CtrlrPanelComponentProperties::setTree(const ValueTree &_treeToEdit, const 
 	if (_treeToEdit == treeToEdit && force == false) {
 		return;
 	}
-
+	// Build once, locally, filtered to SVG resources only — feeds the new
+	// uiPanelIconResource picker so it only offers vector icons.
+	StringArray svgResourceList;
+	for (auto *res : owner.getOwner().getResourceManager().getResourcesCopy()) {
+		if (res != nullptr && res->getName().endsWithIgnoreCase(".svg"))
+			svgResourceList.add(res->getName());
+	}
 	ScopedPointer<XmlElement> xml(propertyPanel->getOpennessState().release());
 	if (treeToEdit.hasType(Ids::panel)) {
 		panelPropertyOpennessState = *xml;
@@ -98,6 +104,9 @@ void CtrlrPanelComponentProperties::setTree(const ValueTree &_treeToEdit, const 
 			if (treeToEdit.getPropertyName(i) == Ids::uiPanelImageResource) {
 				panelProperties.add(getIDManager().createComponentForProperty(
 					treeToEdit.getPropertyName(i), treeToEdit, &owner.getOwner(), &resourceList, &resourceList));
+			} else if (treeToEdit.getPropertyName(i) == Ids::uiPanelIconResource) {
+				panelProperties.add(getIDManager().createComponentForProperty(
+					treeToEdit.getPropertyName(i), treeToEdit, &owner.getOwner(), &svgResourceList, &svgResourceList));
 			} else if (treeToEdit.getPropertyName(i) == Ids::panelMidiInputDevice) {
 				panelMidiProperties.add(
 					getIDManager().createComponentForProperty(treeToEdit.getPropertyName(i), treeToEdit,
@@ -130,6 +139,12 @@ void CtrlrPanelComponentProperties::setTree(const ValueTree &_treeToEdit, const 
 						treeToEdit.getChildWithName(Ids::uiPanelEditor).getPropertyName(i),
 						treeToEdit.getChildWithName(Ids::uiPanelEditor), &owner.getOwner(), &resourceList,
 						&resourceList));
+				} else if (treeToEdit.getChildWithName(Ids::uiPanelEditor).getPropertyName(i) ==
+						   Ids::uiPanelIconResource) {
+					panelEditorProperties.add(getIDManager().createComponentForProperty(
+						treeToEdit.getChildWithName(Ids::uiPanelEditor).getPropertyName(i),
+						treeToEdit.getChildWithName(Ids::uiPanelEditor), &owner.getOwner(), &svgResourceList,
+						&svgResourceList));
 				} else {
 					panelEditorProperties.add(getIDManager().createComponentForProperty(
 						treeToEdit.getChildWithName(Ids::uiPanelEditor).getPropertyName(i),

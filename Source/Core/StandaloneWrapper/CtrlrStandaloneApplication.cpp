@@ -2,6 +2,7 @@
 #include "CtrlrLog.h"
 #include "CtrlrMacros.h"
 #include "CtrlrStandaloneWindow.h"
+#include "CtrlrWebBridge.h"
 #include "LinuxDpiScale.h"
 #include "stdafx.h"
 
