@@ -99,7 +99,7 @@ DECLARE_ID(uiPanelCanvasRectangle);
 DECLARE_ID(uiPanelClipboardTree);
 DECLARE_ID(uiPanelPropertiesOnRight);
 
-DECLARE_ID(uiPanelIconResource);
+// DECLARE_ID(uiPanelIconResource);
 DECLARE_ID(uiPanelInvisibleComponentAlpha);
 DECLARE_ID(uiPanelModulatorListViewTree);
 DECLARE_ID(uiPanelModulatorListTreeState);
