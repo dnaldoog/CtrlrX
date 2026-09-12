@@ -163,7 +163,9 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		void valueTreeChildAdded(ValueTree & /*parentTree*/, ValueTree & /*childWhichHasBeenAdded*/) {}
 		void valueTreeChildRemoved(ValueTree & /*parentTree*/, ValueTree & /*childWhichHasBeenRemoved*/, int) {}
 		void valueTreeChildOrderChanged(ValueTree & /*parentTreeWhoseChildrenHaveMoved*/, int, int) {}
-
+		bool isWaylandSession() const {
+			return CtrlrManager::isWaylandSession();
+		}
 		void saveLayerVisibilityStates();	 // Added v5.6.34
 		void restoreLayerVisibilityStates(); // Added v5.6.34
 

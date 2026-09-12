@@ -1264,6 +1264,7 @@ void CtrlrPanel::wrapForLua(lua_State *L) {
 			 .def("getButton", &CtrlrPanel::getButtonComponent)
 			 .def("getComboComponent", &CtrlrPanel::getComboComponent)
 			 .def("getCombo", &CtrlrPanel::getComboComponent)
+			 .def("isWaylandSession", &CtrlrPanel::isWaylandSession)
 			 .def("getListBoxComponent", &CtrlrPanel::getListBoxComponent)
 			 .def("getListBox", &CtrlrPanel::getListBoxComponent)
 			 .def("getFileListBoxComponent", &CtrlrPanel::getFileListBoxComponent)

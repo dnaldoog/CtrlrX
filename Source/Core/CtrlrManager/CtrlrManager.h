@@ -297,25 +297,35 @@ class CtrlrManager : public ValueTree::Listener,
 
 		static bool isWaylandSession() {
 #if JUCE_LINUX
-			const char *session = std::getenv("XDG_SESSION_TYPE");
-			return session != nullptr && String(session) == "wayland";
+			const char *sessionType = std::getenv("XDG_SESSION_TYPE");
+			if (sessionType != nullptr && String(sessionType).equalsIgnoreCase("wayland"))
+				return true;
+
+			// Fallback: some setups don't export XDG_SESSION_TYPE reliably,
+			// but WAYLAND_DISPLAY is set whenever a Wayland compositor is active.
+			const char *waylandDisplay = std::getenv("WAYLAND_DISPLAY");
+			return waylandDisplay != nullptr && String(waylandDisplay).isNotEmpty();
 #else
 			return false;
 #endif
 		}
-		/** Detects if running under GNOME Shell (not GNOME Classic).
-		 GNOME Shell has issues with modal dialogs on Wayland in JUCE 6.x*/
-		static bool isGnomeShell() {
+
+static bool isGnomeShell() {
 #if JUCE_LINUX
-			const char *session = std::getenv("GDMSESSION");
-			if (session != nullptr) {
-				String sessionStr(session);
-				// If it's "gnome" but NOT "gnome-classic", it's GNOME Shell
-				return sessionStr.containsIgnoreCase("gnome") && !sessionStr.containsIgnoreCase("classic");
-			}
+	const char *desktop = std::getenv("XDG_CURRENT_DESKTOP");
+	if (desktop != nullptr) {
+		String d(desktop);
+		return d.containsIgnoreCase("gnome") && !d.containsIgnoreCase("classic");
+	}
+	// Fallback for older/unusual setups that don't set XDG_CURRENT_DESKTOP
+	const char *session = std::getenv("GDMSESSION");
+	if (session != nullptr) {
+		String s(session);
+		return s.containsIgnoreCase("gnome") && !s.containsIgnoreCase("classic");
+	}
 #endif
-			return false;
-		}
+	return false;
+}
 
 		/** Instance handlers **/
 		const String getInstanceName() const;

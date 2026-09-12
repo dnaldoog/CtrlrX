@@ -537,20 +537,29 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 		return;
 
 	// 2. Safely grab the parent panel and check its address
+	/*
+	Taking the address of a reference can never legitimately be nullptr in well-defined C++ 
+	a reference that's bound to something dangling isn't "null," it's undefined behavior 
+	the moment you even form the reference, 
+	so this check can't catch what it looks like it's trying to catch. 
+	It won't crash and won't false-positive, 
+	but it also won't protect against 
+	the dangling-reference case it seems aimed at
+	*/
 	auto &panel = getOwner(); // Or getPanel() depending on your exact class getter
-	if (&panel == nullptr)
-		return;
+	// if (&panel == nullptr)
+	// 	return;
 
 	// 3. Guard against the Lua manager reference resolving to nullptr during destruction
-	if (&panel.getCtrlrLuaManager() == nullptr) {
-		return;
-	}
+	// if (&panel.getCtrlrLuaManager() == nullptr) {
+	// 	return;
+	// }
 
 	// 4. Safely check if the method manager has already been deallocated
 	auto &luaManager = panel.getCtrlrLuaManager();
-	if (&luaManager.getMethodManager() == nullptr) {
-		return;
-	}
+	// if (&luaManager.getMethodManager() == nullptr) {
+	// 	return;
+	// }
 	if (treeWhosePropertyHasChanged.hasType(Ids::uiPanelEditor)) {
 		if (property == Ids::uiPanelEditMode) {
 			editModeChanged();

@@ -13,6 +13,7 @@
 #include "CtrlrPanelCanvasLayer.h"
 #include "CtrlrUtilitiesGUI.h"
 #include "JuceClasses/LLookAndFeel.h"
+#include <unordered_map>
 
 CtrlrPanelCanvas::CtrlrPanelCanvas(CtrlrPanelEditor &_owner) : owner(_owner), ctrlrPanelCanvasResizableBorder(0) {
 	addAndMakeVisible(ctrlrPanelCanvasResizableBorder = new ResizableBorderComponent(this, 0));
@@ -37,21 +38,6 @@ CtrlrPanelCanvas::~CtrlrPanelCanvas() {
 	// NOTE: Removed getOwner().getPanelEditorTree().removeListener(this)
 	// because CtrlrPanelEditor has already unhooked it in STEP 0 above!
 }
-// CtrlrPanelCanvas::~CtrlrPanelCanvas() {
-// 	for (int i = 0; i < getOwner().getOwner().getModulators().size(); i++) {
-// 		if (getOwner().getOwner().getModulators()[i]) {
-// 			if (getOwner().getOwner().getModulators()[i]->getComponent()) {
-// 				CtrlrComponent *c = getOwner().getOwner().getModulators()[i]->getComponent();
-// 				removeComponent(c, false);
-// 			}
-// 		}
-// 	}
-
-// 	getOwner().getPanelEditorTree().removeListener(
-// 		this); // this is accessing freed memory. Canvas has to be deleted before valueTree, but not sure where...
-// 	deleteAndZero(ctrlrPanelCanvasResizableBorder);
-// 	setLookAndFeel(nullptr);
-// }
 
 //==============================================================================
 void CtrlrPanelCanvas::paint(Graphics &g) {
@@ -710,7 +696,14 @@ void CtrlrPanelCanvas::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 	if (property == Ids::uiPanelBackgroundColour) {
 		repaint();
 	}
+	if (property == Ids::luaPanelFileDragDropHandler) {
+		if (getProperty(property) == "")
+			return;
 
+		luaPanelFileDragDropHandlerCbk =
+			owner.getOwner().getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		warnIfKnownPlatformLimitation(property);
+	}
 	if (property == Ids::luaPanelPaintBackground) {
 		if (getProperty(property) == "")
 			return;
@@ -1533,6 +1526,55 @@ std::unique_ptr<juce::Drawable> CtrlrPanelCanvas::createMenuIcon(const char *dat
 	return nullptr;
 }
 
+namespace {
+
+struct PlatformLimitation {
+		juce::Identifier property;
+		juce::String message;
+};
+
+// Only a handful of entries expected — linear scan avoids needing a
+// std::hash or operator< specialization for juce::Identifier, neither
+// of which JUCE provides.
+const std::vector<PlatformLimitation> &getKnownPlatformLimitations() {
+	static const std::vector<PlatformLimitation> table{
+		{Ids::luaPanelFileDragDropHandler,
+		 "OS file drag-and-drop into an exported panel is not supported under Linux Wayland sessions "
+		 "(a JUCE/XWayland limitation, not fixable from panel code). If Wayland users need to load "
+		 "files, provide an alternative function in your Lua script - e.g. a button calling "
+		 "fileToRead:loadFileAsData(fileData)."},
+		{Ids::luaPanelFileDragEnterHandler,
+		 "This handler relies on OS file drag-and-drop, which is not supported under Linux Wayland "
+		 "sessions. Consider an alternative input method for Wayland users."},
+		{Ids::luaPanelFileDragExitHandler,
+		 "This handler relies on OS file drag-and-drop, which is not supported under Linux Wayland "
+		 "sessions. Consider an alternative input method for Wayland users."},
+	};
+	return table;
+}
+
+} // anonymous namespace
+
+void CtrlrPanelCanvas::warnIfKnownPlatformLimitation(const Identifier &property) {
+	if (!(bool)getOwner().getProperty(Ids::uiPanelEditMode))
+		return;
+
+	if (getPanel().getCtrlrManagerOwner().isRestoring())
+		return;
+
+	const auto &table = getKnownPlatformLimitations();
+	auto it = std::find_if(table.begin(), table.end(),
+						   [&](const PlatformLimitation &entry) { return entry.property == property; });
+	if (it == table.end())
+		return;
+
+	// Already warned about this property in this panel session — don't nag on re-selection.
+	if (std::find(warnedProperties.begin(), warnedProperties.end(), property) != warnedProperties.end())
+		return;
+	warnedProperties.push_back(property);
+
+	AW::showWarning("Platform Limitation", it->message);
+}
 // static function for drawing icons in right click menu
 /* This code should change the icon contrast on dark themed panels
 

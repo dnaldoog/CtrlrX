@@ -142,6 +142,7 @@ class CtrlrPanelCanvas : public CtrlrChildWindowContent,
 		void valueTreeChildRemoved(ValueTree &parentTree, ValueTree &childWhichHasBeenRemoved, int) {}
 		void valueTreeChildOrderChanged(ValueTree &parentTreeWhoseChildrenHaveMoved, int, int) {}
 		void moveSelectionBy(const int deltaOffset, const Direction directionToMove);
+		void warnIfKnownPlatformLimitation(const Identifier &property);
 		static const Direction keyPressToDirection(const KeyPress &k);
 		void alignSelection(const EditMenuItems direction);
 		CtrlrComponentSelection &getSelection();
@@ -220,6 +221,7 @@ class CtrlrPanelCanvas : public CtrlrChildWindowContent,
 		WeakReference<CtrlrLuaMethod> paintCbk, resizedCbk, luaPanelFileDragDropHandlerCbk,
 			luaPanelFileDragEnterHandlerCbk, luaPanelFileDragExitHandlerCbk;
 		int64 lastRMBMouseEventTime, lastLMBMouseEventTime;
+		std::vector<juce::Identifier> warnedProperties;
 		OwnedArray<CtrlrPanelCanvasLayer> layers;
 		ResizableBorderComponent *ctrlrPanelCanvasResizableBorder;
 		CtrlrPanelCanvas(const CtrlrPanelCanvas &);

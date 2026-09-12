@@ -82,7 +82,17 @@ class CtrlrTempDialogWindow : public juce::DialogWindow {
 #endif
 		}
 
-		void closeButtonPressed() override { setVisible(false); }
+		// void closeButtonPressed() override { setVisible(false); }
+
+		/*
+		This just hides the window — it never calls exitModalState().
+		If a user clicks the native titlebar close (X) button instead of your OK button,
+		the dialog disappears but the app stays modally blocked underneath it
+		*/
+
+		void closeButtonPressed() override {
+			exitModalState(0);
+		}
 
 	private:
 		juce::TooltipWindow tooltip;
@@ -103,10 +113,28 @@ void CtrlrDialogWindow::showCustomDialogAsync(const juce::String &title, juce::C
 							if (callback != nullptr)
 								callback(result);
 
-							delete dw;
+							//delete dw;
 						}),
 						true);
 }
+                                      // <-- deleteWhenDismissed = true
+		/*
+		delete dw;
+		deletes the same (now-dangling) pointer again right after
+		invoking the callback.
+
+		Another option is to  keep the explicit delete dw
+		and pass false for that flag.
+
+
+			dw->enterModalState(true, juce::ModalCallbackFunction::create([dw, callback](int result)
+		{ if (callback != nullptr) callback(result); delete dw;
+			}),
+			false);
+
+
+		*/
+
 
 void CtrlrDialogWindow::showModalDialog(const juce::String &title, juce::Component *content, const bool resizable,
 										juce::Component *parent, std::function<void(int)> callback) {
