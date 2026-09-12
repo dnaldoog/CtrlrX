@@ -1536,31 +1536,39 @@ struct PlatformLimitation {
 // Only a handful of entries expected — linear scan avoids needing a
 // std::hash or operator< specialization for juce::Identifier, neither
 // of which JUCE provides.
+
 const std::vector<PlatformLimitation> &getKnownPlatformLimitations() {
 	static const std::vector<PlatformLimitation> table{
 		{Ids::luaPanelFileDragDropHandler,
 		 "OS file drag-and-drop into an exported panel is not supported under Linux Wayland sessions "
 		 "(a JUCE/XWayland limitation, not fixable from panel code). If Wayland users need to load "
-		 "files, provide an alternative function in your Lua script - e.g. a button calling "
-		 "fileToRead:loadFileAsData(fileData)."},
+		 "files, provide an alternative function in your Lua script\ne.g. a button calling "
+		 "fileToRead:loadFileAsData(fileData).\n\n"
+		 "Detect whether Wayland is running with panel:isWayandSession()"},
 		{Ids::luaPanelFileDragEnterHandler,
 		 "This handler relies on OS file drag-and-drop, which is not supported under Linux Wayland "
-		 "sessions. Consider an alternative input method for Wayland users."},
+		 "sessions. Consider an alternative input method for Wayland users.\n\n"
+		 "Detect whether Wayland is running with panel:isWayandSession()"},
 		{Ids::luaPanelFileDragExitHandler,
 		 "This handler relies on OS file drag-and-drop, which is not supported under Linux Wayland "
-		 "sessions. Consider an alternative input method for Wayland users."},
+		 "sessions. Consider an alternative input method for Wayland users.\n\n"
+		 "Detect whether Wayland is running with panel:isWayandSession()"},
 	};
 	return table;
 }
 
 } // anonymous namespace
-
 void CtrlrPanelCanvas::warnIfKnownPlatformLimitation(const Identifier &property) {
-	if (!(bool)getOwner().getProperty(Ids::uiPanelEditMode))
+	// Design-time only — never fires for an exported/standalone binary's end users.
+	if (getOwner().getOwner().getRestoreState() || getOwner().getOwner().isLoading())
 		return;
+	// if (!(bool)getOwner().getProperty(Ids::uiPanelEditMode))
+	// 	return;
 
-	if (getPanel().getCtrlrManagerOwner().isRestoring())
-		return;
+	// Don't fire while a saved panel's properties are being restored from an existing file —
+	// only on a genuine live assignment made by the developer just now.
+	// if (getPanel().isRestoringState())   // <-- confirm real accessor name, see note below
+	//     return;
 
 	const auto &table = getKnownPlatformLimitations();
 	auto it = std::find_if(table.begin(), table.end(),
@@ -1568,13 +1576,46 @@ void CtrlrPanelCanvas::warnIfKnownPlatformLimitation(const Identifier &property)
 	if (it == table.end())
 		return;
 
-	// Already warned about this property in this panel session — don't nag on re-selection.
 	if (std::find(warnedProperties.begin(), warnedProperties.end(), property) != warnedProperties.end())
-		return;
+		return; // already told them this panel session — avoid nagging on every re-selection
 	warnedProperties.push_back(property);
 
 	AW::showWarning("Platform Limitation", it->message);
 }
+// void CtrlrPanelCanvas::warnIfKnownPlatformLimitation(const Identifier &property) {
+//     CtrlrPanel &panel = getPanel();
+
+//     // 1. Ignore empty property clearing
+//     if (getProperty(property).toString().trim().isEmpty())
+//         return;
+
+//     // 2. Skip if the manager or panel is currently restoring state from XML/file
+//     if (panel.getRestoreState() || panel.getCtrlrManagerOwner().isRestoring())
+//         return;
+
+//     // 3. Ensure edit mode is active
+//     if (!(bool)panel.getProperty(Ids::uiPanelEditMode))
+//         return;
+
+//     // 4. Verify property exists in platform limitations table
+//     const auto &table = getKnownPlatformLimitations();
+//     auto it = std::find_if(table.begin(), table.end(),
+//                            [&](const PlatformLimitation &entry) { return entry.property == property; });
+//     if (it == table.end())
+//         return;
+
+//     // 5. Check if Wayland is active before warning
+//     if (!CtrlrManager::isWaylandSession())
+//         return;
+
+//     // 6. Prevent duplicate warnings per panel session
+//     if (std::find(warnedProperties.begin(), warnedProperties.end(), property) != warnedProperties.end())
+//         return;
+
+//     warnedProperties.push_back(property);
+
+//     AW::showWarning("Platform Limitation", it->message);
+// }
 // static function for drawing icons in right click menu
 /* This code should change the icon contrast on dark themed panels
 
