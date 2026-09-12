@@ -1540,19 +1540,19 @@ struct PlatformLimitation {
 const std::vector<PlatformLimitation> &getKnownPlatformLimitations() {
 	static const std::vector<PlatformLimitation> table{
 		{Ids::luaPanelFileDragDropHandler,
-		 "OS file drag-and-drop into an exported panel is not supported under Linux Wayland sessions "
-		 "(a JUCE/XWayland limitation, not fixable from panel code). If Wayland users need to load "
-		 "files, provide an alternative function in your Lua script\ne.g. a button calling "
+		 "OS file drag-and-drop into an exported panel is not supported under Linux Wayland sessions"
+		 "(a JUCE/XWayland limitation, not fixable from panel code).\n\nIf Wayland users need to load "
+		 "files, provide an alternative function in your Lua script\n\ne.g. a button calling "
 		 "fileToRead:loadFileAsData(fileData).\n\n"
-		 "Detect whether Wayland is running with panel:isWayandSession()"},
+		 "Detect whether Wayland is running with panel:isWaylandSession()"},
 		{Ids::luaPanelFileDragEnterHandler,
 		 "This handler relies on OS file drag-and-drop, which is not supported under Linux Wayland "
-		 "sessions. Consider an alternative input method for Wayland users.\n\n"
-		 "Detect whether Wayland is running with panel:isWayandSession()"},
+		 "sessions.\nConsider an alternative input method for Wayland users.\n\n"
+		 "Detect whether Wayland is running with panel:isWaylandSession()"},
 		{Ids::luaPanelFileDragExitHandler,
 		 "This handler relies on OS file drag-and-drop, which is not supported under Linux Wayland "
-		 "sessions. Consider an alternative input method for Wayland users.\n\n"
-		 "Detect whether Wayland is running with panel:isWayandSession()"},
+		 "sessions.\n\nConsider an alternative input method for Wayland users.\n\n"
+		 "Detect whether Wayland is running with panel:isWaylandSession()"},
 	};
 	return table;
 }
