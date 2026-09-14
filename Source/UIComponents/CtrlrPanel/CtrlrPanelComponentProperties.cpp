@@ -73,7 +73,12 @@ void CtrlrPanelComponentProperties::setTree(const ValueTree &_treeToEdit, const 
 		return;
 
 	// 1. Simply collect ALL .svg resources (developer responsibility for 1:1 ratio)
-	StringArray svgResourceList;
+	// 1. Simply collect ALL .svg resources
+	juce::StringArray svgResourceList;
+
+	// Add "-- None" as the very first item so the user can deselect the icon
+	svgResourceList.add(COMBO_NONE_ITEM);
+
 	for (auto *res : owner.getOwner().getResourceManager().getResourcesCopy()) {
 		if (res != nullptr && res->getSourceFile().hasFileExtension("svg"))
 			svgResourceList.add(res->getName());

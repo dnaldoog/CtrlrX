@@ -3,6 +3,7 @@
 #ifdef _WIN32
 #pragma warning(disable : 4244)
 #endif
+#include "../../Core/CtrlrPanel/CtrlrPanelResource.h"
 #include "CtrlrComponents/CtrlrComponentTypeManager.h"
 #include "CtrlrComponents/CtrlrCustomComponent.h"
 #include "CtrlrComponents/Groups/CtrlrGroup.h"
@@ -674,21 +675,78 @@ void CtrlrPanelCanvas::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 	if (&panel.getCtrlrLuaManager() == nullptr) {
 		return;
 	}
-
+	//
 	if (property == Ids::uiPanelImageResource) {
-		if (treeWhosePropertyHasChanged.getProperty(Ids::uiPanelImageResource).toString() == COMBO_NONE_ITEM) {
+		const String resName = treeWhosePropertyHasChanged.getProperty(Ids::uiPanelImageResource).toString();
+
+		if (resName == COMBO_NONE_ITEM || resName.isEmpty()) {
 			ctrlrPanelBackgroundImage = Image();
 		} else {
-			ctrlrPanelBackgroundImage = getOwner().getOwner().getResourceManager().getResourceAsImage(
-				treeWhosePropertyHasChanged.getProperty(Ids::uiPanelImageResource));
+			CtrlrPanelResource *res = getOwner().getOwner().getResourceManager().getResource(resName);
+			if (res != nullptr) {
+				// Safe fallback: asImage() for standard bitmap image types (PNG/JPG/GIF)
+				ctrlrPanelBackgroundImage = res->asImage();
+			} else {
+				ctrlrPanelBackgroundImage = Image();
+			}
 		}
 		repaint();
 	}
+	if (property == Ids::uiPanelCustomIconResource) {
+		if (getOwner().getCanvas() == nullptr) {
+			return;
+		}
+		const String iconName = treeWhosePropertyHasChanged.getProperty(Ids::uiPanelCustomIconResource).toString();
 
+		if (iconName == COMBO_NONE_ITEM || iconName.isEmpty()) {
+			customIconDrawable.reset();
+		} else {
+			CtrlrPanelResource *res = getOwner().getOwner().getResourceManager().getResource(iconName);
+			if (res != nullptr && res->getName().endsWithIgnoreCase(".svg")) {
+				const String svgText = res->asData().toString();
+
+				// XmlDocument::parse directly returns std::unique_ptr<juce::XmlElement>
+				std::unique_ptr<juce::XmlElement> xml = juce::XmlDocument::parse(svgText);
+				if (xml != nullptr) {
+					customIconDrawable = juce::Drawable::createFromSVG(*xml);
+				}
+			}
+		}
+
+		warnIfKnownPlatformLimitation(property);
+		repaint();
+	}
+	/*
+	if (property == Ids::uiPanelCustomIconResource) {
+		// Guard 1: Ensure owner hierarchy exists during boot
+		if (this == nullptr)
+			return;
+
+		const String iconName = treeWhosePropertyHasChanged.getProperty(Ids::uiPanelCustomIconResource).toString();
+
+		if (iconName == COMBO_NONE_ITEM || iconName.isEmpty()) {
+			customIconDrawable.reset();
+		} else {
+			CtrlrPanelResource *res = getOwner().getOwner().getResourceManager().getResource(iconName);
+			if (res != nullptr && res->getName().endsWithIgnoreCase(".svg")) {
+				const String svgText = res->asData().toString();
+
+				// XmlDocument::parse directly returns std::unique_ptr<juce::XmlElement>
+				std::unique_ptr<juce::XmlElement> xml = juce::XmlDocument::parse(svgText);
+				if (xml != nullptr) {
+					customIconDrawable = juce::Drawable::createFromSVG(*xml);
+				}
+
+			} else {
+				customIconDrawable.reset();
+			}
+		}
+		repaint();
+	}
 	if (property == Ids::uiPanelImageAlpha) {
 		repaint();
 	}
-
+*/
 	if (property == Ids::uiPanelImageLayout) {
 		repaint();
 	}

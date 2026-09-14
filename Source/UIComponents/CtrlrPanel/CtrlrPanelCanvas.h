@@ -217,6 +217,7 @@ class CtrlrPanelCanvas : public CtrlrChildWindowContent,
 		bool componentWasDragged;
 		Image backgroundFill;
 		Image ctrlrPanelBackgroundImage;
+		std::unique_ptr<juce::Drawable> customIconDrawable;
 		CtrlrPopupMenuLook menuLook;
 		WeakReference<CtrlrLuaMethod> paintCbk, resizedCbk, luaPanelFileDragDropHandlerCbk,
 			luaPanelFileDragEnterHandlerCbk, luaPanelFileDragExitHandlerCbk;

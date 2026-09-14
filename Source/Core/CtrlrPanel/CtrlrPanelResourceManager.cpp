@@ -90,31 +90,29 @@ void CtrlrPanelResourceManager::initManager() {
 	}
 }
 
-void CtrlrPanelResourceManager::checkMissingResources(ValueTree &panelResourcesTree) {
-    // Check missing resources from ValueTree
-    for (int i = 0; i < panelResourcesTree.getNumChildren(); ++i) {
-        const ValueTree currentResource = panelResourcesTree.getChild(i);
-
-        if (currentResource.hasType(Ids::resource)) {
-            const String resourceName = currentResource.getProperty(Ids::resourceName).toString();
-            CtrlrPanelResource *res = getResource(resourceName);
-
-            if (!res) { // Resource not found in manager => reload from source file
-                const String resourceSourcePath = currentResource.getProperty(Ids::resourceSourceFile).toString();
-                File resourceFile;
-
-                if (File::isAbsolutePath(resourceSourcePath)) {
-                    resourceFile = File(resourceSourcePath);
-                } else {
-                    resourceFile = owner.getPanelResourcesDir().getChildFile(resourceSourcePath);
-                }
-
-                if (resourceFile.existsAsFile()) {
-                    addResource(resourceFile, resourceName);
-                }
-            }
-        }
-    }
+void CtrlrPanelResourceManager::checkMissingResources(
+	ValueTree &panelResourcesTree) { // Check missing resources from ValueTree
+	ValueTree currentResource;
+	String resourceName;
+	for (int i = 0; i < panelResourcesTree.getNumChildren(); i++) {
+		currentResource = panelResourcesTree.getChild(i);
+		if (currentResource.hasType(Ids::resource)) {
+			resourceName = currentResource.getProperty(Ids::resourceName).toString();
+			CtrlrPanelResource *res = getResource(resourceName);
+			if (!res) { // Resource not find in resources directory => try and load it from the source file
+				String resourceSourcePath = currentResource.getProperty(Ids::resourceSourceFile);
+				File resourceFile;
+				if (File::isAbsolutePath(resourceSourcePath)) {
+					resourceFile = File(resourceSourcePath);
+				} else {
+					resourceFile = owner.getPanelResourcesDir().getChildFile(resourceSourcePath);
+				}
+				if (resourceFile.existsAsFile()) {
+					addResource(resourceFile, resourceName);
+				}
+			}
+		}
+	}
 }
 
 int CtrlrPanelResourceManager::getNumResources() { return (resources.size()); }
@@ -146,6 +144,21 @@ const Image CtrlrPanelResourceManager::getResourceAsImage(const String &resource
 
 	return (Image());
 }
+// const Image CtrlrPanelResourceManager::getResourceAsImage(const String &resourceName) {
+// 	if (resourceName.isEmpty() || resourceName == COMBO_NONE_ITEM) {
+// 		return Image();
+// 	}
+
+// 	CtrlrPanelResource *res = getResource(resourceName);
+// 	if (res != nullptr) {
+// 		// Safe check using resource name string (works in restricted binaries without source files)
+// 		if (res->getName().endsWithIgnoreCase(".svg")) {
+// 			return Image(); // Safely return empty image for SVGs
+// 		}
+// 		return res->asImage();
+// 	}
+// 	return Image();
+// }
 
 const Font CtrlrPanelResourceManager::getResourceAsFont(const String &resourceName) {
 	CtrlrPanelResource *res = getResource(resourceName);
@@ -227,7 +240,6 @@ Result CtrlrPanelResourceManager::importResource(const ValueTree &resourceTree) 
 
 	String filename = resourceTree.getProperty(Ids::resourceFile).toString();
 	File resourceDest = resDir.getChildFile(File::createLegalFileName(filename));
-
 	// --- Path A: Resource already exists internally ---
 	if (auto *existingResource = getResource(resourceName)) {
 		if (!(bool)owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrOverwriteResources)) {

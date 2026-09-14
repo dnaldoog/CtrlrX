@@ -350,11 +350,11 @@ CtrlrPanelEditor::~CtrlrPanelEditor() {
 
 	// 2. Safely detach all child components from JUCE's component tree
 	// WITHOUT deleting them via JUCE
-	for (int i = getNumChildComponents() - 1; i >= 0; --i) {
-		if (auto *child = getChildComponent(i)) {
-			removeChildComponent(child);
-		}
-	}
+	// for (int i = getNumChildComponents() - 1; i >= 0; --i) {
+	// 	if (auto *child = getChildComponent(i)) {
+	// 		removeChildComponent(child);
+	// 	}
+	// }
 
 	// 3. Reset unique pointers explicitly in dependency order if they exist
 	// (Replace or adjust these member names to match your CtrlrPanelEditor.h declarations)
