@@ -68,6 +68,7 @@ DECLARE_ID(uiPanelCanvasLayerIsIsolated); // Added v5.6.34
 DECLARE_ID(uiPanelImageAlpha);
 DECLARE_ID(uiPanelImageLayout);
 DECLARE_ID(uiPanelImageResource);
+DECLARE_ID(uiPanelIconResource);
 DECLARE_ID(uiPanelBackgroundColour);
 DECLARE_ID(uiPanelBackgroundColour1);
 DECLARE_ID(uiPanelBackgroundColour2);
