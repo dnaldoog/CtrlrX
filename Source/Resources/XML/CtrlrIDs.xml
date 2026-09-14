@@ -60,7 +60,7 @@
   <id name="uiPanelBackgroundGradientType"  text="Background gradient type" type="VarNumeric" defaults="@gradient" />
   <id name="uiPanelImageLayout"             text="Image layout" type="VarNumeric" defaults="@imageLayout"/>
   <id name="uiPanelImageResource"               text="Panel background image" type="VarText"/>
-  <!--<id name="uiPanelIconResource"                 text="Panel icon resource" type="VarText"/>-->
+  <id name="uiPanelCustomIconResource" text="Panel icon resource" type="VarText"/>
   <id name="uiPanelImageAlpha"                  text="Background image opacity" type="Numeric" max="255"/>
   <id name="uiPanelSnapActive"	 			text="Snap component position" type="Bool"/>
   <id name="uiPanelSnapSize"                text="Snap size" type="Text"/>
@@ -338,6 +338,7 @@
   <id name="uiComboSelectedId" text="Current selected item ID" type="Readonly " />
   <id name="uiComboSelectedIndex" text="Current selected item index" type="Readonly" />
   <id name="uiComboLookAndFeelIsCustom" text="Combo LookAndFeel mode"  type="Bool"  defaults="Using my colours/Using LNF colours" Default="0" />
+
 
   <!-- List box -->
   <id name="uiListBoxContent"             text="ListBox contents"                   type="MultiLine"/>

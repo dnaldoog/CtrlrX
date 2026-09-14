@@ -68,6 +68,7 @@ DECLARE_ID(uiPanelCanvasLayerIsIsolated); // Added v5.6.34
 DECLARE_ID(uiPanelImageAlpha);
 DECLARE_ID(uiPanelImageLayout);
 DECLARE_ID(uiPanelImageResource);
+DECLARE_ID(uiPanelCustomIconResource);
 DECLARE_ID(uiPanelBackgroundColour);
 DECLARE_ID(uiPanelBackgroundColour1);
 DECLARE_ID(uiPanelBackgroundColour2);
@@ -99,7 +100,6 @@ DECLARE_ID(uiPanelCanvasRectangle);
 DECLARE_ID(uiPanelClipboardTree);
 DECLARE_ID(uiPanelPropertiesOnRight);
 
-// DECLARE_ID(uiPanelIconResource);
 DECLARE_ID(uiPanelInvisibleComponentAlpha);
 DECLARE_ID(uiPanelModulatorListViewTree);
 DECLARE_ID(uiPanelModulatorListTreeState);
@@ -133,6 +133,7 @@ DECLARE_ID(uiChildWindow);
 DECLARE_ID(uiChildWindowName);
 DECLARE_ID(uiChildWindowState);
 DECLARE_ID(uiChildWindowContentState);
+
 
 DECLARE_ID(uiPanelCanvasLayerName);
 DECLARE_ID(uiPanelCanvasLayerIndex);
