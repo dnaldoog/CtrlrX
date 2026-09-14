@@ -1120,32 +1120,6 @@ void CtrlrPanelCanvas::filesDropped(const StringArray &files, int x, int y) {
 	}
 }
 
-// void CtrlrPanelCanvas::filesDropped(const StringArray &files, int x, int y) {
-// 	for (int i = 0; i < files.size(); i++) {
-// 		const File f = File(files[i]);
-// 		if (f != File()) {
-// 			if (f.hasFileExtension(".component")) {
-// 				importComponent(f, x, y);
-// 			} else if (CtrlrPanel::isPanelFile(f)) {
-// 				importPanel(f, x, y);
-// 			} else {
-// 				Image img = ImageFileFormat::loadFrom(f);
-// 				if (img != Image()) {
-// 					importImage(f, x, y);
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	if (luaPanelFileDragDropHandlerCbk && !luaPanelFileDragDropHandlerCbk.wasObjectDeleted()) {
-// 		if (luaPanelFileDragDropHandlerCbk->isValid()) {
-// 			owner.getOwner().getCtrlrLuaManager().getMethodManager().call(luaPanelFileDragDropHandlerCbk, files, x, y);
-
-// 			return;
-// 		}
-// 	}
-// }
-
 void CtrlrPanelCanvas::exportSelectedComponents() {
 	if (owner.getSelection() == nullptr)
 		return;
@@ -1549,6 +1523,7 @@ const std::vector<PlatformLimitation> &getKnownPlatformLimitations() {
 		 "This handler relies on OS file drag-and-drop, which is not supported under Linux Wayland "
 		 "sessions.\n\nConsider an alternative input method for Wayland users.\n\n"
 		 "Detect whether Wayland is running with panel:isWaylandSession()"},
+		{Ids::uiPanelCustomIconResource, "Add SVG with 1:1 aspect ratio, for custom app icons (Windows only).\n\n"},
 	};
 	return table;
 }

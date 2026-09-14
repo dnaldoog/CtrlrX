@@ -1154,6 +1154,8 @@
               file="Source/UIComponents/CtrlrValueTreeEditor.cpp"/>
         <FILE id="otPH5I" name="CtrlrValueTreeEditor.h" compile="0" resource="0"
               file="Source/UIComponents/CtrlrValueTreeEditor.h"/>
+        <FILE id="hTPG11" name="CtrlrWinIconPatcher.h" compile="0" resource="0"
+              file="Source/UIComponents/CtrlrWinIconPatcher.h"/>
       </GROUP>
     </GROUP>
     <FILE id="XfJRMR" name="CtrlrHelpWindow.cpp" compile="1" resource="0"
