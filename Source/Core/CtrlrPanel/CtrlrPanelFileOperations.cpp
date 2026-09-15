@@ -279,27 +279,40 @@ void CtrlrPanel::savePanelAs(const CommandID saveOption) {
 		break;
 	}
 
-	case CtrlrEditor::doExportFileInstance:
-	case CtrlrEditor::doExportFileInstanceRestricted: {
-		const bool isRestricted = (saveOption == CtrlrEditor::doExportFileInstanceRestricted);
+case CtrlrEditor::doExportFileInstance:
+case CtrlrEditor::doExportFileInstanceRestricted: {
+    const bool isRestricted = (saveOption == CtrlrEditor::doExportFileInstanceRestricted);
 
-		owner.getNativeObject().exportWithDefaultPanel(this, isRestricted, isRestricted, [this](juce::Result res) {
-			if (res.failed()) {
-				if (res.getErrorMessage() == "User cancelled the export operation.") {
-					notify("Panel instance export: Cancelled by user.", nullptr, NotifyFailure);
-				} else {
-					notify("Panel instance export: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
-					AW::showMessageBox(AW::Warning, "Panel export",
-									   "Failed to export panel as standalone instance.\n" + res.getErrorMessage());
-				}
-			} else {
-				notify("Panel instance export: Wrote new panel instance.", nullptr, NotifySuccess);
-				AW::showMessageBox(AW::Info, "Panel export", "Wrote new panel instance");
-			}
-		});
+    // 1. Ask the user for a file location asynchronously
+    FC::saveFileAsync(
+        "Export Panel Instance",
+        juce::File::getSpecialLocation(juce::File::userDocumentsDirectory),
+        "*.panel", // Adjust file extension mask as needed
+        true,      // Use native dialog
+        [this, isRestricted](const juce::File& targetFile) 
+    {
+        // 2. User clicked Cancel in the dialog
+        if (targetFile == juce::File()) {
+            notify("Panel instance export: Cancelled by user.", nullptr, NotifyFailure);
+            return;
+        }
 
-		break;
-	}
+        // 3. Perform actual export to targetFile
+        juce::Result res = fileToSave(targetFile, isRestricted); 
+
+        // 4. Handle result
+        if (res.failed()) {
+            notify("Panel instance export: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
+            AW::showMessageBox(AW::Warning, "Panel export",
+                               "Failed to export panel as standalone instance.\n" + res.getErrorMessage());
+        } else {
+            notify("Panel instance export: Wrote new panel instance.", nullptr, NotifySuccess);
+            AW::showMessageBox(AW::Info, "Panel export", "Wrote new panel instance");
+        }
+    });
+
+    break;
+}
 
 	case CtrlrEditor::doExportGenerateUID: {
 		setProperty(Ids::panelUID, generateRandomUnique(juce::String(juce::Time::currentTimeMillis())));
