@@ -534,14 +534,6 @@ void CtrlrManager::restoreState (const ValueTree &savedTree)
     _DBG("CtrlrManager::restoreState (ValueTree) exit");
 }
 
-// void CtrlrManager::restoreState (const XmlElement &savedState)
-// {
-// 	restoreState (ValueTree::fromXml(savedState));
-// }
-
-
-
-
 const String CtrlrManager::getUniquePanelName(const String &proposedName) {
 	String n = proposedName;
 	uint32 i = ctrlrPanels.size();
