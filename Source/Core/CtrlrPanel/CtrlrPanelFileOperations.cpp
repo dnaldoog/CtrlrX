@@ -279,27 +279,27 @@ void CtrlrPanel::savePanelAs(const CommandID saveOption) {
 		break;
 	}
 
-	case CtrlrEditor::doExportFileInstance:
-	case CtrlrEditor::doExportFileInstanceRestricted: {
-		const bool isRestricted = (saveOption == CtrlrEditor::doExportFileInstanceRestricted);
+case CtrlrEditor::doExportFileInstance:
+case CtrlrEditor::doExportFileInstanceRestricted: {
+	const bool isRestricted = (saveOption == CtrlrEditor::doExportFileInstanceRestricted);
 
-		owner.getNativeObject().exportWithDefaultPanel(this, isRestricted, isRestricted, [this](juce::Result res) {
-			if (res.failed()) {
-				if (res.getErrorMessage() == "User cancelled the export operation.") {
-					notify("Panel instance export: Cancelled by user.", nullptr, NotifyFailure);
-				} else {
-					notify("Panel instance export: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
-					AW::showMessageBox(AW::Warning, "Panel export",
-									   "Failed to export panel as standalone instance.\n" + res.getErrorMessage());
-				}
+	owner.getNativeObject().exportWithDefaultPanel(this, isRestricted, isRestricted, [this](juce::Result res) {
+		if (res.failed()) {
+			if (res.getErrorMessage() == "User cancelled the export operation.") {
+				notify("Panel instance export: Cancelled by user.", nullptr, NotifyFailure);
 			} else {
-				notify("Panel instance export: Wrote new panel instance.", nullptr, NotifySuccess);
-				AW::showMessageBox(AW::Info, "Panel export", "Wrote new panel instance");
+				notify("Panel instance export: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
+				AW::showMessageBox(AW::Warning, "Panel export",
+								   "Failed to export panel as standalone instance.\n" + res.getErrorMessage());
 			}
-		});
+		} else {
+			notify("Panel instance export: Wrote new panel instance.", nullptr, NotifySuccess);
+			AW::showMessageBox(AW::Info, "Panel export", "Wrote new panel instance");
+		}
+	});
 
-		break;
-	}
+	break;
+}
 
 	case CtrlrEditor::doExportGenerateUID: {
 		setProperty(Ids::panelUID, generateRandomUnique(juce::String(juce::Time::currentTimeMillis())));

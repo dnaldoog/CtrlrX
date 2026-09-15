@@ -63,7 +63,12 @@ CtrlrProcessor::CtrlrProcessor()
 	ctrlrLog = std::make_unique<CtrlrLog>(overridesTree.getProperty(Ids::ctrlrLogToFile));
 #endif
 	ctrlrManager = std::make_unique<CtrlrManager>(this, *ctrlrLog);
-
+	if (ctrlrManager == nullptr) {
+		return;
+	}
+	if (!ctrlrManager->initEmbeddedInstance()) {
+		ctrlrManager->setDefaults();
+	}
 	if (!ctrlrManager->initEmbeddedInstance()) {
 		ctrlrManager->setDefaults();
 	}

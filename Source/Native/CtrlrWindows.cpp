@@ -3,6 +3,7 @@
 #define NOMINMAX // Added v5.6.32
 #include "CtrlrLog.h"
 #include "CtrlrManager/CtrlrManager.h"
+#include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrPanel/CtrlrPanel.h"
 #include "CtrlrWindows.h"
 #include <psapi.h>
@@ -127,7 +128,11 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
                                        "*" + fileExtension,
                                        useNative);
 
-    auto flags = FileBrowserComponent::saveMode | FileBrowserComponent::canSelectFiles;
+    // FIX: added warnAboutOverwriting — matters when useNative is false, since
+    // the OS-native dialog already warns on its own, but JUCE's own file
+    // browser needs this flag explicitly.
+    auto flags = FileBrowserComponent::saveMode | FileBrowserComponent::canSelectFiles |
+                 FileBrowserComponent::warnAboutOverwriting;
 
     // Launch Native File Dialog Asynchronously
     fc->launchAsync(flags, [this, panelToWrite, isRestricted, me, fileExtension, callback, notifyAndReturn](const FileChooser& chooser) mutable {
@@ -144,226 +149,220 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
             return;
         }
 
-        CtrlrManager& manager = panelToWrite->getOwner();
-        PluginLogger logger(me);
-
-        // Save sticky path
-        manager.setProperty("lastExportPath", newMe.getParentDirectory().getFullPathName());
-        manager.saveState();
-
+        // FIX: the dialog's own overwrite check (native OS prompt, or JUCE's
+        // warnAboutOverwriting flag above) only ever validates the literal
+        // path the user actually typed/selected. If that path is missing
+        // the expected extension, withFileExtension() below silently
+        // retargets newMe at a *different* path than the one the dialog
+        // checked — one that may already exist on disk, unbeknownst to
+        // either overwrite mechanism, since both already ran before this
+        // point. So this needs its own explicit check, after the rename,
+        // covering exactly that gap.
         if (!newMe.hasFileExtension(fileExtension))
             newMe = newMe.withFileExtension(fileExtension);
 
-        if (!me.copyFileTo(newMe)) {
-            logger.log("Error: Failed to copy executable");
-            notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource can't copy \"" + me.getFullPathName() +
-                                         "\" to \"" + newMe.getFullPathName() + "\""));
-            return;
-        }
-        logger.log("Executable copied successfully.");
-        MemoryBlock panelExportData, panelResourcesData;
-        String error;
+        // Everything that was previously inline below now runs inside this
+        // nested lambda, so it can be deferred behind the overwrite prompt
+        // when needed, or run immediately when there's nothing to confirm.
+        auto performExport = [this, panelToWrite, isRestricted, me, fileExtension, newMe, notifyAndReturn]() mutable {
+            CtrlrManager& manager = panelToWrite->getOwner();
+            PluginLogger logger(me);
 
-        // 5. Update Win32 Resources (Panel Injection)
-        HANDLE hResource = BeginUpdateResourceW(newMe.getFullPathName().toWideCharPointer(), FALSE);
+            // Save sticky path
+            manager.setProperty("lastExportPath", newMe.getParentDirectory().getFullPathName());
+            manager.saveState();
 
-        if (hResource) {
-            if ((error = CtrlrPanel::exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData,
-                                                 isRestricted)) == "") {
-                if (writeResource(hResource, MAKEINTRESOURCEW(CTRLR_INTERNAL_PANEL_RESID), (LPCWSTR)RT_RCDATA,
-                                  panelExportData) &&
-                    writeResource(hResource, MAKEINTRESOURCEW(CTRLR_INTERNAL_RESOURCES_RESID), (LPCWSTR)RT_RCDATA,
-                                  panelResourcesData)) {
-                    EndUpdateResource(hResource, FALSE);
-                } else {
-                    notifyAndReturn(
-                        Result::fail("Windows Native: exportMeWithNewResource writeResource[panel] failed"));
-                    return;
-                }
-            } else {
-                notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource exportPanel error: \"" + error + "\""));
+            if (!me.copyFileTo(newMe)) {
+                logger.log("Error: Failed to copy executable");
+                notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource can't copy \"" + me.getFullPathName() +
+                                             "\" to \"" + newMe.getFullPathName() + "\""));
                 return;
             }
-        } else {
-            notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource BeginUpdateResource failed"));
-            return;
-        }
+            logger.log("Executable copied successfully.");
+            MemoryBlock panelExportData, panelResourcesData;
+            String error;
 
-        // 6. Binary String Replacement (Rebranding)
-        logger.log("Thread sleep to delay binary modification task.");
-        juce::Thread::sleep(500);
-        logger.log("Thread restarted for binary modification task.");
+            // 5. Update Win32 Resources (Panel Injection)
+            HANDLE hResource = BeginUpdateResourceW(newMe.getFullPathName().toWideCharPointer(), FALSE);
 
-        File executableFile = newMe;
-        if (executableFile.existsAsFile()) {
-            if (fileExtension.equalsIgnoreCase(".vst3") || fileExtension.equalsIgnoreCase(".dll")) {
-                logger.log("fileExtension is : " + fileExtension);
-
-                const bool replaceVst3PluginIds = panelToWrite->getProperty(Ids::panelReplaceVst3PluginIds);
-
-                if (replaceVst3PluginIds) {
-                    logger.log("Replace the VST3 plugin identifiers with the panel ones : " + String((int)replaceVst3PluginIds));
-
-                    MemoryBlock executableData;
-                    if (executableFile.loadFileAsData(executableData)) {
-                        logger.log("Executable loaded into memory for modification.");
-
-                        String pluginName = panelToWrite->getProperty(Ids::name).toString();
-                        String pluginCode = panelToWrite->getProperty(Ids::panelInstanceUID).toString();
-                        String manufacturerName = panelToWrite->getProperty(Ids::panelAuthorName).toString();
-                        String manufacturerCode = panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString();
-                        String versionMajor = panelToWrite->getProperty(Ids::panelVersionMajor).toString();
-                        String versionMinor = panelToWrite->getProperty(Ids::panelVersionMinor).toString();
-                        String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
-
-						// #if JUCE_WINDOWS :: Damien: This code won't work on JUCE 6 - use the commented code below
-						// 8/27/2026 ;) Helper to generate UTF-16 Little Endian byte buffer for JUCE 8 wide-string
-						// metadata
-						// --- 1. ASCII Search & Replacement Pass ---
-						MemoryBlock pluginNameHex, pluginCodeHex, manufacturerNameHex, manufacturerCodeHex, plugTypeHex;
-                        hexStringToBytes(pluginName, 32, pluginNameHex);
-                        hexStringToBytes(pluginCode, 4, pluginCodeHex);
-                        hexStringToBytes(manufacturerName, 16, manufacturerNameHex);
-                        hexStringToBytes(manufacturerCode, 4, manufacturerCodeHex);
-                        hexStringToBytes(plugType, 16, plugTypeHex);
-
-                        MemoryBlock searchPluginNameHex, searchPluginCodeHex, searchManufacturerNameHex,
-                                    searchManufacturerCodeHex, searchPlugTypeHex;
-
-						hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 "
-										 "20 20 20 20 20 20 20",
-										 searchPluginNameHex);
-						hexStringToBytes("63 54 72 58", searchPluginCodeHex);
-						hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20", searchManufacturerNameHex);
-						hexStringToBytes("63 54 72 6C", searchManufacturerCodeHex);
-						hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHex);
-
-						logger.log("Starting ASCII string replacement process (JUCE 8)...");
-                        replaceAllOccurrences(executableData, searchPluginNameHex, pluginNameHex);
-                        replaceAllOccurrences(executableData, searchPluginCodeHex, pluginCodeHex);
-                        replaceAllOccurrences(executableData, searchManufacturerNameHex, manufacturerNameHex);
-                        replaceAllOccurrences(executableData, searchManufacturerCodeHex, manufacturerCodeHex);
-                        replaceAllOccurrences(executableData, searchPlugTypeHex, plugTypeHex);
-
-						// --- 2. Robust UTF-16 (Wide String) Version Resource Pass ---
-						// Helper to generate EXACT byte-length UTF-16 buffers with right-padding
-						auto makeUtf16Buffer = [](const String &text, const String &templateText) -> MemoryBlock {
-							int targetCharCount = templateText.length();
-							MemoryBlock block(targetCharCount * 2, true); // Exact wide-char byte length
-
-							String paddedText = text.length() > targetCharCount
-													? text.substring(0, targetCharCount)
-													: text.paddedRight(' ', targetCharCount);
-
-							const CharPointer_UTF16 utf16Ptr = paddedText.toUTF16();
-							block.copyFrom(utf16Ptr.getAddress(), 0, targetCharCount * 2);
-							return block;
-						};
-
-						// Target 1: "CtrlrX Project" (14 wide chars -> 28 bytes)
-						MemoryBlock searchUtf16ManufName, replaceUtf16ManufName;
-						hexStringToBytes(
-							"43 00 74 00 72 00 6C 00 72 00 58 00 20 00 50 00 72 00 6F 00 6A 00 65 00 63 00 74 00",
-							searchUtf16ManufName);
-						replaceUtf16ManufName = makeUtf16Buffer(manufacturerName, "CtrlrX Project");
-
-						// Target 2: "CtrlrX" (6 wide chars -> 12 bytes)
-						MemoryBlock searchUtf16PluginName, replaceUtf16PluginName;
-						hexStringToBytes("43 00 74 00 72 00 6C 00 72 00 58 00", searchUtf16PluginName);
-						replaceUtf16PluginName = makeUtf16Buffer(pluginName, "CtrlrX");
-
-						logger.log("Starting UTF-16 string replacement process (JUCE 8)...");
-						// Replace longer target ("CtrlrX Project") FIRST to prevent partial matching
-						replaceAllOccurrences(executableData, searchUtf16ManufName, replaceUtf16ManufName);
-						replaceAllOccurrences(executableData, searchUtf16PluginName, replaceUtf16PluginName);
-
-						// #else JUCE 6 code (I don't want to delete it. We worked too hard to get here!)
-						//                         // Legacy replacement logic (JUCE 7 / JUCE 6 and below)
-						//                         MemoryBlock pluginNameHex, pluginCodeHex, manufacturerNameHex,
-						//                         manufacturerCodeHex,
-						//                                     versionMajorHex, versionMinorHex, plugTypeHex;
-
-						//                         hexStringToBytes(pluginName, 32, pluginNameHex);
-						//                         hexStringToBytes(pluginCode, 4, pluginCodeHex);
-						//                         hexStringToBytes(manufacturerName, 16, manufacturerNameHex);
-						//                         hexStringToBytes(manufacturerCode, 4, manufacturerCodeHex);
-						//                         hexStringToBytes(versionMajor, 2, versionMajorHex);
-						//                         hexStringToBytes(versionMinor, 2, versionMinorHex);
-						//                         hexStringToBytes(plugType, 16, plugTypeHex);
-
-						//                         MemoryBlock searchPluginNameHex, searchPluginCodeHex,
-						//                         searchManufacturerNameHex,
-						//                                     searchManufacturerCodeHex, searchPlugTypeHex;
-
-						//                         hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20
-						//                         20 20 20 20 20 20 20 20 20 20 20 20 20 20 20", searchPluginNameHex);
-						//                         hexStringToBytes("63 54 72 58", searchPluginCodeHex);
-						//                         hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20",
-						//                         searchManufacturerNameHex); hexStringToBytes("63 54 72 6C",
-						//                         searchManufacturerCodeHex); hexStringToBytes("49 6E 73 74 72 75 6D 65
-						//                         6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHex);
-
-						//                         logger.log("Starting string replacement process...");
-
-						//                         replaceAllOccurrences(executableData, searchPluginNameHex,
-						//                         pluginNameHex); replaceAllOccurrences(executableData,
-						//                         searchPluginCodeHex, pluginCodeHex);
-						//                         replaceAllOccurrences(executableData, searchManufacturerNameHex,
-						//                         manufacturerNameHex); replaceAllOccurrences(executableData,
-						//                         searchManufacturerCodeHex, manufacturerCodeHex);
-						//                         replaceAllOccurrences(executableData, searchPlugTypeHex,
-						//                         plugTypeHex);
-						// #endif
-
-						logger.log("String replacement process completed.");
-
-                        if (!executableFile.replaceWithData(executableData.getData(), executableData.getSize())) {
-                            logger.log("Error: Failed to write modified executable data");
-                            notifyAndReturn(Result::fail("Windows Native: Failed to write modified executable data"));
-                            return;
-                        }
-                        logger.log("Modified executable data written.");
+            if (hResource) {
+                if ((error = CtrlrPanel::exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData,
+                                                     isRestricted)) == "") {
+                    if (writeResource(hResource, MAKEINTRESOURCEW(CTRLR_INTERNAL_PANEL_RESID), (LPCWSTR)RT_RCDATA,
+                                      panelExportData) &&
+                        writeResource(hResource, MAKEINTRESOURCEW(CTRLR_INTERNAL_RESOURCES_RESID), (LPCWSTR)RT_RCDATA,
+                                      panelResourcesData)) {
+                        EndUpdateResource(hResource, FALSE);
                     } else {
-                        logger.log("Error: Failed to load executable into memory.");
-                        notifyAndReturn(Result::fail("Windows Native: Failed to load executable into memory."));
+                        notifyAndReturn(
+                            Result::fail("Windows Native: exportMeWithNewResource writeResource[panel] failed"));
                         return;
                     }
                 } else {
-                    logger.log("replaceVst3PluginIds set to false, Vst3 IDs replacement skipped.");
-                }
-            } else {
-                logger.log("Exported file is not vst3.");
-            }
-
-            // Codesigning step
-            logger.log("Thread sleep to delay codesigning task.");
-            juce::Thread::sleep(500);
-            logger.log("Thread restarted for codesigning task.");
-
-            juce::String panelCertificateWinPath = panelToWrite->getProperty(Ids::panelCertificateWinPath).toString();
-            juce::String panelCertificateWinPassCode = panelToWrite->getProperty(Ids::panelCertificateWinPassCode).toString();
-
-            if (panelCertificateWinPath.isNotEmpty() && juce::File::isAbsolutePath(panelCertificateWinPath) &&
-                juce::File(panelCertificateWinPath).existsAsFile() && panelCertificateWinPassCode.isNotEmpty()) {
-                
-                const Result codesignResult = codesignFileWindows(newMe, panelCertificateWinPath, panelCertificateWinPassCode);
-                if (!codesignResult.wasOk()) {
-                    logger.logResult(codesignResult);
-                    notifyAndReturn(codesignResult);
+                    notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource exportPanel error: \"" + error + "\""));
                     return;
                 }
-                logger.log("Codesigning successful.");
-                logger.logResult(codesignResult);
             } else {
-                logger.log("Codesigning failed because either CertificatePath or CertificatePassCode were wrong.");
+                notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource BeginUpdateResource failed"));
+                return;
             }
-        } else {
-            logger.log("Error: Executable file does not exist.");
-            notifyAndReturn(Result::fail("Windows Native: Executable file does not exist"));
-            return;
-        }
 
-        notifyAndReturn(Result::ok());
+            // 6. Binary String Replacement (Rebranding)
+            logger.log("Thread sleep to delay binary modification task.");
+            juce::Thread::sleep(500);
+            logger.log("Thread restarted for binary modification task.");
+
+            File executableFile = newMe;
+            if (executableFile.existsAsFile()) {
+                if (fileExtension.equalsIgnoreCase(".vst3") || fileExtension.equalsIgnoreCase(".dll")) {
+                    logger.log("fileExtension is : " + fileExtension);
+
+                    const bool replaceVst3PluginIds = panelToWrite->getProperty(Ids::panelReplaceVst3PluginIds);
+
+                    if (replaceVst3PluginIds) {
+                        logger.log("Replace the VST3 plugin identifiers with the panel ones : " + String((int)replaceVst3PluginIds));
+
+                        MemoryBlock executableData;
+                        if (executableFile.loadFileAsData(executableData)) {
+                            logger.log("Executable loaded into memory for modification.");
+
+                            String pluginName = panelToWrite->getProperty(Ids::name).toString();
+                            String pluginCode = panelToWrite->getProperty(Ids::panelInstanceUID).toString();
+                            String manufacturerName = panelToWrite->getProperty(Ids::panelAuthorName).toString();
+                            String manufacturerCode = panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString();
+                            String versionMajor = panelToWrite->getProperty(Ids::panelVersionMajor).toString();
+                            String versionMinor = panelToWrite->getProperty(Ids::panelVersionMinor).toString();
+                            String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
+
+                            // #if JUCE_WINDOWS :: Damien: This code won't work on JUCE 6 - use the commented code below
+                            // 8/27/2026 ;) Helper to generate UTF-16 Little Endian byte buffer for JUCE 8 wide-string
+                            // metadata
+                            // --- 1. ASCII Search & Replacement Pass ---
+                            MemoryBlock pluginNameHex, pluginCodeHex, manufacturerNameHex, manufacturerCodeHex, plugTypeHex;
+                            hexStringToBytes(pluginName, 32, pluginNameHex);
+                            hexStringToBytes(pluginCode, 4, pluginCodeHex);
+                            hexStringToBytes(manufacturerName, 16, manufacturerNameHex);
+                            hexStringToBytes(manufacturerCode, 4, manufacturerCodeHex);
+                            hexStringToBytes(plugType, 16, plugTypeHex);
+
+                            MemoryBlock searchPluginNameHex, searchPluginCodeHex, searchManufacturerNameHex,
+                                        searchManufacturerCodeHex, searchPlugTypeHex;
+
+                            hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 "
+                                             "20 20 20 20 20 20 20",
+                                             searchPluginNameHex);
+                            hexStringToBytes("63 54 72 58", searchPluginCodeHex);
+                            hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20", searchManufacturerNameHex);
+                            hexStringToBytes("63 54 72 6C", searchManufacturerCodeHex);
+                            hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHex);
+
+                            logger.log("Starting ASCII string replacement process (JUCE 8)...");
+                            replaceAllOccurrences(executableData, searchPluginNameHex, pluginNameHex);
+                            replaceAllOccurrences(executableData, searchPluginCodeHex, pluginCodeHex);
+                            replaceAllOccurrences(executableData, searchManufacturerNameHex, manufacturerNameHex);
+                            replaceAllOccurrences(executableData, searchManufacturerCodeHex, manufacturerCodeHex);
+                            replaceAllOccurrences(executableData, searchPlugTypeHex, plugTypeHex);
+
+                            // --- 2. Robust UTF-16 (Wide String) Version Resource Pass ---
+                            // Helper to generate EXACT byte-length UTF-16 buffers with right-padding
+                            auto makeUtf16Buffer = [](const String &text, const String &templateText) -> MemoryBlock {
+                                int targetCharCount = templateText.length();
+                                MemoryBlock block(targetCharCount * 2, true); // Exact wide-char byte length
+
+                                String paddedText = text.length() > targetCharCount
+                                                        ? text.substring(0, targetCharCount)
+                                                        : text.paddedRight(' ', targetCharCount);
+
+                                const CharPointer_UTF16 utf16Ptr = paddedText.toUTF16();
+                                block.copyFrom(utf16Ptr.getAddress(), 0, targetCharCount * 2);
+                                return block;
+                            };
+
+                            // Target 1: "CtrlrX Project" (14 wide chars -> 28 bytes)
+                            MemoryBlock searchUtf16ManufName, replaceUtf16ManufName;
+                            hexStringToBytes(
+                                "43 00 74 00 72 00 6C 00 72 00 58 00 20 00 50 00 72 00 6F 00 6A 00 65 00 63 00 74 00",
+                                searchUtf16ManufName);
+                            replaceUtf16ManufName = makeUtf16Buffer(manufacturerName, "CtrlrX Project");
+
+                            // Target 2: "CtrlrX" (6 wide chars -> 12 bytes)
+                            MemoryBlock searchUtf16PluginName, replaceUtf16PluginName;
+                            hexStringToBytes("43 00 74 00 72 00 6C 00 72 00 58 00", searchUtf16PluginName);
+                            replaceUtf16PluginName = makeUtf16Buffer(pluginName, "CtrlrX");
+
+                            logger.log("Starting UTF-16 string replacement process (JUCE 8)...");
+                            // Replace longer target ("CtrlrX Project") FIRST to prevent partial matching
+                            replaceAllOccurrences(executableData, searchUtf16ManufName, replaceUtf16ManufName);
+                            replaceAllOccurrences(executableData, searchUtf16PluginName, replaceUtf16PluginName);
+
+                            logger.log("String replacement process completed.");
+
+                            if (!executableFile.replaceWithData(executableData.getData(), executableData.getSize())) {
+                                logger.log("Error: Failed to write modified executable data");
+                                notifyAndReturn(Result::fail("Windows Native: Failed to write modified executable data"));
+                                return;
+                            }
+                            logger.log("Modified executable data written.");
+                        } else {
+                            logger.log("Error: Failed to load executable into memory.");
+                            notifyAndReturn(Result::fail("Windows Native: Failed to load executable into memory."));
+                            return;
+                        }
+                    } else {
+                        logger.log("replaceVst3PluginIds set to false, Vst3 IDs replacement skipped.");
+                    }
+                } else {
+                    logger.log("Exported file is not vst3.");
+                }
+
+                // Codesigning step
+                logger.log("Thread sleep to delay codesigning task.");
+                juce::Thread::sleep(500);
+                logger.log("Thread restarted for codesigning task.");
+
+                juce::String panelCertificateWinPath = panelToWrite->getProperty(Ids::panelCertificateWinPath).toString();
+                juce::String panelCertificateWinPassCode = panelToWrite->getProperty(Ids::panelCertificateWinPassCode).toString();
+
+                if (panelCertificateWinPath.isNotEmpty() && juce::File::isAbsolutePath(panelCertificateWinPath) &&
+                    juce::File(panelCertificateWinPath).existsAsFile() && panelCertificateWinPassCode.isNotEmpty()) {
+                    
+                    const Result codesignResult = codesignFileWindows(newMe, panelCertificateWinPath, panelCertificateWinPassCode);
+                    if (!codesignResult.wasOk()) {
+                        logger.logResult(codesignResult);
+                        notifyAndReturn(codesignResult);
+                        return;
+                    }
+                    logger.log("Codesigning successful.");
+                    logger.logResult(codesignResult);
+                } else {
+                    logger.log("Codesigning failed because either CertificatePath or CertificatePassCode were wrong.");
+                }
+            } else {
+                logger.log("Error: Executable file does not exist.");
+                notifyAndReturn(Result::fail("Windows Native: Executable file does not exist"));
+                return;
+            }
+
+            notifyAndReturn(Result::ok());
+        };
+
+        // FIX: explicit overwrite check, covering the extension-append gap
+        // described above. Only prompts when the final, extension-corrected
+        // path actually already exists.
+        if (newMe.existsAsFile()) {
+            AW::showOkCancelAsyncSafe(
+                AW::Question, "Overwrite File",
+                "\"" + newMe.getFileName() + "\" already exists. Overwrite it?",
+                [performExport, notifyAndReturn](bool confirmed) mutable {
+                    if (confirmed) {
+                        performExport();
+                    } else {
+                        notifyAndReturn(Result::fail("User cancelled the export operation."));
+                    }
+                });
+        } else {
+            performExport();
+        }
     });
 }
 /*

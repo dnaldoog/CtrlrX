@@ -348,11 +348,13 @@ namespace FC {
 inline void saveFileAsync(const juce::String &dialogTitle, const juce::File &initialFileOrDirectory,
 						  const juce::String &filePatternsAllowed, bool useNativeDialog,
 						  std::function<void(const juce::File &)> callback) {
+	// Add warnAboutOverwriting to the bitmask flags
 	int flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles |
 				juce::FileBrowserComponent::warnAboutOverwriting;
 
 	auto chooser =
 		std::make_shared<juce::FileChooser>(dialogTitle, initialFileOrDirectory, filePatternsAllowed, useNativeDialog);
+
 	chooser->launchAsync(flags, [chooser, callback](const juce::FileChooser &fc) {
 		if (callback) {
 			callback(fc.getResult());
