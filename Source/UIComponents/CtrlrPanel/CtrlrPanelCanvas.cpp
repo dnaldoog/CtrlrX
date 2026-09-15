@@ -684,6 +684,13 @@ void CtrlrPanelCanvas::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 		}
 		repaint();
 	}
+	if (property == Ids::uiPanelIconResource) {
+		if (treeWhosePropertyHasChanged.getProperty(Ids::uiPanelIconResource).toString() == COMBO_NONE_ITEM) {
+
+			warnIfKnownPlatformLimitation(property);
+		}
+		repaint();
+	}
 
 	if (property == Ids::uiPanelImageAlpha) {
 		repaint();
@@ -1549,6 +1556,7 @@ const std::vector<PlatformLimitation> &getKnownPlatformLimitations() {
 		 "This handler relies on OS file drag-and-drop, which is not supported under Linux Wayland "
 		 "sessions.\n\nConsider an alternative input method for Wayland users.\n\n"
 		 "Detect whether Wayland is running with panel:isWaylandSession()"},
+		{Ids::uiPanelIconResource, "stub"},
 	};
 	return table;
 }
