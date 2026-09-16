@@ -42,6 +42,8 @@ public:
         AbletonLiveGeneric,
         AdobePremierePro,
         AppleLogic,
+        Ardour,
+        BitwigStudio,
         CakewalkSonar8,
         CakewalkSonarGeneric,
         DigidesignProTools,
@@ -68,6 +70,8 @@ public:
 
     //==============================================================================
     bool isAbletonLive() const noexcept      { return type == AbletonLive6 || type == AbletonLive7 || type == AbletonLive8 || type == AbletonLiveGeneric; }
+    bool isArdour() const noexcept           { return type == Ardour; }
+    bool isBitwigStudio() const noexcept     { return type == BitwigStudio; }
     bool isCubase() const noexcept           { return type == SteinbergCubase4 || type == SteinbergCubase5 || type == SteinbergCubase5Bridged || type == SteinbergCubaseGeneric; }
     bool isCubaseBridged() const noexcept    { return type == SteinbergCubase5Bridged; }
     bool isTracktion() const noexcept        { return type == MackieTracktion3 || type == MackieTracktionGeneric; }
