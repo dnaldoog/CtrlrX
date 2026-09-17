@@ -209,7 +209,42 @@ bool CtrlrEditor::perform(
 #if JUCE_LINUX
 		// Use toggle() on all Linux to avoid Wayland/compositor issues
 		owner.getWindowManager().toggle(CtrlrManagerWindowManager::AboutWindow, true);
+#elif JUCE_MAC // Modal dialog on Windows/macOS
+		// https://github.com/damiensellier/CtrlrX/commit/9c4aedb2027860bfe5f21eaeba683bdac77dfb57
+
+		{
+			auto *aboutComp = new CtrlrAbout(owner);
+
+			juce::DialogWindow::LaunchOptions options;
+			options.dialogTitle = "CtrlrX/About";
+			options.dialogBackgroundColour =
+				juce::LookAndFeel::getDefaultLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
+			options.content.setOwned(aboutComp);
+			options.escapeKeyTriggersCloseButton = true;
+			options.useNativeTitleBar = true;
+			options.resizable = false;
+
+			if (auto *dw = options.create()) {
+				void *nativeHandle = getPeer() ? getPeer()->getNativeHandle() : nullptr;
+
+				int flags = juce::ComponentPeer::windowAppearsOnTaskbar | juce::ComponentPeer::windowIsTemporary;
+
+				dw->addToDesktop(flags, nativeHandle);
+
+				// --- CENTER-TO-CENTER ALIGNMENT ---
+				// Gets the absolute screen center of the CtrlrEditor frame
+				const juce::Point<int> editorScreenCenter = getScreenBounds().getCentre();
+
+				// Align the center of the DialogWindow to the editor's screen center
+				dw->setCentrePosition(editorScreenCenter);
+
+				dw->setAlwaysOnTop(true);
+				dw->setVisible(true);
+				dw->enterModalState(true, nullptr, true);
+			}
+		}
 #else
+
 		// Non-modal dialog on Windows/macOS
 		{
 			CtrlrAbout *aboutWindow = new CtrlrAbout(owner);
