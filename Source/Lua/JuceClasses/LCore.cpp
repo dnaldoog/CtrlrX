@@ -951,23 +951,20 @@ void LSystemStats::wrapForLua(lua_State *L) // Added v5.6.36.
 {
 	using namespace luabind;
 
-	module(
-		L)[class_<SystemStats>("SystemStats")
-			   .scope[def("getOperatingSystemName", &SystemStats::getOperatingSystemName),
-					  def("getOperatingSystemType", &SystemStats::getOperatingSystemType),
-					  def("getDeviceDescription", &SystemStats::getDeviceDescription),
-					  def("getDeviceManufacturer", &SystemStats::getDeviceManufacturer),
-					  def("isOperatingSystem64Bit", &SystemStats::isOperatingSystem64Bit),
-					  def("getMemorySizeInMegabytes", &SystemStats::getMemorySizeInMegabytes),
-					  def("getCpuVendor", &SystemStats::getCpuVendor), def("getCpuModel", &SystemStats::getCpuModel),
-					  def("getCpuSpeedInMegahertz", &SystemStats::getCpuSpeedInMegahertz),
-					  def("getLogonName", &SystemStats::getLogonName),
-					  def("getFullUserName", &SystemStats::getFullUserName), // can return errors on certain systems,
-																			 // the handler above is a clean workaround
-					  //def("getFullUserName", &getSafeFullUserName),
-					  def("getComputerName", &SystemStats::getComputerName),
-					  def("getUserLanguage", &SystemStats::getUserLanguage),
-					  def("getUserRegion", &SystemStats::getUserRegion),
-					  def("getDisplayLanguage", &SystemStats::getDisplayLanguage),
-					  def("getPageSize", &SystemStats::getPageSize)]];
+	module(L)[class_<SystemStats>("SystemStats")
+				  .scope[def("getOperatingSystemName", &SystemStats::getOperatingSystemName),
+						 def("getOperatingSystemType", &SystemStats::getOperatingSystemType),
+						 def("getDeviceDescription", &SystemStats::getDeviceDescription),
+						 def("getDeviceManufacturer", &SystemStats::getDeviceManufacturer),
+						 def("isOperatingSystem64Bit", &SystemStats::isOperatingSystem64Bit),
+						 def("getMemorySizeInMegabytes", &SystemStats::getMemorySizeInMegabytes),
+						 def("getCpuVendor", &SystemStats::getCpuVendor), def("getCpuModel", &SystemStats::getCpuModel),
+						 def("getCpuSpeedInMegahertz", &SystemStats::getCpuSpeedInMegahertz),
+						 // def("getLogonName", &SystemStats::getLogonName), // Removed for privacy
+						 // def("getFullUserName", &SystemStats::getFullUserName), // Removed for privacy
+						 // def("getComputerName", &SystemStats::getComputerName), // Removed for privacy
+						 def("getUserLanguage", &SystemStats::getUserLanguage),
+						 def("getUserRegion", &SystemStats::getUserRegion),
+						 def("getDisplayLanguage", &SystemStats::getDisplayLanguage),
+						 def("getPageSize", &SystemStats::getPageSize)]];
 }
