@@ -682,13 +682,13 @@ void CtrlrPanelCanvas::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 			ctrlrPanelBackgroundImage = getOwner().getOwner().getResourceManager().getResourceAsImage(
 				treeWhosePropertyHasChanged.getProperty(Ids::uiPanelImageResource));
 		}
+		warnIfKnownPlatformLimitation(property);
 		repaint();
 	}
 	if (property == Ids::uiPanelIconResource) {
 		if (treeWhosePropertyHasChanged.getProperty(Ids::uiPanelIconResource).toString() == COMBO_NONE_ITEM) {
-
-			warnIfKnownPlatformLimitation(property);
 		}
+		warnIfKnownPlatformLimitation(property);
 		repaint();
 	}
 
@@ -1556,7 +1556,8 @@ const std::vector<PlatformLimitation> &getKnownPlatformLimitations() {
 		 "This handler relies on OS file drag-and-drop, which is not supported under Linux Wayland "
 		 "sessions.\n\nConsider an alternative input method for Wayland users.\n\n"
 		 "Detect whether Wayland is running with panel:isWaylandSession()"},
-		{Ids::uiPanelIconResource, "stub"},
+		{Ids::uiPanelIconResource, "Choose SVG resource (XML) with 1:1 Ratio,\nnot a raster image (PNG/JPG)"},
+		{Ids::uiPanelImageResource, "Choose raster image (PNG/JPG),\nnot an SVG resource (XML)"},
 	};
 	return table;
 }
