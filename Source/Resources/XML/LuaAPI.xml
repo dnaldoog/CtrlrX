@@ -1088,9 +1088,13 @@
       <method name="withY" args="(int p)" type="instance"/>
     </methods>
   </class>
-  <class name="CtrlrLuaUtils" cpp_name="CtrlrLuaUtils">
+<class name="CtrlrLuaUtils" cpp_name="CtrlrLuaUtils">
     <methods>
       <method name="askForTextInputWindow" args="(String title, String message, String initialInputContent, String onScreenLabel, bool isPassword, String button1Text, String button2Text)" type="instance"/>
+      
+      <!-- JUCE 8 Async Text Input Window -->
+      <method name="askForTextInputWindowAsync" args="(String title, String message, String initialInputContent, String onScreenLabel, bool isPassword, String button1Text, String button2Text, function callback)" type="instance"/>
+
       <method name="base64_decode" args="(String base64String)" type="instance"/>
       <method name="base64_encode" args="(String stringToEncode)" type="instance"/>
       <method name="get16bitSigned" args="(uint16_t val)" type="instance"/>
@@ -1108,7 +1112,11 @@
       <method name="openFileWindow" args="(String dialogBoxTitle, File initialFileOrDirectory, String filePatternsAllowed, bool useOSNativeDialogBox)" type="instance"/>
       <method name="openMultipleFilesWindow" args="(String dialogBoxTitle, File initialFileOrDirectory, String filePatternsAllowed, bool useOSNativeDialogBox, luabind::object table)" type="instance"/>
       <method name="packDsiData" args="()" type="instance"/>
-      <method name="questionWindow" args="()" type="instance"/>
+      
+      <!-- Synchronous & Asynchronous Question Windows -->
+      <method name="questionWindow" args="(String title, String message, String button1Text, String button2Text)" type="instance"/>
+      <method name="questionWindowAsync" args="(String title, String message, String button1Text, String button2Text, function callback)" type="instance"/>
+
       <method name="saveFileWindow" args="(String dialogBoxTitle, File initialFileOrDirectory, String filePatternsAllowed, bool useOSNativeDialogBox)" type="instance"/>
       <method name="unpackDsiData" args="()" type="instance"/>
       <method name="warnWindow" args="(String title, String message)" type="instance"/>
@@ -2239,8 +2247,14 @@
       <method name="showAt" args="(Rectangle&lt;int&gt; rectangle, String message, int numMillisecondsBeforeRemoving, bool removeWhenMouseClicked, bool deleteSelfAfterUse)" type="instance"/>
       <method name="showAt" args="(Rectangle&lt;int&gt; areaToAttachTo, int standardItemHeight)" type="instance"/>
       <method name="showAt" args="(Component componentToAttachTo, int standardItemHeight)" type="instance"/>
+      <!-- JUCE 8 Async Methods -->
+      <method name="showAsync" args="(int itemIDThatMustBeVisible, int minimumWidth, int maximumNumColumns, int standardItemHeight, function callback)" type="instance"/>
+      <method name="showAsync" args="(int itemHeight, function callback)" type="instance"/>
+      <method name="showMenuAsync" args="(PopupMenu::Options options, function callback)" type="instance"/>
+      <method name="showAtAsync" args="(Component componentToAttachTo, int standardItemHeight, function callback)" type="instance"/>
+      <method name="showAtAsync" args="(Rectangle&lt;int&gt; areaToAttachTo, int standardItemHeight, function callback)" type="instance"/>
     </methods>
-    <static_methods>
+      <static_methods>
       <method name="LPopupMenu" args="()" type="constructor"/>
     </static_methods>
     <constructors>
