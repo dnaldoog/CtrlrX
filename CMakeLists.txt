@@ -274,7 +274,10 @@ endif()
 # this, runDispatchLoopUntil()/runDispatchLoop()/stopDispatchLoop() don't exist
 # on juce::MessageManager on platforms where JUCE doesn't default the flag on
 # (observed: fine on local Windows/VS2022, fails on Linux/Mac CI).
-target_compile_definitions(SharedCode INTERFACE JUCE_MODAL_LOOPS_PERMITTED=1)
+target_compile_definitions(SharedCode INTERFACE 
+    JUCE_MODAL_LOOPS_PERMITTED=1
+    JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1
+)
 
 # -----------------------------------------------------------------------
 # ASSETS & BINARY DATA
