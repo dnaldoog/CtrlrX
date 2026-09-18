@@ -269,6 +269,13 @@ if(USE_LUAJIT_FOR_BUILD)
     target_compile_definitions(SharedCode INTERFACE CTRLRX_USE_LUAJIT=1)
 endif()
 
+# Projucer's JUCEOPTIONS (including JUCE_MODAL_LOOPS_PERMITTED) are not read by
+# this CMake build at all -- the two build systems don't share settings. Without
+# this, runDispatchLoopUntil()/runDispatchLoop()/stopDispatchLoop() don't exist
+# on juce::MessageManager on platforms where JUCE doesn't default the flag on
+# (observed: fine on local Windows/VS2022, fails on Linux/Mac CI).
+target_compile_definitions(SharedCode INTERFACE JUCE_MODAL_LOOPS_PERMITTED=1)
+
 # -----------------------------------------------------------------------
 # ASSETS & BINARY DATA
 # -----------------------------------------------------------------------
