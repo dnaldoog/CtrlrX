@@ -149,6 +149,7 @@ class CtrlrEditor : public AudioProcessorEditor,
 		const String getMidiSummary(const CtrlrMIDIDeviceType type = inputDevice);
 		bool isRestricted();
 		void performShowKeyboardMappingDialog(const int menuItemID);
+		void performShowGlobalSettingsDialog();
 		void performMidiChannelChange(const int menuItemID);
 		void performMidiDeviceChange(const int menuItemID);
 		void performMidiOptionChange(const int menuItemID);
