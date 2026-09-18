@@ -270,10 +270,11 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 		menu.addCommandItem(commandManager, showAboutDialog);
 		menu.addSeparator();
 		menu.addCommandItem(commandManager, showExpressionHelp);
+		menu.addCommandItem(commandManager, showDumpByLuaHelp);
 		menu.addSeparator();
 #if 0	
 		if (!isRestricted()){
-			menu.addCommandItem(commandManager, showDumpByLuaHelp);
+			
 			menu.addCommandItem(commandManager, showExpressionHelp);
 			menu.addCommandItem(commandManager, showMidiProgrammingHelp);
 			menu.addCommandItem(commandManager, showLuaUsefulCommandsHelp);
