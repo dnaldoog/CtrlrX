@@ -681,9 +681,11 @@ void CtrlrPanelCanvas::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 		if (treeWhosePropertyHasChanged.getProperty(Ids::uiPanelImageResource).toString() == COMBO_NONE_ITEM) {
 			ctrlrPanelBackgroundImage = Image();
 		} else {
+			// Pass current panel dimensions to rasterize SVG at full scale
 			ctrlrPanelBackgroundImage = getOwner().getOwner().getResourceManager().getResourceAsImage(
-				treeWhosePropertyHasChanged.getProperty(Ids::uiPanelImageResource));
+				treeWhosePropertyHasChanged.getProperty(Ids::uiPanelImageResource), getWidth(), getHeight());
 		}
+
 		warnIfKnownPlatformLimitation(property);
 		repaint();
 	}

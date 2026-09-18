@@ -136,13 +136,37 @@ CtrlrPanelResource *CtrlrPanelResourceManager::getResource(const String &resourc
 	return nullptr;
 }
 
-const Image CtrlrPanelResourceManager::getResourceAsImage(const String &resourceName) {
+Image CtrlrPanelResourceManager::getResourceAsImage(const String &resourceName, int targetWidth, int targetHeight) {
 	CtrlrPanelResource *res = getResource(resourceName);
-	if (res != 0) {
-		return (res->asImage());
+
+	if (res == nullptr)
+		return Image();
+
+	// SVG resources need to be rasterized at the requested size.
+	bool isSvg = res->getFile().getFileExtension().equalsIgnoreCase(".svg");
+
+	if (isSvg) {
+		if (const XmlElement *xml = res->asXml()) {
+			std::unique_ptr<juce::Drawable> svgDrawable(juce::Drawable::createFromSVG(*xml));
+
+			if (svgDrawable != nullptr) {
+				int w = (targetWidth > 0) ? targetWidth : jmax(1, (int)svgDrawable->getWidth());
+
+				int h = (targetHeight > 0) ? targetHeight : jmax(1, (int)svgDrawable->getHeight());
+
+				Image rasterizedSvg(Image::ARGB, w, h, true);
+				Graphics g(rasterizedSvg);
+
+				svgDrawable->drawWithin(g, Rectangle<float>(0.0f, 0.0f, (float)w, (float)h),
+										RectanglePlacement::stretchToFit, 1.0f);
+
+				return rasterizedSvg;
+			}
+		}
 	}
 
-	return (Image());
+	// Standard raster format fallback (PNG, JPG, etc.)
+	return res->asImage();
 }
 
 const Font CtrlrPanelResourceManager::getResourceAsFont(const String &resourceName) {
