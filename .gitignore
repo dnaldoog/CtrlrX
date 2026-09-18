@@ -34,8 +34,8 @@ obj/                      # Object files directory
 *.so                      # Shared libraries
 *.dll                     # Windows dynamic link libraries
 *.dylib                   # macOS dynamic libraries
-*.exe                     # Executables
-*.obj                     # Windows object files
+*.exe
+!Source/Misc/rcedit/*.exe*.obj                     # Windows object files
 *.lib                     # Windows static libraries
 *.pdb                     # Program Database (debug info)
 *.ilk                     # Incremental Linker File
