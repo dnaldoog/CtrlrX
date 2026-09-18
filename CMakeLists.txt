@@ -277,6 +277,7 @@ endif()
 target_compile_definitions(SharedCode INTERFACE 
     JUCE_MODAL_LOOPS_PERMITTED=1
     JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1
+    JUCE_VST3_CAN_REPLACE_VST2=0
 )
 
 # -----------------------------------------------------------------------
