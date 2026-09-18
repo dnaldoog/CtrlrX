@@ -60,11 +60,13 @@ if(LINUX)
     pkg_check_modules(zlib REQUIRED zlib)
     pkg_check_modules(gtk3 REQUIRED gtk+-3.0) 
     pkg_check_modules(webkit REQUIRED webkit2gtk-4.1)
+    pkg_check_modules(curl REQUIRED libcurl)
 
     include_directories(SYSTEM
         ${gtk3_INCLUDE_DIRS}
         ${webkit_INCLUDE_DIRS}
         ${x11_INCLUDE_DIRS}
+        ${curl_INCLUDE_DIRS}
     )
     set(JUCE_USE_WEBKIT_4_1 ON CACHE INTERNAL "")
 endif()
@@ -325,6 +327,7 @@ if(LINUX)
         ${webkit_LIBRARIES}
         ${libudev_LIBRARIES}
         ${zlib_LIBRARIES}
+        ${curl_LIBRARIES}
     )
 endif()
 
@@ -333,24 +336,28 @@ target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
 # -----------------------------------------------------------------------
 # Windows Post-Build Helpers (Copy rcedit next to binaries)
 # -----------------------------------------------------------------------
+# --- NEW FIXED WINDOWS POST-BUILD SECTION ---
 if(WIN32)
-    # Copy for the Standalone Executable target if generated
+    # Target specific actual binaries instead of the meta target
     if(TARGET "${PROJECT_NAME}_Standalone")
         add_custom_command(TARGET "${PROJECT_NAME}_Standalone" POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}_Standalone>"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/rcedit/rcedit-x64.exe"
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}_Standalone>/rcedit-x64.exe"
-            COMMENT "Copying rcedit-x64.exe to Standalone build directory..."
+            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/rcedit/${RCEDIT_FILENAME}"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}_Standalone>/${RCEDIT_FILENAME}"
+            COMMENT "Copying ${RCEDIT_FILENAME} to Standalone output directory..."
+            VERBATIM
         )
     endif()
 
-    # Fallback copy for main target output folder
-    if(TARGET "${PROJECT_NAME}")
-        add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
+    if(TARGET "${PROJECT_NAME}_VST3")
+        add_custom_command(TARGET "${PROJECT_NAME}_VST3" POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}_VST3>"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/rcedit/rcedit-x64.exe"
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/rcedit-x64.exe"
-            COMMENT "Copying rcedit-x64.exe to target build directory..."
+            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/rcedit/${RCEDIT_FILENAME}"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}_VST3>/${RCEDIT_FILENAME}"
+            COMMENT "Copying ${RCEDIT_FILENAME} to VST3 output directory..."
+            VERBATIM
         )
     endif()
 endif()
