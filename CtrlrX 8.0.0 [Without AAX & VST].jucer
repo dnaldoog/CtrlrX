@@ -15,7 +15,12 @@
               pluginAAXCategory="2048" cppLanguageStandard="20">
   <MAINGROUP id="SRLsFb" name="CtrlrX">
     <GROUP id="{BE407432-92DD-AEAB-3C70-AAE03FCD0B1D}" name="Source">
+      <FILE id="JTK9fq" name="CtrlrIconGenerator.h" compile="0" resource="0"
+            file="Source/UIComponents/CtrlrIconGenerator.h"/>
       <GROUP id="{F4D7C0F1-7F03-CB3F-30C6-F728F0E39FE2}" name="Misc">
+        <GROUP id="{1A9B9D6B-9984-9820-3E9F-F0397A7786B6}" name="rcedit">
+          <FILE id="p7zeOi" name="rcedit-x64.exe" compile="0" resource="1" file="Source/Misc/rcedit/rcedit-x64.exe"/>
+        </GROUP>
         <GROUP id="{E0E4DD68-0D44-4709-7B14-B00F9E7420BF}" name="luabind">
           <GROUP id="{2091F07D-D8F8-5C6F-EEAF-33E046D84C00}" name="luabind">
             <GROUP id="{3D1DEE58-7341-D84F-43D9-D93F78FFDB5B}" name="detail">
@@ -1200,13 +1205,15 @@
             externalLibraries="lua51.lib">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/Misc&#10;../../Source/Misc/include&#10;../../Source/Misc/luabind&#10;../../Source/Misc/luajit/src&#10;../../Source/Misc/boost&#10;../../Source/MIDI&#10;../../Source/Core&#10;../../Source/Native&#10;../../Source/Plugin&#10;../../Source/UIComponents&#10;../../Source/Lua"
-                       libraryPath="../../Source/Misc/luajit/src"/>
+                       libraryPath="../../Source/Misc/luajit/src" postbuildCommand="xcopy /Y /D &quot;$(ProjectDir)..\..\Source\Misc\rcedit\rcedit-x64.exe&quot; &quot;$(TargetDir)&quot;"/>
         <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/Misc&#10;../../Source/Misc/include&#10;../../Source/Misc/luabind&#10;../../Source/Misc/luajit/src&#10;../../Source/Misc/boost&#10;../../Source/MIDI&#10;../../Source/Core&#10;../../Source/Native&#10;../../Source/Plugin&#10;../../Source/UIComponents&#10;../../Source/Lua"
-                       libraryPath="../../Source/Misc/luajit/src"/>
+                       libraryPath="../../Source/Misc/luajit/src" postbuildCommand="xcopy /Y /D &quot;$(ProjectDir)..\..\Source\Misc\rcedit\rcedit-x64.exe&quot; &quot;$(TargetDir)&quot;"/>
         <CONFIGURATION isDebug="1" name="Debug_Win32" winArchitecture="Win32" headerPath="../../Source&#10;../../Source/Misc&#10;../../Source/Misc/include&#10;../../Source/Misc/luabind&#10;../../Source/Misc/luajit/src&#10;../../Source/Misc/boost&#10;../../Source/MIDI&#10;../../Source/Core&#10;../../Source/Native&#10;../../Source/Plugin&#10;../../Source/UIComponents&#10;../../Source/Lua"
-                       targetName="CtrlrX-Win32" libraryPath="../../Source/Misc/luajit/src"/>
+                       targetName="CtrlrX-Win32" libraryPath="../../Source/Misc/luajit/src"
+                       postbuildCommand="xcopy /Y /D &quot;$(ProjectDir)..\..\Source\Misc\rcedit\rcedit-x86.exe&quot; &quot;$(TargetDir)&quot;"/>
         <CONFIGURATION isDebug="0" name="Release_Win32" winArchitecture="Win32" headerPath="../../Source&#10;../../Source/Misc&#10;../../Source/Misc/include&#10;../../Source/Misc/luabind&#10;../../Source/Misc/luajit/src&#10;../../Source/Misc/boost&#10;../../Source/MIDI&#10;../../Source/Core&#10;../../Source/Native&#10;../../Source/Plugin&#10;../../Source/UIComponents&#10;../../Source/Lua"
-                       targetName="CtrlrX-Win32" libraryPath="../../Source/Misc/luajit/src"/>
+                       targetName="CtrlrX-Win32" libraryPath="../../Source/Misc/luajit/src"
+                       postbuildCommand="xcopy /Y /D &quot;$(ProjectDir)..\..\Source\Misc\rcedit\rcedit-x86.exe&quot; &quot;$(TargetDir)&quot;"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_gui_extra"/>
@@ -1232,13 +1239,15 @@
             externalLibraries="lua51.lib">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/Misc&#10;../../Source/Misc/include&#10;../../Source/Misc/luabind&#10;../../Source/Misc/luajit/src&#10;../../Source/Misc/boost&#10;../../Source/MIDI&#10;../../Source/Core&#10;../../Source/Native&#10;../../Source/Plugin&#10;../../Source/UIComponents&#10;../../Source/Lua"
-                       libraryPath="../../Source/Misc/luajit/src"/>
+                       libraryPath="../../Source/Misc/luajit/src" postbuildCommand="xcopy /Y /D &quot;$(ProjectDir)..\..\Source\Misc\rcedit\rcedit-x64.exe&quot; &quot;$(TargetDir)&quot;"/>
         <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/Misc&#10;../../Source/Misc/include&#10;../../Source/Misc/luabind&#10;../../Source/Misc/luajit/src&#10;../../Source/Misc/boost&#10;../../Source/MIDI&#10;../../Source/Core&#10;../../Source/Native&#10;../../Source/Plugin&#10;../../Source/UIComponents&#10;../../Source/Lua"
-                       libraryPath="../../Source/Misc/luajit/src"/>
+                       libraryPath="../../Source/Misc/luajit/src" postbuildCommand="xcopy /Y /D &quot;$(ProjectDir)..\..\Source\Misc\rcedit\rcedit-x64.exe&quot; &quot;$(TargetDir)&quot;"/>
         <CONFIGURATION isDebug="1" name="Debug_Win32" headerPath="../../Source&#10;../../Source/Misc&#10;../../Source/Misc/include&#10;../../Source/Misc/luabind&#10;../../Source/Misc/luajit/src&#10;../../Source/Misc/boost&#10;../../Source/MIDI&#10;../../Source/Core&#10;../../Source/Native&#10;../../Source/Plugin&#10;../../Source/UIComponents&#10;../../Source/Lua"
-                       winArchitecture="Win32" targetName="CtrlrX-Win32" libraryPath="../../Source/Misc/luajit/src"/>
+                       winArchitecture="Win32" targetName="CtrlrX-Win32" libraryPath="../../Source/Misc/luajit/src"
+                       postbuildCommand="xcopy /Y /D &quot;$(ProjectDir)..\..\Source\Misc\rcedit\rcedit-x86.exe&quot; &quot;$(TargetDir)&quot;"/>
         <CONFIGURATION isDebug="0" name="Release_Win32" targetName="CtrlrX-Win32" headerPath="../../Source&#10;../../Source/Misc&#10;../../Source/Misc/include&#10;../../Source/Misc/luabind&#10;../../Source/Misc/luajit/src&#10;../../Source/Misc/boost&#10;../../Source/MIDI&#10;../../Source/Core&#10;../../Source/Native&#10;../../Source/Plugin&#10;../../Source/UIComponents&#10;../../Source/Lua"
-                       winArchitecture="Win32" libraryPath="../../Source/Misc/luajit/src"/>
+                       winArchitecture="Win32" libraryPath="../../Source/Misc/luajit/src"
+                       postbuildCommand="xcopy /Y /D &quot;$(ProjectDir)..\..\Source\Misc\rcedit\rcedit-x86.exe&quot; &quot;$(TargetDir)&quot;"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_gui_extra"/>

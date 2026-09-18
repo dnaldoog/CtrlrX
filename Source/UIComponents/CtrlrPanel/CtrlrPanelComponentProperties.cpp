@@ -80,6 +80,7 @@ void CtrlrPanelComponentProperties::setTree(const ValueTree &_treeToEdit, const 
 	// Build once, locally, filtered to SVG resources only — feeds the new
 	// uiPanelIconResource picker so it only offers vector icons.
 	StringArray svgResourceList;
+	svgResourceList.add(COMBO_NONE_ITEM); // Add the "None" option to the list);
 	for (auto *res : owner.getOwner().getResourceManager().getResourcesCopy()) {
 		if (res != nullptr && res->getSourceFile().hasFileExtension("svg"))
 			svgResourceList.add(res->getName());

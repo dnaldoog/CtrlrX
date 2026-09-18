@@ -185,7 +185,6 @@ include(SharedCodeDefaults)
 if(CTRLRX_FORCE_JIT_OFF)
     target_compile_definitions(SharedCode INTERFACE CTRLRX_FORCE_JIT_OFF=1)
 endif()
-
 # Optimization fix for LuaBind
 set_source_files_properties(
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/luabind/src/object_rep.cpp"
@@ -246,20 +245,18 @@ else()
     target_include_directories(SharedCode INTERFACE "${LUA_INCLUDE_TARGET}")
 endif()
 
-target_compile_definitions(SharedCode INTERFACE
-    JUCE_WEB_BROWSER=0
-    JUCE_USE_CURL=0
-    JUCE_VST3_CAN_REPLACE_VST2=0
-    JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1
-    JUCE_MODAL_LOOPS_PERMITTED=1
-    JUCE_DISPLAY_SPLASH_SCREEN=0
-    BOOST_BIND_GLOBAL_PLACEHOLDERS=1
-    CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
-    VERSION="${CURRENT_VERSION}"
-    $<$<PLATFORM_ID:Linux>:_GLIBCXX_USE_DEPRECATED=1>
-    $<$<CXX_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>
-)
+if(WIN32)
+    # CMAKE_SIZEOF_VOID_P is 8 for 64-bit targets and 4 for 32-bit targets
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(RCEDIT_FILENAME "rcedit-x64.exe")
+    else()
+        set(RCEDIT_FILENAME "rcedit-x86.exe")
+    endif()
 
+    target_compile_definitions(SharedCode INTERFACE
+        CTRLRX_RCEDIT_PATH="${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/rcedit/${RCEDIT_FILENAME}"
+    )
+endif()
 target_compile_options(SharedCode INTERFACE
     $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:-msse2 -fPIC>
 )
@@ -322,7 +319,30 @@ endif()
 
 # Final Plugin Target Linking
 target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
+# -----------------------------------------------------------------------
+# Windows Post-Build Helpers (Copy rcedit next to binaries)
+# -----------------------------------------------------------------------
+if(WIN32)
+    # Copy for the Standalone Executable target if generated
+    if(TARGET "${PROJECT_NAME}_Standalone")
+        add_custom_command(TARGET "${PROJECT_NAME}_Standalone" POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/rcedit/rcedit-x64.exe"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}_Standalone>/rcedit-x64.exe"
+            COMMENT "Copying rcedit-x64.exe to Standalone build directory..."
+        )
+    endif()
 
+    # Fallback copy for main target output folder
+    if(TARGET "${PROJECT_NAME}")
+        add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Misc/rcedit/rcedit-x64.exe"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/rcedit-x64.exe"
+            COMMENT "Copying rcedit-x64.exe to target build directory..."
+        )
+    endif()
+endif()
 if(LINUX)
     if(TARGET "${PROJECT_NAME}_VST3")
         target_link_options("${PROJECT_NAME}_VST3" PRIVATE
@@ -330,9 +350,6 @@ if(LINUX)
         )
     endif()
 endif()
-# -----------------------------------------------------------------------
-# Packaging & Distribution (CPack for Linux .deb / .rpm)
-# -----------------------------------------------------------------------
 # -----------------------------------------------------------------------
 # Packaging & Distribution (CPack for Linux .deb / .rpm)
 # -----------------------------------------------------------------------

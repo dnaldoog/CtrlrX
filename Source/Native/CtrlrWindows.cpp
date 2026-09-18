@@ -1,17 +1,24 @@
 #include "stdafx.h"
 #ifdef JUCE_WINDOWS
 #define NOMINMAX // Added v5.6.32
+#include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrLog.h"
 #include "CtrlrManager/CtrlrManager.h"
-#include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrPanel/CtrlrPanel.h"
+#include "CtrlrPanel/CtrlrPanelResource.h"
 #include "CtrlrWindows.h"
+#if __has_include("CtrlrIconGenerator.h")
+#include "CtrlrIconGenerator.h"
+#define CTRLR_HAS_ICON_GENERATOR 1
+#endif
 #include <psapi.h>
 
 #include <algorithm> // Added v5.6.32
 #include <fstream>	 // Added v5.6.32
 #include <random>	 // Added v5.6.32
-#include <vector>	 // Added v5.6.32
+#include <shlobj.h>
+#include <vector> // Added v5.6.32
+#include <windows.h>
 
 CtrlrWindows::CtrlrWindows(CtrlrManager &_owner) : owner(_owner) {}
 
@@ -71,6 +78,35 @@ Result CtrlrWindows::readResource(void *handle, const LPCWSTR resourceId, const 
 		return (Result::fail("Windows Native: GetModuleHandle() for: \"" +
 							 File::getSpecialLocation(File::currentExecutableFile).getFullPathName() + "\" failed"));
 	}
+}
+// Locates rcedit.exe, tried in order:
+//   1. Sitting alongside the currently-running executable — the layout a
+//      properly packaged/distributed build should have (requires a build
+//      step to copy it there; not yet wired up).
+//   2. The build machine's own source-tree copy, via CTRLRX_RCEDIT_PATH
+//      (set by CMake) — works for local dev/testing today, but only on the
+//      machine that built this binary; won't resolve on an end user's
+//      machine running a build produced elsewhere.
+// Locates rcedit.exe, tried in order:
+//   1. Sitting alongside the currently-running executable — the layout a
+//      properly packaged/distributed build should have (requires a build
+//      step to copy it there; not yet wired up).
+//   2. The build machine's own source-tree copy, via CTRLRX_RCEDIT_PATH
+//      (set by CMake) — works for local dev/testing today, but only on the
+//      machine that built this binary; won't resolve on an end user's
+//      machine running a build produced elsewhere.
+static File findRcedit() {
+	File sibling = File::getSpecialLocation(File::currentExecutableFile).getSiblingFile("rcedit-x64.exe");
+	if (sibling.existsAsFile())
+		return sibling;
+
+#ifdef CTRLRX_RCEDIT_PATH
+	File devCopy(CTRLRX_RCEDIT_PATH);
+	if (devCopy.existsAsFile())
+		return devCopy;
+#endif
+
+	return File();
 }
 
 void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
@@ -193,23 +229,110 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
                         writeResource(hResource, MAKEINTRESOURCEW(CTRLR_INTERNAL_RESOURCES_RESID), (LPCWSTR)RT_RCDATA,
                                       panelResourcesData)) {
                         EndUpdateResource(hResource, FALSE);
-                    } else {
-                        notifyAndReturn(
-                            Result::fail("Windows Native: exportMeWithNewResource writeResource[panel] failed"));
-                        return;
-                    }
-                } else {
-                    notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource exportPanel error: \"" + error + "\""));
-                    return;
-                }
-            } else {
-                notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource BeginUpdateResource failed"));
-                return;
-            }
 
-            // 6. Binary String Replacement (Rebranding)
-            logger.log("Thread sleep to delay binary modification task.");
-            juce::Thread::sleep(500);
+						// NEW: swap the exported .exe's icon, if the panel
+						// has one chosen via uiPanelIconResource. Sequenced
+						// AFTER EndUpdateResource above closes out our own
+						// resource transaction — rcedit opens the file
+						// separately, and two handles updating the same
+						// file's resources at once would be asking for
+						// trouble. Non-fatal: the panel/binary rebrand
+						// above already succeeded by this point, so an
+						// icon-swap failure only logs a warning rather
+						// than failing the whole export.
+						if (isRestricted) {
+							ValueTree editorTree = panelToWrite->getPanelTree().getChildWithName(Ids::uiPanelEditor);
+							String iconResourceName = editorTree.isValid()
+														  ? editorTree.getProperty(Ids::uiPanelIconResource).toString()
+														  : String();
+							DBG("iconResourceName => " + iconResourceName);
+							if (iconResourceName.isNotEmpty()) {
+								CtrlrPanelResource *iconResource =
+									panelToWrite->getResourceManager().getResource(iconResourceName);
+
+								if (iconResource != nullptr) {
+									File tempIco = File::getSpecialLocation(File::tempDirectory)
+													   .getNonexistentChildFile("ctrlrx_export_icon", ".ico");
+
+									juce::Result icoResult =
+										CtrlrIconGenerator::generateIcoFromSvg(iconResource->getFile(), tempIco);
+
+									if (icoResult.wasOk()) {
+										File rceditExe = me.getSiblingFile("rcedit-x64.exe");
+
+										if (rceditExe.existsAsFile()) {
+											StringArray args;
+											args.add(rceditExe.getFullPathName());
+											args.add(newMe.getFullPathName());
+											args.add("--set-icon");
+											args.add(tempIco.getFullPathName());
+
+											// Retry loop to handle Windows file indexing / antivirus locks
+											bool success = false;
+											String rceditOutput;
+											int exitCode = -1;
+
+											for (int attempt = 1; attempt <= 5; ++attempt) {
+												// Small delay to let Windows Defender / Explorer release any file
+												// handle
+												Thread::sleep(100);
+
+												ChildProcess rceditProcess;
+												if (rceditProcess.start(args)) {
+													rceditOutput = rceditProcess.readAllProcessOutput();
+													exitCode = rceditProcess.getExitCode();
+
+													if (exitCode == 0) {
+														success = true;
+														break; // Succeeded! Break out of retry loop.
+													}
+
+													DBG("rcedit attempt " + String(attempt) + " failed with code " +
+														String(exitCode) + ". Output: " + rceditOutput.trim());
+												}
+											}
+
+											if (success) {
+												DBG("Icon applied successfully via rcedit. Output: " +
+													rceditOutput.trim());
+												SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
+											} else {
+												DBG("Warning: rcedit failed after retries — code " + String(exitCode) +
+													". Last output: " + rceditOutput.trim());
+											}
+										} else {
+											DBG("Warning: rcedit-x64.exe not found alongside plugin — icon not "
+												"applied: " +
+												rceditExe.getFullPathName());
+										}
+
+										tempIco.deleteFile();
+									} else {
+										DBG("Warning: icon generation failed — " + icoResult.getErrorMessage());
+									}
+								} else {
+									DBG("Warning: icon resource '" + iconResourceName + "' not found");
+								}
+							}
+						}
+					} else {
+						notifyAndReturn(
+							Result::fail("Windows Native: exportMeWithNewResource writeResource[panel] failed"));
+						return;
+					}
+				} else {
+					notifyAndReturn(
+						Result::fail("Windows Native: exportMeWithNewResource exportPanel error: \"" + error + "\""));
+					return;
+				}
+			} else {
+				notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource BeginUpdateResource failed"));
+				return;
+			}
+
+			// 6. Binary String Replacement (Rebranding)
+			logger.log("Thread sleep to delay binary modification task.");
+			juce::Thread::sleep(500);
             logger.log("Thread restarted for binary modification task.");
 
             File executableFile = newMe;
@@ -364,28 +487,27 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
             performExport();
         }
     });
-}
-/*
- * ==============================================================================
- * JUCE 8 Metadata & Resource Encoding Changes (PE/VST3 Binary Patching)
- * ==============================================================================
- *
- * 1. String Encoding in Windows Resources:
- *    - In JUCE 7 and below, binary metadata strings (such as ProductName and
- *      CompanyName inside VS_VERSION_INFO / PE .rsrc sections) were primary target
- *      candidates for single-byte ASCII/UTF-8 replacements (e.g. "43 74 72 6C 72 58").
- *    - In JUCE 8 (MSVC / Windows builds), wide string version metadata is stored
- *      as UTF-16 Little Endian (2 bytes per character, e.g. 'C\0t\0r\0l\0r\0X\0').
- *
- * 2. Replacement Strategy Update:
- *    - Plain ASCII search blocks fail to match UTF-16 strings because of
- *      interleaved null bytes (`0x00`).
- *    - JUCE 8 logic now performs two replacement passes:
- *        a) Standard ASCII pass for embedded C-string/plugin identifier tokens.
- *        b) Dedicated UTF-16 pass to patch wide-character Windows version resources.
- *
- * ==============================================================================
- */
+} /*
+   * ==============================================================================
+   * JUCE 8 Metadata & Resource Encoding Changes (PE/VST3 Binary Patching)
+   * ==============================================================================
+   *
+   * 1. String Encoding in Windows Resources:
+   *    - In JUCE 7 and below, binary metadata strings (such as ProductName and
+   *      CompanyName inside VS_VERSION_INFO / PE .rsrc sections) were primary target
+   *      candidates for single-byte ASCII/UTF-8 replacements (e.g. "43 74 72 6C 72 58").
+   *    - In JUCE 8 (MSVC / Windows builds), wide string version metadata is stored
+   *      as UTF-16 Little Endian (2 bytes per character, e.g. 'C\0t\0r\0l\0r\0X\0').
+   *
+   * 2. Replacement Strategy Update:
+   *    - Plain ASCII search blocks fail to match UTF-16 strings because of
+   *      interleaved null bytes (`0x00`).
+   *    - JUCE 8 logic now performs two replacement passes:
+   *        a) Standard ASCII pass for embedded C-string/plugin identifier tokens.
+   *        b) Dedicated UTF-16 pass to patch wide-character Windows version resources.
+   *
+   * ==============================================================================
+   */
 void CtrlrWindows::stringToUtf16Bytes(const juce::String &text, int charCount, juce::MemoryBlock &result) {
     result.setSize(charCount * 2, true); // Zero-fill memory
     juce::String paddedText = text.paddedRight(' ', charCount);

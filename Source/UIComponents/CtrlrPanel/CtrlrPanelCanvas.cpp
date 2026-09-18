@@ -7,8 +7,10 @@
 #include "CtrlrComponents/CtrlrCustomComponent.h"
 #include "CtrlrComponents/Groups/CtrlrGroup.h"
 #include "CtrlrComponents/Groups/CtrlrTabsComponent.h"
+#include "CtrlrIconGenerator.h"
 #include "CtrlrLuaManager.h"
 #include "CtrlrPanel/CtrlrPanelEditor.h"
+#include "CtrlrPanel/CtrlrPanelResource.h"
 #include "CtrlrPanelCanvas.h"
 #include "CtrlrPanelCanvasLayer.h"
 #include "CtrlrUtilitiesGUI.h"
@@ -687,6 +689,27 @@ void CtrlrPanelCanvas::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 	}
 	if (property == Ids::uiPanelIconResource) {
 		if (treeWhosePropertyHasChanged.getProperty(Ids::uiPanelIconResource).toString() == COMBO_NONE_ITEM) {
+			// TODO: clean up any previously-generated test .ico here
+			DBG("CtrlrPanelCanvas::valueTreePropertyChanged: uiPanelIconResource set to COMBO_NONE_ITEM, no icon will "
+				"be generated");
+		} else {
+			DBG("CtrlrPanelCanvas::valueTreePropertyChanged: uiPanelIconResource changed, generating test .ico from "
+				"SVG resource");
+			CtrlrPanelResource *iconResource = getOwner().getOwner().getResourceManager().getResource(
+				treeWhosePropertyHasChanged.getProperty(Ids::uiPanelIconResource).toString());
+
+			if (iconResource != nullptr) {
+				File testIcoFile = File::getSpecialLocation(File::tempDirectory).getChildFile("ctrlrx_icon_test.ico");
+
+				juce::Result res = CtrlrIconGenerator::generateIcoFromSvg(iconResource->getFile(), testIcoFile);
+
+				if (res.failed())
+					DBG(res.getErrorMessage());
+				else
+					DBG("Test icon written to: " + testIcoFile.getFullPathName());
+			} else {
+				DBG("Icon resource not found");
+			}
 		}
 		warnIfKnownPlatformLimitation(property);
 		repaint();
@@ -1556,8 +1579,8 @@ const std::vector<PlatformLimitation> &getKnownPlatformLimitations() {
 		 "This handler relies on OS file drag-and-drop, which is not supported under Linux Wayland "
 		 "sessions.\n\nConsider an alternative input method for Wayland users.\n\n"
 		 "Detect whether Wayland is running with panel:isWaylandSession()"},
-		{Ids::uiPanelIconResource, "Choose SVG resource (XML) with 1:1 Ratio,\nnot a raster image (PNG/JPG)"},
-		{Ids::uiPanelImageResource, "Choose raster image (PNG/JPG),\nnot an SVG resource (XML)"},
+		//{Ids::uiPanelIconResource, "Choose SVG resource (XML) with 1:1 Ratio,\nnot a raster image (PNG/JPG)"},
+		//{Ids::uiPanelImageResource, "Choose raster image (PNG/JPG),\nnot an SVG resource (XML)"},
 	};
 	return table;
 }
