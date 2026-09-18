@@ -63,11 +63,6 @@ class ImageInfoComponent : public Component {
 // Definition of CtrlrPanelResourceEditor
 CtrlrPanelResourceEditor::CtrlrPanelResourceEditor(CtrlrPanelEditor &_owner)
 	: owner(_owner),
-	  //   resourceList(nullptr),
-	  //   add(nullptr),
-	  //   remove(nullptr),
-	  //   move(nullptr),
-	  //   reload(nullptr),
 	  sortByColumnId(1),
 	  sortForward(1),
 	  maxAspectRatioForStrip(50.0f) // Lower value will split small l/w ratios
@@ -113,11 +108,6 @@ CtrlrPanelResourceEditor::CtrlrPanelResourceEditor(CtrlrPanelEditor &_owner)
 }
 
 CtrlrPanelResourceEditor::~CtrlrPanelResourceEditor() {
-	// deleteAndZero(resourceList);
-	// deleteAndZero(add);
-	// deleteAndZero(remove);
-	// deleteAndZero(move);
-	// deleteAndZero(reload);
 }
 
 void CtrlrPanelResourceEditor::paint(Graphics &g) {}

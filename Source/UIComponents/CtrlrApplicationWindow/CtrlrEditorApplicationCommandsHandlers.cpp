@@ -158,6 +158,10 @@ bool CtrlrEditor::perform(
 		performShowKeyboardMappingDialog(info.commandID);
 		break;
 
+	case CtrlrEditor::showGlobalSettingsDialog:
+		performShowGlobalSettingsDialog();
+		break;
+
 	case CtrlrEditor::showMidiMonitor:
 		owner.getWindowManager().toggle(CtrlrManagerWindowManager::MidiMonWindow, true);
 		break;
@@ -193,30 +197,22 @@ bool CtrlrEditor::perform(
 		}
 		break;
 
-	case CtrlrEditor::showGlobalSettingsDialog:
-#if JUCE_LINUX
-		// Use toggle() on all Linux to avoid Wayland/compositor issues
-		owner.getWindowManager().toggle(CtrlrManagerWindowManager::GlobalSettings, true);
-#else
-		// Modal dialog on Windows/macOS where it's stable
-		owner.getWindowManager().showModalDialog("CtrlrX/Settings",
-												 new CtrlrSettings(owner), // Pass raw pointer directly
-												 true, this);
-#endif
-		break;
+case CtrlrEditor::showAboutDialog:
+{
+    juce::DialogWindow::LaunchOptions options;
+    options.dialogTitle = "CtrlrX/About";
+    options.content.setOwned(new CtrlrAbout(owner));
+    options.resizable = false;
+    options.useNativeTitleBar = true;
+    options.dialogBackgroundColour = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
+    options.escapeKeyTriggersCloseButton = true;
+    
+    // JUCE handles centering AND proper z-index attachment to DAW plugin windows automatically
+    options.componentToCentreAround = this;
 
-	case CtrlrEditor::showAboutDialog:
-#if JUCE_LINUX
-		// Use toggle() on all Linux to avoid Wayland/compositor issues
-		owner.getWindowManager().toggle(CtrlrManagerWindowManager::AboutWindow, true);
-#else
-		// Non-modal dialog on Windows/macOS
-		{
-			CtrlrAbout *aboutWindow = new CtrlrAbout(owner);
-			owner.getWindowManager().showModalDialog("CtrlrX/About", aboutWindow, false, this);
-		}
-#endif
-		break;
+    options.launchAsync();
+    break;
+}
 
 		// case showDumpByLuaHelp:
 		// 	new CtrlrHelpWindow("Bulk Read/Write Dump Help",
@@ -505,38 +501,32 @@ void CtrlrEditor::performRecentFileOpen(const int menuItemID) {
 }
 
 void CtrlrEditor::performShowKeyboardMappingDialog(const int /*menuItemID*/) {
-	// 1. Ensure command targets are registered so KeyMappingEditorComponent isn't empty
+	// 1. Ensure command targets are registered
 	auto &commandManager = owner.getCommandManager();
-
-	// Safety check: register targets if not already bound
 	commandManager.registerAllCommandsForTarget(this);
 
 	// 2. Create the editor component
 	auto keys = std::make_unique<juce::KeyMappingEditorComponent>(*commandManager.getKeyMappings(), true);
-
 	keys->setSize(650, 450);
 
-	// Keep raw pointer reference for the close callback saving logic
-	auto *keysPtr = keys.get();
-
-	// 3. Configure modern JUCE 8 async launch options
+	// 3. Configure JUCE 8 LaunchOptions
 	juce::DialogWindow::LaunchOptions options;
 	options.dialogTitle = "Keyboard mapping";
-	options.content.setOwned(keys.release()); // LaunchOptions takes ownership
+	options.content.setOwned(keys.release()); // Transfers ownership safely
 	options.resizable = true;
-	options.useNativeTitleBar = false; // JUCE titlebar ensures cross-platform consistency
+	options.useNativeTitleBar = true;
 	options.dialogBackgroundColour = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
 	options.escapeKeyTriggersCloseButton = true;
+	options.componentToCentreAround = this;
 
-	// 4. Handle saving XML asynchronously when the dialog is dismissed
+	// 4. Launch window safely (Works non-blocking on Windows, macOS, and Linux)
 	options.launchAsync();
 
-	// 5. Update/Save keyboard mappings when closing or changing
+	// 5. Save mappings when updated
 	if (auto keysXml = commandManager.getKeyMappings()->createXml(true)) {
 		owner.setProperty(Ids::ctrlrKeyboardMapping, keysXml->createDocument(""));
 	}
 }
-
 void CtrlrEditor::performMidiChannelChange(const int menuItemID) {
 	if (isPanelActive()) {
 		if (menuItemID >= 0x6100 && menuItemID <= 0x6111) {
@@ -632,4 +622,16 @@ void CtrlrEditor::sliderValueChanged(Slider *slider) {
 
 void CtrlrEditor::performMidiDeviceRefresh() {
 	owner.getCtrlrMidiDeviceManager().refreshDevices();
+}
+void CtrlrEditor::performShowGlobalSettingsDialog() {
+	juce::DialogWindow::LaunchOptions options;
+	options.dialogTitle = "Global Settings";
+	options.content.setOwned(new CtrlrSettings(owner)); // See note below
+	options.resizable = true;
+	options.useNativeTitleBar = true;
+	options.dialogBackgroundColour = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
+	options.escapeKeyTriggersCloseButton = true;
+	options.componentToCentreAround = this;
+
+	options.launchAsync();
 }
