@@ -368,9 +368,24 @@ if (newMe.exists()) {
 				}
 			}
 
-			const bool codesignExportedPanel = panelToWrite->getProperty(Ids::panelExportCodesign);
-
-			if (codesignExportedPanel) {
+			// FIX: codesigning was previously gated entirely behind
+			// panelExportCodesign, defaulting to skipped. But every export —
+			// standalone, AU, VST3, AAX alike — already has its bundle
+			// contents modified above (copyDirectoryTo, setBundleInfo,
+			// setBundleInfoCarbon rewriting Info.plist, and the panel/
+			// resource files written into Contents/Resources), which
+			// invalidates whatever signature the original build carried
+			// (Xcode auto-signs Apple Silicon builds ad-hoc by default, even
+			// without a paid Developer ID). Apple Silicon's kernel-level
+			// signature verification is mandatory, not optional — an
+			// unsigned/invalidly-signed bundle is silently refused at
+			// launch with no error message. codesignFileMac() already has a
+			// correct ad-hoc fallback (an empty identity becomes "-"), so
+			// it's always safe to call; a real certificate, when configured,
+			// is layered on top as an upgrade rather than being the only
+			// path to a launchable export at all.
+			{
+				const bool codesignExportedPanel = panelToWrite->getProperty(Ids::panelExportCodesign);
 				const bool enableExportDelayBtwSteps = panelToWrite->getProperty(Ids::panelExportDelayBtwSteps);
 
 				if (enableExportDelayBtwSteps) {
@@ -381,13 +396,19 @@ if (newMe.exists()) {
 					logger.log("Thread sleep to delay codesigning task bypassed.");
 				}
 
-				logger.log("Codesigning process started. Ready to call codesignFileMac");
+				logger.log("Codesigning process started (always runs; ad-hoc unless a certificate is configured). "
+						   "Ready to call codesignFileMac");
 				const juce::String newMePathName = newMe.getFullPathName();
 				logger.log("File FullPathname: " + newMePathName);
 
-				const juce::String panelCertificateMacIdentity =
-					panelToWrite->getProperty(Ids::panelCertificateMacId).toString();
-				logger.log("MAC Certificate Identity: " + panelCertificateMacIdentity);
+				juce::String panelCertificateMacIdentity;
+				if (codesignExportedPanel) {
+					panelCertificateMacIdentity = panelToWrite->getProperty(Ids::panelCertificateMacId).toString();
+				}
+				// else: leave empty — codesignFileMac() falls back to "-" (ad-hoc)
+				logger.log("MAC Certificate Identity: " + (panelCertificateMacIdentity.isNotEmpty()
+															   ? panelCertificateMacIdentity
+															   : String("(none — ad-hoc)")));
 
 				juce::String codesignLog;
 				const Result codesignResult = codesignFileMac(newMePathName, panelCertificateMacIdentity, codesignLog);
@@ -401,10 +422,6 @@ if (newMe.exists()) {
 				} else {
 					logger.log("Codesigning successful.");
 				}
-			} else {
-				logger.log("Codesign step was skipped.");
-				notifyAndReturn(Result::ok());
-				return;
 			}
 		}
 
