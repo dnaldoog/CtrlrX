@@ -1,17 +1,4 @@
 ## Ctrlr Expressions
-<br>
-There are three fields in the Property Inspector of a modulator into which you can add expressions. Click the bug icon to check syntax:
-<br>
-- modulatorValueExpression;
-- modulatorValueExpressionReverse;
-- modulatorControllerExpression;
-<br>
-### Example:
-<br>
-You need to send the value **0** for OFF and 127 (**0x7F**) for ON using a `uiButton`
-In the modulatorValueExpression field_Expression to evaluate when calculating the MIDI message value from the modulator value add ```modulatorValue*127```.
-<br>
-
 ### Constants:
 
 <br>
@@ -66,4 +53,18 @@ returns the modified value with the bit set.
 variables in the panel, and returns that set value so the expression can continue.
 
 <br>
+
+There are three fields in the Property Inspector of a modulator into which you can add expressions. Click the bug icon to check syntax:
 <br>
+- modulatorValueExpression;
+- modulatorValueExpressionReverse;
+- modulatorControllerExpression;
+<br>
+### Example:
+<br>
+You need to send the value **0** for OFF and 127 (**0x7F**) for ON using a `uiButton`
+In the modulatorValueExpression field_Expression to evaluate when calculating the MIDI message value from the modulator value add ```modulatorValue*127```.
+<br>
+<br>
+<br>
+
