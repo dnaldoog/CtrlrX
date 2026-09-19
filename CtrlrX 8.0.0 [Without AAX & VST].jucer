@@ -1111,6 +1111,10 @@
               file="Source/UIComponents/CtrlrLogViewer.cpp"/>
         <FILE id="FEt5Md" name="CtrlrLogViewer.h" compile="0" resource="0"
               file="Source/UIComponents/CtrlrLogViewer.h"/>
+        <FILE id="teyHoE" name="CtrlrLuaApiDatabase.cpp" compile="1" resource="0"
+              file="Source/UIComponents/CtrlrLuaApiDatabase.cpp"/>
+        <FILE id="IwFeDj" name="CtrlrLuaApiDatabase.h" compile="0" resource="0"
+              file="Source/UIComponents/CtrlrLuaApiDatabase.h"/>
         <FILE id="QqbcID" name="CtrlrMarkdownParser.cpp" compile="1" resource="0"
               file="Source/UIComponents/CtrlrMarkdownParser.cpp"/>
         <FILE id="CwnjMu" name="CtrlrMarkdownParser.h" compile="0" resource="0"
