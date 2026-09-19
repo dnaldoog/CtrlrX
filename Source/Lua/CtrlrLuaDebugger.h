@@ -10,10 +10,10 @@
 
 #ifndef CTRLRLUADEBUGGER_H_INCLUDED
 #define CTRLRLUADEBUGGER_H_INCLUDED
-
+#if 0
 #include "CtrlrMacros.h"
 #include "CtrlrLua/MethodEditor/CtrlrLuaMethodEditor.h"
-
+#if 0
 class CtrlrLuaManager;
 
 class CtrlrLuaDebugger
@@ -45,5 +45,6 @@ class CtrlrLuaDebugger
         Array <String> commandQueue;
         Array <PendingBreakpoint> pendingBreakpoints;
 };
-
+#endif
+#endif
 #endif  // CTRLRLUADEBUGGER_H_INCLUDED

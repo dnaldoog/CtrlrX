@@ -1368,7 +1368,7 @@ void CtrlrLuaMethodEditor::searchResultClicked(const String &methodName, const i
 		}
 	}
 }
-
+/*
 void CtrlrLuaMethodEditor::insertRawDebuggerOutput(const String &debuggerOutput) {
 	if (methodEditArea->getLuaDebuggerPrompt())
 		methodEditArea->getLuaDebuggerPrompt(true)->insertRawDebuggerOutput(debuggerOutput);
@@ -1390,6 +1390,7 @@ void CtrlrLuaMethodEditor::waitForCommand(std::function<void(int commandResult)>
 												  callback(result);
 										  }));
 }
+										  */
 void CtrlrLuaMethodEditor::setOpenSearchTabsEnabled(bool shouldOpen) {
 	openSearchTabsEnabledState = shouldOpen;
 }

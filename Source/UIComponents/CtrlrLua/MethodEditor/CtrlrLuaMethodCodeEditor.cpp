@@ -1625,7 +1625,7 @@ void GenericCodeEditorComponent::replaceNextMatch(const String &search, const St
 }
 void GenericCodeEditorComponent::findInAll(const String &search) { owner.findInAll(search); }
 void GenericCodeEditorComponent::findInOpened(const String &search) { owner.findInOpened(search); }
-
+/*
 CtrlrLuaDebugger &GenericCodeEditorComponent::getDebugger() {
 	return (owner.getOwner().getOwner().getCtrlrLuaManager().getDebugger());
 }
@@ -1633,7 +1633,7 @@ CtrlrLuaDebugger &GenericCodeEditorComponent::getDebugger() {
 void GenericCodeEditorComponent::markedLinesChanged(int lineNumber, bool isNowSelected) {
 	getDebugger().setBreakpoint(lineNumber, owner.getMethod() ? owner.getMethod()->getName() : "ctrlr", isNowSelected);
 }
-
+*/
 bool GenericCodeEditorComponent::keyPressed(const juce::KeyPress &key) {
 	const int currentPos = getCaretPos().getPosition();
 	const juce::juce_wchar character = key.getTextCharacter();

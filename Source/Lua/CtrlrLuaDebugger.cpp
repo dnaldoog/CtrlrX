@@ -7,6 +7,7 @@
 
   ==============================================================================
 */
+#if 0
 #include "stdafx.h"
 #include "stdafx_luabind.h"
 #include "CtrlrLuaDebugger.h"
@@ -141,3 +142,4 @@ void CtrlrLuaDebugger::wrapForLua(lua_State *L)
             .def("read", (std::string (CtrlrLuaDebugger::*)(void)) &CtrlrLuaDebugger::dbgRead)
     ];
 }
+#endif

@@ -55,8 +55,8 @@ void CtrlrEditor::performLuaEditorCommand(
 						codeComponent->showFindPanel(true);
 					}
 				}
-			} else if (commandID == LuaMethodEditorCommandIDs::editDebugger) {
-				luaMethodEditor->getMethodEditArea()->showDebuggerTab();
+			//} else if (commandID == LuaMethodEditorCommandIDs::editDebugger) {
+			//	luaMethodEditor->getMethodEditArea()->showDebuggerTab();
 			} else if (commandID == LuaMethodEditorCommandIDs::editConsole) {
 				luaMethodEditor->getMethodEditArea()->showConsoleTab();
 			} else if (commandID == LuaMethodEditorCommandIDs::editClearOutput) {

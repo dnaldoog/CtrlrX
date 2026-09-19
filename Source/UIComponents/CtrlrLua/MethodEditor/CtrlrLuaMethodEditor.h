@@ -116,11 +116,11 @@ class CtrlrLuaMethodEditor  : public CtrlrChildWindowContent,
         void convertToFiles();
 	
         /* Debugger stuff */
-        void insertRawDebuggerOutput(const String &debuggerOutput);
+       // void insertRawDebuggerOutput(const String &debuggerOutput);
         //void setRawDebuggerOutput(const String &debuggerOutput); JG 1/19/2025
-        void setJsonDebuggerOutput(const String &jsonData);
-		void waitForCommand(std::function<void(int commandResult)> callback);
-		const String getCurrentDebuggerCommand(const bool clearTheReturnedCommand=true);
+        //void setJsonDebuggerOutput(const String &jsonData);
+		//void waitForCommand(std::function<void(int commandResult)> callback);
+		//const String getCurrentDebuggerCommand(const bool clearTheReturnedCommand=true);
         void setOpenSearchTabsEnabled(bool shouldOpen); // used for toggling search closed files
         bool getOpenSearchTabsEnabled() const; // getter
 

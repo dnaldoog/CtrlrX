@@ -957,26 +957,6 @@
                   compile="1" resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodCodeEditorSettingsColourLnF.cpp"/>
             <FILE id="M8SZ20" name="CtrlrLuaMethodCodeEditorSettingsColourLnF.h"
                   compile="0" resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodCodeEditorSettingsColourLnF.h"/>
-            <FILE id="c9Wgnl" name="CtrlrLuaMethodDebuggerControls.cpp" compile="1"
-                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerControls.cpp"/>
-            <FILE id="dDoOFH" name="CtrlrLuaMethodDebuggerControls.h" compile="0"
-                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerControls.h"/>
-            <FILE id="oeafQ6" name="CtrlrLuaMethodDebuggerInfo.cpp" compile="1"
-                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerInfo.cpp"/>
-            <FILE id="SAfRl1" name="CtrlrLuaMethodDebuggerInfo.h" compile="0" resource="0"
-                  file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerInfo.h"/>
-            <FILE id="lev2hx" name="CtrlrLuaMethodDebuggerPrompt.cpp" compile="1"
-                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerPrompt.cpp"/>
-            <FILE id="zNZOol" name="CtrlrLuaMethodDebuggerPrompt.h" compile="0"
-                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerPrompt.h"/>
-            <FILE id="iSDNSH" name="CtrlrLuaMethodDebuggerStackTrace.cpp" compile="1"
-                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerStackTrace.cpp"/>
-            <FILE id="FEKOTG" name="CtrlrLuaMethodDebuggerStackTrace.h" compile="0"
-                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerStackTrace.h"/>
-            <FILE id="mAMALm" name="CtrlrLuaMethodDebuggerVars.cpp" compile="1"
-                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerVars.cpp"/>
-            <FILE id="Hlhwb2" name="CtrlrLuaMethodDebuggerVars.h" compile="0" resource="0"
-                  file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerVars.h"/>
             <FILE id="Uvekze" name="CtrlrLuaMethodEditArea.cpp" compile="1" resource="0"
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodEditArea.cpp"/>
             <FILE id="htRb7F" name="CtrlrLuaMethodEditArea.h" compile="0" resource="0"
@@ -1151,6 +1131,10 @@
               file="Source/UIComponents/CtrlrLogViewer.cpp"/>
         <FILE id="FEt5Md" name="CtrlrLogViewer.h" compile="0" resource="0"
               file="Source/UIComponents/CtrlrLogViewer.h"/>
+        <FILE id="LSTcpc" name="CtrlrLuaApiInspector.cpp" compile="1" resource="0"
+              file="Source/UIComponents/CtrlrLuaApiInspector.cpp"/>
+        <FILE id="Dog7Rk" name="CtrlrLuaApiInspector.h" compile="0" resource="0"
+              file="Source/UIComponents/CtrlrLuaApiInspector.h"/>
         <FILE id="QqbcID" name="CtrlrMarkdownParser.cpp" compile="1" resource="0"
               file="Source/UIComponents/CtrlrMarkdownParser.cpp"/>
         <FILE id="CwnjMu" name="CtrlrMarkdownParser.h" compile="0" resource="0"

@@ -84,7 +84,7 @@ CtrlrLuaManager::CtrlrLuaManager(CtrlrPanel &_owner)
 	wrapCtrlrClasses(luaState);
 	assignDefaultObjects(luaState);
 
-	ctrlrLuaDebugger = new CtrlrLuaDebugger(*this);
+	//ctrlrLuaDebugger = new CtrlrLuaDebugger(*this);
 
 	luaManagerTree.addChild(methodManager->getManagerTree(), -1, 0);
 }
@@ -100,7 +100,7 @@ CtrlrLuaManager::~CtrlrLuaManager() {
 		deleteAndZero(luaAudioFormatManager);
 		lua_close(luaState);
 		lua_close(luaStateAudio);
-		deleteAndZero(ctrlrLuaDebugger);
+		//deleteAndZero(ctrlrLuaDebugger);
 	}
 }
 
