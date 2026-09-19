@@ -1145,6 +1145,8 @@
               file="Source/UIComponents/CtrlrGenericHelp.cpp"/>
         <FILE id="XfBaHk" name="CtrlrGenericHelp.h" compile="0" resource="0"
               file="Source/UIComponents/CtrlrGenericHelp.h"/>
+        <FILE id="NinwKE" name="CtrlrIcnsGenerator.cpp" compile="1" resource="0"
+              file="Source/UIComponents/CtrlrIcnsGenerator.cpp"/>
         <FILE id="T5Q5Dn" name="CtrlrLogViewer.cpp" compile="1" resource="0"
               file="Source/UIComponents/CtrlrLogViewer.cpp"/>
         <FILE id="FEt5Md" name="CtrlrLogViewer.h" compile="0" resource="0"

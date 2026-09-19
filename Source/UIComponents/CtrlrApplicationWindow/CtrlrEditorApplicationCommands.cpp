@@ -71,6 +71,7 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 							 doKeyGenerator,
 							 doProgramWizard,
 							 showExpressionHelp,
+							 showDumpByLuaHelp,
 							 doQuit
 #if 0
 							 showDumpByLuaHelp,
