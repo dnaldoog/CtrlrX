@@ -151,20 +151,6 @@ void CtrlrLuaApiInspector::mouseDoubleClick(const juce::MouseEvent& event)
         }
     }
 }
-void CtrlrLuaApiInspector::inspectClass(const juce::String& className)
-{
-    if (className.isEmpty())
-        return;
-
-    // Direct JUCE string concatenation (No printf/formatted specifiers)
-    juce::String luaScript;
-    luaScript << "if " << className << " ~= nil then "
-              << "return what(" << className << ") "
-              << "else return 'Error: Global symbol [" << className << "] is nil or uninitialized.' end";
-
-    rawOutput = runLuaAndGetResult(luaScript);
-    applyFilter();
-}
 
 void CtrlrLuaApiInspector::openGithubDocs()
 {
@@ -282,4 +268,92 @@ void CtrlrLuaApiInspector::listAllClasses() // create links
 
     rawOutput = runLuaAndGetResult(luaScript);
     applyFilter();
+}
+// void CtrlrLuaApiInspector::inspectClass(const juce::String& className)
+// {
+//     if (className.isEmpty())
+//         return;
+
+//     // Direct JUCE string concatenation (No printf/formatted specifiers)
+//     juce::String luaScript;
+//     luaScript << "if " << className << " ~= nil then "
+//               << "return what(" << className << ") "
+//               << "else return 'Error: Global symbol [" << className << "] is nil or uninitialized.' end";
+
+//     rawOutput = runLuaAndGetResult(luaScript);
+//     applyFilter();
+// }
+
+void CtrlrLuaApiInspector::inspectClass(const juce::String &className) {
+	if (className.isEmpty())
+		return;
+
+	juce::String luaScript;
+	luaScript << "local className = '" << className << "'\n"
+			  << "local cls = _G[className]\n"
+			  << "if cls == nil then\n"
+			  << "    return 'Error: Global class or symbol [' .. className .. '] is nil or uninitialized.'\n"
+			  << "end\n"
+			  << "\n"
+			  << "local statics = {}\n"
+			  << "local instances = {}\n"
+			  << "\n"
+			  << "local info = class_info(cls)\n"
+			  << "if info and info.methods then\n"
+			  << "    for name, _ in pairs(info.methods) do\n"
+			  << "        local isStatic = false\n"
+			  << "        pcall(function()\n"
+			  << "            if type(cls[name]) == 'function' then\n"
+			  << "                isStatic = true\n"
+			  << "            end\n"
+			  << "        end)\n"
+			  << "\n"
+			  << "        if isStatic then\n"
+			  << "            table.insert(statics, name)\n"
+			  << "        else\n"
+			  << "            table.insert(instances, name)\n"
+			  << "        end\n"
+			  << "    end\n"
+			  << "end\n"
+			  << "\n"
+			  << "table.sort(statics)\n"
+			  << "table.sort(instances)\n"
+			  << "\n"
+			  << "local ret = 'Object type [' .. (info and info.name or className) .. ']\\n'\n"
+			  << "ret = ret .. '-----------------------------------------------------------------\\n\\n'\n"
+			  << "\n"
+			  << "ret = ret .. 'Static / Class Methods (Call as ' .. className .. '.method()):\\n'\n"
+			  << "if #statics == 0 then\n"
+			  << "    ret = ret .. '  (None)\\n'\n"
+			  << "else\n"
+			  << "    for _, name in ipairs(statics) do\n"
+			  << "        ret = ret .. string.format('  [Static]   %s\\n', name)\n"
+			  << "    end\n"
+			  << "end\n"
+			  << "\n"
+			  << "ret = ret .. '\\n'\n"
+			  << "ret = ret .. 'Instance Methods (Call as instance:method()):\\n'\n"
+			  << "if #instances == 0 then\n"
+			  << "    ret = ret .. '  (None)\\n'\n"
+			  << "else\n"
+			  << "    for _, name in ipairs(instances) do\n"
+			  << "        ret = ret .. string.format('  [Instance] %s\\n', name)\n"
+			  << "    end\n"
+			  << "end\n"
+			  << "\n"
+			  << "if info and info.attributes and next(info.attributes) ~= nil then\n"
+			  << "    ret = ret .. '\\nAttributes / Properties:\\n'\n"
+			  << "    local attrs = {}\n"
+			  << "    for name, _ in pairs(info.attributes) do table.insert(attrs, name) end\n"
+			  << "    table.sort(attrs)\n"
+			  << "    for _, name in ipairs(attrs) do\n"
+			  << "        ret = ret .. string.format('  [Property] %s\\n', name)\n"
+			  << "    end\n"
+			  << "end\n"
+			  << "\n"
+			  << "ret = ret .. '-----------------------------------------------------------------'\n"
+			  << "return ret\n";
+
+	rawOutput = runLuaAndGetResult(luaScript);
+	applyFilter();
 }
