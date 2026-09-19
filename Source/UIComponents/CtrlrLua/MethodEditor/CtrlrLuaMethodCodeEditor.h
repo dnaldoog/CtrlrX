@@ -12,7 +12,6 @@ class CtrlrLuaMethodEditor;
 class LuaSuggestionPopup;
 class LuaCallTip;
 class GenericCodeEditorComponent;
-class CtrlrLuaDebugger;
 
 class CtrlrLuaMethodCodeEditor : public Component,
 								 public KeyListener,
@@ -148,7 +147,6 @@ private:
 	std::unique_ptr<FindPanel> findPanel;
 	CtrlrLuaMethodCodeEditor &owner;
 	std::unique_ptr<GoToPanel> goToPanel;
-	CtrlrLuaDebugger &getDebugger();
 	// Remove this from here since it should be in the parent class
 	// juce::Value sharedSearchTabsValue;
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(GenericCodeEditorComponent)

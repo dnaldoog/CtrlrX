@@ -14,7 +14,6 @@ class CtrlrModulator;
 class CtrlrLuaAudioConverter;
 class CtrlrLuaUtils;
 class CtrlrLuaMultiTimer;
-class CtrlrLuaDebugger;
 
 class CtrlrLuaManager : public ValueTree::Listener {
 	public:
@@ -57,7 +56,6 @@ class CtrlrLuaManager : public ValueTree::Listener {
 		const bool isRestoring();
 		CtrlrPanel &getOwner() { return (owner); }
 		CtrlrLuaMethodManager &getMethodManager();
-		CtrlrLuaDebugger &getDebugger();
 		const bool isLuaDisabled();
 		// Access to Lua API database
 		// CtrlrLuaApiDatabase& getLuaApiDatabase() { return luaApi; }
@@ -73,7 +71,6 @@ class CtrlrLuaManager : public ValueTree::Listener {
 		CtrlrLuaUtils *utils;
 		CtrlrLuaMultiTimer *multiTimer;
 		CtrlrLuaAudioConverter *audioConverter;
-		CtrlrLuaDebugger *ctrlrLuaDebugger;
 		LAudioFormatManager *luaAudioFormatManager;
 		/*
 		COMMENTED OUT JG 5/8/2026

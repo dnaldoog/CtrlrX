@@ -517,10 +517,6 @@
               file="Source/Lua/CtrlrLuaAudioConverter.h"/>
         <FILE id="YOQKjn" name="CtrlrLuaConverters.h" compile="0" resource="0"
               file="Source/Lua/CtrlrLuaConverters.h"/>
-        <FILE id="YJzZxj" name="CtrlrLuaDebugger.cpp" compile="1" resource="0"
-              file="Source/Lua/CtrlrLuaDebugger.cpp"/>
-        <FILE id="c0hAwm" name="CtrlrLuaDebugger.h" compile="0" resource="0"
-              file="Source/Lua/CtrlrLuaDebugger.h"/>
         <FILE id="UXyNki" name="CtrlrLuaManager.cpp" compile="1" resource="0"
               file="Source/Lua/CtrlrLuaManager.cpp"/>
         <FILE id="y0Exm0" name="CtrlrLuaManager.h" compile="0" resource="0"
@@ -639,12 +635,6 @@
         <GROUP id="{57CA4634-99B0-23FB-F19C-154181EAAE85}" name="Icons">
           <FILE id="BiLLpE" name="ctrlrx_logo - org.svg" compile="0" resource="1"
                 file="Source/Resources/Icons/ctrlrx_logo - org.svg"/>
-          <FILE id="yHfj7x" name="appbar.control.play.png" compile="0" resource="1"
-                file="Source/Resources/Icons/appbar.control.play.png"/>
-          <FILE id="nNmsqF" name="appbar.debug.clean.png" compile="0" resource="1"
-                file="Source/Resources/Icons/appbar.debug.clean.png"/>
-          <FILE id="QmVkcp" name="appbar.debug.stop.png" compile="0" resource="1"
-                file="Source/Resources/Icons/appbar.debug.stop.png"/>
           <FILE id="EgredL" name="ctrlrx_8_logo.svg" compile="0" resource="1"
                 file="Source/Resources/Icons/ctrlrx_8_logo.svg"/>
           <FILE id="a8RgYD" name="alignhorizontalleftsymbolic.svg" compile="0"
@@ -703,14 +693,6 @@
                 resource="1" file="Source/Resources/Icons/vst3_au_juce_mini_logo_bg_rnd.svg"/>
           <FILE id="eqFQC1" name="ctrlrx_logo.svg" compile="0" resource="1" file="Source/Resources/Icons/ctrlrx_logo.svg"/>
           <FILE id="CzArw5" name="add.svg" compile="0" resource="1" file="Source/Resources/Icons/add.svg"/>
-          <FILE id="aAwGwI" name="appbar.debug.restart.png" compile="0" resource="1"
-                file="Source/Resources/Icons/appbar.debug.restart.png"/>
-          <FILE id="QEqZUY" name="appbar.debug.step.into.png" compile="0" resource="1"
-                file="Source/Resources/Icons/appbar.debug.step.into.png"/>
-          <FILE id="HL8hrU" name="appbar.debug.step.out.png" compile="0" resource="1"
-                file="Source/Resources/Icons/appbar.debug.step.out.png"/>
-          <FILE id="gtMLG6" name="appbar.debug.step.over.png" compile="0" resource="1"
-                file="Source/Resources/Icons/appbar.debug.step.over.png"/>
           <FILE id="WhYONv" name="bold.svg" compile="0" resource="1" file="Source/Resources/Icons/bold.svg"/>
           <FILE id="Ip6zR7" name="bug.svg" compile="0" resource="1" file="Source/Resources/Icons/bug.svg"/>
           <FILE id="yOH9na" name="camera.svg" compile="0" resource="1" file="Source/Resources/Icons/camera.svg"/>
@@ -756,12 +738,6 @@
         </GROUP>
         <GROUP id="{9DD7C62F-9CD5-D638-1ED9-0A44B6B63DC3}" name="Images"/>
         <GROUP id="{C1E779C4-0308-163A-70D6-2D2F2A99F43A}" name="Lua">
-          <GROUP id="{EA9EABB1-8B96-8332-DB0D-E67C18EB73C7}" name="clidebugger">
-            <FILE id="qce5uL" name="debugger.lua" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/debugger.lua"/>
-            <FILE id="BlvHLq" name="LICENSE" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/LICENSE"/>
-            <FILE id="FJuCF9" name="README.md" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/README.md"/>
-            <FILE id="PhZbaa" name="test.lua" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/test.lua"/>
-          </GROUP>
           <GROUP id="{DB5F61FA-CAE2-39A5-2169-9DB4783059BB}" name="json4lua">
             <FILE id="hwsNhq" name="json.lua" compile="0" resource="1" file="Source/Resources/Lua/json4lua/json.lua"/>
             <FILE id="uaDRzI" name="LICENCE.txt" compile="0" resource="1" file="Source/Resources/Lua/json4lua/LICENCE.txt"/>
@@ -935,6 +911,10 @@
         </GROUP>
         <GROUP id="{5355D100-1F52-E713-97B1-8C429FAEF933}" name="CtrlrLua">
           <GROUP id="{73F280B1-458D-D294-57B5-32E2202505CD}" name="MethodEditor">
+            <FILE id="qhmGxF" name="CtrlrLuaApiInspector.cpp" compile="1" resource="0"
+                  file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaApiInspector.cpp"/>
+            <FILE id="P4MA5B" name="CtrlrLuaApiInspector.h" compile="0" resource="0"
+                  file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaApiInspector.h"/>
             <FILE id="V6oOfp" name="CtrlrLuaCodeTokeniser.cpp" compile="1" resource="0"
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaCodeTokeniser.cpp"/>
             <FILE id="kOqisB" name="CtrlrLuaCodeTokeniser.h" compile="0" resource="0"
@@ -1131,10 +1111,6 @@
               file="Source/UIComponents/CtrlrLogViewer.cpp"/>
         <FILE id="FEt5Md" name="CtrlrLogViewer.h" compile="0" resource="0"
               file="Source/UIComponents/CtrlrLogViewer.h"/>
-        <FILE id="LSTcpc" name="CtrlrLuaApiInspector.cpp" compile="1" resource="0"
-              file="Source/UIComponents/CtrlrLuaApiInspector.cpp"/>
-        <FILE id="Dog7Rk" name="CtrlrLuaApiInspector.h" compile="0" resource="0"
-              file="Source/UIComponents/CtrlrLuaApiInspector.h"/>
         <FILE id="QqbcID" name="CtrlrMarkdownParser.cpp" compile="1" resource="0"
               file="Source/UIComponents/CtrlrMarkdownParser.cpp"/>
         <FILE id="CwnjMu" name="CtrlrMarkdownParser.h" compile="0" resource="0"

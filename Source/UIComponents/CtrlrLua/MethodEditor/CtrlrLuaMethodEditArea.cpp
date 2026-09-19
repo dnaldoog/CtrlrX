@@ -67,13 +67,11 @@ CtrlrLuaMethodEditArea::CtrlrLuaMethodEditArea(CtrlrLuaMethodEditor &_owner) : o
 	addAndMakeVisible(resizer.get()); // Pass the raw address to JUCE
 
 	// 3. Complete the remaining allocations
-	// debuggerPrompt = std::make_unique<CtrlrLuaMethodDebuggerPrompt>(owner);
 	apiInspector = std::make_unique<CtrlrLuaApiInspector>(owner.getOwner());
 	luaConsole = std::make_unique<CtrlrLuaConsole>(owner.getOwner());
 	// Pass 'false' so lowerTabs does NOT attempt to delete unique_ptr managed components
 	lowerTabs->addTab("Output", Colours::lightgrey, output.get(), false);
 	lowerTabs->addTab("Find and replace", Colours::lightgrey, find.get(), false);
-	// lowerTabs->addTab("Debugger output", Colours::lightgrey, debuggerPrompt.get(), false);
 	lowerTabs->addTab("API Inspector", Colours::lightgrey, apiInspector.get(), false);
 	lowerTabs->addTab("Console", Colours::lightgrey, luaConsole.get(), false);
 	lowerTabs->setTabBarDepth(owner.getOwner().getOwner().getProperty(Ids::ctrlrTabBarDepth));
@@ -160,8 +158,6 @@ void CtrlrLuaMethodEditArea::showFindDialog() {
 	find->setFocusOnFindInput();
 }
 
-//void CtrlrLuaMethodEditArea::showDebuggerTab() { lowerTabs->setCurrentTabIndex(2, true); }
-
 void CtrlrLuaMethodEditArea::showConsoleTab() { lowerTabs->setCurrentTabIndex(3, true); }
 
 void CtrlrLuaMethodEditArea::findNextMatch() { find->findNextMatch(); }
@@ -231,14 +227,6 @@ void CtrlrLuaMethodEditArea::setActiveOutputTab() {
 		getLowerTabs()->setCurrentTabIndex(0);
 	}
 }
-/*
-CtrlrLuaMethodDebuggerPrompt *CtrlrLuaMethodEditArea::getLuaDebuggerPrompt(const bool activateDebuggerNow) {
-	if (activateDebuggerNow)
-		lowerTabs->setCurrentTabIndex(2, true);
-
-	return (debuggerPrompt.get());
-}
-*/
 void CtrlrLuaMethodEditArea::clearOutputText() { output->setText(""); }
 
 //[/MiscUserCode]

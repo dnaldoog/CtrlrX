@@ -939,12 +939,6 @@
       <method name="CtrlrLuaComponentAnimator" args="()" />
     </constructors>
   </class>
-  <class name="CtrlrLuaDebugger" cpp_name="CtrlrLuaDebugger">
-    <methods>
-      <method name="read" args="()" type="instance"/>
-      <method name="write" args="()" type="instance"/>
-    </methods>
-  </class>
   <class name="CtrlrLuaMemoryBlock" cpp_name="CtrlrLuaMemoryBlock">
     <methods>
       <method name="append" args="(MemoryBlock dataToAppend)" type="instance"/>

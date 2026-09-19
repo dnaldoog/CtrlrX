@@ -1265,7 +1265,6 @@ PopupMenu CtrlrLuaMethodEditor::getMenuForIndex(int topLevelMenuIndex, const Str
 		// Existing Edit commands
 		menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::editSearch);
 		menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::editFindAndReplace);
-		menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::editDebugger);
 		menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::editConsole);
 		menu.addCommandItem(commandManager, LuaMethodEditorCommandIDs::editClearOutput);
 		menu.addSeparator();
@@ -1368,29 +1367,6 @@ void CtrlrLuaMethodEditor::searchResultClicked(const String &methodName, const i
 		}
 	}
 }
-/*
-void CtrlrLuaMethodEditor::insertRawDebuggerOutput(const String &debuggerOutput) {
-	if (methodEditArea->getLuaDebuggerPrompt())
-		methodEditArea->getLuaDebuggerPrompt(true)->insertRawDebuggerOutput(debuggerOutput);
-}
-
-void CtrlrLuaMethodEditor::setJsonDebuggerOutput(const String &jsonData) {}
-
-const String CtrlrLuaMethodEditor::getCurrentDebuggerCommand(const bool clearTheReturnedCommand) {
-	if (methodEditArea->getLuaDebuggerPrompt()) {
-		return (methodEditArea->getLuaDebuggerPrompt()->getCurrentDebuggerCommand(clearTheReturnedCommand));
-	}
-
-	return ("");
-}
-void CtrlrLuaMethodEditor::waitForCommand(std::function<void(int commandResult)> callback) {
-	// enterModalState triggers when the modal loop exits via exitModalState(result)
-	getParentComponent()->enterModalState(true, ModalCallbackFunction::create([callback](int result) {
-											  if (callback)
-												  callback(result);
-										  }));
-}
-										  */
 void CtrlrLuaMethodEditor::setOpenSearchTabsEnabled(bool shouldOpen) {
 	openSearchTabsEnabledState = shouldOpen;
 }

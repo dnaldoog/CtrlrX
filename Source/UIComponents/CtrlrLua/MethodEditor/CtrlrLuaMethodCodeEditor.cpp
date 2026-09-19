@@ -1,5 +1,4 @@
 #include "CtrlrLuaMethodCodeEditor.h"
-#include "CtrlrLuaDebugger.h"
 #include "CtrlrLuaManager.h"
 #include "CtrlrLuaMethodEditor.h"
 #include "CtrlrManager/CtrlrManager.h"
@@ -1624,16 +1623,9 @@ void GenericCodeEditorComponent::replaceNextMatch(const String &search, const St
 	owner.replaceNextMatch(search, replace, bMatchCase);
 }
 void GenericCodeEditorComponent::findInAll(const String &search) { owner.findInAll(search); }
-void GenericCodeEditorComponent::findInOpened(const String &search) { owner.findInOpened(search); }
-/*
-CtrlrLuaDebugger &GenericCodeEditorComponent::getDebugger() {
-	return (owner.getOwner().getOwner().getCtrlrLuaManager().getDebugger());
+void GenericCodeEditorComponent::findInOpened(const String &search) {
+	owner.findInOpened(search);
 }
-
-void GenericCodeEditorComponent::markedLinesChanged(int lineNumber, bool isNowSelected) {
-	getDebugger().setBreakpoint(lineNumber, owner.getMethod() ? owner.getMethod()->getName() : "ctrlr", isNowSelected);
-}
-*/
 bool GenericCodeEditorComponent::keyPressed(const juce::KeyPress &key) {
 	const int currentPos = getCaretPos().getPosition();
 	const juce::juce_wchar character = key.getTextCharacter();
