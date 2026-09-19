@@ -17,7 +17,6 @@
 #include "CtrlrComponents/Specials/CtrlrWaveform.h"
 #include "CtrlrLog.h"
 #include "CtrlrLuaAudioConverter.h"
-#include "CtrlrLuaDebugger.h"
 #include "CtrlrLuaMultiTimer.h"
 #include "CtrlrLuaObject.h"
 #include "CtrlrLuaObjectWrapper.h"
@@ -49,7 +48,6 @@ CtrlrLuaManager::CtrlrLuaManager(CtrlrPanel &_owner)
 	: owner(_owner),
 	  luaManagerTree(Ids::luaManager),
 	  luaAudioFormatManager(nullptr),
-	  ctrlrLuaDebugger(nullptr),
 	  utils(nullptr),
 	  audioConverter(nullptr),
 	  luaStateAudio(nullptr),
@@ -84,8 +82,6 @@ CtrlrLuaManager::CtrlrLuaManager(CtrlrPanel &_owner)
 	wrapCtrlrClasses(luaState);
 	assignDefaultObjects(luaState);
 
-	ctrlrLuaDebugger = new CtrlrLuaDebugger(*this);
-
 	luaManagerTree.addChild(methodManager->getManagerTree(), -1, 0);
 }
 
@@ -100,7 +96,6 @@ CtrlrLuaManager::~CtrlrLuaManager() {
 		deleteAndZero(luaAudioFormatManager);
 		lua_close(luaState);
 		lua_close(luaStateAudio);
-		deleteAndZero(ctrlrLuaDebugger);
 	}
 }
 
@@ -274,8 +269,6 @@ void CtrlrLuaManager::log(const String &message) {
 	if (CtrlrLog::ctrlrLog != nullptr)
 		CtrlrLog::ctrlrLog->logMessage(message, CtrlrLog::Info);
 }
-
-CtrlrLuaDebugger &CtrlrLuaManager::getDebugger() { return (*ctrlrLuaDebugger); }
 
 const bool CtrlrLuaManager::isLuaDisabled() {
 	return ((bool)owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrLuaDisabled));

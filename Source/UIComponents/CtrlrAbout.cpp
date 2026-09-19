@@ -67,7 +67,8 @@ CtrlrAbout::CtrlrAbout(CtrlrManager &_owner) : owner(_owner) {
 	// CtrlrX libs version Label
 	String juceVersion = SystemStats::getJUCEVersion().fromLastOccurrenceOf("JUCE v", false, true);
 #ifdef LUAJIT_VERSION
-	String luaVersion = String(LUAJIT_VERSION); // e.g. "LuaJIT 2.1.0-beta3"
+	String luaVersion = String(LUAJIT_VERSION).substring(0, 10); // e.g. "LuaJIT 2.1.0-beta3"
+
 #else
 	String luaVersion = LUA_RELEASE; // fallback to standard Lua
 #endif

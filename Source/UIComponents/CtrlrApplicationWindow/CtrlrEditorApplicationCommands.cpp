@@ -71,6 +71,7 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 							 doKeyGenerator,
 							 doProgramWizard,
 							 showExpressionHelp,
+							 showDumpByLuaHelp,
 							 doQuit
 #if 0
 							 showDumpByLuaHelp,
@@ -87,25 +88,22 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 	commands.addArray(ids, numElementsInArray(ids));
 
 	// This is the correct, more efficient way to add your Lua commands
-	const CommandID luaIds[] =
-		{
-			LuaMethodEditorCommandIDs::fileSave,
-			LuaMethodEditorCommandIDs::fileSaveAndCompile,
-			LuaMethodEditorCommandIDs::fileSaveAndCompileAll,
-			LuaMethodEditorCommandIDs::fileCloseCurrentTab,
-			LuaMethodEditorCommandIDs::fileCloseAllTabs,
-			LuaMethodEditorCommandIDs::fileConvertToFiles,
-			LuaMethodEditorCommandIDs::fileClose,
-			LuaMethodEditorCommandIDs::editSearch,
-			LuaMethodEditorCommandIDs::editFindAndReplace,
-			LuaMethodEditorCommandIDs::editDebugger,
-			LuaMethodEditorCommandIDs::editConsole,
-			LuaMethodEditorCommandIDs::editClearOutput,
-			LuaMethodEditorCommandIDs::editPreferences,
-			LuaMethodEditorCommandIDs::editSingleLineComment,
-			LuaMethodEditorCommandIDs::editMultiLineComment,
-			LuaMethodEditorCommandIDs::editDuplicateLine,
-			LuaMethodEditorCommandIDs::editGoToLine};
+	const CommandID luaIds[] = {LuaMethodEditorCommandIDs::fileSave,
+								LuaMethodEditorCommandIDs::fileSaveAndCompile,
+								LuaMethodEditorCommandIDs::fileSaveAndCompileAll,
+								LuaMethodEditorCommandIDs::fileCloseCurrentTab,
+								LuaMethodEditorCommandIDs::fileCloseAllTabs,
+								LuaMethodEditorCommandIDs::fileConvertToFiles,
+								LuaMethodEditorCommandIDs::fileClose,
+								LuaMethodEditorCommandIDs::editSearch,
+								LuaMethodEditorCommandIDs::editFindAndReplace,
+								LuaMethodEditorCommandIDs::editConsole,
+								LuaMethodEditorCommandIDs::editClearOutput,
+								LuaMethodEditorCommandIDs::editPreferences,
+								LuaMethodEditorCommandIDs::editSingleLineComment,
+								LuaMethodEditorCommandIDs::editMultiLineComment,
+								LuaMethodEditorCommandIDs::editDuplicateLine,
+								LuaMethodEditorCommandIDs::editGoToLine};
 
 	// Now, add the array of Lua editor commands using addArray
 	commands.addArray(luaIds, numElementsInArray(luaIds));
@@ -172,13 +170,13 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 		break;
 
 	case showExpressionHelp:
-		result.setInfo("Expression Help", "Show help for writing Lua expressions", globalCategory, 0);
+		result.setInfo("Expressions", "Show help for writing Lua expressions", globalCategory, 0);
 		result.addDefaultKeypress('e', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
 
 		break;
 
 	case showDumpByLuaHelp:
-		result.setInfo("Bulk Dump by Lua Help", "Show help reading/writing Dumps to panel", globalCategory, 0);
+		result.setInfo("MIDI Dumps", "Show help reading/writing Dumps to panel", globalCategory, 0);
 		result.addDefaultKeypress('b', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
 
 		break;
@@ -631,11 +629,6 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 	case LuaMethodEditorCommandIDs::editFindAndReplace:
 		result.setInfo("Find and Replace", "Finds and replaces text in the editor", luaCategory, 0);
 		result.addDefaultKeypress('r', ModifierKeys::commandModifier); // cmd+h was not a good idea since cmd+h is to hide the app for macOS, cmd+r is better
-		result.setActive(isPanelActive());
-		break;
-
-	case LuaMethodEditorCommandIDs::editDebugger:
-		result.setInfo("Show Debugger", "Shows the debugger panel", luaCategory, 0);
 		result.setActive(isPanelActive());
 		break;
 

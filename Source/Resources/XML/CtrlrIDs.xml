@@ -5,9 +5,9 @@
   <id name="modulatorValue" 					text="Current modulator value" type="ReadOnly"/>
   <id name="modulatorIsStatic" 					text="Modulator does not react to value changes" type="Bool" defaults="Static/Dynamic"/>
   <id name="modulatorGlobalVariable" 			text="Modulator attached to global variable" type="Numeric" min="-1" max="64"/>
-  <id name="modulatorValueExpression" 			text="Expression to evaluate when calculating the midi message value from the modulator value" type="Expression"/>
-  <id name="modulatorValueExpressionReverse" 	text="Expression to evaluate when calculating the modulator value from the midi message value" type="Expression"/>
-  <id name="modulatorControllerExpression"      text="Expression to evaluate when calculating the modulator value from midi controller message" type="Expression"/>
+  <id name="modulatorValueExpression" 			text="Expression to evaluate when calculating the MIDI message value from the modulator value" type="Expression"/>
+  <id name="modulatorValueExpressionReverse" 	text="Expression to evaluate when calculating the modulator value from the MIDI message value" type="Expression"/>
+  <id name="modulatorControllerExpression"      text="Expression to evaluate when calculating the modulator value from MIDI controller message" type="Expression"/>
   <id name="modulatorMuteOnStart" 				text="Modulator does not output any MIDI during startup" type="Bool" defaults="Mute/UnMute"/>
   <id name="modulatorMute"                      text="Modulator does not output any MIDI" type="Bool" defaults="Mute/UnMute" />
   <id name="modulatorLinkedToPanelProperty" 	text="Link to PANEL property" type="VarText"/>
