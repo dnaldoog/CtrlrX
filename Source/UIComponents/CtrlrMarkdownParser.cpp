@@ -92,32 +92,40 @@ juce::String CtrlrMarkdownParser::stripInlineCode(const juce::String& s)
 }
 
 // ----------------------------- Inline formatting ------------------------------
+// ----------------------------- Inline formatting ------------------------------
 void CtrlrMarkdownParser::appendInlineStyled(juce::AttributedString& as, const juce::String& raw)
 {
-    // replace <br> with actual newline
-    juce::String s = raw.replace("<br>", "\n");
+	// Convert <br> tags directly into real line breaks
+	juce::String s = raw.replace("<br>", "\n").replace("<br/>", "\n").replace("<br />", "\n");
 
-    enum Mode { Normal, Bold, Italic, Code };
+	enum Mode { Normal, Bold, Italic, Code };
     Mode mode = Normal;
     juce::Colour currentColour = juce::Colours::black;
 
     juce::String buffer;
 
-    auto flush = [&]() {
-        if (buffer.isEmpty()) return;
+	auto flush = [&]() {
+        if (buffer.isEmpty())
+			return;
         switch (mode)
         {
-        case Normal: as.append(buffer, normalFont(), currentColour); break;
-        case Bold:   as.append(buffer, boldFont(), currentColour); break;
-        case Italic: as.append(buffer, italicFont(), currentColour); break;
+		case Normal:
+			as.append(buffer, normalFont(), currentColour);
+			break;
+		case Bold:
+			as.append(buffer, boldFont(), currentColour);
+			break;
+		case Italic:
+			as.append(buffer, italicFont(), currentColour);
+			break;
 		case Code:
 			as.append(buffer, getMonospaceFont(16.0f), juce::Colours::purple);
 			break;
 		}
 		buffer.clear();
-        };
+	};
 
-    int i = 0;
+	int i = 0;
     const int L = s.length();
 
     while (i < L)
@@ -126,52 +134,40 @@ void CtrlrMarkdownParser::appendInlineStyled(juce::AttributedString& as, const j
         if (s[i] == '<' && s.substring(i).startsWith("<span style=\"color:"))
         {
             flush();
-
-            // Find the color value
-            int colorStart = i + 19; // length of "<span style=\"color:"
-            int colorEnd = s.indexOfChar(colorStart, '"');
+			int colorStart = i + 19;
+			int colorEnd = s.indexOfChar(colorStart, '"');
 
             if (colorEnd > colorStart)
             {
                 juce::String colorStr = s.substring(colorStart, colorEnd).trim();
+				currentColour = colorStr.startsWith("#")
+									? juce::Colour::fromString(colorStr)
+									: juce::Colours::findColourForName(colorStr, juce::Colours::black);
 
-                // Parse color (support named colors and hex)
-                if (colorStr.startsWith("#"))
-                {
-                    // Hex color: #RRGGBB or #RGB
-                    currentColour = juce::Colour::fromString(colorStr);
-                }
-                else
-                {
-                    // Named color
-                    currentColour = juce::Colours::findColourForName(colorStr, juce::Colours::black);
-                }
-
-                // Skip past the closing >
-                i = s.indexOfChar(colorEnd, '>') + 1;
+				i = s.indexOfChar(colorEnd, '>') + 1;
                 continue;
             }
         }
 
-        // Check for </span> to reset color
-        if (s[i] == '<' && s.substring(i).startsWith("</span>"))
+		// Check for </span>
+		if (s[i] == '<' && s.substring(i).startsWith("</span>"))
         {
             flush();
             currentColour = juce::Colours::black;
-            i += 7; // length of "</span>"
-            continue;
+			i += 7;
+			continue;
         }
 
-        // escape backslash: \* \_ \` -> literal char
-        if (s[i] == '\\' && i + 1 < L)
+		// Escape backslash
+		if (s[i] == '\\' && i + 1 < L)
         {
             buffer += s.substring(i + 1, i + 2);
             i += 2;
             continue;
         }
 
-        // inline code `...`
-        if (s[i] == '`')
+		// Code `...`
+		if (s[i] == '`')
         {
             flush();
             mode = (mode == Code) ? Normal : Code;
@@ -179,8 +175,8 @@ void CtrlrMarkdownParser::appendInlineStyled(juce::AttributedString& as, const j
             continue;
         }
 
-        // bold ** ... **
-        if (s[i] == '*' && i + 1 < L && s[i + 1] == '*')
+		// Bold **...**
+		if (s[i] == '*' && i + 1 < L && s[i + 1] == '*')
         {
             flush();
             mode = (mode == Bold) ? Normal : Bold;
@@ -188,8 +184,8 @@ void CtrlrMarkdownParser::appendInlineStyled(juce::AttributedString& as, const j
             continue;
         }
 
-        // italic * or _
-        if (s[i] == '*' || s[i] == '_')
+		// Italic * or _
+		if (s[i] == '*' || s[i] == '_')
         {
             flush();
             mode = (mode == Italic) ? Normal : Italic;
@@ -197,8 +193,8 @@ void CtrlrMarkdownParser::appendInlineStyled(juce::AttributedString& as, const j
             continue;
         }
 
-        // newline from <br>
-        if (s[i] == '\n')
+		// Process actual newline characters (including converted <br>)
+		if (s[i] == '\n')
         {
             flush();
 			as.append("\n", normalFont());
@@ -211,143 +207,113 @@ void CtrlrMarkdownParser::appendInlineStyled(juce::AttributedString& as, const j
 	}
 
 	flush();
-	// ensure a newline end-of-line in layout
-	as.append("\n", normalFont());
+	// REMOVED automatic trailing newline here
 }
 
 // ----------------------------- Block parser ----------------------------------
-std::vector<CtrlrMarkdownParser::MarkdownBlock> CtrlrMarkdownParser::parseToBlocks(const juce::String& md)
-{
-    std::vector<MarkdownBlock> blocks;
+std::vector<CtrlrMarkdownParser::MarkdownBlock> CtrlrMarkdownParser::parseToBlocks(const juce::String &md) {
+	std::vector<MarkdownBlock> blocks;
 
-    // Convert <br> early so inline parser can use '\n'
-    juce::String text = md.replace("<br>", "\n");
+	// Split strictly by raw markdown lines without preemptively replacing <br>
+	juce::StringArray lines;
+	lines.addLines(md);
 
-    juce::StringArray lines;
-    lines.addLines(text);
+	bool inCodeBlock = false;
+	juce::AttributedString paragraph;
 
-    bool inCodeBlock = false;
-    juce::AttributedString paragraph;
-    paragraph.setLineSpacing(LINE_SPACING);
-
-    auto flushParagraph = [&]() {
-        if (paragraph.getText().trim().isNotEmpty() || paragraph.getNumAttributes() > 0)
-        {
-            MarkdownBlock b;
-            b.isHorizontalRule = false;
-            b.content = paragraph;
-            blocks.push_back(std::move(b));
-            paragraph = juce::AttributedString();
-            paragraph.setLineSpacing(LINE_SPACING);
-        }
-        };
-
-
-    for (int i = 0; i < lines.size(); ++i)
-    {
-        juce::String line = lines[i].trimEnd();
-
-        // fenced code block toggle
-        if (line.startsWith("```"))
-        {
-            flushParagraph();
-            inCodeBlock = !inCodeBlock;
-            continue;
-        }
-
-        if (inCodeBlock)
-        {
-            // each code line becomes its own block (simpler)
-            MarkdownBlock cb;
-            cb.isHorizontalRule = false;
-            juce::AttributedString as;
-            as.setLineSpacing(LINE_SPACING);
-            addCodeLine(as, line);
-            cb.content = as;
-            blocks.push_back(std::move(cb));
-            continue;
-        }
-
-        // prefer explicit <hr> marker; fall back to legacy detection
-        if (line == "<hr>" || isHorizontalRuleLine(line))
-        {
-            flushParagraph();
-            MarkdownBlock hr;
-            hr.isHorizontalRule = true;
-            blocks.push_back(std::move(hr));
-            continue;
-        }
-
-        // Headings (standalone blocks)
-        if (line.startsWith("### "))
-        {
-            flushParagraph();
-            MarkdownBlock hb; hb.isHorizontalRule = false;
-            juce::AttributedString as; as.setLineSpacing(LINE_SPACING);
-            addHeading(as, line.substring(4).trim(), 18.0f, juce::Colours::black);
-            hb.content = as;
-            blocks.push_back(std::move(hb));
-            continue;
-        }
-        if (line.startsWith("## "))
-        {
-            flushParagraph();
-            MarkdownBlock hb; hb.isHorizontalRule = false;
-            juce::AttributedString as; as.setLineSpacing(LINE_SPACING);
-            addHeading(as, line.substring(3).trim(), 24.0f, juce::Colours::black);
-            hb.content = as;
-            blocks.push_back(std::move(hb));
-            continue;
-        }
-        if (line.startsWith("# "))
-        {
-            flushParagraph();
-            MarkdownBlock hb; hb.isHorizontalRule = false;
-            juce::AttributedString as; as.setLineSpacing(LINE_SPACING);
-            addHeading(as, line.substring(2).trim(), 32.0f, juce::Colours::black);
-            hb.content = as;
-            blocks.push_back(std::move(hb));
-            continue;
-        }
-
-        // List item - make as small block
-        if (line.trimStart().startsWith("- "))
-        {
-            flushParagraph();
-            MarkdownBlock lb; lb.isHorizontalRule = false;
-            juce::AttributedString as; as.setLineSpacing(LINE_SPACING);
-            addListItem(as, line.substring(line.indexOfChar('-') + 2).trim());
-            lb.content = as;
-            blocks.push_back(std::move(lb));
-            continue;
-        }
-
-        // empty line => paragraph break
-        if (line.isEmpty())
-        {
-            flushParagraph();
-            continue;
-        }
-
-        // Append inline-styled line to paragraph.
-        // To keep inline attributes intact we append into paragraph directly as a new line.
-        {
-            juce::AttributedString tmp; tmp.setLineSpacing(LINE_SPACING);
-            appendInlineStyled(tmp, line);
-            // If paragraph empty just take tmp; otherwise flush paragraph and push tmp as its own block
-            if (paragraph.getNumAttributes() > 0 ||
-                paragraph.getText().trim().isNotEmpty())
-
-            {
-				paragraph.append(tmp);
-			} else {
-				flushParagraph();
-				MarkdownBlock tb;
-				tb.isHorizontalRule = false;
-				tb.content = tmp;
-				blocks.push_back(std::move(tb));
-			}
+	auto flushParagraph = [&]() {
+		if (paragraph.getText().isNotEmpty()) {
+			MarkdownBlock b;
+			b.isHorizontalRule = false;
+			b.content = paragraph;
+			blocks.push_back(std::move(b));
+			paragraph = juce::AttributedString();
 		}
+	};
+
+	for (int i = 0; i < lines.size(); ++i) {
+		juce::String line = lines[i].trimEnd();
+
+		if (line.startsWith("```")) {
+			flushParagraph();
+			inCodeBlock = !inCodeBlock;
+			continue;
+		}
+
+		if (inCodeBlock) {
+			MarkdownBlock cb;
+			cb.isHorizontalRule = false;
+			juce::AttributedString as;
+			addCodeLine(as, line);
+			cb.content = as;
+			blocks.push_back(std::move(cb));
+			continue;
+		}
+
+		if (line == "<hr>" || isHorizontalRuleLine(line)) {
+			flushParagraph();
+			MarkdownBlock hr;
+			hr.isHorizontalRule = true;
+			blocks.push_back(std::move(hr));
+			continue;
+		}
+
+		// Headings
+		if (line.startsWith("### ")) {
+			flushParagraph();
+			MarkdownBlock hb;
+			hb.isHorizontalRule = false;
+			juce::AttributedString as;
+			addHeading(as, line.substring(4).trim(), 18.0f, juce::Colours::black);
+			hb.content = as;
+			blocks.push_back(std::move(hb));
+			continue;
+		}
+		if (line.startsWith("## ")) {
+			flushParagraph();
+			MarkdownBlock hb;
+			hb.isHorizontalRule = false;
+			juce::AttributedString as;
+			addHeading(as, line.substring(3).trim(), 24.0f, juce::Colours::black);
+			hb.content = as;
+			blocks.push_back(std::move(hb));
+			continue;
+		}
+		if (line.startsWith("# ")) {
+			flushParagraph();
+			MarkdownBlock hb;
+			hb.isHorizontalRule = false;
+			juce::AttributedString as;
+			addHeading(as, line.substring(2).trim(), 32.0f, juce::Colours::black);
+			hb.content = as;
+			blocks.push_back(std::move(hb));
+			continue;
+		}
+
+		// List item
+		if (line.trimStart().startsWith("- ")) {
+			flushParagraph();
+			MarkdownBlock lb;
+			lb.isHorizontalRule = false;
+			juce::AttributedString as;
+			addListItem(as, line.substring(line.indexOfChar('-') + 2).trim());
+			as.append("\n", normalFont());
+			lb.content = as;
+			blocks.push_back(std::move(lb));
+			continue;
+		}
+
+		// Empty line => flush paragraph
+		if (line.isEmpty()) {
+			flushParagraph();
+			continue;
+		}
+
+		// Append line content to the active paragraph block
+		if (paragraph.getText().isNotEmpty())
+			paragraph.append("\n", normalFont()); // Space between text lines within a paragraph
+
+		appendInlineStyled(paragraph, line);
 	}
 
 	flushParagraph();
