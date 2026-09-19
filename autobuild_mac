@@ -3,7 +3,7 @@
 # CtrlrX macOS Build Script
 # Requires: ninja cmake (Install via Homebrew: brew install ninja cmake)
 
-PROJECT_ROOT="$HOME/Documents/CtrlrX"
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$PROJECT_ROOT/build"
 
 # Determine the number of available CPU cores on macOS
@@ -19,8 +19,9 @@ echo "  2) Full Debug         (Clean + Configure + Build)"
 echo "  3) Full RelWithDebInfo (Clean + Configure + Build)"
 echo "  4) Clean Rebuild      (Ninja Clean + Build)"
 echo "  5) Quick Build        (Ninja Only)"
+echo "  6) Run Tests"
 echo ""
-read -p "Enter choice [1-5]: " choice
+read -p "Enter choice [1-6]: " choice
 
 case $choice in
     1|2|3)
@@ -65,6 +66,17 @@ case $choice in
         echo ""
         echo "--- Fast Incremental Build ---"
         cmake --build "$BUILD_DIR" --parallel "$NUM_CORES"
+        ;;
+
+    6)
+        if [ ! -d "$BUILD_DIR" ]; then
+            echo "Build directory not found. Run option 1, 2 or 3 first."
+            exit 1
+        fi
+        pushd "$BUILD_DIR/Tests"
+        GTEST_OUTPUT="xml:test-results/" GTEST_COLOR=1 ctest -j"$NUM_CORES" --output-on-failure
+        ../../Tests/ci_check_test_results.py --allow ../../Tests/known_failures_macos.txt "test-results/*.xml"
+        popd
         ;;
 
     *)

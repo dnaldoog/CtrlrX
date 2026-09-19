@@ -540,9 +540,9 @@ endif()
 
 include(PamplejuceIPP)
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Tests/CMakeLists.txt")
-    enable_testing()
-    add_subdirectory(Tests)
-endif()
+# Everything related to the tests target
+#include(Tests) # This would use the Catch2 framework and recompile the source-code...
+enable_testing()
+add_subdirectory(Tests)
 
 include(GitHubENV)
