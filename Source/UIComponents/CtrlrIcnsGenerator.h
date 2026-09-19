@@ -1,5 +1,4 @@
 #pragma once
-#include "stdafx.h"
 #include <juce_gui_basics/juce_gui_basics.h>
 
 // Generates a macOS .icns icon file from an SVG source file.

@@ -173,13 +173,13 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 		break;
 
 	case showExpressionHelp:
-		result.setInfo("Expression Help", "Show help for writing Lua expressions", globalCategory, 0);
+		result.setInfo("Expressions", "Show help for writing Lua expressions", globalCategory, 0);
 		result.addDefaultKeypress('e', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
 
 		break;
 
 	case showDumpByLuaHelp:
-		result.setInfo("Bulk Dump by Lua Help", "Show help reading/writing Dumps to panel", globalCategory, 0);
+		result.setInfo("MIDI Dumps", "Show help reading/writing Dumps to panel", globalCategory, 0);
 		result.addDefaultKeypress('b', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
 
 		break;

@@ -8,6 +8,8 @@ static const int zero = 0;
 #include "CtrlrMac.h"
 #include "CtrlrMacros.h"
 #include "CtrlrPanel/CtrlrPanel.h"
+#include "CtrlrPanel/CtrlrPanelResource.h"
+#include "UIComponents/CtrlrIcnsGenerator.h"
 #include <memory>
 
 #include <fstream>
@@ -861,7 +863,44 @@ Result CtrlrMac::setBundleInfo(CtrlrPanel *sourceInfo, const File &bundle) {
 		XmlElement *cfInsertStringManufacturerID = dict->createNewChildElement("string");
 		cfInsertStringManufacturerID->addTextElement("ManufacturerID");
 
+		// NEW: generate a custom .icns from the panel's chosen icon
+		// resource (uiPanelIconResource, stored on the uiPanelEditor child
+		// tree — same location the property editor writes it to, and the
+		// same bug already found/fixed on the Windows export path) and set
+		// it as CFBundleIconFile below. Non-fatal by design: if no icon is
+		// selected, or generation fails for any reason, the bundle just
+		// keeps its existing/default icon rather than the export failing.
+		String iconResourceName;
+		ValueTree iconEditorTree = sourceInfo->getPanelTree().getChildWithName(Ids::uiPanelEditor);
+		if (iconEditorTree.isValid())
+			iconResourceName = iconEditorTree.getProperty(Ids::uiPanelIconResource).toString();
+
+		bool wroteCustomIcon = false;
+		String icnsFileName;
+
+		if (iconResourceName.isNotEmpty()) {
+			CtrlrPanelResource *iconResource = sourceInfo->getResourceManager().getResource(iconResourceName);
+
+			if (iconResource != nullptr) {
+				icnsFileName = File::createLegalFileName(sourceInfo->getProperty(Ids::name).toString()) + ".icns";
+				File icnsDest = bundle.getChildFile("Contents/Resources/" + icnsFileName);
+
+				juce::Result icnsResult = CtrlrIcnsGenerator::generateIcnsFromSvg(iconResource->getFile(), icnsDest);
+
+				if (icnsResult.wasOk()) {
+					wroteCustomIcon = true;
+					_DBG("MAC native, wrote custom icon: " + icnsDest.getFullPathName());
+				} else {
+					_DBG("MAC native, icon generation failed: " + icnsResult.getErrorMessage());
+				}
+			} else {
+				_DBG("MAC native, icon resource '" + iconResourceName + "' not found");
+			}
+		}
+
 		if (dict != nullptr) {
+			bool foundCFBundleIconFile = false;
+
 			forEachXmlChildElement(*dict, e1) {
 				if (e1->hasTagName("key") && e1->getAllSubText() == "CFBundleDisplayName") {
 					XmlElement *cfBundleElement = e1->getNextElementWithTagName("string");
@@ -890,6 +929,14 @@ Result CtrlrMac::setBundleInfo(CtrlrPanel *sourceInfo, const File &bundle) {
 					if (cfVersionElement != nullptr) {
 						cfVersionElement->deleteAllTextElements();
 						cfVersionElement->addTextElement(sourceInfo->getProperty(Ids::panelInstanceUID).toString());
+					}
+				}
+				if (e1->hasTagName("key") && (e1->getAllSubText() == "CFBundleIconFile") && wroteCustomIcon) {
+					foundCFBundleIconFile = true;
+					XmlElement *cfIconElement = e1->getNextElementWithTagName("string");
+					if (cfIconElement != nullptr) {
+						cfIconElement->deleteAllTextElements();
+						cfIconElement->addTextElement(icnsFileName);
 					}
 				}
 				if (e1->hasTagName("key") && (e1->getAllSubText() == "NSHumanReadableCopyright")) {
@@ -978,6 +1025,16 @@ Result CtrlrMac::setBundleInfo(CtrlrPanel *sourceInfo, const File &bundle) {
 						}
 					}
 				}
+			}
+
+			// If the plist had no CFBundleIconFile key at all (unusual, but
+			// mirroring the ManufacturerID insertion pattern above just in
+			// case) and a custom icon was written, add the key fresh.
+			if (wroteCustomIcon && !foundCFBundleIconFile) {
+				XmlElement *cfInsertKeyIcon = dict->createNewChildElement("key");
+				cfInsertKeyIcon->addTextElement("CFBundleIconFile");
+				XmlElement *cfInsertStringIcon = dict->createNewChildElement("string");
+				cfInsertStringIcon->addTextElement(icnsFileName);
 			}
 		} else {
 			return (Result::fail("MAC native, Info.plist does not contain <dict /> element"));
