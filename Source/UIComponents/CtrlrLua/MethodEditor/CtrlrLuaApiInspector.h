@@ -11,6 +11,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <rapidfuzz/fuzz.hpp>
 
 class CtrlrPanel;
 
@@ -23,17 +24,23 @@ public:
 
     void resized() override;
     void paint(juce::Graphics& g) override;
+	void textEditorTextChanged(juce::TextEditor &editor) override;
 
 private:
     // TextEditor::Listener callback for live filtering
-    void textEditorTextChanged(juce::TextEditor& editor) override;
-    void textEditorReturnKeyPressed(juce::TextEditor& editor) override;
+
+	void textEditorReturnKeyPressed(juce::TextEditor& editor) override;
     juce::String runLuaAndGetResult(const juce::String& luaScript);
     void mouseDoubleClick(const juce::MouseEvent& event);
     // Execution Helpers
     void inspectClass(const juce::String& className);
     void listAllClasses();
-    void applyFilter();
+	void updateClassCache(); // Populates classNamesCache from Lua
+	void showAutocompletePopup();
+
+	juce::StringArray classNamesCache;
+	bool isAutoCompleting = false; // Guard flag to prevent feedback loops
+	void applyFilter();
     void openGithubDocs();
 
     CtrlrPanel& owner;

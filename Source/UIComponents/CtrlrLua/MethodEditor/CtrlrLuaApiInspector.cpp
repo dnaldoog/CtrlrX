@@ -205,8 +205,84 @@ juce::String CtrlrLuaApiInspector::runLuaAndGetResult(const juce::String& luaScr
 
 void CtrlrLuaApiInspector::textEditorTextChanged(juce::TextEditor& editor)
 {
-    if (&editor == &filterInput)
-        applyFilter();
+	// Handle the Filter input box separately
+	if (&editor == &filterInput) {
+		applyFilter();
+		return;
+	}
+
+	// Handle Class search autocomplete
+	if (&editor == &classInput) {
+		if (isAutoCompleting)
+			return;
+
+		const juce::String query = classInput.getText().trim();
+
+		// Don't show popup if query is too short
+		if (query.length() < 2)
+			return;
+
+		// Ensure cache is populated
+		if (classNamesCache.isEmpty())
+			updateClassCache();
+
+		// Pair each class name with its fuzzy match score
+		struct Match {
+				juce::String name;
+				double score;
+		};
+		std::vector<Match> matches;
+
+		const std::string queryStd = query.toStdString();
+
+		for (const auto &className : classNamesCache) {
+			const std::string nameStd = className.toStdString();
+
+			// RapidFuzz score between query and class name (0.0 to 100.0)
+			double score = rapidfuzz::fuzz::partial_ratio(queryStd, nameStd);
+
+			// Boost score if the class name starts directly with the query string
+			if (className.startsWithIgnoreCase(query))
+				score += 20.0;
+
+			if (score > 60.0) // Threshold for relevant matches
+			{
+				matches.push_back({className, score});
+			}
+		}
+
+		if (matches.empty())
+			return;
+
+		// Sort matches by highest score first
+		std::sort(matches.begin(), matches.end(), [](const Match &a, const Match &b) { return a.score > b.score; });
+
+		// Construct Autocomplete Popup Menu
+		juce::PopupMenu menu;
+		int itemID = 1;
+
+		// Show top 8 matches
+		const size_t limit = std::min<size_t>(matches.size(), 8);
+		for (size_t i = 0; i < limit; ++i) {
+			menu.addItem(itemID++, matches[i].name);
+		}
+
+		// Display popup directly under classInput
+		auto options = juce::PopupMenu::Options().withTargetComponent(&classInput).withItemThatMustBeVisible(1);
+
+		menu.showMenuAsync(options, [this, matches](int result) {
+			if (result > 0 && static_cast<size_t>(result - 1) < matches.size()) {
+				const juce::String selectedClass = matches[result - 1].name;
+
+				isAutoCompleting = true;
+				classInput.setText(selectedClass, juce::dontSendNotification);
+				isAutoCompleting = false;
+
+				// Trigger inspection directly on selection!
+				inspectClass(selectedClass);
+			}
+		});
+	}
 }
 
 void CtrlrLuaApiInspector::applyFilter()
@@ -269,91 +345,106 @@ void CtrlrLuaApiInspector::listAllClasses() // create links
     rawOutput = runLuaAndGetResult(luaScript);
     applyFilter();
 }
-// void CtrlrLuaApiInspector::inspectClass(const juce::String& className)
-// {
-//     if (className.isEmpty())
-//         return;
 
-//     // Direct JUCE string concatenation (No printf/formatted specifiers)
-//     juce::String luaScript;
-//     luaScript << "if " << className << " ~= nil then "
-//               << "return what(" << className << ") "
-//               << "else return 'Error: Global symbol [" << className << "] is nil or uninitialized.' end";
+void CtrlrLuaApiInspector::updateClassCache() {
+	classNamesCache.clear();
 
-//     rawOutput = runLuaAndGetResult(luaScript);
-//     applyFilter();
-// }
+	// Query class_names() from Lua
+	const juce::String luaScript = "local names = class_names()\n"
+								   "if names == nil then return '' end\n"
+								   "local ret = ''\n"
+								   "for _, v in ipairs(names) do ret = ret .. tostring(v) .. '\\n' end\n"
+								   "return ret";
+
+	juce::String result = runLuaAndGetResult(luaScript);
+	classNamesCache.addLines(result);
+	classNamesCache.removeEmptyStrings();
+}
 
 void CtrlrLuaApiInspector::inspectClass(const juce::String &className) {
 	if (className.isEmpty())
 		return;
 
+	// Direct JUCE string concatenation (No printf/formatted specifiers)
 	juce::String luaScript;
-	luaScript << "local className = '" << className << "'\n"
-			  << "local cls = _G[className]\n"
-			  << "if cls == nil then\n"
-			  << "    return 'Error: Global class or symbol [' .. className .. '] is nil or uninitialized.'\n"
-			  << "end\n"
-			  << "\n"
-			  << "local statics = {}\n"
-			  << "local instances = {}\n"
-			  << "\n"
-			  << "local info = class_info(cls)\n"
-			  << "if info and info.methods then\n"
-			  << "    for name, _ in pairs(info.methods) do\n"
-			  << "        local isStatic = false\n"
-			  << "        pcall(function()\n"
-			  << "            if type(cls[name]) == 'function' then\n"
-			  << "                isStatic = true\n"
-			  << "            end\n"
-			  << "        end)\n"
-			  << "\n"
-			  << "        if isStatic then\n"
-			  << "            table.insert(statics, name)\n"
-			  << "        else\n"
-			  << "            table.insert(instances, name)\n"
-			  << "        end\n"
-			  << "    end\n"
-			  << "end\n"
-			  << "\n"
-			  << "table.sort(statics)\n"
-			  << "table.sort(instances)\n"
-			  << "\n"
-			  << "local ret = 'Object type [' .. (info and info.name or className) .. ']\\n'\n"
-			  << "ret = ret .. '-----------------------------------------------------------------\\n\\n'\n"
-			  << "\n"
-			  << "ret = ret .. 'Static / Class Methods (Call as ' .. className .. '.method()):\\n'\n"
-			  << "if #statics == 0 then\n"
-			  << "    ret = ret .. '  (None)\\n'\n"
-			  << "else\n"
-			  << "    for _, name in ipairs(statics) do\n"
-			  << "        ret = ret .. string.format('  [Static]   %s\\n', name)\n"
-			  << "    end\n"
-			  << "end\n"
-			  << "\n"
-			  << "ret = ret .. '\\n'\n"
-			  << "ret = ret .. 'Instance Methods (Call as instance:method()):\\n'\n"
-			  << "if #instances == 0 then\n"
-			  << "    ret = ret .. '  (None)\\n'\n"
-			  << "else\n"
-			  << "    for _, name in ipairs(instances) do\n"
-			  << "        ret = ret .. string.format('  [Instance] %s\\n', name)\n"
-			  << "    end\n"
-			  << "end\n"
-			  << "\n"
-			  << "if info and info.attributes and next(info.attributes) ~= nil then\n"
-			  << "    ret = ret .. '\\nAttributes / Properties:\\n'\n"
-			  << "    local attrs = {}\n"
-			  << "    for name, _ in pairs(info.attributes) do table.insert(attrs, name) end\n"
-			  << "    table.sort(attrs)\n"
-			  << "    for _, name in ipairs(attrs) do\n"
-			  << "        ret = ret .. string.format('  [Property] %s\\n', name)\n"
-			  << "    end\n"
-			  << "end\n"
-			  << "\n"
-			  << "ret = ret .. '-----------------------------------------------------------------'\n"
-			  << "return ret\n";
+	luaScript << "if " << className << " ~= nil then "
+			  << "return what(" << className << ") "
+			  << "else return 'Error: Global symbol [" << className << "] is nil or uninitialized.' end";
 
 	rawOutput = runLuaAndGetResult(luaScript);
 	applyFilter();
 }
+
+// void CtrlrLuaApiInspector::inspectClass(const juce::String &className) {
+// 	if (className.isEmpty())
+// 		return;
+
+// 	juce::String luaScript;
+// 	luaScript << "local className = '" << className << "'\n"
+// 			  << "local cls = _G[className]\n"
+// 			  << "if cls == nil then\n"
+// 			  << "    return 'Error: Global class or symbol [' .. className .. '] is nil or uninitialized.'\n"
+// 			  << "end\n"
+// 			  << "\n"
+// 			  << "local statics = {}\n"
+// 			  << "local instances = {}\n"
+// 			  << "\n"
+// 			  << "local info = class_info(cls)\n"
+// 			  << "if info and info.methods then\n"
+// 			  << "    for name, _ in pairs(info.methods) do\n"
+// 			  << "        local isStatic = false\n"
+// 			  << "        pcall(function()\n"
+// 			  << "            if type(cls[name]) == 'function' then\n"
+// 			  << "                isStatic = true\n"
+// 			  << "            end\n"
+// 			  << "        end)\n"
+// 			  << "\n"
+// 			  << "        if isStatic then\n"
+// 			  << "            table.insert(statics, name)\n"
+// 			  << "        else\n"
+// 			  << "            table.insert(instances, name)\n"
+// 			  << "        end\n"
+// 			  << "    end\n"
+// 			  << "end\n"
+// 			  << "\n"
+// 			  << "table.sort(statics)\n"
+// 			  << "table.sort(instances)\n"
+// 			  << "\n"
+// 			  << "local ret = 'Object type [' .. (info and info.name or className) .. ']\\n'\n"
+// 			  << "ret = ret .. '-----------------------------------------------------------------\\n\\n'\n"
+// 			  << "\n"
+// 			  << "ret = ret .. 'Static / Class Methods (Call as ' .. className .. '.method()):\\n'\n"
+// 			  << "if #statics == 0 then\n"
+// 			  << "    ret = ret .. '  (None)\\n'\n"
+// 			  << "else\n"
+// 			  << "    for _, name in ipairs(statics) do\n"
+// 			  << "        ret = ret .. string.format('  [Static]   %s\\n', name)\n"
+// 			  << "    end\n"
+// 			  << "end\n"
+// 			  << "\n"
+// 			  << "ret = ret .. '\\n'\n"
+// 			  << "ret = ret .. 'Instance Methods (Call as instance:method()):\\n'\n"
+// 			  << "if #instances == 0 then\n"
+// 			  << "    ret = ret .. '  (None)\\n'\n"
+// 			  << "else\n"
+// 			  << "    for _, name in ipairs(instances) do\n"
+// 			  << "        ret = ret .. string.format('  [Instance] %s\\n', name)\n"
+// 			  << "    end\n"
+// 			  << "end\n"
+// 			  << "\n"
+// 			  << "if info and info.attributes and next(info.attributes) ~= nil then\n"
+// 			  << "    ret = ret .. '\\nAttributes / Properties:\\n'\n"
+// 			  << "    local attrs = {}\n"
+// 			  << "    for name, _ in pairs(info.attributes) do table.insert(attrs, name) end\n"
+// 			  << "    table.sort(attrs)\n"
+// 			  << "    for _, name in ipairs(attrs) do\n"
+// 			  << "        ret = ret .. string.format('  [Property] %s\\n', name)\n"
+// 			  << "    end\n"
+// 			  << "end\n"
+// 			  << "\n"
+// 			  << "ret = ret .. '-----------------------------------------------------------------'\n"
+// 			  << "return ret\n";
+
+// 	rawOutput = runLuaAndGetResult(luaScript);
+// 	applyFilter();
+// }
