@@ -8,6 +8,7 @@
 #include "CtrlrMacros.h"
 #include "CtrlrManager/CtrlrManager.h"
 #include "CtrlrPanel/CtrlrPanel.h"
+#include "CtrlrPanel/CtrlrPanelResource.h"
 #include "keys.h"
 #include <cstring>
 #include <fstream>
@@ -530,6 +531,71 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 				_DBG("chmod failed");
 				notifyAndReturn(Result::fail("chmod failed"));
 				return;
+			}
+
+			// NEW: give standalone exported instances a real app icon via a
+			// companion .desktop launcher — Linux ELF binaries have no
+			// icon-embedding mechanism the way Windows PE .exe files
+			// (rcedit) or macOS .app bundles (.icns + Info.plist) do, so
+			// this is the closest real equivalent: a small launcher file
+			// with Icon= pointing at a real file path. Companion files
+			// (.svg, .png) are written into a subfolder clearly named after
+			// the executable, sitting right next to it — one obviously-
+			// related folder to grab alongside the executable, rather than
+			// several anonymous loose files sharing the same directory.
+			// Non-fatal: a missing/failed icon leaves a working export with
+			// no custom icon, same as before this feature existed.
+			if (!isVST3 && !isVST2) {
+				ValueTree editorTree = panelToWrite->getPanelTree().getChildWithName(Ids::uiPanelEditor);
+				String iconResourceName =
+					editorTree.isValid() ? editorTree.getProperty(Ids::uiPanelIconResource).toString() : String();
+
+				if (iconResourceName.isNotEmpty()) {
+					CtrlrPanelResource *iconResource = panelToWrite->getResourceManager().getResource(iconResourceName);
+
+					if (iconResource != nullptr) {
+						File companionDir = newMe.getSiblingFile(newMe.getFileNameWithoutExtension() + "-icon");
+						companionDir.createDirectory();
+
+						File svgDest = companionDir.getChildFile(newMe.getFileNameWithoutExtension() + "-icon.svg");
+						File pngDest = companionDir.getChildFile(newMe.getFileNameWithoutExtension() + "-icon.png");
+						File desktopDest = newMe.getSiblingFile(newMe.getFileNameWithoutExtension() + ".desktop");
+
+						if (iconResource->getFile().copyFileTo(svgDest)) {
+							if (auto drawable = juce::Drawable::createFromSVGFile(svgDest)) {
+								const int size = 256;
+								Image pngImage(Image::ARGB, size, size, true, SoftwareImageType());
+								Graphics g(pngImage);
+								drawable->drawWithin(g, Rectangle<float>(0, 0, (float)size, (float)size),
+													 RectanglePlacement::centred, 1.0f);
+
+								PNGImageFormat pngFormat;
+								FileOutputStream out(pngDest);
+								if (out.openedOk())
+									pngFormat.writeImageToStream(pngImage, out);
+							}
+
+							String desktopContent =
+								"[Desktop Entry]\n"
+								"Type=Application\n"
+								"Name=" + panelToWrite->getProperty(Ids::name).toString() + "\n"
+								"Exec=\"" + newMe.getFullPathName() + "\"\n"
+								"Icon=" + (pngDest.existsAsFile() ? pngDest.getFullPathName() : svgDest.getFullPathName()) +
+								"\n"
+								"Terminal=false\n";
+
+							desktopDest.replaceWithText(desktopContent);
+							chmod(desktopDest.getFullPathName().toUTF8().getAddress(),
+								  S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+
+							_DBG("Wrote icon companions to: " + companionDir.getFullPathName());
+						} else {
+							_DBG("Warning: failed to copy icon resource for exported instance");
+						}
+					} else {
+						_DBG("Warning: icon resource '" + iconResourceName + "' not found for exported instance");
+					}
+				}
 			}
 
 			_DBG("Export succeeded for: " + newMe.getFullPathName());
