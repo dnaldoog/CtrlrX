@@ -71,7 +71,8 @@ void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 		{"midiMessageSysExFormula", Colour(0x44ff69b4)}, // Pink for MIDI Message Type
 		{"luaModulatorValueChange", Colour(0x33007acc)}, // Soft Blue for luaModulatorValueChange
 		{"uiPanelImageResource", Colours::aqua},		 // uiPanelImageResource
-		{"uiPanelIconResource", Colours::aquamarine}	 // uiPanelIconResource
+		{"uiPanelIconResource", Colours::aquamarine},	 // uiPanelIconResource
+		{"uiPanelLinuxExpDest", Colours::pink},			 // uiPanelLinuxExpDest
 	};
 
 	const String propStr = propertyName.toString();

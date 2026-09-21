@@ -125,6 +125,15 @@ static bool isVST2Plugin() {
 	return isNotHost && hasSOExtension && notInVST3;
 }
 
+static String sanitizeAppId(const String &name) {
+	String clean = name.toLowerCase().retainCharacters("abcdefghijklmnopqrstuvwxyz0123456789-_ ");
+	clean = clean.replaceCharacter(' ', '-');
+	while (clean.contains("--")) {
+		clean = clean.replace("--", "-");
+	}
+	return clean.trim();
+}
+
 // --- SimpleEmbeddedDataManager Class ---
 class SimpleEmbeddedDataManager {
 	public:
@@ -319,288 +328,294 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 	_DBG("Current binary path: " + me.getFullPathName());
 
 	String panelName = File::createLegalFileName(panelToWrite->getProperty(Ids::name));
+	String appIdName = sanitizeAppId(panelToWrite->getProperty(Ids::name).toString());
 
-	File suggestedFile;
-	String filePattern;
+	// --- PATH AUTO-ROUTING LAMBDA EXECUTION FOR BOTH PLUGINS AND STANDALONES ---
+	auto performExportPipeline = [this, panelToWrite, me, isVST3, isVST2, isRestricted, appIdName,
+								  notifyAndReturn](const File &chosenFile) {
+		File newMe;
 
-	if (isVST3) {
-		suggestedFile = bundleDir.getParentDirectory().getChildFile(panelName + ".vst3");
-		filePattern = "*.vst3";
-	} else if (isVST2) {
-		suggestedFile = me.getParentDirectory().getChildFile(panelName + ".so");
-		filePattern = "*.so";
-		_DBG("VST2 export detected. suggestedFile = " + suggestedFile.getFullPathName());
-	} else {
-		suggestedFile = me.getParentDirectory().getChildFile(panelName);
-		filePattern = "*";
-		_DBG("Standalone export detected. suggestedFile = " + suggestedFile.getFullPathName());
-	}
+		if (isVST3) {
+			File bundleDir =
+				chosenFile.getFileName().endsWith(".vst3") ? chosenFile : chosenFile.withFileExtension(".vst3");
+			File binaryDir = bundleDir.getChildFile("Contents/x86_64-linux");
+			String binaryName = bundleDir.getFileNameWithoutExtension() + ".so";
+			File binaryFile = binaryDir.getChildFile(binaryName);
 
-	const bool useNativeDialog = panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs);
-
-	FC::saveFileAsync(
-		CTRLR_NEW_INSTANCE_DIALOG_TITLE, suggestedFile, filePattern, useNativeDialog,
-		[this, panelToWrite, me, isVST3, isVST2, isRestricted, notifyAndReturn](const File &chosenFile) {
-			if (chosenFile == File()) {
-				_DBG("User cancelled the export operation.");
-				notifyAndReturn(Result::fail("User cancelled the export operation."));
+			if (!binaryDir.createDirectory() || !me.copyFileTo(binaryFile)) {
+				notifyAndReturn(Result::fail("Failed to create VST3 structure or copy binary."));
 				return;
 			}
 
-			_DBG("FileChooser returned: " + chosenFile.getFullPathName());
-			File newMe;
-
-			if (isVST3) {
-				File bundleDir =
-					chosenFile.getFileName().endsWith(".vst3") ? chosenFile : chosenFile.withFileExtension(".vst3");
-
-				File binaryDir = bundleDir.getChildFile("Contents/x86_64-linux");
-				String binaryName = bundleDir.getFileNameWithoutExtension() + ".so";
-				File binaryFile = binaryDir.getChildFile(binaryName);
-
-				if (!binaryDir.createDirectory()) {
-					_DBG("Failed to create VST3 bundle directory structure");
-					notifyAndReturn(Result::fail("Failed to create VST3 bundle directory structure"));
-					return;
+			File sourceModuleInfo =
+				me.getParentDirectory().getParentDirectory().getChildFile("Resources/moduleinfo.json");
+			if (sourceModuleInfo.existsAsFile()) {
+				File resourcesDir = bundleDir.getChildFile("Contents/Resources");
+				if (resourcesDir.createDirectory()) {
+					File destModuleInfo = resourcesDir.getChildFile("moduleinfo.json");
+					sourceModuleInfo.copyFileTo(destModuleInfo);
 				}
+			}
+			newMe = binaryFile;
+		} else if (isVST2) {
+			newMe = chosenFile.hasFileExtension(".so") ? chosenFile : chosenFile.withFileExtension(".so");
+			if (!me.copyFileTo(newMe)) {
+				notifyAndReturn(Result::fail("Failed to copy VST2 binary."));
+				return;
+			}
+		} else {
+			// STANDALONE BUILD: destination depends on
+			// uiPanelLinuxExpDest — silently install into the
+			// user's system dirs (~/.local/bin), or use whatever location
+			// the user picked via the file chooser (classic/portable mode).
+			ValueTree editorTreeForInstall = panelToWrite->getPanelTree().getChildWithName(Ids::uiPanelEditor);
+			bool exportToUserSystemDirs = editorTreeForInstall.isValid() &&
+										  (bool)editorTreeForInstall.getProperty(Ids::uiPanelLinuxExpDest, false);
 
-				if (!me.copyFileTo(binaryFile)) {
-					_DBG("Linux native, VST3 copyFileTo failed");
-					notifyAndReturn(Result::fail("Linux native, VST3 copyFileTo failed"));
-					return;
-				}
-
-				File sourceModuleInfo =
-					me.getParentDirectory().getParentDirectory().getChildFile("Resources/moduleinfo.json");
-
-				if (sourceModuleInfo.existsAsFile()) {
-					File resourcesDir = bundleDir.getChildFile("Contents/Resources");
-					if (resourcesDir.createDirectory()) {
-						File destModuleInfo = resourcesDir.getChildFile("moduleinfo.json");
-						if (!sourceModuleInfo.copyFileTo(destModuleInfo)) {
-							_DBG("Warning: failed to copy moduleinfo.json into exported VST3 bundle");
-						}
-					} else {
-						_DBG("Warning: failed to create Contents/Resources for exported VST3 bundle");
-					}
-				} else {
-					_DBG("Warning: source moduleinfo.json not found at " + sourceModuleInfo.getFullPathName());
-				}
-
-				newMe = binaryFile;
+			if (exportToUserSystemDirs) {
+				File localBinDir = File::getSpecialLocation(File::userHomeDirectory).getChildFile(".local/bin");
+				localBinDir.createDirectory();
+				newMe = localBinDir.getChildFile(appIdName);
 			} else {
 				newMe = chosenFile;
+			}
 
-				if (isVST2) {
-					if (!newMe.getFullPathName().endsWith(".so")) {
-						newMe = newMe.withFileExtension(".so");
-						_DBG("VST2 export: Added missing .so extension: " + newMe.getFullPathName());
+			if (!me.copyFileTo(newMe)) {
+				notifyAndReturn(
+					Result::fail("Failed to copy Standalone binary to \"" + newMe.getFullPathName() + "\"."));
+				return;
+			}
+		}
+
+		MemoryBlock panelExportData, panelResourcesData;
+		CtrlrPanel p(owner, "", 0);
+		String error = p.exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData, isRestricted);
+
+		if (error.isNotEmpty()) {
+			notifyAndReturn(Result::fail("CtrlrPanel::exportPanel failed: " + error));
+			return;
+		}
+
+		if (isVST3 || isVST2) {
+			MemoryBlock binaryData;
+			if (newMe.loadFileAsData(binaryData)) {
+				String pluginName = panelToWrite->getProperty(Ids::name).toString();
+				String pluginCode = panelToWrite->getProperty(Ids::panelInstanceUID).toString();
+				String manufacturerName = panelToWrite->getProperty(Ids::panelAuthorName).toString();
+				String manufacturerCode = panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString();
+				String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
+
+				MemoryBlock pluginNameBytes = stringToFixedBytes(pluginName, 32);
+				MemoryBlock pluginCodeBytes = stringToFixedBytes(pluginCode, 4);
+				MemoryBlock manufacturerNameBytes = stringToFixedBytes(manufacturerName, 16);
+				MemoryBlock manufacturerCodeBytes = stringToFixedBytes(manufacturerCode, 4);
+				MemoryBlock plugTypeBytes = stringToFixedBytes(plugType, 16);
+
+				MemoryBlock searchPluginName = hexToBytes(
+					"43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20");
+				MemoryBlock searchManufacturerCode = hexToBytes("63 54 72 58");
+				MemoryBlock searchManufacturerName = hexToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20");
+				MemoryBlock searchPluginCode = hexToBytes("63 54 72 6C");
+				MemoryBlock searchPlugTypeHex = hexToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73");
+
+				replaceAllOccurrences(binaryData, searchPluginName, pluginNameBytes);
+				replaceAllOccurrences(binaryData, searchPluginCode, pluginCodeBytes);
+				replaceAllOccurrences(binaryData, searchManufacturerName, manufacturerNameBytes);
+				replaceAllOccurrences(binaryData, searchManufacturerCode, manufacturerCodeBytes);
+				replaceAllOccurrences(binaryData, searchPlugTypeHex, plugTypeBytes);
+
+				MemoryBlock searchUtf16ManufName =
+					hexToBytes("43 00 74 00 72 00 6C 00 72 00 58 00 20 00 50 00 72 00 6F 00 6A 00 65 00 63 00 74 00");
+				MemoryBlock replaceUtf16ManufName = makeUtf16Buffer(manufacturerName, "CtrlrX Project");
+				MemoryBlock searchUtf16PluginName = hexToBytes("43 00 74 00 72 00 6C 00 72 00 58 00");
+				MemoryBlock replaceUtf16PluginName = makeUtf16Buffer(pluginName, "CtrlrX");
+
+				replaceAllOccurrences(binaryData, searchUtf16ManufName, replaceUtf16ManufName);
+				replaceAllOccurrences(binaryData, searchUtf16PluginName, replaceUtf16PluginName);
+
+				newMe.replaceWithData(binaryData.getData(), binaryData.getSize());
+
+				if (isVST3) {
+					File moduleInfoFile =
+						newMe.getParentDirectory().getParentDirectory().getChildFile("Resources/moduleinfo.json");
+					if (moduleInfoFile.existsAsFile()) {
+						String moduleInfoText = moduleInfoFile.loadFileAsString();
+						auto bytesToHexUpper = [](const MemoryBlock &block) {
+							String hex;
+							auto *d = static_cast<const uint8 *>(block.getData());
+							for (size_t i = 0; i < block.getSize(); ++i)
+								hex += String::toHexString((int)d[i]).paddedLeft('0', 2).toUpperCase();
+							return hex;
+						};
+						String newCidSuffix = bytesToHexUpper(manufacturerCodeBytes) + bytesToHexUpper(pluginCodeBytes);
+						moduleInfoText = moduleInfoText.replace("635472586354726C", newCidSuffix, true);
+						moduleInfoText = moduleInfoText.replace("CtrlrX                          ", pluginName, true);
+						moduleInfoText =
+							moduleInfoText.replace("CtrlrX Project                  ", manufacturerName, true);
+						moduleInfoFile.replaceWithText(moduleInfoText);
+					}
+				}
+			}
+		}
+
+		SimpleEmbeddedDataManager dataManager(newMe.getFullPathName().toStdString());
+		dataManager.initialize();
+		dataManager.writeSection(CTRLR_INTERNAL_PANEL_SECTION, panelExportData);
+
+		if (panelResourcesData.getSize() > 0)
+			dataManager.writeSection(CTRLR_INTERNAL_RESOURCES_SECTION, panelResourcesData);
+
+		chmod(newMe.getFullPathName().toUTF8().getAddress(),
+			  S_IRUSR | S_IWUSR | S_IXUSR | S_IXOTH | S_IRGRP | S_IXGRP | S_IROTH);
+
+		if (!isVST3 && !isVST2) {
+			ValueTree editorTree = panelToWrite->getPanelTree().getChildWithName(Ids::uiPanelEditor);
+			bool exportToUserSystemDirs =
+				editorTree.isValid() && (bool)editorTree.getProperty(Ids::uiPanelLinuxExpDest, false);
+			String iconResourceName =
+				editorTree.isValid() ? editorTree.getProperty(Ids::uiPanelIconResource).toString() : String();
+
+			// FIX: the .desktop launcher must always be created — previously
+			// this entire block, .desktop file included, only ran when an
+			// icon resource was selected. GNOME/Cinnamon/etc. discover
+			// launchable apps *only* via .desktop files, so exporting with
+			// no icon chosen was silently producing an installed-but-
+			// undiscoverable app: correctly copied to ~/.local/bin, but with
+			// no launcher entry for any desktop environment to find it by.
+			File applicationsDir, desktopDest, iconDir;
+			bool isSystemDesktopFile = false;
+
+			if (exportToUserSystemDirs) {
+				applicationsDir =
+					File::getSpecialLocation(File::userHomeDirectory).getChildFile(".local/share/applications");
+				applicationsDir.createDirectory();
+				desktopDest = applicationsDir.getChildFile(appIdName + ".desktop");
+
+				iconDir = File::getSpecialLocation(File::userHomeDirectory).getChildFile(".local/share/icons");
+				iconDir.createDirectory();
+				isSystemDesktopFile = true;
+			} else {
+				// Classic/portable mode: companion files sit next to the
+				// exported binary rather than the user's system dirs, so
+				// the whole export stays one movable unit.
+				desktopDest = newMe.getSiblingFile(newMe.getFileNameWithoutExtension() + ".desktop");
+				iconDir = newMe.getSiblingFile(newMe.getFileNameWithoutExtension() + "-icon");
+				iconDir.createDirectory();
+			}
+
+			String iconLine; // stays empty — Icon= is omitted — if no icon was generated
+
+			if (iconResourceName.isNotEmpty()) {
+				CtrlrPanelResource *iconResource = panelToWrite->getResourceManager().getResource(iconResourceName);
+
+				if (iconResource != nullptr) {
+					String iconBaseName =
+						exportToUserSystemDirs ? appIdName : (newMe.getFileNameWithoutExtension() + "-icon");
+					File svgDest = iconDir.getChildFile(iconBaseName + ".svg");
+					File pngDest = iconDir.getChildFile(iconBaseName + ".png");
+
+					if (iconResource->getFile().copyFileTo(svgDest)) {
+						if (auto drawable = juce::Drawable::createFromSVGFile(svgDest)) {
+							const int size = 256;
+							Image pngImage(Image::ARGB, size, size, true, SoftwareImageType());
+							Graphics g(pngImage);
+							drawable->drawWithin(g, Rectangle<float>(0, 0, (float)size, (float)size),
+												 RectanglePlacement::centred, 1.0f);
+
+							PNGImageFormat pngFormat;
+							FileOutputStream out(pngDest);
+							if (out.openedOk())
+								pngFormat.writeImageToStream(pngImage, out);
+						}
+
+						iconLine =
+							"Icon=" + (pngDest.existsAsFile() ? pngDest.getFullPathName() : svgDest.getFullPathName()) +
+							"\n";
+					} else {
+						_DBG("Warning: failed to copy icon resource for exported instance");
 					}
 				} else {
-					_DBG("Standalone export: Final file created without extension = " + newMe.getFullPathName());
-				}
-
-				if (!me.copyFileTo(newMe)) {
-					_DBG("Linux native, Standalone/VST2 copyFileTo failed");
-					notifyAndReturn(Result::fail("Linux native, Standalone/VST2 copyFileTo failed"));
-					return;
+					_DBG("Warning: icon resource '" + iconResourceName + "' not found for exported instance");
 				}
 			}
 
-			MemoryBlock panelExportData, panelResourcesData;
-			CtrlrPanel p(owner, "", 0);
-			String error =
-				p.exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData, isRestricted);
+			String desktopContent = "[Desktop Entry]\n"
+									"Type=Application\n"
+									"Name=" +
+									panelToWrite->getProperty(Ids::name).toString() +
+									"\n"
+									"Exec=\"" +
+									newMe.getFullPathName() + "\"\n" + iconLine +
+									"Terminal=false\n"
+									"StartupWMClass=" +
+									appIdName + "\n";
 
-			if (error.isNotEmpty()) {
-				_DBG("CtrlrPanel::exportPanel failed: " + error);
-				notifyAndReturn(Result::fail("CtrlrPanel::exportPanel failed: " + error));
-				return;
+			desktopDest.replaceWithText(desktopContent);
+			chmod(desktopDest.getFullPathName().toUTF8().getAddress(),
+				  S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+
+			if (isSystemDesktopFile) {
+				String cmd = "update-desktop-database " + applicationsDir.getFullPathName();
+				int dummy = system(cmd.toUTF8().getAddress());
+				(void)dummy;
 			}
 
-			if (isVST3 || isVST2) {
-				MemoryBlock binaryData;
-				if (newMe.loadFileAsData(binaryData)) {
-					String pluginName = panelToWrite->getProperty(Ids::name).toString();
-					String pluginCode = panelToWrite->getProperty(Ids::panelInstanceUID).toString();
-					String manufacturerName = panelToWrite->getProperty(Ids::panelAuthorName).toString();
-					String manufacturerCode = panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString();
-					String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
+			// --- EXPORT COMPLETE MESSAGE ---
+			String completionMessage =
+				exportToUserSystemDirs
+					? panelToWrite->getProperty(Ids::name).toString() +
+						  " installed successfully to ~/.local/bin\n\nIt is now accessible directly from your "
+						  "applications launcher menu."
+					: panelToWrite->getProperty(Ids::name).toString() + " exported successfully to:\n" +
+						  newMe.getFullPathName();
 
-					// --- 1. ASCII Binary Patch ---
-					MemoryBlock pluginNameBytes = stringToFixedBytes(pluginName, 32);
-					MemoryBlock pluginCodeBytes = stringToFixedBytes(pluginCode, 4);
-					MemoryBlock manufacturerNameBytes = stringToFixedBytes(manufacturerName, 16);
-					MemoryBlock manufacturerCodeBytes = stringToFixedBytes(manufacturerCode, 4);
-					MemoryBlock plugTypeBytes = stringToFixedBytes(plugType, 16);
+			juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon, "Export Complete", completionMessage,
+												   "OK");
+		}
 
-					MemoryBlock searchPluginName = hexToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 "
-															  "20 20 20 20 20 20 20 20 20 20 20 20 20 20");
-					MemoryBlock searchManufacturerCode = hexToBytes("63 54 72 58"); // "cTrX"
-					MemoryBlock searchManufacturerName = hexToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20");
-					MemoryBlock searchPluginCode = hexToBytes("63 54 72 6C"); // "cTrl"
-					MemoryBlock searchPlugTypeHex = hexToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73");
+		_DBG("Export pipeline successfully executed.");
+		notifyAndReturn(Result::ok());
+	};
 
-					int totalReplacements = 0;
-					totalReplacements += replaceAllOccurrences(binaryData, searchPluginName, pluginNameBytes);
-					totalReplacements += replaceAllOccurrences(binaryData, searchPluginCode, pluginCodeBytes);
-					totalReplacements +=
-						replaceAllOccurrences(binaryData, searchManufacturerName, manufacturerNameBytes);
-					totalReplacements +=
-						replaceAllOccurrences(binaryData, searchManufacturerCode, manufacturerCodeBytes);
-					totalReplacements += replaceAllOccurrences(binaryData, searchPlugTypeHex, plugTypeBytes);
+	// --- DETERMINATION RULE: PROMPT IF PLUGIN, EXECUTE SILENTLY IF STANDALONE ---
+	if (isVST3 || isVST2) {
+		File suggestedFile = isVST3 ? bundleDir.getParentDirectory().getChildFile(panelName + ".vst3")
+									: me.getParentDirectory().getChildFile(panelName + ".so");
+		String filePattern = isVST3 ? "*.vst3" : "*.so";
+		const bool useNativeDialog = panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs);
 
-					// --- 2. JUCE 8 UTF-16 Wide-String Patch ---
-					MemoryBlock searchUtf16ManufName = hexToBytes(
-						"43 00 74 00 72 00 6C 00 72 00 58 00 20 00 50 00 72 00 6F 00 6A 00 65 00 63 00 74 00");
-					MemoryBlock replaceUtf16ManufName = makeUtf16Buffer(manufacturerName, "CtrlrX Project");
+		FC::saveFileAsync(CTRLR_NEW_INSTANCE_DIALOG_TITLE, suggestedFile, filePattern, useNativeDialog,
+						  [performExportPipeline, notifyAndReturn](const File &chosenFile) {
+							  if (chosenFile == File()) {
+								  notifyAndReturn(Result::fail("User cancelled plugin export operation."));
+								  return;
+							  }
+							  performExportPipeline(chosenFile);
+						  });
+	} else {
+		// STANDALONE: dispatch based on uiPanelLinuxExpDest
+		ValueTree editorTreeForDispatch = panelToWrite->getPanelTree().getChildWithName(Ids::uiPanelEditor);
+		bool exportToUserSystemDirs =
+			editorTreeForDispatch.isValid() && (bool)editorTreeForDispatch.getProperty(Ids::uiPanelLinuxExpDest, false);
 
-					MemoryBlock searchUtf16PluginName = hexToBytes("43 00 74 00 72 00 6C 00 72 00 58 00");
-					MemoryBlock replaceUtf16PluginName = makeUtf16Buffer(pluginName, "CtrlrX");
+		if (exportToUserSystemDirs) {
+			// Silent, no dialog — installs straight into ~/.local/bin
+			performExportPipeline(File());
+		} else {
+			// Classic behavior: ask the user where to save it, same as VST3/VST2
+			File suggestedFile = me.getParentDirectory().getChildFile(panelName);
+			const bool useNativeDialog = panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs);
 
-					totalReplacements += replaceAllOccurrences(binaryData, searchUtf16ManufName, replaceUtf16ManufName);
-					totalReplacements +=
-						replaceAllOccurrences(binaryData, searchUtf16PluginName, replaceUtf16PluginName);
-
-					_DBG("Binary patching complete: " + String(totalReplacements) + " replacements");
-
-					if (!newMe.replaceWithData(binaryData.getData(), binaryData.getSize())) {
-						_DBG("Failed to write patched binary");
-						notifyAndReturn(Result::fail("Failed to write patched binary"));
-						return;
-					}
-
-					// --- 3. JSON Metadata Patch ---
-					// --- 3. JSON Metadata Patch ---
-					if (isVST3) {
-						File moduleInfoFile =
-							newMe.getParentDirectory().getParentDirectory().getChildFile("Resources/moduleinfo.json");
-
-						if (moduleInfoFile.existsAsFile()) {
-							String moduleInfoText = moduleInfoFile.loadFileAsString();
-
-							auto bytesToHexUpper = [](const MemoryBlock &block) {
-								String hex;
-								auto *data = static_cast<const uint8 *>(block.getData());
-								for (size_t i = 0; i < block.getSize(); ++i)
-									hex += String::toHexString((int)data[i]).paddedLeft('0', 2).toUpperCase();
-								return hex;
-							};
-
-							// Rewrite CID Suffix
-							const String defaultCidSuffix = "635472586354726C";
-							String newCidSuffix =
-								bytesToHexUpper(manufacturerCodeBytes) + bytesToHexUpper(pluginCodeBytes);
-							moduleInfoText = moduleInfoText.replace(defaultCidSuffix, newCidSuffix, true);
-
-							// --- FIXED: Replace padded targets with clean unpadded strings ---
-							const String defaultPluginName = "CtrlrX                          ";
-							const String defaultVendorName = "CtrlrX Project                  ";
-
-							// Pass raw pluginName/manufacturerName without right padding
-							moduleInfoText = moduleInfoText.replace(defaultPluginName, pluginName, true);
-							moduleInfoText = moduleInfoText.replace(defaultVendorName, manufacturerName, true);
-
-							if (!moduleInfoFile.replaceWithText(moduleInfoText)) {
-								_DBG("Warning: failed to rewrite moduleinfo.json metadata for exported bundle");
-							}
-						}
-					}
-				}
-			}
-
-			SimpleEmbeddedDataManager dataManager(newMe.getFullPathName().toStdString());
-			dataManager.initialize();
-
-			if (!dataManager.writeSection(CTRLR_INTERNAL_PANEL_SECTION, panelExportData)) {
-				_DBG("Failed to write panel data");
-				notifyAndReturn(Result::fail("Failed to write panel data"));
-				return;
-			}
-
-			if (panelResourcesData.getSize() > 0) {
-				if (!dataManager.writeSection(CTRLR_INTERNAL_RESOURCES_SECTION, panelResourcesData)) {
-					_DBG("Failed to write resources");
-					notifyAndReturn(Result::fail("Failed to write resources"));
-					return;
-				}
-			}
-
-			if (chmod(newMe.getFullPathName().toUTF8().getAddress(),
-					  S_IRUSR | S_IWUSR | S_IXUSR | S_IXOTH | S_IRGRP | S_IXGRP | S_IROTH)) {
-				_DBG("chmod failed");
-				notifyAndReturn(Result::fail("chmod failed"));
-				return;
-			}
-
-			// NEW: give standalone exported instances a real app icon via a
-			// companion .desktop launcher — Linux ELF binaries have no
-			// icon-embedding mechanism the way Windows PE .exe files
-			// (rcedit) or macOS .app bundles (.icns + Info.plist) do, so
-			// this is the closest real equivalent: a small launcher file
-			// with Icon= pointing at a real file path. Companion files
-			// (.svg, .png) are written into a subfolder clearly named after
-			// the executable, sitting right next to it — one obviously-
-			// related folder to grab alongside the executable, rather than
-			// several anonymous loose files sharing the same directory.
-			// Non-fatal: a missing/failed icon leaves a working export with
-			// no custom icon, same as before this feature existed.
-			if (!isVST3 && !isVST2) {
-				ValueTree editorTree = panelToWrite->getPanelTree().getChildWithName(Ids::uiPanelEditor);
-				String iconResourceName =
-					editorTree.isValid() ? editorTree.getProperty(Ids::uiPanelIconResource).toString() : String();
-
-				if (iconResourceName.isNotEmpty()) {
-					CtrlrPanelResource *iconResource = panelToWrite->getResourceManager().getResource(iconResourceName);
-
-					if (iconResource != nullptr) {
-						File companionDir = newMe.getSiblingFile(newMe.getFileNameWithoutExtension() + "-icon");
-						companionDir.createDirectory();
-
-						File svgDest = companionDir.getChildFile(newMe.getFileNameWithoutExtension() + "-icon.svg");
-						File pngDest = companionDir.getChildFile(newMe.getFileNameWithoutExtension() + "-icon.png");
-						File desktopDest = newMe.getSiblingFile(newMe.getFileNameWithoutExtension() + ".desktop");
-
-						if (iconResource->getFile().copyFileTo(svgDest)) {
-							if (auto drawable = juce::Drawable::createFromSVGFile(svgDest)) {
-								const int size = 256;
-								Image pngImage(Image::ARGB, size, size, true, SoftwareImageType());
-								Graphics g(pngImage);
-								drawable->drawWithin(g, Rectangle<float>(0, 0, (float)size, (float)size),
-													 RectanglePlacement::centred, 1.0f);
-
-								PNGImageFormat pngFormat;
-								FileOutputStream out(pngDest);
-								if (out.openedOk())
-									pngFormat.writeImageToStream(pngImage, out);
-							}
-
-							String desktopContent =
-								"[Desktop Entry]\n"
-								"Type=Application\n"
-								"Name=" + panelToWrite->getProperty(Ids::name).toString() + "\n"
-								"Exec=\"" + newMe.getFullPathName() + "\"\n"
-								"Icon=" + (pngDest.existsAsFile() ? pngDest.getFullPathName() : svgDest.getFullPathName()) +
-								"\n"
-								"Terminal=false\n";
-
-							desktopDest.replaceWithText(desktopContent);
-							chmod(desktopDest.getFullPathName().toUTF8().getAddress(),
-								  S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
-
-							_DBG("Wrote icon companions to: " + companionDir.getFullPathName());
-						} else {
-							_DBG("Warning: failed to copy icon resource for exported instance");
-						}
-					} else {
-						_DBG("Warning: icon resource '" + iconResourceName + "' not found for exported instance");
-					}
-				}
-			}
-
-			_DBG("Export succeeded for: " + newMe.getFullPathName());
-			notifyAndReturn(Result::ok());
-		});
+			FC::saveFileAsync(CTRLR_NEW_INSTANCE_DIALOG_TITLE, suggestedFile, "*", useNativeDialog,
+							  [performExportPipeline, notifyAndReturn](const File &chosenFile) {
+								  if (chosenFile == File()) {
+									  notifyAndReturn(Result::fail("User cancelled the export operation."));
+									  return;
+								  }
+								  performExportPipeline(chosenFile);
+							  });
+		}
+	}
 }
 
 // --- Getter functions ---

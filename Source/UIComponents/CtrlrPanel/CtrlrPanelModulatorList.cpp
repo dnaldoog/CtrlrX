@@ -14,7 +14,21 @@ CtrlrPanelModulatorList::CtrlrPanelModulatorList(CtrlrPanel &_owner)
 	  modulatorListTree(owner) // Note: Removed modulatorList(nullptr) from initializer list since unique_ptr
 							   // initializes to nullptr automatically
 {
-	// 1. Allocate the table layout once using modern smart pointers
+	// 0. Setup Search Controls
+	addAndMakeVisible(searchLabel);
+	searchLabel.setFont(juce::FontOptions(12.0f));
+
+	addAndMakeVisible(searchField);
+	searchField.addListener(this);
+	searchField.setTextToShowWhenEmpty("Type to search...", juce::Colours::grey);
+
+	addAndMakeVisible(clearSearchButton);
+	clearSearchButton.onClick = [this]() {
+		searchField.clear(); // Clears text and triggers textEditorTextChanged -> applyFuzzyFilter
+		applyFuzzyFilter();	 // this will reset the modulator list to show all again!
+	};
+
+	// Allocate Table
 	modulatorList = std::make_unique<TableListBox>("Modulator List", this);
 	addAndMakeVisible(modulatorList.get());
 
@@ -62,8 +76,23 @@ CtrlrPanelModulatorList::~CtrlrPanelModulatorList() {
 void CtrlrPanelModulatorList::paint(Graphics &g) {}
 
 void CtrlrPanelModulatorList::resized() {
-	modulatorList->setBounds(0, 0, getWidth() - 0, getHeight() - 0);
-	modulatorListTree.setBounds(0, 0, getWidth() - 0, getHeight() - 0);
+	auto area = getLocalBounds().reduced(4);
+
+	// Top Bar Layout: Label -> 200px Input Field -> 60px Clear Button
+	auto searchRow = area.removeFromTop(24);
+	searchLabel.setBounds(searchRow.removeFromLeft(110));
+	searchRow.removeFromLeft(4);
+
+	searchField.setBounds(searchRow.removeFromLeft(200)); // Fixed 200px width
+	searchRow.removeFromLeft(4);
+
+	clearSearchButton.setBounds(searchRow.removeFromLeft(60)); // Fixed 60px Clear button
+
+	area.removeFromTop(6); // Vertical gap before table
+
+	// Table and Tree fill the remaining space
+	modulatorList->setBounds(area);
+	modulatorListTree.setBounds(area);
 }
 
 void CtrlrPanelModulatorList::resetToDefaults() {
@@ -102,11 +131,13 @@ void CtrlrPanelModulatorList::mouseDown(const MouseEvent &e) {
 void CtrlrPanelModulatorList::mouseUp(const MouseEvent &e) {}
 
 void CtrlrPanelModulatorList::copyModulatorList() {
-	copyOfModulatorList.clear();
+	masterModulatorList.clear();
 
 	for (int i = 0; i < owner.getNumModulators(); i++) {
-		copyOfModulatorList.set(i, owner.getModulatorByIndex(i));
+		masterModulatorList.set(i, owner.getModulatorByIndex(i));
 	}
+
+	applyFuzzyFilter();
 }
 
 void CtrlrPanelModulatorList::modulatorChanged(CtrlrModulator *modulatorThatChanged) {
@@ -138,9 +169,13 @@ void CtrlrPanelModulatorList::modulatorChanged(CtrlrModulator *modulatorThatChan
 	}
 }
 
-void CtrlrPanelModulatorList::modulatorAdded(CtrlrModulator *modulatorThatWasAdded) { refresh(); }
+void CtrlrPanelModulatorList::modulatorAdded(CtrlrModulator *modulatorThatWasAdded) {
+	refresh();
+}
 
-void CtrlrPanelModulatorList::modulatorRemoved(CtrlrModulator *modulatorRemoved) { refresh(); }
+void CtrlrPanelModulatorList::modulatorRemoved(CtrlrModulator *modulatorRemoved) {
+	refresh();
+}
 
 File CtrlrPanelModulatorList::getModListFile(const String &suffix) {
 	return (File::getSpecialLocation(File::tempDirectory)
@@ -219,21 +254,25 @@ const int CtrlrPanelModulatorList::getColumnIdForIdentifier(const String &column
 	return (-1);
 }
 
-int CtrlrPanelModulatorList::getNumRows() { return (copyOfModulatorList.size()); }
+int CtrlrPanelModulatorList::getNumRows() {
+	return (copyOfModulatorList.size());
+}
 
-void CtrlrPanelModulatorList::paintRowBackground (Graphics& g, int rowNumber, int width, int height, bool rowIsSelected)
-{
-	//https://github.com/damiensellier/CtrlrX/issues/295#issuecomment-4961237685
-    if (rowIsSelected) // Updated v5.6.36
-    {
-		Colour rowBackgroundColour = findColour (TextButton::buttonOnColourId);
-		
+void CtrlrPanelModulatorList::paintRowBackground(Graphics &g, int rowNumber, int width, int height,
+												 bool rowIsSelected) {
+	// https://github.com/damiensellier/CtrlrX/issues/295#issuecomment-4961237685
+	if (rowIsSelected) // Updated v5.6.36
+	{
+		Colour rowBackgroundColour = findColour(TextButton::buttonOnColourId);
+
 		// 1. Fill the background base
-		g.fillAll (rowBackgroundColour);
-		
+		g.fillAll(rowBackgroundColour);
+
 		// 2. Override the macro by passing your dynamic color as the 3rd argument
-		gui::drawSelectionRectangle (g, width, height, rowBackgroundColour, 1.0f, 1.0f, 0.0f, 0.0f); // This will remove the stuborn blue gradient at the end of the selected row. @dobo365 will like that.
-    }
+		gui::drawSelectionRectangle(g, width, height, rowBackgroundColour, 1.0f, 1.0f, 0.0f,
+									0.0f); // This will remove the stuborn blue gradient at the end of the selected row.
+										   // @dobo365 will like that.
+	}
 }
 
 juce::Component *CtrlrPanelModulatorList::refreshComponentForCell(int rowNumber, int columnId, bool isRowSelected,
@@ -646,13 +685,21 @@ void CtrlrPanelModulatorList::timerCallback() {
 	}
 }
 
-void CtrlrPanelModulatorList::tableColumnsChanged(TableHeaderComponent *) { saveColumnState(); }
+void CtrlrPanelModulatorList::tableColumnsChanged(TableHeaderComponent *) {
+	saveColumnState();
+}
 
-void CtrlrPanelModulatorList::tableColumnsResized(TableHeaderComponent *t) { saveColumnState(); }
+void CtrlrPanelModulatorList::tableColumnsResized(TableHeaderComponent *t) {
+	saveColumnState();
+}
 
-void CtrlrPanelModulatorList::tableSortOrderChanged(TableHeaderComponent *) { saveColumnState(); }
+void CtrlrPanelModulatorList::tableSortOrderChanged(TableHeaderComponent *) {
+	saveColumnState();
+}
 
-void CtrlrPanelModulatorList::tableColumnDraggingChanged(TableHeaderComponent *, int) { saveColumnState(); }
+void CtrlrPanelModulatorList::tableColumnDraggingChanged(TableHeaderComponent *, int) {
+	saveColumnState();
+}
 
 void CtrlrPanelModulatorList::saveColumnState() {
 	const String state = modulatorList->getHeader().toString();
@@ -661,4 +708,64 @@ void CtrlrPanelModulatorList::saveColumnState() {
 	_DBG(state);
 
 	owner.setProperty(Ids::panelModulatorListColumns, state);
+}
+void CtrlrPanelModulatorList::textEditorTextChanged(juce::TextEditor &editor) {
+	if (&editor == &searchField) {
+		applyFuzzyFilter();
+	}
+}
+
+void CtrlrPanelModulatorList::applyFuzzyFilter() {
+	const juce::String query = searchField.getText().trim();
+
+	copyOfModulatorList.clear();
+
+	// If query is empty, copy all modulators directly
+	if (query.isEmpty()) {
+		for (int i = 0; i < masterModulatorList.size(); ++i) {
+			copyOfModulatorList.add(masterModulatorList[i]);
+		}
+	} else {
+		struct ScoredModulator {
+				WeakReference<CtrlrModulator> mod;
+				double score;
+		};
+
+		std::vector<ScoredModulator> scoredList;
+		const std::string queryStd = query.toStdString();
+
+		for (int i = 0; i < masterModulatorList.size(); ++i) {
+			CtrlrModulator *m = masterModulatorList[i].get();
+			if (!m)
+				continue;
+
+			const juce::String modName = m->getName();
+			const std::string nameStd = modName.toStdString();
+
+			// Calculate RapidFuzz ratio score
+			double score = rapidfuzz::fuzz::partial_ratio(queryStd, nameStd);
+
+			// Direct prefix match bonus
+			if (modName.startsWithIgnoreCase(query))
+				score += 20.0;
+
+			// Include items with reasonable match threshold
+			if (score > 55.0) {
+				scoredList.push_back({masterModulatorList[i], score});
+			}
+		}
+
+		// Sort filtered rows by best match score descending
+		std::sort(scoredList.begin(), scoredList.end(),
+				  [](const ScoredModulator &a, const ScoredModulator &b) { return a.score > b.score; });
+
+		// Populate copyOfModulatorList with filtered items
+		for (const auto &item : scoredList) {
+			copyOfModulatorList.add(item.mod);
+		}
+	}
+
+	// Update JUCE TableListBox
+	modulatorList->updateContent();
+	modulatorList->repaint();
 }

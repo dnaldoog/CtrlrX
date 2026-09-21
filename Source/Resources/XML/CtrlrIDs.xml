@@ -80,6 +80,7 @@
   <id name="uiPanelLookAndFeel"             text="LookAndFeel scheme for panel" type="VarText" defaults="@lookandfeelschemes" />
   <id name="uiPanelColourScheme"            text="LookAndFeel V4 colour scheme" type="VarText" defaults="@colourSchemes" />
   <id name="uiPanelLegacyMode"              text="LookAndFeel V3 for older panels" type="Bool" defaults="Legacy Mode/Disabled" />
+  <id name="uiPanelLinuxExpDest"              text="Linux Restricted Install Destination" type="Bool" defaults="~&#x2215;.local&#x2215;bin [immediate]/Custom save destination" />
   <id name="uiPanelJitMode"                 text="LuaJIT Mode" type="Bool" defaults="Compiler (macOS codesign required)/Interpreter" />
   
   <id name="uiPanelUIColourWindowBackground"    text="Window background colour"  type="Colour" />
