@@ -188,9 +188,7 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 	setProperty(Ids::uiPanelBackgroundGradientType, 0);			 // Default set to SolidColor [No background gradient]
 	setProperty(Ids::uiPanelImageResource, COMBO_ITEM_NONE);
 	setProperty(Ids::uiPanelIconResource, COMBO_ITEM_NONE);
-#if JUCE_LINUX
 	setProperty(Ids::uiPanelLinuxExpDest, false);
-#endif
 	setProperty(Ids::uiPanelImageAlpha, 255);
 	setProperty(Ids::uiPanelImageLayout, 64);
 	setProperty(Ids::uiPanelSnapActive, true);

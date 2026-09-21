@@ -141,7 +141,19 @@ void CtrlrPanelComponentProperties::setTree(const ValueTree &_treeToEdit, const 
 						treeToEdit.getChildWithName(Ids::uiPanelEditor), &owner.getOwner(), &resourceList,
 						&resourceList));
 				} else if (treeToEdit.getChildWithName(Ids::uiPanelEditor).getPropertyName(i) ==
-						  Ids::uiPanelIconResource) {
+						   Ids::uiPanelLinuxExpDest) {
+#if JUCE_LINUX
+					panelEditorProperties.add(getIDManager().createComponentForProperty(
+						treeToEdit.getChildWithName(Ids::uiPanelEditor).getPropertyName(i),
+						treeToEdit.getChildWithName(Ids::uiPanelEditor), &owner.getOwner()));
+#endif
+					// Deliberately add nothing on non-Linux platforms — the property may
+					// still exist in the loaded panel data (e.g. last saved on Linux),
+					// but there's no reason to show or let someone edit a Linux-only
+					// export setting from Windows or macOS.
+
+				} else if (treeToEdit.getChildWithName(Ids::uiPanelEditor).getPropertyName(i) ==
+						   Ids::uiPanelIconResource) {
 					panelEditorProperties.add(getIDManager().createComponentForProperty(
 						treeToEdit.getChildWithName(Ids::uiPanelEditor).getPropertyName(i),
 						treeToEdit.getChildWithName(Ids::uiPanelEditor), &owner.getOwner(), &svgResourceList,

@@ -825,7 +825,7 @@ DECLARE_ID(ctrlrAutoSave);
 DECLARE_ID(ctrlrAutoSaveInterval);
 DECLARE_ID(ctrlrLastBrowsedFileDirectory);
 DECLARE_ID(ctrlrOpenWindowState);
-DECLARE_ID(ctrlrRecenetOpenedPanelFiles);
+DECLARE_ID(ctrlrRecentOpenedPanelFiles);
 DECLARE_ID(ctrlrPropertiesAreURLs);
 DECLARE_ID(ctrlrKeyboardMapping);
 DECLARE_ID(ctrlrCapabilities);
