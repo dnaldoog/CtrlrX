@@ -320,7 +320,7 @@ void CtrlrEditor::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 
 const StringArray CtrlrEditor::getRecentOpenedFilesList() {
 	StringArray recentFiles;
-	recentFiles.addTokens(owner.getProperty(Ids::ctrlrRecenetOpenedPanelFiles).toString(), ";", "'\"");
+	recentFiles.addTokens(owner.getProperty(Ids::ctrlrRecentOpenedPanelFiles).toString(), ";", "'\"");
 
 	return (recentFiles);
 }
@@ -328,7 +328,7 @@ const StringArray CtrlrEditor::getRecentOpenedFilesList() {
 const PopupMenu CtrlrEditor::getRecentOpenedFilesMenu() {
 	PopupMenu m;
 	StringArray recentFiles;
-	recentFiles.addTokens(owner.getProperty(Ids::ctrlrRecenetOpenedPanelFiles).toString(), ";", "'\"");
+	recentFiles.addTokens(owner.getProperty(Ids::ctrlrRecentOpenedPanelFiles).toString(), ";", "'\"");
 
 	for (int i = 0; i < recentFiles.size(); i++) {
 		m.addItem(0x9000 + i, recentFiles[i]);

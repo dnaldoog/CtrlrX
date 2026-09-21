@@ -78,8 +78,9 @@ CtrlrSettings::CtrlrSettings (CtrlrManager &_owner) : Component ("Global Propert
     debugProperties.add(owner.getIDManager().createComponentForProperty(Identifier("uiLuaConsoleInputRemoveAfterRun"), owner.getManagerTree(), nullptr)); // Clear Console After Execute
     
     // Directory section
-    directoriesProperties.add(owner.getIDManager().createComponentForProperty(Identifier("ctrlrRecenetOpenedPanelFiles"), owner.getManagerTree(), nullptr));
-    directoriesProperties.add(owner.getIDManager().createComponentForProperty(Identifier("ctrlrLastBrowsedFileDirectory"), owner.getManagerTree(), nullptr));
+	directoriesProperties.add(owner.getIDManager().createComponentForProperty(Identifier("ctrlrRecentOpenedPanelFiles"),
+																			  owner.getManagerTree(), nullptr));
+	directoriesProperties.add(owner.getIDManager().createComponentForProperty(Identifier("ctrlrLastBrowsedFileDirectory"), owner.getManagerTree(), nullptr));
     directoriesProperties.add(owner.getIDManager().createComponentForProperty(Identifier("ctrlrLastBrowsedResourceDir"), owner.getManagerTree(), nullptr));
     
     // propertyPanel->addSection("Global | Restart to apply settings", globalProperties, true);

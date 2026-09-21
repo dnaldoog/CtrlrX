@@ -785,10 +785,10 @@ void CtrlrManager::openPanelFromFile(Component *componentToAttachMenu) {
 
 void CtrlrManager::panelFileOpened(const File &panelFile) {
 	StringArray recentFiles;
-	recentFiles.addTokens(getProperty(Ids::ctrlrRecenetOpenedPanelFiles).toString(), ";", "\"'");
+	recentFiles.addTokens(getProperty(Ids::ctrlrRecentOpenedPanelFiles).toString(), ";", "\"'");
 	recentFiles.insert(0, panelFile.getFullPathName());
 	recentFiles.removeRange(9, recentFiles.size() - 10);
-	setProperty(Ids::ctrlrRecenetOpenedPanelFiles, recentFiles.joinIntoString(";"));
+	setProperty(Ids::ctrlrRecentOpenedPanelFiles, recentFiles.joinIntoString(";"));
 
 	setProperty(Ids::ctrlrLastBrowsedFileDirectory, panelFile.getFullPathName());
 }
