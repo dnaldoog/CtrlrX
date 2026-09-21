@@ -1,9 +1,10 @@
 #ifndef __CTRLR_PANEL_MODULATOR_LIST__
 #define __CTRLR_PANEL_MODULATOR_LIST__
 
-#include "CtrlrPanelModulatorListTree.h"
-#include "../../Core/CtrlrPanel/CtrlrPanel.h" 
+#include "../../Core/CtrlrPanel/CtrlrPanel.h"
 #include "../CtrlrWindowManagers/CtrlrPanelWindowManager.h"
+#include "CtrlrPanelModulatorListTree.h"
+#include <rapidfuzz/fuzz.hpp>
 
 class CtrlrModulator;
 
@@ -22,7 +23,8 @@ class CtrlrPanelModulatorList : public CtrlrChildWindowContent, // Component bas
 								public juce::TableListBoxModel, // Added namespace
 								public CtrlrPanel::Listener,
 								public juce::TableHeaderComponent::Listener, // Added namespace
-								public juce::Timer {
+								public juce::Timer,
+								public juce::TextEditor::Listener {
 
 	public:
 		CtrlrPanelModulatorList(CtrlrPanel &_owner);
@@ -52,7 +54,7 @@ class CtrlrPanelModulatorList : public CtrlrChildWindowContent, // Component bas
 		const Identifier getColumnCtrlrId(const int columnId);
 		static const String getValueStringForColumn(CtrlrModulator *m, const Identifier columnName);
 		static Value getValueForColumn(CtrlrModulator *m, const Identifier columnName);
-
+		void textEditorTextChanged(juce::TextEditor &editor) override; // relating to fuzzy search
 		void modulatorChanged(CtrlrModulator *modulatorThatChanged) override;
 		void modulatorAdded(CtrlrModulator *modulatorThatWasAdded);
 		void modulatorRemoved(CtrlrModulator *modulatorRemoved);
@@ -89,6 +91,11 @@ https://github.com/damiensellier/CtrlrX/issues/295#issuecomment-4960450879
 
 	private:
 		CtrlrPanel &owner;
+		juce::Label searchLabel{"searchLabel", "Search Modulators:"};
+		juce::TextEditor searchField;
+		juce::TextButton clearSearchButton{"Reset"};
+		void applyFuzzyFilter();
+		Array<WeakReference<CtrlrModulator>> masterModulatorList;
 		Array<WeakReference<CtrlrModulator>> copyOfModulatorList;
 		int sortColumnId;
 		bool isSortedForward;

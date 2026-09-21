@@ -106,6 +106,7 @@ DECLARE_ID(uiPanelModulatorListTreeState);
 DECLARE_ID(uiPanelDisableCombosOnEdit);
 DECLARE_ID(uiPanelJitMode);
 DECLARE_ID(uiPanelLegacyMode);
+DECLARE_ID(uiPanelLinuxExpDest);
 DECLARE_ID(uiPanelLookAndFeel);
 DECLARE_ID(uiPanelColorScheme);
 DECLARE_ID(uiPanelColourScheme);

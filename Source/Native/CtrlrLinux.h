@@ -11,8 +11,9 @@ class CtrlrLinux : public CtrlrNative {
 		~CtrlrLinux() override;
 
 		// Modernized async panel export (matching CtrlrNative)
-		void exportWithDefaultPanel(CtrlrPanel *panelToWrite, bool isRestricted, bool signPanel,
-									std::function<void(juce::Result)> callback) override;
+
+		void exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRestricted, const bool signPanel,
+									std::function<void(juce::Result)> callback);
 
 		// Fixed return types (removed legacy 'const' qualifiers & added 'override')
 		juce::Result getDefaultPanel(juce::MemoryBlock &dataToWrite) override;
