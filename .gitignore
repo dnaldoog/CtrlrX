@@ -111,7 +111,7 @@ Builds/
 vs/
 .vs/
 Source/JUCE/modules
-JUCE/extras
+#JUCE/extras
 build_log.txt
 build/
 CMakeCache.txt
