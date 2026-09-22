@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -528,16 +528,25 @@ struct CoreMidiHelpers
         {
             JUCE_ASSERT_MESSAGE_THREAD
 
-            enableSimulatorMidiSession();
+            static auto clientRef = std::invoke ([]() -> std::optional<MIDIClientRef>
+            {
+                enableSimulatorMidiSession();
 
-            const auto name = ump::Endpoints::Impl::getGlobalMidiClientName();
-            CFUniquePtr<CFStringRef> cfName (name.toCFString());
-            MIDIClientRef clientRef{};
+                const auto name = ump::Endpoints::Impl::getGlobalMidiClientName();
+                CFUniquePtr<CFStringRef> cfName (name.toCFString());
 
-            if (! JUCE_CHECK_ERROR (MIDIClientCreate (cfName.get(), systemChangeCallback, nullptr, &clientRef)))
+                MIDIClientRef midiClientRef{};
+
+                if (! JUCE_CHECK_ERROR (MIDIClientCreate (cfName.get(), systemChangeCallback, nullptr, &midiClientRef)))
+                    return {};
+
+                return midiClientRef;
+            });
+
+            if (! clientRef.has_value())
                 return nullptr;
 
-            const std::shared_ptr<SharedEndpointsImplNative> result { new SharedEndpointsImplNative (clientRef, listener) };
+            const std::shared_ptr<SharedEndpointsImplNative> result { new SharedEndpointsImplNative (*clientRef, listener) };
             Listeners::get().add (result);
             return result;
         }
@@ -674,7 +683,7 @@ struct CoreMidiHelpers
 
                 case kMIDIMsgSetupChanged:
                #if JUCE_IOS
-                case kMIDIMsgInternalStart:
+                case 0x1000: // kMIDIMsgInternalStart
                #endif
 
                 default:
@@ -1929,9 +1938,9 @@ struct CoreMidiHelpers
     class ConnectionToDst
     {
     public:
-        void send (ump::Iterator b, ump::Iterator e)
+        bool send (ump::Iterator b, ump::Iterator e)
         {
-            output.send (connection.portAndEndpoint, b, e);
+            return output.send (connection.portAndEndpoint, b, e);
         }
 
         void addDisconnectionListener (ump::DisconnectionListener& l)
@@ -2106,8 +2115,7 @@ struct CoreMidiHelpers
 
         bool send (ump::Iterator b, ump::Iterator e) override
         {
-            connection->send (b, e);
-            return true;
+            return connection->send (b, e);
         }
 
         ump::EndpointId getEndpointId() const override

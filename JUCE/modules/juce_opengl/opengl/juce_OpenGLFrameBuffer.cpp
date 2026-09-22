@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -35,9 +35,34 @@
 namespace juce
 {
 
-/*
-    Used on Android to detect when the GL context and associated resources (textures, framebuffers,
-    etc.) need to be destroyed/created due to the Surface changing state.
+static bool tryAllocTexture (int w, int h, GLenum type)
+{
+    JUCE_CHECK_OPENGL_ERROR
+
+    for (const auto& [testWidth, testHeight] : { std::tuple (w, h),
+                                                 std::tuple (nextPowerOfTwo (w), nextPowerOfTwo (h)) })
+    {
+        glTexImage2D (GL_TEXTURE_2D,
+                      0,
+                      type == GL_ALPHA ? GL_ALPHA : GL_RGBA,
+                      testWidth,
+                      testHeight,
+                      0,
+                      type,
+                      GL_UNSIGNED_BYTE,
+                      nullptr);
+
+        const GLenum error = glGetError();
+
+        if (error == GL_NO_ERROR)
+            return true;
+    }
+
+    return false;
+}
+
+/*  Used to detect when the GL context and associated resources (textures, framebuffers, etc.)
+    need to be destroyed/created.
 */
 class OpenGLContext::NativeContextListener
 {
@@ -46,9 +71,10 @@ public:
 
     virtual void contextWillPause() = 0;
     virtual void contextDidResume() = 0;
+    virtual void contextWillBeDestroyed() = 0;
 
-    static void addListener (OpenGLContext& ctx, NativeContextListener& l);
-    static void removeListener (OpenGLContext& ctx, NativeContextListener& l);
+    void registerWith (OpenGLContext& c)    { c.nativeContextListeners.add (this); }
+    void unregisterFrom (OpenGLContext& c)  { c.nativeContextListeners.remove (this); }
 };
 
 class OpenGLFrameBuffer::Pimpl : private OpenGLContext::NativeContextListener
@@ -86,7 +112,7 @@ public:
             return false;
 
         associatedContext = &context;
-        NativeContextListener::addListener (*associatedContext, *this);
+        registerWith (*associatedContext);
 
         return true;
     }
@@ -124,7 +150,7 @@ public:
         const ScopeGuard unbinder { [transientState] { transientState->unbind(); }};
 
        #if ! JUCE_ANDROID
-        if (! associatedContext->isCoreProfile())
+        if (associatedContext->getProfile() == OpenGLProfile::compatibility)
             glEnable (GL_TEXTURE_2D);
 
         clearGLError();
@@ -141,7 +167,7 @@ public:
     void release()
     {
         if (auto* prev = std::exchange (associatedContext, nullptr))
-            NativeContextListener::removeListener (*prev, *this);
+            unregisterFrom (*prev);
 
         state.emplace<std::monostate>();
     }
@@ -357,7 +383,10 @@ private:
                 glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 JUCE_CHECK_OPENGL_ERROR
 
-                glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+                [[maybe_unused]] const auto created = tryAllocTexture (width, height, GL_RGBA);
+                // Failed to create texture
+                jassert (created);
+
                 JUCE_CHECK_OPENGL_ERROR
             }
 
@@ -369,11 +398,9 @@ private:
                 gl::glBindRenderbuffer (GL_RENDERBUFFER, depthOrStencilBuffer);
                 jassert (gl::glIsRenderbuffer (depthOrStencilBuffer));
 
-               #if JUCE_OPENGL_ES
-                constexpr auto depthComponentConstant = (GLenum) GL_DEPTH_COMPONENT16;
-               #else
-                constexpr auto depthComponentConstant = (GLenum) GL_DEPTH_COMPONENT;
-               #endif
+                const auto depthComponentConstant = OpenGLHelpers::isOpenGLES()
+                                                  ? (GLenum) GL_DEPTH_COMPONENT16
+                                                  : (GLenum) GL_DEPTH_COMPONENT;
 
                 gl::glRenderbufferStorage (GL_RENDERBUFFER,
                                            (wantsDepthBuffer && wantsStencilBuffer) ? (GLenum) GL_DEPTH24_STENCIL8
@@ -410,6 +437,13 @@ private:
         bool createdOk() const
         {
             return frameBufferID != 0 && textureID != 0;
+        }
+
+        void abandon()
+        {
+            textureID = 0;
+            frameBufferID = 0;
+            depthOrStencilBuffer = 0;
         }
 
         void bind()
@@ -465,8 +499,10 @@ private:
             return transientState;
         }
 
-        // trying to use a framebuffer after saving it with saveAndRelease()! Be sure to call
-        // reloadSavedCopy() to put it back into GPU memory before using it
+        // Trying to use a framebuffer that isn't currently in GPU memory! Either it was saved
+        // with saveAndRelease(), in which case call reloadSavedCopy() to put it back before
+        // using it, or the context that owned it has been detached or destroyed, in which case
+        // the framebuffer must be initialised again with a live context.
         jassertfalse;
 
         return nullptr;
@@ -481,6 +517,15 @@ private:
     {
         if (associatedContext != nullptr)
             reloadSavedCopy (*associatedContext);
+    }
+
+    void contextWillBeDestroyed() override
+    {
+        if (auto* transientState = std::get_if<TransientState> (&state))
+            transientState->abandon();
+
+        associatedContext = nullptr;
+        state.emplace<std::monostate>();
     }
 
     OpenGLContext* associatedContext = nullptr;

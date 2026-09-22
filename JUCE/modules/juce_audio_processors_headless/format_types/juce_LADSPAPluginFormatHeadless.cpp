@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -719,7 +719,9 @@ void LADSPAPluginFormatHeadless::recursiveFileSearch (StringArray& results, cons
 
 FileSearchPath LADSPAPluginFormatHeadless::getDefaultLocationsToSearch()
 {
-    return  { SystemStats::getEnvironmentVariable ("LADSPA_PATH", "/usr/lib/ladspa;/usr/local/lib/ladspa;~/.ladspa").replace (":", ";") };
+    FileSearchPath result { SystemStats::getEnvironmentVariable ("LADSPA_PATH", "").replace (":", ";") };
+    result.addPath ({ "~/.ladspa;/usr/local/lib/ladspa;/usr/lib/ladspa" });
+    return result;
 }
 
 } // namespace juce
