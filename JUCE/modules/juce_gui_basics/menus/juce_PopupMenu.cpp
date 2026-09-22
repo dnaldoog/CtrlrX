@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -68,7 +68,7 @@ struct PopupMenu::HelperClasses
 class MouseSourceState;
 struct MenuWindow;
 
-static bool canBeTriggered (const Item& item) noexcept
+static bool canBeTriggered (const PopupMenu::Item& item) noexcept
 {
     return item.isEnabled
         && item.itemID != 0
@@ -76,7 +76,7 @@ static bool canBeTriggered (const Item& item) noexcept
         && (item.customComponent == nullptr || item.customComponent->isTriggeredAutomatically());
 }
 
-static bool hasActiveSubMenu (const Item& item) noexcept
+static bool hasActiveSubMenu (const PopupMenu::Item& item) noexcept
 {
     return item.isEnabled
         && item.subMenu != nullptr
@@ -84,7 +84,7 @@ static bool hasActiveSubMenu (const Item& item) noexcept
 }
 
 //==============================================================================
-struct HeaderItemComponent final : public CustomComponent
+struct HeaderItemComponent final : public PopupMenu::CustomComponent
 {
     HeaderItemComponent (const String& name, const Options& opts)
         : CustomComponent (false), options (opts)
@@ -122,7 +122,7 @@ struct HeaderItemComponent final : public CustomComponent
 //==============================================================================
 struct ItemComponent final : public Component
 {
-    ItemComponent (const Item& i, const Options& o, MenuWindow& parent)
+    ItemComponent (const PopupMenu::Item& i, const PopupMenu::Options& o, MenuWindow& parent)
         : item (i), parentWindow (parent), options (o), customComp (i.customComponent)
     {
         if (item.isSectionHeader)
@@ -206,12 +206,12 @@ struct ItemComponent final : public Component
         }
     }
 
-    static bool isAccessibilityHandlerRequired (const Item& item)
+    static bool isAccessibilityHandlerRequired (const PopupMenu::Item& item)
     {
         return item.isSectionHeader || hasActiveSubMenu (item) || canBeTriggered (item);
     }
 
-    Item item;
+    PopupMenu::Item item;
 
 private:
     //==============================================================================
@@ -299,7 +299,7 @@ private:
 
     //==============================================================================
     MenuWindow& parentWindow;
-    const Options& options;
+    const PopupMenu::Options& options;
     // NB: we use a copy of the one from the item info in case we're using our own section comp
     ReferenceCountedObjectPtr<CustomComponent> customComp;
     bool isHighlighted = false;
@@ -340,7 +340,7 @@ private:
 };
 
 //==============================================================================
-struct MenuWindow final : public Component, private AsyncUpdater
+struct MenuWindow final : public Component
 {
     MenuWindow (const PopupMenu& menu,
                 MenuWindow* parentWindow,
@@ -384,21 +384,9 @@ struct MenuWindow final : public Component, private AsyncUpdater
             if (shouldDisableAccessibility)
                 setAccessible (false);
 
-            const auto windowsMultiTouchFlag = std::invoke ([&]
-            {
-                if (auto* topComponent = options.getTopLevelTargetComponent())
-                    if (auto* topPeer = topComponent->getPeer())
-                        return topPeer->canWindowsUseMultiTouch();
-
-                return false;
-            });
-
             addToDesktop (ComponentPeer::windowIsTemporary
                           | ComponentPeer::windowIgnoresKeyPresses
                           | lf.getMenuWindowFlags());
-
-            if (auto* peer = getPeer())
-                peer->setWindowsCanUseMultiTouch (windowsMultiTouchFlag);
         }
 
         // Using a global mouse listener means that we get notifications about all mouse events.
@@ -406,50 +394,11 @@ struct MenuWindow final : public Component, private AsyncUpdater
         // menu, because they *only* target the component that initiated the drag interaction.
         Desktop::getInstance().addGlobalMouseListener (this);
 
-        scaleFactor = std::invoke ([&]
-        {
-            if (options.getParentComponent() != nullptr)
-                return scaleFactor;
+        if (options.getParentComponent() == nullptr && parentWindow == nullptr && lf.shouldPopupMenuScaleWithTargetComponent (options))
+            if (auto* targetComponent = options.getTargetComponent())
+                scaleFactor = Component::getApproximateScaleFactorForComponent (targetComponent);
 
-            if (parentWindow != nullptr)
-                return scaleFactor;
-
-            if (! lf.shouldPopupMenuScaleWithTargetComponent (options))
-                return scaleFactor;
-
-            auto* targetComponent = options.getTargetComponent();
-
-            if (targetComponent == nullptr)
-                return scaleFactor;
-
-            const auto baseScale = getApproximateScaleFactorForComponent (targetComponent);
-            const auto targetScale = std::invoke ([&]
-            {
-                if (auto* targetPeer = targetComponent->getPeer())
-                    return targetPeer->getPlatformScaleFactor();
-
-                return 1.0;
-            });
-
-            // Move the menu window's peer to the screen where it will display so that we can
-            // retrieve the peer's native scale there.
-            // The final position will be computed and applied later on.
-
-            const ScopeGuard scope { [this, pos = getPosition()] { setTopLeftPosition (pos.x, pos.y); } };
-            setTopLeftPosition (options.getTargetScreenArea().getCentre());
-
-            const auto selfScale = std::invoke ([&]
-            {
-                if (auto* selfPeer = getPeer())
-                    return (float) selfPeer->getPlatformScaleFactor();
-
-                return 1.0f;
-            });
-
-            return baseScale * (float) targetScale / (float) selfScale;
-        });
-
-        setOpaque (lf.findColour (backgroundColourId).isOpaque()
+        setOpaque (lf.findColour (PopupMenu::backgroundColourId).isOpaque()
                      || ! Desktop::canUseSemiTransparentWindows());
 
         const auto initialSelectedId = options.getInitiallySelectedItemId();
@@ -571,7 +520,7 @@ struct MenuWindow final : public Component, private AsyncUpdater
 
     //==============================================================================
     // hide this and all sub-comps
-    void hide (const Item* item, bool makeInvisible)
+    void hide (const PopupMenu::Item* item, bool makeInvisible)
     {
         if (isVisible())
         {
@@ -606,7 +555,7 @@ struct MenuWindow final : public Component, private AsyncUpdater
         }
     }
 
-    static int getResultItemID (const Item* item)
+    static int getResultItemID (const PopupMenu::Item* item)
     {
         if (item == nullptr)
             return 0;
@@ -618,7 +567,7 @@ struct MenuWindow final : public Component, private AsyncUpdater
         return item->itemID;
     }
 
-    void dismissMenu (const Item* item)
+    void dismissMenu (const PopupMenu::Item* item)
     {
         if (parent != nullptr)
         {
@@ -643,34 +592,17 @@ struct MenuWindow final : public Component, private AsyncUpdater
 
     void visibilityChanged() override
     {
-        // If the component that spawns the MenuWindow is in a modal state, grabbing the focus will
-        // fail, because the ModalComponentManager cannot establish a parent-child relationship
-        // between the PopupMenu and the MenuWindow.
-        //
-        // Our workaround is to wait until after the MenuWindow itself has been put into the modal
-        // state, and only then run the code grabbing the focus.
-        triggerAsyncUpdate();
-    }
-
-    void handleAsyncUpdate() override
-    {
         if (! isShowing())
             return;
 
-        auto* accessibleFocus = std::invoke ([this]() -> AccessibilityHandler*
+        auto* accessibleFocus = [this]
         {
-            if (currentChild != nullptr)
-                if (auto* childHandler = currentChild->getAccessibilityHandler())
-                    return childHandler;
+          if (currentChild != nullptr)
+              if (auto* childHandler = currentChild->getAccessibilityHandler())
+                  return childHandler;
 
-            if (auto* handler = getAccessibilityHandler())
-            {
-                const auto children = handler->getChildren();
-                return children.empty() ? handler : children.front();
-            }
-
-            return nullptr;
-        });
+            return getAccessibilityHandler();
+        }();
 
         if (accessibleFocus != nullptr)
             accessibleFocus->grabFocus();
@@ -923,23 +855,18 @@ struct MenuWindow final : public Component, private AsyncUpdater
         if (relativeTo != nullptr)
             targetPoint = relativeTo->localPointToGlobal (targetPoint);
 
-        auto* display = Desktop::getInstance().getDisplays().getDisplayForPoint (targetPoint.toFloat() * scaleFactor);
-        const auto intBorder = display->safeAreaInsets;
-        const BorderSize floatBorder ((float) intBorder.getTop(),
-                                      (float) intBorder.getLeft(),
-                                      (float) intBorder.getBottom(),
-                                      (float) intBorder.getRight());
-        auto parentArea = display->userBounds.getIntersection (floatBorder.subtractedFrom (display->logicalBounds));
+        auto* display = Desktop::getInstance().getDisplays().getDisplayForPoint (targetPoint * scaleFactor);
+        auto parentArea = display->userArea.getIntersection (display->safeAreaInsets.subtractedFrom (display->totalArea));
 
         if (auto* pc = options.getParentComponent())
         {
             return pc->getLocalArea (nullptr,
-                                     pc->getScreenBounds().toFloat()
-                                           .reduced ((float) getLookAndFeel().getPopupMenuBorderSizeWithOptions (options))
-                                           .getIntersection (parentArea)).getLargestIntegerWithin();
+                                     pc->getScreenBounds()
+                                           .reduced (getLookAndFeel().getPopupMenuBorderSizeWithOptions (options))
+                                           .getIntersection (parentArea));
         }
 
-        return parentArea.toNearestInt();
+        return parentArea;
     }
 
     void calculateWindowPos (Rectangle<int> target, const bool alignToRectangle)
@@ -1735,10 +1662,10 @@ private:
 };
 
 //==============================================================================
-struct NormalComponentWrapper final : public CustomComponent
+struct NormalComponentWrapper final : public PopupMenu::CustomComponent
 {
     NormalComponentWrapper (Component& comp, int w, int h, bool triggerMenuItemAutomaticallyWhenClicked)
-        : CustomComponent (triggerMenuItemAutomaticallyWhenClicked),
+        : PopupMenu::CustomComponent (triggerMenuItemAutomaticallyWhenClicked),
           width (w), height (h)
     {
         addAndMakeVisible (comp);
@@ -2215,14 +2142,14 @@ Component* PopupMenu::createWindow (const Options& options,
                                     ApplicationCommandManager** managerOfChosenCommand) const
 {
    #if JUCE_WINDOWS
-    const auto handle = std::invoke ([&]() -> void*
+    const auto scope = [&]() -> std::unique_ptr<ScopedThreadDPIAwarenessSetter>
     {
         if (auto* target = options.getTargetComponent())
-            return target->getWindowHandle();
+            if (auto* handle = target->getWindowHandle())
+                return std::make_unique<ScopedThreadDPIAwarenessSetter> (handle);
 
         return nullptr;
-    });
-    const ScopedThreadDPIAwarenessSetter scope { handle };
+    }();
    #endif
 
     return items.isEmpty() ? nullptr
@@ -2503,7 +2430,7 @@ bool PopupMenu::MenuItemIterator::next()
     if (index.size() == 0 || menus.getLast()->items.size() == 0)
         return false;
 
-    currentItem = const_cast<Item*> (&(menus.getLast()->items.getReference (index.getLast())));
+    currentItem = const_cast<PopupMenu::Item*> (&(menus.getLast()->items.getReference (index.getLast())));
 
     if (searchRecursively && currentItem->subMenu != nullptr)
     {
@@ -2527,7 +2454,7 @@ bool PopupMenu::MenuItemIterator::next()
     return true;
 }
 
-auto PopupMenu::MenuItemIterator::getItem() const -> Item&
+PopupMenu::Item& PopupMenu::MenuItemIterator::getItem() const
 {
     jassert (currentItem != nullptr);
     return *(currentItem);

@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -38,7 +38,13 @@ namespace juce
 class Direct2DHwndContext : public Direct2DGraphicsContext
 {
 public:
-    explicit Direct2DHwndContext (HWND windowHandle);
+    struct SwapchainDelegate
+    {
+        virtual ~SwapchainDelegate() = default;
+        virtual void onSwapchainEvent() = 0;
+    };
+
+    Direct2DHwndContext (HWND windowHandle, SwapchainDelegate& swapDelegate);
     ~Direct2DHwndContext() override;
 
     void handleShowWindow();

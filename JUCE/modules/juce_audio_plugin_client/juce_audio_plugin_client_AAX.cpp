@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -541,11 +541,7 @@ namespace AAXClasses
                #endif
                 {
                     component->setVisible (true);
-                    const auto [flags, usesMultiTouch] = detail::PluginUtilities::getDesktopFlagsAndWindowsMultiTouchMode (component->pluginEditor.get());
-                    component->addToDesktop (flags, nativeViewToAttachTo);
-
-                    if (auto* peer = component->getPeer())
-                        peer->setWindowsCanUseMultiTouch (usesMultiTouch);
+                    component->addToDesktop (detail::PluginUtilities::getDesktopFlags (component->pluginEditor.get()), nativeViewToAttachTo);
 
                     if (ModifierKeyReceiver* modReceiver = dynamic_cast<ModifierKeyReceiver*> (component->getPeer()))
                         modReceiver->setModifierKeyProvider (this);
@@ -572,8 +568,8 @@ namespace AAXClasses
         {
             if (component != nullptr)
             {
-                *viewSize = component->convertToHostBounds ({ (float) component->getHeight(),
-                                                              (float) component->getWidth() });
+                *viewSize = convertToHostBounds ({ (float) component->getHeight(),
+                                                   (float) component->getWidth() });
 
                 return AAX_SUCCESS;
             }
@@ -630,6 +626,18 @@ namespace AAXClasses
         AAX_CParamID getAAXParamIDFromJuceIndex (int index) const noexcept;
 
         //==============================================================================
+        static AAX_Point convertToHostBounds (AAX_Point pluginSize)
+        {
+            auto desktopScale = Desktop::getInstance().getGlobalScaleFactor();
+
+            if (approximatelyEqual (desktopScale, 1.0f))
+                return pluginSize;
+
+            return { pluginSize.vert * desktopScale,
+                     pluginSize.horz * desktopScale };
+        }
+
+        //==============================================================================
         struct ContentWrapperComponent final : public Component
         {
             ContentWrapperComponent (JuceAAX_GUI& gui, AudioProcessor& plugin)
@@ -638,7 +646,7 @@ namespace AAXClasses
                 setOpaque (true);
                 setBroughtToFrontOnMouseClick (true);
 
-                pluginEditor.reset (plugin.createEditorAndMakeActive());
+                pluginEditor.reset (plugin.createEditorIfNeeded());
                 addAndMakeVisible (pluginEditor.get());
 
                 if (pluginEditor != nullptr)
@@ -705,23 +713,6 @@ namespace AAXClasses
                     pluginEditor->setBoundsConstrained (pluginEditor->getBounds().withSize (lastValidSize.getWidth(),
                                                                                             lastValidSize.getHeight()));
                 }
-            }
-
-            AAX_Point convertToHostBounds (AAX_Point p)
-            {
-                const auto scale = std::invoke ([&]
-                {
-                    if (auto* peer = getPeer())
-                        return (float) (peer->getPlatformScaleFactor() * peer->getComponent().getDesktopScaleFactor());
-
-                    return 1.0f;
-                });
-
-                if (approximatelyEqual (scale, 1.0f))
-                    return p;
-
-                return { scale * p.vert,
-                         scale * p.horz };
             }
 
             bool resizeHostWindow()

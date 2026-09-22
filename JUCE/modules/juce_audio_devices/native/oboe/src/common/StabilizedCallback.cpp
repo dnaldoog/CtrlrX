@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-#include "common/Trace.h"
-#include "oboe/AudioClock.h"
 #include "oboe/StabilizedCallback.h"
+#include "common/AudioClock.h"
+#include "common/Trace.h"
 
 constexpr int32_t kLoadGenerationStepSizeNanos = 20000;
 constexpr float kPercentageOfCallbackToUse = 0.8;
 
 using namespace oboe;
 
-StabilizedCallback::StabilizedCallback(AudioStreamCallback *callback) : mCallback(callback) {
+StabilizedCallback::StabilizedCallback(AudioStreamCallback *callback) : mCallback(callback){
+    Trace::initialize();
 }
 
 /**
@@ -63,17 +64,16 @@ StabilizedCallback::onAudioReady(AudioStream *oboeStream, void *audioData, int32
     int64_t targetDurationNanos = static_cast<int64_t>(
             (numFramesAsNanos * kPercentageOfCallbackToUse) - lateStartNanos);
 
-    bool traceEnabled = Trace::getInstance().isEnabled();
-    if (traceEnabled) Trace::getInstance().beginSection("Actual load");
+    Trace::beginSection("Actual load");
     DataCallbackResult result = mCallback->onAudioReady(oboeStream, audioData, numFrames);
-    if (traceEnabled) Trace::getInstance().endSection();
+    Trace::endSection();
 
     int64_t executionDurationNanos = AudioClock::getNanoseconds() - startTimeNanos;
     int64_t stabilizingLoadDurationNanos = targetDurationNanos - executionDurationNanos;
 
-    if (traceEnabled) Trace::getInstance().beginSection("Stabilized load for %lldns", stabilizingLoadDurationNanos);
+    Trace::beginSection("Stabilized load for %lldns", stabilizingLoadDurationNanos);
     generateLoad(stabilizingLoadDurationNanos);
-    if (traceEnabled) Trace::getInstance().endSection();
+    Trace::endSection();
 
     // Wraparound: At 48000 frames per second mFrameCount wraparound will occur after 6m years,
     // significantly longer than the average lifetime of an Android phone.

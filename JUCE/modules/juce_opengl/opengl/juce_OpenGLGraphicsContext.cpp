@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -53,7 +53,7 @@ struct TextureInfo
 struct CachedImageList final : public ReferenceCountedObject,
                                private ImagePixelData::Listener
 {
-    explicit CachedImageList (OpenGLContext& c) noexcept
+    CachedImageList (OpenGLContext& c) noexcept
         : context (c), maxCacheSize (c.getImageCacheSize()) {}
 
     static CachedImageList* get (OpenGLContext& c)
@@ -92,7 +92,7 @@ struct CachedImageList final : public ReferenceCountedObject,
             c = images.add (new CachedImage (*this, pixelData.get()));
             totalSize += c->imageSize;
 
-            while (totalSize > maxCacheSize && images.size() > 1)
+            while (totalSize > maxCacheSize && images.size() > 1 && totalSize > 0)
                 removeOldestItem();
         }
 
@@ -104,7 +104,7 @@ struct CachedImageList final : public ReferenceCountedObject,
         CachedImage (CachedImageList& list, ImagePixelData* im)
             : owner (list), pixelData (im),
               lastUsed (Time::getCurrentTime()),
-              imageSize ((size_t) im->width * (size_t) im->height * sizeof (PixelARGB))
+              imageSize ((size_t) (im->width * im->height))
         {
             pixelData->listeners.add (&owner);
         }
@@ -169,22 +169,24 @@ private:
 
     void imageDataBeingDeleted (ImagePixelData* im) override
     {
-        const auto iter = std::find_if (images.begin(), images.end(), [&] (auto image)
+        for (int i = images.size(); --i >= 0;)
         {
-            return image->pixelData == im;
-        });
+            auto& ci = *images.getUnchecked (i);
 
-        if (iter == images.end())
-            return;
+            if (ci.pixelData == im)
+            {
+                if (canUseContext())
+                {
+                    totalSize -= ci.imageSize;
+                    images.remove (i);
+                }
+                else
+                {
+                    ci.pixelData = nullptr;
+                }
 
-        if (canUseContext())
-        {
-            totalSize -= (*iter)->imageSize;
-            images.remove ((int) std::distance (images.begin(), iter));
-        }
-        else
-        {
-            (*iter)->pixelData = nullptr;
+                break;
+            }
         }
     }
 
@@ -199,260 +201,20 @@ private:
 
     void removeOldestItem()
     {
-        const auto iter = std::min_element (images.begin(), images.end(), [&] (auto a, auto b)
+        CachedImage* oldest = nullptr;
+
+        for (auto& i : images)
+            if (oldest == nullptr || i->lastUsed < oldest->lastUsed)
+                oldest = i;
+
+        if (oldest != nullptr)
         {
-            return a->lastUsed < b->lastUsed;
-        });
-
-        if (iter == images.end())
-            return;
-
-        totalSize -= (*iter)->imageSize;
-        images.remove ((int) std::distance (images.begin(), iter));
+            totalSize -= oldest->imageSize;
+            images.removeObject (oldest);
+        }
     }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CachedImageList)
-};
-
-//==============================================================================
-struct ActiveTextures
-{
-    explicit ActiveTextures (const OpenGLContext& c) noexcept
-        : needsToEnableTexture (c.getProfile() == OpenGLProfile::compatibility)
-    {
-    }
-
-    void clear() noexcept
-    {
-        zeromem (currentTextureID, sizeof (currentTextureID));
-    }
-
-    template <typename QuadQueueType>
-    void setTexturesEnabled (QuadQueueType& quadQueue, int textureIndexMask) noexcept
-    {
-        if (texturesEnabled != textureIndexMask)
-        {
-            quadQueue.flush();
-
-            for (int i = numTextures; --i >= 0;)
-            {
-                if ((texturesEnabled & (1 << i)) != (textureIndexMask & (1 << i)))
-                {
-                    setActiveTexture (i);
-                    JUCE_CHECK_OPENGL_ERROR
-
-                    const auto thisTextureEnabled = (textureIndexMask & (1 << i)) != 0;
-
-                    if (! thisTextureEnabled)
-                        currentTextureID[i] = 0;
-
-                   #if ! JUCE_ANDROID
-                    if (needsToEnableTexture)
-                    {
-                        if (thisTextureEnabled)
-                            glEnable (GL_TEXTURE_2D);
-                        else
-                            glDisable (GL_TEXTURE_2D);
-
-                        JUCE_CHECK_OPENGL_ERROR
-                    }
-                   #endif
-                }
-            }
-
-            texturesEnabled = textureIndexMask;
-        }
-    }
-
-    template <typename QuadQueueType>
-    void disableTextures (QuadQueueType& quadQueue) noexcept
-    {
-        setTexturesEnabled (quadQueue, 0);
-    }
-
-    template <typename QuadQueueType>
-    void setSingleTextureMode (QuadQueueType& quadQueue) noexcept
-    {
-        setTexturesEnabled (quadQueue, 1);
-        setActiveTexture (0);
-    }
-
-    template <typename QuadQueueType>
-    void setTwoTextureMode (QuadQueueType& quadQueue, GLuint texture1, GLuint texture2)
-    {
-        JUCE_CHECK_OPENGL_ERROR
-        setTexturesEnabled (quadQueue, 3);
-
-        if (currentActiveTexture == 0)
-        {
-            bindTexture (texture1);
-            setActiveTexture (1);
-            bindTexture (texture2);
-        }
-        else
-        {
-            setActiveTexture (1);
-            bindTexture (texture2);
-            setActiveTexture (0);
-            bindTexture (texture1);
-        }
-
-        JUCE_CHECK_OPENGL_ERROR
-    }
-
-    void setActiveTexture (int index) noexcept
-    {
-        if (currentActiveTexture != index)
-        {
-            currentActiveTexture = index;
-            glActiveTexture (GL_TEXTURE0 + (GLenum) index);
-            JUCE_CHECK_OPENGL_ERROR
-        }
-    }
-
-    void bindTexture (GLuint textureID) noexcept
-    {
-        if (currentActiveTexture < 0 || numTextures <= currentActiveTexture)
-        {
-            jassertfalse;
-            return;
-        }
-
-        if (currentTextureID[currentActiveTexture] != textureID)
-        {
-            currentTextureID[currentActiveTexture] = textureID;
-            glBindTexture (GL_TEXTURE_2D, textureID);
-            JUCE_CHECK_OPENGL_ERROR
-        }
-       #if JUCE_DEBUG
-        else
-        {
-            GLint t = 0;
-            glGetIntegerv (GL_TEXTURE_BINDING_2D, &t);
-            jassert (t == (GLint) textureID);
-        }
-       #endif
-    }
-
-private:
-    static constexpr auto numTextures = 3;
-    GLuint currentTextureID[numTextures];
-    int texturesEnabled = 0, currentActiveTexture = -1;
-    bool needsToEnableTexture;
-
-    JUCE_DECLARE_NON_COPYABLE (ActiveTextures)
-    JUCE_DECLARE_NON_MOVEABLE (ActiveTextures)
-};
-
-//==============================================================================
-struct GradientTextureCache final : public ReferenceCountedObject
-{
-    GradientTextureCache() = default;
-
-    static GradientTextureCache& get (OpenGLContext& c)
-    {
-        const char cacheValueID[] = "GradientTextureCache";
-        auto* cache = static_cast<GradientTextureCache*> (c.getAssociatedObject (cacheValueID));
-
-        if (cache == nullptr)
-        {
-            cache = new GradientTextureCache();
-            c.setAssociatedObject (cacheValueID, cache);
-        }
-
-        return *cache;
-    }
-
-    // Entries are kept most-recently-used first, so consecutive fills with the same
-    // gradient hit the front entry immediately.
-    OpenGLTexture& getTextureFor (const ColourGradient& gradient, ActiveTextures& activeTextures)
-    {
-        for (const auto [index, entry] : enumerate (entries, ptrdiff_t{}))
-        {
-            if (matches (entry.key, gradient))
-            {
-                std::rotate (entries.begin(), entries.begin() + index, entries.begin() + index + 1);
-                return *entries.front().texture;
-            }
-        }
-
-        auto texture = std::invoke ([&]() -> std::unique_ptr<OpenGLTexture>
-        {
-            if (entries.size() < maxCachedGradients)
-            {
-                activeTextures.clear();
-                return std::make_unique<OpenGLTexture>();
-            }
-
-            auto evicted = std::move (entries.back().texture);
-            entries.pop_back();
-            return evicted;
-        });
-
-        PixelARGB lookup[lookupTableSize];
-        gradient.createLookupTable (lookup);
-        texture->loadARGB (lookup, lookupTableSize, 1);
-
-        entries.insert (entries.begin(), { buildKey (gradient), std::move (texture) });
-        return *entries.front().texture;
-    }
-
-private:
-    struct Entry
-    {
-        std::vector<uint64> key;
-        std::unique_ptr<OpenGLTexture> texture;
-    };
-
-    // point1 and point2 are deliberately excluded as they position the gradient through
-    // the shader's matrix and do not change the table
-    template <typename Callback>
-    static bool emitKeyWords (const ColourGradient& gradient, Callback&& callback)
-    {
-        const auto numStops = gradient.getNumColours();
-
-        if (! callback (((uint64) numStops << 1) | (gradient.isRadial ? 1u : 0u)))
-            return false;
-
-        for (int i = 0; i < numStops; ++i)
-        {
-            const auto position = gradient.getColourPosition (i);
-            uint64 positionBits{};
-            std::memcpy (&positionBits, &position, sizeof (positionBits));
-
-            if (! callback (positionBits) || ! callback ((uint64) gradient.getColour (i).getARGB()))
-                return false;
-        }
-
-        return true;
-    }
-
-    static bool matches (const std::vector<uint64>& key, const ColourGradient& gradient)
-    {
-        size_t index = 0;
-
-        auto result = emitKeyWords (gradient, [&] (uint64 word)
-        {
-            return index < key.size() && key[index++] == word;
-        });
-
-        return result && index == key.size();
-    }
-
-    static std::vector<uint64> buildKey (const ColourGradient& gradient)
-    {
-        std::vector<uint64> key;
-        key.reserve ((size_t) (2 * gradient.getNumColours() + 1));
-        emitKeyWords (gradient, [&] (uint64 word) { key.push_back (word); return true; });
-        return key;
-    }
-
-    static constexpr size_t maxCachedGradients = 128;
-    static constexpr int lookupTableSize = 256;
-
-    std::vector<Entry> entries;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GradientTextureCache)
 };
 
 //==============================================================================
@@ -627,8 +389,8 @@ struct ShaderPrograms final : public ReferenceCountedObject
                 vertexShader = "attribute vec2 position;"
                                "attribute vec4 colour;"
                                "uniform vec4 screenBounds;"
-                               "varying #mediump# vec4 frontColour;"
-                               "varying #highp# vec2 pixelPos;"
+                               "varying " JUCE_MEDIUMP " vec4 frontColour;"
+                               "varying " JUCE_HIGHP " vec2 pixelPos;"
                                "void main()"
                                "{"
                                  "frontColour = colour;"
@@ -638,8 +400,8 @@ struct ShaderPrograms final : public ReferenceCountedObject
                                  "gl_Position = vec4 (scaledPos.x - 1.0, 1.0 - scaledPos.y, 0, 1.0);"
                                "}";
 
-            if (program.addVertexShader (OpenGLHelpers::translateVertexShaderToV3 (preprocessShaderPrecisionStatements (vertexShader)))
-                 && program.addFragmentShader (OpenGLHelpers::translateFragmentShaderToV3 (preprocessShaderPrecisionStatements (fragmentShader)))
+            if (program.addVertexShader (OpenGLHelpers::translateVertexShaderToV3 (vertexShader))
+                 && program.addFragmentShader (OpenGLHelpers::translateFragmentShaderToV3 (fragmentShader))
                  && program.link())
             {
                 JUCE_CHECK_OPENGL_ERROR
@@ -744,8 +506,8 @@ struct ShaderPrograms final : public ReferenceCountedObject
     };
 
     //==============================================================================
-    #define JUCE_DECLARE_VARYING_COLOUR   "varying #mediump# vec4 frontColour;"
-    #define JUCE_DECLARE_VARYING_PIXELPOS "varying #highp# vec2 pixelPos;"
+    #define JUCE_DECLARE_VARYING_COLOUR   "varying " JUCE_MEDIUMP " vec4 frontColour;"
+    #define JUCE_DECLARE_VARYING_PIXELPOS "varying " JUCE_HIGHP " vec2 pixelPos;"
 
     struct SolidColourProgram final : public ShaderBase
     {
@@ -795,7 +557,7 @@ struct ShaderPrograms final : public ReferenceCountedObject
         OpenGLShaderProgram::Uniform gradientTexture, matrix;
     };
 
-    #define JUCE_DECLARE_MATRIX_UNIFORM   "uniform #highp# float matrix[6];"
+    #define JUCE_DECLARE_MATRIX_UNIFORM   "uniform " JUCE_HIGHP " float matrix[6];"
     #define JUCE_DECLARE_RADIAL_UNIFORMS  "uniform sampler2D gradientTexture;" JUCE_DECLARE_MATRIX_UNIFORM
     #define JUCE_MATRIX_TIMES_FRAGCOORD   "(mat2 (matrix[0], matrix[3], matrix[1], matrix[4]) * pixelPos" \
                                           " + vec2 (matrix[2], matrix[5]))"
@@ -808,7 +570,7 @@ struct ShaderPrograms final : public ReferenceCountedObject
                           JUCE_DECLARE_RADIAL_UNIFORMS JUCE_DECLARE_VARYING_COLOUR
                           "void main()"
                           "{"
-                            "#mediump# float gradientPos = length (" JUCE_MATRIX_TIMES_FRAGCOORD ");"
+                            JUCE_MEDIUMP " float gradientPos = length (" JUCE_MATRIX_TIMES_FRAGCOORD ");"
                             "gl_FragColor = " JUCE_GET_TEXTURE_COLOUR ";"
                           "}"),
               gradientParams (program)
@@ -825,7 +587,7 @@ struct ShaderPrograms final : public ReferenceCountedObject
                           JUCE_DECLARE_MASK_UNIFORMS
                           "void main()"
                           "{"
-                            "#mediump# float gradientPos = length (" JUCE_MATRIX_TIMES_FRAGCOORD ");"
+                            JUCE_MEDIUMP " float gradientPos = length (" JUCE_MATRIX_TIMES_FRAGCOORD ");"
                             "gl_FragColor = " JUCE_GET_TEXTURE_COLOUR " * " JUCE_GET_MASK_ALPHA ";"
                           "}"),
               gradientParams (program),
@@ -848,10 +610,10 @@ struct ShaderPrograms final : public ReferenceCountedObject
     };
 
     #define JUCE_DECLARE_LINEAR_UNIFORMS  "uniform sampler2D gradientTexture;" \
-                                          "uniform #mediump# vec4 gradientInfo;" \
+                                          "uniform " JUCE_MEDIUMP " vec4 gradientInfo;" \
                                           JUCE_DECLARE_VARYING_COLOUR JUCE_DECLARE_VARYING_PIXELPOS
-    #define JUCE_CALC_LINEAR_GRAD_POS1    "#mediump# float gradientPos = (pixelPos.y - (gradientInfo.y + (gradientInfo.z * (pixelPos.x - gradientInfo.x)))) / gradientInfo.w;"
-    #define JUCE_CALC_LINEAR_GRAD_POS2    "#mediump# float gradientPos = (pixelPos.x - (gradientInfo.x + (gradientInfo.z * (pixelPos.y - gradientInfo.y)))) / gradientInfo.w;"
+    #define JUCE_CALC_LINEAR_GRAD_POS1    JUCE_MEDIUMP " float gradientPos = (pixelPos.y - (gradientInfo.y + (gradientInfo.z * (pixelPos.x - gradientInfo.x)))) / gradientInfo.w;"
+    #define JUCE_CALC_LINEAR_GRAD_POS2    JUCE_MEDIUMP " float gradientPos = (pixelPos.x - (gradientInfo.x + (gradientInfo.z * (pixelPos.y - gradientInfo.y)))) / gradientInfo.w;"
 
     struct LinearGradient1Program final : public ShaderBase
     {
@@ -928,14 +690,10 @@ struct ShaderPrograms final : public ReferenceCountedObject
               imageLimits (program, "imageLimits")
         {}
 
-        void setMatrix (const AffineTransform& trans, const TextureInfo& textureInfo,
-                        float targetX, float targetY, bool applyNpotTilingWorkaround) const
+        void setMatrix (const AffineTransform& trans, int imageWidth, int imageHeight,
+                        float fullWidthProportion, float fullHeightProportion,
+                        float targetX, float targetY, bool isForTiling) const
         {
-            const auto imageWidth = textureInfo.imageWidth;
-            const auto imageHeight = textureInfo.imageHeight;
-            auto fullWidthProportion = textureInfo.fullWidthProportion;
-            auto fullHeightProportion = textureInfo.fullHeightProportion;
-
             auto t = trans.translated (-targetX, -targetY)
                           .inverted().scaled (fullWidthProportion  / (float) imageWidth,
                                               fullHeightProportion / (float) imageHeight);
@@ -943,7 +701,7 @@ struct ShaderPrograms final : public ReferenceCountedObject
             const GLfloat m[] = { t.mat00, t.mat01, t.mat02, t.mat10, t.mat11, t.mat12 };
             matrix.set (m, 6);
 
-            if (applyNpotTilingWorkaround)
+            if (isForTiling)
             {
                 fullWidthProportion  -= 0.5f / (float) imageWidth;
                 fullHeightProportion -= 0.5f / (float) imageHeight;
@@ -952,33 +710,42 @@ struct ShaderPrograms final : public ReferenceCountedObject
             imageLimits.set (fullWidthProportion, fullHeightProportion);
         }
 
+        void setMatrix (const AffineTransform& trans, const TextureInfo& textureInfo,
+                        float targetX, float targetY, bool isForTiling) const
+        {
+            setMatrix (trans,
+                       textureInfo.imageWidth, textureInfo.imageHeight,
+                       textureInfo.fullWidthProportion, textureInfo.fullHeightProportion,
+                       targetX, targetY, isForTiling);
+        }
+
         OpenGLShaderProgram::Uniform imageTexture, matrix, imageLimits;
     };
 
     #define JUCE_DECLARE_IMAGE_UNIFORMS "uniform sampler2D imageTexture;" \
-                                        "uniform #mediump# vec2 imageLimits;" \
+                                        "uniform " JUCE_MEDIUMP " vec2 imageLimits;" \
                                         JUCE_DECLARE_MATRIX_UNIFORM JUCE_DECLARE_VARYING_COLOUR JUCE_DECLARE_VARYING_PIXELPOS
     #define JUCE_GET_IMAGE_PIXEL        "texture2D (imageTexture, vec2 (texturePos.x, 1.0 - texturePos.y))"
-    #define JUCE_CLAMP_TEXTURE_COORD    "#highp# vec2 texturePos = clamp (" JUCE_MATRIX_TIMES_FRAGCOORD ", vec2 (0, 0), imageLimits);"
-    #define JUCE_MOD_TEXTURE_COORD      "#highp# vec2 texturePos = mod (" JUCE_MATRIX_TIMES_FRAGCOORD ", imageLimits);"
+    #define JUCE_CLAMP_TEXTURE_COORD    JUCE_HIGHP " vec2 texturePos = clamp (" JUCE_MATRIX_TIMES_FRAGCOORD ", vec2 (0, 0), imageLimits);"
+    #define JUCE_MOD_TEXTURE_COORD      JUCE_HIGHP " vec2 texturePos = mod (" JUCE_MATRIX_TIMES_FRAGCOORD ", imageLimits);"
 
     struct ImageProgram final : public ShaderBase
     {
         ImageProgram (OpenGLContext& context)
             : ShaderBase (context, JUCE_DECLARE_VARYING_COLOUR
                           "uniform sampler2D imageTexture;"
-                          "varying #highp# vec2 texturePos;"
+                          "varying " JUCE_HIGHP " vec2 texturePos;"
                           "void main()"
                           "{"
                             "gl_FragColor = frontColour.a * " JUCE_GET_IMAGE_PIXEL ";"
                           "}",
-                          "uniform #mediump# vec2 imageLimits;"
+                          "uniform " JUCE_MEDIUMP " vec2 imageLimits;"
                           JUCE_DECLARE_MATRIX_UNIFORM
                           "attribute vec2 position;"
                           "attribute vec4 colour;"
                           "uniform vec4 screenBounds;"
-                          "varying #mediump# vec4 frontColour;"
-                          "varying #highp# vec2 texturePos;"
+                          "varying " JUCE_MEDIUMP " vec4 frontColour;"
+                          "varying " JUCE_HIGHP " vec2 texturePos;"
                           "void main()"
                           "{"
                             "frontColour = colour;"
@@ -1064,8 +831,8 @@ struct ShaderPrograms final : public ReferenceCountedObject
             : ShaderBase (context, JUCE_DECLARE_IMAGE_UNIFORMS
                           "void main()"
                           "{"
-                            "#highp# vec2 texturePos = " JUCE_MATRIX_TIMES_FRAGCOORD ";"
-                            "#highp# float roundingError = 0.00001;"
+                            JUCE_HIGHP " vec2 texturePos = " JUCE_MATRIX_TIMES_FRAGCOORD ";"
+                            JUCE_HIGHP " float roundingError = 0.00001;"
                             "if (texturePos.x >= -roundingError"
                                  "&& texturePos.y >= -roundingError"
                                  "&& texturePos.x <= imageLimits.x + roundingError"
@@ -1099,6 +866,24 @@ struct ShaderPrograms final : public ReferenceCountedObject
 //==============================================================================
 struct TraitsVAO
 {
+    static bool isCoreProfile()
+    {
+       #if JUCE_OPENGL_ES
+        return true;
+       #else
+        clearGLError();
+        GLint mask = 0;
+        glGetIntegerv (GL_CONTEXT_PROFILE_MASK, &mask);
+
+        // The context isn't aware of the profile mask, so it pre-dates the core profile
+        if (glGetError() == GL_INVALID_ENUM)
+            return false;
+
+        // Also assumes a compatibility profile if the mask is completely empty for some reason
+        return (mask & (GLint) GL_CONTEXT_CORE_PROFILE_BIT) != 0;
+       #endif
+    }
+
     /*  Returns true if the context requires a non-zero vertex array object (VAO) to be bound.
 
         If the context is a compatibility context, we can just pretend that VAOs don't exist,
@@ -1108,7 +893,11 @@ struct TraitsVAO
     */
     static bool shouldUseCustomVAO()
     {
-        return ! OpenGLHelpers::isOpenGLES() && getOpenGLProfile() == OpenGLProfile::core;
+       #if JUCE_OPENGL_ES
+        return false;
+       #else
+        return isCoreProfile();
+       #endif
     }
 
     static constexpr auto value = GL_VERTEX_ARRAY_BINDING;
@@ -1166,7 +955,7 @@ private:
         GLuint current{};
     };
 
-    static Values getInitialValues()
+    Values values = []
     {
         if (! Traits::predicate())
             return Values{};
@@ -1179,9 +968,7 @@ private:
         Traits::bind (current);
 
         return Values { previous, current };
-    }
-
-    Values values = getInitialValues();
+    }();
 };
 
 //==============================================================================
@@ -1209,6 +996,12 @@ struct StateHelpers
         {
             glDisable (GL_BLEND);
             srcFunction = dstFunction = 0;
+        }
+
+        template <typename QuadQueueType>
+        void setPremultipliedBlendingMode (QuadQueueType& quadQueue) noexcept
+        {
+            setBlendFunc (quadQueue, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         }
 
         template <typename QuadQueueType>
@@ -1242,29 +1035,12 @@ struct StateHelpers
         }
 
         template <typename QuadQueueType>
-        void setBlendMode (QuadQueueType& quadQueue, BlendMode mode) noexcept
+        void setBlendMode (QuadQueueType& quadQueue, bool replaceExistingContents) noexcept
         {
-            switch (mode)
-            {
-                case BlendMode::source:
-                    setBlendFunc (quadQueue, GL_ONE, GL_ZERO);
-                    return;
-
-                case BlendMode::sourceOver:
-                    setBlendFunc (quadQueue, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-                    return;
-
-                case BlendMode::destinationIn:
-                    setBlendFunc (quadQueue, GL_ZERO, GL_SRC_ALPHA);
-                    return;
-
-                case BlendMode::destinationOut:
-                    setBlendFunc (quadQueue, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA);
-                    return;
-            }
-
-            jassertfalse;
-            setBlendFunc (quadQueue, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+            if (replaceExistingContents)
+                disableBlend (quadQueue);
+            else
+                setPremultipliedBlendingMode (quadQueue);
         }
 
     private:
@@ -1366,9 +1142,139 @@ struct StateHelpers
     };
 
     //==============================================================================
+    struct ActiveTextures
+    {
+        explicit ActiveTextures (const OpenGLContext& c) noexcept
+            : context (c)
+        {
+        }
+
+        void clear() noexcept
+        {
+            zeromem (currentTextureID, sizeof (currentTextureID));
+        }
+
+        template <typename QuadQueueType>
+        void setTexturesEnabled (QuadQueueType& quadQueue, int textureIndexMask) noexcept
+        {
+            if (texturesEnabled != textureIndexMask)
+            {
+                quadQueue.flush();
+
+                for (int i = numTextures; --i >= 0;)
+                {
+                    if ((texturesEnabled & (1 << i)) != (textureIndexMask & (1 << i)))
+                    {
+                        setActiveTexture (i);
+                        JUCE_CHECK_OPENGL_ERROR
+
+                        const auto thisTextureEnabled = (textureIndexMask & (1 << i)) != 0;
+
+                        if (! thisTextureEnabled)
+                            currentTextureID[i] = 0;
+
+                       #if ! JUCE_ANDROID
+                        if (needsToEnableTexture)
+                        {
+                            if (thisTextureEnabled)
+                                glEnable (GL_TEXTURE_2D);
+                            else
+                                glDisable (GL_TEXTURE_2D);
+
+                            JUCE_CHECK_OPENGL_ERROR
+                        }
+                       #endif
+                    }
+                }
+
+                texturesEnabled = textureIndexMask;
+            }
+        }
+
+        template <typename QuadQueueType>
+        void disableTextures (QuadQueueType& quadQueue) noexcept
+        {
+            setTexturesEnabled (quadQueue, 0);
+        }
+
+        template <typename QuadQueueType>
+        void setSingleTextureMode (QuadQueueType& quadQueue) noexcept
+        {
+            setTexturesEnabled (quadQueue, 1);
+            setActiveTexture (0);
+        }
+
+        template <typename QuadQueueType>
+        void setTwoTextureMode (QuadQueueType& quadQueue, GLuint texture1, GLuint texture2)
+        {
+            JUCE_CHECK_OPENGL_ERROR
+            setTexturesEnabled (quadQueue, 3);
+
+            if (currentActiveTexture == 0)
+            {
+                bindTexture (texture1);
+                setActiveTexture (1);
+                bindTexture (texture2);
+            }
+            else
+            {
+                setActiveTexture (1);
+                bindTexture (texture2);
+                setActiveTexture (0);
+                bindTexture (texture1);
+            }
+
+            JUCE_CHECK_OPENGL_ERROR
+        }
+
+        void setActiveTexture (int index) noexcept
+        {
+            if (currentActiveTexture != index)
+            {
+                currentActiveTexture = index;
+                context.extensions.glActiveTexture (GL_TEXTURE0 + (GLenum) index);
+                JUCE_CHECK_OPENGL_ERROR
+            }
+        }
+
+        void bindTexture (GLuint textureID) noexcept
+        {
+            if (currentActiveTexture < 0 || numTextures <= currentActiveTexture)
+            {
+                jassertfalse;
+                return;
+            }
+
+            if (currentTextureID[currentActiveTexture] != textureID)
+            {
+                currentTextureID[currentActiveTexture] = textureID;
+                glBindTexture (GL_TEXTURE_2D, textureID);
+                JUCE_CHECK_OPENGL_ERROR
+            }
+            else
+            {
+               #if JUCE_DEBUG
+                GLint t = 0;
+                glGetIntegerv (GL_TEXTURE_BINDING_2D, &t);
+                jassert (t == (GLint) textureID);
+               #endif
+            }
+        }
+
+    private:
+        static constexpr auto numTextures = 3;
+        GLuint currentTextureID[numTextures];
+        int texturesEnabled = 0, currentActiveTexture = -1;
+        const OpenGLContext& context;
+        const bool needsToEnableTexture = ! context.isCoreProfile();
+
+        ActiveTextures& operator= (const ActiveTextures&);
+    };
+
+    //==============================================================================
     struct TextureCache
     {
-        TextureCache() = default;
+        TextureCache() noexcept {}
 
         OpenGLTexture* getTexture (ActiveTextures& activeTextures, int w, int h)
         {
@@ -1389,17 +1295,44 @@ struct StateHelpers
             return textures.removeAndReturn (0);
         }
 
-        void bindTextureForGradient (OpenGLContext& context, ActiveTextures& activeTextures,
-                                     const ColourGradient& gradient)
+        void resetGradient() noexcept
         {
-            JUCE_CHECK_OPENGL_ERROR;
-            auto& texture = GradientTextureCache::get (context).getTextureFor (gradient, activeTextures);
-            activeTextures.bindTexture (texture.getTextureID());
+            gradientNeedsRefresh = true;
         }
 
+        void bindTextureForGradient (ActiveTextures& activeTextures, const ColourGradient& gradient)
+        {
+            if (gradientNeedsRefresh)
+            {
+                gradientNeedsRefresh = false;
+
+                if (gradientTextures.size() < numGradientTexturesToCache)
+                {
+                    activeGradientIndex = gradientTextures.size();
+                    activeTextures.clear();
+                    gradientTextures.add (new OpenGLTexture());
+                }
+                else
+                {
+                    activeGradientIndex = (activeGradientIndex + 1) % numGradientTexturesToCache;
+                }
+
+                JUCE_CHECK_OPENGL_ERROR;
+                PixelARGB lookup[gradientTextureSize];
+                gradient.createLookupTable (lookup);
+                gradientTextures.getUnchecked (activeGradientIndex)->loadARGB (lookup, gradientTextureSize, 1);
+            }
+
+            activeTextures.bindTexture (gradientTextures.getUnchecked (activeGradientIndex)->getTextureID());
+        }
+
+        enum { gradientTextureSize = 256 };
+
     private:
-        enum { numTexturesToCache = 8 };
-        OwnedArray<OpenGLTexture> textures;
+        enum { numTexturesToCache = 8, numGradientTexturesToCache = 10 };
+        OwnedArray<OpenGLTexture> textures, gradientTextures;
+        int activeGradientIndex = 0;
+        bool gradientNeedsRefresh = true;
     };
 
     //==============================================================================
@@ -1417,27 +1350,28 @@ struct StateHelpers
         {
             JUCE_CHECK_OPENGL_ERROR
 
-            const auto numQuads = getBatchSizeInQuads();
-            vertexData = CopyableHeapBlock<VertexInfo> ((size_t) numQuads * verticesPerQuad);
-            CopyableHeapBlock<IndexType> indexData ((size_t) numQuads * indicesPerQuad);
+           #if JUCE_ANDROID || JUCE_IOS
+            int numQuads = maxNumQuads;
+           #else
+            GLint maxIndices = 0;
+            glGetIntegerv (GL_MAX_ELEMENTS_INDICES, &maxIndices);
+            auto numQuads = jmin ((int) maxNumQuads, (int) maxIndices / 6);
+            maxVertices = numQuads * 4 - 4;
+           #endif
 
-            for (size_t i = 0, v = 0; i < indexData.size(); i += indicesPerQuad, v += verticesPerQuad)
+            for (int i = 0, v = 0; i < numQuads * 6; i += 6, v += 4)
             {
-                indexData[i] = (IndexType) v;
-                indexData[i + 1] = indexData[i + 3] = (IndexType) (v + 1);
-                indexData[i + 2] = indexData[i + 4] = (IndexType) (v + 2);
-                indexData[i + 5] = (IndexType) (v + 3);
+                indexData[i] = (GLushort) v;
+                indexData[i + 1] = indexData[i + 3] = (GLushort) (v + 1);
+                indexData[i + 2] = indexData[i + 4] = (GLushort) (v + 2);
+                indexData[i + 5] = (GLushort) (v + 3);
             }
 
             savedElementArrayBuffer.bind();
-            context.extensions.glBufferData (GL_ELEMENT_ARRAY_BUFFER,
-                                             (GLsizeiptr) (indexData.size() * sizeof (IndexType)),
-                                             indexData.data(), GL_STATIC_DRAW);
+            context.extensions.glBufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (indexData), indexData, GL_STATIC_DRAW);
 
             savedArrayBuffer.bind();
-            context.extensions.glBufferData (GL_ARRAY_BUFFER,
-                                             (GLsizeiptr) (vertexData.size() * sizeof (VertexInfo)),
-                                             nullptr, GL_STREAM_DRAW);
+            context.extensions.glBufferData (GL_ARRAY_BUFFER, sizeof (vertexData), vertexData, GL_STREAM_DRAW);
             JUCE_CHECK_OPENGL_ERROR
         }
 
@@ -1445,7 +1379,7 @@ struct StateHelpers
         {
             jassert (w > 0 && h > 0);
 
-            auto* v = vertexData.data() + numVertices;
+            auto* v = vertexData + numVertices;
             v[0].x = v[2].x = (GLshort) x;
             v[0].y = v[1].y = (GLshort) y;
             v[1].x = v[3].x = (GLshort) (x + w);
@@ -1464,9 +1398,9 @@ struct StateHelpers
             v[2].colour = rgba;
             v[3].colour = rgba;
 
-            numVertices += verticesPerQuad;
+            numVertices += 4;
 
-            if ((size_t) numVertices + verticesPerQuad > vertexData.size())
+            if (numVertices > maxVertices)
                 draw();
         }
 
@@ -1512,53 +1446,33 @@ struct StateHelpers
         }
 
     private:
-        using IndexType = GLushort;
-
-        static constexpr auto verticesPerQuad = 4;
-        static constexpr auto indicesPerQuad = 6;
-        static constexpr auto defaultNumQuads = 256;
-        static constexpr auto maxQuadsPerBatch = ((int) std::numeric_limits<IndexType>::max() + 1) / verticesPerQuad;
-
-        static int getBatchSizeInQuads() noexcept
-        {
-            if (OpenGLHelpers::isOpenGLES() && getOpenGLVersion().major < 3)
-                return defaultNumQuads;
-
-            GLint maxIndices = 0;
-            GLint maxVertices = 0;
-            glGetIntegerv (GL_MAX_ELEMENTS_INDICES, &maxIndices);
-            glGetIntegerv (GL_MAX_ELEMENTS_VERTICES, &maxVertices);
-
-            clearGLError();
-
-            if (maxIndices <= 0 || maxVertices <= 0)
-                return defaultNumQuads;
-
-            return jlimit (defaultNumQuads,
-                           maxQuadsPerBatch,
-                           jmin (maxIndices / indicesPerQuad, maxVertices / verticesPerQuad));
-        }
-
         struct VertexInfo
         {
             GLshort x, y;
             GLuint colour;
         };
 
+        enum { maxNumQuads = 256 };
+
         SavedBinding<TraitsArrayBuffer> savedArrayBuffer;
         SavedBinding<TraitsElementArrayBuffer> savedElementArrayBuffer;
-        CopyableHeapBlock<VertexInfo> vertexData;
+        VertexInfo vertexData[maxNumQuads * 4];
+        GLushort indexData[maxNumQuads * 6];
         const OpenGLContext& context;
         int numVertices = 0;
 
+       #if JUCE_ANDROID || JUCE_IOS
+        enum { maxVertices = maxNumQuads * 4 - 4 };
+       #else
+        int maxVertices = 0;
+       #endif
+
         void draw() noexcept
         {
-            context.extensions.glBufferData (GL_ARRAY_BUFFER,
-                                             (GLsizeiptr) ((size_t) numVertices * sizeof (VertexInfo)),
-                                             vertexData.data(), GL_STREAM_DRAW);
+            context.extensions.glBufferSubData (GL_ARRAY_BUFFER, 0, (GLsizeiptr) ((size_t) numVertices * sizeof (VertexInfo)), vertexData);
             // NB: If you get a random crash in here and are running in a Parallels VM, it seems to be a bug in
             // their driver. Can't find a workaround unfortunately.
-            glDrawElements (GL_TRIANGLES, (numVertices / verticesPerQuad) * indicesPerQuad, GL_UNSIGNED_SHORT, nullptr);
+            glDrawElements (GL_TRIANGLES, (numVertices * 3) / 2, GL_UNSIGNED_SHORT, nullptr);
             JUCE_CHECK_OPENGL_ERROR
             numVertices = 0;
         }
@@ -1687,9 +1601,9 @@ private:
 };
 
 //==============================================================================
-struct GLState : private ImagePixelData::Listener
+struct GLState
 {
-    explicit GLState (const Target& t) noexcept
+    GLState (const Target& t) noexcept
         : target (t),
           activeTextures (t.context),
           currentShader (t.context),
@@ -1709,15 +1623,9 @@ struct GLState : private ImagePixelData::Listener
         JUCE_CHECK_OPENGL_ERROR
     }
 
-    ~GLState() override
+    ~GLState()
     {
         flush();
-
-        for (auto* pixelData : observedPixelData)
-        {
-            pixelData->listeners.remove (this);
-        }
-
         target.context.extensions.glBindFramebuffer (GL_FRAMEBUFFER, previousFrameBufferTarget);
     }
 
@@ -1739,7 +1647,7 @@ struct GLState : private ImagePixelData::Listener
     {
         JUCE_CHECK_OPENGL_ERROR
         activeTextures.disableTextures (shaderQuadQueue);
-        blendMode.setBlendMode (shaderQuadQueue, BlendMode::sourceOver);
+        blendMode.setPremultipliedBlendingMode (shaderQuadQueue);
         JUCE_CHECK_OPENGL_ERROR
 
         if (maskArea != nullptr)
@@ -1748,33 +1656,26 @@ struct GLState : private ImagePixelData::Listener
             activeTextures.setActiveTexture (1);
             activeTextures.bindTexture ((GLuint) maskTextureID);
             activeTextures.setActiveTexture (0);
-            textureCache.bindTextureForGradient (target.context, activeTextures, g);
+            textureCache.bindTextureForGradient (activeTextures, g);
         }
         else
         {
             activeTextures.setSingleTextureMode (shaderQuadQueue);
-            textureCache.bindTextureForGradient (target.context, activeTextures, g);
+            textureCache.bindTextureForGradient (activeTextures, g);
         }
 
         auto t = transform.translated (0.5f - (float) target.bounds.getX(),
                                        0.5f - (float) target.bounds.getY());
+        auto p1 = g.point1.transformedBy (t);
+        auto p2 = g.point2.transformedBy (t);
+        auto p3 = Point<float> (g.point1.x + (g.point2.y - g.point1.y),
+                                g.point1.y - (g.point2.x - g.point1.x)).transformedBy (t);
 
         auto programs = currentShader.programs;
         const ShaderPrograms::MaskedShaderParams* maskParams = nullptr;
 
         if (g.isRadial)
         {
-            detail::RadialGradientView gv { &g };
-
-            // This shader is only handling the simple radial case where the start and end circles
-            // are concentric.
-            const auto c1 = gv.getStartCircle().c;
-            const auto c2 = c1 + Point<float> { gv.getEndCircle().r, 0 };
-            const auto p1 = c1.transformedBy (t);
-            const auto p2 = c2.transformedBy (t);
-            const auto p3 = Point<float> (c1.x + (c2.y - c1.y),
-                                          c1.y - (c2.x - c1.x)).transformedBy (t);
-
             ShaderPrograms::RadialGradientParams* gradientParams;
 
             if (maskArea == nullptr)
@@ -1793,11 +1694,6 @@ struct GLState : private ImagePixelData::Listener
         }
         else
         {
-            auto p1 = g.point1.transformedBy (t);
-            const auto p2 = g.point2.transformedBy (t);
-            const auto p3 = Point<float> (g.point1.x + (g.point2.y - g.point1.y),
-                                          g.point1.y - (g.point2.x - g.point1.x)).transformedBy (t);
-
             p1 = Line<float> (p1, p3).findNearestPointTo (p2);
             const Point<float> delta (p2.x - p1.x, p1.y - p2.y);
             const ShaderPrograms::LinearGradientParams* gradientParams;
@@ -1847,22 +1743,11 @@ struct GLState : private ImagePixelData::Listener
         JUCE_CHECK_OPENGL_ERROR
     }
 
-    void setShaderForTiledImageFill (const Image& image,
-                                     const AffineTransform& transform,
-                                     int maskTextureID,
-                                     const Rectangle<int>* maskArea,
-                                     bool isTiledFill,
-                                     BlendMode mode)
+    void setShaderForTiledImageFill (const TextureInfo& textureInfo, const AffineTransform& transform,
+                                     int maskTextureID, const Rectangle<int>* maskArea, bool isTiledFill)
     {
-        if (auto pd = image.getPixelData())
-        {
-            observedPixelData.insert (pd.get());
-            pd->listeners.add (this);
-        }
+        blendMode.setPremultipliedBlendingMode (shaderQuadQueue);
 
-        const auto textureInfo = cachedImageList->getTextureFor (image);
-
-        blendMode.setBlendMode (shaderQuadQueue, mode);
         auto programs = currentShader.programs;
 
         const ShaderPrograms::MaskedShaderParams* maskParams = nullptr;
@@ -1902,11 +1787,7 @@ struct GLState : private ImagePixelData::Listener
             }
         }
 
-        imageParams->setMatrix (transform,
-                                textureInfo,
-                                (float) target.bounds.getX(),
-                                (float) target.bounds.getY(),
-                                ! target.context.isTextureNpotSupported() && isTiledFill);
+        imageParams->setMatrix (transform, textureInfo, (float) target.bounds.getX(), (float) target.bounds.getY(), isTiledFill);
 
         if (maskParams != nullptr)
             maskParams->setBounds (*maskArea, target, 1);
@@ -1915,7 +1796,7 @@ struct GLState : private ImagePixelData::Listener
     Target target;
 
     StateHelpers::BlendingMode blendMode;
-    ActiveTextures activeTextures;
+    StateHelpers::ActiveTextures activeTextures;
     StateHelpers::TextureCache textureCache;
     StateHelpers::CurrentShader currentShader;
     StateHelpers::ShaderQuadQueue shaderQuadQueue;
@@ -1926,18 +1807,6 @@ private:
     GLuint previousFrameBufferTarget;
     SavedBinding<TraitsVAO> savedVAOBinding;
     ViewportRestorer viewportRestorer;
-    std::set<ImagePixelData*> observedPixelData;
-
-    void imageDataBeingDeleted (ImagePixelData* ipd) override
-    {
-        observedPixelData.erase (ipd);
-        activeTextures.bindTexture (0);
-    }
-
-    void imageDataChanged (ImagePixelData*) override {}
-
-    JUCE_DECLARE_NON_COPYABLE (GLState)
-    JUCE_DECLARE_NON_MOVEABLE (GLState)
 };
 
 //==============================================================================
@@ -1998,19 +1867,19 @@ struct SavedState final : public RenderingHelpers::SavedStateBase<SavedState>
 
     Rectangle<int> getMaximumBounds() const     { return state->target.bounds; }
 
+    void setFillType (const FillType& newFill)
+    {
+        BaseClass::setFillType (newFill);
+        state->textureCache.resetGradient();
+    }
+
     //==============================================================================
     template <typename IteratorType>
     void renderImageTransformed (IteratorType& iter, const Image& src, int alpha,
                                  const AffineTransform& trans, Graphics::ResamplingQuality, bool tiledFill) const
     {
         state->shaderQuadQueue.flush();
-
-        state->setShaderForTiledImageFill (src,
-                                           trans,
-                                           0,
-                                           nullptr,
-                                           tiledFill,
-                                           imageBlendMode);
+        state->setShaderForTiledImageFill (state->cachedImageList->getTextureFor (src), trans, 0, nullptr, tiledFill);
 
         state->shaderQuadQueue.add (iter, PixelARGB ((uint8) alpha, (uint8) alpha, (uint8) alpha, (uint8) alpha));
         state->shaderQuadQueue.flush();
@@ -2031,12 +1900,7 @@ struct SavedState final : public RenderingHelpers::SavedStateBase<SavedState>
         if (! isUsingCustomShader)
         {
             state->activeTextures.disableTextures (state->shaderQuadQueue);
-
-            if (replaceContents)
-                state->blendMode.disableBlend (state->shaderQuadQueue);
-            else
-                state->blendMode.setBlendMode (state->shaderQuadQueue, imageBlendMode);
-
+            state->blendMode.setBlendMode (state->shaderQuadQueue, replaceContents);
             state->setShader (state->currentShader.programs->solidColourProgram);
         }
 
@@ -2111,7 +1975,7 @@ struct NonShaderContext final : public LowLevelGraphicsSoftwareRenderer
        #if ! JUCE_ANDROID
         target.context.extensions.glActiveTexture (GL_TEXTURE0);
 
-        if (target.context.getProfile() == OpenGLProfile::compatibility)
+        if (! target.context.isCoreProfile())
             glEnable (GL_TEXTURE_2D);
 
         clearGLError();
@@ -2124,10 +1988,9 @@ struct NonShaderContext final : public LowLevelGraphicsSoftwareRenderer
         texture.bind();
 
         target.makeActive();
-        target.context.copyTexture (target.bounds,
-                                    Rectangle { texture.getWidth(), texture.getHeight() },
-                                    target.bounds.getWidth(),
-                                    target.bounds.getHeight(),
+        target.context.copyTexture (target.bounds, Rectangle<int> (texture.getWidth(),
+                                                                   texture.getHeight()),
+                                    target.bounds.getWidth(), target.bounds.getHeight(),
                                     false);
         glBindTexture (GL_TEXTURE_2D, 0);
 
@@ -2276,22 +2139,6 @@ Result OpenGLGraphicsContextCustomShader::checkCompilation (LowLevelGraphicsCont
         return Result::ok();
 
     return Result::fail (errorMessage);
-}
-
-template <>
-void RenderingHelpers::SavedStateBase<juce::OpenGLRendering::SavedState>::dispatchFillAllWithGradient (typename BaseRegionType::Ptr shapeToFill)
-{
-    const auto& gradient = *fillType.gradient;
-
-    if ((gradient.isRadial && detail::TwoPointConicalGradient::create (gradient).has_value())
-        || gradient.spreadMethod != ColourGradient::SpreadMethod::pad)
-    {
-        const auto gradientImage = fillType.getSoftwareGradientImage (clip->getClipBounds());
-        renderImage (gradientImage, {}, shapeToFill.get());
-        return;
-    }
-
-    fillAllWithGradient (shapeToFill);
 }
 
 } // namespace juce

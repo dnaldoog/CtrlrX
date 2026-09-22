@@ -27,7 +27,6 @@
 #ifndef HB_OT_KERN_TABLE_HH
 #define HB_OT_KERN_TABLE_HH
 
-#include "hb-aat-layout-common.hh"
 #include "hb-aat-layout-kerx-table.hh"
 
 
@@ -90,11 +89,11 @@ struct KernSubTableFormat3
   template <typename set_t>
   void collect_glyphs (set_t &left_set, set_t &right_set, unsigned num_glyphs) const
   {
+    set_t set;
     if (likely (glyphCount))
-    {
-      left_set.add_range (0, num_glyphs - 1);
-      right_set.add_range (0, num_glyphs - 1);
-    }
+      set.add_range (0, glyphCount - 1);
+    left_set.union_ (set);
+    right_set.union_ (set);
   }
 
   protected:
@@ -126,7 +125,7 @@ struct KernSubTableFormat3
 template <typename KernSubTableHeader>
 struct KernSubTable
 {
-  size_t get_size () const { return u.header.length; }
+  unsigned int get_size () const { return u.header.length; }
   unsigned int get_type () const { return u.header.format; }
 
   int get_kerning (hb_codepoint_t left, hb_codepoint_t right) const
@@ -306,8 +305,8 @@ struct kern
 {
   static constexpr hb_tag_t tableTag = HB_OT_TAG_kern;
 
-  bool     has_data () const { return u.version32.v; }
-  unsigned get_type () const { return u.major.v; }
+  bool     has_data () const { return u.version32; }
+  unsigned get_type () const { return u.major; }
 
   bool has_state_machine () const
   {
@@ -343,7 +342,7 @@ struct kern
   }
 
   bool apply (AAT::hb_aat_apply_context_t *c,
-	      const AAT::kern_accelerator_data_t &accel_data) const
+	      const AAT::kern_accelerator_data_t *accel_data = nullptr) const
   { return dispatch (c, accel_data); }
 
   template <typename context_t, typename ...Ts>
@@ -363,7 +362,7 @@ struct kern
   bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    if (!u.version32.v.sanitize (c)) return_trace (false);
+    if (!u.version32.sanitize (c)) return_trace (false);
     hb_barrier ();
     return_trace (dispatch (c));
   }
@@ -396,25 +395,24 @@ struct kern
 
     bool apply (AAT::hb_aat_apply_context_t *c) const
     {
-      return table->apply (c, accel_data);
+      return table->apply (c, &accel_data);
     }
 
     hb_blob_ptr_t<kern> table;
     AAT::kern_accelerator_data_t accel_data;
-    AAT::hb_aat_scratch_t scratch;
   };
 
   protected:
   union {
-  struct { HBUINT32 v; }	version32;
-  struct { HBUINT16 v; }	major;
+  HBUINT32		version32;
+  HBUINT16		major;
   KernOT		ot;
 #ifndef HB_NO_AAT_SHAPE
   KernAAT		aat;
 #endif
   } u;
   public:
-  DEFINE_SIZE_UNION (4, version32.v);
+  DEFINE_SIZE_UNION (4, version32);
 };
 
 struct kern_accelerator_t : kern::accelerator_t {

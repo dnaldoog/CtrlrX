@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -80,10 +80,10 @@ namespace AndroidStatsHelpers
         auto* env = getEnv();
         LocalRef<jobject> locale (env->CallStaticObjectMethod (JavaLocale, JavaLocale.getDefault));
 
-        LocalRef stringResult { isRegion ? (jstring) env->CallObjectMethod (locale.get(), JavaLocale.getCountry)
-                                         : (jstring) env->CallObjectMethod (locale.get(), JavaLocale.getLanguage) };
+        auto stringResult = isRegion ? env->CallObjectMethod (locale.get(), JavaLocale.getCountry)
+                                     : env->CallObjectMethod (locale.get(), JavaLocale.getLanguage);
 
-        return juceString (stringResult);
+        return juceString (LocalRef<jstring> ((jstring) stringResult));
     }
 
     static String getAndroidOsBuildValue (const char* fieldName)
@@ -248,7 +248,7 @@ uint32 juce_millisecondsSinceStartup() noexcept
     timespec t;
     clock_gettime (CLOCK_MONOTONIC, &t);
 
-    return static_cast<uint32> (t.tv_sec) * 1'000U + static_cast<uint32> (t.tv_nsec) / 1'000'000U;
+    return static_cast<uint32> (t.tv_sec) * 1000U + static_cast<uint32> (t.tv_nsec) / 1000000U;
 }
 
 int64 Time::getHighResolutionTicks() noexcept
@@ -256,12 +256,12 @@ int64 Time::getHighResolutionTicks() noexcept
     timespec t;
     clock_gettime (CLOCK_MONOTONIC, &t);
 
-    return (t.tv_sec * (int64) 1'000'000) + (t.tv_nsec / 1'000);
+    return (t.tv_sec * (int64) 1000000) + (t.tv_nsec / 1000);
 }
 
 int64 Time::getHighResolutionTicksPerSecond() noexcept
 {
-    return 1'000'000;  // (microseconds)
+    return 1000000;  // (microseconds)
 }
 
 double Time::getMillisecondCounterHiRes() noexcept

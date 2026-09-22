@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -455,7 +455,7 @@ private:
     public:
         ~Impl()
         {
-            for (const auto& h : *eventHandlerMap)
+            for (const auto& h : eventHandlerMap)
                 LinuxEventLoop::unregisterFdCallback (h.first);
         }
 
@@ -465,28 +465,14 @@ private:
             if (handler == nullptr)
                 return kInvalidArgument;
 
-            auto& handlers = (*eventHandlerMap)[fd];
+            auto& handlers = eventHandlerMap[fd];
 
             if (handlers.empty())
             {
-                // On each iteration, the Linux event loop makes a copy of the callbacks to invoke
-                // before invoking them one-by-one. This means that, if the callback for FD A removes
-                // the callback for FD B, FD B's callback might still get called on this iteration.
-                // It's possible for ~Impl() to be called in FD A's callback before the callback for
-                // FD B, which was just unregistered by ~Impl(). We use a weak_ref to check whether
-                // the eventHandlerMap is still valid, and avoid accessing the map if not.
-                LinuxEventLoop::registerFdCallback (fd, [weak = std::weak_ptr { eventHandlerMap }] (int descriptor)
+                LinuxEventLoop::registerFdCallback (fd, [this] (int descriptor)
                 {
-                    if (const auto strong = weak.lock())
-                    {
-                        const auto iter = strong->find (descriptor);
-
-                        if (iter == strong->end())
-                            return true;
-
-                        for (auto* h : iter->second)
-                            h->onFDIsSet (descriptor);
-                    }
+                    for (auto* h : eventHandlerMap[descriptor])
+                        h->onFDIsSet (descriptor);
 
                     return true;
                 });
@@ -502,7 +488,7 @@ private:
             if (handler == nullptr)
                 return kInvalidArgument;
 
-            for (auto iter = eventHandlerMap->begin(), end = eventHandlerMap->end(); iter != end;)
+            for (auto iter = eventHandlerMap.begin(), end = eventHandlerMap.end(); iter != end;)
             {
                 auto& handlers = iter->second;
 
@@ -515,7 +501,7 @@ private:
                     if (handlers.empty())
                     {
                         LinuxEventLoop::unregisterFdCallback (iter->first);
-                        iter = eventHandlerMap->erase (iter);
+                        iter = eventHandlerMap.erase (iter);
                         continue;
                     }
                 }
@@ -548,8 +534,7 @@ private:
         }
 
     private:
-        using Map = std::unordered_map<Linux::FileDescriptor, std::vector<Linux::IEventHandler*>>;
-        std::shared_ptr<Map> eventHandlerMap = std::make_shared<Map>();
+        std::unordered_map<Linux::FileDescriptor, std::vector<Linux::IEventHandler*>> eventHandlerMap;
         std::list<TimerCaller> timerCallers;
     };
 
@@ -587,7 +572,7 @@ struct VST3HostContextHeadless : public Vst::IComponentHandler,
 
     JUCE_DECLARE_VST3_COM_REF_METHODS
 
-    FUnknown& asFUnknown()     { return *static_cast<Vst::IComponentHandler*> (this); }
+    FUnknown* getFUnknown()     { return static_cast<Vst::IComponentHandler*> (this); }
 
     static bool hasFlag (Steinberg::int32 source, Steinberg::int32 flag) noexcept
     {
@@ -1046,7 +1031,7 @@ struct DescriptionLister
 
                 if (component.loadFrom (&factory, info.cid))
                 {
-                    if (component->initialize (&host.asFUnknown()) == kResultOk)
+                    if (component->initialize (host.getFUnknown()) == kResultOk)
                     {
                         auto numInputs  = getNumSingleDirectionChannelsFor (component.get(), Direction::input);
                         auto numOutputs = getNumSingleDirectionChannelsFor (component.get(), Direction::output);
@@ -1307,9 +1292,7 @@ private:
 struct VST3ModuleHandle final
 {
 public:
-    static VST3ModuleHandle create (const File& pluginFile,
-                                    const PluginDescription& desc,
-                                    FUnknown& hostContext)
+    static VST3ModuleHandle create (const File& pluginFile, const PluginDescription& desc)
     {
         VST3ModuleHandle result;
         result.handle = RefCountedDllHandle::getHandle (pluginFile.getFullPathName());
@@ -1321,14 +1304,6 @@ public:
 
         if (factory == nullptr)
             return {};
-
-        // Shell plugins (e.g. WaveShell) re-enumerate their factory classes when
-        // the host context is set, shifting every class index. Set it before
-        // searching so the index found here still refers to the same class when
-        // VST3ComponentHolder::initialise() sets the same context again and
-        // instantiates by this index.
-        if (VSTComSmartPtr<IPluginFactory3> pf3; pf3.loadFrom (factory.get()))
-            pf3->setHostContext (&hostContext);
 
         const auto numClasses = factory->countClasses();
         result.classIndex = findClassMatchingDescription (factory, desc);
@@ -1609,7 +1584,7 @@ struct VST3ComponentHolder
 
         if (pf3.loadFrom (factory.get()))
         {
-            pf3->setHostContext (&host->asFUnknown());
+            pf3->setHostContext (host->getFUnknown());
             infoW.reset (new PClassInfoW());
             pf3->getClassInfoUnicode (classIdx, infoW.get());
         }
@@ -1660,7 +1635,7 @@ struct VST3ComponentHolder
         pf3.loadFrom (factory.get());
 
         if (pf3 != nullptr)
-            pf3->setHostContext (&host->asFUnknown());
+            pf3->setHostContext (host->getFUnknown());
 
         const auto classIdx = module.getClassIndex();
 
@@ -1676,7 +1651,7 @@ struct VST3ComponentHolder
 
         cidOfComponent = FUID (info.cid);
 
-        if (warnOnFailure (component->initialize (&host->asFUnknown())) != kResultOk)
+        if (warnOnFailure (component->initialize (host->getFUnknown())) != kResultOk)
             return false;
 
         isComponentInitialised = true;
@@ -2023,10 +1998,6 @@ private:
 
 //==============================================================================
 class VST3PluginInstanceHeadless : public AudioPluginInstance
-                                 , private AudioPluginExtensions::VST3Client
-                                #ifdef JUCE_INTERNAL_HAS_ARA
-                                 , private AudioPluginExtensions::ARAClient
-                                #endif
 {
 public:
     //==============================================================================
@@ -2049,12 +2020,6 @@ public:
         {
             pluginInstance.cachedParamValues.set (vstParamIndex, newValue);
             pluginInstance.parameterDispatcher.push (vstParamIndex, newValue);
-        }
-
-        void setValueFromPerformEdit (float newValue)
-        {
-            pluginInstance.cachedParamValues.set (vstParamIndex, newValue);
-            sendValueChangedMessageToListeners (newValue);
         }
 
         /*  If we're syncing the editor to the processor, the processor won't need to
@@ -2231,7 +2196,7 @@ public:
         // If the IComponent and IEditController are the same, we will have
         // already initialized the object at this point and should avoid doing so again.
         if (! holder->isIComponentAlsoIEditController())
-            editController->initialize (&holder->host->asFUnknown());
+            editController->initialize (holder->host->getFUnknown());
 
         isControllerInitialised = true;
         editController->setComponentHandler (holder->host.get());
@@ -2260,23 +2225,40 @@ public:
         return true;
     }
 
-          AudioPluginExtensions::VST3Client* getVST3Client()       override { return this; }
-    const AudioPluginExtensions::VST3Client* getVST3Client() const override { return this; }
-
-    Steinberg::Vst::IComponent* getIComponentPtr() const noexcept override
+    void getExtensions (ExtensionsVisitor& visitor) const override
     {
-        return holder->component.get();
+        struct Extensions final :  public ExtensionsVisitor::VST3Client,
+                                   public ExtensionsVisitor::ARAClient
+        {
+            explicit Extensions (const VST3PluginInstanceHeadless* instanceIn) : instance (instanceIn) {}
+
+            Vst::IComponent* getIComponentPtr() const noexcept override   { return instance->holder->component.get(); }
+
+            MemoryBlock getPreset() const override             { return instance->getStateForPresetFile(); }
+
+            bool setPreset (const MemoryBlock& rawData) const override
+            {
+                return instance->setStateFromPresetFile (rawData);
+            }
+
+            void createARAFactoryAsync (std::function<void (ARAFactoryWrapper)> cb) const noexcept override
+            {
+                cb (ARAFactoryWrapper { ::juce::getARAFactory (instance->holder->module) });
+            }
+
+            const VST3PluginInstanceHeadless* instance = nullptr;
+        };
+
+        Extensions extensions { this };
+        visitor.visitVST3Client (extensions);
+
+        if (::juce::getARAFactory (holder->module))
+        {
+            visitor.visitARAClient (extensions);
+        }
     }
 
-   #ifdef JUCE_INTERNAL_HAS_ARA
-          AudioPluginExtensions::ARAClient* getARAClient()       override { return this; }
-    const AudioPluginExtensions::ARAClient* getARAClient() const override { return this; }
-
-    void createARAFactoryAsync (std::function<void (ARAFactoryWrapper)> cb) const noexcept override
-    {
-        cb (ARAFactoryWrapper { ::juce::getARAFactory (holder->module) });
-    }
-   #endif
+    void* getPlatformSpecificData() override   { return holder->component.get(); }
 
     void updateMidiMappings()
     {
@@ -2904,7 +2886,7 @@ public:
         }
     }
 
-    MemoryBlock getPreset() const override
+    MemoryBlock getStateForPresetFile() const
     {
         VSTComSmartPtr memoryStream { new MemoryStream(), IncrementRef::no };
 
@@ -2922,7 +2904,7 @@ public:
         return {};
     }
 
-    bool setPreset (const MemoryBlock& rawData) override
+    bool setStateFromPresetFile (const MemoryBlock& rawData) const
     {
         auto rawDataCopy = rawData;
         VSTComSmartPtr memoryStream { new MemoryStream (rawDataCopy.getData(), (int) rawDataCopy.getSize()),
@@ -2995,6 +2977,12 @@ private:
     std::unique_ptr<VST3ComponentHolder> holder;
 
     friend VST3HostContextHeadless;
+
+    // Information objects:
+    String company;
+    std::unique_ptr<PClassInfo> info;
+    std::unique_ptr<PClassInfo2> info2;
+    std::unique_ptr<PClassInfoW> infoW;
 
     // Rudimentary interfaces:
     VSTComSmartPtr<Vst::IEditController> editController;
@@ -3133,7 +3121,7 @@ private:
             cachedParamValues = CachedParamValues { std::move (allIds) };
         }
 
-        for (auto end = editController->getParameterCount(), i = 0; i < end; ++i)
+        for (int i = 0; i < editController->getParameterCount(); ++i)
         {
             auto* param = new VST3Parameter (*this, i);
             const auto paramInfo = param->getParameterInfo();
@@ -3489,7 +3477,7 @@ tresult VST3HostContextHeadless::performEdit (Vst::ParamID paramID, Vst::ParamVa
 
     if (auto* param = plugin->getParameterForID (paramID))
     {
-        param->setValueFromPerformEdit ((float) valueNormalised);
+        param->setValueNotifyingHost ((float) valueNormalised);
 
         // did the plug-in already update the parameter internally
         if (! approximatelyEqual (plugin->editController->getParamNormalized (paramID), valueNormalised))
@@ -3633,7 +3621,7 @@ static std::unique_ptr<AudioPluginInstance> createVST3Instance (VST3PluginFormat
     const ScopedWorkingDirectory scope;
     file.getParentDirectory().setAsCurrentWorkingDirectory();
 
-    const auto module = VST3ModuleHandle::create (file, description, host->asFUnknown());
+    const auto module = VST3ModuleHandle::create (file, description);
 
     if (! module.isValid())
         return nullptr;

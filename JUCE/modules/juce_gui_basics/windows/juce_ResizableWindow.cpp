@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -77,13 +77,10 @@ void ResizableWindow::initialise (const bool shouldAddToDesktop)
 
 int ResizableWindow::getDesktopWindowStyleFlags() const
 {
-    const auto styleFlags = TopLevelWindow::getDesktopWindowStyleFlags();
+    int styleFlags = TopLevelWindow::getDesktopWindowStyleFlags();
 
-    if (isResizable()
-        && (isUsingNativeTitleBar() || Desktop::getInstance().supportsBorderlessNonClientResize()))
-    {
-        return styleFlags | ComponentPeer::windowIsResizable;
-    }
+    if (isResizable() && Desktop::getInstance().supportsBorderlessNonClientResize())
+        styleFlags |= ComponentPeer::windowIsResizable;
 
     return styleFlags;
 }
@@ -586,7 +583,7 @@ bool ResizableWindow::restoreWindowStateFromString (const String& s)
 
         if (onScreenArea.getWidth() * onScreenArea.getHeight() < 32 * 32)
         {
-            auto screen = desktop.getDisplays().getDisplayForRect (newPos)->userBounds.getLargestIntegerWithin();
+            auto screen = desktop.getDisplays().getDisplayForRect (newPos)->userArea;
 
             newPos.setSize (jmin (newPos.getWidth(),  screen.getWidth()),
                             jmin (newPos.getHeight(), screen.getHeight()));

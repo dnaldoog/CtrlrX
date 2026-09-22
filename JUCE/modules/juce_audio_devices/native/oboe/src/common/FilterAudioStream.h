@@ -58,7 +58,7 @@ public:
         mSharingMode = mChildStream->getSharingMode();
         mInputPreset = mChildStream->getInputPreset();
         mFramesPerBurst = mChildStream->getFramesPerBurst();
-        mDeviceIds = mChildStream->getDeviceIds();
+        mDeviceId = mChildStream->getDeviceId();
         mHardwareSampleRate = mChildStream->getHardwareSampleRate();
         mHardwareChannelCount = mChildStream->getHardwareChannelCount();
         mHardwareFormat = mChildStream->getHardwareFormat();

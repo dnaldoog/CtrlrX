@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -108,6 +108,10 @@ public:
         if (chain2 == nullptr)
             return E_FAIL;
 
+        swapChainEvent.emplace (chain2->GetFrameLatencyWaitableObject());
+        if (swapChainEvent->getHandle() == INVALID_HANDLE_VALUE)
+            return E_NOINTERFACE;
+
         chain2->SetMaximumFrameLatency (1);
 
         createBuffer (adapter);
@@ -132,15 +136,8 @@ public:
 
         buffer = nullptr;
 
-        if (const auto hr = chain->ResizeBuffers (0,
-                                                  (UINT) scaledSize.getWidth(),
-                                                  (UINT) scaledSize.getHeight(),
-                                                  DXGI_FORMAT_B8G8R8A8_UNORM,
-                                                  swapChainFlags);
-            FAILED (hr))
-        {
+        if (const auto hr = chain->ResizeBuffers (0, (UINT) scaledSize.getWidth(), (UINT) scaledSize.getHeight(), DXGI_FORMAT_B8G8R8A8_UNORM, swapChainFlags); FAILED (hr))
             return hr;
-        }
 
         ComSmartPtr<IDXGIDevice> device;
         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
@@ -164,6 +161,14 @@ public:
             return {};
 
         return { (int) desc.Width, (int) desc.Height };
+    }
+
+    WindowsScopedEvent* getEvent()
+    {
+        if (swapChainEvent.has_value())
+            return &*swapChainEvent;
+
+        return nullptr;
     }
 
     auto getChain() const
@@ -236,6 +241,7 @@ private:
     AssignableDirectX directX;
     ComSmartPtr<IDXGISwapChain1> chain;
     ComSmartPtr<ID2D1Bitmap1> buffer;
+    std::optional<WindowsScopedEvent> swapChainEvent;
 };
 
 //==============================================================================
@@ -291,19 +297,120 @@ private:
 };
 
 //==============================================================================
-struct Direct2DHwndContext::HwndPimpl : public Pimpl
+struct Direct2DHwndContext::HwndPimpl : public Direct2DGraphicsContext::Pimpl
 {
 private:
+    struct SwapChainThread
+    {
+        SwapChainThread (Direct2DHwndContext::HwndPimpl& ownerIn, HANDLE swapHandle)
+            : owner (ownerIn),
+              swapChainEventHandle (swapHandle)
+        {
+            SetWindowSubclass (owner.hwnd, subclassWindowProc, (UINT_PTR) this, (DWORD_PTR) this);
+        }
+
+        ~SwapChainThread()
+        {
+            RemoveWindowSubclass (owner.hwnd, subclassWindowProc, (UINT_PTR) this);
+            SetEvent (quitEvent.getHandle());
+            thread.join();
+        }
+
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SwapChainThread)
+
+    private:
+        Direct2DHwndContext::HwndPimpl& owner;
+        HANDLE swapChainEventHandle = nullptr;
+
+        WindowsScopedEvent quitEvent;
+        std::thread thread { [&] { threadLoop(); } };
+
+        static constexpr uint32_t swapchainReadyMessageID = WM_USER + 124;
+
+        bool handleWindowProcMessage (UINT message)
+        {
+            if (message == swapchainReadyMessageID)
+            {
+                owner.onSwapchainEvent();
+                return true;
+            }
+
+            return false;
+        }
+
+        static LRESULT CALLBACK subclassWindowProc (HWND hwnd,
+                                                    UINT message,
+                                                    WPARAM wParam,
+                                                    LPARAM lParam,
+                                                    UINT_PTR,
+                                                    DWORD_PTR referenceData)
+        {
+            auto* that = reinterpret_cast<SwapChainThread*> (referenceData);
+
+            if (that != nullptr && that->handleWindowProcMessage (message))
+                return 0;
+
+            return DefSubclassProc (hwnd, message, wParam, lParam);
+        }
+
+        void threadLoop()
+        {
+            Thread::setCurrentThreadName ("JUCE D2D swap chain thread");
+
+            for (;;)
+            {
+                const HANDLE handles[] { swapChainEventHandle, quitEvent.getHandle() };
+
+                const auto waitResult = WaitForMultipleObjects ((DWORD) std::size (handles),
+                                                                handles,
+                                                                FALSE,
+                                                                INFINITE);
+
+                switch (waitResult)
+                {
+                    case WAIT_OBJECT_0:
+                    {
+                        PostMessage (owner.hwnd, swapchainReadyMessageID, 0, 0);
+                        break;
+                    }
+
+                    case WAIT_OBJECT_0 + 1:
+                        return;
+
+                    case WAIT_FAILED:
+                    default:
+                        jassertfalse;
+                        break;
+                }
+            }
+        }
+    };
+
     HWND hwnd;
     SwapChain swap;
     ComSmartPtr<ID2D1DeviceContext1> deviceContext;
+    std::unique_ptr<SwapChainThread> swapChainThread;
     std::optional<CompositionTree> compositionTree;
+    SwapchainDelegate& delegate;
 
     // Areas that must be repainted during the next paint call, between startFrame/endFrame
     RectangleList<int> deferredRepaints;
 
+    // Areas that have been updated in the backbuffer, but not presented
+    RectangleList<int> dirtyRegionsInBackBuffer;
+
     std::vector<RECT> dirtyRectangles;
     int64 lastFinishFrameTicks = 0;
+
+    // Set to true after the swap event is signalled, indicating that we're allowed to try presenting
+    // a new frame.
+    bool swapEventReceived = false;
+
+    void onSwapchainEvent()
+    {
+        swapEventReceived = true;
+        delegate.onSwapchainEvent();
+    }
 
     bool prepare() override
     {
@@ -330,6 +437,10 @@ private:
                 return false;
         }
 
+        if (swapChainThread == nullptr)
+            if (auto* e = swap.getEvent())
+                swapChainThread = std::make_unique<SwapChainThread> (*this, e->getHandle());
+
         if (! compositionTree.has_value())
             compositionTree = CompositionTree::create (adapter->dxgiDevice, hwnd, swap.getChain());
 
@@ -342,6 +453,7 @@ private:
     void teardown() override
     {
         compositionTree.reset();
+        swapChainThread = nullptr;
         deviceContext = nullptr;
         swap = {};
 
@@ -364,6 +476,7 @@ private:
         bool ready = Pimpl::checkPaintReady();
         ready &= swap.canPaint();
         ready &= compositionTree.has_value();
+        ready &= swapEventReceived;
 
         return ready;
     }
@@ -371,9 +484,10 @@ private:
     JUCE_DECLARE_WEAK_REFERENCEABLE (HwndPimpl)
 
 public:
-    HwndPimpl (Direct2DHwndContext& ownerIn, HWND hwndIn)
+    HwndPimpl (Direct2DHwndContext& ownerIn, HWND hwndIn, SwapchainDelegate& swapDelegate)
         : Pimpl (ownerIn),
-          hwnd (hwndIn)
+          hwnd (hwndIn),
+          delegate (swapDelegate)
     {
     }
 
@@ -414,20 +528,6 @@ public:
         return swap.getBuffer();
     }
 
-    ComSmartPtr<IDWriteRenderingParams> getDefaultTextRenderingParams() const override
-    {
-        if (auto monitor = MonitorFromWindow (hwnd, MONITOR_DEFAULTTONULL))
-        {
-            ComSmartPtr<IDWriteRenderingParams> result;
-            getDirectWriteFactory()->CreateMonitorRenderingParams (monitor, result.resetAndGetPointerAddress());
-
-            if (result != nullptr)
-                return result;
-        }
-
-        return Pimpl::getDefaultTextRenderingParams();
-    }
-
     void setSize (Rectangle<int> size)
     {
         if (size == swap.getSize() || size.isEmpty())
@@ -435,6 +535,9 @@ public:
 
         // Require the entire window to be repainted
         deferredRepaints = size;
+
+        // The backbuffer has no valid content until we paint a full frame
+        dirtyRegionsInBackBuffer.clear();
 
         InvalidateRect (hwnd, nullptr, TRUE);
 
@@ -463,6 +566,12 @@ public:
         if (savedState == nullptr)
             return nullptr;
 
+        // If a new frame is starting, clear deferredAreas in case repaint is called
+        // while the frame is being painted to ensure the new areas are painted on the
+        // next frame
+        dirtyRegionsInBackBuffer.add (deferredRepaints);
+        deferredRepaints.clear();
+
         JUCE_TRACE_LOG_D2D_PAINT_CALL (etw::direct2dHwndPaintStart, getFrameId());
 
         return savedState;
@@ -480,22 +589,22 @@ public:
     {
         JUCE_D2DMETRICS_SCOPED_ELAPSED_TIME (getMetrics(), present1Duration);
 
-        if (swap.getBuffer() == nullptr || deferredRepaints.isEmpty())
+        if (swap.getBuffer() == nullptr || dirtyRegionsInBackBuffer.isEmpty() || ! swapEventReceived)
             return;
 
         auto const swapChainSize = swap.getSize();
         DXGI_PRESENT_PARAMETERS params{};
 
-        if (! deferredRepaints.containsRectangle (swapChainSize))
+        if (! dirtyRegionsInBackBuffer.containsRectangle (swapChainSize))
         {
             // Allocate enough memory for the array of dirty rectangles
-            dirtyRectangles.resize ((size_t) deferredRepaints.getNumRectangles());
+            dirtyRectangles.resize ((size_t) dirtyRegionsInBackBuffer.getNumRectangles());
 
             // Fill the array of dirty rectangles, intersecting each paint area with the swap chain buffer
             params.pDirtyRects = dirtyRectangles.data();
             params.DirtyRectsCount = 0;
 
-            for (const auto& area : deferredRepaints)
+            for (const auto& area : dirtyRegionsInBackBuffer)
             {
                 const auto intersection = area.getIntersection (swapChainSize);
 
@@ -513,8 +622,12 @@ public:
         if (FAILED (hr))
             return;
 
+        // We managed to present a frame, so we should avoid rendering anything or calling
+        // present again until that frame has been shown on-screen.
+        swapEventReceived = false;
+
         // There's nothing waiting to be displayed in the backbuffer.
-        deferredRepaints.clear();
+        dirtyRegionsInBackBuffer.clear();
 
         JUCE_TRACE_LOG_D2D_PAINT_CALL (etw::direct2dHwndPaintEnd, getFrameId());
     }
@@ -574,7 +687,7 @@ public:
 };
 
 //==============================================================================
-Direct2DHwndContext::Direct2DHwndContext (HWND windowHandle)
+Direct2DHwndContext::Direct2DHwndContext (HWND windowHandle, SwapchainDelegate& swapDelegate)
 {
    #if JUCE_DIRECT2D_METRICS
     metrics = new Direct2DMetrics { Direct2DMetricsHub::getInstance()->lock,
@@ -583,7 +696,7 @@ Direct2DHwndContext::Direct2DHwndContext (HWND windowHandle)
     Direct2DMetricsHub::getInstance()->add (metrics);
    #endif
 
-    pimpl = std::make_unique<HwndPimpl> (*this, windowHandle);
+    pimpl = std::make_unique<HwndPimpl> (*this, windowHandle, swapDelegate);
 }
 
 Direct2DHwndContext::~Direct2DHwndContext()

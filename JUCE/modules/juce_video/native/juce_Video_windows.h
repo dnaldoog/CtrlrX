@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -50,7 +50,7 @@ namespace VideoRenderers
     //==============================================================================
     struct VMR7  : public Base
     {
-        VMR7() = default;
+        VMR7() {}
 
         HRESULT create (ComSmartPtr<IGraphBuilder>& graphBuilder,
                         ComSmartPtr<IBaseFilter>& baseFilter, HWND hwnd) override
@@ -169,7 +169,8 @@ namespace VideoRenderers
 }
 
 //==============================================================================
-struct VideoComponent::Pimpl  : public Component
+struct VideoComponent::Pimpl  : public Component,
+                                private ComponentPeer::ScaleFactorListener
 {
     Pimpl (VideoComponent& ownerToUse, bool)
         : owner (ownerToUse)
@@ -184,6 +185,9 @@ struct VideoComponent::Pimpl  : public Component
         close();
         context = nullptr;
         componentWatcher = nullptr;
+
+        if (currentPeer != nullptr)
+            currentPeer->removeScaleFactorListener (this);
     }
 
     Result loadFromString (const String& fileOrURLPath)
@@ -347,10 +351,9 @@ private:
     VideoComponent& owner;
     ComponentPeer* currentPeer = nullptr;
     bool videoLoaded = false;
-    NativeScaleFactorNotifier notifier { &owner, [this] (auto) { nativeScaleFactorChanged(); } };
 
     //==============================================================================
-    void nativeScaleFactorChanged()
+    void nativeScaleFactorChanged (double /*newScaleFactor*/) override
     {
         if (videoLoaded)
             updateContextPosition();
@@ -372,6 +375,9 @@ private:
 
         void componentPeerChanged() override
         {
+            if (owner.currentPeer != nullptr)
+                owner.currentPeer->removeScaleFactorListener (&owner);
+
             if (owner.videoLoaded)
                 owner.recreateNativeWindowAsync();
         }
@@ -773,6 +779,7 @@ private:
 
                 hwnd = nativeWindow->hwnd;
                 component.currentPeer = topLevelPeer;
+                component.currentPeer->addScaleFactorListener (&component);
 
                 if (hwnd != nullptr)
                 {

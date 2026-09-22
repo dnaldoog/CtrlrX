@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -82,24 +82,27 @@ public:
     {
         return withTextInterface (pRetVal, [&] (const AccessibilityTextInterface& textInterface)
         {
-            SafeArrayHandle result { SafeArrayCreateVector (VT_UNKNOWN, 0, 1) };
+            *pRetVal = SafeArrayCreateVector (VT_UNKNOWN, 0, 1);
 
-            if (result == nullptr)
-                return E_FAIL;
+            if (pRetVal != nullptr)
+            {
+                auto selection = textInterface.getSelection();
+                auto hasSelection = ! selection.isEmpty();
+                auto cursorPos = textInterface.getTextInsertionOffset();
 
-            auto selection = textInterface.getSelection();
-            auto hasSelection = ! selection.isEmpty();
-            auto cursorPos = textInterface.getTextInsertionOffset();
+                auto* rangeProvider = new UIATextRangeProvider (*this,
+                                                                { hasSelection ? selection.getStart() : cursorPos,
+                                                                  hasSelection ? selection.getEnd()   : cursorPos });
 
-            ComSmartPtr rangeProvider { new UIATextRangeProvider (*this,
-                                                                  { hasSelection ? selection.getStart() : cursorPos,
-                                                                  hasSelection ? selection.getEnd()   : cursorPos }),
-                                        IncrementRef::no };
+                LONG pos = 0;
+                auto hr = SafeArrayPutElement (*pRetVal, &pos, static_cast<IUnknown*> (rangeProvider));
 
-            if (LONG pos = 0; FAILED (SafeArrayPutElement (result.get(), &pos, static_cast<IUnknown*> (rangeProvider))))
-                return E_FAIL;
+                if (FAILED (hr))
+                    return E_FAIL;
 
-            *pRetVal = result.release();
+                rangeProvider->Release();
+            }
+
             return S_OK;
         });
     }
@@ -108,18 +111,21 @@ public:
     {
         return withTextInterface (pRetVal, [&] (const AccessibilityTextInterface& textInterface)
         {
-            SafeArrayHandle result { SafeArrayCreateVector (VT_UNKNOWN, 0, 1) };
+            *pRetVal = SafeArrayCreateVector (VT_UNKNOWN, 0, 1);
 
-            if (result == nullptr)
-                return E_FAIL;
+            if (pRetVal != nullptr)
+            {
+                auto* rangeProvider = new UIATextRangeProvider (*this, { 0, textInterface.getTotalNumCharacters() });
 
-            ComSmartPtr rangeProvider { new UIATextRangeProvider (*this, { 0, textInterface.getTotalNumCharacters() }),
-                                        IncrementRef::no };
+                LONG pos = 0;
+                auto hr = SafeArrayPutElement (*pRetVal, &pos, static_cast<IUnknown*> (rangeProvider));
 
-            if (LONG pos = 0; FAILED (SafeArrayPutElement (result.get(), &pos, static_cast<IUnknown*> (rangeProvider))))
-                return E_FAIL;
+                if (FAILED (hr))
+                    return E_FAIL;
 
-            *pRetVal = result.release();
+                rangeProvider->Release();
+            }
+
             return S_OK;
         });
     }
@@ -345,17 +351,20 @@ private:
                 auto rectangleList = textInterface.getTextBounds (selectionRange);
                 auto numRectangles = rectangleList.getNumRectangles();
 
-                SafeArrayHandle result { SafeArrayCreateVector (VT_R8, 0, 4 * (ULONG) numRectangles) };
+                *pRetVal = SafeArrayCreateVector (VT_R8, 0, 4 * (ULONG) numRectangles);
 
-                if (result == nullptr)
+                if (*pRetVal == nullptr)
                     return E_FAIL;
 
                 if (numRectangles > 0)
                 {
                     double* doubleArr = nullptr;
 
-                    if (FAILED (SafeArrayAccessData (result.get(), reinterpret_cast<void**> (&doubleArr))))
+                    if (FAILED (SafeArrayAccessData (*pRetVal, reinterpret_cast<void**> (&doubleArr))))
+                    {
+                        SafeArrayDestroy (*pRetVal);
                         return E_FAIL;
+                    }
 
                     for (int i = 0; i < numRectangles; ++i)
                     {
@@ -367,11 +376,13 @@ private:
                         doubleArr[i * 4 + 3] = r.getHeight();
                     }
 
-                    if (FAILED (SafeArrayUnaccessData (result.get())))
+                    if (FAILED (SafeArrayUnaccessData (*pRetVal)))
+                    {
+                        SafeArrayDestroy (*pRetVal);
                         return E_FAIL;
+                    }
                 }
 
-                *pRetVal = result.release();
                 return S_OK;
             });
         }
@@ -380,12 +391,7 @@ private:
         {
             return withCheckedComArgs (pRetVal, *this, [&]
             {
-                SafeArrayHandle result { SafeArrayCreateVector (VT_UNKNOWN, 0, 0) };
-
-                if (result == nullptr)
-                    return E_FAIL;
-
-                *pRetVal = result.release();
+                *pRetVal = SafeArrayCreateVector (VT_UNKNOWN, 0, 0);
                 return S_OK;
             });
         }

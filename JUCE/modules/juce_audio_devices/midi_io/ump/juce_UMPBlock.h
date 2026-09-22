@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -140,8 +140,16 @@ public:
         return info == other.info;
     }
 
-    bool operator== (const Block& other) const;
-    bool operator!= (const Block& other) const;
+    bool operator== (const Block& other) const
+    {
+        const auto tie = [] (auto& x) { return std::tuple (x.info, x.name); };
+        return tie (*this) == tie (other);
+    }
+
+    bool operator!= (const Block& other) const
+    {
+        return ! operator== (other);
+    }
 
 private:
     BlockInfo info;

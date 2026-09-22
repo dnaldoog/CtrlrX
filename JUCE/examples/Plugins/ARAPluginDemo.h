@@ -866,7 +866,7 @@ struct PlayHeadState
 
 //==============================================================================
 class ARADemoPluginAudioProcessorImpl : public AudioProcessor,
-                                        private AudioProcessorARAExtension
+                                        public AudioProcessorARAExtension
 {
 public:
     //==============================================================================
@@ -937,8 +937,6 @@ public:
     //==============================================================================
     void getStateInformation (MemoryBlock&) override                  {}
     void setStateInformation (const void*, int) override              {}
-
-    AudioProcessorARAExtension* getARAClientExtensions() override { return this; }
 
     PlayHeadState playHeadState;
 
@@ -2302,7 +2300,7 @@ private:
 
 
 class ARADemoPluginProcessorEditor final : public AudioProcessorEditor,
-                                           private AudioProcessorEditorARAExtension
+                                           public AudioProcessorEditorARAExtension
 {
 public:
     explicit ARADemoPluginProcessorEditor (ARADemoPluginAudioProcessorImpl& p)
@@ -2341,8 +2339,6 @@ public:
         if (documentView != nullptr)
             documentView->setBounds (getLocalBounds());
     }
-
-    AudioProcessorEditorARAExtension* getARAClientExtensions() override { return this; }
 
 private:
     std::unique_ptr<Component> documentView;

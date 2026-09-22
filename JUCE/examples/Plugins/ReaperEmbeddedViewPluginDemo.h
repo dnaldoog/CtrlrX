@@ -67,8 +67,7 @@
 #pragma once
 
 JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wshadow-field-in-constructor",
-                                     "-Wnon-virtual-dtor",
-                                     "-Wpragma-pack")
+                                     "-Wnon-virtual-dtor")
 
 #include <pluginterfaces/base/ftypes.h>
 #include <pluginterfaces/base/funknown.h>

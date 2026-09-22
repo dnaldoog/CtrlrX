@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -346,9 +346,9 @@ void MemoryBlock::loadFromHexString (StringRef hex)
             {
                 auto c = t.getAndAdvance();
 
-                if ('0' <= c && c <= '9')    { byte |= c - '0';        break; }
-                if ('a' <= c && c <= 'f')    { byte |= c - ('a' - 10); break; }
-                if ('A' <= c && c <= 'F')    { byte |= c - ('A' - 10); break; }
+                if (c >= '0' && c <= '9')    { byte |= c - '0';        break; }
+                if (c >= 'a' && c <= 'z')    { byte |= c - ('a' - 10); break; }
+                if (c >= 'A' && c <= 'Z')    { byte |= c - ('A' - 10); break; }
 
                 if (c == 0)
                 {
@@ -403,20 +403,23 @@ bool MemoryBlock::fromBase64Encoding (StringRef s)
     setSize ((size_t) numBytesNeeded, true);
 
     auto srcChars = dot + 1;
-    size_t pos = 0;
+    int pos = 0;
 
-    while (auto c = (int) srcChars.getAndAdvance())
+    for (;;)
     {
+        auto c = (int) srcChars.getAndAdvance();
+
+        if (c == 0)
+            return true;
+
         c -= 43;
 
         if (isPositiveAndBelow (c, numElementsInArray (base64DecodingTable)))
         {
-            setBitRange (pos * 6, 6, base64DecodingTable[c]);
-            pos += 1;
+            setBitRange ((size_t) pos, 6, base64DecodingTable[c]);
+            pos += 6;
         }
     }
-
-    return true;
 }
 
 } // namespace juce

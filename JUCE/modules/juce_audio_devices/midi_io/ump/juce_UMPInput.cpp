@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -51,11 +51,6 @@ public:
         virtual PacketProtocol getProtocol() const = 0;
     };
 
-    ~Impl() override
-    {
-        JUCE_ASSERT_MESSAGE_THREAD
-    }
-
     EndpointId getEndpointId() const
     {
         return identifier;
@@ -88,7 +83,7 @@ public:
 
     bool isAlive() const
     {
-        return connected && native != nullptr;
+        return native != nullptr;
     }
 
     template <typename Callback>
@@ -106,10 +101,7 @@ public:
     }
 
 private:
-    Impl()
-    {
-        JUCE_ASSERT_MESSAGE_THREAD
-    }
+    Impl() = default;
 
     void consume (Iterator b, Iterator e, double t) override
     {
@@ -119,7 +111,8 @@ private:
     void disconnected() override
     {
         JUCE_ASSERT_MESSAGE_THREAD
-        connected = false;
+
+        native = nullptr;
         disconnectListeners.call ([] (auto& x) { x.disconnected(); });
     }
 
@@ -128,7 +121,6 @@ private:
     EndpointId identifier;
     PacketProtocol protocol;
     std::unique_ptr<Native> native;
-    std::atomic<bool> connected { true };
 };
 
 Input::Input() = default;
@@ -161,18 +153,12 @@ void Input::addConsumer (Consumer& x)
     // You should ensure that isAlive() returns true before calling other member functions!
     jassert (isAlive());
 
-    // This function should only be called on the main thread!
-    JUCE_ASSERT_MESSAGE_THREAD
-
     if (impl != nullptr)
         impl->addConsumer (x);
 }
 
 void Input::removeConsumer (Consumer& x)
 {
-    // This function should only be called on the main thread!
-    JUCE_ASSERT_MESSAGE_THREAD
-
     if (impl != nullptr)
         impl->removeConsumer (x);
 }
@@ -182,18 +168,12 @@ void Input::addDisconnectionListener (DisconnectionListener& x)
     // You should ensure that isAlive() returns true before calling other member functions!
     jassert (isAlive());
 
-    // This function should only be called on the main thread!
-    JUCE_ASSERT_MESSAGE_THREAD
-
     if (impl != nullptr)
         impl->addDisconnectionListener (x);
 }
 
 void Input::removeDisconnectionListener (DisconnectionListener& x)
 {
-    // This function should only be called on the main thread!
-    JUCE_ASSERT_MESSAGE_THREAD
-
     if (impl != nullptr)
         impl->removeDisconnectionListener (x);
 }

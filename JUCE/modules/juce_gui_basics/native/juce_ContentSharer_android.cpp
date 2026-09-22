@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -267,27 +267,22 @@ public:
                                                       : "android.intent.action.SEND_MULTIPLE";
 
         LocalRef<jobject> intent (env->NewObject (AndroidIntent, AndroidIntent.constructor));
-        LocalRef { env->CallObjectMethod (intent, AndroidIntent.setAction, javaString (action).get()) };
+        env->CallObjectMethod (intent, AndroidIntent.setAction, javaString (action).get());
 
-        LocalRef { env->CallObjectMethod (intent,
-                                          AndroidIntent.setType,
-                                          javaString (getCommonMimeType (mimeTypes)).get()) };
+        env->CallObjectMethod (intent,
+                               AndroidIntent.setType,
+                               javaString (getCommonMimeType (mimeTypes)).get());
 
         constexpr jint grantReadUriPermission   = 1;
         constexpr jint grantPrefixUriPermission = 128;
 
-        LocalRef { env->CallObjectMethod (intent,
-                                          AndroidIntent.setFlags,
-                                          grantReadUriPermission | grantPrefixUriPermission) };
+        env->CallObjectMethod (intent, AndroidIntent.setFlags, grantReadUriPermission | grantPrefixUriPermission);
 
         if (fileForUriIn.size() == 1)
         {
             const auto uri = fileForUriIn.begin()->first;
             LocalRef<jobject> androidUri { env->CallStaticObjectMethod (AndroidUri, AndroidUri.parse, javaString (uri).get()) };
-            LocalRef { env->CallObjectMethod (intent,
-                                              AndroidIntent.putExtraParcelable,
-                                              javaString ("android.intent.extra.STREAM").get(),
-                                              androidUri.get()) };
+            env->CallObjectMethod (intent, AndroidIntent.putExtraParcelable, javaString ("android.intent.extra.STREAM").get(), androidUri.get());
         }
         else
         {
@@ -302,10 +297,10 @@ public:
                                                                      javaString (pair.first).get()));
             }
 
-            LocalRef { env->CallObjectMethod (intent,
-                                              AndroidIntent.putParcelableArrayListExtra,
-                                              javaString ("android.intent.extra.STREAM").get(),
-                                              fileUris.get()) };
+            env->CallObjectMethod (intent,
+                                   AndroidIntent.putParcelableArrayListExtra,
+                                   javaString ("android.intent.extra.STREAM").get(),
+                                   fileUris.get());
         }
 
         return doIntent (intent, callback);
@@ -329,14 +324,14 @@ public:
         auto* env = getEnv();
 
         LocalRef<jobject> intent (env->NewObject (AndroidIntent, AndroidIntent.constructor));
-        LocalRef { env->CallObjectMethod (intent,
-                                          AndroidIntent.setAction,
-                                          javaString ("android.intent.action.SEND").get()) };
-        LocalRef { env->CallObjectMethod (intent,
-                                          AndroidIntent.putExtra,
-                                          javaString ("android.intent.extra.TEXT").get(),
-                                          javaString (text).get()) };
-        LocalRef { env->CallObjectMethod (intent, AndroidIntent.setType, javaString ("text/plain").get()) };
+        env->CallObjectMethod (intent,
+                               AndroidIntent.setAction,
+                               javaString ("android.intent.action.SEND").get());
+        env->CallObjectMethod (intent,
+                               AndroidIntent.putExtra,
+                               javaString ("android.intent.extra.TEXT").get(),
+                               javaString (text).get());
+        env->CallObjectMethod (intent, AndroidIntent.setType, javaString ("text/plain").get());
 
         return doIntent (intent, callback);
     }
@@ -382,10 +377,7 @@ private:
 
         LocalRef<jclass> klass { env->FindClass ("com/rmsl/juce/Receiver") };
         const LocalRef<jobject> replyIntent (env->NewObject (AndroidIntent, AndroidIntent.constructorWithContextAndClass, context.get(), klass.get()));
-        LocalRef { getEnv()->CallObjectMethod (replyIntent,
-                                               AndroidIntent.putExtraInt,
-                                               javaString ("com.rmsl.juce.JUCE_REQUEST_CODE").get(),
-                                               request) };
+        getEnv()->CallObjectMethod (replyIntent, AndroidIntent.putExtraInt, javaString ("com.rmsl.juce.JUCE_REQUEST_CODE").get(), request);
 
         const auto flags = FLAG_UPDATE_CURRENT | FLAG_IMMUTABLE;
         const LocalRef<jobject> pendingIntent (env->CallStaticObjectMethod (AndroidPendingIntent,
@@ -399,8 +391,8 @@ private:
                                                                AndroidIntent.createChooserWithSender,
                                                                intent.get(),
                                                                text.get(),
-                                                               LocalRef { env->CallObjectMethod (pendingIntent,
-                                                                                                 AndroidPendingIntent.getIntentSender) }.get()));
+                                                               env->CallObjectMethod (pendingIntent,
+                                                                                      AndroidPendingIntent.getIntentSender)));
     }
 
     //==============================================================================

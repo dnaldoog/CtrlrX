@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -157,10 +157,10 @@ public:
           androidKeyStorePass                  (settings, Ids::androidKeyStorePass,                  getUndoManager(), "android"),
           androidKeyAlias                      (settings, Ids::androidKeyAlias,                      getUndoManager(), "androiddebugkey"),
           androidKeyAliasPass                  (settings, Ids::androidKeyAliasPass,                  getUndoManager(), "android"),
-          gradleVersion                        (settings, Ids::gradleVersion,                        getUndoManager(), "8.14.5"),
+          gradleVersion                        (settings, Ids::gradleVersion,                        getUndoManager(), "8.11.1"),
           gradleToolchain                      (settings, Ids::gradleToolchain,                      getUndoManager(), "clang"),
           gradleClangTidy                      (settings, Ids::gradleClangTidy,                      getUndoManager(), false),
-          androidPluginVersion                 (settings, Ids::androidPluginVersion,                 getUndoManager(), "8.13.2"),
+          androidPluginVersion                 (settings, Ids::androidPluginVersion,                 getUndoManager(), "8.10.0"),
           androidEnableVirtualMidi             (settings, Ids::androidEnableVirtualMidi,             getUndoManager(), false),
           AndroidExecutable                    (getAppSettings().getStoredPath (Ids::androidStudioExePath, TargetOS::getThisOS()).get().toString())
     {
@@ -653,10 +653,6 @@ private:
         MemoryOutputStream mo;
         mo.setNewLineString (getNewLineString());
 
-        mo << "plugins {" << newLine
-           << "    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'" << newLine
-           << "}" << newLine;
-
         mo << "rootProject.name = " << "\'" << escapeQuotes (projectName) << "\'" << newLine;
         mo << (isLibrary() ? "include ':lib'" : "include ':app'");
 
@@ -702,35 +698,33 @@ private:
 
         mo << "apply plugin: 'com.android." << (isLibrary() ? "library" : "application") << "'" << newLine << newLine;
 
-        // Language version 8 (or lower) is required for compatibility with Android 24
-        mo << "java.toolchain.languageVersion = JavaLanguageVersion.of(8)" << newLine;
         // NDK 26 is required for ANDROID_WEAK_API_DEFS, which is in turn required for weak-linking AFontMatcher
         mo << "def ndkVersionString = \"28.1.13356709\"" << newLine << newLine;
 
-        mo << "android {"                                                                      << newLine;
-        mo << "    compileSdk(" << static_cast<int> (androidTargetSDK.get()) << ')'            << newLine;
-        mo << "    ndkVersion = ndkVersionString"                                              << newLine;
-        mo << "    namespace = " << project.getBundleIdentifierString().toLowerCase().quoted() << newLine;
-        mo << "    externalNativeBuild {"                                                      << newLine;
-        mo << "        cmake {"                                                                << newLine;
-        mo << "            path(\"CMakeLists.txt\")"                                           << newLine;
-        mo << "            version = \"3.22.1\""                                               << newLine;
-        mo << "        }"                                                                      << newLine;
-        mo << "    }"                                                                          << newLine;
+        mo << "android {"                                                                    << newLine;
+        mo << "    compileSdk " << static_cast<int> (androidTargetSDK.get())                 << newLine;
+        mo << "    ndkVersion ndkVersionString"                                              << newLine;
+        mo << "    namespace " << project.getBundleIdentifierString().toLowerCase().quoted() << newLine;
+        mo << "    externalNativeBuild {"                                                    << newLine;
+        mo << "        cmake {"                                                              << newLine;
+        mo << "            path \"CMakeLists.txt\""                                          << newLine;
+        mo << "            version \"3.22.1\""                                               << newLine;
+        mo << "        }"                                                                    << newLine;
+        mo << "    }"                                                                        << newLine;
 
-        mo << getAndroidSigningConfig()                                                        << newLine;
-        mo << getAndroidDefaultConfig()                                                        << newLine;
-        mo << getAndroidBuildTypes()                                                           << newLine;
-        mo << getAndroidProductFlavours()                                                      << newLine;
-        mo << getAndroidVariantFilter()                                                        << newLine;
+        mo << getAndroidSigningConfig()                                                      << newLine;
+        mo << getAndroidDefaultConfig()                                                      << newLine;
+        mo << getAndroidBuildTypes()                                                         << newLine;
+        mo << getAndroidProductFlavours()                                                    << newLine;
+        mo << getAndroidVariantFilter()                                                      << newLine;
 
-        mo << getAndroidJavaSourceSets (modules)                                               << newLine;
-        mo << getAndroidRepositories()                                                         << newLine;
-        mo << getAndroidDependencies()                                                         << newLine;
-        mo << androidCustomAppBuildGradleContent.get().toString()                              << newLine;
-        mo << getApplyPlugins()                                                                << newLine;
+        mo << getAndroidJavaSourceSets (modules)                                             << newLine;
+        mo << getAndroidRepositories()                                                       << newLine;
+        mo << getAndroidDependencies()                                                       << newLine;
+        mo << androidCustomAppBuildGradleContent.get().toString()                            << newLine;
+        mo << getApplyPlugins()                                                              << newLine;
 
-        mo << "}"                                                                              << newLine << newLine;
+        mo << "}"                                                                            << newLine << newLine;
 
         return mo.toString();
     }
@@ -740,7 +734,7 @@ private:
         MemoryOutputStream mo;
         mo.setNewLineString (getNewLineString());
 
-        mo << "    flavorDimensions(\"default\")" << newLine;
+        mo << "    flavorDimensions \"default\"" << newLine;
         mo << "    productFlavors {" << newLine;
 
         for (ConstConfigIterator config (*this); config.next();)
@@ -752,7 +746,7 @@ private:
             if (cfg.getArchitectures().isNotEmpty())
             {
                 mo << "            ndk {" << newLine
-                   << "                abiFilters(" << toGradleList (StringArray::fromTokens (cfg.getArchitectures(),  " ", "")) << ')' << newLine
+                   << "                abiFilters " << toGradleList (StringArray::fromTokens (cfg.getArchitectures(),  " ", "")) << newLine
                    << "            }" << newLine;
             }
 
@@ -762,13 +756,13 @@ private:
             if (getProject().getProjectType().isStaticLibrary())
                 mo << "                    targets \"" << getNativeModuleBinaryName (cfg) << "\"" << newLine;
 
-            mo << "                    cFlags(\"-O" << cfg.getGCCOptimisationFlag() << "\")"                                        << newLine
-               << "                    cppFlags(\"-O" << cfg.getGCCOptimisationFlag() << "\")"                                      << newLine
-               << "                    arguments(\"-DJUCE_BUILD_CONFIGURATION=" << cfg.getProductFlavourCMakeIdentifier() << "\")"  << newLine
+            mo << "                    cFlags    \"-O" << cfg.getGCCOptimisationFlag() << "\""                                      << newLine
+               << "                    cppFlags  \"-O" << cfg.getGCCOptimisationFlag() << "\""                                      << newLine
+               << "                    arguments \"-DJUCE_BUILD_CONFIGURATION=" << cfg.getProductFlavourCMakeIdentifier() << "\""   << newLine
                << "                }"                                                                                               << newLine
                << "            }"                                                                                                   << newLine
                                                                                                                                     << newLine
-               << "            dimension(\"default\")"                                                                              << newLine
+               << "            dimension \"default\""                                                                               << newLine
                << "        }"                                                                                                       << newLine;
         }
 
@@ -785,15 +779,15 @@ private:
         auto keyStoreFilePath = androidKeyStore.get().toString().replace ("${user.home}", "${System.properties['user.home']}")
                                                                 .replace ("/", "${File.separator}");
 
-        mo << "    signingConfigs {"                                                          << newLine;
-        mo << "        juceSigning {"                                                         << newLine;
-        mo << "            storeFile(file(\"" << keyStoreFilePath << "\"))"                   << newLine;
-        mo << "            storePassword(\"" << androidKeyStorePass.get().toString() << "\")" << newLine;
-        mo << "            keyAlias(\"" << androidKeyAlias.get().toString() << "\")"          << newLine;
-        mo << "            keyPassword(\"" << androidKeyAliasPass.get().toString() << "\")"   << newLine;
-        mo << "            storeType(\"jks\")"                                                << newLine;
-        mo << "        }"                                                                     << newLine;
-        mo << "    }"                                                                         << newLine;
+        mo << "    signingConfigs {"                                                         << newLine;
+        mo << "        juceSigning {"                                                        << newLine;
+        mo << "            storeFile     file(\"" << keyStoreFilePath << "\")"               << newLine;
+        mo << "            storePassword \"" << androidKeyStorePass.get().toString() << "\"" << newLine;
+        mo << "            keyAlias      \"" << androidKeyAlias.get().toString() << "\""     << newLine;
+        mo << "            keyPassword   \"" << androidKeyAliasPass.get().toString() << "\"" << newLine;
+        mo << "            storeType     \"jks\""                                            << newLine;
+        mo << "        }"                                                                    << newLine;
+        mo << "    }"                                                                        << newLine;
 
         return mo.toString();
     }
@@ -808,22 +802,22 @@ private:
         MemoryOutputStream mo;
         mo.setNewLineString (getNewLineString());
 
-        mo << "    defaultConfig {"                                                  << newLine;
+        mo << "    defaultConfig {"                                               << newLine;
 
         if (! isLibrary())
-            mo << "        applicationId(\"" << bundleIdentifier << "\")"            << newLine;
+            mo << "        applicationId \"" << bundleIdentifier << "\""          << newLine;
 
-        mo << "        minSdkVersion(" << minSdkVersion << ')'                       << newLine;
-        mo << "        targetSdkVersion(" << targetSdkVersion << ')'                 << newLine;
+        mo << "        minSdkVersion    " << minSdkVersion                        << newLine;
+        mo << "        targetSdkVersion " << targetSdkVersion                     << newLine;
 
-        mo << "        externalNativeBuild {"                                        << newLine;
-        mo << "            cmake {"                                                  << newLine;
+        mo << "        externalNativeBuild {"                                     << newLine;
+        mo << "            cmake {"                                               << newLine;
 
-        mo << "                arguments(" << cmakeDefs.joinIntoString (", ") << ')' << newLine;
+        mo << "                arguments " << cmakeDefs.joinIntoString (", ")     << newLine;
 
-        mo << "            }"                                                        << newLine;
-        mo << "        }"                                                            << newLine;
-        mo << "    }"                                                                << newLine;
+        mo << "            }"                                                     << newLine;
+        mo << "        }"                                                         << newLine;
+        mo << "    }"                                                             << newLine;
 
         return mo.toString();
     }
@@ -846,11 +840,11 @@ private:
             if (numDebugConfigs > 1 || ((numConfigs - numDebugConfigs) > 1))
                 continue;
 
-            mo << "         " << (config->isDebug() ? "debug" : "release") << " {" << newLine;
-            mo << "             initWith(" << (config->isDebug() ? "debug" : "release") << ')' << newLine;
-            mo << "             debuggable(" << (config->isDebug() ? "true" : "false") << ')' << newLine;
-            mo << "             jniDebuggable(" << (config->isDebug() ? "true" : "false") << ')' << newLine;
-            mo << "             signingConfig = signingConfigs.juceSigning" << newLine;
+            mo << "         " << (config->isDebug() ? "debug" : "release") << " {"      << newLine;
+            mo << "             initWith " << (config->isDebug() ? "debug" : "release") << newLine;
+            mo << "             debuggable    " << (config->isDebug() ? "true" : "false") << newLine;
+            mo << "             jniDebuggable " << (config->isDebug() ? "true" : "false") << newLine;
+            mo << "             signingConfig signingConfigs.juceSigning" << newLine;
 
             mo << "         }" << newLine;
         }
@@ -864,23 +858,20 @@ private:
         MemoryOutputStream mo;
         mo.setNewLineString (getNewLineString());
 
-        mo << "    androidComponents {" << newLine
-           << "        beforeVariants(selector().all(), { variant ->" << newLine
-           << "            variant.enabled = false" << newLine;
+        mo << "    variantFilter { variant ->"            << newLine;
+        mo << "        def names = variant.flavors*.name" << newLine;
 
         for (ConstConfigIterator config (*this); config.next();)
         {
             auto& cfg = dynamic_cast<const AndroidBuildConfiguration&> (*config);
-            mo << "            variant.enabled |= variant.productFlavors*.second.contains (\""
-               << cfg.getProductFlavourNameIdentifier()
-               << "\") && variant.buildType == \""
-               << (cfg.isDebug() ? "debug" : "release")
-               << '"'
-               << newLine;
+
+            mo << "        if (names.contains (\"" << cfg.getProductFlavourNameIdentifier() << "\")"                  << newLine;
+            mo << "              && variant.buildType.name != \"" << (cfg.isDebug() ? "debug" : "release") << "\") {" << newLine;
+            mo << "            setIgnore(true)"                                                                       << newLine;
+            mo << "        }"                                                                                         << newLine;
         }
 
-        mo << "        })" << newLine
-           << "    }" << newLine;
+        mo << "    }" << newLine;
 
         return mo.toString();
     }
@@ -933,20 +924,15 @@ private:
             mo << "        " << d << newLine;
 
         for (auto& d : StringArray::fromLines (androidJavaLibs.get().toString()))
-            mo << "        implementation(files('libs/" << File (d).getFileName() << "'))" << newLine;
+            mo << "        implementation files('libs/" << File (d).getFileName() << "')" << newLine;
 
         if (isInAppBillingEnabled())
-        {
-            mo << "        implementation('com.android.billingclient:billing:9.1.0') {" << newLine;
-            mo << "            exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'" << newLine;
-            mo << "            exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'" << newLine;
-            mo << "        }" << newLine;
-        }
+            mo << "        implementation 'com.android.billingclient:billing:7.0.0'" << newLine;
 
         if (areRemoteNotificationsEnabled())
         {
-            mo << "        implementation('com.google.firebase:firebase-core:16.0.1')" << newLine;
-            mo << "        implementation('com.google.firebase:firebase-messaging:17.6.0')" << newLine;
+            mo << "        implementation 'com.google.firebase:firebase-core:16.0.1'" << newLine;
+            mo << "        implementation 'com.google.firebase:firebase-messaging:17.6.0'" << newLine;
         }
 
         mo << "    }" << newLine;
@@ -1141,7 +1127,7 @@ private:
         props.add (new TextPropertyComponent (androidCustomAppBuildGradleContent, "Extra module's build.gradle content", 32768, true),
                    "Additional content to be appended to module's build.gradle inside android { section. ");
 
-        props.add (new TextPropertyComponent (androidGradleSettingsContent, "Custom settings.gradle content", 32768, true),
+        props.add (new TextPropertyComponent (androidGradleSettingsContent, "Custom gradle.settings content", 32768, true),
                    "You can customize the content of settings.gradle here");
 
         props.add (new ChoicePropertyComponent (androidScreenOrientation, "Screen Orientation",

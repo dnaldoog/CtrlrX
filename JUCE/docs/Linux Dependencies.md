@@ -46,7 +46,6 @@ available you could try installing the libfreetype6-dev package.
 - libxinerama-dev (unless `JUCE_USE_XINERAMA=0`)
 - libxrandr-dev (unless `JUCE_USE_XRANDR=0`)
 - libxrender-dev (unless `JUCE_USE_XRENDER=0`)
-- libxi-dev (unless `JUCE_USE_XINPUT=0`)
 
 #### juce_gui_extra
 - libwebkit2gtk-4.1-dev (unless `JUCE_WEB_BROWSER=0`)
@@ -61,7 +60,6 @@ available during runtime.
 #### juce_opengl
 - libglu1-mesa-dev
 - mesa-common-dev
-- libegl-dev
 
 The full command is as follows:
 
@@ -70,6 +68,6 @@ The full command is as follows:
         ladspa-sdk \
         libcurl4-openssl-dev  \
         libfreetype-dev libfontconfig1-dev \
-        libx11-dev libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev libxi-dev \
+        libx11-dev libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev \
         libwebkit2gtk-4.1-dev \
-        libglu1-mesa-dev mesa-common-dev libegl-dev
+        libglu1-mesa-dev mesa-common-dev

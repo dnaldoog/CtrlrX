@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -364,7 +364,7 @@ void UpdateRegion::findRECTAndValidate (HWND windowHandle)
 {
     numRect = 0;
 
-    auto* regionHandle = CreateRectRgn (0, 0, 0, 0);
+    auto regionHandle = CreateRectRgn (0, 0, 0, 0);
 
     if (regionHandle == nullptr)
     {
@@ -372,42 +372,33 @@ void UpdateRegion::findRECTAndValidate (HWND windowHandle)
         return;
     }
 
-    const ScopeGuard regionDeleter { [&] { DeleteObject (regionHandle); } };
-    const auto regionType = GetUpdateRgn (windowHandle, regionHandle, false);
+    auto regionType = GetUpdateRgn (windowHandle, regionHandle, false);
 
-    if (regionType == ERROR)
-        return;
-
-    if (regionType == NULLREGION)
+    if (regionType == SIMPLEREGION || regionType == COMPLEXREGION)
     {
-        ValidateRect (windowHandle, nullptr);
-        return;
+        auto regionDataBytes = GetRegionData (regionHandle, (DWORD) block.getSize(), (RGNDATA*) block.getData());
+
+        if (regionDataBytes > block.getSize())
+        {
+            block.ensureSize (regionDataBytes);
+            regionDataBytes = GetRegionData (regionHandle, (DWORD) block.getSize(), (RGNDATA*) block.getData());
+        }
+
+        if (regionDataBytes > 0)
+        {
+            auto header = (RGNDATAHEADER const* const) block.getData();
+
+            if (header->iType == RDH_RECTANGLES)
+                numRect = header->nCount;
+        }
     }
-
-    const auto requiredBytes = GetRegionData (regionHandle, 0, nullptr);
-    block.ensureSize (requiredBytes);
-
-    const auto regionDataResult = GetRegionData (regionHandle,
-                                                 (DWORD) block.getSize(),
-                                                 static_cast<RGNDATA*> (block.getData()));
-
-    numRect = std::invoke ([&]() -> decltype (numRect)
-    {
-        if (regionDataResult < sizeof (RGNDATAHEADER))
-            return 0;
-
-        const auto* header = static_cast<RGNDATAHEADER const* const> (block.getData());
-
-        if (header->iType != RDH_RECTANGLES)
-            return 0;
-
-        return header->nCount;
-    });
 
     if (numRect > 0)
         ValidateRgn (windowHandle, regionHandle);
     else
         ValidateRect (windowHandle, nullptr);
+
+    DeleteObject (regionHandle);
 }
 
 //==============================================================================
@@ -428,25 +419,7 @@ static ComSmartPtr<ID2D1GradientStopCollection> makeGradientStopCollection (cons
     }
 
     ComSmartPtr<ID2D1GradientStopCollection> result;
-
-    const auto extendMode = std::invoke ([&]
-    {
-        switch (gradient.spreadMethod)
-        {
-            case ColourGradient::SpreadMethod::pad:     return D2D1_EXTEND_MODE_CLAMP;
-            case ColourGradient::SpreadMethod::reflect: return D2D1_EXTEND_MODE_MIRROR;
-            case ColourGradient::SpreadMethod::repeat:  return D2D1_EXTEND_MODE_WRAP;
-        }
-
-        jassertfalse;
-        return D2D1_EXTEND_MODE_CLAMP;
-    });
-
-    deviceContext->CreateGradientStopCollection (stops.data(),
-                                                 (UINT32) stops.size(),
-                                                 D2D1_GAMMA_2_2,
-                                                 extendMode,
-                                                 result.resetAndGetPointerAddress());
+    deviceContext->CreateGradientStopCollection (stops.data(), (UINT32) stops.size(), result.resetAndGetPointerAddress());
     return result;
 }
 

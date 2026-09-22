@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -128,12 +128,6 @@ public:
 
         auto sharedTexture = resources->getSharedTexture();
 
-        if (sharedTexture == nullptr)
-        {
-            jassertfalse;
-            return dirtyRegions;
-        }
-
         auto encodeBlit = [] (id<MTLCommandBuffer> commandBuffer,
                               id<MTLTexture> source,
                               id<MTLTexture> destination)
@@ -155,12 +149,9 @@ public:
         {
             @autoreleasepool
             {
-                id<CAMetalDrawable> drawable = [layer nextDrawable];
-
-                if (drawable == nullptr)
-                    return dirtyRegions;
-
                 id<MTLCommandBuffer> commandBuffer = [commandQueue.get() commandBuffer];
+
+                id<CAMetalDrawable> drawable = [layer nextDrawable];
                 encodeBlit (commandBuffer, sharedTexture, drawable.texture);
 
                 [commandBuffer commit];
@@ -189,9 +180,6 @@ public:
                 @autoreleasepool
                 {
                     id<CAMetalDrawable> drawable = [layer nextDrawable];
-
-                    if (drawable == nullptr)
-                        return;
 
                     id<MTLCommandBuffer> presentationCommandBuffer = [commandQueue.get() commandBuffer];
 
@@ -255,24 +243,6 @@ private:
     //==============================================================================
     class Resources
     {
-        static auto getResourceStorageMode()
-        {
-           #if JUCE_MAC && JUCE_INTEL
-            return MTLResourceStorageModeManaged;
-           #else
-            return MTLResourceStorageModeShared;
-           #endif
-        }
-
-        static auto getStorageMode()
-        {
-           #if JUCE_MAC && JUCE_INTEL
-            return MTLStorageModeManaged;
-           #else
-            return MTLStorageModeShared;
-           #endif
-        }
-
     public:
         Resources (id<MTLDevice> metalDevice, CAMetalLayer* layer)
         {
@@ -282,14 +252,24 @@ private:
 
             buffer.reset ([metalDevice newBufferWithBytesNoCopy: cpuRenderMemory.get()
                                                          length: allocationSize
-                                                        options: getResourceStorageMode()
+                                                        options:
+                                                                #if JUCE_MAC
+                                                                 MTLResourceStorageModeManaged
+                                                                #else
+                                                                 MTLResourceStorageModeShared
+                                                                #endif
                                                     deallocator: nullptr]);
 
             auto* textureDesc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat: layer.pixelFormat
                                                                                    width: (NSUInteger) layer.drawableSize.width
                                                                                   height: (NSUInteger) layer.drawableSize.height
                                                                                mipmapped: NO];
-            textureDesc.storageMode = getStorageMode();
+            textureDesc.storageMode =
+                                     #if JUCE_MAC
+                                      MTLStorageModeManaged;
+                                     #else
+                                      MTLStorageModeShared;
+                                     #endif
             textureDesc.usage = MTLTextureUsageShaderRead;
 
             sharedTexture.reset ([buffer.get() newTextureWithDescriptor: textureDesc
@@ -317,7 +297,7 @@ private:
 
         void signalBufferModifiedByCpu()
         {
-           #if JUCE_MAC && JUCE_INTEL
+           #if JUCE_MAC
             [buffer.get() didModifyRange: { 0, buffer.get().length }];
            #endif
         }
