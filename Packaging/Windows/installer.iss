@@ -38,7 +38,10 @@ Type: filesandordirs; Name: "{commoncf64}\VST3\{#ProductName}Data"
 [Files]
 Source: "..\..\{#ArtifactPath}\VST3\{#ProductName}.vst3\*"; DestDir: "{commoncf64}\VST3\{#ProductName}.vst3\"; Excludes: *.ilk; Flags: ignoreversion recursesubdirs; Components: vst3
 ; Source: "..\..\{#ArtifactPath}\CLAP\{#ProductName}.clap"; DestDir: "{commoncf64}\CLAP\"; Flags: ignoreversion; Components: clap
+
+; Standalone binary + rcedit utility for custom desktop icons
 Source: "..\..\{#ArtifactPath}\Standalone\{#ProductName}.exe"; DestDir: "{commonpf64}\{#Publisher}\{#ProductName}"; Flags: ignoreversion; Components: standalone
+Source: "..\..\{#ArtifactPath}\Standalone\rcedit-x64.exe"; DestDir: "{commonpf64}\{#Publisher}\{#ProductName}"; Flags: ignoreversion; Components: standalone
 
 [Icons]
 Name: "{autoprograms}\{#ProductName}"; Filename: "{commonpf64}\{#Publisher}\{#ProductName}\{#ProductName}.exe"; Components: standalone
