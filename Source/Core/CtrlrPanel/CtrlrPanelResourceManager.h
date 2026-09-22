@@ -22,7 +22,8 @@ class CtrlrPanelResourceManager
 		CtrlrPanelResource *getResource (const String &resourceName);
 
 		// const Image getResourceAsImage (const String &resourceName);
-		Image getResourceAsImage(const String &resourceName, int targetWidth = 0, int targetHeight = 0);
+		Image getResourceAsImage(const String &resourceName);
+		Image getResourceAsImage(const String &resourceName, int targetWidth, int targetHeight);
 		const Font getResourceAsFont (const String &resourceName);
 		void reloadComboContents (ComboBox &comboToUpdate);
 		int getHashCode (const String &resourceName, const bool preloadResource=false);
