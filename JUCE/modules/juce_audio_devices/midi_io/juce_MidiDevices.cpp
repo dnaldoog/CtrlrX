@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -282,7 +282,8 @@ std::unique_ptr<MidiInput> MidiInput::createNewDevice (const String& name, MidiI
     if (! connection)
         return {};
 
-    return Impl::make (session, std::move (connection), 0, { name, {} }, callback, std::move (port));
+    const auto portId = port.getId().dst;
+    return Impl::make (session, std::move (connection), 0, { name, portId }, callback, std::move (port));
 }
 
 void MidiInput::start()
@@ -337,6 +338,7 @@ MidiOutput::MidiOutput (std::shared_ptr<ump::Session> s,
       storedInfo (i),
       group (g)
 {
+    mainPackets.reserve (2048);
 }
 
 Array<MidiDeviceInfo> MidiOutput::getAvailableDevices()
@@ -391,12 +393,19 @@ std::unique_ptr<MidiOutput> MidiOutput::createNewDevice (const String& name)
     if (! connection)
         return {};
 
-    return rawToUniquePtr (new MidiOutput (session, std::move (connection), 0, { name, {} }, std::move (port)));
+    const auto portId = port.getId().src;
+    return rawToUniquePtr (new MidiOutput (session, std::move (connection), 0, { name, portId }, std::move (port)));
 }
 
 MidiDeviceInfo MidiOutput::getDeviceInfo() const noexcept
 {
     return customName.has_value() ? storedInfo.withName (*customName) : storedInfo;
+}
+
+bool MidiDeviceInfo::operator== (const MidiDeviceInfo& other) const noexcept
+{
+    const auto tie = [] (auto& x) { return std::tuple (x.name, x.identifier); };
+    return tie (*this) == tie (other);
 }
 
 } // namespace juce

@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -49,11 +49,11 @@ struct DeviceInfo
     std::array<std::byte, 4> revision;
 
 private:
-    auto tie() const { return std::tie (manufacturer, family, modelNumber, revision); }
+    auto tie() const;
 
 public:
-    bool operator== (const DeviceInfo& other) const { return tie() == other.tie(); }
-    bool operator!= (const DeviceInfo& other) const { return tie() != other.tie(); }
+    bool operator== (const DeviceInfo& other) const;
+    bool operator!= (const DeviceInfo& other) const;
 
     static constexpr auto marshallingVersion = std::nullopt;
 

@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -45,27 +45,11 @@ enum class TextDirection
 class ShapedTextOptions
 {
 private:
-    auto tie() const
-    {
-        return std::tie (justification,
-                         readingDir,
-                         wordWrapWidth,
-                         alignmentWidth,
-                         height,
-                         fontsForRange,
-                         firstLineIndent,
-                         leading,
-                         additiveLineSpacing,
-                         baselineAtZero,
-                         allowBreakingInsideWord,
-                         trailingWhitespacesShouldFit,
-                         maxNumLines,
-                         ellipsis);
-    }
+    auto tie() const;
 
 public:
-    bool operator== (const ShapedTextOptions& other) const { return tie() == other.tie(); }
-    bool operator!= (const ShapedTextOptions& other) const { return tie() != other.tie(); }
+    bool operator== (const ShapedTextOptions& other) const;
+    bool operator!= (const ShapedTextOptions& other) const;
 
     //==============================================================================
     [[nodiscard]] ShapedTextOptions withJustification (Justification x) const

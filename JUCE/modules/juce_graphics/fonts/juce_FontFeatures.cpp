@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -35,6 +35,42 @@
 namespace juce
 {
 
+constexpr auto FontFeatureSetting::tie() const
+{
+    return std::tuple (tag, value);
+}
+
+constexpr bool FontFeatureSetting::operator< (const FontFeatureSetting& other) const
+{
+    return tie() <  other.tie();
+}
+
+constexpr bool FontFeatureSetting::operator<= (const FontFeatureSetting& other) const
+{
+    return tie() <= other.tie();
+}
+
+constexpr bool FontFeatureSetting::operator> (const FontFeatureSetting& other) const
+{
+    return tie() >  other.tie();
+}
+
+constexpr bool FontFeatureSetting::operator>= (const FontFeatureSetting& other) const
+{
+    return tie() >= other.tie();
+}
+
+constexpr bool FontFeatureSetting::operator== (const FontFeatureSetting& other) const
+{
+    return tie() == other.tie();
+}
+
+constexpr bool FontFeatureSetting::operator!= (const FontFeatureSetting& other) const
+{
+    return tie() != other.tie();
+}
+
+//==============================================================================
 FontFeatureTag FontFeatureTag::fromString (const String& string)
 {
     if (string.getNumBytesAsUTF8() != 4)
@@ -61,5 +97,38 @@ String FontFeatureTag::toString() const
 
     return String { characters };
 }
+
+constexpr auto FontVariableSetting::tie() const { return std::tuple (tag, value); }
+
+constexpr bool FontVariableSetting::operator< (const FontVariableSetting& other) const
+{
+    return tie() < other.tie();
+}
+
+constexpr bool FontVariableSetting::operator<= (const FontVariableSetting& other) const
+{
+    return tie() <= other.tie();
+}
+
+constexpr bool FontVariableSetting::operator> (const FontVariableSetting& other) const
+{
+    return tie() > other.tie();
+}
+
+constexpr bool FontVariableSetting::operator>= (const FontVariableSetting& other) const
+{
+    return tie() >= other.tie();
+}
+
+constexpr bool FontVariableSetting::operator!= (const FontVariableSetting& other) const
+{
+    return tie() != other.tie();
+}
+
+constexpr bool FontVariableSetting::operator== (const FontVariableSetting& other) const
+{
+    return tag == other.tag && approximatelyEqual (value, other.value);
+}
+
 
 } // namespace juce
