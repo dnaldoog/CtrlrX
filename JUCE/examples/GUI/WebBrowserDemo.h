@@ -99,7 +99,6 @@ class WebBrowserDemo final : public Component
 public:
     WebBrowserDemo()
     {
-        setName ("Web-browser demo");
         setOpaque (true);
 
         // Create an address box..

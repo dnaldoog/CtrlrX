@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -608,8 +608,7 @@ public:
 private:
     struct DelegateClass final : public ObjCClass<NSObject>
     {
-        DelegateClass()
-            : ObjCClass ("JUCEDelegate_")
+        DelegateClass()  : ObjCClass<NSObject> ("JUCEDelegate_")
         {
             addMethod (darkModeSelector, [] (id, SEL, NSNotification*) { Desktop::getInstance().darkModeChanged(); });
             registerClass();
@@ -745,8 +744,7 @@ void Displays::findDisplays (const Desktop& desktop)
     private:
         struct DelegateClass final : public ObjCClass<NSObject>
         {
-            DelegateClass()
-                : ObjCClass ("JUCEOnScreenKeyboardObserver_")
+            DelegateClass() : ObjCClass ("JUCEOnScreenKeyboardObserver_")
             {
                 addIvar<OnScreenKeyboardChangeDetectorImpl*> ("owner");
 
@@ -773,10 +771,10 @@ void Displays::findDisplays (const Desktop& desktop)
 
                         BorderSize<double> result;
 
-                        if (rect.getY() == display->logicalBounds.toNearestInt().getY())
+                        if (rect.getY() == display->totalArea.getY())
                             result.setTop (rect.getHeight());
 
-                        if (rect.getBottom() == display->logicalBounds.toNearestInt().getBottom())
+                        if (rect.getBottom() == display->totalArea.getBottom())
                             result.setBottom (rect.getHeight());
 
                         return result;
@@ -814,9 +812,8 @@ void Displays::findDisplays (const Desktop& desktop)
 
         Display d;
         const auto masterScale = desktop.getGlobalScaleFactor();
-        d.physicalBounds = convertToRectInt ([s bounds]) * s.nativeScale;
-        d.logicalBounds = convertToRectFloat ([s bounds]) / masterScale;
-        d.userBounds = getRecommendedWindowBounds (desktop).toFloat() / masterScale;
+        d.totalArea = convertToRectInt ([s bounds]) / masterScale;
+        d.userArea = getRecommendedWindowBounds (desktop) / masterScale;
         d.safeAreaInsets = getSafeAreaInsets (desktop);
         const auto scaledInsets = keyboardChangeDetector.getInsets().multipliedBy (1.0 / (double) masterScale);
         d.keyboardInsets = detail::WindowingHelpers::roundToInt (scaledInsets);

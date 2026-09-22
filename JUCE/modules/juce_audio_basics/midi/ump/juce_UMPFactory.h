@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -86,7 +86,7 @@ private:
 */
 class EndpointInfo
 {
-    auto tie() const;
+    auto tie() const { return std::tie (versionMajor, versionMinor, numFunctionBlocks, flags); }
 
 public:
     [[nodiscard]] EndpointInfo withVersion (uint8_t major, uint8_t minor) const
@@ -122,8 +122,8 @@ public:
     /** True if this endpoint is capable of transmitting JR timestamps. */
     [[nodiscard]] bool hasTransmitJRSupport()     const { return getFlag (supportsTransmitJR); }
 
-    bool operator== (const EndpointInfo& other) const;
-    bool operator!= (const EndpointInfo& other) const;
+    bool operator== (const EndpointInfo& other) const { return tie() == other.tie(); }
+    bool operator!= (const EndpointInfo& other) const { return tie() != other.tie(); }
 
 private:
     enum Flags

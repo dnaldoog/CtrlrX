@@ -16,9 +16,10 @@
 #include <cassert>
 #include <android/log.h>
 
+#include <oboe/AudioStream.h>
+#include <common/AudioClock.h>
+
 #include "common/OboeDebug.h"
-#include "oboe/AudioClock.h"
-#include "oboe/AudioStream.h"
 #include "oboe/AudioStreamBuilder.h"
 #include "EngineOpenSLES.h"
 #include "AudioStreamOpenSLES.h"
@@ -29,7 +30,7 @@ using namespace oboe;
 AudioStreamOpenSLES::AudioStreamOpenSLES(const AudioStreamBuilder &builder)
     : AudioStreamBuffered(builder) {
     // OpenSL ES does not support device IDs. So overwrite value from builder.
-    mDeviceIds.clear();
+    mDeviceId = kUnspecified;
     // OpenSL ES does not support session IDs. So overwrite value from builder.
     mSessionId = SessionId::None;
 }
@@ -65,9 +66,8 @@ SLuint32 AudioStreamOpenSLES::getDefaultByteOrder() {
 }
 
 Result AudioStreamOpenSLES::open() {
-#ifndef OBOE_SUPPRESS_LOG_SPAM
+
     LOGI("AudioStreamOpenSLES::open() chans=%d, rate=%d", mChannelCount, mSampleRate);
-#endif
 
     // OpenSL ES only supports I16 and Float
     if (mFormat != AudioFormat::I16 && mFormat != AudioFormat::Float) {
@@ -265,7 +265,7 @@ void AudioStreamOpenSLES::logUnsupportedAttributes() {
     // only report if changed from the default
 
     // Device ID
-    if (!mDeviceIds.empty()) {
+    if (mDeviceId != kUnspecified) {
         LOGW("Device ID [AudioStreamBuilder::setDeviceId()] "
              "is not supported on OpenSLES streams.");
     }
@@ -281,7 +281,7 @@ void AudioStreamOpenSLES::logUnsupportedAttributes() {
              "is not supported on OpenSLES streams running on pre-Android N-MR1 versions.");
     }
     // Content Type
-    if (static_cast<const int32_t>(mContentType) != kUnspecified) {
+    if (mContentType != ContentType::Music) {
         LOGW("ContentType [AudioStreamBuilder::setContentType()] "
              "is not supported on OpenSLES streams.");
     }
@@ -304,26 +304,9 @@ void AudioStreamOpenSLES::logUnsupportedAttributes() {
              "is not supported on OpenSLES streams.");
     }
 
-    if (mIsContentSpatialized) {
-        LOGW("Boolean [AudioStreamBuilder::setIsContentSpatialized()] "
-             "is not supported on OpenSLES streams.");
-    }
-
     // Allowed Capture Policy
     if (mAllowedCapturePolicy != AllowedCapturePolicy::Unspecified) {
         LOGW("AllowedCapturePolicy [AudioStreamBuilder::setAllowedCapturePolicy()] "
-             "is not supported on OpenSLES streams.");
-    }
-
-    // Package Name
-    if (!mPackageName.empty()) {
-        LOGW("PackageName [AudioStreamBuilder::setPackageName()] "
-             "is not supported on OpenSLES streams.");
-    }
-
-    // Attribution Tag
-    if (!mAttributionTag.empty()) {
-        LOGW("AttributionTag [AudioStreamBuilder::setAttributionTag()] "
              "is not supported on OpenSLES streams.");
     }
 }
@@ -380,7 +363,6 @@ SLresult AudioStreamOpenSLES::updateStreamParameters(SLAndroidConfigurationItf c
 
 // This is called under mLock.
 Result AudioStreamOpenSLES::close_l() {
-    LOGD("AudioOutputStreamOpenSLES::%s() called", __func__);
     if (mState == StreamState::Closed) {
         return Result::ErrorClosed;
     }
@@ -389,23 +371,17 @@ Result AudioStreamOpenSLES::close_l() {
 
     onBeforeDestroy();
 
-    // Mark as CLOSED before we unlock for the join.
-    // This will prevent other threads from trying to close().
-    setState(StreamState::Closed);
-
-    SLObjectItf  tempObjectInterface = mObjectInterface;
-    mObjectInterface = nullptr;
-    if (tempObjectInterface != nullptr) {
-        // Temporarily unlock so we can join() the callback thread.
-        mLock.unlock();
-        (*tempObjectInterface)->Destroy(tempObjectInterface); // Will join the callback!
-        mLock.lock();
+    if (mObjectInterface != nullptr) {
+        (*mObjectInterface)->Destroy(mObjectInterface);
+        mObjectInterface = nullptr;
     }
 
     onAfterDestroy();
 
     mSimpleBufferQueueInterface = nullptr;
     EngineOpenSLES::getInstance().close();
+
+    setState(StreamState::Closed);
 
     return Result::OK;
 }

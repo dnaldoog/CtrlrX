@@ -34,9 +34,11 @@
 #include "hb.hh"
 #include "hb-blob.hh"
 #include "hb-map.hh"
-#include "hb-free-pool.hh"
+#include "hb-pool.hh"
 
-#include "hb-subset-serialize.h"
+#ifdef HB_EXPERIMENTAL_API
+#include "hb-subset-repacker.h"
+#endif
 
 /*
  * Serialize
@@ -73,19 +75,21 @@ struct hb_serialize_context_t
 
     object_t () = default;
 
-    object_t (const hb_subset_serialize_object_t &o)
+#ifdef HB_EXPERIMENTAL_API
+    object_t (const hb_object_t &o)
     {
       head = o.head;
       tail = o.tail;
       next = nullptr;
-      real_links.alloc_exact (o.num_real_links);
+      real_links.alloc (o.num_real_links, true);
       for (unsigned i = 0 ; i < o.num_real_links; i++)
         real_links.push (o.real_links[i]);
 
-      virtual_links.alloc_exact (o.num_virtual_links);
+      virtual_links.alloc (o.num_virtual_links, true);
       for (unsigned i = 0; i < o.num_virtual_links; i++)
         virtual_links.push (o.virtual_links[i]);
     }
+#endif
 
     bool add_virtual_link (objidx_t objidx)
     {
@@ -144,7 +148,8 @@ struct hb_serialize_context_t
 
       link_t () = default;
 
-      link_t (const hb_subset_serialize_link_t &o)
+#ifdef HB_EXPERIMENTAL_API
+      link_t (const hb_link_t &o)
       {
         width = o.width;
         is_signed = 0;
@@ -153,6 +158,7 @@ struct hb_serialize_context_t
         bias = 0;
         objidx = o.objidx;
       }
+#endif
 
       HB_INTERNAL static int cmp (const void* a, const void* b)
       {
@@ -172,7 +178,7 @@ struct hb_serialize_context_t
     auto all_links () const HB_AUTO_RETURN
         (( hb_concat (real_links, virtual_links) ));
     auto all_links_writer () HB_AUTO_RETURN
-        (( hb_concat (real_links.writer (), virtual_links.writer ()) ));
+        (( hb_concat (real_links.writer (), virtual_links.writer ()) ));           
   };
 
   struct snapshot_t
@@ -195,7 +201,7 @@ struct hb_serialize_context_t
      };
   }
 
-  hb_serialize_context_t (void *start_, size_t size) :
+  hb_serialize_context_t (void *start_, unsigned int size) :
     start ((char *) start_),
     end (start + size),
     current (nullptr)
@@ -230,7 +236,7 @@ struct hb_serialize_context_t
         || errors == HB_SERIALIZE_ERROR_ARRAY_OVERFLOW;
   }
 
-  void reset (void *start_, size_t size)
+  void reset (void *start_, unsigned int size)
   {
     start = (char*) start_;
     end = start + size;
@@ -394,7 +400,6 @@ struct hb_serialize_context_t
       {
         merge_virtual_links (obj, objidx);
 	obj->fini ();
-        object_pool.release (obj);
 	return objidx;
       }
     }
@@ -458,11 +463,9 @@ struct hb_serialize_context_t
     while (packed.length > 1 &&
 	   packed.tail ()->head < tail)
     {
-      object_t *obj = packed.tail ();
-      packed_map.del (obj);
-      assert (!obj->next);
-      obj->fini ();
-      object_pool.release (obj);
+      packed_map.del (packed.tail ());
+      assert (!packed.tail ()->next);
+      packed.tail ()->fini ();
       packed.pop ();
     }
     if (packed.length > 1)
@@ -680,7 +683,7 @@ struct hb_serialize_context_t
   HB_NODISCARD
   Type *embed (const Type *obj)
   {
-    size_t size = obj->get_size ();
+    unsigned int size = obj->get_size ();
     Type *ret = this->allocate_size<Type> (size, false);
     if (unlikely (!ret)) return nullptr;
     hb_memcpy (ret, obj, size);
@@ -724,7 +727,7 @@ struct hb_serialize_context_t
 	   hb_requires (hb_is_iterator (Iterator)),
 	   typename ...Ts>
   void copy_all (Iterator it, Ts&&... ds)
-  { for (decltype (*it) _ : it) copy (_, ds...); }
+  { for (decltype (*it) _ : it) copy (_, std::forward<Ts> (ds)...); }
 
   template <typename Type>
   hb_serialize_context_t& operator << (const Type &obj) & { embed (obj); return *this; }
@@ -733,7 +736,6 @@ struct hb_serialize_context_t
   Type *extend_size (Type *obj, size_t size, bool clear = true)
   {
     if (unlikely (in_error ())) return nullptr;
-    if (unlikely (size >= INT_MAX)) { err (HB_SERIALIZE_ERROR_OTHER); return nullptr; }
 
     assert (this->start <= (char *) obj);
     assert ((char *) obj <= this->head);
@@ -795,8 +797,7 @@ struct hb_serialize_context_t
   template <typename T, unsigned Size = sizeof (T)>
   void assign_offset (const object_t* parent, const object_t::link_t &link, unsigned offset)
   {
-    // XXX We should stop assuming big-endian!
-    auto &off = * ((HBInt<true, T, Size> *) (parent->head + link.position));
+    auto &off = * ((BEInt<T, Size> *) (parent->head + link.position));
     assert (0 == off);
     check_assign (off, offset, HB_SERIALIZE_ERROR_OFFSET_OVERFLOW);
   }
@@ -816,7 +817,7 @@ struct hb_serialize_context_t
   }
 
   /* Object memory pool. */
-  hb_free_pool_t<object_t> object_pool;
+  hb_pool_t<object_t> object_pool;
 
   /* Stack of currently under construction objects. */
   object_t *current;

@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -356,23 +356,19 @@ public:
         }
     }
 
-    Component* getTargetForGesture (ComponentPeer& peer,
-                                    Point<float> positionWithinPeer,
-                                    Time time,
-                                    Point<float>& physicalScreenPos)
+    Component* getTargetForGesture (ComponentPeer& peer, Point<float> positionWithinPeer,
+                                    Time time, Point<float>& screenPos)
     {
         lastTime = time;
         ++mouseEventCounter;
 
-        physicalScreenPos = peer.localToGlobal (positionWithinPeer);
-        const auto pointerState = lastPointerState.withPosition (physicalScreenPos);
+        screenPos = peer.localToGlobal (positionWithinPeer);
+        const auto pointerState = lastPointerState.withPosition (screenPos);
         setPeer (peer, pointerState, time);
         setPointerState (pointerState, time, false);
         triggerFakeMove();
 
-        const auto positionWithinComponent = positionWithinPeer / peer.getComponent().getDesktopScaleFactor();
-
-        return peer.getComponent().getComponentAt (positionWithinComponent);
+        return getComponentUnderMouse();
     }
 
     void handleWheel (ComponentPeer& peer, Point<float> positionWithinPeer,

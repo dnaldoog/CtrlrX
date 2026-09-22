@@ -53,46 +53,21 @@ public:
     virtual ~FullDuplexStream() = default;
 
     /**
-     * Sets the input stream.
-     *
-     * @deprecated Call setSharedInputStream(std::shared_ptr<AudioStream> &stream) instead.
-     * @param stream the output stream
-     */
-    void setInputStream(AudioStream *stream) {
-        mRawInputStream = stream;
-    }
-
-    /**
      * Sets the input stream. Calling this is mandatory.
      *
      * @param stream the output stream
      */
-    void setSharedInputStream(std::shared_ptr<AudioStream> &stream) {
-        mSharedInputStream = stream;
+    void setInputStream(AudioStream *stream) {
+        mInputStream = stream;
     }
 
     /**
-     * Gets the current input stream. This function tries to return the shared input stream if it
-     * is set before the raw input stream.
+     * Gets the input stream
      *
-     * @return pointer to an output stream or nullptr.
+     * @return the input stream
      */
     AudioStream *getInputStream() {
-        if (mSharedInputStream) {
-            return mSharedInputStream.get();
-        } else {
-            return mRawInputStream;
-        }
-    }
-
-    /**
-     * Sets the output stream.
-     *
-     * @deprecated Call setSharedOutputStream(std::shared_ptr<AudioStream> &stream) instead.
-     * @param stream the output stream
-     */
-    void setOutputStream(AudioStream *stream) {
-        mRawOutputStream = stream;
+        return mInputStream;
     }
 
     /**
@@ -100,22 +75,17 @@ public:
      *
      * @param stream the output stream
      */
-    void setSharedOutputStream(std::shared_ptr<AudioStream> &stream) {
-        mSharedOutputStream = stream;
+    void setOutputStream(AudioStream *stream) {
+        mOutputStream = stream;
     }
 
     /**
-     * Gets the current output stream. This function tries to return the shared output stream if it
-     * is set before the raw output stream.
+     * Gets the output stream
      *
-     * @return pointer to an output stream or nullptr.
+     * @return the output stream
      */
     AudioStream *getOutputStream() {
-        if (mSharedOutputStream) {
-            return mSharedOutputStream.get();
-        } else {
-            return mRawOutputStream;
-        }
+        return mOutputStream;
     }
 
     /**
@@ -153,10 +123,10 @@ public:
         Result outputResult = Result::OK;
         Result inputResult = Result::OK;
         if (getOutputStream()) {
-            outputResult = getOutputStream()->requestStop();
+            outputResult = mOutputStream->requestStop();
         }
         if (getInputStream()) {
-            inputResult = getInputStream()->requestStop();
+            inputResult = mInputStream->requestStop();
         }
         if (outputResult != Result::OK) {
             return outputResult;
@@ -342,10 +312,8 @@ private:
     // Discard some callbacks so the input and output reach equilibrium.
     int32_t              mCountCallbacksToDiscard = kNumCallbacksToDiscard;
 
-    AudioStream *mRawInputStream = nullptr;
-    AudioStream *mRawOutputStream = nullptr;
-    std::shared_ptr<AudioStream> mSharedInputStream;
-    std::shared_ptr<AudioStream> mSharedOutputStream;
+    AudioStream   *mInputStream = nullptr;
+    AudioStream   *mOutputStream = nullptr;
 
     int32_t              mBufferSize = 0;
     std::unique_ptr<float[]> mInputBuffer;

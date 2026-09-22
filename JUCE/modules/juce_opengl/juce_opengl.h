@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -44,7 +44,7 @@
 
   ID:                 juce_opengl
   vendor:             juce
-  version:            9.0.2
+  version:            8.0.12
   name:               JUCE OpenGL classes
   description:        Classes for rendering OpenGL in a JUCE window.
   website:            http://www.juce.com/juce
@@ -54,7 +54,7 @@
   dependencies:       juce_gui_extra
   OSXFrameworks:      OpenGL
   iOSFrameworks:      OpenGLES
-  linuxPackages:      egl gl
+  linuxPackages:      gl
 
  END_JUCE_MODULE_DECLARATION
 
@@ -71,12 +71,9 @@
 
 #if JUCE_IOS || JUCE_ANDROID
  #define JUCE_OPENGL_ES 1
-#endif
-
-#if JUCE_OPENGL_ES
-#include "opengl/juce_gles2.h"
+ #include "opengl/juce_gles2.h"
 #else
-#include "opengl/juce_gl.h"
+ #include "opengl/juce_gl.h"
 #endif
 
 #include <juce_gui_extra/juce_gui_extra.h>

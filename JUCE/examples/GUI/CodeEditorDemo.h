@@ -63,7 +63,6 @@ class CodeEditorDemo final : public Component,
 public:
     CodeEditorDemo()
     {
-        setName ("Code-editor demo");
         setOpaque (true);
 
         // Create the editor..

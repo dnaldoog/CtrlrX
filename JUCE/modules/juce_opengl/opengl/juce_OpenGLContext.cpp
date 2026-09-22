@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -80,21 +80,13 @@ private:
 
 #endif
 
-static auto tieVersion (const OpenGLVersion& v)
-{
-    return std::tuple (v.major, v.minor);
-}
-
-bool OpenGLVersion::operator== (const OpenGLVersion& other) const { return tieVersion (*this) == tieVersion (other); }
-bool OpenGLVersion::operator!= (const OpenGLVersion& other) const { return tieVersion (*this) != tieVersion (other); }
-bool OpenGLVersion::operator<  (const OpenGLVersion& other) const { return tieVersion (*this) <  tieVersion (other); }
-bool OpenGLVersion::operator<= (const OpenGLVersion& other) const { return tieVersion (*this) <= tieVersion (other); }
-bool OpenGLVersion::operator>  (const OpenGLVersion& other) const { return tieVersion (*this) >  tieVersion (other); }
-bool OpenGLVersion::operator>= (const OpenGLVersion& other) const { return tieVersion (*this) >= tieVersion (other); }
+#if JUCE_WINDOWS && JUCE_WIN_PER_MONITOR_DPI_AWARE
+ extern JUCE_API double getScaleFactorForWindow (HWND);
+#endif
 
 static bool contextHasTextureNpotFeature()
 {
-    if (getOpenGLVersion() >= OpenGLVersion (2))
+    if (getOpenGLVersion() >= Version (2))
         return true;
 
     // If the version is < 2, we can't use the newer extension-checking API
@@ -160,13 +152,8 @@ public:
         : context (c),
           component (comp)
     {
-        nativeContext.reset (new NativeContext (component,
-                                                pixFormat,
-                                                contextToShare,
-                                                c.useMultisampling,
-                                                c.preferredAPI,
-                                                c.preferredVersion,
-                                                c.preferredProfile));
+        nativeContext.reset (new NativeContext (component, pixFormat, contextToShare,
+                                                c.useMultisampling, c.versionRequired));
 
         if (nativeContext->createdOk())
             context.nativeContext = nativeContext.get();
@@ -217,15 +204,11 @@ public:
         activator.activate (context);
 
        #if JUCE_ANDROID
-        context.nativeContextListeners.call ([] (auto& l) { l.contextWillPause(); });
+        nativeContext->notifyWillPause();
        #endif
 
         if (context.renderer != nullptr)
             context.renderer->openGLContextClosing();
-
-        context.actualAPI = {};
-        context.actualVersion = {};
-        context.actualProfile = {};
 
         associatedObjectNames.clear();
         associatedObjects.clear();
@@ -335,7 +318,7 @@ public:
         ~ScopedContextActivator()
         {
             if (active)
-                deactivateCurrentContext();
+                OpenGLContext::deactivateCurrentContext();
         }
 
     private:
@@ -464,14 +447,13 @@ public:
     {
         JUCE_ASSERT_MESSAGE_THREAD
 
-        if ([[maybe_unused]] auto* peer = component.getPeer())
+        if (auto* peer = component.getPeer())
         {
+            auto& desktop = Desktop::getInstance();
             const auto localBounds = component.getLocalBounds();
-            const auto logicalArea = component.getScreenBounds();
+            const auto globalArea = component.getScreenBounds() * desktop.getGlobalScaleFactor();
 
            #if JUCE_MAC
-            const auto globalArea = detail::ScalingHelpers::scaledScreenPosToUnscaled (component, logicalArea);
-
             updateScreen();
 
             const auto displayScale = std::invoke ([this]
@@ -489,15 +471,10 @@ public:
             });
 
             const auto newArea = globalArea.withZeroOrigin() * displayScale;
-           #elif JUCE_WINDOWS || JUCE_LINUX || JUCE_BSD
-            const auto globalArea = detail::ScalingHelpers::scaledScreenPosToUnscaled (component, logicalArea);
-            const auto newArea = (globalArea.toFloat() * peer->getPlatformScaleFactor()).withZeroOrigin().toNearestInt();
-           #elif JUCE_IOS || JUCE_ANDROID
-            auto& desktop = Desktop::getInstance();
-            const auto& displays = desktop.getDisplays();
-            const auto physicalTopLeft = displays.logicalToPhysical (logicalArea.getTopLeft().toFloat());
-            const auto physicalBottomRight = displays.logicalToPhysical (logicalArea.getBottomRight().toFloat());
-            const auto newArea = Rectangle { physicalTopLeft, physicalBottomRight }.withZeroOrigin().toNearestInt();
+           #else
+            const auto newArea = desktop.getDisplays()
+                                        .logicalToPhysical (globalArea)
+                                                       .withZeroOrigin();
            #endif
 
             // On Windows some hosts (Pro Tools 2022.7) do not take the current DPI into account
@@ -523,9 +500,7 @@ public:
                 transform = AffineTransform::scale ((float) newArea.getWidth()  / (float) localBounds.getWidth(),
                                                     (float) newArea.getHeight() / (float) localBounds.getHeight());
 
-                if (nativeContext != nullptr)
-                    nativeContext->updateWindowPosition();
-
+                nativeContext->updateWindowPosition (peer->getAreaCoveredBy (component));
                 invalidateAll();
             });
         }
@@ -575,7 +550,7 @@ public:
 
     void drawComponentBuffer()
     {
-        if (context.actualProfile == OpenGLProfile::compatibility)
+        if (! OpenGLRendering::TraitsVAO::isCoreProfile())
             glEnable (GL_TEXTURE_2D);
 
        #if JUCE_WINDOWS
@@ -653,11 +628,12 @@ public:
     //==============================================================================
     InitResult initialiseOnThread (ScopedContextActivator& activator)
     {
-        activator.activate (context);
-
+        // On android, this can get called twice, so drop any previous state.
         associatedObjectNames.clear();
         associatedObjects.clear();
         cachedImageFrameBuffer.release();
+
+        activator.activate (context);
 
         if (const auto nativeResult = nativeContext->initialiseOnRenderThread (context); nativeResult != InitResult::success)
             return nativeResult;
@@ -691,20 +667,11 @@ public:
 
         nativeContext->setSwapInterval (1);
 
-        context.actualAPI = OpenGLHelpers::isOpenGLES() ? OpenGLAPI::openGLES : OpenGLAPI::openGL;
-        context.actualVersion = getOpenGLVersion();
-        context.actualProfile = getOpenGLProfile();
-
-        if (context.actualAPI == OpenGLAPI::openGL)
-        {
-            JUCE_CHECK_OPENGL_ERROR
-            shadersAvailable = OpenGLShaderProgram::getLanguageVersion() > 0;
-            clearGLError();
-        }
-        else
-        {
-            shadersAvailable = true;
-        }
+       #if ! JUCE_OPENGL_ES
+        JUCE_CHECK_OPENGL_ERROR
+        shadersAvailable = OpenGLShaderProgram::getLanguageVersion() > 0;
+        clearGLError();
+       #endif
 
         textureNpotSupported = contextHasTextureNpotFeature();
 
@@ -712,16 +679,16 @@ public:
             context.renderer->newOpenGLContextCreated();
 
        #if JUCE_ANDROID
-        context.nativeContextListeners.call ([] (auto& l) { l.contextDidResume(); });
+        nativeContext->notifyDidResume();
        #endif
 
         return InitResult::success;
     }
 
     //==============================================================================
-    struct BlockingWorker final : public AsyncWorker
+    struct BlockingWorker final : public OpenGLContext::AsyncWorker
     {
-        BlockingWorker (Ptr && workerToUse)
+        BlockingWorker (OpenGLContext::AsyncWorker::Ptr && workerToUse)
             : originalWorker (std::move (workerToUse))
         {}
 
@@ -735,7 +702,7 @@ public:
 
         void block() noexcept  { finishedSignal.wait(); }
 
-        Ptr originalWorker;
+        OpenGLContext::AsyncWorker::Ptr originalWorker;
         WaitableEvent finishedSignal;
     };
 
@@ -753,14 +720,14 @@ public:
         }
     }
 
-    void execute (AsyncWorker::Ptr workerToUse, bool shouldBlock)
+    void execute (OpenGLContext::AsyncWorker::Ptr workerToUse, bool shouldBlock)
     {
         if (! isFlagSet (state, StateFlags::pendingDestruction))
         {
             if (shouldBlock)
             {
                 auto blocker = new BlockingWorker (std::move (workerToUse));
-                AsyncWorker::Ptr worker (*blocker);
+                OpenGLContext::AsyncWorker::Ptr worker (*blocker);
                 workQueue.add (worker);
 
                 renderThread->abortLock();
@@ -1020,7 +987,11 @@ public:
     ReferenceCountedArray<ReferenceCountedObject> associatedObjects;
 
     WaitableEvent canPaintNowFlag, finishedPaintingFlag;
+   #if JUCE_OPENGL_ES
+    bool shadersAvailable = true;
+   #else
     bool shadersAvailable = false;
+   #endif
     bool textureNpotSupported = false;
     std::chrono::steady_clock::time_point lastMMLockReleaseTime{};
     BufferSwapper bufferSwapper { *this };
@@ -1107,7 +1078,7 @@ public:
     };
 
     std::atomic<int> state { 0 };
-    ReferenceCountedArray<AsyncWorker, CriticalSection> workQueue;
+    ReferenceCountedArray<OpenGLContext::AsyncWorker, CriticalSection> workQueue;
 
    #if JUCE_IOS
     iOSBackgroundProcessCheck backgroundProcessCheck;
@@ -1139,7 +1110,7 @@ public:
         stop();
         detail::ComponentHelpers::releaseAllCachedImageResources (comp);
         comp.setCachedComponentImage (nullptr);
-        context.clearNativeContext();
+        context.nativeContext = nullptr;
     }
 
     void componentMovedOrResized (bool /*wasMoved*/, bool /*wasResized*/) override
@@ -1155,8 +1126,8 @@ public:
             if (auto* c = CachedImage::get (comp))
                 c->handleResize();
 
-            if (auto* native = context.nativeContext)
-                native->updateWindowPosition();
+            if (auto* peer = comp.getTopLevelComponent()->getPeer())
+                context.nativeContext->updateWindowPosition (peer->getAreaCoveredBy (comp));
         }
     }
 
@@ -1353,76 +1324,7 @@ void OpenGLContext::setMultisamplingEnabled (bool b) noexcept
 
 void OpenGLContext::setOpenGLVersionRequired (OpenGLVersion v) noexcept
 {
-    setPreferredVersion (std::invoke ([&]() -> Version
-    {
-        switch (v)
-        {
-            case defaultGLVersion: return {};
-            case openGL3_2: return { 3, 2 };
-            case openGL4_1: return { 4, 1 };
-            case openGL4_3: return { 4, 3 };
-        }
-
-        return {};
-    }));
-
-    setPreferredProfile (std::invoke ([&]() -> Profile
-    {
-        switch (v)
-        {
-            case defaultGLVersion: return OpenGLProfile::compatibility;
-            case openGL3_2: return OpenGLProfile::core;
-            case openGL4_1: return OpenGLProfile::core;
-            case openGL4_3: return OpenGLProfile::core;
-        }
-
-        return OpenGLProfile::core;
-    }));
-}
-
-void OpenGLContext::setPreferredVersion (const Version& v)
-{
-    preferredVersion = v;
-}
-
-auto OpenGLContext::getPreferredVersion() const -> Version
-{
-    return preferredVersion;
-}
-
-auto OpenGLContext::getVersion() const -> Version
-{
-    return actualVersion;
-}
-
-void OpenGLContext::setPreferredAPI (API x)
-{
-    preferredAPI = x;
-}
-
-auto OpenGLContext::getPreferredAPI() const -> API
-{
-    return preferredAPI;
-}
-
-auto OpenGLContext::getAPI() const -> API
-{
-    return actualAPI;
-}
-
-void OpenGLContext::setPreferredProfile (Profile x)
-{
-    preferredProfile = x;
-}
-
-auto OpenGLContext::getPreferredProfile() const -> Profile
-{
-    return preferredProfile;
-}
-
-auto OpenGLContext::getProfile() const -> Profile
-{
-    return actualProfile;
+    versionRequired = v;
 }
 
 void OpenGLContext::attachTo (Component& component)
@@ -1444,7 +1346,7 @@ void OpenGLContext::detach()
         attachment.reset();
     }
 
-    clearNativeContext();
+    nativeContext = nullptr;
 }
 
 bool OpenGLContext::isAttached() const noexcept
@@ -1531,7 +1433,8 @@ void* OpenGLContext::getRawContext() const noexcept
 
 bool OpenGLContext::isCoreProfile() const
 {
-    return getProfile() == OpenGLProfile::core;
+    auto* c = getCachedImage();
+    return c != nullptr && OpenGLRendering::TraitsVAO::isCoreProfile();
 }
 
 OpenGLContext::CachedImage* OpenGLContext::getCachedImage() const noexcept
@@ -1684,27 +1587,27 @@ void OpenGLContext::copyTexture (const Rectangle<int>& targetClipArea,
                 explicit BuiltProgram (OpenGLContext& ctx)
                     : OpenGLShaderProgram (ctx)
                 {
-                    addVertexShader (OpenGLHelpers::translateVertexShaderToV3 (preprocessShaderPrecisionStatements (
-                        "attribute #highp# vec2 position;"
-                        "uniform #highp# vec2 screenSize;"
-                        "uniform #highp# float textureBounds[4];"
-                        "uniform #highp# vec2 vOffsetAndScale;"
-                        "varying #highp# vec2 texturePos;"
+                    addVertexShader (OpenGLHelpers::translateVertexShaderToV3 (
+                        "attribute " JUCE_HIGHP " vec2 position;"
+                        "uniform " JUCE_HIGHP " vec2 screenSize;"
+                        "uniform " JUCE_HIGHP " float textureBounds[4];"
+                        "uniform " JUCE_HIGHP " vec2 vOffsetAndScale;"
+                        "varying " JUCE_HIGHP " vec2 texturePos;"
                         "void main()"
                         "{"
-                          "#highp# vec2 scaled = position / (0.5 * screenSize.xy);"
+                          JUCE_HIGHP " vec2 scaled = position / (0.5 * screenSize.xy);"
                           "gl_Position = vec4 (scaled.x - 1.0, 1.0 - scaled.y, 0, 1.0);"
                           "texturePos = (position - vec2 (textureBounds[0], textureBounds[1])) / vec2 (textureBounds[2], textureBounds[3]);"
                           "texturePos = vec2 (texturePos.x, vOffsetAndScale.x + vOffsetAndScale.y * texturePos.y);"
-                        "}")));
+                        "}"));
 
-                    addFragmentShader (OpenGLHelpers::translateFragmentShaderToV3 (preprocessShaderPrecisionStatements (
+                    addFragmentShader (OpenGLHelpers::translateFragmentShaderToV3 (
                         "uniform sampler2D imageTexture;"
-                        "varying #highp# vec2 texturePos;"
+                        "varying " JUCE_HIGHP " vec2 texturePos;"
                         "void main()"
                         "{"
                           "gl_FragColor = texture2D (imageTexture, texturePos);"
-                        "}")));
+                        "}"));
 
                     link();
                 }
@@ -1779,11 +1682,14 @@ void OpenGLContext::copyTexture (const Rectangle<int>& targetClipArea,
     JUCE_CHECK_OPENGL_ERROR
 }
 
-void OpenGLContext::clearNativeContext()
+void OpenGLContext::NativeContextListener::addListener (OpenGLContext& ctx, NativeContextListener& l)
 {
-    nativeContextListeners.call ([] (auto& l) { l.contextWillBeDestroyed(); });
-    nativeContextListeners.clear();
-    nativeContext = nullptr;
+    ctx.nativeContext->addListener (l);
+}
+
+void OpenGLContext::NativeContextListener::removeListener (OpenGLContext& ctx, NativeContextListener& l)
+{
+    ctx.nativeContext->removeListener (l);
 }
 
 #if JUCE_ANDROID
@@ -1812,11 +1718,13 @@ void OpenGLContext::NativeContext::surfaceCreated (LocalRef<jobject> holder)
         surface.reset();
 
         // Create the surface
-        surface = { eglCreateWindowSurface (display, config, window.get(), nullptr), display };
-        jassert (surface != nullptr);
+        surface.reset (eglCreateWindowSurface (display, config, window.get(), nullptr));
+        jassert (surface.get() != EGL_NO_SURFACE);
 
-        context = EGLHelpers::initEGLContext (api, version, profile, display, config, EGL_NO_CONTEXT);
-        jassert (context != nullptr);
+        // create the OpenGL context
+        EGLint contextAttribs[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE };
+        context.reset (eglCreateContext (display, config, EGL_NO_CONTEXT, contextAttribs));
+        jassert (context.get() != EGL_NO_CONTEXT);
     }
 
     if (auto* cached = CachedImage::get (component))
@@ -1834,8 +1742,8 @@ void OpenGLContext::NativeContext::surfaceDestroyed (LocalRef<jobject>)
     {
         const std::lock_guard lock { nativeHandleMutex };
 
-        context.reset();
-        surface.reset();
+        context.reset (EGL_NO_CONTEXT);
+        surface.reset (EGL_NO_SURFACE);
     }
 }
 

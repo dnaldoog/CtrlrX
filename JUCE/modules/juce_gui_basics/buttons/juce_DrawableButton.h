@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -139,14 +139,14 @@ public:
 
     //==============================================================================
     /** Returns the image that the button is currently displaying. */
-    DrawableComponent* getCurrentImage() const noexcept;
+    Drawable* getCurrentImage() const noexcept;
 
     /** Returns the image that the button will use for its normal state. */
-    DrawableComponent* getNormalImage() const noexcept;
+    Drawable* getNormalImage() const noexcept;
     /** Returns the image that the button will use when the mouse is over it. */
-    DrawableComponent* getOverImage() const noexcept;
+    Drawable* getOverImage() const noexcept;
     /** Returns the image that the button will use when the mouse is held down on it. */
-    DrawableComponent* getDownImage() const noexcept;
+    Drawable* getDownImage() const noexcept;
 
     /** Can be overridden to specify a custom position for the image within the button. */
     virtual Rectangle<float> getImageBounds() const;
@@ -195,17 +195,9 @@ private:
 
     //==============================================================================
     ButtonStyle style;
-
-    std::unique_ptr<DrawableComponent> normalImage,
-                                       overImage,
-                                       downImage,
-                                       disabledImage,
-                                       normalImageOn,
-                                       overImageOn,
-                                       downImageOn,
-                                       disabledImageOn;
-
-    DrawableComponent* currentImage = nullptr;
+    std::unique_ptr<Drawable> normalImage, overImage, downImage, disabledImage,
+                              normalImageOn, overImageOn, downImageOn, disabledImageOn;
+    Drawable* currentImage = nullptr;
     int edgeIndent = 3;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DrawableButton)

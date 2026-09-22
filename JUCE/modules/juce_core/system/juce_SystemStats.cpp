@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -190,7 +190,10 @@ String SystemStats::getStackBacktrace()
 {
     String result;
 
-   #if JUCE_WINDOWS
+   #if JUCE_ANDROID || JUCE_WASM
+    jassertfalse; // sorry, not implemented yet!
+
+   #elif JUCE_WINDOWS
     HANDLE process = GetCurrentProcess();
     SymInitialize (process, nullptr, TRUE);
 
@@ -221,8 +224,7 @@ String SystemStats::getStackBacktrace()
         }
     }
 
-   #elif JUCE_MAC || JUCE_IOS || defined (__GLIBC__)
-
+   #else
     void* stack[128];
     auto frames = backtrace (stack, numElementsInArray (stack));
     char** frameStrings = backtrace_symbols (stack, frames);
@@ -231,11 +233,6 @@ String SystemStats::getStackBacktrace()
         result << frameStrings[i] << newLine;
 
     ::free (frameStrings);
-
-   #else
-
-    jassertfalse; // sorry, not implemented yet!
-
    #endif
 
     return result;

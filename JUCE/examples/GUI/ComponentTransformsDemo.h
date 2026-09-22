@@ -60,8 +60,6 @@ class ComponentTransformsDemo final : public Component
 public:
     ComponentTransformsDemo()
     {
-        setName ("Component transforms demo");
-
         content.reset (new WidgetsDemo (true));
         addAndMakeVisible (content.get());
         content->setSize (750, 500);

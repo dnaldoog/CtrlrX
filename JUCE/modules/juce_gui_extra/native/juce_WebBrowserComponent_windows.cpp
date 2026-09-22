@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -730,7 +730,7 @@ private:
 
     //==============================================================================
     template <typename ArgType>
-    static std::optional<String> callMethodWithLpwstrResult (ArgType* args, HRESULT (__stdcall ArgType::* method) (LPWSTR*))
+    static std::optional<String> callMethodWithLpwstrResult (ArgType* args, HRESULT (ArgType::* method) (LPWSTR*))
     {
         // According to the API reference for WebView2, the result of any method with an LPWSTR
         // out-parameter should be freed by the caller using CoTaskMemFree.
@@ -1057,12 +1057,10 @@ private:
 
             webViewHandle.environment->CreateCoreWebView2Controller ((HWND) peer->getNativeHandle(),
                 Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler> (
-                    [weakThis = WeakReference<WebView2> { this },
-                     contextBeforeWebViewCreation = GetThreadDpiAwarenessContext()] (HRESULT, ICoreWebView2Controller* controller) -> HRESULT
+                    [weakThis = WeakReference<WebView2> { this }] (HRESULT, ICoreWebView2Controller* controller) -> HRESULT
                     {
                         if (weakThis != nullptr)
                         {
-                            SetThreadDpiAwarenessContext (contextBeforeWebViewCreation);
                             weakThis->triggerAsyncUpdate();
                             webView2ConstructionHelper.webView2BeingCreated = nullptr;
 

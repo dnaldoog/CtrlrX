@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -41,6 +41,7 @@ public:
     GZIPCompressorHelper (int compressionLevel, int windowBits)
         : compLevel ((compressionLevel < 0 || compressionLevel > 9) ? -1 : compressionLevel)
     {
+        using namespace zlibNamespace;
         zerostruct (stream);
 
         streamIsValid = (deflateInit2 (&stream, compLevel, Z_DEFLATED,
@@ -51,7 +52,7 @@ public:
     ~GZIPCompressorHelper()
     {
         if (streamIsValid)
-            deflateEnd (&stream);
+            zlibNamespace::deflateEnd (&stream);
     }
 
     bool write (const uint8* data, size_t dataSize, OutputStream& out)
@@ -79,19 +80,21 @@ public:
 private:
     enum { strategy = 0 };
 
-    z_stream stream;
+    zlibNamespace::z_stream stream;
     const int compLevel;
     bool isFirstDeflate = true, streamIsValid = false, finished = false;
-    Bytef buffer[32768];
+    zlibNamespace::Bytef buffer[32768];
 
     bool doNextBlock (const uint8*& data, size_t& dataSize, OutputStream& out, const int flushMode)
     {
+        using namespace zlibNamespace;
+
         if (streamIsValid)
         {
             stream.next_in   = const_cast<uint8*> (data);
             stream.next_out  = buffer;
-            stream.avail_in  = (decltype (stream.avail_in)) dataSize;
-            stream.avail_out = (decltype (stream.avail_out)) sizeof (buffer);
+            stream.avail_in  = (z_uInt) dataSize;
+            stream.avail_out = (z_uInt) sizeof (buffer);
 
             auto result = isFirstDeflate ? deflateParams (&stream, compLevel, strategy)
                                          : deflate (&stream, flushMode);

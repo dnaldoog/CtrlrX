@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -129,7 +129,11 @@ struct MidiDeviceInfo
     [[nodiscard]] MidiDeviceInfo withIdentifier (String x) const { return withMember (*this, &MidiDeviceInfo::identifier, x); }
 
     //==============================================================================
-    bool operator== (const MidiDeviceInfo& other) const noexcept;
+    bool operator== (const MidiDeviceInfo& other) const noexcept
+    {
+        const auto tie = [] (auto& x) { return std::tuple (x.name, x.identifier); };
+        return tie (*this) == tie (other);
+    }
 
     bool operator!= (const MidiDeviceInfo& other) const noexcept   { return ! operator== (other); }
 };
@@ -380,13 +384,19 @@ public:
     /** Sends out a MIDI message immediately. */
     void sendMessageNow (const MidiMessage& message)
     {
-        convertAndSend (mainPackets, Span { &message, 1 });
+        converter.convert ({ group, message.asSpan() }, [this] (const ump::View& view)
+        {
+            ump::Iterator b (view.data(), view.size());
+            auto e = std::next (b);
+            connection.send (b, e);
+        });
     }
 
     /** Sends out a sequence of MIDI messages immediately. */
     void sendBlockOfMessagesNow (const MidiBuffer& buffer)
     {
-        convertAndSend (mainPackets, buffer);
+        for (const auto metadata : buffer)
+            sendMessageNow (metadata.getMessage());
     }
 
     /** This lets you supply a block of messages that will be sent out at some point
@@ -430,11 +440,7 @@ public:
     /** Starts up a background thread so that the device can send blocks of data.
         Call this to get the device ready, before using sendBlockOfMessages().
     */
-    void startBackgroundThread()
-    {
-        backgroundPackets.reserve (2048);
-        outputThread.start();
-    }
+    void startBackgroundThread()            { outputThread.start(); }
 
     /** Stops the background thread, and clears any pending midi events.
         @see startBackgroundThread
@@ -454,33 +460,17 @@ private:
                 const MidiDeviceInfo&,
                 ump::LegacyVirtualOutput);
 
-    template <typename Range>
-    void convertAndSend (ump::Packets& packets, Range&& range)
-    {
-        packets.clear();
-
-        std::for_each (std::begin (range), std::end (range), [&] (const auto& item)
-        {
-            ump::ToUMP1Converter{}.convert ({ group, item.asSpan() }, [&packets] (auto view)
-            {
-                packets.add (view);
-            });
-        });
-
-        connection.send (packets.begin(), packets.end());
-    }
-
     //==============================================================================
     std::shared_ptr<ump::Session> session;
     ump::LegacyVirtualOutput virtualEndpoint;
     std::optional<String> customName;
     ump::Output connection;
     MidiDeviceInfo storedInfo;
-    ump::Packets mainPackets, backgroundPackets;
+    ump::ToUMP1Converter converter;
     uint8_t group{};
     ScheduledEventThread<MidiMessage> outputThread { [this] (const MidiMessage& message)
     {
-        convertAndSend (backgroundPackets, Span { &message, 1 });
+        sendMessageNow (message);
     } };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MidiOutput)

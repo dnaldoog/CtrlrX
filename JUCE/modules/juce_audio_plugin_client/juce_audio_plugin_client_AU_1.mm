@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -416,7 +416,7 @@ public:
             {
                 case juceFilterObjectPropertyID:
                     outWritable = false;
-                    outDataSize = sizeof (JuceAU*);
+                    outDataSize = sizeof (void*) * 2;
                     return noErr;
 
                 case kAudioUnitProperty_OfflineRender:
@@ -572,13 +572,8 @@ public:
                     if (binding->inOutMagicNumber != ARA::kARAAudioUnitMagic)
                         return kAudioUnitErr_InvalidProperty;   // if the magic value isn't found, the property ID is re-used outside the ARA context with different, unsupported sematics
 
-                    auto* araAudioProcessorExtension = juceFilter->getARAClientExtensions();
-
-                    if (araAudioProcessorExtension == nullptr)
-                        return kAudioUnitErr_CannotDoInCurrentContext;
-
+                    AudioProcessorARAExtension* araAudioProcessorExtension = dynamic_cast<AudioProcessorARAExtension*> (juceFilter.get());
                     binding->outPlugInExtension = araAudioProcessorExtension->bindToARA (binding->inDocumentControllerRef, binding->knownRoles, binding->assignedRoles);
-
                     if (binding->outPlugInExtension == nullptr)
                         return kAudioUnitErr_CannotDoInCurrentContext;  // bindToARA() returns null if binding is already established
 
@@ -587,7 +582,8 @@ public:
                #endif
 
                 case juceFilterObjectPropertyID:
-                    *static_cast<JuceAU**> (outData) = this;
+                    ((void**) outData)[0] = (void*) static_cast<AudioProcessor*> (juceFilter.get());
+                    ((void**) outData)[1] = (void*) this;
                     return noErr;
 
                 case kAudioUnitProperty_OfflineRender:
@@ -1214,14 +1210,7 @@ public:
         const double rate = getSampleRate();
         jassert (rate > 0);
        #if JucePlugin_Enable_ARA
-        jassert (juceFilter->getLatencySamples() == 0 || std::invoke ([&]
-        {
-            if (auto* extension = juceFilter->getARAClientExtensions())
-                return ! extension->isBoundToARA();
-
-            jassertfalse;
-            return false;
-        }));
+        jassert (juceFilter->getLatencySamples() == 0 || ! dynamic_cast<AudioProcessorARAExtension*> (juceFilter.get())->isBoundToARA());
        #endif
         return rate > 0 ? juceFilter->getLatencySamples() / rate : 0;
     }
@@ -1669,30 +1658,6 @@ public:
     }
 
     //==============================================================================
-    /*
-        When the host asks to create an editor NSView, we check the
-        AudioProcessor's activeEditor field to determine whether an editor is
-        currently alive.
-
-        If there's a living editor, we create a new EditorCompHolder that
-        points to the activeEditor.
-
-        The new EditorCompHolder adds the activeEditor as a child, which in
-        turn removes the activeEditor from any other EditorCompHolders that are
-        alive.
-
-        When an EditorCompHolder is destroyed, if it still has a child
-        component, then it deletes that child.
-
-        In effect, the AudioProcessorEditor is always owned by the
-        most-recently-created EditorCompHolder.
-
-        The JuceAU destructor contains some logic to destroy any active editor
-        before the AudioProcessor is torn down.
-
-        If/when we add support for multiple editors per processor, we should
-        revisit and simplify the ownership here.
-    */
     class EditorCompHolder final : public Component
     {
     public:
@@ -1746,9 +1711,7 @@ public:
                                                        object: nil];
             activeUIs.add (view);
 
-            const auto flagsAndMultiTouch = detail::PluginUtilities::getDesktopFlagsAndWindowsMultiTouchMode (editor);
-
-            editorCompHolder->addToDesktop (flagsAndMultiTouch.desktopFlags, view);
+            editorCompHolder->addToDesktop (detail::PluginUtilities::getDesktopFlags (editor), view);
             editorCompHolder->setVisible (true);
 
             return view;
@@ -1850,8 +1813,7 @@ public:
     //==============================================================================
     struct JuceUIViewClass final : public ObjCClass<NSView>
     {
-        JuceUIViewClass()
-            : ObjCClass ("JUCEAUView_")
+        JuceUIViewClass()  : ObjCClass<NSView> ("JUCEAUView_")
         {
             addIvar<AudioProcessor*> ("filter");
             addIvar<JuceAU*> ("au");
@@ -1940,8 +1902,7 @@ public:
     //==============================================================================
     struct JuceUICreationClass final : public ObjCClass<NSObject>
     {
-        JuceUICreationClass()
-            : ObjCClass ("JUCE_AUCocoaViewClass_")
+        JuceUICreationClass()  : ObjCClass<NSObject> ("JUCE_AUCocoaViewClass_")
         {
             addMethod (@selector (interfaceVersion), [] (id, SEL) { return 0; });
             addMethod (@selector (description), [] (id, SEL)
@@ -1951,44 +1912,27 @@ public:
 
             addMethod (@selector (uiViewForAudioUnit:withSize:), [] (id, SEL, AudioUnit inAudioUnit, NSSize) -> NSView*
             {
-                JuceAU* ptr{};
-                UInt32 propertySize = sizeof (ptr);
+                void* pointers[2];
+                UInt32 propertySize = sizeof (pointers);
 
-                if (AudioUnitGetProperty (inAudioUnit,
-                                          juceFilterObjectPropertyID,
-                                          kAudioUnitScope_Global,
-                                          0,
-                                          &ptr,
-                                          &propertySize) != noErr)
+                if (AudioUnitGetProperty (inAudioUnit, juceFilterObjectPropertyID,
+                                          kAudioUnitScope_Global, 0, pointers, &propertySize) == noErr)
                 {
-                    return nil;
+                    if (AudioProcessor* filter = static_cast<AudioProcessor*> (pointers[0]))
+                    {
+                        if (AudioProcessorEditor* editorComp = filter->createEditorIfNeeded())
+                        {
+                           #if JucePlugin_Enable_ARA
+                            jassert (dynamic_cast<AudioProcessorEditorARAExtension*> (editorComp) != nullptr);
+                            // for proper view embedding, ARA plug-ins must be resizable
+                            jassert (editorComp->isResizable());
+                           #endif
+                            return EditorCompHolder::createViewFor (filter, static_cast<JuceAU*> (pointers[1]), editorComp);
+                        }
+                    }
                 }
 
-                if (ptr == nullptr)
-                    return nil;
-
-                auto* filter = ptr->juceFilter.get();
-
-                if (filter == nullptr)
-                    return nil;
-
-                auto* editorComp = std::invoke ([&]
-                {
-                    if (auto* active = filter->getActiveEditor())
-                        return active;
-
-                    return filter->createEditorAndMakeActive();
-                });
-
-                if (editorComp == nullptr)
-                    return nil;
-
-               #if JucePlugin_Enable_ARA
-                jassert (editorComp->getARAClientExtensions() != nullptr);
-                // for proper view embedding, ARA plug-ins must be resizable
-                jassert (editorComp->isResizable());
-               #endif
-                return EditorCompHolder::createViewFor (filter, ptr, editorComp);
+                return nil;
             });
 
             addProtocol (@protocol (AUCocoaUIBase));

@@ -48,11 +48,10 @@ body:
       multiple: true
       options:
         - x86_64
-        - Arm64/aarch64
-        - Arm64EC (Windows)
-        - x86 (Windows, Android)
-        - 32 bit Arm (Linux, Android)
-        - Unsupported
+        - ARM
+        - Other
+        - 64-bit
+        - 32-bit
     validations:
       required: true
   - type: textarea

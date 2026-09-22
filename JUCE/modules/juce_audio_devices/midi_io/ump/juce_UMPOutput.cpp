@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -48,11 +48,6 @@ public:
         virtual bool send (Iterator b, Iterator e) = 0;
     };
 
-    ~Impl() override
-    {
-        JUCE_ASSERT_MESSAGE_THREAD
-    }
-
     EndpointId getEndpointId() const
     {
         return identifier;
@@ -60,7 +55,10 @@ public:
 
     bool send (Iterator beginIterator, Iterator endIterator)
     {
-        return isAlive() && native->send (beginIterator, endIterator);
+        if (native != nullptr)
+            return native->send (beginIterator, endIterator);
+
+        return false;
     }
 
     void addDisconnectionListener (DisconnectionListener& x)
@@ -75,7 +73,7 @@ public:
 
     bool isAlive() const
     {
-        return connected && native != nullptr;
+        return native != nullptr;
     }
 
     template <typename Callback>
@@ -92,22 +90,19 @@ public:
     }
 
 private:
-    Impl()
-    {
-        JUCE_ASSERT_MESSAGE_THREAD
-    }
+    Impl() = default;
 
     void disconnected() override
     {
         JUCE_ASSERT_MESSAGE_THREAD
-        connected = false;
+
+        native = nullptr;
         disconnectListeners.call ([] (auto& x) { x.disconnected(); });
     }
 
     ListenerList<DisconnectionListener> disconnectListeners;
     std::unique_ptr<Native> native;
     EndpointId identifier;
-    std::atomic<bool> connected { true };
 };
 
 Output::Output() = default;
@@ -143,18 +138,12 @@ void Output::addDisconnectionListener (DisconnectionListener& x)
     // You should ensure that isAlive() returns true before calling other member functions!
     jassert (isAlive());
 
-    // This function should only be called on the main thread!
-    JUCE_ASSERT_MESSAGE_THREAD
-
     if (impl != nullptr)
         impl->addDisconnectionListener (x);
 }
 
 void Output::removeDisconnectionListener (DisconnectionListener& x)
 {
-    // This function should only be called on the main thread!
-    JUCE_ASSERT_MESSAGE_THREAD
-
     if (impl != nullptr)
         impl->removeDisconnectionListener (x);
 }

@@ -52,18 +52,17 @@
 #pragma once
 
 #include "../Assets/DemoUtilities.h"
-#include "../Assets/FontListComponent.h"
 
 //==============================================================================
-class FontsDemo final : public Component
+class FontsDemo final : public Component,
+                        private ListBoxModel
 {
 public:
     FontsDemo()
     {
-        setName ("Fonts demo");
         setOpaque (true);
 
-        addAndMakeVisible (fontListComponent);
+        addAndMakeVisible (listBox);
         addAndMakeVisible (demoTextBox);
         addAndMakeVisible (heightSlider);
         addAndMakeVisible (heightLabel);
@@ -85,8 +84,6 @@ public:
         addAndMakeVisible (verticalJustificationBox);
         addAndMakeVisible (resetButton);
 
-        addChildComponent (hintingToggle);
-
         kerningLabel                .attachToComponent (&kerningSlider,              true);
         heightLabel                 .attachToComponent (&heightSlider,               true);
         scaleLabel                  .attachToComponent (&scaleSlider,                true);
@@ -102,15 +99,15 @@ public:
         boldToggle     .onClick  = [this] { refreshPreviewBoxFont(); };
         italicToggle   .onClick  = [this] { refreshPreviewBoxFont(); };
         underlineToggle.onClick  = [this] { refreshPreviewBoxFont(); };
-        hintingToggle  .onClick  = [this] { refreshPreviewBoxFont(); };
         styleBox       .onChange = [this] { refreshPreviewBoxFont(); };
 
-        fontListComponent.rescan();
-        fontListComponent.onFontSelected = [&]
-        {
-            resetMetricsSliders();
-            refreshPreviewBoxFont();
-        };
+        Font::findFonts (fonts);   // Generate the list of fonts
+
+        listBox.setTitle ("Fonts");
+        listBox.setRowHeight (20);
+        listBox.setModel (this);   // Tell the listbox where to get its data model
+        listBox.setColour (ListBox::textColourId, Colours::black);
+        listBox.setColour (ListBox::backgroundColourId, Colours::white);
 
         heightSlider .setRange (3.0, 150.0, 0.01);
         scaleSlider  .setRange (0.2, 3.0, 0.01);
@@ -132,7 +129,7 @@ public:
         addAndMakeVisible (verticalDividerBar.get());
 
         // ..and pick a random font to select initially
-        fontListComponent.selectRow (Random::getSystemRandom().nextInt (fontListComponent.getNumFonts()));
+        listBox.selectRow (Random::getSystemRandom().nextInt (fonts.size()));
 
         demoTextBox.setMultiLine (true);
         demoTextBox.setReturnKeyStartsNewLine (true);
@@ -154,7 +151,6 @@ public:
 
         resetButton.onClick = [this] { resetToDefaultParameters(); };
 
-        updateHintingToggleVisibility();
         setupJustificationOptions();
         resetToDefaultParameters();
 
@@ -172,7 +168,7 @@ public:
         auto r = getLocalBounds().reduced (5);
 
         // lay out the list box and vertical divider..
-        Component* vcomps[] = { &fontListComponent, verticalDividerBar.get(), nullptr };
+        Component* vcomps[] = { &listBox, verticalDividerBar.get(), nullptr };
 
         verticalLayout.layOutComponents (vcomps, 3,
                                          r.getX(), r.getY(), r.getWidth(), r.getHeight(),
@@ -194,18 +190,10 @@ public:
 
         auto row = r.removeFromBottom (30);
         row.removeFromLeft (labelWidth);
-
-        {
-            FlexBox fb;
-
-            for (auto* toggle : { &boldToggle, &italicToggle, &underlineToggle, &hintingToggle })
-            {
-                if (toggle->isVisible())
-                    fb.items.add (FlexItem { *toggle }.withFlex (1.0f));
-            }
-
-            fb.performLayout (row);
-        }
+        auto toggleWidth = row.getWidth() / 3;
+        boldToggle     .setBounds (row.removeFromLeft (toggleWidth));
+        italicToggle   .setBounds (row.removeFromLeft (toggleWidth));
+        underlineToggle.setBounds (row);
 
         r.removeFromBottom (8);
         horizontalJustificationBox.setBounds (r.removeFromBottom (30).withTrimmedLeft (labelWidth * 3));
@@ -225,22 +213,50 @@ public:
         demoTextBox.setBounds (r);
     }
 
-    void parentHierarchyChanged() override
+    // The following methods implement the ListBoxModel virtual methods:
+    int getNumRows() override
     {
-        updateHintingToggleVisibility();
-        resized();
+        return fonts.size();
+    }
+
+    void paintListBoxItem (int rowNumber, Graphics& g,
+                           int width, int height, bool rowIsSelected) override
+    {
+        if (rowIsSelected)
+            g.fillAll (Colours::lightblue);
+
+        auto font = getFont (rowNumber);
+
+        AttributedString s;
+        s.setWordWrap (AttributedString::none);
+        s.setJustification (Justification::centredLeft);
+        s.append (getNameForRow (rowNumber), font.withPointHeight ((float) height * 0.7f), Colours::black);
+        s.append ("   " + font.getTypefaceName(), FontOptions ((float) height * 0.5f, Font::italic), Colours::grey);
+
+        s.draw (g, Rectangle<int> (width, height).expanded (-4, 50).toFloat());
+    }
+
+    String getNameForRow (int rowNumber) override
+    {
+        return getFont (rowNumber).getTypefaceName();
+    }
+
+    void selectedRowsChanged (int /*lastRowselected*/) override
+    {
+        resetMetricsSliders();
+        refreshPreviewBoxFont();
     }
 
 private:
     Font getFont (int rowNumber) const
     {
-        return isPositiveAndBelow (rowNumber, fontListComponent.getNumFonts()) ? fontListComponent.getFontForRow (rowNumber)
-                                                                               : FontOptions{};
+        return isPositiveAndBelow (rowNumber, fonts.size()) ? fonts.getUnchecked (rowNumber) : FontOptions{};
     }
 
-    FontListComponent fontListComponent;
+    Array<Font> fonts;
     StringArray currentStyleList;
 
+    ListBox listBox;
     TextEditor demoTextBox;
 
     Label heightLabel  { {}, "Height:" },
@@ -254,8 +270,7 @@ private:
 
     ToggleButton boldToggle      { "Bold" },
                  italicToggle    { "Italic" },
-                 underlineToggle { "Underlined" },
-                 hintingToggle   { "Hinted" };
+                 underlineToggle { "Underlined" };
 
     TextButton resetButton { "Reset" };
 
@@ -281,7 +296,6 @@ private:
         boldToggle     .setToggleState (false, sendNotificationSync);
         italicToggle   .setToggleState (false, sendNotificationSync);
         underlineToggle.setToggleState (false, sendNotificationSync);
-        hintingToggle.setToggleState   (true,  sendNotificationSync);
 
         styleBox.setSelectedItemIndex (0);
         horizontalJustificationBox.setSelectedItemIndex (0);
@@ -292,7 +306,7 @@ private:
 
     void resetMetricsSliders()
     {
-        auto font = getFont (fontListComponent.getSelectedRow());
+        auto font = getFont (listBox.getSelectedRow());
         font.setPointHeight (1.0f);
 
         ascentSlider .setValue (font.getAscentInPoints());
@@ -325,7 +339,7 @@ private:
         auto italic = italicToggle.getToggleState();
         auto useStyle = ! (bold || italic);
 
-        auto font = getFont (fontListComponent.getSelectedRow());
+        auto font = getFont (listBox.getSelectedRow());
 
         font = font.withPointHeight        ((float) heightSlider .getValue())
                    .withExtraKerningFactor ((float) kerningSlider.getValue())
@@ -333,8 +347,6 @@ private:
 
         if (bold)    font = font.boldened();
         if (italic)  font = font.italicised();
-
-        font.setDirect2DHinting (hintingToggle.getToggleState());
 
         updateStylesList (font);
 
@@ -362,24 +374,6 @@ private:
             styleBox.addItemList (newStyles, 1);
             styleBox.setSelectedItemIndex (0);
         }
-    }
-
-    void updateHintingToggleVisibility()
-    {
-        const auto visible = std::invoke ([&]
-        {
-            if ((SystemStats::getOperatingSystemType() & SystemStats::OperatingSystemType::Windows) == 0)
-                return false;
-
-            auto* peer = getPeer();
-
-            if (peer == nullptr)
-                return false;
-
-            return peer->getAvailableRenderingEngines()[peer->getCurrentRenderingEngine()].contains ("Direct2D");
-        });
-
-        hintingToggle.setVisible (visible);
     }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FontsDemo)

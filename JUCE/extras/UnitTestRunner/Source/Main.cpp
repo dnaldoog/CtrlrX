@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -55,6 +55,7 @@ class ConsoleUnitTestRunner final : public UnitTestRunner
         Logger::writeToLog (message);
     }
 };
+
 
 //==============================================================================
 int main (int argc, char **argv)
@@ -113,44 +114,28 @@ int main (int argc, char **argv)
         return Random::getSystemRandom().nextInt64();
     });
 
+    if (args.containsOption (categoryOption))
+        runner.runTestsInCategory (args.getValueForOption (categoryOption), seed);
+    else if (args.containsOption (nameOption))
+        runner.runTestsWithName (args.getValueForOption (nameOption), seed);
+    else
+        runner.runAllTests (seed);
+
     std::vector<String> failures;
 
-    const auto appendFailures = [&]
+    for (int i = 0; i < runner.getNumResults(); ++i)
     {
-        for (int i = 0; i < runner.getNumResults(); ++i)
+        auto* result = runner.getResult (i);
+
+        if (result->failures > 0)
         {
-            auto* result = runner.getResult (i);
+            const auto testName = result->unitTestName + " / " + result->subcategoryName;
+            const auto testSummary = String (result->failures) + " test failure" + (result->failures > 1 ? "s" : "");
+            const auto newLineAndTab = newLine + "\t";
 
-            if (result->failures > 0)
-            {
-                const auto testName = result->unitTestName + " / " + result->subcategoryName;
-                const auto testSummary = String (result->failures) + " test failure" + (result->failures > 1 ? "s" : "");
-                const auto newLineAndTab = newLine + "\t";
-
-                failures.push_back (testName + ": " + testSummary + newLineAndTab
-                                    + result->messages.joinIntoString (newLineAndTab));
-            }
+            failures.push_back (testName + ": " + testSummary + newLineAndTab
+                                + result->messages.joinIntoString (newLineAndTab));
         }
-    };
-
-    if (args.containsOption (categoryOption) || args.containsOption (nameOption))
-    {
-        while (args.containsOption (categoryOption))
-        {
-            runner.runTestsInCategory (args.removeValueForOption (categoryOption), seed);
-            appendFailures();
-        }
-
-        while (args.containsOption (nameOption))
-        {
-            runner.runTestsWithName (args.removeValueForOption (nameOption), seed);
-            appendFailures();
-        }
-    }
-    else
-    {
-        runner.runAllTests (seed);
-        appendFailures();
     }
 
     logger.writeToLog (newLine + String::repeatedString ("-", 65));

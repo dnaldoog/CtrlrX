@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -134,9 +134,7 @@ private:
     //==============================================================================
     String getMachineInfoToDisplay() const
     {
-        const auto screenBounds = getScreenBounds().toFloat();
-        const auto& displays = Desktop::getInstance().getDisplays();
-        const auto* display = displays.getDisplayForPoint (screenBounds.getCentre());
+        auto* display = Desktop::getInstance().getDisplays().getDisplayForPoint (getScreenBounds().getCentre());
         return getOSName() + "   " + String (display->dpi) + "   "  + String (display->scale);
     }
 
@@ -192,10 +190,9 @@ private:
     {
         if (auto client = canvas.findClient (clientName))
         {
-            const auto screenBounds = getScreenBounds().toFloat();
-            const auto& displays = Desktop::getInstance().getDisplays();
-            const auto* display = displays.getDisplayForPoint (screenBounds.getCentre());
-            return ((screenBounds - display->userBounds.getCentre()) / (client->scaleFactor * display->dpi / display->scale)) + client->centre;
+            auto screenBounds = getScreenBounds();
+            auto* display = Desktop::getInstance().getDisplays().getDisplayForPoint (screenBounds.getCentre());
+            return ((screenBounds - display->userArea.getCentre()).toFloat() / (client->scaleFactor * display->dpi / display->scale)) + client->centre;
         }
 
         return {};
@@ -205,10 +202,8 @@ private:
     {
         if (auto client = canvas.findClient (clientName))
         {
-            const auto screenBounds = getScreenBounds().toFloat();
-            const auto& displays = Desktop::getInstance().getDisplays();
-            const auto* display = displays.getDisplayForPoint (screenBounds.getCentre());
-            return (display->userBounds / (client->scaleFactor * display->dpi / display->scale)).withCentre (client->centre);
+            auto* display = Desktop::getInstance().getDisplays().getDisplayForPoint (getScreenBounds().getCentre());
+            return (display->userArea.toFloat() / (client->scaleFactor * display->dpi / display->scale)).withCentre (client->centre);
         }
 
         return {};

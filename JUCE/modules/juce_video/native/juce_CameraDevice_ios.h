@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -560,8 +560,7 @@ private:
         //==============================================================================
         struct SessionDelegateClass    : public ObjCClass<NSObject>
         {
-            SessionDelegateClass()
-                : ObjCClass ("SessionDelegateClass_")
+            SessionDelegateClass()  : ObjCClass<NSObject> ("SessionDelegateClass_")
             {
                 JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wundeclared-selector")
                 addMethod (@selector (sessionDidStartRunning:),
@@ -730,8 +729,7 @@ private:
             class PhotoOutputDelegateClass : public ObjCClass<NSObject>
             {
             public:
-                PhotoOutputDelegateClass()
-                    : ObjCClass ("PhotoOutputDelegateClass_")
+                PhotoOutputDelegateClass() : ObjCClass<NSObject> ("PhotoOutputDelegateClass_")
                 {
                     addMethod (@selector (captureOutput:willBeginCaptureForResolvedSettings:),
                                [] (id, SEL, AVCapturePhotoOutput*, AVCaptureResolvedPhotoSettings*)
@@ -979,8 +977,7 @@ private:
             //==============================================================================
             struct FileOutputRecordingDelegateClass    : public ObjCClass<NSObject<AVCaptureFileOutputRecordingDelegate>>
             {
-                FileOutputRecordingDelegateClass()
-                    : ObjCClass ("FileOutputRecordingDelegateClass_")
+                FileOutputRecordingDelegateClass()  : ObjCClass<NSObject<AVCaptureFileOutputRecordingDelegate>> ("FileOutputRecordingDelegateClass_")
                 {
                     addMethod (@selector (captureOutput:didStartRecordingToOutputFileAtURL:fromConnections:),
                                [] (id self, SEL, AVCaptureFileOutput*, NSURL*, NSArray<AVCaptureConnection*>*)
@@ -1159,8 +1156,7 @@ struct CameraDevice::ViewerComponent  : public UIViewComponent
     //==============================================================================
     struct JuceCameraDeviceViewerClass    : public ObjCClass<UIView>
     {
-        JuceCameraDeviceViewerClass()
-            : ObjCClass ("JuceCameraDeviceViewerClass_")
+        JuceCameraDeviceViewerClass()  : ObjCClass ("JuceCameraDeviceViewerClass_")
         {
             addMethod (@selector (layoutSubviews),
                        [] (id self, SEL)

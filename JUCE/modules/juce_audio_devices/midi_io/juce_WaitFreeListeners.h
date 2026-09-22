@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -53,15 +53,19 @@ public:
     /** Registers a receiver, *not* wait-free */
     void add (Listener& r)
     {
-        auto copy = std::invoke ([&]
+        auto copy = [&]
         {
             const std::scoped_lock lock { mainCopyMutex };
-            mainCopy.emplace (&r, std::make_shared<Entry> (r));
+            const auto entryAsInt = reinterpret_cast<uintptr_t> (&r);
+            // We're going to use the lowest bit of the pointer as a flag to indicate that the entry is in use,
+            // so this bit must not be set!
+            jassert ((entryAsInt & 1) == 0);
+            mainCopy.emplace (&r, std::make_shared<Entry> (entryAsInt));
 
             std::vector<std::shared_ptr<Entry>> entries (mainCopy.size());
             std::transform (mainCopy.begin(), mainCopy.end(), entries.begin(), [] (const auto& p) { return p.second; });
             return entries;
-        });
+        }();
 
         {
             const SpinLock::ScopedLockType lock { blockingCopyMutex };
@@ -84,13 +88,15 @@ public:
         {
             auto& entry = *entryToClear;
 
-            constexpr size_t expected = 1;
+            // We expect the current entry not to have its lowest bit set, because the low bit
+            // indicates the entry is in use.
+            const auto expected = entry.load() & ~(uintptr_t) 1;
             auto tmp = expected;
 
-            // If the count is zero, clear the entire entry. If the entry is set to zero
+            // If the lowest bit is zero, clear the entire entry. If the entry is set to zero
             // in the meantime, that means someone else has removed this entry, so we can exit
             // in that case.
-            while (! entry.useCount.compare_exchange_weak (tmp, 0) && tmp != 0)
+            while (! entry.compare_exchange_weak (tmp, 0) && tmp != 0)
                 tmp = expected;
         }
 
@@ -99,7 +105,7 @@ public:
     }
 
     /** Notifies all registered receivers, wait-free, may be called concurrently with add/remove,
-        and with itself.
+        but may *not* be called concurrently with itself.
     */
     template <typename Callback>
     void call (Callback&& callback) const
@@ -113,12 +119,13 @@ public:
 
         for (auto& entry : callerCopy)
         {
-            const auto oldUseCount = entry->useCount.fetch_add (1);
+            const auto entryAsInt = entry->fetch_or (1);
+            auto* const entryAsPtr = reinterpret_cast<Listener*> (entryAsInt & ~(uintptr_t) 1);
 
-            if (oldUseCount != 0)
-                callback (*entry->listener);
+            if (entryAsPtr != nullptr)
+                callback (*entryAsPtr);
 
-            entry->useCount -= 1;
+            *entry = entryAsInt;
         }
     }
 
@@ -126,12 +133,7 @@ public:
     JUCE_DECLARE_NON_MOVEABLE (WaitFreeListeners)
 
 private:
-    struct Entry
-    {
-        explicit Entry (Listener& l) : listener (&l) {}
-        Listener* listener{};
-        std::atomic<size_t> useCount { 1 };
-    };
+    using Entry = std::atomic<uintptr_t>;
     std::map<Listener*, std::shared_ptr<Entry>> mainCopy;
     mutable std::vector<std::shared_ptr<Entry>> blockingCopy, callerCopy;
 

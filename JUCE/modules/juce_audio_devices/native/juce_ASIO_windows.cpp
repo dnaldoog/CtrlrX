@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -128,7 +128,7 @@ struct ASIOSampleFormat
     {
         if (formatIsFloat)
         {
-            memcpy (dst, src, (size_t) samps * sizeof (float));
+            memcpy (dst, src, samps * sizeof (float));
         }
         else
         {
@@ -146,7 +146,7 @@ struct ASIOSampleFormat
     {
         if (formatIsFloat)
         {
-            memcpy (dst, src, (size_t) samps * sizeof (float));
+            memcpy (dst, src, samps * sizeof (float));
         }
         else
         {
@@ -163,7 +163,7 @@ struct ASIOSampleFormat
     void clear (void* dst, int numSamps) noexcept
     {
         if (dst != nullptr)
-            zeromem (dst, (size_t) (numSamps * byteStride));
+            zeromem (dst, numSamps * byteStride);
     }
 
     int bitDepth = 24, byteStride = 4;
@@ -202,8 +202,7 @@ private:
         {
             while (--numSamples >= 0)
             {
-                const auto value = ByteOrder::swapIfBigEndian ((uint16) (short) roundToInt (jlimit (-maxVal, maxVal, maxVal * *src++)));
-                std::memcpy (dest, &value, sizeof (value));
+                *(uint16*) dest = ByteOrder::swapIfBigEndian ((uint16) (short) roundToInt (jlimit (-maxVal, maxVal, maxVal * *src++)));
                 dest += dstStrideBytes;
             }
         }
@@ -211,8 +210,7 @@ private:
         {
             while (--numSamples >= 0)
             {
-                const auto value = ByteOrder::swapIfLittleEndian ((uint16) (short) roundToInt (jlimit (-maxVal, maxVal, maxVal * *src++)));
-                std::memcpy (dest, &value, sizeof (value));
+                *(uint16*) dest = ByteOrder::swapIfLittleEndian ((uint16) (short) roundToInt (jlimit (-maxVal, maxVal, maxVal * *src++)));
                 dest += dstStrideBytes;
             }
         }
@@ -250,7 +248,7 @@ private:
         {
             while (--numSamples >= 0)
             {
-                ByteOrder::littleEndian24BitToChars ((int32) roundToInt (jlimit (-maxVal, maxVal, maxVal * *src++)), dest);
+                ByteOrder::littleEndian24BitToChars ((uint32) roundToInt (jlimit (-maxVal, maxVal, maxVal * *src++)), dest);
                 dest += dstStrideBytes;
             }
         }
@@ -258,7 +256,7 @@ private:
         {
             while (--numSamples >= 0)
             {
-                ByteOrder::bigEndian24BitToChars ((int32) roundToInt (jlimit (-maxVal, maxVal, maxVal * *src++)), dest);
+                ByteOrder::bigEndian24BitToChars ((uint32) roundToInt (jlimit (-maxVal, maxVal, maxVal * *src++)), dest);
                 dest += dstStrideBytes;
             }
         }
@@ -296,8 +294,7 @@ private:
         {
             while (--numSamples >= 0)
             {
-                const auto value = ByteOrder::swapIfBigEndian ((uint32) roundToInt (jlimit (-maxVal, maxVal, maxVal * *src++)));
-                std::memcpy (dest, &value, sizeof (value));
+                *(uint32*) dest = ByteOrder::swapIfBigEndian ((uint32) roundToInt (jlimit (-maxVal, maxVal, maxVal * *src++)));
                 dest += dstStrideBytes;
             }
         }
@@ -305,8 +302,7 @@ private:
         {
             while (--numSamples >= 0)
             {
-                const auto value = ByteOrder::swapIfLittleEndian ((uint32) roundToInt (jlimit (-maxVal, maxVal, maxVal * *src++)));
-                std::memcpy (dest, &value, sizeof (value));
+                *(uint32*) dest = ByteOrder::swapIfLittleEndian ((uint32) roundToInt (jlimit (-maxVal, maxVal, maxVal * *src++)));
                 dest += dstStrideBytes;
             }
         }
@@ -334,7 +330,7 @@ public:
          owner (ownerType),
          classId (clsID)
     {
-        [[maybe_unused]] const auto result = ::CoInitialize (nullptr);
+        ::CoInitialize (nullptr);
 
         name = devName;
         inBuffers.calloc (4);
@@ -365,7 +361,7 @@ public:
         Array<double> newRates;
 
         if (asioObject != nullptr)
-            for (const auto rate : SampleRateHelpers::getCommonSampleRates())
+            for (const auto rate : SampleRateHelpers::getAllSampleRates())
                 if (asioObject->canSampleRate (rate) == 0)
                     newRates.add (rate);
 
@@ -434,13 +430,10 @@ public:
 
         updateSampleRates();
 
-        if (! sampleRates.isEmpty())
-        {
-            if (sampleRate <= 0 || ! sampleRates.contains (sampleRate))
-                sampleRate = sampleRates[0];
-        }
+        if (sampleRate == 0 || (sampleRates.size() > 0 && ! sampleRates.contains (sampleRate)))
+            sampleRate = sampleRates[0];
 
-        if (sampleRate <= 0)
+        if (sampleRate == 0)
         {
             jassertfalse;
             sampleRate = 44100.0;
@@ -962,7 +955,7 @@ private:
 
     void setSampleRate (double newRate)
     {
-        if (! approximatelyEqual (currentSampleRate, newRate))
+        if (currentSampleRate != newRate)
         {
             JUCE_ASIO_LOG ("rate change: " + String (currentSampleRate) + " to " + String (newRate));
             auto err = asioObject->setSampleRate (newRate);
@@ -1111,20 +1104,11 @@ private:
 
         if (asioObject != nullptr)
         {
-            JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
-            JUCE_BEGIN_IGNORE_WARNINGS_MSVC (6320)
-
             __try
             {
                 asioObject->Release();
             }
-            __except (EXCEPTION_EXECUTE_HANDLER)
-            {
-                releasedOK = false;
-            }
-
-            JUCE_END_IGNORE_WARNINGS_MSVC
-            JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+            __except (EXCEPTION_EXECUTE_HANDLER) { releasedOK = false; }
 
             asioObject = nullptr;
         }
@@ -1148,22 +1132,12 @@ private:
 
     bool tryCreatingDriver (bool& crashed)
     {
-        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
-        JUCE_BEGIN_IGNORE_WARNINGS_MSVC (6320)
-
         __try
         {
-            return CoCreateInstance (classId, nullptr, CLSCTX_INPROC_SERVER,
+            return CoCreateInstance (classId, 0, CLSCTX_INPROC_SERVER,
                                      classId, (void**) &asioObject) == S_OK;
         }
-        __except (EXCEPTION_EXECUTE_HANDLER)
-        {
-            crashed = true;
-        }
-
-        JUCE_END_IGNORE_WARNINGS_MSVC
-        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
-
+        __except (EXCEPTION_EXECUTE_HANDLER) { crashed = true; }
         return false;
     }
 
@@ -1224,77 +1198,81 @@ private:
         if (getName().isEmpty())
             return error;
 
-        const auto [errorText, errorCode] = std::invoke ([&]() -> std::tuple<String, long>
+        long err = 0;
+
+        if (loadDriver())
         {
-            if (! loadDriver())
-                return { "No such device", 0 };
-
-            if (const auto init = initDriver(); init.isNotEmpty())
-                return { init, 0 };
-
-            numActiveInputChans = 0;
-            numActiveOutputChans = 0;
-            totalNumInputChans = 0;
-            totalNumOutputChans = 0;
-
-            if (asioObject == nullptr)
-                return { "Can't open device", 0 };
-
-             if (const auto err = asioObject->getChannels (&totalNumInputChans, &totalNumOutputChans); err != 0)
-                 return { "Can't detect asio channels", err };
-
-            JUCE_ASIO_LOG (String ((int) totalNumInputChans) + " in, " + String ((int) totalNumOutputChans) + " out");
-
-            const int chansToAllocate = totalNumInputChans + totalNumOutputChans + 4;
-            bufferInfos.calloc (chansToAllocate);
-            inBuffers.calloc (chansToAllocate);
-            outBuffers.calloc (chansToAllocate);
-            inputFormat.calloc (chansToAllocate);
-            outputFormat.calloc (chansToAllocate);
-
-            if (const auto err = refreshBufferSizes(); err != 0)
-                return { "Can't detect buffer sizes", 0 };
-
-            auto currentRate = getSampleRate();
-
-            if (currentRate < 1.0 || currentRate > 192001.0)
+            if ((error = initDriver()).isEmpty())
             {
-                JUCE_ASIO_LOG ("setting default sample rate");
-                const auto err = asioObject->setSampleRate (44100.0);
-                JUCE_ASIO_LOG_ERROR ("setting sample rate", err);
+                numActiveInputChans = 0;
+                numActiveOutputChans = 0;
+                totalNumInputChans = 0;
+                totalNumOutputChans = 0;
 
-                currentRate = getSampleRate();
+                if (asioObject != nullptr
+                     && (err = asioObject->getChannels (&totalNumInputChans, &totalNumOutputChans)) == 0)
+                {
+                    JUCE_ASIO_LOG (String ((int) totalNumInputChans) + " in, " + String ((int) totalNumOutputChans) + " out");
+
+                    const int chansToAllocate = totalNumInputChans + totalNumOutputChans + 4;
+                    bufferInfos.calloc (chansToAllocate);
+                    inBuffers.calloc (chansToAllocate);
+                    outBuffers.calloc (chansToAllocate);
+                    inputFormat.calloc (chansToAllocate);
+                    outputFormat.calloc (chansToAllocate);
+
+                    if ((err = refreshBufferSizes()) == 0)
+                    {
+                        auto currentRate = getSampleRate();
+
+                        if (currentRate < 1.0 || currentRate > 192001.0)
+                        {
+                            JUCE_ASIO_LOG ("setting default sample rate");
+                            err = asioObject->setSampleRate (44100.0);
+                            JUCE_ASIO_LOG_ERROR ("setting sample rate", err);
+
+                            currentRate = getSampleRate();
+                        }
+
+                        currentSampleRate = currentRate;
+                        postOutput = (asioObject->outputReady() == 0);
+
+                        if (postOutput)
+                            JUCE_ASIO_LOG ("outputReady true");
+
+                        updateSampleRates();
+                        readLatencies();                          // doing these steps because cubase does so at this stage
+                        createDummyBuffers (preferredBufferSize); // in initialisation, and some devices fail if we don't
+                        readLatencies();
+
+                        // start and stop because cubase does it
+                        err = asioObject->start();
+                        // ignore an error here, as it might start later after setting other stuff up
+                        JUCE_ASIO_LOG_ERROR ("start", err);
+
+                        Thread::sleep (80);
+                        asioObject->stop();
+                    }
+                    else
+                    {
+                        error = "Can't detect buffer sizes";
+                    }
+                }
+                else
+                {
+                    error = "Can't detect asio channels";
+                }
             }
-
-            currentSampleRate = currentRate;
-            postOutput = (asioObject->outputReady() == 0);
-
-            if (postOutput)
-                JUCE_ASIO_LOG ("outputReady true");
-
-            updateSampleRates();
-            readLatencies();                          // doing these steps because cubase does so at this stage
-            createDummyBuffers (preferredBufferSize); // in initialisation, and some devices fail if we don't
-
-            const ScopeGuard disposeBuffers { [&] { asioObject->disposeBuffers(); } };
-
-            readLatencies();
-
-            // start and stop because cubase does it
-            const auto err = asioObject->start();
-            // ignore an error here, as it might start later after setting other stuff up
-            JUCE_ASIO_LOG_ERROR ("start", err);
-
-            const ScopeGuard stop { [&] { asioObject->stop(); } };
-
-            Thread::sleep (80);
-
-            return {};
-        });
-
-        if (errorText.isNotEmpty())
+        }
+        else
         {
-            JUCE_ASIO_LOG_ERROR (errorText, errorCode);
+            error = "No such device";
+        }
+
+        if (error.isNotEmpty())
+        {
+            JUCE_ASIO_LOG_ERROR (error, err);
+            disposeBuffers();
 
             if (! removeCurrentDriver())
                 JUCE_ASIO_LOG ("** Driver crashed while being closed");
@@ -1307,7 +1285,7 @@ private:
         deviceIsOpen = false;
         needToReset = false;
         stopTimer();
-        return errorText;
+        return error;
     }
 
     void disposeBuffers()
@@ -1476,7 +1454,7 @@ public:
         deviceNames.clear();
         classIds.clear();
 
-        HKEY hk = nullptr;
+        HKEY hk = 0;
         int index = 0;
 
         if (RegOpenKey (HKEY_LOCAL_MACHINE, _T ("software\\asio"), &hk) == ERROR_SUCCESS)
@@ -1577,7 +1555,7 @@ private:
     //==============================================================================
     static bool checkClassIsOk (const String& classId)
     {
-        HKEY hk = nullptr;
+        HKEY hk = 0;
         bool ok = false;
 
         if (RegOpenKey (HKEY_CLASSES_ROOT, _T ("clsid"), &hk) == ERROR_SUCCESS)
@@ -1599,7 +1577,7 @@ private:
                             DWORD dtype = REG_SZ;
                             DWORD dsize = sizeof (pathName);
 
-                            if (RegQueryValueEx (pathKey, nullptr, nullptr, &dtype, (LPBYTE) pathName, &dsize) == ERROR_SUCCESS)
+                            if (RegQueryValueEx (pathKey, 0, 0, &dtype, (LPBYTE) pathName, &dsize) == ERROR_SUCCESS)
                                 // In older code, this used to check for the existence of the file, but there are situations
                                 // where our process doesn't have access to it, but where the driver still loads ok.
                                 ok = (pathName[0] != 0);
@@ -1636,7 +1614,7 @@ private:
             DWORD dtype = REG_SZ;
             DWORD dsize = sizeof (buf);
 
-            if (RegQueryValueEx (subKey, _T ("clsid"), nullptr, &dtype, (LPBYTE) buf, &dsize) == ERROR_SUCCESS)
+            if (RegQueryValueEx (subKey, _T ("clsid"), 0, &dtype, (LPBYTE) buf, &dsize) == ERROR_SUCCESS)
             {
                 if (dsize > 0 && checkClassIsOk (buf))
                 {
@@ -1648,7 +1626,7 @@ private:
                         dsize = sizeof (buf);
                         String deviceName;
 
-                        if (RegQueryValueEx (subKey, _T ("description"), nullptr, &dtype, (LPBYTE) buf, &dsize) == ERROR_SUCCESS)
+                        if (RegQueryValueEx (subKey, _T ("description"), 0, &dtype, (LPBYTE) buf, &dsize) == ERROR_SUCCESS)
                             deviceName = buf;
                         else
                             deviceName = keyName;

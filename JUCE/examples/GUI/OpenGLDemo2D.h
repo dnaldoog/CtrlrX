@@ -72,8 +72,10 @@ public:
         statusLabel.setJustificationType (Justification::topLeft);
         statusLabel.setFont (FontOptions (14.0f));
 
-        for (const auto [index, preset] : enumerate (getPresets(), 1))
-            presetBox.addItem (preset.name, index);
+        auto presets = getPresets();
+
+        for (int i = 0; i < presets.size(); ++i)
+            presetBox.addItem (presets[i].name, i + 1);
 
         addAndMakeVisible (presetLabel);
         presetLabel.attachToComponent (&presetBox, true);
@@ -144,7 +146,7 @@ public:
 
     void selectPreset (int preset)
     {
-        fragmentDocument.replaceAllContent (preprocessShader (getPresets()[(size_t) preset].fragmentShader));
+        fragmentDocument.replaceAllContent (getPresets()[preset].fragmentShader);
         startTimer (1);
     }
 
@@ -184,14 +186,7 @@ private:
         const char* fragmentShader;
     };
 
-    static String preprocessShader (String shaderSource)
-    {
-        return shaderSource.replace ("#lowp#",    OpenGLHelpers::isOpenGLES() ? "lowp" : "")
-                           .replace ("#mediump#", OpenGLHelpers::isOpenGLES() ? "mediump" : "")
-                           .replace ("#highp#",   OpenGLHelpers::isOpenGLES() ? "highp" : "");
-    }
-
-    static Span<const ShaderPreset> getPresets()
+    static Array<ShaderPreset> getPresets()
     {
         #define SHADER_2DDEMO_HEADER \
             "/*  This demo shows the use of the OpenGLGraphicsContextCustomShader,\n" \
@@ -201,7 +196,7 @@ private:
             "    recompiled in real-time!\n" \
             "*/\n\n"
 
-        static constexpr ShaderPreset presets[]
+        ShaderPreset presets[] =
         {
             {
                 "Simple Gradient",
@@ -209,9 +204,9 @@ private:
                 SHADER_2DDEMO_HEADER
                 "void main()\n"
                 "{\n"
-                "    #mediump# vec4 colour1 = vec4 (1.0, 0.4, 0.6, 1.0);\n"
-                "    #mediump# vec4 colour2 = vec4 (0.0, 0.8, 0.6, 1.0);\n"
-                "    #mediump# float alpha = pixelPos.x / 1000.0;\n"
+                "    " JUCE_MEDIUMP " vec4 colour1 = vec4 (1.0, 0.4, 0.6, 1.0);\n"
+                "    " JUCE_MEDIUMP " vec4 colour2 = vec4 (0.0, 0.8, 0.6, 1.0);\n"
+                "    " JUCE_MEDIUMP " float alpha = pixelPos.x / 1000.0;\n"
                 "    gl_FragColor = pixelAlpha * mix (colour1, colour2, alpha);\n"
                 "}\n"
             },
@@ -222,9 +217,9 @@ private:
                 SHADER_2DDEMO_HEADER
                 "void main()\n"
                 "{\n"
-                "    #mediump# vec4 colour1 = vec4 (1.0, 0.4, 0.6, 1.0);\n"
-                "    #mediump# vec4 colour2 = vec4 (0.3, 0.4, 0.4, 1.0);\n"
-                "    #mediump# float alpha = distance (pixelPos, vec2 (600.0, 500.0)) / 400.0;\n"
+                "    " JUCE_MEDIUMP " vec4 colour1 = vec4 (1.0, 0.4, 0.6, 1.0);\n"
+                "    " JUCE_MEDIUMP " vec4 colour2 = vec4 (0.3, 0.4, 0.4, 1.0);\n"
+                "    " JUCE_MEDIUMP " float alpha = distance (pixelPos, vec2 (600.0, 500.0)) / 400.0;\n"
                 "    gl_FragColor = pixelAlpha * mix (colour1, colour2, alpha);\n"
                 "}\n"
             },
@@ -235,12 +230,12 @@ private:
                 SHADER_2DDEMO_HEADER
                 "void main()\n"
                 "{\n"
-                "    #mediump# vec4 colour1 = vec4 (0.1, 0.1, 0.9, 1.0);\n"
-                "    #mediump# vec4 colour2 = vec4 (0.0, 0.8, 0.6, 1.0);\n"
-                "    #mediump# float distance = distance (pixelPos, vec2 (600.0, 500.0));\n"
+                "    " JUCE_MEDIUMP " vec4 colour1 = vec4 (0.1, 0.1, 0.9, 1.0);\n"
+                "    " JUCE_MEDIUMP " vec4 colour2 = vec4 (0.0, 0.8, 0.6, 1.0);\n"
+                "    " JUCE_MEDIUMP " float distance = distance (pixelPos, vec2 (600.0, 500.0));\n"
                 "\n"
-                "    #mediump# float innerRadius = 200.0;\n"
-                "    #mediump# float outerRadius = 210.0;\n"
+                "    " JUCE_MEDIUMP " float innerRadius = 200.0;\n"
+                "    " JUCE_MEDIUMP " float outerRadius = 210.0;\n"
                 "\n"
                 "    if (distance < innerRadius)\n"
                 "        gl_FragColor = colour1;\n"
@@ -264,7 +259,7 @@ private:
             }
         };
 
-        return presets;
+        return Array<ShaderPreset> (presets, numElementsInArray (presets));
     }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OpenGLDemo2D)

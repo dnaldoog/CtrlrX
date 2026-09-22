@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -340,14 +340,13 @@ struct ProjectSettingsComponent final : public Component,
         group.setProperties (props);
         group.setName ("Project Settings");
 
+        lastProjectType = project.getProjectTypeString();
         parentSizeChanged();
     }
 
     void changeListenerCallback (ChangeBroadcaster*) override
     {
-        const auto next = getProjectStatesRequiringRebuild();
-
-        if (std::exchange (states, next) != next)
+        if (lastProjectType != project.getProjectTypeString())
             updatePropertyList();
     }
 
@@ -361,30 +360,8 @@ struct ProjectSettingsComponent final : public Component,
         setSize (width, y);
     }
 
-    struct StatesRequiringPropertyRebuild
-    {
-        var projectType;
-        var enableARA;
-
-        bool operator== (const StatesRequiringPropertyRebuild& other) const
-        {
-            const auto tie = [] (auto& x) { return std::tuple (x.projectType, x.enableARA); };
-            return tie (*this) == tie (other);
-        }
-
-        bool operator!= (const StatesRequiringPropertyRebuild& other) const
-        {
-            return ! operator== (other);
-        }
-    };
-
-    StatesRequiringPropertyRebuild getProjectStatesRequiringRebuild() const
-    {
-        return { project.getProjectTypeString(), project.shouldEnableARA() };
-    }
-
     Project& project;
-    StatesRequiringPropertyRebuild states = getProjectStatesRequiringRebuild();
+    var lastProjectType;
     PropertyGroupComponent group;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProjectSettingsComponent)

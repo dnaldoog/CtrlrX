@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -222,20 +222,20 @@ struct GraphEditorPanel::PluginComponent final : public Component,
 
         toFront (true);
 
-        if (e.source.isTouch())
+        if (isOnTouchDevice())
         {
-            originalTouchPos = e.position.toInt();
             startTimer (750);
         }
-        else if (e.mods.isPopupMenu())
+        else
         {
-            showPopupMenu (e.position.toInt());
+            if (e.mods.isPopupMenu())
+                showPopupMenu();
         }
     }
 
     void mouseDrag (const MouseEvent& e) override
     {
-        if (e.source.isTouch() && e.getDistanceFromDragStart() > 5)
+        if (isOnTouchDevice() && e.getDistanceFromDragStart() > 5)
             stopTimer();
 
         if (! e.mods.isPopupMenu())
@@ -257,7 +257,7 @@ struct GraphEditorPanel::PluginComponent final : public Component,
 
     void mouseUp (const MouseEvent& e) override
     {
-        if (e.source.isTouch())
+        if (isOnTouchDevice())
         {
             stopTimer();
             callAfterDelay (250, []() { PopupMenu::dismissAllActiveMenus(); });
@@ -413,7 +413,7 @@ struct GraphEditorPanel::PluginComponent final : public Component,
         return false;
     }
 
-    void showPopupMenu (Point<int> localPos)
+    void showPopupMenu()
     {
         menu.reset (new PopupMenu);
         menu->addItem ("Delete this filter", [this] { graph.graph.removeNode (pluginID); });
@@ -453,7 +453,7 @@ struct GraphEditorPanel::PluginComponent final : public Component,
         menu->addItem ("Load plugin state", [this] { loadPluginState(); });
        #endif
 
-        menu->showMenuAsync (PopupMenu::Options{}.withTargetScreenArea (Rectangle<int>{}.withPosition (localPointToGlobal (localPos))));
+        menu->showMenuAsync ({});
     }
 
     void testStateSaveLoad()
@@ -475,8 +475,11 @@ struct GraphEditorPanel::PluginComponent final : public Component,
 
     void timerCallback() override
     {
+        // this should only be called on touch devices
+        jassert (isOnTouchDevice());
+
         stopTimer();
-        showPopupMenu (originalTouchPos);
+        showPopupMenu();
     }
 
     void parameterValueChanged (int, float) override
@@ -549,7 +552,7 @@ struct GraphEditorPanel::PluginComponent final : public Component,
     OwnedArray<PinComponent> pins;
     int numInputs = 0, numOutputs = 0;
     int pinSize = 16;
-    Point<int> originalPos, originalTouchPos;
+    Point<int> originalPos;
     Font font = FontOptions { 13.0f, Font::bold };
     int numIns = 0, numOuts = 0;
     DropShadowEffect shadow;
@@ -777,20 +780,19 @@ void GraphEditorPanel::paint (Graphics& g)
 
 void GraphEditorPanel::mouseDown (const MouseEvent& e)
 {
-    if (e.source.isTouch())
+    if (isOnTouchDevice())
     {
         originalTouchPos = e.position.toInt();
         startTimer (750);
     }
-    else if (e.mods.isPopupMenu())
-    {
+
+    if (e.mods.isPopupMenu())
         showPopupMenu (e.position.toInt());
-    }
 }
 
-void GraphEditorPanel::mouseUp (const MouseEvent& e)
+void GraphEditorPanel::mouseUp (const MouseEvent&)
 {
-    if (e.source.isTouch())
+    if (isOnTouchDevice())
     {
         stopTimer();
         callAfterDelay (250, []() { PopupMenu::dismissAllActiveMenus(); });
@@ -799,7 +801,7 @@ void GraphEditorPanel::mouseUp (const MouseEvent& e)
 
 void GraphEditorPanel::mouseDrag (const MouseEvent& e)
 {
-    if (e.source.isTouch() && e.getDistanceFromDragStart() > 5)
+    if (isOnTouchDevice() && e.getDistanceFromDragStart() > 5)
         stopTimer();
 }
 
@@ -890,7 +892,7 @@ void GraphEditorPanel::updateComponents()
     }
 }
 
-void GraphEditorPanel::showPopupMenu (Point<int> localMousePos)
+void GraphEditorPanel::showPopupMenu (Point<int> mousePos)
 {
     menu.reset (new PopupMenu);
 
@@ -898,12 +900,12 @@ void GraphEditorPanel::showPopupMenu (Point<int> localMousePos)
     {
         mainWindow->addPluginsToMenu (*menu);
 
-        menu->showMenuAsync (PopupMenu::Options{}.withTargetScreenArea (Rectangle<int>{}.withPosition (localPointToGlobal (localMousePos))),
-                             ModalCallbackFunction::create ([this, localMousePos] (int r)
+        menu->showMenuAsync ({},
+                             ModalCallbackFunction::create ([this, mousePos] (int r)
                                                             {
                                                                 if (auto* mainWin = findParentComponentOfClass<MainHostWindow>())
                                                                     if (const auto chosen = mainWin->getChosenType (r))
-                                                                        createNewPlugin (*chosen, localMousePos);
+                                                                        createNewPlugin (*chosen, mousePos);
                                                             }));
     }
 }
@@ -1000,6 +1002,9 @@ void GraphEditorPanel::endDraggingConnector (const MouseEvent& e)
 
 void GraphEditorPanel::timerCallback()
 {
+    // this should only be called on touch devices
+    jassert (isOnTouchDevice());
+
     stopTimer();
     showPopupMenu (originalTouchPos);
 }
@@ -1239,7 +1244,7 @@ void GraphDocumentComponent::init()
 
     graphPanel->updateComponents();
 
-    if (Desktop::getInstance().getMainMouseSource().isTouch())
+    if (isOnTouchDevice())
     {
         titleBarComponent.reset (new TitleBarComponent (*this));
         addAndMakeVisible (titleBarComponent.get());
@@ -1286,7 +1291,7 @@ void GraphDocumentComponent::resized()
     const int keysHeight = 60;
     const int statusHeight = 20;
 
-    if (Desktop::getInstance().getMainMouseSource().isTouch())
+    if (isOnTouchDevice())
         titleBarComponent->setBounds (r.removeFromTop (titleBarHeight));
 
     keyboardComp->setBounds (r.removeFromBottom (keysHeight));

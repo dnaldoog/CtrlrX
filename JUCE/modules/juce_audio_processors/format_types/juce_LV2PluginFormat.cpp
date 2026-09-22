@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -213,9 +213,6 @@ public:
 
     Rectangle<int> getDetectedViewBounds() const
     {
-        if (widget == nullptr)
-            return {};
-
        #if JUCE_MAC
         const auto frame = [(NSView*) widget frame];
         return { (int) frame.size.width, (int) frame.size.height };
@@ -379,22 +376,23 @@ private:
 
 struct ViewSizeListener final : private ComponentMovementWatcher
 {
-    ViewSizeListener (Component& c, LogicalResizeListener& l)
+    ViewSizeListener (Component& c, PhysicalResizeListener& l)
         : ComponentMovementWatcher (&c), listener (l)
     {
     }
 
     void componentMovedOrResized (bool, bool wasResized) override
     {
-        if (! wasResized)
-            return;
+        if (wasResized)
+        {
+            const auto physicalSize = Desktop::getInstance().getDisplays()
+                                                            .logicalToPhysical (getComponent()->localAreaToGlobal (getComponent()->getLocalBounds()));
+            const auto width  = physicalSize.getWidth();
+            const auto height = physicalSize.getHeight();
 
-        const auto bounds = getComponent()->getLocalBounds();
-        const auto width = bounds.getWidth();
-        const auto height = bounds.getHeight();
-
-        if (width > 10 && height > 10)
-            listener.viewRequestedResizeInLogicalPixels (width, height);
+            if (width > 10 && height > 10)
+                listener.viewRequestedResizeInPhysicalPixels (width, height);
+        }
     }
 
     void componentPeerChanged() override {}
@@ -403,12 +401,11 @@ struct ViewSizeListener final : private ComponentMovementWatcher
     using ComponentMovementWatcher::componentVisibilityChanged;
     using ComponentMovementWatcher::componentMovedOrResized;
 
-    LogicalResizeListener& listener;
+    PhysicalResizeListener& listener;
 };
 
 class ConfiguredEditorComponent final : public Component,
-                                        private PhysicalResizeListener,
-                                        private LogicalResizeListener
+                                        private PhysicalResizeListener
 {
 public:
     ConfiguredEditorComponent (World& world,
@@ -448,11 +445,10 @@ public:
             return uiInstance->instance.getDetectedViewBounds();
         }();
 
-        lastPhysicalWidth  = boundsToUse.getWidth();
-        lastPhysicalHeight = boundsToUse.getHeight();
-
         const auto scaled = lv2ToComponentRect (boundsToUse);
-        setSize (scaled.getWidth(), scaled.getHeight());
+        lastWidth  = scaled.getWidth();
+        lastHeight = scaled.getHeight();
+        setSize (lastWidth, lastHeight);
     }
 
     ~ConfiguredEditorComponent() override
@@ -467,7 +463,6 @@ public:
 
     void resized() override
     {
-        const ScopedValueSetter scope { resizingSelf, true };
         viewComponent.setBounds (getLocalBounds());
     }
 
@@ -475,9 +470,6 @@ public:
     {
         // If the editor changed size as a result of a request from the client,
         // we shouldn't send a notification back to the client.
-        if (resizeFromClient)
-            return;
-
         if (uiInstance != nullptr)
         {
             if (resizeClient.valid && resizeClient.extension.ui_resize != nullptr)
@@ -507,9 +499,6 @@ public:
 
     void childBoundsChanged (Component* c) override
     {
-        if (resizingSelf)
-            return;
-
         if (c == nullptr)
             resizeToFitView();
     }
@@ -528,31 +517,15 @@ public:
 
         if (optionsInterface.valid)
             optionsInterface.extension.set (uiInstance->instance.getHandle(), options);
+
+        applyLastRequestedPhysicalSize();
     }
 
 private:
-    void viewRequestedResizeInLogicalPixels (int width, int height) override
-    {
-        if (resizingSelf)
-            return;
-
-        const ScopedValueSetter scope { resizeFromClient, true };
-
-        const auto physical = componentToLv2Rect ({ width, height });
-        lastPhysicalWidth = physical.getWidth();
-        lastPhysicalHeight = physical.getHeight();;
-        resizeListener.viewRequestedResizeInLogicalPixels (width, height);
-    }
-
     void viewRequestedResizeInPhysicalPixels (int width, int height) override
     {
-        if (resizingSelf)
-            return;
-
-        const ScopedValueSetter scope { resizeFromClient, true };
-
-        lastPhysicalWidth = width;
-        lastPhysicalHeight = height;
+        lastWidth = width;
+        lastHeight = height;
         const auto logical = lv2ToComponentRect ({ width, height });
         resizeListener.viewRequestedResizeInLogicalPixels (logical.getWidth(), logical.getHeight());
     }
@@ -565,49 +538,50 @@ private:
 
     void applyLastRequestedPhysicalSize()
     {
-        viewRequestedResizeInPhysicalPixels (lastPhysicalWidth, lastPhysicalHeight);
+        viewRequestedResizeInPhysicalPixels (lastWidth, lastHeight);
         viewComponent.forceViewToSize();
     }
 
     /*  Convert from the component's coordinate system to the hosted LV2's coordinate system. */
     Rectangle<int> componentToLv2Rect (Rectangle<int> r) const
     {
-        const auto platformScale = getDesktopScaleFactor() * getPeerScale();
-        return (localAreaToGlobal (r.toFloat()) * platformScale).toNearestInt();
+        return localAreaToGlobal (r) * nativeScaleFactor * getDesktopScaleFactor();
     }
 
     /*  Convert from the hosted LV2's coordinate system to the component's coordinate system. */
     Rectangle<int> lv2ToComponentRect (Rectangle<int> vr) const
     {
-        const auto platformScale = getDesktopScaleFactor() * getPeerScale();
-        return (getLocalArea (nullptr, vr.toFloat() / platformScale)).toNearestInt();
+        return getLocalArea (nullptr, vr / (nativeScaleFactor * getDesktopScaleFactor()));
     }
 
-    float getPeerScale() const
-    {
-        if (auto* peer = getPeer())
-            return (float) peer->getPlatformScaleFactor();
-
-        return 1.0f;
-    }
-
-    float getEffectiveScale() const
-    {
-        return getPeerScale() * userScaleFactor;
-    }
+    float getEffectiveScale() const     { return nativeScaleFactor * userScaleFactor; }
 
     // If possible, try to keep platform-specific handing restricted to the implementation of
     // ViewComponent. Keep the interface of ViewComponent consistent on all platforms.
    #if JUCE_LINUX || JUCE_BSD
-    struct ViewComponent final : public XEmbedComponent
+    struct InnerHolder
     {
-        explicit ViewComponent (LogicalResizeListener& l)
-            : XEmbedComponent (true, false),
-              listener (*this, l)
+        struct Inner final : public XEmbedComponent
+        {
+            Inner() : XEmbedComponent (true, true)
+            {
+                setOpaque (true);
+                setVisible (true);
+                addToDesktop (0);
+            }
+        };
+
+        Inner inner;
+    };
+
+    struct ViewComponent final : public InnerHolder,
+                                 public XEmbedComponent
+    {
+        explicit ViewComponent (PhysicalResizeListener& l)
+            : XEmbedComponent ((unsigned long) inner.getPeer()->getNativeHandle(), true, false),
+              listener (inner, l)
         {
             setOpaque (true);
-
-            X11Symbols::getInstance()->xSync (XWindowSystem::getInstance()->getDisplay(), false);
         }
 
         ~ViewComponent()
@@ -617,10 +591,10 @@ private:
 
         void prepareForDestruction()
         {
-            removeClient();
+            inner.removeClient();
         }
 
-        LV2UI_Widget getWidget() { return lv2_shared::wordCast<LV2UI_Widget> (getHostWindowID()); }
+        LV2UI_Widget getWidget() { return lv2_shared::wordCast<LV2UI_Widget> (inner.getHostWindowID()); }
         void forceViewToSize() {}
         void fitToView() {}
 
@@ -681,29 +655,31 @@ private:
     {
         ConfiguredEditorComponent& window;
 
-        void operator() (float) const
+        void operator() (float platformScale) const
         {
-            MessageManager::callAsync ([ref = Component::SafePointer<ConfiguredEditorComponent> (&window)]
+            MessageManager::callAsync ([ref = Component::SafePointer<ConfiguredEditorComponent> (&window), platformScale]
             {
                 if (auto* r = ref.getComponent())
                 {
+                    if (approximatelyEqual (std::exchange (r->nativeScaleFactor, platformScale), platformScale))
+                        return;
+
+                    r->nativeScaleFactor = platformScale;
                     r->sendScaleFactorToPlugin();
-                    r->viewComponent.forceViewToSize();
                 }
             });
         }
     };
 
     LogicalResizeListener& resizeListener;
-    int lastPhysicalWidth = 0, lastPhysicalHeight = 0;
-    float userScaleFactor = 1.0f;
+    int lastWidth = 0, lastHeight = 0;
+    float nativeScaleFactor = 1.0f, userScaleFactor = 1.0f;
     NativeScaleFactorNotifier scaleNotifier { this, ScaleNotifierCallback { *this } };
     ViewComponent viewComponent { *this };
     LV2_URID floatUrid, scaleFactorUrid;
     std::unique_ptr<UiInstanceWithSupports> uiInstance;
     OptionalExtension<LV2UI_Resize> resizeClient;
     OptionalExtension<LV2_Options_Interface> optionsInterface;
-    bool resizingSelf = false, resizeFromClient = false;
     PeerChangedListener peerListener { *this, [this]
     {
         applyLastRequestedPhysicalSize();
@@ -869,6 +845,7 @@ private:
         };
 
         return uiDescriptor->hasExtensionData (world, LV2_UI__resize)
+               && ! uiDescriptor->hasExtensionData (world, LV2_UI__noUserResize)
                && noneOf (requiredFeatures.values, uriMatches)
                && noneOf (optionalFeatures.values, uriMatches);
     }

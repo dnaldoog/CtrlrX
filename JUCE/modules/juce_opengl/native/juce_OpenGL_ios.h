@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -50,11 +50,6 @@ extern "C" GLvoid glResolveMultisampleFramebufferAPPLE();
 namespace juce
 {
 
-bool OpenGLHelpers::isOpenGLES()
-{
-    return true;
-}
-
 class OpenGLContext::NativeContext
 {
 public:
@@ -62,18 +57,11 @@ public:
                    const OpenGLPixelFormat& pixFormat,
                    void* contextToShare,
                    bool multisampling,
-                   [[maybe_unused]] API apiIn,
-                   Version versionIn,
-                   [[maybe_unused]] Profile profileIn)
-        : component (c),
+                   OpenGLVersion version)
+        : component (c), openGLversion (version),
           useDepthBuffer (pixFormat.depthBufferBits > 0),
           useMSAA (multisampling)
     {
-        // Only OpenGL ES is supported on iOS
-        jassert (apiIn == OpenGLAPI::openGLES);
-        // Only core profile is supported on iOS
-        jassert (profileIn == OpenGLProfile::core);
-
         JUCE_AUTORELEASEPOOL
         {
             if (auto* peer = component.getPeer())
@@ -89,11 +77,11 @@ public:
                 glLayer = (CAEAGLLayer*) [view layer];
                 glLayer.opaque = true;
 
-                updateWindowPosition();
+                updateWindowPosition (bounds);
 
                 [((UIView*) peer->getNativeHandle()) addSubview: view];
 
-                const auto shouldUseES3 = versionIn >= Version { 3, 0 }
+                const auto shouldUseES3 = version != defaultGLVersion
                                        && [[UIDevice currentDevice].systemVersion floatValue] >= 7.0;
 
                 [[maybe_unused]] const auto gotContext = (shouldUseES3 && createContext (kEAGLRenderingAPIOpenGLES3, contextToShare))
@@ -107,7 +95,6 @@ public:
                     // so causes mysterious timing-related failures.
                     [EAGLContext setCurrentContext: context.get()];
                     gl::loadFunctions();
-                    openGLVersion = getOpenGLVersion();
                     createGLBuffers();
                     deactivateCurrentContext();
                 }
@@ -170,10 +157,10 @@ public:
             glBindFramebuffer (GL_DRAW_FRAMEBUFFER, frameBufferHandle);
             glBindFramebuffer (GL_READ_FRAMEBUFFER, msaaBufferHandle);
 
-            if (openGLVersion >= Version { 3, 0 })
+            if (openGLversion >= openGL3_2)
             {
-                const auto w = lastBounds.getWidth();
-                const auto h = lastBounds.getHeight();
+                auto w = roundToInt (lastBounds.getWidth()  * glLayer.contentsScale);
+                auto h = roundToInt (lastBounds.getHeight() * glLayer.contentsScale);
 
                 glBlitFramebuffer (0, 0, w, h,
                                    0, 0, w, h,
@@ -189,28 +176,27 @@ public:
         glBindRenderbuffer (GL_RENDERBUFFER, colorBufferHandle);
         [context.get() presentRenderbuffer: GL_RENDERBUFFER];
 
-        if (! std::exchange (needToRebuildBuffers, false))
-            return;
+        if (needToRebuildBuffers)
+        {
+            needToRebuildBuffers = false;
 
-        freeGLBuffers();
-        createGLBuffers();
-        makeActive();
+            freeGLBuffers();
+            createGLBuffers();
+            makeActive();
+        }
     }
 
-    void updateWindowPosition()
+    void updateWindowPosition (Rectangle<int> bounds)
     {
-        auto* peer = component.getTopLevelComponent()->getPeer();
-
-        if (peer == nullptr)
-            return;
-
-        const auto bounds = peer->getAreaCoveredBy (component);
         view.frame = convertToCGRect (bounds);
         glLayer.contentsScale = (CGFloat) (Desktop::getInstance().getDisplays().getPrimaryDisplay()->scale
                                             / component.getDesktopScaleFactor());
 
-        const auto msaaBounds = bounds * glLayer.contentsScale;
-        needToRebuildBuffers |= std::exchange (lastBounds, msaaBounds) != msaaBounds;
+        if (lastBounds != bounds)
+        {
+            lastBounds = bounds;
+            needToRebuildBuffers = true;
+        }
     }
 
     bool setSwapInterval (int numFramesPerSwap) noexcept
@@ -227,13 +213,16 @@ public:
         const ScopedLock lock;
     };
 
+    void addListener (NativeContextListener&) {}
+    void removeListener (NativeContextListener&) {}
+
 private:
     CriticalSection mutex;
     Component& component;
     JuceGLView* view = nil;
     CAEAGLLayer* glLayer = nil;
     NSUniquePtr<EAGLContext> context;
-    Version openGLVersion{};
+    const OpenGLVersion openGLversion;
     const bool useDepthBuffer, useMSAA;
 
     GLuint frameBufferHandle = 0, colorBufferHandle = 0, depthBufferHandle = 0,

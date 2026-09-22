@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -143,20 +143,23 @@ public:
 
 public:
     //==============================================================================
-    Pimpl (XEmbedComponent& parent, const XEmbedComponentOptions& optionsIn)
+    Pimpl (XEmbedComponent& parent, Window x11Window,
+           bool wantsKeyboardFocus, bool isClientInitiated, bool shouldAllowResize)
         : owner (parent),
           infoAtom (XWindowSystem::getInstance()->getAtoms().XembedInfo),
           messageTypeAtom (XWindowSystem::getInstance()->getAtoms().XembedMsgType),
-          options (optionsIn)
+          clientInitiated (isClientInitiated),
+          wantsFocus (wantsKeyboardFocus),
+          allowResize (shouldAllowResize)
     {
         getWidgets().add (this);
 
         createHostWindow();
 
-        if (auto x11Window = options.getClientWindow(); x11Window != 0)
+        if (clientInitiated)
             setClient (x11Window, true);
 
-        owner.setWantsKeyboardFocus (options.getWantsKeyboardFocus());
+        owner.setWantsKeyboardFocus (wantsFocus);
         owner.addComponentListener (this);
     }
 
@@ -200,7 +203,7 @@ public:
 
             // if the client has initiated the component then keep the clients size
             // otherwise the client should use the host's window' size
-            if (options.getClientWindow() != 0)
+            if (clientInitiated)
             {
                 configureNotify();
             }
@@ -224,16 +227,16 @@ public:
             if (shouldReparent)
                 X11Symbols::getInstance()->xReparentWindow (dpy, client, host, 0, 0);
 
-            updateMapping();
-
             if (supportsXembed)
                 sendXEmbedEvent (CurrentTime, XEMBED_EMBEDDED_NOTIFY, 0, (long) host, xembedVersion);
+
+            updateMapping();
         }
     }
 
     void focusGained (FocusChangeType changeType, FocusChangeDirection direction)
     {
-        if (client != 0 && supportsXembed && options.getWantsKeyboardFocus())
+        if (client != 0 && supportsXembed && wantsFocus)
         {
             updateKeyFocus();
 
@@ -255,7 +258,7 @@ public:
 
     void focusLost (FocusChangeType)
     {
-        if (client != 0 && supportsXembed && options.getWantsKeyboardFocus())
+        if (client != 0 && supportsXembed && wantsFocus)
         {
             sendXEmbedEvent (CurrentTime, XEMBED_FOCUS_OUT);
             updateKeyFocus();
@@ -273,7 +276,7 @@ public:
         // You are using the client initiated version of the protocol. You cannot
         // retrieve the window id of the host. Please read the documentation for
         // the XEmebedComponent class.
-        jassert (options.getClientWindow() == 0);
+        jassert (! clientInitiated);
 
         return host;
     }
@@ -317,7 +320,7 @@ private:
             if (window == 0)
                 return;
 
-            const auto shouldBeMapped =    (pimpl.getXEmbedMappedFlag() || pimpl.options.getIgnoreXembedMapped())
+            const auto shouldBeMapped =    pimpl.getXEmbedMappedFlag()
                                         && pimpl.owner.isShowing()
                                         && pimpl.lastPeer != nullptr;
 
@@ -351,51 +354,47 @@ private:
     WindowMapper clientMapper { *this, client }, hostMapper { *this, host };
     Atom infoAtom, messageTypeAtom;
 
-    XEmbedComponentOptions options;
-
+    bool clientInitiated;
+    bool wantsFocus        = false;
+    bool allowResize       = false;
     bool supportsXembed    = false;
     int xembedVersion      = maxXEmbedVersionToSupport;
 
     ComponentPeer* lastPeer = nullptr;
     SharedKeyWindow::Ptr keyWindow;
 
-    NativeScaleFactorNotifier notifier { &owner, [this] (auto)
-    {
-        componentMovedOrResized (owner, true, true);
-    } };
-
     //==============================================================================
     void componentParentHierarchyChanged (Component&) override   { peerChanged (owner.getPeer()); }
     void componentMovedOrResized (Component&, bool, bool) override
     {
-        if (host == 0 || lastPeer == nullptr)
-            return;
-
-        auto dpy = getDisplay();
-        auto newBounds = getX11BoundsFromJuce();
-        XWindowAttributes attr;
-
-        if (X11Symbols::getInstance()->xGetWindowAttributes (dpy, host, &attr))
+        if (host != 0 && lastPeer != nullptr)
         {
-            Rectangle currentBounds (attr.x, attr.y, attr.width, attr.height);
-            if (currentBounds != newBounds)
+            auto dpy = getDisplay();
+            auto newBounds = getX11BoundsFromJuce();
+            XWindowAttributes attr;
+
+            if (X11Symbols::getInstance()->xGetWindowAttributes (dpy, host, &attr))
             {
-                X11Symbols::getInstance()->xMoveResizeWindow (dpy, host, newBounds.getX(), newBounds.getY(),
-                                                              static_cast<unsigned int> (newBounds.getWidth()),
-                                                              static_cast<unsigned int> (newBounds.getHeight()));
+                Rectangle<int> currentBounds (attr.x, attr.y, attr.width, attr.height);
+                if (currentBounds != newBounds)
+                {
+                    X11Symbols::getInstance()->xMoveResizeWindow (dpy, host, newBounds.getX(), newBounds.getY(),
+                                                                  static_cast<unsigned int> (newBounds.getWidth()),
+                                                                  static_cast<unsigned int> (newBounds.getHeight()));
+                }
             }
-        }
 
-        if (client != 0 && X11Symbols::getInstance()->xGetWindowAttributes (dpy, client, &attr))
-        {
-            Rectangle currentBounds (attr.x, attr.y, attr.width, attr.height);
-
-            if (std::tuple (currentBounds.getWidth(), currentBounds.getHeight())
-                != std::tuple (newBounds.getWidth(), newBounds.getHeight()))
+            if (client != 0 && X11Symbols::getInstance()->xGetWindowAttributes (dpy, client, &attr))
             {
-                X11Symbols::getInstance()->xMoveResizeWindow (dpy, client, 0, 0,
-                                                              static_cast<unsigned int> (newBounds.getWidth()),
-                                                              static_cast<unsigned int> (newBounds.getHeight()));
+                Rectangle<int> currentBounds (attr.x, attr.y, attr.width, attr.height);
+
+                if ((currentBounds.getWidth() != newBounds.getWidth()
+                     || currentBounds.getHeight() != newBounds.getHeight()))
+                {
+                    X11Symbols::getInstance()->xMoveResizeWindow (dpy, client, 0, 0,
+                                                                  static_cast<unsigned int> (newBounds.getWidth()),
+                                                                  static_cast<unsigned int> (newBounds.getHeight()));
+                }
             }
         }
     }
@@ -479,9 +478,11 @@ private:
 
             return ((flags & XEMBED_MAPPED) != 0);
         }
-
-        supportsXembed = false;
-        xembedVersion = maxXEmbedVersionToSupport;
+        else
+        {
+            supportsXembed = false;
+            xembedVersion = maxXEmbedVersionToSupport;
+        }
 
         return true;
     }
@@ -513,13 +514,13 @@ private:
             const double scale = (peer != nullptr ? peer->getPlatformScaleFactor()
                                                   : displays.getPrimaryDisplay()->scale);
 
-            const auto topLeftInPeer
-                = (peer != nullptr ? peer->getComponent().getLocalPoint (&owner, Point (0, 0))
+            Point<int> topLeftInPeer
+                = (peer != nullptr ? peer->getComponent().getLocalPoint (&owner, Point<int> (0, 0))
                    : owner.getBounds().getTopLeft());
 
-            Rectangle newBounds (topLeftInPeer.getX(), topLeftInPeer.getY(),
-                                 static_cast<int> (static_cast<double> (attr.width)  / scale),
-                                 static_cast<int> (static_cast<double> (attr.height) / scale));
+            Rectangle<int> newBounds (topLeftInPeer.getX(), topLeftInPeer.getY(),
+                                      static_cast<int> (static_cast<double> (attr.width)  / scale),
+                                      static_cast<int> (static_cast<double> (attr.height) / scale));
 
 
             if (peer != nullptr)
@@ -541,7 +542,7 @@ private:
 
             auto dpy = getDisplay();
             Window rootWindow = X11Symbols::getInstance()->xRootWindow (dpy, DefaultScreen (dpy));
-            const auto newBounds = getX11BoundsFromJuce();
+            Rectangle<int> newBounds = getX11BoundsFromJuce();
 
             if (newPeer == nullptr)
                 hostMapper.unmap();
@@ -553,7 +554,7 @@ private:
 
             if (newPeer != nullptr)
             {
-                if (options.getWantsKeyboardFocus())
+                if (wantsFocus)
                 {
                     keyWindow = SharedKeyWindow::getKeyWindowForPeer (newPeer);
                     updateKeyFocus();
@@ -578,8 +579,6 @@ private:
     {
         if (auto* peer = owner.getPeer())
             peer->getCurrentModifiersRealtime();
-
-        const auto wantsFocus = options.getWantsKeyboardFocus();
 
         switch (opcode)
         {
@@ -614,10 +613,10 @@ private:
                     return true;
 
                 case ConfigureNotify:
-                    if (options.getAllowForeignWidgetToResizeComponent())
+                    if (allowResize)
                         configureNotify();
                     else
-                        MessageManager::callAsync ([this] { componentMovedOrResized (owner, true, true); });
+                        MessageManager::callAsync ([this] {componentMovedOrResized (owner, true, true);});
 
                     return true;
 
@@ -745,23 +744,16 @@ private:
 };
 
 //==============================================================================
-XEmbedComponent::XEmbedComponent (const XEmbedComponentOptions& options)
-    : pimpl (new Pimpl (*this, options))
+XEmbedComponent::XEmbedComponent (bool wantsKeyboardFocus, bool allowForeignWidgetToResizeComponent)
+    : pimpl (new Pimpl (*this, 0, wantsKeyboardFocus, false, allowForeignWidgetToResizeComponent))
 {
     setOpaque (true);
 }
 
-XEmbedComponent::XEmbedComponent (bool wantsKeyboardFocus, bool allowForeignWidgetToResizeComponent)
-    : XEmbedComponent { XEmbedComponentOptions{}.withWantsKeyboardFocus (wantsKeyboardFocus)
-                                                .withAllowForeignWidgetToResizeComponent (allowForeignWidgetToResizeComponent) }
-{
-}
-
 XEmbedComponent::XEmbedComponent (unsigned long wID, bool wantsKeyboardFocus, bool allowForeignWidgetToResizeComponent)
-    : XEmbedComponent { XEmbedComponentOptions{}.withClientWindow (wID)
-                                                .withWantsKeyboardFocus (wantsKeyboardFocus)
-                                                .withAllowForeignWidgetToResizeComponent (allowForeignWidgetToResizeComponent) }
+    : pimpl (new Pimpl (*this, wID, wantsKeyboardFocus, true, allowForeignWidgetToResizeComponent))
 {
+    setOpaque (true);
 }
 
 XEmbedComponent::~XEmbedComponent() {}

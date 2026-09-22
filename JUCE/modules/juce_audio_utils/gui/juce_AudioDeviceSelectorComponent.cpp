@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -76,291 +76,116 @@ struct SimpleDeviceManagerInputLevelMeter final : public Component,
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SimpleDeviceManagerInputLevelMeter)
 };
 
-struct ToggleButtonListItem
+static void drawTextLayout (Graphics& g, Component& owner, StringRef text, const Rectangle<int>& textBounds, bool enabled)
 {
-    String name;
-    bool enabled = false;
-};
+    const auto textColour = owner.findColour (ListBox::textColourId, true).withMultipliedAlpha (enabled ? 1.0f : 0.6f);
 
-class ToggleButtonList final : public Component
-{
-public:
-    ToggleButtonList (StringRef noItems, std::function<void (int, bool)> toggleCallbackIn)
-        : toggleCallback (toggleCallbackIn),
-          buttonListContent (*this)
-    {
-        noItemsLabel.setText (noItems, dontSendNotification);
-        addAndMakeVisible (noItemsLabel);
-    }
+    AttributedString attributedString { text };
+    attributedString.setColour (textColour);
+    attributedString.setFont (owner.withDefaultMetrics (FontOptions { (float) textBounds.getHeight() * 0.6f }));
+    attributedString.setJustification (Justification::centredLeft);
+    attributedString.setWordWrap (AttributedString::WordWrap::none);
 
-    void toggleStateChanged (int index, bool newState)
-    {
-        toggleCallback (index, newState);
-    }
+    TextLayout textLayout;
+    textLayout.createLayout (attributedString,
+                             (float) textBounds.getWidth(),
+                             (float) textBounds.getHeight());
+    textLayout.draw (g, textBounds.toFloat());
+}
 
-    void setItems (Span<const ToggleButtonListItem> items)
-    {
-        buttonListContent.setItems (items);
-
-        if (items.empty())
-        {
-            removeChildComponent (&viewport);
-            addAndMakeVisible (noItemsLabel);
-            return;
-        }
-
-        removeChildComponent (&noItemsLabel);
-        addAndMakeVisible (viewport);
-        viewport.setViewedComponent (&buttonListContent, false);
-
-        resized();
-    }
-
-    int getBestHeight (int maxHeight)
-    {
-        const auto padding = outlineThickness * 2;
-        return buttonListContent.getBestHeight (maxHeight - padding) + padding;
-    }
-
-    void paint (Graphics& g) override
-    {
-        g.fillAll (findColour (ListBox::backgroundColourId));
-        g.setColour (findColour (ListBox::outlineColourId));
-        g.drawRect (getLocalBounds(), outlineThickness);
-    }
-
-    void setRowHeight (int h)
-    {
-        buttonListContent.setRowHeight (h);
-    }
-
-    void resized() override
-    {
-        if (noItemsLabel.getParentComponent() == this)
-        {
-            noItemsLabel.setBounds (getLocalBounds().reduced (outlineThickness));
-            return;
-        }
-
-        jassert (viewport.getParentComponent() == this);
-
-        auto bounds = getLocalBounds().reduced (outlineThickness);
-        viewport.setBounds (bounds);
-        buttonListContent.setWidth (viewport.getMaximumVisibleWidth());
-    }
-
-private:
-    void scrollToShowVerticalRange (Range<int> range)
-    {
-        if (viewport.getParentComponent() != this)
-            return;
-
-        const auto currentY = viewport.getViewPositionY();
-        const auto visibleHeight = viewport.getMaximumVisibleHeight();
-
-        const auto newY = std::invoke ([&]
-        {
-            if (range.getStart() < currentY)
-                return range.getStart();
-
-            if (range.getEnd() > currentY + visibleHeight)
-                return std::min (range.getStart(), range.getEnd() - visibleHeight);
-
-            return currentY;
-        });
-
-        viewport.setViewPosition (viewport.getViewPositionX(), newY);
-    }
-
-    class ToggleButtonListContent final : public Component
-    {
-    public:
-        explicit ToggleButtonListContent (ToggleButtonList& ownerIn)
-            : owner (ownerIn)
-        {
-        }
-
-        void setItems (Span<const ToggleButtonListItem> items)
-        {
-            for (const auto [itemIndex, item] : enumerate (items, size_t{}))
-            {
-                if (buttons.size() <= itemIndex)
-                {
-                    buttons.push_back (std::make_unique<ListToggleButton> (*this));
-                    toggleStates.emplace_back();
-                }
-
-                auto& button = *buttons[itemIndex];
-                button.setName (item.name);
-                button.setButtonText (item.name);
-                button.setToggleState (item.enabled, dontSendNotification);
-                toggleStates[itemIndex] = item.enabled;
-
-                button.onClick = [this, index = itemIndex, &button]
-                {
-                    const auto newState = button.getToggleState();
-                    const bool oldState = toggleStates[index];
-
-                    toggleStates[index] = newState;
-
-                    if (oldState != newState)
-                        owner.toggleStateChanged ((int) index, newState);
-                };
-
-                addAndMakeVisible (button);
-            }
-
-            buttons.erase (buttons.begin() + (std::ptrdiff_t) items.size(), buttons.end());
-            toggleStates.erase (toggleStates.begin() + (std::ptrdiff_t) items.size(), toggleStates.end());
-
-            updateButtonTextColours();
-            updateSizeAndRelayout();
-        }
-
-        void setWidth (int newWidth)
-        {
-            width = newWidth;
-            updateSizeAndRelayout();
-        }
-
-        void setRowHeight (int newRowHeight)
-        {
-            rowHeight = newRowHeight;
-            updateSizeAndRelayout();
-        }
-
-        int getBestHeight (int maxHeight) const
-        {
-            const auto minRowsNeeded = 2;
-            const auto maxRowsThatFit = (maxHeight + spacing) / (rowHeight + spacing);
-            const auto rowsToRequest = jlimit (minRowsNeeded, jmax (minRowsNeeded, maxRowsThatFit), (int) buttons.size());
-            return rowsToRequest * rowHeight + (rowsToRequest - 1) * spacing;
-        }
-
-        //==============================================================================
-        void resized() override
-        {
-            auto bounds = getLocalBounds();
-
-            for (auto& button : buttons)
-            {
-                button->setBounds (bounds.removeFromTop (rowHeight));
-                bounds.removeFromTop (spacing);
-            }
-        }
-
-        void parentHierarchyChanged() override
-        {
-            updateButtonTextColours();
-        }
-
-        void lookAndFeelChanged() override
-        {
-            updateButtonTextColours();
-        }
-
-    private:
-        class ListToggleButton final : public ToggleButton
-        {
-        public:
-            explicit ListToggleButton (ToggleButtonListContent& contentIn)
-                : content (contentIn)
-            {
-            }
-
-            void focusGained (FocusChangeType type) override
-            {
-                ToggleButton::focusGained (type);
-                content.owner.scrollToShowVerticalRange ({ getY(), getBottom() });
-            }
-
-        private:
-            ToggleButtonListContent& content;
-        };
-
-        ToggleButtonList& owner;
-        std::vector<std::unique_ptr<ListToggleButton>> buttons;
-        std::vector<bool> toggleStates;
-        int width = 200;
-        int rowHeight = 22;
-
-        static constexpr int spacing = 2;
-
-        void updateSizeAndRelayout()
-        {
-            const auto numButtons = (int) buttons.size();
-            setSize (width, rowHeight * numButtons + spacing * (numButtons - 1));
-            resized();
-        }
-
-        void updateButtonTextColours()
-        {
-            const auto textColour = findColour (ListBox::textColourId);
-
-            for (auto& button : buttons)
-                button->setColour (ToggleButton::textColourId, textColour);
-        }
-    };
-
-    //==============================================================================
-    static constexpr int outlineThickness = 1;
-
-    Label noItemsLabel;
-    std::function<void (int, bool)> toggleCallback;
-    ToggleButtonListContent buttonListContent;
-    Viewport viewport;
-};
 
 //==============================================================================
-class AudioDeviceSelectorComponent::MidiInputSelectorComponent final : public Component
+class AudioDeviceSelectorComponent::MidiInputSelectorComponentListBox final : public ListBox,
+                                                                              private ListBoxModel
 {
 public:
-    MidiInputSelectorComponent (AudioDeviceManager& dm, const String& noItems)
-        : deviceManager (dm),
-          buttonList (noItems, [this] (int channel, bool) { flipEnablement (channel); })
+    MidiInputSelectorComponentListBox (AudioDeviceManager& dm, const String& noItems)
+        : ListBox ({}, nullptr),
+          deviceManager (dm),
+          noItemsMessage (noItems)
     {
         updateDevices();
-        addAndMakeVisible (buttonList);
+        setModel (this);
+        setOutlineThickness (1);
     }
 
     void updateDevices()
     {
         items = MidiInput::getAvailableDevices();
-
-        std::vector<ToggleButtonListItem> toggleButtonListItems;
-
-        for (const auto [i, item] : enumerate (items, int{}))
-            toggleButtonListItems.push_back ({ item.name, isEnabled (i) });
-
-        buttonList.setItems (toggleButtonListItems);
     }
 
-    bool isEnabled (int row) const
+    int getNumRows() override
     {
-        const auto item = items[row];
-        return deviceManager.isMidiInputDeviceEnabled (item.identifier);
+        return items.size();
+    }
+
+    void paintListBoxItem (int row, Graphics& g, int width, int height, bool rowIsSelected) override
+    {
+        if (isPositiveAndBelow (row, items.size()))
+        {
+            if (rowIsSelected)
+                g.fillAll (findColour (TextEditor::highlightColourId)
+                               .withMultipliedAlpha (0.3f));
+
+            auto item = items[row];
+            bool enabled = deviceManager.isMidiInputDeviceEnabled (item.identifier);
+
+            auto x = getTickX();
+            auto tickW = (float) height * 0.75f;
+
+            getLookAndFeel().drawTickBox (g, *this, (float) x - tickW, ((float) height - tickW) * 0.5f, tickW, tickW,
+                                          enabled, true, true, false);
+
+            drawTextLayout (g, *this, item.name, { x + 5, 0, width - x - 5, height }, enabled);
+        }
+    }
+
+    void listBoxItemClicked (int row, const MouseEvent& e) override
+    {
+        selectRow (row);
+
+        if (e.x < getTickX())
+            flipEnablement (row);
+    }
+
+    void listBoxItemDoubleClicked (int row, const MouseEvent&) override
+    {
+        flipEnablement (row);
+    }
+
+    void returnKeyPressed (int row) override
+    {
+        flipEnablement (row);
+    }
+
+    void paint (Graphics& g) override
+    {
+        ListBox::paint (g);
+
+        if (items.isEmpty())
+        {
+            g.setColour (Colours::grey);
+            g.setFont (0.5f * (float) getRowHeight());
+            g.drawText (noItemsMessage,
+                        0, 0, getWidth(), getHeight() / 2,
+                        Justification::centred, true);
+        }
     }
 
     int getBestHeight (int preferredHeight)
     {
-        return buttonList.getBestHeight (preferredHeight);
-    }
+        auto extra = getOutlineThickness() * 2;
 
-    void resized() override
-    {
-        buttonList.setBounds (getLocalBounds());
-    }
-
-    void setRowHeight (int h)
-    {
-        buttonList.setRowHeight (h);
+        return jmax (getRowHeight() * 2 + extra,
+                     jmin (getRowHeight() * getNumRows() + extra,
+                           preferredHeight));
     }
 
 private:
     //==============================================================================
     AudioDeviceManager& deviceManager;
+    const String noItemsMessage;
     Array<MidiDeviceInfo> items;
-    ToggleButtonList buttonList;
 
     void flipEnablement (const int row)
     {
@@ -371,7 +196,12 @@ private:
         }
     }
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MidiInputSelectorComponent)
+    int getTickX() const
+    {
+        return getRowHeight();
+    }
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MidiInputSelectorComponentListBox)
 };
 
 
@@ -510,7 +340,7 @@ public:
         {
             outputChanList->setRowHeight (jmin (22, h));
             outputChanList->setBounds (r.removeFromTop (outputChanList->getBestHeight (maxListBoxHeight)));
-            outputChanLabel->setBounds (0, outputChanList->getBounds().getY(), r.getX(), h);
+            outputChanLabel->setBounds (0, outputChanList->getBounds().getCentreY() - h / 2, r.getX(), h);
             r.removeFromTop (space);
         }
 
@@ -518,7 +348,7 @@ public:
         {
             inputChanList->setRowHeight (jmin (22, h));
             inputChanList->setBounds (r.removeFromTop (inputChanList->getBestHeight (maxListBoxHeight)));
-            inputChanLabel->setBounds (0, inputChanList->getBounds().getY(), r.getX(), h);
+            inputChanLabel->setBounds (0, inputChanList->getBounds().getCentreY() - h / 2, r.getX(), h);
             r.removeFromTop (space);
         }
 
@@ -691,9 +521,8 @@ public:
             {
                 if (outputChanList == nullptr)
                 {
-                    outputChanList = std::make_unique<ChannelSelector> (setup,
-                                                                        ChannelSelector::audioOutputType,
-                                                                        TRANS ("(no audio output channels found)"));
+                    outputChanList = std::make_unique<ChannelSelectorListBox> (setup, ChannelSelectorListBox::audioOutputType,
+                                                                               TRANS ("(no audio output channels found)"));
                     addAndMakeVisible (outputChanList.get());
                     outputChanLabel = std::make_unique<Label> (String{}, TRANS ("Active output channels:"));
                     outputChanLabel->setJustificationType (Justification::centredRight);
@@ -713,9 +542,8 @@ public:
             {
                 if (inputChanList == nullptr)
                 {
-                    inputChanList = std::make_unique<ChannelSelector> (setup,
-                                                                       ChannelSelector::audioInputType,
-                                                                       TRANS ("(no audio input channels found)"));
+                    inputChanList = std::make_unique<ChannelSelectorListBox> (setup, ChannelSelectorListBox::audioInputType,
+                                                                              TRANS ("(no audio input channels found)"));
                     addAndMakeVisible (inputChanList.get());
                     inputChanLabel = std::make_unique<Label> (String{}, TRANS ("Active input channels:"));
                     inputChanLabel->setJustificationType (Justification::centredRight);
@@ -991,7 +819,8 @@ private:
 
 public:
     //==============================================================================
-    class ChannelSelector final : public Component
+    class ChannelSelectorListBox final : public ListBox,
+                                         private ListBoxModel
     {
     public:
         enum BoxType
@@ -1001,15 +830,12 @@ public:
         };
 
         //==============================================================================
-        ChannelSelector (const AudioDeviceSetupDetails& setupDetails,
-                         BoxType boxType,
-                         const String& noItemsText)
-            : setup (setupDetails),
-              type (boxType),
-              buttonList (noItemsText, [this] (int channel, bool) { flipEnablement (channel); })
+        ChannelSelectorListBox (const AudioDeviceSetupDetails& setupDetails, BoxType boxType, const String& noItemsText)
+           : ListBox ({}, nullptr), setup (setupDetails), type (boxType), noItemsMessage (noItemsText)
         {
             refresh();
-            addAndMakeVisible (buttonList);
+            setModel (this);
+            setOutlineThickness (1);
         }
 
         void refresh()
@@ -1041,18 +867,21 @@ public:
                 }
             }
 
-            std::vector<ToggleButtonListItem> toggleButtonListItems;
-
-            for (const auto [i, name] : enumerate (items, int{}))
-                toggleButtonListItems.push_back ({ name, isEnabled (i) });
-
-            buttonList.setItems (toggleButtonListItems);
+            updateContent();
+            repaint();
         }
 
-        bool isEnabled (int row)
+        int getNumRows() override
+        {
+            return items.size();
+        }
+
+        void paintListBoxItem (int row, Graphics& g, int width, int height, bool) override
         {
             if (isPositiveAndBelow (row, items.size()))
             {
+                g.fillAll (findColour (ListBox::backgroundColourId));
+
                 auto item = items[row];
                 bool enabled = false;
                 auto config = setup.manager->getAudioDeviceSetup();
@@ -1072,33 +901,61 @@ public:
                         enabled = config.outputChannels[row];
                 }
 
-                return enabled;
-            }
+                auto x = getTickX();
+                auto tickW = (float) height * 0.75f;
 
-            return false;
+                getLookAndFeel().drawTickBox (g, *this, (float) x - tickW, ((float) height - tickW) * 0.5f, tickW, tickW,
+                                              enabled, true, true, false);
+
+                drawTextLayout (g, *this, item, { x + 5, 0, width - x - 5, height }, enabled);
+            }
+        }
+
+        void listBoxItemClicked (int row, const MouseEvent& e) override
+        {
+            selectRow (row);
+
+            if (e.x < getTickX())
+                flipEnablement (row);
+        }
+
+        void listBoxItemDoubleClicked (int row, const MouseEvent&) override
+        {
+            flipEnablement (row);
+        }
+
+        void returnKeyPressed (int row) override
+        {
+            flipEnablement (row);
+        }
+
+        void paint (Graphics& g) override
+        {
+            ListBox::paint (g);
+
+            if (items.isEmpty())
+            {
+                g.setColour (Colours::grey);
+                g.setFont (0.5f * (float) getRowHeight());
+                g.drawText (noItemsMessage,
+                            0, 0, getWidth(), getHeight() / 2,
+                            Justification::centred, true);
+            }
         }
 
         int getBestHeight (int maxHeight)
         {
-            return buttonList.getBestHeight (maxHeight);
-        }
-
-        void setRowHeight (int h)
-        {
-            buttonList.setRowHeight (h);
-        }
-
-        void resized() override
-        {
-            buttonList.setBounds (getLocalBounds());
+            return getRowHeight() * jlimit (2, jmax (2, maxHeight / getRowHeight()),
+                                            getNumRows())
+                       + getOutlineThickness() * 2;
         }
 
     private:
         //==============================================================================
         const AudioDeviceSetupDetails setup;
         const BoxType type;
+        const String noItemsMessage;
         StringArray items;
-        ToggleButtonList buttonList;
 
         static String getNameForChannelPair (const String& name1, const String& name2)
         {
@@ -1186,11 +1043,16 @@ public:
             }
         }
 
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ChannelSelector)
+        int getTickX() const
+        {
+            return getRowHeight();
+        }
+
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ChannelSelectorListBox)
     };
 
 private:
-    std::unique_ptr<ChannelSelector> inputChanList, outputChanList;
+    std::unique_ptr<ChannelSelectorListBox> inputChanList, outputChanList;
     ScopedMessageBox messageBox;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioDeviceSettingsPanel)
@@ -1238,8 +1100,8 @@ AudioDeviceSelectorComponent::AudioDeviceSelectorComponent (AudioDeviceManager& 
 
     if (showMidiInputOptions)
     {
-        midiInputsList = std::make_unique <MidiInputSelectorComponent> (deviceManager,
-                                                                        "(" + TRANS ("No MIDI inputs available") + ")");
+        midiInputsList = std::make_unique <MidiInputSelectorComponentListBox> (deviceManager,
+                                                                               "(" + TRANS ("No MIDI inputs available") + ")");
         addAndMakeVisible (midiInputsList.get());
 
         midiInputsLabel = std::make_unique<Label> (String{}, TRANS ("Active MIDI inputs:"));
@@ -1380,6 +1242,7 @@ void AudioDeviceSelectorComponent::updateAllControls()
     if (midiInputsList != nullptr)
     {
         midiInputsList->updateDevices();
+        midiInputsList->updateContent();
         midiInputsList->repaint();
     }
 
@@ -1400,6 +1263,11 @@ void AudioDeviceSelectorComponent::handleBluetoothButton()
                 BluetoothMidiDevicePairingDialogue::open();
         });
     }
+}
+
+ListBox* AudioDeviceSelectorComponent::getMidiInputSelectorListBox() const noexcept
+{
+    return midiInputsList.get();
 }
 
 } // namespace juce

@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -77,11 +77,9 @@ public:
             if (owner.startingFile != File())
             {
                 if (saveMode && (! owner.startingFile.isDirectory()))
-                {
-                    LocalRef { env->CallObjectMethod (intent.get(), AndroidIntent.putExtraString,
-                                                      javaString ("android.intent.extra.TITLE").get(),
-                                                      javaString (owner.startingFile.getFileName()).get()) };
-                }
+                    env->CallObjectMethod (intent.get(), AndroidIntent.putExtraString,
+                                           javaString ("android.intent.extra.TITLE").get(),
+                                           javaString (owner.startingFile.getFileName()).get());
 
 
                 URL url (owner.startingFile);
@@ -89,30 +87,26 @@ public:
                                                                     javaString (url.toString (true)).get()));
 
                 if (uri)
-                {
-                    LocalRef { env->CallObjectMethod (intent.get(), AndroidIntent.putExtraParcelable,
-                                                      javaString ("android.provider.extra.INITIAL_URI").get(),
-                                                      uri.get()) };
-                }
+                    env->CallObjectMethod (intent.get(), AndroidIntent.putExtraParcelable,
+                                           javaString ("android.provider.extra.INITIAL_URI").get(),
+                                           uri.get());
             }
 
-            LocalRef { env->CallObjectMethod (intent.get(),
-                                              AndroidIntent.putExtraBool,
-                                              javaString ("android.intent.extra.ALLOW_MULTIPLE").get(),
-                                              canSelectMultiple) };
+            env->CallObjectMethod (intent.get(),
+                                   AndroidIntent.putExtraBool,
+                                   javaString ("android.intent.extra.ALLOW_MULTIPLE").get(),
+                                   canSelectMultiple);
 
             if (! selectsDirectories)
             {
-                LocalRef { env->CallObjectMethod (intent.get(), AndroidIntent.addCategory,
-                                                  javaString ("android.intent.category.OPENABLE").get()) };
+                env->CallObjectMethod (intent.get(), AndroidIntent.addCategory,
+                                       javaString ("android.intent.category.OPENABLE").get());
 
                 auto mimeTypes = convertFiltersToMimeTypes (owner.filters);
 
                 if (mimeTypes.size() == 1)
                 {
-                    LocalRef { env->CallObjectMethod (intent.get(),
-                                                      AndroidIntent.setType,
-                                                      javaString (mimeTypes[0]).get()) };
+                    env->CallObjectMethod (intent.get(), AndroidIntent.setType, javaString (mimeTypes[0]).get());
                 }
                 else
                 {
@@ -134,17 +128,15 @@ public:
                                 allMimeTypesHaveSameGroup = false;
                         }
 
-                        LocalRef { env->CallObjectMethod (intent.get(), AndroidIntent.putExtraStrings,
-                                                          javaString ("android.intent.extra.MIME_TYPES").get(),
-                                                          jMimeTypes.get()) };
+                        env->CallObjectMethod (intent.get(), AndroidIntent.putExtraStrings,
+                                               javaString ("android.intent.extra.MIME_TYPES").get(),
+                                               jMimeTypes.get());
 
                         if (! allMimeTypesHaveSameGroup)
                             mimeGroup = "*";
                     }
 
-                    LocalRef { env->CallObjectMethod (intent.get(),
-                                                      AndroidIntent.setType,
-                                                      javaString (mimeGroup + "/*").get()) };
+                    env->CallObjectMethod (intent.get(), AndroidIntent.setType, javaString (mimeGroup + "/*").get());
                 }
             }
         }
@@ -197,7 +189,7 @@ public:
 
             const auto addUrl = [env, &chosenURLs] (jobject uri)
             {
-                if (LocalRef jStr { (jstring) env->CallObjectMethod (uri, JavaObject.toString) })
+                if (auto jStr = (jstring) env->CallObjectMethod (uri, JavaObject.toString))
                     chosenURLs.add (URL (juceString (env, jStr)));
             };
 

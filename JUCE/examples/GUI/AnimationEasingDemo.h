@@ -806,7 +806,6 @@ public:
     //==============================================================================
     AnimationEasingDemo()
     {
-        setName ("Animation easing demo");
         animationSettings.durationMs = 1000.0;
         animationSettings.shouldAnimatePosition = true;
         animationSettings.shouldAnimateSize = false;

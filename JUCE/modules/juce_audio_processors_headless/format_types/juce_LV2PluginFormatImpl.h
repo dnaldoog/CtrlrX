@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -1800,13 +1800,15 @@ public:
         return lilv_plugins_get_by_uri (plugins, uri.get());
     }
 
-    void getByFile (const File& file, std::vector<const LilvPlugin*>& result) const
+    const LilvPlugin* getByFile (const File& file) const
     {
         for (const auto* plugin : *this)
         {
             if (bundlePathFromUri (lilv_node_as_uri (lilv_plugin_get_bundle_uri (plugin))) == file)
-                result.push_back (plugin);
+                return plugin;
         }
+
+        return nullptr;
     }
 
 private:
@@ -4236,14 +4238,12 @@ public:
         if (File::isAbsolutePath (identifier))
             world->loadBundle (world->newFileUri (nullptr, File::addTrailingSeparator (identifier).toRawUTF8()));
 
-        std::vector<const LilvPlugin*> plugins { findPluginByUri (identifier) };
-        findPluginsByFile (identifier, plugins);
-
-        for (const auto& plugin : plugins)
+        for (const auto& plugin : { findPluginByUri (identifier), findPluginByFile (identifier) })
         {
             if (auto desc = getDescription (plugin); desc.fileOrIdentifier.isNotEmpty())
             {
                 result.add (std::make_unique<PluginDescription> (desc));
+                break;
             }
         }
     }
@@ -4282,42 +4282,34 @@ public:
         StringArray result;
 
         for (const auto* plugin : world->getAllPlugins())
-            result.add (URL { lv2_host::Plugin { plugin }.getBundleUri().getTyped() }.getLocalFile().getFullPathName());
+            result.add (lv2_host::Plugin { plugin }.getUri().getTyped());
 
         return result;
     }
 
     FileSearchPath getDefaultLocationsToSearch()
     {
-        auto defaults = std::invoke ([]() -> FileSearchPath
-        {
-          #if JUCE_MAC
-            return { "~/Library/Audio/Plug-Ins/LV2;"
-                     "~/.lv2;"
-                     "/Library/Audio/Plug-Ins/LV2;"
-                     "/usr/local/lib/lv2;"
-                     "/usr/lib/lv2;" };
-          #elif JUCE_WINDOWS
-            const auto localAppData = File::getSpecialLocation (File::userApplicationDataDirectory).getFullPathName();
-            const auto programFiles = File::getSpecialLocation (File::windowsProgramFilesCommon).getFullPathName();
-            return { localAppData + "\\LV2;" + programFiles + "\\LV2" };
-          #else
-           #if JUCE_64BIT
-            if (File ("/usr/lib64/lv2").exists() || File ("/usr/local/lib64/lv2").exists())
-                return { "~/.lv2;"
-                         "/usr/local/lib64/lv2;"
-                         "/usr/lib64/lv2" };
-           #endif
-
+      #if JUCE_MAC
+        return { "~/Library/Audio/Plug-Ins/LV2;"
+                 "~/.lv2;"
+                 "/usr/local/lib/lv2;"
+                 "/usr/lib/lv2;"
+                 "/Library/Audio/Plug-Ins/LV2;" };
+      #elif JUCE_WINDOWS
+        return { "%APPDATA%\\LV2;"
+                 "%COMMONPROGRAMFILES%\\LV2" };
+      #else
+       #if JUCE_64BIT
+        if (File ("/usr/lib64/lv2").exists() || File ("/usr/local/lib64/lv2").exists())
             return { "~/.lv2;"
-                     "/usr/local/lib/lv2;"
-                     "/usr/lib/lv2" };
-          #endif
-        });
+                     "/usr/lib64/lv2;"
+                     "/usr/local/lib64/lv2" };
+       #endif
 
-        FileSearchPath result { SystemStats::getEnvironmentVariable ("LV2_PATH", "").replace (":", ";") };
-        result.addPath (defaults);
-        return result;
+        return { "~/.lv2;"
+                 "/usr/lib/lv2;"
+                 "/usr/local/lib/lv2" };
+      #endif
     }
 
     const LilvUI* findEmbeddableUi (const lv2_host::Uis* pluginUis, std::true_type)
@@ -4530,9 +4522,9 @@ private:
         return world->getAllPlugins().getByUri (world->newUri (s.toRawUTF8()));
     }
 
-    void findPluginsByFile (const File& f, std::vector<const LilvPlugin*>& result)
+    const LilvPlugin* findPluginByFile (const File& f)
     {
-        return world->getAllPlugins().getByFile (f, result);
+        return world->getAllPlugins().getByFile (f);
     }
 
     template <typename Fn>
@@ -4583,24 +4575,6 @@ private:
         result.pluginFormatName     = LV2PluginFormatHeadless::getFormatName();
         result.numInputChannels     = static_cast<int> (numInputs);
         result.numOutputChannels    = static_cast<int> (numOutputs);
-
-        JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4702)
-        const auto getValue = [&] (const char* propertyName)
-        {
-            for (const auto* item : wrapped.getValue (world->newUri (propertyName).get()))
-                return lv2_host::lilvNodeToString (item);
-
-            return String{};
-        };
-        JUCE_END_IGNORE_WARNINGS_MSVC
-
-        result.version = std::invoke ([&]
-        {
-            StringArray versionComponents { getValue (LV2_CORE__minorVersion),
-                                            getValue (LV2_CORE__microVersion) };
-            versionComponents.removeEmptyStrings();
-            return versionComponents.joinIntoString (".");
-        });
 
         const auto classPtr     = wrapped.getClass();
         const auto classes      = collectPluginClassUris (classPtr);

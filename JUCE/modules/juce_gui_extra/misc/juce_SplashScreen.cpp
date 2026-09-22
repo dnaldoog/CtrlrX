@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -66,12 +66,13 @@ void SplashScreen::makeVisible (int w, int h, bool useDropShadow, bool fullscree
     clickCountToDelete = Desktop::getInstance().getMouseButtonClickCounter();
     creationTime = Time::getCurrentTime();
 
-    const auto screenSize = Desktop::getInstance().getDisplays().getPrimaryDisplay()->userBounds.getSmallestIntegerContainer();
-    const auto size = fullscreen ? screenSize : Rectangle { w, h };
+    const Rectangle<int> screenSize = Desktop::getInstance().getDisplays().getPrimaryDisplay()->userArea;
+    const int width  = (fullscreen ? screenSize.getWidth()   : w);
+    const int height = (fullscreen ? screenSize.getHeight()  : h);
 
     setAlwaysOnTop (true);
     setVisible (true);
-    centreWithSize (size.getWidth(), size.getHeight());
+    centreWithSize (width, height);
     addToDesktop (useDropShadow ? ComponentPeer::windowHasDropShadow : 0);
 
     if (fullscreen)

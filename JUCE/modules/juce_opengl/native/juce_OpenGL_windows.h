@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -37,28 +37,18 @@ namespace juce
 
 extern ComponentPeer* createNonRepaintingEmbeddedWindowsPeer (Component&, Component* parent);
 
-bool OpenGLHelpers::isOpenGLES()
-{
-    return false;
-}
-
 //==============================================================================
-class OpenGLContext::NativeContext  : private AsyncUpdater
+class OpenGLContext::NativeContext  : private ComponentPeer::ScaleFactorListener,
+                                      private AsyncUpdater
 {
 public:
     NativeContext (Component& component,
                    const OpenGLPixelFormat& pixelFormat,
                    void* contextToShareWithIn,
                    bool /*useMultisampling*/,
-                   [[maybe_unused]] API apiIn,
-                   Version versionIn,
-                   Profile profileIn)
-        : safeComponent (&component),
-          sharedContext (contextToShareWithIn)
+                   OpenGLVersion version)
+        : sharedContext (contextToShareWithIn)
     {
-        // OpenGL ES is not supported on Windows
-        jassert (apiIn == API::openGL);
-
         placeholderComponent.reset (new PlaceholderComponent (*this));
         createNativeWindow (component);
 
@@ -71,7 +61,7 @@ public:
             SetPixelFormat (dc.get(), pixFormat, &pfd);
 
         initialiseWGLExtensions (dc.get());
-        renderContext.reset (createRenderContext (versionIn, profileIn, dc.get()));
+        renderContext.reset (createRenderContext (version, dc.get()));
 
         if (renderContext != nullptr)
         {
@@ -91,7 +81,7 @@ public:
                 if (SetPixelFormat (dc.get(), wglFormat, &pfd))
                 {
                     renderContext.reset();
-                    renderContext.reset (createRenderContext (versionIn, profileIn, dc.get()));
+                    renderContext.reset (createRenderContext (version, dc.get()));
                 }
             }
 
@@ -105,11 +95,15 @@ public:
         cancelPendingUpdate();
         renderContext.reset();
         dc.reset();
+
+        if (safeComponent != nullptr)
+            if (auto* peer = safeComponent->getTopLevelComponent()->getPeer())
+                peer->removeScaleFactorListener (this);
     }
 
     InitResult initialiseOnRenderThread (OpenGLContext& c)
     {
-        threadAwarenessSetter.emplace (nativeWindow->getNativeHandle());
+        threadAwarenessSetter = std::make_unique<ScopedThreadDPIAwarenessSetter> (nativeWindow->getNativeHandle());
         context = &c;
 
         if (sharedContext != nullptr)
@@ -138,7 +132,7 @@ public:
     {
         deactivateCurrentContext();
         context = nullptr;
-        threadAwarenessSetter.reset();
+        threadAwarenessSetter = nullptr;
     }
 
     static void deactivateCurrentContext()  { wglMakeCurrent (nullptr, nullptr); }
@@ -165,20 +159,15 @@ public:
         return wglGetSwapIntervalEXT != nullptr ? wglGetSwapIntervalEXT() : 0;
     }
 
-    void updateWindowPosition()
+    void updateWindowPosition (Rectangle<int> bounds)
     {
         if (nativeWindow != nullptr)
         {
-            const auto bounds = getPhysicalBounds();
+            if (! approximatelyEqual (nativeScaleFactor, 1.0))
+                bounds = (bounds.toDouble() * nativeScaleFactor).toNearestInt();
 
-            const ScopedThreadDPIAwarenessSetter scope { nativeWindow->getNativeHandle() };
-
-            SetWindowPos ((HWND) nativeWindow->getNativeHandle(),
-                          nullptr,
-                          bounds.getX(),
-                          bounds.getY(),
-                          bounds.getWidth(),
-                          bounds.getHeight(),
+            SetWindowPos ((HWND) nativeWindow->getNativeHandle(), nullptr,
+                          bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight(),
                           SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOOWNERZORDER);
         }
     }
@@ -207,25 +196,11 @@ public:
         return nullptr;
     }
 
+    void addListener (NativeContextListener&) {}
+    void removeListener (NativeContextListener&) {}
+
 private:
     //==============================================================================
-    Rectangle<int> getPhysicalBounds() const
-    {
-        if (safeComponent == nullptr)
-            return {};
-
-        auto& component = *safeComponent;
-
-        if (auto* peer = component.getPeer())
-        {
-            const auto peerBounds = peer->getAreaCoveredBy (component);
-            const auto physicalBounds = peerBounds.toDouble() * peer->getPlatformScaleFactor();
-            return physicalBounds.toNearestInt();
-        }
-
-        return component.getBounds();
-    }
-
     void handleAsyncUpdate() override
     {
         nativeWindow->setVisible (true);
@@ -277,9 +252,23 @@ private:
         pfd.cAccumAlphaBits = (BYTE) pixelFormat.accumulationBufferAlphaBits;
     }
 
-    static HGLRC createRenderContext (Version version, Profile profile, HDC dcIn)
+    static HGLRC createRenderContext (OpenGLVersion version, HDC dcIn)
     {
-        if (version != Version{} && wglCreateContextAttribsARB != nullptr)
+        const auto components = [&]() -> Optional<Version>
+        {
+            switch (version)
+            {
+                case OpenGLVersion::openGL3_2: return Version { 3, 2 };
+                case OpenGLVersion::openGL4_1: return Version { 4, 1 };
+                case OpenGLVersion::openGL4_3: return Version { 4, 3 };
+
+                case OpenGLVersion::defaultGLVersion: break;
+            }
+
+            return {};
+        }();
+
+        if (components.hasValue() && wglCreateContextAttribsARB != nullptr)
         {
            #if JUCE_DEBUG
             constexpr auto contextFlags = WGL_CONTEXT_DEBUG_BIT_ARB;
@@ -289,11 +278,11 @@ private:
             constexpr auto noErrorChecking = GL_TRUE;
            #endif
 
-            const int attribs[]
+            const int attribs[] =
             {
-                WGL_CONTEXT_MAJOR_VERSION_ARB,   version.major,
-                WGL_CONTEXT_MINOR_VERSION_ARB,   version.minor,
-                WGL_CONTEXT_PROFILE_MASK_ARB,    (int) (profile == OpenGLProfile::core ? WGL_CONTEXT_CORE_PROFILE_BIT_ARB : WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB),
+                WGL_CONTEXT_MAJOR_VERSION_ARB,   components->major,
+                WGL_CONTEXT_MINOR_VERSION_ARB,   components->minor,
+                WGL_CONTEXT_PROFILE_MASK_ARB,    WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
                 WGL_CONTEXT_FLAGS_ARB,           contextFlags,
                 WGL_CONTEXT_OPENGL_NO_ERROR_ARB, noErrorChecking,
                 0
@@ -324,20 +313,21 @@ private:
     };
 
     //==============================================================================
-    void nativeScaleFactorChanged (double newScaleFactor)
+    void nativeScaleFactorChanged (double newScaleFactor) override
     {
         if (approximatelyEqual (newScaleFactor, nativeScaleFactor)
             || safeComponent == nullptr)
             return;
 
-        nativeScaleFactor = newScaleFactor;
-        updateWindowPosition();
+        if (auto* peer = safeComponent->getTopLevelComponent()->getPeer())
+        {
+            nativeScaleFactor = newScaleFactor;
+            updateWindowPosition (peer->getAreaCoveredBy (*safeComponent));
+        }
     }
 
     void createNativeWindow (Component& component)
     {
-        safeComponent = &component;
-
         auto* topComp = component.getTopLevelComponent();
 
         {
@@ -349,12 +339,15 @@ private:
 
         if (auto* peer = topComp->getPeer())
         {
+            safeComponent = Component::SafePointer<Component> (&component);
+
             nativeScaleFactor = peer->getPlatformScaleFactor();
-            updateWindowPosition();
+            updateWindowPosition (peer->getAreaCoveredBy (component));
+            peer->addScaleFactorListener (this);
         }
 
-        dc = { GetDC ((HWND) nativeWindow->getNativeHandle()),
-               DeviceContextDeleter { (HWND) nativeWindow->getNativeHandle() } };
+        dc = std::unique_ptr<std::remove_pointer_t<HDC>, DeviceContextDeleter> { GetDC ((HWND) nativeWindow->getNativeHandle()),
+                                                                                 DeviceContextDeleter { (HWND) nativeWindow->getNativeHandle() } };
     }
 
     int wglChoosePixelFormatExtension (const OpenGLPixelFormat& pixelFormat) const
@@ -364,46 +357,39 @@ private:
         if (wglChoosePixelFormatARB != nullptr)
         {
             int atts[64];
-            auto* ptr = atts;
+            int n = 0;
 
-            const int common[]
-            {
-                WGL_DRAW_TO_WINDOW_ARB,   GL_TRUE,
-                WGL_SUPPORT_OPENGL_ARB,   GL_TRUE,
-                WGL_DOUBLE_BUFFER_ARB,    GL_TRUE,
-                WGL_PIXEL_TYPE_ARB,       WGL_TYPE_RGBA_ARB,
-                WGL_ACCELERATION_ARB,     WGL_FULL_ACCELERATION_ARB,
+            atts[n++] = WGL_DRAW_TO_WINDOW_ARB;   atts[n++] = GL_TRUE;
+            atts[n++] = WGL_SUPPORT_OPENGL_ARB;   atts[n++] = GL_TRUE;
+            atts[n++] = WGL_DOUBLE_BUFFER_ARB;    atts[n++] = GL_TRUE;
+            atts[n++] = WGL_PIXEL_TYPE_ARB;       atts[n++] = WGL_TYPE_RGBA_ARB;
+            atts[n++] = WGL_ACCELERATION_ARB;
+            atts[n++] = WGL_FULL_ACCELERATION_ARB;
 
-                WGL_COLOR_BITS_ARB,       pixelFormat.redBits + pixelFormat.greenBits + pixelFormat.blueBits,
-                WGL_RED_BITS_ARB,         pixelFormat.redBits,
-                WGL_GREEN_BITS_ARB,       pixelFormat.greenBits,
-                WGL_BLUE_BITS_ARB,        pixelFormat.blueBits,
-                WGL_ALPHA_BITS_ARB,       pixelFormat.alphaBits,
-                WGL_DEPTH_BITS_ARB,       pixelFormat.depthBufferBits,
+            atts[n++] = WGL_COLOR_BITS_ARB;  atts[n++] = pixelFormat.redBits + pixelFormat.greenBits + pixelFormat.blueBits;
+            atts[n++] = WGL_RED_BITS_ARB;    atts[n++] = pixelFormat.redBits;
+            atts[n++] = WGL_GREEN_BITS_ARB;  atts[n++] = pixelFormat.greenBits;
+            atts[n++] = WGL_BLUE_BITS_ARB;   atts[n++] = pixelFormat.blueBits;
+            atts[n++] = WGL_ALPHA_BITS_ARB;  atts[n++] = pixelFormat.alphaBits;
+            atts[n++] = WGL_DEPTH_BITS_ARB;  atts[n++] = pixelFormat.depthBufferBits;
 
-                WGL_STENCIL_BITS_ARB,     pixelFormat.stencilBufferBits,
-                WGL_ACCUM_RED_BITS_ARB,   pixelFormat.accumulationBufferRedBits,
-                WGL_ACCUM_GREEN_BITS_ARB, pixelFormat.accumulationBufferGreenBits,
-                WGL_ACCUM_BLUE_BITS_ARB,  pixelFormat.accumulationBufferBlueBits,
-                WGL_ACCUM_ALPHA_BITS_ARB, pixelFormat.accumulationBufferAlphaBits,
-            };
-
-            ptr = std::copy (std::begin (common), std::end (common), ptr);
+            atts[n++] = WGL_STENCIL_BITS_ARB;       atts[n++] = pixelFormat.stencilBufferBits;
+            atts[n++] = WGL_ACCUM_RED_BITS_ARB;     atts[n++] = pixelFormat.accumulationBufferRedBits;
+            atts[n++] = WGL_ACCUM_GREEN_BITS_ARB;   atts[n++] = pixelFormat.accumulationBufferGreenBits;
+            atts[n++] = WGL_ACCUM_BLUE_BITS_ARB;    atts[n++] = pixelFormat.accumulationBufferBlueBits;
+            atts[n++] = WGL_ACCUM_ALPHA_BITS_ARB;   atts[n++] = pixelFormat.accumulationBufferAlphaBits;
 
             if (pixelFormat.multisamplingLevel > 0
                   && OpenGLHelpers::isExtensionSupported ("GL_ARB_multisample"))
             {
-                const int multisample[]
-                {
-                    WGL_SAMPLE_BUFFERS_ARB, 1,
-                    WGL_SAMPLES_ARB,        pixelFormat.multisamplingLevel,
-                };
-
-                ptr = std::copy (std::begin (multisample), std::end (multisample), ptr);
+                atts[n++] = WGL_SAMPLE_BUFFERS_ARB;
+                atts[n++] = 1;
+                atts[n++] = WGL_SAMPLES_ARB;
+                atts[n++] = pixelFormat.multisamplingLevel;
             }
 
-            *ptr++ = 0;
-            jassert (std::distance (atts, ptr) <= numElementsInArray (atts));
+            atts[n++] = 0;
+            jassert (n <= numElementsInArray (atts));
 
             UINT formatsCount = 0;
             wglChoosePixelFormatARB (dc.get(), atts, nullptr, 1, &format, &formatsCount);
@@ -437,7 +423,7 @@ private:
     CriticalSection mutex;
     std::unique_ptr<PlaceholderComponent> placeholderComponent;
     std::unique_ptr<ComponentPeer> nativeWindow;
-    std::optional<ScopedThreadDPIAwarenessSetter> threadAwarenessSetter;
+    std::unique_ptr<ScopedThreadDPIAwarenessSetter> threadAwarenessSetter;
     Component::SafePointer<Component> safeComponent;
     std::unique_ptr<std::remove_pointer_t<HGLRC>, RenderContextDeleter> renderContext;
     std::unique_ptr<std::remove_pointer_t<HDC>, DeviceContextDeleter> dc;
@@ -445,8 +431,6 @@ private:
     void* sharedContext = nullptr;
     double nativeScaleFactor = 1.0;
     bool haveBuffersBeenSwapped = false;
-    NativeScaleFactorNotifier scaleFactorNotifier { safeComponent.getComponent(),
-                                                    [this] (auto x) { nativeScaleFactorChanged (x); } };
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NativeContext)

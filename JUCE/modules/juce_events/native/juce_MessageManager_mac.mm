@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -322,31 +322,31 @@ public:
 //==============================================================================
 void MessageManager::runDispatchLoop()
 {
-    if (quitMessagePosted)
-        return;
-
-    JUCE_AUTORELEASEPOOL
+    if (quitMessagePosted.get() == 0) // check that the quit message wasn't already posted
     {
-        // must only be called by the message thread!
-        jassert (isThisTheMessageThread());
+        JUCE_AUTORELEASEPOOL
+        {
+            // must only be called by the message thread!
+            jassert (isThisTheMessageThread());
 
-       #if JUCE_CATCH_UNHANDLED_EXCEPTIONS
-        @try
-        {
+           #if JUCE_CATCH_UNHANDLED_EXCEPTIONS
+            @try
+            {
+                [NSApp run];
+            }
+            @catch (NSException* e)
+            {
+                // An AppKit exception will kill the app, but at least this provides a chance to log it.,
+                std::runtime_error ex (std::string ("NSException: ") + [[e name] UTF8String] + ", Reason:" + [[e reason] UTF8String]);
+                JUCEApplicationBase::sendUnhandledException (&ex, __FILE__, __LINE__);
+            }
+            @finally
+            {
+            }
+           #else
             [NSApp run];
+           #endif
         }
-        @catch (NSException* e)
-        {
-            // An AppKit exception will kill the app, but at least this provides a chance to log it.,
-            std::runtime_error ex (std::string ("NSException: ") + [[e name] UTF8String] + ", Reason:" + [[e reason] UTF8String]);
-            JUCEApplicationBase::sendUnhandledException (&ex, __FILE__, __LINE__);
-        }
-        @finally
-        {
-        }
-       #else
-        [NSApp run];
-       #endif
     }
 }
 
@@ -360,8 +360,8 @@ void MessageManager::stopDispatchLoop()
 {
     if (isThisTheMessageThread())
     {
-        if (! quitMessagePosted.exchange (true))
-            shutdownNSApp();
+        quitMessagePosted = true;
+        shutdownNSApp();
     }
     else
     {
@@ -383,7 +383,7 @@ bool MessageManager::runDispatchLoopUntil (int millisecondsToRunFor)
 
     auto endTime = Time::currentTimeMillis() + millisecondsToRunFor;
 
-    while (! quitMessagePosted)
+    while (quitMessagePosted.get() == 0)
     {
         JUCE_AUTORELEASEPOOL
         {
@@ -392,7 +392,7 @@ bool MessageManager::runDispatchLoopUntil (int millisecondsToRunFor)
             if (msRemaining <= 0)
                 break;
 
-            CFRunLoopRunInMode (kCFRunLoopDefaultMode, jmin (1.0, (double) msRemaining * 0.001), true);
+            CFRunLoopRunInMode (kCFRunLoopDefaultMode, jmin (1.0, msRemaining * 0.001), true);
 
             if (NSEvent* e = [NSApp nextEventMatchingMask: NSEventMaskAny
                                                 untilDate: [NSDate dateWithTimeIntervalSinceNow: 0.001]
@@ -403,7 +403,7 @@ bool MessageManager::runDispatchLoopUntil (int millisecondsToRunFor)
         }
     }
 
-    return ! quitMessagePosted;
+    return quitMessagePosted.get() == 0;
 }
 #endif
 
@@ -432,14 +432,9 @@ void MessageManager::doPlatformSpecificShutdown()
 
 bool MessageManager::postMessageToSystemQueue (MessageBase* message)
 {
-    if (appDelegate != nullptr)
-    {
-        appDelegate->messageQueue.post (message);
-        return true;
-    }
-
-    jassertfalse;
-    return false;
+    jassert (appDelegate != nil);
+    appDelegate->messageQueue.post (message);
+    return true;
 }
 
 void MessageManager::broadcastMessage (const String& message)

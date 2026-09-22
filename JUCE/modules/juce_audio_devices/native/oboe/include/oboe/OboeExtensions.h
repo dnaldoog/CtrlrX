@@ -57,11 +57,6 @@ public:
      * @return true if the AAudio MMAP data path is used on the stream
      */
     static bool isMMapUsed(oboe::AudioStream *oboeStream);
-
-    /**
-     * @returns true if partial data callback is supported.
-     */
-    static bool isPartialDataCallbackSupported();
 };
 
 } // namespace oboe

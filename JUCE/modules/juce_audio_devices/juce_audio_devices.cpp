@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -61,7 +61,6 @@
 #include "midi_io/juce_WaitFreeListeners.cpp"
 #include "midi_io/juce_MidiDeviceListConnectionBroadcaster.cpp"
 
-#include "midi_io/ump/juce_UMPBlock.cpp"
 #include "midi_io/ump/juce_UMPIOHelpers.cpp"
 #include "midi_io/ump/juce_UMPInput.cpp"
 #include "midi_io/ump/juce_UMPOutput.cpp"
@@ -70,7 +69,6 @@
 #include "midi_io/ump/juce_UMPVirtualEndpoint.cpp"
 #include "midi_io/ump/juce_UMPSession.cpp"
 #include "midi_io/ump/juce_UMPEndpoints.cpp"
-#include "midi_io/ump/juce_UMPEndpointId.cpp"
 
 #include "audio_io/juce_SampleRateHelpers.cpp"
 #include "midi_io/juce_MidiDevices.cpp"
@@ -200,8 +198,7 @@ namespace juce
                                         "-Wshadow-field-in-constructor",
                                         "-Wshadow-field",
                                         "-Wsign-conversion",
-                                        "-Wswitch-enum",
-                                        "-Wshorten-64-to-32")
+                                        "-Wswitch-enum")
    #include <oboe/Oboe.h>
    JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
@@ -262,8 +259,6 @@ namespace juce
  #include "native/juce_CoreMidi_mac.mm"
 #elif JUCE_WINDOWS
  #if JUCE_USE_WINDOWS_MIDI_SERVICES
-  static_assert (JUCE_CXX20_IS_AVAILABLE, "Make sure C++20 is enabled to use Windows MIDI Services");
-
   JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4265)
   #include <winrt/Windows.Foundation.h>
   #include <winrt/Windows.Foundation.Collections.h>

@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -182,41 +182,16 @@ bool File::moveToTrash() const
     if (! exists())
         return true;
 
-    static auto gio = std::invoke ([]
-    {
-        DynamicLibrary lib;
+    File trashCan ("~/.Trash");
 
-        if (lib.open ("libgio-2.0.so.0") || lib.open ("libgio-2.0.so"))
-            return lib;
+    if (! trashCan.isDirectory())
+        trashCan = "~/.local/share/Trash/files";
 
-        // Maybe the GLib/gio library isn't installed?
-        // This might be innocent if you're running on a minimal or embedded
-        // install or if no desktop environment is installed.
-        jassertfalse;
-        return lib;
-    });
-
-    if (! gio.isOpen())
+    if (! trashCan.isDirectory())
         return false;
 
-    static const auto g_file_new_for_path = gio.getFunction<void* (const char*)> ("g_file_new_for_path");
-    static const auto g_object_unref = gio.getFunction<void (void*)> ("g_object_unref");
-    static const auto g_file_trash = gio.getFunction<int (void*, void*, void*)> ("g_file_trash");
-
-    if (g_file_new_for_path == nullptr
-        || g_object_unref == nullptr
-        || g_file_trash == nullptr)
-    {
-        // Symbols failed to load!
-        // Please let the JUCE team know if you encounter this assertion.
-        jassertfalse;
-        return false;
-    }
-
-    void* file = g_file_new_for_path (fullPath.toRawUTF8());
-    const ScopeGuard scope { [&] { g_object_unref (file); } };
-
-    return (bool) g_file_trash (file, nullptr, nullptr);
+    return moveFileTo (trashCan.getNonexistentChildFile (getFileNameWithoutExtension(),
+                                                         getFileExtension()));
 }
 
 //==============================================================================

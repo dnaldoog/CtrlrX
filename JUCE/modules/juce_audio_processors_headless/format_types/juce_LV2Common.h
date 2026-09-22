@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -151,13 +151,13 @@ struct NumericAtomParser
     template <typename T> struct Tag { LV2_URID urid; };
 
     template <typename Target, typename... Types>
-    static std::optional<Target> tryParse (const LV2_Atom&, const void*)
+    static Optional<Target> tryParse (const LV2_Atom&, const void*)
     {
         return {};
     }
 
     template <typename Target, typename Head, typename... Tail>
-    static std::optional<Target> tryParse (const LV2_Atom& atom, const void* data, Tag<Head> head, Tag<Tail>... tail)
+    static Optional<Target> tryParse (const LV2_Atom& atom, const void* data, Tag<Head> head, Tag<Tail>... tail)
     {
         if (atom.type == head.urid && atom.size == sizeof (Head))
             return static_cast<Target> (*reinterpret_cast<const Head*> (data));
@@ -166,7 +166,7 @@ struct NumericAtomParser
     }
 
     template <typename Target>
-    std::optional<Target> parseNumericAtom (const LV2_Atom* atom, const void* data) const
+    Optional<Target> parseNumericAtom (const LV2_Atom* atom, const void* data) const
     {
         if (atom == nullptr)
             return {};
@@ -181,13 +181,13 @@ struct NumericAtomParser
     }
 
     template <typename Target>
-    std::optional<Target> parseNumericAtom (const LV2_Atom* atom) const
+    Optional<Target> parseNumericAtom (const LV2_Atom* atom) const
     {
         return parseNumericAtom<Target> (atom, atom + 1);
     }
 
     template <typename Target>
-    std::optional<Target> parseNumericOption (const LV2_Options_Option* option) const
+    Optional<Target> parseNumericOption (const LV2_Options_Option* option) const
     {
         if (option != nullptr)
         {
@@ -278,7 +278,7 @@ struct PatchSetHelper
 
         const auto parseResult = parser.parseNumericAtom<float> (value);
 
-        if (! parseResult.has_value())
+        if (! parseResult.hasValue())
         {
             // Didn't understand the type of this atom.
             jassertfalse;

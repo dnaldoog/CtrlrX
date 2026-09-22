@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -47,14 +47,16 @@ Uuid::Uuid()
     uuid[8] = (uuid[8] & 0x3f) | 0x80;
 }
 
+Uuid::~Uuid() noexcept {}
+
 Uuid::Uuid (const Uuid& other) noexcept
 {
-    std::copy (other.uuid, other.uuid + sizeInBytes, uuid);
+    memcpy (uuid, other.uuid, sizeof (uuid));
 }
 
 Uuid& Uuid::operator= (const Uuid& other) noexcept
 {
-    Uuid { other }.swap (*this);
+    memcpy (uuid, other.uuid, sizeof (uuid));
     return *this;
 }
 
@@ -110,15 +112,15 @@ String Uuid::toDashedString() const
 
 Uuid::Uuid (const String& uuidString)
 {
-    MemoryBlock mb;
-    mb.loadFromHexString (uuidString);
-    mb.ensureSize (sizeof (uuid), true);
-    mb.copyTo (uuid, 0, sizeof (uuid));
+    operator= (uuidString);
 }
 
 Uuid& Uuid::operator= (const String& uuidString)
 {
-    Uuid { uuidString }.swap (*this);
+    MemoryBlock mb;
+    mb.loadFromHexString (uuidString);
+    mb.ensureSize (sizeof (uuid), true);
+    mb.copyTo (uuid, 0, sizeof (uuid));
     return *this;
 }
 
@@ -152,14 +154,6 @@ uint64 Uuid::hash() const noexcept
         result = ((uint64) 101) * result + n;
 
     return result;
-}
-
-void Uuid::swap (Uuid& other) noexcept
-{
-    uint8 temp[sizeInBytes];
-    std::copy (uuid, uuid + sizeInBytes, temp);
-    std::copy (other.uuid, other.uuid + sizeInBytes, uuid);
-    std::copy (temp, temp + sizeInBytes, other.uuid);
 }
 
 } // namespace juce

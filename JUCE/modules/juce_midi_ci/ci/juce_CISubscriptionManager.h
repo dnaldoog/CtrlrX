@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -42,7 +42,7 @@ namespace juce::midi_ci
 */
 class SubscriptionKey
 {
-    auto tie() const;
+    auto tie() const { return std::tuple (m, v); }
 
 public:
     /** Constructor */
@@ -58,13 +58,13 @@ public:
     Token64 getKey() const { return v; }
 
     /** Equality operator. */
-    bool operator== (const SubscriptionKey& other) const;
+    bool operator== (const SubscriptionKey& other) const { return tie() == other.tie(); }
 
     /** Inequality operator. */
-    bool operator!= (const SubscriptionKey& other) const;
+    bool operator!= (const SubscriptionKey& other) const { return tie() != other.tie(); }
 
     /** Less-than operator. */
-    bool operator<  (const SubscriptionKey& other) const;
+    bool operator<  (const SubscriptionKey& other) const { return tie() < other.tie(); }
 
 private:
     MUID m = MUID::getBroadcast();

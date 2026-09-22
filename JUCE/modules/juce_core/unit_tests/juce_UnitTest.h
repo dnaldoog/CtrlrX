@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -52,17 +52,15 @@ class UnitTestRunner;
 
         void runTest() override
         {
-            testCase ("Part 1", [&]
-            {
-                expect (myFoobar.doesSomething());
-                expect (myFoobar.doesSomethingElse());
-            });
+            beginTest ("Part 1");
 
-            testCase ("Part 2", [&]
-            {
-                expect (myOtherFoobar.doesSomething());
-                expect (myOtherFoobar.doesSomethingElse());
-            });
+            expect (myFoobar.doesSomething());
+            expect (myFoobar.doesSomethingElse());
+
+            beginTest ("Part 2");
+
+            expect (myOtherFoobar.doesSomething());
+            expect (myOtherFoobar.doesSomethingElse());
 
             ...etc...
         }
@@ -127,7 +125,7 @@ public:
 
     /** Implement this method in your subclass to actually run your tests.
 
-        The content of your implementation should call testCase() and expect()
+        The content of your implementation should call beginTest() and expect()
         to perform the tests.
     */
     virtual void runTest() = 0;
@@ -136,53 +134,8 @@ public:
     /** Tells the system that a new subsection of tests is beginning.
         This should be called from your runTest() method, and may be called
         as many times as you like, to demarcate different sets of tests.
-
-        In general prefer using testCase() rather than manually calling
-        beginTest().
-
-        @see testCase
     */
     void beginTest (const String& testName);
-
-    /** Begins running a new subsection of the test.
-
-        Example...
-        @code
-        void runTest() override
-        {
-            testCase ("My first test", [&]
-            {
-                // do something
-                expect (someCondition);
-            });
-
-            testCase ("My second test", [&]
-            {
-                // do something else
-                expect (someOtherCondition);
-            });
-        }
-        @endcode
-    */
-    template <typename Invokable>
-    void testCase (const String& testName, Invokable&& test)
-    {
-        beginTest (testName);
-        const ScopedValueSetter svs { isRunningTestCase, true };
-
-        try
-        {
-            test();
-        }
-        catch (const std::exception& e)
-        {
-            expect (false, "An uncaught exception was thrown: " + String (e.what()));
-        }
-        catch (...)
-        {
-            expect (false, "An uncaught exception was thrown");
-        }
-    }
 
     //==============================================================================
     /** Checks that the result of a test is true, and logs this result.
@@ -193,12 +146,10 @@ public:
         @code
         void runTest()
         {
-            testCase ("basic tests", [&]
-            {
-                expect (x + y == 2);
-                expect (getThing() == someThing);
-                ...etc...
-            });
+            beginTest ("basic tests");
+            expect (x + y == 2);
+            expect (getThing() == someThing);
+            ...etc...
         }
         @endcode
 
@@ -366,7 +317,6 @@ private:
     //==============================================================================
     const String name, category;
     UnitTestRunner* runner = nullptr;
-    bool isRunningTestCase{};
 
     JUCE_DECLARE_NON_COPYABLE (UnitTest)
 };
