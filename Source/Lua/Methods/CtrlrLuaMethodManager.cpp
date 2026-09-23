@@ -365,7 +365,11 @@ const StringArray CtrlrLuaMethodManager::getMethodList() {
 
 	for (int i = 0; i < methods.size(); i++) {
 		ret.add(methods[i]->getName());
+		DBG("ret ---" + String(methods[i]->getLeakedObjectClassName()));
 	}
+
+	// Sort method names naturally / alphabetically
+	ret.sortNatural();
 
 	return (ret);
 }
