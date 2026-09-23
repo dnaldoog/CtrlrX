@@ -367,6 +367,9 @@ const StringArray CtrlrLuaMethodManager::getMethodList() {
 		ret.add(methods[i]->getName());
 	}
 
+	// Sort method names naturally / alphabetically
+	ret.sortNatural();
+
 	return (ret);
 }
 
