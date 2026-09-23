@@ -46,8 +46,9 @@ CtrlrCustomButtonInternal::CtrlrCustomButtonInternal (CtrlrImageButton &_owner)
     //[/UserPreSize]
 
     setSize (128, 32);
-
-    //[Constructor] You can add your own custom stuff here..
+	// Explicitly enable mouse clicks for this button and its children
+	setInterceptsMouseClicks(true, true);
+	//[Constructor] You can add your own custom stuff here..
     //[/Constructor]
 }
 
@@ -61,7 +62,6 @@ CtrlrCustomButtonInternal::~CtrlrCustomButtonInternal()
     //[Destructor]. You can add your own custom destruction code here..
     //[/Destructor]
 }
-
 //==============================================================================
 void CtrlrCustomButtonInternal::resized()
 {
@@ -69,17 +69,25 @@ void CtrlrCustomButtonInternal::resized()
     //[/UserResized]
 }
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
-void CtrlrCustomButtonInternal::paintButton (Graphics& g, bool isMouseOverButton, bool isButtonDown)
-{
-	drawFrame (g, getFrameDestinationRect(), isMouseOverButton, isButtonDown);
-	drawTextBoxText (g, getFrameDestinationRect(), getBounds());
-}
+// void CtrlrCustomButtonInternal::paintButton (Graphics& g, bool isMouseOverButton, bool isButtonDown)
+// {
+// 	drawFrame (g, getFrameDestinationRect(), isMouseOverButton, isButtonDown);
+// 	drawTextBoxText (g, getFrameDestinationRect(), getBounds());
+// }
 
 void CtrlrCustomButtonInternal::setPaintMode(const RectanglePlacement _paintMode)
 {
 	paintMode = _paintMode;
 }
+void CtrlrCustomButtonInternal::paintButton (Graphics& g, bool isMouseOverButton, bool isButtonDown)
+{
+    // Query the parent CtrlrImageButton directly for hover and press states
+    const bool hovering = owner.isMouseOver(true);
+    const bool down = owner.isMouseButtonDown(true);
 
+    drawFrame (g, getFrameDestinationRect(), hovering, down);
+    drawTextBoxText (g, getFrameDestinationRect(), getBounds());
+}
 void CtrlrCustomButtonInternal::setImage (const Image imageToSet, const int _frameWidth, const int _frameHeight)
 {
 	possibleValues.clear();

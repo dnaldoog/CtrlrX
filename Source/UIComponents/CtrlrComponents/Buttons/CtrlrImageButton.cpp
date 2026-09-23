@@ -36,7 +36,7 @@ CtrlrImageButton::CtrlrImageButton(CtrlrModulator &owner)
 	setProperty(Ids::uiButtonRepeat, false);
 	setProperty(Ids::uiButtonRepeatRate, 100);
 	//[/UserPreSize]
-
+ctrlrButton->setInterceptsMouseClicks(false, false);
 	setSize(96, 62);
 
 	//[Constructor] You can add your own custom stuff here..
@@ -80,16 +80,73 @@ void CtrlrImageButton::timerCallback()
 
 void CtrlrImageButton::mouseDown(const MouseEvent &e)
 {
-	if (e.eventComponent == ctrlrButton.get())
-	{
-		if (!isTimerRunning())
-		{
-			startTimer((int)getProperty(Ids::uiButtonRepeatRate));
-		}
-	}
-	CtrlrComponent::mouseDown(e);
+    DBG("MD CtrlrIMAGEbutton");
+
+    const int mode = getButtonMode();
+
+    // 1. Toggle or Set Value based on Mode
+    if (mode == Momentary || mode == MomentaryMouseOver)
+    {
+        // Momentary: ON while pressed (usually value 1 or max)
+        setComponentValue(1.0, true);
+    }
+    else
+    {
+        // Normal / NormalMouseOver: Toggle value (0 <-> 1)
+        const double currentValue = getComponentValue();
+        const double newValue = (currentValue == 0.0) ? 1.0 : 0.0;
+        setComponentValue(newValue, true);
+    }
+
+    // 2. Force internal button to update its visual "down" state and repaint
+    if (ctrlrButton != nullptr)
+    {
+        ctrlrButton->repaint();
+    }
+
+    // 3. Delegate to CtrlrComponent for Lua callbacks & panel interaction
+    CtrlrComponent::mouseDown(e);
 }
 
+void CtrlrImageButton::mouseUp(const MouseEvent &e)
+{
+    const int mode = getButtonMode();
+
+    // Momentary modes return to OFF (0) on release
+    if (mode == Momentary || mode == MomentaryMouseOver)
+    {
+        setComponentValue(0.0, true);
+    }
+
+    if (ctrlrButton != nullptr)
+    {
+        ctrlrButton->repaint();
+    }
+
+    CtrlrComponent::mouseUp(e);
+}
+
+void CtrlrImageButton::mouseEnter(const MouseEvent &e)
+{
+    // Trigger repaint on hover enter for MouseOver modes
+    if (ctrlrButton != nullptr)
+    {
+        ctrlrButton->repaint();
+    }
+
+    CtrlrComponent::mouseEnter(e);
+}
+
+void CtrlrImageButton::mouseExit(const MouseEvent &e)
+{
+    // Trigger repaint on hover exit for MouseOver modes
+    if (ctrlrButton != nullptr)
+    {
+        ctrlrButton->repaint();
+    }
+
+    CtrlrComponent::mouseExit(e);
+}
 double CtrlrImageButton::getComponentMaxValue()
 {
 	return (valueMap->getNonMappedMax());
