@@ -23,6 +23,9 @@ public:
 	};
 
 	void mouseDown(const MouseEvent &e);
+	void mouseUp(const MouseEvent &e);
+	void mouseEnter(const MouseEvent &e);
+	void mouseExit(const MouseEvent &e);
 	void setComponentValue(const double newValue, const bool sendChangeMessage = false);
 	void setComponentMidiValue(const int newValue, const bool sendChangeMessage = false);
 	int getComponentMidiValue();
