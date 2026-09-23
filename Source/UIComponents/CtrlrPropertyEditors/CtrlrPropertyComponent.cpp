@@ -1172,16 +1172,26 @@ void CtrlrLuaMethodProperty::resized() {
 	deleteMethodButton->setBounds(48, 0, 24, getHeight() - 0);
 }
 
+// Helper function to strip visual tags (e.g., "[C] myMethod" -> "myMethod")
+static juce::String cleanMethodName(const juce::String &rawChoice) {
+	if (rawChoice.startsWith("[") && rawChoice.contains("] ")) {
+		return rawChoice.substring(rawChoice.indexOf("] ") + 2);
+	}
+	return rawChoice;
+}
+
 void CtrlrLuaMethodProperty::comboBoxChanged(ComboBox *comboBoxThatHasChanged) {
 	if (comboBoxThatHasChanged == methodSelectorCombo.get()) {
-		valueToControl = methodSelectorCombo->getText();
+		// Strip tag before assigning to property value
+		valueToControl = cleanMethodName(methodSelectorCombo->getText());
 	}
 }
 
 void CtrlrLuaMethodProperty::buttonClicked(Button *buttonThatWasClicked) {
 	// --- EDIT METHOD BUTTON ---
 	if (buttonThatWasClicked == editMethodButton.get()) {
-		const juce::String selectedMethod = methodSelectorCombo->getText();
+		// Strip tag before passing to method editor
+		const juce::String selectedMethod = cleanMethodName(methodSelectorCombo->getText());
 
 		if (selectedMethod.isEmpty() || selectedMethod == COMBO_NONE_ITEM) {
 			return;
@@ -1296,6 +1306,16 @@ void CtrlrLuaMethodProperty::refresh() {
 	methodSelectorCombo->addItem(COMBO_NONE_ITEM, 1);
 	methodSelectorCombo->addItemList(owner->getCtrlrLuaManager().getMethodManager().getMethodList(), 2);
 	methodSelectorCombo->setText(valueToControl.toString(), sendNotification);
+	const String cleanSavedName = valueToControl.toString();
+
+	for (int i = 0; i < methodSelectorCombo->getNumItems(); ++i) {
+		String itemText = methodSelectorCombo->getItemText(i);
+
+		if (cleanMethodName(itemText) == cleanSavedName) {
+			methodSelectorCombo->setSelectedItemIndex(i, dontSendNotification);
+			return;
+		}
+	}
 }
 
 CtrlrModulatorListProperty::CtrlrModulatorListProperty(const Value &_valueToControl, CtrlrPanel *_owner)
