@@ -128,5 +128,4 @@ LSB/MSB two byte 4-bit nibble:
 ```panel:setModulatorValuesFromData(midi:getData(), "modulatorCustomIndex",CtrlrPanel.EncodeNormal, -5, 1, false)```
 ```panel:setModulatorValuesFromData(midi:getData(), "modulatorCustomIndex",CtrlrPanel.EncodeSignedNibbleMsbFirst,-54, 2, false)```
 
-<br>
-<br>
+-----------------------------------------------

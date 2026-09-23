@@ -96,7 +96,16 @@ juce::String CtrlrMarkdownParser::stripInlineCode(const juce::String& s)
 void CtrlrMarkdownParser::appendInlineStyled(juce::AttributedString& as, const juce::String& raw)
 {
 	// Convert <br> tags directly into real line breaks
-	juce::String s = raw.replace("<br>", "\n").replace("<br/>", "\n").replace("<br />", "\n");
+	juce::String s = raw.replace("<br>", "\n")
+						 .replace("<br/>", "\n")
+						 .replace("<br />", "\n")
+						 .replace("&gt;", ">")
+						 .replace("&lt;", "<")
+						 .replace("&amp;", "&")
+						 .replace("&quot;", "\"")
+						 .replace("&#39;", "'")
+						 .replace("&#215;", "\\*")
+						 .replace("&times;", "\\*");
 
 	enum Mode { Normal, Bold, Italic, Code };
     Mode mode = Normal;
@@ -351,7 +360,14 @@ juce::AttributedString CtrlrMarkdownParser::parse(const juce::String& md)
 juce::String CtrlrMarkdownParser::parseToPlainText(const juce::String& md)
 {
     // very simple: strip markdown markers
-    juce::StringArray lines; lines.addLines(md);
+	juce::String s = md.replace("&gt;", ">")
+						 .replace("&lt;", "<")
+						 .replace("&amp;", "&")
+						 .replace("&quot;", "\"")
+						 .replace("&#39;", "'")
+						 .replace("&#215;", "\\*")
+						 .replace("&times;", "\\*");
+	juce::StringArray lines; lines.addLines(md);
     juce::String out;
     bool inCodeBlock = false;
     for (auto& ln : lines)
