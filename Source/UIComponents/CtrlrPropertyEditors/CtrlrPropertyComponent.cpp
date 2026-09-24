@@ -1130,6 +1130,7 @@ CtrlrLuaMethodProperty::CtrlrLuaMethodProperty(const Value &_valueToControl, con
 	methodSelectorCombo->setJustificationType(Justification::centredLeft);
 	methodSelectorCombo->setTextWhenNothingSelected("");
 	methodSelectorCombo->setTextWhenNoChoicesAvailable(L"(no choices)");
+	methodSelectorCombo->setTooltip(L"[U] User,[C] Callback,[S] System,[E] Mouse Event");
 	methodSelectorCombo->addListener(this);
 
 	editMethodButton = std::unique_ptr<DrawableButton>(gui::createDrawableButton("Edit Metod", BIN2STR(edit_svg)));
@@ -1181,10 +1182,16 @@ static juce::String cleanMethodName(const juce::String &rawChoice) {
 }
 
 void CtrlrLuaMethodProperty::comboBoxChanged(ComboBox *comboBoxThatHasChanged) {
-	if (comboBoxThatHasChanged == methodSelectorCombo.get()) {
-		// Strip tag before assigning to property value
-		valueToControl = cleanMethodName(methodSelectorCombo->getText());
-	}
+    if (comboBoxThatHasChanged == methodSelectorCombo.get()) {
+        const String rawText = methodSelectorCombo->getText();
+        const String cleanName = cleanMethodName(rawText);
+
+        // 1. Update underlying property value
+        valueToControl = cleanName;
+
+        // 2. Override the display text of the closed ComboBox to show the clean name
+        methodSelectorCombo->setText(cleanName, dontSendNotification);
+    }
 }
 
 void CtrlrLuaMethodProperty::buttonClicked(Button *buttonThatWasClicked) {
@@ -1300,22 +1307,36 @@ void CtrlrLuaMethodProperty::buttonClicked(Button *buttonThatWasClicked) {
 }
 
 void CtrlrLuaMethodProperty::refresh() {
-	if (owner == 0)
-		return;
-	methodSelectorCombo->clear();
-	methodSelectorCombo->addItem(COMBO_NONE_ITEM, 1);
-	methodSelectorCombo->addItemList(owner->getCtrlrLuaManager().getMethodManager().getMethodList(), 2);
-	methodSelectorCombo->setText(valueToControl.toString(), sendNotification);
-	const String cleanSavedName = valueToControl.toString();
+    // Re-populate the list
+    methodSelectorCombo->clear(dontSendNotification);
+    methodSelectorCombo->addItem(COMBO_NONE_ITEM, 1);
 
-	for (int i = 0; i < methodSelectorCombo->getNumItems(); ++i) {
-		String itemText = methodSelectorCombo->getItemText(i);
+    const StringArray methods = owner->getCtrlrLuaManager().getMethodManager().getMethodList();
+    for (int i = 0; i < methods.size(); ++i) {
+        methodSelectorCombo->addItem(methods[i], i + 2);
+    }
 
-		if (cleanMethodName(itemText) == cleanSavedName) {
-			methodSelectorCombo->setSelectedItemIndex(i, dontSendNotification);
-			return;
-		}
-	}
+    // Retrieve saved method name (clean)
+    const String cleanSavedName = valueToControl.toString();
+
+    if (cleanSavedName.isEmpty() || cleanSavedName == COMBO_NONE_ITEM) {
+        methodSelectorCombo->setText(COMBO_NONE_ITEM, dontSendNotification);
+        return;
+    }
+
+    // Search dropdown items by stripping their tags and matching clean names
+    for (int i = 0; i < methodSelectorCombo->getNumItems(); ++i) {
+        String itemText = methodSelectorCombo->getItemText(i);
+
+        if (cleanMethodName(itemText) == cleanSavedName) {
+            // Select the item index without triggering callbacks
+            methodSelectorCombo->setSelectedItemIndex(i, dontSendNotification);
+            
+            // Override the closed display text to show the clean name!
+            methodSelectorCombo->setText(cleanSavedName, dontSendNotification);
+            return;
+        }
+    }
 }
 
 CtrlrModulatorListProperty::CtrlrModulatorListProperty(const Value &_valueToControl, CtrlrPanel *_owner)

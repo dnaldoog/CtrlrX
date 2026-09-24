@@ -260,6 +260,52 @@ const String CtrlrLuaMethodManager::getMethodListForCombo() {
 	return (ret.upToLastOccurrenceOf(":", false, false));
 }
 
+// const StringArray CtrlrLuaMethodManager::getMethodList() {
+// 	StringArray ret;
+
+// 	for (int i = 0; i < methods.size(); i++) {
+// 		ret.add(methods[i]->getName());
+// 	}
+
+// 	// Sort method names naturally / alphabetically
+// 	ret.sortNatural();
+
+// 	return (ret);
+// }
+
+const StringArray CtrlrLuaMethodManager::getMethodList() {
+	StringArray ret;
+
+	for (int i = 0; i < methods.size(); i++) {
+		if (methods[i] == nullptr)
+			continue;
+
+		String name = methods[i]->getName();
+		String code = methods[i]->getCode();
+
+		// Skip tables entirely to keep the callback list clean
+		if (code.contains("{") && !code.contains("function")) {
+			continue;
+		}
+
+		String prefix = "[U] "; // Default: User/Generic function
+		if (name == "what" || name == "how" || name == "debugger" || name == "json4lua" || name == "inspect" ||
+			name == "table_dump") {
+
+			prefix = "[S] ";
+		} else if (code.contains("--[[ CtrlrModulator --]]") || code.contains("source")) {
+			prefix = "[C] "; // Component/Modulator Callback
+		} else if (code.contains("--[[ MouseEvent --]]") || code.contains("event")) {
+			prefix = "[E] "; // UI Mouse Event
+		}
+		DBG("name " + name);
+		ret.add(prefix + name);
+	}
+
+	ret.sortNatural();
+
+	return (ret);
+}
 void CtrlrLuaMethodManager::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged,
 													 const Identifier &property) {}
 
@@ -358,19 +404,6 @@ const String CtrlrLuaMethodManager::getTemplateForProperty(const String &methodN
 	_ERR("CtrlrLuaMethodManager::getTemplateForProperty failed to find template for this method \"" + methodName +
 		 "\" propertyName \"" + propertyName + "\"");
 	return ("");
-}
-
-const StringArray CtrlrLuaMethodManager::getMethodList() {
-	StringArray ret;
-
-	for (int i = 0; i < methods.size(); i++) {
-		ret.add(methods[i]->getName());
-	}
-
-	// Sort method names naturally / alphabetically
-	ret.sortNatural();
-
-	return (ret);
 }
 
 const StringArray CtrlrLuaMethodManager::getTemplateList() {
