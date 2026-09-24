@@ -4,7 +4,9 @@
 
 CtrlrSettings::CtrlrSettings (CtrlrManager &_owner) : Component ("Global Properties"), owner(_owner), propertyPanel (0)
 {
-    addAndMakeVisible (propertyPanel = new PropertyPanel());
+
+	owner.getManagerTree().addListener(this);
+	addAndMakeVisible (propertyPanel = new PropertyPanel());
     
     propertyPanel->setName ("propertyPanel");
     
@@ -106,28 +108,35 @@ void CtrlrSettings::resized()
     propertyPanel->setBounds (0, 0, getWidth() - 0, getHeight() - 0);
 }
 
-CtrlrSettings::~CtrlrSettings()
-{
-DBG("(X) CtrlrSettings DTOR call");
-    deleteAndZero (propertyPanel);
-    
-    if (JUCEApplication::isStandaloneApp())
-    {
-    // Show Ok/Cancel dialog to confirm restart
-    const auto callbackRestart = juce::ModalCallbackFunction::create([this] (int resultBox){
-        if (resultBox == 0){nullptr;} // for Cancel
-        if (resultBox == 1){restart();} // for OK
-    });
-    juce::NativeMessageBox::showOkCancelBox(juce::AlertWindow::QuestionIcon,"CtrlrX", "Restarting CtrlrX is required to apply new settings.", nullptr, callbackRestart);
-    }
-    else{
-        // For VST/AU instances
-		AW::showMessageBox(AW::Warning, "CtrlrX", "Restart to apply new settings.");
-		// AlertWindow::showMessageBox (AlertWindow::WarningIcon, "CtrlrX", "Restart to apply new settings."); // Added
-		// v5.6.31
+// Called automatically by JUCE whenever any setting property is modified
+void CtrlrSettings::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
+	if (treeWhosePropertyHasChanged == owner.getManagerTree()) {
+		settingsWereModified = true;
 	}
 }
 
+CtrlrSettings::~CtrlrSettings()
+{
+	DBG("(X) CtrlrSettings DTOR call");
+
+	// Always unregister listener when window closes
+	owner.getManagerTree().removeListener(this);
+
+	deleteAndZero (propertyPanel);
+
+	// Show notice ONLY if a setting was modified
+	if (settingsWereModified) {
+		const juce::String message = "Some setting changes may require restarting CtrlrX (or reloading the plugin "
+									 "instance) to take full effect.";
+
+		if (JUCEApplication::isStandaloneApp()) {
+			juce::NativeMessageBox::showMessageBoxAsync(juce::AlertWindow::InfoIcon, "CtrlrX Preferences", message);
+		} else {
+			// For VST3 / AU instances
+			AW::showMessageBox(AW::Info, "CtrlrX Preferences", message);
+		}
+	}
+}
 void CtrlrSettings::restart()
 {
     // Check if multiple instances are allowed

@@ -290,7 +290,7 @@ const StringArray CtrlrLuaMethodManager::getMethodList() {
 
 		String prefix = "[U] "; // Default: User/Generic function
 		if (name == "what" || name == "how" || name == "debugger" || name == "json4lua" || name == "inspect" ||
-			name == "table_dump") {
+			name == "table_dump" || name == "isLoading" || name == "memoize") {
 
 			prefix = "[S] ";
 		} else if (code.contains("--[[ CtrlrModulator --]]") || code.contains("source")) {

@@ -1307,6 +1307,10 @@ void CtrlrLuaMethodProperty::buttonClicked(Button *buttonThatWasClicked) {
 }
 
 void CtrlrLuaMethodProperty::refresh() {
+	// 1. Guard against null owner (e.g. global preferences / non-panel context)
+    if (owner == nullptr) {
+        return;
+    }
     // Re-populate the list
     methodSelectorCombo->clear(dontSendNotification);
     methodSelectorCombo->addItem(COMBO_NONE_ITEM, 1);
