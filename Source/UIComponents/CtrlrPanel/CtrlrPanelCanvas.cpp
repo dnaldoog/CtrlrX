@@ -1557,43 +1557,39 @@ std::unique_ptr<juce::Drawable> CtrlrPanelCanvas::createMenuIcon(const char *dat
 namespace {
 
 struct PlatformLimitation {
-		juce::Identifier property;
-		juce::String message;
+    juce::Identifier property;
+    juce::String message;
 };
-
-// Only a handful of entries expected — linear scan avoids needing a
-// std::hash or operator< specialization for juce::Identifier, neither
-// of which JUCE provides.
 
 const std::vector<PlatformLimitation> &getKnownPlatformLimitations() {
-#if JUCE_LINUX
+    static const std::vector<PlatformLimitation> table;
+    
+    /* TODO: Re-enable platform limitations table when ready
+    #if JUCE_LINUX
+    static const std::vector<PlatformLimitation> table {
+        {Ids::luaPanelFileDragDropHandler,
+         "OS file drag-and-drop into an exported panel is not supported under Linux Wayland sessions "
+         "(a JUCE/XWayland limitation, not fixable from panel code).\n\nIf Wayland users need to load "
+         "files, provide an alternative function in your Lua script\n\ne.g. a button calling "
+         "fileToRead:loadFileAsData(fileData).\n\n"
+         "Detect whether Wayland is running with panel:isWaylandSession()"},
+        {Ids::luaPanelFileDragEnterHandler,
+         "This handler relies on OS file drag-and-drop, which is not supported under Linux Wayland "
+         "sessions.\nConsider an alternative input method for Wayland users.\n\n"
+         "Detect whether Wayland is running with panel:isWaylandSession()"},
+        {Ids::luaPanelFileDragExitHandler,
+         "This handler relies on OS file drag-and-drop, which is not supported under Linux Wayland "
+         "sessions.\n\nConsider an alternative input method for Wayland users.\n\n"
+         "Detect whether Wayland is running with panel:isWaylandSession()"}
+    };
+    #endif
+    */
 
-	{Ids::luaPanelFileDragDropHandler,
-	 "OS file drag-and-drop into an exported panel is not supported under Linux Wayland sessions"
-	 "(a JUCE/XWayland limitation, not fixable from panel code).\n\nIf Wayland users need to load "
-	 "files, provide an alternative function in your Lua script\n\ne.g. a button calling "
-	 "fileToRead:loadFileAsData(fileData).\n\n"
-	 "Detect whether Wayland is running with panel:isWaylandSession()"},
-	{Ids::luaPanelFileDragEnterHandler,
-	 "This handler relies on OS file drag-and-drop, which is not supported under Linux Wayland "
-	 "sessions.\nConsider an alternative input method for Wayland users.\n\n"
-	 "Detect whether Wayland is running with panel:isWaylandSession()"},
-	{Ids::luaPanelFileDragExitHandler,
-	 "This handler relies on OS file drag-and-drop, which is not supported under Linux Wayland "
-	 "sessions.\n\nConsider an alternative input method for Wayland users.\n\n"
-	 "Detect whether Wayland is running with panel:isWaylandSession()"},
-	//{Ids::uiPanelIconResource, "Choose SVG resource (XML) with 1:1 Ratio,\nnot a raster image (PNG/JPG)"},
-	//{Ids::uiPanelImageResource, "Choose raster image (PNG/JPG),\nnot an SVG resource (XML)"},
-};
-#else
-	static const std::vector<PlatformLimitation> table {
-		{"dummy", "stub"}
-	};
-#endif
-return table;
+    return table;
 }
 
 } // anonymous namespace
+
 void CtrlrPanelCanvas::warnIfKnownPlatformLimitation(const Identifier &property) {
 	// Design-time only — never fires for an exported/standalone binary's end users.
 	if (getOwner().getOwner().getRestoreState() || getOwner().getOwner().isLoading())
