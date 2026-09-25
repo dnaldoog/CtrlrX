@@ -8,7 +8,7 @@
 class CtrlrSettings : public juce::Component, public juce::ValueTree::Listener {
 	public:
 		CtrlrSettings (CtrlrManager &_owner);
-		~CtrlrSettings();
+		~CtrlrSettings() override;
 		void paint (Graphics& g);
 		void resized();
         void restart();
@@ -28,6 +28,8 @@ class CtrlrSettings : public juce::Component, public juce::ValueTree::Listener {
 		CtrlrManager &owner;
 		PropertyPanel* propertyPanel;
 		bool settingsWereModified = false; // Flag to track changes
+
+		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrSettings)
 };
 
 #endif
