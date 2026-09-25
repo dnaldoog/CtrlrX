@@ -29,11 +29,7 @@ class CtrlrSettings : public juce::Component, public juce::ValueTree::Listener {
 		juce::PropertyPanel *propertyPanel = nullptr;
 		bool settingsWereModified = false; // Flag to track changes
 
-<<<<<<< HEAD
-		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrSettings)CtrlrPanelCanvas
-=======
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrSettings);
->>>>>>> 8.0.0_stdunique
 };
 
 #endif
