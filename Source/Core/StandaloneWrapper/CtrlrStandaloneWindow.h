@@ -2,6 +2,7 @@
 #define __CTRLR_STANDALONE_WINDOW__
 
 #include "CtrlrMacros.h"
+#include "CtrlrInlineUtilitiesGUI.h"
 #include <CtrlrManager/CtrlrManager.h>
 class CtrlrProcessor;
 
@@ -21,6 +22,7 @@ class CtrlrStandaloneWindow : public DocumentWindow, public ActionListener, publ
 		CtrlrManager *getManager();
 		void closeAllPanelsEarly();
 		void clearProcessorPointer(); // Added JUCE 8
+		gui::ViewPortMode vpMode{gui::ViewPortMode::Scrollable};
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrStandaloneWindow);
 
 	private:

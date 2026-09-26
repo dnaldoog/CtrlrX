@@ -203,14 +203,6 @@ enum CtrlrMIDIDeviceHandler
 };
 
 
-enum class ViewPortMode
-{
-    Scrollable,
-    Fixed,
-    Scaled
-};
-
-
 class CtrlrPanelMidiProcessor
 {
 	public:

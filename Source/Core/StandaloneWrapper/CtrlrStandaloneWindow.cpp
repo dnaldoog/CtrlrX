@@ -117,7 +117,7 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 	Rectangle<int> r = VAR2RECT(ed.getProperty(Ids::uiPanelCanvasRectangle));
 	panelCanvasWidth = r.getWidth();
 	panelCanvasHeight = r.getHeight();
-	vpEnableFixedAspectRatio = ed.getProperty(Ids::uiViewPortEnableFixedAspectRatio, false);
+	// vpEnableFixedAspectRatio = ed.getProperty(Ids::uiViewPortEnableFixedAspectRatio, false);
 
 	vpOsFrameTop = getPeer()->getFrameSize().getTop();	   // OS Native Title Bar Height
 	vpOsFrameBtm = getPeer()->getFrameSize().getBottom();  // OS Native Window Border Bottom thickness
@@ -140,39 +140,42 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 	vpMaxWidth = ed.getProperty(Ids::uiViewPortMaxWidth);
 	vpMaxHeight = ed.getProperty(Ids::uiViewPortMaxHeight);
 
-	if (ctrlrProcessor->getManager().getInstanceMode() ==
-		InstanceSingleRestricted) // restricted instances check flag to be resizable
-	{
-		_DBG("Restricted Instance Mode");
+if (ctrlrProcessor->getManager().getInstanceMode() == InstanceSingleRestricted) {
+    _DBG("Restricted Instance Mode");
 
-		if (auto *constrainer = getConstrainer()) {
-			if (vpEnableFixedAspectRatio == true) {
-				constrainer->setFixedAspectRatio(vpStandaloneAspectRatio); // set window aspect ratio
+    if (vpMode == gui::ViewPortMode::Fixed) {
+        setResizable(false, false);
+    } else {
+        setResizable(true, true);
 
-				if (vpEnableResizableLimits == true) {
-					if (vpMinWidth != 0 && vpMaxWidth != 0) {
-						setResizeLimits(vpMinWidth, round(vpMinWidth / vpStandaloneAspectRatio), vpMaxWidth,
-										round(vpMaxWidth / vpStandaloneAspectRatio));
-					} else if (vpMinWidth != 0 && vpMinHeight != 0 && vpMaxWidth != 0 && vpMaxHeight != 0) {
-						setResizeLimits(
-							vpMinWidth + vpOsFrameLeft + vpOsFrameRight, vpMinHeight + vpOsFrameTop + vpOsFrameBtm,
-							vpMaxWidth + vpOsFrameLeft + vpOsFrameRight, vpMaxHeight + vpOsFrameTop + vpOsFrameBtm);
-					} else {
-						constrainer->setMinimumSize(panelCanvasWidth, panelCanvasHeight + vpOsFrameTop + vpOsFrameBtm);
-					}
-				}
-			} else if (vpEnableResizableLimits == true && vpMinWidth != 0 && vpMinHeight != 0 && vpMaxWidth != 0 &&
-					   vpMaxHeight != 0) {
-				setResizeLimits(vpMinWidth + vpOsFrameLeft + vpOsFrameRight, vpMinHeight + vpOsFrameTop + vpOsFrameBtm,
-								vpMaxWidth + vpOsFrameLeft + vpOsFrameRight, vpMaxHeight + vpOsFrameTop + vpOsFrameBtm);
-			}
-		}
-	} else {
-		setResizable(true, true);
-	}
+        if (auto *constrainer = getConstrainer()) {
+            if (vpMode == gui::ViewPortMode::Scaled) {
+                constrainer->setFixedAspectRatio(vpStandaloneAspectRatio);
 
-	restoreState = false;
-	setVisible(true);
+                if (vpEnableResizableLimits == true) {
+                    if (vpMinWidth != 0 && vpMaxWidth != 0) {
+                        setResizeLimits(vpMinWidth, round(vpMinWidth / vpStandaloneAspectRatio), vpMaxWidth,
+                                         round(vpMaxWidth / vpStandaloneAspectRatio));
+                    } else if (vpMinWidth != 0 && vpMinHeight != 0 && vpMaxWidth != 0 && vpMaxHeight != 0) {
+                        setResizeLimits(
+                            vpMinWidth + vpOsFrameLeft + vpOsFrameRight, vpMinHeight + vpOsFrameTop + vpOsFrameBtm,
+                            vpMaxWidth + vpOsFrameLeft + vpOsFrameRight, vpMaxHeight + vpOsFrameTop + vpOsFrameBtm);
+                    } else {
+                        constrainer->setMinimumSize(panelCanvasWidth, panelCanvasHeight + vpOsFrameTop + vpOsFrameBtm);
+                    }
+                }
+            } else { // Scrollable
+                if (vpEnableResizableLimits == true && vpMinWidth != 0 && vpMinHeight != 0 && vpMaxWidth != 0 &&
+                    vpMaxHeight != 0) {
+                    setResizeLimits(vpMinWidth + vpOsFrameLeft + vpOsFrameRight, vpMinHeight + vpOsFrameTop + vpOsFrameBtm,
+                                     vpMaxWidth + vpOsFrameLeft + vpOsFrameRight, vpMaxHeight + vpOsFrameTop + vpOsFrameBtm);
+                }
+            }
+        }
+    }
+} else {
+    setResizable(true, true);
+}
 }
 
 CtrlrStandaloneWindow::~CtrlrStandaloneWindow()
