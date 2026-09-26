@@ -73,9 +73,9 @@ CtrlrEditor::CtrlrEditor(CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
 									   ->getPanelEditorTree(); // owner is CtrlrManager for the current class
 			editorRect = VAR2RECT(owner.getProperty(Ids::ctrlrEditorBounds));
 			vpMenuBarVisible = editorTree.getProperty(Ids::uiPanelMenuBarVisible);
-			vpResizable = editorTree.getProperty(Ids::uiViewPortResizable);
+			//vpResizable = editorTree.getProperty(Ids::uiViewPortResizable);
 			vpEnableFixedAspectRatio = editorTree.getProperty(Ids::uiViewPortEnableFixedAspectRatio);
-			vpFixedAspectRatio = editorTree.getProperty(Ids::uiViewPortFixedAspectRatio);
+			// vpFixedAspectRatio = editorTree.getProperty(Ids::uiViewPortFixedAspectRatio);
 
 			vpEnableResizableLimits = editorTree.getProperty(Ids::uiViewPortEnableResizeLimits);
 			vpMinWidth = editorTree.getProperty(Ids::uiViewPortMinWidth);
@@ -95,7 +95,7 @@ CtrlrEditor::CtrlrEditor(CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
 			}
 
 			if (!JUCEApplication::isStandaloneApp() && owner.getInstanceMode() == InstanceSingleRestricted) {
-				setResizable(vpResizable, true);
+				//setResizable(vpResizable, true);
 
 				// if (auto* constrainer = getConstrainer()) // According to GoodWeather, auto*
 				// returns type warning in VS.

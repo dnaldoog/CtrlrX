@@ -156,20 +156,12 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 	setProperty(Ids::uiPanelMidiControllerMenuHideOnExport, false);
 	setProperty(Ids::uiPanelMidiThruMenuHideOnExport, false);
 	setProperty(Ids::uiPanelMidiChannelMenuHideOnExport, false);
-	setProperty(Ids::uiPanelViewPortSize, 800);
-	setProperty(Ids::uiPanelPropertiesSize, 300);
-    setProperty(Ids::uiViewPortMode, viewPortModeToString(ViewPortMode::Scrollable));
-	setProperty(Ids::uiViewPortResizable, true);
-	setProperty(Ids::uiViewPortShowScrollBars, true);
-	setProperty(Ids::uiViewPortWidth, 400);
-	setProperty(Ids::uiViewPortHeight, 400);
+	setProperty(Ids::uiViewPortMode, viewPortModeToString(ViewPortMode::Scrollable));
 	setProperty(Ids::uiViewPortEnableResizeLimits, false);
 	setProperty(Ids::uiViewPortMinWidth, 0);
 	setProperty(Ids::uiViewPortMinHeight, 0);
 	setProperty(Ids::uiViewPortMaxWidth, 0);
 	setProperty(Ids::uiViewPortMaxHeight, 0);
-	setProperty(Ids::uiViewPortEnableFixedAspectRatio, false);
-	setProperty(Ids::uiViewPortFixedAspectRatio, 1.5);
 	setProperty(Ids::uiPanelZoom, 1.0);
 
 	setProperty(Ids::uiPanelViewPortBackgroundColour,
@@ -381,9 +373,6 @@ void CtrlrPanelEditor::resized() {
 
 	layoutItems();
 
-	if (!getRestoreState()) {
-		saveLayout();
-	}
 	if (resizedCbk && !resizedCbk.wasObjectDeleted()) {
 		if (resizedCbk->isValid()) {
 			owner.getCtrlrLuaManager().getMethodManager().call(resizedCbk, &owner);
@@ -406,11 +395,6 @@ void CtrlrPanelEditor::layoutItems() {
 	} else {
 		layoutManager.layOutComponents(editorComponents, 1, 0, 0, getWidth(), getHeight(), false, true);
 	}
-}
-
-void CtrlrPanelEditor::saveLayout() {
-	setProperty(Ids::uiPanelViewPortSize, layoutManager.getItemCurrentAbsoluteSize(0));
-	setProperty(Ids::uiPanelPropertiesSize, layoutManager.getItemCurrentAbsoluteSize(2));
 }
 
 CtrlrPanelCanvas *CtrlrPanelEditor::getCanvas() {
@@ -562,8 +546,13 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 	// 	return;
 	// }
 	if (treeWhosePropertyHasChanged.hasType(Ids::uiPanelEditor)) {
+
 		if (property == Ids::uiPanelEditMode) {
 			editModeChanged();
+		} else if (property == Ids::uiViewPortMode) {
+			// apply resizable / scrollbars / scaled-zoom behavior for the new mode
+			resized();
+
 		} else if (property == Ids::luaViewPortResized) {
 			if (getProperty(property) == "")
 				return;
@@ -589,14 +578,10 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 			canvasAspectRatio =
 				canvasWidth / canvasHeight; // Updated v5.6.31 by GoodWeather. Removed type double(canvasAspectRatio) =
 											// double(canvasWidth) / double(canvasHeight)
-			setProperty(Ids::uiViewPortFixedAspectRatio,
-						canvasAspectRatio); // update canvas aspect ratio if canvas is resized
 			resized();
-		} else if (property == Ids::uiViewPortResizable || property == Ids::uiViewPortShowScrollBars ||
-				   property == Ids::uiViewPortEnableFixedAspectRatio || property == Ids::uiViewPortFixedAspectRatio ||
-				   property == Ids::uiViewPortEnableResizeLimits || property == Ids::uiViewPortMinWidth ||
+		} else if (property == Ids::uiViewPortEnableResizeLimits || property == Ids::uiViewPortMinWidth ||
 				   property == Ids::uiViewPortMinHeight || property == Ids::uiViewPortMaxWidth ||
-				   property == Ids::uiViewPortMaxHeight || property == Ids::uiViewPortShowScrollBars) {
+				   property == Ids::uiViewPortMaxHeight) {
 			resized();
 		} else if (property == Ids::uiViewPortWidth || property == Ids::uiViewPortHeight) {
 			resized();

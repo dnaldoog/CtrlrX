@@ -117,8 +117,6 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 	Rectangle<int> r = VAR2RECT(ed.getProperty(Ids::uiPanelCanvasRectangle));
 	panelCanvasWidth = r.getWidth();
 	panelCanvasHeight = r.getHeight();
-
-	vpResizable = ed.getProperty(Ids::uiViewPortResizable, true);
 	vpEnableFixedAspectRatio = ed.getProperty(Ids::uiViewPortEnableFixedAspectRatio, false);
 
 	vpOsFrameTop = getPeer()->getFrameSize().getTop();	   // OS Native Title Bar Height
@@ -146,7 +144,6 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 		InstanceSingleRestricted) // restricted instances check flag to be resizable
 	{
 		_DBG("Restricted Instance Mode");
-		setResizable(vpResizable, true);
 
 		if (auto *constrainer = getConstrainer()) {
 			if (vpEnableFixedAspectRatio == true) {

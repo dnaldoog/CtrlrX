@@ -98,7 +98,6 @@ class CtrlrPanelEditor : public Component,
 
 		void setAllCombosDisabled();
 		void setAllCombosEnabled();
-		void saveLayout();
 		bool getRestoreState() { return (currentRestoreState); }
 		void setRestoreState(const bool _state) { currentRestoreState = _state; }
 		void reloadResources(Array<CtrlrPanelResource *> resourcesThatChanged);

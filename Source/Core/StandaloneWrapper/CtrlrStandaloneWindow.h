@@ -24,9 +24,7 @@ class CtrlrStandaloneWindow : public DocumentWindow, public ActionListener, publ
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrStandaloneWindow);
 
 	private:
-		bool vpResizable;
 		double vpFixedAspectRatio;
-		bool vpEnableFixedAspectRatio;
 		bool vpEnableResizableLimits;
 		int vpCurrentWidth;
 		int vpCurrentHeight;
