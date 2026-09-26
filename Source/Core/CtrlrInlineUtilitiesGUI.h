@@ -638,4 +638,27 @@ static PanelThemePalette getPaletteForScheme(const juce::String &schemeName) {
 // ctrlrButton->setColour(juce::ToggleButton::textColourId, palette.textColour);
 // ctrlrButton->setColour(juce::ToggleButton::tickDisabledColourId, palette.outlineColour);
 // ctrlrButton->setColour(juce::ToggleButton::tickColourId, palette.tickAccent);
+
+// namespace VP {
+inline ViewPortMode viewPortModeFromString(const String &s) {
+	if (s == "Fixed")
+		return ViewPortMode::Fixed;
+	if (s == "Scaled")
+		return ViewPortMode::Scaled;
+	return ViewPortMode::Scrollable; // safe default for missing/unrecognized values
+}
+
+inline String viewPortModeToString(ViewPortMode m) {
+	switch (m) {
+	case ViewPortMode::Fixed:
+		return "Fixed";
+	case ViewPortMode::Scaled:
+		return "Scaled";
+	default:
+		return "Scrollable";
+	}
+}
+
+// } // namespace VP
+
 #endif

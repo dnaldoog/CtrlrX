@@ -51,6 +51,7 @@
   <id name="uiViewPortMaxHeight"            text="ViewPort maximum height" type="Text"/>
   <id name="uiViewPortEnableFixedAspectRatio"   text="ViewPort enable aspect ratio" type="Bool" defaults="Enabled/Disabled" />
   <id name="uiViewPortFixedAspectRatio"     text="ViewPort fixed aspect ratio" type="Numeric" min="0" max="10" int="0.0001"/>
+  <id name="uiViewPortMode"            text="Viewport options"         type="VarText" defaults="Scrollable,Fixed,Scaled" />
   <id name="uiPanelZoom" text="Canvas zoom ratio" type="Numeric" min="0.001" max="10.00" int="0.001"/>
   
   <id name="uiPanelViewPortBackgroundColour"    text="Panel ViewPort background colour" type="Colour"/>

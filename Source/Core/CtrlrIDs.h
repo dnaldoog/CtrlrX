@@ -93,6 +93,7 @@ DECLARE_ID(uiViewPortMinWidth);
 DECLARE_ID(uiViewPortMinHeight);
 DECLARE_ID(uiViewPortMaxWidth);
 DECLARE_ID(uiViewPortMaxHeight);
+DECLARE_ID(uiViewPortMode);
 DECLARE_ID(uiViewPortEnableFixedAspectRatio);
 DECLARE_ID(uiViewPortFixedAspectRatio);
 DECLARE_ID(uiPanelSnapActive);

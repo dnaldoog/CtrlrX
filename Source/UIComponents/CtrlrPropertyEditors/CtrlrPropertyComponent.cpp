@@ -73,6 +73,7 @@ void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 		{"uiPanelImageResource", Colours::aqua},		 // uiPanelImageResource
 		{"uiPanelIconResource", Colours::aquamarine},	 // uiPanelIconResource
 		{"uiPanelLinuxExpDest", Colours::pink},			 // uiPanelLinuxExpDest
+		{"uiViewPortMode", Colours::fuchsia},			 // uiPanelLinuxExpDest
 	};
 
 	const String propStr = propertyName.toString();

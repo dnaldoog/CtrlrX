@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "CtrlrPanelEditor.h"
 #include "CtrlrComponents/CtrlrCombo.h"
 #include "CtrlrComponents/CtrlrComponent.h"
@@ -16,7 +17,7 @@
 #include "CtrlrProcessor.h"
 #include "CtrlrUtilities.h"
 #include "JuceClasses/LMemoryBlock.h"
-#include "stdafx.h"
+
 
 #if JUCE_MAC
 #define Point MacTypes_Point
@@ -155,10 +156,9 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 	setProperty(Ids::uiPanelMidiControllerMenuHideOnExport, false);
 	setProperty(Ids::uiPanelMidiThruMenuHideOnExport, false);
 	setProperty(Ids::uiPanelMidiChannelMenuHideOnExport, false);
-
 	setProperty(Ids::uiPanelViewPortSize, 800);
 	setProperty(Ids::uiPanelPropertiesSize, 300);
-
+    setProperty(Ids::uiViewPortMode, viewPortModeToString(ViewPortMode::Scrollable));
 	setProperty(Ids::uiViewPortResizable, true);
 	setProperty(Ids::uiViewPortShowScrollBars, true);
 	setProperty(Ids::uiViewPortWidth, 400);
@@ -384,7 +384,6 @@ void CtrlrPanelEditor::resized() {
 	if (!getRestoreState()) {
 		saveLayout();
 	}
-
 	if (resizedCbk && !resizedCbk.wasObjectDeleted()) {
 		if (resizedCbk->isValid()) {
 			owner.getCtrlrLuaManager().getMethodManager().call(resizedCbk, &owner);
