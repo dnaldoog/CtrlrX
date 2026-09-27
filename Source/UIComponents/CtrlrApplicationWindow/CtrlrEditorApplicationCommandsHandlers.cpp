@@ -471,6 +471,122 @@ case CtrlrEditor::doQuit:
 		}
 	});
 	break;
+
+case CtrlrEditor::cleanOrphanProperties: {
+	if (auto *panel = owner.getActivePanel()) {
+		ValueTree panelTree = panel->getPanelTree();
+		ValueTree editorTree = panel->getEditor() ? panel->getEditor()->getPanelEditorTree() : ValueTree();
+
+		// 1. Static Master Set initialized once from BinaryData::CtrlrIDs_xml
+		static const std::unordered_set<String> validRegisteredIds = []() {
+			std::unordered_set<String> idSet;
+
+			const char *xmlData = BinaryData::CtrlrIDs_xml;
+			const int xmlDataSize = BinaryData::CtrlrIDs_xmlSize;
+
+			if (xmlData != nullptr && xmlDataSize > 0) {
+				if (auto xml = juce::XmlDocument::parse(juce::String::createStringFromData(xmlData, xmlDataSize))) {
+					for (auto *child : xml->getChildIterator()) {
+						if (child->hasAttribute("name")) {
+							idSet.insert(child->getStringAttribute("name"));
+						} else if (child->hasAttribute("id")) {
+							idSet.insert(child->getStringAttribute("id"));
+						} else if (child->getTagName().isNotEmpty()) {
+							idSet.insert(child->getTagName());
+						}
+					}
+				}
+			}
+			return idSet;
+		}();
+
+		StringArray orphanKeys;
+
+		// 2. Uncaptured access to static local variable
+		auto isPropertyOrphan = [](const Identifier &key) -> bool {
+			return validRegisteredIds.find(key.toString()) == validRegisteredIds.end();
+		};
+
+		// 3. Scan panel trees for orphan keys
+		auto scanTreeForOrphans = [&orphanKeys, &isPropertyOrphan](const ValueTree &tree) {
+			if (!tree.isValid())
+				return;
+
+			for (int i = 0; i < tree.getNumProperties(); ++i) {
+				const Identifier key = tree.getPropertyName(i);
+
+				if (isPropertyOrphan(key)) {
+					orphanKeys.addIfNotAlreadyThere(key.toString());
+				}
+			}
+		};
+
+		scanTreeForOrphans(panelTree);
+		scanTreeForOrphans(editorTree);
+
+		if (orphanKeys.isEmpty()) {
+			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Clean Orphan Properties",
+											 "No orphaned or unrecognized properties found in the active panel.");
+			break;
+		}
+
+		// 4. Build Modal Alert Window with Dropdown
+		auto alert = std::make_unique<AlertWindow>(
+			"Remove Orphan Property",
+			"Select an orphaned property to permanently remove from this panel's ValueTree:", AlertWindow::WarningIcon);
+
+		alert->addComboBox("orphanSelect", orphanKeys, "Orphaned Properties");
+		alert->addButton("Delete Property", 1, KeyPress(KeyPress::returnKey));
+		alert->addButton("Cancel", 0, KeyPress(KeyPress::escapeKey));
+
+		auto *alertWindow = alert.get();
+
+		// Capture raw 'panel' pointer alongside trees to trigger refresh & dirty flag
+		alert->enterModalState(
+			true, ModalCallbackFunction::create([panel, panelTree, editorTree, alertWindow](int result) mutable {
+				if (result == 1) // User clicked Delete
+				{
+					if (auto *combo = alertWindow->getComboBoxComponent("orphanSelect")) {
+						const String selectedProp = combo->getText();
+						const Identifier propId(selectedProp);
+
+						if (propId.isValid()) {
+							bool removed = false;
+
+							// Explicitly pass panel's UndoManager (if active) or nullptr to trigger listeners
+							if (panelTree.hasProperty(propId)) {
+								panelTree.removeProperty(propId, panel->getPanelUndoManager());
+								removed = true;
+							}
+							if (editorTree.hasProperty(propId)) {
+								editorTree.removeProperty(propId, panel->getPanelUndoManager());
+								removed = true;
+							}
+
+							if (removed) {
+								// 1. Mark panel as dirty so File -> Save serializes changes to disk
+								panel->setProperty(Ids::panelIsDirty, true);
+
+								// 2. Notify tree listeners of the specific property removal
+								panelTree.sendPropertyChangeMessage(propId);
+								if (editorTree.isValid()) {
+									editorTree.sendPropertyChangeMessage(propId);
+								}
+
+								AlertWindow::showMessageBoxAsync(
+									AlertWindow::InfoIcon, "Property Removed",
+									"Property '" + selectedProp +
+										"' was successfully purged. Save the panel to write changes to disk.");
+							}
+						}
+					}
+				}
+			}),
+			true);
+		alert.release();
+	}
+	break;
+}
 case CtrlrEditor::doRegisterExtension:
 	tempResult = owner.getNativeObject().registerFileHandler();
 	if (tempResult.wasOk()) {

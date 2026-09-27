@@ -249,6 +249,8 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 		menu.addCommandItem(commandManager, showMidiCalculator);
 		menu.addCommandItem(commandManager, showLogViewer);
 		menu.addCommandItem(commandManager, showComparatorTables);
+		menu.addSeparator();
+		menu.addCommandItem(commandManager, cleanOrphanProperties);
 
 		if (!isRestricted()) {
 			if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) !=

@@ -574,8 +574,8 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 				   property == Ids::uiViewPortMinHeight || property == Ids::uiViewPortMaxWidth ||
 				   property == Ids::uiViewPortMaxHeight) {
 			resized();
-		} else if (property == Ids::uiViewPortWidth || property == Ids::uiViewPortHeight) {
-			resized();
+			// } else if (property == Ids::uiViewPortWidth || property == Ids::uiViewPortHeight) {
+			// 	resized(); PROV
 		} else if (property == Ids::uiPanelDisableCombosOnEdit) {
 			if ((bool)getProperty(property) && getMode()) {
 				setAllCombosDisabled();
@@ -924,14 +924,14 @@ bool CtrlrPanelEditor::isAppSignedWithEntitlements() {
 }
 
 void CtrlrPanelEditor::applyViewPortMode() {
-	_DBG("ApplyViewPortMode was hit");
+	//_DBG("ApplyViewPortMode was hit");
 	if ((bool)getProperty(Ids::uiPanelEditMode))
 		return;
 
 	auto mode = gui::viewPortModeFromString(getProperty(Ids::uiViewPortMode).toString());
-	_DBG("ZZZZZ!!!! applyViewPortMode: mode=" + String(gui::viewPortModeToString(mode)) +
-		 " canvasWidth=" + String(canvasWidth) + " canvasHeight=" + String(canvasHeight) +
-		 " editorW=" + String(getWidth()) + " editorH=" + String(getHeight()));
+	//_DBG("ZZZZZ!!!! applyViewPortMode: mode=" + String(gui::viewPortModeToString(mode)) +
+	//	 " canvasWidth=" + String(canvasWidth) + " canvasHeight=" + String(canvasHeight) +
+	//	 " editorW=" + String(getWidth()) + " editorH=" + String(getHeight()));
 
 	switch (mode) {
 	case gui::ViewPortMode::Fixed:
@@ -945,8 +945,8 @@ void CtrlrPanelEditor::applyViewPortMode() {
 		if (auto *canvas = getCanvas()) {
 			const int cw = canvas->getWidth();
 			const int ch = canvas->getHeight();
-			_DBG("XXXXX!!!! Scaled: canvasW=" + String(cw) + " canvasH=" + String(ch) +
-				 " editorW=" + String(getWidth()) + " editorH=" + String(getHeight()));
+			//_DBG("XXXXX!!!! Scaled: canvasW=" + String(cw) + " canvasH=" + String(ch) +
+			//	 " editorW=" + String(getWidth()) + " editorH=" + String(getHeight()));
 			if (cw > 0 && ch > 0) {
 				double zoomW = (double)getWidth() / cw;
 				double zoomH = (double)getHeight() / ch;
