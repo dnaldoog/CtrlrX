@@ -8,7 +8,8 @@
 /**
  */
 
-CtrlrPanelViewport::CtrlrPanelViewport(CtrlrPanelEditor &_owner) : owner(_owner), isSpaceDown(false) {
+CtrlrPanelViewport::CtrlrPanelViewport(CtrlrPanelEditor &_owner)
+	: owner(_owner), isSpaceDown(false), vpScrollBarsShown(true) {
 	currentZoom = 1.0;
 
 	canvasList.add(new CtrlrPanelCanvas(owner));
@@ -17,11 +18,17 @@ CtrlrPanelViewport::CtrlrPanelViewport(CtrlrPanelEditor &_owner) : owner(_owner)
 	addAndMakeVisible(viewport = new CtrlrViewportImpl(this));
 	viewport->setViewedComponent(magnifier);
 
-	ValueTree ed = owner.getOwner().getOwner().getInstanceTree().getChildWithName(Ids::uiPanelEditor);
-	//vpScrollBarsShown = ed.getProperty(Ids::uiViewPortShowScrollBars, true);
-	viewport->setScrollBarsShown(vpScrollBarsShown, vpScrollBarsShown);
+	viewport->setScrollBarsShown(vpScrollBarsShown, vpScrollBarsShown); // safe default; CtrlrPanelEditor::applyViewPortMode() sets the real value once uiViewPortMode is known
 
 	setSize(512, 512);
+}
+
+// ...
+
+void CtrlrPanelViewport::setScrollBarsShown(bool shown) {
+	vpScrollBarsShown = shown;
+	if (viewport != nullptr)
+		viewport->setScrollBarsShown(vpScrollBarsShown, vpScrollBarsShown);
 }
 
 CtrlrPanelViewport::~CtrlrPanelViewport() {

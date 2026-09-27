@@ -28,6 +28,7 @@ class CtrlrViewport : public Component, private ComponentListener, private Scrol
 		int getScrollBarThickness() const;
 		void setSingleStepSizes(int stepX, int stepY);
 		void setScrollBarButtonVisibility(bool buttonsVisible);
+
 		ScrollBar *getVerticalScrollBar() noexcept { return &verticalScrollBar; }
 		ScrollBar *getHorizontalScrollBar() noexcept { return &horizontalScrollBar; }
 		void resized();

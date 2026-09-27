@@ -372,7 +372,7 @@ void CtrlrPanelEditor::resized() {
 	}
 
 	layoutItems();
-
+	applyViewPortMode();
 	if (resizedCbk && !resizedCbk.wasObjectDeleted()) {
 		if (resizedCbk->isValid()) {
 			owner.getCtrlrLuaManager().getMethodManager().call(resizedCbk, &owner);
@@ -414,7 +414,7 @@ void CtrlrPanelEditor::editModeChanged() {
 		spacerComponent->setVisible(true);
 		ctrlrPanelProperties->setVisible(true);
 		getCanvas()->getResizableBorder()->setVisible(true);
-
+		setProperty(Ids::uiPanelZoom, 1.0); // So we don't have a zoomed panel if scaled is set
 		// Notify the property inspector so it can display the current selection.
 		// CtrlrPanelProperties does not expose a setTargetObject() method.
 		if (getSelection() != nullptr)
@@ -422,15 +422,6 @@ void CtrlrPanelEditor::editModeChanged() {
 
 		if ((bool)getProperty(Ids::uiPanelDisableCombosOnEdit))
 			setAllCombosDisabled();
-		// if (editMode) {
-		// 	layoutManager.setItemLayout(0, -0.001, -1.0, getProperty(Ids::uiPanelViewPortSize, -0.7));
-		// 	layoutManager.setItemLayout(2, -0.001, -1.0, getProperty(Ids::uiPanelPropertiesSize, -0.3));
-		// 	spacerComponent->setVisible(true);
-		// 	ctrlrPanelProperties->setVisible(true);
-		// 	getCanvas()->getResizableBorder()->setVisible(true);
-
-		// 	if ((bool)getProperty(Ids::uiPanelDisableCombosOnEdit))
-		// 		setAllCombosDisabled();
 	} else {
 		if (getSelection())
 			getSelection()->deselectAll();
@@ -930,4 +921,40 @@ bool CtrlrPanelEditor::isAppSignedWithEntitlements() {
 		CFRelease(selfCode);
 #endif
 	return false;
+}
+
+void CtrlrPanelEditor::applyViewPortMode() {
+	_DBG("ApplyViewPortMode was hit");
+	if ((bool)getProperty(Ids::uiPanelEditMode))
+		return;
+
+	auto mode = gui::viewPortModeFromString(getProperty(Ids::uiViewPortMode).toString());
+	_DBG("ZZZZZ!!!! applyViewPortMode: mode=" + String(gui::viewPortModeToString(mode)) +
+		 " canvasWidth=" + String(canvasWidth) + " canvasHeight=" + String(canvasHeight) +
+		 " editorW=" + String(getWidth()) + " editorH=" + String(getHeight()));
+
+	switch (mode) {
+	case gui::ViewPortMode::Fixed:
+		getPanelViewport()->setScrollBarsShown(false);
+		break;
+	case gui::ViewPortMode::Scrollable:
+		getPanelViewport()->setScrollBarsShown(true);
+		break;
+	case gui::ViewPortMode::Scaled: {
+		getPanelViewport()->setScrollBarsShown(false);
+		if (auto *canvas = getCanvas()) {
+			const int cw = canvas->getWidth();
+			const int ch = canvas->getHeight();
+			_DBG("XXXXX!!!! Scaled: canvasW=" + String(cw) + " canvasH=" + String(ch) +
+				 " editorW=" + String(getWidth()) + " editorH=" + String(getHeight()));
+			if (cw > 0 && ch > 0) {
+				double zoomW = (double)getWidth() / cw;
+				double zoomH = (double)getHeight() / ch;
+				double zoom = (cw >= ch) ? zoomW : zoomH;
+				setProperty(Ids::uiPanelZoom, zoom);
+			}
+		}
+		break;
+	}
+	}
 }
