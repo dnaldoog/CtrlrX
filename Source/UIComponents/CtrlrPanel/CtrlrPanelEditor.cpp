@@ -561,20 +561,33 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 				resized();
 			}
 		} else if (property == Ids::uiPanelCanvasRectangle) {
-			getCanvas()->setBounds(
-				VAR2RECT(getProperty(property))); // update canvas size if values in the property field are changed
-			canvasHeight =
-				getCanvas()->getHeight();		   // Updated v5.6.31 by GoodWeather. Removed type double(canvasHeight)
-			canvasWidth = getCanvas()->getWidth(); // Updated v5.6.31 by GoodWeather. Removed type double(canvasWidth)
-			canvasAspectRatio =
-				canvasWidth / canvasHeight; // Updated v5.6.31 by GoodWeather. Removed type double(canvasAspectRatio) =
-											// double(canvasWidth) / double(canvasHeight)
+			getCanvas()->setBounds(VAR2RECT(getProperty(property)));
+			canvasHeight = getCanvas()->getHeight();
+			canvasWidth = getCanvas()->getWidth();
+			canvasAspectRatio = (canvasHeight > 0) ? (double)canvasWidth / (double)canvasHeight : 1.0;
+
+			// Recalculate Min/Max constraints to match new canvas base dimensions
+			auto editorTree = getPanelEditorTree();
+
+			int minW = editorTree.getProperty(Ids::uiViewPortMinWidth, canvasWidth);
+			int maxW = editorTree.getProperty(Ids::uiViewPortMaxWidth, canvasWidth);
+
+			// Keep Min pinned <= new canvasWidth
+			if (minW > canvasWidth) {
+				editorTree.setProperty(Ids::uiViewPortMinWidth, canvasWidth, owner.getPanelUndoManager());
+			}
+
+			// Keep Max pinned >= new canvasWidth
+			if (maxW < canvasWidth) {
+				editorTree.setProperty(Ids::uiViewPortMaxWidth, canvasWidth, owner.getPanelUndoManager());
+			}
+
 			resized();
 		}
 	} else if (property == Ids::uiViewPortMinWidth || property == Ids::uiViewPortMinHeight ||
 			   property == Ids::uiViewPortMaxWidth || property == Ids::uiViewPortMaxHeight) {
 
-		DBG("VP height/width property changed: " + property.toString());
+		DBG("VP dimension changed: " + property.toString());
 
 		if (auto *canvas = getCanvas()) {
 			const int cWidth = canvas->getWidth();
@@ -584,7 +597,6 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 				const double aspectRatio = (double)cWidth / (double)cHeight;
 				const int newVal = (int)treeWhosePropertyHasChanged.getProperty(property);
 
-				// Avoid recursive callback loops when setting sister properties
 				static bool isSyncingDimensions = false;
 
 				if (!isSyncingDimensions && newVal > 0) {
@@ -613,12 +625,12 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 			}
 		}
 
-		// Refresh UI viewport component layout and inspector table
-		resized();
-
+		// Force Property Inspector to reload row controls so sister height/width dropdown updates live
 		if (ctrlrPanelProperties != nullptr) {
 			ctrlrPanelProperties->refreshAll();
 		}
+
+		resized();
 
 	} else if (property == Ids::uiViewPortEnableResizeLimits) {
 		resized();
