@@ -577,6 +577,12 @@ case CtrlrEditor::cleanOrphanProperties: {
 									AlertWindow::InfoIcon, "Property Removed",
 									"Property '" + selectedProp +
 										"' was successfully purged. Save the panel to write changes to disk.");
+								// Re-builds the property inspector list for the panel
+								if (auto *panelEditor = panel->getEditor()) {
+									// Notify listeners that the panel properties have changed.
+									auto *propertyPanel = panelEditor->getPanelProperties();
+									propertyPanel->refreshAll();
+								}
 							}
 						}
 					}
