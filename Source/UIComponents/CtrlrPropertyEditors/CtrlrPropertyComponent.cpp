@@ -4,7 +4,84 @@
 #include "CtrlrLuaManager.h"
 #include "stdafx.h"
 #include <juce_gui_basics/juce_gui_basics.h>
+
+
+
+
 using namespace juce;
+
+
+// ==============================================================================
+// Viewport Multiplier Dropdown Helpers
+// ==============================================================================
+
+static Array<double> getZoomMultipliers(const String& defaultsString)
+{
+    Array<double> multipliers;
+    StringArray tokens;
+    tokens.addTokens(defaultsString, ",", "");
+
+    for (const auto& token : tokens)
+    {
+        const double val = token.trim().getDoubleValue();
+        if (val > 0.0)
+            multipliers.add(val);
+    }
+
+    // Fallback if defaults attribute is missing or empty
+    if (multipliers.isEmpty())
+    {
+        multipliers = { 0.25, 0.5, 0.75, 1.0, 1.05, 1.10, 1.15, 1.20, 1.25, 
+                        1.33, 1.5, 1.66, 1.75, 1.80, 1.90, 2.0, 2.25, 2.5, 
+                        3.0, 3.5, 4.0, 4.5, 5.5, 6.0, 6.5, 7.0, 7.5 };
+    }
+
+    return multipliers;
+}
+
+static void populateViewportComboOptions(int baseDimension, 
+                                         int currentPropertyVal, 
+                                         const Array<double>& multipliers, 
+                                         StringArray& outChoices, 
+                                         Array<var>& outValues)
+{
+    outChoices.clear();
+    outValues.clear();
+
+    bool currentValIsMatched = false;
+
+    for (double mult : multipliers)
+    {
+        int calculatedPx = roundDoubleToInt(baseDimension * mult);
+
+        if (calculatedPx <= 0)
+            continue;
+
+        if (calculatedPx == currentPropertyVal)
+            currentValIsMatched = true;
+
+        String label = String(calculatedPx) + " px (" + String(mult, 2) + "x)";
+        outChoices.add(label);
+        outValues.add(calculatedPx);
+    }
+
+    // LEGACY PANEL COMPATIBILITY:
+    // If the existing panel has a custom pixel value (e.g., 769) that doesn't match a multiplier,
+    // inject it as a custom choice so old panels are preserved.
+    if (currentPropertyVal > 0 && !currentValIsMatched)
+    {
+        double effectiveRatio = (double)currentPropertyVal / (double)jmax(1, baseDimension);
+        String customLabel = String(currentPropertyVal) + " px (Custom " + String(effectiveRatio, 2) + "x)";
+        
+        int insertIdx = 0;
+        while (insertIdx < outValues.size() && (int)outValues[insertIdx] < currentPropertyVal)
+            insertIdx++;
+
+        outChoices.insert(insertIdx, customLabel);
+        outValues.insert(insertIdx, currentPropertyVal);
+    }
+}
+
 
 CtrlrPropertyComponent::CtrlrPropertyComponent(const Identifier &_propertyName, const ValueTree &_propertyElement,
 											   const ValueTree &_identifierDefinition, CtrlrPanel *_panel,
@@ -64,6 +141,10 @@ const String CtrlrPropertyComponent::getVisibleText() {
 
 void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 {
+	// 1. Single source of truth for viewport property row highlights
+	static const Colour viewportHighlight = Colours::honeydew; // Change here to update all
+
+	// 2. Map uses viewportHighlight directly
 	static const std::map<String, Colour> customHighlights = {
 		{"name", Colour(0x33ffaa00)},					 // Amber/Gold for Modulator Name
 		{"componentVisibleName", Colour(0x33ffaa00)},	 // ComponentVisibleName
@@ -73,8 +154,16 @@ void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 		{"uiPanelImageResource", Colours::aqua},		 // uiPanelImageResource
 		{"uiPanelIconResource", Colours::aquamarine},	 // uiPanelIconResource
 		{"uiPanelLinuxExpDest", Colours::pink},			 // uiPanelLinuxExpDest
-		{"uiViewPortMode", Colours::fuchsia},			 // uiPanelLinuxExpDest
-	};
+
+		// Viewport Properties linked to the static color variable
+		{"uiViewPortMode", viewportHighlight},
+		{"uiViewPortEnableResizeLimits", viewportHighlight},
+		{"uiViewPortMinWidth", viewportHighlight},
+		{"uiViewPortMinHeight", viewportHighlight},
+		{"uiViewPortMaxWidth", viewportHighlight},
+		{"uiViewPortMaxHeight", viewportHighlight},
+		{"uiPanelZoom", viewportHighlight},
+		{"uiPanelViewPortBackgroundColour", viewportHighlight}};
 
 	const String propStr = propertyName.toString();
 	auto it = customHighlights.find(propStr);
@@ -332,7 +421,32 @@ Component *CtrlrPropertyComponent::getPropertyComponent() {
 	case CtrlrIDManager::VarText:
 		// preferredHeight = 36;
 		preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
-		return (new CtrlrChoicePropertyComponent(valueToControl, &possibleChoices, &possibleValues, false));
+	if (propertyName == Ids::uiViewPortMinWidth || propertyName == Ids::uiViewPortMinHeight ||
+         propertyName == Ids::uiViewPortMaxWidth || propertyName == Ids::uiViewPortMaxHeight)
+{
+    DBG("VP height/width getProperty");
+
+    possibleChoices.clear();
+    possibleValues.clear();
+
+    if (panel != nullptr && panel->getCanvas() != nullptr)
+    {
+        const int canvasW = panel->getCanvas()->getWidth();
+        const int canvasH = panel->getCanvas()->getHeight();
+
+        const bool isWidthProp = (propertyName == Ids::uiViewPortMinWidth || propertyName == Ids::uiViewPortMaxWidth);
+        const int baseDim      = isWidthProp ? canvasW : canvasH;
+        const int currentVal   = propertyElement.getProperty(propertyName, baseDim);
+
+        // Fetch multiplier string from identifier definition defaults attribute
+        String zoomDefaults = identifierDefinition.getProperty("defaults").toString();
+        Array<double> mults = getZoomMultipliers(zoomDefaults);
+
+        populateViewportComboOptions(baseDim, currentVal, mults, possibleChoices, possibleValues);
+    }
+
+    return new CtrlrChoicePropertyComponent(valueToControl, &possibleChoices, &possibleValues, true);
+}
 
 	case CtrlrIDManager::FileProperty:
 		// preferredHeight = 36;

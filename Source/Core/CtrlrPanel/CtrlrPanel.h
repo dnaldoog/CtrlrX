@@ -166,6 +166,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		bool isWaylandSession() const {
 			return CtrlrManager::isWaylandSession();
 		}
+		void viewportDimensionChanged(const Identifier& changedProperty, int newPixelValue);
 		void saveLayerVisibilityStates();	 // Added v5.6.34
 		void restoreLayerVisibilityStates(); // Added v5.6.34
 
