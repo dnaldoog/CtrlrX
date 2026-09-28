@@ -2,6 +2,7 @@
 namespace
 {
 constexpr float LINE_SPACING = 4.0f; // Increase from 4.0f to 8.0f for more space
+constexpr float PARAGRAPH_GAP = 8.0f; // Height of the gap a blank line adds between blocks (like <p>)
 
 // juce::Colour::fromString() expects 8 hex digits (ARGB), so a CSS-style "#rrggbb" would come out
 // fully transparent. Accepts #rgb, #rrggbb, #aarrggbb (JUCE order) or a colour name.
@@ -285,6 +286,11 @@ std::vector<CtrlrMarkdownParser::MarkdownBlock> CtrlrMarkdownParser::parseToBloc
 
 	auto flushParagraph = [&]() {
 		if (paragraph.getText().isNotEmpty()) {
+			// End the last line so the next block starts on a new line (headings, lists and code
+			// lines already end with one). Skip if a trailing <br> already supplied it.
+			if (!paragraph.getText().endsWithChar('\n'))
+				paragraph.append("\n", normalFont());
+
 			MarkdownBlock b;
 			b.isHorizontalRule = false;
 			b.content = paragraph;
@@ -302,6 +308,22 @@ std::vector<CtrlrMarkdownParser::MarkdownBlock> CtrlrMarkdownParser::parseToBloc
 		addHeading(as, stripInlineCode(text.trim()), size, juce::Colours::black);
 		hb.content = as;
 		blocks.push_back(std::move(hb));
+	};
+
+	// A blank line in the source acts like <p>: one small gap between blocks.
+	// Consecutive blank lines collapse into a single gap, and no gap is added at the very start.
+	int spacerIndex = -1;
+	auto addParagraphGap = [&]() {
+		if (blocks.empty() || (int)blocks.size() - 1 == spacerIndex)
+			return;
+
+		MarkdownBlock sb;
+		sb.isHorizontalRule = false;
+		juce::AttributedString as;
+		as.append("\n", juce::Font(PARAGRAPH_GAP));
+		sb.content = as;
+		blocks.push_back(std::move(sb));
+		spacerIndex = (int)blocks.size() - 1;
 	};
 
 	for (int i = 0; i < lines.size(); ++i) {
@@ -373,6 +395,7 @@ std::vector<CtrlrMarkdownParser::MarkdownBlock> CtrlrMarkdownParser::parseToBloc
 		// Empty line => flush paragraph
 		if (line.isEmpty()) {
 			flushParagraph();
+			addParagraphGap();
 			continue;
 		}
 
