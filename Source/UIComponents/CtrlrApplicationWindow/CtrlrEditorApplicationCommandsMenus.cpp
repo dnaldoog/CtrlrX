@@ -251,13 +251,18 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 		menu.addCommandItem(commandManager, showComparatorTables);
 
 		if (!isRestricted()) {
-			if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) !=
-				0) { // added v5.6.33. Hidden for macOS
-			} else { // // added v5.6.33. Showing up on Windows
-				menu.addCommandItem(commandManager, doRegisterExtension);
-			}
-			// menu.addCommandItem(commandManager, doKeyGenerator);  // Updated v5.6.31. Useless
-		} // end if restricted
+#if JUCE_WINDOWS
+			// File extension registration in system registry is Windows-only
+			menu.addCommandItem(commandManager, doRegisterExtension);
+#endif
+
+			menu.addSeparator();
+
+			// Available on all platforms (Windows, macOS, Linux)
+
+			menu.addCommandItem(commandManager, cleanOrphanProperties);
+
+		} // end if !isRestricted
 	}
 
 	else if ((!isRestricted() && (topLevelMenuIndex == MenuHelp)) ||
@@ -267,27 +272,24 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 		_DBG("Building help menu: index=" + String(topLevelMenuIndex) + " MenuHelp=" + String(MenuHelp) +
 			 " restricted=" + String(isRestricted() ? "true" : "false"));
 
+		const bool panelIsRestricted = isRestricted();
 		menu.addCommandItem(commandManager, showAboutDialog);
 		menu.addSeparator();
-		menu.addCommandItem(commandManager, showExpressionHelp);
-		menu.addCommandItem(commandManager, showDumpByLuaHelp);
-		menu.addSeparator();
-#if 0	
-		if (!isRestricted()){
-			
+		if (!panelIsRestricted) {
+
+			// Developer / Unrestricted Mode Help Items
 			menu.addCommandItem(commandManager, showExpressionHelp);
-			menu.addCommandItem(commandManager, showMidiProgrammingHelp);
-			menu.addCommandItem(commandManager, showLuaUsefulCommandsHelp);
-			menu.addCommandItem(commandManager, showLuaFileOperationsHelp);
-			menu.addCommandItem(commandManager, showMenuLuaClassBrowser);
+			menu.addCommandItem(commandManager, showDumpByLuaHelp);
+			menu.addCommandItem(commandManager, showViewportHelp);
 			menu.addSeparator();
+
+#ifdef JUCE_DEBUG
+			menu.addCommandItem(commandManager, doDumpVstTables);
+			menu.addSeparator();
+#endif
 		}
 
-#endif
-#ifdef JUCE_DEBUG
-		// menu.addCommandItem(commandManager, doCrash);
-		menu.addCommandItem(commandManager, doDumpVstTables);
-#endif
+		// About Dialog - Shown in Restricted Mode (and developer mode)
 	}
 
 	return menu;

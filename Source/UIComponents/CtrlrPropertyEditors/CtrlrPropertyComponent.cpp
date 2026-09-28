@@ -64,6 +64,9 @@ const String CtrlrPropertyComponent::getVisibleText() {
 
 void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 {
+	static const Colour viewportHighlight = Colours::lightgoldenrodyellow; // Change here to update all
+
+	// 2. Map uses viewportHighlight directly
 	static const std::map<String, Colour> customHighlights = {
 		{"name", Colour(0x33ffaa00)},					 // Amber/Gold for Modulator Name
 		{"componentVisibleName", Colour(0x33ffaa00)},	 // ComponentVisibleName
@@ -73,7 +76,18 @@ void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 		{"uiPanelImageResource", Colours::aqua},		 // uiPanelImageResource
 		{"uiPanelIconResource", Colours::aquamarine},	 // uiPanelIconResource
 		{"uiPanelLinuxExpDest", Colours::pink},			 // uiPanelLinuxExpDest
-	};
+
+		// Viewport Properties linked to the static color variable
+		{"uiViewPortMode", viewportHighlight.darker()},
+		{"uiViewPortEnableResizeLimits", viewportHighlight},
+		{"uiViewPortMinWidth", viewportHighlight},
+		{"uiViewPortMinHeight", viewportHighlight},
+		{"uiViewPortMaxWidth", viewportHighlight},
+		{"uiViewPortMaxHeight", viewportHighlight},
+		{"uiViewPortWidth", viewportHighlight.darker()},
+		{"uiViewPortHeight", viewportHighlight.darker()},
+		{"uiPanelZoom", viewportHighlight},
+		{"uiPanelViewPortBackgroundColour", viewportHighlight}};
 
 	const String propStr = propertyName.toString();
 	auto it = customHighlights.find(propStr);

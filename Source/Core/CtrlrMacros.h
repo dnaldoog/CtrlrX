@@ -202,6 +202,7 @@ enum CtrlrMIDIDeviceHandler
 	RtMIDI
 };
 
+
 class CtrlrPanelMidiProcessor
 {
 	public:

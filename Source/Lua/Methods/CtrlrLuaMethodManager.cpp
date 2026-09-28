@@ -260,19 +260,6 @@ const String CtrlrLuaMethodManager::getMethodListForCombo() {
 	return (ret.upToLastOccurrenceOf(":", false, false));
 }
 
-// const StringArray CtrlrLuaMethodManager::getMethodList() {
-// 	StringArray ret;
-
-// 	for (int i = 0; i < methods.size(); i++) {
-// 		ret.add(methods[i]->getName());
-// 	}
-
-// 	// Sort method names naturally / alphabetically
-// 	ret.sortNatural();
-
-// 	return (ret);
-// }
-
 const StringArray CtrlrLuaMethodManager::getMethodList() {
 	StringArray ret;
 
@@ -298,7 +285,7 @@ const StringArray CtrlrLuaMethodManager::getMethodList() {
 		} else if (code.contains("--[[ MouseEvent --]]") || code.contains("event")) {
 			prefix = "[E] "; // UI Mouse Event
 		}
-		DBG("name " + name);
+		//DBG("name " + name);
 		ret.add(prefix + name);
 	}
 

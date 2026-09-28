@@ -37,6 +37,7 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 							 showLuaEditor,
 							 showLuaConsole,
 							 showComparatorTables,
+							 cleanOrphanProperties,
 							 showModulatorList,
 							 showBufferEditor,
 							 showLayers,
@@ -72,6 +73,7 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 							 doProgramWizard,
 							 showExpressionHelp,
 							 showDumpByLuaHelp,
+							 showViewportHelp,
 							 doQuit
 #if 0
 							 showDumpByLuaHelp,
@@ -178,6 +180,12 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 	case showDumpByLuaHelp:
 		result.setInfo("MIDI Dumps", "Show help reading/writing Dumps to panel", globalCategory, 0);
 		result.addDefaultKeypress('b', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
+
+		break;
+
+	case showViewportHelp:
+		result.setInfo("Viewport Options", "Export options for Viewport", globalCategory, 0);
+		result.addDefaultKeypress('g', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
 
 		break;
 #if 0
@@ -359,7 +367,11 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 		result.setInfo("Comparator tables", "Show/hide the dump for the comparator tables", panelCategory, 0);
 		result.setActive(isPanelActive());
 		break;
-
+	case cleanOrphanProperties:
+		result.setInfo("Remove property", "Scan and remove deprecated properties from the panel",
+					   globalCategory, 0);
+		result.setActive(owner.getActivePanel() != nullptr);
+		break;
 	case showMidiLibrary:
 		result.setInfo("MIDI Library", "Show/hide the MIDI LIbrary window", panelCategory, 0);
 		result.setActive(isPanelActive());

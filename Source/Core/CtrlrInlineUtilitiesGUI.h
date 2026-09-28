@@ -399,6 +399,35 @@ inline void openMultipleFilesAsync(const juce::String &dialogTitle, const juce::
 
 namespace gui {
 
+	enum class ViewPortMode {
+    Scrollable,
+    Fixed,
+    Scaled
+};
+
+	// namespace VP {
+inline ViewPortMode viewPortModeFromString(const String &s) {
+	if (s == "Fixed")
+		return ViewPortMode::Fixed;
+	if (s == "Scaled")
+		return ViewPortMode::Scaled;
+	return ViewPortMode::Scrollable; // safe default for missing/unrecognized values
+}
+
+inline String viewPortModeToString(ViewPortMode m) {
+	switch (m) {
+	case ViewPortMode::Fixed:
+		return "Fixed";
+	case ViewPortMode::Scaled:
+		return "Scaled";
+	default:
+		return "Scrollable";
+	}
+}
+
+// } // namespace VP
+
+
 static inline DrawableButton *createDrawableButton(const String &buttonName, const String &svgData,
 												   const String &svgDataDown = "",
 												   const MouseCursor cursor = MouseCursor::PointingHandCursor) {
@@ -638,4 +667,7 @@ static PanelThemePalette getPaletteForScheme(const juce::String &schemeName) {
 // ctrlrButton->setColour(juce::ToggleButton::textColourId, palette.textColour);
 // ctrlrButton->setColour(juce::ToggleButton::tickDisabledColourId, palette.outlineColour);
 // ctrlrButton->setColour(juce::ToggleButton::tickColourId, palette.tickAccent);
+
+
+
 #endif
