@@ -1,24 +1,22 @@
 ## Ctrlr Expressions
-<br>
+
 There are three fields in the Property Inspector of a modulator to which you can add expressions. Click the bug icon to check syntax:
-<br>
+
 - modulatorValueExpression;
 - modulatorValueExpressionReverse;
 - modulatorControllerExpression;
-<br>
+
 ### Example:
-<br>
+
 You need to send the value **0** for OFF and 127 (**0x7F**) for ON using a `uiButton`
 In the modulatorValueExpression field_Expression to evaluate when calculating the MIDI message value from the modulator value add 
-<br>
+
 ```
 modulatorValue * 127
 ```.
-<br>
 
 ### Constants:
 
-<br>
 - **modulatorValue** : The current linear value of the modulator, this is the index of the array of values; is always positive.
 - **modulatorMappedValue** : The current mapped value in case of components that have mappings. This might be negative.
 - **modulatorMax** : The maximum value the modulator can have (non mapped)
@@ -28,10 +26,8 @@ modulatorValue * 127
 - **vstIndex** : The VST/AU index of the parameter as seen by the host program
 - **midiValue** : The current value stored in the MIDI MESSAGE assosiated with the modulator.
 - **midiNumber** : The number of the MIDI MESSAGE controller if applicable
-<br>
 
 ### Functions:
-<br>
 
 - `ceil(x)` : Returns the smallest integral value of the parameter
 - `abs(x)` : Returns the absolute value of the parameter
@@ -40,10 +36,10 @@ modulatorValue * 127
 - `fmod`(numerator,denominator) : Returns the floating-point remainder of the two parameters passed in
 - `pow(a,b)` : Returns the first parameter raised to the power of the second (a^b)
 - `gte(a,b,retTrue,retFalse)` : Return the larger or equal of the two passed parameters (a >= b). For example
-- `gte (modulatorValue, 0, modulatorValue, 128 - modulatorValue)` will return modulatorValue if modulatorValue is greater then 0 and (128 – modulatorValue) if it is less then zero
-- `gt(a,b,retTrue,retFalse`) : Same as gte but greater then without the equal sign (a &gt; b)
-- `lt(a,b,retTrue,retFalse)` : Same as gte but less then (a < b)
-- `lte(a,b,retTrue,retFalse)`: Same as gte but less then or equal (a <= b)
+- `gte (modulatorValue, 0, modulatorValue, 128 - modulatorValue)` will return modulatorValue if modulatorValue is greater than 0 and (128 – modulatorValue) if it is less than zero
+- `gt(a,b,retTrue,retFalse`) : Same as gte but greater than without the equal sign (a &gt; b)
+- `lt(a,b,retTrue,retFalse)` : Same as gte but less than (a < b)
+- `lte(a,b,retTrue,retFalse)`: Same as gte but less than or equal (a <= b)
 - `eq(a,b,retTrue,retFalse)` : Equals sign true if (a == b)
 - `max(a,b)` : Returns the bigger of two parameters.
 - `min(a,b)` : Returns the smaller of two parameters.
@@ -54,14 +50,10 @@ modulatorValue * 127
 - `setBit (value, bitToSet)` : Sets one bit in an integer at position (bitToSet) and returns the modified value with the bit set.
 - `setGlobal (globalIndex, newValueToSet)` : This sets the value of one of the global variables in the panel, and returns that set value so the expression can continue.
 
-<br>
-
 There are three fields in the Property Inspector of a modulator into which you can add expressions. Click the bug icon to check syntax:
-<br>
+
 - modulatorValueExpression;
 - modulatorValueExpressionReverse;
 - modulatorControllerExpression;
 
-<br>
-<br>
-<br>
+
