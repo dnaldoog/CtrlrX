@@ -158,10 +158,12 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 	setProperty(Ids::uiPanelMidiChannelMenuHideOnExport, false);
 	setProperty(Ids::uiViewPortMode, gui::viewPortModeToString(gui::ViewPortMode::Scrollable));
 	setProperty(Ids::uiViewPortEnableResizeLimits, false);
-	setProperty(Ids::uiViewPortMinWidth, COMBO_ITEM_NONE);
-	setProperty(Ids::uiViewPortMinHeight, COMBO_ITEM_NONE);
-	setProperty(Ids::uiViewPortMaxWidth, COMBO_ITEM_NONE);
-	setProperty(Ids::uiViewPortMaxHeight, COMBO_ITEM_NONE);
+	setProperty(Ids::uiViewPortMinWidth, 0);
+	setProperty(Ids::uiViewPortMinHeight, 0);
+	setProperty(Ids::uiViewPortMaxWidth, 0);
+	setProperty(Ids::uiViewPortMaxHeight, 0);
+	setProperty(Ids::uiViewPortWidth, 0);
+	setProperty(Ids::uiViewPortHeight,0);
 	setProperty(Ids::uiPanelZoom, 1.0);
 
 	setProperty(Ids::uiPanelViewPortBackgroundColour,
@@ -365,7 +367,7 @@ void CtrlrPanelEditor::resized() {
 	spacerComponent->setBounds(getWidth(), 32, 8, getHeight() - 32);
 
 	// setProperty(Ids::uiViewPortWidth, getWidth());
-	// setProperty(Ids::uiViewPortHeight, getHeight());
+	// setProperty(Ids::uiViewPortHeight,getHeight());
 
 	if (ctrlrPanelNotifier) {
 		ctrlrPanelNotifier->setBounds(0, getHeight() - 28, getWidth() - 32, 20);
@@ -561,111 +563,51 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 				resized();
 			}
 		} else if (property == Ids::uiPanelCanvasRectangle) {
-			getCanvas()->setBounds(VAR2RECT(getProperty(property)));
-			canvasHeight = getCanvas()->getHeight();
-			canvasWidth = getCanvas()->getWidth();
-			canvasAspectRatio = (canvasHeight > 0) ? (double)canvasWidth / (double)canvasHeight : 1.0;
-
-			// Recalculate Min/Max constraints to match new canvas base dimensions
-			auto editorTree = getPanelEditorTree();
-
-			int minW = editorTree.getProperty(Ids::uiViewPortMinWidth, canvasWidth);
-			int maxW = editorTree.getProperty(Ids::uiViewPortMaxWidth, canvasWidth);
-
-			// Keep Min pinned <= new canvasWidth
-			if (minW > canvasWidth) {
-				editorTree.setProperty(Ids::uiViewPortMinWidth, canvasWidth, owner.getPanelUndoManager());
-			}
-
-			// Keep Max pinned >= new canvasWidth
-			if (maxW < canvasWidth) {
-				editorTree.setProperty(Ids::uiViewPortMaxWidth, canvasWidth, owner.getPanelUndoManager());
-			}
-
+			getCanvas()->setBounds(
+				VAR2RECT(getProperty(property))); // update canvas size if values in the property field are changed
+			canvasHeight =
+				getCanvas()->getHeight();		   // Updated v5.6.31 by GoodWeather. Removed type double(canvasHeight)
+			canvasWidth = getCanvas()->getWidth(); // Updated v5.6.31 by GoodWeather. Removed type double(canvasWidth)
+			canvasAspectRatio =
+				canvasWidth / canvasHeight; // Updated v5.6.31 by GoodWeather. Removed type double(canvasAspectRatio) =
+											// double(canvasWidth) / double(canvasHeight)
 			resized();
-		}
-	} else if (property == Ids::uiViewPortMinWidth || property == Ids::uiViewPortMinHeight ||
-			   property == Ids::uiViewPortMaxWidth || property == Ids::uiViewPortMaxHeight) {
-
-		DBG("VP dimension changed: " + property.toString());
-
-		if (auto *canvas = getCanvas()) {
-			const int cWidth = canvas->getWidth();
-			const int cHeight = canvas->getHeight();
-
-			if (cWidth > 0 && cHeight > 0) {
-				const double aspectRatio = (double)cWidth / (double)cHeight;
-				const int newVal = (int)treeWhosePropertyHasChanged.getProperty(property);
-
-				static bool isSyncingDimensions = false;
-
-				if (!isSyncingDimensions && newVal > 0) {
-					isSyncingDimensions = true;
-
-					if (property == Ids::uiViewPortMinWidth) {
-						const int targetH = roundDoubleToInt((double)newVal / aspectRatio);
-						treeWhosePropertyHasChanged.setProperty(Ids::uiViewPortMinHeight, targetH,
-																owner.getPanelUndoManager());
-					} else if (property == Ids::uiViewPortMinHeight) {
-						const int targetW = roundDoubleToInt((double)newVal * aspectRatio);
-						treeWhosePropertyHasChanged.setProperty(Ids::uiViewPortMinWidth, targetW,
-																owner.getPanelUndoManager());
-					} else if (property == Ids::uiViewPortMaxWidth) {
-						const int targetH = roundDoubleToInt((double)newVal / aspectRatio);
-						treeWhosePropertyHasChanged.setProperty(Ids::uiViewPortMaxHeight, targetH,
-																owner.getPanelUndoManager());
-					} else if (property == Ids::uiViewPortMaxHeight) {
-						const int targetW = roundDoubleToInt((double)newVal * aspectRatio);
-						treeWhosePropertyHasChanged.setProperty(Ids::uiViewPortMaxWidth, targetW,
-																owner.getPanelUndoManager());
-					}
-
-					isSyncingDimensions = false;
-				}
+		} else if (property == Ids::uiViewPortEnableResizeLimits || property == Ids::uiViewPortMinWidth ||
+				   property == Ids::uiViewPortMinHeight || property == Ids::uiViewPortMaxWidth ||
+				   property == Ids::uiViewPortMaxHeight) {
+			resized();
+			// } else if (property == Ids::uiViewPortWidth || property == Ids::uiViewPortHeight) {
+			// 	resized(); PROV
+		} else if (property == Ids::uiPanelDisableCombosOnEdit) {
+			if ((bool)getProperty(property) && getMode()) {
+				setAllCombosDisabled();
+			} else {
+				setAllCombosEnabled();
 			}
-		}
+		} else if (property == Ids::uiPanelZoom) {
+			getPanelViewport()->setZoom(getProperty(property), getCanvas()->getBounds().getCentre().getX(),
+										getCanvas()->getBounds().getCentre().getY());
+		} else if (property == Ids::uiPanelMenuBarVisible) {
+			if (owner.getCtrlrManagerOwner().getEditor()) {
+				owner.getCtrlrManagerOwner().getEditor()->activeCtrlrChanged();
+			}
+		} else if (property == Ids::uiPanelBackgroundGradientType || property == Ids::uiPanelViewPortBackgroundColour ||
+				   property == Ids::uiPanelBackgroundColour || property == Ids::uiPanelBackgroundColour1 ||
+				   property == Ids::uiPanelBackgroundColour2) {
+			resized();
+		} else if (property == Ids::uiPanelUIColourWindowBackground ||
+				   property == Ids::uiPanelUIColourWidgetBackground || property == Ids::uiPanelUIColourMenuBackground ||
+				   property == Ids::uiPanelUIColourOutline || property == Ids::uiPanelUIColourDefaultText ||
+				   property == Ids::uiPanelUIColourDefaultFill || property == Ids::uiPanelUIColourHighlightedText ||
+				   property == Ids::uiPanelUIColourHighlightedFill || property == Ids::uiPanelUIColourMenuText) {
+		} else if (property == Ids::uiPanelJitMode) {
+			// Retrieve the lua_State using the panel's Lua manager pattern
+			lua_State *L = owner.getCtrlrLuaManager().getLuaState();
 
-		// Force Property Inspector to reload row controls so sister height/width dropdown updates live
-		if (ctrlrPanelProperties != nullptr) {
-			ctrlrPanelProperties->refreshAll();
-		}
+			if (L != nullptr) {
+				bool jitRequested = (bool)getProperty(property);
 
-		resized();
-
-	} else if (property == Ids::uiViewPortEnableResizeLimits) {
-		resized();
-		// } else if (property == Ids::uiViewPortWidth || property == Ids::uiViewPortHeight) {
-		// 	resized(); PROV
-	} else if (property == Ids::uiPanelDisableCombosOnEdit) {
-		if ((bool)getProperty(property) && getMode()) {
-			setAllCombosDisabled();
-		} else {
-			setAllCombosEnabled();
-		}
-	} else if (property == Ids::uiPanelZoom) {
-		getPanelViewport()->setZoom(getProperty(property), getCanvas()->getBounds().getCentre().getX(),
-									getCanvas()->getBounds().getCentre().getY());
-	} else if (property == Ids::uiPanelMenuBarVisible) {
-		if (owner.getCtrlrManagerOwner().getEditor()) {
-			owner.getCtrlrManagerOwner().getEditor()->activeCtrlrChanged();
-		}
-	} else if (property == Ids::uiPanelBackgroundGradientType || property == Ids::uiPanelViewPortBackgroundColour ||
-			   property == Ids::uiPanelBackgroundColour || property == Ids::uiPanelBackgroundColour1 ||
-			   property == Ids::uiPanelBackgroundColour2) {
-		resized();
-	} else if (property == Ids::uiPanelUIColourWindowBackground || property == Ids::uiPanelUIColourWidgetBackground ||
-			   property == Ids::uiPanelUIColourMenuBackground || property == Ids::uiPanelUIColourOutline ||
-			   property == Ids::uiPanelUIColourDefaultText || property == Ids::uiPanelUIColourDefaultFill ||
-			   property == Ids::uiPanelUIColourHighlightedText || property == Ids::uiPanelUIColourHighlightedFill ||
-			   property == Ids::uiPanelUIColourMenuText) {
-	} else if (property == Ids::uiPanelJitMode) {
-		// Retrieve the lua_State using the panel's Lua manager pattern
-		lua_State *L = owner.getCtrlrLuaManager().getLuaState();
-
-		if (L != nullptr) {
-			bool jitRequested = (bool)getProperty(property);
-
-			if (jitRequested) {
+				if (jitRequested) {
 #if JUCE_MAC
 					// On macOS, verify if the binary has the required Hardened Runtime entitlement
 					if (!isAppSignedWithEntitlements()) {
@@ -716,83 +658,85 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 				String modeStr = isJitActive ? "Full mode (Interpreter + Compiler)" : "Interpreter only";
 				_DBG("LuaJIT mode: " + modeStr);
 			}
-	} else if (property == Ids::uiPanelLookAndFeel) {
-		static bool handlingLookAndFeelChange = false;
-		if (handlingLookAndFeelChange)
-			return;
-		handlingLookAndFeelChange = true;
-		struct Guard {
-				~Guard() {
-					handlingLookAndFeelChange = false;
-				}
-		} guard;
+		} else if (property == Ids::uiPanelLookAndFeel) {
+			static bool handlingLookAndFeelChange = false;
+			if (handlingLookAndFeelChange)
+				return;
+			handlingLookAndFeelChange = true;
+			struct Guard {
+					~Guard() {
+						handlingLookAndFeelChange = false;
+					}
+			} guard;
 
-		auto newLookAndFeel = std::unique_ptr<juce::LookAndFeel>(getLookAndFeelFromDescription(getProperty(property)));
+			auto newLookAndFeel =
+				std::unique_ptr<juce::LookAndFeel>(getLookAndFeelFromDescription(getProperty(property)));
 
-		if (newLookAndFeel == nullptr)
-			return;
+			if (newLookAndFeel == nullptr)
+				return;
 
-		// Detach only the components that explicitly held our old lookAndFeel pointer.
-		// Do NOT use sendLookAndFeelChange() here — it clears all children's explicit
-		// LookAndFeel assignments (e.g. slider's lfV3 from applyCentralLookAndFeel).
-		setLookAndFeel(nullptr);
-		if (getCanvas() != nullptr)
-			getCanvas()->setLookAndFeel(nullptr);
-		if (ctrlrPanelProperties != nullptr)
-			ctrlrPanelProperties->setLookAndFeel(nullptr);
+			// Detach only the components that explicitly held our old lookAndFeel pointer.
+			// Do NOT use sendLookAndFeelChange() here — it clears all children's explicit
+			// LookAndFeel assignments (e.g. slider's lfV3 from applyCentralLookAndFeel).
+			setLookAndFeel(nullptr);
+			if (getCanvas() != nullptr)
+				getCanvas()->setLookAndFeel(nullptr);
+			if (ctrlrPanelProperties != nullptr)
+				ctrlrPanelProperties->setLookAndFeel(nullptr);
 
-		// Now safe to destroy old lookAndFeel — WeakReferences released
-		lookAndFeel = std::move(newLookAndFeel);
+			// Now safe to destroy old lookAndFeel — WeakReferences released
+			lookAndFeel = std::move(newLookAndFeel);
 
-		// Reattach new lookAndFeel
-		getCanvas()->setLookAndFeel(lookAndFeel.get());
-		setLookAndFeel(lookAndFeel.get());
-		if (ctrlrPanelProperties != nullptr)
-			ctrlrPanelProperties->setLookAndFeel(lookAndFeel.get());
+			// Reattach new lookAndFeel
+			getCanvas()->setLookAndFeel(lookAndFeel.get());
+			setLookAndFeel(lookAndFeel.get());
+			if (ctrlrPanelProperties != nullptr)
+				ctrlrPanelProperties->setLookAndFeel(lookAndFeel.get());
 
-		// Propagates to all children via normal inheritance
-		lookAndFeelChanged();
-		if (!getProperty(Ids::uiPanelLegacyMode)) {
-			setProperty(Ids::uiPanelViewPortBackgroundColour,
-						(String)Component::findColour(ResizableWindow::backgroundColourId).withAlpha(0.7f).toString());
-			setProperty(Ids::uiPanelBackgroundColour,
-						(String)Component::findColour(ResizableWindow::backgroundColourId).toString());
-			setProperty(Ids::uiPanelBackgroundColour1,
-						(String)Component::findColour(ResizableWindow::backgroundColourId).toString());
-			setProperty(Ids::uiPanelBackgroundColour2,
-						(String)Component::findColour(ResizableWindow::backgroundColourId).darker(0.2f).toString());
-			setProperty(Ids::uiPanelTooltipBackgroundColour,
-						(String)Component::findColour(BubbleComponent::backgroundColourId).toString());
-			setProperty(Ids::uiPanelTooltipOutlineColour,
-						(String)Component::findColour(BubbleComponent::outlineColourId).toString());
-			setProperty(Ids::uiPanelTooltipColour, (String)Component::findColour(Label::textColourId).toString());
-		}
+			// Propagates to all children via normal inheritance
+			lookAndFeelChanged();
+			if (!getProperty(Ids::uiPanelLegacyMode)) {
+				setProperty(
+					Ids::uiPanelViewPortBackgroundColour,
+					(String)Component::findColour(ResizableWindow::backgroundColourId).withAlpha(0.7f).toString());
+				setProperty(Ids::uiPanelBackgroundColour,
+							(String)Component::findColour(ResizableWindow::backgroundColourId).toString());
+				setProperty(Ids::uiPanelBackgroundColour1,
+							(String)Component::findColour(ResizableWindow::backgroundColourId).toString());
+				setProperty(Ids::uiPanelBackgroundColour2,
+							(String)Component::findColour(ResizableWindow::backgroundColourId).darker(0.2f).toString());
+				setProperty(Ids::uiPanelTooltipBackgroundColour,
+							(String)Component::findColour(BubbleComponent::backgroundColourId).toString());
+				setProperty(Ids::uiPanelTooltipOutlineColour,
+							(String)Component::findColour(BubbleComponent::outlineColourId).toString());
+				setProperty(Ids::uiPanelTooltipColour, (String)Component::findColour(Label::textColourId).toString());
+			}
 
-		if (owner.getCtrlrManagerOwner().getEditor())
-			owner.getCtrlrManagerOwner().getEditor()->activeCtrlrChanged();
+			if (owner.getCtrlrManagerOwner().getEditor())
+				owner.getCtrlrManagerOwner().getEditor()->activeCtrlrChanged();
 
-		ctrlrPanelProperties->refreshAll();
-		if (getSelection())
-			getSelection()->sendChangeMessage();
+			ctrlrPanelProperties->refreshAll();
+			if (getSelection())
+				getSelection()->sendChangeMessage();
 
-		// --- ADD THIS BLOCK TO FORCE ALL SLIDERS / COMPONENTS TO UPDATE ---
-		for (int i = 0; i < owner.getModulators().size(); ++i) {
-			if (auto *mod = owner.getModulatorByIndex(i)) {
-				if (auto *comp = mod->getComponent()) {
-					// Notify the component to refresh its style/colors against the new Panel LnF
+			// --- ADD THIS BLOCK TO FORCE ALL SLIDERS / COMPONENTS TO UPDATE ---
+			for (int i = 0; i < owner.getModulators().size(); ++i) {
+				if (auto *mod = owner.getModulatorByIndex(i)) {
+					if (auto *comp = mod->getComponent()) {
+						// Notify the component to refresh its style/colors against the new Panel LnF
 
-					comp->valueTreePropertyChanged(comp->getComponentTree(), Ids::uiSliderStyle);
-					comp->valueTreePropertyChanged(comp->getComponentTree(), Ids::uiButtonLookAndFeel);
-					comp->lookAndFeelChanged();
-					comp->repaint();
+						comp->valueTreePropertyChanged(comp->getComponentTree(), Ids::uiSliderStyle);
+						comp->valueTreePropertyChanged(comp->getComponentTree(), Ids::uiButtonLookAndFeel);
+						comp->lookAndFeelChanged();
+						comp->repaint();
+					}
 				}
 			}
+			if (getSelection())
+				getSelection()->sendChangeMessage();
 		}
-		if (getSelection())
-			getSelection()->sendChangeMessage();
 	}
-	}
-
+}
 
 std::unique_ptr<juce::LookAndFeel>
 CtrlrPanelEditor::getLookAndFeelFromDescription(const juce::String &lookAndFeelDesc) // Added v5.6.34

@@ -249,17 +249,19 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 		menu.addCommandItem(commandManager, showMidiCalculator);
 		menu.addCommandItem(commandManager, showLogViewer);
 		menu.addCommandItem(commandManager, showComparatorTables);
-		menu.addSeparator();
-		menu.addCommandItem(commandManager, cleanOrphanProperties);
 
 		if (!isRestricted()) {
-			if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) !=
-				0) { // added v5.6.33. Hidden for macOS
-			} else { // // added v5.6.33. Showing up on Windows
-				menu.addCommandItem(commandManager, doRegisterExtension);
-			}
-			// menu.addCommandItem(commandManager, doKeyGenerator);  // Updated v5.6.31. Useless
-		} // end if restricted
+#if JUCE_WINDOWS
+			// File extension registration in system registry is Windows-only
+			menu.addCommandItem(commandManager, doRegisterExtension);
+#endif
+
+			menu.addSeparator();
+
+			// Available on all platforms (Windows, macOS, Linux)
+			menu.addCommandItem(commandManager, cleanOrphanProperties);
+
+		} // end if !isRestricted
 	}
 
 	else if ((!isRestricted() && (topLevelMenuIndex == MenuHelp)) ||

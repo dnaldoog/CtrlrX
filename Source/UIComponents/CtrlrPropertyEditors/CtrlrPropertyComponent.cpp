@@ -4,105 +4,7 @@
 #include "CtrlrLuaManager.h"
 #include "stdafx.h"
 #include <juce_gui_basics/juce_gui_basics.h>
-
-
-
-
 using namespace juce;
-
-
-// ==============================================================================
-// Viewport Multiplier Dropdown Helpers
-// ==============================================================================
-
-static Array<double> getZoomMultipliers(const String& defaultsString)
-{
-    Array<double> multipliers;
-    
-    // Always insert 1.0x (100% Canvas Size) as the fundamental baseline option
-    multipliers.add(1.0);
-
-    StringArray tokens;
-    tokens.addTokens(defaultsString, ",", "");
-
-    for (const auto& token : tokens)
-    {
-        const double val = token.trim().getDoubleValue();
-        if (val > 0.0 && !multipliers.contains(val))
-            multipliers.add(val);
-    }
-
-    multipliers.sort();
-    return multipliers;
-}
-
-static void populateViewportComboOptions(int baseDimension, 
-                                         int currentPropertyVal, 
-                                         bool isMinProperty,
-                                         const Array<double>& multipliers, 
-                                         StringArray& outChoices, 
-                                         Array<var>& outValues)
-{
-    outChoices.clear();
-    outValues.clear();
-
-    bool currentValIsMatched = false;
-
-    for (double mult : multipliers)
-    {
-        int calculatedPx = 0;
-
-        if (isMinProperty)
-        {
-            // MIN BOUNDS: Divide canvas dimension by multiplier factor (e.g., 600 / 1.25 = 480 px)
-            // Higher multipliers reduce the minimum size down from 100% canvas size.
-            calculatedPx = roundDoubleToInt((double)baseDimension / mult);
-
-            // Skip any rare calculation that exceeds native canvas size
-            if (calculatedPx > baseDimension)
-                continue;
-        }
-        else
-        {
-            // MAX BOUNDS: Multiply canvas dimension by factor (e.g., 600 * 1.25 = 750 px)
-            calculatedPx = roundDoubleToInt((double)baseDimension * mult);
-
-            // Skip any calculation that falls below native canvas size
-            if (calculatedPx < baseDimension)
-                continue;
-        }
-
-        if (calculatedPx <= 0)
-            continue;
-
-        // Avoid duplicate pixel values in the dropdown
-        if (outValues.contains(calculatedPx))
-            continue;
-
-        if (calculatedPx == currentPropertyVal)
-            currentValIsMatched = true;
-
-        String label = String(calculatedPx) + " px (" + String(mult, 2) + "x)";
-        outChoices.add(label);
-        outValues.add(calculatedPx);
-    }
-
-    // LEGACY & CUSTOM VALUE COMPATIBILITY:
-    // If current panel value (e.g. 630 px) doesn't match a standard multiplier choice, append it.
-    if (currentPropertyVal > 0 && !currentValIsMatched)
-    {
-        // Calculate true scaling factor: current / base (e.g., 630 / 600 = 1.05x)
-        double realRatio = (double)currentPropertyVal / (double)jmax(1, baseDimension);
-        String customLabel = String(currentPropertyVal) + " px (Custom " + String(realRatio, 2) + "x)";
-        
-        int insertIdx = 0;
-        while (insertIdx < outValues.size() && (int)outValues[insertIdx] < currentPropertyVal)
-            insertIdx++;
-
-        outChoices.insert(insertIdx, customLabel);
-        outValues.insert(insertIdx, currentPropertyVal);
-    }
-}
 
 CtrlrPropertyComponent::CtrlrPropertyComponent(const Identifier &_propertyName, const ValueTree &_propertyElement,
 											   const ValueTree &_identifierDefinition, CtrlrPanel *_panel,
@@ -162,8 +64,7 @@ const String CtrlrPropertyComponent::getVisibleText() {
 
 void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 {
-	// 1. Single source of truth for viewport property row highlights
-	static const Colour viewportHighlight = Colours::honeydew; // Change here to update all
+	static const Colour viewportHighlight = Colours::orange; // Change here to update all
 
 	// 2. Map uses viewportHighlight directly
 	static const std::map<String, Colour> customHighlights = {
@@ -183,6 +84,8 @@ void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 		{"uiViewPortMinHeight", viewportHighlight},
 		{"uiViewPortMaxWidth", viewportHighlight},
 		{"uiViewPortMaxHeight", viewportHighlight},
+		{"uiViewPortWidth", viewportHighlight},
+		{"uiViewPortHeight", viewportHighlight},
 		{"uiPanelZoom", viewportHighlight},
 		{"uiPanelViewPortBackgroundColour", viewportHighlight}};
 
@@ -439,43 +342,13 @@ Component *CtrlrPropertyComponent::getPropertyComponent() {
 		preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
 		return (new CtrlrChoicePropertyComponent(valueToControl, &possibleChoices, &possibleValues, true));
 
-case CtrlrIDManager::VarText:
+	case CtrlrIDManager::VarText:
+		// preferredHeight = 36;
 		preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
-
-		// 1. Special Handling for Viewport Min/Max Multipliers -> Choice Dropdown
-		if (propertyName == Ids::uiViewPortMinWidth || propertyName == Ids::uiViewPortMinHeight ||
-			propertyName == Ids::uiViewPortMaxWidth || propertyName == Ids::uiViewPortMaxHeight) {
-			DBG("VP height/width getProperty");
-
-			possibleChoices.clear();
-			possibleValues.clear();
-
-			if (panel != nullptr && panel->getCanvas() != nullptr) {
-				const int canvasW = panel->getCanvas()->getWidth();
-				const int canvasH = panel->getCanvas()->getHeight();
-
-				const bool isWidthProp =
-					(propertyName == Ids::uiViewPortMinWidth || propertyName == Ids::uiViewPortMaxWidth);
-				const bool isMinProp =
-					(propertyName == Ids::uiViewPortMinWidth || propertyName == Ids::uiViewPortMinHeight);
-
-				const int baseDim = isWidthProp ? canvasW : canvasH;
-				const int currentVal = propertyElement.getProperty(propertyName, baseDim);
-
-				// Fetch multiplier string from identifier definition defaults attribute
-				String zoomDefaults = identifierDefinition.getProperty("defaults").toString();
-				Array<double> mults = getZoomMultipliers(zoomDefaults);
-
-				populateViewportComboOptions(baseDim, currentVal, isMinProp, mults, possibleChoices, possibleValues);
-			}
-
-			return new CtrlrChoicePropertyComponent(valueToControl, &possibleChoices, &possibleValues, true);
-		}
-
-		// 2. Standard VarText Properties -> Text Component (Fixes Read-Only bug)
-		return new CtrlrTextPropertyComponent(valueToControl, 0, false);
+		return (new CtrlrChoicePropertyComponent(valueToControl, &possibleChoices, &possibleValues, false));
 
 	case CtrlrIDManager::FileProperty:
+		// preferredHeight = 36;
 		preferredHeight = roundDoubleToInt(propertyLineheightBaseValue * 1.0); // Updated v5.6.33.
 		return (new CtrlrFileProperty(valueToControl));
 

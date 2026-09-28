@@ -153,6 +153,24 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 							vpMinWidth + vpOsFrameLeft + vpOsFrameRight, vpMinHeight + vpOsFrameTop + vpOsFrameBtm,
 							vpMaxWidth + vpOsFrameLeft + vpOsFrameRight, vpMaxHeight + vpOsFrameTop + vpOsFrameBtm);
 					}
+
+					// Author-chosen initial size: 0, or anything larger than the canvas, means "panel size"
+					int initW = (int)ed.getProperty(Ids::uiViewPortWidth, 0);
+					int initH = (int)ed.getProperty(Ids::uiViewPortHeight, 0);
+					if (initW <= 0 || initW > panelCanvasWidth)
+						initW = panelCanvasWidth;
+					if (initH <= 0 || initH > panelCanvasHeight)
+						initH = panelCanvasHeight;
+
+					// Same menu bar allowance the constructor already applies elsewhere
+					int menuBarHeight =
+						static_cast<int>(ctrlrProcessor->getManager().getProperty(Ids::ctrlrMenuBarHeight));
+					if (menuBarHeight <= 0)
+						menuBarHeight = 24;
+					const bool menuBarVisible = ed.getProperty(Ids::uiPanelMenuBarVisible, true);
+
+					centreWithSize(initW, initH + (menuBarVisible ? menuBarHeight : 0));
+				}
 				}
 			}
 		}

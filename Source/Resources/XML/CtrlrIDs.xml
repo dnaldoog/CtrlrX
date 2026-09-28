@@ -40,11 +40,13 @@
   
   <id name="uiPanelViewPortSize" 			text="Editor ViewPort width" type="Text"/>
   <id name="uiPanelPropertiesSize" 			text="Editor property pane width" type="Text"/>
+  <id name="uiViewPortWidth" 				text="Scrollable default ViewPort width" type="Text"/>
+  <id name="uiViewPortHeight" 				text="Scrollable default ViewPort height" type="Text"/>
   <id name="uiViewPortEnableResizeLimits"   text="ViewPort resize limits enabled on an exported instance" type="Bool" defaults="Enabled/Disabled" />
-  <id name="uiViewPortMinWidth"             text="ViewPort minimum width (-)" type="VarText" defaults="@panelminmaxzoom" />
-  <id name="uiViewPortMinHeight"            text="ViewPort minimum height (-)" type="VarText" defaults="@panelminmaxzoom" />
-  <id name="uiViewPortMaxWidth"             text="ViewPort maximum width (+)"  type="VarText" defaults="@panelminmaxzoom"/>
-  <id name="uiViewPortMaxHeight"            text="ViewPort maximum height (+)"  type="VarText" defaults="@panelminmaxzoom"/>
+  <id name="uiViewPortMinWidth"             text="ViewPort minimum width" type="Text"/>
+  <id name="uiViewPortMinHeight"            text="ViewPort minimum height" type="Text"/>
+  <id name="uiViewPortMaxWidth"             text="ViewPort maximum width" type="Text"/>
+  <id name="uiViewPortMaxHeight"            text="ViewPort maximum height" type="Text"/>
   <id name="uiViewPortMode"            text="Viewport options"         type="VarText" defaults="Scrollable,Fixed,Scaled" />
   <id name="uiPanelZoom" text="Canvas zoom ratio" type="Numeric" min="0.001" max="10.00" int="0.001"/>
   
@@ -920,7 +922,6 @@
   <constants>
     <const name="justification"     value="left=1,right=2,horizontallyCentred=4,top=8,bottom=16,verticallyCentred=32,horizontallyJustified=64,centred=36,centredLeft=33,centredRight=34,centredTop=12,centredBottom=20,topLeft=9,topRight=10,bottomLeft=17,bottomRight=18" />
     <const name="gradient"          value="None=0,Vertical=1,Horizontal=2,Radial=3" />
-    <const name="panelminmaxzoom"             value="1.05,1.10,1.15,1.20,1.25,1.33,1.5,1.66,1.75,1.80,1.90,2.0,2.25,2.5,3.0,3.5,4.0,4.5,5.5,6.0,6.5,7.0,7.5" /> 
     <const name="imageLayout"       value="tile=8192,xLeft=1,xRight=2,xMid=4,yTop=8,yBottom=16,yMid=32,stretchToFit=64,fillDestination=128,onlyReduceInSize=256,onlyIncreaseInSize=512,centred=36" />
     <const name="relativePosition"  value="none,top,bottom,left,right" />
     <const name="midiInputChannel"  value="All Channels=0,Channel 1=1,Channel 2=2,Channel 3=3,Channel 4=4,Channel 5=5,Channel 6=6,Channel 7=7,Channel 8=8,Channel 9=9,Channel 10=10,Channel 11=11,Channel 12=12,Channel 13=13,Channel 14=14,Channel 15=15,Channel 16=16" />
@@ -937,5 +938,4 @@
     <const name="ctrlrColourSchemes"   value="Modern,Light,Grey,Dark,Midnight,JetBlack,YamDX,AkAPC,AkMPC,LexiBlue,KurzGreen,KorGrey,KorGold,ArturOrange,AiraGreen" />
     <const name="plugType"             value="Instrument|Drum,Instrument|Piano,Instrument|Synth,Instrument|Tools,Fx|Delay,Fx|Distortion,Fx|Dynamics,Fx|EQ,Fx|Filter,Fx|Instrument,Fx|Mastering,Fx|Modulation,Fx|Pitch Shift,Fx|Restoration,Fx|Reverb,Fx|Spatial,Fx|Synth,Fx|Tools" /> </constants>
 
-</constants>
 </ctrlrIds>

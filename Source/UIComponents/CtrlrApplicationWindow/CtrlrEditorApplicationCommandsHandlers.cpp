@@ -504,6 +504,10 @@ case CtrlrEditor::cleanOrphanProperties: {
 
 		// 2. Uncaptured access to static local variable
 		auto isPropertyOrphan = [](const Identifier &key) -> bool {
+			// Ignore internal runtime viewport properties
+			if (key == Ids::uiViewPortWidth || key == Ids::uiViewPortHeight)
+				return false;
+
 			return validRegisteredIds.find(key.toString()) == validRegisteredIds.end();
 		};
 
@@ -525,17 +529,17 @@ case CtrlrEditor::cleanOrphanProperties: {
 		scanTreeForOrphans(editorTree);
 
 		if (orphanKeys.isEmpty()) {
-			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Clean Orphan Properties",
-											 "No orphaned or unrecognized properties found in the active panel.");
+			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Remove properties",
+											 "No unrecognized properties found in the active panel.");
 			break;
 		}
 
 		// 4. Build Modal Alert Window with Dropdown
 		auto alert = std::make_unique<AlertWindow>(
-			"Remove Orphan Property",
-			"Select an orphaned property to permanently remove from this panel's ValueTree:", AlertWindow::WarningIcon);
+			"Remove Property",
+			"Select a property to permanently remove from this panel's ValueTree:", AlertWindow::WarningIcon);
 
-		alert->addComboBox("orphanSelect", orphanKeys, "Orphaned Properties");
+		alert->addComboBox("orphanSelect", orphanKeys, "Properties");
 		alert->addButton("Delete Property", 1, KeyPress(KeyPress::returnKey));
 		alert->addButton("Cancel", 0, KeyPress(KeyPress::escapeKey));
 
@@ -577,12 +581,6 @@ case CtrlrEditor::cleanOrphanProperties: {
 									AlertWindow::InfoIcon, "Property Removed",
 									"Property '" + selectedProp +
 										"' was successfully purged. Save the panel to write changes to disk.");
-								// Re-builds the property inspector list for the panel
-								if (auto *panelEditor = panel->getEditor()) {
-									// Notify listeners that the panel properties have changed.
-									auto *propertyPanel = panelEditor->getPanelProperties();
-									propertyPanel->refreshAll();
-								}
 							}
 						}
 					}
