@@ -64,7 +64,7 @@ const String CtrlrPropertyComponent::getVisibleText() {
 
 void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 {
-	static const Colour viewportHighlight = Colours::orange; // Change here to update all
+	static const Colour viewportHighlight = Colours::lightgoldenrodyellow; // Change here to update all
 
 	// 2. Map uses viewportHighlight directly
 	static const std::map<String, Colour> customHighlights = {
@@ -78,14 +78,14 @@ void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 		{"uiPanelLinuxExpDest", Colours::pink},			 // uiPanelLinuxExpDest
 
 		// Viewport Properties linked to the static color variable
-		{"uiViewPortMode", viewportHighlight},
+		{"uiViewPortMode", viewportHighlight.darker()},
 		{"uiViewPortEnableResizeLimits", viewportHighlight},
 		{"uiViewPortMinWidth", viewportHighlight},
 		{"uiViewPortMinHeight", viewportHighlight},
 		{"uiViewPortMaxWidth", viewportHighlight},
 		{"uiViewPortMaxHeight", viewportHighlight},
-		{"uiViewPortWidth", viewportHighlight},
-		{"uiViewPortHeight", viewportHighlight},
+		{"uiViewPortWidth", viewportHighlight.darker()},
+		{"uiViewPortHeight", viewportHighlight.darker()},
 		{"uiPanelZoom", viewportHighlight},
 		{"uiPanelViewPortBackgroundColour", viewportHighlight}};
 

@@ -608,6 +608,8 @@
           <FILE id="TwaTzD" name="BulkReadWriteDump.md" compile="0" resource="1"
                 file="Source/Resources/Doc/BulkReadWriteDump.md"/>
           <FILE id="CiV3x1" name="Expressions.md" compile="0" resource="1" file="Source/Resources/Doc/Expressions.md"/>
+          <FILE id="IzPj0o" name="ViewPortOptions.md" compile="0" resource="1"
+                file="Source/Resources/Doc/ViewPortOptions.md"/>
         </GROUP>
         <GROUP id="{5425C584-8B65-E29D-5410-23D72492F06C}" name="Fonts">
           <FILE id="GYiDwF" name="5x8_lcd_hd44780u_a02.ttf" compile="0" resource="1"

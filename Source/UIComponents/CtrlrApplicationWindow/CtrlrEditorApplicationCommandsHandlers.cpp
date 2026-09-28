@@ -218,6 +218,12 @@ case showDumpByLuaHelp:
 	return true;
 	break;
 
+case showViewportHelp:
+	new CtrlrHelpWindow("Viewport Settings Help",
+						new CtrlrGenericHelp(BinaryData::ViewPortOptions_md, BinaryData::ViewPortOptions_mdSize));
+	return true;
+	break;
+
 case showExpressionHelp:
 	new CtrlrHelpWindow("Expressions Help",
 						new CtrlrGenericHelp(BinaryData::Expressions_md, BinaryData::Expressions_mdSize));

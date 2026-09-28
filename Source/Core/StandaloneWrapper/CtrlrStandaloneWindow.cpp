@@ -171,7 +171,6 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 
 					centreWithSize(initW, initH + (menuBarVisible ? menuBarHeight : 0));
 				}
-				}
 			}
 		}
 	}

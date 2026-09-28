@@ -9,7 +9,11 @@ There are three fields in the Property Inspector of a modulator to which you can
 ### Example:
 <br>
 You need to send the value **0** for OFF and 127 (**0x7F**) for ON using a `uiButton`
-In the modulatorValueExpression field_Expression to evaluate when calculating the MIDI message value from the modulator value add ```modulatorValue \* 127```.
+In the modulatorValueExpression field_Expression to evaluate when calculating the MIDI message value from the modulator value add 
+<br>
+```
+modulatorValue * 127
+```.
 <br>
 
 ### Constants:

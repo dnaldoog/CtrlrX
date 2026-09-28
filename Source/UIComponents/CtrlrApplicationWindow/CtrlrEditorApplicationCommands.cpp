@@ -73,6 +73,7 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 							 doProgramWizard,
 							 showExpressionHelp,
 							 showDumpByLuaHelp,
+							 showViewportHelp,
 							 doQuit
 #if 0
 							 showDumpByLuaHelp,
@@ -179,6 +180,12 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 	case showDumpByLuaHelp:
 		result.setInfo("MIDI Dumps", "Show help reading/writing Dumps to panel", globalCategory, 0);
 		result.addDefaultKeypress('b', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
+
+		break;
+
+	case showViewportHelp:
+		result.setInfo("Viewport Options", "Export options for Viewport", globalCategory, 0);
+		result.addDefaultKeypress('g', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
 
 		break;
 #if 0
