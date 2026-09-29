@@ -43,10 +43,10 @@
   <id name="uiViewPortWidth" 				text="Scrollable default ViewPort width" type="Text"/>
   <id name="uiViewPortHeight" 				text="Scrollable default ViewPort height" type="Text"/>
   <id name="uiViewPortEnableResizeLimits"   text="ViewPort resize limits enabled on an exported instance" type="Bool" defaults="Enabled/Disabled" />
-  <id name="uiViewPortMinWidth"             text="ViewPort minimum width" type="Text"/>
-  <id name="uiViewPortMinHeight"            text="ViewPort minimum height" type="Text"/>
-  <id name="uiViewPortMaxWidth"             text="ViewPort maximum width" type="Text"/>
-  <id name="uiViewPortMaxHeight"            text="ViewPort maximum height" type="Text"/>
+  <id name="uiViewPortMinWidth"             text="ViewPort minimum width" type="Numeric"/>
+  <id name="uiViewPortMinHeight"            text="ViewPort minimum height" type="Numeric"/>
+  <id name="uiViewPortMaxWidth"             text="ViewPort maximum width" type="Numeric"/>
+  <id name="uiViewPortMaxHeight"            text="ViewPort maximum height" type="Numeric"/>
   <id name="uiViewPortMode"            text="Viewport options"         type="VarText" defaults="Scrollable,Fixed,Scaled" />
   <id name="uiPanelZoom" text="Canvas zoom ratio" type="Numeric" min="0.001" max="10.00" int="0.001"/>
   

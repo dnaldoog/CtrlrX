@@ -215,9 +215,6 @@ class CtrlrEditor : public AudioProcessorEditor,
 		bool hideMidiThruMenu = false;
 		bool hideMidiChannelMenu = false;
 
-		bool vpResizable;
-		double vpFixedAspectRatio;
-		bool vpEnableFixedAspectRatio;
 		bool vpEnableResizableLimits;
 		int vpMinWidth;
 		int vpMinHeight;
