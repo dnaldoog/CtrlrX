@@ -64,42 +64,37 @@ const String CtrlrPropertyComponent::getVisibleText() {
 
 void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 {
-	static const Colour viewportHighlight = Colours::lightgoldenrodyellow; // Change here to update all
+	static const Colour viewportHighlight = Colours::lightgoldenrodyellow;
 
-	// 2. Map uses viewportHighlight directly
-	static const std::map<String, Colour> customHighlights = {
-		{"name", Colour(0x33ffaa00)},					 // Amber/Gold for Modulator Name
-		{"componentVisibleName", Colour(0x33ffaa00)},	 // ComponentVisibleName
-		{"midiMessageType", Colour(0x44ff69b4)},		 // Pink for MIDI Message Type
-		{"midiMessageSysExFormula", Colour(0x44ff69b4)}, // Pink for MIDI Message Type
-		{"luaModulatorValueChange", Colour(0x33007acc)}, // Soft Blue for luaModulatorValueChange
-		{"uiPanelImageResource", Colours::aqua},		 // uiPanelImageResource
-		{"uiPanelIconResource", Colours::aquamarine},	 // uiPanelIconResource
-		{"uiPanelLinuxExpDest", Colours::pink},			 // uiPanelLinuxExpDest
+	static const std::map<String, Colour> customHighlights = {{"name", Colour(0x33ffaa00)},
+															  {"componentVisibleName", Colour(0x33ffaa00)},
+															  {"midiMessageType", Colour(0x44ff69b4)},
+															  {"midiMessageSysExFormula", Colour(0x44ff69b4)},
+															  {"luaModulatorValueChange", Colour(0x33007acc)},
+															  {"uiPanelImageResource", Colours::aqua},
+															  {"uiPanelIconResource", Colours::aquamarine},
+															  {"uiPanelLinuxExpDest", Colours::pink},
 
-		// Viewport Properties linked to the static color variable
-		{"uiViewPortMode", viewportHighlight.darker()},
-		{"uiViewPortEnableResizeLimits", viewportHighlight},
-		{"uiViewPortMinWidth", viewportHighlight},
-		{"uiViewPortMinHeight", viewportHighlight},
-		{"uiViewPortMaxWidth", viewportHighlight},
-		{"uiViewPortMaxHeight", viewportHighlight},
-		{"uiViewPortWidth", viewportHighlight.darker()},
-		{"uiViewPortHeight", viewportHighlight.darker()},
-		{"uiPanelZoom", viewportHighlight},
-		{"uiPanelViewPortBackgroundColour", viewportHighlight}};
+															  {"uiViewPortMode", viewportHighlight.darker()},
+															  {"uiViewPortEnableResizeLimits", viewportHighlight},
+															  {"uiViewPortMinWidth", viewportHighlight},
+															  {"uiViewPortMinHeight", viewportHighlight},
+															  {"uiViewPortMaxWidth", viewportHighlight},
+															  {"uiViewPortMaxHeight", viewportHighlight},
+															  {"uiViewPortWidth", viewportHighlight.darker()},
+															  {"uiViewPortHeight", viewportHighlight.darker()},
+															  {"uiPanelZoom", viewportHighlight},
+															  {"uiPanelViewPortBackgroundColour", viewportHighlight}};
 
 	const String propStr = propertyName.toString();
 	auto it = customHighlights.find(propStr);
 
-	// Check if the property element itself is a modulator (or component)
 	const bool isModulatorProperty = propertyElement.hasType(Ids::modulator) || propertyElement.hasType(Ids::component);
 
-	// Only highlight "name" if it belongs to a Modulator, not a Panel
 	bool shouldHighlight = false;
 	if (it != customHighlights.end()) {
 		if (propertyName == Ids::name)
-			shouldHighlight = isModulatorProperty; // Ignore if owner is panel
+			shouldHighlight = isModulatorProperty;
 		else
 			shouldHighlight = true;
 	}
@@ -126,10 +121,29 @@ void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 	}
 
 	g.setFont(currentFont);
-	g.setColour(findColour(CtrlrPropertyComponent::labelTextColourId));
+
+	// DYNAMIC CONTRAST LOGIC
+	Colour labelColour = findColour(CtrlrPropertyComponent::labelTextColourId);
+
+	if (shouldHighlight) {
+		const Colour fillColour = it->second;
+
+		// Check background luminance (0.0 = black, 1.0 = white)
+		// Note: For translucent ARGB colors like 0x33ffaa00, getPerceivedBrightness()
+		// evaluates the color RGB. If alpha blending over a dark LookAndFeel background makes it look dark,
+		// using fillColour.getPerceivedBrightness() checks the raw RGB tint brightness.
+		if (fillColour.getPerceivedBrightness() > 0.55f) {
+			labelColour = Colours::black.withAlpha(0.85f); // Dark text on light pastel highlights
+		} else {
+			labelColour = Colours::white.withAlpha(0.95f); // Light text on dark highlights
+		}
+	}
+
+	g.setColour(labelColour);
 	g.drawFittedText(visibleText, 6, 0, getLookAndFeel().getPropertyComponentContentPosition(*this).getX() - 12,
 					 getHeight(), Justification::centredLeft, 2, 1.0f);
 }
+
 void CtrlrPropertyComponent::resized() {
 	// currentFont.setHeight (jmin (getHeight(), 24) * 0.55f);
 
