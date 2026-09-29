@@ -929,6 +929,8 @@ void CtrlrPanelEditor::applyViewPortMode() {
 	//_DBG("ApplyViewPortMode was hit");
 	if ((bool)getProperty(Ids::uiPanelEditMode))
 		return;
+    if (owner.getCtrlrManagerOwner().getInstanceMode() != InstanceSingleRestricted)
+        return; // skip main-app preview — only exported/restricted instances get real viewport behavior
 
 	auto mode = gui::viewPortModeFromString(getProperty(Ids::uiViewPortMode).toString());
 	//_DBG("ZZZZZ!!!! applyViewPortMode: mode=" + String(gui::viewPortModeToString(mode)) +

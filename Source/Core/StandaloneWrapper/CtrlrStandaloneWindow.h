@@ -49,6 +49,7 @@ class CtrlrStandaloneWindow : public DocumentWindow, public ActionListener, publ
 		int vpOsFrameRight;
 		double vpPanelZoom;
 		bool restoreState;
+		std::unique_ptr<juce::ResizableCornerComponent> resizeGrip;
 		AudioProcessor *filter;
 		CtrlrProcessor *ctrlrProcessor;
 		ApplicationProperties *appProperties;

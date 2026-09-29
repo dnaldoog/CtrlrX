@@ -290,7 +290,8 @@ case CtrlrEditor::doExportFileInstanceRestricted: {
 			} else {
 				notify("Panel instance export: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
 				AW::showMessageBox(AW::Warning, "Panel export",
-								   "Failed to export panel as standalone instance.\n" + res.getErrorMessage());
+								   "Failed to export panel as standalone instance.\n" + res.getErrorMessage() +
+									   "\n\nMaybe the file is still open and running?");
 			}
 		} else {
 			notify("Panel instance export: Wrote new panel instance.", nullptr, NotifySuccess);

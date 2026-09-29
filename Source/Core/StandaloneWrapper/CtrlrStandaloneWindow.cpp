@@ -129,49 +129,47 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 		} else {
 			setResizable(true, true);
 
-			if (auto *constrainer = getConstrainer()) {
-				if (vpMode == gui::ViewPortMode::Scaled) {
-					constrainer->setFixedAspectRatio(vpStandaloneAspectRatio);
+if (auto *constrainer = getConstrainer()) {
+    resizeGrip = std::make_unique<juce::ResizableCornerComponent>(this, constrainer);
+    addAndMakeVisible(resizeGrip.get());
 
-					if (vpEnableResizableLimits && vpMinWidth > 0 && vpMaxWidth > 0) {
-						setResizeLimits(vpMinWidth, round(vpMinWidth / vpStandaloneAspectRatio), vpMaxWidth,
-										 round(vpMaxWidth / vpStandaloneAspectRatio));
-					} else if (vpEnableResizableLimits && vpMinWidth > 0 && vpMinHeight > 0 && vpMaxWidth > 0 &&
-							   vpMaxHeight > 0) {
-						setResizeLimits(
-							vpMinWidth + vpOsFrameLeft + vpOsFrameRight, vpMinHeight + vpOsFrameTop + vpOsFrameBtm,
-							vpMaxWidth + vpOsFrameLeft + vpOsFrameRight, vpMaxHeight + vpOsFrameTop + vpOsFrameBtm);
-					} else {
-						constrainer->setMinimumSize(panelCanvasWidth, panelCanvasHeight + vpOsFrameTop + vpOsFrameBtm);
-					}
-				} else { // Scrollable
-					constrainer->setFixedAspectRatio(0.0);
+    if (vpMode == gui::ViewPortMode::Scaled) {
+        constrainer->setFixedAspectRatio(vpStandaloneAspectRatio);
 
-					if (vpEnableResizableLimits && vpMinWidth > 0 && vpMinHeight > 0 && vpMaxWidth > 0 &&
-						vpMaxHeight > 0) {
-						setResizeLimits(
-							vpMinWidth + vpOsFrameLeft + vpOsFrameRight, vpMinHeight + vpOsFrameTop + vpOsFrameBtm,
-							vpMaxWidth + vpOsFrameLeft + vpOsFrameRight, vpMaxHeight + vpOsFrameTop + vpOsFrameBtm);
-					}
+        if (vpEnableResizableLimits && vpMinWidth > 0 && vpMaxWidth > 0) {
+            setResizeLimits(vpMinWidth, round(vpMinWidth / vpStandaloneAspectRatio), vpMaxWidth,
+                             round(vpMaxWidth / vpStandaloneAspectRatio));
+        } else if (vpEnableResizableLimits && vpMinWidth > 0 && vpMinHeight > 0 && vpMaxWidth > 0 &&
+                   vpMaxHeight > 0) {
+            setResizeLimits(
+                vpMinWidth + vpOsFrameLeft + vpOsFrameRight, vpMinHeight + vpOsFrameTop + vpOsFrameBtm,
+                vpMaxWidth + vpOsFrameLeft + vpOsFrameRight, vpMaxHeight + vpOsFrameTop + vpOsFrameBtm);
+        } else {
+            constrainer->setMinimumSize(panelCanvasWidth, panelCanvasHeight + vpOsFrameTop + vpOsFrameBtm);
+        }
+    } else { // Scrollable
+        constrainer->setFixedAspectRatio(0.0);
 
-					// Author-chosen initial size: 0, or anything larger than the canvas, means "panel size"
-					int initW = (int)ed.getProperty(Ids::uiViewPortWidth, 0);
-					int initH = (int)ed.getProperty(Ids::uiViewPortHeight, 0);
-					if (initW <= 0 || initW > panelCanvasWidth)
-						initW = panelCanvasWidth;
-					if (initH <= 0 || initH > panelCanvasHeight)
-						initH = panelCanvasHeight;
+        if (vpEnableResizableLimits && vpMinWidth > 0 && vpMinHeight > 0 && vpMaxWidth > 0 && vpMaxHeight > 0) {
+            setResizeLimits(
+                vpMinWidth + vpOsFrameLeft + vpOsFrameRight, vpMinHeight + vpOsFrameTop + vpOsFrameBtm,
+                vpMaxWidth + vpOsFrameLeft + vpOsFrameRight, vpMaxHeight + vpOsFrameTop + vpOsFrameBtm);
+        }
 
-					// Same menu bar allowance the constructor already applies elsewhere
-					int menuBarHeight =
-						static_cast<int>(ctrlrProcessor->getManager().getProperty(Ids::ctrlrMenuBarHeight));
-					if (menuBarHeight <= 0)
-						menuBarHeight = 24;
-					const bool menuBarVisible = ed.getProperty(Ids::uiPanelMenuBarVisible, true);
+        // Author-chosen initial size: 0, or anything larger than the canvas, means "panel size"
+        int initW = (int)ed.getProperty(Ids::uiViewPortWidth, 0);
+        int initH = (int)ed.getProperty(Ids::uiViewPortHeight, 0);
+        if (initW <= 0 || initW > panelCanvasWidth)  initW = panelCanvasWidth;
+        if (initH <= 0 || initH > panelCanvasHeight) initH = panelCanvasHeight;
 
-					centreWithSize(initW, initH + (menuBarVisible ? menuBarHeight : 0));
-				}
-			}
+        int menuBarHeight = static_cast<int>(ctrlrProcessor->getManager().getProperty(Ids::ctrlrMenuBarHeight));
+        if (menuBarHeight <= 0)
+            menuBarHeight = 24;
+        const bool menuBarVisible = ed.getProperty(Ids::uiPanelMenuBarVisible, true);
+
+        centreWithSize(initW, initH + (menuBarVisible ? menuBarHeight : 0));
+    }
+}
 		}
 	}
 
@@ -260,7 +258,12 @@ void CtrlrStandaloneWindow::clearProcessorPointer() {
 
 void CtrlrStandaloneWindow::resized() {
 	DocumentWindow::resized();
+	if (resizeGrip)
+		resizeGrip->setBounds(getWidth() - 16, getHeight() - 16, 16, 16);
 
+	if (appProperties != nullptr && !restoreState) {
+		appProperties->getUserSettings()->setValue(CTRLR_PROPERTIES_WINDOW_STATE, getWindowStateAsString());
+	}
 	if (appProperties != nullptr && !restoreState) {
 		appProperties->getUserSettings()->setValue(CTRLR_PROPERTIES_WINDOW_STATE, getWindowStateAsString());
 	}
