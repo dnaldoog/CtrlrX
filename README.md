@@ -1,5 +1,6 @@
+<center><img width="180" height="180" alt="ctrlrx_logoJuce 8" src="https://github.com/user-attachments/assets/ca839e74-28bb-4534-8087-4837e09cf33d" /></center>
 
-<img width="180" height="180" alt="ctrlrx_logoJuce 8" src="https://github.com/user-attachments/assets/ca839e74-28bb-4534-8087-4837e09cf33d" />
+
 # CtrlrX (JUCE 8 Experimental Fork)
 
 Welcome to the active, fast-moving development fork of **CtrlrX**. While the upstream repository focuses on a conservative, highly stable release cycle, this repository serves as the project's experimental frontier—bringing modern framework updates, cutting-edge features, and expanded platform support to the community.
