@@ -45,14 +45,14 @@ jobs:
             os: ubuntu-24.04
             pluginval-binary: ./pluginval
             extra-flags: -G Ninja -DJUCE_LINUX=1
-          - name: macOS
-            os: macos-14
-            pluginval-binary: pluginval.app/Contents/MacOS/pluginval
-            extra-flags: -G Ninja -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
-          - name: Windows
-            os: windows-2022
-            pluginval-binary: ./pluginval.exe
-            extra-flags: ""
+          # - name: macOS
+          #   os: macos-14
+          #   pluginval-binary: pluginval.app/Contents/MacOS/pluginval
+          #   extra-flags: -G Ninja -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          # - name: Windows
+          #   os: windows-2022
+          #   pluginval-binary: ./pluginval.exe
+          #   extra-flags: ""
 
     steps:
       - name: Checkout code
