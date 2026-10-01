@@ -345,9 +345,10 @@ jobs:
 
       - name: Generate Installer (Windows)
         if: ${{ matrix.name == 'Windows' }}
+        shell: pwsh
         run: |
           iscc "Packaging\Windows\installer.iss"
-          mv "Packaging/Windows/Output/${{ env.ARTIFACT_NAME }}.exe" "${{ env.ARTIFACTS_PATH }}/"
+          Move-Item -Path "Packaging/Windows/Output/${env:ARTIFACT_NAME}.exe" -Destination "${env:ARTIFACTS_PATH}/"
 
       - name: Codesign with Azure Trusted Signing (Windows Installer)
         if: ${{ matrix.name == 'Windows' && env.HAVE_AZURE_CLIENT_SECRET == 'true' }}

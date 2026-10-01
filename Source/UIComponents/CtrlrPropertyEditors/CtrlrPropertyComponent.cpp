@@ -64,28 +64,37 @@ const String CtrlrPropertyComponent::getVisibleText() {
 
 void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 {
-	static const std::map<String, Colour> customHighlights = {
-		{"name", Colour(0x33ffaa00)},					 // Amber/Gold for Modulator Name
-		{"componentVisibleName", Colour(0x33ffaa00)},	 // ComponentVisibleName
-		{"midiMessageType", Colour(0x44ff69b4)},		 // Pink for MIDI Message Type
-		{"midiMessageSysExFormula", Colour(0x44ff69b4)}, // Pink for MIDI Message Type
-		{"luaModulatorValueChange", Colour(0x33007acc)}, // Soft Blue for luaModulatorValueChange
-		{"uiPanelImageResource", Colours::aqua},		 // uiPanelImageResource
-		{"uiPanelIconResource", Colours::aquamarine},	 // uiPanelIconResource
-		{"uiPanelLinuxExpDest", Colours::pink},			 // uiPanelLinuxExpDest
-	};
+	static const Colour viewportHighlight = Colours::lightgoldenrodyellow;
+
+	static const std::map<String, Colour> customHighlights = {{"name", Colour(0x33ffaa00)},
+															  {"componentVisibleName", Colour(0x33ffaa00)},
+															  {"midiMessageType", Colour(0x44ff69b4)},
+															  {"midiMessageSysExFormula", Colour(0x44ff69b4)},
+															  {"luaModulatorValueChange", Colour(0x33007acc)},
+															  {"uiPanelImageResource", Colours::aqua},
+															  {"uiPanelIconResource", Colours::aquamarine},
+															  {"uiPanelLinuxExpDest", Colours::pink},
+
+															  {"uiViewPortMode", viewportHighlight.darker()},
+															  {"uiViewPortEnableResizeLimits", viewportHighlight},
+															  {"uiViewPortMinWidth", viewportHighlight},
+															  {"uiViewPortMinHeight", viewportHighlight},
+															  {"uiViewPortMaxWidth", viewportHighlight},
+															  {"uiViewPortMaxHeight", viewportHighlight},
+															  {"uiViewPortWidth", viewportHighlight.darker()},
+															  {"uiViewPortHeight", viewportHighlight.darker()},
+															  {"uiPanelZoom", viewportHighlight},
+															  {"uiPanelViewPortBackgroundColour", viewportHighlight}};
 
 	const String propStr = propertyName.toString();
 	auto it = customHighlights.find(propStr);
 
-	// Check if the property element itself is a modulator (or component)
 	const bool isModulatorProperty = propertyElement.hasType(Ids::modulator) || propertyElement.hasType(Ids::component);
 
-	// Only highlight "name" if it belongs to a Modulator, not a Panel
 	bool shouldHighlight = false;
 	if (it != customHighlights.end()) {
 		if (propertyName == Ids::name)
-			shouldHighlight = isModulatorProperty; // Ignore if owner is panel
+			shouldHighlight = isModulatorProperty;
 		else
 			shouldHighlight = true;
 	}
@@ -112,10 +121,29 @@ void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 	}
 
 	g.setFont(currentFont);
-	g.setColour(findColour(CtrlrPropertyComponent::labelTextColourId));
+
+	// DYNAMIC CONTRAST LOGIC
+	Colour labelColour = findColour(CtrlrPropertyComponent::labelTextColourId);
+
+	if (shouldHighlight) {
+		const Colour fillColour = it->second;
+
+		// Check background luminance (0.0 = black, 1.0 = white)
+		// Note: For translucent ARGB colors like 0x33ffaa00, getPerceivedBrightness()
+		// evaluates the color RGB. If alpha blending over a dark LookAndFeel background makes it look dark,
+		// using fillColour.getPerceivedBrightness() checks the raw RGB tint brightness.
+		if (fillColour.getPerceivedBrightness() > 0.55f) {
+			labelColour = Colours::black.withAlpha(0.85f); // Dark text on light pastel highlights
+		} else {
+			labelColour = Colours::white.withAlpha(0.95f); // Light text on dark highlights
+		}
+	}
+
+	g.setColour(labelColour);
 	g.drawFittedText(visibleText, 6, 0, getLookAndFeel().getPropertyComponentContentPosition(*this).getX() - 12,
 					 getHeight(), Justification::centredLeft, 2, 1.0f);
 }
+
 void CtrlrPropertyComponent::resized() {
 	// currentFont.setHeight (jmin (getHeight(), 24) * 0.55f);
 
@@ -1130,6 +1158,7 @@ CtrlrLuaMethodProperty::CtrlrLuaMethodProperty(const Value &_valueToControl, con
 	methodSelectorCombo->setJustificationType(Justification::centredLeft);
 	methodSelectorCombo->setTextWhenNothingSelected("");
 	methodSelectorCombo->setTextWhenNoChoicesAvailable(L"(no choices)");
+	methodSelectorCombo->setTooltip(L"[U] User,[C] Callback,[S] System,[E] Mouse Event");
 	methodSelectorCombo->addListener(this);
 
 	editMethodButton = std::unique_ptr<DrawableButton>(gui::createDrawableButton("Edit Metod", BIN2STR(edit_svg)));
@@ -1172,16 +1201,32 @@ void CtrlrLuaMethodProperty::resized() {
 	deleteMethodButton->setBounds(48, 0, 24, getHeight() - 0);
 }
 
-void CtrlrLuaMethodProperty::comboBoxChanged(ComboBox *comboBoxThatHasChanged) {
-	if (comboBoxThatHasChanged == methodSelectorCombo.get()) {
-		valueToControl = methodSelectorCombo->getText();
+// Helper function to strip visual tags (e.g., "[C] myMethod" -> "myMethod")
+static juce::String cleanMethodName(const juce::String &rawChoice) {
+	if (rawChoice.startsWith("[") && rawChoice.contains("] ")) {
+		return rawChoice.substring(rawChoice.indexOf("] ") + 2);
 	}
+	return rawChoice;
+}
+
+void CtrlrLuaMethodProperty::comboBoxChanged(ComboBox *comboBoxThatHasChanged) {
+    if (comboBoxThatHasChanged == methodSelectorCombo.get()) {
+        const String rawText = methodSelectorCombo->getText();
+        const String cleanName = cleanMethodName(rawText);
+
+        // 1. Update underlying property value
+        valueToControl = cleanName;
+
+        // 2. Override the display text of the closed ComboBox to show the clean name
+        methodSelectorCombo->setText(cleanName, dontSendNotification);
+    }
 }
 
 void CtrlrLuaMethodProperty::buttonClicked(Button *buttonThatWasClicked) {
 	// --- EDIT METHOD BUTTON ---
 	if (buttonThatWasClicked == editMethodButton.get()) {
-		const juce::String selectedMethod = methodSelectorCombo->getText();
+		// Strip tag before passing to method editor
+		const juce::String selectedMethod = cleanMethodName(methodSelectorCombo->getText());
 
 		if (selectedMethod.isEmpty() || selectedMethod == COMBO_NONE_ITEM) {
 			return;
@@ -1290,12 +1335,40 @@ void CtrlrLuaMethodProperty::buttonClicked(Button *buttonThatWasClicked) {
 }
 
 void CtrlrLuaMethodProperty::refresh() {
-	if (owner == 0)
-		return;
-	methodSelectorCombo->clear();
-	methodSelectorCombo->addItem(COMBO_NONE_ITEM, 1);
-	methodSelectorCombo->addItemList(owner->getCtrlrLuaManager().getMethodManager().getMethodList(), 2);
-	methodSelectorCombo->setText(valueToControl.toString(), sendNotification);
+	// 1. Guard against null owner (e.g. global preferences / non-panel context)
+    if (owner == nullptr) {
+        return;
+    }
+    // Re-populate the list
+    methodSelectorCombo->clear(dontSendNotification);
+    methodSelectorCombo->addItem(COMBO_NONE_ITEM, 1);
+
+    const StringArray methods = owner->getCtrlrLuaManager().getMethodManager().getMethodList();
+    for (int i = 0; i < methods.size(); ++i) {
+        methodSelectorCombo->addItem(methods[i], i + 2);
+    }
+
+    // Retrieve saved method name (clean)
+    const String cleanSavedName = valueToControl.toString();
+
+    if (cleanSavedName.isEmpty() || cleanSavedName == COMBO_NONE_ITEM) {
+        methodSelectorCombo->setText(COMBO_NONE_ITEM, dontSendNotification);
+        return;
+    }
+
+    // Search dropdown items by stripping their tags and matching clean names
+    for (int i = 0; i < methodSelectorCombo->getNumItems(); ++i) {
+        String itemText = methodSelectorCombo->getItemText(i);
+
+        if (cleanMethodName(itemText) == cleanSavedName) {
+            // Select the item index without triggering callbacks
+            methodSelectorCombo->setSelectedItemIndex(i, dontSendNotification);
+            
+            // Override the closed display text to show the clean name!
+            methodSelectorCombo->setText(cleanSavedName, dontSendNotification);
+            return;
+        }
+    }
 }
 
 CtrlrModulatorListProperty::CtrlrModulatorListProperty(const Value &_valueToControl, CtrlrPanel *_owner)

@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "CtrlrPanelEditor.h"
 #include "CtrlrComponents/CtrlrCombo.h"
 #include "CtrlrComponents/CtrlrComponent.h"
@@ -16,7 +17,7 @@
 #include "CtrlrProcessor.h"
 #include "CtrlrUtilities.h"
 #include "JuceClasses/LMemoryBlock.h"
-#include "stdafx.h"
+
 
 #if JUCE_MAC
 #define Point MacTypes_Point
@@ -155,21 +156,14 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 	setProperty(Ids::uiPanelMidiControllerMenuHideOnExport, false);
 	setProperty(Ids::uiPanelMidiThruMenuHideOnExport, false);
 	setProperty(Ids::uiPanelMidiChannelMenuHideOnExport, false);
-
-	setProperty(Ids::uiPanelViewPortSize, 800);
-	setProperty(Ids::uiPanelPropertiesSize, 300);
-
-	setProperty(Ids::uiViewPortResizable, true);
-	setProperty(Ids::uiViewPortShowScrollBars, true);
-	setProperty(Ids::uiViewPortWidth, 400);
-	setProperty(Ids::uiViewPortHeight, 400);
+	setProperty(Ids::uiViewPortMode, gui::viewPortModeToString(gui::ViewPortMode::Scrollable));
 	setProperty(Ids::uiViewPortEnableResizeLimits, false);
 	setProperty(Ids::uiViewPortMinWidth, 0);
 	setProperty(Ids::uiViewPortMinHeight, 0);
 	setProperty(Ids::uiViewPortMaxWidth, 0);
 	setProperty(Ids::uiViewPortMaxHeight, 0);
-	setProperty(Ids::uiViewPortEnableFixedAspectRatio, false);
-	setProperty(Ids::uiViewPortFixedAspectRatio, 1.5);
+	setProperty(Ids::uiViewPortWidth, 0);
+	setProperty(Ids::uiViewPortHeight,0);
 	setProperty(Ids::uiPanelZoom, 1.0);
 
 	setProperty(Ids::uiPanelViewPortBackgroundColour,
@@ -372,19 +366,15 @@ void CtrlrPanelEditor::resized() {
 	ctrlrPanelProperties->setBounds(getWidth() - 600, 32, 600, getHeight() - 32);
 	spacerComponent->setBounds(getWidth(), 32, 8, getHeight() - 32);
 
-	setProperty(Ids::uiViewPortWidth, getWidth());
-	setProperty(Ids::uiViewPortHeight, getHeight());
+	// setProperty(Ids::uiViewPortWidth, getWidth());
+	// setProperty(Ids::uiViewPortHeight,getHeight());
 
 	if (ctrlrPanelNotifier) {
 		ctrlrPanelNotifier->setBounds(0, getHeight() - 28, getWidth() - 32, 20);
 	}
 
 	layoutItems();
-
-	if (!getRestoreState()) {
-		saveLayout();
-	}
-
+	applyViewPortMode();
 	if (resizedCbk && !resizedCbk.wasObjectDeleted()) {
 		if (resizedCbk->isValid()) {
 			owner.getCtrlrLuaManager().getMethodManager().call(resizedCbk, &owner);
@@ -409,11 +399,6 @@ void CtrlrPanelEditor::layoutItems() {
 	}
 }
 
-void CtrlrPanelEditor::saveLayout() {
-	setProperty(Ids::uiPanelViewPortSize, layoutManager.getItemCurrentAbsoluteSize(0));
-	setProperty(Ids::uiPanelPropertiesSize, layoutManager.getItemCurrentAbsoluteSize(2));
-}
-
 CtrlrPanelCanvas *CtrlrPanelEditor::getCanvas() {
 	if (ctrlrPanelViewport != 0) {
 		return (ctrlrPanelViewport->getCanvas());
@@ -431,7 +416,7 @@ void CtrlrPanelEditor::editModeChanged() {
 		spacerComponent->setVisible(true);
 		ctrlrPanelProperties->setVisible(true);
 		getCanvas()->getResizableBorder()->setVisible(true);
-
+		setProperty(Ids::uiPanelZoom, 1.0); // So we don't have a zoomed panel if scaled is set
 		// Notify the property inspector so it can display the current selection.
 		// CtrlrPanelProperties does not expose a setTargetObject() method.
 		if (getSelection() != nullptr)
@@ -439,15 +424,6 @@ void CtrlrPanelEditor::editModeChanged() {
 
 		if ((bool)getProperty(Ids::uiPanelDisableCombosOnEdit))
 			setAllCombosDisabled();
-		// if (editMode) {
-		// 	layoutManager.setItemLayout(0, -0.001, -1.0, getProperty(Ids::uiPanelViewPortSize, -0.7));
-		// 	layoutManager.setItemLayout(2, -0.001, -1.0, getProperty(Ids::uiPanelPropertiesSize, -0.3));
-		// 	spacerComponent->setVisible(true);
-		// 	ctrlrPanelProperties->setVisible(true);
-		// 	getCanvas()->getResizableBorder()->setVisible(true);
-
-		// 	if ((bool)getProperty(Ids::uiPanelDisableCombosOnEdit))
-		// 		setAllCombosDisabled();
 	} else {
 		if (getSelection())
 			getSelection()->deselectAll();
@@ -563,8 +539,13 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 	// 	return;
 	// }
 	if (treeWhosePropertyHasChanged.hasType(Ids::uiPanelEditor)) {
+
 		if (property == Ids::uiPanelEditMode) {
 			editModeChanged();
+		} else if (property == Ids::uiViewPortMode) {
+			// apply resizable / scrollbars / scaled-zoom behavior for the new mode
+			resized();
+
 		} else if (property == Ids::luaViewPortResized) {
 			if (getProperty(property) == "")
 				return;
@@ -590,17 +571,13 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 			canvasAspectRatio =
 				canvasWidth / canvasHeight; // Updated v5.6.31 by GoodWeather. Removed type double(canvasAspectRatio) =
 											// double(canvasWidth) / double(canvasHeight)
-			setProperty(Ids::uiViewPortFixedAspectRatio,
-						canvasAspectRatio); // update canvas aspect ratio if canvas is resized
 			resized();
-		} else if (property == Ids::uiViewPortResizable || property == Ids::uiViewPortShowScrollBars ||
-				   property == Ids::uiViewPortEnableFixedAspectRatio || property == Ids::uiViewPortFixedAspectRatio ||
-				   property == Ids::uiViewPortEnableResizeLimits || property == Ids::uiViewPortMinWidth ||
+		} else if (property == Ids::uiViewPortEnableResizeLimits || property == Ids::uiViewPortMinWidth ||
 				   property == Ids::uiViewPortMinHeight || property == Ids::uiViewPortMaxWidth ||
-				   property == Ids::uiViewPortMaxHeight || property == Ids::uiViewPortShowScrollBars) {
+				   property == Ids::uiViewPortMaxHeight) {
 			resized();
-		} else if (property == Ids::uiViewPortWidth || property == Ids::uiViewPortHeight) {
-			resized();
+			// } else if (property == Ids::uiViewPortWidth || property == Ids::uiViewPortHeight) {
+			// 	resized(); PROV
 		} else if (property == Ids::uiPanelDisableCombosOnEdit) {
 			if ((bool)getProperty(property) && getMode()) {
 				setAllCombosDisabled();
@@ -946,4 +923,42 @@ bool CtrlrPanelEditor::isAppSignedWithEntitlements() {
 		CFRelease(selfCode);
 #endif
 	return false;
+}
+
+void CtrlrPanelEditor::applyViewPortMode() {
+	//_DBG("ApplyViewPortMode was hit");
+	if ((bool)getProperty(Ids::uiPanelEditMode))
+		return;
+    if (owner.getCtrlrManagerOwner().getInstanceMode() != InstanceSingleRestricted)
+        return; // skip main-app preview — only exported/restricted instances get real viewport behavior
+
+	auto mode = gui::viewPortModeFromString(getProperty(Ids::uiViewPortMode).toString());
+	//_DBG("ZZZZZ!!!! applyViewPortMode: mode=" + String(gui::viewPortModeToString(mode)) +
+	//	 " canvasWidth=" + String(canvasWidth) + " canvasHeight=" + String(canvasHeight) +
+	//	 " editorW=" + String(getWidth()) + " editorH=" + String(getHeight()));
+
+	switch (mode) {
+	case gui::ViewPortMode::Fixed:
+		getPanelViewport()->setScrollBarsShown(false);
+		break;
+	case gui::ViewPortMode::Scrollable:
+		getPanelViewport()->setScrollBarsShown(true);
+		break;
+	case gui::ViewPortMode::Scaled: {
+		getPanelViewport()->setScrollBarsShown(false);
+		if (auto *canvas = getCanvas()) {
+			const int cw = canvas->getWidth();
+			const int ch = canvas->getHeight();
+			//_DBG("XXXXX!!!! Scaled: canvasW=" + String(cw) + " canvasH=" + String(ch) +
+			//	 " editorW=" + String(getWidth()) + " editorH=" + String(getHeight()));
+			if (cw > 0 && ch > 0) {
+				double zoomW = (double)getWidth() / cw;
+				double zoomH = (double)getHeight() / ch;
+				double zoom = (cw >= ch) ? zoomW : zoomH;
+				setProperty(Ids::uiPanelZoom, zoom);
+			}
+		}
+		break;
+	}
+	}
 }

@@ -98,11 +98,11 @@ const CtrlrLuaMethodCodeEditorSettings::ColourItem CtrlrLuaMethodCodeEditorSetti
 CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings(CtrlrLuaMethodEditor &_owner,
 																   juce::Value &sharedSearchTabsValue_)
 	: owner(_owner), sharedSearchTabsValue(sharedSearchTabsValue_) {
-	label0 = std::make_unique<Label>("new label", TRANS("Font:")); // Added v.5.6.31
-	addAndMakeVisible(label0.get());							   // Added v.5.6.31
-	label0->setFont(Font(14.00f));								   // Added v.5.6.31
-	label0->setJustificationType(Justification::centredLeft);	   // Added v.5.6.31
-	label0->setEditable(false, false, false);					   // Added v.5.6.31
+	labelFont = std::make_unique<Label>("new label", TRANS("Font:")); // Added v.5.6.31
+	addAndMakeVisible(labelFont.get());								  // Added v.5.6.31
+	labelFont->setFont(Font(14.00f));								  // Added v.5.6.31
+	labelFont->setJustificationType(Justification::centredLeft);	  // Added v.5.6.31
+	labelFont->setEditable(false, false, false);					  // Added v.5.6.31
 
 	fontTypeface = std::make_unique<ComboBox>("");
 	addAndMakeVisible(fontTypeface.get());
@@ -135,23 +135,23 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings(CtrlrLuaMetho
 	resetToPreviousButton->addListener(this);
 	resetToPreviousButton->setColour(TextButton::buttonColourId, findColour(TextButton::buttonColourId));
 
-	label1 = std::make_unique<Label>("new label", TRANS("Editor background:")); // Added v.5.6.31
-	addAndMakeVisible(label1.get());											// Added v.5.6.31
-	label1->setFont(Font(14.00f));												// Added v.5.6.31
-	label1->setJustificationType(Justification::centredLeft);					// Added v.5.6.31
-	label1->setEditable(false, false, false);									// Added v.5.6.31
+	labelEditorBG = std::make_unique<Label>("new label", TRANS("Editor background:")); // Added v.5.6.31
+	addAndMakeVisible(labelEditorBG.get());											   // Added v.5.6.31
+	labelEditorBG->setFont(Font(14.00f));											   // Added v.5.6.31
+	labelEditorBG->setJustificationType(Justification::centredLeft);				   // Added v.5.6.31
+	labelEditorBG->setEditable(false, false, false);								   // Added v.5.6.31
 
-	label2 = std::make_unique<Label>("new label", TRANS("Line numbers background:")); // Added v.5.6.31
-	addAndMakeVisible(label2.get());												  // Added v.5.6.31
-	label2->setFont(Font(14.00f));													  // Added v.5.6.31
-	label2->setJustificationType(Justification::centredLeft);						  // Added v.5.6.31
-	label2->setEditable(false, false, false);										  // Added v.5.6.31
+	labelLineNumBG = std::make_unique<Label>("new label", TRANS("Line numbers background:")); // Added v.5.6.31
+	addAndMakeVisible(labelLineNumBG.get());												  // Added v.5.6.31
+	labelLineNumBG->setFont(Font(14.00f));													  // Added v.5.6.31
+	labelLineNumBG->setJustificationType(Justification::centredLeft);						  // Added v.5.6.31
+	labelLineNumBG->setEditable(false, false, false);										  // Added v.5.6.31
 
-	label3 = std::make_unique<Label>("new label", TRANS("Line numbers:")); // Added v.5.6.31
-	addAndMakeVisible(label3.get());									   // Added v.5.6.31
-	label3->setFont(Font(14.00f));										   // Added v.5.6.31
-	label3->setJustificationType(Justification::centredLeft);			   // Added v.5.6.31
-	label3->setEditable(false, false, false);							   // Added v.5.6.31
+	labelLineNumFontCol = std::make_unique<Label>("new label", TRANS("Line numbers:")); // Added v.5.6.31
+	addAndMakeVisible(labelLineNumFontCol.get());										// Added v.5.6.31
+	labelLineNumFontCol->setFont(Font(14.00f));											// Added v.5.6.31
+	labelLineNumFontCol->setJustificationType(Justification::centredLeft);				// Added v.5.6.31
+	labelLineNumFontCol->setEditable(false, false, false);								// Added v.5.6.31
 
 	fontTest = std::make_unique<CodeEditorComponent>(codeDocument, &luaTokeniser);
 	addAndMakeVisible(fontTest.get());
@@ -264,12 +264,12 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings(CtrlrLuaMetho
 			Ids::luaMethodEditorFont, owner.getOwner().getCtrlrManagerOwner().getFontManager().getStringFromFont(
 										  Font("<Monospaced>", 14.0f, Font::plain))));
 
-	label1->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId));
-	label1->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
-	label2->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId));
-	label2->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
-	label3->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId));
-	label3->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
+	labelEditorBG->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId));
+	labelEditorBG->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
+	labelLineNumBG->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId));
+	labelLineNumBG->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
+	labelLineNumFontCol->setColour(TextEditor::textColourId, findColour(TextEditor::textColourId));
+	labelLineNumFontCol->setColour(TextEditor::backgroundColourId, Colour(0x00000000));
 
 	Colour defaultBgColour =
 		VAR2COLOUR(owner.getComponentTree().getProperty(Ids::luaMethodEditorBgColour, Colours::white.toString()));
@@ -340,7 +340,7 @@ void CtrlrLuaMethodCodeEditorSettings::resized() {
 		fontTest->setBounds(marginLeft, marginTop, sampleWidth, sampleHeight);
 
 	// Font type
-	label0->setBounds(marginLeft - 4, marginTop + sampleHeight + 8, sampleWidth, 24);
+	labelFont->setBounds(marginLeft - 4, marginTop + sampleHeight + 8, sampleWidth, 24);
 	fontTypeface->setBounds(marginLeft, marginTop + sampleHeight + 24 + 8, sampleWidth, 24);
 
 	// Font style
@@ -354,15 +354,16 @@ void CtrlrLuaMethodCodeEditorSettings::resized() {
 	fontSize->setBounds(marginLeft + 224, marginTop + sampleHeight + 24 + 40, 88, 24);
 
 	// Editor background
-	label1->setBounds(marginLeft - 4, marginTop + sampleHeight + 24 + 72, sampleWidth, 24);
+	labelEditorBG->setBounds(marginLeft - 4, marginTop + sampleHeight + 24 + 72, sampleWidth, 24);
 	bgColour->setBounds(marginLeft, marginTop + sampleHeight + 24 + 72 + 24, sampleWidth, 24);
 
 	// Line numbers background
-	label2->setBounds(marginLeft - 4, marginTop + sampleHeight + 24 + 72 + 24 + 32, sampleWidth, 24);
+	labelLineNumBG->setBounds(marginLeft - 4, marginTop + sampleHeight + 24 + 72 + 24 + 32, sampleWidth, 24);
 	lineNumbersBgColour->setBounds(marginLeft, marginTop + sampleHeight + 24 + 72 + 2 * 24 + 32, sampleWidth, 24);
 
 	// Line numbers
-	label3->setBounds(marginLeft - 4, marginTop + sampleHeight + 24 + 72 + 2 * 24 + 2 * 32, sampleWidth, 24);
+	labelLineNumFontCol->setBounds(marginLeft - 4, marginTop + sampleHeight + 24 + 72 + 2 * 24 + 2 * 32, sampleWidth,
+								   24);
 	lineNumbersColour->setBounds(marginLeft, marginTop + sampleHeight + 24 + 72 + 3 * 24 + 2 * 32, sampleWidth, 24);
 
 	// Highlights

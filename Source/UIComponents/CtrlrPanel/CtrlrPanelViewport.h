@@ -120,6 +120,7 @@ class CtrlrPanelViewport : public Component {
 		bool keyStateChanged(bool isKeyDown);
 		void lookAndFeelChanged();
 		CtrlrPanel &getPanel();
+		void setScrollBarsShown(bool shown);
 		void valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property);
 		void setProperty(const Identifier &name, const var &newValue, const bool isUndoable = false);
 		const var &getProperty(const Identifier &name) const;

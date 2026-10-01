@@ -2,9 +2,11 @@
 #include "CtrlrInlineUtilitiesGUI.h"
 #include "stdafx.h"
 
-CtrlrSettings::CtrlrSettings (CtrlrManager &_owner) : Component ("Global Properties"), owner(_owner), propertyPanel (0)
+CtrlrSettings::CtrlrSettings (CtrlrManager &_owner) : Component ("Global Properties"), owner(_owner), propertyPanel (nullptr)
 {
-    addAndMakeVisible (propertyPanel = new PropertyPanel());
+
+	owner.getManagerTree().addListener(this);
+	addAndMakeVisible (propertyPanel = new PropertyPanel());
     
     propertyPanel->setName ("propertyPanel");
     
@@ -92,8 +94,22 @@ CtrlrSettings::CtrlrSettings (CtrlrManager &_owner) : Component ("Global Propert
     
 	propertyPanel->getViewport().setScrollBarThickness(owner.getManagerTree().getProperty(Ids::ctrlrScrollbarThickness));
     
-    const int totalContentHeight = propertyPanel->getTotalContentHeight(); // Added v5.6.31. Returns totalContentHeight
-    setSize (600, totalContentHeight);
+// --- FIX FOR HIGH RESOLUTION / SMALLER DISPLAYS ---
+    const int totalContentHeight = propertyPanel->getTotalContentHeight();
+
+    // Get primary display work area height (excluding taskbars/dock)
+    int maxAvailableHeight = 700; // Safe fallback height
+    
+    if (auto* primaryDisplay = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay())
+    {
+        // Limit max window height to ~75% of screen work area height
+        maxAvailableHeight = juce::roundToInt(primaryDisplay->userArea.getHeight() * 0.75f);
+    }
+
+    // Set height to content size if small, or clamp to maxAvailableHeight
+    const int targetHeight = juce::jmin(totalContentHeight + 20, maxAvailableHeight);
+
+    setSize (600, targetHeight);
 }
 
 void CtrlrSettings::paint (Graphics& g)
@@ -106,27 +122,38 @@ void CtrlrSettings::resized()
     propertyPanel->setBounds (0, 0, getWidth() - 0, getHeight() - 0);
 }
 
+// Called automatically by JUCE whenever any setting property is modified
+
 CtrlrSettings::~CtrlrSettings()
 {
-DBG("(X) CtrlrSettings DTOR call");
+    // Unregister 'this' instance before destruction completes
+    owner.getManagerTree().removeListener (this);
+
     deleteAndZero (propertyPanel);
-    
-    if (JUCEApplication::isStandaloneApp())
+
+    if (settingsWereModified)
     {
-    // Show Ok/Cancel dialog to confirm restart
-    const auto callbackRestart = juce::ModalCallbackFunction::create([this] (int resultBox){
-        if (resultBox == 0){nullptr;} // for Cancel
-        if (resultBox == 1){restart();} // for OK
-    });
-    juce::NativeMessageBox::showOkCancelBox(juce::AlertWindow::QuestionIcon,"CtrlrX", "Restarting CtrlrX is required to apply new settings.", nullptr, callbackRestart);
+        const juce::String msg = "If changes are not visible or effective, please restart CtrlrX.";
+
+        if (juce::JUCEApplication::isStandaloneApp())
+        {
+            juce::NativeMessageBox::showMessageBoxAsync (juce::AlertWindow::InfoIcon, "CtrlrX Preferences", msg);
+        }
+        else
+        {
+            AW::showMessageBox (AW::Info, "CtrlrX Preferences", msg);
+        }
     }
-    else{
-        // For VST/AU instances
-		AW::showMessageBox(AW::Warning, "CtrlrX", "Restart to apply new settings.");
-		// AlertWindow::showMessageBox (AlertWindow::WarningIcon, "CtrlrX", "Restart to apply new settings."); // Added
-		// v5.6.31
-	}
 }
+
+void CtrlrSettings::valueTreePropertyChanged (juce::ValueTree& treeWhosePropertyHasChanged, const juce::Identifier& property)
+{
+    if (treeWhosePropertyHasChanged == owner.getManagerTree())
+    {
+        settingsWereModified = true;
+    }
+}
+
 
 void CtrlrSettings::restart()
 {
@@ -214,3 +241,4 @@ void CtrlrSettings::restart()
     Logger::writeToLog("Quit request sent. Waiting for 500ms.");
     Thread::sleep(500);
 }
+

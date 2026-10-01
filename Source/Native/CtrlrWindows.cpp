@@ -487,7 +487,9 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
             performExport();
         }
     });
-} /*
+} 
+
+/*
    * ==============================================================================
    * JUCE 8 Metadata & Resource Encoding Changes (PE/VST3 Binary Patching)
    * ==============================================================================

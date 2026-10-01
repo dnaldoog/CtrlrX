@@ -40,17 +40,14 @@
   
   <id name="uiPanelViewPortSize" 			text="Editor ViewPort width" type="Text"/>
   <id name="uiPanelPropertiesSize" 			text="Editor property pane width" type="Text"/>
-  <id name="uiViewPortWidth" 				text="ViewPort current width" type="Text"/>
-  <id name="uiViewPortHeight" 				text="ViewPort current height" type="Text"/>
-  <id name="uiViewPortResizable"            text="ViewPort is resizable on a restricted instance" type="Bool" defaults="Resizable/Locked" />
-  <id name="uiViewPortShowScrollBars"       text="ViewPort Scrollbars visibility on an exported instance" type="Bool" defaults="Visible/Hidden" />
+  <id name="uiViewPortWidth" 				text="Scrollable default ViewPort width" type="Text"/>
+  <id name="uiViewPortHeight" 				text="Scrollable default ViewPort height" type="Text"/>
   <id name="uiViewPortEnableResizeLimits"   text="ViewPort resize limits enabled on an exported instance" type="Bool" defaults="Enabled/Disabled" />
-  <id name="uiViewPortMinWidth"             text="ViewPort minimum width" type="Text"/>
-  <id name="uiViewPortMinHeight"            text="ViewPort minimum height" type="Text"/>
-  <id name="uiViewPortMaxWidth"             text="ViewPort maximum width" type="Text"/>
-  <id name="uiViewPortMaxHeight"            text="ViewPort maximum height" type="Text"/>
-  <id name="uiViewPortEnableFixedAspectRatio"   text="ViewPort enable aspect ratio" type="Bool" defaults="Enabled/Disabled" />
-  <id name="uiViewPortFixedAspectRatio"     text="ViewPort fixed aspect ratio" type="Numeric" min="0" max="10" int="0.0001"/>
+  <id name="uiViewPortMinWidth"             text="ViewPort minimum width" type="Numeric"/>
+  <id name="uiViewPortMinHeight"            text="ViewPort minimum height" type="Numeric"/>
+  <id name="uiViewPortMaxWidth"             text="ViewPort maximum width" type="Numeric"/>
+  <id name="uiViewPortMaxHeight"            text="ViewPort maximum height" type="Numeric"/>
+  <id name="uiViewPortMode"            text="Viewport options"         type="VarText" defaults="Scrollable,Fixed,Scaled" />
   <id name="uiPanelZoom" text="Canvas zoom ratio" type="Numeric" min="0.001" max="10.00" int="0.001"/>
   
   <id name="uiPanelViewPortBackgroundColour"    text="Panel ViewPort background colour" type="Colour"/>
@@ -384,10 +381,6 @@
   <id name="uiFileListOpenButtonVisible"    text="FileListBox is open button visible" type="Bool"/>
   <id name="uiFileListFileClicked"          text="Called when a file is clicked"  type="LuaMethod" />
   <id name="uiFileListFileDoubleClicked"    text="Called when a file is double clicked" type="LuaMethod" />
-<!--
-  <id name="uiFileListItemDeleteKeyPressed" text="Called when a file has Delete key pressed"  type="LuaMethod" />
-  <id name="uiFileListItemReturnKeyPressed" text="Called when a file has Return key pressed" type="LuaMethod" />
-  -->
   <id name="uiFileListCurrentRoot"          text="Root directory browsing"        type="Text" />
 
   <!-- Label -->
