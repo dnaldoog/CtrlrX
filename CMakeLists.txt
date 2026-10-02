@@ -497,7 +497,8 @@ if(LINUX)
     set(CPACK_RPM_PACKAGE_URL "https://github.com")
     set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Packaging/Linux/postinst")
     set(CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Packaging/Linux/postrm-rpm")
-    
+    set(CPACK_RPM_PACKAGE_AUTOREQ "OFF")
+    set(CPACK_RPM_PACKAGE_REQUIRES "libcurl, systemd-libs, libX11, gtk3, webkit2gtk4.1")
     set(CPACK_RPM_PACKAGE_SUMMARY "MIDI Control Surface Framework & Editor")
     set(CPACK_RPM_PACKAGE_DESCRIPTION "With CtrlrX, control any MIDI enabled hardware: synthesizers, drum machines, effects, samplers.")
 
