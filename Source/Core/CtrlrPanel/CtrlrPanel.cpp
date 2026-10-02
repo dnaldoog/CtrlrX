@@ -1808,6 +1808,12 @@ void CtrlrPanel::performInternalComponentFunction(CtrlrComponent *sourceComponen
 	case MIDIMonitor:
 		owner.getWindowManager().toggle(CtrlrManagerWindowManager::MidiMonWindow, true);
 		break;
+	case AboutBox:
+		owner.getWindowManager().toggle(CtrlrManagerWindowManager::AboutWindow, true);
+		break;
+	case SendSnapshot:
+		owner.getActivePanel()->sendSnapshot();
+		break;
 	case none:
 	default:
 		break;
