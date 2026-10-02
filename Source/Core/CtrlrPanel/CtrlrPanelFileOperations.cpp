@@ -282,19 +282,21 @@ void CtrlrPanel::savePanelAs(const CommandID saveOption) {
 case CtrlrEditor::doExportFileInstance:
 case CtrlrEditor::doExportFileInstanceRestricted: {
 	const bool isRestricted = (saveOption == CtrlrEditor::doExportFileInstanceRestricted);
-
-	owner.getNativeObject().exportWithDefaultPanel(this, isRestricted, isRestricted, [this](juce::Result res) {
+	juce::WeakReference<CtrlrPanel> safeThis(this);
+	owner.getNativeObject().exportWithDefaultPanel(this, isRestricted, true, [safeThis](juce::Result res) {
+		if (safeThis.wasObjectDeleted())
+			return; // Panel was destroyed while exporting; bail safely.
 		if (res.failed()) {
 			if (res.getErrorMessage() == "User cancelled the export operation.") {
-				notify("Panel instance export: Cancelled by user.", nullptr, NotifyFailure);
+				safeThis->notify("Panel instance export: Cancelled by user.", nullptr, NotifyFailure);
 			} else {
-				notify("Panel instance export: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
+				safeThis->notify("Panel instance export: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
 				AW::showMessageBox(AW::Warning, "Panel export",
 								   "Failed to export panel as standalone instance.\n" + res.getErrorMessage() +
 									   "\n\nMaybe the file is still open and running?");
 			}
 		} else {
-			notify("Panel instance export: Wrote new panel instance.", nullptr, NotifySuccess);
+			safeThis->notify("Panel instance export: Wrote new panel instance.", nullptr, NotifySuccess);
 			AW::showMessageBox(AW::Info, "Panel export", "Wrote new panel instance");
 		}
 	});
