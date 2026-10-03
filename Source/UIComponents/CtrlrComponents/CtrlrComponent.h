@@ -16,7 +16,9 @@ enum CtrlrComponentInternalFunctions
 {
     none,
     MIDIDeviceSelection,
-    MIDIMonitor
+    MIDIMonitor,
+    AboutBox,
+    SendSnapshot
 };
 
 class CtrlrGrouppingComponent

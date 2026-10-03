@@ -232,8 +232,13 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 			 (isRestricted() && !hideProgramsMenu && (topLevelMenuIndex == MenuRestrictedPrograms))) // Programs
 	{
 		menu.addSectionHeader("Snapshots");
-		menu.addCommandItem(commandManager, doSnapshotStore);
 		menu.addCommandItem(commandManager, doSendSnapshot);
+		menu.addCommandItem(commandManager, doSnapshotSaveToFile);
+		menu.addCommandItem(commandManager, doSnapshotLoadFromFile);
+		menu.addSeparator();
+		menu.addCommandItem(commandManager, doSavePatchToJSON);
+		menu.addCommandItem(commandManager, doLoadPatchFromJSON);
+		menu.addSeparator();
 		menu.addCommandItem(commandManager, optMidiSnapshotOnLoad);
 		menu.addCommandItem(commandManager, optMidiSnapshotOnProgramChange);
 		// std::unique_ptr<PopupMenu::CustomComponent> slider;

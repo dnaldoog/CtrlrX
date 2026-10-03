@@ -18,6 +18,7 @@
   <id name="modulatorMin" 						text="Minimum value the modulator can have, should be set from the UI component" type="ReadOnly" min="-32768" max="65535" int="0.0001" />
   <id name="modulatorMax"                       text="Maximum value the modulator can have, should be set from the UI component" type="ReadOnly" min="-32768" max="65535" int="0.0001" />
   <id name="modulatorExcludeFromSnapshot" 		text="Don't send this modulator during snapshots" type="Bool" defaults="Don't send/Send"/>
+  <id name="modulatorValueSaveToFile" 			text="Save modulator value to file" type="Bool" defaults="Save/Don't save"/>
   <id name="modulatorBaseValue" 				text="Base/fallback value" type="Numeric" min="-32768" max="65535"/>
   <id name="modulatorCustomIndex" 				text="Custom modulator index" type="Text"/>
   <id name="modulatorCustomIndexGroup" 			text="Custom modulator index group" type="Text"/>
@@ -930,7 +931,7 @@
     <const name="imageEffect"       value="No Effect,Glow,Shadow" />
     <const name="dynamicContent"    value="None=0,Modulator List=1,Filesystem=2,Bank,Program=3" />
     <const name="lcdFonts"          value="LCD=0,Digital-7=1,Dotty-Shadow=2,ZX81=3,Invasion2000=4,Digit=5,Computerfont=6,Electronic-Highway-Sign=7,Karmatic-Arcade=8,60sekuntia=9" />
-    <const name="internalFunctions"    value="-- None=0,MIDI Device Selection=1,MIDI Monitor=2" />
+    <const name="internalFunctions"    value="-- None=0,MIDI Device Selection=1,MIDI Monitor=2,About CtrlrX=3,Send Snapshot=4" />
     <const name="componentlookandfeel" value="Default,V4 Modern,V4 Light,V4 Grey,V4 Dark,V4 Midnight,V4 JetBlack,V4 YamDX,V4 AkAPC,V4 AkMPC,V4 LexiBlue,V4 KurzGreen,V4 KorGrey,V4 KorGold,V4 ArturOrange,V4 AiraGreen,V3,V2,V1" />
     <const name="lookandfeelschemes"   value="V4 Modern,V4 Light,V4 Grey,V4 Dark,V4 Midnight,V4 JetBlack,V4 YamDX,V4 AkAPC,V4 AkMPC,V4 LexiBlue,V4 KurzGreen,V4 KorGrey,V4 KorGold,V4 ArturOrange,V4 AiraGreen,V3,V2,V1" />
     <const name="lookandfeel"          value="V4,V3,V2,V1" />
