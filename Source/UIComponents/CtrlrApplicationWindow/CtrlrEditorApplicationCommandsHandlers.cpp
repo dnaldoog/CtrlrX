@@ -432,6 +432,16 @@ case CtrlrEditor::doSendSnapshot:
 		getActivePanel()->sendSnapshot();
 	break;
 
+case CtrlrEditor::doSnapshotLoadFromFile:
+	if (getActivePanel())
+		getActivePanel()->loadSnapshotFromFile();
+	break;
+
+case CtrlrEditor::doSnapshotSaveToFile:
+	if (getActivePanel())
+		getActivePanel()->saveSnapshotToFile();
+	break;
+
 case CtrlrEditor::doShowMidiSettingsDialog:
 	if (getActivePanel())
 		getActivePanel()->getPanelWindowManager().toggle(CtrlrPanelWindowManager::MIDISettings, true);

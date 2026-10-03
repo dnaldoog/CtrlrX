@@ -33,6 +33,8 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 							 doPanelLock,
 							 doPanelDisableCombosOnEdit,
 							 doSendSnapshot,
+							 doSnapshotSaveToFile,
+							 doSnapshotLoadFromFile,
 							 doRefreshDeviceList,
 							 showLuaEditor,
 							 showLuaConsole,
@@ -66,6 +68,7 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 							 optMidiThruD2DChannelize,
 							 optMidiThruD2HChannelize,
 							 doSnapshotStore,
+							 doSnapshotLoad,
 							 doCrash,
 							 doDumpVstTables,
 							 doRegisterExtension,
@@ -405,8 +408,13 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 		result.setActive(isPanelActive());
 		break;
 
-	case doSnapshotStore:
-		result.setInfo("Program snapshot", "Save the current panel state as a snapshot", panelCategory, 0);
+	case doSnapshotSaveToFile:
+		result.setInfo("Save snapshot", "Save the current panel state as a snapshot file", panelCategory, 0);
+		result.setActive(isPanelActive());
+		break;
+
+	case doSnapshotLoadFromFile:
+		result.setInfo("Load snapshot", "Load a previously saved panel state from a snapshot file", panelCategory, 0);
 		result.setActive(isPanelActive());
 		break;
 

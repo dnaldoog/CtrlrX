@@ -267,33 +267,6 @@ void CtrlrEditor::activeCtrlrChanged() {
 
 		lookAndFeelChanged();
 
-		//        menuBar colour properties are deprecated and need to be removed in v5.6.30
-		//        String customMenuBarBackgroundColour1 =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarBackgroundColour1);
-		//        String customMenuBarBackgroundColour2 =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarBackgroundColour2);
-		//        String customMenuBarItemBackgroundColour =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemBackgroundColour);
-		//        String customMenuBarItemTextColour =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemTextColour);
-		//        String customMenuBarItemHighlightedTextColour =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemHighlightedTextColour);
-		//        String customMenuBarItemHighlightColour =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemHighlightColour);
-		//        String customMenuBarItemFont =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemFont); String
-		//        customMenuBarItemSeparatorColour =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemSeparatorColour);
-		//        String customMenuBarItemHeaderColour =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemHeaderColour);
-		//        String customMenuBarTextColour =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarTextColour);
-		//        String customMenuBarHighlightedTextColour =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarHighlightedTextColour);
-		//        String customMenuBarHighlightColour =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarHighlightColour);
-		//        String customMenuBarFont =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarFont);
 	} else // logic for no active panel
 	{
 		// No active panel, set L&F to "V4 Light"
@@ -360,58 +333,3 @@ void CtrlrEditor::recreateTooltipEngine() {
 	tooltipWindow = std::make_unique<juce::TooltipWindow>(this);
 }
 void CtrlrEditor::applyThemeToCombosDirectly(const String &themeName) {}
-// 	String highlightHex = "0xff42a2c8"; // Default fallback
-// 	String menuBgHex = "0xfff0f0f0";
-// 	String menuTextHex = "0xff000000";
-
-// 	if (themeName == "ArturOrange") {
-// 		highlightHex = "0xffe24a21";
-// 		menuBgHex = "0xff0e1012";
-// 		menuTextHex = "0xffffffff";
-// 	} else if (themeName == "AiraGreen") {
-// 		highlightHex = "0xff00955a";
-// 		menuBgHex = "0xff111111";
-// 		menuTextHex = "0xffffffff";
-// 	} else if (themeName == "LexiBlue") {
-// 		highlightHex = "0xff5794c7";
-// 		menuBgHex = "0xff1a1a1a";
-// 		menuTextHex = "0xffffffff";
-// 	} else if (themeName == "YamDx") {
-// 		highlightHex = "0xff8584bc";
-// 		menuBgHex = "0xff0f0f0f";
-// 		menuTextHex = "0xfffffbed";
-// 	} else if (themeName == "KurzGreen") {
-// 		highlightHex = "0xff00a66e";
-// 		menuBgHex = "0xff111214";
-// 		menuTextHex = "0xffffffff";
-// 	} else if (themeName == "AkApc" || themeName == "AkMpc") {
-// 		highlightHex = "0xffd01634";
-// 		menuBgHex = "0xff222326";
-// 		menuTextHex = "0xffffffff";
-// 	}
-
-// 	// Access the active CtrlrPanel
-// 	CtrlrPanel *panel = owner.getActivePanel();
-// 	if (panel == nullptr)
-// 		return;
-
-// 	const int numModulators = panel->getNumModulators();
-// 	for (int i = 0; i < numModulators; ++i) {
-// 		CtrlrModulator *mod = panel->getModulatorByIndex(i);
-
-// 		if (mod != nullptr) {
-// 			CtrlrComponent *comp = mod->getComponent();
-// 			if (comp != nullptr) {
-// 				// Target components containing combo menu properties
-// 				if (!comp->getProperty(Ids::uiComboMenuHighlightColour).isVoid()) {
-// 					comp->setProperty(Ids::uiComboMenuHighlightColour, highlightHex);
-// 					comp->setProperty(Ids::uiComboMenuBackgroundColour, menuBgHex);
-// 					comp->setProperty(Ids::uiComboMenuFontColour, menuTextHex);
-// 					comp->setProperty(Ids::uiComboMenuBackgroundRibbed, false);
-
-// 					comp->repaint();
-// 				}
-// 			}
-// 		}
-// 	}
-// }

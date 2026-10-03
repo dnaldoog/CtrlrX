@@ -445,6 +445,7 @@ void CtrlrPanel::sendSnapshotOnLoad() {
 	}
 }
 
+
 void CtrlrPanel::bootstrapPanel(const bool setInitialProgram) {
 	_DBG("CtrlrPanel::bootstrapPanel");
 	if (getRestoreState())
@@ -1359,6 +1360,14 @@ bool CtrlrPanel::checkRadioGroup(CtrlrComponent *c, const bool componentToggleSt
 
 void CtrlrPanel::sendSnapshot() {
 	snapshot.sendSnapshot();
+}
+
+void CtrlrPanel::loadSnapshotFromFile() {
+	snapshot.loadSnapshotFromFile();
+}
+
+void CtrlrPanel::saveSnapshotToFile() {
+	snapshot.saveSnapshotToFile();
 }
 
 bool CtrlrPanel::getRestoreState() {

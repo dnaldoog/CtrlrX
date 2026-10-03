@@ -317,7 +317,6 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		CtrlrComponent *getComponent(const String &modulatorName);
 		void panelReceivedMidi(const MidiBuffer &buffer, const CtrlrMIDIDeviceType source = inputDevice);
 		void handleAsyncUpdate();
-		void sendSnapshotOnLoad();
 		bool isLoading();
 		bool getRestoreState();
 		bool getProgramState();
@@ -327,6 +326,9 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		const String getName();
 		void resourceImportFinished();
 		void sendSnapshot();
+		void sendSnapshotOnLoad();
+		void loadSnapshotFromFile();
+		void saveSnapshotToFile();
 		void modulatorValueChanged(CtrlrModulator *m);
 		bool getMidiOptionBool(const CtrlrPanelMidiOption optionToCheck);
 		uint8 getMidiChannel(const CtrlrPanelMidiChannel channelToGet);
