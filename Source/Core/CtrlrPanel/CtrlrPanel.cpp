@@ -1930,8 +1930,7 @@ void CtrlrPanel::savePatchToJSON() {
 
 	// 1. Metadata Header
 	headerObj->setProperty("panelName", getProperty(Ids::name));
-	headerObj->setProperty("panelVersion", getProperty(Ids::panelVersionName));
-	headerObj->setProperty("author", getProperty(Ids::panelAuthorName));
+	headerObj->setProperty("UID", getProperty(Ids::panelUID));
 
 	// 2. Modulator Extraction
 	int savedCount = 0;
@@ -2001,6 +2000,61 @@ void CtrlrPanel::loadPatchFromJSON() {
 						return;
 					}
 
+					// 1. Header Metadata & Identity Verification
+					juce::var headerVar = rootObj->getProperty("header");
+					juce::DynamicObject *headerObj = headerVar.getDynamicObject();
+
+					if (headerObj != nullptr) {
+						const juce::String fileUID = headerObj->getProperty("UID").toString();
+						const juce::String fileName = headerObj->getProperty("panelName").toString();
+
+						const juce::String currentUID = safeThis->getProperty(Ids::panelUID).toString();
+						const juce::String currentName = safeThis->getProperty(Ids::name).toString();
+
+						bool isMatch = false;
+
+						// Check UID first if present in both file and panel
+						if (fileUID.isNotEmpty() && currentUID.isNotEmpty()) {
+							isMatch = (fileUID == currentUID);
+						}
+						// Fall back to panelName if UID is missing or unset
+						else if (fileName.isNotEmpty() && currentName.isNotEmpty()) {
+							isMatch = (fileName == currentName);
+						}
+						// If metadata is entirely absent, permit load but proceed
+						else {
+							isMatch = true;
+						}
+
+						if (!isMatch) {
+							const juce::String errorMsg =
+								"Patch file target mismatch!\n\n"
+								"File Target: " +
+								(fileName.isNotEmpty() ? fileName : "Unknown Panel") +
+								"\n"
+								"File UID: " +
+								(fileUID.isNotEmpty() ? fileUID : "N/A") +
+								"\n\n"
+								"Current Panel: " +
+								currentName +
+								"\n"
+								"Current UID: " +
+								currentUID +
+								"\n\n"
+								"(The current panel UID has been automatically copied to your clipboard\nPlease edit the JSON file to match the correct panel UID).";
+
+							// Automatically copy current panel UID to clipboard for quick paste into JSON files
+							if (currentUID.isNotEmpty()) {
+								juce::SystemClipboard::copyTextToClipboard(currentUID);
+							}
+
+							// AW::showMessageBox uses AlertWindow, which allows text selection/copying on desktop
+							AW::showMessageBox(AW::Warning, "Target Mismatch", errorMsg, "OK");
+							return;
+						}
+					}
+
+					// 2. Modulator Extraction & Loading
 					juce::var patchVar = rootObj->getProperty("patch");
 					juce::DynamicObject *modsObj = patchVar.getDynamicObject();
 
@@ -2013,7 +2067,7 @@ void CtrlrPanel::loadPatchFromJSON() {
 					juce::StringArray missingModulators;
 					int loadedCount = 0;
 
-					// Pause MIDI output while loading
+					// Pause MIDI output to avoid clogging the hardware bus during updates
 					safeThis->setProperty(Ids::panelMidiPauseOut, true);
 
 					for (const auto &prop : properties) {
@@ -2032,23 +2086,24 @@ void CtrlrPanel::loadPatchFromJSON() {
 					// Resume MIDI output
 					safeThis->setProperty(Ids::panelMidiPauseOut, false);
 
-					// Report status
+					// 3. Status Reporting
+					// 3. Status Reporting via Alert Windows
 					if (!missingModulators.isEmpty()) {
 						_DBG("JSON Load Warning — Missing Modulators (" + juce::String(missingModulators.size()) +
 							 "):");
 						for (const auto &item : missingModulators)
 							_DBG("  - " + item);
 
-						safeThis->notify("Loaded " + juce::String(loadedCount) + " parameters. (" +
-											 juce::String(missingModulators.size()) + " missing controls logged)",
-										 nullptr, NotifyWarning);
+						juce::String warnMsg = "Loaded " + juce::String(loadedCount) + " parameters.\n\n" +
+											   juce::String(missingModulators.size()) +
+											   " controls were missing from this panel.";
+
+						AW::showMessageBox(AW::Warning, "Load Warning", warnMsg);
 					} else {
-						safeThis->notify("Successfully loaded " + juce::String(loadedCount) + " parameters.", nullptr,
-										 NotifySuccess);
+						juce::String successMsg = "Successfully loaded " + juce::String(loadedCount) + " parameters.";
+						AW::showMessageBox(AW::Info, "Patch Loaded", successMsg);
 					}
 				});
 		},
-		"Load Patch", // button1Text (defaults to "Yes" if omitted)
-		"Cancel"	  // button2Text (defaults to "No" if omitted)
-	);
+		"Load Patch", "Cancel");
 }
