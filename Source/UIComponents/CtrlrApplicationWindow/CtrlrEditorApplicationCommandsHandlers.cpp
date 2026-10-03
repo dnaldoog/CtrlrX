@@ -442,6 +442,16 @@ case CtrlrEditor::doSnapshotSaveToFile:
 		getActivePanel()->saveSnapshotToFile();
 	break;
 
+case CtrlrEditor::doSavePatchToJSON:
+	if (getActivePanel())
+		getActivePanel()->savePatchToJSON();
+	break;
+
+case CtrlrEditor::doLoadPatchFromJSON:
+	if (getActivePanel())
+		getActivePanel()->loadPatchFromJSON();
+	break;
+
 case CtrlrEditor::doShowMidiSettingsDialog:
 	if (getActivePanel())
 		getActivePanel()->getPanelWindowManager().toggle(CtrlrPanelWindowManager::MIDISettings, true);

@@ -1270,6 +1270,8 @@ void CtrlrPanel::wrapForLua(lua_State *L) {
 			 .def("getFixedSlider", &CtrlrPanel::getFixedSliderComponent)
 			 .def("getImageSliderComponent", &CtrlrPanel::getImageSliderComponent)
 			 .def("getImageSlider", &CtrlrPanel::getImageSliderComponent)
+			 .def("savePatchToJSON", &CtrlrPanel::savePatchToJSON)
+			 .def("loadPatchFromJSON", &CtrlrPanel::loadPatchFromJSON)
 			 .def("getModulatorWithProperty",
 				  (CtrlrModulator * (CtrlrPanel::*)(const String &, const int)) & CtrlrPanel::getModulatorWithProperty)
 			 .def("getModulatorWithProperty", (CtrlrModulator * (CtrlrPanel::*)(const String &, const String &)) &

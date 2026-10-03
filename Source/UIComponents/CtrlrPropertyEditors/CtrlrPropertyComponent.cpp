@@ -74,6 +74,7 @@ void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 															  {"uiPanelImageResource", Colours::aqua},
 															  {"uiPanelIconResource", Colours::aquamarine},
 															  {"uiPanelLinuxExpDest", Colours::pink},
+															  {"modulatorValueSaveToFile", Colours::rebeccapurple},
 
 															  {"uiViewPortMode", viewportHighlight.darker()},
 															  {"uiViewPortEnableResizeLimits", viewportHighlight},

@@ -41,6 +41,10 @@ CtrlrModulator::CtrlrModulator(CtrlrPanel &_owner, const int suggestedVstIndex)
 	setProperty (Ids::modulatorMuteOnStart, false);
 	setProperty (Ids::modulatorMute, false);
 	setProperty (Ids::modulatorExcludeFromSnapshot, false);
+	// In CtrlrModulator.cpp initialization / property tree creation:
+	if (!hasProperty(Ids::modulatorValueSaveToFile)) {
+		setProperty(Ids::modulatorValueSaveToFile, true);
+	}
 	setProperty (Ids::modulatorValueExpression, EXP_MODULATOR_FORWARD);
 	setProperty (Ids::modulatorValueExpressionReverse, EXP_MODULATOR_REVERSE);
 	setProperty (Ids::modulatorControllerExpression, EXP_MODULATOR_CONTROLLER);

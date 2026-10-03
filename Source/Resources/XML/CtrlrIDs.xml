@@ -18,6 +18,7 @@
   <id name="modulatorMin" 						text="Minimum value the modulator can have, should be set from the UI component" type="ReadOnly" min="-32768" max="65535" int="0.0001" />
   <id name="modulatorMax"                       text="Maximum value the modulator can have, should be set from the UI component" type="ReadOnly" min="-32768" max="65535" int="0.0001" />
   <id name="modulatorExcludeFromSnapshot" 		text="Don't send this modulator during snapshots" type="Bool" defaults="Don't send/Send"/>
+  <id name="modulatorValueSaveToFile" 			text="Save modulator value to file" type="Bool" defaults="Save/Don't save"/>
   <id name="modulatorBaseValue" 				text="Base/fallback value" type="Numeric" min="-32768" max="65535"/>
   <id name="modulatorCustomIndex" 				text="Custom modulator index" type="Text"/>
   <id name="modulatorCustomIndexGroup" 			text="Custom modulator index group" type="Text"/>

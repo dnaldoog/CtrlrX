@@ -53,6 +53,7 @@ DECLARE_ID(modulatorLinkedToComponent);
 DECLARE_ID(modulatorMax);
 DECLARE_ID(modulatorMin);
 DECLARE_ID(modulatorExcludeFromSnapshot);
+DECLARE_ID(modulatorValueSaveToFile);
 DECLARE_ID(modulatorBaseValue);
 DECLARE_ID(modulatorCustomIndex);
 DECLARE_ID(modulatorCustomIndexGroup);

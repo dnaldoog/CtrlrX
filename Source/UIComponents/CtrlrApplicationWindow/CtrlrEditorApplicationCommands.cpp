@@ -35,6 +35,8 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 							 doSendSnapshot,
 							 doSnapshotSaveToFile,
 							 doSnapshotLoadFromFile,
+							 doSavePatchToJSON,
+							 doLoadPatchFromJSON,
 							 doRefreshDeviceList,
 							 showLuaEditor,
 							 showLuaConsole,
@@ -375,6 +377,7 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 					   globalCategory, 0);
 		result.setActive(owner.getActivePanel() != nullptr);
 		break;
+
 	case showMidiLibrary:
 		result.setInfo("MIDI Library", "Show/hide the MIDI LIbrary window", panelCategory, 0);
 		result.setActive(isPanelActive());
@@ -416,6 +419,16 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 	case doSnapshotLoadFromFile:
 		result.setInfo("Load snapshot", "Load a previously saved panel state from a snapshot file", panelCategory, 0);
 		result.setActive(isPanelActive());
+		break;
+
+	case doSavePatchToJSON:
+		result.setInfo("Save Patch to File", "Export current panel values to a JSON file", "Snapshots", 0);
+		result.setActive(getActivePanel() != nullptr);
+		break;
+
+	case doLoadPatchFromJSON:
+		result.setInfo("Load Patch from File", "Import panel values from a JSON file", "Snapshots", 0);
+		result.setActive(getActivePanel() != nullptr);
 		break;
 
 	case doRefreshPropertyLists:

@@ -329,6 +329,8 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		void sendSnapshotOnLoad();
 		void loadSnapshotFromFile();
 		void saveSnapshotToFile();
+		void savePatchToJSON();
+		void loadPatchFromJSON();
 		void modulatorValueChanged(CtrlrModulator *m);
 		bool getMidiOptionBool(const CtrlrPanelMidiOption optionToCheck);
 		uint8 getMidiChannel(const CtrlrPanelMidiChannel channelToGet);

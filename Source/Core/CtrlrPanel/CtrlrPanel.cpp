@@ -1922,3 +1922,133 @@ void CtrlrPanel::setLookAndFeel(LookAndFeel *newLookAndFeel) // Added JUCE 8
 	}
 	// Otherwise, do nothing.
 }
+
+void CtrlrPanel::savePatchToJSON() {
+	juce::DynamicObject::Ptr rootObj = new juce::DynamicObject();
+	juce::DynamicObject::Ptr headerObj = new juce::DynamicObject();
+	juce::DynamicObject::Ptr patchObj = new juce::DynamicObject();
+
+	// 1. Metadata Header
+	headerObj->setProperty("panelName", getProperty(Ids::name));
+	headerObj->setProperty("panelVersion", getProperty(Ids::panelVersionName));
+	headerObj->setProperty("author", getProperty(Ids::panelAuthorName));
+
+	// 2. Modulator Extraction
+	int savedCount = 0;
+	for (int i = 0; i < getNumModulators(); ++i) {
+		CtrlrModulator *mod = getModulatorByIndex(i);
+		if (mod != nullptr) {
+			const bool userExplicitSave = mod->getProperty(Ids::modulatorValueSaveToFile, true);
+			const bool isStatic = mod->getProperty(Ids::modulatorIsStatic, false);
+
+			if (!userExplicitSave || isStatic)
+				continue;
+
+			patchObj->setProperty(mod->getName(), mod->getModulatorValue());
+			savedCount++;
+		}
+	}
+
+	rootObj->setProperty("header", headerObj.get());
+	rootObj->setProperty("patch", patchObj.get());
+
+	juce::String jsonText = juce::JSON::toString(juce::var(rootObj.get()), true);
+
+	// 3. File Chooser
+	juce::WeakReference<CtrlrPanel> safeThis(this);
+	juce::File defaultFile =
+		juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile(getName() + "_Patch.json");
+
+	FC::saveFileAsync("Save Patch to JSON", defaultFile, "*.json", true,
+					  [safeThis, jsonText, savedCount](const juce::File &targetFile) {
+						  if (safeThis.wasObjectDeleted() || targetFile == juce::File())
+							  return;
+
+						  juce::File fileToSave = targetFile.withFileExtension(".json");
+						  if (fileToSave.replaceWithText(jsonText)) {
+							  safeThis->notify("Saved " + juce::String(savedCount) + " parameters to " +
+												   fileToSave.getFileName(),
+											   nullptr, NotifySuccess);
+						  } else {
+							  safeThis->notify("Failed to write JSON patch file.", nullptr, NotifyFailure);
+						  }
+					  });
+}
+
+void CtrlrPanel::loadPatchFromJSON() {
+	juce::WeakReference<CtrlrPanel> safeThis(this);
+
+	// Prompt user before proceeding
+	AW::showOkCancelAsyncSafe(
+		AW::Warning, "Load JSON Patch",
+		"Loading a new patch will overwrite your current panel settings.\n\nAre you sure you want to proceed?",
+		[safeThis](bool confirmed) {
+			if (!confirmed || safeThis.wasObjectDeleted())
+				return;
+
+			// Trigger file chooser
+			FC::openFileAsync(
+				"Load Patch from JSON", juce::File::getSpecialLocation(juce::File::userDocumentsDirectory), "*.json",
+				true, [safeThis](const juce::File &sourceFile) {
+					if (safeThis.wasObjectDeleted() || sourceFile == juce::File())
+						return;
+
+					juce::var parsedData = juce::JSON::parse(sourceFile);
+					juce::DynamicObject *rootObj = parsedData.getDynamicObject();
+
+					if (rootObj == nullptr) {
+						safeThis->notify("Invalid JSON patch file.", nullptr, NotifyFailure);
+						return;
+					}
+
+					juce::var patchVar = rootObj->getProperty("patch");
+					juce::DynamicObject *modsObj = patchVar.getDynamicObject();
+
+					if (modsObj == nullptr) {
+						safeThis->notify("Corrupt patch section in JSON file.", nullptr, NotifyFailure);
+						return;
+					}
+
+					juce::NamedValueSet &properties = modsObj->getProperties();
+					juce::StringArray missingModulators;
+					int loadedCount = 0;
+
+					// Pause MIDI output while loading
+					safeThis->setProperty(Ids::panelMidiPauseOut, true);
+
+					for (const auto &prop : properties) {
+						const juce::String modName = prop.name.toString();
+						const juce::var modValue = prop.value;
+
+						CtrlrModulator *mod = safeThis->getModulator(modName);
+						if (mod != nullptr) {
+							mod->setModulatorValue(modValue, false, true, false);
+							loadedCount++;
+						} else {
+							missingModulators.add(modName + " (" + modValue.toString() + ")");
+						}
+					}
+
+					// Resume MIDI output
+					safeThis->setProperty(Ids::panelMidiPauseOut, false);
+
+					// Report status
+					if (!missingModulators.isEmpty()) {
+						_DBG("JSON Load Warning — Missing Modulators (" + juce::String(missingModulators.size()) +
+							 "):");
+						for (const auto &item : missingModulators)
+							_DBG("  - " + item);
+
+						safeThis->notify("Loaded " + juce::String(loadedCount) + " parameters. (" +
+											 juce::String(missingModulators.size()) + " missing controls logged)",
+										 nullptr, NotifyWarning);
+					} else {
+						safeThis->notify("Successfully loaded " + juce::String(loadedCount) + " parameters.", nullptr,
+										 NotifySuccess);
+					}
+				});
+		},
+		"Load Patch", // button1Text (defaults to "Yes" if omitted)
+		"Cancel"	  // button2Text (defaults to "No" if omitted)
+	);
+}
