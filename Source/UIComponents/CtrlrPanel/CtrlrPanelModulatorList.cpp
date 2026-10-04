@@ -765,7 +765,12 @@ void CtrlrPanelModulatorList::applyFuzzyFilter() {
 		}
 	}
 
-	// Update JUCE TableListBox
-	modulatorList->updateContent();
-	modulatorList->repaint();
+	// 1. Update JUCE TableListBox
+	if (modulatorList != nullptr) {
+		modulatorList->updateContent();
+		modulatorList->repaint();
+	}
+
+	// 2. Update Tree View
+	modulatorListTree.setSearchFilter(query);
 }
