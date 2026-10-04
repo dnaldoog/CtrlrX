@@ -35,6 +35,8 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 							 doSendSnapshot,
 							 doSnapshotSaveToFile,
 							 doSnapshotLoadFromFile,
+							 doSetSnapshotDelay,
+							 doSetGlobalMidiDelay,
 							 doSavePatchToJSON,
 							 doLoadPatchFromJSON,
 							 doRefreshDeviceList,
@@ -414,6 +416,20 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 	case doSnapshotSaveToFile:
 		result.setInfo("Save snapshot", "Save the current panel state as a snapshot file", panelCategory, 0);
 		result.setActive(isPanelActive());
+		break;
+
+	case doSetSnapshotDelay:
+		result.shortName = "Snapshot Transmission Delay...";
+		result.description = "Set delay between snapshot messages (ms)";
+		result.categoryName = "Panel";
+		result.setActive(getActivePanel() != nullptr);
+		break;
+
+	case doSetGlobalMidiDelay:
+		result.shortName = "Global MIDI Output Delay...";
+		result.description = "Set global delay between outgoing MIDI messages (ms)";
+		result.categoryName = "MIDI";
+		result.setActive(getActivePanel() != nullptr);
 		break;
 
 	case doSnapshotLoadFromFile:

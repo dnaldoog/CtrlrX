@@ -168,7 +168,10 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		}
 		void saveLayerVisibilityStates();	 // Added v5.6.34
 		void restoreLayerVisibilityStates(); // Added v5.6.34
-
+		void promptForMidiDelay(const juce::Identifier &propertyId, const juce::String &dialogTitle,const juce::String &instructions, int minMs, int maxMs);
+		void promptForMidiDelayWithSlider(const juce::Identifier &propertyId,const juce::String &dialogTitle,int minMs, int maxMs);
+		void setSnapshotDelay();
+		void setGlobalMidiDelay();
 		const String getUniqueModulatorName(const String &proposedName);
 		const Array<CtrlrModulator *> getModulatorsByUIType(const Identifier &typeToFilter);
 		const Array<CtrlrModulator *> getModulatorsByMidiType(const CtrlrMidiMessageType typeToFilter);
