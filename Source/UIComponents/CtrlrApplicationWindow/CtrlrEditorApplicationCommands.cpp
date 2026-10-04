@@ -375,7 +375,7 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 		result.setActive(isPanelActive());
 		break;
 	case cleanOrphanProperties:
-		result.setInfo("Remove property", "Scan and remove deprecated properties from the panel",
+		result.setInfo("Remove property ...", "Scan and remove deprecated properties from the panel",
 					   globalCategory, 0);
 		result.setActive(owner.getActivePanel() != nullptr);
 		break;
