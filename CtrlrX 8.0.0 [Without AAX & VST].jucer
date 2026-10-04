@@ -1041,6 +1041,10 @@
                 resource="0" file="Source/UIComponents/CtrlrPanel/CtrlrPanelModulatorListTree.cpp"/>
           <FILE id="E3nJSe" name="CtrlrPanelModulatorListTree.h" compile="0"
                 resource="0" file="Source/UIComponents/CtrlrPanel/CtrlrPanelModulatorListTree.h"/>
+          <FILE id="ua38sm" name="CtrlrPanelModulatorMatrix.cpp" compile="1"
+                resource="0" file="Source/UIComponents/CtrlrPanel/CtrlrPanelModulatorMatrix.cpp"/>
+          <FILE id="Xpu3Tk" name="CtrlrPanelModulatorMatrix.h" compile="0" resource="0"
+                file="Source/UIComponents/CtrlrPanel/CtrlrPanelModulatorMatrix.h"/>
           <FILE id="hPmOOC" name="CtrlrPanelProperties.cpp" compile="1" resource="0"
                 file="Source/UIComponents/CtrlrPanel/CtrlrPanelProperties.cpp"/>
           <FILE id="ocBdgp" name="CtrlrPanelProperties.h" compile="0" resource="0"

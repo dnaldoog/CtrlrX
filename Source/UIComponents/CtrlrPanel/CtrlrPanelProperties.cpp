@@ -4,6 +4,7 @@
 #include "CtrlrLog.h"
 #include "CtrlrPanelComponentProperties.h"
 #include "CtrlrPanelResourceEditor.h"
+#include "CtrlrPanelModulatorMatrix.h"
 
 
 #include "CtrlrPanelProperties.h"
@@ -36,6 +37,12 @@ CtrlrPanelProperties::CtrlrPanelProperties(CtrlrPanelEditor& _owner)
         new CtrlrPanelUtilities(owner),
         true
     );
+
+    tabbedComponent->addTab("Flag Matrix",
+    getLookAndFeel().findColour(TabbedComponent::backgroundColourId),
+    new CtrlrPanelModulatorMatrix(owner),
+    true
+);
 	/*MOVED TO CtrlrEditor.h Probably needs a separate file h/cpp*/
 	// NEW: Add Expressions tab
     // tabbedComponent->addTab("Expressions",
