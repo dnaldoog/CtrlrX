@@ -88,7 +88,9 @@ CtrlrModulatorTreeViewItem::CtrlrModulatorTreeViewItem(CtrlrTreeViewItemListener
 
 CtrlrModulatorTreeViewItem::~CtrlrModulatorTreeViewItem()
 {
-	itemToAttach.removeListener (this);
+    itemToAttach.removeListener (this);
+    removeListener (defaultListener);
+    clearSubItems();
 }
 
 void CtrlrModulatorTreeViewItem::itemClicked (const MouseEvent &e)
@@ -116,7 +118,10 @@ String CtrlrModulatorTreeViewItem::getUniqueName () const
 
 void CtrlrModulatorTreeViewItem::itemSelectionChanged (bool isNowSelected)
 {
-	itemLabel->setSelected (isNowSelected);
+    if (itemLabel != nullptr)
+    {
+        itemLabel->setSelected (isNowSelected);
+    }
 }
 
 bool CtrlrModulatorTreeViewItem::mightContainSubItems ()
@@ -194,7 +199,7 @@ void CtrlrModulatorTreeViewItem::mouseDoubleClick (const MouseEvent &e)
 
 CtrlrModulatorTreeLabel *CtrlrModulatorTreeViewItem::createItemLabel(const ValueTree &_itemToAttach)
 {
-	return (itemLabel);
+    return itemLabel.getComponent();
 }
 
 void CtrlrModulatorTreeViewItem::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasChanged, const Identifier &property)
@@ -414,4 +419,73 @@ void CtrlrPanelModulatorListTree::drawIconForType(Graphics &g, const ValueTree &
     if (icon != nullptr)
         icon->drawWithin(g, Rectangle<float>(2, 2, 20, 20), RectanglePlacement::centred, 1.0f);
 }
+ValueTree CtrlrPanelModulatorListTree::filterValueTree (const ValueTree& originalTree, const String& query)
+{
+    if (query.isEmpty())
+        return originalTree.createCopy();
 
+    String nodeName = originalTree.getProperty (Ids::name).toString();
+    String nodeType = originalTree.getType().toString();
+    
+    // Check if current node matches (case-insensitive substring or wildcard/fuzzy match)
+    bool matchesSelf = nodeName.containsIgnoreCase (query) || nodeType.containsIgnoreCase (query);
+
+    // Create a shadow node to collect matching children
+    ValueTree filteredTree = originalTree.createCopy();
+    filteredTree.removeAllChildren (nullptr);
+
+    for (int i = 0; i < originalTree.getNumChildren(); ++i)
+    {
+        ValueTree filteredChild = filterValueTree (originalTree.getChild (i), query);
+        if (filteredChild.isValid())
+        {
+            filteredTree.appendChild (filteredChild, nullptr);
+        }
+    }
+
+    // Keep this node if it matches itself OR if any of its children matched
+    if (matchesSelf || filteredTree.getNumChildren() > 0)
+    {
+        return filteredTree;
+    }
+
+    return ValueTree(); // Invalid tree = pruned from search
+}
+
+void CtrlrPanelModulatorListTree::setSearchFilter (const String& newSearchQuery)
+{
+    currentSearchQuery = newSearchQuery;
+
+    // Get filtered subtree
+    ValueTree filteredRoot = filterValueTree (owner.getObjectTree(), currentSearchQuery);
+
+    // Rebuild root tree view item
+    if (filteredRoot.isValid())
+    {
+        auto* rootItem = new CtrlrModulatorTreeViewItem (this, filteredRoot);
+        treeView.setRootItem (rootItem);
+        
+        // Auto-expand matching nodes if searching
+        if (currentSearchQuery.isNotEmpty() && rootItem != nullptr)
+        {
+            rootItem->expandAllSubItems (true);
+        }
+    }
+    else
+    {
+        treeView.setRootItem (nullptr);
+    }
+}
+
+void CtrlrModulatorTreeViewItem::expandAllSubItems (bool shouldBeOpen)
+{
+    setOpen (shouldBeOpen);
+
+    for (int i = 0; i < getNumSubItems(); ++i)
+    {
+        if (auto* child = dynamic_cast<CtrlrModulatorTreeViewItem*> (getSubItem (i)))
+        {
+            child->expandAllSubItems (shouldBeOpen);
+        }
+    }
+}
