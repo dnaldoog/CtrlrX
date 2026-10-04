@@ -2107,3 +2107,90 @@ void CtrlrPanel::loadPatchFromJSON() {
 		},
 		"Load Patch", "Cancel");
 }
+
+void CtrlrPanel::promptForMidiDelay(const juce::Identifier &propertyId, 
+                                    const juce::String &dialogTitle, 
+                                    const juce::String &instructions, 
+                                    int minMs, int maxMs) 
+{
+    juce::WeakReference<CtrlrPanel> safeThis(this);
+
+    int currentVal = getProperty(propertyId);
+
+    auto *alert = new juce::AlertWindow(dialogTitle, instructions, juce::AlertWindow::QuestionIcon);
+    
+    // Add text editor pre-populated with current value
+    alert->addTextEditor("delayInput", juce::String(currentVal), "Delay (ms):");
+    
+    // Limit input to numbers only
+    if (auto *editor = alert->getTextEditor("delayInput")) {
+        editor->setInputRestrictions(5, "0123456789");
+    }
+
+    alert->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    alert->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+    alert->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, alert, propertyId, minMs, maxMs](int result) {
+        if (result == 1 && !safeThis.wasObjectDeleted()) {
+            int newVal = alert->getTextEditorContents("delayInput").getIntValue();
+            newVal = juce::jlimit(minMs, maxMs, newVal);
+            
+            safeThis->setProperty(propertyId, newVal);
+        }
+        delete alert;
+    }));
+}
+
+void CtrlrPanel::promptForMidiDelayWithSlider(const juce::Identifier &propertyId, 
+                                              const juce::String &dialogTitle, 
+                                              int minMs, int maxMs) 
+{
+    juce::WeakReference<CtrlrPanel> safeThis(this);
+    int currentVal = getProperty(propertyId);
+
+    auto *alert = new juce::AlertWindow(dialogTitle, "Adjust delay in milliseconds:", juce::AlertWindow::NoIcon);
+    
+    // Create a custom slider component
+    auto slider = std::make_unique<juce::Slider>(juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight);
+    slider->setRange(minMs, maxMs, 1);
+    slider->setValue(currentVal);
+    slider->setTextValueSuffix(" ms");
+    slider->setSize(280, 30);
+
+    // addCustomComponent takes ownership or references depending on JUCE version
+    alert->addCustomComponent(slider.get());
+
+    alert->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    alert->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+    // Move ownership into callback lambda
+    juce::Slider *rawSlider = slider.release();
+
+    alert->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, alert, rawSlider, propertyId](int result) {
+        if (result == 1 && !safeThis.wasObjectDeleted()) {
+            safeThis->setProperty(propertyId, (int)rawSlider->getValue());
+        }
+        delete rawSlider;
+        delete alert;
+    }));
+}
+
+// Snapshot Delay Action Callback
+void CtrlrPanel::setSnapshotDelay() {
+    promptForMidiDelay(
+        Ids::panelMidiSnapshotDelay,
+        "Snapshot Transmission Delay",
+        "Set delay between MIDI messages during snapshot send (0 - 20000 ms).\nUseful for older synth buffers (e.g. TX81Z):",
+        0, 20000
+    );
+}
+
+// Global MIDI Delay Action Callback
+void CtrlrPanel::setGlobalMidiDelay() {
+    promptForMidiDelay(
+        Ids::panelMidiGlobalDelay,
+        "Global MIDI Message Delay",
+        "Set global inter-message delay for outgoing MIDI stream (0 - 500 ms):",
+        0, 500
+    );
+}

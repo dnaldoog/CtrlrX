@@ -183,6 +183,8 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 			menu.addCommandItem(commandManager, doShowMidiSettingsDialog);
 		menu.addCommandItem(commandManager, doRefreshDeviceList);
 		menu.addSeparator();
+		menu.addCommandItem(commandManager, doSetGlobalMidiDelay);
+		menu.addSeparator();
 		menu.addSectionHeader("Input" + getMidiSummary(inputDevice));
 		menu.addSubMenu("Device", getMidiDeviceMenu(inputDevice), isPanelActive());
 
@@ -241,6 +243,8 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 		menu.addSeparator();
 		menu.addCommandItem(commandManager, optMidiSnapshotOnLoad);
 		menu.addCommandItem(commandManager, optMidiSnapshotOnProgramChange);
+		menu.addSeparator();
+		menu.addCommandItem(commandManager, doSetSnapshotDelay);
 		// std::unique_ptr<PopupMenu::CustomComponent> slider;
 		// slider.reset (new CtrlrMenuSlider(this, "Snapshot delay", getPanelProperty(Ids::panelMidiSnapshotDelay), 0,
 		// 2000, 1)); menu.addCustomItem (1, slider);

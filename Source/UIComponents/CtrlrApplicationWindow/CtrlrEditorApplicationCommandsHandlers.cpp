@@ -402,9 +402,15 @@ case CtrlrEditor::showLuaEditor:
 		getActivePanel()->getPanelWindowManager().toggle(CtrlrPanelWindowManager::LuaMethodEditor, true);
 	break;
 
+case CtrlrEditor::doSetGlobalMidiDelay:
+    if (getActivePanel())
+        getActivePanel()->setGlobalMidiDelay(); // Calls the AlertWindow dialog
+    break;
+	
+
 case CtrlrEditor::doRefreshDeviceList:
 	performMidiDeviceRefresh();
-	AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "MIDI devices", "MIDI Device list refreshed");
+	AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "MIDI devices", "MIDI Device list refreshed");		
 	break;
 
 case CtrlrEditor::showLuaConsole:
@@ -441,6 +447,11 @@ case CtrlrEditor::doSnapshotSaveToFile:
 	if (getActivePanel())
 		getActivePanel()->saveSnapshotToFile();
 	break;
+
+case CtrlrEditor::doSetSnapshotDelay:
+    if (getActivePanel())
+        getActivePanel()->setSnapshotDelay(); // Calls the AlertWindow dialog
+    break;
 
 case CtrlrEditor::doSavePatchToJSON:
 	if (getActivePanel())
