@@ -172,9 +172,9 @@ bool CtrlrEditor::perform(
 		owner.getWindowManager().toggle(CtrlrManagerWindowManager::MIDICalculator, true);
 		break;
 
-	case CtrlrEditor::doSaveState:
-		owner.saveStateToDisk();
-		break;
+	// case CtrlrEditor::doSaveState:
+	// 	owner.saveStateToDisk();
+	// 	break;
 
 	case CtrlrEditor::doOpenPanel:
 		owner.openPanelFromFile(nullptr);

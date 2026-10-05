@@ -126,13 +126,13 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 
 	switch (commandID)
 	{
-	case doSaveState:
-		result.setInfo("Save CTRLR State", "Saves the CTRLR state to disk", globalCategory, 0);
-		if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
-		{
-			result.addDefaultKeypress('s', ModifierKeys::commandModifier | ModifierKeys::altModifier);
-		}
-		break;
+	// case doSaveState:
+	// 	result.setInfo("Save CTRLR State", "Saves the CTRLR state to disk", globalCategory, 0);
+	// 	if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
+	// 	{
+	// 		result.addDefaultKeypress('s', ModifierKeys::commandModifier | ModifierKeys::altModifier);
+	// 	}
+	// 	break;
 
 	case doOpenPanel:
 		result.setInfo("Open Panel", "Open a panel from a file", globalCategory, 0);
@@ -438,12 +438,12 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 		break;
 
 	case doSavePatchToJSON:
-		result.setInfo("Save Patch to File", "Export current panel values to a JSON file", "Snapshots", 0);
+		result.setInfo("Save Current Patch to File ...", "Export current panel values to a JSON file", "Snapshots", 0);
 		result.setActive(getActivePanel() != nullptr);
 		break;
 
 	case doLoadPatchFromJSON:
-		result.setInfo("Load Patch from File", "Import panel values from a JSON file", "Snapshots", 0);
+		result.setInfo("Load Patch from File ...", "Import panel values from a JSON file", "Snapshots", 0);
 		result.setActive(getActivePanel() != nullptr);
 		break;
 
