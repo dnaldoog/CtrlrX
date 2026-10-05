@@ -1923,191 +1923,6 @@ void CtrlrPanel::setLookAndFeel(LookAndFeel *newLookAndFeel) // Added JUCE 8
 	// Otherwise, do nothing.
 }
 
-void CtrlrPanel::savePatchToJSON() {
-	juce::DynamicObject::Ptr rootObj = new juce::DynamicObject();
-	juce::DynamicObject::Ptr headerObj = new juce::DynamicObject();
-	juce::DynamicObject::Ptr patchObj = new juce::DynamicObject();
-
-	// 1. Metadata Header
-	headerObj->setProperty("panelName", getProperty(Ids::name));
-	headerObj->setProperty("UID", getProperty(Ids::panelUID));
-
-	// 2. Modulator Extraction
-	int savedCount = 0;
-	for (int i = 0; i < getNumModulators(); ++i) {
-		CtrlrModulator *mod = getModulatorByIndex(i);
-		if (mod != nullptr) {
-			const bool userExplicitSave = mod->getProperty(Ids::modulatorValueSaveToFile, true);
-			const bool isStatic = mod->getProperty(Ids::modulatorIsStatic, false);
-
-			if (!userExplicitSave || isStatic)
-				continue;
-
-			patchObj->setProperty(mod->getName(), mod->getModulatorValue());
-			savedCount++;
-		}
-	}
-
-	rootObj->setProperty("header", headerObj.get());
-	rootObj->setProperty("patch", patchObj.get());
-
-	juce::String jsonText = juce::JSON::toString(juce::var(rootObj.get()), true);
-
-	// 3. File Chooser
-	juce::WeakReference<CtrlrPanel> safeThis(this);
-	juce::File defaultFile =
-		juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile(getName() + "_Patch.json");
-
-	FC::saveFileAsync("Save Patch to JSON", defaultFile, "*.json", true,
-					  [safeThis, jsonText, savedCount](const juce::File &targetFile) {
-						  if (safeThis.wasObjectDeleted() || targetFile == juce::File())
-							  return;
-
-						  juce::File fileToSave = targetFile.withFileExtension(".json");
-						  if (fileToSave.replaceWithText(jsonText)) {
-							  safeThis->notify("Saved " + juce::String(savedCount) + " parameters to " +
-												   fileToSave.getFileName(),
-											   nullptr, NotifySuccess);
-						  } else {
-							  safeThis->notify("Failed to write JSON patch file.", nullptr, NotifyFailure);
-						  }
-					  });
-}
-
-void CtrlrPanel::loadPatchFromJSON() {
-	juce::WeakReference<CtrlrPanel> safeThis(this);
-
-	// Prompt user before proceeding
-	AW::showOkCancelAsyncSafe(
-		AW::Warning, "Load JSON Patch",
-		"Loading a new patch will overwrite your current panel settings.\n\nAre you sure you want to proceed?",
-		[safeThis](bool confirmed) {
-			if (!confirmed || safeThis.wasObjectDeleted())
-				return;
-
-			// Trigger file chooser
-			FC::openFileAsync(
-				"Load Patch from JSON", juce::File::getSpecialLocation(juce::File::userDocumentsDirectory), "*.json",
-				true, [safeThis](const juce::File &sourceFile) {
-					if (safeThis.wasObjectDeleted() || sourceFile == juce::File())
-						return;
-
-					juce::var parsedData = juce::JSON::parse(sourceFile);
-					juce::DynamicObject *rootObj = parsedData.getDynamicObject();
-
-					if (rootObj == nullptr) {
-						safeThis->notify("Invalid JSON patch file.", nullptr, NotifyFailure);
-						return;
-					}
-
-					// 1. Header Metadata & Identity Verification
-					juce::var headerVar = rootObj->getProperty("header");
-					juce::DynamicObject *headerObj = headerVar.getDynamicObject();
-
-					if (headerObj != nullptr) {
-						const juce::String fileUID = headerObj->getProperty("UID").toString();
-						const juce::String fileName = headerObj->getProperty("panelName").toString();
-
-						const juce::String currentUID = safeThis->getProperty(Ids::panelUID).toString();
-						const juce::String currentName = safeThis->getProperty(Ids::name).toString();
-
-						bool isMatch = false;
-
-						// Check UID first if present in both file and panel
-						if (fileUID.isNotEmpty() && currentUID.isNotEmpty()) {
-							isMatch = (fileUID == currentUID);
-						}
-						// Fall back to panelName if UID is missing or unset
-						else if (fileName.isNotEmpty() && currentName.isNotEmpty()) {
-							isMatch = (fileName == currentName);
-						}
-						// If metadata is entirely absent, permit load but proceed
-						else {
-							isMatch = true;
-						}
-
-						if (!isMatch) {
-							const juce::String errorMsg =
-								"Patch file target mismatch!\n\n"
-								"File Target: " +
-								(fileName.isNotEmpty() ? fileName : "Unknown Panel") +
-								"\n"
-								"File UID: " +
-								(fileUID.isNotEmpty() ? fileUID : "N/A") +
-								"\n\n"
-								"Current Panel: " +
-								currentName +
-								"\n"
-								"Current UID: " +
-								currentUID +
-								"\n\n"
-								"(The current panel UID has been automatically copied to your clipboard\nPlease edit the JSON file to match the correct panel UID).";
-
-							// Automatically copy current panel UID to clipboard for quick paste into JSON files
-							if (currentUID.isNotEmpty()) {
-								juce::SystemClipboard::copyTextToClipboard(currentUID);
-							}
-
-							// AW::showMessageBox uses AlertWindow, which allows text selection/copying on desktop
-							AW::showMessageBox(AW::Warning, "Target Mismatch", errorMsg, "OK");
-							return;
-						}
-					}
-
-					// 2. Modulator Extraction & Loading
-					juce::var patchVar = rootObj->getProperty("patch");
-					juce::DynamicObject *modsObj = patchVar.getDynamicObject();
-
-					if (modsObj == nullptr) {
-						safeThis->notify("Corrupt patch section in JSON file.", nullptr, NotifyFailure);
-						return;
-					}
-
-					juce::NamedValueSet &properties = modsObj->getProperties();
-					juce::StringArray missingModulators;
-					int loadedCount = 0;
-
-					// Pause MIDI output to avoid clogging the hardware bus during updates
-					safeThis->setProperty(Ids::panelMidiPauseOut, true);
-
-					for (const auto &prop : properties) {
-						const juce::String modName = prop.name.toString();
-						const juce::var modValue = prop.value;
-
-						CtrlrModulator *mod = safeThis->getModulator(modName);
-						if (mod != nullptr) {
-							mod->setModulatorValue(modValue, false, true, false);
-							loadedCount++;
-						} else {
-							missingModulators.add(modName + " (" + modValue.toString() + ")");
-						}
-					}
-
-					// Resume MIDI output
-					safeThis->setProperty(Ids::panelMidiPauseOut, false);
-
-					// 3. Status Reporting
-					// 3. Status Reporting via Alert Windows
-					if (!missingModulators.isEmpty()) {
-						_DBG("JSON Load Warning — Missing Modulators (" + juce::String(missingModulators.size()) +
-							 "):");
-						for (const auto &item : missingModulators)
-							_DBG("  - " + item);
-
-						juce::String warnMsg = "Loaded " + juce::String(loadedCount) + " parameters.\n\n" +
-											   juce::String(missingModulators.size()) +
-											   " controls were missing from this panel.";
-
-						AW::showMessageBox(AW::Warning, "Load Warning", warnMsg);
-					} else {
-						juce::String successMsg = "Successfully loaded " + juce::String(loadedCount) + " parameters.";
-						AW::showMessageBox(AW::Info, "Patch Loaded", successMsg);
-					}
-				});
-		},
-		"Load Patch", "Cancel");
-}
-
 void CtrlrPanel::promptForMidiDelay(const juce::Identifier &propertyId, 
                                     const juce::String &dialogTitle, 
                                     const juce::String &instructions, 
@@ -2193,4 +2008,220 @@ void CtrlrPanel::setGlobalMidiDelay() {
         "Set global inter-message delay for outgoing MIDI stream (0 - 500 ms):",
         0, 500
     );
+}
+
+void CtrlrPanel::savePatchToJSON() {
+    juce::DynamicObject::Ptr rootObj = new juce::DynamicObject();
+    juce::DynamicObject::Ptr headerObj = new juce::DynamicObject();
+    juce::DynamicObject::Ptr patchObj = new juce::DynamicObject();
+    juce::DynamicObject::Ptr labelsObj = new juce::DynamicObject();
+
+    // 1. Metadata Header
+    headerObj->setProperty("panelName", getProperty(Ids::name));
+    headerObj->setProperty("UID", getProperty(Ids::panelUID));
+
+    // 2. Modulator & Label Extraction
+// 2. Modulator & Label Extraction
+// 2. Modulator & Label Extraction
+int savedCount = 0;
+int labelCount = 0;
+
+for (int i = 0; i < getNumModulators(); ++i) {
+    CtrlrModulator *mod = getModulatorByIndex(i);
+    if (mod == nullptr)
+        continue;
+
+    const bool userExplicitSave = mod->getProperty(Ids::modulatorValueSaveToFile, true);
+    const bool isStatic = mod->getProperty(Ids::modulatorIsStatic, false);
+
+    // Respect the "Save To File" matrix setting
+    if (!userExplicitSave)
+        continue;
+
+    CtrlrComponent *comp = mod->getComponent();
+    
+    // Check if the component type is explicitly a Label (uiLabel)
+    bool isLabelComponent = false;
+    if (comp != nullptr) {
+        // Option A: Check property directly from component tree
+        const juce::String uiType = comp->getProperty(Ids::uiType).toString();
+        
+        // Option B: Fallback check against component type string if uiType is empty
+        isLabelComponent = (uiType == "uiLabel"); // || comp->getComponentType() == Ids::uiLabel);
+    }
+
+    if (isLabelComponent) {
+        // Fetch text from component
+        juce::String labelText = comp->getComponentText();
+        
+        // Fallback to component property if getComponentText() returns empty
+        if (labelText.isEmpty()) {
+            labelText = comp->getProperty(Ids::uiLabelText).toString();
+        }
+
+        labelsObj->setProperty(mod->getName(), labelText);
+        labelCount++;
+        
+        // Skip adding to numeric 'patch' object
+        continue; 
+    }
+
+    // Standard Numeric Modulators: Skip if static
+    if (isStatic)
+        continue;
+
+    patchObj->setProperty(mod->getName(), mod->getModulatorValue());
+    savedCount++;
+}
+
+    rootObj->setProperty("header", headerObj.get());
+    rootObj->setProperty("patch", patchObj.get());
+    if (labelCount > 0) {
+        rootObj->setProperty("labels", labelsObj.get());
+    }
+
+    juce::String jsonText = juce::JSON::toString(juce::var(rootObj.get()), true);
+
+    // 3. Async File Save
+    juce::WeakReference<CtrlrPanel> safeThis(this);
+    juce::File defaultFile =
+        juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile(getName() + "_Patch.json");
+
+    FC::saveFileAsync("Save Patch to JSON", defaultFile, "*.json", true,
+                      [safeThis, jsonText, savedCount, labelCount](const juce::File &targetFile) {
+                          if (safeThis.wasObjectDeleted() || targetFile == juce::File())
+                              return;
+
+                          juce::File fileToSave = targetFile.withFileExtension(".json");
+                          if (fileToSave.replaceWithText(jsonText)) {
+                              safeThis->notify("Saved " + juce::String(savedCount) + " parameters & " +
+                                                   juce::String(labelCount) + " labels to " +
+                                                   fileToSave.getFileName(),
+                                               nullptr, NotifySuccess);
+                          } else {
+                              safeThis->notify("Failed to write JSON patch file.", nullptr, NotifyFailure);
+                          }
+                      });
+}
+
+void CtrlrPanel::loadPatchFromJSON() {
+    juce::WeakReference<CtrlrPanel> safeThis(this);
+
+    AW::showOkCancelAsyncSafe(
+        AW::Warning, "Load JSON Patch",
+        "Loading a new patch will overwrite your current panel settings.\n\nAre you sure you want to proceed?",
+        [safeThis](bool confirmed) {
+            if (!confirmed || safeThis.wasObjectDeleted())
+                return;
+
+            FC::openFileAsync(
+                "Load Patch from JSON", juce::File::getSpecialLocation(juce::File::userDocumentsDirectory), "*.json",
+                true, [safeThis](const juce::File &sourceFile) {
+                    if (safeThis.wasObjectDeleted() || sourceFile == juce::File())
+                        return;
+
+                    juce::var parsedData = juce::JSON::parse(sourceFile);
+                    juce::DynamicObject *rootObj = parsedData.getDynamicObject();
+
+                    if (rootObj == nullptr) {
+                        safeThis->notify("Invalid JSON patch file.", nullptr, NotifyFailure);
+                        return;
+                    }
+
+                    // 1. Identity Verification Header
+                    juce::var headerVar = rootObj->getProperty("header");
+                    juce::DynamicObject *headerObj = headerVar.getDynamicObject();
+
+                    if (headerObj != nullptr) {
+                        const juce::String fileUID = headerObj->getProperty("UID").toString();
+                        const juce::String fileName = headerObj->getProperty("panelName").toString();
+
+                        const juce::String currentUID = safeThis->getProperty(Ids::panelUID).toString();
+                        const juce::String currentName = safeThis->getProperty(Ids::name).toString();
+
+                        bool isMatch = false;
+
+                        if (fileUID.isNotEmpty() && currentUID.isNotEmpty()) {
+                            isMatch = (fileUID == currentUID);
+                        } else if (fileName.isNotEmpty() && currentName.isNotEmpty()) {
+                            isMatch = (fileName == currentName);
+                        } else {
+                            isMatch = true;
+                        }
+
+                        if (!isMatch) {
+                            const juce::String errorMsg =
+                                "Patch file target mismatch!\n\n"
+                                "File Target: " + (fileName.isNotEmpty() ? fileName : "Unknown Panel") + "\n" +
+                                "File UID: " + (fileUID.isNotEmpty() ? fileUID : "N/A") + "\n\n" +
+                                "Current Panel: " + currentName + "\n" +
+                                "Current UID: " + currentUID;
+
+                            if (currentUID.isNotEmpty()) {
+                                juce::SystemClipboard::copyTextToClipboard(currentUID);
+                            }
+
+                            AW::showMessageBox(AW::Warning, "Target Mismatch", errorMsg, "OK");
+                            return;
+                        }
+                    }
+
+                    // Pause MIDI output during state changes
+                    safeThis->setProperty(Ids::panelMidiPauseOut, true);
+
+                    int loadedCount = 0;
+                    int labelLoadedCount = 0;
+                    juce::StringArray missingModulators;
+
+                    // 2. Load Standard Numeric Patch Modulators
+                    juce::var patchVar = rootObj->getProperty("patch");
+                    if (juce::DynamicObject *modsObj = patchVar.getDynamicObject()) {
+                        for (const auto &prop : modsObj->getProperties()) {
+                            const juce::String modName = prop.name.toString();
+                            const juce::var modValue = prop.value;
+
+                            CtrlrModulator *mod = safeThis->getModulator(modName);
+                            if (mod != nullptr) {
+                                mod->setModulatorValue(modValue, false, true, false);
+                                loadedCount++;
+                            } else {
+                                missingModulators.add(modName);
+                            }
+                        }
+                    }
+
+                    // 3. Load Separate Label Text Data
+                    juce::var labelsVar = rootObj->getProperty("labels");
+                    if (juce::DynamicObject *labelsObj = labelsVar.getDynamicObject()) {
+                        for (const auto &prop : labelsObj->getProperties()) {
+                            const juce::String modName = prop.name.toString();
+                            const juce::String labelText = prop.value.toString();
+
+                            CtrlrModulator *mod = safeThis->getModulator(modName);
+                            if (mod != nullptr && mod->getComponent() != nullptr) {
+                                mod->getComponent()->setComponentText(labelText);
+                                labelLoadedCount++;
+                            }
+                        }
+                    }
+
+                    // Resume MIDI output
+                    safeThis->setProperty(Ids::panelMidiPauseOut, false);
+
+                    // 4. Status Reporting
+                    if (!missingModulators.isEmpty()) {
+                        juce::String warnMsg = "Loaded " + juce::String(loadedCount) + " parameters and " +
+                                               juce::String(labelLoadedCount) + " labels.\n\n" +
+                                               juce::String(missingModulators.size()) +
+                                               " controls were missing from this panel.";
+
+                        AW::showMessageBox(AW::Warning, "Load Warning", warnMsg);
+                    } else {
+                        juce::String successMsg = "Successfully loaded " + juce::String(loadedCount) +
+                                                  " parameters and " + juce::String(labelLoadedCount) + " labels.";
+                        AW::showMessageBox(AW::Info, "Patch Loaded", successMsg);
+                    }
+                });
+        },
+        "Load Patch", "Cancel");
 }
