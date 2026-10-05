@@ -75,33 +75,31 @@ StringArray CtrlrEditor::getMenuBarNames() {
 	StringArray n;
 
 	if (!isRestricted()) {
-		const char *const names[] = {"File", "Edit", "View", "Panel", "MIDI", "Programs", "Tools", "Help", nullptr};
-		n = StringArray(names);
+		n = {"File", "Edit", "View", "Panel", "MIDI", "Programs", "Tools", "Help"};
 	} else {
-		if (hideProgramsMenu) {
-			const char *const names[] = {"File", "Edit", "View", "MIDI", "Tools", "Help", nullptr};
-			n = StringArray(names);
-		} else {
-			const char *const names[] = {"File", "Edit", "View", "MIDI", "Programs", "Tools", "Help", nullptr};
-			n = StringArray(names);
-		}
+		n.add("File");
+		// "Edit" intentionally omitted in restricted instances
+		n.add("View");
+		n.add("MIDI");
+		if (!hideProgramsMenu)
+			n.add("Programs");
+		n.add("Tools");
+		n.add("Help");
 	}
 
-	return (n);
+	return n;
 }
 
-PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menuName) {
+PopupMenu CtrlrEditor::getMenuForIndex(int /*topLevelMenuIndex*/, const String &menuName) {
 	ApplicationCommandManager *commandManager = &(owner.getCommandManager());
 	PopupMenu menu;
 
-	if (topLevelMenuIndex == MenuFile) // File
-	{
+	if (menuName == "File") {
 		if (!isRestricted()) {
 			menu.addCommandItem(commandManager, doNewPanel);
 			menu.addSeparator();
 			menu.addCommandItem(commandManager, doOpenPanel);
-			menu.addSubMenu("Open recent", getRecentOpenedFilesMenu(),
-							getRecentOpenedFilesMenu().getNumItems() ? true : false);
+			menu.addSubMenu("Open recent", getRecentOpenedFilesMenu(), getRecentOpenedFilesMenu().getNumItems() > 0);
 			menu.addSeparator();
 			menu.addCommandItem(commandManager, doSave);
 			menu.addCommandItem(commandManager, doSaveAs);
@@ -121,15 +119,17 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 
 			menu.addCommandItem(commandManager, doClose);
 			menu.addSeparator();
-			menu.addCommandItem(commandManager, doSaveState);
+			// menu.addCommandItem(commandManager, doSaveState);
 		}
 
+		menu.addSeparator();
+		menu.addCommandItem(commandManager, doSavePatchToJSON);
+		menu.addCommandItem(commandManager, doLoadPatchFromJSON);
 		menu.addSeparator();
 		menu.addCommandItem(commandManager, doQuit);
 	}
 
-	else if (topLevelMenuIndex == MenuEdit) // Edit
-	{
+	else if (menuName == "Edit") {
 		menu.addCommandItem(commandManager, doCopy);
 		menu.addCommandItem(commandManager, doCut);
 		menu.addCommandItem(commandManager, doPaste);
@@ -137,29 +137,28 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 		menu.addCommandItem(commandManager, doUndo);
 		menu.addCommandItem(commandManager, doRedo);
 
-		if (!isRestricted()) // Added v5.6.32 to hide menuItems on resticted instance
+		if (!isRestricted()) // even though the top menu Edit is hidden anyway from restricted instances, this is a
+							 // safeguard in case the menu is ever shown again in the future
 		{
 			menu.addSeparator();
 			menu.addCommandItem(commandManager, showKeyboardMappingDialog);
 			menu.addCommandItem(commandManager, showGlobalSettingsDialog);
-			// menu.addSeparator(); // Removed v5.6.31
-			// menu.addCommandItem(commandManager, doSearchForProperty); // Removed v5.6.31
 		}
 	}
 
-	else if (topLevelMenuIndex == MenuView) // View
-	{
+	else if (menuName == "View") {
 		menu.addCommandItem(commandManager, doZoomIn);
 		menu.addCommandItem(commandManager, doZoomOut);
 		menu.addCommandItem(commandManager, doZoomZero);
-		menu.addSeparator();
-		if (!isRestricted())
+
+		if (!isRestricted()) {
+			menu.addSeparator();
 			menu.addCommandItem(commandManager, doRefreshPropertyLists);
-		if (!isRestricted())
 			menu.addCommandItem(commandManager, doViewPropertyDisplayIDs);
+		}
 	}
 
-	else if (!isRestricted() && (topLevelMenuIndex == MenuPanel)) // Panel
+	else if (menuName == "Panel") // unrestricted only
 	{
 		menu.addCommandItem(commandManager, doPanelMode);
 		menu.addCommandItem(commandManager, doPanelLock);
@@ -167,20 +166,16 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 		menu.addSeparator();
 		menu.addCommandItem(commandManager, showModulatorList);
 		menu.addSeparator();
-		if (!isRestricted())
-			menu.addCommandItem(commandManager, showLayers);
-		if (!isRestricted())
-			menu.addCommandItem(commandManager, showLuaEditor);
-		if (!isRestricted())
-			menu.addCommandItem(commandManager, showLuaConsole);
+		menu.addCommandItem(commandManager, showLayers);
+		menu.addCommandItem(commandManager, showLuaEditor);
+		menu.addCommandItem(commandManager, showLuaConsole);
 		// menu.addCommandItem (commandManager, showBufferEditor);
 	}
 
-	else if ((!isRestricted() && (topLevelMenuIndex == MenuMidi)) ||
-			 (isRestricted() && (topLevelMenuIndex == MenuRestrictedMidi))) // MIDI
-	{
+	else if (menuName == "MIDI") {
 		if (!isRestricted())
 			menu.addCommandItem(commandManager, doShowMidiSettingsDialog);
+
 		menu.addCommandItem(commandManager, doRefreshDeviceList);
 		menu.addSeparator();
 		menu.addCommandItem(commandManager, doSetGlobalMidiDelay);
@@ -230,30 +225,20 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 		}
 	}
 
-	else if ((!isRestricted() && (topLevelMenuIndex == MenuPrograms)) ||
-			 (isRestricted() && !hideProgramsMenu && (topLevelMenuIndex == MenuRestrictedPrograms))) // Programs
+	else if (menuName == "Programs") // absent from the bar when hideProgramsMenu is set
 	{
 		menu.addSectionHeader("Snapshots");
 		menu.addCommandItem(commandManager, doSendSnapshot);
 		menu.addCommandItem(commandManager, doSnapshotSaveToFile);
 		menu.addCommandItem(commandManager, doSnapshotLoadFromFile);
 		menu.addSeparator();
-		menu.addCommandItem(commandManager, doSavePatchToJSON);
-		menu.addCommandItem(commandManager, doLoadPatchFromJSON);
-		menu.addSeparator();
 		menu.addCommandItem(commandManager, optMidiSnapshotOnLoad);
 		menu.addCommandItem(commandManager, optMidiSnapshotOnProgramChange);
 		menu.addSeparator();
 		menu.addCommandItem(commandManager, doSetSnapshotDelay);
-		// std::unique_ptr<PopupMenu::CustomComponent> slider;
-		// slider.reset (new CtrlrMenuSlider(this, "Snapshot delay", getPanelProperty(Ids::panelMidiSnapshotDelay), 0,
-		// 2000, 1)); menu.addCustomItem (1, slider);
 	}
 
-	else if ((!isRestricted() && (topLevelMenuIndex == MenuTools)) ||
-			 (isRestricted() &&
-			  (topLevelMenuIndex == (hideProgramsMenu ? (MenuRestrictedTools - 1) : MenuRestrictedTools)))) // Tools
-	{
+	else if (menuName == "Tools") {
 		menu.addCommandItem(commandManager, showMidiMonitor);
 		menu.addCommandItem(commandManager, showMidiCalculator);
 		menu.addCommandItem(commandManager, showLogViewer);
@@ -264,29 +249,16 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 			// File extension registration in system registry is Windows-only
 			menu.addCommandItem(commandManager, doRegisterExtension);
 #endif
-
 			menu.addSeparator();
-
-			// Available on all platforms (Windows, macOS, Linux)
-
 			menu.addCommandItem(commandManager, cleanOrphanProperties);
-
-		} // end if !isRestricted
+		}
 	}
 
-	else if ((!isRestricted() && (topLevelMenuIndex == MenuHelp)) ||
-			 (isRestricted() &&
-			  (topLevelMenuIndex == (hideProgramsMenu ? (MenuRestrictedHelp - 1) : MenuRestrictedHelp)))) // Help
-	{
-		_DBG("Building help menu: index=" + String(topLevelMenuIndex) + " MenuHelp=" + String(MenuHelp) +
-			 " restricted=" + String(isRestricted() ? "true" : "false"));
-
-		const bool panelIsRestricted = isRestricted();
+	else if (menuName == "Help") {
 		menu.addCommandItem(commandManager, showAboutDialog);
 		menu.addSeparator();
-		if (!panelIsRestricted) {
 
-			// Developer / Unrestricted Mode Help Items
+		if (!isRestricted()) {
 			menu.addCommandItem(commandManager, showExpressionHelp);
 			menu.addCommandItem(commandManager, showDumpByLuaHelp);
 			menu.addCommandItem(commandManager, showViewportHelp);
@@ -297,8 +269,6 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 			menu.addSeparator();
 #endif
 		}
-
-		// About Dialog - Shown in Restricted Mode (and developer mode)
 	}
 
 	return menu;
@@ -306,26 +276,21 @@ PopupMenu CtrlrEditor::getMenuForIndex(int topLevelMenuIndex, const String &menu
 
 void CtrlrEditor::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	/* Some items are not commands, they need to be invoked manually here */
-	//_DBG("CtrlrEditor::menuItemSelected topLevelMenuIndex="+STR(topLevelMenuIndex)+" menuItemID="+STR(menuItemID)+"
-	//MENU_OFFSET_MIDI="+STR(MENU_OFFSET_MIDI));
 
-	if (topLevelMenuIndex == 3 ||
-		topLevelMenuIndex == 4) { // This is MIDI menu (3 if Panel menu is hidden, 4 otherwise)
+	// MenuBarModel only gives us the position, so resolve it to a name.
+	// (An out-of-range index returns an empty String, which matches nothing.)
+	const String menuName = getMenuBarNames()[topLevelMenuIndex];
+
+	if (menuName == "MIDI") {
 		if (menuItemID >= MENU_OFFSET_MIDI_DEV_IN && menuItemID < MENU_OFFSET_CUSTOM_REQUESTS) {
 			performMidiDeviceChange(menuItemID);
-			return;
 		} else if (menuItemID >= 0x6100 && menuItemID <= 0x650f) {
 			performMidiChannelChange(menuItemID);
-			return;
-		} else {
-			// this causes double invocation BAD
-			// invokeDirectly (menuItemID, false);
-			return;
 		}
-	} else if (topLevelMenuIndex == 0) {
-		if (menuItemID >= 0x9000 && menuItemID < 0x9100) {
+		// Anything else is a command item. Invoking it here would cause a double invocation.
+	} else if (menuName == "File") {
+		if (menuItemID >= 0x9000 && menuItemID < 0x9100)
 			performRecentFileOpen(menuItemID);
-		}
 	}
 }
 
