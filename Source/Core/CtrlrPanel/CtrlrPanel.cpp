@@ -2150,14 +2150,15 @@ void CtrlrPanel::loadPatchFromJSON() {
                         }
 
                         if (!isMatch) {
-                            const juce::String errorMsg =
-                                "Patch file target mismatch!\n\n"
-                                "File Target: " + (fileName.isNotEmpty() ? fileName : "Unknown Panel") + "\n" +
-                                "File UID: " + (fileUID.isNotEmpty() ? fileUID : "N/A") + "\n\n" +
-                                "Current Panel: " + currentName + "\n" +
-                                "Current UID: " + currentUID;
+							const juce::String errorMsg = "Patch file target mismatch!\n\n"
+														  "File Target: " +
+														  (fileName.isNotEmpty() ? fileName : "Unknown Panel") + "\n" +
+														  "File UID: " + (fileUID.isNotEmpty() ? fileUID : "N/A") +
+														  "\n\n" + "Current Panel: " + currentName + "\n" +
+														  "Current UID: " + currentUID + "\n\n" +
+														  "(Current Panel UID has been copied to the clipboard)";
 
-                            if (currentUID.isNotEmpty()) {
+							if (currentUID.isNotEmpty()) {
                                 juce::SystemClipboard::copyTextToClipboard(currentUID);
                             }
 
