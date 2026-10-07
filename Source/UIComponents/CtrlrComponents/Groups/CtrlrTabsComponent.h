@@ -128,8 +128,8 @@ private:
     //[/UserVariables]
 
     //==============================================================================
-    CtrlrTabsInternal* ctrlrTabs;
-
+    CtrlrTabsInternal* ctrlrTabs = nullptr;
+	bool restoreStateInProgress = false;
 
     //==============================================================================
     // (prevent copy constructor and operator= being generated..)

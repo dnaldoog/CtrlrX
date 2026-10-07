@@ -1,0 +1,18 @@
+[0/2] Re-checking globbed directories...
+[1/10] Building CXX object CMakeFiles/CtrlrX.dir/Source/UIComponents/CtrlrPanel/CtrlrPanelCanvasHandlers.cpp.o
+[2/10] Building CXX object CMakeFiles/CtrlrX.dir/Source/UIComponents/CtrlrComponents/Groups/CtrlrTabsComponent.cpp.o
+[3/10] Building CXX object CMakeFiles/CtrlrX.dir/Source/UIComponents/CtrlrComponents/CtrlrComponentTypeManager.cpp.o
+[4/10] Building CXX object CMakeFiles/CtrlrX.dir/Source/UIComponents/CtrlrPanel/CtrlrPanelCanvas.cpp.o
+[5/10] Building CXX object CMakeFiles/CtrlrX.dir/Source/UIComponents/CtrlrComponents/CtrlrComponent.cpp.o
+[6/10] Building CXX object CMakeFiles/CtrlrX.dir/Source/UIComponents/CtrlrComponents/CtrlrComponentLuaRegistration.cpp.o
+[7/10] Linking CXX static library CtrlrX_artefacts/Release/libCtrlrX_SharedCode.a
+[8/10] Linking CXX shared module CtrlrX_artefacts/Release/VST3/CtrlrX.vst3/Contents/x86_64-linux/CtrlrX.so
+lto-wrapper: warning: using serial compilation of 343 LTRANS jobs
+lto-wrapper: note: see the ‘-flto’ option documentation for more information
+/usr/bin/ld.bfd: /tmp/ccn6G0jY.ltrans216.ltrans.o: in function `os_tmpname':
+<artificial>:(.text+0x6582): warning: the use of `tmpnam' is dangerous, better use `mkstemp'
+[9/10] Linking CXX executable CtrlrX_artefacts/Release/Standalone/CtrlrX
+lto-wrapper: warning: using serial compilation of 346 LTRANS jobs
+lto-wrapper: note: see the ‘-flto’ option documentation for more information
+/usr/bin/ld.bfd: /tmp/ccgPxGlh.ltrans219.ltrans.o: in function `os_tmpname':
+<artificial>:(.text+0x6e82): warning: the use of `tmpnam' is dangerous, better use `mkstemp'

@@ -458,35 +458,42 @@ bool CtrlrTabsComponent::isOwned(CtrlrComponent *componentToCheck)
 
 void CtrlrTabsComponent::setOwned (CtrlrComponent *componentToOwn, const int subIndexInGroup, const bool shouldOwnThisComponent)
 {
-	if (componentToOwn == nullptr)
-		return;
+    if (componentToOwn == nullptr)
+        return;
 
-	if (shouldOwnThisComponent)
-	{
-		componentToOwn->setProperty (Ids::componentTabName, owner.getName(), true);
-		componentToOwn->setProperty (Ids::componentTabId, subIndexInGroup, true);
-		componentToOwn->setProperty (Ids::componentGroupped, true, true);
-		
-		// SAFEGUARD: Only clear the group name if we aren't currently loading the panel
-		if (!CtrlrComponent::restoreStateInProgress)
-		{
-			componentToOwn->setProperty(Ids::componentGroupName, "", true); // Added v5.6.35. Thanks to @dnaldoog. Clear group name when assigning to tab
-		}
-		
-		if (ctrlrTabs->getTabContentComponent(subIndexInGroup))
-			ctrlrTabs->getTabContentComponent(subIndexInGroup)->addAndMakeVisible (componentToOwn);
-	}
-	else
-	{
-		owner.getOwnerPanel().getEditor()->getCanvas()->addAndMakeVisibleNg (componentToOwn);
-		componentToOwn->setProperty (Ids::componentGroupped, false, true);
+    if (shouldOwnThisComponent)
+    {
+        componentToOwn->setProperty (Ids::componentTabName, owner.getName(), true);
+        componentToOwn->setProperty (Ids::componentTabId, subIndexInGroup, true);
+        componentToOwn->setProperty (Ids::componentGroupped, true, true);
+
+        if (ctrlrTabs != nullptr)
+        {
+            if (auto* tabContent = ctrlrTabs->getTabContentComponent (subIndexInGroup))
+            {
+                tabContent->addAndMakeVisible (componentToOwn);
+            }
+        }
+    }
+    else
+    {
+        if (auto* editor = owner.getOwnerPanel().getEditor())
+        {
+            if (auto* canvas = editor->getCanvas())
+            {
+                canvas->addAndMakeVisibleNg (componentToOwn);
+            }
+        }
+
+        componentToOwn->setProperty (Ids::componentGroupped, false, true);
 
         if (!getOwner().getOwnerPanel().isSchemeAtLeast(1))
-		{
+        {
             componentToOwn->setProperty (Ids::componentTabName, "", false);
-		}
-	}
+        }
+    }
 }
+
 
 void CtrlrTabsComponent::canvasStateRestored()
 {
