@@ -99,6 +99,7 @@ https://github.com/damiensellier/CtrlrX/issues/295#issuecomment-4960450879
 		Array<WeakReference<CtrlrModulator>> copyOfModulatorList;
 		int sortColumnId;
 		bool isSortedForward;
+		void showColumnPicker();
 		CtrlrPanelModulatorListTree modulatorListTree;
 		std::unique_ptr<TableListBox> modulatorList;
 };
