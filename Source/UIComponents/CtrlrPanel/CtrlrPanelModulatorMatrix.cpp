@@ -103,65 +103,51 @@ void CtrlrPanelModulatorMatrix::textEditorTextChanged(TextEditor&)
 void CtrlrPanelModulatorMatrix::buttonClicked(Button* b)
 {
     Identifier propId;
-    juce::String propName;
+    if (b == &toggleAllExclude)      propId = Ids::modulatorExcludeFromSnapshot;
+    else if (b == &toggleAllStatic)  propId = Ids::modulatorIsStatic;
+    else if (b == &toggleAllSave)    propId = Ids::modulatorValueSaveToFile;
+    else return;
 
-    if (b == &toggleAllExclude)
-    {
-        propId = Ids::modulatorExcludeFromSnapshot;
-        propName = "Exclude From Snapshot";
-    }
-    else if (b == &toggleAllStatic)
-    {
-        propId = Ids::modulatorIsStatic;
-        propName = "Is Static";
-    }
-    else if (b == &toggleAllSave)
-    {
-        propId = Ids::modulatorValueSaveToFile;
-        propName = "Save To File";
-    }
-    else
-    {
-        return;
-    }
-
-    if (filteredModulatorList.size() == 0)
-        return;
-
-    // Determine target state based on the first item in the list
+    // Determine target toggle state from first visible item
     bool newTargetState = true;
-    if (auto* firstMod = filteredModulatorList[0].get())
+    if (filteredModulatorList.size() > 0)
     {
-        newTargetState = ((int)firstMod->getProperty(propId) == 0);
+        if (auto* firstMod = filteredModulatorList[0].get())
+            newTargetState = ((int)firstMod->getProperty(propId) == 0);
     }
 
-    juce::String stateText = newTargetState ? "ENABLE" : "DISABLE";
-    juce::String message = "Are you sure you want to " + stateText + " '" + propName + 
-                           "' across all " + juce::String(filteredModulatorList.size()) + 
-                           " visible modulators?";
-AW::showOkCancelAsyncSafe(
-    AW::Warning,
-    "Bulk Update Warning",
-    message,
-    [this, propId, newTargetState](bool confirmed)
+    // Apply batch updates adhering to mutual rules
+    for (int i = 0; i < filteredModulatorList.size(); ++i)
     {
-        if (confirmed)
+        if (auto* mod = filteredModulatorList[i].get())
         {
-            for (int i = 0; i < filteredModulatorList.size(); ++i)
+            if (b == &toggleAllStatic)
             {
-                if (auto* mod = filteredModulatorList[i].get())
+                mod->setProperty(Ids::modulatorIsStatic, newTargetState ? 1 : 0);
+                if (newTargetState)
                 {
-                    mod->setProperty(propId, newTargetState ? 1 : 0);
+                    // Making static forces exclusion from snapshots
+                    mod->setProperty(Ids::modulatorExcludeFromSnapshot, 1);
                 }
             }
-
-            table.updateContent();
-            table.repaint();
+            else if (b == &toggleAllExclude)
+            {
+                mod->setProperty(Ids::modulatorExcludeFromSnapshot, newTargetState ? 1 : 0);
+                if (!newTargetState)
+                {
+                    // Including in snapshots forces non-static
+                    mod->setProperty(Ids::modulatorIsStatic, 0);
+                }
+            }
+            else if (b == &toggleAllSave)
+            {
+                mod->setProperty(Ids::modulatorValueSaveToFile, newTargetState ? 1 : 0);
+            }
         }
-    },
-    "Proceed",
-    "Cancel"
-);
+    }
+
+    table.updateContent();
+    table.repaint();
 }
 
 int CtrlrPanelModulatorMatrix::getNumRows()
@@ -208,25 +194,81 @@ Component* CtrlrPanelModulatorMatrix::refreshComponentForCell(int rowNumber, int
     if (!toggle)
         toggle = new ToggleButton();
 
+    // Clear previous callback to prevent cell recycling bugs
+    toggle->onClick = nullptr;
+
     if (rowNumber < 0 || rowNumber >= filteredModulatorList.size()) return toggle;
 
     auto* mod = filteredModulatorList[rowNumber].get();
     if (!mod) return toggle;
 
-    Identifier propId;
-    if (columnId == ColExcludeFromSnapshot) propId = Ids::modulatorExcludeFromSnapshot;
-    else if (columnId == ColIsStatic) propId = Ids::modulatorIsStatic;
-    else if (columnId == ColValueSaveToFile) propId = Ids::modulatorValueSaveToFile;
+    const bool isStatic   = ((int)mod->getProperty(Ids::modulatorIsStatic) != 0);
+    const bool isExcluded = ((int)mod->getProperty(Ids::modulatorExcludeFromSnapshot) != 0);
+    const bool isSave     = ((int)mod->getProperty(Ids::modulatorValueSaveToFile) != 0);
 
-    toggle->setToggleState((int)mod->getProperty(propId) != 0, dontSendNotification);
-
-    toggle->onClick = [mod, propId, toggle]()
+    if (columnId == ColIsStatic)
     {
-        if (mod)
+        toggle->setEnabled(true);
+        toggle->setToggleState(isStatic, dontSendNotification);
+
+        toggle->onClick = [this, mod, toggle]()
         {
-            mod->setProperty(propId, toggle->getToggleState() ? 1 : 0);
+            if (!mod) return;
+            const bool active = toggle->getToggleState();
+            mod->setProperty(Ids::modulatorIsStatic, active ? 1 : 0);
+
+            if (active)
+            {
+                // Force Exclude Snapshot property to 0 when made Static
+                mod->setProperty(Ids::modulatorExcludeFromSnapshot, 0);
+            }
+
+            table.updateContent();
+            table.repaint();
+        };
+    }
+    else if (columnId == ColExcludeFromSnapshot)
+    {
+        if (isStatic)
+        {
+            // STATIC MODE: Explicitly uncheck AND disable
+            toggle->setToggleState(false, dontSendNotification);
+            toggle->setEnabled(false);
         }
-    };
+        else
+        {
+            // DYNAMIC MODE: Enable and show actual property state
+            toggle->setEnabled(true);
+            toggle->setToggleState(isExcluded, dontSendNotification);
+        }
+
+        toggle->onClick = [this, mod, toggle]()
+        {
+            if (!mod) return;
+            const bool active = toggle->getToggleState();
+            mod->setProperty(Ids::modulatorExcludeFromSnapshot, active ? 1 : 0);
+
+            if (active)
+            {
+                // If checked Exclude Snapshot, force IsStatic to 0
+                mod->setProperty(Ids::modulatorIsStatic, 0);
+            }
+
+            table.updateContent();
+            table.repaint();
+        };
+    }
+    else if (columnId == ColValueSaveToFile)
+    {
+        toggle->setEnabled(true);
+        toggle->setToggleState(isSave, dontSendNotification);
+
+        toggle->onClick = [mod, toggle]()
+        {
+            if (mod)
+                mod->setProperty(Ids::modulatorValueSaveToFile, toggle->getToggleState() ? 1 : 0);
+        };
+    }
 
     return toggle;
 }
