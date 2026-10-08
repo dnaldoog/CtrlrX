@@ -6,6 +6,37 @@
 #include "CtrlrPanelModulatorListTree.h"
 #include <rapidfuzz/fuzz.hpp>
 
+namespace {
+struct DefaultColumn {
+		const char *identifier;
+		int width;
+};
+
+// Order here == order of columns after "Reset columns to default"
+const DefaultColumn kDefaultColumns[] = {
+	{"name", 100},
+	{"modulatorValue", 60},
+	{"vstIndex", 60},
+	{"uiType", 100},
+	{"componentRectangle", 80},
+	{"componentGroupName", 60},
+	{"componentTabName", 60},
+	// {"componentRadioGroupId", 60},
+	{"midiMessageType", 60},
+	{"midiMessageCtrlrNumber", 60},
+	{"midiMessageSysExFormula", 100},
+	{"modulatorCustomIndex", 60},
+	// {"modulatorCustomIndexGroup", 60},
+};
+
+bool isDefaultColumn(const juce::String &identifier) {
+	for (const auto &c : kDefaultColumns)
+		if (identifier == c.identifier)
+			return true;
+	return false;
+}
+} // namespace
+
 class CtrlrModulator;
 
 class CtrlrModulatorListSorter {
@@ -94,6 +125,7 @@ https://github.com/damiensellier/CtrlrX/issues/295#issuecomment-4960450879
 		juce::Label searchLabel{"searchLabel", "Search Modulators:"};
 		juce::TextEditor searchField;
 		juce::TextButton clearSearchButton{"Reset"};
+
 		void applyFuzzyFilter();
 		Array<WeakReference<CtrlrModulator>> masterModulatorList;
 		Array<WeakReference<CtrlrModulator>> copyOfModulatorList;
