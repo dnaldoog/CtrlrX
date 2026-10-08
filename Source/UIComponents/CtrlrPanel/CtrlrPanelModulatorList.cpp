@@ -27,13 +27,23 @@ class ColumnPickerComponent : public juce::Component,
 		listBox.setModel(this);
 		listBox.setRowHeight(22);
 
+		addAndMakeVisible(checkedFirstButton);
+		checkedFirstButton.setClickingTogglesState(true);
+		checkedFirstButton.setWantsKeyboardFocus(false);
+		checkedFirstButton.onClick = [this] {
+			rebuildFilter();
+			searchBox.grabKeyboardFocus();
+		};
 		rebuildFilter();
-		setSize(260, 340);
+		setSize(320, 360);
 	}
 
 	void resized() override {
 		auto r = getLocalBounds().reduced(6);
-		searchBox.setBounds(r.removeFromTop(26));
+		auto top = r.removeFromTop(26);
+		checkedFirstButton.setBounds(top.removeFromRight(96));
+		top.removeFromRight(4);
+		searchBox.setBounds(top);
 		r.removeFromTop(4);
 		listBox.setBounds(r);
 	}
@@ -69,6 +79,9 @@ class ColumnPickerComponent : public juce::Component,
 		if (!juce::isPositiveAndBelow(row, filtered.size()))
 			return;
 		const int idx = filtered[row];
+
+		if (isDefaultColumn(names[idx]))
+			g.fillAll(juce::Colours::steelblue.withAlpha(0.25f));
 
 		if (selected)
 			g.fillAll(findColour(juce::TextEditor::highlightColourId).withAlpha(0.4f));
@@ -114,6 +127,8 @@ class ColumnPickerComponent : public juce::Component,
 			for (auto &s : scored)
 				filtered.add(s.second);
 		}
+		if (checkedFirstButton.getToggleState())
+			std::stable_partition(filtered.begin(), filtered.end(), [this](int idx) { return isColumnVisible(idx); });
 		listBox.updateContent();
 		listBox.repaint();
 	}
@@ -122,7 +137,7 @@ class ColumnPickerComponent : public juce::Component,
 	juce::Array<int> filtered; // indices into `names` (== column index, columnId = index + 1)
 	std::function<bool(int)> isColumnVisible;
 	std::function<void(int)> toggleColumn;
-
+	juce::TextButton checkedFirstButton{"Selected"};
 	juce::TextEditor searchBox;
 	juce::ListBox listBox;
 };
@@ -216,25 +231,15 @@ void CtrlrPanelModulatorList::resized() {
 }
 
 void CtrlrPanelModulatorList::resetToDefaults() {
-	modulatorList->getHeader().removeAllColumns();
-	modulatorList->getHeader().addColumn("name", getColumnIdForIdentifier("name") + 1, 100);
-	modulatorList->getHeader().addColumn("modulatorValue", getColumnIdForIdentifier("modulatorValue") + 1, 60);
-	modulatorList->getHeader().addColumn("vstIndex", getColumnIdForIdentifier("vstIndex") + 1, 60);
-	modulatorList->getHeader().addColumn("uiType", getColumnIdForIdentifier("uiType") + 1, 100);
-	modulatorList->getHeader().addColumn("componentRectangle", getColumnIdForIdentifier("componentRectangle") + 1, 80);
-	modulatorList->getHeader().addColumn("componentGroupName", getColumnIdForIdentifier("componentGroupName") + 1, 60);
-	modulatorList->getHeader().addColumn("componentTabName", getColumnIdForIdentifier("componentTabName") + 1, 60);
-	// modulatorList->getHeader().addColumn ("componentRadioGroupId",
-	// getColumnIdForIdentifier("componentRadioGroupId")+1, 60);
-	modulatorList->getHeader().addColumn("midiMessageType", getColumnIdForIdentifier("midiMessageType") + 1, 60);
-	modulatorList->getHeader().addColumn("midiMessageCtrlrNumber",
-										 getColumnIdForIdentifier("midiMessageCtrlrNumber") + 1, 60);
-	modulatorList->getHeader().addColumn("midiMessageSysExFormula",
-										 getColumnIdForIdentifier("midiMessageSysExFormula") + 1, 100);
-	modulatorList->getHeader().addColumn("modulatorCustomIndex", getColumnIdForIdentifier("modulatorCustomIndex") + 1,
-										 60);
-	// modulatorList->getHeader().addColumn ("modulatorCustomIndexGroup",
-	// getColumnIdForIdentifier("modulatorCustomIndexGroup")+1, 60);
+	auto &header = modulatorList->getHeader();
+	header.removeAllColumns();
+
+	for (const auto &c : kDefaultColumns) {
+		const int index = getColumnIdForIdentifier(c.identifier);
+		if (index < 0)
+			continue; // identifier not in the ID tree: skip rather than add an invalid column id
+		header.addColumn(c.identifier, index + 1, c.width);
+	}
 	saveColumnState();
 }
 

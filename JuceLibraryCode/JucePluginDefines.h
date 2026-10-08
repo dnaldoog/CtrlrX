@@ -83,7 +83,7 @@
  #define JucePlugin_VersionCode            0x80000
 #endif
 #ifndef  JucePlugin_VersionString
- #define JucePlugin_VersionString          "8.64"
+ #define JucePlugin_VersionString          "8.0"
 #endif
 #ifndef  JucePlugin_VSTUniqueID
  #define JucePlugin_VSTUniqueID            JucePlugin_PluginCode
