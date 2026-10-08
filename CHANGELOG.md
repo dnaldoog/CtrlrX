@@ -1,3 +1,8 @@
+### CtrlrX v8.64 - Changelog 10/08/2026
+
+- Changed Modulator List Add/Remove menu (with fuzzy search)
+- Flag Matrix tab Static/Send Snapshot acts as radio button toggle
+- [https://github.com/dnaldoog/CtrlrX/commit/4c8e78bb17e3e0ae70d17f09dc1ad61809d39561](https://github.com/dnaldoog/CtrlrX/commit/b0b4a4d5086935e326b642f515162cc0bdf181f6)
 
 ### CtrlrX v8.63 - Changelog 10/05/2026
 
