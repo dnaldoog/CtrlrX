@@ -9,6 +9,126 @@
 // Top of CtrlrPanelModulatorList.cpp
 
 /* ********************************************************************************** */
+
+namespace {
+class ColumnPickerComponent : public juce::Component,
+							  private juce::TextEditor::Listener,
+							  private juce::ListBoxModel {
+  public:
+	ColumnPickerComponent(juce::StringArray columnNames, std::function<bool(int)> isVisibleFn,
+						  std::function<void(int)> toggleFn)
+		: names(std::move(columnNames)), isColumnVisible(std::move(isVisibleFn)), toggleColumn(std::move(toggleFn)) {
+		addAndMakeVisible(searchBox);
+		searchBox.setTextToShowWhenEmpty("Search columns...", juce::Colours::grey);
+		searchBox.addListener(this);
+		searchBox.setEscapeAndReturnKeysConsumed(true);
+
+		addAndMakeVisible(listBox);
+		listBox.setModel(this);
+		listBox.setRowHeight(22);
+
+		rebuildFilter();
+		setSize(260, 340);
+	}
+
+	void resized() override {
+		auto r = getLocalBounds().reduced(6);
+		searchBox.setBounds(r.removeFromTop(26));
+		r.removeFromTop(4);
+		listBox.setBounds(r);
+	}
+
+	void parentHierarchyChanged() override {
+		juce::Component::SafePointer<ColumnPickerComponent> safe(this);
+		juce::MessageManager::callAsync([safe] {
+			if (safe != nullptr && safe->isShowing())
+				safe->searchBox.grabKeyboardFocus();
+		});
+	}
+
+  private:
+	// --- TextEditor::Listener ---
+	void textEditorTextChanged(juce::TextEditor &) override {
+		rebuildFilter();
+	}
+	void textEditorReturnKeyPressed(juce::TextEditor &) override {
+		// Enter toggles the top match, so "type, Enter" works without the mouse
+		if (filtered.size() > 0)
+			toggleRow(0);
+	}
+	void textEditorEscapeKeyPressed(juce::TextEditor &) override {
+		if (auto *box = findParentComponentOfClass<juce::CallOutBox>())
+			box->dismiss();
+	}
+
+	// --- ListBoxModel ---
+	int getNumRows() override {
+		return filtered.size();
+	}
+	void paintListBoxItem(int row, juce::Graphics &g, int w, int h, bool selected) override {
+		if (!juce::isPositiveAndBelow(row, filtered.size()))
+			return;
+		const int idx = filtered[row];
+
+		if (selected)
+			g.fillAll(findColour(juce::TextEditor::highlightColourId).withAlpha(0.4f));
+
+		getLookAndFeel().drawTickBox(g, *this, 4.0f, (h - 14) * 0.5f, 14.0f, 14.0f, isColumnVisible(idx), true, false,
+									 false);
+
+		g.setColour(findColour(juce::TextEditor::textColourId));
+		g.setFont(juce::FontOptions(13.0f));
+		g.drawText(names[idx], 26, 0, w - 30, h, juce::Justification::centredLeft, true);
+	}
+	void listBoxItemClicked(int row, const juce::MouseEvent &) override {
+		toggleRow(row);
+	}
+
+	// --- helpers ---
+	void toggleRow(int row) {
+		if (!juce::isPositiveAndBelow(row, filtered.size()))
+			return;
+		toggleColumn(filtered[row]);
+		listBox.repaint();
+	}
+
+	void rebuildFilter() {
+		filtered.clear();
+		const juce::String query = searchBox.getText().trim();
+
+		if (query.isEmpty()) {
+			for (int i = 0; i < names.size(); ++i)
+				filtered.add(i);
+		} else {
+			const std::string q = query.toLowerCase().toStdString();
+			std::vector<std::pair<double, int>> scored;
+
+			for (int i = 0; i < names.size(); ++i) {
+				double score = rapidfuzz::fuzz::partial_ratio(q, names[i].toLowerCase().toStdString());
+				if (names[i].startsWithIgnoreCase(query))
+					score += 20.0;
+				if (score > 55.0)
+					scored.push_back({score, i});
+			}
+			std::stable_sort(scored.begin(), scored.end(), [](auto &a, auto &b) { return a.first > b.first; });
+			for (auto &s : scored)
+				filtered.add(s.second);
+		}
+		listBox.updateContent();
+		listBox.repaint();
+	}
+
+	juce::StringArray names;
+	juce::Array<int> filtered; // indices into `names` (== column index, columnId = index + 1)
+	std::function<bool(int)> isColumnVisible;
+	std::function<void(int)> toggleColumn;
+
+	juce::TextEditor searchBox;
+	juce::ListBox listBox;
+};
+} // namespace
+
+
 CtrlrPanelModulatorList::CtrlrPanelModulatorList(CtrlrPanel &_owner)
 	: owner(_owner),
 	  modulatorListTree(owner) // Note: Removed modulatorList(nullptr) from initializer list since unique_ptr
@@ -603,7 +723,8 @@ PopupMenu CtrlrPanelModulatorList::getMenuForIndex(int topLevelMenuIndex, const 
 			m.addItem(8192 + i, getIdTree().getChild(i).getProperty(Ids::name), true,
 					  modulatorList->getHeader().isColumnVisible(i + 1));
 		}
-		menu.addSubMenu("Visible columns", m);
+		// menu.addSubMenu("Visible columns", m);
+		menu.addItem(14, "Visible columns...");
 		menu.addItem(13, "Reset columns to default");
 	}
 	return (menu);
@@ -618,6 +739,8 @@ void CtrlrPanelModulatorList::menuItemSelected(int menuItemID, int topLevelMenuI
 		deleteSelected();
 	} else if (menuItemID == 3) {
 		switchView();
+	} else if (menuItemID == 14) {
+		showColumnPicker();
 	} else if (menuItemID >= 8192) {
 		handleColumnSelection(menuItemID);
 	} else if (menuItemID == 4) {
@@ -773,4 +896,23 @@ void CtrlrPanelModulatorList::applyFuzzyFilter() {
 
 	// 2. Update Tree View
 	modulatorListTree.setSearchFilter(query);
+}
+
+void CtrlrPanelModulatorList::showColumnPicker() {
+	juce::StringArray names;
+	for (int i = 0; i < getIdTree().getNumChildren(); ++i)
+		names.add(getIdTree().getChild(i).getProperty(Ids::name).toString());
+
+	juce::Component::SafePointer<CtrlrPanelModulatorList> safe(this);
+
+	auto picker = std::make_unique<ColumnPickerComponent>(
+		names,
+		[safe](int i) { return safe != nullptr && safe->modulatorList->getHeader().isColumnVisible(i + 1); },
+		[safe](int i) {
+			if (safe != nullptr)
+				safe->handleColumnSelection(8192 + i);
+		});
+
+	// Null parent => area is in screen coordinates; point at the table header
+	juce::CallOutBox::launchAsynchronously(std::move(picker), modulatorList->getHeader().getScreenBounds(), nullptr);
 }
