@@ -45,7 +45,8 @@ class CtrlrLuaMethodCodeEditorSettings : public Component,
 		void populateColourComboWithThumbnails(ColourComboBox *combo);
 		void updateTokenColorDisplay(const String &tokenType);
 		void clearSyntaxColorSettings();
-
+		static CodeEditorComponent::ColourScheme &getSharedScheme();
+		static void loadSharedSchemeFromTree(const ValueTree &tree);
 		bool hasUnsavedChanges() const;
 		void markAsChanged();
 		void markAsSaved();
@@ -99,7 +100,6 @@ class CtrlrLuaMethodCodeEditorSettings : public Component,
 		std::unique_ptr<Label> syntaxLabel; // Updated v5.6.34. Thanks to @dnaldoog
 		std::unique_ptr<CodeEditorComponent> fontTest;
 
-		static CodeEditorComponent::ColourScheme &getSharedScheme();
 		HashMap<String, Colour> customSyntaxColors;
 
 		Font originalFont;
@@ -110,6 +110,8 @@ class CtrlrLuaMethodCodeEditorSettings : public Component,
 		bool originalOpenSearchTabs;
 		bool originalAutoComplete;
 		juce::Value &sharedSearchTabsValue;
+		bool resetDialogOpen = false;
+		void resetEditorSettingsToDefaults();
 
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrLuaMethodCodeEditorSettings);
 };

@@ -249,7 +249,7 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings(CtrlrLuaMetho
 
 	// Load saved settings BEFORE setting initial selections
 	loadSyntaxColorsFromSettings();
-
+	loadSharedSchemeFromTree(owner.getComponentTree());
 	// Set initial selection for token type
 	syntaxTokenType->setSelectedId(1, dontSendNotification);
 
@@ -461,50 +461,27 @@ void CtrlrLuaMethodCodeEditorSettings::buttonClicked(Button *buttonThatWasClicke
 		applySettings();
 		closeWindow(); // Added to apply and close settings window
 	} else if (buttonThatWasClicked == resetButton.get()) {
-		// Capture a SafePointer to prevent accessing a destroyed 'this'
+		// Ignore extra clicks while the confirmation dialog is open
+		if (resetDialogOpen)
+			return;
+		resetDialogOpen = true;
+
 		juce::Component::SafePointer<CtrlrLuaMethodCodeEditorSettings> safeThis(this);
 
-		AW::showOkCancelAsyncSafe(AW::Question, "Reset Editor", "Reset Editor to default", [safeThis](int result) {
-			// Ensure 'this' component hasn't been deleted by parent while waiting for user click
-			if (safeThis == nullptr)
-				return;
+		AW::showOkCancelOverComponent(
+			AW::Question, "Reset Editor", "Reset Editor to default", this,
+			[safeThis](bool confirmed) {
+				if (safeThis == nullptr)
+					return; // window was closed while the dialog was open
 
-			if (result == 1) {
-				// Reset to defaults
-				safeThis->fontTypeface->setText("<Monospaced>", dontSendNotification);
-				safeThis->fontBold->setToggleState(false, dontSendNotification);
-				safeThis->fontItalic->setToggleState(false, dontSendNotification);
-				safeThis->openSearchTabs->setToggleState(false, dontSendNotification);
-				safeThis->fontSize->setValue(14.0f, dontSendNotification);
-				safeThis->bgColour->setSelectedId(safeThis->findColourIndex(Colours::white), dontSendNotification);
-				safeThis->lineNumbersBgColour->setSelectedId(safeThis->findColourIndex(Colours::cornflowerblue),
-															 dontSendNotification);
-				safeThis->lineNumbersColour->setSelectedId(safeThis->findColourIndex(Colours::black),
-														   dontSendNotification);
+				safeThis->resetDialogOpen = false; // re-arm on OK and on Cancel
 
-				safeThis->customSyntaxColors.clear();
-				safeThis->clearSyntaxColorSettings();
-				String currentToken = safeThis->getCurrentSelectedTokenType();
-				safeThis->updateTokenColorDisplay(currentToken);
-				safeThis->updateSyntaxColors();
-
-				safeThis->previousFont = safeThis->getFont();
-				safeThis->resetToPreviousButton->setEnabled(true);
-
-				safeThis->changeListenerCallback(nullptr);
-
-				// DEFER WINDOW CLOSE: Allows the AW async dialog to finish completely before deleting 'this'
-				juce::MessageManager::callAsync([safeThis]() {
-					if (safeThis != nullptr) {
-						//safeThis->closeWindow();
-						safeThis->applySettings(); // Apply the reset settings to the main editor
-					}
-				});
-			}
-		});
+				if (confirmed)
+					safeThis->resetEditorSettingsToDefaults();
+			},
+			"Reset", "Cancel");
 
 		return;
-
 	} else if (buttonThatWasClicked == fontBold.get() || buttonThatWasClicked == fontItalic.get()) {
 		// For style changes, also enable reset and store previous
 		if (!resetToPreviousButton->isEnabled()) {
@@ -602,34 +579,24 @@ void CtrlrLuaMethodCodeEditorSettings::populateSyntaxTokenCombo() {
 }
 
 void CtrlrLuaMethodCodeEditorSettings::updateSyntaxColors() {
-	// Create the custom scheme by getting the default
 	CodeEditorComponent::ColourScheme scheme = luaTokeniser.getDefaultColourScheme();
 
-	// Iterate through your custom saved colors and override the defaults.
-	// Use the `set()` method on the scheme to do this.
 	HashMap<String, Colour>::Iterator it(customSyntaxColors);
 	while (it.next()) {
 		scheme.set(it.getKey(), it.getValue());
 	}
 
-	// Now, apply the fully updated scheme to your editors.
-
-	// Update the static shared scheme so new editors use it
+	// 1. Update the static shared scheme so all future tabs pick it up
 	getSharedScheme() = scheme;
 
-	// Update the preview editor
+	// 2. Update the settings preview box
 	if (fontTest) {
 		fontTest->setColourScheme(scheme);
-		fontTest->repaint(); // Ensure the preview updates
+		fontTest->repaint();
 	}
 
-	// Update the main editor if it exists
-	CtrlrLuaMethodCodeEditor *currentEditor = owner.getCurrentEditor();
-	if (currentEditor && currentEditor->getCodeComponent()) {
-		currentEditor->getCodeComponent()->setColourScheme(scheme);
-		currentEditor->getCodeComponent()->repaint();
-		_DBG("Updated current editor with new scheme.");
-	}
+	// 3. Trigger full update on the owner component (refreshes all active tabs)
+	owner.updateTabs();
 }
 
 CodeEditorComponent::ColourScheme &CtrlrLuaMethodCodeEditorSettings::getSharedScheme() {
@@ -645,17 +612,23 @@ String CtrlrLuaMethodCodeEditorSettings::getCurrentSelectedTokenType() {
 }
 
 void CtrlrLuaMethodCodeEditorSettings::loadSyntaxColorsFromSettings() {
-	StringArray tokenTypes = CtrlrLuaCodeTokeniser::getTokenTypeNames();
+	customSyntaxColors.clear();
 
-	for (int i = 0; i < tokenTypes.size(); ++i) {
-		const String &tokenType = tokenTypes[i];
-		String settingKey = "syntaxColor_" + tokenType;
-		var colorVar = owner.getComponentTree().getProperty(settingKey);
-		DBG("Loading: " + settingKey + " = " + colorVar.toString());
+	String serializedColors = owner.getComponentTree().getProperty(Ids::luaMethodEditorSyntaxColors, "").toString();
+	_DBG("Loading Syntax Colors: " + serializedColors);
 
-		if (!colorVar.isVoid() && colorVar.toString().isNotEmpty()) {
-			Colour savedColor = VAR2COLOUR(colorVar);
-			customSyntaxColors.set(tokenType, savedColor);
+	if (serializedColors.isNotEmpty()) {
+		StringArray entries;
+		entries.addTokens(serializedColors, ";", "");
+
+		for (int i = 0; i < entries.size(); ++i) {
+			StringArray pair;
+			pair.addTokens(entries[i], "=", "");
+			if (pair.size() == 2) {
+				String tokenType = pair[0];
+				Colour color = Colour::fromString(pair[1]);
+				customSyntaxColors.set(tokenType, color);
+			}
 		}
 	}
 }
@@ -669,16 +642,10 @@ void CtrlrLuaMethodCodeEditorSettings::saveSyntaxColorsToSettings() {
 		owner.getComponentTree().setProperty(settingKey, colorValue, nullptr);
 	}
 }
-void CtrlrLuaMethodCodeEditorSettings::clearSyntaxColorSettings() {
-	// Remove all saved syntax color settings
-	StringArray tokenTypes = CtrlrLuaCodeTokeniser::getTokenTypeNames();
 
-	for (int i = 0; i < tokenTypes.size(); ++i) {
-		const String &tokenType = tokenTypes[i];
-		String settingKey = "syntaxColor_" + tokenType;
-		owner.getComponentTree().removeProperty(settingKey, nullptr);
-		DBG("Cleared setting: " + settingKey);
-	}
+void CtrlrLuaMethodCodeEditorSettings::clearSyntaxColorSettings() {
+	owner.getComponentTree().removeProperty(Ids::luaMethodEditorSyntaxColors, nullptr);
+	_DBG("Cleared syntax color settings.");
 }
 
 // This function will now be more robust and will always set the
@@ -852,4 +819,48 @@ void CtrlrLuaMethodCodeEditorSettings::closeWindow() {
 	} else if (DocumentWindow *parentWindow = findParentComponentOfClass<DocumentWindow>()) {
 		parentWindow->closeButtonPressed();
 	}
+}
+void CtrlrLuaMethodCodeEditorSettings::loadSharedSchemeFromTree(const ValueTree &tree) {
+	CodeEditorComponent::ColourScheme scheme = CtrlrLuaCodeTokeniser().getDefaultColourScheme();
+	StringArray tokenTypes = CtrlrLuaCodeTokeniser::getTokenTypeNames();
+
+	for (const String &tokenType : tokenTypes) {
+		String settingKey = "syntaxColor_" + tokenType;
+		var colorVar = tree.getProperty(settingKey);
+
+		if (!colorVar.isVoid() && colorVar.toString().isNotEmpty()) {
+			Colour savedColor = VAR2COLOUR(colorVar);
+			scheme.set(tokenType, savedColor);
+		}
+	}
+
+	getSharedScheme() = scheme;
+}
+
+void CtrlrLuaMethodCodeEditorSettings::resetEditorSettingsToDefaults() {
+	fontTypeface->setText("<Monospaced>", dontSendNotification);
+	fontBold->setToggleState(false, dontSendNotification);
+	fontItalic->setToggleState(false, dontSendNotification);
+	openSearchTabs->setToggleState(false, dontSendNotification);
+	fontSize->setValue(14.0f, dontSendNotification);
+	bgColour->setSelectedId(findColourIndex(Colours::white), dontSendNotification);
+	lineNumbersBgColour->setSelectedId(findColourIndex(Colours::cornflowerblue), dontSendNotification);
+	lineNumbersColour->setSelectedId(findColourIndex(Colours::black), dontSendNotification);
+
+	customSyntaxColors.clear();
+	clearSyntaxColorSettings();
+	updateTokenColorDisplay(getCurrentSelectedTokenType());
+	updateSyntaxColors();
+
+	previousFont = getFont();
+	resetToPreviousButton->setEnabled(true);
+
+	changeListenerCallback(nullptr);
+
+	// Apply once the dialog has fully finished, not from inside its callback
+	juce::Component::SafePointer<CtrlrLuaMethodCodeEditorSettings> safeThis(this);
+	juce::MessageManager::callAsync([safeThis] {
+		if (safeThis != nullptr)
+			safeThis->applySettings(); // push the reset settings to the main editor
+	});
 }

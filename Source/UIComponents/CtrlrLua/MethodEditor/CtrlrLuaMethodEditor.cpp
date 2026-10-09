@@ -51,6 +51,8 @@ CtrlrLuaMethodEditor::CtrlrLuaMethodEditor(CtrlrPanel &_owner)
 
 	addKeyListener(this);
 	componentTree.addListener(this);
+	CtrlrLuaMethodCodeEditorSettings::loadSharedSchemeFromTree(getComponentTree());
+	updateTabs();
 	setSize(900, 600); // Update v5.6.31. Note : follows container size 800x500
 }
 
@@ -77,8 +79,12 @@ TabbedComponent *CtrlrLuaMethodEditor::getTabs() {
 
 void CtrlrLuaMethodEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged,
 													const Identifier &property) {
-	if (property == Ids::luaMethodEditorFont || property == Ids::luaMethodEditorBgColour ||
-		property == Ids::luaMethodEditorLineNumbersColour || property == Ids::luaMethodEditorFontColour) {
+
+	if (property == Ids::luaMethodEditorSyntaxColors || property.toString().startsWith("syntaxColor_")) {
+		CtrlrLuaMethodCodeEditorSettings::loadSharedSchemeFromTree(getComponentTree());
+		updateTabs();
+	} else if (property == Ids::luaMethodEditorFont || property == Ids::luaMethodEditorBgColour ||
+			   property == Ids::luaMethodEditorLineNumbersColour || property == Ids::luaMethodEditorFontColour) {
 		for (int i = 0; i < methodEditArea->getTabs()->getNumTabs(); i++) {
 			CtrlrLuaMethodCodeEditor *ed =
 				dynamic_cast<CtrlrLuaMethodCodeEditor *>(methodEditArea->getTabs()->getTabContentComponent(i));
@@ -126,6 +132,10 @@ void CtrlrLuaMethodEditor::restoreState(const ValueTree &savedState) {
 		setEditedMethod(Uuid(openedMethods[i]));
 	}
 
+	// 1. Sync shared scheme from restored tree
+	CtrlrLuaMethodCodeEditorSettings::loadSharedSchemeFromTree(componentTree);
+
+	// 2. Refresh open tabs to apply loaded scheme
 	updateTabs();
 }
 
@@ -784,6 +794,12 @@ void CtrlrLuaMethodEditor::updateTabs() {
 				} else {
 					methodEditArea->getTabs()->setTabBackgroundColour(i, Colours::red.brighter(0.6f));
 				}
+			}
+
+			// Sync the custom syntax highlighting scheme across all tabs
+			if (ed->getCodeComponent()) {
+				ed->getCodeComponent()->setColourScheme(CtrlrLuaMethodCodeEditorSettings::getSharedScheme());
+				ed->getCodeComponent()->repaint();
 			}
 		}
 	}

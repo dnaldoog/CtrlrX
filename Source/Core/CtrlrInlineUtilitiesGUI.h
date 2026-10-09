@@ -311,7 +311,22 @@ static void showWarning(const juce::String &title, const juce::String &message,
 										  }
 									  });
 }
+/**************************************************************************************************/
+// JUCE-drawn OK/Cancel alert, centred on (and associated with) a component, with real button labels.
+static void showOkCancelOverComponent(Icon icon, const juce::String &title, const juce::String &message,
+									  juce::Component *associatedComponent, std::function<void(bool)> callback,
+									  const juce::String &okText = "OK", const juce::String &cancelText = "Cancel") {
+	auto iconType = (icon == Question)	? juce::MessageBoxIconType::QuestionIcon
+					: (icon == Warning) ? juce::MessageBoxIconType::WarningIcon
+					: (icon == Info)	? juce::MessageBoxIconType::InfoIcon
+										: juce::MessageBoxIconType::NoIcon;
 
+	juce::AlertWindow::showOkCancelBox(iconType, title, message, okText, cancelText, associatedComponent,
+									   juce::ModalCallbackFunction::create([callback](int result) {
+										   if (callback != nullptr)
+											   callback(result == 1); // button 1 (OK) returns 1, Cancel returns 0
+									   }));
+}
 }; // namespace AW
 /**************************************************************************************************/
 /*
