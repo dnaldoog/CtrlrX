@@ -461,44 +461,41 @@ void CtrlrLuaMethodCodeEditorSettings::buttonClicked(Button *buttonThatWasClicke
 		applySettings();
 		closeWindow(); // Added to apply and close settings window
 	} else if (buttonThatWasClicked == resetButton.get()) {
-		// Ignore extra clicks while the confirmation dialog is open
 		if (resetDialogOpen)
 			return;
 		resetDialogOpen = true;
+		resetButton->setEnabled(false); // further clicks can't reach the button
 
 		juce::Component::SafePointer<CtrlrLuaMethodCodeEditorSettings> safeThis(this);
 
-		AW::showOkCancelOverComponent(
-			AW::Question, "Reset Editor", "Reset Editor to default", this,
-			[safeThis](bool confirmed) {
-				if (safeThis == nullptr)
-					return; // window was closed while the dialog was open
+// Short delay so the dialog doesn't appear in the middle of a click sequence
+#if JUCE_LINUX
+		constexpr int dialogDelayMs = 1000;
+#else
+		constexpr int dialogDelayMs = 10;
+#endif
 
-				safeThis->resetDialogOpen = false; // re-arm on OK and on Cancel
+		juce::Timer::callAfterDelay(dialogDelayMs, [safeThis] {
+			if (safeThis == nullptr)
+				return;
 
-				if (confirmed)
-					safeThis->resetEditorSettingsToDefaults();
-			},
-			"Reset", "Cancel");
+			AW::showOkCancelOverComponent(
+				AW::Question, "Reset Editor", "Reset Editor to default", safeThis.getComponent(),
+				[safeThis](bool confirmed) {
+					if (safeThis == nullptr)
+						return;
+
+					safeThis->resetDialogOpen = false;
+					safeThis->resetButton->setEnabled(true); // re-arm on OK and on Cancel
+
+					if (confirmed)
+						safeThis->resetEditorSettingsToDefaults();
+				},
+				"Reset", "Cancel");
+		});
 
 		return;
-	} else if (buttonThatWasClicked == fontBold.get() || buttonThatWasClicked == fontItalic.get()) {
-		// For style changes, also enable reset and store previous
-		if (!resetToPreviousButton->isEnabled()) {
-			previousFont = getFont(); // Store current before style change
-			resetToPreviousButton->setEnabled(true);
-		}
-	} else if (buttonThatWasClicked == openSearchTabs.get()) {
-		bool currentState = openSearchTabs->getToggleState();
-		owner.setOpenSearchTabsEnabled(currentState);
-		owner.getComponentTree().setProperty(Ids::openSearchTabsState, currentState, nullptr);
-	} else if (buttonThatWasClicked == autoCompleteButton.get()) {
-		bool currentState = autoCompleteButton->getToggleState();
-		owner.getComponentTree().setProperty(Ids::luaMethodEditorAutoComplete, currentState, nullptr);
 	}
-
-	// Runs immediately for non-async button clicks
-	changeListenerCallback(nullptr);
 }
 
 void CtrlrLuaMethodCodeEditorSettings::sliderValueChanged(Slider *sliderThatWasMoved) {
