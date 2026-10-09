@@ -217,7 +217,7 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings(CtrlrLuaMetho
 	// addAndMakeVisible(autoCompleteOptionsButton = new ToggleButton(""));
 	// autoCompleteOptionsButton->setButtonText(SharedValues::getAutoCompleteOptionsLabel());
 
-	resetButton = std::make_unique<TextButton>("Reset");
+	resetButton = std::make_unique<TextButton>("Defaults");
 	addAndMakeVisible(resetButton.get());
 	resetButton->addListener(this);
 	resetButton->setColour(TextButton::buttonColourId,
@@ -313,7 +313,7 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings(CtrlrLuaMetho
 	originalAutoComplete = autoCompleteButton->getToggleState();
 	originalOpenSearchTabs = openSearchTabs->getToggleState();
 
-	setSize(334, 600);
+	setSize(334, 616);
 	updateSyntaxColors();
 }
 
@@ -379,18 +379,18 @@ void CtrlrLuaMethodCodeEditorSettings::resized() {
 	// Autocomplete toggle
 	autoCompleteButton->setBounds(marginLeft + 0, syntaxY + 88, sampleWidth, 24);
 
-	// Autocomplete toggle
-	// autoCompleteOptionsButton->setBounds(marginLeft + 0, syntaxY + 112, sampleWidth, 24);
+	// Defaults on the left; OK and Apply together on the right
+	const int buttonY = syntaxY + 128 + 24;
+	const int buttonHeight = 24;
+	const int buttonWidth = 80;
+	const int gap = 8;
 
-	// Add horizontal line above buttons
-	int buttonY = syntaxY + 128 + 24;
+	auto row = juce::Rectangle<int>(marginLeft, buttonY, sampleWidth, buttonHeight);
 
-	// Position the three buttons in a row: RESET  APPLY  CANCEL
-	int buttonWidth = (sampleWidth - 16) / 2; // Account for spacing between buttons
-	resetButton->setBounds(marginLeft, buttonY, (sampleWidth - 8) / 2,
-						   42); // 42px high is the default JUCE buttons height
-	okayButton->setBounds(marginLeft + buttonWidth + 8, buttonY, buttonWidth, 24);
-	applyButton->setBounds(marginLeft + (sampleWidth - 8) / 2 + 8, buttonY, (sampleWidth - 8) / 2, 42);
+	resetButton->setBounds(row.removeFromLeft(buttonWidth));  // "Defaults"
+	applyButton->setBounds(row.removeFromRight(buttonWidth)); // far right
+	row.removeFromRight(gap);
+	okayButton->setBounds(row.removeFromRight(buttonWidth)); // just left of Apply
 }
 
 void CtrlrLuaMethodCodeEditorSettings::comboBoxChanged(ComboBox *comboBoxThatHasChanged) {
