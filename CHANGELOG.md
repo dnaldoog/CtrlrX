@@ -1,3 +1,5 @@
+[&#187; Release page &#171;](https://github.com/dnaldoog/CtrlrX/releases)
+----
 ### CtrlrX v.8.65 10/09/2026
 
 - Toggle between classic Add to Modulator List PopupMenu and new CallOutBox
