@@ -179,6 +179,7 @@ CtrlrPanelModulatorList::CtrlrPanelModulatorList(CtrlrPanel &_owner)
 	modulatorListTree.setVisible(false);
 
 	owner.setProperty(Ids::uiPanelModulatorListViewTree, false);
+	owner.setProperty(Ids::panelModulatorListAddMode, true); // Default to "Add Columns Mode" (true) on first load
 
 	// 4. Restore settings and register listeners
 	if (owner.getProperty(Ids::panelModulatorListColumns).toString() != COMBO_ITEM_NONE) {
@@ -728,9 +729,18 @@ PopupMenu CtrlrPanelModulatorList::getMenuForIndex(int topLevelMenuIndex, const 
 			m.addItem(8192 + i, getIdTree().getChild(i).getProperty(Ids::name), true,
 					  modulatorList->getHeader().isColumnVisible(i + 1));
 		}
-		// menu.addSubMenu("Visible columns", m);
-		menu.addItem(14, "Visible columns...");
-		menu.addItem(13, "Reset columns to default");
+
+const bool searchMode = (bool)owner.getProperty(Ids::panelModulatorListAddMode);
+
+menu.addItem(15, "Searchable column picker", true, searchMode);
+
+if (searchMode)
+	menu.addItem(14, "Visible columns...");
+else
+	menu.addSubMenu("Visible columns", m);
+
+menu.addItem(13, "Reset columns to default");
+
 	}
 	return (menu);
 }
@@ -750,7 +760,7 @@ void CtrlrPanelModulatorList::menuItemSelected(int menuItemID, int topLevelMenuI
 		handleColumnSelection(menuItemID);
 	} else if (menuItemID == 4) {
 		refresh();
-	} else if (menuItemID == 5 || menuItemID == 6) {
+	} else if (menuItemID == 5 || menuItemID == 6 || menuItemID == 15) {
 		handleSortSelection(menuItemID);
 	} else if (menuItemID == 7) {
 		makeVisibleItem();
@@ -777,6 +787,11 @@ void CtrlrPanelModulatorList::handleSortSelection(const int itemId) {
 		owner.setProperty(Ids::panelModulatorListSortOption, true);
 	if (itemId == 6)
 		owner.setProperty(Ids::panelModulatorListSortOption, false);
+	if (itemId == 15) {
+		const bool togglingAddMode = !owner.getProperty(Ids::panelModulatorListAddMode);
+		DBG("Toggling Add Mode: " + String(togglingAddMode ? "true" : "false"));
+		owner.setProperty(Ids::panelModulatorListAddMode, togglingAddMode);
+	}
 
 	modulatorList->updateContent();
 }

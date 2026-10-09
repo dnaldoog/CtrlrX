@@ -249,6 +249,7 @@ DECLARE_ID(panelModulatorListCsvDelimiter);
 DECLARE_ID(panelModulatorListXmlRoot);
 DECLARE_ID(panelModulatorListXmlModulator);
 DECLARE_ID(panelModulatorListSortOption);
+DECLARE_ID(panelModulatorListAddMode);
 DECLARE_ID(panelState);
 DECLARE_ID(panelResources);
 DECLARE_ID(panelCaps);
