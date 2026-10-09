@@ -137,7 +137,7 @@ class ColumnPickerComponent : public juce::Component,
 	juce::Array<int> filtered; // indices into `names` (== column index, columnId = index + 1)
 	std::function<bool(int)> isColumnVisible;
 	std::function<void(int)> toggleColumn;
-	juce::TextButton checkedFirstButton{"Selected"};
+	juce::TextButton checkedFirstButton{"Sort visible"};
 	juce::TextEditor searchBox;
 	juce::ListBox listBox;
 };
