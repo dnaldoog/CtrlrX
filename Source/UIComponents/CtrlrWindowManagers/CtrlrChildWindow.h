@@ -33,9 +33,7 @@ class CtrlrChildWindow  : public DocumentWindow, public KeyListener
 		bool keyPressed (const KeyPress &key, Component *originatingComponent);
 		void resized();
 		void enablementChanged();
-		int getDesktopWindowStyleFlags() const override {
-			return juce::ComponentPeer::windowHasTitleBar | juce::ComponentPeer::windowAppearsOnTaskbar;
-		}
+		void addToDesktop(int styleFlags);
 		JUCE_LEAK_DETECTOR(CtrlrChildWindow)
 
 	private:
