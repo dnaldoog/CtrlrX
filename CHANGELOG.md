@@ -1,7 +1,8 @@
 ### CtrlrX v.8.65 - Changelog 10/09/2026
 
 - Toggle between classic Add to Modulator List PopupMenu and new CallOutBox
-- Lua Editor changed behaviour of RESET/APPLY button (does not close window)
+- Lua Preferences Editor changed behaviour of RESET/APPLY button (does not close window)
+- Lua Preferences added OKAY button
 - [https://github.com/dnaldoog/CtrlrX/commit/96c944938422c8b38354f372bfba04470803bfdb](https://github.com/dnaldoog/CtrlrX/commit/96c944938422c8b38354f372bfba04470803bfdb)
 
 ### CtrlrX v8.64 - Changelog 10/08/2026
