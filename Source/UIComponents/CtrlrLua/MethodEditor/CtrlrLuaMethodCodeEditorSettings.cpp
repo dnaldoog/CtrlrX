@@ -229,9 +229,10 @@ CtrlrLuaMethodCodeEditorSettings::CtrlrLuaMethodCodeEditorSettings(CtrlrLuaMetho
 	resetButton->setColour(TextButton::textColourOnId,
 						   findColour(TextButton::textColourOnId)); // Will follow the main LnF
 
-	//    addAndMakeVisible(cancelButton = new TextButton("CANCEL"));
-	//    cancelButton->addListener(this);
-	//    cancelButton->setColour(TextButton::buttonColourId, findColour(TextButton::buttonColourId));
+	okayButton = std::make_unique<TextButton>("Okay");
+	addAndMakeVisible(okayButton.get());
+	okayButton->addListener(this);
+	okayButton->setColour(TextButton::buttonColourId, findColour(TextButton::buttonColourId));
 
 	applyButton = std::make_unique<TextButton>("Apply");
 	addAndMakeVisible(applyButton.get());
@@ -388,7 +389,7 @@ void CtrlrLuaMethodCodeEditorSettings::resized() {
 	int buttonWidth = (sampleWidth - 16) / 2; // Account for spacing between buttons
 	resetButton->setBounds(marginLeft, buttonY, (sampleWidth - 8) / 2,
 						   42); // 42px high is the default JUCE buttons height
-	// cancelButton->setBounds(marginLeft + buttonWidth + 8, buttonY, buttonWidth, 24);
+	okayButton->setBounds(marginLeft + buttonWidth + 8, buttonY, buttonWidth, 24);
 	applyButton->setBounds(marginLeft + (sampleWidth - 8) / 2 + 8, buttonY, (sampleWidth - 8) / 2, 42);
 }
 
@@ -456,6 +457,8 @@ void CtrlrLuaMethodCodeEditorSettings::buttonClicked(Button *buttonThatWasClicke
 		}
 	} else if (buttonThatWasClicked == applyButton.get()) {
 		applySettings();
+	} else if (buttonThatWasClicked == okayButton.get()) {
+		applySettings();
 		closeWindow(); // Added to apply and close settings window
 	} else if (buttonThatWasClicked == resetButton.get()) {
 		// Capture a SafePointer to prevent accessing a destroyed 'this'
@@ -493,7 +496,8 @@ void CtrlrLuaMethodCodeEditorSettings::buttonClicked(Button *buttonThatWasClicke
 				// DEFER WINDOW CLOSE: Allows the AW async dialog to finish completely before deleting 'this'
 				juce::MessageManager::callAsync([safeThis]() {
 					if (safeThis != nullptr) {
-						safeThis->closeWindow();
+						//safeThis->closeWindow();
+						safeThis->applySettings(); // Apply the reset settings to the main editor
 					}
 				});
 			}

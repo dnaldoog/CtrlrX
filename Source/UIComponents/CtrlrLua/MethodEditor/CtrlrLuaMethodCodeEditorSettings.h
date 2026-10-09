@@ -88,7 +88,7 @@ class CtrlrLuaMethodCodeEditorSettings : public Component,
 		std::unique_ptr<ToggleButton> openSearchTabs;
 		std::unique_ptr<ToggleButton> autoCompleteButton;
 		std::unique_ptr<TextButton> applyButton;
-		std::unique_ptr<TextButton> cancelButton;
+		std::unique_ptr<TextButton> okayButton;
 		std::unique_ptr<TextButton> resetButton;
 		std::unique_ptr<TextButton> resetToPreviousButton;
 		std::unique_ptr<Slider> fontSize;
