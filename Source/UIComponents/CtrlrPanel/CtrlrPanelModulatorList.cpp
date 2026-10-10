@@ -69,6 +69,8 @@ class ColumnPickerComponent : public juce::Component,
 	void textEditorEscapeKeyPressed(juce::TextEditor &) override {
 		if (auto *box = findParentComponentOfClass<juce::CallOutBox>())
 			box->dismiss();
+		else if (auto *w = findParentComponentOfClass<juce::DocumentWindow>())
+			w->closeButtonPressed();
 	}
 
 	// --- ListBoxModel ---
@@ -142,7 +144,24 @@ class ColumnPickerComponent : public juce::Component,
 	juce::ListBox listBox;
 };
 } // namespace
+class ColumnPickerWindow : public juce::DocumentWindow {
+	public:
+		ColumnPickerWindow(juce::Component *contentToOwn, std::function<void()> onCloseFn)
+			: juce::DocumentWindow("Visible columns", juce::Colours::darkgrey, juce::DocumentWindow::closeButton),
+			  onClose(std::move(onCloseFn)) {
+			setUsingNativeTitleBar(true);
+			setContentOwned(contentToOwn, true);
+			setResizable(true, false);
+			setAlwaysOnTop(true);
+		}
+		void closeButtonPressed() override {
+			if (onClose)
+				onClose();
+		}
 
+	private:
+		std::function<void()> onClose;
+};
 
 CtrlrPanelModulatorList::CtrlrPanelModulatorList(CtrlrPanel &_owner)
 	: owner(_owner),
@@ -919,13 +938,25 @@ void CtrlrPanelModulatorList::applyFuzzyFilter() {
 }
 
 void CtrlrPanelModulatorList::showColumnPicker() {
+#if JUCE_LINUX
+	const bool useFloatingWindow = true;
+#else
+	const bool useFloatingWindow = false;
+#endif
+
+	// Already open as a floating window: just bring it forward
+	if (columnPickerWindow != nullptr) {
+		columnPickerWindow->toFront(true);
+		return;
+	}
+
 	juce::StringArray names;
 	for (int i = 0; i < getIdTree().getNumChildren(); ++i)
 		names.add(getIdTree().getChild(i).getProperty(Ids::name).toString());
 
 	juce::Component::SafePointer<CtrlrPanelModulatorList> safe(this);
 
-	auto picker = std::make_unique<ColumnPickerComponent>(
+	auto *picker = new ColumnPickerComponent(
 		names,
 		[safe](int i) { return safe != nullptr && safe->modulatorList->getHeader().isColumnVisible(i + 1); },
 		[safe](int i) {
@@ -933,6 +964,20 @@ void CtrlrPanelModulatorList::showColumnPicker() {
 				safe->handleColumnSelection(8192 + i);
 		});
 
-	// Null parent => area is in screen coordinates; point at the table header
-	juce::CallOutBox::launchAsynchronously(std::move(picker), modulatorList->getHeader().getScreenBounds(), nullptr);
+	if (useFloatingWindow) {
+		columnPickerWindow = std::make_unique<ColumnPickerWindow>(picker, [safe] {
+			// delete asynchronously, never from inside the window's own close handler
+			juce::MessageManager::callAsync([safe] {
+				if (safe != nullptr)
+					safe->columnPickerWindow.reset();
+			});
+		});
+		columnPickerWindow->centreAroundComponent(this, columnPickerWindow->getWidth(),
+												   columnPickerWindow->getHeight());
+		columnPickerWindow->setVisible(true);
+		return;
+	}
+
+	juce::CallOutBox::launchAsynchronously(std::unique_ptr<juce::Component>(picker),
+										   modulatorList->getHeader().getScreenBounds(), nullptr);
 }

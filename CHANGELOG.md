@@ -3,8 +3,11 @@
 ### CtrlrX v.8.65 10/09/2026
 
 - Toggle between classic Add to Modulator List PopupMenu and new CallOutBox
+- Fix Wayland/X11 closing window when default sort button clicked
 - Lua Preferences Editor changed behaviour of RESET/APPLY button (does not close window)
 - Lua Preferences added OKAY button
+- Fixed infinite ASYNC loop with reset button in Wayland/X11
+- Lua Preferences combo Syntax Highlighting was not persisting across sessions
 - [https://github.com/dnaldoog/CtrlrX/commit/96c944938422c8b38354f372bfba04470803bfdb](https://github.com/dnaldoog/CtrlrX/commit/96c944938422c8b38354f372bfba04470803bfdb)
 
 ### CtrlrX v8.64 10/08/2026

@@ -134,6 +134,7 @@ https://github.com/damiensellier/CtrlrX/issues/295#issuecomment-4960450879
 		void showColumnPicker();
 		CtrlrPanelModulatorListTree modulatorListTree;
 		std::unique_ptr<TableListBox> modulatorList;
+		std::unique_ptr<juce::DocumentWindow> columnPickerWindow;
 };
 
 #endif
