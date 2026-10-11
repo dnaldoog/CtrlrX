@@ -8,7 +8,7 @@
 - Lua Preferences added OKAY button
 - Fixed infinite ASYNC loop with reset button in Wayland/X11
 - Lua Preferences combo Syntax Highlighting was not persisting across sessions
-- Version 8.65.1 updtates incorrect versioning. (10/11/2026)
+- Version 8.65.1 updates incorrect versioning. (10/11/2026)
 - [https://github.com/dnaldoog/CtrlrX/commit/96c944938422c8b38354f372bfba04470803bfdb](https://github.com/dnaldoog/CtrlrX/commit/96c944938422c8b38354f372bfba04470803bfdb)
 
 ### CtrlrX v8.64 10/08/2026
