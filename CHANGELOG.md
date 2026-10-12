@@ -1,6 +1,13 @@
 [&#187; Release page &#171;](https://github.com/dnaldoog/CtrlrX/releases)
 ----
-### CtrlrX v.8.65/8.65.1 10/10/2026
+### CtrlrX v.8.66 10/12/2026
+- Add searchable column picker to Modulator List (floating window on Linux)
+- Table-drive Modulator List default columns and highlight them in the picker
+- Add Defaults/OK/Apply button layout to Lua editor settings, guard reset dialog
+- Fix assertion in CtrlrChildWindow by using getDesktopWindowStyleFlags()
+- https://github.com/dnaldoog/CtrlrX/commit/8df187ad974615b5815ac77935eedbc52870938a
+
+### CtrlrX v.8.65 10/10/2026
 
 - Toggle between classic Add to Modulator List PopupMenu and new CallOutBox
 - Fix Wayland/X11 closing window when default sort button clicked
