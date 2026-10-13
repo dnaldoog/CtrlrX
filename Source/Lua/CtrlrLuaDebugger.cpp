@@ -34,7 +34,7 @@ void CtrlrLuaDebugger::dbgWrite(std::string data)
 {
     owner.getOwner().getWindowManager().show (CtrlrPanelWindowManager::LuaMethodEditor);
 
-    CtrlrLuaMethodEditor *ui = dynamic_cast<CtrlrLuaMethodEditor *>(owner.getOwner().getWindowManager().getContent(CtrlrPanelWindowManager::LuaConsole));
+    CtrlrLuaMethodEditor *ui = dynamic_cast<CtrlrLuaMethodEditor *>(owner.getOwner().getWindowManager().getContent(CtrlrPanelWindowManager::LuaMethodEditor));
 
     // Paused at file disableMidi line 7 (1) (breakpoint)
 
@@ -51,7 +51,7 @@ void CtrlrLuaDebugger::dbgWrite(std::string data)
 
     if (ui)
     {
-       //return (ui->insertRawDebuggerOutput(_STR(data)));
+        return (ui->insertRawDebuggerOutput(_STR(data)));
     }
 }
 
@@ -84,23 +84,23 @@ std::string CtrlrLuaDebugger::dbgRead(std::string prompt)
 	    return (commandQueue.removeAndReturn (commandQueue.size() - 1).toStdString());
 	}
 
-	owner.getOwner().getWindowManager().show (CtrlrPanelWindowManager::LuaConsole);
+	owner.getOwner().getWindowManager().show (CtrlrPanelWindowManager::LuaMethodEditor);
 
     CtrlrLuaMethodEditor *ui = dynamic_cast<CtrlrLuaMethodEditor *>(owner.getOwner().getWindowManager().getContent(CtrlrPanelWindowManager::LuaMethodEditor));
     if (ui)
     {
-        // if (ui->waitForCommand())
-        // {
+        if (ui->waitForCommand())
+        {
             commandQueue.add ("trace");
             commandQueue.add ("vars");
-            // commandQueue.add (ui->getCurrentDebuggerCommand (true).toStdString());
+            commandQueue.add (ui->getCurrentDebuggerCommand (true).toStdString());
             return (commandQueue.removeAndReturn (commandQueue.size() - 1).toStdString());
-        // }
-        // else
-        // {
-            // _WRN("CtrlrLuaDebugger::dbgRead debugger UI didn't return any commands, continuing");
-            // return ("run");
-        // }
+        }
+        else
+        {
+            _WRN("CtrlrLuaDebugger::dbgRead debugger UI didn't return any commands, continuing");
+            return ("run");
+        }
     }
 
     _WRN("CtrlrLuaDebugger::dbgRead debugger window is invalid, continuing");
@@ -128,7 +128,6 @@ void CtrlrLuaDebugger::wrapForLua(lua_State *L)
     [
         class_<CtrlrLuaDebugger>("CtrlrLuaDebugger")
             .def("write", &CtrlrLuaDebugger::dbgWrite)
-            .def("dump", &CtrlrLuaDebugger::dbgWrite)
             .def("read", (std::string (CtrlrLuaDebugger::*)(std::string)) &CtrlrLuaDebugger::dbgRead)
             .def("read", (std::string (CtrlrLuaDebugger::*)(void)) &CtrlrLuaDebugger::dbgRead)
     ];
