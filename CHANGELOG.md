@@ -1,6 +1,6 @@
 [back to release page &rArr;](https://github.com/dnaldoog/CtrlrX/releases)
 ----
-### CtrlrX v.8.66 10/12/2026
+### CtrlrX v.8.66 10/13/2026
 
 - Add searchable column picker to Modulator List (floating window on Linux)
 - Table-drive Modulator List default columns and highlight them in the picker
