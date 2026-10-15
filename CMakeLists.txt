@@ -367,7 +367,7 @@ if(LINUX)
     endif()
 
     if(NOT DEFINED VST3_STAGE_DIR)
-        set(VST3_STAGE_DIR "share/ctrlrx/vst3")
+        set(VST3_STAGE_DIR "lib/vst3")
     endif()
 
     if(CMAKE_BUILD_TYPE)
