@@ -34,6 +34,7 @@
 #include "CtrlrUtilities.h"
 #include "CtrlrWindowManagers/CtrlrPanelWindowManager.h"
 #include "Methods/CtrlrLuaMethod.h"
+#include "UIComponents/CtrlrLua/MethodEditor/CtrlrLuaPanelScriptWatcher.h"
 
 #include <fstream> // Added v5.6.32. Required for vst3 logger
 

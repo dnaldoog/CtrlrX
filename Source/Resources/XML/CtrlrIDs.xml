@@ -803,6 +803,7 @@
   <id name="ctrlrOverwriteResources"        text="Overwrite imported resources" type="Bool"/>
   <id name="ctrlrAutoSave"                  text="Autosave enabled" type="Bool"/>
   <id name="ctrlrAutoSaveInterval"          text="Autosave interval in seconds" type="Numeric" min="1" max="999999" int="1"/>
+  <id name="ctrlrLuaExternalEditorEnabled" 	text="Enable External Editor" type="Bool" />
   <id name="ctrlrOpenWindowState"           text="Open panel dialog state" type="Text"/>
   <id name="ctrlrPropertiesAreURLs"         text="When editing a panel the property names can be clickable URLs to relevant WIKI pages" type="Bool" />
   <id name="ctrlrRecentOpenedPanelFiles"   text="Recent opened Panel files" type="Text" />

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="hrcYoO" name="CtrlrX" reportAppUsage="1" projectType="audioplug"
-              version="8.0" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
+              version="8.67" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
               buildVST="0" buildVST3="1" buildAU="1" buildAUv3="0" buildRTAS="0"
               buildAAX="0" buildStandalone="1" enableIAA="0" pluginName="CtrlrX                          "
               pluginManufacturer="CtrlrX Project                  " pluginManufacturerCode="cTrX"
@@ -961,6 +961,10 @@
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodFind.cpp"/>
             <FILE id="dRy0Hy" name="CtrlrLuaMethodFind.h" compile="0" resource="0"
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodFind.h"/>
+            <FILE id="nUtFmv" name="CtrlrLuaPanelScriptWatcher.cpp" compile="1"
+                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaPanelScriptWatcher.cpp"/>
+            <FILE id="nqvJ16" name="CtrlrLuaPanelScriptWatcher.h" compile="0" resource="0"
+                  file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaPanelScriptWatcher.h"/>
             <FILE id="aOE6gd" name="CtrlrMethodEditorTabCloseButton.cpp" compile="1"
                   resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrMethodEditorTabCloseButton.cpp"/>
             <FILE id="Id57q7" name="CtrlrMethodEditorTabCloseButton.h" compile="0"
