@@ -10,6 +10,7 @@ public:
 
     void timerCallback() override;
     void setScriptDirectory(const juce::File& newDir);
+	void setExternalScriptSyncEnabled(bool enabled);
 
 private:
     void updateTimestamps();

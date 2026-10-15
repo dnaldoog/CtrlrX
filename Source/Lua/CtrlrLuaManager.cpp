@@ -1564,3 +1564,28 @@ void CtrlrPanelEditor::wrapForLua(lua_State *L) {
 				  .def("getCanvas", &CtrlrPanelEditor::getCanvas)
 				  .def("getOwner", &CtrlrPanelEditor::getOwner)];
 }
+
+void CtrlrLuaManager::setExternalScriptSyncEnabled(bool enabled)
+{
+    if (enabled)
+    {
+		// Store scripts under the panel's named folder in the user's documents.
+		juce::File scriptsDir = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
+									.getChildFile("CtrlrX_Scripts")
+									.getChildFile(owner.getProperty(Ids::name).toString());
+
+        if (!scriptsDir.exists())
+            scriptsDir.createDirectory();
+
+        // Instantiate and start the watcher, passing the reload callback
+        scriptWatcher = std::make_unique<CtrlrLuaPanelScriptWatcher>(scriptsDir, [this](const juce::File& modifiedFile) {
+            // TODO: Call your script reload method here
+            // reloadScriptFromDisk(modifiedFile);
+        });
+    }
+    else
+    {
+        // Stop and destroy the watcher
+        scriptWatcher = nullptr;
+    }
+}

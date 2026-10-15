@@ -89,7 +89,7 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 	setProperty(Ids::panelVersionName, "");
 	setProperty(Ids::panelVendor, "");
 	setProperty(Ids::panelDevice, "");
-	setProperty(Ids::ctrlrLuaExternalEditorEnabled, false);
+setProperty(Ids::ctrlrLuaExternalEditorEnabled, false);
 
 	// Exported Instance management
 	// Get application type
@@ -267,81 +267,6 @@ CtrlrPanel::~CtrlrPanel() {
 	// Keep 'this' valid via WeakReference until all child teardowns complete
 	masterReference.clear();
 }
-/*
-CtrlrPanel::~CtrlrPanel() {
-
-DBG("(G) CtrlrPanel DTOR");
-}
-
-CtrlrPanel::~CtrlrPanel()
-{
-	DBG("!!! TRACKING: CtrlrPanel Destructor has been entered !!!");
-
-	// =========================================================================
-	// 1. STANDARD JUCE THREAD SHUTDOWN
-	// =========================================================================
-	// Step A: Signal both threads that they ought to exit
-	midiInputThread.signalThreadShouldExit();
-	midiControllerInputThread.signalThreadShouldExit();
-
-	// Step B: Wake them up if they are sleeping inside juce::Thread::wait()
-	midiInputThread.notify();
-	midiControllerInputThread.notify();
-
-	// Step C: Wait for them to actually exit their run() loops.
-	// Use a longer timeout (e.g. 3000ms) so slow debug builds don't hit the timeout.
-	midiInputThread.stopThread(3000);
-	midiControllerInputThread.stopThread(3000);
-
-	// =========================================================================
-	// 2. CLEAR LISTENERS & DETACH PANEL TREE
-	// =========================================================================
-	panelTree.removeListener(this);
-	owner.removeChangeListener(this);
-
-	// =========================================================================
-	// 2. CLEAR LISTENERS & DETACH PANEL TREE SAFELY
-	// =========================================================================
-	panelTree.removeListener(this);
-	owner.removeChangeListener(this);
-
-	if (!owner.isShuttingDown()) {
-		juce::ValueTree managerTree = owner.getManagerTree();
-		if (managerTree.isValid() && managerTree.indexOf(panelTree) >= 0) {
-			managerTree.removeChild(panelTree, nullptr);
-		}
-	}
-
-	// =========================================================================
-	// 3. IMMEDIATE EDITOR & UI TEARDOWN
-	// =========================================================================
-	if (ctrlrPanelEditor != nullptr) {
-		ctrlrPanelEditor->setVisible(false);
-		ctrlrPanelEditor->setLookAndFeel(nullptr);
-
-		if (auto *parent = ctrlrPanelEditor->getParentComponent()) {
-			parent->removeChildComponent(ctrlrPanelEditor.get());
-		}
-
-		// Destroy editor cleanly
-		ctrlrPanelEditor.reset();
-	}
-
-	// Clear member LookAndFeel handles
-	lfV1 = nullptr;
-	lfV2 = nullptr;
-	lfV3 = nullptr;
-
-	// =========================================================================
-	// 4. DESTROY MODULATORS & LUA
-	// =========================================================================
-	ctrlrModulators.clear(true);
-	deleteAndZero(ctrlrLuaManager);
-
-	masterReference.clear();
-	panelTree.removeAllChildren(nullptr);
-}
-*/
 
 void CtrlrPanel::setRestoreState(const bool _restoreStateStatus) {
 	const ScopedWriteLock lock(panelLock);
@@ -614,8 +539,17 @@ void CtrlrPanel::getCodeSigningIdentityFromPopup(std::function<void(juce::String
 }
 
 void CtrlrPanel::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
+	
 	if (treeWhosePropertyHasChanged.hasType(Ids::modulator)) {
 		return;
+	} else if (property == Ids::ctrlrLuaExternalEditorEnabled)
+    {
+        bool isEnabled = (bool)getProperty(Ids::ctrlrLuaExternalEditorEnabled);
+
+        if (ctrlrLuaManager != nullptr) {
+            ctrlrLuaManager->setExternalScriptSyncEnabled(isEnabled);
+        }
+
 	} else if (property == Ids::panelMidiInputDevice) {
 		if (getProperty(property).toString().isEmpty() || getProperty(property).toString() == COMBO_ITEM_NONE) {
 			midiInputThread.closeInputDevice();

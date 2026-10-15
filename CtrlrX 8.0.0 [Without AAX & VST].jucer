@@ -740,6 +740,12 @@
         </GROUP>
         <GROUP id="{9DD7C62F-9CD5-D638-1ED9-0A44B6B63DC3}" name="Images"/>
         <GROUP id="{C1E779C4-0308-163A-70D6-2D2F2A99F43A}" name="Lua">
+          <GROUP id="{E55A6C92-1082-8CD5-8451-0D4C7479FD90}" name="clidebugger">
+            <FILE id="BK6kSz" name="debugger.lua" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/debugger.lua"/>
+            <FILE id="Ry2VcW" name="LICENSE" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/LICENSE"/>
+            <FILE id="PttfYE" name="README.md" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/README.md"/>
+            <FILE id="QkO1Qj" name="test.lua" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/test.lua"/>
+          </GROUP>
           <GROUP id="{DB5F61FA-CAE2-39A5-2169-9DB4783059BB}" name="json4lua">
             <FILE id="hwsNhq" name="json.lua" compile="0" resource="1" file="Source/Resources/Lua/json4lua/json.lua"/>
             <FILE id="uaDRzI" name="LICENCE.txt" compile="0" resource="1" file="Source/Resources/Lua/json4lua/LICENCE.txt"/>

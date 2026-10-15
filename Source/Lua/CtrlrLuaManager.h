@@ -6,7 +6,8 @@
 
 #include "Methods/CtrlrLuaMethodManager.h"
 // #include "CtrlrLuaApiDatabase.h"
-
+#include "UIComponents/CtrlrLua/MethodEditor/CtrlrLuaPanelScriptWatcher.h"
+ 
 // Forward declarations
 class LAudioFormatManager;
 class CtrlrPanel;
@@ -57,11 +58,13 @@ class CtrlrLuaManager : public ValueTree::Listener {
 		CtrlrPanel &getOwner() { return (owner); }
 		CtrlrLuaMethodManager &getMethodManager();
 		const bool isLuaDisabled();
+		void setExternalScriptSyncEnabled(bool enabled);
 		// Access to Lua API database
 		// CtrlrLuaApiDatabase& getLuaApiDatabase() { return luaApi; }
 	private:
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrLuaManager);
 		CtrlrLuaMethodManager *methodManager;
+		std::unique_ptr<CtrlrLuaPanelScriptWatcher> scriptWatcher;
 		String lastError;
 		ValueTree luaManagerTree;
 		File scriptsDir;

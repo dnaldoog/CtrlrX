@@ -62,3 +62,4 @@ void CtrlrLuaPanelScriptWatcher::updateTimestamps()
         lastModTimes[file] = file.getLastModificationTime().toMilliseconds();
     }
 }
+

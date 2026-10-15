@@ -164,6 +164,8 @@ PopupMenu CtrlrEditor::getMenuForIndex(int /*topLevelMenuIndex*/, const String &
 		menu.addCommandItem(commandManager, doPanelLock);
 		menu.addCommandItem(commandManager, doPanelDisableCombosOnEdit);
 		menu.addSeparator();
+		menu.addCommandItem(commandManager, doPanelToggleExternalLuaEdit);
+		menu.addSeparator();
 		menu.addCommandItem(commandManager, showModulatorList);
 		menu.addSeparator();
 		menu.addCommandItem(commandManager, showLayers);

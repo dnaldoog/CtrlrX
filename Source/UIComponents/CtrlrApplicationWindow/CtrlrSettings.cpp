@@ -42,8 +42,6 @@ CtrlrSettings::CtrlrSettings (CtrlrManager &_owner) : Component ("Global Propert
     // #ifdef JUCE_MAC
     // globalProperties.add(owner.getIDManager().createComponentForProperty(Identifier("ctrlrShutdownDelay"), owner.getManagerTree(), nullptr)); // ifdef JUCE_OSX not working
     // #endif
-	globalProperties.add(owner.getIDManager().createComponentForProperty(Identifier("CtrlrLuaExternalEditorEnabled"),
-																		 owner.getManagerTree(), nullptr));
 	globalProperties.add(owner.getIDManager().createComponentForProperty(Identifier("luaCtrlrSaveState"), owner.getManagerTree(), nullptr));
     globalProperties.add(owner.getIDManager().createComponentForProperty(Identifier("luaCtrlrRestoreState"), owner.getManagerTree(), nullptr));
 
@@ -138,8 +136,8 @@ CtrlrSettings::~CtrlrSettings()
 
         if (juce::JUCEApplication::isStandaloneApp())
         {
-            juce::NativeMessageBox::showMessageBoxAsync (juce::AlertWindow::InfoIcon, "CtrlrX Preferences", msg);
-        }
+			// juce::NativeMessageBox::showMessageBoxAsync (juce::AlertWindow::InfoIcon, "CtrlrX Preferences", msg);
+		}
         else
         {
             AW::showMessageBox (AW::Info, "CtrlrX Preferences", msg);
