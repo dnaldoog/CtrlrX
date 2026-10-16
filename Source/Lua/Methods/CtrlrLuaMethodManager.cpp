@@ -116,33 +116,46 @@ bool CtrlrLuaMethodManager::isLuaDisabled() {
 
 void CtrlrLuaMethodManager::restoreState(const ValueTree &savedState) {
 	for (int i = 0; i < savedState.getNumChildren(); i++) {
-		if (savedState.getChild(i).hasType(Ids::luaMethodGroup)) {
-			restoreGroup(savedState.getChild(i));
+		ValueTree child = savedState.getChild(i);
+		if (child.hasType(Ids::luaMethodGroup)) {
+			// Skip the Built-In group entirely
+			if (child.getProperty(Ids::name).toString() == "Built-In") {
+				continue;
+			}
+			restoreGroup(child);
 		}
 	}
 
 	for (int i = 0; i < savedState.getNumChildren(); i++) {
-		if (savedState.getChild(i).hasType(Ids::luaMethod)) {
-			restoreMethod(savedState.getChild(i));
+		ValueTree child = savedState.getChild(i);
+		if (child.hasType(Ids::luaMethod)) {
+			restoreMethod(child);
 		}
 
-		if (savedState.getChild(i).hasType(Ids::luaMethodGroup)) {
-			restoreMethodsRecursivly(savedState.getChild(i));
+		if (child.hasType(Ids::luaMethodGroup)) {
+			if (child.getProperty(Ids::name).toString() == "Built-In") {
+				continue;
+			}
+			restoreMethodsRecursivly(child);
 		}
 	}
 }
 
 void CtrlrLuaMethodManager::restoreGroup(const ValueTree &savedState, const Uuid parentUuid) {
-	addGroup(savedState.getProperty(Ids::name), parentUuid, Uuid(savedState.getProperty(Ids::uuid).toString()));
+	String groupName = savedState.getProperty(Ids::name).toString();
+	if (groupName == "Built-In") {
+		return; // Skip Built-In group
+	}
 
-	/* let's be recursive */
+	addGroup(groupName, parentUuid, Uuid(savedState.getProperty(Ids::uuid).toString()));
+
 	for (int i = 0; i < savedState.getNumChildren(); i++) {
-		if (savedState.getChild(i).hasType(Ids::luaMethodGroup)) {
-			restoreGroup(savedState.getChild(i), Uuid(savedState.getProperty(Ids::uuid).toString()));
-		}
-
-		if (savedState.getChild(i).hasType(Ids::luaMethod)) {
-			continue; // restoreMethod (savedState.getChild(i), parentUuid);
+		ValueTree child = savedState.getChild(i);
+		if (child.hasType(Ids::luaMethodGroup)) {
+			if (child.getProperty(Ids::name).toString() == "Built-In") {
+				continue;
+			}
+			restoreGroup(child, Uuid(savedState.getProperty(Ids::uuid).toString()));
 		}
 	}
 }
@@ -206,9 +219,16 @@ void CtrlrLuaMethodManager::addMethod(ValueTree groupToAddTo, const String &meth
 	else
 		group = managerTree;
 
-	if (group.getChildWithProperty(Ids::uuid, methodUuid.toString()).isValid() && forceIfAlreadyExists) {
-		group.removeChild(group.getChildWithProperty(Ids::uuid, methodUuid.toString()), nullptr);
+	// --- Prevent Duplicates: If this UUID already exists in the group, handle accordingly ---
+	ValueTree existingChild = group.getChildWithProperty(Ids::uuid, methodUuid.toString());
+	if (existingChild.isValid()) {
+		if (forceIfAlreadyExists) {
+			group.removeChild(existingChild, nullptr);
+		} else {
+			return; // Skip adding duplicate!
+		}
 	}
+	// -------------------------------------------------------------------------------------
 
 	ValueTree newMethodTree;
 
@@ -226,24 +246,18 @@ void CtrlrLuaMethodManager::addMethod(ValueTree groupToAddTo, const String &meth
 		{
 			codeToWrite = getDefaultMethodCode(methodName, methodProperty);
 		}
-		
-		// 1. Write the file to disk first
+
 		juce::File methodFile = scriptsDir.getChildFile(methodName + ".lua");
-		methodFile.replaceWithText(codeToWrite);
-		
-		// 2. Use the built-in helper so it handles path relativity and source-in-file setup identically to the first function
+		if (!methodFile.existsAsFile()) {
+			methodFile.replaceWithText(codeToWrite);
+		}
+
 		newMethodTree = getDefaultMethodTree(methodFile, methodUuid);
-		
-		// Also ensure internal code property is populated so the UI editor reads it if opened
 		newMethodTree.setProperty(Ids::luaMethodCode, codeToWrite, nullptr);
 		newMethodTree.setProperty(Ids::luaMethodLinkedProperty, methodProperty, nullptr);
-	}
-	else
-	{
-		// Fallback to standard property storage if external editing is off
+	} else {
 		newMethodTree = getDefaultMethodTree(methodName, initialCode, methodProperty, methodUuid);
 	}
-	// ---------------------------------------------
 
 	group.addChild(newMethodTree, -1, nullptr);
 
@@ -251,11 +265,29 @@ void CtrlrLuaMethodManager::addMethod(ValueTree groupToAddTo, const String &meth
 	owner.getOwner().luaManagerChanged();
 }
 void CtrlrLuaMethodManager::addMethodFromFile(ValueTree groupToAddTo, const File &fileToUse, const Uuid methodUid) {
-	if (groupToAddTo.isValid()) {
-		groupToAddTo.addChild(getDefaultMethodTree(fileToUse, methodUid), -1, nullptr);
-	} else {
-		managerTree.addChild(getDefaultMethodTree(fileToUse, methodUid), -1, nullptr);
+	ValueTree group;
+	if (groupToAddTo.isValid())
+		group = groupToAddTo;
+	else
+		group = managerTree;
+
+	// --- Prevent Duplicates: If this method UID already exists, update it instead of duplicating ---
+	ValueTree existingChild = group.getChildWithProperty(Ids::uuid, methodUid.toString());
+	if (existingChild.isValid()) {
+		existingChild.setProperty(Ids::luaMethodName, fileToUse.getFileNameWithoutExtension(), nullptr);
+
+		File panelLuaDir = owner.getOwner().getPanelLuaDir();
+		if (panelLuaDir.exists() && panelLuaDir.isDirectory() && fileToUse.isAChildOf(panelLuaDir)) {
+			existingChild.setProperty(Ids::luaMethodSourcePath, fileToUse.getRelativePathFrom(panelLuaDir), nullptr);
+		} else {
+			existingChild.setProperty(Ids::luaMethodSourcePath, fileToUse.getFullPathName(), nullptr);
+		}
+		existingChild.setProperty(Ids::luaMethodSource, (int)CtrlrLuaMethod::codeInFile, nullptr);
+		return;
 	}
+	// ---------------------------------------------------------------------------------------------
+
+	group.addChild(getDefaultMethodTree(fileToUse, methodUid), -1, nullptr);
 
 	// Notify the panel about the modification
 	owner.getOwner().luaManagerChanged();
@@ -553,17 +585,20 @@ const bool CtrlrLuaMethodManager::attachDefaultGroups() {
 	return (ret);
 }
 
+// void CtrlrLuaMethodManager::wrapUtilities() {
+// 	if (getNumUtilities() > 0) {
+// 		attachDefaultGroups();
+
+// 		for (int i = 0; i < getNumUtilities(); i++) {
+// 			addMethod(getGroupByName("Built-In"), getUtilityName(i), getUtilityCode(i).trim(), "", getUtilityUuid(i),
+// 					  getUtilityAlwaysUpdate(i));
+// 		}
+// 	}
+// }
 void CtrlrLuaMethodManager::wrapUtilities() {
-	if (getNumUtilities() > 0) {
-		attachDefaultGroups();
-
-		for (int i = 0; i < getNumUtilities(); i++) {
-			addMethod(getGroupByName("Built-In"), getUtilityName(i), getUtilityCode(i).trim(), "", getUtilityUuid(i),
-					  getUtilityAlwaysUpdate(i));
-		}
-	}
+	// Completely disabled to prevent built-in folder injection and duplication
+	return;
 }
-
 bool CtrlrLuaMethodManager::isMethodValid(CtrlrLuaMethod *o) {
 	if (o == nullptr)
 		return false;

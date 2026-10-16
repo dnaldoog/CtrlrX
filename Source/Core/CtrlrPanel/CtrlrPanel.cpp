@@ -89,7 +89,7 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 	setProperty(Ids::panelVersionName, "");
 	setProperty(Ids::panelVendor, "");
 	setProperty(Ids::panelDevice, "");
-setProperty(Ids::ctrlrLuaExternalEditorEnabled, false);
+
 
 	// Exported Instance management
 	// Get application type

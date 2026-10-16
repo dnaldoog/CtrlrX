@@ -394,8 +394,37 @@ case CtrlrEditor::doPanelLock:
 case CtrlrEditor::doPanelToggleExternalLuaEdit:
 	if (getActivePanelEditor()) {
 		CtrlrPanel &panel = getActivePanelEditor()->getOwner();
-		bool currentState = (bool)panel.getProperty(Ids::ctrlrLuaExternalEditorEnabled);
-		panel.setProperty(Ids::ctrlrLuaExternalEditorEnabled, !currentState);
+
+		// 1. Read current state and compute the new toggled state
+		bool currentEnabled = (bool)panel.getProperty(Ids::ctrlrLuaExternalEditorEnabled);
+		bool newEnabled = !currentEnabled;
+
+		// 2. Apply the new state to the panel first
+		panel.setProperty(Ids::ctrlrLuaExternalEditorEnabled, newEnabled);
+
+		// 3. If we just turned it ON, trigger the alert and clipboard copy
+		if (newEnabled) {
+			juce::File workspaceDir = panel.getCtrlrLuaManager().getPanelWorkspaceDir();
+
+			if (!workspaceDir.exists()) {
+				workspaceDir.createDirectory();
+			}
+
+			juce::String dirPath = workspaceDir.getFullPathName();
+			juce::SystemClipboard::copyTextToClipboard(dirPath);
+
+			juce::String infoMsg =
+				"External Lua Script Editing is now ENABLED.\n\n"
+				"Your script files for this panel are automatically saved and synced here:\n"
+				"--------------------------------------------------\n" +
+				dirPath + "\n" +
+				"--------------------------------------------------\n\n"
+				"• Edit your .lua files in your favorite external editor (e.g., Visual Studio Code or Xcode).\n"
+				"• Changes will hot-reload live into CtrlrX automatically.\n\n"
+				"(This folder path has been copied to your clipboard!)";
+
+			AW::showMessageBox(AW::Info, "External Editor Enabled", infoMsg, "OK");
+		}
 	}
 	break;
 
