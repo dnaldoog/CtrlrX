@@ -59,6 +59,8 @@ class CtrlrLuaManager : public ValueTree::Listener {
 		CtrlrLuaMethodManager &getMethodManager();
 		const bool isLuaDisabled();
 		void setExternalScriptSyncEnabled(bool enabled);
+		void reloadScriptFromDisk(const juce::File &modifiedFile);
+		juce::File getPanelWorkspaceDir() const;
 		// Access to Lua API database
 		// CtrlrLuaApiDatabase& getLuaApiDatabase() { return luaApi; }
 	private:
@@ -75,6 +77,7 @@ class CtrlrLuaManager : public ValueTree::Listener {
 		CtrlrLuaMultiTimer *multiTimer;
 		CtrlrLuaAudioConverter *audioConverter;
 		LAudioFormatManager *luaAudioFormatManager;
+
 		/*
 		COMMENTED OUT JG 5/8/2026
 		--CtrlrPanel& owner;

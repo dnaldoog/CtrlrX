@@ -1565,27 +1565,85 @@ void CtrlrPanelEditor::wrapForLua(lua_State *L) {
 				  .def("getOwner", &CtrlrPanelEditor::getOwner)];
 }
 
-void CtrlrLuaManager::setExternalScriptSyncEnabled(bool enabled)
+
+juce::File CtrlrLuaManager::getPanelWorkspaceDir() const {
+	// Use Ctrlr's actual panel UID property instead of Ids::uuid
+	String panelUuid = owner.getProperty(Ids::panelUID).toString();
+	if (panelUuid.isEmpty()) {
+		panelUuid = owner.getProperty(Ids::uuid).toString(); // Fallback check
+	}
+
+	if (panelUuid.isEmpty()) {
+		panelUuid = juce::Uuid().toString();
+		const_cast<CtrlrPanel &>(owner).setProperty(Ids::panelUID, panelUuid);
+	}
+
+	// This will now point directly to AppData/CtrlrX/[8.4B2QJcc40qK]/scripts/
+	return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+		.getChildFile("CtrlrX")
+		.getChildFile(panelUuid)
+		.getChildFile("scripts");
+}
+
+void CtrlrLuaManager::setExternalScriptSyncEnabled(bool enabled) {
+	DBG("setExternalScriptSyncEnabled called with state: " + juce::String(enabled ? "TRUE" : "FALSE"));
+
+	if (enabled) {
+		juce::File scriptsDir = getPanelWorkspaceDir();
+
+		if (!scriptsDir.exists()) {
+			bool created = scriptsDir.createDirectory();
+			DBG("Created scripts directory successfully? " + juce::String(created ? "YES" : "NO"));
+		} else {
+			DBG("Scripts directory already exists.");
+		}
+
+		Result res = owner.convertLuaMethodsToFiles(scriptsDir.getFullPathName());
+		if (res.wasOk()) {
+			DBG("Successfully exported Lua methods to disk.");
+		} else {
+			DBG("FAILED to export Lua methods: " + res.getErrorMessage());
+		}
+
+		scriptWatcher = std::make_unique<CtrlrLuaPanelScriptWatcher>(
+			scriptsDir, [this](const juce::File &modifiedFile) { reloadScriptFromDisk(modifiedFile); });
+	} else {
+		DBG("Stopping external script watcher.");
+		scriptWatcher = nullptr;
+	}
+}
+
+void CtrlrLuaManager::reloadScriptFromDisk(const juce::File& modifiedFile)
 {
-    if (enabled)
-    {
-		// Store scripts under the panel's named folder in the user's documents.
-		juce::File scriptsDir = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
-									.getChildFile("CtrlrX_Scripts")
-									.getChildFile(owner.getProperty(Ids::name).toString());
+    ValueTree luaManagerTree = owner.getPanelTree().getChildWithName(Ids::luaManager);
+    ValueTree luaMethods = luaManagerTree.getChildWithName(Ids::luaManagerMethods);
 
-        if (!scriptsDir.exists())
-            scriptsDir.createDirectory();
-
-        // Instantiate and start the watcher, passing the reload callback
-        scriptWatcher = std::make_unique<CtrlrLuaPanelScriptWatcher>(scriptsDir, [this](const juce::File& modifiedFile) {
-            // TODO: Call your script reload method here
-            // reloadScriptFromDisk(modifiedFile);
-        });
-    }
-    else
+    for (int i = 0; i < luaMethods.getNumChildren(); i++)
     {
-        // Stop and destroy the watcher
-        scriptWatcher = nullptr;
+        ValueTree methodChild = luaMethods.getChild(i);
+        if (methodChild.hasType(Ids::luaMethod))
+        {
+            File methodFile = owner.getLuaMethodSourceFile(&methodChild);
+            if (methodFile == modifiedFile)
+            {
+                Uuid methodUuid(methodChild.getProperty(Ids::uuid).toString());
+                if (auto* methodObj = getMethodManager().getMethodByUuid(methodUuid))
+                {
+                    // 1. Reload the code into the Lua state
+                    methodObj->reload();
+                    DBG("Hot-reloaded and recompiled method live: " + methodObj->getName());
+
+                    // 2. If the built-in Ctrlr editor is currently open and editing THIS method, refresh its text view!
+                    auto* methodManager = &getMethodManager();
+                    if (methodManager && methodManager->getMethodEditor())
+                    {
+                        // Check if the current editor matches this method UUID and update its document text
+                        // (Depending on your editor class structure, you can call a method like refreshEditorContent or setCode)
+                        // e.g., if it matches, update the UI document without triggering a recursive save loop.
+                    }
+                }
+                break;
+            }
+        }
     }
 }

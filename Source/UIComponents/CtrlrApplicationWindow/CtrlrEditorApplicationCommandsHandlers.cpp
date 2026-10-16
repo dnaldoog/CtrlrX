@@ -391,10 +391,12 @@ case CtrlrEditor::doPanelLock:
 											!(bool)getActivePanelEditor()->getProperty(Ids::uiPanelLock));
 	break;
 
-	case CtrlrEditor::doPanelToggleExternalLuaEdit:
-		if (getActivePanelEditor())
-			getActivePanelEditor()->setProperty(Ids::ctrlrLuaExternalEditorEnabled, !(bool)getActivePanelEditor()->getProperty(
-																				 Ids::ctrlrLuaExternalEditorEnabled));
+case CtrlrEditor::doPanelToggleExternalLuaEdit:
+	if (getActivePanelEditor()) {
+		CtrlrPanel &panel = getActivePanelEditor()->getOwner();
+		bool currentState = (bool)panel.getProperty(Ids::ctrlrLuaExternalEditorEnabled);
+		panel.setProperty(Ids::ctrlrLuaExternalEditorEnabled, !currentState);
+	}
 	break;
 
 case CtrlrEditor::doPanelDisableCombosOnEdit:

@@ -110,7 +110,9 @@ class CtrlrLuaMethodManager : public ValueTree::Listener
 		const bool call(CtrlrLuaMethod *o, MidiBuffer *param1);
 		const bool call(CtrlrLuaMethod *o, const ValueTree &param1);
 		const bool call(CtrlrLuaMethod *o, const String &param1, const String &param2, CtrlrLuaObjectWrapper const &param3);
-
+		CtrlrLuaMethodEditor *getMethodEditor() const {
+			return currentMethodEditor;
+		} // hot reload extern editor access to current method editor
 		int callWithRet(CtrlrLuaMethod *o, CtrlrCustomComponent *param1, DragAndDropSourceDetails param2);
 		int callWithRet(CtrlrLuaMethod *o, ValueTree valueTree1, ValueTree valueTree2);
 		int callWithRet(CtrlrLuaMethod *o, CtrlrModulator *param1, const int param2);

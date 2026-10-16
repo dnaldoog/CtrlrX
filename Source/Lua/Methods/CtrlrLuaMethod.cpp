@@ -252,3 +252,8 @@ int CtrlrLuaMethod::getCodeSize()
 {
 	return (getCode().length());
 }
+
+void CtrlrLuaMethod::reload() // for external editor hot reloading access to private method to reload the code from disk and recompile it
+{
+    setCodeInternal(getCode());
+}

@@ -197,7 +197,7 @@ void CtrlrLuaMethodManager::restoreMethodsRecursivly(const ValueTree &savedState
 }
 
 void CtrlrLuaMethodManager::addMethod(ValueTree groupToAddTo, const String &methodName, const String &initialCode,
-									  const String &linkedToProperty, const Uuid methodUid,
+									  const String &methodProperty, const Uuid methodUuid,
 									  const bool forceIfAlreadyExists) {
 	ValueTree group;
 
@@ -206,16 +206,50 @@ void CtrlrLuaMethodManager::addMethod(ValueTree groupToAddTo, const String &meth
 	else
 		group = managerTree;
 
-	if (group.getChildWithProperty(Ids::uuid, methodUid.toString()).isValid() && forceIfAlreadyExists) {
-		group.removeChild(group.getChildWithProperty(Ids::uuid, methodUid.toString()), nullptr);
+	if (group.getChildWithProperty(Ids::uuid, methodUuid.toString()).isValid() && forceIfAlreadyExists) {
+		group.removeChild(group.getChildWithProperty(Ids::uuid, methodUuid.toString()), nullptr);
 	}
 
-	group.addChild(getDefaultMethodTree(methodName, initialCode, linkedToProperty, methodUid), -1, nullptr);
+	ValueTree newMethodTree;
+
+	// --- Check if external editing is enabled ---
+	if ((bool)owner.getOwner().getProperty(Ids::ctrlrLuaExternalEditorEnabled))
+	{
+		juce::File scriptsDir = owner.getPanelWorkspaceDir();
+		if (!scriptsDir.exists())
+		{
+			scriptsDir.createDirectory();
+		}
+		
+		String codeToWrite = initialCode;
+		if (codeToWrite.isEmpty())
+		{
+			codeToWrite = getDefaultMethodCode(methodName, methodProperty);
+		}
+		
+		// 1. Write the file to disk first
+		juce::File methodFile = scriptsDir.getChildFile(methodName + ".lua");
+		methodFile.replaceWithText(codeToWrite);
+		
+		// 2. Use the built-in helper so it handles path relativity and source-in-file setup identically to the first function
+		newMethodTree = getDefaultMethodTree(methodFile, methodUuid);
+		
+		// Also ensure internal code property is populated so the UI editor reads it if opened
+		newMethodTree.setProperty(Ids::luaMethodCode, codeToWrite, nullptr);
+		newMethodTree.setProperty(Ids::luaMethodLinkedProperty, methodProperty, nullptr);
+	}
+	else
+	{
+		// Fallback to standard property storage if external editing is off
+		newMethodTree = getDefaultMethodTree(methodName, initialCode, methodProperty, methodUuid);
+	}
+	// ---------------------------------------------
+
+	group.addChild(newMethodTree, -1, nullptr);
 
 	// Notify the panel about the modification
 	owner.getOwner().luaManagerChanged();
 }
-
 void CtrlrLuaMethodManager::addMethodFromFile(ValueTree groupToAddTo, const File &fileToUse, const Uuid methodUid) {
 	if (groupToAddTo.isValid()) {
 		groupToAddTo.addChild(getDefaultMethodTree(fileToUse, methodUid), -1, nullptr);
