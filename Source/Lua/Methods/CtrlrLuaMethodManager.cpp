@@ -248,9 +248,10 @@ void CtrlrLuaMethodManager::addMethod(ValueTree groupToAddTo, const String &meth
 		}
 
 		juce::File methodFile = scriptsDir.getChildFile(methodName + ".lua");
-		if (!methodFile.existsAsFile()) {
-			methodFile.replaceWithText(codeToWrite);
-		}
+		// if (!methodFile.existsAsFile()) { this will create a new file every time, which is not desired. We want to
+		// overwrite the existing file if it exists.
+		methodFile.replaceWithText(codeToWrite);
+		//}
 
 		newMethodTree = getDefaultMethodTree(methodFile, methodUuid);
 		newMethodTree.setProperty(Ids::luaMethodCode, codeToWrite, nullptr);
@@ -529,17 +530,16 @@ ValueTree CtrlrLuaMethodManager::getDefaultGroupTree(const String &groupName, co
 }
 
 bool CtrlrLuaMethodManager::isValidMethodName(const String &methodName) {
-	if (methodName.indexOfAnyOf("0123456789", 0, false) == 0) {
-		jassertfalse; // functions cant start with numbers
-		return (false);
-	}
+	if (methodName.isEmpty())
+		return false;
 
-	if (!methodName.containsOnly("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")) {
-		jassertfalse; // functions can contain only numbers letter and underscores
-		return (false);
-	}
+	const juce_wchar firstCharacter = methodName[0];
+	const bool startsWithLetterOrUnderscore =
+		(firstCharacter >= 'a' && firstCharacter <= 'z') || (firstCharacter >= 'A' && firstCharacter <= 'Z') ||
+		firstCharacter == '_';
 
-	return (true);
+	return startsWithLetterOrUnderscore &&
+		   methodName.containsOnly("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_");
 }
 
 void CtrlrLuaMethodManager::setMethodEditor(CtrlrLuaMethodEditor *_currentMethodEditor) {
@@ -547,16 +547,36 @@ void CtrlrLuaMethodManager::setMethodEditor(CtrlrLuaMethodEditor *_currentMethod
 }
 
 void CtrlrLuaMethodManager::removeMethod(const Uuid methodUuid) {
-	CtrlrLuaMethod *method = getMethodByUuid(methodUuid);
-	if (method) {
-		ValueTree child = method->getMethodTree();
-		ValueTree parent = child.getParent();
+    CtrlrLuaMethod *method = getMethodByUuid(methodUuid);
+    if (method) {
+        ValueTree child = method->getMethodTree();
+        ValueTree parent = child.getParent();
 
-		method->remove();
-		parent.removeChild(child, nullptr);
+        // --- Delete the physical .lua file from disk if external editing is enabled ---
+        if ((bool)owner.getOwner().getProperty(Ids::ctrlrLuaExternalEditorEnabled)) {
+            juce::File scriptsDir = owner.getPanelWorkspaceDir();
+            juce::String sourcePath = child.getProperty(Ids::luaMethodSourcePath).toString();
+            
+            if (sourcePath.isNotEmpty()) {
+                juce::File methodFile = scriptsDir.getChildFile(sourcePath);
+                if (methodFile.existsAsFile()) {
+                    methodFile.deleteFile();
+                }
+            } else {
+                juce::String methodName = child.getProperty(Ids::luaMethodName).toString();
+                juce::File methodFile = scriptsDir.getChildFile(methodName + ".lua");
+                if (methodFile.existsAsFile()) {
+                    methodFile.deleteFile();
+                }
+            }
+        }
+        // -----------------------------------------------------------------------------
 
-		methods.removeObject(method);
-	}
+        method->remove();
+        parent.removeChild(child, nullptr);
+
+        methods.removeObject(method);
+    }
 }
 
 const int CtrlrLuaMethodManager::getNumMethods() { return (methods.size()); }
@@ -584,7 +604,7 @@ const bool CtrlrLuaMethodManager::attachDefaultGroups() {
 
 	return (ret);
 }
-
+/* Hide the built-in folder */
 // void CtrlrLuaMethodManager::wrapUtilities() {
 // 	if (getNumUtilities() > 0) {
 // 		attachDefaultGroups();
@@ -596,7 +616,8 @@ const bool CtrlrLuaMethodManager::attachDefaultGroups() {
 // 	}
 // }
 void CtrlrLuaMethodManager::wrapUtilities() {
-	// Completely disabled to prevent built-in folder injection and duplication
+	// Completely disabled to prevent built-in folder injection and duplication in external editing mode.
+	//and will not show in the method list. The built-in folder is now only used for internal purposes and should not be exposed to the user.
 	return;
 }
 bool CtrlrLuaMethodManager::isMethodValid(CtrlrLuaMethod *o) {
@@ -622,4 +643,50 @@ bool CtrlrLuaMethodManager::isMethodValid(CtrlrLuaMethod *o) {
 	}
 
 	return false;
+}
+
+void CtrlrLuaMethodManager::handleExternalFileChange(const juce::File &file, bool isDeleted)
+//when an external file is deleted, we need to remove the corresponding method from Ctrlr's internal tree without triggering a back-loop of file deletion
+{
+    // 1. Find if a method in our tree points to this file path
+	ValueTree methodTree;
+	for (int i = 0; i < methods.size(); ++i)
+	{
+		if (methods[i] == nullptr)
+			continue;
+
+		ValueTree candidateTree = methods[i]->getMethodTree();
+		if (owner.getOwner().getLuaMethodSourceFile(&candidateTree) == file)
+		{
+			methodTree = candidateTree;
+			break;
+		}
+	}
+    
+    if (methodTree.isValid())
+    {
+        if (!file.existsAsFile() || isDeleted)
+        {
+            // 2. The file was deleted externally! Remove it from Ctrlr without 
+            // triggering our own file-deletion back-loop.
+            Uuid methodUuid(methodTree.getProperty(Ids::uuid).toString());
+            
+			// Remove the method from the manager without deleting the external file.
+			CtrlrLuaMethod *method = getMethodByUuid(methodUuid);
+			if (method)
+			{
+				ValueTree child = method->getMethodTree();
+				method->remove();
+				child.getParent().removeChild(child, nullptr);
+			}
+        }
+        else
+        {
+            // Normal file update / hot reload
+            String newCode = file.loadFileAsString();
+            methodTree.setProperty(Ids::luaMethodCode, newCode, nullptr);
+            
+            // Recompile/reload bytecode in the background...
+        }
+    }
 }

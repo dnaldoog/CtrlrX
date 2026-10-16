@@ -1627,7 +1627,25 @@ void CtrlrLuaManager::reloadScriptFromDisk(const juce::File& modifiedFile)
             if (methodFile == modifiedFile)
             {
                 Uuid methodUuid(methodChild.getProperty(Ids::uuid).toString());
-                if (auto* methodObj = getMethodManager().getMethodByUuid(methodUuid))
+
+				// --- HANDLE EXTERNAL DELETION ---
+				if (!modifiedFile.existsAsFile()) {
+					if (auto *methodManager = &getMethodManager()) {
+						CtrlrLuaMethod *methodObj = methodManager->getMethodByUuid(methodUuid);
+						if (methodObj) {
+							ValueTree child = methodObj->getMethodTree();
+							methodObj->remove();
+							child.getParent().removeChild(child, nullptr);
+							DBG("Removed method from Ctrlr because its file was deleted externally: " +
+								modifiedFile.getFileName());
+						}
+					}
+					break;
+				}
+				// --------------------------------
+
+				// --- NORMAL HOT-RELOAD ---
+				if (auto* methodObj = getMethodManager().getMethodByUuid(methodUuid))
                 {
                     // 1. Reload the code into the Lua state
                     methodObj->reload();
@@ -1637,10 +1655,8 @@ void CtrlrLuaManager::reloadScriptFromDisk(const juce::File& modifiedFile)
                     auto* methodManager = &getMethodManager();
                     if (methodManager && methodManager->getMethodEditor())
                     {
-                        // Check if the current editor matches this method UUID and update its document text
-                        // (Depending on your editor class structure, you can call a method like refreshEditorContent or setCode)
-                        // e.g., if it matches, update the UI document without triggering a recursive save loop.
-                    }
+						// Refresh logic if applicable
+					}
                 }
                 break;
             }

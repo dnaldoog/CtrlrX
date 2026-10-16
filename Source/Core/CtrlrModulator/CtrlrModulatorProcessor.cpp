@@ -32,96 +32,68 @@ CtrlrModulatorProcessor::~CtrlrModulatorProcessor()
 
 void CtrlrModulatorProcessor::handleAsyncUpdate()
 {
-	        /* update the GUI and the ValueTree from the value provided by the HOST or
-         the MIDI subsystem */
-	if (owner.isStatic() && 
-       (currentValue.lastChangeSource == CtrlrModulatorValue::changedByMidiIn || 
-        currentValue.lastChangeSource == CtrlrModulatorValue::changedByHost))
-    {
-        return; 
-    }
-    {
-        /* update the GUI and the ValueTree from the value provided by the HOST or
-         the MIDI subsystem */
-        const ScopedReadLock sl (processorLock);
-        
-        /* If we already have the same value, calling setProperty on the ValueTree won't cause a
-         propertyChanged callback, we need to remove the property and re-set it */
-        if ( (double) owner.getProperty(Ids::modulatorValue) == currentValue.value )
-        {
-            owner.removeProperty(Ids::modulatorValue);
-        }
-        
-        // owner.setProperty (Ids::modulatorValue, (double) currentValue.value); // v5.6.32. NOTE : mod value prop field is updated here
-        
-        // Rounding process for currentValue.value NOTE useless with all internal values as double type
-        // const double sliderDecPlace = (double) owner.getProperty(Ids::uiSliderDecimalPlaces); // Added v5.6.32. Cannot reach the actual property value, I don't know why.
-        const double sliderDecPlace = 4.0; // Added v5.6.32
-        const double multiplier = std::pow(10, sliderDecPlace); // Added v5.6.32
-        const double roundedValue = std::round(currentValue.value * multiplier) / multiplier;
-        
-        // value debug
-        // std::cout << "sliderDecPlace: " << sliderDecPlace << std::endl;
-        // std::cout << "multiplier: " << multiplier << std::endl;
-        // std::cout << "roundedValue: " << roundedValue << std::endl;
-        
-        owner.setProperty (Ids::modulatorValue, roundedValue); // v5.6.32. NOTE : mod value prop field is updated here
-    }
-    
-    const bool warningInBoostrapState = owner.getCtrlrManagerOwner().getProperty (Ids::ctrlrWarningInBootstrapState); // Added v5.5.32 for John Goodland @dnaldoog
-    
-    if (warningInBoostrapState == (true))
-    {
-        // Old behaviour like in Ctrlr 5.3.198, loose conditions, will show error alert window when loading the panel
-        if (valueChangedCbk.get() // Updated v5.6.32. Replacing weak ref : if (valueChangedCbk)
-            && !owner.getOwnerPanel().getRestoreState()
-            && !valueChangedCbk.wasObjectDeleted())
-        {
-            if (valueChangedCbk->isValid()) // Valid means LUA syntax OK. Can be "valid" even though it can return code errors and can even be crashing Ctrlr
-            {
-                owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (valueChangedCbk,
-                                                                                    &owner,
-                                                                                    currentValue.value,
-                                                                                    (uint8)currentValue.lastChangeSource);
-            }
-            else{
-				// AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error", owner.getName() + "\n" +
-				// "LUA script not valid: luaModulatorValueChange");
-				AW::showMessageBox(AW::Warning, "Callback error",
-								   owner.getName() + "\n" + "LUA script not valid: luaModulatorValueChange");
-			}
-        }
-    }
-    else // else if (warningInBoostrapState == (false))
-    {
-        // if (valueChangedCbk.get() && !owner.getRestoreState()) // Removed v5.6.31
-        // if (valueChangedCbk.get() && !owner.getRestoreState() && currentValue.lastChangeSource != CtrlrModulatorValue::changedByProgram) // Updated v5.6.31 to help avoid feedback loops between LUA and (delayed) UI commit 6e5a0b2 by midibox
-        if (valueChangedCbk.get()
-            && !owner.getOwnerPanel().getBootstrapState()
-            && !owner.getOwnerPanel().getRestoreState()
-            && !valueChangedCbk.wasObjectDeleted()
-            && currentValue.lastChangeSource != CtrlrModulatorValue::changedByProgram) // Updated v5.6.32. Stricter conditions
-        {
-            if (valueChangedCbk->isValid()) // Valid means LUA syntax OK. Can be "valid" even though it can return code errors and can even be crashing Ctrlr
-            {
-                owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call (valueChangedCbk,
-                                                                                    &owner,
-                                                                                    currentValue.value,
-                                                                                    (uint8)currentValue.lastChangeSource);
-            }
-            else{
-				// AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error", owner.getName() + "\n LUA
-				// script not valid: luaModulatorValueChange");
-				AW::showMessageBox(AW::Warning, "Callback error",
-								   owner.getName() + "\n LUA script not valid: luaModulatorValueChange");
-			}
-        }
-    }
-    
-    if (linkedToGlobal)
-    {
-        owner.getOwnerPanel().setGlobalVariable (getLinkedToGlobalIndex(), currentValue.value);
-    }
+	/* update the GUI and the ValueTree from the value provided by the HOST or the MIDI subsystem */
+	if (owner.isStatic() && (currentValue.lastChangeSource == CtrlrModulatorValue::changedByMidiIn ||
+							 currentValue.lastChangeSource == CtrlrModulatorValue::changedByHost)) {
+		return;
+	}
+	{
+		const ScopedReadLock sl(processorLock);
+
+		if ((double)owner.getProperty(Ids::modulatorValue) == currentValue.value) {
+			owner.removeProperty(Ids::modulatorValue);
+		}
+
+		const double sliderDecPlace = 4.0;
+		const double multiplier = std::pow(10, sliderDecPlace);
+		const double roundedValue = std::round(currentValue.value * multiplier) / multiplier;
+
+		owner.setProperty(Ids::modulatorValue, roundedValue);
+	}
+
+	// --- SAFETY HELPER: Ensure callback pointer is safe, active, and has a valid Lua name ---
+	auto isCallbackSafe = [this](CtrlrLuaMethod *cbk) {
+		if (!cbk || !cbk->isValid())
+			return false;
+
+		// Ensure the method's name is a valid Lua identifier (prevents crashes from legacy/malformed names like "1")
+		String methodName = cbk->getName();
+		if (methodName.isEmpty())
+			return false;
+
+		return owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().isValidMethodName(methodName);
+	};
+	// ------------------------------------------------------------------------------------------
+
+	const bool warningInBoostrapState = owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrWarningInBootstrapState);
+
+	if (warningInBoostrapState == (true)) {
+		if (isCallbackSafe(valueChangedCbk.get()) && !owner.getOwnerPanel().getRestoreState()) {
+			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(
+				valueChangedCbk.get(), &owner, currentValue.value, (uint8)currentValue.lastChangeSource);
+		} else if (valueChangedCbk.get() && !owner.getOwnerPanel().getRestoreState()) {
+			AW::showMessageBox(AW::Warning, "Callback error",
+							   owner.getName() + "\n" +
+								   "LUA script not valid or has an illegal name: luaModulatorValueChange");
+		}
+	} else {
+		if (isCallbackSafe(valueChangedCbk.get()) && !owner.getOwnerPanel().getBootstrapState() &&
+			!owner.getOwnerPanel().getRestoreState() &&
+			currentValue.lastChangeSource != CtrlrModulatorValue::changedByProgram) {
+			owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(
+				valueChangedCbk.get(), &owner, currentValue.value, (uint8)currentValue.lastChangeSource);
+		} else if (valueChangedCbk.get() && !owner.getOwnerPanel().getBootstrapState() &&
+				   !owner.getOwnerPanel().getRestoreState() &&
+				   currentValue.lastChangeSource != CtrlrModulatorValue::changedByProgram) {
+			AW::showMessageBox(AW::Warning, "Callback error",
+							   owner.getName() +
+								   "\n LUA script not valid or has an illegal name: luaModulatorValueChange");
+		}
+	}
+
+	if (linkedToGlobal) {
+		owner.getOwnerPanel().setGlobalVariable(getLinkedToGlobalIndex(), currentValue.value);
+	}
 }
 
 void CtrlrModulatorProcessor::setValue(const double value)  // Updated v5.6.32. int to double
@@ -195,10 +167,19 @@ void CtrlrModulatorProcessor::setReverseExpression (const String &reverseExpress
 
 void CtrlrModulatorProcessor::setValueChangedCallback (const String &methodName)
 {
-	if (methodName.isEmpty())
+	if (methodName.isEmpty()) {
+		valueChangedCbk = nullptr;
 		return;
+	}
 
-	valueChangedCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(methodName);
+	auto &methodManager = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager();
+	if (!methodManager.isValidMethodName(methodName)) {
+		DBG("Rejected invalid callback name: " + methodName);
+		valueChangedCbk = nullptr;
+		return;
+	}
+
+	valueChangedCbk = methodManager.getMethod(methodName);
 }
 
 void CtrlrModulatorProcessor::setGetValueForMidiCallback (const String &methodName)

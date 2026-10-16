@@ -72,6 +72,7 @@ class CtrlrLuaMethodManager : public ValueTree::Listener
 		String getUtilityUuid(const int index);
 		bool getUtilityAlwaysUpdate(const int index);
 		void wrapUtilities();
+		void handleExternalFileChange(const juce::File &file, bool isDeleted);
 
 		/** Calls */
 		const bool call(CtrlrLuaMethod *o, CtrlrModulator *param1, const int param2);
