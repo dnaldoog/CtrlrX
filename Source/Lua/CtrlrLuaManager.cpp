@@ -1663,3 +1663,72 @@ void CtrlrLuaManager::reloadScriptFromDisk(const juce::File& modifiedFile)
         }
     }
 }
+
+void CtrlrLuaManager::scanAndImportNewFilesFromWorkspace()
+{
+    juce::File scriptsDir = getPanelWorkspaceDir();
+    if (!scriptsDir.exists() || !scriptsDir.isDirectory())
+        return;
+
+    Array<File> foundFiles;
+    scriptsDir.findChildFiles(foundFiles, File::findFiles, true, "*.lua");
+
+    int importedCount = 0; // Track newly imported files
+
+    for (const auto &file : foundFiles)
+    {
+        // Check if this file is already tracked by any existing method in Ctrlr
+        bool isTracked = false;
+        ValueTree luaMethods = luaManagerTree.getChildWithName(Ids::luaManagerMethods);
+        for (int i = 0; i < luaMethods.getNumChildren(); ++i)
+        {
+            ValueTree methodTree = luaMethods.getChild(i);
+            if (methodTree.hasType(Ids::luaMethod))
+            {
+                if (owner.getLuaMethodSourceFile(&methodTree) == file)
+                {
+                    isTracked = true;
+                    break;
+                }
+            }
+        }
+
+        // If it's a brand new external file, import it!
+        if (!isTracked)
+        {
+            String methodName = file.getFileNameWithoutExtension();
+            
+            // Ensure the filename is a valid Lua identifier before adding.
+            const bool hasValidIdentifierCharacters =
+                !methodName.isEmpty() && methodName.containsOnly("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789");
+            const juce_wchar firstCharacter = methodName.isEmpty() ? 0 : methodName[0];
+            const bool startsWithLetterOrUnderscore =
+                (firstCharacter >= 'a' && firstCharacter <= 'z') ||
+                (firstCharacter >= 'A' && firstCharacter <= 'Z') || firstCharacter == '_';
+                
+            if (hasValidIdentifierCharacters && startsWithLetterOrUnderscore)
+            {
+                ValueTree rootGroup = luaManagerTree.getChildWithName(Ids::luaManagerMethods);
+                if (!rootGroup.isValid())
+                    rootGroup = luaManagerTree;
+
+                // Add the file to the panel tree
+                getMethodManager().addMethodFromFile(rootGroup, file);
+                DBG("Auto-imported new external script file: " + file.getFileName());
+                importedCount++;
+            }
+        }
+    }
+
+    // --- NOTIFY USER TO REOPEN LUA EDITOR IF FILES WERE ADDED ---
+    if (importedCount > 0)
+    {
+        AW::showMessageBox(AW::Warning, "Workspace Scan Complete",
+                           String(importedCount) + " new external script file(s) imported.\n"
+                           "Please close and reopen the Lua Editor window to refresh the method tree view.");
+    }
+    else
+    {
+        AW::showMessageBox(AW::Info, "Workspace Scan Complete", "No new script files found to import.");
+    }
+}

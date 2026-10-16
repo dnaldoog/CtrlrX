@@ -1024,6 +1024,7 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 			m.addItem(6, "Sort by name");
 			m.addItem(7, "Sort by size");
 
+			m.addItem(15, "Scan workspace for new files");
 			// const int ret = m.show(); JUCE 6 LEGACY CODE
 			juce::Point<int> screenPt = e.getEventRelativeTo(this).getMouseDownScreenPosition();
 
@@ -1063,6 +1064,8 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 					getMethodManager().getManagerTree().sort(sorter, nullptr, false);
 
 					triggerAsyncUpdate();
+				} else if (ret == 15) {
+					owner.getCtrlrLuaManager().scanAndImportNewFilesFromWorkspace();
 				}
 			});
 		} else if (item.hasType(Ids::luaMethod)) {
@@ -1070,12 +1073,27 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 			m.addSectionHeader("Method " + item.getProperty(Ids::luaMethodName).toString());
 
 			// --- External Editor File Menu Options ---
-			if ((bool)owner.getOwner().getProperty(Ids::ctrlrLuaExternalEditorEnabled)) {
-				juce::File methodFile = owner.getLuaMethodSourceFile(&item);
-				if (methodFile.existsAsFile()) {
-					m.addItem(13, "Reveal file in Explorer");
-				} else if ((int)item.getProperty(Ids::luaMethodSource) == CtrlrLuaMethod::codeInFile) {
-					m.addItem(12, "Locate file on disk");
+			CtrlrPanel *panel = &owner; // (or however you resolve the panel)
+			if (panel != nullptr) {
+				bool isEnabled = (bool)panel->getProperty(Ids::ctrlrLuaExternalEditorEnabled);
+				DBG("Panel property external editor: " + String(isEnabled ? "true" : "false"));
+
+				// Only show these file options if external editing is enabled
+				if (isEnabled) {
+					juce::File methodFile = owner.getLuaMethodSourceFile(&item);
+					if (methodFile.existsAsFile()) {
+						String revealText = "Reveal in File Manager";
+#if JUCE_MAC
+						revealText = "Reveal in Finder";
+#elif JUCE_WINDOWS
+						revealText = "Reveal in Explorer";
+#endif
+
+						m.addItem(13, revealText);
+
+					} else {
+						m.addItem(12, "Locate file on disk");
+					}
 				}
 			}
 			// -----------------------------------------
@@ -1096,7 +1114,10 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 				if (ret == 11) {
 					/* convert a in-memory method to a file based one */
 				} else if (ret == 12) {
-					/* locate a missing file on disk */
+					juce::File methodFile = owner.getLuaMethodSourceFile(&item);
+					if (methodFile.existsAsFile()) {
+						methodFile.revealToUser();
+					}
 				} else if (ret == 13) {
 					/* reveal existing file in OS file manager */
 					juce::File methodFile = owner.getLuaMethodSourceFile(&item);

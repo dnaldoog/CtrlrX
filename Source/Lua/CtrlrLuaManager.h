@@ -61,6 +61,7 @@ class CtrlrLuaManager : public ValueTree::Listener {
 		void setExternalScriptSyncEnabled(bool enabled);
 		void reloadScriptFromDisk(const juce::File &modifiedFile);
 		juce::File getPanelWorkspaceDir() const;
+		void scanAndImportNewFilesFromWorkspace();
 		// Access to Lua API database
 		// CtrlrLuaApiDatabase& getLuaApiDatabase() { return luaApi; }
 	private:
