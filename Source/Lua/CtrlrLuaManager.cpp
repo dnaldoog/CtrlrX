@@ -1688,32 +1688,35 @@ bool isValidLuaIdentifier(const String &name) {
 } // namespace
 
 // ---------------------------------------------------------------------------
+// Uses the file-local helpers from CtrlrLuaManager_external_sync.cpp:
+//   collectMethodTrees(), getOrCreateGroupForDir(), isValidLuaIdentifier()
+
 void CtrlrLuaManager::scanAndImportNewFilesFromWorkspace()
 {
 	const File scriptsDir = getPanelWorkspaceDir();
-	if (!scriptsDir.exists() || !scriptsDir.isDirectory())
+	if (!scriptsDir.exists() || !scriptsDir.isDirectory()) {
+		AW::showMessageBox(AW::Warning, "Workspace Scan",
+						   "Workspace folder not found:\n" + scriptsDir.getFullPathName());
 		return;
+	}
 
 	ValueTree luaMethods = luaManagerTree.getChildWithName(Ids::luaManagerMethods);
 	ValueTree rootGroup = luaMethods.isValid() ? luaMethods : luaManagerTree;
 
 	// 0. Prune stale nodes: methods whose source file no longer exists on disk
-	//    (e.g. the file was moved/deleted in Explorer while Ctrlr was closed).
-	//    Mirrors the watcher's external-deletion handling. If the file was MOVED,
-	//    step 3 below re-imports it at its new location.
+	//    (moved/deleted externally). A moved file is re-imported at its new
+	//    location in step 3.
 	int prunedCount = 0;
 	{
 		Array<ValueTree> candidates;
 		collectMethodTrees(rootGroup, candidates);
 
 		for (auto &m : candidates) {
-			const File src = owner.getLuaMethodSourceFile(&m);
-			DBG("Prune check: " + src.getFullPathName() + " exists=" + String(src.existsAsFile() ? "YES" : "NO"));
 			if (owner.getLuaMethodSourceFile(&m).existsAsFile())
 				continue;
 
-			const Uuid uuid(m.getProperty(Ids::uuid).toString());
 			ValueTree tree = m;
+			const Uuid uuid(m.getProperty(Ids::uuid).toString());
 
 			if (auto *methodObj = getMethodManager().getMethodByUuid(uuid)) {
 				tree = methodObj->getMethodTree();
@@ -1723,12 +1726,11 @@ void CtrlrLuaManager::scanAndImportNewFilesFromWorkspace()
 			if (tree.getParent().isValid())
 				tree.getParent().removeChild(tree, nullptr);
 
-			DBG("Pruned stale method (file missing on disk)");
 			++prunedCount;
 		}
 	}
 
-	// 1. Build the set of already-tracked files ONCE, including methods inside groups.
+	// 1. Files already tracked (built once, includes methods inside groups).
 	Array<ValueTree> existingMethods;
 	collectMethodTrees(rootGroup, existingMethods);
 
@@ -1736,51 +1738,52 @@ void CtrlrLuaManager::scanAndImportNewFilesFromWorkspace()
 	for (auto &m : existingMethods)
 		trackedFiles.add(owner.getLuaMethodSourceFile(&m));
 
-	// 2. Find all .lua files on disk (recursive).
+	// 2. Every .lua file on disk (recursive).
 	Array<File> foundFiles;
 	scriptsDir.findChildFiles(foundFiles, File::findFiles, true, "*.lua");
 
+	// 3. Import untracked files into the group that mirrors their folder.
 	int importedCount = 0;
-	int skippedInvalidCount = 0;
+	StringArray skippedNames; // relative paths of files with invalid Lua identifiers
 
-	// 3. Import anything untracked, placing it in the group that mirrors its folder.
 	for (const auto &file : foundFiles) {
 		if (trackedFiles.contains(file))
 			continue;
 
 		if (!isValidLuaIdentifier(file.getFileNameWithoutExtension())) {
-			++skippedInvalidCount;
-			DBG("Skipped (invalid Lua identifier): " + file.getFullPathName());
+			skippedNames.add(file.getRelativePathFrom(scriptsDir));
 			continue;
 		}
 
 		ValueTree targetGroup = getOrCreateGroupForDir(rootGroup, scriptsDir, file.getParentDirectory());
-
 		getMethodManager().addMethodFromFile(targetGroup, file);
-		trackedFiles.add(file); // guards against re-importing within this same scan
+		trackedFiles.add(file); // don't re-import within this scan
 
 		DBG("Auto-imported: " + file.getRelativePathFrom(scriptsDir));
 		++importedCount;
 	}
 
-	// 4. Report.
-	if (importedCount > 0 || prunedCount > 0) {
-		String msg = String(importedCount) + " new script file(s) imported, " + String(prunedCount) +
-					 " stale entry(ies) removed.\n"
-					 "Please close and reopen the Lua Editor window to refresh the method tree view.";
-		if (skippedInvalidCount > 0)
-			msg << "\n\n"
-				<< String(skippedInvalidCount) << " file(s) skipped: file name is not a valid Lua identifier.";
+	// 4. Report (one message for every outcome).
+	const bool changed = importedCount > 0 || prunedCount > 0;
+	const int skippedCount = skippedNames.size();
+	const int trackedCount = foundFiles.size() - importedCount - skippedCount;
 
-		AW::showMessageBox(AW::Warning, "Workspace Scan Complete", msg);
-	} else {
-		String msg = "No new script files found to import.";
-		if (skippedInvalidCount > 0)
-			msg << "\n\n"
-				<< String(skippedInvalidCount) << " file(s) skipped: file name is not a valid Lua identifier.";
+	String msg = changed ? String(importedCount) + " new script file(s) imported, " + String(prunedCount) +
+							   " stale entry(ies) removed."
+						 : String("No new script files found to import.");
 
-		AW::showMessageBox(AW::Info, "Workspace Scan Complete", msg);
-	}
+	msg << "\n\nScanned: " << scriptsDir.getFullPathName() << "\nLua files found: " << String(foundFiles.size())
+		<< "\nAlready tracked: " << String(trackedCount) << "\nSkipped: " << String(skippedCount);
+
+	if (skippedCount > 0)
+		msg << "\n\nNot imported - file name must be a valid Lua identifier "
+			   "(letters, digits, underscores; not starting with a digit):\n"
+			<< skippedNames.joinIntoString("\n");
+
+	if (changed)
+		msg << "\n\nPlease close and reopen the Lua Editor window to refresh the method tree view.";
+
+	AW::showMessageBox(changed ? AW::Warning : AW::Info, "Workspace Scan Complete", msg);
 }
 
 // ---------------------------------------------------------------------------
