@@ -1009,7 +1009,7 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 			m.addItem(1, "Add method");
 			m.addItem(10, "Add table");
 			m.addItem(11, "Add class");
-			m.addItem(2, "Add files");
+			// m.addItem(2, "Add files");
 			m.addItem(3, "Add group");
 			m.addSeparator();
 			bool isMethodGroup = item.hasType(Ids::luaMethodGroup);

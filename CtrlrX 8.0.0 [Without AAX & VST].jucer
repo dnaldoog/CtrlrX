@@ -971,6 +971,8 @@
                   resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaPanelScriptWatcher.cpp"/>
             <FILE id="nqvJ16" name="CtrlrLuaPanelScriptWatcher.h" compile="0" resource="0"
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaPanelScriptWatcher.h"/>
+            <FILE id="ZLO4iT" name="CtrlrLuaWorkspaceSync.h" compile="0" resource="0"
+                  file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaWorkspaceSync.h"/>
             <FILE id="aOE6gd" name="CtrlrMethodEditorTabCloseButton.cpp" compile="1"
                   resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrMethodEditorTabCloseButton.cpp"/>
             <FILE id="Id57q7" name="CtrlrMethodEditorTabCloseButton.h" compile="0"

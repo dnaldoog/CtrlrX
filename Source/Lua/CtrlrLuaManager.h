@@ -6,6 +6,7 @@
 
 #include "Methods/CtrlrLuaMethodManager.h"
 // #include "CtrlrLuaApiDatabase.h"
+#include "UIComponents/CtrlrLua/MethodEditor/CtrlrLuaWorkspaceSync.h"
 #include "UIComponents/CtrlrLua/MethodEditor/CtrlrLuaPanelScriptWatcher.h"
  
 // Forward declarations
@@ -78,7 +79,7 @@ class CtrlrLuaManager : public ValueTree::Listener {
 		CtrlrLuaMultiTimer *multiTimer;
 		CtrlrLuaAudioConverter *audioConverter;
 		LAudioFormatManager *luaAudioFormatManager;
-
+		std::unique_ptr<CtrlrLuaWorkspaceSync> workspaceSync;
 		/*
 		COMMENTED OUT JG 5/8/2026
 		--CtrlrPanel& owner;

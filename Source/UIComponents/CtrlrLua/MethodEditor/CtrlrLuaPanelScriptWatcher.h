@@ -18,6 +18,6 @@ private:
     juce::File scriptDir;
     std::function<void(const juce::File&)> callback;
     std::map<juce::File, int64> lastModTimes; // Changed to std::map
-    
+    std::map<juce::File, int> missingPolls; // Track missing files and their poll counts
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrLuaPanelScriptWatcher)
 };
