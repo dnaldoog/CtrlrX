@@ -416,12 +416,17 @@ case CtrlrEditor::doPanelToggleExternalLuaEdit:
 			juce::String infoMsg =
 				"External Lua Script Editing is now ENABLED.\n\n"
 				"Your script files for this panel are automatically saved and synced here:\n"
+
 				"--------------------------------------------------\n" +
 				dirPath + "\n" +
 				"--------------------------------------------------\n\n"
+				"(This folder path has been copied to your clipboard!)\n\n"
 				"• Edit your .lua files in your favorite external editor (e.g., Visual Studio Code or Xcode).\n"
-				"• Changes will hot-reload live into CtrlrX automatically.\n\n"
-				"(This folder path has been copied to your clipboard!)";
+				"• Changes will hot-reload live into CtrlrX automatically.\n"
+				"• To see external file changes.\n"
+				"  1. Right click in lua editor and select\n"
+				"  2. 'Scan workspace for new files'.\n"
+				"  3. Close and re-open the lua editor\n\n";
 
 			AW::showMessageBox(AW::Info, "External Editor Enabled", infoMsg, "OK");
 		}

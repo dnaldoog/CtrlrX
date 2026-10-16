@@ -502,46 +502,51 @@ void CtrlrLuaMethodEditor::addMethodFromFile(ValueTree parentGroup) {
 
 	Component::SafePointer<CtrlrLuaMethodEditor> safeThis(this);
 
-	FC::openMultipleFilesAsync("Select LUA files", lastBrowsedSourceDir, "*.lua;*.txt", useNative,
-							   [safeThis, parentGroup](const Array<File> &results) {
-								   if (safeThis == nullptr || results.isEmpty())
-									   return;
+	FC::openMultipleFilesAsync(
+		"Select LUA files", lastBrowsedSourceDir, "*.lua", useNative,
+		[safeThis, parentGroup](const Array<File> &results) {
+			if (safeThis == nullptr || results.isEmpty())
+				return;
 
-								   for (const auto &file : results) {
-									   String methodName = file.getFileNameWithoutExtension();
-									   bool nameOK = true;
-									   if (!safeThis->getMethodManager().isValidMethodName(methodName)) {
-										   nameOK = false;
-										   AW::showMessageBox(
-											   AW::Warning, "Add Files",
-											   "'" + methodName +
-												   "' is not a valid method name. Method names must be valid Lua "
-												   "identifiers (cannot start with numbers or contain spaces).");
-									   }
-									   // Check that a method with that name does not already exist
-									   for (int j = 0; j < parentGroup.getNumChildren(); j++) {
-										   ValueTree child = parentGroup.getChild(j);
-										   if (child.hasType(Ids::luaMethod)) {
-											   if (methodName == child.getProperty(Ids::luaMethodName).toString()) {
-												   nameOK = false;
-												   break;
-											   }
-										   }
-									   }
+			for (const auto &file : results) {
+				String methodName = file.getFileNameWithoutExtension();
+				bool nameOK = true;
 
-									   if (nameOK) {
-										   safeThis->getMethodManager().addMethodFromFile(parentGroup, file);
-									   } else {
-										   AW::showMessageBox(
-											   AW::Warning, "Add Files",
-											   "A method named '" + methodName +
-												   "' already exists in this group, file will be ignored.");
-									   }
-								   }
+				// --- CRASH PREVENTION: Validate method name before importing ---
+				if (!safeThis->getMethodManager().isValidMethodName(methodName)) {
+					nameOK = false;
+					AW::showMessageBox(
+						AW::Warning, "Invalid Method Name",
+						"'" + methodName +
+							"' is not a valid method name.\nMethod names must be valid Lua "
+							"identifiers (cannot start with numbers or contain spaces/special characters).");
+				}
+				// -------------------------------------------------------------
 
-								   safeThis->updateRootItem();
-								   safeThis->saveSettings();
-							   });
+				// Check that a method with that name does not already exist
+				if (nameOK) {
+					for (int j = 0; j < parentGroup.getNumChildren(); j++) {
+						ValueTree child = parentGroup.getChild(j);
+						if (child.hasType(Ids::luaMethod)) {
+							if (methodName == child.getProperty(Ids::luaMethodName).toString()) {
+								nameOK = false;
+								AW::showMessageBox(AW::Warning, "Add Files",
+												   "A method named '" + methodName +
+													   "' already exists in this group, file will be ignored.");
+								break;
+							}
+						}
+					}
+				}
+
+				if (nameOK) {
+					safeThis->getMethodManager().addMethodFromFile(parentGroup, file);
+				}
+			}
+
+			safeThis->updateRootItem();
+			safeThis->saveSettings();
+		});
 }
 
 void CtrlrLuaMethodEditor::addNewGroup(ValueTree parentGroup) {
@@ -1009,7 +1014,7 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 			m.addItem(1, "Add method");
 			m.addItem(10, "Add table");
 			m.addItem(11, "Add class");
-			// m.addItem(2, "Add files");
+			m.addItem(2, "Add files");
 			m.addItem(3, "Add group");
 			m.addSeparator();
 			bool isMethodGroup = item.hasType(Ids::luaMethodGroup);
@@ -1099,7 +1104,7 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 			// -----------------------------------------
 
 			m.addSeparator();
-			m.addItem(2, "Remove method");
+			m.addItem(16, "Remove method");
 
 			//  const int ret = m.show(); JUCE 6 code
 			juce::Point<int> screenPt = e.getEventRelativeTo(this).getMouseDownScreenPosition();
@@ -1126,7 +1131,7 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 					}
 				} else if (ret == 10) {
 					/* convert a method from a file to a in-memory property */
-				} else if (ret == 2) {
+				} else if (ret == 16) {
 					/* remove a method */
 					AW::showOkCancelAsyncSafe(
 						AW::Question, "Confirm Deletion", "Delete the selected method?", [this, item](int result) {
