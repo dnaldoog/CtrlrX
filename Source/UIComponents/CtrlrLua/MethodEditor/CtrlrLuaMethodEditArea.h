@@ -25,6 +25,7 @@
 #include "CtrlrLuaApiInspector.h"
 #include "CtrlrLuaMethodCodeEditor.h"
 #include "CtrlrLuaMethodEditorTabs.h"
+#include "CtrlrLuaMethodDebuggerPrompt.h"
 #include "CtrlrLuaMethodFind.h"
 #include "CtrlrTextEditor.h"
 class CtrlrLuaMethodEditor;

@@ -51,7 +51,7 @@ void CtrlrLuaDebugger::dbgWrite(std::string data)
 
     if (ui)
     {
-        return (ui->insertRawDebuggerOutput(_STR(data)));
+        _INF(_STR(data));
     }
 }
 
@@ -89,18 +89,8 @@ std::string CtrlrLuaDebugger::dbgRead(std::string prompt)
     CtrlrLuaMethodEditor *ui = dynamic_cast<CtrlrLuaMethodEditor *>(owner.getOwner().getWindowManager().getContent(CtrlrPanelWindowManager::LuaMethodEditor));
     if (ui)
     {
-        if (ui->waitForCommand())
-        {
-            commandQueue.add ("trace");
-            commandQueue.add ("vars");
-            commandQueue.add (ui->getCurrentDebuggerCommand (true).toStdString());
-            return (commandQueue.removeAndReturn (commandQueue.size() - 1).toStdString());
-        }
-        else
-        {
-            _WRN("CtrlrLuaDebugger::dbgRead debugger UI didn't return any commands, continuing");
-            return ("run");
-        }
+        _WRN("CtrlrLuaDebugger::dbgRead debugger UI command retrieval is unavailable, continuing");
+        return ("run");
     }
 
     _WRN("CtrlrLuaDebugger::dbgRead debugger window is invalid, continuing");

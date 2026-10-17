@@ -65,15 +65,17 @@ CtrlrLuaMethodEditArea::CtrlrLuaMethodEditArea(CtrlrLuaMethodEditor &_owner) : o
 	// 2. Split the inline resizer allocation apart
 	resizer = std::make_unique<StretchableLayoutResizerBar>(&layoutManager, 1, false);
 	addAndMakeVisible(resizer.get()); // Pass the raw address to JUCE
+	debuggerPrompt = new CtrlrLuaMethodDebuggerPrompt(owner);
 
 	// 3. Complete the remaining allocations
 	apiInspector = std::make_unique<CtrlrLuaApiInspector>(owner.getOwner());
 	luaConsole = std::make_unique<CtrlrLuaConsole>(owner.getOwner());
+
 	// Pass 'false' so lowerTabs does NOT attempt to delete unique_ptr managed components
 	lowerTabs->addTab("Output", Colours::lightgrey, output.get(), false);
 	lowerTabs->addTab("Find and replace", Colours::lightgrey, find.get(), false);
 	lowerTabs->addTab("API Inspector", Colours::lightgrey, apiInspector.get(), false);
-        lowerTabs->addTab ("Debugger output", Colours::lightgrey, debuggerPrompt, true);
+	lowerTabs->addTab("Debugger output", Colours::lightgrey, debuggerPrompt, true);
 	lowerTabs->addTab("Console", Colours::lightgrey, luaConsole.get(), false);
 	lowerTabs->setTabBarDepth(owner.getOwner().getOwner().getProperty(Ids::ctrlrTabBarDepth));
 
@@ -234,6 +236,8 @@ CtrlrLuaMethodDebuggerPrompt *CtrlrLuaMethodEditArea::getLuaDebuggerPrompt(const
         lowerTabs->setCurrentTabIndex (2, true);
 
     return (debuggerPrompt);
+}
+
 void CtrlrLuaMethodEditArea::setActiveOutputTab() {
 	if (getLowerTabs()) {
 		getLowerTabs()->setCurrentTabIndex(0);
