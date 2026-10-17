@@ -491,32 +491,6 @@ void CtrlrLuaMethodEditor::addNewClass(ValueTree parentGroup) {
 		}));
 }
 
-#if 0
-void CtrlrLuaMethodEditor::addNewMethod(ValueTree parentGroup) {
-	AlertWindow wnd(METHOD_NEW, "", AlertWindow::InfoIcon, this);
-	wnd.addTextEditor("methodName", "myNewMethod", "Method name", false);
-	wnd.addComboBox("templateList", getMethodManager().getTemplateList(), "Initialize from template");
-
-	wnd.addButton("OK", 1, KeyPress(KeyPress::returnKey));
-	wnd.addButton("Cancel", 0, KeyPress(KeyPress::escapeKey));
-	if (wnd.runModalLoop()) {
-		const String methodName = wnd.getTextEditorContents("methodName");
-
-		if (getMethodManager().isValidMethodName(methodName)) {
-			const String initialCode = getMethodManager().getDefaultMethodCode(
-				methodName, wnd.getComboBoxComponent("templateList")->getText());
-
-			getMethodManager().addMethod(parentGroup, wnd.getTextEditorContents("methodName"), initialCode, "");
-		} else {
-			WARN("Invalid method name, please correct");
-		}
-	}
-
-	updateRootItem();
-
-	saveSettings(); // save settings
-}
-#endif
 void CtrlrLuaMethodEditor::addMethodFromFile(ValueTree parentGroup) {
 	// See if group folder exists
 	File groupFolder = owner.getLuaMethodGroupDir(parentGroup);
@@ -528,39 +502,51 @@ void CtrlrLuaMethodEditor::addMethodFromFile(ValueTree parentGroup) {
 
 	Component::SafePointer<CtrlrLuaMethodEditor> safeThis(this);
 
-	FC::openMultipleFilesAsync("Select LUA files", lastBrowsedSourceDir, "*.lua;*.txt", useNative,
-							   [safeThis, parentGroup](const Array<File> &results) {
-								   if (safeThis == nullptr || results.isEmpty())
-									   return;
+	FC::openMultipleFilesAsync(
+		"Select LUA files", lastBrowsedSourceDir, "*.lua", useNative,
+		[safeThis, parentGroup](const Array<File> &results) {
+			if (safeThis == nullptr || results.isEmpty())
+				return;
 
-								   for (const auto &file : results) {
-									   String methodName = file.getFileNameWithoutExtension();
-									   bool nameOK = true;
+			for (const auto &file : results) {
+				String methodName = file.getFileNameWithoutExtension();
+				bool nameOK = true;
 
-									   // Check that a method with that name does not already exist
-									   for (int j = 0; j < parentGroup.getNumChildren(); j++) {
-										   ValueTree child = parentGroup.getChild(j);
-										   if (child.hasType(Ids::luaMethod)) {
-											   if (methodName == child.getProperty(Ids::luaMethodName).toString()) {
-												   nameOK = false;
-												   break;
-											   }
-										   }
-									   }
+				// --- CRASH PREVENTION: Validate method name before importing ---
+				if (!safeThis->getMethodManager().isValidMethodName(methodName)) {
+					nameOK = false;
+					AW::showMessageBox(
+						AW::Warning, "Invalid Method Name",
+						"'" + methodName +
+							"' is not a valid method name.\nMethod names must be valid Lua "
+							"identifiers (cannot start with numbers or contain spaces/special characters).");
+				}
+				// -------------------------------------------------------------
 
-									   if (nameOK) {
-										   safeThis->getMethodManager().addMethodFromFile(parentGroup, file);
-									   } else {
-										   AW::showMessageBox(
-											   AW::Warning, "Add Files",
-											   "A method named '" + methodName +
-												   "' already exists in this group, file will be ignored.");
-									   }
-								   }
+				// Check that a method with that name does not already exist
+				if (nameOK) {
+					for (int j = 0; j < parentGroup.getNumChildren(); j++) {
+						ValueTree child = parentGroup.getChild(j);
+						if (child.hasType(Ids::luaMethod)) {
+							if (methodName == child.getProperty(Ids::luaMethodName).toString()) {
+								nameOK = false;
+								AW::showMessageBox(AW::Warning, "Add Files",
+												   "A method named '" + methodName +
+													   "' already exists in this group, file will be ignored.");
+								break;
+							}
+						}
+					}
+				}
 
-								   safeThis->updateRootItem();
-								   safeThis->saveSettings();
-							   });
+				if (nameOK) {
+					safeThis->getMethodManager().addMethodFromFile(parentGroup, file);
+				}
+			}
+
+			safeThis->updateRootItem();
+			safeThis->saveSettings();
+		});
 }
 
 void CtrlrLuaMethodEditor::addNewGroup(ValueTree parentGroup) {
@@ -1043,6 +1029,7 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 			m.addItem(6, "Sort by name");
 			m.addItem(7, "Sort by size");
 
+			m.addItem(15, "Scan workspace for new files");
 			// const int ret = m.show(); JUCE 6 LEGACY CODE
 			juce::Point<int> screenPt = e.getEventRelativeTo(this).getMouseDownScreenPosition();
 
@@ -1082,19 +1069,42 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 					getMethodManager().getManagerTree().sort(sorter, nullptr, false);
 
 					triggerAsyncUpdate();
+				} else if (ret == 15) {
+					owner.getCtrlrLuaManager().scanAndImportNewFilesFromWorkspace();
 				}
 			});
 		} else if (item.hasType(Ids::luaMethod)) {
 			PopupMenu m;
 			m.addSectionHeader("Method " + item.getProperty(Ids::luaMethodName).toString());
-			if ((int)item.getProperty(Ids::luaMethodSource) == CtrlrLuaMethod::codeInFile) {
-				if (!owner.getLuaMethodSourceFile(&item).existsAsFile()) {
-					m.addItem(12, "Locate file on disk");
+
+			// --- External Editor File Menu Options ---
+			CtrlrPanel *panel = &owner; // (or however you resolve the panel)
+			if (panel != nullptr) {
+				bool isEnabled = (bool)panel->getProperty(Ids::ctrlrLuaExternalEditorEnabled);
+				DBG("Panel property external editor: " + String(isEnabled ? "true" : "false"));
+
+				// Only show these file options if external editing is enabled
+				if (isEnabled) {
+					juce::File methodFile = owner.getLuaMethodSourceFile(&item);
+					if (methodFile.existsAsFile()) {
+						String revealText = "Reveal in File Manager";
+#if JUCE_MAC
+						revealText = "Reveal in Finder";
+#elif JUCE_WINDOWS
+						revealText = "Reveal in Explorer";
+#endif
+
+						m.addItem(13, revealText);
+
+					} else {
+						m.addItem(12, "Locate file on disk");
+					}
 				}
 			}
+			// -----------------------------------------
 
 			m.addSeparator();
-			m.addItem(2, "Remove method");
+			m.addItem(16, "Remove method");
 
 			//  const int ret = m.show(); JUCE 6 code
 			juce::Point<int> screenPt = e.getEventRelativeTo(this).getMouseDownScreenPosition();
@@ -1109,10 +1119,19 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 				if (ret == 11) {
 					/* convert a in-memory method to a file based one */
 				} else if (ret == 12) {
-					/* locate a missing file on disk */
+					juce::File methodFile = owner.getLuaMethodSourceFile(&item);
+					if (methodFile.existsAsFile()) {
+						methodFile.revealToUser();
+					}
+				} else if (ret == 13) {
+					/* reveal existing file in OS file manager */
+					juce::File methodFile = owner.getLuaMethodSourceFile(&item);
+					if (methodFile.existsAsFile()) {
+						methodFile.revealToUser();
+					}
 				} else if (ret == 10) {
 					/* convert a method from a file to a in-memory property */
-				} else if (ret == 2) {
+				} else if (ret == 16) {
 					/* remove a method */
 					AW::showOkCancelAsyncSafe(
 						AW::Question, "Confirm Deletion", "Delete the selected method?", [this, item](int result) {

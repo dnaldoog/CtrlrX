@@ -59,7 +59,7 @@ class CtrlrLuaMethod : public ValueTree::Listener
 		void valueTreeChildAdded (ValueTree& /*parentTree*/, ValueTree& /*child*/){}
 		void valueTreeChildRemoved (ValueTree& /*parentTree*/, ValueTree& /*child*/, int){}
 		void valueTreeChildOrderChanged (ValueTree& /*parentTreeWhoseChildrenHaveMoved*/, int, int){}
-
+		void reload(); // for external editor hot reloading
 		JUCE_LEAK_DETECTOR(CtrlrLuaMethod)
 
 	private:

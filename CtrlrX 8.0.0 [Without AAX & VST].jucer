@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="hrcYoO" name="CtrlrX" reportAppUsage="1" projectType="audioplug"
-              version="8.66" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
+              version="8.67" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
               buildVST="0" buildVST3="1" buildAU="1" buildAUv3="0" buildRTAS="0"
               buildAAX="0" buildStandalone="1" enableIAA="0" pluginName="CtrlrX                          "
               pluginManufacturer="CtrlrX Project                  " pluginManufacturerCode="cTrX"
@@ -741,10 +741,10 @@
         <GROUP id="{9DD7C62F-9CD5-D638-1ED9-0A44B6B63DC3}" name="Images"/>
         <GROUP id="{C1E779C4-0308-163A-70D6-2D2F2A99F43A}" name="Lua">
           <GROUP id="{E55A6C92-1082-8CD5-8451-0D4C7479FD90}" name="clidebugger">
-            <FILE id="EYyyU8" name="debugger.lua" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/debugger.lua"/>
-            <FILE id="wGRa1g" name="LICENSE" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/LICENSE"/>
-            <FILE id="KyxZOD" name="README.md" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/README.md"/>
-            <FILE id="CCNhwR" name="test.lua" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/test.lua"/>
+            <FILE id="BK6kSz" name="debugger.lua" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/debugger.lua"/>
+            <FILE id="Ry2VcW" name="LICENSE" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/LICENSE"/>
+            <FILE id="PttfYE" name="README.md" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/README.md"/>
+            <FILE id="QkO1Qj" name="test.lua" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/test.lua"/>
           </GROUP>
           <GROUP id="{DB5F61FA-CAE2-39A5-2169-9DB4783059BB}" name="json4lua">
             <FILE id="hwsNhq" name="json.lua" compile="0" resource="1" file="Source/Resources/Lua/json4lua/json.lua"/>
@@ -967,6 +967,12 @@
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodFind.cpp"/>
             <FILE id="dRy0Hy" name="CtrlrLuaMethodFind.h" compile="0" resource="0"
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodFind.h"/>
+            <FILE id="nUtFmv" name="CtrlrLuaPanelScriptWatcher.cpp" compile="1"
+                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaPanelScriptWatcher.cpp"/>
+            <FILE id="nqvJ16" name="CtrlrLuaPanelScriptWatcher.h" compile="0" resource="0"
+                  file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaPanelScriptWatcher.h"/>
+            <FILE id="ZLO4iT" name="CtrlrLuaWorkspaceSync.h" compile="0" resource="0"
+                  file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaWorkspaceSync.h"/>
             <FILE id="aOE6gd" name="CtrlrMethodEditorTabCloseButton.cpp" compile="1"
                   resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrMethodEditorTabCloseButton.cpp"/>
             <FILE id="Id57q7" name="CtrlrMethodEditorTabCloseButton.h" compile="0"

@@ -32,6 +32,7 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 							 doPanelMode,
 							 doPanelLock,
 							 doPanelDisableCombosOnEdit,
+							 doPanelToggleExternalLuaEdit,
 							 doSendSnapshot,
 							 doSnapshotSaveToFile,
 							 doSnapshotLoadFromFile,
@@ -344,7 +345,17 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 		}
 		break;
 
+	case doPanelToggleExternalLuaEdit:
+		result.setInfo("External LUA edit", "Toggle external LUA editing mode", panelCategory, 0);
+		result.setActive(isPanelActive(true));
+		if (isPanelActive(true) && getActivePanelEditor()) {
+			CtrlrPanel &panel = getActivePanelEditor()->getOwner();
+			result.setTicked((bool)panel.getProperty(Ids::ctrlrLuaExternalEditorEnabled));
+		}
+		break;
+
 	case doPanelDisableCombosOnEdit:
+
 		result.setInfo("Disable combos on edit", "Combo boxes will not open when editing panel", panelCategory, 0);
 		result.setActive(isPanelActive(true));
 		if (isPanelActive(true))

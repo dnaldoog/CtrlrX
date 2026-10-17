@@ -1,13 +1,14 @@
-#include "stdafx.h"
-#include "stdafx_luabind.h"
-#include "CtrlrLuaObjectWrapper.h"
 #include "CtrlrLuaMethod.h"
 #include "CtrlrIDs.h"
+#include "CtrlrInlineUtilitiesGUI.h"
+#include "CtrlrLua/MethodEditor/CtrlrLuaMethodCodeEditor.h"
+#include "CtrlrLuaManager.h"
+#include "CtrlrLuaMethodManager.h"
+#include "CtrlrLuaObjectWrapper.h"
 #include "CtrlrModulator/CtrlrModulator.h"
 #include "CtrlrPanel/CtrlrPanel.h"
-#include "CtrlrLuaMethodManager.h"
-#include "CtrlrLuaManager.h"
-#include "CtrlrLua/MethodEditor/CtrlrLuaMethodCodeEditor.h"
+#include "stdafx.h"
+#include "stdafx_luabind.h"
 
 CtrlrLuaMethod::CtrlrLuaMethod(CtrlrLuaMethodManager &_owner)
 	:	methodIsValid(false),
@@ -106,11 +107,25 @@ void CtrlrLuaMethod::valueTreePropertyChanged (ValueTree &treeWhosePropertyHasCh
 	if (property == Ids::luaMethodValid)
 	{
 		methodIsValid = (bool)treeWhosePropertyHasChanged.getProperty(property);
-	}
-	else if (property == Ids::luaMethodName)
-	{
-		if (methodCodeEditor)
+	} else if (property == Ids::luaMethodName) {
+		String newName = treeWhosePropertyHasChanged.getProperty(Ids::luaMethodName).toString();
+
+		// --- NIP IT IN THE BUD: Validate Lua identifier rules ---
+		if (!owner.isValidMethodName(
+				newName)) // (or owner.getOwnerPanel()... depending on how owner is referenced here)
 		{
+			// Revert back to the current valid name
+			treeWhosePropertyHasChanged.setProperty(Ids::luaMethodName, getName(), nullptr);
+
+			AW::showMessageBox(AW::Warning, "Invalid Method Name",
+							   "'" + newName +
+								   "' is not a valid method name.\nMethod names must be valid Lua identifiers (cannot "
+								   "start with a number or contain spaces/special characters).");
+			return;
+		}
+		// -------------------------------------------------------
+
+		if (methodCodeEditor) {
 			methodCodeEditor->triggerAsyncUpdate();
 		}
 	}
@@ -251,4 +266,9 @@ void CtrlrLuaMethod::triggerSourceChangeFromEditor(const bool recompile)
 int CtrlrLuaMethod::getCodeSize()
 {
 	return (getCode().length());
+}
+
+void CtrlrLuaMethod::reload() // for external editor hot reloading access to private method to reload the code from disk and recompile it
+{
+    setCodeInternal(getCode());
 }
