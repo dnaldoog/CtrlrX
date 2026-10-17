@@ -33,6 +33,16 @@
 //[/MiscUserDefs]
 
 //==============================================================================
+
+static int tabIndexOf (TabbedComponent &tabs, Component *c)
+{
+    for (int i = 0; i < tabs.getNumTabs(); ++i)
+        if (tabs.getTabContentComponent (i) == c)
+            return i;
+    return -1;
+}
+
+
 CtrlrLuaMethodEditArea::CtrlrLuaMethodEditArea(CtrlrLuaMethodEditor &_owner) : owner(_owner), sharedSearchTabsValue() {
 
 
@@ -161,7 +171,10 @@ void CtrlrLuaMethodEditArea::showFindDialog() {
 	find->setFocusOnFindInput();
 }
 
-void CtrlrLuaMethodEditArea::showConsoleTab() { lowerTabs->setCurrentTabIndex(3, true); }
+void CtrlrLuaMethodEditArea::showConsoleTab()
+{
+    lowerTabs->setCurrentTabIndex (tabIndexOf (*lowerTabs, luaConsole.get()), true);
+}
 
 void CtrlrLuaMethodEditArea::findNextMatch() { find->findNextMatch(); }
 
@@ -169,9 +182,8 @@ void CtrlrLuaMethodEditArea::replaceNextMatch() { find->replaceNextMatch(); }
 
 void CtrlrLuaMethodEditArea::showDebuggerTab()
 {
-	lowerTabs->setCurrentTabIndex (2, true);
+    lowerTabs->setCurrentTabIndex (tabIndexOf (*lowerTabs, debuggerPrompt), true);
 }
-
 
 void CtrlrLuaMethodEditArea::closeTabWithMethod(const ValueTree &item) {
 	for (int i = 0; i < upperTabs->getNumTabs(); i++) {
@@ -230,12 +242,13 @@ bool CtrlrLuaMethodEditArea::keyPressed(
 	// If we didn't handle the key, return false so the parent can handle it.
 	return false;
 }
-CtrlrLuaMethodDebuggerPrompt *CtrlrLuaMethodEditArea::getLuaDebuggerPrompt(const bool activateDebuggerNow)
+
+CtrlrLuaMethodDebuggerPrompt *CtrlrLuaMethodEditArea::getLuaDebuggerPrompt (const bool activateDebuggerNow)
 {
     if (activateDebuggerNow)
-        lowerTabs->setCurrentTabIndex (2, true);
+        showDebuggerTab();
 
-    return (debuggerPrompt);
+    return debuggerPrompt;
 }
 
 void CtrlrLuaMethodEditArea::setActiveOutputTab() {
@@ -244,35 +257,3 @@ void CtrlrLuaMethodEditArea::setActiveOutputTab() {
 	}
 }
 void CtrlrLuaMethodEditArea::clearOutputText() { output->setText(""); }
-
-//[/MiscUserCode]
-
-//==============================================================================
-#if 0
-/*  -- Introjucer information section --
-
-    This is where the Introjucer stores the metadata that describe this GUI layout, so
-    make changes in here at your peril!
-
-BEGIN_JUCER_METADATA
-
-<JUCER_COMPONENT documentType="Component" className="CtrlrLuaMethodEditArea" componentName=""
-                 parentClasses="public Component, public CtrlrLog::Listener" constructorParams="CtrlrLuaMethodEditor &amp;_owner"
-                 variableInitialisers="owner(_owner)" snapPixels="8" snapActive="1"
-                 snapShown="1" overlayOpacity="0.330" fixedSize="0" initialWidth="600"
-                 initialHeight="400">
-  <BACKGROUND backgroundColour="0"/>
-  <TABBEDCOMPONENT name="" id="efc1426cbb2876d0" memberName="lowerTabs" virtualName=""
-                   explicitFocusOrder="0" pos="0 69.947% 0M 30.053%" orientation="bottom"
-                   tabBarDepth="20" initialTab="-1"/>
-  <GENERICCOMPONENT name="" id="87b2c9d03de9339d" memberName="upperTabs" virtualName=""
-                    explicitFocusOrder="0" pos="0 0 0M 69.947%" class="CtrlrLuaMethodEditorTabs"
-                    params="owner"/>
-</JUCER_COMPONENT>
-
-END_JUCER_METADATA
-*/
-#endif
-
-//[EndFile] You can add extra defines here...
-//[/EndFile]

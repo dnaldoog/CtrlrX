@@ -57,10 +57,10 @@ CtrlrLuaMethodDebuggerPrompt::CtrlrLuaMethodDebuggerPrompt (CtrlrLuaMethodEditor
     debuggerInput->setText ("");
 
     addAndMakeVisible (debugContinue = new ImageButton ("Continue"));
-    debugContinue->setTooltip (TRANS("Continue"));
-    debugContinue->addListener (this);
+	debugContinue->setTooltip(TRANS("Run/Continue"));
+	debugContinue->addListener(this);
 
-    debugContinue->setImages (false, true, true,
+	debugContinue->setImages (false, true, true,
                               Image(), 0.550f, Colour (0x00000000),
                               Image(), 0.850f, Colour (0x00000000),
                               Image(), 1.000f, Colour (0x00000000));
@@ -93,16 +93,16 @@ CtrlrLuaMethodDebuggerPrompt::CtrlrLuaMethodDebuggerPrompt (CtrlrLuaMethodEditor
                              Image(), 0.850f, Colour (0x00000000),
                              Image(), 1.000f, Colour (0x00000000));
     addAndMakeVisible (debugRestart = new ImageButton ("Restart"));
-    debugRestart->setTooltip (TRANS("Restart"));
-    debugRestart->addListener (this);
+	debugRestart->setTooltip(TRANS("Stop debugging and resume"));
+	debugRestart->addListener (this);
 
     debugRestart->setImages (false, true, true,
                              Image(), 0.550f, Colour (0x00000000),
                              Image(), 0.850f, Colour (0x00000000),
                              Image(), 1.000f, Colour (0x00000000));
     addAndMakeVisible (debugStop = new ImageButton ("Stop"));
-    debugStop->setTooltip (TRANS("Stop"));
-    debugStop->addListener (this);
+	debugStop->setTooltip(TRANS("Stop debugging and resume"));
+	debugStop->addListener (this);
 
     debugStop->setImages (false, true, true,
                           Image(), 0.550f, Colour (0x00000000),
@@ -272,8 +272,9 @@ void CtrlrLuaMethodDebuggerPrompt::buttonClicked (Button* buttonThatWasClicked)
     else if (buttonThatWasClicked == debugStop)
     {
         //[UserButtonCode_debugStop] -- add your button handler code here..
-        //[/UserButtonCode_debugStop]
-    }
+		sendCommand("exit");
+		//[/UserButtonCode_debugStop]
+	}
 	else if (buttonThatWasClicked == clearOutput)
 	{
 		//[UserButtonCode_clearOutput] -- add your button handler code here..
@@ -290,28 +291,29 @@ void CtrlrLuaMethodDebuggerPrompt::buttonClicked (Button* buttonThatWasClicked)
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 void CtrlrLuaMethodDebuggerPrompt::insertRawDebuggerOutput(const String &output)
 {
-    insertToOutput (output);
-
-    if (output.contains("Paused at file"))
-    {
-        /* Debugger tells us we paused at some location in the code
-            get the method name, and highlight the relevant code in
-            the editor
-        */
-        const String file = output.fromFirstOccurrenceOf("Paused at file ", false, true).upToFirstOccurrenceOf(" ", false, true);
+	DBG("rawOutput this=" << String::toHexString((pointer_sized_int)this)
+						  << " msgThread=" << (int)MessageManager::getInstance()->isThisTheMessageThread()
+						  << " showing=" << (int)debuggerOutput->isShowing() << " len=" << output.length());
+	insertToOutput(output);
+	DBG("chars now " << debuggerOutput->getTotalNumChars());
+	if (output.contains("Paused at file")) {
+		/* Debugger tells us we paused at some location in the code
+			get the method name, and highlight the relevant code in
+			the editor
+		*/
+		const String file = output.fromFirstOccurrenceOf("Paused at file ", false, true).upToFirstOccurrenceOf(" ", false, true);
         const int line = output.fromFirstOccurrenceOf(" line ", false, true).getIntValue();
 
         owner.highlightCode (file, line);
-    }
+	}
 
-    if (output.contains ("::start trace"))
-    {
-        collectedData = "";
+	if (output.contains("::start trace")) {
+		collectedData = "";
         collectionState = Trace;
         return;
-    }
+	}
 
-    if (output.contains ("::start dumpvar"))
+	if (output.contains ("::start dumpvar"))
     {
         collectedData = "";
         collectionState = Values;
@@ -403,6 +405,23 @@ void CtrlrLuaMethodDebuggerPrompt::insertToOutput(const String &what, Colour tex
     debuggerOutput->setCaretPosition (debuggerOutput->getText().length());
     debuggerOutput->insertTextAtCaret (what);
     debuggerOutput->setColour (TextEditor::textColourId, lastColourUsed);
+}
+
+const String CtrlrLuaMethodDebuggerPrompt::waitForCommand() {
+	Component *modalTarget = owner.getParentComponent(); // the SAME component sendCommand() tests
+
+	if (modalTarget == nullptr) {
+		_WRN("CtrlrLuaMethodDebuggerPrompt::waitForCommand editor has no parent, continuing");
+		return ("run");
+	}
+
+	commandQueue.clear(); // drop stale commands from a previous stop
+	debuggerInput->grabKeyboardFocus();
+
+	modalTarget->runModalLoop(); // blocks; sendCommand() ends it via exitModalState(1)
+
+	const String cmd = getCurrentDebuggerCommand().trim();
+	return cmd.isNotEmpty() ? cmd : String("run"); // never return empty
 }
 //[/MiscUserCode]
 

@@ -143,18 +143,18 @@ void CtrlrLuaMethodManager::restoreState(const ValueTree &savedState) {
 
 void CtrlrLuaMethodManager::restoreGroup(const ValueTree &savedState, const Uuid parentUuid) {
 	String groupName = savedState.getProperty(Ids::name).toString();
-	if (groupName == "Built-In") {
-		return; // Skip Built-In group
-	}
+	// if (groupName == "Built-In") {
+	// 	return; // Skip Built-In group
+	// }
 
 	addGroup(groupName, parentUuid, Uuid(savedState.getProperty(Ids::uuid).toString()));
 
 	for (int i = 0; i < savedState.getNumChildren(); i++) {
 		ValueTree child = savedState.getChild(i);
 		if (child.hasType(Ids::luaMethodGroup)) {
-			if (child.getProperty(Ids::name).toString() == "Built-In") {
-				continue;
-			}
+			// if (child.getProperty(Ids::name).toString() == "Built-In") {
+			// 	continue;
+			// }
 			restoreGroup(child, Uuid(savedState.getProperty(Ids::uuid).toString()));
 		}
 	}
@@ -605,21 +605,21 @@ const bool CtrlrLuaMethodManager::attachDefaultGroups() {
 	return (ret);
 }
 /* Hide the built-in folder */
-// void CtrlrLuaMethodManager::wrapUtilities() {
-// 	if (getNumUtilities() > 0) {
-// 		attachDefaultGroups();
-
-// 		for (int i = 0; i < getNumUtilities(); i++) {
-// 			addMethod(getGroupByName("Built-In"), getUtilityName(i), getUtilityCode(i).trim(), "", getUtilityUuid(i),
-// 					  getUtilityAlwaysUpdate(i));
-// 		}
-// 	}
-// }
 void CtrlrLuaMethodManager::wrapUtilities() {
-	// Completely disabled to prevent built-in folder injection and duplication in external editing mode.
-	//and will not show in the method list. The built-in folder is now only used for internal purposes and should not be exposed to the user.
-	return;
+	if (getNumUtilities() > 0) {
+		attachDefaultGroups();
+
+		for (int i = 0; i < getNumUtilities(); i++) {
+			addMethod(getGroupByName("Built-In"), getUtilityName(i), getUtilityCode(i).trim(), "", getUtilityUuid(i),
+					  getUtilityAlwaysUpdate(i));
+		}
+	}
 }
+// void CtrlrLuaMethodManager::wrapUtilities() {
+// 	// Completely disabled to prevent built-in folder injection and duplication in external editing mode.
+// 	//and will not show in the method list. The built-in folder is now only used for internal purposes and should not be
+// exposed to the user. 	return;
+// }
 bool CtrlrLuaMethodManager::isMethodValid(CtrlrLuaMethod *o) {
 	if (o == nullptr)
 		return false;

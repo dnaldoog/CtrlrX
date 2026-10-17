@@ -1409,3 +1409,21 @@ void CtrlrLuaMethodEditor::setOpenSearchTabsEnabled(bool shouldOpen) {
 bool CtrlrLuaMethodEditor::getOpenSearchTabsEnabled() const {
 	return openSearchTabsEnabledState;
 }
+void CtrlrLuaMethodEditor::insertRawDebuggerOutput (const String &output)
+{
+    // the hook can fire off the message thread; JUCE components may only be touched on it
+    if (! MessageManager::getInstance()->isThisTheMessageThread())
+    {
+        Component::SafePointer<CtrlrLuaMethodEditor> safe (this);
+        MessageManager::callAsync ([safe, output]
+        {
+            if (safe != nullptr)
+                safe->insertRawDebuggerOutput (output);
+        });
+        return;
+    }
+
+    // bring the Debugger tab to the front whenever the script pauses
+    if (auto *p = getDebuggerPrompt (output.contains ("Paused at")))
+        p->insertRawDebuggerOutput (output);
+}
