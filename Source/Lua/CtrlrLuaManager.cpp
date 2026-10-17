@@ -1,3 +1,5 @@
+#include "stdafx.h"
+#include "stdafx_luabind.h"
 #include "CtrlrLuaManager.h"
 #include "CtrlrComponents/Buttons/CtrlrButton.h"
 #include "CtrlrComponents/Buttons/CtrlrImageButton.h"
@@ -32,9 +34,8 @@
 #include "JuceClasses/LAudioFormat.h"
 #include "JuceClasses/LGlobalFunctions.h"
 #include "MIDI/CtrlrMidiInputComparator.h"
-#include "stdafx.h"
-#include "stdafx_luabind.h"
 
+#include "CtrlrLuaDebugger.h"
 // Deprecated classes
 #include "Deprecated/CtrlrLuaBigInteger.h"
 #include "Deprecated/CtrlrLuaComponentAnimator.h"
@@ -48,6 +49,7 @@ CtrlrLuaManager::CtrlrLuaManager(CtrlrPanel &_owner)
 	: owner(_owner),
 	  luaManagerTree(Ids::luaManager),
 	  luaAudioFormatManager(nullptr),
+ctrlrLuaDebugger(nullptr),
 	  utils(nullptr),
 	  audioConverter(nullptr),
 	  luaStateAudio(nullptr),
@@ -82,6 +84,8 @@ CtrlrLuaManager::CtrlrLuaManager(CtrlrPanel &_owner)
 	wrapCtrlrClasses(luaState);
 	assignDefaultObjects(luaState);
 
+	ctrlrLuaDebugger = new CtrlrLuaDebugger(*this);
+
 	luaManagerTree.addChild(methodManager->getManagerTree(), -1, 0);
 }
 
@@ -96,6 +100,7 @@ CtrlrLuaManager::~CtrlrLuaManager() {
 		deleteAndZero(luaAudioFormatManager);
 		lua_close(luaState);
 		lua_close(luaStateAudio);
+		deleteAndZero(ctrlrLuaDebugger);
 	}
 }
 
@@ -270,6 +275,10 @@ void CtrlrLuaManager::log(const String &message) {
 		CtrlrLog::ctrlrLog->logMessage(message, CtrlrLog::Info);
 }
 
+CtrlrLuaDebugger& CtrlrLuaManager::getDebugger()
+{
+	return (*ctrlrLuaDebugger);
+}
 const bool CtrlrLuaManager::isLuaDisabled() {
 	return ((bool)owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrLuaDisabled));
 }

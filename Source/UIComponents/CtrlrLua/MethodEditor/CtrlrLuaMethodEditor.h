@@ -60,9 +60,12 @@ class CtrlrLuaMethodEditor  : public CtrlrChildWindowContent,
         CtrlrLuaMethodEditArea *getMethodEditArea();
         void restoreState(const ValueTree &savedState);
         void setPositionLabelText (const String &text);
-
-        void addNewMethod(ValueTree parentGroup=ValueTree());
-        void addNewTable(ValueTree parentGroup);
+		CtrlrLuaMethodDebuggerPrompt *getDebuggerPrompt(const bool activate = false) const {
+			return methodEditArea != nullptr ? methodEditArea->getLuaDebuggerPrompt(activate) : nullptr;
+		}
+        void insertRawDebuggerOutput (const String &output);
+		void addNewMethod(ValueTree parentGroup = ValueTree());
+		void addNewTable(ValueTree parentGroup);
         void addNewClass(ValueTree parentGroup);
         //void addNewClass(ValueTree parentGroup=ValueTree()); JG 1/19/2025
         void addMethodFromFile(ValueTree parentGroup=ValueTree());
@@ -134,8 +137,9 @@ class CtrlrLuaMethodEditor  : public CtrlrChildWindowContent,
 private:
         juce::Value sharedSearchTabsValue;
         bool openSearchTabsEnabledState = false; // Add this private member variable
-        WeakReference<CtrlrLuaMethodEditor>::Master masterReference;
-        friend class WeakReference<CtrlrLuaMethodEditor>;
+		// CtrlrLuaMethodDebuggerPrompt *debuggerPrompt = nullptr; // Add this private member variable
+		WeakReference<CtrlrLuaMethodEditor>::Master masterReference;
+		friend class WeakReference<CtrlrLuaMethodEditor>;
         File lastBrowsedSourceDir;
         CtrlrValueTreeEditorTree *methodTree;
         StretchableLayoutManager layoutManager;

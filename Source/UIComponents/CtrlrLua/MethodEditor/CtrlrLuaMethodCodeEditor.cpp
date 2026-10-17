@@ -1,10 +1,11 @@
-#include "CtrlrLuaMethodCodeEditor.h"
-#include "CtrlrLuaManager.h"
-#include "CtrlrLuaMethodEditor.h"
+#include "stdafx.h"
 #include "CtrlrManager/CtrlrManager.h"
+#include "CtrlrLuaMethodCodeEditor.h"
+#include "CtrlrLuaMethodEditor.h"
 #include "CtrlrPanel/CtrlrPanel.h"
 #include "Methods/CtrlrLuaMethodManager.h"
-#include "stdafx.h"
+#include "CtrlrLuaDebugger.h"
+#include "CtrlrLuaManager.h"
 
 // A simple popup window to show the Lua suggestions, matching the editor's LookAndFeel
 class LuaSuggestionPopup : public juce::Component, public juce::ListBoxModel {

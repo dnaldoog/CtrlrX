@@ -517,6 +517,10 @@
               file="Source/Lua/CtrlrLuaAudioConverter.h"/>
         <FILE id="YOQKjn" name="CtrlrLuaConverters.h" compile="0" resource="0"
               file="Source/Lua/CtrlrLuaConverters.h"/>
+        <FILE id="A1tdER" name="CtrlrLuaDebugger.cpp" compile="1" resource="0"
+              file="Source/Lua/CtrlrLuaDebugger.cpp"/>
+        <FILE id="z63OsN" name="CtrlrLuaDebugger.h" compile="0" resource="0"
+              file="Source/Lua/CtrlrLuaDebugger.h"/>
         <FILE id="UXyNki" name="CtrlrLuaManager.cpp" compile="1" resource="0"
               file="Source/Lua/CtrlrLuaManager.cpp"/>
         <FILE id="y0Exm0" name="CtrlrLuaManager.h" compile="0" resource="0"
@@ -635,6 +639,20 @@
           <FILE id="OOpHQ2" name="FONT_ZX81.ttf" compile="0" resource="1" file="Source/Resources/Fonts/FONT_ZX81.ttf"/>
         </GROUP>
         <GROUP id="{57CA4634-99B0-23FB-F19C-154181EAAE85}" name="Icons">
+          <FILE id="yWviUs" name="appbar.control.play.png" compile="0" resource="1"
+                file="../tree/Source/Resources/Icons/appbar.control.play.png"/>
+          <FILE id="xDpiMG" name="appbar.debug.clean.png" compile="0" resource="1"
+                file="../tree/Source/Resources/Icons/appbar.debug.clean.png"/>
+          <FILE id="r4TmPc" name="appbar.debug.restart.png" compile="0" resource="1"
+                file="../tree/Source/Resources/Icons/appbar.debug.restart.png"/>
+          <FILE id="PRwlrG" name="appbar.debug.step.into.png" compile="0" resource="1"
+                file="../tree/Source/Resources/Icons/appbar.debug.step.into.png"/>
+          <FILE id="DMZmXX" name="appbar.debug.step.out.png" compile="0" resource="1"
+                file="../tree/Source/Resources/Icons/appbar.debug.step.out.png"/>
+          <FILE id="phb9Yb" name="appbar.debug.step.over.png" compile="0" resource="1"
+                file="../tree/Source/Resources/Icons/appbar.debug.step.over.png"/>
+          <FILE id="knJZts" name="appbar.debug.stop.png" compile="0" resource="1"
+                file="../tree/Source/Resources/Icons/appbar.debug.stop.png"/>
           <FILE id="BiLLpE" name="ctrlrx_logo - org.svg" compile="0" resource="1"
                 file="Source/Resources/Icons/ctrlrx_logo - org.svg"/>
           <FILE id="EgredL" name="ctrlrx_8_logo.svg" compile="0" resource="1"
@@ -945,6 +963,26 @@
                   compile="1" resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodCodeEditorSettingsColourLnF.cpp"/>
             <FILE id="M8SZ20" name="CtrlrLuaMethodCodeEditorSettingsColourLnF.h"
                   compile="0" resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodCodeEditorSettingsColourLnF.h"/>
+            <FILE id="sUj4oZ" name="CtrlrLuaMethodDebuggerControls.cpp" compile="1"
+                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerControls.cpp"/>
+            <FILE id="ce0hqr" name="CtrlrLuaMethodDebuggerControls.h" compile="0"
+                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerControls.h"/>
+            <FILE id="of8Jwa" name="CtrlrLuaMethodDebuggerInfo.cpp" compile="1"
+                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerInfo.cpp"/>
+            <FILE id="eVNdTn" name="CtrlrLuaMethodDebuggerInfo.h" compile="0" resource="0"
+                  file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerInfo.h"/>
+            <FILE id="DgPung" name="CtrlrLuaMethodDebuggerPrompt.cpp" compile="1"
+                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerPrompt.cpp"/>
+            <FILE id="vD91wB" name="CtrlrLuaMethodDebuggerPrompt.h" compile="0"
+                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerPrompt.h"/>
+            <FILE id="imXg0M" name="CtrlrLuaMethodDebuggerStackTrace.cpp" compile="1"
+                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerStackTrace.cpp"/>
+            <FILE id="KUPrPu" name="CtrlrLuaMethodDebuggerStackTrace.h" compile="0"
+                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerStackTrace.h"/>
+            <FILE id="efteb4" name="CtrlrLuaMethodDebuggerVars.cpp" compile="1"
+                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerVars.cpp"/>
+            <FILE id="s6Dpc6" name="CtrlrLuaMethodDebuggerVars.h" compile="0" resource="0"
+                  file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerVars.h"/>
             <FILE id="Uvekze" name="CtrlrLuaMethodEditArea.cpp" compile="1" resource="0"
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodEditArea.cpp"/>
             <FILE id="htRb7F" name="CtrlrLuaMethodEditArea.h" compile="0" resource="0"
