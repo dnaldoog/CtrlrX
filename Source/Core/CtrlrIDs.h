@@ -816,6 +816,7 @@ DECLARE_ID(ctrlrLogMidiInput);
 DECLARE_ID(ctrlrLogMidiOutput);
 DECLARE_ID(ctrlrLogOptions);
 DECLARE_ID(ctrlrLuaDisabled);
+DECLARE_ID(ctrlrLuaExternalEditorEnabled);
 DECLARE_ID(ctrlrLastBrowsedResourceDir);
 DECLARE_ID(ctrlrLogToFile);
 DECLARE_ID(ctrlrWarningInBootstrapState); // Added v5.6.32

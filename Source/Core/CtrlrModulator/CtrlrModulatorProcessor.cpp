@@ -195,10 +195,19 @@ void CtrlrModulatorProcessor::setReverseExpression (const String &reverseExpress
 
 void CtrlrModulatorProcessor::setValueChangedCallback (const String &methodName)
 {
-	if (methodName.isEmpty())
+	if (methodName.isEmpty()) {
+		valueChangedCbk = nullptr;
 		return;
+	}
 
-	valueChangedCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(methodName);
+	auto &methodManager = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager();
+	if (!methodManager.isValidMethodName(methodName)) {
+		DBG("Rejected invalid callback name: " + methodName);
+		valueChangedCbk = nullptr;
+		return;
+	}
+
+	valueChangedCbk = methodManager.getMethod(methodName);
 }
 
 void CtrlrModulatorProcessor::setGetValueForMidiCallback (const String &methodName)
