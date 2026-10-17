@@ -1,3 +1,5 @@
+#include "stdafx.h"
+#include "stdafx_luabind.h"
 #include "CtrlrLuaMethod.h"
 #include "CtrlrIDs.h"
 #include "CtrlrInlineUtilitiesGUI.h"
@@ -7,8 +9,7 @@
 #include "CtrlrLuaObjectWrapper.h"
 #include "CtrlrModulator/CtrlrModulator.h"
 #include "CtrlrPanel/CtrlrPanel.h"
-#include "stdafx.h"
-#include "stdafx_luabind.h"
+
 
 CtrlrLuaMethod::CtrlrLuaMethod(CtrlrLuaMethodManager &_owner)
 	:	methodIsValid(false),

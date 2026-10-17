@@ -73,6 +73,7 @@ CtrlrLuaMethodEditArea::CtrlrLuaMethodEditArea(CtrlrLuaMethodEditor &_owner) : o
 	lowerTabs->addTab("Output", Colours::lightgrey, output.get(), false);
 	lowerTabs->addTab("Find and replace", Colours::lightgrey, find.get(), false);
 	lowerTabs->addTab("API Inspector", Colours::lightgrey, apiInspector.get(), false);
+        lowerTabs->addTab ("Debugger output", Colours::lightgrey, debuggerPrompt, true);
 	lowerTabs->addTab("Console", Colours::lightgrey, luaConsole.get(), false);
 	lowerTabs->setTabBarDepth(owner.getOwner().getOwner().getProperty(Ids::ctrlrTabBarDepth));
 
@@ -164,6 +165,12 @@ void CtrlrLuaMethodEditArea::findNextMatch() { find->findNextMatch(); }
 
 void CtrlrLuaMethodEditArea::replaceNextMatch() { find->replaceNextMatch(); }
 
+void CtrlrLuaMethodEditArea::showDebuggerTab()
+{
+	lowerTabs->setCurrentTabIndex (2, true);
+}
+
+
 void CtrlrLuaMethodEditArea::closeTabWithMethod(const ValueTree &item) {
 	for (int i = 0; i < upperTabs->getNumTabs(); i++) {
 		CtrlrLuaMethodCodeEditor *ed = dynamic_cast<CtrlrLuaMethodCodeEditor *>(upperTabs->getTabContentComponent(i));
@@ -221,7 +228,12 @@ bool CtrlrLuaMethodEditArea::keyPressed(
 	// If we didn't handle the key, return false so the parent can handle it.
 	return false;
 }
+CtrlrLuaMethodDebuggerPrompt *CtrlrLuaMethodEditArea::getLuaDebuggerPrompt(const bool activateDebuggerNow)
+{
+    if (activateDebuggerNow)
+        lowerTabs->setCurrentTabIndex (2, true);
 
+    return (debuggerPrompt);
 void CtrlrLuaMethodEditArea::setActiveOutputTab() {
 	if (getLowerTabs()) {
 		getLowerTabs()->setCurrentTabIndex(0);

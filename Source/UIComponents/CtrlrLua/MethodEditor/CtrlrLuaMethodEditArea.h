@@ -51,6 +51,7 @@ class CtrlrLuaMethodEditArea : public Component, public CtrlrLog::Listener {
 		void insertOutput(const String &textToInsert, const Colour what);
 		void insertOutput(const AttributedString stringToInsert);
 		void showFindDialog();
+		void showDebuggerTab();
 		void showConsoleTab();
 		void findNextMatch();
 		void replaceNextMatch();
@@ -60,6 +61,7 @@ class CtrlrLuaMethodEditArea : public Component, public CtrlrLog::Listener {
 		bool keyPressed(const KeyPress &key, Component *event);
 		void setActiveOutputTab();
 		void clearOutputText();
+		CtrlrLuaMethodDebuggerPrompt *getLuaDebuggerPrompt(const bool activateDebuggerNow=false);
 		//[/UserMethods]
 
 		void paint(Graphics &g);
@@ -75,6 +77,7 @@ class CtrlrLuaMethodEditArea : public Component, public CtrlrLog::Listener {
 		std::unique_ptr<CtrlrTextEditor> output;
 		std::unique_ptr<CtrlrLuaMethodFind> find;
 		std::unique_ptr<CtrlrLuaApiInspector> apiInspector;
+    		CtrlrLuaMethodDebuggerPrompt *debuggerPrompt;
 		std::unique_ptr<CtrlrLuaConsole> luaConsole;
 		juce::Value searchTabsValue; // This will be shared between toggles
 		//[/UserVariables]

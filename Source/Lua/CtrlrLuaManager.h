@@ -16,6 +16,7 @@ class CtrlrModulator;
 class CtrlrLuaAudioConverter;
 class CtrlrLuaUtils;
 class CtrlrLuaMultiTimer;
+class CtrlrLuaDebugger;
 
 class CtrlrLuaManager : public ValueTree::Listener {
 	public:
@@ -58,6 +59,7 @@ class CtrlrLuaManager : public ValueTree::Listener {
 		const bool isRestoring();
 		CtrlrPanel &getOwner() { return (owner); }
 		CtrlrLuaMethodManager &getMethodManager();
+        CtrlrLuaDebugger &getDebugger();
 		const bool isLuaDisabled();
 		void setExternalScriptSyncEnabled(bool enabled);
 		void reloadScriptFromDisk(const juce::File &modifiedFile);
@@ -78,6 +80,7 @@ class CtrlrLuaManager : public ValueTree::Listener {
 		CtrlrLuaUtils *utils;
 		CtrlrLuaMultiTimer *multiTimer;
 		CtrlrLuaAudioConverter *audioConverter;
+		CtrlrLuaDebugger *ctrlrLuaDebugger;
 		LAudioFormatManager *luaAudioFormatManager;
 		std::unique_ptr<CtrlrLuaWorkspaceSync> workspaceSync;
 		/*
