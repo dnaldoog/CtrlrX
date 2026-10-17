@@ -1,5 +1,6 @@
 #include "CtrlrLuaMethodManager.h"
 #include "CtrlrComponents/CtrlrCustomComponent.h"
+#include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrLog.h"
 #include "CtrlrLua/MethodEditor/CtrlrLuaMethodEditor.h"
 #include "CtrlrLuaManager.h"
@@ -9,6 +10,7 @@
 #include "CtrlrWindowManagers/CtrlrManagerWindowManager.h"
 #include "luabind/object.hpp" // added to check if method has a certain property in isMethodValid, which is used to disable methods that have thrown an error during execution. This is needed to prevent the same error from happening repeatedly and crashing Ctrlr.
 #include "stdafx.h"
+
 // #include "luabind/types.hpp"
 
 CtrlrLuaMethodManager::CtrlrLuaMethodManager(CtrlrLuaManager &_owner)
@@ -143,24 +145,35 @@ void CtrlrLuaMethodManager::restoreState(const ValueTree &savedState) {
 
 void CtrlrLuaMethodManager::restoreGroup(const ValueTree &savedState, const Uuid parentUuid) {
 	String groupName = savedState.getProperty(Ids::name).toString();
-	// if (groupName == "Built-In") {
-	// 	return; // Skip Built-In group
-	// }
+	if (groupName == "Built-In") {
+		return; // Skip Built-In group
+	}
 
 	addGroup(groupName, parentUuid, Uuid(savedState.getProperty(Ids::uuid).toString()));
 
 	for (int i = 0; i < savedState.getNumChildren(); i++) {
 		ValueTree child = savedState.getChild(i);
 		if (child.hasType(Ids::luaMethodGroup)) {
-			// if (child.getProperty(Ids::name).toString() == "Built-In") {
-			// 	continue;
-			// }
+			if (child.getProperty(Ids::name).toString() == "Built-In") {
+				continue;
+			}
 			restoreGroup(child, Uuid(savedState.getProperty(Ids::uuid).toString()));
 		}
 	}
 }
 
 void CtrlrLuaMethodManager::removeGroup(ValueTree groupToRemove) {
+	if (!groupToRemove.isValid())
+		return;
+
+	// --- GUARD AGAINST DELETING BUILT-IN/READ-ONLY GROUPS ---
+	if ((bool)groupToRemove.getProperty("isReadOnly", false) ||
+		groupToRemove.getProperty(Ids::luaMethodGroup).toString() == "Built-In") {
+		AW::showMessageBox(AW::Warning, "Protected Group", "The Built-In system group cannot be deleted.");
+		return;
+	}
+	// --------------------------------------------------------
+
 	ValueTree parent = groupToRemove.getParent();
 
 	for (int i = 0; i < groupToRemove.getNumChildren(); i++) {
@@ -548,36 +561,67 @@ void CtrlrLuaMethodManager::setMethodEditor(CtrlrLuaMethodEditor *_currentMethod
 
 void CtrlrLuaMethodManager::removeMethod(const Uuid methodUuid) {
     CtrlrLuaMethod *method = getMethodByUuid(methodUuid);
-    if (method) {
-        ValueTree child = method->getMethodTree();
-        ValueTree parent = child.getParent();
+    if (!method) {
+        DBG("removeMethod: Method not found for UUID.");
+        return;
+    }
 
-        // --- Delete the physical .lua file from disk if external editing is enabled ---
-        if ((bool)owner.getOwner().getProperty(Ids::ctrlrLuaExternalEditorEnabled)) {
-            juce::File scriptsDir = owner.getPanelWorkspaceDir();
-            juce::String sourcePath = child.getProperty(Ids::luaMethodSourcePath).toString();
+    ValueTree child = method->getMethodTree();
+    String methodName = child.getProperty(Ids::luaMethodName).toString();
+    
+    // --- DEBUG GUARDS ---
+    bool isReadOnly = (bool)child.getProperty("isReadOnly", false);
+    DBG("removeMethod checking method: " + methodName + " | isReadOnly: " + (isReadOnly ? "TRUE" : "FALSE"));
+
+    if (isReadOnly) {
+        DBG(" -> BLOCKED: Method is marked as read-only.");
+        AW::showMessageBox(AW::Warning, "Protected Method", "Built-in system methods cannot be deleted.");
+        return;
+    }
+    
+    ValueTree parent = child.getParent();
+    if (parent.isValid()) {
+        String groupName = parent.getProperty(Ids::luaMethodGroup).toString();
+        if (groupName.isEmpty())
+            groupName = parent.getProperty(Ids::name).toString(); // Fallback check
             
-            if (sourcePath.isNotEmpty()) {
-                juce::File methodFile = scriptsDir.getChildFile(sourcePath);
-                if (methodFile.existsAsFile()) {
-                    methodFile.deleteFile();
-                }
-            } else {
-                juce::String methodName = child.getProperty(Ids::luaMethodName).toString();
-                juce::File methodFile = scriptsDir.getChildFile(methodName + ".lua");
-                if (methodFile.existsAsFile()) {
-                    methodFile.deleteFile();
-                }
+        DBG(" -> Parent group name: " + groupName);
+
+        if (groupName == "Built-In") {
+            DBG(" -> BLOCKED: Method belongs to Built-In group.");
+            AW::showMessageBox(AW::Warning, "Protected Method", "Methods inside the Built-In group cannot be deleted.");
+            return;
+        }
+    }
+    // ---------------------------------------------------------
+
+    // --- Delete the physical .lua file from disk if external editing is enabled ---
+    if ((bool)owner.getOwner().getProperty(Ids::ctrlrLuaExternalEditorEnabled)) {
+        juce::File scriptsDir = owner.getPanelWorkspaceDir();
+        juce::String sourcePath = child.getProperty(Ids::luaMethodSourcePath).toString();
+        
+        if (sourcePath.isNotEmpty()) {
+            juce::File methodFile = scriptsDir.getChildFile(sourcePath);
+            if (methodFile.existsAsFile()) {
+                methodFile.deleteFile();
+            }
+        } else {
+            juce::File methodFile = scriptsDir.getChildFile(methodName + ".lua");
+            if (methodFile.existsAsFile()) {
+                methodFile.deleteFile();
             }
         }
-        // -----------------------------------------------------------------------------
-
-        method->remove();
-        parent.removeChild(child, nullptr);
-
-        methods.removeObject(method);
     }
+
+    method->remove();
+    parent.removeChild(child, nullptr);
+
+    methods.removeObject(method);
+    DBG("Successfully removed regular method: " + methodName);
 }
+	// -----------------------------------------------------------------------------
+
+
 
 const int CtrlrLuaMethodManager::getNumMethods() { return (methods.size()); }
 
@@ -604,22 +648,32 @@ const bool CtrlrLuaMethodManager::attachDefaultGroups() {
 
 	return (ret);
 }
-/* Hide the built-in folder */
+
 void CtrlrLuaMethodManager::wrapUtilities() {
 	if (getNumUtilities() > 0) {
 		attachDefaultGroups();
 
+		ValueTree builtInGroup = getGroupByName("Built-In");
+
 		for (int i = 0; i < getNumUtilities(); i++) {
-			addMethod(getGroupByName("Built-In"), getUtilityName(i), getUtilityCode(i).trim(), "", getUtilityUuid(i),
-					  getUtilityAlwaysUpdate(i));
+			// Add the method normally
+			addMethod(builtInGroup, getUtilityName(i), getUtilityCode(i).trim(), "",
+				  getUtilityUuid(i), getUtilityAlwaysUpdate(i));
+			ValueTree newMethod = builtInGroup.getChildWithProperty(Ids::uuid, getUtilityUuid(i));
+
+			// --- MARK AS READ-ONLY / BUILT-IN ---
+			if (newMethod.isValid()) {
+				newMethod.setProperty("isReadOnly", true, nullptr);
+			}
+		}
+
+		// Also mark the "Built-In" group itself as protected
+		if (builtInGroup.isValid()) {
+			builtInGroup.setProperty("isReadOnly", true, nullptr);
 		}
 	}
 }
-// void CtrlrLuaMethodManager::wrapUtilities() {
-// 	// Completely disabled to prevent built-in folder injection and duplication in external editing mode.
-// 	//and will not show in the method list. The built-in folder is now only used for internal purposes and should not be
-// exposed to the user. 	return;
-// }
+
 bool CtrlrLuaMethodManager::isMethodValid(CtrlrLuaMethod *o) {
 	if (o == nullptr)
 		return false;
