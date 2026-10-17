@@ -1,37 +1,49 @@
 [back to release page &rArr;](https://github.com/dnaldoog/CtrlrX/releases)
 ----
+
+### CtrlrX v.8.67 10/17/2026
+
+- Restored clidebugger interface to editor.
+- updated luadebugger.lua for JUCE 8 compatibility.
+- External two-way synced editing in VS Code, xcode etc now possible.
+- Restored *Built-In* code folder in lua editor (read only).
+- Added guard to only import legal lua filenames into lua editor.
+- Added guard to prevent illegal function name creation in callback/mouse events Property editor.
+- Fix assertion in CtrlrChildWindow by using getDesktopWindowStyleFlags().
+- https://github.com/dnaldoog/CtrlrX/commit/1d969b5d0359be0cecd91841b0a778e1661be67c
+
 ### CtrlrX v.8.66 10/13/2026
 
-- Add searchable column picker to Modulator List (floating window on Linux)
-- Table-drive Modulator List default columns and highlight them in the picker
-- Add Defaults/OK/Apply button layout to Lua editor settings, guard reset dialog
-- Fix assertion in CtrlrChildWindow by using getDesktopWindowStyleFlags()
-- Restored clidebugger files to prevent crash when removing from lua editor
+- Add searchable column picker to Modulator List (floating window on Linux).
+- Table-drive Modulator List default columns and highlight them in the picker.
+- Add Defaults/OK/Apply button layout to Lua editor settings, guard reset dialog.
+- Fix assertion in CtrlrChildWindow by using getDesktopWindowStyleFlags().
+- Restored clidebugger files to prevent crash when removing from lua editor.
 - https://github.com/dnaldoog/CtrlrX/commit/8df187ad974615b5815ac77935eedbc52870938a
 
 ### CtrlrX v.8.65 10/10/2026
 
-- Toggle between classic Add to Modulator List PopupMenu and new CallOutBox
-- Fix Wayland/X11 closing window when default sort button clicked
-- Lua Preferences Editor changed behaviour of RESET/APPLY button (does not close window)
-- Lua Preferences added OKAY button
-- Fixed infinite ASYNC loop with reset button in Wayland/X11
-- Lua Preferences combo Syntax Highlighting was not persisting across sessions
-- Version 8.65.1 updates incorrect versioning. (10/11/2026)
+- Toggle between classic Add to Modulator List PopupMenu and new CallOutBox.
+- Fix Wayland/X11 closing window when default sort button clicked.
+- Lua Preferences Editor changed behaviour of RESET/APPLY button (does not close window).
+- Lua Preferences added OKAY button.
+- Fixed infinite ASYNC loop with reset button in Wayland/X11.
+- Lua Preferences combo Syntax Highlighting was not persisting across sessions.
+- Version 8.65.1 updates incorrect versioning. (10/11/2026).
 - [https://github.com/dnaldoog/CtrlrX/commit/96c944938422c8b38354f372bfba04470803bfdb](https://github.com/dnaldoog/CtrlrX/commit/96c944938422c8b38354f372bfba04470803bfdb)
 
 ### CtrlrX v8.64 10/08/2026
 
-- Changed Modulator List Add/Remove menu (with fuzzy search)
-- Flag Matrix tab Static/Send Snapshot acts as radio button toggle
+- Changed Modulator List Add/Remove menu (with fuzzy search).
+- Flag Matrix tab Static/Send Snapshot acts as radio button toggle.
 - [https://github.com/dnaldoog/CtrlrX/commit/4c8e78bb17e3e0ae70d17f09dc1ad61809d39561](https://github.com/dnaldoog/CtrlrX/commit/b0b4a4d5086935e326b642f515162cc0bdf181f6)
 
 ### CtrlrX v8.63 10/05/2026
 
-- Added label component save object to JSON file
-- Repositioned Save patch to File menu
-- Removed Edit menu in restricted instances
-- Removed *Save CTRLR State* menu item placeholder
+- Added label component save object to JSON file.
+- Repositioned Save patch to File menu.
+- Removed Edit menu in restricted instances.
+- Removed *Save CTRLR State* menu item placeholder.
 - https://github.com/dnaldoog/CtrlrX/commit/4c8e78bb17e3e0ae70d17f09dc1ad61809d39561
 
 ### CtrlrX v8.62 10/04/2026
