@@ -242,48 +242,97 @@ void CtrlrLuaMethodDebuggerPrompt::buttonClicked (Button* buttonThatWasClicked)
     if (buttonThatWasClicked == debugContinue)
     {
         //[UserButtonCode_debugContinue] -- add your button handler code here..
-        sendCommand ("run");
-        //[/UserButtonCode_debugContinue]
-    }
-    else if (buttonThatWasClicked == debugStepOver)
-    {
-        //[UserButtonCode_debugStepOver] -- add your button handler code here..
-        sendCommand ("over");
-        //[/UserButtonCode_debugStepOver]
-    }
-    else if (buttonThatWasClicked == debugStepInto)
-    {
-        //[UserButtonCode_debugStepInto] -- add your button handler code here..
-        sendCommand ("step");
-        //[/UserButtonCode_debugStepInto]
-    }
-    else if (buttonThatWasClicked == debugStepOut)
-    {
-        //[UserButtonCode_debugStepOut] -- add your button handler code here..
-        sendCommand ("out");
-        //[/UserButtonCode_debugStepOut]
-    }
-    else if (buttonThatWasClicked == debugRestart)
-    {
-        //[UserButtonCode_debugRestart] -- add your button handler code here..
-        sendCommand ("exit");
-        //[/UserButtonCode_debugRestart]
-    }
-    else if (buttonThatWasClicked == debugStop)
-    {
-        //[UserButtonCode_debugStop] -- add your button handler code here..
+		debugStop->setImages(false, true, true,
+							 ImageCache::getFromMemory(BinaryData::appbar_debug_running_stop_png,
+													   BinaryData::appbar_debug_running_stop_pngSize),
+							 0.550f, Colour(0x00000000),
+							 ImageCache::getFromMemory(BinaryData::appbar_debug_running_stop_png,
+													   BinaryData::appbar_debug_running_stop_pngSize),
+							 0.850f, Colour(0x00000000),
+							 ImageCache::getFromMemory(BinaryData::appbar_debug_running_stop_png,
+													   BinaryData::appbar_debug_running_stop_pngSize),
+							 1.000f, Colour(0x00000000));
+                             
+		debugContinue->setImages(false, true, true,
+								 ImageCache::getFromMemory(BinaryData::appbar_control_play_clicked_png,
+														   BinaryData::appbar_control_play_clicked_pngSize),
+								 0.550f, Colour(0x00000000),
+								 ImageCache::getFromMemory(BinaryData::appbar_control_play_clicked_png,
+														   BinaryData::appbar_control_play_clicked_pngSize),
+								 0.850f, Colour(0x00000000),
+								 ImageCache::getFromMemory(BinaryData::appbar_control_play_clicked_png,
+														   BinaryData::appbar_control_play_clicked_pngSize),
+								 1.000f, Colour(0x00000000));
+
+		sendCommand("run");
+		//[/UserButtonCode_debugContinue]
+	} else if (buttonThatWasClicked == debugStepOver) {
+		//[UserButtonCode_debugStepOver] -- add your button handler code here..
+		sendCommand("over");
+		//[/UserButtonCode_debugStepOver]
+	} else if (buttonThatWasClicked == debugStepInto) {
+		//[UserButtonCode_debugStepInto] -- add your button handler code here..
+		sendCommand("step");
+		//[/UserButtonCode_debugStepInto]
+	} else if (buttonThatWasClicked == debugStepOut) {
+		//[UserButtonCode_debugStepOut] -- add your button handler code here..
+		sendCommand("out");
+		//[/UserButtonCode_debugStepOut]
+	} else if (buttonThatWasClicked == debugRestart) {
+		//[UserButtonCode_debugRestart] -- add your button handler code here..
+		// Revert back to the default stop icon
+
+		debugStop->setImages(
+			false, true, true,
+			ImageCache::getFromMemory(BinaryData::appbar_debug_stop_png, BinaryData::appbar_debug_stop_pngSize), 0.550f,
+			Colour(0x00000000),
+			ImageCache::getFromMemory(BinaryData::appbar_debug_stop_png, BinaryData::appbar_debug_stop_pngSize), 0.850f,
+			Colour(0x00000000),
+			ImageCache::getFromMemory(BinaryData::appbar_debug_stop_png, BinaryData::appbar_debug_stop_pngSize), 1.000f,
+			Colour(0x00000000));
+
+		debugContinue->setImages(
+			false, true, true,
+			ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize),
+			0.550f, Colour(0x00000000),
+			ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize),
+			0.850f, Colour(0x00000000),
+			ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize),
+			1.000f, Colour(0x00000000));
+
+		sendCommand("exit");
+		//[/UserButtonCode_debugRestart]
+	} else if (buttonThatWasClicked == debugStop) {
+		//[UserButtonCode_debugStop] -- add your button handler code here..
+		// Revert back to the default stop icon
+		debugStop->setImages(
+			false, true, true,
+			ImageCache::getFromMemory(BinaryData::appbar_debug_stop_png, BinaryData::appbar_debug_stop_pngSize), 0.550f,
+			Colour(0x00000000),
+			ImageCache::getFromMemory(BinaryData::appbar_debug_stop_png, BinaryData::appbar_debug_stop_pngSize), 0.850f,
+			Colour(0x00000000),
+			ImageCache::getFromMemory(BinaryData::appbar_debug_stop_png, BinaryData::appbar_debug_stop_pngSize), 1.000f,
+			Colour(0x00000000));
+
+		debugContinue->setImages(
+			false, true, true,
+			ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize),
+			0.550f, Colour(0x00000000),
+			ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize),
+			0.850f, Colour(0x00000000),
+			ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize),
+			1.000f, Colour(0x00000000));
+
 		sendCommand("exit");
 		//[/UserButtonCode_debugStop]
-	}
-	else if (buttonThatWasClicked == clearOutput)
-	{
+	} else if (buttonThatWasClicked == clearOutput) {
 		//[UserButtonCode_clearOutput] -- add your button handler code here..
 		debuggerOutput->setText("");
 		//[/UserButtonCode_clearOutput]
 	}
 
-    //[UserbuttonClicked_Post]
-    //[/UserbuttonClicked_Post]
+	//[UserbuttonClicked_Post]
+	//[/UserbuttonClicked_Post]
 }
 
 

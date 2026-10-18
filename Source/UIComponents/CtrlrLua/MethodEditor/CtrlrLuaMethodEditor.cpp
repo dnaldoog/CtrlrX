@@ -598,19 +598,28 @@ void CtrlrLuaMethodEditor::removeGroup(ValueTree parentGroup) {
 }
 
 void CtrlrLuaMethodEditor::renameGroup(ValueTree parentGroup) {
+	if (!parentGroup.isValid())
+		return;
+
+	// --- GUARD AGAINST RENAMING BUILT-IN GROUP ---
+	String currentName = parentGroup.getProperty(Ids::name).toString();
+	if (currentName == "Built-In" || (bool)parentGroup.getProperty("isReadOnly", false)) {
+		AW::showMessageBox(AW::Warning, "Protected Group", "The Built-In system group cannot be renamed.");
+		return;
+	}
+	// ---------------------------------------------
+
 	auto *w = new AlertWindow("Rename group", "", AlertWindow::QuestionIcon, this);
-	w->addTextEditor("name", parentGroup.getProperty(Ids::name).toString());
+	w->addTextEditor("name", currentName);
 	w->addButton("OK", 1, KeyPress(KeyPress::returnKey));
 	w->addButton("Cancel", 0, KeyPress(KeyPress::escapeKey));
 
-	// Notice 'mutable' added before the body:
 	w->enterModalState(true, ModalCallbackFunction::create([this, parentGroup, w](int result) mutable {
 						   if (result == 1) { // User clicked OK
 							   parentGroup.setProperty(Ids::name, w->getTextEditorContents("name"), nullptr);
 							   updateRootItem();
 							   saveSettings();
 						   }
-
 						   delete w;
 					   }));
 }
@@ -991,6 +1000,7 @@ const Font CtrlrLuaMethodEditor::getItemFont(const ValueTree &item) const {
 }
 
 Drawable *CtrlrLuaMethodEditor::getIconForItem(const ValueTree &item) const {
+	DBG("CALL getIconForItem: " + item.getType().toString() + " - " + item.getProperty(Ids::name).toString());
 	if (item.hasType(Ids::luaMethod)) {
 		if ((int)item.getProperty(Ids::luaMethodSource) == (int)CtrlrLuaMethod::codeInProperty) {
 			return gui::createDrawable(BIN2STR(cog_svg));
@@ -998,7 +1008,12 @@ Drawable *CtrlrLuaMethodEditor::getIconForItem(const ValueTree &item) const {
 
 		if ((int)item.getProperty(Ids::luaMethodSource) == (int)CtrlrLuaMethod::codeInFile) {
 			if (owner.getLuaMethodSourceFile(&item).existsAsFile()) {
-				return gui::createDrawable(BIN2STR(file_svg));
+				const bool externalOn = (bool)owner.getProperty(Ids::ctrlrLuaExternalEditorEnabled);
+				if (!externalOn) {
+					return gui::createDrawable(BIN2STR(file_svg));
+				} else {
+					return gui::createDrawable(BIN2STR(link_svg));
+				}
 			} else {
 				return gui::createDrawable(BIN2STR(radio_svg));
 			}
@@ -1013,6 +1028,7 @@ Drawable *CtrlrLuaMethodEditor::getIconForItem(const ValueTree &item) const {
 }
 
 void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
+	const bool externalOn = (bool)owner.getProperty(Ids::ctrlrLuaExternalEditorEnabled);
 	if (!e.mods.isPopupMenu())
 		return;
 
@@ -1037,7 +1053,8 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 		m.addSeparator();
 		m.addItem(6, "Sort by name");
 		m.addItem(7, "Sort by size");
-		m.addItem(15, "Scan workspace for new files");
+		if (externalOn)
+			m.addItem(15, "Scan workspace for new files");
 
 		juce::Point<int> screenPt = e.getEventRelativeTo(this).getMouseDownScreenPosition();
 		if (screenPt.x == 0 && screenPt.y == 0) {

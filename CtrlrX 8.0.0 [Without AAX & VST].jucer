@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="hrcYoO" name="CtrlrX" reportAppUsage="1" projectType="audioplug"
-              version="8.68" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
+              version="8.67.5" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
               buildVST="0" buildVST3="1" buildAU="1" buildAUv3="0" buildRTAS="0"
               buildAAX="0" buildStandalone="1" enableIAA="0" pluginName="CtrlrX                          "
               pluginManufacturer="CtrlrX Project                  " pluginManufacturerCode="cTrX"
@@ -639,6 +639,9 @@
           <FILE id="OOpHQ2" name="FONT_ZX81.ttf" compile="0" resource="1" file="Source/Resources/Fonts/FONT_ZX81.ttf"/>
         </GROUP>
         <GROUP id="{57CA4634-99B0-23FB-F19C-154181EAAE85}" name="Icons">
+          <FILE id="OokJTd" name="appbar.control.play.clicked.png" compile="0"
+                resource="1" file="Source/Resources/Icons/appbar.control.play.clicked.png"/>
+          <FILE id="R1sh5n" name="link.svg" compile="0" resource="1" file="Source/Resources/Icons/link.svg"/>
           <FILE id="leAM8H" name="appbar.control.play.png" compile="0" resource="1"
                 file="Source/Resources/Icons/appbar.control.play.png"/>
           <FILE id="MHWtno" name="appbar.debug.clean.png" compile="0" resource="1"

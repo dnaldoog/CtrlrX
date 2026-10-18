@@ -4,6 +4,7 @@
 ### CtrlrX v.8.68 10/18/2026
 
 - Fixed error with Built-In files duplicating when External Editor enabled
+- Stop lua editor creating duplicate function names
 - Added new stop icon in lua debugger
 
 ### CtrlrX v.8.67 10/17/2026
