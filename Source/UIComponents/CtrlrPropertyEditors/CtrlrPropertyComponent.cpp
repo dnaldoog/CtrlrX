@@ -1275,15 +1275,15 @@ void CtrlrLuaMethodProperty::buttonClicked(Button *buttonThatWasClicked) {
 		w->addTextEditor("methodName", "myMethod", "Method", false);
 		w->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
 		w->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
-
+ 
 		juce::Component::SafePointer<CtrlrLuaMethodProperty> safeThis(this);
-
+ 
 		w->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, w](int result) {
 							   if (safeThis != nullptr && result == 1) {
 								   if (auto *panelOwner = safeThis->owner) {
 									   const juce::String newMethodName = w->getTextEditorContents("methodName");
 									   auto &methodManager = panelOwner->getCtrlrLuaManager().getMethodManager();
-
+ 
 									   if (!methodManager.isValidMethodName(newMethodName)) {
 										   juce::AlertWindow::showMessageBoxAsync(
 											   juce::AlertWindow::WarningIcon, "Invalid method name",
@@ -1291,14 +1291,27 @@ void CtrlrLuaMethodProperty::buttonClicked(Button *buttonThatWasClicked) {
 											   "only letters, digits, and underscores.");
 										   return;
 									   }
-
-									   // 1. Add method to MethodManager
-									   methodManager.addMethod(juce::ValueTree(), newMethodName, "",
-															   safeThis->id.toString());
-
+ 
+									   // NEW: names must be unique across ALL groups.
+									   if (methodManager.methodNameExists(newMethodName)) {
+										   juce::AlertWindow::showMessageBoxAsync(
+											   juce::AlertWindow::WarningIcon, "Method name already in use",
+											   "A method named \"" + newMethodName + "\" already exists (in: " +
+												   methodManager.getMethodLocationByName(newMethodName) + ").\n\n"
+												   "Method names must be unique across all groups, because Lua "
+												   "methods are global functions. Please choose a different name.");
+										   return;
+									   }
+ 
+									   // 1. Add method to MethodManager (bail out if it refuses for any reason,
+									   //    otherwise step 3 would select a pre-existing method of that name)
+									   if (!methodManager.addMethod(juce::ValueTree(), newMethodName, "",
+																	safeThis->id.toString()))
+										   return;
+ 
 									   // 2. Refresh property dropdown AFTER method is created
 									   safeThis->refresh();
-
+ 
 									   // 3. Set newly created method in the combo box
 									   if (safeThis->methodSelectorCombo != nullptr) {
 										   safeThis->methodSelectorCombo->setText(newMethodName,

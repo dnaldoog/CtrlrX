@@ -33,6 +33,7 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 							 doPanelLock,
 							 doPanelDisableCombosOnEdit,
 							 doPanelToggleExternalLuaEdit,
+							 doPanelScanExternalFolder,
 							 doSendSnapshot,
 							 doSnapshotSaveToFile,
 							 doSnapshotLoadFromFile,
@@ -352,6 +353,15 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 			CtrlrPanel &panel = getActivePanelEditor()->getOwner();
 			result.setTicked((bool)panel.getProperty(Ids::ctrlrLuaExternalEditorEnabled));
 		}
+		break;
+
+	case doPanelScanExternalFolder:
+		result.setInfo("Scan workspace for new files", "Scan workspace for new files", panelCategory, 0);
+		if (!isRestricted()) 
+		{
+			result.addDefaultKeypress('s', ModifierKeys::altModifier);
+		}
+		result.setActive(isPanelActive(true));
 		break;
 
 	case doPanelDisableCombosOnEdit:

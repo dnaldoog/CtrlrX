@@ -13,6 +13,17 @@
 
 // #include "luabind/types.hpp"
 
+// True if this node, or any ancestor, is the "Built-In" method group.
+inline bool isInBuiltInGroup(juce::ValueTree g) {
+	for (; g.isValid(); g = g.getParent()) {
+		if (g.getProperty(Ids::luaMethodGroup).toString() == "Built-In" ||
+			g.getProperty(Ids::name).toString() == "Built-In")
+			return true;
+	}
+	return false;
+}
+
+
 CtrlrLuaMethodManager::CtrlrLuaMethodManager(CtrlrLuaManager &_owner)
 	: managerTree(Ids::luaManagerMethods),
 	  owner(_owner),
@@ -220,91 +231,6 @@ void CtrlrLuaMethodManager::restoreMethodsRecursivly(const ValueTree &savedState
 			restoreMethod(savedState.getChild(i), savedState.getProperty(Ids::uuid).toString());
 		}
 	}
-}
-
-void CtrlrLuaMethodManager::addMethod(ValueTree groupToAddTo, const String &methodName, const String &initialCode,
-									  const String &methodProperty, const Uuid methodUuid,
-									  const bool forceIfAlreadyExists) {
-	ValueTree group;
-
-	if (groupToAddTo.isValid())
-		group = groupToAddTo;
-	else
-		group = managerTree;
-
-	// --- Prevent Duplicates: If this UUID already exists in the group, handle accordingly ---
-	ValueTree existingChild = group.getChildWithProperty(Ids::uuid, methodUuid.toString());
-	if (existingChild.isValid()) {
-		if (forceIfAlreadyExists) {
-			group.removeChild(existingChild, nullptr);
-		} else {
-			return; // Skip adding duplicate!
-		}
-	}
-	// -------------------------------------------------------------------------------------
-
-	ValueTree newMethodTree;
-
-	// --- Check if external editing is enabled ---
-	if ((bool)owner.getOwner().getProperty(Ids::ctrlrLuaExternalEditorEnabled))
-	{
-		juce::File scriptsDir = owner.getPanelWorkspaceDir();
-		if (!scriptsDir.exists())
-		{
-			scriptsDir.createDirectory();
-		}
-		
-		String codeToWrite = initialCode;
-		if (codeToWrite.isEmpty())
-		{
-			codeToWrite = getDefaultMethodCode(methodName, methodProperty);
-		}
-
-		juce::File methodFile = scriptsDir.getChildFile(methodName + ".lua");
-		// if (!methodFile.existsAsFile()) { this will create a new file every time, which is not desired. We want to
-		// overwrite the existing file if it exists.
-		methodFile.replaceWithText(codeToWrite);
-		//}
-
-		newMethodTree = getDefaultMethodTree(methodFile, methodUuid);
-		newMethodTree.setProperty(Ids::luaMethodCode, codeToWrite, nullptr);
-		newMethodTree.setProperty(Ids::luaMethodLinkedProperty, methodProperty, nullptr);
-	} else {
-		newMethodTree = getDefaultMethodTree(methodName, initialCode, methodProperty, methodUuid);
-	}
-
-	group.addChild(newMethodTree, -1, nullptr);
-
-	// Notify the panel about the modification
-	owner.getOwner().luaManagerChanged();
-}
-void CtrlrLuaMethodManager::addMethodFromFile(ValueTree groupToAddTo, const File &fileToUse, const Uuid methodUid) {
-	ValueTree group;
-	if (groupToAddTo.isValid())
-		group = groupToAddTo;
-	else
-		group = managerTree;
-
-	// --- Prevent Duplicates: If this method UID already exists, update it instead of duplicating ---
-	ValueTree existingChild = group.getChildWithProperty(Ids::uuid, methodUid.toString());
-	if (existingChild.isValid()) {
-		existingChild.setProperty(Ids::luaMethodName, fileToUse.getFileNameWithoutExtension(), nullptr);
-
-		File panelLuaDir = owner.getOwner().getPanelLuaDir();
-		if (panelLuaDir.exists() && panelLuaDir.isDirectory() && fileToUse.isAChildOf(panelLuaDir)) {
-			existingChild.setProperty(Ids::luaMethodSourcePath, fileToUse.getRelativePathFrom(panelLuaDir), nullptr);
-		} else {
-			existingChild.setProperty(Ids::luaMethodSourcePath, fileToUse.getFullPathName(), nullptr);
-		}
-		existingChild.setProperty(Ids::luaMethodSource, (int)CtrlrLuaMethod::codeInFile, nullptr);
-		return;
-	}
-	// ---------------------------------------------------------------------------------------------
-
-	group.addChild(getDefaultMethodTree(fileToUse, methodUid), -1, nullptr);
-
-	// Notify the panel about the modification
-	owner.getOwner().luaManagerChanged();
 }
 
 void CtrlrLuaMethodManager::valueTreeChildAdded(ValueTree &parentTree, ValueTree &child) {
@@ -743,4 +669,177 @@ void CtrlrLuaMethodManager::handleExternalFileChange(const juce::File &file, boo
             // Recompile/reload bytecode in the background...
         }
     }
+}
+
+static ValueTree findMethodNodeByName(const ValueTree &parent, const String &name, bool ignoreCase,
+									  const ValueTree &ignore)
+{
+	for (int i = 0; i < parent.getNumChildren(); ++i) {
+		ValueTree child = parent.getChild(i);
+ 
+		if (child == ignore)
+			continue;
+ 
+		if (child.hasType(Ids::luaMethod)) {
+			const String existing = child.getProperty(Ids::luaMethodName).toString();
+			if (ignoreCase ? existing.equalsIgnoreCase(name) : existing == name)
+				return child;
+		} else {
+			ValueTree found = findMethodNodeByName(child, name, ignoreCase, ignore); // group -> recurse
+			if (found.isValid())
+				return found;
+		}
+	}
+	return ValueTree();
+}
+ 
+bool CtrlrLuaMethodManager::methodNameExists(const String &name, const ValueTree &ignore) const
+{
+	// Case-insensitive when external editing is on (name becomes a file name).
+	const bool externalOn = (bool)owner.getOwner().getProperty(Ids::ctrlrLuaExternalEditorEnabled);
+	return findMethodNodeByName(managerTree, name, externalOn, ignore).isValid();
+}
+ 
+String CtrlrLuaMethodManager::getMethodLocationByName(const String &name) const
+{
+	const bool externalOn = (bool)owner.getOwner().getProperty(Ids::ctrlrLuaExternalEditorEnabled);
+	ValueTree method = findMethodNodeByName(managerTree, name, externalOn, ValueTree());
+ 
+	if (!method.isValid())
+		return String();
+ 
+	StringArray groups;
+	for (ValueTree p = method.getParent(); p.isValid() && p != managerTree; p = p.getParent())
+		if (p.hasType(Ids::luaMethodGroup))
+			groups.insert(0, p.getProperty(Ids::name).toString());
+ 
+	return groups.isEmpty() ? String("top level") : groups.joinIntoString(" / ");
+}
+ 
+bool CtrlrLuaMethodManager::addMethodWithAlert(ValueTree groupToAddTo, const String &methodName,
+											   const String &initialCode, const String &methodProperty)
+{
+		AW::showMessageBox(AW::Info, "addMethodWithAlert reached [alert-test-1]", methodName); // TEMP
+	if (addMethod(groupToAddTo, methodName, initialCode, methodProperty))
+		return true;
+ 
+	const String where = getMethodLocationByName(methodName);
+ 
+	if (where.isNotEmpty()) {
+		AW::showMessageBox(AW::Warning, "Method name already in use",
+						   "A method named \"" + methodName + "\" already exists (in: " + where + ").\n\n"
+						   "Method names must be unique across all groups, because Lua methods are global "
+						   "functions. Please choose a different name.");
+	} else {
+		AW::showMessageBox(AW::Warning, "Could not add method",
+						   "The method \"" + methodName + "\" could not be added.");
+	}
+	return false;
+}
+ 
+ 
+// ===========================================================================
+// 3. The UI caller (the lambda in CtrlrLuaMethodProperty::buttonClicked, and any other
+//    "add method" button/menu code) - replace
+//        safeThis->getMethodManager().addMethod(parentGroup, methodName, initialCode, "");
+//    with
+//        safeThis->getMethodManager().addMethodWithAlert(parentGroup, methodName, initialCode, "");
+// ===========================================================================
+
+String CtrlrLuaMethodManager::getUniqueMethodName(const String &baseName) const {
+	if (!methodNameExists(baseName))
+		return baseName;
+
+	for (int n = 2;; ++n) {
+		const String candidate = baseName + String(n);
+		if (!methodNameExists(candidate))
+			return candidate;
+	}
+}
+
+bool CtrlrLuaMethodManager::addMethod(ValueTree groupToAddTo, const String &methodName, const String &initialCode,
+									  const String &methodProperty, const Uuid methodUuid,
+									  const bool forceIfAlreadyExists, const bool isRestoring) {
+	ValueTree group = groupToAddTo.isValid() ? groupToAddTo : managerTree;
+ 
+	// 1. Same UUID already in this group?
+	ValueTree existingChild = group.getChildWithProperty(Ids::uuid, methodUuid.toString());
+	if (existingChild.isValid() && !forceIfAlreadyExists)
+		return false;
+ 
+	// 2. Method names are unique across the WHOLE tree (Lua methods are global functions).
+	//    existingChild is ignored: when forcing, it is about to be replaced by the new method.
+	//    Checked BEFORE removing anything, so a rejected add never loses the old method.
+	//    Skipped while restoring a saved panel, so old panels that already contain
+	//    duplicate names (allowed in Ctrlr 5.3.201) still load completely.
+	if (!isRestoring && methodNameExists(methodName, existingChild)) {
+		DBG("addMethod rejected: a method named '" + methodName + "' already exists");
+		return false;
+	}
+ 
+	if (existingChild.isValid())
+		group.removeChild(existingChild, nullptr);
+ 
+	// 3. Build the new method node.
+	const bool builtIn = isInBuiltInGroup(group);
+	const bool externalOn = (bool)owner.getOwner().getProperty(Ids::ctrlrLuaExternalEditorEnabled);
+	const juce::File scriptsDir = owner.getPanelWorkspaceDir();
+ 
+	ValueTree newMethodTree;
+ 
+	if (externalOn && !builtIn && scriptsDir.isDirectory()) {
+		// External editing: user method backed by a .lua file in the workspace.
+		const String codeToWrite = initialCode.isEmpty() ? getDefaultMethodCode(methodName, methodProperty) : initialCode;
+ 
+		const juce::File methodFile = scriptsDir.getChildFile(methodName + ".lua");
+		if (!methodFile.existsAsFile())          // never overwrite an existing file
+			methodFile.replaceWithText(codeToWrite);
+ 
+		newMethodTree = getDefaultMethodTree(methodFile, methodUuid);
+		newMethodTree.setProperty(Ids::luaMethodCode, codeToWrite, nullptr);
+		newMethodTree.setProperty(Ids::luaMethodLinkedProperty, methodProperty, nullptr);
+	} else {
+		// External editing off, workspace not ready, or a built-in: store in memory only.
+		newMethodTree = getDefaultMethodTree(methodName, initialCode, methodProperty, methodUuid);
+ 
+		if (builtIn)
+			newMethodTree.setProperty("isReadOnly", true, nullptr);
+	}
+ 
+	// 4. Add and notify.
+	group.addChild(newMethodTree, -1, nullptr);
+	owner.getOwner().luaManagerChanged();
+	return true;
+}
+ 
+// ---------------------------------------------------------------------------
+bool CtrlrLuaMethodManager::addMethodFromFile(ValueTree groupToAddTo, const File &fileToUse, const Uuid methodUid) {
+	ValueTree group = groupToAddTo.isValid() ? groupToAddTo : managerTree;
+ 
+	// 1. Same UUID already in this group: update it in place instead of duplicating.
+	ValueTree existingChild = group.getChildWithProperty(Ids::uuid, methodUid.toString());
+	if (existingChild.isValid()) {
+		existingChild.setProperty(Ids::luaMethodName, fileToUse.getFileNameWithoutExtension(), nullptr);
+ 
+		const File panelLuaDir = owner.getOwner().getPanelLuaDir();
+		const bool insidePanelDir = panelLuaDir.isDirectory() && fileToUse.isAChildOf(panelLuaDir);
+ 
+		existingChild.setProperty(Ids::luaMethodSourcePath,
+								  insidePanelDir ? fileToUse.getRelativePathFrom(panelLuaDir)
+												 : fileToUse.getFullPathName(),
+								  nullptr);
+		existingChild.setProperty(Ids::luaMethodSource, (int)CtrlrLuaMethod::codeInFile, nullptr);
+		return true;
+	}
+ 
+	// 2. Method names are unique across the whole tree.
+	if (methodNameExists(fileToUse.getFileNameWithoutExtension())) {
+		DBG("addMethodFromFile rejected: name already used: " + fileToUse.getFileNameWithoutExtension());
+		return false;
+	}
+ 
+	// 3. Add and notify.
+	group.addChild(getDefaultMethodTree(fileToUse, methodUid), -1, nullptr);
+	owner.getOwner().luaManagerChanged();
+	return true;
 }

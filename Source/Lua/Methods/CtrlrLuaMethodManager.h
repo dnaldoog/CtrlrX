@@ -17,6 +17,8 @@ class CtrlrComponent;
 class LMemoryBlock;
 class CtrlrLuaObjectWrapper;
 
+bool isInBuiltInGroup(juce::ValueTree g);
+
 class CtrlrLuaMethodManager : public ValueTree::Listener
 {
 	public:
@@ -38,8 +40,18 @@ class CtrlrLuaMethodManager : public ValueTree::Listener
 		const bool attachDefaultGroups();
 		ValueTree getGroupByName(const String &groupName);
 		ValueTree findGroupRecursive(ValueTree treeToSearch, const Uuid &groupUuid);
-		void addMethod (ValueTree groupToAddTo, const String &methodName, const String &initialCode, const String &linkedToProperty, const Uuid methodUuid=UID_NULL, const bool forceIfAlreadyExists=false);
-		void addMethodFromFile (ValueTree groupToAddTo, const File &fileToUse, const Uuid methodUuid=UID_NULL);
+		bool addMethod(ValueTree groupToAddTo, const String &methodName, const String &initialCode,
+					   const String &methodProperty = String(), const Uuid methodUuid = Uuid(),
+					   const bool forceIfAlreadyExists = false, const bool isRestoring = false);
+
+		bool addMethodFromFile(ValueTree groupToAddTo, const File &fileToUse, const Uuid methodUid = Uuid());
+		bool methodNameExists(const String &name, const ValueTree &ignore = ValueTree()) const;
+		bool addMethodWithAlert(ValueTree groupToAddTo, const String &methodName, const String &initialCode,
+								const String &methodProperty = String());
+		// "myLuaMethod" -> "myLuaMethod" if free, else "myLuaMethod2", "myLuaMethod3", ...
+
+		String getUniqueMethodName(const String &baseName) const;
+		String getMethodLocationByName(const String &name) const;
 		void deleteMethod(const Uuid &methodUuid);
 		void setEditedMethod(const Uuid &methodUid);
 		void setEditedMethod(const String &methodName);

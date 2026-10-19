@@ -92,6 +92,11 @@ StringArray CtrlrEditor::getMenuBarNames() {
 
 PopupMenu CtrlrEditor::getMenuForIndex(int /*topLevelMenuIndex*/, const String &menuName) {
 	ApplicationCommandManager *commandManager = &(owner.getCommandManager());
+	bool externalOn = false;
+	if (auto *activePanel = owner.getActivePanel()) {
+		externalOn = (bool)activePanel->getProperty(Ids::ctrlrLuaExternalEditorEnabled);
+	}
+//	DBG("XXX set enabled" << String(externalOn ? "true" : "false"));
 	PopupMenu menu;
 
 	if (menuName == "File") {
@@ -165,6 +170,8 @@ PopupMenu CtrlrEditor::getMenuForIndex(int /*topLevelMenuIndex*/, const String &
 		menu.addCommandItem(commandManager, doPanelDisableCombosOnEdit);
 		menu.addSeparator();
 		menu.addCommandItem(commandManager, doPanelToggleExternalLuaEdit);
+		if (externalOn)
+			menu.addCommandItem(commandManager, doPanelScanExternalFolder);
 		menu.addSeparator();
 		menu.addCommandItem(commandManager, showModulatorList);
 		menu.addSeparator();
