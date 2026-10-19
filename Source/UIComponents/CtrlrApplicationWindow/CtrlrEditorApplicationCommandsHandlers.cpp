@@ -423,6 +423,7 @@ case CtrlrEditor::doPanelToggleExternalLuaEdit:
 				"(This folder path has been copied to your clipboard!)\n\n"
 				"• Edit your .lua files in your favorite external editor (e.g., Visual Studio Code or Xcode).\n"
 				"• Changes will hot-reload live into CtrlrX automatically.\n"
+				"• Sometimes it may be necessary to completely close CtrlrX and restart to see changes.\n"
 				"• To see external file changes.\n"
 				"  1. Right click in lua editor and select\n"
 				"  2. 'Scan workspace for new files'.\n"
@@ -432,6 +433,14 @@ case CtrlrEditor::doPanelToggleExternalLuaEdit:
 		}
 	}
 	break;
+
+	case CtrlrEditor::doPanelScanExternalFolder:
+	if (getActivePanelEditor()) {
+		CtrlrPanel &panel = getActivePanelEditor()->getOwner();
+		panel.getCtrlrLuaManager().scanAndImportNewFilesFromWorkspace();
+}
+	break;
+
 
 case CtrlrEditor::doPanelDisableCombosOnEdit:
 	if (getActivePanelEditor())

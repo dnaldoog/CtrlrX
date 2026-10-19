@@ -1054,7 +1054,7 @@ void CtrlrLuaMethodEditor::itemClicked(const MouseEvent &e, ValueTree &item) {
 		m.addItem(6, "Sort by name");
 		m.addItem(7, "Sort by size");
 		if (externalOn)
-			m.addItem(15, "Scan workspace for new files");
+		m.addItem(15, "Scan workspace for new files");
 
 		juce::Point<int> screenPt = e.getEventRelativeTo(this).getMouseDownScreenPosition();
 		if (screenPt.x == 0 && screenPt.y == 0) {
