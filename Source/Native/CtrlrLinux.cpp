@@ -1,18 +1,22 @@
 #include "stdafx.h"
-#ifdef __linux__ // Updated v5.6.35. Thanks to @dnaldoog. SEE: https://github.com/damiensellier/CtrlrX/pull/193#issuecomment-3561230356
+#ifdef __linux__
+
 #define PACKAGE "Ctrlr"
 
-#include "CtrlrMacros.h"
+#include "BinaryData.h"
+#include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrLinux.h"
-#include "CtrlrPanel/CtrlrPanel.h"
+#include "CtrlrMacros.h"
 #include "CtrlrManager/CtrlrManager.h"
-#include <sys/types.h>
-#include <sys/stat.h>
+#include "CtrlrPanel/CtrlrPanel.h"
+#include "CtrlrPanel/CtrlrPanelResource.h"
 #include "keys.h"
+#include <cstring> // For strlen, memcpy
 #include <fstream>
 #include <sstream>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <vector>
-#include <cstring>  // For strlen, memcpy
 
 // --- Utility Functions ---
 
@@ -41,6 +45,18 @@ static MemoryBlock stringToFixedBytes(const String& str, int fixedSize) {
     return result;
 }
 
+static MemoryBlock makeUtf16Buffer(const String &text, const String &templateText) {
+    int targetCharCount = templateText.length();
+    MemoryBlock block(targetCharCount * 2, true);
+
+    String paddedText =
+        text.length() > targetCharCount ? text.substring(0, targetCharCount) : text.paddedRight(' ', targetCharCount);
+
+    const CharPointer_UTF16 utf16Ptr = paddedText.toUTF16();
+    block.copyFrom(utf16Ptr.getAddress(), 0, targetCharCount * 2);
+    return block;
+}
+
 static int replaceAllOccurrences(MemoryBlock& target, const MemoryBlock& search, const MemoryBlock& replace) {
     if (search.getSize() != replace.getSize() || search.getSize() == 0) {
         return 0;
@@ -62,13 +78,11 @@ static int replaceAllOccurrences(MemoryBlock& target, const MemoryBlock& search,
     return count;
 }
 
-// FIX: Improved detection logic for VST2 .so files on Linux
 static File getVST3PluginPath()
 {
     std::ifstream maps("/proc/self/maps");
     std::string line;
-    
-    // Get the path of the host executable (REAPER in this case)
+
     File hostExe = File::getSpecialLocation(File::currentApplicationFile);
     
     while (std::getline(maps, line)) {
@@ -81,16 +95,13 @@ static File getVST3PluginPath()
                 if (soEnd != std::string::npos) {
                     path = path.substr(0, soEnd + 3);
                     File currentFile = File(String(path));
-                    
-                    // 1. VST3 detection (high confidence, return immediately)
+
                     if (path.find(".vst3/Contents/") != std::string::npos) {
                         _DBG("Detection: Found VST3 path: " + currentFile.getFullPathName());
                         return currentFile;
                     }
-                    
-                    // 2. VST2 detection: It must be a loaded .so file and NOT the host executable.
+
                     if (currentFile != hostExe) {
-                        // Check if the path contains common VST paths or user paths (to exclude system libs like libc.so)
                         if (currentFile.getFullPathName().contains("/.vst/") ||
                             currentFile.getFullPathName().contains("/vst/") ||
                             currentFile.getFullPathName().contains("/plugins/") ||
@@ -104,8 +115,7 @@ static File getVST3PluginPath()
             }
         }
     }
-    
-    // Fallback: Returns the host executable path if no plugin is found (this is the standalone case).
+
     return hostExe;
 }
 
@@ -113,10 +123,18 @@ static bool isVST2Plugin() {
     File me = getVST3PluginPath();
     bool hasSOExtension = me.hasFileExtension(".so");
     bool notInVST3 = !me.getFullPathName().contains(".vst3/");
-    // Also explicitly check if the path is NOT the host executable path
     bool isNotHost = (me != File::getSpecialLocation(File::currentApplicationFile));
     
     return isNotHost && hasSOExtension && notInVST3;
+}
+
+static String sanitizeAppId(const String &name) {
+    String clean = name.toLowerCase().retainCharacters("abcdefghijklmnopqrstuvwxyz0123456789-_ ");
+    clean = clean.replaceCharacter(' ', '-');
+    while (clean.contains("--")) {
+        clean = clean.replace("--", "-");
+    }
+    return clean.trim();
 }
 
 // --- SimpleEmbeddedDataManager Class ---
@@ -303,8 +321,7 @@ const Result CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const 
     
     bool isVST3 = bundleDir.getFileName().endsWith(".vst3");
     bool isVST2 = isVST2Plugin();
-    
-    // Cast bool to int to fix the compile error
+
     _DBG("Export detection: isVST3=" + String((int)isVST3) + ", isVST2=" + String((int)isVST2));
     _DBG("Current binary path: " + me.getFullPathName());
     
@@ -318,17 +335,15 @@ const Result CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const 
         suggestedFile = bundleDir.getParentDirectory().getChildFile(panelName + ".vst3");
         filePattern = ".vst3";
     } else if (isVST2) {
-        // VST2: Suggest and enforce .so
         suggestedFile = me.getParentDirectory().getChildFile(panelName + ".so");
         filePattern = "*.so";
         _DBG("VST2 export detected. suggestedFile = " + suggestedFile.getFullPathName());
     } else {
-        // STANDALONE (isVST3=0, isVST2=0): Suggest and export without extension
         suggestedFile = me.getParentDirectory().getChildFile(panelName);
-        filePattern = "*"; // No required pattern
+        filePattern = "*";
         _DBG("Standalone export detected. suggestedFile = " + suggestedFile.getFullPathName());
     }
-    
+
     FileChooser fc(CTRLR_NEW_INSTANCE_DIALOG_TITLE, suggestedFile, filePattern,
                    panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs));
     
@@ -358,12 +373,9 @@ const Result CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const 
             newMe = binaryFile;
         }
         else {
-            // --- Logic for VST2 (isVST2=1) and Standalone (isVST2=0) ---
-            
-            newMe = chosenFile; // Start with the file the user chose
-            
+            newMe = chosenFile;
+
             if (isVST2) {
-                // If VST2, we MUST ensure it has the .so extension
                 if (!newMe.getFullPathName().endsWith(".so")) {
                     newMe = newMe.withFileExtension(".so");
                     _DBG("VST2 export: Added missing .so extension, now = " + newMe.getFullPathName());
@@ -371,10 +383,9 @@ const Result CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const 
                     _DBG("VST2 export: Already has .so extension");
                 }
             } else {
-                // If Standalone, we keep the file name exactly as chosen (no forced extension)
                 _DBG("Standalone export: Final file created without extension = " + newMe.getFullPathName());
             }
-            
+
             if (!me.copyFileTo(newMe)) {
                 return Result::fail("Linux native, Standalone/VST2 copyFileTo failed");
             }
@@ -396,14 +407,12 @@ const Result CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const 
     
     // Perform binary patching for VST3 AND VST2
     if (isVST3 || isVST2) {
-        
         MemoryBlock binaryData;
         if (newMe.loadFileAsData(binaryData)) {
             String pluginName = panelToWrite->getProperty(Ids::name).toString();
             String pluginCode = panelToWrite->getProperty(Ids::panelInstanceUID).toString();
             String manufacturerName = panelToWrite->getProperty(Ids::panelAuthorName).toString();
             String manufacturerCode = panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString();
-            // --- NEW: Retrieve the plug type from the panel properties ---
             String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
             
             MemoryBlock pluginNameBytes = stringToFixedBytes(pluginName, 32);
@@ -432,7 +441,7 @@ const Result CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const 
             }
         }
     }
-    
+
     // Embed data using SimpleEmbeddedDataManager
     SimpleEmbeddedDataManager dataManager(newMe.getFullPathName().toStdString());
     dataManager.initialize();
@@ -454,11 +463,94 @@ const Result CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const 
             return Result::fail("chmod failed");
         }
     }
-    
+
+    // --- MINIMAL ADDITION: CREATE .DESKTOP ENTRY & EXTRACT GNOME MENU ICON ---
+    if (!isVST3 && !isVST2) {
+        _DBG("Entering Standalone Desktop/Icon generation pipeline...");
+
+        // 1. Prepare icon directory (~/.local/share/icons)
+        File iconDir = File::getSpecialLocation(File::userHomeDirectory).getChildFile(".local/share/icons");
+        if (!iconDir.createDirectory()) {
+            _DBG("ERROR: Could not create directory: " + iconDir.getFullPathName());
+        }
+
+        File svgIcon = iconDir.getChildFile("ctrlrx_logo.svg");
+        File pngIcon = iconDir.getChildFile("ctrlrx_logo.png");
+
+        // 2. Write embedded BinaryData SVG icon
+        if (!svgIcon.existsAsFile()) {
+            if (BinaryData::ctrlrx_logo_svg != nullptr) {
+                // Write raw bytes directly from BinaryData buffer
+                svgIcon.replaceWithData(BinaryData::ctrlrx_logo_svg, (size_t)BinaryData::ctrlrx_logo_svgSize);
+                _DBG("Wrote SVG icon to: " + svgIcon.getFullPathName());
+            } else {
+                _DBG("ERROR: BinaryData::ctrlrx_logo_svg is null!");
+            }
+        }
+
+        // 3. Render PNG fallback for GNOME compatibility
+        if (svgIcon.existsAsFile() && !pngIcon.existsAsFile()) {
+            if (auto drawable = Drawable::createFromSVGFile(svgIcon)) {
+                const int size = 256;
+                Image pngImage(Image::ARGB, size, size, true, SoftwareImageType());
+                Graphics g(pngImage);
+                drawable->drawWithin(g, Rectangle<float>(0, 0, (float)size, (float)size), RectanglePlacement::centred,
+                                     1.0f);
+
+                PNGImageFormat pngFormat;
+                FileOutputStream out(pngIcon);
+                if (out.openedOk())
+                    pngFormat.writeImageToStream(pngImage, out);
+            }
+        }
+
+        // 4. Create .desktop launcher in ~/.local/share/applications/
+        File appsDir = File::getSpecialLocation(File::userHomeDirectory).getChildFile(".local/share/applications");
+        appsDir.createDirectory();
+
+        String appName = panelToWrite->getProperty(Ids::name).toString();
+        String safeFileName = File::createLegalFileName(appName).toLowerCase().replaceCharacter(' ', '-');
+        if (safeFileName.isEmpty()) {
+            safeFileName = "ctrlrx-instance";
+        }
+
+        File desktopFile = appsDir.getChildFile(safeFileName + ".desktop");
+
+        String iconPath = pngIcon.existsAsFile() ? pngIcon.getFullPathName() : svgIcon.getFullPathName();
+
+        String desktopContent = "[Desktop Entry]\n"
+                                "Type=Application\n"
+                                "Name=" +
+                                appName +
+                                "\n"
+                                "Exec=\"" +
+                                newMe.getFullPathName() +
+                                "\"\n"
+                                "Icon=" +
+                                iconPath +
+                                "\n"
+                                "Terminal=false\n"
+                                "Categories=AudioVideo;Audio;\n";
+
+        if (desktopFile.replaceWithText(desktopContent)) {
+            _DBG("Created .desktop file: " + desktopFile.getFullPathName());
+        } else {
+            _DBG("ERROR: Failed to write .desktop file!");
+        }
+
+        chmod(desktopFile.getFullPathName().toUTF8().getAddress(),
+              S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+
+        // Refresh GNOME desktop database cache
+        String cmd = "update-desktop-database " + appsDir.getFullPathName();
+        int dummy = system(cmd.toUTF8().getAddress());
+        (void)dummy;
+    }
+
     return Result::ok();
 }
 
-// --- Getter functions (unchanged logic) ---
+// --- Getter functions ---
 
 const Result CtrlrLinux::getDefaultPanel(MemoryBlock& dataToWrite)
 {
