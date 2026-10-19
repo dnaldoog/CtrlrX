@@ -539,7 +539,12 @@ void CtrlrPanel::getCodeSigningIdentityFromPopup(std::function<void(juce::String
 }
 
 void CtrlrPanel::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
-	
+	// Resolve a callback property to its method; an empty property CLEARS the callback
+	// (previously an emptied property left the old method wired up).
+	auto resolveLuaCallback = [this](WeakReference<CtrlrLuaMethod> &callback, const Identifier &prop) {
+		const String methodName = getProperty(prop).toString();
+		callback = methodName.isNotEmpty() ? getCtrlrLuaManager().getMethodManager().getMethod(methodName) : nullptr;
+	};
 	if (treeWhosePropertyHasChanged.hasType(Ids::modulator)) {
 		return;
 	} else if (property == Ids::ctrlrLuaExternalEditorEnabled)
@@ -623,50 +628,40 @@ void CtrlrPanel::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 			}
 		}
 	} else if (property == Ids::luaPanelMidiReceived) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelMidiReceivedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelMidiReceivedCbk, property);
 	} else if (property == Ids::luaPanelMidiMultiReceived) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelMidiMultiReceivedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelMidiMultiReceivedCbk, property);
 	} else if (property == Ids::luaPanelMidiChannelChanged) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelMidiChannelChangedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelMidiChannelChangedCbk, property);
 	} else if (property == Ids::luaPanelMessageHandler) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelMessageHandlerCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelMessageHandlerCbk, property);
 	} else if (property == Ids::luaPanelSaved) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelSavedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelSavedCbk, property);
 	} else if (property == Ids::luaPanelLoaded) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelLoadedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelLoadedCbk, property);
 	} else if (property == Ids::luaPanelGlobalChanged) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelGlobalChangedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelGlobalChangedCbk, property);
 	} else if (property == Ids::luaPanelBeforeLoad) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelBeforeLoadCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelBeforeLoadCbk, property);
 	} else if (property == Ids::luaPanelProgramChanged) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelProgramChangedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelProgramChangedCbk, property);
 	} else if (property == Ids::luaPanelResourcesLoaded) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelResourcesLoadedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelResourcesLoadedCbk, property);
 	} else if (property == Ids::luaPanelModulatorValueChanged) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelModulatorValueChangedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelModulatorValueChangedCbk, property);
 	} else if (property == Ids::luaPanelSaveState) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelSaveStateCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelSaveStateCbk, property);
 	} else if (property == Ids::luaPanelRestoreState) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelRestoreStateCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelRestoreStateCbk, property);
 	} else if (property == Ids::luaPanelMidiSnapshotPost) {
-		if (getProperty(property).toString().isNotEmpty())
-			snapshot.setPostLuaCallback(getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property)));
+		// assumes setPostLuaCallback() takes a CtrlrLuaMethod* (it is passed getMethod()'s result today)
+		const String name = getProperty(property).toString();
+		snapshot.setPostLuaCallback(name.isNotEmpty() ? getCtrlrLuaManager().getMethodManager().getMethod(name)
+													  : nullptr);
 	} else if (property == Ids::luaPanelMidiSnapshotPre) {
-		if (getProperty(property).toString().isNotEmpty())
-			snapshot.setPreLuaCallback(getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property)));
+		const String name = getProperty(property).toString();
+		snapshot.setPreLuaCallback(name.isNotEmpty() ? getCtrlrLuaManager().getMethodManager().getMethod(name)
+													 : nullptr);
 	} else if (property == Ids::panelGlobalVariables) {
 		globalVariables = globalsFromString(getProperty(property));
 	} else if (property == Ids::panelResources) {
