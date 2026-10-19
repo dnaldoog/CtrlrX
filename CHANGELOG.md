@@ -6,6 +6,13 @@
 - Fixed error with Built-In files duplicating when External Editor enabled
 - Stop lua editor creating duplicate function names
 - Added new stop icon in lua debugger
+- Added icons to lua editor when external editor engaged
+- Added "Scan workspace ..." in *Panel* menu for better visibility
+- Renamed postrm-deb to postrm - apt only supports postrm
+- sudo apt remove ctrlrx now removes `~/.vst3` folder
+- Decision made to retian vst3 files in /usr/share - it is not usually a DAW folder location so duplicate with ~/.vst3 unlikely
+  - (note retained to satisfy apt/dnf remove
+- https://github.com/dnaldoog/CtrlrX/commit/86c02db3ae8c83b00b8ca1696cd331cbc3ef3135
 
 ### CtrlrX v.8.67 10/17/2026
 
