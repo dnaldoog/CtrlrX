@@ -13,128 +13,88 @@
 #include "stdafx_luabind.h"
 #include <luabind/luabind.hpp>
 
-#define CATCH_METHOD_EXCEPTION                                                                                         \
-	catch (luabind::error & e) {                                                                                       \
-		if (o)                                                                                                         \
-			o->setValid(false);                                                                                        \
-		juce::String lastExecutionError =                                                                              \
-			juce::String(luabind::object_cast<std::string>(luabind::object(luabind::from_stack(e.state(), -1))));      \
-		_LERR("Callback error: [" + (o ? o->getName() : "Unknown") + "]\n" + lastExecutionError +                      \
-			  ".\nMethod disabled");                                                                                   \
-		if (currentMethodEditor)                                                                                       \
-			currentMethodEditor->getMethodEditArea()->insertOutput(lastExecutionError, juce::Colours::red);            \
-		return (false);                                                                                                \
+// Reads the error text a failed Lua call left on top of the Lua stack, without ever throwing.
+// (The old macros did object_cast<std::string>() on the stack top; if that value was not a string it
+// threw cast_failed from INSIDE the catch block, which nothing could catch.)
+static juce::String describeLuaError(lua_State *L) {
+	if (L == nullptr || lua_gettop(L) < 1)
+		return "Unknown Lua error (no message available)";
+
+	const int t = lua_type(L, -1);
+
+	if (t == LUA_TSTRING || t == LUA_TNUMBER) {
+		if (const char *msg = lua_tostring(L, -1))
+			return juce::String::createStringFromData(msg, (int)strlen(msg));
 	}
 
-#define CATCH_METHOD_EXCEPTION_STR                                                                                     \
+	return juce::String("Lua error (") + lua_typename(L, t) + " value, no message)";
+}
+
+void CtrlrLuaMethodManager::handleMethodException(CtrlrLuaMethod *o, const juce::String &message,
+												  const bool trimLogMessage) {
+	try {
+		if (o)
+			o->setValid(false);
+
+		const juce::String name = o ? o->getName() : juce::String("Unknown");
+
+		// The _NO_DIALOG variant logged only the text after "Error message:\n"; the editor output always
+		// got the full text.
+		const juce::String logText =
+			trimLogMessage ? message.fromLastOccurrenceOf("Error message:\n", false, false) : message;
+
+		_LERR("Callback error: [" + name + "]\n" + logText + ".\nMethod disabled");
+
+		if (currentMethodEditor && currentMethodEditor->getMethodEditArea())
+			currentMethodEditor->getMethodEditArea()->insertOutput(message, juce::Colours::red);
+	} catch (...) {
+		// reporting an error must never raise another one
+	}
+}
+
+// One shared body. luabind::error first; cast_failed and other std exceptions fall into the second clause.
+#define CATCH_METHOD_EXCEPTION_IMPL(trimLog, returnStatement)                                                          \
 	catch (luabind::error & e) {                                                                                       \
-		if (o)                                                                                                         \
-			o->setValid(false);                                                                                        \
-		juce::String lastExecutionError =                                                                              \
-			juce::String(luabind::object_cast<std::string>(luabind::object(luabind::from_stack(e.state(), -1))));      \
-		_LERR("Callback error: [" + (o ? o->getName() : "Unknown") + "]\n" + lastExecutionError +                      \
-			  ".\nMethod disabled");                                                                                   \
-		if (currentMethodEditor)                                                                                       \
-			currentMethodEditor->getMethodEditArea()->insertOutput(lastExecutionError, juce::Colours::red);            \
-		return ("");                                                                                                   \
+		handleMethodException(o, describeLuaError(e.state()), trimLog);                                                \
+		returnStatement                                                                                                \
+	}                                                                                                                  \
+	catch (const std::exception &e) {                                                                                  \
+		handleMethodException(o, juce::String::createStringFromData(e.what(), (int)strlen(e.what())), trimLog);        \
+		returnStatement                                                                                                \
+	}                                                                                                                  \
+	catch (...) {                                                                                                      \
+		handleMethodException(o, "Unknown exception while calling the Lua method", trimLog);                           \
+		returnStatement                                                                                                \
 	}
 
-#define CATCH_METHOD_EXCEPTION_DAD                                                                                     \
-	catch (luabind::error & e) {                                                                                       \
-		if (o)                                                                                                         \
-			o->setValid(false);                                                                                        \
-		juce::String lastExecutionError =                                                                              \
-			juce::String(luabind::object_cast<std::string>(luabind::object(luabind::from_stack(e.state(), -1))));      \
-		_LERR("Callback error: [" + (o ? o->getName() : "Unknown") + "]\n" + lastExecutionError +                      \
-			  ".\nMethod disabled");                                                                                   \
-		if (currentMethodEditor)                                                                                       \
-			currentMethodEditor->getMethodEditArea()->insertOutput(lastExecutionError, juce::Colours::red);            \
-	}
-// #define CATCH_METHOD_EXCEPTION \
-// catch (luabind::error &e)\
-// {\
-// 	o->setValid(false);\
-// 	const char* a = lua_tostring(e.state(), -1);\
-// 	lastExecutionError = String(a);\
-// 	AlertWindow::showMessageBox (AlertWindow::WarningIcon,\
-//         "Callback error: " + o->getName(), \
-//         String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1))))\
-//          + "\n\nMethod disabled");\
-// 	_LERR("Callback error: [" + o->getName() + "] " + String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1))))+" "+lastExecutionError+".\nMethod disabled");\
-// 	if (currentMethodEditor)\
-// 		currentMethodEditor->getMethodEditArea()->insertOutput(lastExecutionError, juce::Colours::red); \
-// 	return (false);\
-// }
-
-// #define CATCH_METHOD_EXCEPTION_STR \
-// catch (luabind::error &e)\
-// {\
-// 	o->setValid(false);\
-// 	const char* a = lua_tostring(e.state(), -1);\
-// 	lastExecutionError = String(a);\
-// 	AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error: " + o->getName(), String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1)))) + "\n\nMethod disabled");\
-// 	_LERR("Callback error: [" + o->getName() + "] " + String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1))))+" "+lastExecutionError+".\nMethod disabled");\
-// 	if (currentMethodEditor)\
-// 		currentMethodEditor->getMethodEditArea()->insertOutput(lastExecutionError, juce::Colours::red); \
-// 	return ("");\
-// }
-
-// #define CATCH_METHOD_EXCEPTION_DAD \
-// catch (luabind::error &e)\
-// {\
-// 	o->setValid(false);\
-// 	const char* a = lua_tostring(e.state(), -1);\
-// 	lastExecutionError = String(a);\
-// 	AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Callback error: " + o->getName(), String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1)))) + "\n\nMethod disabled");\
-// 	_LERR("Callback error: [" + o->getName() + "] " + String(luabind::object_cast <std::string> (luabind::object(luabind::from_stack(e.state(), -1))))+" "+lastExecutionError+".\nMethod disabled");\
-// 	if (currentMethodEditor)\
-// 		currentMethodEditor->getMethodEditArea()->insertOutput(lastExecutionError, juce::Colours::red); \
-// }
-
-#define CATCH_METHOD_EXCEPTION_NO_DIALOG                                                                               \
-	catch (luabind::error & e) {                                                                                       \
-		o->setValid(false);                                                                                            \
-		String lastExecutionError =                                                                                    \
-			String(luabind::object_cast<std::string>(luabind::object(luabind::from_stack(e.state(), -1))));            \
-		_LERR("Callback error: [" + o->getName() + "]\n" +                                                             \
-			  lastExecutionError.fromLastOccurrenceOf("Error message:\n", false, false) + ".\nMethod disabled");       \
-		if (currentMethodEditor)                                                                                       \
-			currentMethodEditor->getMethodEditArea()->insertOutput(lastExecutionError, juce::Colours::red);            \
-		return (false);                                                                                                \
-	}
+#define CATCH_METHOD_EXCEPTION CATCH_METHOD_EXCEPTION_IMPL(false, return (false);)
+#define CATCH_METHOD_EXCEPTION_STR CATCH_METHOD_EXCEPTION_IMPL(false, return ("");)
+#define CATCH_METHOD_EXCEPTION_DAD CATCH_METHOD_EXCEPTION_IMPL(false, (void)0;)
+#define CATCH_METHOD_EXCEPTION_NO_DIALOG CATCH_METHOD_EXCEPTION_IMPL(true, return (false);)
 
 #define LUA_DEBUG                                                                                                      \
 	if (getDebug() && o) {                                                                                             \
 		_INF("CtrlrLuaMethodManager::call " + o->getName());                                                           \
 	}
 
-// ===========================================================================
-// 1. Replace call(CtrlrLuaMethod *o) in CtrlrLuaMethodManager.cpp
-//
-//    Was: `if (o->isValid())` - only tests that the method object exists / compiled.
-//    Now: isMethodValid(o)    - also requires the method to be a real Lua FUNCTION.
-//    A deleted / empty / 0-byte method (callback property still names it) now fails the
-//    gate and is skipped, instead of reaching luabind::call_function with a nil object.
-// ===========================================================================
 const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o) {
 	const ScopedLock sl(methodManagerCriticalSection);
- 
+
 	LUA_DEBUG
- 
+
 	if (isLuaDisabled())
 		return (true);
- 
+
 	if (!isMethodValid(o)) // also covers o == nullptr
 		return (true);
- 
+
 	try {
 		luabind::call_function<void>(o->getObject().getObject());
 	}
 	CATCH_METHOD_EXCEPTION
- 
+
 	return (true);
 }
-
 const bool CtrlrLuaMethodManager::call(CtrlrLuaMethod *o, CtrlrModulator *param1, const int param2) {
 	if (!isMethodValid(o))
 		return (false);

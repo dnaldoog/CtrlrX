@@ -288,6 +288,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 											StringArray *notes);
 		Result exportLuaMethodToWorkspace(const File &parentDir, ValueTree method, StringArray &usedPaths,
 										  StringArray *notes);
+		ValueTree createPortablePanelTree(); // CtrlrPanelFileOperations
 		static void convertLuaMethodsToPropeties(const File &panelLuaDir, ValueTree &panelTree);
 		static void convertLuaMethodToProperty(const File &panelLuaDir, ValueTree *method);
 		static void convertLuaChildrenToProperties(const File &panelLuaDir, ValueTree *parentElement);

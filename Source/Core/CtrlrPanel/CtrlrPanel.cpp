@@ -2205,7 +2205,17 @@ Result CtrlrPanel::exportLuaMethodToWorkspace(const File &parentDir, ValueTree m
 }
  int CtrlrPanel::inlineExternalLuaMethods(ValueTree methodsRoot, StringArray *missingNames)
 {
-	const File workspaceDir = getCtrlrLuaManager().getPanelWorkspaceDir();
+
+	/*
+	One small refinement. inlineExternalLuaMethods() calls getPanelWorkspaceDir() at the top, 
+	and that function can assign a new panelUID as a side effect if the panel doesn’t have one. 
+	So a save of a panel that never used external editing could, in an odd case, modify the panel. 
+	It costs almost nothing to avoid. Move the line from the top of the function to just inside the loop, 
+	after the codeInFile check and before the isAChildOf test, so it only runs when a file-backed method is found.
+	*/
+
+	// const File workspaceDir = getCtrlrLuaManager().getPanelWorkspaceDir();
+
 	int converted = 0;
  
 	for (int i = 0; i < methodsRoot.getNumChildren(); ++i) {
@@ -2221,7 +2231,7 @@ Result CtrlrPanel::exportLuaMethodToWorkspace(const File &parentDir, ValueTree m
  
 		if ((int)child.getProperty(Ids::luaMethodSource) != (int)CtrlrLuaMethod::codeInFile)
 			continue;
- 
+ 		const File workspaceDir = getCtrlrLuaManager().getPanelWorkspaceDir();
 		const File src = getLuaMethodSourceFile(&child);
 		if (!src.isAChildOf(workspaceDir)) // hand-linked file elsewhere: leave alone
 			continue;

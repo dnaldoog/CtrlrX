@@ -10,6 +10,13 @@
 #include "CtrlrUtilities.h"
 #include "stdafx.h"
 
+ValueTree CtrlrPanel::createPortablePanelTree() {
+	ValueTree copy = getPanelTree().createCopy();
+	inlineExternalLuaMethods(copy.getChildWithName(Ids::luaManager).getChildWithName(Ids::luaManagerMethods));
+	copy.setProperty(Ids::ctrlrLuaExternalEditorEnabled, false, nullptr);
+	return copy;
+}
+
 ValueTree CtrlrPanel::getCleanPanelTree() {
 	ValueTree exportTree = panelTree.createCopy();
 
@@ -391,7 +398,9 @@ const String CtrlrPanel::exportPanel(CtrlrPanel *panel, const File &lastBrowsedD
 	}
 
 	juce::ValueTree exportTree = panel->getCleanPanelTree();
-
+	panel->inlineExternalLuaMethods(
+		exportTree.getChildWithName(Ids::luaManager).getChildWithName(Ids::luaManagerMethods));
+	exportTree.setProperty(Ids::ctrlrLuaExternalEditorEnabled, false, nullptr);
 	if (isRestricted) {
 		exportTree.setProperty(Ids::restricted, static_cast<int>(InstanceSingleRestricted), nullptr);
 		auto editorTree = exportTree.getChildWithName(Ids::uiPanelEditor);
@@ -551,11 +560,11 @@ Result CtrlrPanel::savePanelBin(const File &fileToSave, CtrlrPanel *panel, const
 		panel->luaSavePanel(PanelFileBinaryCompressed, fileToSave);
 
 		GZIPCompressorOutputStream gzOutputStream(&panelBinData);
-		panel->getPanelTree().writeToStream(gzOutputStream);
+		panel->createPortablePanelTree().writeToStream(gzOutputStream);
 		gzOutputStream.flush();
 	} else {
 		panel->luaSavePanel(PanelFileBinary, fileToSave);
-		panel->getPanelTree().writeToStream(panelBinData);
+		panel->createPortablePanelTree().writeToStream(panelBinData);
 	}
 
 	if (fileToSave.hasWriteAccess()) {
@@ -579,7 +588,8 @@ void CtrlrPanel::writePanelXml(OutputStream &outputStream, CtrlrPanel *panel, co
 
 	panel->sync();
 
-	std::unique_ptr<XmlElement> panelXml(panel->getPanelTree().createXml().release());
+	// std::unique_ptr<XmlElement> panelXml(panel->getPanelTree().createXml().release());
+	std::unique_ptr<XmlElement> panelXml(panel->createPortablePanelTree().createXml().release());
 
 	if (compressPanel && panelXml) {
 		String xml = panelXml->createDocument("");
