@@ -3,8 +3,7 @@
 
 ### CtrlrX v.8.69 10/19/2026
 
-Lua external editor: keep tree and scripts folder in sync, make saved panels self-contained
-
+- Lua external editor: keep tree and scripts folder in sync, make saved panels self-contained
 - Workspace scan now handles subfolders: files in a subfolder are imported into a
   matching method group, stale entries are pruned, and the result dialog shows
   what was imported, tracked, removed and skipped (with reasons)
@@ -19,7 +18,7 @@ Lua external editor: keep tree and scripts folder in sync, make saved panels sel
   machine or after clearing settings no longer show 0-byte functions
 - Built-In methods are never exported to the scripts folder (fixes what2.lua,
   what3.lua... piling up on every panel open)
-- https://github.com/dnaldoog/CtrlrX/commit/92a6b16a21342ae54802618a40ade1629a027726
+- [https://github.com/dnaldoog/CtrlrX/commit/92a6b16a21342ae54802618a40ade1629a027726](https://github.com/dnaldoog/CtrlrX/commit/4b44fe8efc8e9f0ebc21dadecc73e27fbde7e892)
   
 ### CtrlrX v.8.68 10/19/2026
 
