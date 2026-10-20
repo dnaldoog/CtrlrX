@@ -2156,3 +2156,86 @@ void CtrlrPanel::loadPatchFromJSON() {
         },
         "Load Patch", "Cancel");
 }
+Result CtrlrPanel::exportLuaMethodToWorkspace(const File &parentDir, ValueTree method, StringArray &usedPaths,
+											  StringArray *notes) {
+	const String name = method.getProperty(Ids::luaMethodName).toString();
+ 
+	if (name.isEmpty() || File::createLegalFileName(name) != name) {
+		if (notes != nullptr)
+			notes->add("Kept in the panel (name can't be used as a file name): " + name);
+		return Result::ok();
+	}
+ 
+	const File target = parentDir.getChildFile(name + ".lua");
+ 
+	String key = target.getFullPathName();
+	if (!File::areFileNamesCaseSensitive())
+		key = key.toLowerCase();
+ 
+	if (usedPaths.contains(key)) {
+		if (notes != nullptr)
+			notes->add("Kept in the panel (another method already uses this file name): " + name);
+		return Result::ok();
+	}
+ 
+	const String code = method.getProperty(Ids::luaMethodCode).toString();
+	bool needsWrite = true;
+ 
+	if (target.existsAsFile()) {
+		if (target.loadFileAsString() == code) {
+			needsWrite = false; // identical: just link to it
+		} else {
+			target.copyFileTo(parentDir.getChildFile(name + ".lua.bak")); // keep the old content
+			if (notes != nullptr)
+				notes->add("Existing file replaced with the panel's version (old copy kept as " + name +
+						   ".lua.bak): " + name + ".lua");
+		}
+	}
+ 
+	if (needsWrite && !target.replaceWithText(code))
+		return Result::fail("Could not write " + target.getFullPathName());
+ 
+	usedPaths.add(key);
+ 
+	// Same bookkeeping as writeLuaMethod(), but the method keeps its name.
+	method.setProperty(Ids::luaMethodSourcePath, target.getRelativePathFrom(getPanelLuaDir()), nullptr);
+	method.setProperty(Ids::luaMethodSource, (int)CtrlrLuaMethod::codeInFile, nullptr);
+	method.removeProperty(Ids::luaMethodCode, nullptr);
+	return Result::ok();
+}
+ int CtrlrPanel::inlineExternalLuaMethods(ValueTree methodsRoot, StringArray *missingNames)
+{
+	const File workspaceDir = getCtrlrLuaManager().getPanelWorkspaceDir();
+	int converted = 0;
+ 
+	for (int i = 0; i < methodsRoot.getNumChildren(); ++i) {
+		ValueTree child = methodsRoot.getChild(i);
+ 
+		if (child.hasType(Ids::luaMethodGroup)) {
+			converted += inlineExternalLuaMethods(child, missingNames);
+			continue;
+		}
+ 
+		if (!child.hasType(Ids::luaMethod))
+			continue;
+ 
+		if ((int)child.getProperty(Ids::luaMethodSource) != (int)CtrlrLuaMethod::codeInFile)
+			continue;
+ 
+		const File src = getLuaMethodSourceFile(&child);
+		if (!src.isAChildOf(workspaceDir)) // hand-linked file elsewhere: leave alone
+			continue;
+ 
+		String code = child.getProperty(Ids::luaMethodCode).toString(); // cached copy, if one exists
+		if (src.existsAsFile())
+			code = src.loadFileAsString();                              // the file always wins
+		else if (code.isEmpty() && missingNames != nullptr)
+			missingNames->add(child.getProperty(Ids::luaMethodName).toString());
+ 
+		child.setProperty(Ids::luaMethodCode, code, nullptr);
+		child.setProperty(Ids::luaMethodSource, (int)CtrlrLuaMethod::codeInProperty, nullptr);
+		child.removeProperty(Ids::luaMethodSourcePath, nullptr);
+		++converted;
+	}
+	return converted;
+}

@@ -45,6 +45,69 @@
 
 #include "luabind/class_info.hpp"
 
+namespace {
+// Recursively collect every FILE-BACKED luaMethod node, however deeply it is nested in groups.
+// In-memory methods (built-ins etc.) have no source path and are deliberately skipped, so the
+// scan never treats them as "stale".
+void collectMethodTrees(const ValueTree &parent, Array<ValueTree> &out) {
+	for (int i = 0; i < parent.getNumChildren(); ++i) {
+		ValueTree child = parent.getChild(i);
+
+		if (child.hasType(Ids::luaMethod)) {
+			if (child.getProperty(Ids::luaMethodSourcePath).toString().isNotEmpty())
+				out.add(child);
+		} else {
+			collectMethodTrees(child, out); // group node -> recurse
+		}
+	}
+}
+
+// Walk (and create if missing) the group nodes that mirror a folder on disk.
+// scriptsDir itself maps to the root node.
+ValueTree getOrCreateGroupForDir(ValueTree root, const File &scriptsDir, const File &dir) {
+	if (dir == scriptsDir)
+		return root;
+
+	StringArray parts = StringArray::fromTokens(dir.getRelativePathFrom(scriptsDir), "/\\", "");
+	parts.removeEmptyStrings();
+
+	ValueTree current = root;
+
+	for (const auto &part : parts) {
+		ValueTree next;
+
+		for (int i = 0; i < current.getNumChildren(); ++i) {
+			ValueTree c = current.getChild(i);
+			if (c.hasType(Ids::luaMethodGroup) && c.getProperty(Ids::name).toString() == part) {
+				next = c;
+				break;
+			}
+		}
+
+		if (!next.isValid()) {
+			next = ValueTree(Ids::luaMethodGroup);
+			next.setProperty(Ids::name, part, nullptr);
+			current.addChild(next, -1, nullptr);
+		}
+
+		current = next;
+	}
+
+	return current;
+}
+
+bool isValidLuaIdentifier(const String &name) {
+	if (name.isEmpty())
+		return false;
+
+	if (!name.containsOnly("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789"))
+		return false;
+
+	const juce_wchar first = name[0];
+	return (first >= 'a' && first <= 'z') || (first >= 'A' && first <= 'Z') || first == '_';
+}
+} // namespace
+
 CtrlrLuaManager::CtrlrLuaManager(CtrlrPanel &_owner)
 	: owner(_owner),
 	  luaManagerTree(Ids::luaManager),
@@ -1595,106 +1658,46 @@ juce::File CtrlrLuaManager::getPanelWorkspaceDir() const {
 }
 
 void CtrlrLuaManager::setExternalScriptSyncEnabled(bool enabled) {
-	DBG("setExternalScriptSyncEnabled called with state: " + juce::String(enabled ? "TRUE" : "FALSE"));
-
 	if (enabled) {
 		juce::File scriptsDir = getPanelWorkspaceDir();
+		if (!scriptsDir.exists())
+			scriptsDir.createDirectory();
 
-		if (!scriptsDir.exists()) {
-			bool created = scriptsDir.createDirectory();
-			DBG("Created scripts directory successfully? " + juce::String(created ? "YES" : "NO"));
-		} else {
-			DBG("Scripts directory already exists.");
-		}
-
-		Result res = owner.convertLuaMethodsToFiles(scriptsDir.getFullPathName());
+		StringArray notes;
+		const Result res = owner.exportMethodsToWorkspace(scriptsDir, &notes);
 
 		if (res.wasOk()) {
-			DBG("Successfully exported Lua methods to disk.");
-
 			ValueTree methodsRoot = luaManagerTree.getChildWithName(Ids::luaManagerMethods);
 			if (methodsRoot.isValid()) {
 				workspaceSync = std::make_unique<CtrlrLuaWorkspaceSync>(owner, methodsRoot, scriptsDir);
 				workspaceSync->resyncNow();
 			}
+
+			if (notes.size() > 0)
+				AW::showMessageBox(AW::Info, "External editing enabled", notes.joinIntoString("\n"));
 		} else {
-			DBG("FAILED to export Lua methods: " + res.getErrorMessage());
+			AW::showMessageBox(AW::Warning, "External editing",
+							   "Could not export the Lua methods:\n" + res.getErrorMessage());
 		}
 
 		scriptWatcher = std::make_unique<CtrlrLuaPanelScriptWatcher>(
 			scriptsDir, [this](const juce::File &modifiedFile) { reloadScriptFromDisk(modifiedFile); });
 	} else {
-		workspaceSync = nullptr;
-		DBG("Stopping external script watcher.");
+		workspaceSync = nullptr; // stop the tree->disk sync first, so it ignores the changes below
 		scriptWatcher = nullptr;
-	}
-}
 
-// ---------------------------------------------------------------------------
-// File-local helpers (put above the two member functions in CtrlrLuaManager.cpp)
-//
-// ASSUMPTIONS - change to match your tree:
-//   Ids::luaMethodGroup : ValueTree type of a group node
-//   Ids::name           : property holding the group's display name
-// ---------------------------------------------------------------------------
-namespace {
-// Recursively collect every luaMethod node, however deeply it is nested in groups.
-void collectMethodTrees(const ValueTree &parent, Array<ValueTree> &out) {
-	for (int i = 0; i < parent.getNumChildren(); ++i) {
-		ValueTree child = parent.getChild(i);
+		// Not while a saved panel is being loaded (the property is restored as "false" then).
+		if (!owner.getRestoreState()) {
+			StringArray missing;
+			owner.inlineExternalLuaMethods(luaManagerTree.getChildWithName(Ids::luaManagerMethods), &missing);
 
-		if (child.hasType(Ids::luaMethod))
-			out.add(child);
-		else
-			collectMethodTrees(child, out); // group node -> recurse
-	}
-}
-
-// Walk (and create if missing) the group nodes that mirror a folder on disk.
-// scriptsDir itself maps to the root node.
-ValueTree getOrCreateGroupForDir(ValueTree root, const File &scriptsDir, const File &dir) {
-	if (dir == scriptsDir)
-		return root;
-
-	StringArray parts = StringArray::fromTokens(dir.getRelativePathFrom(scriptsDir), "/\\", "");
-	parts.removeEmptyStrings();
-
-	ValueTree current = root;
-
-	for (const auto &part : parts) {
-		ValueTree next;
-
-		for (int i = 0; i < current.getNumChildren(); ++i) {
-			ValueTree c = current.getChild(i);
-			if (c.hasType(Ids::luaMethodGroup) && c.getProperty(Ids::name).toString() == part) {
-				next = c;
-				break;
-			}
+			if (missing.size() > 0)
+				AW::showMessageBox(AW::Warning, "External editing turned off",
+								   "These methods had no script file and no stored copy, so they are now empty:\n\n" +
+									   missing.joinIntoString("\n"));
 		}
-
-		if (!next.isValid()) {
-			next = ValueTree(Ids::luaMethodGroup);
-			next.setProperty(Ids::name, part, nullptr);
-			current.addChild(next, -1, nullptr);
-		}
-
-		current = next;
 	}
-
-	return current;
 }
-
-bool isValidLuaIdentifier(const String &name) {
-	if (name.isEmpty())
-		return false;
-
-	if (!name.containsOnly("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789"))
-		return false;
-
-	const juce_wchar first = name[0];
-	return (first >= 'a' && first <= 'z') || (first >= 'A' && first <= 'Z') || first == '_';
-}
-} // namespace
 
 // ---------------------------------------------------------------------------
 // Uses the file-local helpers from CtrlrLuaManager_external_sync.cpp:

@@ -899,3 +899,55 @@ void CtrlrPanel::canClose(const bool closePanel, std::function<void(bool)> compl
 	if (completionCallback)
 		completionCallback(true);
 }
+Result CtrlrPanel::exportMethodsToWorkspace(const File &workspaceDir, StringArray *notes) {
+	if (!workspaceDir.exists()) {
+		const Result created = workspaceDir.createDirectory();
+		if (created.failed())
+			return created;
+	}
+ 
+	if (!workspaceDir.hasWriteAccess())
+		return Result::fail("No write access to the workspace folder: " + workspaceDir.getFullPathName());
+ 
+	ValueTree luaManager = getPanelTree().getChildWithName(Ids::luaManager);
+	if (!luaManager.isValid())
+		return Result::fail("Panel has no Lua manager");
+ 
+	StringArray usedPaths; // files claimed during THIS export (collision detection)
+	return exportLuaChildrenToWorkspace(workspaceDir, luaManager.getChildWithName(Ids::luaManagerMethods),
+										usedPaths, notes);
+}
+ 
+Result CtrlrPanel::exportLuaChildrenToWorkspace(const File &parentDir, ValueTree parent, StringArray &usedPaths,
+												StringArray *notes) {
+	for (int i = 0; i < parent.getNumChildren(); ++i) {
+		ValueTree child = parent.getChild(i);
+ 
+		if (child.hasType(Ids::luaMethod)) {
+			if (isInBuiltInGroup(child) || (bool)child.getProperty("isReadOnly", false))
+				continue; // built-ins stay in memory, never exported
+ 
+			if ((int)child.getProperty(Ids::luaMethodSource) == (int)CtrlrLuaMethod::codeInFile)
+				continue; // already linked to a file
+ 
+			const Result r = exportLuaMethodToWorkspace(parentDir, child, usedPaths, notes);
+			if (r.failed())
+				return r;
+		} else if (child.hasType(Ids::luaMethodGroup) && !isInBuiltInGroup(child)) {
+			const String groupName = child.getProperty(Ids::name).toString();
+			if (groupName.isEmpty())
+				continue;
+ 
+			// same folder naming as CtrlrLuaWorkspaceSync::expectedFileFor()
+			const File groupDir = parentDir.getChildFile(File::createLegalFileName(groupName));
+			const Result made = groupDir.createDirectory();
+			if (made.failed())
+				return made;
+ 
+			const Result r = exportLuaChildrenToWorkspace(groupDir, child, usedPaths, notes);
+			if (r.failed())
+				return r;
+		}
+	}
+	return Result::ok();
+}
