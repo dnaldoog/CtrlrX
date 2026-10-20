@@ -1,6 +1,12 @@
 [back to release page &rArr;](https://github.com/dnaldoog/CtrlrX/releases)
 ----
 
+### CtrlrX v8.70 10/21/2026
+
+- Fix Assertion failures with juce::TooltipWindow tooltip;
+- Changed to juce::SharedResourcePointer<juce::TooltipWindow> tooltip;
+- 
+
 ### CtrlrX v.8.69 10/19/2026
 
 - Lua external editor: keep tree and scripts folder in sync, make saved panels self-contained
