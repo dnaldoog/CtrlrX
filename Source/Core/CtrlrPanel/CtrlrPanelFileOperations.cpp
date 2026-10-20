@@ -5,6 +5,7 @@
 #include "CtrlrPanel/CtrlrPanelEditor.h"
 #include "CtrlrPanel/CtrlrPanelResource.h"
 #include "CtrlrPanel/CtrlrPanelResourceManager.h"
+#include "Lua/Methods/CtrlrLuaMethodManager.h"
 #include "CtrlrProcessor.h"
 #include "CtrlrUtilities.h"
 #include "stdafx.h"
@@ -657,18 +658,18 @@ Result CtrlrPanel::writeLuaChildren(const File &parentDir, ValueTree *parentElem
 	for (int i = 0; i < parentElement->getNumChildren(); i++) {
 		ValueTree child = parentElement->getChild(i);
 		if (child.hasType(Ids::luaMethod)) {
-			if ((int)child.getProperty(Ids::luaMethodSource) !=
-				CtrlrLuaMethod::codeInFile) { // Only process methods that are not already saved in files
+			if (isInBuiltInGroup(child) || (bool)child.getProperty("isReadOnly", false))
+				continue; // built-ins stay in memory, never exported
+
+			if ((int)child.getProperty(Ids::luaMethodSource) != CtrlrLuaMethod::codeInFile) {
 				res = CtrlrPanel::writeLuaMethod(parentDir, &child);
-				if (res.failed()) { // Break on first error
+				if (res.failed())
 					return res;
-				}
 			}
-		} else if (child.hasType(Ids::luaMethodGroup)) {
+		} else if (child.hasType(Ids::luaMethodGroup) && !isInBuiltInGroup(child)) {
 			res = CtrlrPanel::writeLuaMethodGroup(parentDir, &child);
-			if (res.failed()) { // Break on first error
+			if (res.failed())
 				return res;
-			}
 		}
 	}
 	return res;
