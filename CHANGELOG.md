@@ -1,7 +1,7 @@
 [back to release page &rArr;](https://github.com/dnaldoog/CtrlrX/releases)
 ----
 
-### CtrlrX v.8.68 10/19/2026
+### CtrlrX v.8.69 10/19/2026
 
 Lua external editor: keep tree and scripts folder in sync, make saved panels self-contained
 
@@ -22,6 +22,7 @@ Lua external editor: keep tree and scripts folder in sync, make saved panels sel
 - https://github.com/dnaldoog/CtrlrX/commit/92a6b16a21342ae54802618a40ade1629a027726
   
 ### CtrlrX v.8.68 10/19/2026
+
 
 - Fixed error with __Built-In__ files duplicating when External Editor enabled.
 - Stop lua editor creating duplicate function names.
