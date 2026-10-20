@@ -10,6 +10,13 @@
 #include "CtrlrUtilities.h"
 #include "stdafx.h"
 
+ValueTree CtrlrPanel::createPortablePanelTree() {
+	ValueTree copy = getPanelTree().createCopy();
+	inlineExternalLuaMethods(copy.getChildWithName(Ids::luaManager).getChildWithName(Ids::luaManagerMethods));
+	copy.setProperty(Ids::ctrlrLuaExternalEditorEnabled, false, nullptr);
+	return copy;
+}
+
 ValueTree CtrlrPanel::getCleanPanelTree() {
 	ValueTree exportTree = panelTree.createCopy();
 
@@ -391,7 +398,9 @@ const String CtrlrPanel::exportPanel(CtrlrPanel *panel, const File &lastBrowsedD
 	}
 
 	juce::ValueTree exportTree = panel->getCleanPanelTree();
-
+	panel->inlineExternalLuaMethods(
+		exportTree.getChildWithName(Ids::luaManager).getChildWithName(Ids::luaManagerMethods));
+	exportTree.setProperty(Ids::ctrlrLuaExternalEditorEnabled, false, nullptr);
 	if (isRestricted) {
 		exportTree.setProperty(Ids::restricted, static_cast<int>(InstanceSingleRestricted), nullptr);
 		auto editorTree = exportTree.getChildWithName(Ids::uiPanelEditor);
@@ -551,11 +560,11 @@ Result CtrlrPanel::savePanelBin(const File &fileToSave, CtrlrPanel *panel, const
 		panel->luaSavePanel(PanelFileBinaryCompressed, fileToSave);
 
 		GZIPCompressorOutputStream gzOutputStream(&panelBinData);
-		panel->getPanelTree().writeToStream(gzOutputStream);
+		panel->createPortablePanelTree().writeToStream(gzOutputStream);
 		gzOutputStream.flush();
 	} else {
 		panel->luaSavePanel(PanelFileBinary, fileToSave);
-		panel->getPanelTree().writeToStream(panelBinData);
+		panel->createPortablePanelTree().writeToStream(panelBinData);
 	}
 
 	if (fileToSave.hasWriteAccess()) {
@@ -579,7 +588,8 @@ void CtrlrPanel::writePanelXml(OutputStream &outputStream, CtrlrPanel *panel, co
 
 	panel->sync();
 
-	std::unique_ptr<XmlElement> panelXml(panel->getPanelTree().createXml().release());
+	// std::unique_ptr<XmlElement> panelXml(panel->getPanelTree().createXml().release());
+	std::unique_ptr<XmlElement> panelXml(panel->createPortablePanelTree().createXml().release());
 
 	if (compressPanel && panelXml) {
 		String xml = panelXml->createDocument("");
@@ -898,4 +908,56 @@ void CtrlrPanel::canClose(const bool closePanel, std::function<void(bool)> compl
 
 	if (completionCallback)
 		completionCallback(true);
+}
+Result CtrlrPanel::exportMethodsToWorkspace(const File &workspaceDir, StringArray *notes) {
+	if (!workspaceDir.exists()) {
+		const Result created = workspaceDir.createDirectory();
+		if (created.failed())
+			return created;
+	}
+ 
+	if (!workspaceDir.hasWriteAccess())
+		return Result::fail("No write access to the workspace folder: " + workspaceDir.getFullPathName());
+ 
+	ValueTree luaManager = getPanelTree().getChildWithName(Ids::luaManager);
+	if (!luaManager.isValid())
+		return Result::fail("Panel has no Lua manager");
+ 
+	StringArray usedPaths; // files claimed during THIS export (collision detection)
+	return exportLuaChildrenToWorkspace(workspaceDir, luaManager.getChildWithName(Ids::luaManagerMethods),
+										usedPaths, notes);
+}
+ 
+Result CtrlrPanel::exportLuaChildrenToWorkspace(const File &parentDir, ValueTree parent, StringArray &usedPaths,
+												StringArray *notes) {
+	for (int i = 0; i < parent.getNumChildren(); ++i) {
+		ValueTree child = parent.getChild(i);
+ 
+		if (child.hasType(Ids::luaMethod)) {
+			if (isInBuiltInGroup(child) || (bool)child.getProperty("isReadOnly", false))
+				continue; // built-ins stay in memory, never exported
+ 
+			if ((int)child.getProperty(Ids::luaMethodSource) == (int)CtrlrLuaMethod::codeInFile)
+				continue; // already linked to a file
+ 
+			const Result r = exportLuaMethodToWorkspace(parentDir, child, usedPaths, notes);
+			if (r.failed())
+				return r;
+		} else if (child.hasType(Ids::luaMethodGroup) && !isInBuiltInGroup(child)) {
+			const String groupName = child.getProperty(Ids::name).toString();
+			if (groupName.isEmpty())
+				continue;
+ 
+			// same folder naming as CtrlrLuaWorkspaceSync::expectedFileFor()
+			const File groupDir = parentDir.getChildFile(File::createLegalFileName(groupName));
+			const Result made = groupDir.createDirectory();
+			if (made.failed())
+				return made;
+ 
+			const Result r = exportLuaChildrenToWorkspace(groupDir, child, usedPaths, notes);
+			if (r.failed())
+				return r;
+		}
+	}
+	return Result::ok();
 }

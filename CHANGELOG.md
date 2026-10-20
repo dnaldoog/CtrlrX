@@ -1,7 +1,28 @@
 [back to release page &rArr;](https://github.com/dnaldoog/CtrlrX/releases)
 ----
 
+### CtrlrX v.8.69 10/19/2026
+
+Lua external editor: keep tree and scripts folder in sync, make saved panels self-contained
+
+- Workspace scan now handles subfolders: files in a subfolder are imported into a
+  matching method group, stale entries are pruned, and the result dialog shows
+  what was imported, tracked, removed and skipped (with reasons)
+- New tree-to-disk sync: moving methods between groups, or renaming groups or
+  methods, in the Lua editor now moves the .lua files on disk to match
+- Enabling external editing uses a new exporter: a method keeps its name (no more
+  name2.lua), an existing file with different content is saved as name.lua.bak,
+  and methods that can't be exported cleanly stay in the panel and are reported
+- Disabling external editing moves the code back into the panel
+- Save, Save As and compressed/binary export now write a self-contained copy of
+  the panel (code inline, external editing off), so panels opened on another
+  machine or after clearing settings no longer show 0-byte functions
+- Built-In methods are never exported to the scripts folder (fixes what2.lua,
+  what3.lua... piling up on every panel open)
+- https://github.com/dnaldoog/CtrlrX/commit/92a6b16a21342ae54802618a40ade1629a027726
+  
 ### CtrlrX v.8.68 10/19/2026
+
 
 - Fixed error with __Built-In__ files duplicating when External Editor enabled.
 - Stop lua editor creating duplicate function names.

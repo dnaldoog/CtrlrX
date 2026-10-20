@@ -149,6 +149,7 @@ class CtrlrLuaMethodManager : public ValueTree::Listener
 		XmlElement *utilityMethods;
 		CtrlrLuaMethod emptyMethod;
 		CriticalSection methodManagerCriticalSection;
+		void handleMethodException(CtrlrLuaMethod *o, const juce::String &message, const bool trimLogMessage = false);
 		WeakReference <CtrlrLuaMethodEditor> currentMethodEditor;
 };
 
