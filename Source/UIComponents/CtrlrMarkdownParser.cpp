@@ -35,6 +35,72 @@ juce::Colour parseCssColour(const juce::String& value)
 
 	return juce::Colours::findColourForName(v, juce::Colours::black);
 }
+
+// Splits "| a | b |" into { "a", "b" }. Honours \| and ignores | inside `code`.
+juce::StringArray splitTableRow(const juce::String &row) {
+	juce::String s = row.trim();
+
+	if (s.startsWithChar('|'))
+		s = s.substring(1);
+	if (s.endsWithChar('|') && !s.endsWith("\\|"))
+		s = s.dropLastCharacters(1);
+
+	juce::StringArray cells;
+	juce::String cell;
+	bool inCode = false;
+
+	for (int k = 0; k < s.length(); ++k) {
+		const juce_wchar ch = s[k];
+
+		if (ch == '\\' && k + 1 < s.length() && s[k + 1] == '|') {
+			cell += "|";
+			++k;
+			continue;
+		}
+
+		if (ch == '`')
+			inCode = !inCode;
+
+		if (ch == '|' && !inCode) {
+			cells.add(cell.trim());
+			cell.clear();
+			continue;
+		}
+
+		cell += ch;
+	}
+
+	cells.add(cell.trim());
+	return cells;
+}
+
+// True for the row under a table header: |---|:---:|---:|
+bool isTableSeparatorLine(const juce::String &raw) {
+	const juce::String s = raw.trim();
+
+	if (!s.containsChar('|') || !s.containsOnly("|-: \t"))
+		return false;
+
+	const juce::StringArray cells = splitTableRow(s);
+
+	if (cells.isEmpty())
+		return false;
+
+	for (const auto &c : cells) {
+		juce::String t = c.trim();
+
+		if (t.startsWithChar(':'))
+			t = t.substring(1);
+		if (t.endsWithChar(':'))
+			t = t.dropLastCharacters(1);
+
+		if (t.isEmpty() || !t.containsOnly("-"))
+			return false;
+	}
+
+	return true;
+}
+
 } // namespace
 
 // ----------------------------- Fonts ---------------------------------
@@ -126,8 +192,7 @@ juce::String CtrlrMarkdownParser::stripInlineCode(const juce::String& s)
 }
 
 // ----------------------------- Inline formatting ------------------------------
-void CtrlrMarkdownParser::appendInlineStyled(juce::AttributedString& as, const juce::String& raw)
-{
+void CtrlrMarkdownParser::appendInlineStyled(juce::AttributedString &as, const juce::String &raw, bool forceBold) {
 	// Convert <br> tags (any case) directly into real line breaks
 	juce::String s = raw.replace("<br>", "\n", true)
 						 .replace("<br/>", "\n", true)
@@ -141,7 +206,7 @@ void CtrlrMarkdownParser::appendInlineStyled(juce::AttributedString& as, const j
 						 .replace("&times;", "\\*");
 
 	// Independent flags instead of a single mode, so ***bold italic*** works
-	bool bold = false;
+	bool bold = forceBold;
 	bool italic = false;
 	bool code = false;
 	juce::Colour currentColour = juce::Colours::black;
@@ -345,7 +410,53 @@ std::vector<CtrlrMarkdownParser::MarkdownBlock> CtrlrMarkdownParser::parseToBloc
 			blocks.push_back(std::move(cb));
 			continue;
 		}
+		// Table: a header row followed by a separator row such as |---|:---:|---:|
+		if (line.containsChar('|') && i + 1 < lines.size() && isTableSeparatorLine(lines[i + 1])) {
+			flushParagraph();
 
+			const juce::StringArray headerCells = splitTableRow(line);
+			const juce::StringArray alignCells = splitTableRow(lines[i + 1]);
+			const int numCols = headerCells.size();
+
+			MarkdownBlock tb;
+			tb.isHorizontalRule = false;
+			tb.isTable = true;
+
+			auto addRow = [&](const juce::StringArray &cells, bool isHeader) {
+				std::vector<juce::AttributedString> row;
+
+				for (int c = 0; c < numCols; ++c) {
+					const juce::String a = alignCells[c].trim();
+					juce::AttributedString cell;
+
+					if (a.startsWithChar(':') && a.endsWithChar(':'))
+						cell.setJustification(juce::Justification::centred);
+					else if (a.endsWithChar(':'))
+						cell.setJustification(juce::Justification::centredRight);
+					else
+						cell.setJustification(juce::Justification::centredLeft);
+
+					appendInlineStyled(cell, cells[c], isHeader);
+					row.push_back(std::move(cell));
+				}
+
+				tb.tableRows.push_back(std::move(row));
+			};
+
+			addRow(headerCells, true);
+
+			int j = i + 2;
+			for (; j < lines.size(); ++j) {
+				const juce::String rowLine = lines[j].trimEnd();
+				if (rowLine.isEmpty() || !rowLine.containsChar('|'))
+					break;
+				addRow(splitTableRow(rowLine), false);
+			}
+
+			blocks.push_back(std::move(tb));
+			i = j - 1; // the loop's ++i moves to the first line after the table
+			continue;
+		}
 		if (line.equalsIgnoreCase("<hr>") || line.equalsIgnoreCase("<hr/>") || line.equalsIgnoreCase("<hr />") ||
 			isHorizontalRuleLine(line)) {
 			flushParagraph();
@@ -422,17 +533,22 @@ juce::AttributedString CtrlrMarkdownParser::parse(const juce::String& md)
         if (b.isHorizontalRule)
         {
             addHorizontalRule(out);
-        }
-        else
-        {
-            // append block content directly
+		} else if (b.isTable) {
+			// parse() cannot draw a grid, so tables degrade to "a  |  b  |  c" lines
+			for (auto &row : b.tableRows)
+				for (size_t c = 0; c < row.size(); ++c) {
+					out.append(row[c]);
+					out.append(c + 1 < row.size() ? "  |  " : "\n", normalFont(), juce::Colours::grey);
+				}
+		} else {
+			// append block content directly
             // preserve attribute runs by appending text and attributes: easiest is to append its plain representation using default font
             // but we want to keep inline style: append the content's plain string with attributes is non-trivial,
             // so we append the whole content by converting to plain string but also re-styling simple runs:
             // Simpler: append the content as-is by constructing a new AttributedString copy
             out.append(b.content);
-        }
-    }
+		}
+	}
 
     return out;
 }
@@ -440,43 +556,78 @@ juce::AttributedString CtrlrMarkdownParser::parse(const juce::String& md)
 // ----------------------------- Plain text fallback --------------------------
 juce::String CtrlrMarkdownParser::parseToPlainText(const juce::String& md)
 {
-    // very simple: strip markdown markers
-	juce::String s = md.replace("<br>", "\n", true)
-						 .replace("<br/>", "\n", true)
-						 .replace("<br />", "\n", true)
-						 .replace("&gt;", ">")
-						 .replace("&lt;", "<")
-						 .replace("&amp;", "&")
-						 .replace("&quot;", "\"")
-						 .replace("&#39;", "'")
-						 .replace("&#215;", juce::String::charToString(0x00d7))
-						 .replace("&times;", juce::String::charToString(0x00d7));
+	auto decode = [](const juce::String &t, const juce::String &br) {
+		return t.replace("<br>", br, true)
+			.replace("<br/>", br, true)
+			.replace("<br />", br, true)
+			.replace("&gt;", ">")
+			.replace("&lt;", "<")
+			.replace("&amp;", "&")
+			.replace("&quot;", "\"")
+			.replace("&#39;", "'")
+			.replace("&#215;", juce::String::charToString(0x00d7))
+			.replace("&times;", juce::String::charToString(0x00d7));
+	};
 
-	// Use the entity-decoded text (the original decoded into 's' but then split 'md')
-	juce::StringArray lines; lines.addLines(s);
-    juce::String out;
-    bool inCodeBlock = false;
+	juce::StringArray lines;
+	lines.addLines(md);
+
+	juce::String out;
+	bool inCodeBlock = false;
+	bool inTable = false;
 	const juce::String bullet = juce::CharPointer_UTF8("\xe2\x80\xa2 "); // • in UTF-8
-    for (auto& ln : lines)
-    {
-        juce::String line = ln.trimEnd();
-        if (line.trimStart().startsWith("```")) { inCodeBlock = !inCodeBlock; continue; }
-        if (inCodeBlock) { out << line << "\n"; continue; }
 
+	for (int i = 0; i < lines.size(); ++i) {
+		juce::String line = lines[i].trimEnd();
+
+		if (line.trimStart().startsWith("```")) {
+			inCodeBlock = !inCodeBlock;
+			continue;
+		}
+		if (inCodeBlock) {
+			out << line << "\n";
+			continue;
+		}
+
+		// Tables: tab-separated
+		if (!inTable && line.containsChar('|') && i + 1 < lines.size() && isTableSeparatorLine(lines[i + 1]))
+			inTable = true;
+
+		if (inTable) {
+			if (isTableSeparatorLine(line))
+				continue;
+
+			if (line.containsChar('|')) {
+				juce::StringArray cells = splitTableRow(line);
+				for (auto &cell : cells)
+					cell = stripInlineCode(decode(cell, " ").replace("**", "").replace("*", ""));
+
+				out << cells.joinIntoString("\t") << "\n";
+				continue;
+			}
+
+			inTable = false; // a blank or other line ends the table; handle it normally below
+		}
+
+		line = decode(line, "\n");
 		const juce::String trimmedLine = line.trimStart();
 
-        if (line.startsWith("# ")) out << line.substring(2).trim() << "\n";
-        else if (line.startsWith("## ")) out << line.substring(3).trim() << "\n";
-        else if (line.startsWith("### ")) out << line.substring(4).trim() << "\n";
-        else if (line.startsWith("#### ")) out << line.substring(5).trim() << "\n";
-        else if (trimmedLine.startsWith("- ") || trimmedLine.startsWith("* ") || trimmedLine.startsWith("+ "))
-            out << bullet << trimmedLine.substring(2).trim() << "\n";
-        else
-        {
-            juce::String t = line.replace("**", "").replace("*", "").replace("_", "");
-            t = stripInlineCode(t);
-            out << t << "\n";
-        }
-    }
-    return out;
+		if (line.startsWith("# "))
+			out << line.substring(2).trim() << "\n";
+		else if (line.startsWith("## "))
+			out << line.substring(3).trim() << "\n";
+		else if (line.startsWith("### "))
+			out << line.substring(4).trim() << "\n";
+		else if (line.startsWith("#### "))
+			out << line.substring(5).trim() << "\n";
+		else if (trimmedLine.startsWith("- ") || trimmedLine.startsWith("* ") || trimmedLine.startsWith("+ "))
+			out << bullet << trimmedLine.substring(2).trim() << "\n";
+		else {
+			juce::String t = line.replace("**", "").replace("*", "").replace("_", "");
+			t = stripInlineCode(t);
+			out << t << "\n";
+		}
+	}
+
+	return out;
 }

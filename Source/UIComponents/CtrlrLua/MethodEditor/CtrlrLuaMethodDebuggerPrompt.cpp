@@ -54,7 +54,8 @@ CtrlrLuaMethodDebuggerPrompt::CtrlrLuaMethodDebuggerPrompt (CtrlrLuaMethodEditor
     debuggerInput->setColour (TextEditor::highlightColourId, Colour (0x5b247c8d));
     debuggerInput->setColour (TextEditor::outlineColourId, Colour (0x8a000000));
     debuggerInput->setColour (TextEditor::shadowColourId, Colour (0x00000000));
-    debuggerInput->setText ("");
+	debuggerInput->setColour(TextEditor::backgroundColourId, Colours::orange);
+	debuggerInput->setText ("");
 
     addAndMakeVisible (debugContinue = new ImageButton ("Continue"));
 	debugContinue->setTooltip(TRANS("Run/Continue"));
@@ -218,20 +219,23 @@ void CtrlrLuaMethodDebuggerPrompt::paint (Graphics& g)
 
 void CtrlrLuaMethodDebuggerPrompt::resized()
 {
-    debuggerOutput->setBounds (0, 32, proportionOfWidth (0.7000f), getHeight() - 50);
-    debuggerInput->setBounds (0, getHeight() - 18, getWidth() - 0, 18);
-    debugContinue->setBounds (0, 0, 32, 32);
+	const int inputHeight = 32; // Define your desired height here
+
+	debuggerOutput->setBounds(0, 32, proportionOfWidth(0.7000f), getHeight() - 32 - inputHeight);
+	debuggerInput->setBounds(0, getHeight() - inputHeight, getWidth(), inputHeight);
+	debugContinue->setBounds (0, 0, 32, 32);
     debugStepOver->setBounds (40, 0, 32, 32);
     debugStepInto->setBounds (80, 0, 32, 32);
-    debuggerInfo->setBounds (proportionOfWidth (0.7000f), 32, proportionOfWidth (0.3000f), getHeight() - 50);
-    debugStepOut->setBounds (120, 0, 32, 32);
+	debuggerInfo->setBounds(proportionOfWidth(0.7000f), 32, proportionOfWidth(0.3000f), getHeight() - 32 - inputHeight);
+	debugStepOut->setBounds (120, 0, 32, 32);
     debugRestart->setBounds (160, 0, 32, 32);
     debugStop->setBounds (200, 0, 32, 32);
-	clearOutput->setBounds (240, 0, 32, 32);
-    //[UserResized] Add your own custom resize handling here..
-    Component* comps[] = { debuggerOutput, resizer, debuggerInfo  };
-	layoutManager.layOutComponents (comps, 3, 0, 32, getWidth(), getHeight() - 50, false, true);
-    //[/UserResized]
+	clearOutput->setBounds(240, 0, 32, 32);
+
+	//[UserResized] Add your own custom resize handling here..
+	Component *comps[] = {debuggerOutput, resizer, debuggerInfo};
+	layoutManager.layOutComponents(comps, 3, 0, 32, getWidth(), getHeight() - 32 - inputHeight, false, true);
+	//[/UserResized]
 }
 
 void CtrlrLuaMethodDebuggerPrompt::buttonClicked (Button* buttonThatWasClicked)

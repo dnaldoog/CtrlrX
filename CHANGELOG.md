@@ -5,6 +5,11 @@
 
 - Fix Assertion failures with juce::TooltipWindow tooltip;
 - Changed to juce::SharedResourcePointer<juce::TooltipWindow> tooltip;
+- Restrict open panel to bpanel(z) etc
+- Added table formatting to CtrlrMarkdownParser
+- Added luadebugger help section
+- Added ctrlrLuaExternalEditorEnabled to auto isPropertyOrphan = [](const Identifier &key) -> bool {
+- Increased debugEditor window height and orange background colour
 - https://github.com/dnaldoog/CtrlrX/commit/38be360bb8c556a2fe5ca8c1e3e66d61339572a7
 
 ### CtrlrX v.8.69 10/19/2026

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="hrcYoO" name="CtrlrX" reportAppUsage="1" projectType="audioplug"
-              version="8.69" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
+              version="8.70" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
               buildVST="0" buildVST3="1" buildAU="1" buildAUv3="0" buildRTAS="0"
               buildAAX="0" buildStandalone="1" enableIAA="0" pluginName="CtrlrX                          "
               pluginManufacturer="CtrlrX Project                  " pluginManufacturerCode="cTrX"
@@ -612,6 +612,8 @@
           <FILE id="TwaTzD" name="BulkReadWriteDump.md" compile="0" resource="1"
                 file="Source/Resources/Doc/BulkReadWriteDump.md"/>
           <FILE id="CiV3x1" name="Expressions.md" compile="0" resource="1" file="Source/Resources/Doc/Expressions.md"/>
+          <FILE id="eu5r5x" name="lua-debugger-help.md" compile="0" resource="1"
+                file="Source/Resources/Doc/lua-debugger-help.md"/>
           <FILE id="IzPj0o" name="ViewPortOptions.md" compile="0" resource="1"
                 file="Source/Resources/Doc/ViewPortOptions.md"/>
         </GROUP>

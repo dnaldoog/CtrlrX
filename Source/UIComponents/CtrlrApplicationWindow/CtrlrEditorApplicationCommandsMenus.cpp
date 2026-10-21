@@ -271,6 +271,7 @@ PopupMenu CtrlrEditor::getMenuForIndex(int /*topLevelMenuIndex*/, const String &
 			menu.addCommandItem(commandManager, showExpressionHelp);
 			menu.addCommandItem(commandManager, showDumpByLuaHelp);
 			menu.addCommandItem(commandManager, showViewportHelp);
+			menu.addCommandItem(commandManager, showDebuggerHelp);
 			menu.addSeparator();
 
 #ifdef JUCE_DEBUG
