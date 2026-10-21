@@ -39,5 +39,6 @@ class CtrlrChildWindow  : public DocumentWindow, public KeyListener
 		CtrlrChildWindowContainer *containerComponent;
 		CtrlrChildWindowContent *contentComponent;
 		CtrlrWindowManager &owner;
-		TooltipWindow window;
+		// TooltipWindow window;
+		juce::SharedResourcePointer<juce::TooltipWindow> window;
 };

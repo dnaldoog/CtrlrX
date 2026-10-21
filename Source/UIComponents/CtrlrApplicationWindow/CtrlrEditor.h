@@ -120,6 +120,7 @@ class CtrlrEditor : public AudioProcessorEditor,
 			doQuit = 0x00fffffe,
 			showDumpByLuaHelp = 0x7100,
 			showExpressionHelp = 0x7101,
+			showDebuggerHelp = 0x7102,
 			showViewportHelp = 0x7106
 			// showMidiProgrammingHelp = 0x7102,
 			// showLuaUsefulCommandsHelp = 0x7103,

@@ -81,6 +81,7 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 							 doKeyGenerator,
 							 doProgramWizard,
 							 showExpressionHelp,
+							 showDebuggerHelp,
 							 showDumpByLuaHelp,
 							 showViewportHelp,
 							 doQuit
@@ -183,6 +184,12 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 	case showExpressionHelp:
 		result.setInfo("Expressions", "Show help for writing Lua expressions", globalCategory, 0);
 		result.addDefaultKeypress('e', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
+
+		break;
+
+	case showDebuggerHelp:
+		result.setInfo("Lua Debugger", "Show help for lua debugger", globalCategory, 0);
+		result.addDefaultKeypress('d', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
 
 		break;
 

@@ -228,6 +228,11 @@ case showExpressionHelp:
 	new CtrlrHelpWindow("Expressions Help",
 						new CtrlrGenericHelp(BinaryData::Expressions_md, BinaryData::Expressions_mdSize));
 	return true;
+	break;
+case showDebuggerHelp:
+	new CtrlrHelpWindow("Lua Debugger Help",
+						new CtrlrGenericHelp(BinaryData::luadebuggerhelp_md, BinaryData::luadebuggerhelp_mdSize));
+	return true;
 
 	// case showMidiProgrammingHelp:
 	// 	new CtrlrHelpWindow("MIDI programming Help",
@@ -593,7 +598,8 @@ case CtrlrEditor::cleanOrphanProperties: {
 		// 2. Uncaptured access to static local variable
 		auto isPropertyOrphan = [](const Identifier &key) -> bool {
 			// Ignore internal runtime viewport properties
-			if (key == Ids::uiViewPortWidth || key == Ids::uiViewPortHeight)
+			if (key == Ids::uiViewPortWidth || key == Ids::uiViewPortHeight ||
+				key == Ids::ctrlrLuaExternalEditorEnabled)
 				return false;
 
 			return validRegisteredIds.find(key.toString()) == validRegisteredIds.end();
