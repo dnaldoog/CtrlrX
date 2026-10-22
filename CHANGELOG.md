@@ -1,6 +1,26 @@
 [back to release page &rArr;](https://github.com/dnaldoog/CtrlrX/releases)
 ----
 
+
+### CtrlrX v8.71 10/23/2026
+
+- Fix PopupMenu::showAt() leaving menu window open in JUCE 8
+- The sync show helpers pump the message loop around showMenuAsync() to
+stay compatible with legacy Lua panels. 
+- In JUCE 8 the menu callback
+fires before the popup window is fully torn down, so returning
+immediately sometimes left the main menu on screen until the next
+click (roughly every other selection).
+- After the callback fires, dismissAllActiveMenus() and pump the
+  dispatch loop until no modal components remain (250 ms cap)
+- Track the target component with a SafePointer and abort the wait if
+  it is deleted while the menu is open
+- Use shared state for the result so a late callback cannot write to a
+  dead stack frame
+- Pass the target component through showMenuSyncAtComponent()
+- https://github.com/dnaldoog/CtrlrX/commit/44f15470ce4e139521fa243a69529fa560e885bc
+
+
 ### CtrlrX v8.70 10/21/2026
 
 - Fix Assertion failures with juce::TooltipWindow tooltip;
