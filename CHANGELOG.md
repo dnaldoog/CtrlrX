@@ -18,6 +18,7 @@ click (roughly every other selection).
 - Use shared state for the result so a late callback cannot write to a
   dead stack frame
 - Pass the target component through showMenuSyncAtComponent()
+- Added Static/Instance identifiers to LuaApi what() browser
 - https://github.com/dnaldoog/CtrlrX/commit/44f15470ce4e139521fa243a69529fa560e885bc
 
 

@@ -1,17 +1,18 @@
 /*
   ==============================================================================
 
-    CtrlrLuaApiInspector.cpp
-    Created: 19 Sep 2026 4:01:10pm
-    Author:  zan64
+	CtrlrLuaApiInspector.cpp
+	Created: 19 Sep 2026 4:01:10pm
+	Author:  zan64
 
   ==============================================================================
 */
-# include "stdafx.h"
 #include "CtrlrLuaApiInspector.h"
-#include "CtrlrPanel/CtrlrPanel.h"
+#include "CtrlrLuaApiLookup.h"
 #include "CtrlrLuaManager.h"
+#include "CtrlrPanel/CtrlrPanel.h"
 #include "luabind/luabind.hpp"
+#include "stdafx.h"
 
 CtrlrLuaApiInspector::CtrlrLuaApiInspector(CtrlrPanel& _owner)
     : owner(_owner)
@@ -57,6 +58,7 @@ outputDisplay.setFont(juce::FontOptions(juce::Font::getDefaultMonospacedFontName
 outputDisplay.setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
 outputDisplay.setColour(juce::TextEditor::textColourId, juce::Colours::black);
 outputDisplay.setColour(juce::TextEditor::outlineColourId, juce::Colours::transparentBlack);
+updateClassCache();
 suggestionList.onPick = [this](int row) { acceptSuggestion(row); };
 classInput.onKey = [this](const juce::KeyPress &key) { return handleClassInputKey(key); };
 addChildComponent(suggestionList); // hidden until there are matches
@@ -365,30 +367,58 @@ void CtrlrLuaApiInspector::listAllClasses() // create links
 }
 
 void CtrlrLuaApiInspector::updateClassCache() {
-	classNamesCache.clear();
-
-	// Query class_names() from Lua
-	const juce::String luaScript = "local names = class_names()\n"
-								   "if names == nil then return '' end\n"
-								   "local ret = ''\n"
-								   "for _, v in ipairs(names) do ret = ret .. tostring(v) .. '\\n' end\n"
-								   "return ret";
-
-	juce::String result = runLuaAndGetResult(luaScript);
-	classNamesCache.addLines(result);
-	classNamesCache.removeEmptyStrings();
+    classNamesCache.clear();
+    classNamesCache = CtrlrLuaApiLookup::getInstance().getAllClassNames();
 }
 
 void CtrlrLuaApiInspector::inspectClass(const juce::String &className) {
-	if (className.isEmpty())
-		return;
+    if (className.isEmpty())
+        return;
 
-	// Direct JUCE string concatenation (No printf/formatted specifiers)
-	juce::String luaScript;
-	luaScript << "if " << className << " ~= nil then "
-			  << "return what(" << className << ") "
-			  << "else return 'Error: Global symbol [" << className << "] is nil or uninitialized.' end";
+    auto& db = CtrlrLuaApiLookup::getInstance();
+    if (db.hasClass(className)) {
+        const ApiClass* apiClass = db.getClassInfo(className);
+        
+        juce::String formattedOutput;
+        formattedOutput.preallocateBytes(2048); // Prevent reallocation stutter
 
-	rawOutput = runLuaAndGetResult(luaScript);
-	applyFilter();
+        formattedOutput << "Object type [" << apiClass->name << "]\n";
+        formattedOutput << "-----------------------------------------------------------------\n\n";
+
+        formattedOutput << "Static / Class Methods (Call as " << apiClass->name << ".method()):\n";
+        if (apiClass->staticMethods.empty()) {
+            formattedOutput << "    (None)\n";
+        } else {
+            for (const auto& m : apiClass->staticMethods) {
+                formattedOutput << "    [Static] " << m.name << m.args << "\n";
+                // formattedOutput << "⚡ [Static] " << m.name << m.args << "\n";
+            }
+        }
+
+        formattedOutput << "\n";
+
+        formattedOutput << "Instance Methods (Call as instance:method()):\n";
+        if (apiClass->methods.empty()) {
+            formattedOutput << "    (None)\n";
+        } else {
+            for (const auto& m : apiClass->methods) {
+                formattedOutput << "    [Instance] " << m.name << m.args << "\n";
+                // formattedOutput << "🔹 [Instance] " << m.name << m.args << "\n";
+            }
+        }
+
+        formattedOutput << "\n-----------------------------------------------------------------";
+        rawOutput = formattedOutput;
+        applyFilter();
+        return;
+    }
+
+    // Fallback reflection
+    juce::String luaScript;
+    luaScript << "if " << className << " ~= nil then "
+              << "return what(" << className << ") "
+              << "else return 'Error: Global symbol [" << className << "] is nil or uninitialized.' end";
+
+    rawOutput = runLuaAndGetResult(luaScript);
+    applyFilter();
 }
