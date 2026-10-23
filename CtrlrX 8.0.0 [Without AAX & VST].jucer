@@ -948,6 +948,10 @@
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaApiInspector.cpp"/>
             <FILE id="P4MA5B" name="CtrlrLuaApiInspector.h" compile="0" resource="0"
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaApiInspector.h"/>
+            <FILE id="SDPYHR" name="CtrlrLuaApiLookup.cpp" compile="1" resource="0"
+                  file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaApiLookup.cpp"/>
+            <FILE id="rCZ0sE" name="CtrlrLuaApiLookup.h" compile="0" resource="0"
+                  file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaApiLookup.h"/>
             <FILE id="V6oOfp" name="CtrlrLuaCodeTokeniser.cpp" compile="1" resource="0"
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaCodeTokeniser.cpp"/>
             <FILE id="kOqisB" name="CtrlrLuaCodeTokeniser.h" compile="0" resource="0"
