@@ -48,7 +48,8 @@ public:
      * If user types ':', includeInstance should be true.
      * If user types '.', includeStatic and includeProperties should be true.
      */
-    std::vector<SuggestionItem> getMethodSuggestionsForClass(const juce::String& className,
+	std::vector<SuggestionItem> getClassSuggestions(const juce::String &prefix);
+	std::vector<SuggestionItem> getMethodSuggestionsForClass(const juce::String& className,
                                                            const juce::String& prefix,
                                                            bool includeInstance,
                                                            bool includeStatic,

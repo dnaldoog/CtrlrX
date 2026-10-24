@@ -321,6 +321,51 @@ std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggesti
     return results;
 }
 
+std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getClassSuggestions(const juce::String &prefix)
+{
+    std::vector<SuggestionItem> results;
+
+    // Libraries you'd plausibly assign from or call into: x = utils.xxx / x = MemoryBlock()
+    // (drop this block if you only want entries from classNames)
+    static const juce::StringArray libraries = {"math", "table", "string", "utils", "MemoryBlock"};
+    for (auto &lib : libraries)
+    {
+        if (lib.startsWithIgnoreCase(prefix) && !classNames.contains(lib, true))
+            results.push_back({lib, TypeClass});
+    }
+
+    for (auto &c : classNames)
+    {
+        if (!c.startsWithIgnoreCase(prefix))
+            continue;
+
+        const auto &lc = classes.getReference(c);
+        bool addedAny = false;
+
+        if (!lc.constructors.isEmpty())
+        {
+            results.push_back({c + "()", TypeClass});   // x = Foo()
+            addedAny = true;
+        }
+
+        if (!lc.staticMethods.isEmpty())
+        {
+            results.push_back({c + ".", TypeStatic});   // x = Foo.someStatic(...)
+            addedAny = true;
+        }
+
+        if (!addedAny)
+            results.push_back({c, TypeClass});          // never swallow classes lacking metadata
+    }
+
+    std::sort(results.begin(), results.end(),
+              [](const SuggestionItem &a, const SuggestionItem &b)
+              { return a.text.compareIgnoreCase(b.text) < 0; });
+
+    return results;
+}
+
+
 std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getMethodSuggestionsForClass(
     const juce::String &className, const juce::String &prefix,
     bool includeInstance, bool includeStatic, bool includeProperties)
