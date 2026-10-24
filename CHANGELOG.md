@@ -22,6 +22,7 @@ click (roughly every other selection).
 - Lua editor: trigger autocomplete by context (=, :, .) rather than every keystroke
 - Removed LuaAPI.xml as all classes are for AutoComplete and API Inspector 
 looked up through CtrlrLuaApiLookup() c++ classMap
+- Refactored `isLoading()`: [See here](https://github.com/damiensellier/CtrlrX/pull/336#issue-6011724625)
 - https://github.com/dnaldoog/CtrlrX/commit/44f15470ce4e139521fa243a69529fa560e885bc
 
 
