@@ -2,8 +2,9 @@
 
 // This is required to access BinaryData::LuaAPI_xml
 #include "BinaryData.h"
-#include "CtrlrMacros.h"
 #include "CtrlrLog.h"
+#include "CtrlrLuaApiLookup.h"
+#include "CtrlrMacros.h"
 
 CtrlrLuaMethodAutoCompleteManager::CtrlrLuaMethodAutoCompleteManager()
 {
@@ -20,635 +21,212 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
     allMethodNames.clear();
     utilityMethodNames.clear();
 
-    // 1. Load the MAIN API from XML
-    if (BinaryData::LuaAPI_xml != nullptr)
-    {
-        juce::XmlDocument doc(juce::String::createStringFromData(BinaryData::LuaAPI_xml, BinaryData::LuaAPI_xmlSize));
-        std::unique_ptr<juce::XmlElement> root(doc.getDocumentElement());
+	// 1. Load data directly from the RAM-native C++ CtrlrLuaApiLookup database (No XML!)
+	auto &db = CtrlrLuaApiLookup::getInstance();
+	auto allClassNames = db.getAllClassNames();
 
-        if (root != nullptr && root->hasTagName("LuaAPI"))
-        {
-            forEachXmlChildElement(*root, classXml)
-            {
-                if (classXml->hasTagName("class"))
-                {
-                    LuaClass lc;
-                    lc.name = classXml->getStringAttribute("name");
-                    lc.parentClass = classXml->getStringAttribute("inherits");
-                    juce::String cppName = classXml->getStringAttribute("cpp_name");
+	for (const auto &className : allClassNames) {
+		const auto *apiClass = db.getClassInfo(className);
+        _DBG("CHECKING CLASS: " + className);
+		if (!apiClass)
+			continue;
 
-                    if (auto *mList = classXml->getChildByName("methods"))
-                    {
-                        forEachXmlChildElement(*mList, m)
-                        {
-                            juce::String name = m->getStringAttribute("name");
-                            juce::String args = m->getStringAttribute("args").trim();
+		LuaClass lc;
+		lc.name = apiClass->name;
+		lc.parentClass = ""; // Can be mapped if inheritance is stored in C++ DB
 
-                            // --- CLEANED SANITIZATION ---
-                            if (args.isEmpty() || args == "()" || args.containsOnly(", ") || args.containsOnly("(, )"))
-                            {
-                                args = "()";
-                            }
-                            else
-                            {
-                                if (!args.startsWith("("))
-                                    args = "(" + args;
-                                if (!args.endsWith(")"))
-                                    args = args + ")";
+		// Map Constructors
+		for (const auto &c : apiClass->constructor) {
+			lc.constructors.add(c.args.isEmpty() ? "()" : c.args);
 
-                                // Double check if the content inside brackets is just commas
-                                if (args.substring(1, args.length() - 1).trim().containsOnly(", "))
-                                    args = "()";
-                            }
+			// Also add constructor signature to methods/static methods for autocomplete
+			LuaMethod lm;
+			lm.name = lc.name;
+			lm.parameters = c.args;
+			lm.isStatic = true;
+			lc.methods.add(lm);
+			lc.staticMethods.add(lm);
+		}
 
-                            bool alreadyExists = false;
-                            for (auto &existing : lc.methods)
-                            {
-                                if (existing.name == name && existing.parameters == args)
-                                {
-                                    alreadyExists = true;
-                                    break;
-                                }
-                            }
+		// Map Instance Methods
+		for (const auto &m : apiClass->methods) {
+			LuaMethod lm;
+			lm.name = m.name;
+			lm.parameters = m.args.isEmpty() ? "()" : m.args;
+			lm.isStatic = false;
 
-                            if (!alreadyExists)
-                            {
-                                LuaMethod lm;
-                                lm.name = name;
-                                lm.parameters = args;
-                                lm.isStatic = false;
+			if (lc.name == "CtrlrLuaUtils") {
+				lm.isStatic = true;
+				lc.staticMethods.add(lm);
+			}
 
-                                // If the class is CtrlrLuaUtils, also treat these as static
-                                // so they show up after a dot (utils.)
-                                if (lc.name == "CtrlrLuaUtils")
-                                {
-                                    lm.isStatic = true;
-                                    lc.staticMethods.add(lm);
-                                }
+			lc.methods.add(lm);
+			if (m.name != "string" && m.name != "math" && m.name != "table")
+				allMethodNames.add(m.name);
+		}
 
-                                lc.methods.add(lm);
+		// Map Static Methods
+		for (const auto &m : apiClass->staticMethods) {
+			LuaMethod sm;
+			sm.name = m.name;
+			sm.parameters = m.args.isEmpty() ? "()" : m.args;
+			sm.isStatic = true;
 
-                                // FIX: We no longer manually insert a "()" version here.
-                                // The UI now handles displaying the real signature.
+			lc.staticMethods.add(sm);
+			lc.methods.add(sm); // Ensure getMethodParams can find them
 
-                                if (name != "string" && name != "math" && name != "table")
-                                    allMethodNames.add(name);
-                            }
-                        }
-                    }
+			if (m.name != "string" && m.name != "math" && m.name != "table")
+				allMethodNames.add(m.name);
+		}
 
-                    if (auto *sList = classXml->getChildByName("static_methods"))
-                    {
-                        forEachXmlChildElement(*sList, s)
-                        {
-                            juce::String name = s->getStringAttribute("name");
-                            juce::String args = s->getStringAttribute("args").trim();
+		classes.set(lc.name, lc);
+		classNames.add(lc.name);
+	}
 
-                            if (args.isEmpty() || args.containsOnly(", "))
-                                args = "()";
-                            else
-                            {
-                                if (!args.startsWith("("))
-                                    args = "(" + args;
-                                if (!args.endsWith(")"))
-                                    args = args + ")";
-                            }
+	// 2. Manual Injection of Base Classes & Specialized Mappings (Keeps your custom UI hints intact)
+	// if (!classes.contains("LMemoryBlock"))
+	// {
+	//     LuaClass mbClass;
+	// 	mbClass.name = "MemoryBlock";
+	// 	classes.set("LMemoryBlock", mbClass);
+	// 	classes.set("MemoryBlock", mbClass);
+	// 	classNames.addIfNotAlreadyThere("MemoryBlock");
+	//     classNames.addIfNotAlreadyThere("LMemoryBlock");
+	// }
 
-                            LuaMethod sm;
-                            sm.name = name;
-                            sm.parameters = args;
-                            sm.isStatic = true;
-                            lc.staticMethods.add(sm);
-
-                            // IMPORTANT: Also add to methods list so getMethodParams can find them!
-                            lc.methods.add(sm);
-
-                            if (name != "string" && name != "math" && name != "table")
-                                allMethodNames.add(name);
-                        }
-                    }
-
-                    if (auto *cList = classXml->getChildByName("constructors"))
-                    {
-                        forEachXmlChildElement(*cList, c)
-                        {
-                            juce::String args = c->getStringAttribute("args").trim();
-                            if (!args.startsWith("("))
-                                args = "(" + args;
-                            if (!args.endsWith(")"))
-                                args = args + ")";
-
-                            LuaMethod lm;
-                            lm.name = lc.name; // Use the class name for the constructor
-                            lm.parameters = (args == "()" || args.isEmpty()) ? "()" : args;
-                            lm.isStatic = true;
-
-                            lc.methods.add(lm);
-                            lc.staticMethods.add(lm); // Add to static so it shows after a dot
-                        }
-                    }
-
-                    classes.set(lc.name, lc);
-                    if (cppName.isNotEmpty() && cppName != lc.name)
-                        classes.set(cppName, lc);
-                    classNames.add(lc.name);
-                }
-            }
-        }
-    }
-
-    // 2. Manual Injection of Base Classes
-    if (!classes.contains("LMemoryBlock"))
-    {
-        LuaClass mbClass;
-        mbClass.name = "MemoryBlock";
-
-        // Add essential methods here if they aren't in your XML
-        LuaMethod initM;
-        initM.name = "init";
-        initM.parameters = "()";
-        mbClass.methods.add(initM);
-
-        // Map BOTH keys to this definition
-        classes.set("LMemoryBlock", mbClass);
-        classes.set("MemoryBlock", mbClass);
-
-        // Add BOTH to the searchable list so inheritance/lookup loops find them
-        classNames.addIfNotAlreadyThere("MemoryBlock");
-        classNames.addIfNotAlreadyThere("LMemoryBlock");
-    }
-
-    if (!classes.contains("Listener"))
-    {
-        LuaClass l;
-        l.name = "Listener";
-        classes.set("Listener", l);
-        classNames.addIfNotAlreadyThere("Listener");
-    }
-
-    if (!classes.contains("Timer"))
-    {
-        LuaClass t;
-        t.name = "Timer";
-        classes.set("Timer", t);
-        classNames.addIfNotAlreadyThere("Timer");
-    }
-
-    if (!classes.contains("Component"))
-    {
-        LuaClass comp;
+	if (!classes.contains("Component")) {
+		LuaClass comp;
         comp.name = "Component";
         juce::StringArray ui = {"setBounds", "setSize", "setVisible", "getX", "getY", "getWidth", "getHeight", "repaint", "setHeight", "setWidth"};
         for (auto &n : ui)
         {
             LuaMethod m;
             m.name = n;
-            if (n == "setBounds")
-                m.parameters = "(int x, int y, int width, int height)";
-            else if (n == "setSize")
-                m.parameters = "(int width, int height)";
-            else if (n == "setHeight")
-                m.parameters = "(int height)";
-            else if (n == "setWidth")
-                m.parameters = "(int width)";
-            else if (n == "setVisible")
-                m.parameters = "(bool shouldBeVisible)";
-            else
-                m.parameters = "()";
-
-            comp.methods.add(m);
-            // FIX: Removed duplicate empty () injection that was overriding the real signatures.
-            allMethodNames.add(n);
-        }
+			m.parameters = (n == "setBounds") ? "(int x, int y, int width, int height)"
+						   : (n == "setSize") ? "(int width, int height)"
+											  : "()";
+			comp.methods.add(m);
+			allMethodNames.add(n);
+		}
         classes.set(comp.name, comp);
         classNames.add(comp.name);
-    }
+	}
 
-    if (!classes.contains("CtrlrObject"))
+	if (!classes.contains("CtrlrObject"))
     {
         LuaClass obj;
         obj.name = "CtrlrObject";
-        obj.parentClass = "Component";
-        juce::StringArray om = {"getProperty", "setProperty", "getPropertyInt", "getPropertyString"};
-        for (auto &n : om)
-        {
-            LuaMethod m;
-            m.name = n;
-            m.parameters = (n == "setProperty") ? "(String name, var value)" : "(String name)";
-            obj.methods.add(m);
-            // FIX: Removed duplicate empty () injection.
-            allMethodNames.add(n);
-        }
-        classes.set(obj.name, obj);
-        classNames.add(obj.name);
+		obj.parentClass = "Component";
+		classes.set(obj.name, obj);
+		classNames.add(obj.name);
     }
 
-    if (!classes.contains("CtrlrMidiMessage"))
-    {
-        LuaClass m;
-        m.name = "CtrlrMidiMessage";
-        classes.set("CtrlrMidiMessage", m);
-        classNames.addIfNotAlreadyThere("CtrlrMidiMessage");
-    }
-    auto &mid = classes.getReference("CtrlrMidiMessage");
-    mid.constructors.clear();
-    mid.methods.clear();
-    mid.constructors.add("(String hexData)");
-    mid.constructors.add("({byteTable})");
-    mid.constructors.add("(MemoryBlock data)");
+	// Include your RectangleFloat manual injection if not already in C++ lookup
+	// if (!classes.contains("RectangleFloat"))
+	// {
+	//     LuaClass rectFloatClass;
+	//     rectFloatClass.name = "RectangleFloat";
+	//     rectFloatClass.parentClass = "LRectangle";
+	//     rectFloatClass.constructors.add("()");
+	//     rectFloatClass.constructors.add("(const Rectangle<float> &)");
+	//     rectFloatClass.constructors.add("(float x, float y, float width, float height)");
+	//     rectFloatClass.constructors.add("(float width, float height)");
+	//     rectFloatClass.constructors.add("(const Point<float> &, const Point<float> &)");
+	//     classes.set("RectangleFloat", rectFloatClass);
+	//     classNames.addIfNotAlreadyThere("RectangleFloat");
+	// }
 
-    juce::StringArray midiMethods = {"getSize", "getData", "getType", "getChannel", "getTimeStamp", "setTimeStamp"};
-    for (auto &n : midiMethods)
-    {
-        LuaMethod lm;
-        lm.name = n;
-        lm.parameters = "()";
-        mid.methods.add(lm);
-        allMethodNames.addIfNotAlreadyThere(n);
-    }
-
-    // Setup Justification
-    if (!classes.contains("Justification"))
-    {
-        LuaClass jClass;
-        jClass.name = "Justification";
-        classes.set("Justification", jClass);
-        classNames.addIfNotAlreadyThere("Justification");
-    }
-
-    auto &j = classes.getReference("Justification");
-    j.staticMethods.clear();
-
-    juce::StringArray jEnums = {"left", "right", "horizontallyCentred", "top", "bottom", "verticallyCentred", "centred"};
-    for (auto &e : jEnums)
-    {
-        LuaMethod m;
-        m.name = e;
-        m.parameters = ""; // No brackets, Icon "P"
-        m.isStatic = true;
-        j.staticMethods.add(m);
-    }
-
-    // Setup Path
-    if (!classes.contains("Path"))
-    {
-        LuaClass pClass;
-        pClass.name = "Path";
-        classes.set("Path", pClass);
-        classNames.addIfNotAlreadyThere("Path");
-    }
-
-    auto &pc = classes.getReference("Path");
-    // Mirror instance methods to static so Path.something works without crashing
-    if (pc.staticMethods.isEmpty() && !pc.methods.isEmpty())
-    {
-        for (auto &m : pc.methods)
-        {
-            LuaMethod sm = m;
-            sm.isStatic = true;
-            pc.staticMethods.add(sm);
-        }
-    }
-
-    // 3. HARD-FIX SPECIFIC INSTANCES
-    if (classes.contains("CtrlrPanel"))
-    {
-        auto &panel = classes.getReference("CtrlrPanel");
-        panel.parentClass = "Component";
-        juce::StringArray missing = {
-            "getModulatorByName", "getModulator", "getModulatorByIndex", "getNumModulators",
-            "sendMidiMessageNow", "getCanvas", "getPanelEditor", "getGlobalVariable", "setGlobalVariable"};
-
-        for (auto &mName : missing)
-        {
-            // --- FIX: FORCE OVERRIDE ---
-            // Explicitly remove any existing versions (from XML) first.
-            // This prevents the empty-param version from blocking our high-quality fix.
-            for (int i = panel.methods.size(); --i >= 0;)
-            {
-                if (panel.methods.getReference(i).name == mName)
-                {
-                    panel.methods.remove(i);
-                }
-            }
-
-            // Now add the correct version with parameters
-            LuaMethod lm;
-            lm.name = mName;
-
-            if (mName == "sendMidiMessageNow")
-            {
-                // These names appear inside the bubble when the user opens the bracket '('
-                lm.parameters = "(MidiMessage) | (hexString) | ({table})"; // If the bubble is just single line
-            }
-            else if (mName.contains("ByName"))
-            {
-                lm.parameters = "(String name)";
-            }
-            else if (mName.contains("ByIndex"))
-            {
-                lm.parameters = "(int index)";
-            }
-            else if (mName == "setGlobalVariable")
-            {
-                lm.parameters = "(int index, int value)";
-            }
-            else
-            {
-                lm.parameters = "()";
-            }
-            panel.methods.add(lm);
-        }
-    }
-
-    if (classes.contains("CtrlrMidiMessage"))
-    {
-        auto &midiClass = classes.getReference("CtrlrMidiMessage");
-        // Clear old constructors if any
-        midiClass.constructors.clear();
-
-        // Add the new overloads
-        midiClass.constructors.add("(String hexData)");
-        midiClass.constructors.add("({table bytes})");
-        midiClass.constructors.add("(MemoryBlock data)");
-    }
-
-    // 4. Detailed Library Definitions
-    if (true)
-    {
-        // We use "luaString" internally as a key to avoid JUCE String conflicts
-        // but we will alias it to "string"
-        LuaClass strLib;
-        strLib.name = "string"; // The name remains lowercase
-
-        juce::StringArray strMethods = {
-            "byte(s, i, j)", "char(...)", "dump(function)", "find(s, pattern, init, plain)",
-            "format(formatstring, ...)", "gmatch(s, pattern)", "gsub(s, pattern, repl, n)",
-            "len(s)", "lower(s)", "match(s, pattern, init)", "rep(s, n)",
-            "reverse(s)", "sub(s, i, j)", "upper(s)"};
-
-        for (auto &mEntry : strMethods)
-        {
-            LuaMethod lm;
-            lm.name = mEntry.upToFirstOccurrenceOf("(", false, false).trim();
-            lm.parameters = mEntry.substring(mEntry.indexOf("(")).trim();
-            lm.isStatic = true;
-            strLib.staticMethods.add(lm);
-            strLib.methods.add(lm); // Keep both for safety
-        }
-
-        // FORCE both keys to point to our Lua library
-        classes.set("string", strLib);
-        classes.set("String", strLib);
-
-        if (!classNames.contains("string"))
-            classNames.add("string");
-    }
-
-    if (!classes.contains("math"))
-    {
-        LuaClass mathLib;
-        mathLib.name = "math";
-        juce::StringArray mathMethods = {
-            "abs(x)", "acos(x)", "asin(x)", "atan(x)", "ceil(x)", "cos(x)",
-            "deg(x)", "exp(x)", "floor(x)", "fmod(x, y)", "huge", "log(x)",
-            "max(x, ...)", "min(x, ...)", "modf(x)", "pi", "pow(x, y)",
-            "rad(x)", "random(m, n)", "randomseed(x)", "sin(x)", "sqrt(x)", "tan(x)"};
-
-        for (auto &mEntry : mathMethods)
-        {
-            if (mEntry == "pi" || mEntry == "huge")
-            {
-                // Add directly to the local mathLib object we are building
-                mathLib.properties.add(mEntry);
-                continue;
-            }
-
-            LuaMethod lm;
-            if (mEntry.contains("("))
-            {
-                lm.name = mEntry.upToFirstOccurrenceOf("(", false, false).trim();
-                // This captures from the first '(' to the end, e.g., "(x, y)"
-                lm.parameters = mEntry.substring(mEntry.indexOf("(")).trim();
-            }
-            else
-            {
-                lm.name = mEntry.trim();
-                lm.parameters = "()";
-            }
-
-            lm.isStatic = true;
-            mathLib.staticMethods.add(lm);
-            mathLib.methods.add(lm);
-        }
-
-        // Now store the completed class in the map
-        classes.set("math", mathLib);
-        if (!classNames.contains("math"))
-            classNames.add("math");
-    }
-
-    if (classes.contains("LMemoryBlock") && !classes.contains("MemoryBlock"))
-    {
-        classes.set("MemoryBlock", classes["LMemoryBlock"]);
-    }
-
-    // Force CtrlrLuaUtils instance methods to act as statics so 'utils.' works
-    if (classes.contains("CtrlrLuaUtils"))
-    {
-        auto &utilsClass = classes.getReference("CtrlrLuaUtils");
-        if (utilsClass.staticMethods.isEmpty())
-        {
-            for (auto &m : utilsClass.methods)
-            {
-                utilsClass.staticMethods.add(m);
-            }
-        }
-    }
-
-    // 5. Inject Common Libs (Final pass to ensure presence)
-    auto injectStaticLib = [this](juce::String libName, juce::StringArray methods)
-    {
-        if (!classes.contains(libName))
-        {
-            LuaClass newLc;
-            newLc.name = libName;
-            classes.set(libName, newLc);
-        }
-        auto &lc = classes.getReference(libName);
-        for (auto &mName : methods)
-        {
-            bool exists = false;
-            for (auto &sm : lc.staticMethods)
-            {
-                if (sm.name == mName)
-                {
-                    exists = true;
-                    break;
-                }
-            }
-            for (auto &m : lc.methods)
-            {
-                if (m.name == mName)
-                {
-                    exists = true;
-                    break;
-                }
-            }
-            if (!exists)
-            {
-                LuaMethod lm;
-                lm.name = mName;
-                lm.parameters = "()";
-                lm.isStatic = true;
-                lc.staticMethods.add(lm);
-                lc.methods.add(lm);
-            }
-        }
-        if (!classNames.contains(libName))
-            classNames.add(libName);
-    };
-
-    injectStaticLib("table", {"insert", "remove", "sort", "concat", "unpack"});
-    // Note: math and string already handled in detail above, but this catch-all is safe.
-
-    // 6. MemoryBlock specialized fixes
-    if (classes.contains("MemoryBlock"))
-    {
-        auto &mb = classes.getReference("MemoryBlock");
-        if (!mb.constructors.contains("()"))
-            mb.constructors.insert(0, "()");
-        else
-        {
-            int idx = mb.constructors.indexOf("()");
-            if (idx > 0)
-            {
-                mb.constructors.remove(idx);
-                mb.constructors.insert(0, "()");
-            }
-        }
-        bool hasEmptyInit = false;
-        for (int i = 0; i < mb.methods.size(); ++i)
-        {
-            if (mb.methods[i].name == "init" && (mb.methods[i].parameters == "()" || mb.methods[i].parameters.isEmpty()))
-            {
-                LuaMethod m = mb.methods.removeAndReturn(i);
-                mb.methods.insert(0, m);
-                hasEmptyInit = true;
-                break;
-            }
-        }
-        if (!hasEmptyInit)
-        {
-            LuaMethod lm;
-            lm.name = "init";
-            lm.parameters = "()";
-            mb.methods.insert(0, lm);
-        }
-        allMethodNames.addIfNotAlreadyThere("init");
-    }
-
-    if (classes.contains("CtrlrModulator"))
-    {
-        classes.getReference("CtrlrModulator").parentClass = "CtrlrObject";
-    }
-
-    // 7. Finalize and Sort
-    allMethodNames.removeDuplicates(false);
-    allMethodNames.sort(true);
+	// 3. Finalize and Sort
+	allMethodNames.removeDuplicates(false);
+	allMethodNames.sort(true);
     classNames.removeDuplicates(false);
     classNames.sort(true);
 
-    _DBG("AUTOCOMPLETE: Definition Loading Complete.");
+	_DBG("AUTOCOMPLETE: Definitions successfully loaded from C++ CtrlrLuaApiLookup database.");
 }
 
 std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggestions(const juce::String &prefix)
 {
     std::vector<SuggestionItem> results;
-    juce::StringArray added;
+    std::vector<juce::String> addedLocal; // Helper to avoid duplicate tracking issues
 
-    // 1. THE "VIP" SECTION for MemoryBlock ---
-    if (juce::String("MemoryBlock").startsWithIgnoreCase(prefix))
-    {
-        // 1. This provides the "M" icon and will insert MemoryBlock()
-        results.push_back({"MemoryBlock", TypeMethod});
+    auto wasAdded = [&addedLocal](const juce::String& s) {
+        return std::find(addedLocal.begin(), addedLocal.end(), s.toLowerCase()) != addedLocal.end();
+    };
 
-        // 2. This provides the "S" icon and will insert MemoryBlock.
-        results.push_back({"MemoryBlock.", TypeStatic});
+    auto markAdded = [&addedLocal](const juce::String& s) {
+        addedLocal.push_back(s.toLowerCase());
+    };
 
-        // 3. This tells the manager to SKIP the default "C" (Class) suggestion
-        // so you don't end up with 3 items in the list.
-        added.add("memoryblock");
-        added.add("lmemoryblock");
-    }
-
-    // 2. MANDATORY LIBRARIES / CLASSES (The "C" Icon)
+    // 1. MANDATORY LIBRARIES / CLASSES (The "C" Icon)
     juce::StringArray libraries = {"math", "table", "string", "utils", "MemoryBlock"};
     for (auto &lib : libraries)
     {
-        if (lib.startsWithIgnoreCase(prefix))
+        if (lib.startsWithIgnoreCase(prefix) && !wasAdded(lib))
         {
             results.push_back({lib, TypeClass});
-            added.add(lib.toLowerCase());
+            markAdded(lib);
         }
     }
 
-    // 3. GLOBALS / KEYWORDS
+    // 2. GLOBALS / KEYWORDS
     juce::StringArray globals = {"local", "function", "if", "then", "else", "elseif", "end", "for", "while", "do", "return", "break", "nil", "true", "false", "panel", "mod", "value", "source", "comp", "event", "canvas", "g", "midi", "console"};
     for (auto &g : globals)
     {
-        if (g.startsWithIgnoreCase(prefix) && !added.contains(g.toLowerCase()))
+        if (g.startsWithIgnoreCase(prefix) && !wasAdded(g))
         {
             results.push_back({g, TypeGlobal});
-            added.add(g.toLowerCase());
+            markAdded(g);
         }
     }
 
-    // 4. CLASSES
+    // 3. CLASSES (Fixed to never drop classes lacking explicit constructor metadata)
     for (auto &c : classNames)
     {
-        // --- ADD THIS LINE TO PREVENT THE 3RD SUGGESTION ---
-        if (added.contains(c.toLowerCase()))
+        if (wasAdded(c))
             continue;
-        // --------------------------------------------------
 
         if (c.startsWithIgnoreCase(prefix))
         {
             const auto &lc = classes.getReference(c);
+            bool addedAny = false;
 
-            // SUGGESTION 1: THE CONSTRUCTOR (Icon "C")
             if (!lc.constructors.isEmpty())
             {
                 results.push_back({c + "()", TypeClass});
+                addedAny = true;
             }
 
-            // SUGGESTION 2: THE STATIC ACCESS (Icon "S")
             if (!lc.staticMethods.isEmpty())
             {
                 results.push_back({c + ".", TypeStatic});
+                addedAny = true;
             }
 
-            added.add(c.toLowerCase());
+            // SAFETY FALLBACK: If a class has no constructors or static methods listed 
+            // (like ZipFile), still show the class name so it doesn't get swallowed!
+            if (!addedAny)
+            {
+                results.push_back({c, TypeClass});
+            }
+
+            markAdded(c);
         }
     }
 
-    // 5. METHODS (The "M" Icon)
+    // 4. METHODS (The "M" Icon)
     for (auto &m : allMethodNames)
     {
         if (m.startsWithIgnoreCase(prefix))
         {
             juce::String lowerM = m.toLowerCase();
 
-            // Skip if we already handled this as a Class/Static entry above
-            if (libraries.contains(lowerM) || added.contains(lowerM))
+            if (wasAdded(lowerM))
                 continue;
 
-            if (!added.contains(lowerM))
-            {
-                SuggestionType type = utilityMethodNames.contains(m) ? TypeUtility : TypeMethod;
-                results.push_back({m, type});
-                added.add(lowerM);
-            }
+            SuggestionType type = utilityMethodNames.contains(m) ? TypeUtility : TypeMethod;
+            results.push_back({m, type});
+            markAdded(lowerM);
         }
     }
 
@@ -1018,11 +596,11 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
     if (varName == "table")
         return "table";
     if (varName == "string")
-        return "string";
-    if (varName == "MemoryBlock" || varName == "memoryBlock")
-        return "LMemoryBlock"; //  // Updated v5.6.35 12.02.26. Redirect everything to the one with the methods
-    if (varName == "CtrlrMidiMessage")
-        return "CtrlrMidiMessage";
+		return "String";
+	if (varName == "MemoryBlock")
+		return "MemoryBlock"; // Redirects to LMemoryBlock
+	if (varName == "CtrlrMidiMessage")
+		return "CtrlrMidiMessage";
     if (varName.equalsIgnoreCase("Path"))
         return "Path";
 
@@ -1075,16 +653,16 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
             if (name.equalsIgnoreCase(potentialClass))
             {
                 // Redirection logic: ensure we always return the key that has the methods
-                if (name.equalsIgnoreCase("MemoryBlock") || name.equalsIgnoreCase("LMemoryBlock"))
-                    return "LMemoryBlock";
+                // if (name.equalsIgnoreCase("MemoryBlock") || name.equalsIgnoreCase("LMemoryBlock"))
+                //     return "LMemoryBlock";
 
                 return name;
             }
         }
 
         // 2. Explicit check for manual aliases
-        if (potentialClass.equalsIgnoreCase("MemoryBlock") || potentialClass.equalsIgnoreCase("LMemoryBlock"))
-            return "LMemoryBlock";
+        // if (potentialClass.equalsIgnoreCase("MemoryBlock") || potentialClass.equalsIgnoreCase("LMemoryBlock"))
+        //     return "LMemoryBlock";
 
         // 3. RECURSIVE ALIAS/CHAIN RESOLUTION
         // Only run this if we didn't find a direct class match above
@@ -1105,10 +683,10 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
     }
 
     // 4. Static Fallbacks (If no assignment found, guess by name)
-    if (varName == "m" || varName == "mb" || varName == "mem" || varName == "memoryBlock")
-        return "LMemoryBlock"; // Updated v5.6.35 12.02.26
-    if (varName == "f")
-        return "File";
+    // if (varName == "m" || varName == "mb" || varName == "mem" || varName == "memoryBlock")
+    //     return "LMemoryBlock"; // Updated v5.6.35 12.02.26
+    // if (varName == "f")
+    //     return "File";
 
     return "";
 }

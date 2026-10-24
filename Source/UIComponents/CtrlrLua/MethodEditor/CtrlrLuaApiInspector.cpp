@@ -370,6 +370,7 @@ void CtrlrLuaApiInspector::updateClassCache() {
     classNamesCache.clear();
     classNamesCache = CtrlrLuaApiLookup::getInstance().getAllClassNames();
 #if JUCE_DEBUG // Check which luabind class names have been added to Ctrlr but are not present in classMap
+#if 0
 	DBG("CHECK MISSING");
 	const juce::String luaScript = "local names = class_names()\n"
 								   "if names == nil then return '' end\n"
@@ -404,6 +405,7 @@ void CtrlrLuaApiInspector::updateClassCache() {
 	}
 
 #endif
+#endif
 }
 
 #if JUCE_DEBUG
@@ -432,18 +434,15 @@ void CtrlrLuaApiInspector::auditClassMethods(const juce::String& className) {
 
     for (const auto& line : runtimeLines) {
         juce::String trimmedLine = line.trim();
-        
-        // Skip headers, metadata, or empty lines
-        if (trimmedLine.isEmpty() || trimmedLine.contains("---") || 
-            trimmedLine.startsWith("Object type") || trimmedLine.startsWith("Members:") ||
-            trimmedLine.startsWith("Attributes:")) 
-        {
-            continue;
-        }
 
-        juce::String methodName;
-        int colonIndex = trimmedLine.indexOf(":");
-        int parenIndex = trimmedLine.indexOf("(");
+		if (trimmedLine.isEmpty() || trimmedLine.contains("---") || trimmedLine.startsWith("Object type") ||
+			trimmedLine.startsWith("Members:") || trimmedLine.startsWith("Attributes:")) {
+			continue;
+		}
+
+		juce::String methodName;
+		int colonIndex = trimmedLine.indexOf(":");
+		int parenIndex = trimmedLine.indexOf("(");
 
         if (colonIndex != -1) {
             methodName = trimmedLine.substring(0, colonIndex).trim();
@@ -453,22 +452,27 @@ void CtrlrLuaApiInspector::auditClassMethods(const juce::String& className) {
             methodName = trimmedLine.upToFirstOccurrenceOf(" ", false, false).trim();
         }
 
-        // Ignore luabind's internal constructor hook
-        if (methodName == "__init")
-            continue;
+		if (methodName == "__init")
+			continue;
 
-        if (methodName.isNotEmpty()) {
-            if (cppMethods.find(methodName) == cppMethods.end()) {
-                DBG("⚠️ METHOD AUDIT [" << className << "]: Method '" << methodName << "' exists in Lua/luabind but is MISSING from CtrlrLuaApiLookup!");
-            }
-        }
-    }
+		if (methodName.isNotEmpty()) {
+			if (cppMethods.find(methodName) == cppMethods.end()) {
+				// 1. Print the warning alert
+				DBG("⚠️ METHOD AUDIT [" << className << "]: Method '" << methodName << "' is missing from C++ DB.");
+
+				// 2. Print a copy-pasteable C++ snippet for your database initialization code!
+				// (Defaults to "instance", you can easily change to "static" if needed)
+				DBG("   --> COPY-PASTE: cls.methods.push_back({\"" << methodName << "\", \"instance\", \"()\", 1});");
+			}
+		}
+	}
 }
 #endif
 
 void CtrlrLuaApiInspector::inspectClass(const juce::String &className) {
-    if (className.isEmpty())
-        return;
+	// std::string emoji = "🚀";
+	if (className.isEmpty())
+		return;
 #if JUCE_DEBUG
 	auditClassMethods(className); // Debug only
 #endif
@@ -482,20 +486,31 @@ void CtrlrLuaApiInspector::inspectClass(const juce::String &className) {
         formattedOutput << "Object type [" << apiClass->name << "]\n";
         formattedOutput << "-----------------------------------------------------------------\n\n";
 
-        formattedOutput << "Static / Class Methods (Call as " << apiClass->name << ".method()):\n";
-        if (apiClass->staticMethods.empty()) {
-            formattedOutput << "    (None)\n";
-        } else {
-            for (const auto& m : apiClass->staticMethods) {
-                formattedOutput << "    [Static] " << m.name << m.args << "\n";
-                // formattedOutput << "⚡ [Static] " << m.name << m.args << "\n";
-            }
-        }
+		if (apiClass->constructor.empty()) {
+			// formattedOutput << "    (None)\n";
+		} else {
+			formattedOutput << "Constructor (Call as " << apiClass->name << "(arguments)):\n";
+			for (const auto &m : apiClass->constructor) {
+				formattedOutput << "    [Constructor] " << m.name << m.args << "\n";
+				// formattedOutput << emoji << "    [Constructor] " << m.name << m.args << "\n";
+			}
+			formattedOutput << "\n";
+		}
 
-        formattedOutput << "\n";
+		formattedOutput << "Static / Class Methods (Call as " << apiClass->name << ".method()):\n";
+		if (apiClass->staticMethods.empty()) {
+			formattedOutput << "    (None)\n";
+		} else {
+			for (const auto &m : apiClass->staticMethods) {
+				formattedOutput << "    [Static] " << m.name << m.args << "\n";
+				// formattedOutput << "⚡ [Static] " << m.name << m.args << "\n";
+			}
+		}
 
-        formattedOutput << "Instance Methods (Call as instance:method()):\n";
-        if (apiClass->methods.empty()) {
+		formattedOutput << "\n";
+
+		formattedOutput << "Instance Methods (Call as instance:method()):\n";
+		if (apiClass->methods.empty()) {
             formattedOutput << "    (None)\n";
         } else {
             for (const auto& m : apiClass->methods) {

@@ -914,7 +914,7 @@ bool isValidSearchString(const String &search) {
 	String trimmed = search.trim();
 
 	// Minimum length check
-	if (trimmed.length() < 3)
+	if (trimmed.length() < 1)
 		return false;
 
 	// Check for only whitespace
@@ -922,7 +922,7 @@ bool isValidSearchString(const String &search) {
 		return false;
 
 	// Check for repetitive single characters (like "aaa" or "111")
-	if (trimmed.length() >= 3) {
+	if (trimmed.length() >= 1) {
 		bool allSame = true;
 		juce_wchar firstChar = trimmed[0];
 		for (int i = 1; i < trimmed.length(); i++) {
