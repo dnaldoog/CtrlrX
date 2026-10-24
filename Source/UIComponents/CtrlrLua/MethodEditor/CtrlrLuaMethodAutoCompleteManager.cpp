@@ -21,25 +21,24 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
     allMethodNames.clear();
     utilityMethodNames.clear();
 
-	// 1. Load data directly from the RAM-native C++ CtrlrLuaApiLookup database (No XML!)
+	// 1. Load data directly from the RAM-native C++ CtrlrLuaApiLookup database
 	auto &db = CtrlrLuaApiLookup::getInstance();
 	auto allClassNames = db.getAllClassNames();
 
 	for (const auto &className : allClassNames) {
 		const auto *apiClass = db.getClassInfo(className);
-        _DBG("CHECKING CLASS: " + className);
+		_DBG("CHECKING CLASS: " + className);
 		if (!apiClass)
 			continue;
 
 		LuaClass lc;
 		lc.name = apiClass->name;
-		lc.parentClass = ""; // Can be mapped if inheritance is stored in C++ DB
+		lc.parentClass = "";
 
 		// Map Constructors
 		for (const auto &c : apiClass->constructor) {
 			lc.constructors.add(c.args.isEmpty() ? "()" : c.args);
 
-			// Also add constructor signature to methods/static methods for autocomplete
 			LuaMethod lm;
 			lm.name = lc.name;
 			lm.parameters = c.args;
@@ -73,7 +72,7 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
 			sm.isStatic = true;
 
 			lc.staticMethods.add(sm);
-			lc.methods.add(sm); // Ensure getMethodParams can find them
+			lc.methods.add(sm);
 
 			if (m.name != "string" && m.name != "math" && m.name != "table")
 				allMethodNames.add(m.name);
@@ -83,66 +82,155 @@ void CtrlrLuaMethodAutoCompleteManager::loadDefinitions()
 		classNames.add(lc.name);
 	}
 
-	// 2. Manual Injection of Base Classes & Specialized Mappings (Keeps your custom UI hints intact)
-	// if (!classes.contains("LMemoryBlock"))
-	// {
-	//     LuaClass mbClass;
-	// 	mbClass.name = "MemoryBlock";
-	// 	classes.set("LMemoryBlock", mbClass);
-	// 	classes.set("MemoryBlock", mbClass);
-	// 	classNames.addIfNotAlreadyThere("MemoryBlock");
-	//     classNames.addIfNotAlreadyThere("LMemoryBlock");
-	// }
+	// 2. Manual Injections & Parameter Enhancements
 
+	// --- Component Parameter Overrides ---
 	if (!classes.contains("Component")) {
 		LuaClass comp;
-        comp.name = "Component";
+		comp.name = "Component";
         juce::StringArray ui = {"setBounds", "setSize", "setVisible", "getX", "getY", "getWidth", "getHeight", "repaint", "setHeight", "setWidth"};
-        for (auto &n : ui)
-        {
-            LuaMethod m;
+		for (auto &n : ui) {
+			LuaMethod m;
             m.name = n;
-			m.parameters = (n == "setBounds") ? "(int x, int y, int width, int height)"
-						   : (n == "setSize") ? "(int width, int height)"
-											  : "()";
+			if (n == "setBounds")
+				m.parameters = "(int x, int y, int width, int height)";
+			else if (n == "setSize")
+				m.parameters = "(int width, int height)";
+			else if (n == "setHeight")
+				m.parameters = "(int height)";
+			else if (n == "setWidth")
+				m.parameters = "(int width)";
+			else if (n == "setVisible")
+				m.parameters = "(bool shouldBeVisible)";
+			else
+				m.parameters = "()";
+
 			comp.methods.add(m);
 			allMethodNames.add(n);
 		}
-        classes.set(comp.name, comp);
+		classes.set(comp.name, comp);
         classNames.add(comp.name);
 	}
 
-	if (!classes.contains("CtrlrObject"))
-    {
-        LuaClass obj;
+	// --- CtrlrObject ---
+	if (!classes.contains("CtrlrObject")) {
+		LuaClass obj;
         obj.name = "CtrlrObject";
 		obj.parentClass = "Component";
+		juce::StringArray om = {"getProperty", "setProperty", "getPropertyInt", "getPropertyString"};
+		for (auto &n : om) {
+			LuaMethod m;
+			m.name = n;
+			m.parameters = (n == "setProperty") ? "(String name, var value)" : "(String name)";
+			obj.methods.add(m);
+			allMethodNames.add(n);
+		}
 		classes.set(obj.name, obj);
 		classNames.add(obj.name);
-    }
+	}
 
-	// Include your RectangleFloat manual injection if not already in C++ lookup
-	// if (!classes.contains("RectangleFloat"))
-	// {
-	//     LuaClass rectFloatClass;
-	//     rectFloatClass.name = "RectangleFloat";
-	//     rectFloatClass.parentClass = "LRectangle";
-	//     rectFloatClass.constructors.add("()");
-	//     rectFloatClass.constructors.add("(const Rectangle<float> &)");
-	//     rectFloatClass.constructors.add("(float x, float y, float width, float height)");
-	//     rectFloatClass.constructors.add("(float width, float height)");
-	//     rectFloatClass.constructors.add("(const Point<float> &, const Point<float> &)");
-	//     classes.set("RectangleFloat", rectFloatClass);
-	//     classNames.addIfNotAlreadyThere("RectangleFloat");
+	// --- CtrlrPanel Parameter Enrichment ---
+	if (classes.contains("CtrlrPanel")) {
+		auto &panel = classes.getReference("CtrlrPanel");
+		panel.parentClass = "Component";
+		juce::StringArray missing = {"getModulatorByName", "getModulator",		 "getModulatorByIndex",
+									 "getNumModulators",   "sendMidiMessageNow", "getCanvas",
+									 "getPanelEditor",	   "getGlobalVariable",	 "setGlobalVariable"};
+		for (auto &mName : missing) {
+			for (int i = panel.methods.size(); --i >= 0;) {
+				if (panel.methods.getReference(i).name == mName)
+					panel.methods.remove(i);
+			}
+			LuaMethod lm;
+			lm.name = mName;
+			if (mName == "sendMidiMessageNow")
+				lm.parameters = "(MidiMessage) | (hexString) | ({table})";
+			else if (mName.contains("ByName"))
+				lm.parameters = "(String name)";
+			else if (mName.contains("ByIndex"))
+				lm.parameters = "(int index)";
+			else if (mName == "setGlobalVariable")
+				lm.parameters = "(int index, int value)";
+			else
+				lm.parameters = "()";
+			panel.methods.add(lm);
+		}
+	}
+
+	// --- MemoryBlock / LMemoryBlock Parity Bridge ---
+	// if (classes.contains("MemoryBlock") && !classes.contains("LMemoryBlock")) {
+	//     classes.set("LMemoryBlock", classes["MemoryBlock"]);
+	//     classNames.addIfNotAlreadyThere("LMemoryBlock");
+	// } else if (classes.contains("LMemoryBlock") && !classes.contains("MemoryBlock")) {
+	//     classes.set("MemoryBlock", classes["LMemoryBlock"]);
+	//     classNames.addIfNotAlreadyThere("MemoryBlock");
 	// }
+
+	// --- CtrlrLuaUtils Static Bridge ---
+	if (classes.contains("CtrlrLuaUtils")) {
+		auto &utilsClass = classes.getReference("CtrlrLuaUtils");
+		if (utilsClass.staticMethods.isEmpty()) {
+			for (auto &m : utilsClass.methods) {
+				utilsClass.staticMethods.add(m);
+			}
+		}
+	}
+
+	// --- Lua Standard Library: string ---
+	LuaClass strLib;
+	strLib.name = "string";
+	juce::StringArray strMethods = {"byte(s, i, j)",
+									"char(...)",
+									"dump(function)",
+									"find(s, pattern, init, plain)",
+									"format(formatstring, ...)",
+									"gmatch(s, pattern)",
+									"gsub(s, pattern, repl, n)",
+									"len(s)",
+									"lower(s)",
+									"match(s, pattern, init)",
+									"rep(s, n)",
+									"reverse(s)",
+									"sub(s, i, j)",
+									"upper(s)"};
+	for (auto &mEntry : strMethods) {
+		LuaMethod lm;
+		lm.name = mEntry.upToFirstOccurrenceOf("(", false, false).trim();
+		lm.parameters = mEntry.substring(mEntry.indexOf("(")).trim();
+		lm.isStatic = true;
+		strLib.staticMethods.add(lm);
+		strLib.methods.add(lm);
+	}
+	classes.set("string", strLib);
+	classes.set("String", strLib);
+	classNames.addIfNotAlreadyThere("string");
+	classNames.addIfNotAlreadyThere("String");
+
+	// --- Lua Standard Library: math ---
+	LuaClass mathLib;
+	mathLib.name = "math";
+	juce::StringArray mathMethods = {
+		"abs(x)",	 "acos(x)",	 "asin(x)",		 "atan(x)",		  "ceil(x)",	 "cos(x)",		"deg(x)",
+		"exp(x)",	 "floor(x)", "fmod(x, y)",	 "log(x)",		  "max(x, ...)", "min(x, ...)", "modf(x)",
+		"pow(x, y)", "rad(x)",	 "random(m, n)", "randomseed(x)", "sin(x)",		 "sqrt(x)",		"tan(x)"};
+	for (auto &mEntry : mathMethods) {
+		LuaMethod lm;
+		lm.name = mEntry.upToFirstOccurrenceOf("(", false, false).trim();
+		lm.parameters = mEntry.substring(mEntry.indexOf("(")).trim();
+		lm.isStatic = true;
+		mathLib.staticMethods.add(lm);
+		mathLib.methods.add(lm);
+	}
+	classes.set("math", mathLib);
+	classNames.addIfNotAlreadyThere("math");
 
 	// 3. Finalize and Sort
 	allMethodNames.removeDuplicates(false);
 	allMethodNames.sort(true);
-    classNames.removeDuplicates(false);
+	classNames.removeDuplicates(false);
     classNames.sort(true);
 
-	_DBG("AUTOCOMPLETE: Definitions successfully loaded from C++ CtrlrLuaApiLookup database.");
+	_DBG("AUTOCOMPLETE: Definitions successfully loaded from C++ CtrlrLuaApiLookup database with manual patches.");
 }
 
 std::vector<SuggestionItem> CtrlrLuaMethodAutoCompleteManager::getGlobalSuggestions(const juce::String &prefix)
@@ -591,20 +679,20 @@ juce::String CtrlrLuaMethodAutoCompleteManager::getClassNameForVariable(const ju
         return "Graphics";
     if (varName == "utils")
         return "CtrlrLuaUtils"; // Updated v5.6.35 12.02.26. Fixed: Points to actual class
-    if (varName == "math")
-        return "math";
-    if (varName == "table")
+	// if (varName == "math")
+	//     return "math";
+	if (varName == "table")
         return "table";
     if (varName == "string")
-		return "String";
-	if (varName == "MemoryBlock")
-		return "MemoryBlock"; // Redirects to LMemoryBlock
-	if (varName == "CtrlrMidiMessage")
-		return "CtrlrMidiMessage";
-    if (varName.equalsIgnoreCase("Path"))
-        return "Path";
+		return "String"; // upper case for JUCE
+						 // if (varName == "MemoryBlock")
+						 // 	return "MemoryBlock";
+						 // if (varName == "CtrlrMidiMessage")
+						 // 	return "CtrlrMidiMessage";
+	// if (varName.equalsIgnoreCase("Path"))
+	//     return "Path";
 
-    // 2. CHAIN RESOLUTION (e.g., mb:someMethod():)
+	// 2. CHAIN RESOLUTION (e.g., mb:someMethod():)
     if (varName.contains(":") || varName.contains("."))
     {
         juce::String normalized = varName.replace(".", ":");
