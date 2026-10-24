@@ -328,7 +328,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		CtrlrComponent *getComponent(const String &modulatorName);
 		void panelReceivedMidi(const MidiBuffer &buffer, const CtrlrMIDIDeviceType source = inputDevice);
 		void handleAsyncUpdate();
-		bool isLoading();
+		bool isLoading() const;
 		bool getRestoreState();
 		bool getProgramState();
 		bool getBootstrapState();
@@ -445,17 +445,21 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		Atomic<uint32> midiOptions;
 		Atomic<uint32> deviceInputChannel, deviceOutputChannel, hostInputChannel, hostOutputChannel,
 			controllerInputChannel;
-
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrPanel)
 
 	private:
+		std::atomic<bool> restoreStateStatus{false};
+		std::atomic<bool> programState{false};
+		std::atomic<bool> boostrapStateStatus{false};
+		std::atomic<bool> postBootstrapGate{false};
 		juce::Uuid sessionId{juce::Uuid()}; // Automatically generates a 128-bit random UUID
 		ValueTree initialProgram, panelTree;
 		ReadWriteLock panelLock;
 		CtrlrLuaManager *ctrlrLuaManager;
 		// std::unique_ptr<CtrlrLuaManager> ctrlrLuaManager;
 		double globalMidiDelay;
-		bool restoreStateStatus, boostrapStateStatus, programState, editMode;
+		// bool restoreStateStatus, boostrapStateStatus, programState, editMode;
+		bool editMode;
 		ListenerList<CtrlrPanel::Listener> listeners;
 		std::unique_ptr<CtrlrPanelEditor> ctrlrPanelEditor;
 		CtrlrManager &owner;
