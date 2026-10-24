@@ -6,7 +6,6 @@
 
 class CtrlrModulatorTreeViewItem;
 class CtrlrPanelModulatorListTree;
-class CtrlrPanelModulatorListTree;
 
 class CtrlrTreeViewItemListener
 {
@@ -100,7 +99,7 @@ class CtrlrModulatorTreeViewItem : public TreeViewItem,
 		std::unique_ptr<Component> createItemComponent();
 		void itemOpennessChanged (bool isNowOpen);
 		CtrlrModulatorTreeLabel *createItemLabel(const ValueTree &itemToAttach);
-
+		void expandAllSubItems(bool shouldBeOpen);
 		bool isInterestedInDragSource (const DragAndDropTarget::SourceDetails &dragSourceDetails);
 		var getDragSourceDescription ();
 
@@ -110,6 +109,7 @@ class CtrlrModulatorTreeViewItem : public TreeViewItem,
 		void valueTreeChildAdded (ValueTree& parentTree, ValueTree& childWhichHasBeenAdded);
         void valueTreeChildRemoved (ValueTree& parentTree, ValueTree& childWhichHasBeenRemoved, int);
         void valueTreeChildOrderChanged (ValueTree& parentTreeWhoseChildrenHaveMoved, int, int);
+
 		void itemChanged();
 
 
@@ -120,7 +120,8 @@ class CtrlrModulatorTreeViewItem : public TreeViewItem,
 
 	private:
 		ListenerList <CtrlrTreeViewItemListener> listeners;
-		WeakReference<CtrlrModulatorTreeLabel> itemLabel;
+		Component::SafePointer<CtrlrModulatorTreeLabel> itemLabel;
+
 		ValueTree itemToAttach;
 		Font labelFont;
 		Font labelMouseOverFont;
@@ -135,6 +136,7 @@ class CtrlrPanelModulatorListTree : public Component, public CtrlrTreeViewItemLi
 		void resized();
 		void itemChanged (ValueTree &itemTreeThatChanged);
 		static void drawIconForType (Graphics &g, const ValueTree &item);
+		void setSearchFilter(const String &newSearchQuery);
 		JUCE_LEAK_DETECTOR(CtrlrPanelModulatorListTree)
 
 	private:
@@ -142,6 +144,8 @@ class CtrlrPanelModulatorListTree : public Component, public CtrlrTreeViewItemLi
 		TreeView treeView;
 		StretchableLayoutResizerBar* spacerComponent;
 		StretchableLayoutManager layoutManager;
+		String currentSearchQuery;
+		ValueTree filterValueTree(const ValueTree &originalTree, const String &query);
 		CtrlrPanel &owner;
 };
 

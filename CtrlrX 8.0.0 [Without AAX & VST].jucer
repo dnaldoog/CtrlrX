@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="hrcYoO" name="CtrlrX" reportAppUsage="1" projectType="audioplug"
-              version="8.0" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
+              version="8.71" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
               buildVST="0" buildVST3="1" buildAU="1" buildAUv3="0" buildRTAS="0"
               buildAAX="0" buildStandalone="1" enableIAA="0" pluginName="CtrlrX                          "
               pluginManufacturer="CtrlrX Project                  " pluginManufacturerCode="cTrX"
@@ -15,7 +15,12 @@
               pluginAAXCategory="2048" cppLanguageStandard="20">
   <MAINGROUP id="SRLsFb" name="CtrlrX">
     <GROUP id="{BE407432-92DD-AEAB-3C70-AAE03FCD0B1D}" name="Source">
+      <FILE id="JTK9fq" name="CtrlrIconGenerator.h" compile="0" resource="0"
+            file="Source/UIComponents/CtrlrIconGenerator.h"/>
       <GROUP id="{F4D7C0F1-7F03-CB3F-30C6-F728F0E39FE2}" name="Misc">
+        <GROUP id="{1A9B9D6B-9984-9820-3E9F-F0397A7786B6}" name="rcedit">
+          <FILE id="p7zeOi" name="rcedit-x64.exe" compile="0" resource="1" file="Source/Misc/rcedit/rcedit-x64.exe"/>
+        </GROUP>
         <GROUP id="{E0E4DD68-0D44-4709-7B14-B00F9E7420BF}" name="luabind">
           <GROUP id="{2091F07D-D8F8-5C6F-EEAF-33E046D84C00}" name="luabind">
             <GROUP id="{3D1DEE58-7341-D84F-43D9-D93F78FFDB5B}" name="detail">
@@ -512,9 +517,9 @@
               file="Source/Lua/CtrlrLuaAudioConverter.h"/>
         <FILE id="YOQKjn" name="CtrlrLuaConverters.h" compile="0" resource="0"
               file="Source/Lua/CtrlrLuaConverters.h"/>
-        <FILE id="YJzZxj" name="CtrlrLuaDebugger.cpp" compile="1" resource="0"
+        <FILE id="A1tdER" name="CtrlrLuaDebugger.cpp" compile="1" resource="0"
               file="Source/Lua/CtrlrLuaDebugger.cpp"/>
-        <FILE id="c0hAwm" name="CtrlrLuaDebugger.h" compile="0" resource="0"
+        <FILE id="z63OsN" name="CtrlrLuaDebugger.h" compile="0" resource="0"
               file="Source/Lua/CtrlrLuaDebugger.h"/>
         <FILE id="UXyNki" name="CtrlrLuaManager.cpp" compile="1" resource="0"
               file="Source/Lua/CtrlrLuaManager.cpp"/>
@@ -604,7 +609,13 @@
       </GROUP>
       <GROUP id="{A473FE32-72A8-D607-99DF-96F6BF23D1C7}" name="Resources">
         <GROUP id="{65EC9C15-6A63-DAAE-2AA9-AD09AB114162}" name="Doc">
+          <FILE id="TwaTzD" name="BulkReadWriteDump.md" compile="0" resource="1"
+                file="Source/Resources/Doc/BulkReadWriteDump.md"/>
           <FILE id="CiV3x1" name="Expressions.md" compile="0" resource="1" file="Source/Resources/Doc/Expressions.md"/>
+          <FILE id="eu5r5x" name="lua-debugger-help.md" compile="0" resource="1"
+                file="Source/Resources/Doc/lua-debugger-help.md"/>
+          <FILE id="IzPj0o" name="ViewPortOptions.md" compile="0" resource="1"
+                file="Source/Resources/Doc/ViewPortOptions.md"/>
         </GROUP>
         <GROUP id="{5425C584-8B65-E29D-5410-23D72492F06C}" name="Fonts">
           <FILE id="GYiDwF" name="5x8_lcd_hd44780u_a02.ttf" compile="0" resource="1"
@@ -630,14 +641,27 @@
           <FILE id="OOpHQ2" name="FONT_ZX81.ttf" compile="0" resource="1" file="Source/Resources/Fonts/FONT_ZX81.ttf"/>
         </GROUP>
         <GROUP id="{57CA4634-99B0-23FB-F19C-154181EAAE85}" name="Icons">
+          <FILE id="OokJTd" name="appbar.control.play.clicked.png" compile="0"
+                resource="1" file="Source/Resources/Icons/appbar.control.play.clicked.png"/>
+          <FILE id="R1sh5n" name="link.svg" compile="0" resource="1" file="Source/Resources/Icons/link.svg"/>
+          <FILE id="leAM8H" name="appbar.control.play.png" compile="0" resource="1"
+                file="Source/Resources/Icons/appbar.control.play.png"/>
+          <FILE id="MHWtno" name="appbar.debug.clean.png" compile="0" resource="1"
+                file="Source/Resources/Icons/appbar.debug.clean.png"/>
+          <FILE id="vtEEBX" name="appbar.debug.restart.png" compile="0" resource="1"
+                file="Source/Resources/Icons/appbar.debug.restart.png"/>
+          <FILE id="ypXZsJ" name="appbar.debug.running.stop.png" compile="0"
+                resource="1" file="Source/Resources/Icons/appbar.debug.running.stop.png"/>
+          <FILE id="qRc3Vs" name="appbar.debug.step.into.png" compile="0" resource="1"
+                file="Source/Resources/Icons/appbar.debug.step.into.png"/>
+          <FILE id="vMtzyA" name="appbar.debug.step.out.png" compile="0" resource="1"
+                file="Source/Resources/Icons/appbar.debug.step.out.png"/>
+          <FILE id="CnPmd5" name="appbar.debug.step.over.png" compile="0" resource="1"
+                file="Source/Resources/Icons/appbar.debug.step.over.png"/>
+          <FILE id="BV7HP6" name="appbar.debug.stop.png" compile="0" resource="1"
+                file="Source/Resources/Icons/appbar.debug.stop.png"/>
           <FILE id="BiLLpE" name="ctrlrx_logo - org.svg" compile="0" resource="1"
                 file="Source/Resources/Icons/ctrlrx_logo - org.svg"/>
-          <FILE id="yHfj7x" name="appbar.control.play.png" compile="0" resource="1"
-                file="Source/Resources/Icons/appbar.control.play.png"/>
-          <FILE id="nNmsqF" name="appbar.debug.clean.png" compile="0" resource="1"
-                file="Source/Resources/Icons/appbar.debug.clean.png"/>
-          <FILE id="QmVkcp" name="appbar.debug.stop.png" compile="0" resource="1"
-                file="Source/Resources/Icons/appbar.debug.stop.png"/>
           <FILE id="EgredL" name="ctrlrx_8_logo.svg" compile="0" resource="1"
                 file="Source/Resources/Icons/ctrlrx_8_logo.svg"/>
           <FILE id="a8RgYD" name="alignhorizontalleftsymbolic.svg" compile="0"
@@ -696,14 +720,6 @@
                 resource="1" file="Source/Resources/Icons/vst3_au_juce_mini_logo_bg_rnd.svg"/>
           <FILE id="eqFQC1" name="ctrlrx_logo.svg" compile="0" resource="1" file="Source/Resources/Icons/ctrlrx_logo.svg"/>
           <FILE id="CzArw5" name="add.svg" compile="0" resource="1" file="Source/Resources/Icons/add.svg"/>
-          <FILE id="aAwGwI" name="appbar.debug.restart.png" compile="0" resource="1"
-                file="Source/Resources/Icons/appbar.debug.restart.png"/>
-          <FILE id="QEqZUY" name="appbar.debug.step.into.png" compile="0" resource="1"
-                file="Source/Resources/Icons/appbar.debug.step.into.png"/>
-          <FILE id="HL8hrU" name="appbar.debug.step.out.png" compile="0" resource="1"
-                file="Source/Resources/Icons/appbar.debug.step.out.png"/>
-          <FILE id="gtMLG6" name="appbar.debug.step.over.png" compile="0" resource="1"
-                file="Source/Resources/Icons/appbar.debug.step.over.png"/>
           <FILE id="WhYONv" name="bold.svg" compile="0" resource="1" file="Source/Resources/Icons/bold.svg"/>
           <FILE id="Ip6zR7" name="bug.svg" compile="0" resource="1" file="Source/Resources/Icons/bug.svg"/>
           <FILE id="yOH9na" name="camera.svg" compile="0" resource="1" file="Source/Resources/Icons/camera.svg"/>
@@ -749,11 +765,11 @@
         </GROUP>
         <GROUP id="{9DD7C62F-9CD5-D638-1ED9-0A44B6B63DC3}" name="Images"/>
         <GROUP id="{C1E779C4-0308-163A-70D6-2D2F2A99F43A}" name="Lua">
-          <GROUP id="{EA9EABB1-8B96-8332-DB0D-E67C18EB73C7}" name="clidebugger">
-            <FILE id="qce5uL" name="debugger.lua" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/debugger.lua"/>
-            <FILE id="BlvHLq" name="LICENSE" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/LICENSE"/>
-            <FILE id="FJuCF9" name="README.md" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/README.md"/>
-            <FILE id="PhZbaa" name="test.lua" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/test.lua"/>
+          <GROUP id="{E55A6C92-1082-8CD5-8451-0D4C7479FD90}" name="clidebugger">
+            <FILE id="BK6kSz" name="debugger.lua" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/debugger.lua"/>
+            <FILE id="Ry2VcW" name="LICENSE" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/LICENSE"/>
+            <FILE id="PttfYE" name="README.md" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/README.md"/>
+            <FILE id="QkO1Qj" name="test.lua" compile="0" resource="1" file="Source/Resources/Lua/clidebugger/test.lua"/>
           </GROUP>
           <GROUP id="{DB5F61FA-CAE2-39A5-2169-9DB4783059BB}" name="json4lua">
             <FILE id="hwsNhq" name="json.lua" compile="0" resource="1" file="Source/Resources/Lua/json4lua/json.lua"/>
@@ -783,7 +799,6 @@
           <FILE id="NdGwMn" name="RSRC.zip" compile="0" resource="1" file="Source/Resources/Misc/RSRC.zip"/>
         </GROUP>
         <GROUP id="{3E28051A-C67A-EB61-FFEC-E15E9C2440B2}" name="XML">
-          <FILE id="apYczx" name="LuaAPI.xml" compile="0" resource="1" file="Source/Resources/XML/LuaAPI.xml"/>
           <FILE id="sfPVqB" name="CtrlrIDs.xml" compile="0" resource="1" file="Source/Resources/XML/CtrlrIDs.xml"/>
           <FILE id="c2a7q2" name="CtrlrLuaClassTemplates.xml" compile="0" resource="1"
                 file="Source/Resources/XML/CtrlrLuaClassTemplates.xml"/>
@@ -928,6 +943,14 @@
         </GROUP>
         <GROUP id="{5355D100-1F52-E713-97B1-8C429FAEF933}" name="CtrlrLua">
           <GROUP id="{73F280B1-458D-D294-57B5-32E2202505CD}" name="MethodEditor">
+            <FILE id="qhmGxF" name="CtrlrLuaApiInspector.cpp" compile="1" resource="0"
+                  file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaApiInspector.cpp"/>
+            <FILE id="P4MA5B" name="CtrlrLuaApiInspector.h" compile="0" resource="0"
+                  file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaApiInspector.h"/>
+            <FILE id="SDPYHR" name="CtrlrLuaApiLookup.cpp" compile="1" resource="0"
+                  file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaApiLookup.cpp"/>
+            <FILE id="rCZ0sE" name="CtrlrLuaApiLookup.h" compile="0" resource="0"
+                  file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaApiLookup.h"/>
             <FILE id="V6oOfp" name="CtrlrLuaCodeTokeniser.cpp" compile="1" resource="0"
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaCodeTokeniser.cpp"/>
             <FILE id="kOqisB" name="CtrlrLuaCodeTokeniser.h" compile="0" resource="0"
@@ -950,25 +973,25 @@
                   compile="1" resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodCodeEditorSettingsColourLnF.cpp"/>
             <FILE id="M8SZ20" name="CtrlrLuaMethodCodeEditorSettingsColourLnF.h"
                   compile="0" resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodCodeEditorSettingsColourLnF.h"/>
-            <FILE id="c9Wgnl" name="CtrlrLuaMethodDebuggerControls.cpp" compile="1"
+            <FILE id="sUj4oZ" name="CtrlrLuaMethodDebuggerControls.cpp" compile="1"
                   resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerControls.cpp"/>
-            <FILE id="dDoOFH" name="CtrlrLuaMethodDebuggerControls.h" compile="0"
+            <FILE id="ce0hqr" name="CtrlrLuaMethodDebuggerControls.h" compile="0"
                   resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerControls.h"/>
-            <FILE id="oeafQ6" name="CtrlrLuaMethodDebuggerInfo.cpp" compile="1"
+            <FILE id="of8Jwa" name="CtrlrLuaMethodDebuggerInfo.cpp" compile="1"
                   resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerInfo.cpp"/>
-            <FILE id="SAfRl1" name="CtrlrLuaMethodDebuggerInfo.h" compile="0" resource="0"
+            <FILE id="eVNdTn" name="CtrlrLuaMethodDebuggerInfo.h" compile="0" resource="0"
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerInfo.h"/>
-            <FILE id="lev2hx" name="CtrlrLuaMethodDebuggerPrompt.cpp" compile="1"
+            <FILE id="DgPung" name="CtrlrLuaMethodDebuggerPrompt.cpp" compile="1"
                   resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerPrompt.cpp"/>
-            <FILE id="zNZOol" name="CtrlrLuaMethodDebuggerPrompt.h" compile="0"
+            <FILE id="vD91wB" name="CtrlrLuaMethodDebuggerPrompt.h" compile="0"
                   resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerPrompt.h"/>
-            <FILE id="iSDNSH" name="CtrlrLuaMethodDebuggerStackTrace.cpp" compile="1"
+            <FILE id="imXg0M" name="CtrlrLuaMethodDebuggerStackTrace.cpp" compile="1"
                   resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerStackTrace.cpp"/>
-            <FILE id="FEKOTG" name="CtrlrLuaMethodDebuggerStackTrace.h" compile="0"
+            <FILE id="KUPrPu" name="CtrlrLuaMethodDebuggerStackTrace.h" compile="0"
                   resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerStackTrace.h"/>
-            <FILE id="mAMALm" name="CtrlrLuaMethodDebuggerVars.cpp" compile="1"
+            <FILE id="efteb4" name="CtrlrLuaMethodDebuggerVars.cpp" compile="1"
                   resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerVars.cpp"/>
-            <FILE id="Hlhwb2" name="CtrlrLuaMethodDebuggerVars.h" compile="0" resource="0"
+            <FILE id="s6Dpc6" name="CtrlrLuaMethodDebuggerVars.h" compile="0" resource="0"
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodDebuggerVars.h"/>
             <FILE id="Uvekze" name="CtrlrLuaMethodEditArea.cpp" compile="1" resource="0"
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodEditArea.cpp"/>
@@ -992,6 +1015,12 @@
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodFind.cpp"/>
             <FILE id="dRy0Hy" name="CtrlrLuaMethodFind.h" compile="0" resource="0"
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodFind.h"/>
+            <FILE id="nUtFmv" name="CtrlrLuaPanelScriptWatcher.cpp" compile="1"
+                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaPanelScriptWatcher.cpp"/>
+            <FILE id="nqvJ16" name="CtrlrLuaPanelScriptWatcher.h" compile="0" resource="0"
+                  file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaPanelScriptWatcher.h"/>
+            <FILE id="ZLO4iT" name="CtrlrLuaWorkspaceSync.h" compile="0" resource="0"
+                  file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaWorkspaceSync.h"/>
             <FILE id="aOE6gd" name="CtrlrMethodEditorTabCloseButton.cpp" compile="1"
                   resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrMethodEditorTabCloseButton.cpp"/>
             <FILE id="Id57q7" name="CtrlrMethodEditorTabCloseButton.h" compile="0"
@@ -1072,6 +1101,10 @@
                 resource="0" file="Source/UIComponents/CtrlrPanel/CtrlrPanelModulatorListTree.cpp"/>
           <FILE id="E3nJSe" name="CtrlrPanelModulatorListTree.h" compile="0"
                 resource="0" file="Source/UIComponents/CtrlrPanel/CtrlrPanelModulatorListTree.h"/>
+          <FILE id="ua38sm" name="CtrlrPanelModulatorMatrix.cpp" compile="1"
+                resource="0" file="Source/UIComponents/CtrlrPanel/CtrlrPanelModulatorMatrix.cpp"/>
+          <FILE id="Xpu3Tk" name="CtrlrPanelModulatorMatrix.h" compile="0" resource="0"
+                file="Source/UIComponents/CtrlrPanel/CtrlrPanelModulatorMatrix.h"/>
           <FILE id="hPmOOC" name="CtrlrPanelProperties.cpp" compile="1" resource="0"
                 file="Source/UIComponents/CtrlrPanel/CtrlrPanelProperties.cpp"/>
           <FILE id="ocBdgp" name="CtrlrPanelProperties.h" compile="0" resource="0"
@@ -1138,10 +1171,16 @@
               file="Source/UIComponents/CtrlrGenericHelp.cpp"/>
         <FILE id="XfBaHk" name="CtrlrGenericHelp.h" compile="0" resource="0"
               file="Source/UIComponents/CtrlrGenericHelp.h"/>
+        <FILE id="OVCCJY" name="CtrlrIcnsGenerator.h" compile="0" resource="0"
+              file="Source/UIComponents/CtrlrIcnsGenerator.h"/>
         <FILE id="T5Q5Dn" name="CtrlrLogViewer.cpp" compile="1" resource="0"
               file="Source/UIComponents/CtrlrLogViewer.cpp"/>
         <FILE id="FEt5Md" name="CtrlrLogViewer.h" compile="0" resource="0"
               file="Source/UIComponents/CtrlrLogViewer.h"/>
+        <FILE id="teyHoE" name="CtrlrLuaApiDatabase.cpp" compile="1" resource="0"
+              file="Source/UIComponents/CtrlrLuaApiDatabase.cpp"/>
+        <FILE id="IwFeDj" name="CtrlrLuaApiDatabase.h" compile="0" resource="0"
+              file="Source/UIComponents/CtrlrLuaApiDatabase.h"/>
         <FILE id="QqbcID" name="CtrlrMarkdownParser.cpp" compile="1" resource="0"
               file="Source/UIComponents/CtrlrMarkdownParser.cpp"/>
         <FILE id="CwnjMu" name="CtrlrMarkdownParser.h" compile="0" resource="0"
@@ -1200,13 +1239,15 @@
             externalLibraries="lua51.lib">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/Misc&#10;../../Source/Misc/include&#10;../../Source/Misc/luabind&#10;../../Source/Misc/luajit/src&#10;../../Source/Misc/boost&#10;../../Source/MIDI&#10;../../Source/Core&#10;../../Source/Native&#10;../../Source/Plugin&#10;../../Source/UIComponents&#10;../../Source/Lua"
-                       libraryPath="../../Source/Misc/luajit/src"/>
+                       libraryPath="../../Source/Misc/luajit/src" postbuildCommand="xcopy /Y /D &quot;$(ProjectDir)..\..\Source\Misc\rcedit\rcedit-x64.exe&quot; &quot;$(TargetDir)&quot;"/>
         <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/Misc&#10;../../Source/Misc/include&#10;../../Source/Misc/luabind&#10;../../Source/Misc/luajit/src&#10;../../Source/Misc/boost&#10;../../Source/MIDI&#10;../../Source/Core&#10;../../Source/Native&#10;../../Source/Plugin&#10;../../Source/UIComponents&#10;../../Source/Lua"
-                       libraryPath="../../Source/Misc/luajit/src"/>
+                       libraryPath="../../Source/Misc/luajit/src" postbuildCommand="xcopy /Y /D &quot;$(ProjectDir)..\..\Source\Misc\rcedit\rcedit-x64.exe&quot; &quot;$(TargetDir)&quot;"/>
         <CONFIGURATION isDebug="1" name="Debug_Win32" winArchitecture="Win32" headerPath="../../Source&#10;../../Source/Misc&#10;../../Source/Misc/include&#10;../../Source/Misc/luabind&#10;../../Source/Misc/luajit/src&#10;../../Source/Misc/boost&#10;../../Source/MIDI&#10;../../Source/Core&#10;../../Source/Native&#10;../../Source/Plugin&#10;../../Source/UIComponents&#10;../../Source/Lua"
-                       targetName="CtrlrX-Win32" libraryPath="../../Source/Misc/luajit/src"/>
+                       targetName="CtrlrX-Win32" libraryPath="../../Source/Misc/luajit/src"
+                       postbuildCommand="xcopy /Y /D &quot;$(ProjectDir)..\..\Source\Misc\rcedit\rcedit-x86.exe&quot; &quot;$(TargetDir)&quot;"/>
         <CONFIGURATION isDebug="0" name="Release_Win32" winArchitecture="Win32" headerPath="../../Source&#10;../../Source/Misc&#10;../../Source/Misc/include&#10;../../Source/Misc/luabind&#10;../../Source/Misc/luajit/src&#10;../../Source/Misc/boost&#10;../../Source/MIDI&#10;../../Source/Core&#10;../../Source/Native&#10;../../Source/Plugin&#10;../../Source/UIComponents&#10;../../Source/Lua"
-                       targetName="CtrlrX-Win32" libraryPath="../../Source/Misc/luajit/src"/>
+                       targetName="CtrlrX-Win32" libraryPath="../../Source/Misc/luajit/src"
+                       postbuildCommand="xcopy /Y /D &quot;$(ProjectDir)..\..\Source\Misc\rcedit\rcedit-x86.exe&quot; &quot;$(TargetDir)&quot;"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_gui_extra"/>
@@ -1232,13 +1273,15 @@
             externalLibraries="lua51.lib">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/Misc&#10;../../Source/Misc/include&#10;../../Source/Misc/luabind&#10;../../Source/Misc/luajit/src&#10;../../Source/Misc/boost&#10;../../Source/MIDI&#10;../../Source/Core&#10;../../Source/Native&#10;../../Source/Plugin&#10;../../Source/UIComponents&#10;../../Source/Lua"
-                       libraryPath="../../Source/Misc/luajit/src"/>
+                       libraryPath="../../Source/Misc/luajit/src" postbuildCommand="xcopy /Y /D &quot;$(ProjectDir)..\..\Source\Misc\rcedit\rcedit-x64.exe&quot; &quot;$(TargetDir)&quot;"/>
         <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/Misc&#10;../../Source/Misc/include&#10;../../Source/Misc/luabind&#10;../../Source/Misc/luajit/src&#10;../../Source/Misc/boost&#10;../../Source/MIDI&#10;../../Source/Core&#10;../../Source/Native&#10;../../Source/Plugin&#10;../../Source/UIComponents&#10;../../Source/Lua"
-                       libraryPath="../../Source/Misc/luajit/src"/>
+                       libraryPath="../../Source/Misc/luajit/src" postbuildCommand="xcopy /Y /D &quot;$(ProjectDir)..\..\Source\Misc\rcedit\rcedit-x64.exe&quot; &quot;$(TargetDir)&quot;"/>
         <CONFIGURATION isDebug="1" name="Debug_Win32" headerPath="../../Source&#10;../../Source/Misc&#10;../../Source/Misc/include&#10;../../Source/Misc/luabind&#10;../../Source/Misc/luajit/src&#10;../../Source/Misc/boost&#10;../../Source/MIDI&#10;../../Source/Core&#10;../../Source/Native&#10;../../Source/Plugin&#10;../../Source/UIComponents&#10;../../Source/Lua"
-                       winArchitecture="Win32" targetName="CtrlrX-Win32" libraryPath="../../Source/Misc/luajit/src"/>
+                       winArchitecture="Win32" targetName="CtrlrX-Win32" libraryPath="../../Source/Misc/luajit/src"
+                       postbuildCommand="xcopy /Y /D &quot;$(ProjectDir)..\..\Source\Misc\rcedit\rcedit-x86.exe&quot; &quot;$(TargetDir)&quot;"/>
         <CONFIGURATION isDebug="0" name="Release_Win32" targetName="CtrlrX-Win32" headerPath="../../Source&#10;../../Source/Misc&#10;../../Source/Misc/include&#10;../../Source/Misc/luabind&#10;../../Source/Misc/luajit/src&#10;../../Source/Misc/boost&#10;../../Source/MIDI&#10;../../Source/Core&#10;../../Source/Native&#10;../../Source/Plugin&#10;../../Source/UIComponents&#10;../../Source/Lua"
-                       winArchitecture="Win32" libraryPath="../../Source/Misc/luajit/src"/>
+                       winArchitecture="Win32" libraryPath="../../Source/Misc/luajit/src"
+                       postbuildCommand="xcopy /Y /D &quot;$(ProjectDir)..\..\Source\Misc\rcedit\rcedit-x86.exe&quot; &quot;$(TargetDir)&quot;"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_gui_extra"/>

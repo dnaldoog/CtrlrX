@@ -5,9 +5,17 @@
 #include "CtrlrPanel/CtrlrPanelEditor.h"
 #include "CtrlrPanel/CtrlrPanelResource.h"
 #include "CtrlrPanel/CtrlrPanelResourceManager.h"
+#include "Lua/Methods/CtrlrLuaMethodManager.h"
 #include "CtrlrProcessor.h"
 #include "CtrlrUtilities.h"
 #include "stdafx.h"
+
+ValueTree CtrlrPanel::createPortablePanelTree() {
+	ValueTree copy = getPanelTree().createCopy();
+	inlineExternalLuaMethods(copy.getChildWithName(Ids::luaManager).getChildWithName(Ids::luaManagerMethods));
+	copy.setProperty(Ids::ctrlrLuaExternalEditorEnabled, false, nullptr);
+	return copy;
+}
 
 ValueTree CtrlrPanel::getCleanPanelTree() {
 	ValueTree exportTree = panelTree.createCopy();
@@ -282,18 +290,21 @@ void CtrlrPanel::savePanelAs(const CommandID saveOption) {
 case CtrlrEditor::doExportFileInstance:
 case CtrlrEditor::doExportFileInstanceRestricted: {
 	const bool isRestricted = (saveOption == CtrlrEditor::doExportFileInstanceRestricted);
-
-	owner.getNativeObject().exportWithDefaultPanel(this, isRestricted, isRestricted, [this](juce::Result res) {
+	juce::WeakReference<CtrlrPanel> safeThis(this);
+	owner.getNativeObject().exportWithDefaultPanel(this, isRestricted, true, [safeThis](juce::Result res) {
+		if (safeThis.wasObjectDeleted())
+			return; // Panel was destroyed while exporting; bail safely.
 		if (res.failed()) {
 			if (res.getErrorMessage() == "User cancelled the export operation.") {
-				notify("Panel instance export: Cancelled by user.", nullptr, NotifyFailure);
+				safeThis->notify("Panel instance export: Cancelled by user.", nullptr, NotifyFailure);
 			} else {
-				notify("Panel instance export: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
+				safeThis->notify("Panel instance export: [" + res.getErrorMessage() + "]", nullptr, NotifyFailure);
 				AW::showMessageBox(AW::Warning, "Panel export",
-								   "Failed to export panel as standalone instance.\n" + res.getErrorMessage());
+								   "Failed to export panel as standalone instance.\n" + res.getErrorMessage() +
+									   "\n\nMaybe the file is still open and running?");
 			}
 		} else {
-			notify("Panel instance export: Wrote new panel instance.", nullptr, NotifySuccess);
+			safeThis->notify("Panel instance export: Wrote new panel instance.", nullptr, NotifySuccess);
 			AW::showMessageBox(AW::Info, "Panel export", "Wrote new panel instance");
 		}
 	});
@@ -387,7 +398,9 @@ const String CtrlrPanel::exportPanel(CtrlrPanel *panel, const File &lastBrowsedD
 	}
 
 	juce::ValueTree exportTree = panel->getCleanPanelTree();
-
+	panel->inlineExternalLuaMethods(
+		exportTree.getChildWithName(Ids::luaManager).getChildWithName(Ids::luaManagerMethods));
+	exportTree.setProperty(Ids::ctrlrLuaExternalEditorEnabled, false, nullptr);
 	if (isRestricted) {
 		exportTree.setProperty(Ids::restricted, static_cast<int>(InstanceSingleRestricted), nullptr);
 		auto editorTree = exportTree.getChildWithName(Ids::uiPanelEditor);
@@ -547,11 +560,11 @@ Result CtrlrPanel::savePanelBin(const File &fileToSave, CtrlrPanel *panel, const
 		panel->luaSavePanel(PanelFileBinaryCompressed, fileToSave);
 
 		GZIPCompressorOutputStream gzOutputStream(&panelBinData);
-		panel->getPanelTree().writeToStream(gzOutputStream);
+		panel->createPortablePanelTree().writeToStream(gzOutputStream);
 		gzOutputStream.flush();
 	} else {
 		panel->luaSavePanel(PanelFileBinary, fileToSave);
-		panel->getPanelTree().writeToStream(panelBinData);
+		panel->createPortablePanelTree().writeToStream(panelBinData);
 	}
 
 	if (fileToSave.hasWriteAccess()) {
@@ -575,7 +588,8 @@ void CtrlrPanel::writePanelXml(OutputStream &outputStream, CtrlrPanel *panel, co
 
 	panel->sync();
 
-	std::unique_ptr<XmlElement> panelXml(panel->getPanelTree().createXml().release());
+	// std::unique_ptr<XmlElement> panelXml(panel->getPanelTree().createXml().release());
+	std::unique_ptr<XmlElement> panelXml(panel->createPortablePanelTree().createXml().release());
 
 	if (compressPanel && panelXml) {
 		String xml = panelXml->createDocument("");
@@ -654,18 +668,18 @@ Result CtrlrPanel::writeLuaChildren(const File &parentDir, ValueTree *parentElem
 	for (int i = 0; i < parentElement->getNumChildren(); i++) {
 		ValueTree child = parentElement->getChild(i);
 		if (child.hasType(Ids::luaMethod)) {
-			if ((int)child.getProperty(Ids::luaMethodSource) !=
-				CtrlrLuaMethod::codeInFile) { // Only process methods that are not already saved in files
+			if (isInBuiltInGroup(child) || (bool)child.getProperty("isReadOnly", false))
+				continue; // built-ins stay in memory, never exported
+
+			if ((int)child.getProperty(Ids::luaMethodSource) != CtrlrLuaMethod::codeInFile) {
 				res = CtrlrPanel::writeLuaMethod(parentDir, &child);
-				if (res.failed()) { // Break on first error
+				if (res.failed())
 					return res;
-				}
 			}
-		} else if (child.hasType(Ids::luaMethodGroup)) {
+		} else if (child.hasType(Ids::luaMethodGroup) && !isInBuiltInGroup(child)) {
 			res = CtrlrPanel::writeLuaMethodGroup(parentDir, &child);
-			if (res.failed()) { // Break on first error
+			if (res.failed())
 				return res;
-			}
 		}
 	}
 	return res;
@@ -894,4 +908,56 @@ void CtrlrPanel::canClose(const bool closePanel, std::function<void(bool)> compl
 
 	if (completionCallback)
 		completionCallback(true);
+}
+Result CtrlrPanel::exportMethodsToWorkspace(const File &workspaceDir, StringArray *notes) {
+	if (!workspaceDir.exists()) {
+		const Result created = workspaceDir.createDirectory();
+		if (created.failed())
+			return created;
+	}
+ 
+	if (!workspaceDir.hasWriteAccess())
+		return Result::fail("No write access to the workspace folder: " + workspaceDir.getFullPathName());
+ 
+	ValueTree luaManager = getPanelTree().getChildWithName(Ids::luaManager);
+	if (!luaManager.isValid())
+		return Result::fail("Panel has no Lua manager");
+ 
+	StringArray usedPaths; // files claimed during THIS export (collision detection)
+	return exportLuaChildrenToWorkspace(workspaceDir, luaManager.getChildWithName(Ids::luaManagerMethods),
+										usedPaths, notes);
+}
+ 
+Result CtrlrPanel::exportLuaChildrenToWorkspace(const File &parentDir, ValueTree parent, StringArray &usedPaths,
+												StringArray *notes) {
+	for (int i = 0; i < parent.getNumChildren(); ++i) {
+		ValueTree child = parent.getChild(i);
+ 
+		if (child.hasType(Ids::luaMethod)) {
+			if (isInBuiltInGroup(child) || (bool)child.getProperty("isReadOnly", false))
+				continue; // built-ins stay in memory, never exported
+ 
+			if ((int)child.getProperty(Ids::luaMethodSource) == (int)CtrlrLuaMethod::codeInFile)
+				continue; // already linked to a file
+ 
+			const Result r = exportLuaMethodToWorkspace(parentDir, child, usedPaths, notes);
+			if (r.failed())
+				return r;
+		} else if (child.hasType(Ids::luaMethodGroup) && !isInBuiltInGroup(child)) {
+			const String groupName = child.getProperty(Ids::name).toString();
+			if (groupName.isEmpty())
+				continue;
+ 
+			// same folder naming as CtrlrLuaWorkspaceSync::expectedFileFor()
+			const File groupDir = parentDir.getChildFile(File::createLegalFileName(groupName));
+			const Result made = groupDir.createDirectory();
+			if (made.failed())
+				return made;
+ 
+			const Result r = exportLuaChildrenToWorkspace(groupDir, child, usedPaths, notes);
+			if (r.failed())
+				return r;
+		}
+	}
+	return Result::ok();
 }

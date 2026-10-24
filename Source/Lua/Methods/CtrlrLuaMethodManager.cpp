@@ -1,5 +1,6 @@
 #include "CtrlrLuaMethodManager.h"
 #include "CtrlrComponents/CtrlrCustomComponent.h"
+#include "CtrlrInlineUtilitiesGUI.h"
 #include "CtrlrLog.h"
 #include "CtrlrLua/MethodEditor/CtrlrLuaMethodEditor.h"
 #include "CtrlrLuaManager.h"
@@ -9,7 +10,19 @@
 #include "CtrlrWindowManagers/CtrlrManagerWindowManager.h"
 #include "luabind/object.hpp" // added to check if method has a certain property in isMethodValid, which is used to disable methods that have thrown an error during execution. This is needed to prevent the same error from happening repeatedly and crashing Ctrlr.
 #include "stdafx.h"
+
 // #include "luabind/types.hpp"
+
+// True if this node, or any ancestor, is the "Built-In" method group.
+inline bool isInBuiltInGroup(juce::ValueTree g) {
+	for (; g.isValid(); g = g.getParent()) {
+		if (g.getProperty(Ids::luaMethodGroup).toString() == "Built-In" ||
+			g.getProperty(Ids::name).toString() == "Built-In")
+			return true;
+	}
+	return false;
+}
+
 
 CtrlrLuaMethodManager::CtrlrLuaMethodManager(CtrlrLuaManager &_owner)
 	: managerTree(Ids::luaManagerMethods),
@@ -116,38 +129,62 @@ bool CtrlrLuaMethodManager::isLuaDisabled() {
 
 void CtrlrLuaMethodManager::restoreState(const ValueTree &savedState) {
 	for (int i = 0; i < savedState.getNumChildren(); i++) {
-		if (savedState.getChild(i).hasType(Ids::luaMethodGroup)) {
-			restoreGroup(savedState.getChild(i));
+		ValueTree child = savedState.getChild(i);
+		if (child.hasType(Ids::luaMethodGroup)) {
+			// Skip the Built-In group entirely
+			if (child.getProperty(Ids::name).toString() == "Built-In") {
+				continue;
+			}
+			restoreGroup(child);
 		}
 	}
 
 	for (int i = 0; i < savedState.getNumChildren(); i++) {
-		if (savedState.getChild(i).hasType(Ids::luaMethod)) {
-			restoreMethod(savedState.getChild(i));
+		ValueTree child = savedState.getChild(i);
+		if (child.hasType(Ids::luaMethod)) {
+			restoreMethod(child);
 		}
 
-		if (savedState.getChild(i).hasType(Ids::luaMethodGroup)) {
-			restoreMethodsRecursivly(savedState.getChild(i));
+		if (child.hasType(Ids::luaMethodGroup)) {
+			if (child.getProperty(Ids::name).toString() == "Built-In") {
+				continue;
+			}
+			restoreMethodsRecursivly(child);
 		}
 	}
 }
 
 void CtrlrLuaMethodManager::restoreGroup(const ValueTree &savedState, const Uuid parentUuid) {
-	addGroup(savedState.getProperty(Ids::name), parentUuid, Uuid(savedState.getProperty(Ids::uuid).toString()));
+	String groupName = savedState.getProperty(Ids::name).toString();
+	if (groupName == "Built-In") {
+		return; // Skip Built-In group
+	}
 
-	/* let's be recursive */
+	addGroup(groupName, parentUuid, Uuid(savedState.getProperty(Ids::uuid).toString()));
+
 	for (int i = 0; i < savedState.getNumChildren(); i++) {
-		if (savedState.getChild(i).hasType(Ids::luaMethodGroup)) {
-			restoreGroup(savedState.getChild(i), Uuid(savedState.getProperty(Ids::uuid).toString()));
-		}
-
-		if (savedState.getChild(i).hasType(Ids::luaMethod)) {
-			continue; // restoreMethod (savedState.getChild(i), parentUuid);
+		ValueTree child = savedState.getChild(i);
+		if (child.hasType(Ids::luaMethodGroup)) {
+			if (child.getProperty(Ids::name).toString() == "Built-In") {
+				continue;
+			}
+			restoreGroup(child, Uuid(savedState.getProperty(Ids::uuid).toString()));
 		}
 	}
 }
 
 void CtrlrLuaMethodManager::removeGroup(ValueTree groupToRemove) {
+	if (!groupToRemove.isValid())
+		return;
+
+	// --- GUARD AGAINST DELETING BUILT-IN/READ-ONLY GROUPS ---
+	if ((bool)groupToRemove.getProperty("isReadOnly", false) ||
+		groupToRemove.getProperty(Ids::luaMethodGroup).toString() == "Built-In") {
+		AW::showMessageBox(AW::Warning, "Protected Group", "The Built-In system group cannot be deleted.");
+		return;
+	}
+	// --------------------------------------------------------
+
 	ValueTree parent = groupToRemove.getParent();
 
 	for (int i = 0; i < groupToRemove.getNumChildren(); i++) {
@@ -196,37 +233,6 @@ void CtrlrLuaMethodManager::restoreMethodsRecursivly(const ValueTree &savedState
 	}
 }
 
-void CtrlrLuaMethodManager::addMethod(ValueTree groupToAddTo, const String &methodName, const String &initialCode,
-									  const String &linkedToProperty, const Uuid methodUid,
-									  const bool forceIfAlreadyExists) {
-	ValueTree group;
-
-	if (groupToAddTo.isValid())
-		group = groupToAddTo;
-	else
-		group = managerTree;
-
-	if (group.getChildWithProperty(Ids::uuid, methodUid.toString()).isValid() && forceIfAlreadyExists) {
-		group.removeChild(group.getChildWithProperty(Ids::uuid, methodUid.toString()), nullptr);
-	}
-
-	group.addChild(getDefaultMethodTree(methodName, initialCode, linkedToProperty, methodUid), -1, nullptr);
-
-	// Notify the panel about the modification
-	owner.getOwner().luaManagerChanged();
-}
-
-void CtrlrLuaMethodManager::addMethodFromFile(ValueTree groupToAddTo, const File &fileToUse, const Uuid methodUid) {
-	if (groupToAddTo.isValid()) {
-		groupToAddTo.addChild(getDefaultMethodTree(fileToUse, methodUid), -1, nullptr);
-	} else {
-		managerTree.addChild(getDefaultMethodTree(fileToUse, methodUid), -1, nullptr);
-	}
-
-	// Notify the panel about the modification
-	owner.getOwner().luaManagerChanged();
-}
-
 void CtrlrLuaMethodManager::valueTreeChildAdded(ValueTree &parentTree, ValueTree &child) {
 	if (child.hasType(Ids::luaMethod)) {
 		methods.add(new CtrlrLuaMethod(*this, child));
@@ -260,6 +266,39 @@ const String CtrlrLuaMethodManager::getMethodListForCombo() {
 	return (ret.upToLastOccurrenceOf(":", false, false));
 }
 
+const StringArray CtrlrLuaMethodManager::getMethodList() {
+	StringArray ret;
+
+	for (int i = 0; i < methods.size(); i++) {
+		if (methods[i] == nullptr)
+			continue;
+
+		String name = methods[i]->getName();
+		String code = methods[i]->getCode();
+
+		// Skip tables entirely to keep the callback list clean
+		if (code.contains("{") && !code.contains("function")) {
+			continue;
+		}
+
+		String prefix = "[U] "; // Default: User/Generic function
+		if (name == "what" || name == "how" || name == "debugger" || name == "json4lua" || name == "inspect" ||
+			name == "table_dump" || name == "isLoading" || name == "memoize") {
+
+			prefix = "[S] ";
+		} else if (code.contains("--[[ CtrlrModulator --]]") || code.contains("source")) {
+			prefix = "[C] "; // Component/Modulator Callback
+		} else if (code.contains("--[[ MouseEvent --]]") || code.contains("event")) {
+			prefix = "[E] "; // UI Mouse Event
+		}
+		//DBG("name " + name);
+		ret.add(prefix + name);
+	}
+
+	ret.sortNatural();
+
+	return (ret);
+}
 void CtrlrLuaMethodManager::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged,
 													 const Identifier &property) {}
 
@@ -360,16 +399,6 @@ const String CtrlrLuaMethodManager::getTemplateForProperty(const String &methodN
 	return ("");
 }
 
-const StringArray CtrlrLuaMethodManager::getMethodList() {
-	StringArray ret;
-
-	for (int i = 0; i < methods.size(); i++) {
-		ret.add(methods[i]->getName());
-	}
-
-	return (ret);
-}
-
 const StringArray CtrlrLuaMethodManager::getTemplateList() {
 	StringArray ret;
 	ret.add(COMBO_NONE_ITEM);
@@ -440,17 +469,16 @@ ValueTree CtrlrLuaMethodManager::getDefaultGroupTree(const String &groupName, co
 }
 
 bool CtrlrLuaMethodManager::isValidMethodName(const String &methodName) {
-	if (methodName.indexOfAnyOf("0123456789", 0, false) == 0) {
-		jassertfalse; // functions cant start with numbers
-		return (false);
-	}
+	if (methodName.isEmpty())
+		return false;
 
-	if (!methodName.containsOnly("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")) {
-		jassertfalse; // functions can contain only numbers letter and underscores
-		return (false);
-	}
+	const juce_wchar firstCharacter = methodName[0];
+	const bool startsWithLetterOrUnderscore =
+		(firstCharacter >= 'a' && firstCharacter <= 'z') || (firstCharacter >= 'A' && firstCharacter <= 'Z') ||
+		firstCharacter == '_';
 
-	return (true);
+	return startsWithLetterOrUnderscore &&
+		   methodName.containsOnly("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_");
 }
 
 void CtrlrLuaMethodManager::setMethodEditor(CtrlrLuaMethodEditor *_currentMethodEditor) {
@@ -458,17 +486,68 @@ void CtrlrLuaMethodManager::setMethodEditor(CtrlrLuaMethodEditor *_currentMethod
 }
 
 void CtrlrLuaMethodManager::removeMethod(const Uuid methodUuid) {
-	CtrlrLuaMethod *method = getMethodByUuid(methodUuid);
-	if (method) {
-		ValueTree child = method->getMethodTree();
-		ValueTree parent = child.getParent();
+    CtrlrLuaMethod *method = getMethodByUuid(methodUuid);
+    if (!method) {
+        DBG("removeMethod: Method not found for UUID.");
+        return;
+    }
 
-		method->remove();
-		parent.removeChild(child, nullptr);
+    ValueTree child = method->getMethodTree();
+    String methodName = child.getProperty(Ids::luaMethodName).toString();
+    
+    // --- DEBUG GUARDS ---
+    bool isReadOnly = (bool)child.getProperty("isReadOnly", false);
+    DBG("removeMethod checking method: " + methodName + " | isReadOnly: " + (isReadOnly ? "TRUE" : "FALSE"));
 
-		methods.removeObject(method);
-	}
+    if (isReadOnly) {
+        DBG(" -> BLOCKED: Method is marked as read-only.");
+        AW::showMessageBox(AW::Warning, "Protected Method", "Built-in system methods cannot be deleted.");
+        return;
+    }
+    
+    ValueTree parent = child.getParent();
+    if (parent.isValid()) {
+        String groupName = parent.getProperty(Ids::luaMethodGroup).toString();
+        if (groupName.isEmpty())
+            groupName = parent.getProperty(Ids::name).toString(); // Fallback check
+            
+        DBG(" -> Parent group name: " + groupName);
+
+        if (groupName == "Built-In") {
+            DBG(" -> BLOCKED: Method belongs to Built-In group.");
+            AW::showMessageBox(AW::Warning, "Protected Method", "Methods inside the Built-In group cannot be deleted.");
+            return;
+        }
+    }
+    // ---------------------------------------------------------
+
+    // --- Delete the physical .lua file from disk if external editing is enabled ---
+    if ((bool)owner.getOwner().getProperty(Ids::ctrlrLuaExternalEditorEnabled)) {
+        juce::File scriptsDir = owner.getPanelWorkspaceDir();
+        juce::String sourcePath = child.getProperty(Ids::luaMethodSourcePath).toString();
+        
+        if (sourcePath.isNotEmpty()) {
+            juce::File methodFile = scriptsDir.getChildFile(sourcePath);
+            if (methodFile.existsAsFile()) {
+                methodFile.deleteFile();
+            }
+        } else {
+            juce::File methodFile = scriptsDir.getChildFile(methodName + ".lua");
+            if (methodFile.existsAsFile()) {
+                methodFile.deleteFile();
+            }
+        }
+    }
+
+    method->remove();
+    parent.removeChild(child, nullptr);
+
+    methods.removeObject(method);
+    DBG("Successfully removed regular method: " + methodName);
 }
+	// -----------------------------------------------------------------------------
+
+
 
 const int CtrlrLuaMethodManager::getNumMethods() { return (methods.size()); }
 
@@ -500,9 +579,23 @@ void CtrlrLuaMethodManager::wrapUtilities() {
 	if (getNumUtilities() > 0) {
 		attachDefaultGroups();
 
+		ValueTree builtInGroup = getGroupByName("Built-In");
+
 		for (int i = 0; i < getNumUtilities(); i++) {
-			addMethod(getGroupByName("Built-In"), getUtilityName(i), getUtilityCode(i).trim(), "", getUtilityUuid(i),
-					  getUtilityAlwaysUpdate(i));
+			// Add the method normally
+			addMethod(builtInGroup, getUtilityName(i), getUtilityCode(i).trim(), "",
+				  getUtilityUuid(i), getUtilityAlwaysUpdate(i));
+			ValueTree newMethod = builtInGroup.getChildWithProperty(Ids::uuid, getUtilityUuid(i));
+
+			// --- MARK AS READ-ONLY / BUILT-IN ---
+			if (newMethod.isValid()) {
+				newMethod.setProperty("isReadOnly", true, nullptr);
+			}
+		}
+
+		// Also mark the "Built-In" group itself as protected
+		if (builtInGroup.isValid()) {
+			builtInGroup.setProperty("isReadOnly", true, nullptr);
 		}
 	}
 }
@@ -530,4 +623,223 @@ bool CtrlrLuaMethodManager::isMethodValid(CtrlrLuaMethod *o) {
 	}
 
 	return false;
+}
+
+void CtrlrLuaMethodManager::handleExternalFileChange(const juce::File &file, bool isDeleted)
+//when an external file is deleted, we need to remove the corresponding method from Ctrlr's internal tree without triggering a back-loop of file deletion
+{
+    // 1. Find if a method in our tree points to this file path
+	ValueTree methodTree;
+	for (int i = 0; i < methods.size(); ++i)
+	{
+		if (methods[i] == nullptr)
+			continue;
+
+		ValueTree candidateTree = methods[i]->getMethodTree();
+		if (owner.getOwner().getLuaMethodSourceFile(&candidateTree) == file)
+		{
+			methodTree = candidateTree;
+			break;
+		}
+	}
+    
+    if (methodTree.isValid())
+    {
+        if (!file.existsAsFile() || isDeleted)
+        {
+            // 2. The file was deleted externally! Remove it from Ctrlr without 
+            // triggering our own file-deletion back-loop.
+            Uuid methodUuid(methodTree.getProperty(Ids::uuid).toString());
+            
+			// Remove the method from the manager without deleting the external file.
+			CtrlrLuaMethod *method = getMethodByUuid(methodUuid);
+			if (method)
+			{
+				ValueTree child = method->getMethodTree();
+				method->remove();
+				child.getParent().removeChild(child, nullptr);
+			}
+        }
+        else
+        {
+            // Normal file update / hot reload
+            String newCode = file.loadFileAsString();
+            methodTree.setProperty(Ids::luaMethodCode, newCode, nullptr);
+            
+            // Recompile/reload bytecode in the background...
+        }
+    }
+}
+
+static ValueTree findMethodNodeByName(const ValueTree &parent, const String &name, bool ignoreCase,
+									  const ValueTree &ignore)
+{
+	for (int i = 0; i < parent.getNumChildren(); ++i) {
+		ValueTree child = parent.getChild(i);
+ 
+		if (child == ignore)
+			continue;
+ 
+		if (child.hasType(Ids::luaMethod)) {
+			const String existing = child.getProperty(Ids::luaMethodName).toString();
+			if (ignoreCase ? existing.equalsIgnoreCase(name) : existing == name)
+				return child;
+		} else {
+			ValueTree found = findMethodNodeByName(child, name, ignoreCase, ignore); // group -> recurse
+			if (found.isValid())
+				return found;
+		}
+	}
+	return ValueTree();
+}
+ 
+bool CtrlrLuaMethodManager::methodNameExists(const String &name, const ValueTree &ignore) const
+{
+	// Case-insensitive when external editing is on (name becomes a file name).
+	const bool externalOn = (bool)owner.getOwner().getProperty(Ids::ctrlrLuaExternalEditorEnabled);
+	return findMethodNodeByName(managerTree, name, externalOn, ignore).isValid();
+}
+ 
+String CtrlrLuaMethodManager::getMethodLocationByName(const String &name) const
+{
+	const bool externalOn = (bool)owner.getOwner().getProperty(Ids::ctrlrLuaExternalEditorEnabled);
+	ValueTree method = findMethodNodeByName(managerTree, name, externalOn, ValueTree());
+ 
+	if (!method.isValid())
+		return String();
+ 
+	StringArray groups;
+	for (ValueTree p = method.getParent(); p.isValid() && p != managerTree; p = p.getParent())
+		if (p.hasType(Ids::luaMethodGroup))
+			groups.insert(0, p.getProperty(Ids::name).toString());
+ 
+	return groups.isEmpty() ? String("top level") : groups.joinIntoString(" / ");
+}
+ 
+bool CtrlrLuaMethodManager::addMethodWithAlert(ValueTree groupToAddTo, const String &methodName,
+											   const String &initialCode, const String &methodProperty)
+{
+		AW::showMessageBox(AW::Info, "addMethodWithAlert reached [alert-test-1]", methodName); // TEMP
+	if (addMethod(groupToAddTo, methodName, initialCode, methodProperty))
+		return true;
+ 
+	const String where = getMethodLocationByName(methodName);
+ 
+	if (where.isNotEmpty()) {
+		AW::showMessageBox(AW::Warning, "Method name already in use",
+						   "A method named \"" + methodName + "\" already exists (in: " + where + ").\n\n"
+						   "Method names must be unique across all groups, because Lua methods are global "
+						   "functions. Please choose a different name.");
+	} else {
+		AW::showMessageBox(AW::Warning, "Could not add method",
+						   "The method \"" + methodName + "\" could not be added.");
+	}
+	return false;
+}
+ 
+ 
+// ===========================================================================
+// 3. The UI caller (the lambda in CtrlrLuaMethodProperty::buttonClicked, and any other
+//    "add method" button/menu code) - replace
+//        safeThis->getMethodManager().addMethod(parentGroup, methodName, initialCode, "");
+//    with
+//        safeThis->getMethodManager().addMethodWithAlert(parentGroup, methodName, initialCode, "");
+// ===========================================================================
+
+String CtrlrLuaMethodManager::getUniqueMethodName(const String &baseName) const {
+	if (!methodNameExists(baseName))
+		return baseName;
+
+	for (int n = 2;; ++n) {
+		const String candidate = baseName + String(n);
+		if (!methodNameExists(candidate))
+			return candidate;
+	}
+}
+
+bool CtrlrLuaMethodManager::addMethod(ValueTree groupToAddTo, const String &methodName, const String &initialCode,
+									  const String &methodProperty, const Uuid methodUuid,
+									  const bool forceIfAlreadyExists, const bool isRestoring) {
+	ValueTree group = groupToAddTo.isValid() ? groupToAddTo : managerTree;
+ 
+	// 1. Same UUID already in this group?
+	ValueTree existingChild = group.getChildWithProperty(Ids::uuid, methodUuid.toString());
+	if (existingChild.isValid() && !forceIfAlreadyExists)
+		return false;
+ 
+	// 2. Method names are unique across the WHOLE tree (Lua methods are global functions).
+	//    existingChild is ignored: when forcing, it is about to be replaced by the new method.
+	//    Checked BEFORE removing anything, so a rejected add never loses the old method.
+	//    Skipped while restoring a saved panel, so old panels that already contain
+	//    duplicate names (allowed in Ctrlr 5.3.201) still load completely.
+	if (!isRestoring && methodNameExists(methodName, existingChild)) {
+		DBG("addMethod rejected: a method named '" + methodName + "' already exists");
+		return false;
+	}
+ 
+	if (existingChild.isValid())
+		group.removeChild(existingChild, nullptr);
+ 
+	// 3. Build the new method node.
+	const bool builtIn = isInBuiltInGroup(group);
+	const bool externalOn = (bool)owner.getOwner().getProperty(Ids::ctrlrLuaExternalEditorEnabled);
+	const juce::File scriptsDir = owner.getPanelWorkspaceDir();
+ 
+	ValueTree newMethodTree;
+ 
+	if (externalOn && !builtIn && scriptsDir.isDirectory()) {
+		// External editing: user method backed by a .lua file in the workspace.
+		const String codeToWrite = initialCode.isEmpty() ? getDefaultMethodCode(methodName, methodProperty) : initialCode;
+ 
+		const juce::File methodFile = scriptsDir.getChildFile(methodName + ".lua");
+		if (!methodFile.existsAsFile())          // never overwrite an existing file
+			methodFile.replaceWithText(codeToWrite);
+ 
+		newMethodTree = getDefaultMethodTree(methodFile, methodUuid);
+		newMethodTree.setProperty(Ids::luaMethodCode, codeToWrite, nullptr);
+		newMethodTree.setProperty(Ids::luaMethodLinkedProperty, methodProperty, nullptr);
+	} else {
+		// External editing off, workspace not ready, or a built-in: store in memory only.
+		newMethodTree = getDefaultMethodTree(methodName, initialCode, methodProperty, methodUuid);
+ 
+		if (builtIn)
+			newMethodTree.setProperty("isReadOnly", true, nullptr);
+	}
+ 
+	// 4. Add and notify.
+	group.addChild(newMethodTree, -1, nullptr);
+	owner.getOwner().luaManagerChanged();
+	return true;
+}
+ 
+// ---------------------------------------------------------------------------
+bool CtrlrLuaMethodManager::addMethodFromFile(ValueTree groupToAddTo, const File &fileToUse, const Uuid methodUid) {
+	ValueTree group = groupToAddTo.isValid() ? groupToAddTo : managerTree;
+ 
+	// 1. Same UUID already in this group: update it in place instead of duplicating.
+	ValueTree existingChild = group.getChildWithProperty(Ids::uuid, methodUid.toString());
+	if (existingChild.isValid()) {
+		existingChild.setProperty(Ids::luaMethodName, fileToUse.getFileNameWithoutExtension(), nullptr);
+ 
+		const File panelLuaDir = owner.getOwner().getPanelLuaDir();
+		const bool insidePanelDir = panelLuaDir.isDirectory() && fileToUse.isAChildOf(panelLuaDir);
+ 
+		existingChild.setProperty(Ids::luaMethodSourcePath,
+								  insidePanelDir ? fileToUse.getRelativePathFrom(panelLuaDir)
+												 : fileToUse.getFullPathName(),
+								  nullptr);
+		existingChild.setProperty(Ids::luaMethodSource, (int)CtrlrLuaMethod::codeInFile, nullptr);
+		return true;
+	}
+ 
+	// 2. Method names are unique across the whole tree.
+	if (methodNameExists(fileToUse.getFileNameWithoutExtension())) {
+		DBG("addMethodFromFile rejected: name already used: " + fileToUse.getFileNameWithoutExtension());
+		return false;
+	}
+ 
+	// 3. Add and notify.
+	group.addChild(getDefaultMethodTree(fileToUse, methodUid), -1, nullptr);
+	owner.getOwner().luaManagerChanged();
+	return true;
 }

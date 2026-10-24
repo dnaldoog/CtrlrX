@@ -59,62 +59,55 @@ std::string CtrlrLuaDebugger::dbgRead(std::string prompt)
 {
     if (pendingBreakpoints.size() > 0)
     {
-		for (int i = 0; i < pendingBreakpoints.size(); i++) {
-			PendingBreakpoint pb = pendingBreakpoints.removeAndReturn(i);
+        for (int i=0; i<pendingBreakpoints.size(); i++)
+        {
+            PendingBreakpoint pb = pendingBreakpoints.removeAndReturn (i);
 
-			if (pendingBreakpoints.size() == 0) {
-				commandQueue.add("run");
-			}
+            if (pendingBreakpoints.size() == 0)
+            {
+                commandQueue.add ("run");
+            }
 
-			if (pb.shouldBeSet) {
-				return (_STR("setb " + _STR(pb.line) + " " + pb.fileName).toStdString());
-			} else {
-				return (_STR("delb " + _STR(pb.line) + " " + pb.fileName).toStdString());
-			}
-		}
-	}
+            if (pb.shouldBeSet)
+            {
+                return (_STR("setb " + _STR(pb.line) + " " + pb.fileName).toStdString());
+            }
+            else
+            {
+                return (_STR("delb " + _STR(pb.line) + " " + pb.fileName).toStdString());
+            }
+        }
+    }
 
-	if (commandQueue.size() > 0) {
-		return (commandQueue.removeAndReturn(commandQueue.size() - 1).toStdString());
+	if (commandQueue.size() > 0)
+	{
+	    return (commandQueue.removeAndReturn (commandQueue.size() - 1).toStdString());
 	}
 
 	owner.getOwner().getWindowManager().show(CtrlrPanelWindowManager::LuaMethodEditor);
 
-	CtrlrLuaMethodEditor *ui = dynamic_cast<CtrlrLuaMethodEditor *>(
-		owner.getOwner().getWindowManager().getContent(CtrlrPanelWindowManager::LuaMethodEditor));
+	CtrlrLuaMethodEditor *ui = dynamic_cast<CtrlrLuaMethodEditor *>(owner.getOwner().getWindowManager().getContent(CtrlrPanelWindowManager::LuaMethodEditor));
 
-	if (ui)
-    {
-
-		int cmdResult = 0;
-		juce::WaitableEvent waiter;
-
-		// Post to the main UI thread to enter modal state asynchronously
-		juce::MessageManager::callAsync([ui, &cmdResult, &waiter]() {
-			ui->waitForCommand([&cmdResult, &waiter](int result) {
-				cmdResult = result;
-				waiter.signal(); // Signal completion to unblock dbgRead
-			});
-		});
-
-		waiter.wait(-1); // Wait until the user interacts with the UI
-
-		if (cmdResult) {
-			commandQueue.add("trace");
-			commandQueue.add("vars");
-			commandQueue.add(ui->getCurrentDebuggerCommand(true).toStdString());
-			return (commandQueue.removeAndReturn(commandQueue.size() - 1).toStdString());
-		}
-
-		else {
-			_WRN("CtrlrLuaDebugger::dbgRead debugger UI didn't return any commands, continuing");
-            return ("run");
-		}
+	if (ui == nullptr) {
+		_WRN("CtrlrLuaDebugger::dbgRead editor content is null, continuing");
+		return std::string("run");
 	}
 
-    _WRN("CtrlrLuaDebugger::dbgRead debugger window is invalid, continuing");
-    return ("run");
+	CtrlrLuaMethodDebuggerPrompt *debugPrompt = ui->getDebuggerPrompt();
+
+	if (debugPrompt == nullptr) {
+		_WRN("CtrlrLuaDebugger::dbgRead editor has no debugger prompt, continuing");
+		return std::string("run");
+	}
+
+	return debugPrompt->waitForCommand().toStdString();
 }
+// _WRN("CtrlrLuaDebugger::dbgRead debugger window is invalid, continuing");
+// return std::string ("run");
+
+//     _WRN("CtrlrLuaDebugger::dbgRead debugger window is invalid, continuing");
+//     return ("run");
+// }
 
 std::string CtrlrLuaDebugger::dbgRead()
 {

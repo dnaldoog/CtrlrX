@@ -55,8 +55,6 @@ void CtrlrEditor::performLuaEditorCommand(
 						codeComponent->showFindPanel(true);
 					}
 				}
-			} else if (commandID == LuaMethodEditorCommandIDs::editDebugger) {
-				luaMethodEditor->getMethodEditArea()->showDebuggerTab();
 			} else if (commandID == LuaMethodEditorCommandIDs::editConsole) {
 				luaMethodEditor->getMethodEditArea()->showConsoleTab();
 			} else if (commandID == LuaMethodEditorCommandIDs::editClearOutput) {
@@ -158,6 +156,10 @@ bool CtrlrEditor::perform(
 		performShowKeyboardMappingDialog(info.commandID);
 		break;
 
+	case CtrlrEditor::showGlobalSettingsDialog:
+		performShowGlobalSettingsDialog();
+		break;
+
 	case CtrlrEditor::showMidiMonitor:
 		owner.getWindowManager().toggle(CtrlrManagerWindowManager::MidiMonWindow, true);
 		break;
@@ -170,9 +172,9 @@ bool CtrlrEditor::perform(
 		owner.getWindowManager().toggle(CtrlrManagerWindowManager::MIDICalculator, true);
 		break;
 
-	case CtrlrEditor::doSaveState:
-		owner.saveStateToDisk();
-		break;
+	// case CtrlrEditor::doSaveState:
+	// 	owner.saveStateToDisk();
+	// 	break;
 
 	case CtrlrEditor::doOpenPanel:
 		owner.openPanelFromFile(nullptr);
@@ -193,305 +195,508 @@ bool CtrlrEditor::perform(
 		}
 		break;
 
-	case CtrlrEditor::showGlobalSettingsDialog:
-#if JUCE_LINUX
-		// Use toggle() on all Linux to avoid Wayland/compositor issues
-		owner.getWindowManager().toggle(CtrlrManagerWindowManager::GlobalSettings, true);
-#else
-		// Modal dialog on Windows/macOS where it's stable
-		owner.getWindowManager().showModalDialog("CtrlrX/Settings",
-												 new CtrlrSettings(owner), // Pass raw pointer directly
-												 true, this);
-#endif
-		break;
+case CtrlrEditor::showAboutDialog:
+{
+    juce::DialogWindow::LaunchOptions options;
+    options.dialogTitle = "CtrlrX/About";
+    options.content.setOwned(new CtrlrAbout(owner));
+    options.resizable = false;
+    options.useNativeTitleBar = true;
+    options.dialogBackgroundColour = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
+    options.escapeKeyTriggersCloseButton = true;
+    
+    // JUCE handles centering AND proper z-index attachment to DAW plugin windows automatically
+    options.componentToCentreAround = this;
 
-	case CtrlrEditor::showAboutDialog:
-#if JUCE_LINUX
-		// Use toggle() on all Linux to avoid Wayland/compositor issues
-		owner.getWindowManager().toggle(CtrlrManagerWindowManager::AboutWindow, true);
-#else
-		// Non-modal dialog on Windows/macOS
-		{
-			CtrlrAbout *aboutWindow = new CtrlrAbout(owner);
-			owner.getWindowManager().showModalDialog("CtrlrX/About", aboutWindow, false, this);
+    options.launchAsync();
+    break;
+}
+
+case showDumpByLuaHelp:
+	new CtrlrHelpWindow("Bulk Read/Write Dump Help",
+						new CtrlrGenericHelp(BinaryData::BulkReadWriteDump_md, BinaryData::BulkReadWriteDump_mdSize));
+	return true;
+	break;
+
+case showViewportHelp:
+	new CtrlrHelpWindow("Viewport Settings Help",
+						new CtrlrGenericHelp(BinaryData::ViewPortOptions_md, BinaryData::ViewPortOptions_mdSize));
+	return true;
+	break;
+
+case showExpressionHelp:
+	new CtrlrHelpWindow("Expressions Help",
+						new CtrlrGenericHelp(BinaryData::Expressions_md, BinaryData::Expressions_mdSize));
+	return true;
+	break;
+case showDebuggerHelp:
+	new CtrlrHelpWindow("Lua Debugger Help",
+						new CtrlrGenericHelp(BinaryData::luadebuggerhelp_md, BinaryData::luadebuggerhelp_mdSize));
+	return true;
+
+	// case showMidiProgrammingHelp:
+	// 	new CtrlrHelpWindow("MIDI programming Help",
+	// 						new CtrlrGenericHelp(BinaryData::MidiProgramming_md,
+	// 											 BinaryData::MidiProgramming_mdSize));
+	// 	return true;
+
+	// 	break;
+	// case showLuaUsefulCommandsHelp:
+	// 	new CtrlrHelpWindow("lua programming Help",
+	// 						new CtrlrGenericHelp(BinaryData::LuaUsefulCommands_md,
+	// 											 BinaryData::LuaUsefulCommands_mdSize));
+	// 	return true;
+
+	// case showLuaFileOperationsHelp:
+	// 	new CtrlrHelpWindow("Lua File Save/Load Help",
+	// 						new CtrlrGenericHelp(BinaryData::LuaFileOperations_md,
+	// 											 BinaryData::LuaFileOperations_mdSize));
+	// 	return true;
+
+	// case showMenuLuaClassBrowser: {
+	// 	CtrlrPanel *panel = getActivePanel();
+	// 	if (panel) {
+	// 		auto *browser = new CtrlrLuaClassBrowser(&panel->getCtrlrLuaManager());
+
+	// 		browser->setLuaApiXml(panel->getCtrlrLuaManager().getLuaApiDatabase().getXmlRoot());
+
+	// 		browser->setSize(1200, 1000);
+	// 		new CtrlrHelpWindow("Lua Class API", browser);
+	// 	}
+	// 	return true;
+
+	break;
+
+case CtrlrEditor::doZoomIn:
+	if (getActivePanelEditor()) {
+		double newZoomFactor = (double)getActivePanelEditor()->getProperty(Ids::uiPanelZoom) + 0.1;
+		if (newZoomFactor < MINZOOM || newZoomFactor > MAXZOOM)
+			return true;
+		getActivePanelEditor()->setProperty(Ids::uiPanelZoom, newZoomFactor);
+	}
+	break;
+
+case CtrlrEditor::doZoomOut:
+	if (getActivePanelEditor()) {
+		// FIX: Get the property, but default to 1.0 if it doesn't exist yet
+		double currentZoom = getActivePanelEditor()->getProperty(Ids::uiPanelZoom);
+		if (currentZoom <= 0.0)
+			currentZoom = 1.0;
+
+		double newZoomFactor = currentZoom - 0.1;
+
+		_DBG("ZoomOut Triggered inside VM. Current: " + juce::String(currentZoom) +
+			 " New: " + juce::String(newZoomFactor));
+
+		// If it trips the bounds guard, log it so we know!
+		if (newZoomFactor < MINZOOM || newZoomFactor > MAXZOOM) {
+			_DBG("ZoomOut rejected: Out of bounds (MINZOOM: " + juce::String(MINZOOM) + ")");
+			return true;
 		}
-#endif
-		break;
 
-		// case showDumpByLuaHelp:
-		// 	new CtrlrHelpWindow("Bulk Read/Write Dump Help",
-		// 						new CtrlrGenericHelp(BinaryData::BulkReadWriteDump_md,
-		// 											 BinaryData::BulkReadWriteDump_mdSize));
-		// 	return true;
-		// 	break;
+		getActivePanelEditor()->setProperty(Ids::uiPanelZoom, newZoomFactor);
+	}
+	break;
 
-			case showExpressionHelp:
-				new CtrlrHelpWindow("Expressions Help",
-									new CtrlrGenericHelp(BinaryData::Expressions_md,
-														 BinaryData::Expressions_mdSize));
-				return true;
+case CtrlrEditor::doZoomZero:
+	if (getActivePanelEditor()) {
+		double newZoomFactor = 1.0; // Reset to 100% zoom
+		_DBG("Resetting zoom factor to: " + String(newZoomFactor));
+		getActivePanelEditor()->setProperty(Ids::uiPanelZoom, newZoomFactor);
+	}
+	break;
 
-				// case showMidiProgrammingHelp:
-				// 	new CtrlrHelpWindow("MIDI programming Help",
-				// 						new CtrlrGenericHelp(BinaryData::MidiProgramming_md,
-				// 											 BinaryData::MidiProgramming_mdSize));
-				// 	return true;
+case CtrlrEditor::doCopy:
+	getActivePanel()->getCanvas()->copy();
+	break;
 
-				// 	break;
-				// case showLuaUsefulCommandsHelp:
-				// 	new CtrlrHelpWindow("lua programming Help",
-				// 						new CtrlrGenericHelp(BinaryData::LuaUsefulCommands_md,
-				// 											 BinaryData::LuaUsefulCommands_mdSize));
-				// 	return true;
+case CtrlrEditor::doCut:
+	getActivePanel()->getCanvas()->cut();
+	break;
 
-				// case showLuaFileOperationsHelp:
-				// 	new CtrlrHelpWindow("Lua File Save/Load Help",
-				// 						new CtrlrGenericHelp(BinaryData::LuaFileOperations_md,
-				// 											 BinaryData::LuaFileOperations_mdSize));
-				// 	return true;
+case CtrlrEditor::doPaste:
+	getActivePanel()->getCanvas()->paste();
+	break;
 
-				// case showMenuLuaClassBrowser: {
-				// 	CtrlrPanel *panel = getActivePanel();
-				// 	if (panel) {
-				// 		auto *browser = new CtrlrLuaClassBrowser(&panel->getCtrlrLuaManager());
+case CtrlrEditor::doUndo:
+	getActivePanel()->undo();
+	break;
 
-				// 		browser->setLuaApiXml(panel->getCtrlrLuaManager().getLuaApiDatabase().getXmlRoot());
+case CtrlrEditor::doRedo:
+	getActivePanel()->redo();
+	break;
 
-				// 		browser->setSize(1200, 1000);
-				// 		new CtrlrHelpWindow("Lua Class API", browser);
-				// 	}
-				// 	return true;
+case CtrlrEditor::doSearchForProperty:
+	getActivePanelEditor()->searchForProperty();
+	break;
 
-				break;
+case CtrlrEditor::doClose:
+	// 1. Fetch pointers to the active panel and its editor
+	DBG("I clicked on the close button in the menu");
+	if (auto *panel = getActivePanel()) {
+		// Use SafePointer to protect the editor component
+		juce::Component::SafePointer<CtrlrPanelEditor> safeEditor(getActivePanelEditor());
 
-	case CtrlrEditor::doZoomIn:
-		if (getActivePanelEditor()) {
-			double newZoomFactor = (double)getActivePanelEditor()->getProperty(Ids::uiPanelZoom) + 0.1;
-			if (newZoomFactor < MINZOOM || newZoomFactor > MAXZOOM)
-				return true;
-			getActivePanelEditor()->setProperty(Ids::uiPanelZoom, newZoomFactor);
-		}
-		break;
+		// 2. Call non-blocking canClose
+		panel->canClose(true, [this, safeEditor](bool shouldClose) {
+			if (shouldClose && safeEditor != nullptr) {
+				// Deselect any active selection first
+				if (auto *selection = safeEditor->getSelection())
+					selection->deselectAll();
 
-	case CtrlrEditor::doZoomOut:
-		if (getActivePanelEditor()) {
-			// FIX: Get the property, but default to 1.0 if it doesn't exist yet
-			double currentZoom = getActivePanelEditor()->getProperty(Ids::uiPanelZoom);
-			if (currentZoom <= 0.0)
-				currentZoom = 1.0;
+				// Tell CtrlrManager to destroy the panel object model
+				owner.removePanel(safeEditor);
 
-			double newZoomFactor = currentZoom - 0.1;
-
-			_DBG("ZoomOut Triggered inside VM. Current: " + juce::String(currentZoom) +
-				 " New: " + juce::String(newZoomFactor));
-
-			// If it trips the bounds guard, log it so we know!
-			if (newZoomFactor < MINZOOM || newZoomFactor > MAXZOOM) {
-				_DBG("ZoomOut rejected: Out of bounds (MINZOOM: " + juce::String(MINZOOM) + ")");
-				return true;
-			}
-
-			getActivePanelEditor()->setProperty(Ids::uiPanelZoom, newZoomFactor);
-		}
-		break;
-
-	case CtrlrEditor::doZoomZero:
-		if (getActivePanelEditor()) {
-			double newZoomFactor = 1.0; // Reset to 100% zoom
-			_DBG("Resetting zoom factor to: " + String(newZoomFactor));
-			getActivePanelEditor()->setProperty(Ids::uiPanelZoom, newZoomFactor);
-		}
-		break;
-
-	case CtrlrEditor::doCopy:
-		getActivePanel()->getCanvas()->copy();
-		break;
-
-	case CtrlrEditor::doCut:
-		getActivePanel()->getCanvas()->cut();
-		break;
-
-	case CtrlrEditor::doPaste:
-		getActivePanel()->getCanvas()->paste();
-		break;
-
-	case CtrlrEditor::doUndo:
-		getActivePanel()->undo();
-		break;
-
-	case CtrlrEditor::doRedo:
-		getActivePanel()->redo();
-		break;
-
-	case CtrlrEditor::doSearchForProperty:
-		getActivePanelEditor()->searchForProperty();
-		break;
-
-	case CtrlrEditor::doClose:
-		// 1. Fetch pointers to the active panel and its editor
-		DBG("I clicked on the close button in the menu");
-		if (auto *panel = getActivePanel()) {
-			// Use SafePointer to protect the editor component
-			juce::Component::SafePointer<CtrlrPanelEditor> safeEditor(getActivePanelEditor());
-
-			// 2. Call non-blocking canClose
-			panel->canClose(true, [this, safeEditor](bool shouldClose) {
-				if (shouldClose && safeEditor != nullptr) {
-					// Deselect any active selection first
-					if (auto *selection = safeEditor->getSelection())
-						selection->deselectAll();
-
-					// Tell CtrlrManager to destroy the panel object model
-					owner.removePanel(safeEditor);
-
-					// Tell MultiDocumentPanel (CtrlrDocumentPanel) to remove the visual tab!
-					if (auto *docPanel = &owner.getCtrlrDocumentPanel()) {
-						docPanel->closeDocumentAsync(safeEditor, false, nullptr);
-					}
+				// Tell MultiDocumentPanel (CtrlrDocumentPanel) to remove the visual tab!
+				if (auto *docPanel = &owner.getCtrlrDocumentPanel()) {
+					docPanel->closeDocumentAsync(safeEditor, false, nullptr);
 				}
-			});
-		}
-		break;
-	case CtrlrEditor::doSaveAs:
-		getActivePanel()->savePanelAs(doExportFileText);
-		break;
-	case CtrlrEditor::doSave:
-		if (getActivePanel())
-			getActivePanel()->savePanel();
-		break;
-	case CtrlrEditor::doSaveVersioned:
-		getActivePanel()->savePanelVersioned();
-		break;
-
-	case CtrlrEditor::doExportFileText:
-	case CtrlrEditor::doExportFileZText:
-	case CtrlrEditor::doExportFileBin:
-	case CtrlrEditor::doExportFileZBin:
-	case CtrlrEditor::doExportFileZBinRes:
-	case CtrlrEditor::doExportFileInstance:
-	case CtrlrEditor::doExportGenerateUID:
-	case CtrlrEditor::doExportFileInstanceRestricted:
-		getActivePanel()->savePanelAs(info.commandID);
-		break;
-
-	case CtrlrEditor::doViewPropertyDisplayIDs:
-		if (getActivePanel())
-			getActivePanel()->setProperty(Ids::panelPropertyDisplayIDs,
-										  !getActivePanel()->getProperty(Ids::panelPropertyDisplayIDs));
-		break;
-
-	case CtrlrEditor::doPanelMode:
-		DBG("doPanelMode");
-		if (getActivePanelEditor())
-			getActivePanelEditor()->setProperty(Ids::uiPanelEditMode,
-												!getActivePanelEditor()->getProperty(Ids::uiPanelEditMode));
-		break;
-
-	case CtrlrEditor::doPanelLock:
-		if (getActivePanelEditor())
-			getActivePanelEditor()->setProperty(Ids::uiPanelLock,
-												!(bool)getActivePanelEditor()->getProperty(Ids::uiPanelLock));
-		break;
-
-	case CtrlrEditor::doPanelDisableCombosOnEdit:
-		if (getActivePanelEditor())
-			getActivePanelEditor()->setProperty(
-				Ids::uiPanelDisableCombosOnEdit,
-				!(bool)getActivePanelEditor()->getProperty(Ids::uiPanelDisableCombosOnEdit));
-		break;
-
-	case CtrlrEditor::showLuaEditor:
-		if (getActivePanel())
-			getActivePanel()->getPanelWindowManager().toggle(CtrlrPanelWindowManager::LuaMethodEditor, true);
-		break;
-
-	case CtrlrEditor::doRefreshDeviceList:
-		performMidiDeviceRefresh();
-		AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "MIDI devices", "MIDI Device list refreshed");
-		break;
-
-	case CtrlrEditor::showLuaConsole:
-		if (getActivePanel())
-			getActivePanel()->getPanelWindowManager().toggle(CtrlrPanelWindowManager::LuaConsole, true);
-		break;
-
-	case CtrlrEditor::showComparatorTables:
-		if (getActivePanel())
-			getActivePanel()->dumpComparatorTables();
-		break;
-
-	case CtrlrEditor::showModulatorList:
-		if (getActivePanel())
-			getActivePanel()->getPanelWindowManager().toggle(CtrlrPanelWindowManager::ModulatorList, true);
-		break;
-
-	case CtrlrEditor::showLayers:
-		if (getActivePanel())
-			getActivePanel()->getPanelWindowManager().toggle(CtrlrPanelWindowManager::LayerEditor, true);
-		break;
-
-	case CtrlrEditor::doSendSnapshot:
-		if (getActivePanel())
-			getActivePanel()->sendSnapshot();
-		break;
-
-	case CtrlrEditor::doShowMidiSettingsDialog:
-		if (getActivePanel())
-			getActivePanel()->getPanelWindowManager().toggle(CtrlrPanelWindowManager::MIDISettings, true);
-		break;
-
-	case CtrlrEditor::optMidiInputFromHost:
-	case CtrlrEditor::optMidiInputFromHostCompare:
-	case CtrlrEditor::optMidiOutuptToHost:
-		performMidiHostOptionChange(info.commandID);
-		break;
-
-	case CtrlrEditor::optMidiSnapshotOnLoad:
-	case CtrlrEditor::optMidiSnapshotOnProgramChange:
-		performMidiOptionChange(info.commandID);
-		break;
-
-	case CtrlrEditor::optMidiThruD2D:
-	case CtrlrEditor::optMidiThruD2H:
-	case CtrlrEditor::optMidiThruH2D:
-	case CtrlrEditor::optMidiThruH2H:
-	case CtrlrEditor::optMidiThruD2DChannelize:
-	case CtrlrEditor::optMidiThruD2HChannelize:
-	case CtrlrEditor::optMidiThruH2DChannelize:
-	case CtrlrEditor::optMidiThruH2HChannelize:
-		performMidiThruChange(info.commandID);
-		break;
-
-	case CtrlrEditor::doCrash:
-		invalidCtrlrPtr->cancelPendingUpdate();
-		break;
-
-	case CtrlrEditor::doDumpVstTables:
-		owner.getVstManager().dumpDebugData();
-		if (isPanelActive()) {
-			getActivePanel()->dumpDebugData();
-		}
-		break;
-
-	case CtrlrEditor::doQuit:
-		owner.canCloseWindow([](bool canClose) {
-			if (canClose) {
-				juce::JUCEApplication::quit();
 			}
 		});
-		break;
-	case CtrlrEditor::doRegisterExtension:
-		tempResult = owner.getNativeObject().registerFileHandler();
-		if (tempResult.wasOk()) {
-			INFO("Register file handler", "Registration successful");
-		} else {
-			WARN("Registration failed");
-		}
-		break;
-
-	default:
-		break;
 	}
+	break;
+case CtrlrEditor::doSaveAs:
+	getActivePanel()->savePanelAs(doExportFileText);
+	break;
+case CtrlrEditor::doSave:
+	if (getActivePanel())
+		getActivePanel()->savePanel();
+	break;
+case CtrlrEditor::doSaveVersioned:
+	getActivePanel()->savePanelVersioned();
+	break;
+
+case CtrlrEditor::doExportFileText:
+case CtrlrEditor::doExportFileZText:
+case CtrlrEditor::doExportFileBin:
+case CtrlrEditor::doExportFileZBin:
+case CtrlrEditor::doExportFileZBinRes:
+case CtrlrEditor::doExportFileInstance:
+case CtrlrEditor::doExportGenerateUID:
+case CtrlrEditor::doExportFileInstanceRestricted:
+	getActivePanel()->savePanelAs(info.commandID);
+	break;
+
+case CtrlrEditor::doViewPropertyDisplayIDs:
+	if (getActivePanel())
+		getActivePanel()->setProperty(Ids::panelPropertyDisplayIDs,
+									  !getActivePanel()->getProperty(Ids::panelPropertyDisplayIDs));
+	break;
+
+case CtrlrEditor::doPanelMode:
+	DBG("doPanelMode");
+	if (getActivePanelEditor())
+		getActivePanelEditor()->setProperty(Ids::uiPanelEditMode,
+											!getActivePanelEditor()->getProperty(Ids::uiPanelEditMode));
+	break;
+
+case CtrlrEditor::doPanelLock:
+	if (getActivePanelEditor())
+		getActivePanelEditor()->setProperty(Ids::uiPanelLock,
+											!(bool)getActivePanelEditor()->getProperty(Ids::uiPanelLock));
+	break;
+
+case CtrlrEditor::doPanelToggleExternalLuaEdit:
+	if (getActivePanelEditor()) {
+		CtrlrPanel &panel = getActivePanelEditor()->getOwner();
+
+		// 1. Read current state and compute the new toggled state
+		bool currentEnabled = (bool)panel.getProperty(Ids::ctrlrLuaExternalEditorEnabled);
+		bool newEnabled = !currentEnabled;
+
+		// 2. Apply the new state to the panel first
+		panel.setProperty(Ids::ctrlrLuaExternalEditorEnabled, newEnabled);
+
+		// 3. If we just turned it ON, trigger the alert and clipboard copy
+		if (newEnabled) {
+			juce::File workspaceDir = panel.getCtrlrLuaManager().getPanelWorkspaceDir();
+
+			if (!workspaceDir.exists()) {
+				workspaceDir.createDirectory();
+			}
+
+			juce::String dirPath = workspaceDir.getFullPathName();
+			juce::SystemClipboard::copyTextToClipboard(dirPath);
+
+			juce::String infoMsg =
+				"External Lua Script Editing is now ENABLED.\n\n"
+				"Your script files for this panel are automatically saved and synced here:\n"
+
+				"--------------------------------------------------\n" +
+				dirPath + "\n" +
+				"--------------------------------------------------\n\n"
+				"(This folder path has been copied to your clipboard!)\n\n"
+				"• Edit your .lua files in your favorite external editor (e.g., Visual Studio Code or Xcode).\n"
+				"• Changes will hot-reload live into CtrlrX automatically.\n"
+				"• Sometimes it may be necessary to completely close CtrlrX and restart to see changes.\n"
+				"• To see external file changes.\n"
+				"  1. Right click in lua editor and select\n"
+				"  2. 'Scan workspace for new files'.\n"
+				"  3. Close and re-open the lua editor\n\n";
+
+			AW::showMessageBox(AW::Info, "External Editor Enabled", infoMsg, "OK");
+		}
+	}
+	break;
+
+	case CtrlrEditor::doPanelScanExternalFolder:
+	if (getActivePanelEditor()) {
+		CtrlrPanel &panel = getActivePanelEditor()->getOwner();
+		panel.getCtrlrLuaManager().scanAndImportNewFilesFromWorkspace();
+}
+	break;
+
+
+case CtrlrEditor::doPanelDisableCombosOnEdit:
+	if (getActivePanelEditor())
+		getActivePanelEditor()->setProperty(Ids::uiPanelDisableCombosOnEdit, !(bool)getActivePanelEditor()->getProperty(
+																				 Ids::uiPanelDisableCombosOnEdit));
+	break;
+
+case CtrlrEditor::showLuaEditor:
+	if (getActivePanel())
+		getActivePanel()->getPanelWindowManager().toggle(CtrlrPanelWindowManager::LuaMethodEditor, true);
+	break;
+
+case CtrlrEditor::doSetGlobalMidiDelay:
+    if (getActivePanel())
+        getActivePanel()->setGlobalMidiDelay(); // Calls the AlertWindow dialog
+    break;
+	
+
+case CtrlrEditor::doRefreshDeviceList:
+	performMidiDeviceRefresh();
+	AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "MIDI devices", "MIDI Device list refreshed");		
+	break;
+
+case CtrlrEditor::showLuaConsole:
+	if (getActivePanel())
+		getActivePanel()->getPanelWindowManager().toggle(CtrlrPanelWindowManager::LuaConsole, true);
+	break;
+
+case CtrlrEditor::showComparatorTables:
+	if (getActivePanel())
+		getActivePanel()->dumpComparatorTables();
+	break;
+
+case CtrlrEditor::showModulatorList:
+	if (getActivePanel())
+		getActivePanel()->getPanelWindowManager().toggle(CtrlrPanelWindowManager::ModulatorList, true);
+	break;
+
+case CtrlrEditor::showLayers:
+	if (getActivePanel())
+		getActivePanel()->getPanelWindowManager().toggle(CtrlrPanelWindowManager::LayerEditor, true);
+	break;
+
+case CtrlrEditor::doSendSnapshot:
+	if (getActivePanel())
+		getActivePanel()->sendSnapshot();
+	break;
+
+case CtrlrEditor::doSnapshotLoadFromFile:
+	if (getActivePanel())
+		getActivePanel()->loadSnapshotFromFile();
+	break;
+
+case CtrlrEditor::doSnapshotSaveToFile:
+	if (getActivePanel())
+		getActivePanel()->saveSnapshotToFile();
+	break;
+
+case CtrlrEditor::doSetSnapshotDelay:
+    if (getActivePanel())
+        getActivePanel()->setSnapshotDelay(); // Calls the AlertWindow dialog
+    break;
+
+case CtrlrEditor::doSavePatchToJSON:
+	if (getActivePanel())
+		getActivePanel()->savePatchToJSON();
+	break;
+
+case CtrlrEditor::doLoadPatchFromJSON:
+	if (getActivePanel())
+		getActivePanel()->loadPatchFromJSON();
+	break;
+
+case CtrlrEditor::doShowMidiSettingsDialog:
+	if (getActivePanel())
+		getActivePanel()->getPanelWindowManager().toggle(CtrlrPanelWindowManager::MIDISettings, true);
+	break;
+
+case CtrlrEditor::optMidiInputFromHost:
+case CtrlrEditor::optMidiInputFromHostCompare:
+case CtrlrEditor::optMidiOutuptToHost:
+	performMidiHostOptionChange(info.commandID);
+	break;
+
+case CtrlrEditor::optMidiSnapshotOnLoad:
+case CtrlrEditor::optMidiSnapshotOnProgramChange:
+	performMidiOptionChange(info.commandID);
+	break;
+
+case CtrlrEditor::optMidiThruD2D:
+case CtrlrEditor::optMidiThruD2H:
+case CtrlrEditor::optMidiThruH2D:
+case CtrlrEditor::optMidiThruH2H:
+case CtrlrEditor::optMidiThruD2DChannelize:
+case CtrlrEditor::optMidiThruD2HChannelize:
+case CtrlrEditor::optMidiThruH2DChannelize:
+case CtrlrEditor::optMidiThruH2HChannelize:
+	performMidiThruChange(info.commandID);
+	break;
+
+case CtrlrEditor::doCrash:
+	invalidCtrlrPtr->cancelPendingUpdate();
+	break;
+
+case CtrlrEditor::doDumpVstTables:
+	owner.getVstManager().dumpDebugData();
+	if (isPanelActive()) {
+		getActivePanel()->dumpDebugData();
+	}
+	break;
+
+case CtrlrEditor::doQuit:
+	owner.canCloseWindow([](bool canClose) {
+		if (canClose) {
+			juce::JUCEApplication::quit();
+		}
+	});
+	break;
+
+case CtrlrEditor::cleanOrphanProperties: {
+	if (auto *panel = owner.getActivePanel()) {
+		ValueTree panelTree = panel->getPanelTree();
+		ValueTree editorTree = panel->getEditor() ? panel->getEditor()->getPanelEditorTree() : ValueTree();
+
+		// 1. Static Master Set initialized once from BinaryData::CtrlrIDs_xml
+		static const std::unordered_set<String> validRegisteredIds = []() {
+			std::unordered_set<String> idSet;
+
+			const char *xmlData = BinaryData::CtrlrIDs_xml;
+			const int xmlDataSize = BinaryData::CtrlrIDs_xmlSize;
+
+			if (xmlData != nullptr && xmlDataSize > 0) {
+				if (auto xml = juce::XmlDocument::parse(juce::String::createStringFromData(xmlData, xmlDataSize))) {
+					for (auto *child : xml->getChildIterator()) {
+						if (child->hasAttribute("name")) {
+							idSet.insert(child->getStringAttribute("name"));
+						} else if (child->hasAttribute("id")) {
+							idSet.insert(child->getStringAttribute("id"));
+						} else if (child->getTagName().isNotEmpty()) {
+							idSet.insert(child->getTagName());
+						}
+					}
+				}
+			}
+			return idSet;
+		}();
+
+		StringArray orphanKeys;
+
+		// 2. Uncaptured access to static local variable
+		auto isPropertyOrphan = [](const Identifier &key) -> bool {
+			// Ignore internal runtime viewport properties
+			if (key == Ids::uiViewPortWidth || key == Ids::uiViewPortHeight ||
+				key == Ids::ctrlrLuaExternalEditorEnabled)
+				return false;
+
+			return validRegisteredIds.find(key.toString()) == validRegisteredIds.end();
+		};
+
+		// 3. Scan panel trees for orphan keys
+		auto scanTreeForOrphans = [&orphanKeys, &isPropertyOrphan](const ValueTree &tree) {
+			if (!tree.isValid())
+				return;
+
+			for (int i = 0; i < tree.getNumProperties(); ++i) {
+				const Identifier key = tree.getPropertyName(i);
+
+				if (isPropertyOrphan(key)) {
+					orphanKeys.addIfNotAlreadyThere(key.toString());
+				}
+			}
+		};
+
+		scanTreeForOrphans(panelTree);
+		scanTreeForOrphans(editorTree);
+
+		if (orphanKeys.isEmpty()) {
+			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Remove properties",
+											 "No unrecognized properties found in the active panel.");
+			break;
+		}
+
+		// 4. Build Modal Alert Window with Dropdown
+		auto alert = std::make_unique<AlertWindow>(
+			"Remove Property",
+			"Select a property to permanently remove from this panel's ValueTree:", AlertWindow::WarningIcon);
+
+		alert->addComboBox("orphanSelect", orphanKeys, "Properties");
+		alert->addButton("Delete Property", 1, KeyPress(KeyPress::returnKey));
+		alert->addButton("Cancel", 0, KeyPress(KeyPress::escapeKey));
+
+		auto *alertWindow = alert.get();
+
+		// Capture raw 'panel' pointer alongside trees to trigger refresh & dirty flag
+		alert->enterModalState(
+			true, ModalCallbackFunction::create([panel, panelTree, editorTree, alertWindow](int result) mutable {
+				if (result == 1) // User clicked Delete
+				{
+					if (auto *combo = alertWindow->getComboBoxComponent("orphanSelect")) {
+						const String selectedProp = combo->getText();
+						const Identifier propId(selectedProp);
+
+						if (propId.isValid()) {
+							bool removed = false;
+
+							// Explicitly pass panel's UndoManager (if active) or nullptr to trigger listeners
+							if (panelTree.hasProperty(propId)) {
+								panelTree.removeProperty(propId, panel->getPanelUndoManager());
+								removed = true;
+							}
+							if (editorTree.hasProperty(propId)) {
+								editorTree.removeProperty(propId, panel->getPanelUndoManager());
+								removed = true;
+							}
+
+							if (removed) {
+								// 1. Mark panel as dirty so File -> Save serializes changes to disk
+								panel->setProperty(Ids::panelIsDirty, true);
+
+								// 2. Notify tree listeners of the specific property removal
+								panelTree.sendPropertyChangeMessage(propId);
+								if (editorTree.isValid()) {
+									editorTree.sendPropertyChangeMessage(propId);
+								}
+
+								AlertWindow::showMessageBoxAsync(
+									AlertWindow::InfoIcon, "Property Removed",
+									"Property '" + selectedProp +
+										"' was successfully purged. Save the panel to write changes to disk.");
+							}
+						}
+					}
+				}
+			}),
+			true);
+		alert.release();
+	}
+	break;
+}
+case CtrlrEditor::doRegisterExtension:
+	tempResult = owner.getNativeObject().registerFileHandler();
+	if (tempResult.wasOk()) {
+		INFO("Register file handler", "Registration successful");
+	} else {
+		WARN("Registration failed");
+	}
+	break;
+
+default:
+	break;
+}
 
 	return (true);
 }
@@ -505,38 +710,32 @@ void CtrlrEditor::performRecentFileOpen(const int menuItemID) {
 }
 
 void CtrlrEditor::performShowKeyboardMappingDialog(const int /*menuItemID*/) {
-	// 1. Ensure command targets are registered so KeyMappingEditorComponent isn't empty
+	// 1. Ensure command targets are registered
 	auto &commandManager = owner.getCommandManager();
-
-	// Safety check: register targets if not already bound
 	commandManager.registerAllCommandsForTarget(this);
 
 	// 2. Create the editor component
 	auto keys = std::make_unique<juce::KeyMappingEditorComponent>(*commandManager.getKeyMappings(), true);
-
 	keys->setSize(650, 450);
 
-	// Keep raw pointer reference for the close callback saving logic
-	auto *keysPtr = keys.get();
-
-	// 3. Configure modern JUCE 8 async launch options
+	// 3. Configure JUCE 8 LaunchOptions
 	juce::DialogWindow::LaunchOptions options;
 	options.dialogTitle = "Keyboard mapping";
-	options.content.setOwned(keys.release()); // LaunchOptions takes ownership
+	options.content.setOwned(keys.release()); // Transfers ownership safely
 	options.resizable = true;
-	options.useNativeTitleBar = false; // JUCE titlebar ensures cross-platform consistency
+	options.useNativeTitleBar = true;
 	options.dialogBackgroundColour = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
 	options.escapeKeyTriggersCloseButton = true;
+	options.componentToCentreAround = this;
 
-	// 4. Handle saving XML asynchronously when the dialog is dismissed
+	// 4. Launch window safely (Works non-blocking on Windows, macOS, and Linux)
 	options.launchAsync();
 
-	// 5. Update/Save keyboard mappings when closing or changing
+	// 5. Save mappings when updated
 	if (auto keysXml = commandManager.getKeyMappings()->createXml(true)) {
 		owner.setProperty(Ids::ctrlrKeyboardMapping, keysXml->createDocument(""));
 	}
 }
-
 void CtrlrEditor::performMidiChannelChange(const int menuItemID) {
 	if (isPanelActive()) {
 		if (menuItemID >= 0x6100 && menuItemID <= 0x6111) {
@@ -632,4 +831,16 @@ void CtrlrEditor::sliderValueChanged(Slider *slider) {
 
 void CtrlrEditor::performMidiDeviceRefresh() {
 	owner.getCtrlrMidiDeviceManager().refreshDevices();
+}
+void CtrlrEditor::performShowGlobalSettingsDialog() {
+	juce::DialogWindow::LaunchOptions options;
+	options.dialogTitle = "Global Settings";
+	options.content.setOwned(new CtrlrSettings(owner)); // See note below
+	options.resizable = true;
+	options.useNativeTitleBar = true;
+	options.dialogBackgroundColour = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
+	options.escapeKeyTriggersCloseButton = true;
+	options.componentToCentreAround = this;
+
+	options.launchAsync();
 }

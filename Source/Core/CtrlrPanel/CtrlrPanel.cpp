@@ -90,6 +90,7 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 	setProperty(Ids::panelVendor, "");
 	setProperty(Ids::panelDevice, "");
 
+
 	// Exported Instance management
 	// Get application type
 	File me = File::getSpecialLocation(File::currentApplicationFile);
@@ -266,81 +267,6 @@ CtrlrPanel::~CtrlrPanel() {
 	// Keep 'this' valid via WeakReference until all child teardowns complete
 	masterReference.clear();
 }
-/*
-CtrlrPanel::~CtrlrPanel() {
-
-DBG("(G) CtrlrPanel DTOR");
-}
-
-CtrlrPanel::~CtrlrPanel()
-{
-	DBG("!!! TRACKING: CtrlrPanel Destructor has been entered !!!");
-
-	// =========================================================================
-	// 1. STANDARD JUCE THREAD SHUTDOWN
-	// =========================================================================
-	// Step A: Signal both threads that they ought to exit
-	midiInputThread.signalThreadShouldExit();
-	midiControllerInputThread.signalThreadShouldExit();
-
-	// Step B: Wake them up if they are sleeping inside juce::Thread::wait()
-	midiInputThread.notify();
-	midiControllerInputThread.notify();
-
-	// Step C: Wait for them to actually exit their run() loops.
-	// Use a longer timeout (e.g. 3000ms) so slow debug builds don't hit the timeout.
-	midiInputThread.stopThread(3000);
-	midiControllerInputThread.stopThread(3000);
-
-	// =========================================================================
-	// 2. CLEAR LISTENERS & DETACH PANEL TREE
-	// =========================================================================
-	panelTree.removeListener(this);
-	owner.removeChangeListener(this);
-
-	// =========================================================================
-	// 2. CLEAR LISTENERS & DETACH PANEL TREE SAFELY
-	// =========================================================================
-	panelTree.removeListener(this);
-	owner.removeChangeListener(this);
-
-	if (!owner.isShuttingDown()) {
-		juce::ValueTree managerTree = owner.getManagerTree();
-		if (managerTree.isValid() && managerTree.indexOf(panelTree) >= 0) {
-			managerTree.removeChild(panelTree, nullptr);
-		}
-	}
-
-	// =========================================================================
-	// 3. IMMEDIATE EDITOR & UI TEARDOWN
-	// =========================================================================
-	if (ctrlrPanelEditor != nullptr) {
-		ctrlrPanelEditor->setVisible(false);
-		ctrlrPanelEditor->setLookAndFeel(nullptr);
-
-		if (auto *parent = ctrlrPanelEditor->getParentComponent()) {
-			parent->removeChildComponent(ctrlrPanelEditor.get());
-		}
-
-		// Destroy editor cleanly
-		ctrlrPanelEditor.reset();
-	}
-
-	// Clear member LookAndFeel handles
-	lfV1 = nullptr;
-	lfV2 = nullptr;
-	lfV3 = nullptr;
-
-	// =========================================================================
-	// 4. DESTROY MODULATORS & LUA
-	// =========================================================================
-	ctrlrModulators.clear(true);
-	deleteAndZero(ctrlrLuaManager);
-
-	masterReference.clear();
-	panelTree.removeAllChildren(nullptr);
-}
-*/
 
 void CtrlrPanel::setRestoreState(const bool _restoreStateStatus) {
 	const ScopedWriteLock lock(panelLock);
@@ -445,6 +371,7 @@ void CtrlrPanel::sendSnapshotOnLoad() {
 	}
 }
 
+
 void CtrlrPanel::bootstrapPanel(const bool setInitialProgram) {
 	_DBG("CtrlrPanel::bootstrapPanel");
 	if (getRestoreState())
@@ -482,8 +409,17 @@ void CtrlrPanel::bootstrapPanel(const bool setInitialProgram) {
 	}
 
 	boostrapStateStatus = false;
-	bootstrapStartTime = juce::Time::getMillisecondCounter();
-	isBootstrapTimerActive = true;
+	postBootstrapGate = true;
+
+	juce::MessageManager::callAsync([safe = juce::WeakReference<CtrlrPanel>(this)] {
+		if (safe == nullptr)
+			return;
+
+		juce::MessageManager::callAsync([safe] {
+			if (safe != nullptr)
+				safe->postBootstrapGate = false;
+		});
+	});
 }
 
 CtrlrPanelEditor *CtrlrPanel::getEditor(const bool createNewEditorIfNeeded) {
@@ -612,8 +548,22 @@ void CtrlrPanel::getCodeSigningIdentityFromPopup(std::function<void(juce::String
 }
 
 void CtrlrPanel::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged, const Identifier &property) {
+	// Resolve a callback property to its method; an empty property CLEARS the callback
+	// (previously an emptied property left the old method wired up).
+	auto resolveLuaCallback = [this](WeakReference<CtrlrLuaMethod> &callback, const Identifier &prop) {
+		const String methodName = getProperty(prop).toString();
+		callback = methodName.isNotEmpty() ? getCtrlrLuaManager().getMethodManager().getMethod(methodName) : nullptr;
+	};
 	if (treeWhosePropertyHasChanged.hasType(Ids::modulator)) {
 		return;
+	} else if (property == Ids::ctrlrLuaExternalEditorEnabled)
+    {
+        bool isEnabled = (bool)getProperty(Ids::ctrlrLuaExternalEditorEnabled);
+
+        if (ctrlrLuaManager != nullptr) {
+            ctrlrLuaManager->setExternalScriptSyncEnabled(isEnabled);
+        }
+
 	} else if (property == Ids::panelMidiInputDevice) {
 		if (getProperty(property).toString().isEmpty() || getProperty(property).toString() == COMBO_ITEM_NONE) {
 			midiInputThread.closeInputDevice();
@@ -687,50 +637,40 @@ void CtrlrPanel::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasChanged
 			}
 		}
 	} else if (property == Ids::luaPanelMidiReceived) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelMidiReceivedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelMidiReceivedCbk, property);
 	} else if (property == Ids::luaPanelMidiMultiReceived) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelMidiMultiReceivedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelMidiMultiReceivedCbk, property);
 	} else if (property == Ids::luaPanelMidiChannelChanged) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelMidiChannelChangedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelMidiChannelChangedCbk, property);
 	} else if (property == Ids::luaPanelMessageHandler) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelMessageHandlerCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelMessageHandlerCbk, property);
 	} else if (property == Ids::luaPanelSaved) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelSavedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelSavedCbk, property);
 	} else if (property == Ids::luaPanelLoaded) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelLoadedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelLoadedCbk, property);
 	} else if (property == Ids::luaPanelGlobalChanged) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelGlobalChangedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelGlobalChangedCbk, property);
 	} else if (property == Ids::luaPanelBeforeLoad) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelBeforeLoadCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelBeforeLoadCbk, property);
 	} else if (property == Ids::luaPanelProgramChanged) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelProgramChangedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelProgramChangedCbk, property);
 	} else if (property == Ids::luaPanelResourcesLoaded) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelResourcesLoadedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelResourcesLoadedCbk, property);
 	} else if (property == Ids::luaPanelModulatorValueChanged) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelModulatorValueChangedCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelModulatorValueChangedCbk, property);
 	} else if (property == Ids::luaPanelSaveState) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelSaveStateCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelSaveStateCbk, property);
 	} else if (property == Ids::luaPanelRestoreState) {
-		if (getProperty(property).toString().isNotEmpty())
-			luaPanelRestoreStateCbk = getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property));
+		resolveLuaCallback(luaPanelRestoreStateCbk, property);
 	} else if (property == Ids::luaPanelMidiSnapshotPost) {
-		if (getProperty(property).toString().isNotEmpty())
-			snapshot.setPostLuaCallback(getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property)));
+		// assumes setPostLuaCallback() takes a CtrlrLuaMethod* (it is passed getMethod()'s result today)
+		const String name = getProperty(property).toString();
+		snapshot.setPostLuaCallback(name.isNotEmpty() ? getCtrlrLuaManager().getMethodManager().getMethod(name)
+													  : nullptr);
 	} else if (property == Ids::luaPanelMidiSnapshotPre) {
-		if (getProperty(property).toString().isNotEmpty())
-			snapshot.setPreLuaCallback(getCtrlrLuaManager().getMethodManager().getMethod(getProperty(property)));
+		const String name = getProperty(property).toString();
+		snapshot.setPreLuaCallback(name.isNotEmpty() ? getCtrlrLuaManager().getMethodManager().getMethod(name)
+													 : nullptr);
 	} else if (property == Ids::panelGlobalVariables) {
 		globalVariables = globalsFromString(getProperty(property));
 	} else if (property == Ids::panelResources) {
@@ -1361,6 +1301,14 @@ void CtrlrPanel::sendSnapshot() {
 	snapshot.sendSnapshot();
 }
 
+void CtrlrPanel::loadSnapshotFromFile() {
+	snapshot.loadSnapshotFromFile();
+}
+
+void CtrlrPanel::saveSnapshotToFile() {
+	snapshot.saveSnapshotToFile();
+}
+
 bool CtrlrPanel::getRestoreState() {
 	const ScopedReadLock lock(panelLock);
 	return (restoreStateStatus);
@@ -1808,6 +1756,12 @@ void CtrlrPanel::performInternalComponentFunction(CtrlrComponent *sourceComponen
 	case MIDIMonitor:
 		owner.getWindowManager().toggle(CtrlrManagerWindowManager::MidiMonWindow, true);
 		break;
+	case AboutBox:
+		owner.getWindowManager().toggle(CtrlrManagerWindowManager::AboutWindow, true);
+		break;
+	case SendSnapshot:
+		owner.getActivePanel()->sendSnapshot();
+		break;
 	case none:
 	default:
 		break;
@@ -1862,35 +1816,14 @@ void CtrlrPanel::restoreLayerVisibilityStates() // Added v5.6.34. Thanks to @dna
 	layerVisibilityBackup.clear();
 }
 
-bool CtrlrPanel::isLoading() {
-	const ScopedReadLock lock(panelLock);
-
-	// 1. Structural Gates: Immediate block if loading a DAW project or preset bank
-	if (restoreStateStatus || programState) {
-		return true;
-	}
-
-	// 2. Core Bootstrap Gate: If C++ is actively inside bootstrapPanel(), ALWAYS block
-	if (boostrapStateStatus) {
-		return true;
-	}
-
-	// 3. The Asynchronous Cooldown Gate (Your Timer Rule)
-	if (isBootstrapTimerActive) {
-		uint32 currentTime = juce::Time::getMillisecondCounter();
-
-		// Use a tight 300ms to 500ms cooldown window AFTER boostrapStateStatus drops to false
-		if (currentTime - bootstrapStartTime > 400) {
-			const_cast<CtrlrPanel *>(this)->isBootstrapTimerActive = false;
-			// juce::Logger::writeToLog("[CtrlrX Engine] >>> 400ms Cooldown Passed. GATE IS OPEN! <<<");
-			return false;
-		}
-
-		return true;
-	}
-
-	return false;
+bool CtrlrPanel::isLoading() const
+{
+    return restoreStateStatus.load()
+        || programState.load()
+        || boostrapStateStatus.load()
+        || postBootstrapGate.load();
 }
+
 
 void CtrlrPanel::setLookAndFeel(LookAndFeel *newLookAndFeel) // Added JUCE 8
 {
@@ -1906,4 +1839,401 @@ void CtrlrPanel::setLookAndFeel(LookAndFeel *newLookAndFeel) // Added JUCE 8
 		getCanvas()->setLookAndFeel(newLookAndFeel);
 	}
 	// Otherwise, do nothing.
+}
+
+void CtrlrPanel::promptForMidiDelay(const juce::Identifier &propertyId, 
+                                    const juce::String &dialogTitle, 
+                                    const juce::String &instructions, 
+                                    int minMs, int maxMs) 
+{
+    juce::WeakReference<CtrlrPanel> safeThis(this);
+
+    int currentVal = getProperty(propertyId);
+
+    auto *alert = new juce::AlertWindow(dialogTitle, instructions, juce::AlertWindow::QuestionIcon);
+    
+    // Add text editor pre-populated with current value
+    alert->addTextEditor("delayInput", juce::String(currentVal), "Delay (ms):");
+    
+    // Limit input to numbers only
+    if (auto *editor = alert->getTextEditor("delayInput")) {
+        editor->setInputRestrictions(5, "0123456789");
+    }
+
+    alert->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    alert->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+    alert->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, alert, propertyId, minMs, maxMs](int result) {
+        if (result == 1 && !safeThis.wasObjectDeleted()) {
+            int newVal = alert->getTextEditorContents("delayInput").getIntValue();
+            newVal = juce::jlimit(minMs, maxMs, newVal);
+            
+            safeThis->setProperty(propertyId, newVal);
+        }
+        delete alert;
+    }));
+}
+
+void CtrlrPanel::promptForMidiDelayWithSlider(const juce::Identifier &propertyId, 
+                                              const juce::String &dialogTitle, 
+                                              int minMs, int maxMs) 
+{
+    juce::WeakReference<CtrlrPanel> safeThis(this);
+    int currentVal = getProperty(propertyId);
+
+    auto *alert = new juce::AlertWindow(dialogTitle, "Adjust delay in milliseconds:", juce::AlertWindow::NoIcon);
+    
+    // Create a custom slider component
+    auto slider = std::make_unique<juce::Slider>(juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight);
+    slider->setRange(minMs, maxMs, 1);
+    slider->setValue(currentVal);
+    slider->setTextValueSuffix(" ms");
+    slider->setSize(280, 30);
+
+    // addCustomComponent takes ownership or references depending on JUCE version
+    alert->addCustomComponent(slider.get());
+
+    alert->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    alert->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+    // Move ownership into callback lambda
+    juce::Slider *rawSlider = slider.release();
+
+    alert->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, alert, rawSlider, propertyId](int result) {
+        if (result == 1 && !safeThis.wasObjectDeleted()) {
+            safeThis->setProperty(propertyId, (int)rawSlider->getValue());
+        }
+        delete rawSlider;
+        delete alert;
+    }));
+}
+
+// Snapshot Delay Action Callback
+void CtrlrPanel::setSnapshotDelay() {
+    promptForMidiDelay(
+        Ids::panelMidiSnapshotDelay,
+        "Snapshot Transmission Delay",
+        "Set delay between MIDI messages during snapshot send (0 - 20000 ms).\nUseful for older synth buffers (e.g. TX81Z):",
+        0, 20000
+    );
+}
+
+// Global MIDI Delay Action Callback
+void CtrlrPanel::setGlobalMidiDelay() {
+    promptForMidiDelay(
+        Ids::panelMidiGlobalDelay,
+        "Global MIDI Message Delay",
+        "Set global inter-message delay for outgoing MIDI stream (0 - 500 ms):",
+        0, 500
+    );
+}
+
+void CtrlrPanel::savePatchToJSON() {
+    juce::DynamicObject::Ptr rootObj = new juce::DynamicObject();
+    juce::DynamicObject::Ptr headerObj = new juce::DynamicObject();
+    juce::DynamicObject::Ptr patchObj = new juce::DynamicObject();
+    juce::DynamicObject::Ptr labelsObj = new juce::DynamicObject();
+
+    // 1. Metadata Header
+    headerObj->setProperty("panelName", getProperty(Ids::name));
+    headerObj->setProperty("UID", getProperty(Ids::panelUID));
+
+    // 2. Modulator & Label Extraction
+// 2. Modulator & Label Extraction
+// 2. Modulator & Label Extraction
+int savedCount = 0;
+int labelCount = 0;
+
+for (int i = 0; i < getNumModulators(); ++i) {
+    CtrlrModulator *mod = getModulatorByIndex(i);
+    if (mod == nullptr)
+        continue;
+
+    const bool userExplicitSave = mod->getProperty(Ids::modulatorValueSaveToFile, true);
+    const bool isStatic = mod->getProperty(Ids::modulatorIsStatic, false);
+
+    // Respect the "Save To File" matrix setting
+    if (!userExplicitSave)
+        continue;
+
+    CtrlrComponent *comp = mod->getComponent();
+    
+    // Check if the component type is explicitly a Label (uiLabel)
+    bool isLabelComponent = false;
+    if (comp != nullptr) {
+        // Option A: Check property directly from component tree
+        const juce::String uiType = comp->getProperty(Ids::uiType).toString();
+        
+        // Option B: Fallback check against component type string if uiType is empty
+        isLabelComponent = (uiType == "uiLabel"); // || comp->getComponentType() == Ids::uiLabel);
+    }
+
+    if (isLabelComponent) {
+        // Fetch text from component
+        juce::String labelText = comp->getComponentText();
+        
+        // Fallback to component property if getComponentText() returns empty
+        if (labelText.isEmpty()) {
+            labelText = comp->getProperty(Ids::uiLabelText).toString();
+        }
+
+        labelsObj->setProperty(mod->getName(), labelText);
+        labelCount++;
+        
+        // Skip adding to numeric 'patch' object
+        continue; 
+    }
+
+    // Standard Numeric Modulators: Skip if static
+    if (isStatic)
+        continue;
+
+    patchObj->setProperty(mod->getName(), mod->getModulatorValue());
+    savedCount++;
+}
+
+    rootObj->setProperty("header", headerObj.get());
+    rootObj->setProperty("patch", patchObj.get());
+    if (labelCount > 0) {
+        rootObj->setProperty("labels", labelsObj.get());
+    }
+
+    juce::String jsonText = juce::JSON::toString(juce::var(rootObj.get()), true);
+
+    // 3. Async File Save
+    juce::WeakReference<CtrlrPanel> safeThis(this);
+    juce::File defaultFile =
+        juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile(getName() + "_Patch.json");
+
+    FC::saveFileAsync("Save Patch to JSON", defaultFile, "*.json", true,
+                      [safeThis, jsonText, savedCount, labelCount](const juce::File &targetFile) {
+                          if (safeThis.wasObjectDeleted() || targetFile == juce::File())
+                              return;
+
+                          juce::File fileToSave = targetFile.withFileExtension(".json");
+                          if (fileToSave.replaceWithText(jsonText)) {
+                              safeThis->notify("Saved " + juce::String(savedCount) + " parameters & " +
+                                                   juce::String(labelCount) + " labels to " +
+                                                   fileToSave.getFileName(),
+                                               nullptr, NotifySuccess);
+                          } else {
+                              safeThis->notify("Failed to write JSON patch file.", nullptr, NotifyFailure);
+                          }
+                      });
+}
+
+void CtrlrPanel::loadPatchFromJSON() {
+    juce::WeakReference<CtrlrPanel> safeThis(this);
+
+    AW::showOkCancelAsyncSafe(
+        AW::Warning, "Load JSON Patch",
+        "Loading a new patch will overwrite your current panel settings.\n\nAre you sure you want to proceed?",
+        [safeThis](bool confirmed) {
+            if (!confirmed || safeThis.wasObjectDeleted())
+                return;
+
+            FC::openFileAsync(
+                "Load Patch from JSON", juce::File::getSpecialLocation(juce::File::userDocumentsDirectory), "*.json",
+                true, [safeThis](const juce::File &sourceFile) {
+                    if (safeThis.wasObjectDeleted() || sourceFile == juce::File())
+                        return;
+
+                    juce::var parsedData = juce::JSON::parse(sourceFile);
+                    juce::DynamicObject *rootObj = parsedData.getDynamicObject();
+
+                    if (rootObj == nullptr) {
+                        safeThis->notify("Invalid JSON patch file.", nullptr, NotifyFailure);
+                        return;
+                    }
+
+                    // 1. Identity Verification Header
+                    juce::var headerVar = rootObj->getProperty("header");
+                    juce::DynamicObject *headerObj = headerVar.getDynamicObject();
+
+                    if (headerObj != nullptr) {
+                        const juce::String fileUID = headerObj->getProperty("UID").toString();
+                        const juce::String fileName = headerObj->getProperty("panelName").toString();
+
+                        const juce::String currentUID = safeThis->getProperty(Ids::panelUID).toString();
+                        const juce::String currentName = safeThis->getProperty(Ids::name).toString();
+
+                        bool isMatch = false;
+
+                        if (fileUID.isNotEmpty() && currentUID.isNotEmpty()) {
+                            isMatch = (fileUID == currentUID);
+                        } else if (fileName.isNotEmpty() && currentName.isNotEmpty()) {
+                            isMatch = (fileName == currentName);
+                        } else {
+                            isMatch = true;
+                        }
+
+                        if (!isMatch) {
+							const juce::String errorMsg = "Patch file target mismatch!\n\n"
+														  "File Target: " +
+														  (fileName.isNotEmpty() ? fileName : "Unknown Panel") + "\n" +
+														  "File UID: " + (fileUID.isNotEmpty() ? fileUID : "N/A") +
+														  "\n\n" + "Current Panel: " + currentName + "\n" +
+														  "Current UID: " + currentUID + "\n\n" +
+														  "(Current Panel UID has been copied to the clipboard)";
+
+							if (currentUID.isNotEmpty()) {
+                                juce::SystemClipboard::copyTextToClipboard(currentUID);
+                            }
+
+                            AW::showMessageBox(AW::Warning, "Target Mismatch", errorMsg, "OK");
+                            return;
+                        }
+                    }
+
+                    // Pause MIDI output during state changes
+                    safeThis->setProperty(Ids::panelMidiPauseOut, true);
+
+                    int loadedCount = 0;
+                    int labelLoadedCount = 0;
+                    juce::StringArray missingModulators;
+
+                    // 2. Load Standard Numeric Patch Modulators
+                    juce::var patchVar = rootObj->getProperty("patch");
+                    if (juce::DynamicObject *modsObj = patchVar.getDynamicObject()) {
+                        for (const auto &prop : modsObj->getProperties()) {
+                            const juce::String modName = prop.name.toString();
+                            const juce::var modValue = prop.value;
+
+                            CtrlrModulator *mod = safeThis->getModulator(modName);
+                            if (mod != nullptr) {
+                                mod->setModulatorValue(modValue, false, true, false);
+                                loadedCount++;
+                            } else {
+                                missingModulators.add(modName);
+                            }
+                        }
+                    }
+
+                    // 3. Load Separate Label Text Data
+                    juce::var labelsVar = rootObj->getProperty("labels");
+                    if (juce::DynamicObject *labelsObj = labelsVar.getDynamicObject()) {
+                        for (const auto &prop : labelsObj->getProperties()) {
+                            const juce::String modName = prop.name.toString();
+                            const juce::String labelText = prop.value.toString();
+
+                            CtrlrModulator *mod = safeThis->getModulator(modName);
+                            if (mod != nullptr && mod->getComponent() != nullptr) {
+                                mod->getComponent()->setComponentText(labelText);
+                                labelLoadedCount++;
+                            }
+                        }
+                    }
+
+                    // Resume MIDI output
+                    safeThis->setProperty(Ids::panelMidiPauseOut, false);
+
+                    // 4. Status Reporting
+                    if (!missingModulators.isEmpty()) {
+                        juce::String warnMsg = "Loaded " + juce::String(loadedCount) + " parameters and " +
+                                               juce::String(labelLoadedCount) + " labels.\n\n" +
+                                               juce::String(missingModulators.size()) +
+                                               " controls were missing from this panel.";
+
+                        AW::showMessageBox(AW::Warning, "Load Warning", warnMsg);
+                    } else {
+                        juce::String successMsg = "Successfully loaded " + juce::String(loadedCount) +
+                                                  " parameters and " + juce::String(labelLoadedCount) + " labels.";
+                        AW::showMessageBox(AW::Info, "Patch Loaded", successMsg);
+                    }
+                });
+        },
+        "Load Patch", "Cancel");
+}
+Result CtrlrPanel::exportLuaMethodToWorkspace(const File &parentDir, ValueTree method, StringArray &usedPaths,
+											  StringArray *notes) {
+	const String name = method.getProperty(Ids::luaMethodName).toString();
+ 
+	if (name.isEmpty() || File::createLegalFileName(name) != name) {
+		if (notes != nullptr)
+			notes->add("Kept in the panel (name can't be used as a file name): " + name);
+		return Result::ok();
+	}
+ 
+	const File target = parentDir.getChildFile(name + ".lua");
+ 
+	String key = target.getFullPathName();
+	if (!File::areFileNamesCaseSensitive())
+		key = key.toLowerCase();
+ 
+	if (usedPaths.contains(key)) {
+		if (notes != nullptr)
+			notes->add("Kept in the panel (another method already uses this file name): " + name);
+		return Result::ok();
+	}
+ 
+	const String code = method.getProperty(Ids::luaMethodCode).toString();
+	bool needsWrite = true;
+ 
+	if (target.existsAsFile()) {
+		if (target.loadFileAsString() == code) {
+			needsWrite = false; // identical: just link to it
+		} else {
+			target.copyFileTo(parentDir.getChildFile(name + ".lua.bak")); // keep the old content
+			if (notes != nullptr)
+				notes->add("Existing file replaced with the panel's version (old copy kept as " + name +
+						   ".lua.bak): " + name + ".lua");
+		}
+	}
+ 
+	if (needsWrite && !target.replaceWithText(code))
+		return Result::fail("Could not write " + target.getFullPathName());
+ 
+	usedPaths.add(key);
+ 
+	// Same bookkeeping as writeLuaMethod(), but the method keeps its name.
+	method.setProperty(Ids::luaMethodSourcePath, target.getRelativePathFrom(getPanelLuaDir()), nullptr);
+	method.setProperty(Ids::luaMethodSource, (int)CtrlrLuaMethod::codeInFile, nullptr);
+	method.removeProperty(Ids::luaMethodCode, nullptr);
+	return Result::ok();
+}
+ int CtrlrPanel::inlineExternalLuaMethods(ValueTree methodsRoot, StringArray *missingNames)
+{
+
+	/*
+	One small refinement. inlineExternalLuaMethods() calls getPanelWorkspaceDir() at the top, 
+	and that function can assign a new panelUID as a side effect if the panel doesn’t have one. 
+	So a save of a panel that never used external editing could, in an odd case, modify the panel. 
+	It costs almost nothing to avoid. Move the line from the top of the function to just inside the loop, 
+	after the codeInFile check and before the isAChildOf test, so it only runs when a file-backed method is found.
+	*/
+
+	// const File workspaceDir = getCtrlrLuaManager().getPanelWorkspaceDir();
+
+	int converted = 0;
+ 
+	for (int i = 0; i < methodsRoot.getNumChildren(); ++i) {
+		ValueTree child = methodsRoot.getChild(i);
+ 
+		if (child.hasType(Ids::luaMethodGroup)) {
+			converted += inlineExternalLuaMethods(child, missingNames);
+			continue;
+		}
+ 
+		if (!child.hasType(Ids::luaMethod))
+			continue;
+ 
+		if ((int)child.getProperty(Ids::luaMethodSource) != (int)CtrlrLuaMethod::codeInFile)
+			continue;
+ 		const File workspaceDir = getCtrlrLuaManager().getPanelWorkspaceDir();
+		const File src = getLuaMethodSourceFile(&child);
+		if (!src.isAChildOf(workspaceDir)) // hand-linked file elsewhere: leave alone
+			continue;
+ 
+		String code = child.getProperty(Ids::luaMethodCode).toString(); // cached copy, if one exists
+		if (src.existsAsFile())
+			code = src.loadFileAsString();                              // the file always wins
+		else if (code.isEmpty() && missingNames != nullptr)
+			missingNames->add(child.getProperty(Ids::luaMethodName).toString());
+ 
+		child.setProperty(Ids::luaMethodCode, code, nullptr);
+		child.setProperty(Ids::luaMethodSource, (int)CtrlrLuaMethod::codeInProperty, nullptr);
+		child.removeProperty(Ids::luaMethodSourcePath, nullptr);
+		++converted;
+	}
+	return converted;
 }

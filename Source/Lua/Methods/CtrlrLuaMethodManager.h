@@ -17,6 +17,8 @@ class CtrlrComponent;
 class LMemoryBlock;
 class CtrlrLuaObjectWrapper;
 
+bool isInBuiltInGroup(juce::ValueTree g);
+
 class CtrlrLuaMethodManager : public ValueTree::Listener
 {
 	public:
@@ -38,8 +40,18 @@ class CtrlrLuaMethodManager : public ValueTree::Listener
 		const bool attachDefaultGroups();
 		ValueTree getGroupByName(const String &groupName);
 		ValueTree findGroupRecursive(ValueTree treeToSearch, const Uuid &groupUuid);
-		void addMethod (ValueTree groupToAddTo, const String &methodName, const String &initialCode, const String &linkedToProperty, const Uuid methodUuid=UID_NULL, const bool forceIfAlreadyExists=false);
-		void addMethodFromFile (ValueTree groupToAddTo, const File &fileToUse, const Uuid methodUuid=UID_NULL);
+		bool addMethod(ValueTree groupToAddTo, const String &methodName, const String &initialCode,
+					   const String &methodProperty = String(), const Uuid methodUuid = Uuid(),
+					   const bool forceIfAlreadyExists = false, const bool isRestoring = false);
+
+		bool addMethodFromFile(ValueTree groupToAddTo, const File &fileToUse, const Uuid methodUid = Uuid());
+		bool methodNameExists(const String &name, const ValueTree &ignore = ValueTree()) const;
+		bool addMethodWithAlert(ValueTree groupToAddTo, const String &methodName, const String &initialCode,
+								const String &methodProperty = String());
+		// "myLuaMethod" -> "myLuaMethod" if free, else "myLuaMethod2", "myLuaMethod3", ...
+
+		String getUniqueMethodName(const String &baseName) const;
+		String getMethodLocationByName(const String &name) const;
 		void deleteMethod(const Uuid &methodUuid);
 		void setEditedMethod(const Uuid &methodUid);
 		void setEditedMethod(const String &methodName);
@@ -72,6 +84,7 @@ class CtrlrLuaMethodManager : public ValueTree::Listener
 		String getUtilityUuid(const int index);
 		bool getUtilityAlwaysUpdate(const int index);
 		void wrapUtilities();
+		void handleExternalFileChange(const juce::File &file, bool isDeleted);
 
 		/** Calls */
 		const bool call(CtrlrLuaMethod *o, CtrlrModulator *param1, const int param2);
@@ -110,7 +123,9 @@ class CtrlrLuaMethodManager : public ValueTree::Listener
 		const bool call(CtrlrLuaMethod *o, MidiBuffer *param1);
 		const bool call(CtrlrLuaMethod *o, const ValueTree &param1);
 		const bool call(CtrlrLuaMethod *o, const String &param1, const String &param2, CtrlrLuaObjectWrapper const &param3);
-
+		CtrlrLuaMethodEditor *getMethodEditor() const {
+			return currentMethodEditor;
+		} // hot reload extern editor access to current method editor
 		int callWithRet(CtrlrLuaMethod *o, CtrlrCustomComponent *param1, DragAndDropSourceDetails param2);
 		int callWithRet(CtrlrLuaMethod *o, ValueTree valueTree1, ValueTree valueTree2);
 		int callWithRet(CtrlrLuaMethod *o, CtrlrModulator *param1, const int param2);
@@ -134,6 +149,7 @@ class CtrlrLuaMethodManager : public ValueTree::Listener
 		XmlElement *utilityMethods;
 		CtrlrLuaMethod emptyMethod;
 		CriticalSection methodManagerCriticalSection;
+		void handleMethodException(CtrlrLuaMethod *o, const juce::String &message, const bool trimLogMessage = false);
 		WeakReference <CtrlrLuaMethodEditor> currentMethodEditor;
 };
 

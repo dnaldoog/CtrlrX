@@ -9,7 +9,7 @@ setlocal enabledelayedexpansion
 :: #winget install -e --id Ninja-build.Ninja
 :: #cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCTRLRX_USE_LUAJIT=ON ..
 :: #cmake --build build
-set "BUILD_DIR=%USERPROFILE%\Documents\CtrlrX\build"
+set "BUILD_DIR=%CD%\build"
 set "PROCESSORS=%PROCESSORS%"
 
 ::==============================================================================

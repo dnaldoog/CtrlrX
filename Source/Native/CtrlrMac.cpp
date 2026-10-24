@@ -8,6 +8,8 @@ static const int zero = 0;
 #include "CtrlrMac.h"
 #include "CtrlrMacros.h"
 #include "CtrlrPanel/CtrlrPanel.h"
+#include "CtrlrPanel/CtrlrPanelResource.h"
+#include "UIComponents/CtrlrIcnsGenerator.h"
 #include <memory>
 
 #include <fstream>
@@ -368,9 +370,24 @@ if (newMe.exists()) {
 				}
 			}
 
-			const bool codesignExportedPanel = panelToWrite->getProperty(Ids::panelExportCodesign);
-
-			if (codesignExportedPanel) {
+			// FIX: codesigning was previously gated entirely behind
+			// panelExportCodesign, defaulting to skipped. But every export —
+			// standalone, AU, VST3, AAX alike — already has its bundle
+			// contents modified above (copyDirectoryTo, setBundleInfo,
+			// setBundleInfoCarbon rewriting Info.plist, and the panel/
+			// resource files written into Contents/Resources), which
+			// invalidates whatever signature the original build carried
+			// (Xcode auto-signs Apple Silicon builds ad-hoc by default, even
+			// without a paid Developer ID). Apple Silicon's kernel-level
+			// signature verification is mandatory, not optional — an
+			// unsigned/invalidly-signed bundle is silently refused at
+			// launch with no error message. codesignFileMac() already has a
+			// correct ad-hoc fallback (an empty identity becomes "-"), so
+			// it's always safe to call; a real certificate, when configured,
+			// is layered on top as an upgrade rather than being the only
+			// path to a launchable export at all.
+			{
+				const bool codesignExportedPanel = panelToWrite->getProperty(Ids::panelExportCodesign);
 				const bool enableExportDelayBtwSteps = panelToWrite->getProperty(Ids::panelExportDelayBtwSteps);
 
 				if (enableExportDelayBtwSteps) {
@@ -381,13 +398,19 @@ if (newMe.exists()) {
 					logger.log("Thread sleep to delay codesigning task bypassed.");
 				}
 
-				logger.log("Codesigning process started. Ready to call codesignFileMac");
+				logger.log("Codesigning process started (always runs; ad-hoc unless a certificate is configured). "
+						   "Ready to call codesignFileMac");
 				const juce::String newMePathName = newMe.getFullPathName();
 				logger.log("File FullPathname: " + newMePathName);
 
-				const juce::String panelCertificateMacIdentity =
-					panelToWrite->getProperty(Ids::panelCertificateMacId).toString();
-				logger.log("MAC Certificate Identity: " + panelCertificateMacIdentity);
+				juce::String panelCertificateMacIdentity;
+				if (codesignExportedPanel) {
+					panelCertificateMacIdentity = panelToWrite->getProperty(Ids::panelCertificateMacId).toString();
+				}
+				// else: leave empty — codesignFileMac() falls back to "-" (ad-hoc)
+				logger.log("MAC Certificate Identity: " + (panelCertificateMacIdentity.isNotEmpty()
+															   ? panelCertificateMacIdentity
+															   : String("(none — ad-hoc)")));
 
 				juce::String codesignLog;
 				const Result codesignResult = codesignFileMac(newMePathName, panelCertificateMacIdentity, codesignLog);
@@ -401,10 +424,6 @@ if (newMe.exists()) {
 				} else {
 					logger.log("Codesigning successful.");
 				}
-			} else {
-				logger.log("Codesign step was skipped.");
-				notifyAndReturn(Result::ok());
-				return;
 			}
 		}
 
@@ -844,7 +863,44 @@ Result CtrlrMac::setBundleInfo(CtrlrPanel *sourceInfo, const File &bundle) {
 		XmlElement *cfInsertStringManufacturerID = dict->createNewChildElement("string");
 		cfInsertStringManufacturerID->addTextElement("ManufacturerID");
 
+		// NEW: generate a custom .icns from the panel's chosen icon
+		// resource (uiPanelIconResource, stored on the uiPanelEditor child
+		// tree — same location the property editor writes it to, and the
+		// same bug already found/fixed on the Windows export path) and set
+		// it as CFBundleIconFile below. Non-fatal by design: if no icon is
+		// selected, or generation fails for any reason, the bundle just
+		// keeps its existing/default icon rather than the export failing.
+		String iconResourceName;
+		ValueTree iconEditorTree = sourceInfo->getPanelTree().getChildWithName(Ids::uiPanelEditor);
+		if (iconEditorTree.isValid())
+			iconResourceName = iconEditorTree.getProperty(Ids::uiPanelIconResource).toString();
+
+		bool wroteCustomIcon = false;
+		String icnsFileName;
+
+		if (iconResourceName.isNotEmpty()) {
+			CtrlrPanelResource *iconResource = sourceInfo->getResourceManager().getResource(iconResourceName);
+
+			if (iconResource != nullptr) {
+				icnsFileName = File::createLegalFileName(sourceInfo->getProperty(Ids::name).toString()) + ".icns";
+				File icnsDest = bundle.getChildFile("Contents/Resources/" + icnsFileName);
+
+				juce::Result icnsResult = CtrlrIcnsGenerator::generateIcnsFromSvg(iconResource->getFile(), icnsDest);
+
+				if (icnsResult.wasOk()) {
+					wroteCustomIcon = true;
+					_DBG("MAC native, wrote custom icon: " + icnsDest.getFullPathName());
+				} else {
+					_DBG("MAC native, icon generation failed: " + icnsResult.getErrorMessage());
+				}
+			} else {
+				_DBG("MAC native, icon resource '" + iconResourceName + "' not found");
+			}
+		}
+
 		if (dict != nullptr) {
+			bool foundCFBundleIconFile = false;
+
 			forEachXmlChildElement(*dict, e1) {
 				if (e1->hasTagName("key") && e1->getAllSubText() == "CFBundleDisplayName") {
 					XmlElement *cfBundleElement = e1->getNextElementWithTagName("string");
@@ -873,6 +929,14 @@ Result CtrlrMac::setBundleInfo(CtrlrPanel *sourceInfo, const File &bundle) {
 					if (cfVersionElement != nullptr) {
 						cfVersionElement->deleteAllTextElements();
 						cfVersionElement->addTextElement(sourceInfo->getProperty(Ids::panelInstanceUID).toString());
+					}
+				}
+				if (e1->hasTagName("key") && (e1->getAllSubText() == "CFBundleIconFile") && wroteCustomIcon) {
+					foundCFBundleIconFile = true;
+					XmlElement *cfIconElement = e1->getNextElementWithTagName("string");
+					if (cfIconElement != nullptr) {
+						cfIconElement->deleteAllTextElements();
+						cfIconElement->addTextElement(icnsFileName);
 					}
 				}
 				if (e1->hasTagName("key") && (e1->getAllSubText() == "NSHumanReadableCopyright")) {
@@ -961,6 +1025,16 @@ Result CtrlrMac::setBundleInfo(CtrlrPanel *sourceInfo, const File &bundle) {
 						}
 					}
 				}
+			}
+
+			// If the plist had no CFBundleIconFile key at all (unusual, but
+			// mirroring the ManufacturerID insertion pattern above just in
+			// case) and a custom icon was written, add the key fresh.
+			if (wroteCustomIcon && !foundCFBundleIconFile) {
+				XmlElement *cfInsertKeyIcon = dict->createNewChildElement("key");
+				cfInsertKeyIcon->addTextElement("CFBundleIconFile");
+				XmlElement *cfInsertStringIcon = dict->createNewChildElement("string");
+				cfInsertStringIcon->addTextElement(icnsFileName);
 			}
 		} else {
 			return (Result::fail("MAC native, Info.plist does not contain <dict /> element"));

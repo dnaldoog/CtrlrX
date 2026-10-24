@@ -7,8 +7,10 @@
 #include "CtrlrComponents/CtrlrCustomComponent.h"
 #include "CtrlrComponents/Groups/CtrlrGroup.h"
 #include "CtrlrComponents/Groups/CtrlrTabsComponent.h"
+#include "CtrlrIconGenerator.h"
 #include "CtrlrLuaManager.h"
 #include "CtrlrPanel/CtrlrPanelEditor.h"
+#include "CtrlrPanel/CtrlrPanelResource.h"
 #include "CtrlrPanelCanvas.h"
 #include "CtrlrPanelCanvasLayer.h"
 #include "CtrlrUtilitiesGUI.h"
@@ -679,16 +681,39 @@ void CtrlrPanelCanvas::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 		if (treeWhosePropertyHasChanged.getProperty(Ids::uiPanelImageResource).toString() == COMBO_NONE_ITEM) {
 			ctrlrPanelBackgroundImage = Image();
 		} else {
+			// Pass current panel dimensions to rasterize SVG at full scale
 			ctrlrPanelBackgroundImage = getOwner().getOwner().getResourceManager().getResourceAsImage(
-				treeWhosePropertyHasChanged.getProperty(Ids::uiPanelImageResource));
+				treeWhosePropertyHasChanged.getProperty(Ids::uiPanelImageResource), getWidth(), getHeight());
 		}
+
+		warnIfKnownPlatformLimitation(property);
 		repaint();
 	}
 	if (property == Ids::uiPanelIconResource) {
 		if (treeWhosePropertyHasChanged.getProperty(Ids::uiPanelIconResource).toString() == COMBO_NONE_ITEM) {
+			// TODO: clean up any previously-generated test .ico here
+			DBG("CtrlrPanelCanvas::valueTreePropertyChanged: uiPanelIconResource set to COMBO_NONE_ITEM, no icon will "
+				"be generated");
+		} else {
+			DBG("CtrlrPanelCanvas::valueTreePropertyChanged: uiPanelIconResource changed, generating test .ico from "
+				"SVG resource");
+			CtrlrPanelResource *iconResource = getOwner().getOwner().getResourceManager().getResource(
+				treeWhosePropertyHasChanged.getProperty(Ids::uiPanelIconResource).toString());
 
-			warnIfKnownPlatformLimitation(property);
+			if (iconResource != nullptr) {
+				File testIcoFile = File::getSpecialLocation(File::tempDirectory).getChildFile("ctrlrx_icon_test.ico");
+
+				juce::Result res = CtrlrIconGenerator::generateIcoFromSvg(iconResource->getFile(), testIcoFile);
+
+				if (res.failed())
+					DBG(res.getErrorMessage());
+				else
+					DBG("Test icon written to: " + testIcoFile.getFullPathName());
+			} else {
+				DBG("Icon resource not found");
+			}
 		}
+		warnIfKnownPlatformLimitation(property);
 		repaint();
 	}
 
@@ -1532,36 +1557,39 @@ std::unique_ptr<juce::Drawable> CtrlrPanelCanvas::createMenuIcon(const char *dat
 namespace {
 
 struct PlatformLimitation {
-		juce::Identifier property;
-		juce::String message;
+    juce::Identifier property;
+    juce::String message;
 };
 
-// Only a handful of entries expected — linear scan avoids needing a
-// std::hash or operator< specialization for juce::Identifier, neither
-// of which JUCE provides.
-
 const std::vector<PlatformLimitation> &getKnownPlatformLimitations() {
-	static const std::vector<PlatformLimitation> table{
-		{Ids::luaPanelFileDragDropHandler,
-		 "OS file drag-and-drop into an exported panel is not supported under Linux Wayland sessions"
-		 "(a JUCE/XWayland limitation, not fixable from panel code).\n\nIf Wayland users need to load "
-		 "files, provide an alternative function in your Lua script\n\ne.g. a button calling "
-		 "fileToRead:loadFileAsData(fileData).\n\n"
-		 "Detect whether Wayland is running with panel:isWaylandSession()"},
-		{Ids::luaPanelFileDragEnterHandler,
-		 "This handler relies on OS file drag-and-drop, which is not supported under Linux Wayland "
-		 "sessions.\nConsider an alternative input method for Wayland users.\n\n"
-		 "Detect whether Wayland is running with panel:isWaylandSession()"},
-		{Ids::luaPanelFileDragExitHandler,
-		 "This handler relies on OS file drag-and-drop, which is not supported under Linux Wayland "
-		 "sessions.\n\nConsider an alternative input method for Wayland users.\n\n"
-		 "Detect whether Wayland is running with panel:isWaylandSession()"},
-		{Ids::uiPanelIconResource, "stub"},
-	};
-	return table;
+    static const std::vector<PlatformLimitation> table;
+    
+    /* TODO: Re-enable platform limitations table when ready
+    #if JUCE_LINUX
+    static const std::vector<PlatformLimitation> table {
+        {Ids::luaPanelFileDragDropHandler,
+         "OS file drag-and-drop into an exported panel is not supported under Linux Wayland sessions "
+         "(a JUCE/XWayland limitation, not fixable from panel code).\n\nIf Wayland users need to load "
+         "files, provide an alternative function in your Lua script\n\ne.g. a button calling "
+         "fileToRead:loadFileAsData(fileData).\n\n"
+         "Detect whether Wayland is running with panel:isWaylandSession()"},
+        {Ids::luaPanelFileDragEnterHandler,
+         "This handler relies on OS file drag-and-drop, which is not supported under Linux Wayland "
+         "sessions.\nConsider an alternative input method for Wayland users.\n\n"
+         "Detect whether Wayland is running with panel:isWaylandSession()"},
+        {Ids::luaPanelFileDragExitHandler,
+         "This handler relies on OS file drag-and-drop, which is not supported under Linux Wayland "
+         "sessions.\n\nConsider an alternative input method for Wayland users.\n\n"
+         "Detect whether Wayland is running with panel:isWaylandSession()"}
+    };
+    #endif
+    */
+
+    return table;
 }
 
 } // anonymous namespace
+
 void CtrlrPanelCanvas::warnIfKnownPlatformLimitation(const Identifier &property) {
 	// Design-time only — never fires for an exported/standalone binary's end users.
 	if (getOwner().getOwner().getRestoreState() || getOwner().getOwner().isLoading())

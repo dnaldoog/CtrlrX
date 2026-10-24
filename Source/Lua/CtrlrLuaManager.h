@@ -6,7 +6,9 @@
 
 #include "Methods/CtrlrLuaMethodManager.h"
 // #include "CtrlrLuaApiDatabase.h"
-
+#include "UIComponents/CtrlrLua/MethodEditor/CtrlrLuaWorkspaceSync.h"
+#include "UIComponents/CtrlrLua/MethodEditor/CtrlrLuaPanelScriptWatcher.h"
+ 
 // Forward declarations
 class LAudioFormatManager;
 class CtrlrPanel;
@@ -57,13 +59,18 @@ class CtrlrLuaManager : public ValueTree::Listener {
 		const bool isRestoring();
 		CtrlrPanel &getOwner() { return (owner); }
 		CtrlrLuaMethodManager &getMethodManager();
-		CtrlrLuaDebugger &getDebugger();
+        CtrlrLuaDebugger &getDebugger();
 		const bool isLuaDisabled();
+		void setExternalScriptSyncEnabled(bool enabled);
+		void reloadScriptFromDisk(const juce::File &modifiedFile);
+		juce::File getPanelWorkspaceDir() const;
+		void scanAndImportNewFilesFromWorkspace();
 		// Access to Lua API database
 		// CtrlrLuaApiDatabase& getLuaApiDatabase() { return luaApi; }
 	private:
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrLuaManager);
 		CtrlrLuaMethodManager *methodManager;
+		std::unique_ptr<CtrlrLuaPanelScriptWatcher> scriptWatcher;
 		String lastError;
 		ValueTree luaManagerTree;
 		File scriptsDir;
@@ -75,6 +82,7 @@ class CtrlrLuaManager : public ValueTree::Listener {
 		CtrlrLuaAudioConverter *audioConverter;
 		CtrlrLuaDebugger *ctrlrLuaDebugger;
 		LAudioFormatManager *luaAudioFormatManager;
+		std::unique_ptr<CtrlrLuaWorkspaceSync> workspaceSync;
 		/*
 		COMMENTED OUT JG 5/8/2026
 		--CtrlrPanel& owner;

@@ -22,9 +22,10 @@
 
 //[Headers]     -- You can add your own extra header files here --
 #include "../CtrlrLuaConsole.h"
+#include "CtrlrLuaApiInspector.h"
 #include "CtrlrLuaMethodCodeEditor.h"
-#include "CtrlrLuaMethodDebuggerPrompt.h"
 #include "CtrlrLuaMethodEditorTabs.h"
+#include "CtrlrLuaMethodDebuggerPrompt.h"
 #include "CtrlrLuaMethodFind.h"
 #include "CtrlrTextEditor.h"
 class CtrlrLuaMethodEditor;
@@ -60,8 +61,8 @@ class CtrlrLuaMethodEditArea : public Component, public CtrlrLog::Listener {
 		void mouseDoubleClick(const MouseEvent &e);
 		bool keyPressed(const KeyPress &key, Component *event);
 		void setActiveOutputTab();
-		CtrlrLuaMethodDebuggerPrompt *getLuaDebuggerPrompt(const bool activateDebuggerNow = false);
 		void clearOutputText();
+		CtrlrLuaMethodDebuggerPrompt *getLuaDebuggerPrompt(const bool activateDebuggerNow=false);
 		//[/UserMethods]
 
 		void paint(Graphics &g);
@@ -76,7 +77,8 @@ class CtrlrLuaMethodEditArea : public Component, public CtrlrLog::Listener {
 		std::unique_ptr<StretchableLayoutResizerBar> resizer;
 		std::unique_ptr<CtrlrTextEditor> output;
 		std::unique_ptr<CtrlrLuaMethodFind> find;
-		std::unique_ptr<CtrlrLuaMethodDebuggerPrompt> debuggerPrompt;
+		std::unique_ptr<CtrlrLuaApiInspector> apiInspector;
+    		CtrlrLuaMethodDebuggerPrompt *debuggerPrompt;
 		std::unique_ptr<CtrlrLuaConsole> luaConsole;
 		juce::Value searchTabsValue; // This will be shared between toggles
 		//[/UserVariables]

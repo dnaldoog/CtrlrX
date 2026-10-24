@@ -1,6 +1,6 @@
-#include "CtrlrLuaFile.h"
 #include "stdafx.h"
 #include "stdafx_luabind.h"
+#include "CtrlrLuaFile.h"
 
 CtrlrLuaFile::CtrlrLuaFile() : file() {}
 

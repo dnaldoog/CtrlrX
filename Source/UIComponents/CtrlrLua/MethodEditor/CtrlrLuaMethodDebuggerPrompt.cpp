@@ -23,164 +23,147 @@
 
 #include "CtrlrLuaMethodDebuggerPrompt.h"
 
+
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 #include "CtrlrLuaMethodEditor.h"
 //[/MiscUserDefs]
 
 //==============================================================================
-CtrlrLuaMethodDebuggerPrompt::CtrlrLuaMethodDebuggerPrompt(CtrlrLuaMethodEditor &_owner) : owner(_owner) {
-	debuggerOutput = std::make_unique<TextEditor>("Debugger output");
-	addAndMakeVisible(debuggerOutput.get());
-	debuggerOutput->setMultiLine(true);
-	debuggerOutput->setReturnKeyStartsNewLine(false);
-	debuggerOutput->setReadOnly(true);
-	debuggerOutput->setScrollbarsShown(true);
-	debuggerOutput->setCaretVisible(false);
-	debuggerOutput->setPopupMenuEnabled(true);
-	debuggerOutput->setColour(TextEditor::textColourId, Colour(0xff5c5c5c));
-	debuggerOutput->setColour(TextEditor::outlineColourId, Colour(0x00000000));
-	debuggerOutput->setColour(TextEditor::shadowColourId, Colour(0x00000000));
-	debuggerOutput->setText("");
+CtrlrLuaMethodDebuggerPrompt::CtrlrLuaMethodDebuggerPrompt (CtrlrLuaMethodEditor &_owner)
+    : owner(_owner)
+{
+    addAndMakeVisible (debuggerOutput = new TextEditor ("Debugger output"));
+    debuggerOutput->setMultiLine (true);
+    debuggerOutput->setReturnKeyStartsNewLine (false);
+    debuggerOutput->setReadOnly (true);
+    debuggerOutput->setScrollbarsShown (true);
+    debuggerOutput->setCaretVisible (false);
+    debuggerOutput->setPopupMenuEnabled (true);
+    debuggerOutput->setColour (TextEditor::textColourId, Colour (0xff5c5c5c));
+    debuggerOutput->setColour (TextEditor::outlineColourId, Colour (0x00000000));
+    debuggerOutput->setColour (TextEditor::shadowColourId, Colour (0x00000000));
+    debuggerOutput->setText ("");
 
-	debuggerInput = std::make_unique<TextEditor>("Debugger input");
-	addAndMakeVisible(debuggerInput.get());
-	debuggerInput->setMultiLine(false);
-	debuggerInput->setReturnKeyStartsNewLine(false);
-	debuggerInput->setReadOnly(false);
-	debuggerInput->setScrollbarsShown(false);
-	debuggerInput->setCaretVisible(true);
-	debuggerInput->setPopupMenuEnabled(true);
-	debuggerInput->setColour(TextEditor::highlightColourId, Colour(0x5b247c8d));
-	debuggerInput->setColour(TextEditor::outlineColourId, Colour(0x8a000000));
-	debuggerInput->setColour(TextEditor::shadowColourId, Colour(0x00000000));
-	debuggerInput->setText("");
+    addAndMakeVisible (debuggerInput = new TextEditor ("Debugger input"));
+    debuggerInput->setMultiLine (false);
+    debuggerInput->setReturnKeyStartsNewLine (false);
+    debuggerInput->setReadOnly (false);
+    debuggerInput->setScrollbarsShown (false);
+    debuggerInput->setCaretVisible (true);
+    debuggerInput->setPopupMenuEnabled (true);
+    debuggerInput->setColour (TextEditor::highlightColourId, Colour (0x5b247c8d));
+    debuggerInput->setColour (TextEditor::outlineColourId, Colour (0x8a000000));
+    debuggerInput->setColour (TextEditor::shadowColourId, Colour (0x00000000));
+	debuggerInput->setColour(TextEditor::backgroundColourId, Colours::orange);
+	debuggerInput->setText ("");
 
-	debugContinue = std::make_unique<ImageButton>("Continue");
-	addAndMakeVisible(debugContinue.get());
-	debugContinue->setTooltip(TRANS("Continue"));
+    addAndMakeVisible (debugContinue = new ImageButton ("Continue"));
+	debugContinue->setTooltip(TRANS("Run/Continue"));
 	debugContinue->addListener(this);
 
-	debugContinue->setImages(false, true, true, Image(), 0.550f, Colour(0x00000000), Image(), 0.850f,
-							 Colour(0x00000000), Image(), 1.000f, Colour(0x00000000));
+	debugContinue->setImages (false, true, true,
+                              Image(), 0.550f, Colour (0x00000000),
+                              Image(), 0.850f, Colour (0x00000000),
+                              Image(), 1.000f, Colour (0x00000000));
+    addAndMakeVisible (debugStepOver = new ImageButton ("Step Over"));
+    debugStepOver->setTooltip (TRANS("Step Over"));
+    debugStepOver->addListener (this);
 
-	debugStepOver = std::make_unique<ImageButton>("Step Over");
-	addAndMakeVisible(debugStepOver.get());
-	debugStepOver->setTooltip(TRANS("Step Over"));
-	debugStepOver->addListener(this);
+    debugStepOver->setImages (false, true, true,
+                              Image(), 0.550f, Colour (0x00000000),
+                              Image(), 0.850f, Colour (0x00000000),
+                              Image(), 1.000f, Colour (0x00000000));
+    addAndMakeVisible (debugStepInto = new ImageButton ("Step Into"));
+    debugStepInto->setTooltip (TRANS("Step Into"));
+    debugStepInto->addListener (this);
 
-	debugStepOver->setImages(false, true, true, Image(), 0.550f, Colour(0x00000000), Image(), 0.850f,
-							 Colour(0x00000000), Image(), 1.000f, Colour(0x00000000));
+    debugStepInto->setImages (false, true, true,
+                              Image(), 0.550f, Colour (0x00000000),
+                              Image(), 0.850f, Colour (0x00000000),
+                              Image(), 1.000f, Colour (0x00000000));
+    addAndMakeVisible (debuggerInfo = new ConcertinaPanel());
+    debuggerInfo->setExplicitFocusOrder (50);
+    debuggerInfo->setName ("Realtime information");
 
-	debugStepInto = std::make_unique<ImageButton>("Step Into");
-	addAndMakeVisible(debugStepInto.get());
-	debugStepInto->setTooltip(TRANS("Step Into"));
-	debugStepInto->addListener(this);
+    addAndMakeVisible (debugStepOut = new ImageButton ("Step Out"));
+    debugStepOut->setTooltip (TRANS("Step Out"));
+    debugStepOut->addListener (this);
 
-	debugStepInto->setImages(false, true, true, Image(), 0.550f, Colour(0x00000000), Image(), 0.850f,
-							 Colour(0x00000000), Image(), 1.000f, Colour(0x00000000));
+    debugStepOut->setImages (false, true, true,
+                             Image(), 0.550f, Colour (0x00000000),
+                             Image(), 0.850f, Colour (0x00000000),
+                             Image(), 1.000f, Colour (0x00000000));
+    addAndMakeVisible (debugRestart = new ImageButton ("Restart"));
+	debugRestart->setTooltip(TRANS("Stop debugging and resume"));
+	debugRestart->addListener (this);
 
-	debuggerInfo = std::make_unique<ConcertinaPanel>();
-	addAndMakeVisible(debuggerInfo.get());
-	debuggerInfo->setExplicitFocusOrder(50);
-	debuggerInfo->setName("Realtime information");
+    debugRestart->setImages (false, true, true,
+                             Image(), 0.550f, Colour (0x00000000),
+                             Image(), 0.850f, Colour (0x00000000),
+                             Image(), 1.000f, Colour (0x00000000));
+    addAndMakeVisible (debugStop = new ImageButton ("Stop"));
+	debugStop->setTooltip(TRANS("Stop debugging and resume"));
+	debugStop->addListener (this);
 
-	debugStepOut = std::make_unique<ImageButton>("Step Out");
-	addAndMakeVisible(debugStepOut.get());
-	debugStepOut->setTooltip(TRANS("Step Out"));
-	debugStepOut->addListener(this);
+    debugStop->setImages (false, true, true,
+                          Image(), 0.550f, Colour (0x00000000),
+                          Image(), 0.850f, Colour (0x00000000),
+                          Image(), 1.000f, Colour (0x00000000));
 
-	debugStepOut->setImages(false, true, true, Image(), 0.550f, Colour(0x00000000), Image(), 0.850f, Colour(0x00000000),
-							Image(), 1.000f, Colour(0x00000000));
+    addAndMakeVisible (clearOutput = new ImageButton ("Clear"));
+    clearOutput->setTooltip (TRANS("Clear"));
+    clearOutput->addListener (this);
 
-	debugRestart = std::make_unique<ImageButton>("Restart");
-	addAndMakeVisible(debugRestart.get());
-	debugRestart->setTooltip(TRANS("Restart"));
-	debugRestart->addListener(this);
+    clearOutput->setImages (false, true, true,
+        Image(), 0.550f, Colour (0x00000000),
+        Image(), 0.850f, Colour (0x00000000),
+        Image(), 1.000f, Colour (0x00000000));
 
-	debugRestart->setImages(false, true, true, Image(), 0.550f, Colour(0x00000000), Image(), 0.850f, Colour(0x00000000),
-							Image(), 1.000f, Colour(0x00000000));
+    //[UserPreSize]
+    collectionState = Ended;
 
-	debugStop = std::make_unique<ImageButton>("Stop");
-	addAndMakeVisible(debugStop.get());
-	debugStop->setTooltip(TRANS("Stop"));
-	debugStop->addListener(this);
+    addAndMakeVisible (resizer	= new StretchableLayoutResizerBar (&layoutManager, 1, true));
 
-	debugStop->setImages(false, true, true, Image(), 0.550f, Colour(0x00000000), Image(), 0.850f, Colour(0x00000000),
-						 Image(), 1.000f, Colour(0x00000000));
+    layoutManager.setItemLayout (0, -0.001, -1.0, -0.59);
+    layoutManager.setItemLayout (1, 8, 8, 8);
+    layoutManager.setItemLayout (2, -0.001, -1.0, -0.39);
 
-	clearOutput = std::make_unique<ImageButton>("Clear");
-	addAndMakeVisible(clearOutput.get());
-	clearOutput->setTooltip(TRANS("Clear"));
-	clearOutput->addListener(this);
+    debuggerInfo->addPanel (0, stackTracePanel = new CtrlrLuaMethodDebuggerStackTrace(owner), true);
+    debuggerInfo->addPanel (1, varsPanel = new CtrlrLuaMethodDebuggerVars(owner), true);
 
-	clearOutput->setImages(false, true, true, Image(), 0.550f, Colour(0x00000000), Image(), 0.850f, Colour(0x00000000),
-						   Image(), 1.000f, Colour(0x00000000));
+    debuggerOutput->setFont (Font (Font::getDefaultMonospacedFontName(), 14.0f, Font::plain));
+    debuggerInput->setFont (Font (Font::getDefaultMonospacedFontName(), 14.0f, Font::plain));
+    debuggerInput->addListener (this);
 
-	//[UserPreSize]
-	collectionState = Ended;
+    debugContinue->setImages (false, true, true,
+                              ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize), 0.550f, Colour (0x00000000),
+                              ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize), 0.850f, Colour (0x00000000),
+                              ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize), 1.000f, Colour (0x00000000));
+    debugContinue->setMouseCursor (MouseCursor::PointingHandCursor);
 
-	addAndMakeVisible(resizer = new StretchableLayoutResizerBar(&layoutManager, 1, true));
+    debugStepInto->setImages (false, true, true,
+                              ImageCache::getFromMemory(BinaryData::appbar_debug_step_into_png, BinaryData::appbar_debug_step_into_pngSize), 0.550f, Colour (0x00000000),
+                              ImageCache::getFromMemory(BinaryData::appbar_debug_step_into_png, BinaryData::appbar_debug_step_into_pngSize), 0.850f, Colour (0x00000000),
+                              ImageCache::getFromMemory(BinaryData::appbar_debug_step_into_png, BinaryData::appbar_debug_step_into_pngSize), 1.000f, Colour (0x00000000));
+    debugStepInto->setMouseCursor (MouseCursor::PointingHandCursor);
 
-	layoutManager.setItemLayout(0, -0.001, -1.0, -0.59);
-	layoutManager.setItemLayout(1, 8, 8, 8);
-	layoutManager.setItemLayout(2, -0.001, -1.0, -0.39);
+    debugStepOver->setImages (false, true, true,
+                              ImageCache::getFromMemory(BinaryData::appbar_debug_step_over_png, BinaryData::appbar_debug_step_over_pngSize), 0.550f, Colour (0x00000000),
+                              ImageCache::getFromMemory(BinaryData::appbar_debug_step_over_png, BinaryData::appbar_debug_step_over_pngSize), 0.850f, Colour (0x00000000),
+                              ImageCache::getFromMemory(BinaryData::appbar_debug_step_over_png, BinaryData::appbar_debug_step_over_pngSize), 1.000f, Colour (0x00000000));
+    debugStepOver->setMouseCursor (MouseCursor::PointingHandCursor);
 
-	debuggerInfo->addPanel(0, stackTracePanel = new CtrlrLuaMethodDebuggerStackTrace(owner), true);
-	debuggerInfo->addPanel(1, varsPanel = new CtrlrLuaMethodDebuggerVars(owner), true);
+    debugRestart->setImages (false, true, true,
+                              ImageCache::getFromMemory(BinaryData::appbar_debug_restart_png, BinaryData::appbar_debug_restart_pngSize), 0.550f, Colour (0x00000000),
+                              ImageCache::getFromMemory(BinaryData::appbar_debug_restart_png, BinaryData::appbar_debug_restart_pngSize), 0.850f, Colour (0x00000000),
+                              ImageCache::getFromMemory(BinaryData::appbar_debug_restart_png, BinaryData::appbar_debug_restart_pngSize), 1.000f, Colour (0x00000000));
+    debugRestart->setMouseCursor (MouseCursor::PointingHandCursor);
 
-	debuggerOutput->setFont(Font(Font::getDefaultMonospacedFontName(), 14.0f, Font::plain));
-	debuggerInput->setFont(Font(Font::getDefaultMonospacedFontName(), 14.0f, Font::plain));
-	debuggerInput->addListener(this);
-
-	debugContinue->setImages(
-		false, true, true,
-		ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize), 0.550f,
-		Colour(0x00000000),
-		ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize), 0.850f,
-		Colour(0x00000000),
-		ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize), 1.000f,
-		Colour(0x00000000));
-	debugContinue->setMouseCursor(MouseCursor::PointingHandCursor);
-
-	debugStepInto->setImages(
-		false, true, true,
-		ImageCache::getFromMemory(BinaryData::appbar_debug_step_into_png, BinaryData::appbar_debug_step_into_pngSize),
-		0.550f, Colour(0x00000000),
-		ImageCache::getFromMemory(BinaryData::appbar_debug_step_into_png, BinaryData::appbar_debug_step_into_pngSize),
-		0.850f, Colour(0x00000000),
-		ImageCache::getFromMemory(BinaryData::appbar_debug_step_into_png, BinaryData::appbar_debug_step_into_pngSize),
-		1.000f, Colour(0x00000000));
-	debugStepInto->setMouseCursor(MouseCursor::PointingHandCursor);
-
-	debugStepOver->setImages(
-		false, true, true,
-		ImageCache::getFromMemory(BinaryData::appbar_debug_step_over_png, BinaryData::appbar_debug_step_over_pngSize),
-		0.550f, Colour(0x00000000),
-		ImageCache::getFromMemory(BinaryData::appbar_debug_step_over_png, BinaryData::appbar_debug_step_over_pngSize),
-		0.850f, Colour(0x00000000),
-		ImageCache::getFromMemory(BinaryData::appbar_debug_step_over_png, BinaryData::appbar_debug_step_over_pngSize),
-		1.000f, Colour(0x00000000));
-	debugStepOver->setMouseCursor(MouseCursor::PointingHandCursor);
-
-	debugRestart->setImages(
-		false, true, true,
-		ImageCache::getFromMemory(BinaryData::appbar_debug_restart_png, BinaryData::appbar_debug_restart_pngSize),
-		0.550f, Colour(0x00000000),
-		ImageCache::getFromMemory(BinaryData::appbar_debug_restart_png, BinaryData::appbar_debug_restart_pngSize),
-		0.850f, Colour(0x00000000),
-		ImageCache::getFromMemory(BinaryData::appbar_debug_restart_png, BinaryData::appbar_debug_restart_pngSize),
-		1.000f, Colour(0x00000000));
-	debugRestart->setMouseCursor(MouseCursor::PointingHandCursor);
-
-	debugStepOut->setImages(
-		false, true, true,
-		ImageCache::getFromMemory(BinaryData::appbar_debug_step_out_png, BinaryData::appbar_debug_step_out_pngSize),
-		0.550f, Colour(0x00000000),
-		ImageCache::getFromMemory(BinaryData::appbar_debug_step_out_png, BinaryData::appbar_debug_step_out_pngSize),
-		0.850f, Colour(0x00000000),
-		ImageCache::getFromMemory(BinaryData::appbar_debug_step_out_png, BinaryData::appbar_debug_step_out_pngSize),
-		1.000f, Colour(0x00000000));
-	debugStepOut->setMouseCursor(MouseCursor::PointingHandCursor);
+    debugStepOut->setImages (false, true, true,
+                              ImageCache::getFromMemory(BinaryData::appbar_debug_step_out_png, BinaryData::appbar_debug_step_out_pngSize), 0.550f, Colour (0x00000000),
+                              ImageCache::getFromMemory(BinaryData::appbar_debug_step_out_png, BinaryData::appbar_debug_step_out_pngSize), 0.850f, Colour (0x00000000),
+                              ImageCache::getFromMemory(BinaryData::appbar_debug_step_out_png, BinaryData::appbar_debug_step_out_pngSize), 1.000f, Colour (0x00000000));
+    debugStepOut->setMouseCursor (MouseCursor::PointingHandCursor);
 
     debugStop->setImages (false, true, true,
 								ImageCache::getFromMemory(BinaryData::appbar_debug_stop_png, BinaryData::appbar_debug_stop_pngSize), 0.550f, Colour (0x00000000),
@@ -194,87 +177,159 @@ CtrlrLuaMethodDebuggerPrompt::CtrlrLuaMethodDebuggerPrompt(CtrlrLuaMethodEditor 
 								ImageCache::getFromMemory(BinaryData::appbar_debug_clean_png, BinaryData::appbar_debug_clean_pngSize), 1.000f, Colour (0x00000000));
     clearOutput->setMouseCursor (MouseCursor::PointingHandCursor);
 
-	//[/UserPreSize]
+    //[/UserPreSize]
 
-	setSize(600, 400);
+    setSize (600, 400);
 
-	//[Constructor] You can add your own custom stuff here..
-	//[/Constructor]
+
+    //[Constructor] You can add your own custom stuff here..
+    //[/Constructor]
 }
 
-CtrlrLuaMethodDebuggerPrompt::~CtrlrLuaMethodDebuggerPrompt() {
-	//[Destructor_pre]. You can add your own custom destruction code here..
-	//[/Destructor_pre]
+CtrlrLuaMethodDebuggerPrompt::~CtrlrLuaMethodDebuggerPrompt()
+{
+    //[Destructor_pre]. You can add your own custom destruction code here..
+    //[/Destructor_pre]
 
-	// debuggerOutput = nullptr;
-	// debuggerInput = nullptr;
-	// debugContinue = nullptr;
-	// debugStepOver = nullptr;
-	// debugStepInto = nullptr;
-	// debuggerInfo = nullptr;
-	// debugStepOut = nullptr;
-	// debugRestart = nullptr;
-	// debugStop = nullptr;
-	// clearOutput = nullptr;
+    debuggerOutput = nullptr;
+    debuggerInput = nullptr;
+    debugContinue = nullptr;
+    debugStepOver = nullptr;
+    debugStepInto = nullptr;
+    debuggerInfo = nullptr;
+    debugStepOut = nullptr;
+    debugRestart = nullptr;
+    debugStop = nullptr;
+	clearOutput = nullptr;
 
-	//[Destructor]. You can add your own custom destruction code here..
-	//[/Destructor]
+
+    //[Destructor]. You can add your own custom destruction code here..
+    //[/Destructor]
 }
 
 //==============================================================================
-void CtrlrLuaMethodDebuggerPrompt::paint(Graphics &g) {
-	//[UserPrePaint] Add your own custom painting code here..
-	//[/UserPrePaint]
+void CtrlrLuaMethodDebuggerPrompt::paint (Graphics& g)
+{
+    //[UserPrePaint] Add your own custom painting code here..
+    //[/UserPrePaint]
 
-	//[UserPaint] Add your own custom painting code here..
-	//[/UserPaint]
+    //[UserPaint] Add your own custom painting code here..
+    //[/UserPaint]
 }
 
-void CtrlrLuaMethodDebuggerPrompt::resized() {
-	debuggerOutput->setBounds(0, 32, proportionOfWidth(0.7000f), getHeight() - 50);
-	debuggerInput->setBounds(0, getHeight() - 18, getWidth() - 0, 18);
-	debugContinue->setBounds(0, 0, 32, 32);
-	debugStepOver->setBounds(40, 0, 32, 32);
-	debugStepInto->setBounds(80, 0, 32, 32);
-	debuggerInfo->setBounds(proportionOfWidth(0.7000f), 32, proportionOfWidth(0.3000f), getHeight() - 50);
-	debugStepOut->setBounds(120, 0, 32, 32);
-	debugRestart->setBounds(160, 0, 32, 32);
-	debugStop->setBounds(200, 0, 32, 32);
+void CtrlrLuaMethodDebuggerPrompt::resized()
+{
+	const int inputHeight = 32; // Define your desired height here
+
+	debuggerOutput->setBounds(0, 32, proportionOfWidth(0.7000f), getHeight() - 32 - inputHeight);
+	debuggerInput->setBounds(0, getHeight() - inputHeight, getWidth(), inputHeight);
+	debugContinue->setBounds (0, 0, 32, 32);
+    debugStepOver->setBounds (40, 0, 32, 32);
+    debugStepInto->setBounds (80, 0, 32, 32);
+	debuggerInfo->setBounds(proportionOfWidth(0.7000f), 32, proportionOfWidth(0.3000f), getHeight() - 32 - inputHeight);
+	debugStepOut->setBounds (120, 0, 32, 32);
+    debugRestart->setBounds (160, 0, 32, 32);
+    debugStop->setBounds (200, 0, 32, 32);
 	clearOutput->setBounds(240, 0, 32, 32);
+
 	//[UserResized] Add your own custom resize handling here..
-	Component *comps[] = {debuggerOutput.get(), resizer, debuggerInfo.get()};
-	layoutManager.layOutComponents(comps, 3, 0, 32, getWidth(), getHeight() - 50, false, true);
+	Component *comps[] = {debuggerOutput, resizer, debuggerInfo};
+	layoutManager.layOutComponents(comps, 3, 0, 32, getWidth(), getHeight() - 32 - inputHeight, false, true);
 	//[/UserResized]
 }
 
-void CtrlrLuaMethodDebuggerPrompt::buttonClicked(Button *buttonThatWasClicked) {
-	//[UserbuttonClicked_Pre]
-	//[/UserbuttonClicked_Pre]
+void CtrlrLuaMethodDebuggerPrompt::buttonClicked (Button* buttonThatWasClicked)
+{
+    //[UserbuttonClicked_Pre]
+    //[/UserbuttonClicked_Pre]
 
-	if (buttonThatWasClicked == debugContinue.get()) {
-		//[UserButtonCode_debugContinue] -- add your button handler code here..
+    if (buttonThatWasClicked == debugContinue)
+    {
+        //[UserButtonCode_debugContinue] -- add your button handler code here..
+		debugStop->setImages(false, true, true,
+							 ImageCache::getFromMemory(BinaryData::appbar_debug_running_stop_png,
+													   BinaryData::appbar_debug_running_stop_pngSize),
+							 0.550f, Colour(0x00000000),
+							 ImageCache::getFromMemory(BinaryData::appbar_debug_running_stop_png,
+													   BinaryData::appbar_debug_running_stop_pngSize),
+							 0.850f, Colour(0x00000000),
+							 ImageCache::getFromMemory(BinaryData::appbar_debug_running_stop_png,
+													   BinaryData::appbar_debug_running_stop_pngSize),
+							 1.000f, Colour(0x00000000));
+                             
+		debugContinue->setImages(false, true, true,
+								 ImageCache::getFromMemory(BinaryData::appbar_control_play_clicked_png,
+														   BinaryData::appbar_control_play_clicked_pngSize),
+								 0.550f, Colour(0x00000000),
+								 ImageCache::getFromMemory(BinaryData::appbar_control_play_clicked_png,
+														   BinaryData::appbar_control_play_clicked_pngSize),
+								 0.850f, Colour(0x00000000),
+								 ImageCache::getFromMemory(BinaryData::appbar_control_play_clicked_png,
+														   BinaryData::appbar_control_play_clicked_pngSize),
+								 1.000f, Colour(0x00000000));
+
 		sendCommand("run");
 		//[/UserButtonCode_debugContinue]
-	} else if (buttonThatWasClicked == debugStepOver.get()) {
+	} else if (buttonThatWasClicked == debugStepOver) {
 		//[UserButtonCode_debugStepOver] -- add your button handler code here..
 		sendCommand("over");
 		//[/UserButtonCode_debugStepOver]
-	} else if (buttonThatWasClicked == debugStepInto.get()) {
+	} else if (buttonThatWasClicked == debugStepInto) {
 		//[UserButtonCode_debugStepInto] -- add your button handler code here..
 		sendCommand("step");
 		//[/UserButtonCode_debugStepInto]
-	} else if (buttonThatWasClicked == debugStepOut.get()) {
+	} else if (buttonThatWasClicked == debugStepOut) {
 		//[UserButtonCode_debugStepOut] -- add your button handler code here..
 		sendCommand("out");
 		//[/UserButtonCode_debugStepOut]
-	} else if (buttonThatWasClicked == debugRestart.get()) {
+	} else if (buttonThatWasClicked == debugRestart) {
 		//[UserButtonCode_debugRestart] -- add your button handler code here..
+		// Revert back to the default stop icon
+
+		debugStop->setImages(
+			false, true, true,
+			ImageCache::getFromMemory(BinaryData::appbar_debug_stop_png, BinaryData::appbar_debug_stop_pngSize), 0.550f,
+			Colour(0x00000000),
+			ImageCache::getFromMemory(BinaryData::appbar_debug_stop_png, BinaryData::appbar_debug_stop_pngSize), 0.850f,
+			Colour(0x00000000),
+			ImageCache::getFromMemory(BinaryData::appbar_debug_stop_png, BinaryData::appbar_debug_stop_pngSize), 1.000f,
+			Colour(0x00000000));
+
+		debugContinue->setImages(
+			false, true, true,
+			ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize),
+			0.550f, Colour(0x00000000),
+			ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize),
+			0.850f, Colour(0x00000000),
+			ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize),
+			1.000f, Colour(0x00000000));
+
 		sendCommand("exit");
 		//[/UserButtonCode_debugRestart]
-	} else if (buttonThatWasClicked == debugStop.get()) {
+	} else if (buttonThatWasClicked == debugStop) {
 		//[UserButtonCode_debugStop] -- add your button handler code here..
+		// Revert back to the default stop icon
+		debugStop->setImages(
+			false, true, true,
+			ImageCache::getFromMemory(BinaryData::appbar_debug_stop_png, BinaryData::appbar_debug_stop_pngSize), 0.550f,
+			Colour(0x00000000),
+			ImageCache::getFromMemory(BinaryData::appbar_debug_stop_png, BinaryData::appbar_debug_stop_pngSize), 0.850f,
+			Colour(0x00000000),
+			ImageCache::getFromMemory(BinaryData::appbar_debug_stop_png, BinaryData::appbar_debug_stop_pngSize), 1.000f,
+			Colour(0x00000000));
+
+		debugContinue->setImages(
+			false, true, true,
+			ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize),
+			0.550f, Colour(0x00000000),
+			ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize),
+			0.850f, Colour(0x00000000),
+			ImageCache::getFromMemory(BinaryData::appbar_control_play_png, BinaryData::appbar_control_play_pngSize),
+			1.000f, Colour(0x00000000));
+
+		sendCommand("exit");
 		//[/UserButtonCode_debugStop]
-	} else if (buttonThatWasClicked == clearOutput.get()) {
+	} else if (buttonThatWasClicked == clearOutput) {
 		//[UserButtonCode_clearOutput] -- add your button handler code here..
 		debuggerOutput->setText("");
 		//[/UserButtonCode_clearOutput]
@@ -284,104 +339,145 @@ void CtrlrLuaMethodDebuggerPrompt::buttonClicked(Button *buttonThatWasClicked) {
 	//[/UserbuttonClicked_Post]
 }
 
-//[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
-void CtrlrLuaMethodDebuggerPrompt::insertRawDebuggerOutput(const String &output) {
-	insertToOutput(output);
 
+
+//[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
+void CtrlrLuaMethodDebuggerPrompt::insertRawDebuggerOutput(const String &output)
+{
+	DBG("rawOutput this=" << String::toHexString((pointer_sized_int)this)
+						  << " msgThread=" << (int)MessageManager::getInstance()->isThisTheMessageThread()
+						  << " showing=" << (int)debuggerOutput->isShowing() << " len=" << output.length());
+	insertToOutput(output);
+	DBG("chars now " << debuggerOutput->getTotalNumChars());
 	if (output.contains("Paused at file")) {
 		/* Debugger tells us we paused at some location in the code
 			get the method name, and highlight the relevant code in
 			the editor
 		*/
-		const String file =
-			output.fromFirstOccurrenceOf("Paused at file ", false, true).upToFirstOccurrenceOf(" ", false, true);
-		const int line = output.fromFirstOccurrenceOf(" line ", false, true).getIntValue();
+		const String file = output.fromFirstOccurrenceOf("Paused at file ", false, true).upToFirstOccurrenceOf(" ", false, true);
+        const int line = output.fromFirstOccurrenceOf(" line ", false, true).getIntValue();
 
-		owner.highlightCode(file, line);
+        owner.highlightCode (file, line);
 	}
 
 	if (output.contains("::start trace")) {
 		collectedData = "";
-		collectionState = Trace;
-		return;
+        collectionState = Trace;
+        return;
 	}
 
-	if (output.contains("::start dumpvar")) {
-		collectedData = "";
-		collectionState = Values;
-		return;
-	}
+	if (output.contains ("::start dumpvar"))
+    {
+        collectedData = "";
+        collectionState = Values;
+        return;
+    }
 
-	if (output.contains("::end")) {
-		finishDataCollection();
-	}
+    if (output.contains("::end"))
+    {
+        finishDataCollection();
+    }
 
-	if (collectionState != Ended)
-		collectedData << output;
+    if (collectionState != Ended)
+        collectedData << output;
 }
 
-void CtrlrLuaMethodDebuggerPrompt::finishDataCollection() {
-	switch (collectionState) {
-	case Trace:
-		stackTracePanel->setData(collectedData);
-		break;
-	case Values:
-		varsPanel->setData(collectedData);
-		break;
-	default:
-		break;
+void CtrlrLuaMethodDebuggerPrompt::finishDataCollection()
+{
+    switch (collectionState)
+    {
+        case Trace:
+            stackTracePanel->setData(collectedData);
+            break;
+        case Values:
+            varsPanel->setData(collectedData);
+            break;
+        default:
+            break;
+    }
+
+    collectionState = Ended;
+}
+
+void CtrlrLuaMethodDebuggerPrompt::sendCommand (const String &command)
+{
+    if (owner.getParentComponent()->isCurrentlyModal())
+    {
+        commandQueue.add (command);
+
+        insertToOutput (command.trim() + "\n", Colours::black);
+
+        if (owner.getParentComponent()->isCurrentlyModal())
+        {
+            owner.getParentComponent()->exitModalState(1);
+        }
+    }
+    else
+    {
+        _WRN("CtrlrLuaMethodDebuggerPrompt::sendCommand debugger is not active");
+    }
+}
+
+void CtrlrLuaMethodDebuggerPrompt::textEditorReturnKeyPressed (TextEditor &editor)
+{
+    if (&editor == debuggerInput)
+    {
+        sendCommand (debuggerInput->getText());
+        debuggerInput->clear();
+    }
+}
+
+StringArray &CtrlrLuaMethodDebuggerPrompt::getCommandQueue()
+{
+    return (commandQueue);
+}
+
+const String CtrlrLuaMethodDebuggerPrompt::getCurrentDebuggerCommand(const bool clearTheReturnedCommand)
+{
+    if (commandQueue.size() <= 0)
+        return ("");
+
+    const String ret = commandQueue[commandQueue.size() - 1];
+    commandQueue.remove (commandQueue.size() - 1);
+    return (ret);
+}
+
+void CtrlrLuaMethodDebuggerPrompt::visibilityChanged()
+{
+    if (isVisible())
+    {
+        debuggerInput->grabKeyboardFocus ();
+    }
+}
+
+void CtrlrLuaMethodDebuggerPrompt::insertToOutput(const String &what, Colour textColour)
+{
+    const Colour lastColourUsed = debuggerOutput->findColour(TextEditor::textColourId);
+
+    debuggerOutput->setColour (TextEditor::textColourId, textColour);
+    debuggerOutput->setCaretPosition (debuggerOutput->getText().length());
+    debuggerOutput->insertTextAtCaret (what);
+    debuggerOutput->setColour (TextEditor::textColourId, lastColourUsed);
+}
+
+const String CtrlrLuaMethodDebuggerPrompt::waitForCommand() {
+	Component *modalTarget = owner.getParentComponent(); // the SAME component sendCommand() tests
+
+	if (modalTarget == nullptr) {
+		_WRN("CtrlrLuaMethodDebuggerPrompt::waitForCommand editor has no parent, continuing");
+		return ("run");
 	}
 
-	collectionState = Ended;
-}
+	commandQueue.clear(); // drop stale commands from a previous stop
+	debuggerInput->grabKeyboardFocus();
 
-void CtrlrLuaMethodDebuggerPrompt::sendCommand(const String &command) {
-	if (owner.getParentComponent()->isCurrentlyModal()) {
-		commandQueue.add(command);
+	modalTarget->runModalLoop(); // blocks; sendCommand() ends it via exitModalState(1)
 
-		insertToOutput(command.trim() + "\n", Colours::black);
-
-		if (owner.getParentComponent()->isCurrentlyModal()) {
-			owner.getParentComponent()->exitModalState(1);
-		}
-	} else {
-		_WRN("CtrlrLuaMethodDebuggerPrompt::sendCommand debugger is not active");
-	}
-}
-
-void CtrlrLuaMethodDebuggerPrompt::textEditorReturnKeyPressed(TextEditor &editor) {
-	if (&editor == debuggerInput.get()) {
-		sendCommand(debuggerInput->getText());
-		debuggerInput->clear();
-	}
-}
-
-StringArray &CtrlrLuaMethodDebuggerPrompt::getCommandQueue() { return (commandQueue); }
-
-const String CtrlrLuaMethodDebuggerPrompt::getCurrentDebuggerCommand(const bool clearTheReturnedCommand) {
-	if (commandQueue.size() <= 0)
-		return ("");
-
-	const String ret = commandQueue[commandQueue.size() - 1];
-	commandQueue.remove(commandQueue.size() - 1);
-	return (ret);
-}
-
-void CtrlrLuaMethodDebuggerPrompt::visibilityChanged() {
-	if (isVisible()) {
-		debuggerInput->grabKeyboardFocus();
-	}
-}
-
-void CtrlrLuaMethodDebuggerPrompt::insertToOutput(const String &what, Colour textColour) {
-	const Colour lastColourUsed = debuggerOutput->findColour(TextEditor::textColourId);
-
-	debuggerOutput->setColour(TextEditor::textColourId, textColour);
-	debuggerOutput->setCaretPosition(debuggerOutput->getText().length());
-	debuggerOutput->insertTextAtCaret(what);
-	debuggerOutput->setColour(TextEditor::textColourId, lastColourUsed);
+	const String cmd = getCurrentDebuggerCommand().trim();
+	return cmd.isNotEmpty() ? cmd : String("run"); // never return empty
 }
 //[/MiscUserCode]
+
 
 //==============================================================================
 #if 0
@@ -456,6 +552,7 @@ BEGIN_JUCER_METADATA
 END_JUCER_METADATA
 */
 #endif
+
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]

@@ -1,11 +1,11 @@
-#include "CtrlrLuaMethodCodeEditor.h"
-#include "CtrlrLuaDebugger.h"
-#include "CtrlrLuaManager.h"
-#include "CtrlrLuaMethodEditor.h"
+#include "stdafx.h"
 #include "CtrlrManager/CtrlrManager.h"
+#include "CtrlrLuaMethodCodeEditor.h"
+#include "CtrlrLuaMethodEditor.h"
 #include "CtrlrPanel/CtrlrPanel.h"
 #include "Methods/CtrlrLuaMethodManager.h"
-#include "stdafx.h"
+#include "CtrlrLuaDebugger.h"
+#include "CtrlrLuaManager.h"
 
 // A simple popup window to show the Lua suggestions, matching the editor's LookAndFeel
 class LuaSuggestionPopup : public juce::Component, public juce::ListBoxModel {
@@ -594,19 +594,16 @@ void CtrlrLuaMethodCodeEditor::hideCallTip() {
 	nextTabJumpPosition = -1;
 }
 void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String &newText, int insertIndex) {
-	// --- 1. AGGRESSIVE GUARD ---
-
+	// --- 1. GUARDS ---
 	const bool autoCompleteEnabled =
 		((int)owner.getComponentTree().getProperty(Ids::luaMethodEditorAutoComplete, 1)) != 0;
-	const bool autoCompleteOpts = ((int)owner.getComponentTree()
-        .getProperty(Ids::luaMethodEditorAutoCompleteOpt, 1)) != 0;
 
-    if (!autoCompleteEnabled)
-        return;
+	if (!autoCompleteEnabled)
+		return;
+
 	if (isReplacingText) {
 		if (newText != ":" && newText != ".")
 			return;
-
 		_DBG("AUTOCOMPLETE: Bypassing lock for manual flow re-trigger [" + newText + "]");
 	}
 
@@ -618,6 +615,28 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String &newT
 
 	if (!suggestionPopup)
 		return;
+
+	// CR / LF (including auto-indent text): reset and stop
+	if (newText.containsAnyOf("\r\n")) {
+		suggestionPopup->setVisible(false);
+		return;
+	}
+
+	// Only react to single typed characters (ignore paste / snippet / multi-char inserts)
+	if (newText.length() != 1) {
+		suggestionPopup->setVisible(false);
+		return;
+	}
+
+	const juce::juce_wchar typed = newText[0];
+	const bool typedIsIdentChar = juce::CharacterFunctions::isLetterOrDigit(typed) || typed == '_';
+	const bool typedIsTrigger = (typed == ':' || typed == '.' || typed == '=' || typed == ' ');
+
+	// Anything else ( ( ) , ; " etc ) dismisses the popup
+	if (!typedIsIdentChar && !typedIsTrigger) {
+		suggestionPopup->setVisible(false);
+		return;
+	}
 
 	auto &manager = owner.getAutocompleteManager();
 	std::vector<SuggestionItem> matches;
@@ -632,15 +651,29 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String &newT
 		separator = juce::CodeDocument::Position(document, wordStart - 1).getCharacter();
 	}
 
-	if (newText == ":" || newText == ".")
-		separator = newText[0];
+	if (typed == ':' || typed == '.')
+		separator = typed;
+
+	// --- 2b. ASSIGNMENT CONTEXT: text before the current word on this line ends with '=' ---
+	// (but not ==, ~=, <=, >=)
+	bool assignmentContext = false;
+	{
+		const int wordBegin = caretPosInt - currentWord.length();
+		juce::CodeDocument::Position wordPos(document, wordBegin);
+		juce::CodeDocument::Position lineStart(document, wordPos.getLineNumber(), 0);
+		const juce::String before = document.getTextBetween(lineStart, wordPos).trimEnd();
+
+		assignmentContext = before.endsWithChar('=') && !before.endsWith("==") && !before.endsWith("~=") &&
+							!before.endsWith("<=") && !before.endsWith(">=");
+	}
 
 	_DBG("AUTOCOMPLETE: Triggered. Word: [" + currentWord + "] | Separator: [" + juce::String::charToString(separator) +
-		 "]");
+		 "] | Assignment: " + juce::String(assignmentContext ? "yes" : "no"));
 
 	bool contextResolved = false;
 
 	// --- 3. CONTEXTUAL SEARCH (Triggered by : or .) ---
+	// ':' -> instance methods, '.' -> static methods / constructors / properties
 	if (separator == ':' || separator == '.') {
 		bool isInstance = (separator == ':');
 		juce::String className = "";
@@ -674,16 +707,12 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String &newT
 		_DBG("AUTOCOMPLETE: Expression found to resolve: [" + expressionToResolve + "]");
 
 		if (expressionToResolve.isNotEmpty()) {
-			// Resolve variable to Class (e.g., "myVar" -> "AffineTransform")
 			className = manager.getClassNameForVariable(expressionToResolve, document.getAllContent());
 
-			// --- UPDATED: Class Name Check ---
-			// If it's not a variable, check if the expression IS the class name (e.g., "AffineTransform.")
 			if (className.isEmpty() && manager.getClassNames().contains(expressionToResolve, true)) {
 				className = expressionToResolve;
 			}
 
-			// Fallback for hardcoded shortcuts
 			if (className.isEmpty()) {
 				if (expressionToResolve.equalsIgnoreCase("panel") || expressionToResolve == "pan")
 					className = "CtrlrPanel";
@@ -698,7 +727,6 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String &newT
 			contextResolved = true;
 			_DBG("AUTOCOMPLETE: Context Resolved: [" + expressionToResolve + "] -> [" + className + "]");
 
-			// Logic: ':' is for instances, '.' is for static methods/constructors
 			bool includeInstance = isInstance;
 			bool includeStatic = !isInstance;
 			bool includeProperties = !isInstance;
@@ -708,19 +736,23 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String &newT
 			_DBG("AUTOCOMPLETE: Found " + juce::String((int)matches.size()) + " class-specific matches.");
 		}
 	}
+	// --- 4. CLASS LIST AFTER '=' ---
+	else if (assignmentContext) {
+		matches = manager.getClassSuggestions(currentWord); // classes only, empty word = all classes
+		_DBG("AUTOCOMPLETE: Assignment context, " + juce::String((int)matches.size()) + " class matches.");
+	}
+	// --- 5. GLOBAL FALLBACK (gated) ---
+	else if (typedIsIdentChar) {
+		const bool popupOpen = suggestionPopup->isVisible();
+		const int minChars = 3; // "loc" -> local
 
-	// --- 4. GLOBAL FALLBACK ---
-	if (matches.empty() && currentWord.length() >= 1) {
-		if (separator != ':' && separator != '.') {
-			_DBG("AUTOCOMPLETE: Fetching Global Suggestions for [" + currentWord + "]");
+		if (currentWord.length() >= minChars || (popupOpen && currentWord.isNotEmpty())) {
 			matches = manager.getGlobalSuggestions(currentWord);
 			_DBG("AUTOCOMPLETE: Found " + juce::String((int)matches.size()) + " global matches.");
-		} else if (contextResolved) {
-			_DBG("AUTOCOMPLETE: Class context matched 0 results. Suppressing global fallback.");
 		}
 	}
 
-	// --- 5. UI DISPLAY ---
+	// --- 6. UI DISPLAY ---
 	if (!matches.empty()) {
 		suggestionPopup->setSuggestions(matches);
 		juce::Rectangle<int> caretRect = editorComponent->getCharacterBounds(editorComponent->getCaretPos());
@@ -732,7 +764,7 @@ void CtrlrLuaMethodCodeEditor::codeDocumentTextInserted(const juce::String &newT
 
 		suggestionPopup->setVisible(true);
 		suggestionPopup->toFront(false);
-	} else if (suggestionPopup) {
+	} else {
 		suggestionPopup->setVisible(false);
 	}
 }
@@ -914,7 +946,7 @@ bool isValidSearchString(const String &search) {
 	String trimmed = search.trim();
 
 	// Minimum length check
-	if (trimmed.length() < 3)
+	if (trimmed.length() < 1)
 		return false;
 
 	// Check for only whitespace
@@ -922,7 +954,7 @@ bool isValidSearchString(const String &search) {
 		return false;
 
 	// Check for repetitive single characters (like "aaa" or "111")
-	if (trimmed.length() >= 3) {
+	if (trimmed.length() >= 1) {
 		bool allSame = true;
 		juce_wchar firstChar = trimmed[0];
 		for (int i = 1; i < trimmed.length(); i++) {
@@ -1624,16 +1656,9 @@ void GenericCodeEditorComponent::replaceNextMatch(const String &search, const St
 	owner.replaceNextMatch(search, replace, bMatchCase);
 }
 void GenericCodeEditorComponent::findInAll(const String &search) { owner.findInAll(search); }
-void GenericCodeEditorComponent::findInOpened(const String &search) { owner.findInOpened(search); }
-
-CtrlrLuaDebugger &GenericCodeEditorComponent::getDebugger() {
-	return (owner.getOwner().getOwner().getCtrlrLuaManager().getDebugger());
+void GenericCodeEditorComponent::findInOpened(const String &search) {
+	owner.findInOpened(search);
 }
-
-void GenericCodeEditorComponent::markedLinesChanged(int lineNumber, bool isNowSelected) {
-	getDebugger().setBreakpoint(lineNumber, owner.getMethod() ? owner.getMethod()->getName() : "ctrlr", isNowSelected);
-}
-
 bool GenericCodeEditorComponent::keyPressed(const juce::KeyPress &key) {
 	const int currentPos = getCaretPos().getPosition();
 	const juce::juce_wchar character = key.getTextCharacter();

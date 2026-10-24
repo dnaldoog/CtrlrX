@@ -80,6 +80,7 @@ void CtrlrPanelComponentProperties::setTree(const ValueTree &_treeToEdit, const 
 	// Build once, locally, filtered to SVG resources only — feeds the new
 	// uiPanelIconResource picker so it only offers vector icons.
 	StringArray svgResourceList;
+	svgResourceList.add(COMBO_NONE_ITEM); // Add the "None" option to the list);
 	for (auto *res : owner.getOwner().getResourceManager().getResourcesCopy()) {
 		if (res != nullptr && res->getSourceFile().hasFileExtension("svg"))
 			svgResourceList.add(res->getName());
@@ -104,9 +105,9 @@ void CtrlrPanelComponentProperties::setTree(const ValueTree &_treeToEdit, const 
 			if (treeToEdit.getPropertyName(i) == Ids::uiPanelImageResource) {
 				panelProperties.add(getIDManager().createComponentForProperty(
 					treeToEdit.getPropertyName(i), treeToEdit, &owner.getOwner(), &resourceList, &resourceList));
-	//		} else if (treeToEdit.getPropertyName(i) == Ids::uiPanelIconResource) {
-		//		panelProperties.add(getIDManager().createComponentForProperty(
-			//		treeToEdit.getPropertyName(i), treeToEdit, &owner.getOwner(), &svgResourceList, &svgResourceList));
+			} else if (treeToEdit.getPropertyName(i) == Ids::uiPanelIconResource) {
+				panelProperties.add(getIDManager().createComponentForProperty(
+					treeToEdit.getPropertyName(i), treeToEdit, &owner.getOwner(), &svgResourceList, &svgResourceList));
 			} else if (treeToEdit.getPropertyName(i) == Ids::panelMidiInputDevice) {
 				panelMidiProperties.add(
 					getIDManager().createComponentForProperty(treeToEdit.getPropertyName(i), treeToEdit,
@@ -139,12 +140,24 @@ void CtrlrPanelComponentProperties::setTree(const ValueTree &_treeToEdit, const 
 						treeToEdit.getChildWithName(Ids::uiPanelEditor).getPropertyName(i),
 						treeToEdit.getChildWithName(Ids::uiPanelEditor), &owner.getOwner(), &resourceList,
 						&resourceList));
-				//} else if (treeToEdit.getChildWithName(Ids::uiPanelEditor).getPropertyName(i) ==
-						//   Ids::uiPanelIconResource) {
-				//	panelEditorProperties.add(getIDManager().createComponentForProperty(
-				//		treeToEdit.getChildWithName(Ids::uiPanelEditor).getPropertyName(i),
-				//		treeToEdit.getChildWithName(Ids::uiPanelEditor), &owner.getOwner(), &svgResourceList,
-				//		&svgResourceList));
+				} else if (treeToEdit.getChildWithName(Ids::uiPanelEditor).getPropertyName(i) ==
+						   Ids::uiPanelLinuxExpDest) {
+#if JUCE_LINUX
+					panelEditorProperties.add(getIDManager().createComponentForProperty(
+						treeToEdit.getChildWithName(Ids::uiPanelEditor).getPropertyName(i),
+						treeToEdit.getChildWithName(Ids::uiPanelEditor), &owner.getOwner()));
+#endif
+					// Deliberately add nothing on non-Linux platforms — the property may
+					// still exist in the loaded panel data (e.g. last saved on Linux),
+					// but there's no reason to show or let someone edit a Linux-only
+					// export setting from Windows or macOS.
+
+				} else if (treeToEdit.getChildWithName(Ids::uiPanelEditor).getPropertyName(i) ==
+						   Ids::uiPanelIconResource) {
+					panelEditorProperties.add(getIDManager().createComponentForProperty(
+						treeToEdit.getChildWithName(Ids::uiPanelEditor).getPropertyName(i),
+						treeToEdit.getChildWithName(Ids::uiPanelEditor), &owner.getOwner(), &svgResourceList,
+						&svgResourceList));
 				} else {
 					panelEditorProperties.add(getIDManager().createComponentForProperty(
 						treeToEdit.getChildWithName(Ids::uiPanelEditor).getPropertyName(i),

@@ -214,6 +214,13 @@ void CtrlrManager::allPanelsInitialized() {
 }
 
 CtrlrPanel *CtrlrManager::addPanel(const ValueTree &savedState, const bool showUI) {
+
+// 0. General Guard: If this is a restricted instance or player instance, allow maximum ONE panel
+	if ((getInstanceMode() == InstanceSingleRestricted || getInstanceMode() == InstanceSingle) && !ctrlrPanels.isEmpty()) {
+        _DBG("CtrlrManager::addPanel - Instance restricted: panel already loaded, skipping duplicate.");
+        return ctrlrPanels.getUnchecked(0);
+    }
+
 	// 1. Instantiate the panel
 	CtrlrPanel *panel = new CtrlrPanel(*this, getUniquePanelName("Ctrlr Panel"), ctrlrPanels.size());
 
@@ -228,10 +235,7 @@ CtrlrPanel *CtrlrManager::addPanel(const ValueTree &savedState, const bool showU
 
 	// 5. Open/Show UI via Ctrlr's dedicated editor helper
 	if (showUI) {
-		if (auto *editor = panel->getEditor(true)) {
-			// Delegate tab addition to Ctrlr's editor handler to prevent duplicate entries
-			addPanel(editor);
-		}
+		addPanel(panel->getEditor(true));
 	}
 
 	organizePanels();
@@ -240,11 +244,17 @@ CtrlrPanel *CtrlrManager::addPanel(const ValueTree &savedState, const bool showU
 }
 
 void CtrlrManager::addPanel(CtrlrPanelEditor *panelToAdd) {
+	
 	// This override handles visual UI window docking, no change needed here
 	ctrlrDocumentPanel->addDocument((Component *)panelToAdd, Colours::lightgrey, true);
 }
 
 Result CtrlrManager::addInstancePanel() {
+	// 0. Guard against duplicate loading in single-instance/restricted mode
+	if (!ctrlrPanels.isEmpty()) {
+		_DBG("CtrlrManager::addInstancePanel - Panel already loaded, skipping duplicate instance panel creation.");
+		return Result::ok();
+	}
 	if (ctrlrPlayerInstanceTree.isValid()) {
 		CtrlrPanel *panel = new CtrlrPanel(*this, getInstanceName(), ctrlrPanels.size());
 		ctrlrPanels.add(panel);
@@ -762,7 +772,7 @@ int CtrlrManager::getNextVstIndex() {
 
 void CtrlrManager::openPanelFromFile(Component *componentToAttachMenu) {
 	// 1. Set the specific file types Ctrlr expects, matching your legacy code
-	String wildcards = "*.panel;*.panelz;*.bpanel;*.bpanelz;*.*";
+	String wildcards = "*.panel;*.panelz;*.bpanel;*.bpanelz";
 	bool useNativeDialog = (bool)getProperty(Ids::ctrlrNativeFileDialogs);
 
 	// Make sure fileChooser is declared as a std::unique_ptr<juce::FileChooser>
@@ -785,10 +795,10 @@ void CtrlrManager::openPanelFromFile(Component *componentToAttachMenu) {
 
 void CtrlrManager::panelFileOpened(const File &panelFile) {
 	StringArray recentFiles;
-	recentFiles.addTokens(getProperty(Ids::ctrlrRecenetOpenedPanelFiles).toString(), ";", "\"'");
+	recentFiles.addTokens(getProperty(Ids::ctrlrRecentOpenedPanelFiles).toString(), ";", "\"'");
 	recentFiles.insert(0, panelFile.getFullPathName());
 	recentFiles.removeRange(9, recentFiles.size() - 10);
-	setProperty(Ids::ctrlrRecenetOpenedPanelFiles, recentFiles.joinIntoString(";"));
+	setProperty(Ids::ctrlrRecentOpenedPanelFiles, recentFiles.joinIntoString(";"));
 
 	setProperty(Ids::ctrlrLastBrowsedFileDirectory, panelFile.getFullPathName());
 }

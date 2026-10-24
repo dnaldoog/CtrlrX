@@ -18,42 +18,30 @@ CtrlrEditor::CtrlrEditor(CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
 	  tempResult(Result::ok()),
 	  menuHandlerCalled(false),
 	  lastCommandInvocationMillis(0) {
-	// Initialize currentLookAndFeel to a default LookAndFeel_V4 Light.
-	// This provides a starting point before properties are loaded.
-	// currentLookAndFeel = new LookAndFeel_V4(juce::LookAndFeel_V4::getLightColourScheme());
-	// setLookAndFeel(currentLookAndFeel); // Set the editor's LookAndFeel initially
 	currentLookAndFeel = std::make_unique<juce::LookAndFeel_V4>(juce::LookAndFeel_V4::getLightColourScheme());
 	gui::initLookAndFeelDefaults(*currentLookAndFeel);
 	tooltipWindow = std::make_unique<juce::TooltipWindow>(this);
 	setLookAndFeel(currentLookAndFeel.get());
 
 	menuBar = std::make_unique<juce::MenuBarComponent>(this);
-	addAndMakeVisible(menuBar.get()); // Added v5.6.34
+	addAndMakeVisible(menuBar.get());
 
 	Rectangle<int> editorRect;
-	// http://www.juce.com/forum/topic/applicationcommandmanager-menus-not-active-annoyance#new
 	owner.getCommandManager().setFirstCommandTarget(this);
-
 	setApplicationCommandManagerToWatch(&owner.getCommandManager());
-
 	owner.getCommandManager().registerAllCommandsForTarget(this);
 	owner.getCommandManager().registerAllCommandsForTarget(JUCEApplication::getInstance());
 
 	std::unique_ptr<juce::XmlElement> xml(juce::XmlDocument::parse(owner.getProperty(Ids::ctrlrKeyboardMapping)));
-
 	if (xml) {
 		owner.getCommandManager().getKeyMappings()->restoreFromXml(*xml);
 	}
 
 	owner.setEditor(this);
-
 	addAndMakeVisible(&owner.getCtrlrDocumentPanel());
 
-	if (!JUCEApplication::isStandaloneApp()) // If Ctrlr is !NOT run as a standalone app but as a
-											 // plugin or shared lib
-	{
-		if (owner.getInstanceMode() != InstanceSingleRestricted) // is !NOT restricted instance of the plugin
-		{
+	if (!JUCEApplication::isStandaloneApp()) {
+		if (owner.getInstanceMode() != InstanceSingleRestricted) {
 			addAndMakeVisible(&resizer);
 			resizer.setAlwaysOnTop(false);
 			resizer.grabKeyboardFocus();
@@ -61,67 +49,63 @@ CtrlrEditor::CtrlrEditor(CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
 		}
 	}
 
-	if (owner.getProperty(Ids::ctrlrEditorBounds).toString() !=
-		"") // ctrlrEditorBounds is Editor size. AAX Plugin crashes here, passes without it
-	{
+	if (owner.getProperty(Ids::ctrlrEditorBounds).toString() != "") {
 		if (owner.getInstanceMode() != InstanceSingle && owner.getInstanceMode() != InstanceSingleRestricted) {
-			editorRect = VAR2RECT(owner.getProperty(Ids::ctrlrEditorBounds)); // Size of full Editor window including
-																			  // top tabs and 1px borders
-		} else if (owner.getActivePanel()) {
-			ValueTree editorTree = owner.getActivePanel()
-									   ->getEditor()
-									   ->getPanelEditorTree(); // owner is CtrlrManager for the current class
 			editorRect = VAR2RECT(owner.getProperty(Ids::ctrlrEditorBounds));
-			vpMenuBarVisible = editorTree.getProperty(Ids::uiPanelMenuBarVisible);
-			vpResizable = editorTree.getProperty(Ids::uiViewPortResizable);
-			vpEnableFixedAspectRatio = editorTree.getProperty(Ids::uiViewPortEnableFixedAspectRatio);
-			vpFixedAspectRatio = editorTree.getProperty(Ids::uiViewPortFixedAspectRatio);
+		} else if (owner.getActivePanel()) {
+    ValueTree editorTree = owner.getActivePanel()->getEditor()->getPanelEditorTree();
+    editorRect = VAR2RECT(owner.getProperty(Ids::ctrlrEditorBounds));
+    vpMenuBarVisible = editorTree.getProperty(Ids::uiPanelMenuBarVisible);
 
-			vpEnableResizableLimits = editorTree.getProperty(Ids::uiViewPortEnableResizeLimits);
-			vpMinWidth = editorTree.getProperty(Ids::uiViewPortMinWidth);
-			vpMinHeight = editorTree.getProperty(Ids::uiViewPortMinHeight);
-			vpMaxWidth = editorTree.getProperty(Ids::uiViewPortMaxWidth);
-			vpMaxHeight = editorTree.getProperty(Ids::uiViewPortMaxHeight);
+    const auto vpMode =
+        gui::viewPortModeFromString(editorTree.getProperty(Ids::uiViewPortMode, "Scrollable").toString());
 
-			if ((bool)owner.getActivePanel()->getEditor()->getProperty(
-					Ids::uiPanelMenuBarVisible)) // Exp. instances get an override from
-												 // uiPanelMenuBarHideOnExport
-			{
-				setMenuBarVisible(true); // Enable visibility
-				editorRect.setHeight(editorRect.getHeight() + (int)owner.getProperty(Ids::ctrlrMenuBarHeight, 24));
-			} else {
-				editorRect.setWidth(editorRect.getWidth());
-				editorRect.setHeight(editorRect.getHeight());
-			}
+    vpEnableResizableLimits = editorTree.getProperty(Ids::uiViewPortEnableResizeLimits);
+    vpMinWidth = editorTree.getProperty(Ids::uiViewPortMinWidth);
+    vpMinHeight = editorTree.getProperty(Ids::uiViewPortMinHeight);
+    vpMaxWidth = editorTree.getProperty(Ids::uiViewPortMaxWidth);
+    vpMaxHeight = editorTree.getProperty(Ids::uiViewPortMaxHeight);
 
-			if (!JUCEApplication::isStandaloneApp() && owner.getInstanceMode() == InstanceSingleRestricted) {
-				setResizable(vpResizable, true);
+    Rectangle<int> canvasRect = VAR2RECT(editorTree.getProperty(Ids::uiPanelCanvasRectangle, "0 0 800 600"));
+    panelCanvasWidth = canvasRect.getWidth() <= 0 ? 800 : canvasRect.getWidth();
+    panelCanvasHeight = canvasRect.getHeight() <= 0 ? 600 : canvasRect.getHeight();
+    vpStandaloneAspectRatio = double(panelCanvasWidth) / double(panelCanvasHeight);
 
-				// if (auto* constrainer = getConstrainer()) // According to GoodWeather, auto*
-				// returns type warning in VS.
-				if (auto constrainer = getConstrainer()) // Updated v.5.6.31. Though auto* stresses
-														 // better the intent that var is a pointer.
-				{
-					if (vpEnableFixedAspectRatio == true) {
-						constrainer->setFixedAspectRatio(vpFixedAspectRatio);
+    if ((bool)owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelMenuBarVisible)) {
+        setMenuBarVisible(true);
+        editorRect.setHeight(editorRect.getHeight() + (int)owner.getProperty(Ids::ctrlrMenuBarHeight, 24));
+    }
 
-						if (vpEnableResizableLimits == true) {
-							if (vpMinWidth != 0 && vpMaxWidth != 0) {
-								setResizeLimits(vpMinWidth, round(vpMinWidth / vpFixedAspectRatio), vpMaxWidth,
-												round(vpMaxWidth / vpFixedAspectRatio));
-							} else if (vpMinWidth != 0 && vpMinHeight != 0 && vpMaxWidth != 0 && vpMaxHeight != 0) {
-								setResizeLimits(vpMinWidth, vpMinHeight, vpMaxWidth, vpMaxHeight);
-							}
-						} else {
-							constrainer->setMinimumSize(editorRect.getWidth(), editorRect.getHeight());
-						}
-					} else if (vpEnableResizableLimits == true && vpMinWidth != 0 && vpMinHeight != 0 &&
-							   vpMaxWidth != 0 && vpMaxHeight != 0) {
-						setResizeLimits(vpMinWidth, vpMinHeight, vpMaxWidth, vpMaxHeight);
-					}
-				}
-			}
-		}
+    if (!JUCEApplication::isStandaloneApp() && owner.getInstanceMode() == InstanceSingleRestricted) {
+        if (vpMode == gui::ViewPortMode::Fixed) {
+            setResizable(false, false);
+        } else {
+            setResizable(true, true);
+
+            if (auto constrainer = getConstrainer()) {
+                if (vpMode == gui::ViewPortMode::Scaled) {
+                    constrainer->setFixedAspectRatio(vpStandaloneAspectRatio);
+
+                    if (vpEnableResizableLimits && vpMinWidth != 0 && vpMaxWidth != 0) {
+                        setResizeLimits(vpMinWidth, round(vpMinWidth / vpStandaloneAspectRatio), vpMaxWidth,
+                                         round(vpMaxWidth / vpStandaloneAspectRatio));
+                    } else if (vpEnableResizableLimits && vpMinWidth != 0 && vpMinHeight != 0 && vpMaxWidth != 0 &&
+                               vpMaxHeight != 0) {
+                        setResizeLimits(vpMinWidth, vpMinHeight, vpMaxWidth, vpMaxHeight);
+                    } else {
+                        constrainer->setMinimumSize(panelCanvasWidth, panelCanvasHeight);
+                    }
+                } else { // Scrollable
+                    constrainer->setFixedAspectRatio(0.0);
+                    if (vpEnableResizableLimits && vpMinWidth != 0 && vpMinHeight != 0 && vpMaxWidth != 0 &&
+                        vpMaxHeight != 0) {
+                        setResizeLimits(vpMinWidth, vpMinHeight, vpMaxWidth, vpMaxHeight);
+                    }
+                }
+            }
+        }
+    }
+}
 		setBounds(editorRect);
 	} else {
 		if (JUCEApplication::isStandaloneApp())
@@ -132,20 +116,17 @@ CtrlrEditor::CtrlrEditor(CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
 
 	// --- LOOK AND FEEL AND COLOUR SCHEME LOGIC ---
 	String lookAndFeelVersionToApply;
-	var colourSchemePropertyToApply; // Will be passed to setEditorLookAndFeel
+	var colourSchemePropertyToApply;
 
-	// 1. Check for global legacy mode first
-	bool isLegacyModeGlobal = owner.getProperty(Ids::ctrlrLegacyMode); // This is a Bool property
+	bool isLegacyModeGlobal = owner.getProperty(Ids::ctrlrLegacyMode);
 
 	if (isLegacyModeGlobal) {
-		lookAndFeelVersionToApply = "V3";	 // Force V3 if legacy mode is on
-		colourSchemePropertyToApply = var(); // No colour scheme for V3
+		lookAndFeelVersionToApply = "V3";
+		colourSchemePropertyToApply = var();
 	} else {
-		// 2. If not in legacy mode, check global LookAndFeel version
 		lookAndFeelVersionToApply = owner.getProperty(Ids::ctrlrLookAndFeel).toString();
 		colourSchemePropertyToApply = owner.getProperty(Ids::ctrlrColourScheme);
 
-		// 3. If no global L&F version or colour scheme, check panel properties
 		if (lookAndFeelVersionToApply.isEmpty() && owner.getActivePanel()) {
 			lookAndFeelVersionToApply =
 				owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelLookAndFeel).toString();
@@ -155,18 +136,13 @@ CtrlrEditor::CtrlrEditor(CtrlrProcessor *_ownerFilter, CtrlrManager &_owner)
 		}
 	}
 
-	// Apply the determined LookAndFeel and ColourScheme
 	setEditorLookAndFeel(lookAndFeelVersionToApply, colourSchemePropertyToApply);
+	menuBar->setLookAndFeel(currentLookAndFeel.get());
+	lookAndFeelChanged();
 
-	menuBar->setLookAndFeel(currentLookAndFeel.get()); // Ensure menuBar uses the current L&F
+	getLookAndFeel().setUsingNativeAlertWindows((bool)owner.getProperty(Ids::ctrlrNativeAlerts));
 
-	lookAndFeelChanged(); // Added v5.6.31. Update LnF for all components
-
-	getLookAndFeel().setUsingNativeAlertWindows(
-		(bool)owner.getProperty(Ids::ctrlrNativeAlerts)); // Sets OS Native alert windows or JUCE
-
-	activeCtrlrChanged(); // Refresh CtrlrEditor Template and menuBar LnF, wether panel mode or
-						  // Editor with or WO menuBar from properties
+	activeCtrlrChanged();
 
 	if (isRestricted() && owner.getActivePanel()) {
 		hideProgramsMenu = owner.getActivePanel()->getEditor()->getProperty(Ids::uiPanelProgramsMenuHideOnExport);
@@ -291,33 +267,6 @@ void CtrlrEditor::activeCtrlrChanged() {
 
 		lookAndFeelChanged();
 
-		//        menuBar colour properties are deprecated and need to be removed in v5.6.30
-		//        String customMenuBarBackgroundColour1 =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarBackgroundColour1);
-		//        String customMenuBarBackgroundColour2 =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarBackgroundColour2);
-		//        String customMenuBarItemBackgroundColour =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemBackgroundColour);
-		//        String customMenuBarItemTextColour =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemTextColour);
-		//        String customMenuBarItemHighlightedTextColour =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemHighlightedTextColour);
-		//        String customMenuBarItemHighlightColour =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemHighlightColour);
-		//        String customMenuBarItemFont =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemFont); String
-		//        customMenuBarItemSeparatorColour =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemSeparatorColour);
-		//        String customMenuBarItemHeaderColour =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuItemHeaderColour);
-		//        String customMenuBarTextColour =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarTextColour);
-		//        String customMenuBarHighlightedTextColour =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarHighlightedTextColour);
-		//        String customMenuBarHighlightColour =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarHighlightColour);
-		//        String customMenuBarFont =
-		//        owner.getActivePanel()->getEditor()->getProperty(Ids::ctrlrMenuBarFont);
 	} else // logic for no active panel
 	{
 		// No active panel, set L&F to "V4 Light"
@@ -384,58 +333,3 @@ void CtrlrEditor::recreateTooltipEngine() {
 	tooltipWindow = std::make_unique<juce::TooltipWindow>(this);
 }
 void CtrlrEditor::applyThemeToCombosDirectly(const String &themeName) {}
-// 	String highlightHex = "0xff42a2c8"; // Default fallback
-// 	String menuBgHex = "0xfff0f0f0";
-// 	String menuTextHex = "0xff000000";
-
-// 	if (themeName == "ArturOrange") {
-// 		highlightHex = "0xffe24a21";
-// 		menuBgHex = "0xff0e1012";
-// 		menuTextHex = "0xffffffff";
-// 	} else if (themeName == "AiraGreen") {
-// 		highlightHex = "0xff00955a";
-// 		menuBgHex = "0xff111111";
-// 		menuTextHex = "0xffffffff";
-// 	} else if (themeName == "LexiBlue") {
-// 		highlightHex = "0xff5794c7";
-// 		menuBgHex = "0xff1a1a1a";
-// 		menuTextHex = "0xffffffff";
-// 	} else if (themeName == "YamDx") {
-// 		highlightHex = "0xff8584bc";
-// 		menuBgHex = "0xff0f0f0f";
-// 		menuTextHex = "0xfffffbed";
-// 	} else if (themeName == "KurzGreen") {
-// 		highlightHex = "0xff00a66e";
-// 		menuBgHex = "0xff111214";
-// 		menuTextHex = "0xffffffff";
-// 	} else if (themeName == "AkApc" || themeName == "AkMpc") {
-// 		highlightHex = "0xffd01634";
-// 		menuBgHex = "0xff222326";
-// 		menuTextHex = "0xffffffff";
-// 	}
-
-// 	// Access the active CtrlrPanel
-// 	CtrlrPanel *panel = owner.getActivePanel();
-// 	if (panel == nullptr)
-// 		return;
-
-// 	const int numModulators = panel->getNumModulators();
-// 	for (int i = 0; i < numModulators; ++i) {
-// 		CtrlrModulator *mod = panel->getModulatorByIndex(i);
-
-// 		if (mod != nullptr) {
-// 			CtrlrComponent *comp = mod->getComponent();
-// 			if (comp != nullptr) {
-// 				// Target components containing combo menu properties
-// 				if (!comp->getProperty(Ids::uiComboMenuHighlightColour).isVoid()) {
-// 					comp->setProperty(Ids::uiComboMenuHighlightColour, highlightHex);
-// 					comp->setProperty(Ids::uiComboMenuBackgroundColour, menuBgHex);
-// 					comp->setProperty(Ids::uiComboMenuFontColour, menuTextHex);
-// 					comp->setProperty(Ids::uiComboMenuBackgroundRibbed, false);
-
-// 					comp->repaint();
-// 				}
-// 			}
-// 		}
-// 	}
-// }

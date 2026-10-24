@@ -66,6 +66,7 @@ class PU {
 		// =========================================================================
 
 		/** Displays a menu synchronously with layout constraints */
+		/*************************************************************************************************************/
 		static int showMenuSync(juce::PopupMenu &menu, int itemIDThatMustBeVisible = 0, int minimumWidth = 0,
 								int maximumNumColumns = 0, int standardItemHeight = 0) {
 			auto options = juce::PopupMenu::Options()
@@ -101,31 +102,73 @@ class PU {
 
 			return showSyncWithOptions(menu, options);
 		}
+		/*************************************************************************************************************/
+		/** Runs the JUCE 8 async menu synchronously via local message pumping
+		 *
+		 *
+		 * Fix PopupMenu::showAt() leaving menu window open in JUCE 8
 
-		/** Runs the JUCE 8 async menu synchronously via local message pumping */
-		static int showSyncWithOptions(juce::PopupMenu &menu, const juce::PopupMenu::Options &options) {
+		The sync show helpers pump the message loop around showMenuAsync() to
+		stay compatible with legacy Lua panels. In JUCE 8 the menu callback
+		fires before the popup window is fully torn down, so returning
+		immediately sometimes left the main menu on screen until the next
+		click (roughly every other selection).
+
+		- After the callback fires, dismissAllActiveMenus() and pump the
+		dispatch loop until no modal components remain (250 ms cap)
+		- Track the target component with a SafePointer and abort the wait if
+		it is deleted while the menu is open
+		- Use shared state for the result so a late callback cannot write to a
+		dead stack frame
+		- Pass the target component through showMenuSyncAtComponent()
+		 *
+		 *
+		 *
+		*/
+		static int showSyncWithOptions(juce::PopupMenu &menu, const juce::PopupMenu::Options &options,
+									   juce::Component *target = nullptr) {
 			auto *mm = juce::MessageManager::getInstance();
-
 			if (!mm->isThisTheMessageThread()) {
-				jassertfalse; // Popup menus must be shown from the Message Thread
+				jassertfalse;
 				return 0;
 			}
 
-			bool finished = false;
-			int selectedResult = 0;
+			// Shared state, so a late callback can't write into a dead stack frame
+			struct State {
+					bool finished = false;
+					int result = 0;
+			};
+			auto state = std::make_shared<State>();
 
-			menu.showMenuAsync(options, [&finished, &selectedResult](int result) {
-				selectedResult = result;
-				finished = true;
+			juce::Component::SafePointer<juce::Component> safeTarget(target);
+
+			menu.showMenuAsync(options, [state](int result) {
+				state->result = result;
+				state->finished = true;
 			});
 
-			// Pump the queue in short slices, checking our OWN local flag —
-			// never touch stopDispatchLoop()/the global quit state.
-			while (!finished)
+			while (!state->finished) {
 				mm->runDispatchLoopUntil(20);
 
-			return selectedResult;
+				// Target component was deleted while the menu was open: bail out
+				if (target != nullptr && safeTarget == nullptr) {
+					juce::PopupMenu::dismissAllActiveMenus();
+					break;
+				}
+			}
+
+			juce::PopupMenu::dismissAllActiveMenus(); // force any leftover window to close
+
+			const auto deadline = juce::Time::getMillisecondCounter() + 250;
+
+			while (juce::ModalComponentManager::getInstance()->getNumModalComponents() > 0 &&
+				   juce::Time::getMillisecondCounter() < deadline) {
+				mm->runDispatchLoopUntil(5);
+			}
+
+			return state->result;
 		}
+		/*************************************************************************************************************/
 		static void showMenuAsyncAtArea(juce::PopupMenu &menuToDisplay, const juce::Rectangle<int> &screenArea,
 										std::function<void(int)> callback) {
 			auto options = juce::PopupMenu::Options().withTargetScreenArea(screenArea);
@@ -134,6 +177,7 @@ class PU {
 					callback(result);
 			});
 		}
+		/*************************************************************************************************************/
 		static void showMenuAsyncAtArea(juce::PopupMenu &menuToDisplay, const juce::Rectangle<int> &screenArea,
 										juce::Component *targetComponent, std::function<void(int)> callback) {
 			// Adding 2-4 pixels to the Y position moves the anchor slightly below the cursor
@@ -158,6 +202,7 @@ class PU {
 		// =========================================================================
 
 		/** Safely shows a popup menu asynchronously */
+		/*************************************************************************************************************/
 		static void showMenuAsyncSafe(juce::PopupMenu &menuToDisplay, juce::Component *targetComponent,
 									  std::function<void(int)> callback) {
 			auto options = juce::PopupMenu::Options();
@@ -311,7 +356,22 @@ static void showWarning(const juce::String &title, const juce::String &message,
 										  }
 									  });
 }
+/**************************************************************************************************/
+// JUCE-drawn OK/Cancel alert, centred on (and associated with) a component, with real button labels.
+static void showOkCancelOverComponent(Icon icon, const juce::String &title, const juce::String &message,
+									  juce::Component *associatedComponent, std::function<void(bool)> callback,
+									  const juce::String &okText = "OK", const juce::String &cancelText = "Cancel") {
+	auto iconType = (icon == Question)	? juce::MessageBoxIconType::QuestionIcon
+					: (icon == Warning) ? juce::MessageBoxIconType::WarningIcon
+					: (icon == Info)	? juce::MessageBoxIconType::InfoIcon
+										: juce::MessageBoxIconType::NoIcon;
 
+	juce::AlertWindow::showOkCancelBox(iconType, title, message, okText, cancelText, associatedComponent,
+									   juce::ModalCallbackFunction::create([callback](int result) {
+										   if (callback != nullptr)
+											   callback(result == 1); // button 1 (OK) returns 1, Cancel returns 0
+									   }));
+}
 }; // namespace AW
 /**************************************************************************************************/
 /*
@@ -398,6 +458,35 @@ inline void openMultipleFilesAsync(const juce::String &dialogTitle, const juce::
 /**************************************************************************************************/
 
 namespace gui {
+
+	enum class ViewPortMode {
+    Scrollable,
+    Fixed,
+    Scaled
+};
+
+	// namespace VP {
+inline ViewPortMode viewPortModeFromString(const String &s) {
+	if (s == "Fixed")
+		return ViewPortMode::Fixed;
+	if (s == "Scaled")
+		return ViewPortMode::Scaled;
+	return ViewPortMode::Scrollable; // safe default for missing/unrecognized values
+}
+
+inline String viewPortModeToString(ViewPortMode m) {
+	switch (m) {
+	case ViewPortMode::Fixed:
+		return "Fixed";
+	case ViewPortMode::Scaled:
+		return "Scaled";
+	default:
+		return "Scrollable";
+	}
+}
+
+// } // namespace VP
+
 
 static inline DrawableButton *createDrawableButton(const String &buttonName, const String &svgData,
 												   const String &svgDataDown = "",
@@ -638,4 +727,7 @@ static PanelThemePalette getPaletteForScheme(const juce::String &schemeName) {
 // ctrlrButton->setColour(juce::ToggleButton::textColourId, palette.textColour);
 // ctrlrButton->setColour(juce::ToggleButton::tickDisabledColourId, palette.outlineColour);
 // ctrlrButton->setColour(juce::ToggleButton::tickColourId, palette.tickAccent);
+
+
+
 #endif

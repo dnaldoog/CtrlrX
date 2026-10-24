@@ -135,14 +135,41 @@ CtrlrPanelResource *CtrlrPanelResourceManager::getResource(const String &resourc
 	}
 	return nullptr;
 }
+Image CtrlrPanelResourceManager::getResourceAsImage(const String &resourceName) {
+	return getResourceAsImage(resourceName, 0, 0); // 0,0 → natural size, per your existing fallback logic
+}
 
-const Image CtrlrPanelResourceManager::getResourceAsImage(const String &resourceName) {
+Image CtrlrPanelResourceManager::getResourceAsImage(const String &resourceName, int targetWidth, int targetHeight) {
 	CtrlrPanelResource *res = getResource(resourceName);
-	if (res != 0) {
-		return (res->asImage());
+
+	if (res == nullptr)
+		return Image();
+
+	// SVG resources need to be rasterized at the requested size.
+	bool isSvg = res->getFile().getFileExtension().equalsIgnoreCase(".svg");
+
+	if (isSvg) {
+		if (const XmlElement *xml = res->asXml()) {
+			std::unique_ptr<juce::Drawable> svgDrawable(juce::Drawable::createFromSVG(*xml));
+
+			if (svgDrawable != nullptr) {
+				int w = (targetWidth > 0) ? targetWidth : jmax(1, (int)svgDrawable->getWidth());
+
+				int h = (targetHeight > 0) ? targetHeight : jmax(1, (int)svgDrawable->getHeight());
+
+				Image rasterizedSvg(Image::ARGB, w, h, true);
+				Graphics g(rasterizedSvg);
+
+				svgDrawable->drawWithin(g, Rectangle<float>(0.0f, 0.0f, (float)w, (float)h),
+										RectanglePlacement::stretchToFit, 1.0f);
+
+				return rasterizedSvg;
+			}
+		}
 	}
 
-	return (Image());
+	// Standard raster format fallback (PNG, JPG, etc.)
+	return res->asImage();
 }
 
 const Font CtrlrPanelResourceManager::getResourceAsFont(const String &resourceName) {
@@ -372,43 +399,47 @@ Result CtrlrPanelResourceManager::removeResourceRange(const int resourceIndexSta
 void CtrlrPanelResourceManager::wrapForLua(lua_State *L) {
 	using namespace luabind;
 
-	module(L)[class_<CtrlrPanelResource>("CtrlrPanelResource")
-				  .def("asImage", &CtrlrPanelResource::asImage)
-				  .def("asText", &CtrlrPanelResource::asText)
-				  .def("asFont", &CtrlrPanelResource::asFont)
-				  .def("asXml", &CtrlrPanelResource::asXml)
-				  .def("asAudioFormat", &CtrlrPanelResource::asAudioFormat)
-				  .def("asData", &CtrlrPanelResource::asData)
-				  .def("getName", &CtrlrPanelResource::getName)
-				  .def("getSize", (double (CtrlrPanelResource::*)())&CtrlrPanelResource::
-									  getSize) // Updated v5.5.35. Uncommented for :
-											   // https://github.com/damiensellier/CtrlrX/issues/192
-				  .def("getSizeDouble", &CtrlrPanelResource::getSizeDouble) // Added v5.6.34.
-				  .def("getHashCode", &CtrlrPanelResource::getHashCode)
-				  .def("load", &CtrlrPanelResource::load)
-				  .def("loadIfNeeded", &CtrlrPanelResource::loadIfNeeded)
-				  .def("getType", &CtrlrPanelResource::getType)
-				  .def("getTypeDescription", &CtrlrPanelResource::getTypeDescription)
-				  .def("getFile", &CtrlrPanelResource::getFile)
-				  .def("createInputStream", &CtrlrPanelResource::createInputStream) // Added v5.6.34. gzip support
-				  .def("asGzipText", &CtrlrPanelResource::asGzipText)				//  Added v5.6.34. gzip support
-			  ,
-			  class_<CtrlrPanelResourceManager>("CtrlrPanelResourceManager")
-				  .def("getResource",
-					   (CtrlrPanelResource * (CtrlrPanelResourceManager::*)(const int)) &
-						   CtrlrPanelResourceManager::getResource,
-					   dependency(result, _1))
-				  .def("getResource",
-					   (CtrlrPanelResource * (CtrlrPanelResourceManager::*)(const String &)) &
-						   CtrlrPanelResourceManager::getResource,
-					   dependency(result, _1))
-				  //.def("getResource", (CtrlrPanelResource *(CtrlrPanelResourceManager::*)(const
-				  // int))&CtrlrPanelResourceManager::getResource) .def("getResource", (CtrlrPanelResource
-				  //*(CtrlrPanelResourceManager::*)(const String &))&CtrlrPanelResourceManager::getResource)
-				  .def("getNumResources", &CtrlrPanelResourceManager::getNumResources)
-				  .def("getResourceIndex", &CtrlrPanelResourceManager::getResourceIndex)
-				  .def("getResourceAsImage", &CtrlrPanelResourceManager::getResourceAsImage)
-				  .def("getResourceAsFont", &CtrlrPanelResourceManager::getResourceAsFont)];
+	module(
+		L)[class_<CtrlrPanelResource>("CtrlrPanelResource")
+			   .def("asImage", &CtrlrPanelResource::asImage)
+			   .def("asText", &CtrlrPanelResource::asText)
+			   .def("asFont", &CtrlrPanelResource::asFont)
+			   .def("asXml", &CtrlrPanelResource::asXml)
+			   .def("asAudioFormat", &CtrlrPanelResource::asAudioFormat)
+			   .def("asData", &CtrlrPanelResource::asData)
+			   .def("getName", &CtrlrPanelResource::getName)
+			   .def("getSize", (double (CtrlrPanelResource::*)())&CtrlrPanelResource::
+								   getSize) // Updated v5.5.35. Uncommented for :
+											// https://github.com/damiensellier/CtrlrX/issues/192
+			   .def("getSizeDouble", &CtrlrPanelResource::getSizeDouble) // Added v5.6.34.
+			   .def("getHashCode", &CtrlrPanelResource::getHashCode)
+			   .def("load", &CtrlrPanelResource::load)
+			   .def("loadIfNeeded", &CtrlrPanelResource::loadIfNeeded)
+			   .def("getType", &CtrlrPanelResource::getType)
+			   .def("getTypeDescription", &CtrlrPanelResource::getTypeDescription)
+			   .def("getFile", &CtrlrPanelResource::getFile)
+			   .def("createInputStream", &CtrlrPanelResource::createInputStream) // Added v5.6.34. gzip support
+			   .def("asGzipText", &CtrlrPanelResource::asGzipText)				 //  Added v5.6.34. gzip support
+		   ,
+		   class_<CtrlrPanelResourceManager>("CtrlrPanelResourceManager")
+			   .def("getResource",
+					(CtrlrPanelResource * (CtrlrPanelResourceManager::*)(const int)) &
+						CtrlrPanelResourceManager::getResource,
+					dependency(result, _1))
+			   .def("getResource",
+					(CtrlrPanelResource * (CtrlrPanelResourceManager::*)(const String &)) &
+						CtrlrPanelResourceManager::getResource,
+					dependency(result, _1))
+			   //.def("getResource", (CtrlrPanelResource *(CtrlrPanelResourceManager::*)(const
+			   // int))&CtrlrPanelResourceManager::getResource) .def("getResource", (CtrlrPanelResource
+			   //*(CtrlrPanelResourceManager::*)(const String &))&CtrlrPanelResourceManager::getResource)
+			   .def("getNumResources", &CtrlrPanelResourceManager::getNumResources)
+			   .def("getResourceIndex", &CtrlrPanelResourceManager::getResourceIndex)
+			   .def("getResourceAsImage", (Image (CtrlrPanelResourceManager::*)(
+											  const String &))&CtrlrPanelResourceManager::getResourceAsImage)
+			   .def("getResourceAsImage", (Image (CtrlrPanelResourceManager::*)(
+											  const String &, int, int))&CtrlrPanelResourceManager::getResourceAsImage)
+			   .def("getResourceAsFont", &CtrlrPanelResourceManager::getResourceAsFont)];
 }
 
 const String CtrlrPanelResourceManager::getTypeDescription(const CtrlrPanelResourceType type) {

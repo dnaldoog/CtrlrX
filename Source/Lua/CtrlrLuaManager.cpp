@@ -1,3 +1,5 @@
+#include "stdafx.h"
+#include "stdafx_luabind.h"
 #include "CtrlrLuaManager.h"
 #include "CtrlrComponents/Buttons/CtrlrButton.h"
 #include "CtrlrComponents/Buttons/CtrlrImageButton.h"
@@ -17,7 +19,6 @@
 #include "CtrlrComponents/Specials/CtrlrWaveform.h"
 #include "CtrlrLog.h"
 #include "CtrlrLuaAudioConverter.h"
-#include "CtrlrLuaDebugger.h"
 #include "CtrlrLuaMultiTimer.h"
 #include "CtrlrLuaObject.h"
 #include "CtrlrLuaObjectWrapper.h"
@@ -33,9 +34,8 @@
 #include "JuceClasses/LAudioFormat.h"
 #include "JuceClasses/LGlobalFunctions.h"
 #include "MIDI/CtrlrMidiInputComparator.h"
-#include "stdafx.h"
-#include "stdafx_luabind.h"
 
+#include "CtrlrLuaDebugger.h"
 // Deprecated classes
 #include "Deprecated/CtrlrLuaBigInteger.h"
 #include "Deprecated/CtrlrLuaComponentAnimator.h"
@@ -45,11 +45,74 @@
 
 #include "luabind/class_info.hpp"
 
+namespace {
+// Recursively collect every FILE-BACKED luaMethod node, however deeply it is nested in groups.
+// In-memory methods (built-ins etc.) have no source path and are deliberately skipped, so the
+// scan never treats them as "stale".
+void collectMethodTrees(const ValueTree &parent, Array<ValueTree> &out) {
+	for (int i = 0; i < parent.getNumChildren(); ++i) {
+		ValueTree child = parent.getChild(i);
+
+		if (child.hasType(Ids::luaMethod)) {
+			if (child.getProperty(Ids::luaMethodSourcePath).toString().isNotEmpty())
+				out.add(child);
+		} else {
+			collectMethodTrees(child, out); // group node -> recurse
+		}
+	}
+}
+
+// Walk (and create if missing) the group nodes that mirror a folder on disk.
+// scriptsDir itself maps to the root node.
+ValueTree getOrCreateGroupForDir(ValueTree root, const File &scriptsDir, const File &dir) {
+	if (dir == scriptsDir)
+		return root;
+
+	StringArray parts = StringArray::fromTokens(dir.getRelativePathFrom(scriptsDir), "/\\", "");
+	parts.removeEmptyStrings();
+
+	ValueTree current = root;
+
+	for (const auto &part : parts) {
+		ValueTree next;
+
+		for (int i = 0; i < current.getNumChildren(); ++i) {
+			ValueTree c = current.getChild(i);
+			if (c.hasType(Ids::luaMethodGroup) && c.getProperty(Ids::name).toString() == part) {
+				next = c;
+				break;
+			}
+		}
+
+		if (!next.isValid()) {
+			next = ValueTree(Ids::luaMethodGroup);
+			next.setProperty(Ids::name, part, nullptr);
+			current.addChild(next, -1, nullptr);
+		}
+
+		current = next;
+	}
+
+	return current;
+}
+
+bool isValidLuaIdentifier(const String &name) {
+	if (name.isEmpty())
+		return false;
+
+	if (!name.containsOnly("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789"))
+		return false;
+
+	const juce_wchar first = name[0];
+	return (first >= 'a' && first <= 'z') || (first >= 'A' && first <= 'Z') || first == '_';
+}
+} // namespace
+
 CtrlrLuaManager::CtrlrLuaManager(CtrlrPanel &_owner)
 	: owner(_owner),
 	  luaManagerTree(Ids::luaManager),
 	  luaAudioFormatManager(nullptr),
-	  ctrlrLuaDebugger(nullptr),
+ctrlrLuaDebugger(nullptr),
 	  utils(nullptr),
 	  audioConverter(nullptr),
 	  luaStateAudio(nullptr),
@@ -275,8 +338,10 @@ void CtrlrLuaManager::log(const String &message) {
 		CtrlrLog::ctrlrLog->logMessage(message, CtrlrLog::Info);
 }
 
-CtrlrLuaDebugger &CtrlrLuaManager::getDebugger() { return (*ctrlrLuaDebugger); }
-
+CtrlrLuaDebugger& CtrlrLuaManager::getDebugger()
+{
+	return (*ctrlrLuaDebugger);
+}
 const bool CtrlrLuaManager::isLuaDisabled() {
 	return ((bool)owner.getCtrlrManagerOwner().getProperty(Ids::ctrlrLuaDisabled));
 }
@@ -1277,6 +1342,8 @@ void CtrlrPanel::wrapForLua(lua_State *L) {
 			 .def("getFixedSlider", &CtrlrPanel::getFixedSliderComponent)
 			 .def("getImageSliderComponent", &CtrlrPanel::getImageSliderComponent)
 			 .def("getImageSlider", &CtrlrPanel::getImageSliderComponent)
+			 .def("savePatchToJSON", &CtrlrPanel::savePatchToJSON)
+			 .def("loadPatchFromJSON", &CtrlrPanel::loadPatchFromJSON)
 			 .def("getModulatorWithProperty",
 				  (CtrlrModulator * (CtrlrPanel::*)(const String &, const int)) & CtrlrPanel::getModulatorWithProperty)
 			 .def("getModulatorWithProperty", (CtrlrModulator * (CtrlrPanel::*)(const String &, const String &)) &
@@ -1568,4 +1635,206 @@ void CtrlrPanelEditor::wrapForLua(lua_State *L) {
 				  .def("getHeight", &CtrlrPanelEditor::getHeight)
 				  .def("getCanvas", &CtrlrPanelEditor::getCanvas)
 				  .def("getOwner", &CtrlrPanelEditor::getOwner)];
+}
+
+
+juce::File CtrlrLuaManager::getPanelWorkspaceDir() const {
+	// Use Ctrlr's actual panel UID property instead of Ids::uuid
+	String panelUuid = owner.getProperty(Ids::panelUID).toString();
+	if (panelUuid.isEmpty()) {
+		panelUuid = owner.getProperty(Ids::uuid).toString(); // Fallback check
+	}
+
+	if (panelUuid.isEmpty()) {
+		panelUuid = juce::Uuid().toString();
+		const_cast<CtrlrPanel &>(owner).setProperty(Ids::panelUID, panelUuid);
+	}
+
+	// This will now point directly to AppData/CtrlrX/[8.4B2QJcc40qK]/scripts/
+	return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+		.getChildFile("CtrlrX")
+		.getChildFile(panelUuid)
+		.getChildFile("scripts");
+}
+
+void CtrlrLuaManager::setExternalScriptSyncEnabled(bool enabled) {
+	if (enabled) {
+		juce::File scriptsDir = getPanelWorkspaceDir();
+		if (!scriptsDir.exists())
+			scriptsDir.createDirectory();
+
+		StringArray notes;
+		const Result res = owner.exportMethodsToWorkspace(scriptsDir, &notes);
+
+		if (res.wasOk()) {
+			ValueTree methodsRoot = luaManagerTree.getChildWithName(Ids::luaManagerMethods);
+			if (methodsRoot.isValid()) {
+				workspaceSync = std::make_unique<CtrlrLuaWorkspaceSync>(owner, methodsRoot, scriptsDir);
+				workspaceSync->resyncNow();
+			}
+
+			if (notes.size() > 0)
+				AW::showMessageBox(AW::Info, "External editing enabled", notes.joinIntoString("\n"));
+		} else {
+			AW::showMessageBox(AW::Warning, "External editing",
+							   "Could not export the Lua methods:\n" + res.getErrorMessage());
+		}
+
+		scriptWatcher = std::make_unique<CtrlrLuaPanelScriptWatcher>(
+			scriptsDir, [this](const juce::File &modifiedFile) { reloadScriptFromDisk(modifiedFile); });
+	} else {
+		workspaceSync = nullptr; // stop the tree->disk sync first, so it ignores the changes below
+		scriptWatcher = nullptr;
+
+		// Not while a saved panel is being loaded (the property is restored as "false" then).
+		if (!owner.getRestoreState()) {
+			StringArray missing;
+			owner.inlineExternalLuaMethods(luaManagerTree.getChildWithName(Ids::luaManagerMethods), &missing);
+
+			if (missing.size() > 0)
+				AW::showMessageBox(AW::Warning, "External editing turned off",
+								   "These methods had no script file and no stored copy, so they are now empty:\n\n" +
+									   missing.joinIntoString("\n"));
+		}
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Uses the file-local helpers from CtrlrLuaManager_external_sync.cpp:
+//   collectMethodTrees(), getOrCreateGroupForDir(), isValidLuaIdentifier()
+
+void CtrlrLuaManager::scanAndImportNewFilesFromWorkspace()
+{
+	const File scriptsDir = getPanelWorkspaceDir();
+	if (!scriptsDir.exists() || !scriptsDir.isDirectory()) {
+		AW::showMessageBox(AW::Warning, "Workspace Scan",
+						   "Workspace folder not found:\n" + scriptsDir.getFullPathName());
+		return;
+	}
+
+	ValueTree luaMethods = luaManagerTree.getChildWithName(Ids::luaManagerMethods);
+	ValueTree rootGroup = luaMethods.isValid() ? luaMethods : luaManagerTree;
+
+	// 0. Prune stale nodes: methods whose source file no longer exists on disk
+	//    (moved/deleted externally). A moved file is re-imported at its new
+	//    location in step 3.
+	int prunedCount = 0;
+	{
+		Array<ValueTree> candidates;
+		collectMethodTrees(rootGroup, candidates);
+
+		for (auto &m : candidates) {
+			if (owner.getLuaMethodSourceFile(&m).existsAsFile())
+				continue;
+
+			ValueTree tree = m;
+			const Uuid uuid(m.getProperty(Ids::uuid).toString());
+
+			if (auto *methodObj = getMethodManager().getMethodByUuid(uuid)) {
+				tree = methodObj->getMethodTree();
+				methodObj->remove();
+			}
+
+			if (tree.getParent().isValid())
+				tree.getParent().removeChild(tree, nullptr);
+
+			++prunedCount;
+		}
+	}
+
+	// 1. Files already tracked (built once, includes methods inside groups).
+	Array<ValueTree> existingMethods;
+	collectMethodTrees(rootGroup, existingMethods);
+
+	Array<File> trackedFiles;
+	for (auto &m : existingMethods)
+		trackedFiles.add(owner.getLuaMethodSourceFile(&m));
+
+	// 2. Every .lua file on disk (recursive).
+	Array<File> foundFiles;
+	scriptsDir.findChildFiles(foundFiles, File::findFiles, true, "*.lua");
+
+	// 3. Import untracked files into the group that mirrors their folder.
+	int importedCount = 0;
+	StringArray skippedNames; // relative paths of files with invalid Lua identifiers
+
+	for (const auto &file : foundFiles) {
+		if (trackedFiles.contains(file))
+			continue;
+
+		if (!isValidLuaIdentifier(file.getFileNameWithoutExtension())) {
+			skippedNames.add(file.getRelativePathFrom(scriptsDir));
+			continue;
+		}
+
+		ValueTree targetGroup = getOrCreateGroupForDir(rootGroup, scriptsDir, file.getParentDirectory());
+		getMethodManager().addMethodFromFile(targetGroup, file);
+		trackedFiles.add(file); // don't re-import within this scan
+
+		DBG("Auto-imported: " + file.getRelativePathFrom(scriptsDir));
+		++importedCount;
+	}
+
+	// 4. Report (one message for every outcome).
+	const bool changed = importedCount > 0 || prunedCount > 0;
+	const int skippedCount = skippedNames.size();
+	const int trackedCount = foundFiles.size() - importedCount - skippedCount;
+
+	String msg = changed ? String(importedCount) + " new script file(s) imported, " + String(prunedCount) +
+							   " stale entry(ies) removed."
+						 : String("No new script files found to import.");
+
+	msg << "\n\nScanned: " << scriptsDir.getFullPathName() << "\nLua files found: " << String(foundFiles.size())
+		<< "\nAlready tracked: " << String(trackedCount) << "\nSkipped: " << String(skippedCount);
+
+	if (skippedCount > 0)
+		msg << "\n\nNot imported - file name must be a valid Lua identifier "
+			   "(letters, digits, underscores; not starting with a digit):\n"
+			<< skippedNames.joinIntoString("\n");
+
+	if (changed)
+		msg << "\n\nPlease close and reopen the Lua Editor window to refresh the method tree view.";
+
+	AW::showMessageBox(changed ? AW::Warning : AW::Info, "Workspace Scan Complete", msg);
+}
+
+// ---------------------------------------------------------------------------
+void CtrlrLuaManager::reloadScriptFromDisk(const juce::File &modifiedFile) {
+	ValueTree lmTree = owner.getPanelTree().getChildWithName(Ids::luaManager);
+	ValueTree luaMethods = lmTree.getChildWithName(Ids::luaManagerMethods);
+
+	// Recursive, so methods inside groups are found too.
+	Array<ValueTree> allMethods;
+	collectMethodTrees(luaMethods, allMethods);
+
+	for (auto &methodChild : allMethods) {
+		if (owner.getLuaMethodSourceFile(&methodChild) != modifiedFile)
+			continue;
+
+		const Uuid methodUuid(methodChild.getProperty(Ids::uuid).toString());
+		CtrlrLuaMethod *methodObj = getMethodManager().getMethodByUuid(methodUuid);
+
+		if (methodObj == nullptr)
+			return;
+
+		// --- External deletion ---
+		if (!modifiedFile.existsAsFile()) {
+			ValueTree tree = methodObj->getMethodTree();
+			methodObj->remove();
+
+			if (tree.getParent().isValid()) // parent may be a group node now
+				tree.getParent().removeChild(tree, nullptr);
+
+			DBG("Removed method because its file was deleted externally: " + modifiedFile.getFileName());
+			return;
+		}
+
+		// --- Normal hot-reload ---
+		methodObj->reload();
+		DBG("Hot-reloaded method: " + methodObj->getName());
+
+		// TODO: if the built-in editor is open on THIS method, refresh its text view here.
+		// (getMethodManager().getMethodEditor() - needs whatever refresh call your editor exposes)
+		return;
+	}
 }

@@ -60,9 +60,12 @@ class CtrlrLuaMethodEditor  : public CtrlrChildWindowContent,
         CtrlrLuaMethodEditArea *getMethodEditArea();
         void restoreState(const ValueTree &savedState);
         void setPositionLabelText (const String &text);
-
-        void addNewMethod(ValueTree parentGroup=ValueTree());
-        void addNewTable(ValueTree parentGroup);
+		CtrlrLuaMethodDebuggerPrompt *getDebuggerPrompt(const bool activate = false) const {
+			return methodEditArea != nullptr ? methodEditArea->getLuaDebuggerPrompt(activate) : nullptr;
+		}
+        void insertRawDebuggerOutput (const String &output);
+		void addNewMethod(ValueTree parentGroup = ValueTree());
+		void addNewTable(ValueTree parentGroup);
         void addNewClass(ValueTree parentGroup);
         //void addNewClass(ValueTree parentGroup=ValueTree()); JG 1/19/2025
         void addMethodFromFile(ValueTree parentGroup=ValueTree());
@@ -113,16 +116,9 @@ class CtrlrLuaMethodEditor  : public CtrlrChildWindowContent,
         void menuItemSelected(int menuItemID, int topLevelMenuIndex);
         void searchResultClicked (const String &methodName, const int lineNumber, const int resultPositionStart, const int resultPositionEnd);
         void saveAndCompilAllMethods();
-        void convertToFiles();
-	
-        /* Debugger stuff */
-        void insertRawDebuggerOutput(const String &debuggerOutput);
-        //void setRawDebuggerOutput(const String &debuggerOutput); JG 1/19/2025
-        void setJsonDebuggerOutput(const String &jsonData);
-		void waitForCommand(std::function<void(int commandResult)> callback);
-		const String getCurrentDebuggerCommand(const bool clearTheReturnedCommand=true);
-        void setOpenSearchTabsEnabled(bool shouldOpen); // used for toggling search closed files
-        bool getOpenSearchTabsEnabled() const; // getter
+		void convertToFiles();
+		void setOpenSearchTabsEnabled(bool shouldOpen); // used for toggling search closed files
+		bool getOpenSearchTabsEnabled() const; // getter
 
         bool caseCansitive, findDialogActive;
         String lookInString, searchInString, currentSearchString;
@@ -141,8 +137,9 @@ class CtrlrLuaMethodEditor  : public CtrlrChildWindowContent,
 private:
         juce::Value sharedSearchTabsValue;
         bool openSearchTabsEnabledState = false; // Add this private member variable
-        WeakReference<CtrlrLuaMethodEditor>::Master masterReference;
-        friend class WeakReference<CtrlrLuaMethodEditor>;
+		// CtrlrLuaMethodDebuggerPrompt *debuggerPrompt = nullptr; // Add this private member variable
+		WeakReference<CtrlrLuaMethodEditor>::Master masterReference;
+		friend class WeakReference<CtrlrLuaMethodEditor>;
         File lastBrowsedSourceDir;
         CtrlrValueTreeEditorTree *methodTree;
         StretchableLayoutManager layoutManager;

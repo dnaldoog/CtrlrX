@@ -45,7 +45,8 @@ class CtrlrLuaMethodCodeEditorSettings : public Component,
 		void populateColourComboWithThumbnails(ColourComboBox *combo);
 		void updateTokenColorDisplay(const String &tokenType);
 		void clearSyntaxColorSettings();
-
+		static CodeEditorComponent::ColourScheme &getSharedScheme();
+		static void loadSharedSchemeFromTree(const ValueTree &tree);
 		bool hasUnsavedChanges() const;
 		void markAsChanged();
 		void markAsSaved();
@@ -88,18 +89,17 @@ class CtrlrLuaMethodCodeEditorSettings : public Component,
 		std::unique_ptr<ToggleButton> openSearchTabs;
 		std::unique_ptr<ToggleButton> autoCompleteButton;
 		std::unique_ptr<TextButton> applyButton;
-		std::unique_ptr<TextButton> cancelButton;
+		std::unique_ptr<TextButton> okayButton;
 		std::unique_ptr<TextButton> resetButton;
 		std::unique_ptr<TextButton> resetToPreviousButton;
 		std::unique_ptr<Slider> fontSize;
-		std::unique_ptr<Label> label0;		// Updated v5.6.34. Thanks to @dnaldoog
-		std::unique_ptr<Label> label1;		// Updated v5.6.34. Thanks to @dnaldoog
-		std::unique_ptr<Label> label2;		// Updated v5.6.34. Thanks to @dnaldoog
-		std::unique_ptr<Label> label3;		// Updated v5.6.34. Thanks to @dnaldoog
+		std::unique_ptr<Label> labelFont;		// Updated v5.6.34. Thanks to @dnaldoog
+		std::unique_ptr<Label> labelEditorBG;		// Updated v5.6.34. Thanks to @dnaldoog
+		std::unique_ptr<Label> labelLineNumBG;		// Updated v5.6.34. Thanks to @dnaldoog
+		std::unique_ptr<Label> labelLineNumFontCol;		// Updated v5.6.34. Thanks to @dnaldoog
 		std::unique_ptr<Label> syntaxLabel; // Updated v5.6.34. Thanks to @dnaldoog
 		std::unique_ptr<CodeEditorComponent> fontTest;
 
-		static CodeEditorComponent::ColourScheme &getSharedScheme();
 		HashMap<String, Colour> customSyntaxColors;
 
 		Font originalFont;
@@ -110,6 +110,8 @@ class CtrlrLuaMethodCodeEditorSettings : public Component,
 		bool originalOpenSearchTabs;
 		bool originalAutoComplete;
 		juce::Value &sharedSearchTabsValue;
+		bool resetDialogOpen = false;
+		void resetEditorSettingsToDefaults();
 
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrLuaMethodCodeEditorSettings);
 };

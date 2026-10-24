@@ -25,6 +25,8 @@
 class CtrlrLuaMethodEditor;
 //[/Headers]
 
+
+
 //==============================================================================
 /**
                                                                     //[Comments]
@@ -33,19 +35,21 @@ class CtrlrLuaMethodEditor;
     Describe your class and how it works here!
                                                                     //[/Comments]
 */
-class CtrlrLuaMethodDebuggerInfo : public Component
+class CtrlrLuaMethodDebuggerInfo  : public Component
 {
 public:
     //==============================================================================
-    CtrlrLuaMethodDebuggerInfo(CtrlrLuaMethodEditor &_owner);
+    CtrlrLuaMethodDebuggerInfo (CtrlrLuaMethodEditor &_owner);
     ~CtrlrLuaMethodDebuggerInfo();
 
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
     //[/UserMethods]
 
-    void paint(Graphics &g);
+    void paint (Graphics& g);
     void resized();
+
+
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
@@ -54,11 +58,12 @@ private:
 
     //==============================================================================
 
+
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrLuaMethodDebuggerInfo)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrLuaMethodDebuggerInfo)
 };
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]
 
-#endif // __JUCE_HEADER_20DE8E0E185E09BE__
+#endif   // __JUCE_HEADER_20DE8E0E185E09BE__

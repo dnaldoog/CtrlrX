@@ -32,11 +32,20 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 							 doPanelMode,
 							 doPanelLock,
 							 doPanelDisableCombosOnEdit,
+							 doPanelToggleExternalLuaEdit,
+							 doPanelScanExternalFolder,
 							 doSendSnapshot,
+							 doSnapshotSaveToFile,
+							 doSnapshotLoadFromFile,
+							 doSetSnapshotDelay,
+							 doSetGlobalMidiDelay,
+							 doSavePatchToJSON,
+							 doLoadPatchFromJSON,
 							 doRefreshDeviceList,
 							 showLuaEditor,
 							 showLuaConsole,
 							 showComparatorTables,
+							 cleanOrphanProperties,
 							 showModulatorList,
 							 showBufferEditor,
 							 showLayers,
@@ -65,12 +74,16 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 							 optMidiThruD2DChannelize,
 							 optMidiThruD2HChannelize,
 							 doSnapshotStore,
+							 doSnapshotLoad,
 							 doCrash,
 							 doDumpVstTables,
 							 doRegisterExtension,
 							 doKeyGenerator,
 							 doProgramWizard,
 							 showExpressionHelp,
+							 showDebuggerHelp,
+							 showDumpByLuaHelp,
+							 showViewportHelp,
 							 doQuit
 #if 0
 							 showDumpByLuaHelp,
@@ -87,25 +100,22 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 	commands.addArray(ids, numElementsInArray(ids));
 
 	// This is the correct, more efficient way to add your Lua commands
-	const CommandID luaIds[] =
-		{
-			LuaMethodEditorCommandIDs::fileSave,
-			LuaMethodEditorCommandIDs::fileSaveAndCompile,
-			LuaMethodEditorCommandIDs::fileSaveAndCompileAll,
-			LuaMethodEditorCommandIDs::fileCloseCurrentTab,
-			LuaMethodEditorCommandIDs::fileCloseAllTabs,
-			LuaMethodEditorCommandIDs::fileConvertToFiles,
-			LuaMethodEditorCommandIDs::fileClose,
-			LuaMethodEditorCommandIDs::editSearch,
-			LuaMethodEditorCommandIDs::editFindAndReplace,
-			LuaMethodEditorCommandIDs::editDebugger,
-			LuaMethodEditorCommandIDs::editConsole,
-			LuaMethodEditorCommandIDs::editClearOutput,
-			LuaMethodEditorCommandIDs::editPreferences,
-			LuaMethodEditorCommandIDs::editSingleLineComment,
-			LuaMethodEditorCommandIDs::editMultiLineComment,
-			LuaMethodEditorCommandIDs::editDuplicateLine,
-			LuaMethodEditorCommandIDs::editGoToLine};
+	const CommandID luaIds[] = {LuaMethodEditorCommandIDs::fileSave,
+								LuaMethodEditorCommandIDs::fileSaveAndCompile,
+								LuaMethodEditorCommandIDs::fileSaveAndCompileAll,
+								LuaMethodEditorCommandIDs::fileCloseCurrentTab,
+								LuaMethodEditorCommandIDs::fileCloseAllTabs,
+								LuaMethodEditorCommandIDs::fileConvertToFiles,
+								LuaMethodEditorCommandIDs::fileClose,
+								LuaMethodEditorCommandIDs::editSearch,
+								LuaMethodEditorCommandIDs::editFindAndReplace,
+								LuaMethodEditorCommandIDs::editConsole,
+								LuaMethodEditorCommandIDs::editClearOutput,
+								LuaMethodEditorCommandIDs::editPreferences,
+								LuaMethodEditorCommandIDs::editSingleLineComment,
+								LuaMethodEditorCommandIDs::editMultiLineComment,
+								LuaMethodEditorCommandIDs::editDuplicateLine,
+								LuaMethodEditorCommandIDs::editGoToLine};
 
 	// Now, add the array of Lua editor commands using addArray
 	commands.addArray(luaIds, numElementsInArray(luaIds));
@@ -119,13 +129,13 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 
 	switch (commandID)
 	{
-	case doSaveState:
-		result.setInfo("Save CTRLR State", "Saves the CTRLR state to disk", globalCategory, 0);
-		if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
-		{
-			result.addDefaultKeypress('s', ModifierKeys::commandModifier | ModifierKeys::altModifier);
-		}
-		break;
+	// case doSaveState:
+	// 	result.setInfo("Save CTRLR State", "Saves the CTRLR state to disk", globalCategory, 0);
+	// 	if (!isRestricted()) // Added v5.6.32. Disable shortcut on restricted instance
+	// 	{
+	// 		result.addDefaultKeypress('s', ModifierKeys::commandModifier | ModifierKeys::altModifier);
+	// 	}
+	// 	break;
 
 	case doOpenPanel:
 		result.setInfo("Open Panel", "Open a panel from a file", globalCategory, 0);
@@ -172,21 +182,29 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 		break;
 
 	case showExpressionHelp:
-		result.setInfo("Expression Help", "Show help for writing Lua expressions", globalCategory, 0);
+		result.setInfo("Expressions", "Show help for writing Lua expressions", globalCategory, 0);
 		result.addDefaultKeypress('e', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
 
 		break;
-#if 0
+
+	case showDebuggerHelp:
+		result.setInfo("Lua Debugger", "Show help for lua debugger", globalCategory, 0);
+		result.addDefaultKeypress('d', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
+
+		break;
+
 	case showDumpByLuaHelp:
-		result.setInfo("Bulk Dump by Lua Help", "Show help reading/writing Dumps to panel", globalCategory, 0);
+		result.setInfo("MIDI Dumps", "Show help reading/writing Dumps to panel", globalCategory, 0);
 		result.addDefaultKeypress('b', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
 
 		break;
-	case showExpressionHelp:
-		result.setInfo("Expression Help", "Show help for writing Lua expressions", globalCategory, 0);
-		result.addDefaultKeypress('e', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
+
+	case showViewportHelp:
+		result.setInfo("Viewport Options", "Export options for Viewport", globalCategory, 0);
+		result.addDefaultKeypress('g', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
 
 		break;
+#if 0
 
 
 	case showMidiProgrammingHelp:
@@ -335,7 +353,26 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 		}
 		break;
 
+	case doPanelToggleExternalLuaEdit:
+		result.setInfo("External LUA edit", "Toggle external LUA editing mode", panelCategory, 0);
+		result.setActive(isPanelActive(true));
+		if (isPanelActive(true) && getActivePanelEditor()) {
+			CtrlrPanel &panel = getActivePanelEditor()->getOwner();
+			result.setTicked((bool)panel.getProperty(Ids::ctrlrLuaExternalEditorEnabled));
+		}
+		break;
+
+	case doPanelScanExternalFolder:
+		result.setInfo("Scan workspace for new files", "Scan workspace for new files", panelCategory, 0);
+		if (!isRestricted()) 
+		{
+			result.addDefaultKeypress('s', ModifierKeys::altModifier);
+		}
+		result.setActive(isPanelActive(true));
+		break;
+
 	case doPanelDisableCombosOnEdit:
+
 		result.setInfo("Disable combos on edit", "Combo boxes will not open when editing panel", panelCategory, 0);
 		result.setActive(isPanelActive(true));
 		if (isPanelActive(true))
@@ -364,6 +401,11 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 	case showComparatorTables:
 		result.setInfo("Comparator tables", "Show/hide the dump for the comparator tables", panelCategory, 0);
 		result.setActive(isPanelActive());
+		break;
+	case cleanOrphanProperties:
+		result.setInfo("Remove property ...", "Scan and remove deprecated properties from the panel",
+					   globalCategory, 0);
+		result.setActive(owner.getActivePanel() != nullptr);
 		break;
 
 	case showMidiLibrary:
@@ -399,9 +441,38 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 		result.setActive(isPanelActive());
 		break;
 
-	case doSnapshotStore:
-		result.setInfo("Program snapshot", "Save the current panel state as a snapshot", panelCategory, 0);
+	case doSnapshotSaveToFile:
+		result.setInfo("Save snapshot", "Save the current panel state as a snapshot file", panelCategory, 0);
 		result.setActive(isPanelActive());
+		break;
+
+	case doSetSnapshotDelay:
+		result.shortName = "Snapshot Transmission Delay...";
+		result.description = "Set delay between snapshot messages (ms)";
+		result.categoryName = "Panel";
+		result.setActive(getActivePanel() != nullptr);
+		break;
+
+	case doSetGlobalMidiDelay:
+		result.shortName = "Global MIDI Output Delay...";
+		result.description = "Set global delay between outgoing MIDI messages (ms)";
+		result.categoryName = "MIDI";
+		result.setActive(getActivePanel() != nullptr);
+		break;
+
+	case doSnapshotLoadFromFile:
+		result.setInfo("Load snapshot", "Load a previously saved panel state from a snapshot file", panelCategory, 0);
+		result.setActive(isPanelActive());
+		break;
+
+	case doSavePatchToJSON:
+		result.setInfo("Save Current Patch to File ...", "Export current panel values to a JSON file", "Snapshots", 0);
+		result.setActive(getActivePanel() != nullptr);
+		break;
+
+	case doLoadPatchFromJSON:
+		result.setInfo("Load Patch from File ...", "Import panel values from a JSON file", "Snapshots", 0);
+		result.setActive(getActivePanel() != nullptr);
 		break;
 
 	case doRefreshPropertyLists:
@@ -635,11 +706,6 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 	case LuaMethodEditorCommandIDs::editFindAndReplace:
 		result.setInfo("Find and Replace", "Finds and replaces text in the editor", luaCategory, 0);
 		result.addDefaultKeypress('r', ModifierKeys::commandModifier); // cmd+h was not a good idea since cmd+h is to hide the app for macOS, cmd+r is better
-		result.setActive(isPanelActive());
-		break;
-
-	case LuaMethodEditorCommandIDs::editDebugger:
-		result.setInfo("Show Debugger", "Shows the debugger panel", luaCategory, 0);
 		result.setActive(isPanelActive());
 		break;
 

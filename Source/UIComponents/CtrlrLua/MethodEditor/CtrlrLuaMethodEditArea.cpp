@@ -19,10 +19,12 @@
 
 //[Headers] You can add your own extra header files here...
 #include "CtrlrIDs.h"
+#include "CtrlrLuaApiInspector.h"
 #include "CtrlrLuaMethodEditor.h"
 #include "CtrlrManager/CtrlrManager.h"
 #include "CtrlrPanel/CtrlrPanel.h"
 #include "stdafx.h"
+
 //[/Headers]
 
 #include "CtrlrLuaMethodEditArea.h"
@@ -31,6 +33,16 @@
 //[/MiscUserDefs]
 
 //==============================================================================
+
+static int tabIndexOf (TabbedComponent &tabs, Component *c)
+{
+    for (int i = 0; i < tabs.getNumTabs(); ++i)
+        if (tabs.getTabContentComponent (i) == c)
+            return i;
+    return -1;
+}
+
+
 CtrlrLuaMethodEditArea::CtrlrLuaMethodEditArea(CtrlrLuaMethodEditor &_owner) : owner(_owner), sharedSearchTabsValue() {
 
 
@@ -63,14 +75,17 @@ CtrlrLuaMethodEditArea::CtrlrLuaMethodEditArea(CtrlrLuaMethodEditor &_owner) : o
 	// 2. Split the inline resizer allocation apart
 	resizer = std::make_unique<StretchableLayoutResizerBar>(&layoutManager, 1, false);
 	addAndMakeVisible(resizer.get()); // Pass the raw address to JUCE
+	debuggerPrompt = new CtrlrLuaMethodDebuggerPrompt(owner);
 
 	// 3. Complete the remaining allocations
-	debuggerPrompt = std::make_unique<CtrlrLuaMethodDebuggerPrompt>(owner);
+	apiInspector = std::make_unique<CtrlrLuaApiInspector>(owner.getOwner());
 	luaConsole = std::make_unique<CtrlrLuaConsole>(owner.getOwner());
+
 	// Pass 'false' so lowerTabs does NOT attempt to delete unique_ptr managed components
 	lowerTabs->addTab("Output", Colours::lightgrey, output.get(), false);
 	lowerTabs->addTab("Find and replace", Colours::lightgrey, find.get(), false);
-	lowerTabs->addTab("Debugger output", Colours::lightgrey, debuggerPrompt.get(), false);
+	lowerTabs->addTab("API Inspector", Colours::lightgrey, apiInspector.get(), false);
+	lowerTabs->addTab("Debugger output", Colours::lightgrey, debuggerPrompt, true);
 	lowerTabs->addTab("Console", Colours::lightgrey, luaConsole.get(), false);
 	lowerTabs->setTabBarDepth(owner.getOwner().getOwner().getProperty(Ids::ctrlrTabBarDepth));
 
@@ -156,13 +171,19 @@ void CtrlrLuaMethodEditArea::showFindDialog() {
 	find->setFocusOnFindInput();
 }
 
-void CtrlrLuaMethodEditArea::showDebuggerTab() { lowerTabs->setCurrentTabIndex(2, true); }
-
-void CtrlrLuaMethodEditArea::showConsoleTab() { lowerTabs->setCurrentTabIndex(3, true); }
+void CtrlrLuaMethodEditArea::showConsoleTab()
+{
+    lowerTabs->setCurrentTabIndex (tabIndexOf (*lowerTabs, luaConsole.get()), true);
+}
 
 void CtrlrLuaMethodEditArea::findNextMatch() { find->findNextMatch(); }
 
 void CtrlrLuaMethodEditArea::replaceNextMatch() { find->replaceNextMatch(); }
+
+void CtrlrLuaMethodEditArea::showDebuggerTab()
+{
+    lowerTabs->setCurrentTabIndex (tabIndexOf (*lowerTabs, debuggerPrompt), true);
+}
 
 void CtrlrLuaMethodEditArea::closeTabWithMethod(const ValueTree &item) {
 	for (int i = 0; i < upperTabs->getNumTabs(); i++) {
@@ -222,49 +243,17 @@ bool CtrlrLuaMethodEditArea::keyPressed(
 	return false;
 }
 
+CtrlrLuaMethodDebuggerPrompt *CtrlrLuaMethodEditArea::getLuaDebuggerPrompt (const bool activateDebuggerNow)
+{
+    if (activateDebuggerNow)
+        showDebuggerTab();
+
+    return debuggerPrompt;
+}
+
 void CtrlrLuaMethodEditArea::setActiveOutputTab() {
 	if (getLowerTabs()) {
 		getLowerTabs()->setCurrentTabIndex(0);
 	}
 }
-
-CtrlrLuaMethodDebuggerPrompt *CtrlrLuaMethodEditArea::getLuaDebuggerPrompt(const bool activateDebuggerNow) {
-	if (activateDebuggerNow)
-		lowerTabs->setCurrentTabIndex(2, true);
-
-	return (debuggerPrompt.get());
-}
-
 void CtrlrLuaMethodEditArea::clearOutputText() { output->setText(""); }
-
-//[/MiscUserCode]
-
-//==============================================================================
-#if 0
-/*  -- Introjucer information section --
-
-    This is where the Introjucer stores the metadata that describe this GUI layout, so
-    make changes in here at your peril!
-
-BEGIN_JUCER_METADATA
-
-<JUCER_COMPONENT documentType="Component" className="CtrlrLuaMethodEditArea" componentName=""
-                 parentClasses="public Component, public CtrlrLog::Listener" constructorParams="CtrlrLuaMethodEditor &amp;_owner"
-                 variableInitialisers="owner(_owner)" snapPixels="8" snapActive="1"
-                 snapShown="1" overlayOpacity="0.330" fixedSize="0" initialWidth="600"
-                 initialHeight="400">
-  <BACKGROUND backgroundColour="0"/>
-  <TABBEDCOMPONENT name="" id="efc1426cbb2876d0" memberName="lowerTabs" virtualName=""
-                   explicitFocusOrder="0" pos="0 69.947% 0M 30.053%" orientation="bottom"
-                   tabBarDepth="20" initialTab="-1"/>
-  <GENERICCOMPONENT name="" id="87b2c9d03de9339d" memberName="upperTabs" virtualName=""
-                    explicitFocusOrder="0" pos="0 0 0M 69.947%" class="CtrlrLuaMethodEditorTabs"
-                    params="owner"/>
-</JUCER_COMPONENT>
-
-END_JUCER_METADATA
-*/
-#endif
-
-//[EndFile] You can add extra defines here...
-//[/EndFile]

@@ -36,6 +36,7 @@ void CtrlrManager::setEmbeddedDefaults() {
 		setProperty(Ids::ctrlrAutoSaveInterval, 300);
 	}
 	// setProperty (Ids::ctrlrLogOptions, 32); // Updated v5.6.31
+	setProperty(Ids::ctrlrLuaExternalEditorEnabled, false);
 	setProperty(Ids::ctrlrLogOptions,
 				6014); // Added v5.6.31. 6014 shows everything by default with MIDI messages in Hex
 	setProperty(Ids::ctrlrScrollbarThickness, 16.0f);			  // Added v5.6.31
@@ -163,35 +164,6 @@ const bool CtrlrManager::isSingleInstance() const {
 	return (ctrlrPlayerInstanceMode == InstanceSingle || ctrlrPlayerInstanceMode == InstanceSingleRestricted);
 }
 
-/*Result CtrlrManager::addInstancePanel()
-{
-	if (ctrlrPlayerInstanceTree.isValid())
-	{
-		CtrlrPanel *panel = new CtrlrPanel(*this, getInstanceName(), ctrlrPanels.size());
-		ctrlrPanels.add (panel);
-
-		Result restoreResult = panel->restoreState (ctrlrPlayerInstanceTree);
-
-		if (!restoreResult.wasOk())
-		{
-			WARN("AddInstancePanel failed to restore the state of the panel");
-			ctrlrPanels.clear (true);
-			return (restoreResult);
-		}
-
-		managerTree.addChild (panel->getPanelTree(), -1, 0);
-		addPanel (panel->getEditor(true));
-
-		organizePanels();
-
-		return (Result::ok());
-	}
-	else
-	{
-		return (Result::fail("AddInstancePanel failed, the decoded instance tree is invalid"));
-	}
-}
-*/
 Result CtrlrManager::importInstanceResources(CtrlrNative *native) {
 	if (getCtrlrProperties().getProperties().getUserSettings()) {
 		if (getCtrlrProperties()

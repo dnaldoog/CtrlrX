@@ -9,12 +9,180 @@
 // Top of CtrlrPanelModulatorList.cpp
 
 /* ********************************************************************************** */
+
+namespace {
+class ColumnPickerComponent : public juce::Component,
+							  private juce::TextEditor::Listener,
+							  private juce::ListBoxModel {
+  public:
+	ColumnPickerComponent(juce::StringArray columnNames, std::function<bool(int)> isVisibleFn,
+						  std::function<void(int)> toggleFn)
+		: names(std::move(columnNames)), isColumnVisible(std::move(isVisibleFn)), toggleColumn(std::move(toggleFn)) {
+		addAndMakeVisible(searchBox);
+		searchBox.setTextToShowWhenEmpty("Search columns...", juce::Colours::grey);
+		searchBox.addListener(this);
+		searchBox.setEscapeAndReturnKeysConsumed(true);
+
+		addAndMakeVisible(listBox);
+		listBox.setModel(this);
+		listBox.setRowHeight(22);
+
+		addAndMakeVisible(checkedFirstButton);
+		checkedFirstButton.setClickingTogglesState(true);
+		checkedFirstButton.setWantsKeyboardFocus(false);
+		checkedFirstButton.onClick = [this] {
+			rebuildFilter();
+			searchBox.grabKeyboardFocus();
+		};
+		rebuildFilter();
+		setSize(320, 360);
+	}
+
+	void resized() override {
+		auto r = getLocalBounds().reduced(6);
+		auto top = r.removeFromTop(26);
+		checkedFirstButton.setBounds(top.removeFromRight(96));
+		top.removeFromRight(4);
+		searchBox.setBounds(top);
+		r.removeFromTop(4);
+		listBox.setBounds(r);
+	}
+
+	void parentHierarchyChanged() override {
+		juce::Component::SafePointer<ColumnPickerComponent> safe(this);
+		juce::MessageManager::callAsync([safe] {
+			if (safe != nullptr && safe->isShowing())
+				safe->searchBox.grabKeyboardFocus();
+		});
+	}
+
+  private:
+	// --- TextEditor::Listener ---
+	void textEditorTextChanged(juce::TextEditor &) override {
+		rebuildFilter();
+	}
+	void textEditorReturnKeyPressed(juce::TextEditor &) override {
+		// Enter toggles the top match, so "type, Enter" works without the mouse
+		if (filtered.size() > 0)
+			toggleRow(0);
+	}
+	void textEditorEscapeKeyPressed(juce::TextEditor &) override {
+		if (auto *box = findParentComponentOfClass<juce::CallOutBox>())
+			box->dismiss();
+		else if (auto *w = findParentComponentOfClass<juce::DocumentWindow>())
+			w->closeButtonPressed();
+	}
+
+	// --- ListBoxModel ---
+	int getNumRows() override {
+		return filtered.size();
+	}
+	void paintListBoxItem(int row, juce::Graphics &g, int w, int h, bool selected) override {
+		if (!juce::isPositiveAndBelow(row, filtered.size()))
+			return;
+		const int idx = filtered[row];
+
+		if (isDefaultColumn(names[idx]))
+			g.fillAll(juce::Colours::steelblue.withAlpha(0.25f));
+
+		if (selected)
+			g.fillAll(findColour(juce::TextEditor::highlightColourId).withAlpha(0.4f));
+
+		getLookAndFeel().drawTickBox(g, *this, 4.0f, (h - 14) * 0.5f, 14.0f, 14.0f, isColumnVisible(idx), true, false,
+									 false);
+
+		g.setColour(findColour(juce::TextEditor::textColourId));
+		g.setFont(juce::FontOptions(13.0f));
+		g.drawText(names[idx], 26, 0, w - 30, h, juce::Justification::centredLeft, true);
+	}
+	void listBoxItemClicked(int row, const juce::MouseEvent &) override {
+		toggleRow(row);
+	}
+
+	// --- helpers ---
+	void toggleRow(int row) {
+		if (!juce::isPositiveAndBelow(row, filtered.size()))
+			return;
+		toggleColumn(filtered[row]);
+		listBox.repaint();
+	}
+
+	void rebuildFilter() {
+		filtered.clear();
+		const juce::String query = searchBox.getText().trim();
+
+		if (query.isEmpty()) {
+			for (int i = 0; i < names.size(); ++i)
+				filtered.add(i);
+		} else {
+			const std::string q = query.toLowerCase().toStdString();
+			std::vector<std::pair<double, int>> scored;
+
+			for (int i = 0; i < names.size(); ++i) {
+				double score = rapidfuzz::fuzz::partial_ratio(q, names[i].toLowerCase().toStdString());
+				if (names[i].startsWithIgnoreCase(query))
+					score += 20.0;
+				if (score > 55.0)
+					scored.push_back({score, i});
+			}
+			std::stable_sort(scored.begin(), scored.end(), [](auto &a, auto &b) { return a.first > b.first; });
+			for (auto &s : scored)
+				filtered.add(s.second);
+		}
+		if (checkedFirstButton.getToggleState())
+			std::stable_partition(filtered.begin(), filtered.end(), [this](int idx) { return isColumnVisible(idx); });
+		listBox.updateContent();
+		listBox.repaint();
+	}
+
+	juce::StringArray names;
+	juce::Array<int> filtered; // indices into `names` (== column index, columnId = index + 1)
+	std::function<bool(int)> isColumnVisible;
+	std::function<void(int)> toggleColumn;
+	juce::TextButton checkedFirstButton{"Sort visible"};
+	juce::TextEditor searchBox;
+	juce::ListBox listBox;
+};
+} // namespace
+class ColumnPickerWindow : public juce::DocumentWindow {
+	public:
+		ColumnPickerWindow(juce::Component *contentToOwn, std::function<void()> onCloseFn)
+			: juce::DocumentWindow("Visible columns", juce::Colours::darkgrey, juce::DocumentWindow::closeButton),
+			  onClose(std::move(onCloseFn)) {
+			setUsingNativeTitleBar(true);
+			setContentOwned(contentToOwn, true);
+			setResizable(true, false);
+			setAlwaysOnTop(true);
+		}
+		void closeButtonPressed() override {
+			if (onClose)
+				onClose();
+		}
+
+	private:
+		std::function<void()> onClose;
+};
+
 CtrlrPanelModulatorList::CtrlrPanelModulatorList(CtrlrPanel &_owner)
 	: owner(_owner),
 	  modulatorListTree(owner) // Note: Removed modulatorList(nullptr) from initializer list since unique_ptr
 							   // initializes to nullptr automatically
 {
-	// 1. Allocate the table layout once using modern smart pointers
+	// 0. Setup Search Controls
+	addAndMakeVisible(searchLabel);
+	searchLabel.setFont(juce::FontOptions(12.0f));
+
+	addAndMakeVisible(searchField);
+	searchField.addListener(this);
+	searchField.setTextToShowWhenEmpty("Type to search...", juce::Colours::grey);
+
+	addAndMakeVisible(clearSearchButton);
+	clearSearchButton.onClick = [this]() {
+		searchField.clear(); // Clears text and triggers textEditorTextChanged -> applyFuzzyFilter
+		applyFuzzyFilter();	 // this will reset the modulator list to show all again!
+	};
+
+	// Allocate Table
 	modulatorList = std::make_unique<TableListBox>("Modulator List", this);
 	addAndMakeVisible(modulatorList.get());
 
@@ -30,6 +198,7 @@ CtrlrPanelModulatorList::CtrlrPanelModulatorList(CtrlrPanel &_owner)
 	modulatorListTree.setVisible(false);
 
 	owner.setProperty(Ids::uiPanelModulatorListViewTree, false);
+	owner.setProperty(Ids::panelModulatorListAddMode, true); // Default to "Add Columns Mode" (true) on first load
 
 	// 4. Restore settings and register listeners
 	if (owner.getProperty(Ids::panelModulatorListColumns).toString() != COMBO_ITEM_NONE) {
@@ -62,30 +231,35 @@ CtrlrPanelModulatorList::~CtrlrPanelModulatorList() {
 void CtrlrPanelModulatorList::paint(Graphics &g) {}
 
 void CtrlrPanelModulatorList::resized() {
-	modulatorList->setBounds(0, 0, getWidth() - 0, getHeight() - 0);
-	modulatorListTree.setBounds(0, 0, getWidth() - 0, getHeight() - 0);
+	auto area = getLocalBounds().reduced(4);
+
+	// Top Bar Layout: Label -> 200px Input Field -> 60px Clear Button
+	auto searchRow = area.removeFromTop(24);
+	searchLabel.setBounds(searchRow.removeFromLeft(110));
+	searchRow.removeFromLeft(4);
+
+	searchField.setBounds(searchRow.removeFromLeft(200)); // Fixed 200px width
+	searchRow.removeFromLeft(4);
+
+	clearSearchButton.setBounds(searchRow.removeFromLeft(60)); // Fixed 60px Clear button
+
+	area.removeFromTop(6); // Vertical gap before table
+
+	// Table and Tree fill the remaining space
+	modulatorList->setBounds(area);
+	modulatorListTree.setBounds(area);
 }
 
 void CtrlrPanelModulatorList::resetToDefaults() {
-	modulatorList->getHeader().removeAllColumns();
-	modulatorList->getHeader().addColumn("name", getColumnIdForIdentifier("name") + 1, 100);
-	modulatorList->getHeader().addColumn("modulatorValue", getColumnIdForIdentifier("modulatorValue") + 1, 60);
-	modulatorList->getHeader().addColumn("vstIndex", getColumnIdForIdentifier("vstIndex") + 1, 60);
-	modulatorList->getHeader().addColumn("uiType", getColumnIdForIdentifier("uiType") + 1, 100);
-	modulatorList->getHeader().addColumn("componentRectangle", getColumnIdForIdentifier("componentRectangle") + 1, 80);
-	modulatorList->getHeader().addColumn("componentGroupName", getColumnIdForIdentifier("componentGroupName") + 1, 60);
-	modulatorList->getHeader().addColumn("componentTabName", getColumnIdForIdentifier("componentTabName") + 1, 60);
-	// modulatorList->getHeader().addColumn ("componentRadioGroupId",
-	// getColumnIdForIdentifier("componentRadioGroupId")+1, 60);
-	modulatorList->getHeader().addColumn("midiMessageType", getColumnIdForIdentifier("midiMessageType") + 1, 60);
-	modulatorList->getHeader().addColumn("midiMessageCtrlrNumber",
-										 getColumnIdForIdentifier("midiMessageCtrlrNumber") + 1, 60);
-	modulatorList->getHeader().addColumn("midiMessageSysExFormula",
-										 getColumnIdForIdentifier("midiMessageSysExFormula") + 1, 100);
-	modulatorList->getHeader().addColumn("modulatorCustomIndex", getColumnIdForIdentifier("modulatorCustomIndex") + 1,
-										 60);
-	// modulatorList->getHeader().addColumn ("modulatorCustomIndexGroup",
-	// getColumnIdForIdentifier("modulatorCustomIndexGroup")+1, 60);
+	auto &header = modulatorList->getHeader();
+	header.removeAllColumns();
+
+	for (const auto &c : kDefaultColumns) {
+		const int index = getColumnIdForIdentifier(c.identifier);
+		if (index < 0)
+			continue; // identifier not in the ID tree: skip rather than add an invalid column id
+		header.addColumn(c.identifier, index + 1, c.width);
+	}
 	saveColumnState();
 }
 
@@ -102,11 +276,13 @@ void CtrlrPanelModulatorList::mouseDown(const MouseEvent &e) {
 void CtrlrPanelModulatorList::mouseUp(const MouseEvent &e) {}
 
 void CtrlrPanelModulatorList::copyModulatorList() {
-	copyOfModulatorList.clear();
+	masterModulatorList.clear();
 
 	for (int i = 0; i < owner.getNumModulators(); i++) {
-		copyOfModulatorList.set(i, owner.getModulatorByIndex(i));
+		masterModulatorList.set(i, owner.getModulatorByIndex(i));
 	}
+
+	applyFuzzyFilter();
 }
 
 void CtrlrPanelModulatorList::modulatorChanged(CtrlrModulator *modulatorThatChanged) {
@@ -138,9 +314,13 @@ void CtrlrPanelModulatorList::modulatorChanged(CtrlrModulator *modulatorThatChan
 	}
 }
 
-void CtrlrPanelModulatorList::modulatorAdded(CtrlrModulator *modulatorThatWasAdded) { refresh(); }
+void CtrlrPanelModulatorList::modulatorAdded(CtrlrModulator *modulatorThatWasAdded) {
+	refresh();
+}
 
-void CtrlrPanelModulatorList::modulatorRemoved(CtrlrModulator *modulatorRemoved) { refresh(); }
+void CtrlrPanelModulatorList::modulatorRemoved(CtrlrModulator *modulatorRemoved) {
+	refresh();
+}
 
 File CtrlrPanelModulatorList::getModListFile(const String &suffix) {
 	return (File::getSpecialLocation(File::tempDirectory)
@@ -219,21 +399,25 @@ const int CtrlrPanelModulatorList::getColumnIdForIdentifier(const String &column
 	return (-1);
 }
 
-int CtrlrPanelModulatorList::getNumRows() { return (copyOfModulatorList.size()); }
+int CtrlrPanelModulatorList::getNumRows() {
+	return (copyOfModulatorList.size());
+}
 
-void CtrlrPanelModulatorList::paintRowBackground (Graphics& g, int rowNumber, int width, int height, bool rowIsSelected)
-{
-	//https://github.com/damiensellier/CtrlrX/issues/295#issuecomment-4961237685
-    if (rowIsSelected) // Updated v5.6.36
-    {
-		Colour rowBackgroundColour = findColour (TextButton::buttonOnColourId);
-		
+void CtrlrPanelModulatorList::paintRowBackground(Graphics &g, int rowNumber, int width, int height,
+												 bool rowIsSelected) {
+	// https://github.com/damiensellier/CtrlrX/issues/295#issuecomment-4961237685
+	if (rowIsSelected) // Updated v5.6.36
+	{
+		Colour rowBackgroundColour = findColour(TextButton::buttonOnColourId);
+
 		// 1. Fill the background base
-		g.fillAll (rowBackgroundColour);
-		
+		g.fillAll(rowBackgroundColour);
+
 		// 2. Override the macro by passing your dynamic color as the 3rd argument
-		gui::drawSelectionRectangle (g, width, height, rowBackgroundColour, 1.0f, 1.0f, 0.0f, 0.0f); // This will remove the stuborn blue gradient at the end of the selected row. @dobo365 will like that.
-    }
+		gui::drawSelectionRectangle(g, width, height, rowBackgroundColour, 1.0f, 1.0f, 0.0f,
+									0.0f); // This will remove the stuborn blue gradient at the end of the selected row.
+										   // @dobo365 will like that.
+	}
 }
 
 juce::Component *CtrlrPanelModulatorList::refreshComponentForCell(int rowNumber, int columnId, bool isRowSelected,
@@ -564,8 +748,18 @@ PopupMenu CtrlrPanelModulatorList::getMenuForIndex(int topLevelMenuIndex, const 
 			m.addItem(8192 + i, getIdTree().getChild(i).getProperty(Ids::name), true,
 					  modulatorList->getHeader().isColumnVisible(i + 1));
 		}
-		menu.addSubMenu("Visible columns", m);
-		menu.addItem(13, "Reset columns to default");
+
+const bool searchMode = (bool)owner.getProperty(Ids::panelModulatorListAddMode);
+
+menu.addItem(15, "Searchable column picker", true, searchMode);
+
+if (searchMode)
+	menu.addItem(14, "Visible columns...");
+else
+	menu.addSubMenu("Visible columns", m);
+
+menu.addItem(13, "Reset columns to default");
+
 	}
 	return (menu);
 }
@@ -579,11 +773,13 @@ void CtrlrPanelModulatorList::menuItemSelected(int menuItemID, int topLevelMenuI
 		deleteSelected();
 	} else if (menuItemID == 3) {
 		switchView();
+	} else if (menuItemID == 14) {
+		showColumnPicker();
 	} else if (menuItemID >= 8192) {
 		handleColumnSelection(menuItemID);
 	} else if (menuItemID == 4) {
 		refresh();
-	} else if (menuItemID == 5 || menuItemID == 6) {
+	} else if (menuItemID == 5 || menuItemID == 6 || menuItemID == 15) {
 		handleSortSelection(menuItemID);
 	} else if (menuItemID == 7) {
 		makeVisibleItem();
@@ -610,6 +806,11 @@ void CtrlrPanelModulatorList::handleSortSelection(const int itemId) {
 		owner.setProperty(Ids::panelModulatorListSortOption, true);
 	if (itemId == 6)
 		owner.setProperty(Ids::panelModulatorListSortOption, false);
+	if (itemId == 15) {
+		const bool togglingAddMode = !owner.getProperty(Ids::panelModulatorListAddMode);
+		DBG("Toggling Add Mode: " + String(togglingAddMode ? "true" : "false"));
+		owner.setProperty(Ids::panelModulatorListAddMode, togglingAddMode);
+	}
 
 	modulatorList->updateContent();
 }
@@ -646,13 +847,21 @@ void CtrlrPanelModulatorList::timerCallback() {
 	}
 }
 
-void CtrlrPanelModulatorList::tableColumnsChanged(TableHeaderComponent *) { saveColumnState(); }
+void CtrlrPanelModulatorList::tableColumnsChanged(TableHeaderComponent *) {
+	saveColumnState();
+}
 
-void CtrlrPanelModulatorList::tableColumnsResized(TableHeaderComponent *t) { saveColumnState(); }
+void CtrlrPanelModulatorList::tableColumnsResized(TableHeaderComponent *t) {
+	saveColumnState();
+}
 
-void CtrlrPanelModulatorList::tableSortOrderChanged(TableHeaderComponent *) { saveColumnState(); }
+void CtrlrPanelModulatorList::tableSortOrderChanged(TableHeaderComponent *) {
+	saveColumnState();
+}
 
-void CtrlrPanelModulatorList::tableColumnDraggingChanged(TableHeaderComponent *, int) { saveColumnState(); }
+void CtrlrPanelModulatorList::tableColumnDraggingChanged(TableHeaderComponent *, int) {
+	saveColumnState();
+}
 
 void CtrlrPanelModulatorList::saveColumnState() {
 	const String state = modulatorList->getHeader().toString();
@@ -661,4 +870,114 @@ void CtrlrPanelModulatorList::saveColumnState() {
 	_DBG(state);
 
 	owner.setProperty(Ids::panelModulatorListColumns, state);
+}
+void CtrlrPanelModulatorList::textEditorTextChanged(juce::TextEditor &editor) {
+	if (&editor == &searchField) {
+		applyFuzzyFilter();
+	}
+}
+
+void CtrlrPanelModulatorList::applyFuzzyFilter() {
+	const juce::String query = searchField.getText().trim();
+
+	copyOfModulatorList.clear();
+
+	// If query is empty, copy all modulators directly
+	if (query.isEmpty()) {
+		for (int i = 0; i < masterModulatorList.size(); ++i) {
+			copyOfModulatorList.add(masterModulatorList[i]);
+		}
+	} else {
+		struct ScoredModulator {
+				WeakReference<CtrlrModulator> mod;
+				double score;
+		};
+
+		std::vector<ScoredModulator> scoredList;
+		const std::string queryStd = query.toStdString();
+
+		for (int i = 0; i < masterModulatorList.size(); ++i) {
+			CtrlrModulator *m = masterModulatorList[i].get();
+			if (!m)
+				continue;
+
+			const juce::String modName = m->getName();
+			const std::string nameStd = modName.toStdString();
+
+			// Calculate RapidFuzz ratio score
+			double score = rapidfuzz::fuzz::partial_ratio(queryStd, nameStd);
+
+			// Direct prefix match bonus
+			if (modName.startsWithIgnoreCase(query))
+				score += 20.0;
+
+			// Include items with reasonable match threshold
+			if (score > 55.0) {
+				scoredList.push_back({masterModulatorList[i], score});
+			}
+		}
+
+		// Sort filtered rows by best match score descending
+		std::sort(scoredList.begin(), scoredList.end(),
+				  [](const ScoredModulator &a, const ScoredModulator &b) { return a.score > b.score; });
+
+		// Populate copyOfModulatorList with filtered items
+		for (const auto &item : scoredList) {
+			copyOfModulatorList.add(item.mod);
+		}
+	}
+
+	// 1. Update JUCE TableListBox
+	if (modulatorList != nullptr) {
+		modulatorList->updateContent();
+		modulatorList->repaint();
+	}
+
+	// 2. Update Tree View
+	modulatorListTree.setSearchFilter(query);
+}
+
+void CtrlrPanelModulatorList::showColumnPicker() {
+#if JUCE_LINUX
+	const bool useFloatingWindow = true;
+#else
+	const bool useFloatingWindow = false;
+#endif
+
+	// Already open as a floating window: just bring it forward
+	if (columnPickerWindow != nullptr) {
+		columnPickerWindow->toFront(true);
+		return;
+	}
+
+	juce::StringArray names;
+	for (int i = 0; i < getIdTree().getNumChildren(); ++i)
+		names.add(getIdTree().getChild(i).getProperty(Ids::name).toString());
+
+	juce::Component::SafePointer<CtrlrPanelModulatorList> safe(this);
+
+	auto *picker = new ColumnPickerComponent(
+		names,
+		[safe](int i) { return safe != nullptr && safe->modulatorList->getHeader().isColumnVisible(i + 1); },
+		[safe](int i) {
+			if (safe != nullptr)
+				safe->handleColumnSelection(8192 + i);
+		});
+
+	if (useFloatingWindow) {
+		columnPickerWindow = std::make_unique<ColumnPickerWindow>(picker, [safe] {
+			// delete asynchronously, never from inside the window's own close handler
+			juce::MessageManager::callAsync([safe] {
+				if (safe != nullptr)
+					safe->columnPickerWindow.reset();
+			});
+		});
+		columnPickerWindow->centreAroundComponent(this, columnPickerWindow->getWidth(),
+												   columnPickerWindow->getHeight());
+		columnPickerWindow->setVisible(true);
+		return;
+	}
+
+	juce::CallOutBox::launchAsynchronously(std::unique_ptr<juce::Component>(picker),
+										   modulatorList->getHeader().getScreenBounds(), nullptr);
 }

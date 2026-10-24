@@ -61,8 +61,16 @@ class CtrlrEditor : public AudioProcessorEditor,
 			doPanelMode = 0x300a,
 			doPanelLock = 0x300b,
 			doPanelDisableCombosOnEdit = 0x3027,
+			doPanelToggleExternalLuaEdit = 0x300d,
+			doPanelScanExternalFolder = 0x300e,
 			doSendSnapshot = 0x300c,
+			doSnapshotSaveToFile = 0x302a,
+			doSnapshotLoadFromFile = 0x302b,
+			doSavePatchToJSON = 0x302c,
+			doLoadPatchFromJSON = 0x302d,
 			doRefreshDeviceList = 0x200b,
+			doSetSnapshotDelay = 0x302f,
+			doSetGlobalMidiDelay = 0x302e,
 			showLuaEditor = 0x3011,
 			showMidiLibrary = 0x3012,
 			showModulatorList = 0x3013,
@@ -71,6 +79,7 @@ class CtrlrEditor : public AudioProcessorEditor,
 			showLayers = 0x3016,
 			showLuaConsole = 0x3017,
 			showComparatorTables = 0x3018,
+			cleanOrphanProperties = 0x3021,
 			doRefreshPropertyLists = 0x3019,
 			doViewPropertyDisplayIDs = 0x3020,
 			doExportFileText = 0x4001,
@@ -83,6 +92,7 @@ class CtrlrEditor : public AudioProcessorEditor,
 			doSearchForProperty = 0x4018,
 			doExportFileInstanceRestricted = 0x4008,
 			doSnapshotStore = 0x4009,
+			doSnapshotLoad = 0x4010,
 			optMidiSnapshotOnLoad = 0x6003,
 			optMidiSnapshotOnProgramChange = 0x6004,
 			doPrevProgram = 0x6005,
@@ -108,8 +118,10 @@ class CtrlrEditor : public AudioProcessorEditor,
 			doKeyGenerator = 0x23,
 			doProgramWizard = 0x24,
 			doQuit = 0x00fffffe,
-			// showDumpByLuaHelp = 0x7100,
-			showExpressionHelp = 0x7101
+			showDumpByLuaHelp = 0x7100,
+			showExpressionHelp = 0x7101,
+			showDebuggerHelp = 0x7102,
+			showViewportHelp = 0x7106
 			// showMidiProgrammingHelp = 0x7102,
 			// showLuaUsefulCommandsHelp = 0x7103,
 			// showLuaFileOperationsHelp = 0x7104,
@@ -149,6 +161,7 @@ class CtrlrEditor : public AudioProcessorEditor,
 		const String getMidiSummary(const CtrlrMIDIDeviceType type = inputDevice);
 		bool isRestricted();
 		void performShowKeyboardMappingDialog(const int menuItemID);
+		void performShowGlobalSettingsDialog();
 		void performMidiChannelChange(const int menuItemID);
 		void performMidiDeviceChange(const int menuItemID);
 		void performMidiOptionChange(const int menuItemID);
@@ -212,9 +225,6 @@ class CtrlrEditor : public AudioProcessorEditor,
 		bool hideMidiThruMenu = false;
 		bool hideMidiChannelMenu = false;
 
-		bool vpResizable;
-		double vpFixedAspectRatio;
-		bool vpEnableFixedAspectRatio;
 		bool vpEnableResizableLimits;
 		int vpMinWidth;
 		int vpMinHeight;
