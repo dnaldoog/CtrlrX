@@ -23,6 +23,7 @@ struct ApiMethod {
 
 struct ApiClass {
     juce::String name;
+    std::vector<ApiMethod> constructor;
     std::vector<ApiMethod> methods;
     std::vector<ApiMethod> staticMethods;
 };

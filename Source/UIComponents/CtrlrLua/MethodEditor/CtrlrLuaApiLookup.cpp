@@ -210,12 +210,14 @@ CtrlrLuaApiLookup::CtrlrLuaApiLookup() {
     {
         ApiClass cls;
         cls.name = "BigInteger";
-        cls.methods.push_back({"clear", "instance", "()", 1});
-        cls.methods.push_back({"clearBit", "instance", "()", 1});
-        cls.methods.push_back({"compare", "instance", "()", 1});
-        cls.methods.push_back({"compareAbsolute", "instance", "()", 1});
-        cls.methods.push_back({"countNumberOfSetBits", "instance", "()", 1});
-        cls.methods.push_back({"divideBy", "instance", "()", 1});
+		cls.constructor.push_back({"BigInteger", "constructor", "()", 0});
+		cls.constructor.push_back({"BigInteger", "constructor", "(int)", 1});
+		cls.methods.push_back({"clear", "instance", "()", 1});
+		cls.methods.push_back({"clearBit", "instance", "()", 1});
+		cls.methods.push_back({"compare", "instance", "()", 1});
+		cls.methods.push_back({"compareAbsolute", "instance", "()", 1});
+		cls.methods.push_back({"countNumberOfSetBits", "instance", "()", 1});
+		cls.methods.push_back({"divideBy", "instance", "()", 1});
         cls.methods.push_back({"exponentModulo", "instance", "()", 1});
         cls.methods.push_back({"findGreatestCommonDivisor", "instance", "()", 1});
         cls.methods.push_back({"findNextClearBit", "instance", "()", 1});
@@ -969,8 +971,13 @@ CtrlrLuaApiLookup::CtrlrLuaApiLookup() {
     {
         ApiClass cls;
         cls.name = "CtrlrMidiMessage";
-        cls.methods.push_back({"getChannel", "instance", "()", 1});
-        cls.methods.push_back({"getData", "instance", "()", 1});
+
+		cls.constructor.push_back({"CtrlrMidiMessage", "constructor", "(String)", 0});
+		cls.constructor.push_back({"CtrlrMidiMessage", "constructor", "({})", 1});
+		cls.constructor.push_back({"CtrlrMidiMessage", "constructor", "(MemoryBlock())", 2});
+
+		cls.methods.push_back({"getChannel", "instance", "()", 1});
+		cls.methods.push_back({"getData", "instance", "()", 1});
         cls.methods.push_back({"getInitializationResult", "instance", "()", 1});
         cls.methods.push_back({"getLuaData", "instance", "()", 1});
         cls.methods.push_back({"getMidiMessageType", "instance", "()", 1});
@@ -1744,9 +1751,13 @@ CtrlrLuaApiLookup::CtrlrLuaApiLookup() {
     {
         ApiClass cls;
         cls.name = "Line";
-        cls.methods.push_back({"applyTransform", "instance", "()", 1});
-        cls.methods.push_back({"findNearestPointTo", "instance", "()", 1});
-        cls.methods.push_back({"findNearestProportionalPositionTo", "instance", "()", 1});
+		cls.constructor.push_back({"Line", "constructor", "()", 0});
+		cls.constructor.push_back({"Line", "constructor", "(float,float,float,float)", 1});
+		cls.constructor.push_back({"Line", "constructor", "(Point<float>, const Point<float>)", 2});
+		cls.constructor.push_back({"Line", "constructor", "(Line<float>)", 3});
+		cls.methods.push_back({"applyTransform", "instance", "()", 1});
+		cls.methods.push_back({"findNearestPointTo", "instance", "()", 1});
+		cls.methods.push_back({"findNearestProportionalPositionTo", "instance", "()", 1});
         cls.methods.push_back({"getAngle", "instance", "()", 1});
         cls.methods.push_back({"getDistanceFromPoint", "instance", "()", 1});
         cls.methods.push_back({"getEnd", "instance", "()", 1});
@@ -2119,10 +2130,14 @@ CtrlrLuaApiLookup::CtrlrLuaApiLookup() {
     {
         ApiClass cls;
         cls.name = "Point";
-        cls.methods.push_back({"addXY", "instance", "()", 1});
-        cls.methods.push_back({"applyTransform", "instance", "()", 1});
-        cls.methods.push_back({"getAngleToPoint", "instance", "()", 1});
-        cls.methods.push_back({"getDistanceFrom", "instance", "()", 1});
+		cls.constructor.push_back({"Point", "constructor", "()", 0});
+		cls.constructor.push_back({"Point", "constructor", "(float)", 1});
+		cls.constructor.push_back({"Point", "constructor", "(float,float)", 2});
+
+		cls.methods.push_back({"addXY", "instance", "()", 1});
+		cls.methods.push_back({"applyTransform", "instance", "()", 1});
+		cls.methods.push_back({"getAngleToPoint", "instance", "()", 1});
+		cls.methods.push_back({"getDistanceFrom", "instance", "()", 1});
         cls.methods.push_back({"getDistanceFromOrigin", "instance", "()", 1});
         cls.methods.push_back({"getPointOnCircumference", "instance", "()", 1});
         cls.methods.push_back({"getPointOnCircumference", "instance", "()", 2});
@@ -2209,8 +2224,13 @@ CtrlrLuaApiLookup::CtrlrLuaApiLookup() {
     {
         ApiClass cls;
         cls.name = "Rectangle";
-        cls.methods.push_back({"contains", "instance", "()", 1});
-        cls.methods.push_back({"contains", "instance", "()", 2});
+		cls.constructor.push_back({"Rectangle", "constructor", "()", 0});
+		cls.constructor.push_back({"Rectangle", "constructor", "(Rectangle)", 1});
+		cls.constructor.push_back({"Rectangle", "constructor", "(int,int,int,int)", 2});
+		cls.constructor.push_back({"Rectangle", "constructor", "(int,int)", 3});
+		cls.constructor.push_back({"Rectangle", "constructor", "(Point<int>,Point<int>)", 4});
+		cls.methods.push_back({"contains", "instance", "()", 1});
+		cls.methods.push_back({"contains", "instance", "()", 2});
         cls.methods.push_back({"contains", "instance", "()", 3});
         cls.methods.push_back({"contains", "instance", "()", 4});
         cls.methods.push_back({"enlargeIfAdjacent", "instance", "()", 1});
@@ -2345,7 +2365,85 @@ CtrlrLuaApiLookup::CtrlrLuaApiLookup() {
         classMap[cls.name] = cls;
     }
 
-    // --- RectanglePlacement ---
+	// --- RectangleFloat---
+	{
+		ApiClass cls;
+		cls.name = "RectangleFloat";
+		cls.constructor.push_back({"RectangleFloat", "constructor", "()", 0});
+		cls.constructor.push_back({"RectangleFloat", "constructor", "(Rectangle)", 1});
+		cls.constructor.push_back({"RectangleFloat", "constructor", "(float,float,float,float)", 2});
+		cls.constructor.push_back({"RectangleFloat", "constructor", "(float,float)", 3});
+		cls.constructor.push_back({"RectangleFloat", "constructor", "(Point<float>,Point<float>)", 4});
+		cls.methods.push_back({"isEmpty", "instance", "()", 1});
+		cls.methods.push_back({"getX", "instance", "()", 1});
+		cls.methods.push_back({"getY", "instance", "()", 1});
+		cls.methods.push_back({"getWidth", "instance", "()", 1});
+		cls.methods.push_back({"getHeight", "instance", "()", 1});
+		cls.methods.push_back({"getRight", "instance", "()", 1});
+		cls.methods.push_back({"getBottom", "instance", "()", 1});
+		cls.methods.push_back({"getCentreX", "instance", "()", 1});
+		cls.methods.push_back({"getCentreY", "instance", "()", 1});
+		cls.methods.push_back({"getCentre", "instance", "()", 1});
+		cls.methods.push_back({"getAspectRatio", "instance", "()", 1});
+		cls.methods.push_back({"getPosition", "instance", "()", 1});
+		cls.methods.push_back({"setPosition", "instance", "()", 1});
+		cls.methods.push_back({"setPosition", "instance", "()", 2});
+		cls.methods.push_back({"getTopLeft", "instance", "()", 1});
+		cls.methods.push_back({"getTopRight", "instance", "()", 1});
+		cls.methods.push_back({"getBottomLeft", "instance", "()", 1});
+		cls.methods.push_back({"getBottomRight", "instance", "()", 1});
+		cls.methods.push_back({"setSize", "instance", "()", 1});
+		cls.methods.push_back({"setBounds", "instance", "()", 1});
+		cls.methods.push_back({"setX", "instance", "()", 1});
+		cls.methods.push_back({"setY", "instance", "()", 1});
+		cls.methods.push_back({"setWidth", "instance", "()", 1});
+		cls.methods.push_back({"setHeight", "instance", "()", 1});
+		cls.methods.push_back({"withX", "instance", "()", 1});
+		cls.methods.push_back({"withY", "instance", "()", 1});
+		cls.methods.push_back({"withPosition", "instance", "()", 1});
+		cls.methods.push_back({"withPosition", "instance", "()", 2});
+		cls.methods.push_back({"withZeroOrigin", "instance", "()", 1});
+		cls.methods.push_back({"withWidth", "instance", "()", 1});
+		cls.methods.push_back({"withHeight", "instance", "()", 1});
+		cls.methods.push_back({"withSize", "instance", "()", 1});
+		cls.methods.push_back({"setLeft", "instance", "()", 1});
+		cls.methods.push_back({"withLeft", "instance", "()", 1});
+		cls.methods.push_back({"setTop", "instance", "()", 1});
+		cls.methods.push_back({"withTop", "instance", "()", 1});
+		cls.methods.push_back({"setRight", "instance", "()", 1});
+		cls.methods.push_back({"withRight", "instance", "()", 1});
+		cls.methods.push_back({"setBottom", "instance", "()", 1});
+		cls.methods.push_back({"withBottom", "instance", "()", 1});
+		cls.methods.push_back({"translate", "instance", "()", 1});
+		cls.methods.push_back({"translated", "instance", "()", 1});
+		cls.methods.push_back({"expand", "instance", "()", 1});
+		cls.methods.push_back({"expanded", "instance", "()", 1});
+		cls.methods.push_back({"expanded", "instance", "()", 2});
+		cls.methods.push_back({"reduce", "instance", "()", 1});
+		cls.methods.push_back({"reduced", "instance", "()", 1});
+		cls.methods.push_back({"reduced", "instance", "()", 2});
+		cls.methods.push_back({"removeFromTop", "instance", "()", 1});
+		cls.methods.push_back({"removeFromLeft", "instance", "()", 1});
+		cls.methods.push_back({"removeFromRight", "instance", "()", 1});
+		cls.methods.push_back({"removeFromBottom", "instance", "()", 1});
+		cls.methods.push_back({"contains", "instance", "()", 1});
+		cls.methods.push_back({"contains", "instance", "()", 2});
+		cls.methods.push_back({"getConstrainedPoint", "instance", "()", 1});
+		cls.methods.push_back({"getIntersection", "instance", "()", 1});
+		cls.methods.push_back({"getUnion", "instance", "()", 1});
+		cls.methods.push_back({"enlargeIfAdjacent", "instance", "()", 1});
+		cls.methods.push_back({"reduceIfPartlyContainedIn", "instance", "()", 1});
+		cls.methods.push_back({"transformedBy", "instance", "()", 1});
+		cls.methods.push_back({"toString", "instance", "()", 1});
+		cls.methods.push_back({"leftTopRightBottom", "instance", "()", 1});
+		cls.methods.push_back({"findAreaContainingPoints", "instance", "()", 1});
+		cls.methods.push_back({"intersectRectangles", "instance", "()", 1});
+		cls.methods.push_back({"fromString", "instance", "()", 1});
+		cls.methods.push_back({"toInt", "instance", "()", 1});
+		classMap[cls.name] = cls;
+	}
+
+	// --- RectanglePlacement ---
     {
         ApiClass cls;
         cls.name = "RectanglePlacement";
@@ -2495,9 +2593,10 @@ CtrlrLuaApiLookup::CtrlrLuaApiLookup() {
     {
         ApiClass cls;
         cls.name = "String";
-        cls.methods.push_back({"append", "instance", "(String, size_t)", 1});
-        cls.methods.push_back({"compare", "instance", "(wchar_t)", 1});
-        cls.methods.push_back({"compare", "instance", "(wchar_t)", 2});
+
+		cls.methods.push_back({"append", "instance", "(String, size_t)", 1});
+		cls.methods.push_back({"compare", "instance", "(wchar_t)", 1});
+		cls.methods.push_back({"compare", "instance", "(wchar_t)", 2});
         cls.methods.push_back({"compareIgnoreCase", "instance", "(String)", 1});
         cls.methods.push_back({"compareIgnoreCase", "instance", "(String)", 2});
         cls.methods.push_back({"compareNatural", "instance", "()", 1});
@@ -3168,36 +3267,42 @@ CtrlrLuaApiLookup::CtrlrLuaApiLookup() {
         cls.staticMethods.push_back({"saveFileWindow", "static", "(String, File, String, bool)", 1});
         cls.staticMethods.push_back({"unpackDsiData", "static", "()", 1});
         cls.staticMethods.push_back({"warnWindow", "static", "(String, String)", 1});
-        classMap[cls.name] = cls;
-    }
+		cls.staticMethods.push_back({"questionWindowAsync", "static", "()", 1});
+		cls.staticMethods.push_back({"askForTextInputWindowAsync", "static", "()", 1});
 
-    // --- MemoryBlock ---
-    {
-        ApiClass cls;
-        cls.name = "MemoryBlock";
-        cls.methods.push_back({"append", "instance", "(MemoryBlock)", 1});
-        cls.methods.push_back({"compressGzip", "instance", "()", 1});
-        cls.methods.push_back({"compressZlib", "instance", "()", 1});
-        cls.methods.push_back({"createFromTable", "instance", "(table)", 1});
-        cls.methods.push_back({"decompressGzip", "instance", "()", 1});
-        cls.methods.push_back({"decompressZlib", "instance", "()", 1});
-        cls.methods.push_back({"ensureSize", "instance", "()", 1});
-        cls.methods.push_back({"fillWith", "instance", "()", 1});
+		classMap[cls.name] = cls;
+	}
+
+	// --- MemoryBlock ---
+	{
+		ApiClass cls;
+		cls.name = "MemoryBlock";
+		cls.constructor.push_back({"MemoryBlock", "constructor", "()", 0});
+		cls.constructor.push_back({"MemoryBlock", "constructor", "(size, clearMemory)", 2});
+		cls.constructor.push_back({"MemoryBlock", "constructor", "(otherMemoryBlock)", 1});
+		cls.constructor.push_back({"MemoryBlock", "constructor", "(stringData)", 1});
+		cls.methods.push_back({"compressGzip", "instance", "()", 1});
+		cls.methods.push_back({"compressZlib", "instance", "()", 1});
+		cls.methods.push_back({"createFromTable", "instance", "(table)", 1});
+		cls.methods.push_back({"decompressGzip", "instance", "()", 1});
+		cls.methods.push_back({"decompressZlib", "instance", "()", 1});
+		cls.methods.push_back({"ensureSize", "instance", "()", 1});
+		cls.methods.push_back({"fillWith", "instance", "()", 1});
         cls.methods.push_back({"fromBase64Encoding", "instance", "()", 1});
         cls.methods.push_back({"getBitRange", "instance", "(int, int)", 1});
         cls.methods.push_back({"getByte", "instance", "(int)", 1});
         cls.methods.push_back({"getData", "instance", "()", 1});
+        cls.methods.push_back({"getRawAddress", "instance", "(MemoryBlock::getData())", 1});
         cls.methods.push_back({"getRange", "instance", "(int, int)", 1});
-        cls.methods.push_back({"getSize", "instance", "()", 1});
-        cls.methods.push_back({"init", "instance", "(int)", 1});
-        cls.methods.push_back({"insert", "instance", "(MemoryBlock, int, int)", 1});
-        cls.methods.push_back({"insert", "instance", "(MemoryBlock, int, int)", 2});
-        cls.methods.push_back({"insertIntoTable", "instance", "(table)", 1});
-        cls.methods.push_back({"loadFromHexString", "instance", "(String hex)", 1});
-        cls.methods.push_back({"pushLString", "instance", "()", 1});
-        cls.methods.push_back({"removeSection", "instance", "(int, int)", 1});
-        cls.methods.push_back({"replaceWith", "instance", "(MemoryBlock)", 1});
-        cls.methods.push_back({"setBitRange", "instance", "(int, int, int)", 1});
+		cls.methods.push_back({"getSize", "instance", "()", 1});
+		cls.methods.push_back({"insert", "instance", "(MemoryBlock, int, int)", 1});
+		cls.methods.push_back({"insert", "instance", "(MemoryBlock, int, int)", 2});
+		cls.methods.push_back({"insertIntoTable", "instance", "(table)", 1});
+		cls.methods.push_back({"loadFromHexString", "instance", "(String hex)", 1});
+		cls.methods.push_back({"pushLString", "instance", "()", 1});
+		cls.methods.push_back({"removeSection", "instance", "(int, int)", 1});
+		cls.methods.push_back({"replaceWith", "instance", "(MemoryBlock)", 1});
+		cls.methods.push_back({"setBitRange", "instance", "(int, int, int)", 1});
         cls.methods.push_back({"setByte", "instance", "(int, uint8)", 1});
         cls.methods.push_back({"setSize", "instance", "()", 1});
         cls.methods.push_back({"swapWith", "instance", "()", 1});
@@ -3221,17 +3326,18 @@ CtrlrLuaApiLookup::CtrlrLuaApiLookup() {
         cls.staticMethods.push_back({"copyFrom", "static", "(MemoryBlock source, int start, int size)", 1});
         cls.staticMethods.push_back({"copyTo", "static", "(MemoryBlock dest, int start, int size)", 1});
         classMap[cls.name] = cls;
-    }
+	}
 
-    // --- AlertWindow ---
-    {
-        ApiClass cls;
-        cls.name = "AlertWindow";
-        cls.methods.push_back({"addButton", "instance", "()", 1});
-        cls.methods.push_back({"addComboBox", "instance", "()", 1});
-        cls.methods.push_back({"addCustomComponent", "instance", "()", 1});
-        cls.methods.push_back({"addProgressBarComponent", "instance", "()", 1});
-        cls.methods.push_back({"addTextBlock", "instance", "()", 1});
+	// --- AlertWindow ---
+	{
+		ApiClass cls;
+		cls.name = "AlertWindow";
+		cls.constructor.push_back({"AlertWindow", "constructor", "(String,String,Icon)", 0});
+		cls.methods.push_back({"addButton", "instance", "()", 1});
+		cls.methods.push_back({"addComboBox", "instance", "()", 1});
+		cls.methods.push_back({"addCustomComponent", "instance", "()", 1});
+		cls.methods.push_back({"addProgressBarComponent", "instance", "()", 1});
+		cls.methods.push_back({"addTextBlock", "instance", "()", 1});
         cls.methods.push_back({"addTextEditor", "instance", "()", 1});
         cls.methods.push_back({"containsAnyExtraComponents", "instance", "()", 1});
         cls.methods.push_back({"exitModalState", "instance", "()", 1});
@@ -3255,23 +3361,23 @@ CtrlrLuaApiLookup::CtrlrLuaApiLookup() {
         cls.staticMethods.push_back({"showOkCancelBox", "static", "(AlertIconType, String, String, String, String)", 1});
         cls.staticMethods.push_back({"showYesNoCancelBox", "static", "(AlertIconType, String, String, String, String, String)", 1});
         classMap[cls.name] = cls;
-    }
+	}
 
-    // --- BubbleMessageComponent ---
-    {
-        ApiClass cls;
-        cls.name = "BubbleMessageComponent";
-        cls.methods.push_back({"getContentSize", "instance", "(int, int)", 1});
+	// --- BubbleMessageComponent ---
+	{
+		ApiClass cls;
+		cls.name = "BubbleMessageComponent";
+		cls.methods.push_back({"getContentSize", "instance", "(int, int)", 1});
         cls.methods.push_back({"showAt", "instance", "(Rectangle<int>, String, int, bool, bool)", 1});
         cls.methods.push_back({"showAt", "instance", "(Rectangle<int>, String, int, bool, bool)", 2});
         cls.methods.push_back({"showAt", "instance", "(Rectangle<int>, String, int, bool, bool)", 3});
         cls.methods.push_back({"showAt", "instance", "(Rectangle<int>, String, int, bool, bool)", 4});
         classMap[cls.name] = cls;
-    }
+	}
 
-    // --- AudioFormatManager ---
-    {
-        ApiClass cls;
+	// --- AudioFormatManager ---
+	{
+		ApiClass cls;
         cls.name = "AudioFormatManager";
         cls.methods.push_back({"createReaderFor", "instance", "()", 1});
         cls.methods.push_back({"findFormatForFileExtension", "instance", "()", 1});
@@ -3281,9 +3387,9 @@ CtrlrLuaApiLookup::CtrlrLuaApiLookup() {
         cls.methods.push_back({"getWildcardForAllFormats", "instance", "()", 1});
         cls.methods.push_back({"registerBasicFormats", "instance", "()", 1});
         classMap[cls.name] = cls;
-    }
+	}
 
-    // --- PopupMenu ---
+	// --- PopupMenu ---
     {
         ApiClass cls;
         cls.name = "PopupMenu";
@@ -3300,32 +3406,35 @@ CtrlrLuaApiLookup::CtrlrLuaApiLookup() {
         cls.methods.push_back({"show", "instance", "(int)", 2});
         cls.methods.push_back({"showAt", "instance", "(Rectangle<int>, int)", 1});
         cls.methods.push_back({"showAt", "instance", "(Rectangle<int>, int)", 2});
-        classMap[cls.name] = cls;
-    }
+		cls.methods.push_back({"showAsync", "instance", "(Component,Height, function callback)", 1});
+		cls.methods.push_back({"showAtAsync", "instance", "(Component,Height, function callback)", 1});
+		cls.methods.push_back({"showAtAsync", "instance", "(Rectangle,Height, function callback)", 2});
 
-    // --- RelativeCoordinate ---
-    {
-        ApiClass cls;
-        cls.name = "RelativeCoordinate";
-        cls.methods.push_back({"getExpression", "instance", "()", 1});
-        cls.methods.push_back({"isDynamic", "instance", "()", 1});
-        cls.methods.push_back({"isRecursive", "instance", "()", 1});
+		classMap[cls.name] = cls;
+	}
+
+	// --- RelativeCoordinate ---
+	{
+		ApiClass cls;
+		cls.name = "RelativeCoordinate";
+		cls.methods.push_back({"getExpression", "instance", "()", 1});
+		cls.methods.push_back({"isDynamic", "instance", "()", 1});
+		cls.methods.push_back({"isRecursive", "instance", "()", 1});
         cls.methods.push_back({"moveToAbsolute", "instance", "()", 1});
         cls.methods.push_back({"resolve", "instance", "()", 1});
         cls.methods.push_back({"toString", "instance", "()", 1});
         classMap[cls.name] = cls;
-    }
+	}
 
-    // --- ThreadWithProgressWindow ---
-    {
-        ApiClass cls;
-        cls.name = "ThreadWithProgressWindow";
-        cls.methods.push_back({"runThread", "instance", "()", 1});
+	// --- ThreadWithProgressWindow ---
+	{
+		ApiClass cls;
+		cls.name = "ThreadWithProgressWindow";
+		cls.methods.push_back({"runThread", "instance", "()", 1});
         cls.methods.push_back({"setProgress", "instance", "(double)", 1});
         cls.methods.push_back({"setStatusMessage", "instance", "(String)", 1});
         cls.methods.push_back({"setThreadFunction", "instance", "(table)", 1});
         cls.methods.push_back({"wait", "instance", "()", 1});
         classMap[cls.name] = cls;
-    }
-
+	}
 }

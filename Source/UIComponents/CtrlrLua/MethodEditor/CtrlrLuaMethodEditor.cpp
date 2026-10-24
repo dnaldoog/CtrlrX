@@ -1000,7 +1000,7 @@ const Font CtrlrLuaMethodEditor::getItemFont(const ValueTree &item) const {
 }
 
 Drawable *CtrlrLuaMethodEditor::getIconForItem(const ValueTree &item) const {
-	DBG("CALL getIconForItem: " + item.getType().toString() + " - " + item.getProperty(Ids::name).toString());
+	//DBG("CALL getIconForItem: " + item.getType().toString() + " - " + item.getProperty(Ids::name).toString());
 	if (item.hasType(Ids::luaMethod)) {
 		if ((int)item.getProperty(Ids::luaMethodSource) == (int)CtrlrLuaMethod::codeInProperty) {
 			return gui::createDrawable(BIN2STR(cog_svg));

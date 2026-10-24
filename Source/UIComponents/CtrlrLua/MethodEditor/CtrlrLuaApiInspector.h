@@ -115,6 +115,7 @@ private:
     void inspectClass(const juce::String& className);
     void listAllClasses();
 	void updateClassCache(); // Populates classNamesCache from Lua
+	void auditClassMethods(const juce::String& className);
 	CtrlrApiSuggestionList suggestionList;
 
 	void textEditorFocusLost(juce::TextEditor &editor) override;
