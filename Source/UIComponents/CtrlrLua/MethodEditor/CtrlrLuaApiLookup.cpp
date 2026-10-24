@@ -3187,6 +3187,7 @@ CtrlrLuaApiLookup::CtrlrLuaApiLookup() {
         cls.methods.push_back({"getBitRange", "instance", "(int, int)", 1});
         cls.methods.push_back({"getByte", "instance", "(int)", 1});
         cls.methods.push_back({"getData", "instance", "()", 1});
+        cls.methods.push_back({"getRawAddress", "instance", "(MemoryBlock::getData())", 1});
         cls.methods.push_back({"getRange", "instance", "(int, int)", 1});
         cls.methods.push_back({"getSize", "instance", "()", 1});
         cls.methods.push_back({"init", "instance", "(int)", 1});

@@ -369,13 +369,110 @@ void CtrlrLuaApiInspector::listAllClasses() // create links
 void CtrlrLuaApiInspector::updateClassCache() {
     classNamesCache.clear();
     classNamesCache = CtrlrLuaApiLookup::getInstance().getAllClassNames();
+#if JUCE_DEBUG // Check which luabind class names have been added to Ctrlr but are not present in classMap
+	DBG("CHECK MISSING");
+	const juce::String luaScript = "local names = class_names()\n"
+								   "if names == nil then return '' end\n"
+								   "local ret = ''\n"
+								   "for _, v in ipairs(names) do ret = ret .. tostring(v) .. '\\n' end\n"
+								   "return ret";
+
+	juce::String result = runLuaAndGetResult(luaScript);
+	juce::StringArray luaClasses;
+	luaClasses.addLines(result);
+	luaClasses.removeEmptyStrings();
+
+	// 2. Populate your autocomplete cache from C++ DB as normal
+	classNamesCache = CtrlrLuaApiLookup::getInstance().getAllClassNames();
+
+	// 3. AUDIT: Find which Lua classes are MISSING from your hardcoded C++ database
+	auto &db = CtrlrLuaApiLookup::getInstance();
+	int missingCount = 0;
+
+	for (const auto &luaClass : luaClasses) {
+		if (!db.hasClass(luaClass)) {
+			DBG("⚠️ LUA API AUDIT: Class '" << luaClass
+										   << "' exists in Lua/luabind but is MISSING from CtrlrLuaApiLookup!");
+			missingCount++;
+		}
+	}
+
+	if (missingCount > 0) {
+		DBG("⚠️ LUA API AUDIT SUMMARY: " << missingCount << " classes are missing from your C++ database.");
+	} else {
+		DBG("✅ LUA API AUDIT: All runtime classes are successfully covered in the C++ database!");
+	}
+
+#endif
 }
+
+#if JUCE_DEBUG
+void CtrlrLuaApiInspector::auditClassMethods(const juce::String& className) {
+    auto& db = CtrlrLuaApiLookup::getInstance();
+    if (!db.hasClass(className))
+        return;
+
+    const ApiClass* apiClass = db.getClassInfo(className);
+
+    juce::String luaScript;
+    luaScript << "if " << className << " ~= nil then return what(" << className << ") else return '' end";
+    juce::String runtimeWhatOutput = runLuaAndGetResult(luaScript);
+
+    if (runtimeWhatOutput.isEmpty() || runtimeWhatOutput.startsWith("Lua Error"))
+        return;
+
+    std::set<juce::String> cppMethods;
+    for (const auto& m : apiClass->staticMethods)
+        cppMethods.insert(m.name);
+    for (const auto& m : apiClass->methods)
+        cppMethods.insert(m.name);
+
+    juce::StringArray runtimeLines;
+    runtimeLines.addLines(runtimeWhatOutput);
+
+    for (const auto& line : runtimeLines) {
+        juce::String trimmedLine = line.trim();
+        
+        // Skip headers, metadata, or empty lines
+        if (trimmedLine.isEmpty() || trimmedLine.contains("---") || 
+            trimmedLine.startsWith("Object type") || trimmedLine.startsWith("Members:") ||
+            trimmedLine.startsWith("Attributes:")) 
+        {
+            continue;
+        }
+
+        juce::String methodName;
+        int colonIndex = trimmedLine.indexOf(":");
+        int parenIndex = trimmedLine.indexOf("(");
+
+        if (colonIndex != -1) {
+            methodName = trimmedLine.substring(0, colonIndex).trim();
+        } else if (parenIndex != -1) {
+            methodName = trimmedLine.substring(0, parenIndex).trim();
+        } else {
+            methodName = trimmedLine.upToFirstOccurrenceOf(" ", false, false).trim();
+        }
+
+        // Ignore luabind's internal constructor hook
+        if (methodName == "__init")
+            continue;
+
+        if (methodName.isNotEmpty()) {
+            if (cppMethods.find(methodName) == cppMethods.end()) {
+                DBG("⚠️ METHOD AUDIT [" << className << "]: Method '" << methodName << "' exists in Lua/luabind but is MISSING from CtrlrLuaApiLookup!");
+            }
+        }
+    }
+}
+#endif
 
 void CtrlrLuaApiInspector::inspectClass(const juce::String &className) {
     if (className.isEmpty())
         return;
-
-    auto& db = CtrlrLuaApiLookup::getInstance();
+#if JUCE_DEBUG
+	auditClassMethods(className); // Debug only
+#endif
+	auto& db = CtrlrLuaApiLookup::getInstance();
     if (db.hasClass(className)) {
         const ApiClass* apiClass = db.getClassInfo(className);
         
