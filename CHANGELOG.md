@@ -1,8 +1,9 @@
 [back to release page &rArr;](https://github.com/dnaldoog/CtrlrX/releases)
+
 ----
 
 
-##### CtrlrX v8.71 10/24/2026
+### CtrlrX v8.71 10/24/2026
 
 - Fix PopupMenu::showAt() leaving menu window open in JUCE 8
 - The sync show helpers pump the message loop around showMenuAsync() to
