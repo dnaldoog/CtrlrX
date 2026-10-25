@@ -497,8 +497,8 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		// MIDI channel or use CC messages.
 		bool nrpnHeaderLatched = false;
 		int nrpnLatchedNumber = -1;
-		String nrpnLatchedFormula; // tracks which formula type is active
-		uint32 bootstrapStartTime; // Used to track how long the bootstrap process takes, and to prevent it from taking
-								   // too long and causing instability. Added v5.6.34
-		bool isBootstrapTimerActive; // Added v5.6.36
+		String nrpnLatchedFormula; // tracks which formula type is active 
+		//uint32 bootstrapStartTime; // Used to track how long the bootstrap process takes, and to prevent it from taking
+								   // too long and causing instability. Added v5.6.34 Removed v.8.72
+		//bool isBootstrapTimerActive; // Added v5.6.36 Removed v.8.72
 };

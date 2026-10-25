@@ -378,9 +378,8 @@ void CtrlrPanel::bootstrapPanel(const bool setInitialProgram) {
 		return;
 
 	boostrapStateStatus = true;
-	// Capture the exact system time when boot started
-	bootstrapStartTime = juce::Time::getMillisecondCounter();
-	isBootstrapTimerActive = true;
+	_DBG("[Gate] bootstrap START, isLoading=" + String(isLoading() ? "true" : "false"));
+
 	for (int i = 0; i < ctrlrModulators.size(); i++) {
 		ctrlrModulators[i]->allModulatorsInitialized();
 	}
@@ -410,14 +409,24 @@ void CtrlrPanel::bootstrapPanel(const bool setInitialProgram) {
 
 	boostrapStateStatus = false;
 	postBootstrapGate = true;
+	const double gateStartMs = juce::Time::getMillisecondCounterHiRes();
+	// _DBG("[Gate] bootstrap END, isLoading=" + String(isLoading() ? "true" : "false"));
 
-	juce::MessageManager::callAsync([safe = juce::WeakReference<CtrlrPanel>(this)] {
+	juce::MessageManager::callAsync([safe = juce::WeakReference<CtrlrPanel>(this), gateStartMs] {
 		if (safe == nullptr)
 			return;
 
-		juce::MessageManager::callAsync([safe] {
-			if (safe != nullptr)
+		// _DBG("[Gate] hop 1 reached, +" +
+		// 	 String(juce::Time::getMillisecondCounterHiRes() - gateStartMs, 3) +
+		// 	 " ms, isLoading=" + String(safe->isLoading() ? "true" : "false"));
+
+		juce::MessageManager::callAsync([safe, gateStartMs] {
+			if (safe != nullptr) {
 				safe->postBootstrapGate = false;
+				// _DBG("[Gate] hop 2 reached, gate CLOSED, +" +
+				// 	 String(juce::Time::getMillisecondCounterHiRes() - gateStartMs, 3) +
+				// 	 " ms, isLoading=" + String(safe->isLoading() ? "true" : "false"));
+			}
 		});
 	});
 }
