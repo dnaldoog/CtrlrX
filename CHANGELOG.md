@@ -1,6 +1,16 @@
 [back to release page &rArr;](https://github.com/dnaldoog/CtrlrX/releases)
 
 ----
+### CtrlrX v8.72 10/25/2026
+
+- Fixed: panel:isLoading() no longer uses a fixed 400 ms cooldown. It now
+  stays true until all work queued during panel load has finished, so
+  Lua callbacks guarded by it are reliably skipped during load and run
+  immediately afterwards (no timing dead zone, including on large
+  panels and in Standalone).
+- Update to CtrlrModulatorProcessor::setParameterNotifyingHost()
+    Re: https://github.com/damiensellier/CtrlrX/pull/324
+- https://github.com/dnaldoog/CtrlrX/commit/decc196f00925b755b91466aa4d56226307c6420
 
 
 ### CtrlrX v8.71 10/24/2026
