@@ -378,46 +378,30 @@ void CtrlrPanel::bootstrapPanel(const bool setInitialProgram) {
 		return;
 
 	boostrapStateStatus = true;
-	// Capture the exact system time when boot started
-	bootstrapStartTime = juce::Time::getMillisecondCounter();
-	isBootstrapTimerActive = true;
-	for (int i = 0; i < ctrlrModulators.size(); i++) {
-		ctrlrModulators[i]->allModulatorsInitialized();
-	}
+	_INF("[Gate] bootstrap START, isLoading=" + String(isLoading() ? "true" : "false")); // 1
 
-	if (setInitialProgram)
-		setProgram(initialProgram);
+	// ... existing code ...
 
-	if (luaPanelLoadedCbk.get()) {
-		if (luaPanelLoadedCbk->isValid()) {
-			getCtrlrLuaManager().getMethodManager().call(luaPanelLoadedCbk, (uint8)owner.getInstanceMode());
-		}
-	}
-
-	if ((bool)getProperty(Ids::panelMidiSendProgramChangeOnLoad) == true) {
-		sendMidiProgramChange();
-	}
-
-	editModeChanged(getProperty(Ids::uiPanelEditMode));
-
-	sendSnapshotOnLoad();
-
-	// Synchronously dispatch any pending change message in each modulator to prevent Lua Callback functions beeing
-	// called on startup
 	for (int i = 0; i < ctrlrModulators.size(); i++) {
 		ctrlrModulators[i]->getProcessor().handleUpdateNowIfNeeded();
 	}
 
 	boostrapStateStatus = false;
 	postBootstrapGate = true;
+	_DBG("[Gate] bootstrap END, isLoading=" + String(isLoading() ? "true" : "false")); // 2
 
 	juce::MessageManager::callAsync([safe = juce::WeakReference<CtrlrPanel>(this)] {
 		if (safe == nullptr)
 			return;
 
+		_DBG("[Gate] hop 1 reached, isLoading=" + String(safe->isLoading() ? "true" : "false")); // 3
+
 		juce::MessageManager::callAsync([safe] {
-			if (safe != nullptr)
+			if (safe != nullptr) {
 				safe->postBootstrapGate = false;
+				_DBG("[Gate] hop 2 reached, gate CLOSED, isLoading=" +
+					 String(safe->isLoading() ? "true" : "false")); // 4
+			}
 		});
 	});
 }
