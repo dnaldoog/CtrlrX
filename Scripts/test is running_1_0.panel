@@ -36,7 +36,7 @@
     <uiChildWindow uiChildWindowName="LuaMethodEditor" uiChildWindowState="fs 8 31 800 500">
       <uiChildWindowContentState luaMethodEditor="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#13;&#10;&#13;&#10;&lt;CLOSED id=&quot;LUA&quot; scrollPos=&quot;0&quot;/&gt;&#13;&#10;;07a4de8a82f44a60825fb4d4b727292f:4acc3de1cac64e2684be73630b6d6c58"/>
     </uiChildWindow>
-    <uiChildWindow uiChildWindowName="LuaConsole" uiChildWindowState="772 602 800 500">
+    <uiChildWindow uiChildWindowName="LuaConsole" uiChildWindowState="295 552 800 500">
       <uiChildWindowContentState/>
     </uiChildWindow>
     <uiChildWindow uiChildWindowName="ModulatorList" uiChildWindowState="560 266 800 500">
@@ -48,10 +48,10 @@
       <luaMethod luaMethodName="testIsLoading" luaMethodCode="--&#10;-- Called when a modulator value changes&#10;-- get name of modulator with L(mod:getName())&#10;-- @value    new numeric value of the modulator&#10;-- @source indicates what caused the change&#10;--&#10;-- * initial value = 0&#10;-- * changed by Host = 1&#10;-- * changed by MidiIn = 2&#10;-- * changed by MidiController = 3&#10;-- * changed by GUI = 4&#10;-- * changed by Lua = 5&#10;-- * changed by Program = 6&#10;-- * changed by Link = 7&#10;-- * change by Unknown = 8&#10;&#10;testIsLoading = function(--[[ CtrlrModulator --]] mod, --[[ number --]] value, --[[ number --]] source)&#10;-- Safety Check: Prevents methods firing during boot, DAW load, or preset changes.&#10;-- Combines getBootstrapState(), getRestoreState(), and getProgramState().&#10;-- (Optionally delete this line if this function must run during initialization)&#10;console(&quot;cb fired, isLoading=&quot; .. tostring(panel:isLoading()))&#13;&#10;if panel:isLoading() then&#13;&#10;    console(&quot;blocked: myCallbackName&quot;)&#13;&#10;        return&#13;&#10;    end&#13;&#10;&#13;&#10;console(&quot;code running: Value=&quot;..value)&#10;&#10;&#10;end"
                  luaMethodLinkedProperty="luaModulatorValueChange" luaMethodSource="0"
                  uuid="07a4de8a82f44a60825fb4d4b727292f" luaMethodValid="1"/>
-      <luaMethod luaMethodName="init" luaMethodCode="--&#13;&#10;-- Called when the panel has finished loading&#13;&#10;--&#13;&#10;-- @type the type of instance being started, types available in the CtrlrPanel&#13;&#10;-- class as enum&#13;&#10;--&#13;&#10;-- InstanceSingle&#13;&#10;-- InstanceMulti&#13;&#10;-- InstanceSingleRestricted&#13;&#10;-- InstanceSingleEngine&#13;&#10;-- InstanceMultiEngine&#13;&#10;-- InstanceSingleRestrictedEngine&#13;&#10;--&#13;&#10;init = function()&#13;&#10;    console(&quot;I am code that is luaPanelLoaded&quot;)&#13;&#10;    timerid = 1&#13;&#10;&#13;&#10;    timer:setCallback(timerid, t)&#13;&#10;    timer:startTimer(timerid, 500)&#13;&#10;end&#13;&#10;&#13;&#10;t = function(timerId) -- keep as a global so it isn't garbage collected&#13;&#10;    if timerId == 1 then&#13;&#10;        local ranv = math.random(0, 127)&#13;&#10;        panel:getModulatorByName(&quot;targetMod&quot;):setModulatorValue(ranv, false, true, false)&#13;&#10;        console(&quot;post-load set: &quot; .. ranv .. &quot; isLoading=&quot; .. tostring(panel:isLoading()))&#13;&#10;        panel:getLabelComponent(&quot;randL&quot;):setText(String(ranv))&#13;&#10;        timer:stopTimer(timerId)&#13;&#10;    end&#13;&#10;end&#13;&#10;"
+      <luaMethod luaMethodName="init" luaMethodCode="--&#13;&#10;-- Called when the panel has finished loading&#13;&#10;--&#13;&#10;-- @type the type of instance being started, types available in the CtrlrPanel&#13;&#10;-- class as enum&#13;&#10;--&#13;&#10;-- InstanceSingle&#13;&#10;-- InstanceMulti&#13;&#10;-- InstanceSingleRestricted&#13;&#10;-- InstanceSingleEngine&#13;&#10;-- InstanceMultiEngine&#13;&#10;-- InstanceSingleRestrictedEngine&#13;&#10;--&#13;&#10;init = function()&#13;&#10;    console(&quot;luaPanelLoaded&quot;)&#13;&#10;        panel:getLabelComponent(&quot;randL&quot;):setText(&quot;init&quot;)&#13;&#10;    timerid = 1&#13;&#10;&#13;&#10;    timer:setCallback(timerid, t)&#13;&#10;    timer:startTimer(timerid, 500)&#13;&#10;end&#13;&#10;&#13;&#10;t = function(timerId) -- keep as a global so it isn't garbage collected&#13;&#10;    if timerId == 1 then&#13;&#10;        local ranv = math.random(0, 1000)&#13;&#10;        panel:getModulatorByName(&quot;targetMod&quot;):setModulatorValue(ranv, false, true, false)&#13;&#10;        console(&quot;post-load set: &quot; .. ranv .. &quot; isLoading=&quot; .. tostring(panel:isLoading()))&#13;&#10;        panel:getLabelComponent(&quot;randL&quot;):setText(&quot;luaPanelLoaded:set &quot;..ranv)&#13;&#10;        timer:stopTimer(timerId)&#13;&#10;    end&#13;&#10;end&#13;&#10;"
                  luaMethodLinkedProperty="luaPanelLoaded" luaMethodSource="0"
                  uuid="4acc3de1cac64e2684be73630b6d6c58" luaMethodValid="1"/>
-      <luaMethodGroup name="Built-In" uuid="5d0a0b4eb4ce4675bb87d0fa9b4fc12d" isReadOnly="1">
+      <luaMethodGroup name="Built-In" uuid="58b00706971a41aa92c1bc4c51e7a656" isReadOnly="1">
         <luaMethod luaMethodName="table_dump" luaMethodCode="-- @1.1&#10;--&#10;-- Print table contents&#10;--&#10;function table_dump(table)&#10;&#9;for key,value in ipairs(table) do&#10;&#9;&#9;_DBG (&quot;KEY= [&quot;..key..&quot;]&quot;)&#10;&#10;&#9;&#9;if (type(value) == &quot;table&quot;) then&#10;&#9;&#9;&#9;table_dump(value)&#10;&#9;&#9;elseif (type(value) == &quot;nil&quot;) then&#10;&#9;&#9;&#9;_DBG (&quot; = NIL&quot;)&#10;&#9;&#9;else&#10;&#9;&#9;&#9;what (value)&#10;&#9;&#9;end&#10;&#9;end&#10;end"
                    luaMethodLinkedProperty="" luaMethodSource="0" uuid="00000000000000000000000000000001"
                    isReadOnly="1" luaMethodValid="1"/>
@@ -109,8 +109,8 @@
              modulatorLinkedToModulatorSource="1" modulatorLinkedToComponent="Modulator"
              modulatorBaseValue="0" modulatorCustomIndex="0" modulatorCustomName=""
              modulatorCustomIndexGroup="0" modulatorCustomNameGroup="" modulatorVstNameFormat="%n"
-             luaModulatorValueChange="testIsLoading" modulatorMin="0.0" modulatorMax="127.0"
-             modulatorValue="101.0">
+             luaModulatorValueChange="testIsLoading" modulatorMin="0.0" modulatorMax="1500.0"
+             modulatorValue="699.0">
     <midi midiMessageType="9" midiMessageChannelOverride="0" midiMessageChannel="1"
           midiMessageCtrlrNumber="1" midiMessageCtrlrValue="0" midiMessageCtrlrNumberSize="0"
           midiMessageLatchAndStream="0" midiMessageMultiList="" midiMessageSysExFormula=""/>
@@ -129,7 +129,7 @@
                componentLuaMouseEnter="-- None" componentLuaMouseExit="-- None"
                componentBubbleHelpEnabled="0" componentBubbleHelpTitle="" componentBubbleHelpText=""
                componentBubbleHelpTimeout="5000" componentBubbleHelpTrigger="0"
-               componentBubbleHelpDismissOnExit="0" uiSliderMin="0" uiSliderMax="127"
+               componentBubbleHelpDismissOnExit="0" uiSliderMin="0" uiSliderMax="1500.0"
                uiSliderInterval="1" uiSliderDecimalPlaces="0" uiSliderValueSuffix=""
                uiSliderSetNotificationOnlyOnRelease="0" uiSliderDoubleClickEnabled="1"
                uiSliderDoubleClickValue="0" uiSliderVelocitySensitivity="1.0"
@@ -146,8 +146,8 @@
                uiSliderThumbFlatOnBottom="0" uiSliderValuePosition="4" uiSliderValueTextJustification="centred"
                uiSliderValueFont="&lt;Sans-Serif&gt;;12;0;0;0;0;1;3" uiSliderValueTextColour="ff000000"
                uiSliderValueHighlightColour="66a9a9a9" uiSliderValueBgColour="0x00ffffff"
-               uiSliderValueOutlineColour="0x00ffffff" componentLayerUid="b4f937b51900000001000000f67f0000"
-               componentRectangle="93 50 72 96" uiType="uiSlider"/>
+               uiSliderValueOutlineColour="0x00ffffff" uiType="uiSlider" componentRectangle="93 50 72 96"
+               componentLayerUid="b4f937b51900000001000000f67f0000"/>
   </modulator>
   <modulator modulatorCustomIndex="0" modulatorCustomIndexGroup="0" modulatorIsStatic="1"
              name="randL" modulatorVstExported="0" modulatorValue="0.0">
@@ -169,12 +169,11 @@
                componentBubbleHelpDismissOnExit="0" uiLabelBgColour="0" uiLabelTextColour="ff000000"
                uiLabelOutline="0" uiLabelOutlineColour="0" uiLabelJustification="centred"
                uiLabelFitFont="0" uiLabelFont="&lt;Sans-Serif&gt;;14;0;0;0;0;1;3"
-               uiLabelText="101" uiLabelDisplaysAllValues="0" uiLabelDisplayFormat="%n(%N) = %v(%h)"
-               uiLabelInputHighlightTextColour="0xffffffff" uiLabelInputHighlightColour="0xff0000ff"
-               uiLabelEditOnSingleClick="0" uiLabelEditOnDoubleClick="0" uiLabelEditFocusDiscardsChanges="1"
+               uiLabelText="luaPanelLoaded:set 699" uiLabelDisplaysAllValues="0"
+               uiLabelDisplayFormat="%n(%N) = %v(%h)" uiLabelInputHighlightTextColour="0xffffffff"
+               uiLabelInputHighlightColour="0xff0000ff" uiLabelEditOnSingleClick="0"
+               uiLabelEditOnDoubleClick="0" uiLabelEditFocusDiscardsChanges="1"
                uiLabelInputAllowedChars="" uiLabelInputMaxLength="1024" uiLabelChangedCbk="-- None"
-               componentLayerUid="b4f937b51900000001000000f67f0000" componentRectangle="80 200 291 73"
-               uiType="uiLabel"/>
+               uiType="uiLabel" componentRectangle="80 200 291 73" componentLayerUid="b4f937b51900000001000000f67f0000"/>
   </modulator>
-  <panelCustomData/>
 </panel>

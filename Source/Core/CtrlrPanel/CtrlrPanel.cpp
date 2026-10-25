@@ -409,19 +409,23 @@ void CtrlrPanel::bootstrapPanel(const bool setInitialProgram) {
 
 	boostrapStateStatus = false;
 	postBootstrapGate = true;
+	const double gateStartMs = juce::Time::getMillisecondCounterHiRes();
 	_DBG("[Gate] bootstrap END, isLoading=" + String(isLoading() ? "true" : "false"));
 
-	juce::MessageManager::callAsync([safe = juce::WeakReference<CtrlrPanel>(this)] {
+	juce::MessageManager::callAsync([safe = juce::WeakReference<CtrlrPanel>(this), gateStartMs] {
 		if (safe == nullptr)
 			return;
 
-		_DBG("[Gate] hop 1 reached, isLoading=" + String(safe->isLoading() ? "true" : "false"));
+		_DBG("[Gate] hop 1 reached, +" +
+			 String(juce::Time::getMillisecondCounterHiRes() - gateStartMs, 3) +
+			 " ms, isLoading=" + String(safe->isLoading() ? "true" : "false"));
 
-		juce::MessageManager::callAsync([safe] {
+		juce::MessageManager::callAsync([safe, gateStartMs] {
 			if (safe != nullptr) {
 				safe->postBootstrapGate = false;
-				_DBG("[Gate] hop 2 reached, gate CLOSED, isLoading=" +
-					 String(safe->isLoading() ? "true" : "false"));
+				_DBG("[Gate] hop 2 reached, gate CLOSED, +" +
+					 String(juce::Time::getMillisecondCounterHiRes() - gateStartMs, 3) +
+					 " ms, isLoading=" + String(safe->isLoading() ? "true" : "false"));
 			}
 		});
 	});
