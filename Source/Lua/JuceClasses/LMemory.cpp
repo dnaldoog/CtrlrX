@@ -414,65 +414,66 @@ void LMemoryBlock::wrapForLua (lua_State *L)
 {
 	using namespace luabind;
 
-	module(L)
-    [
-		class_<MemoryBlock>("JMemoryBlock")
-		,
-		class_<LMemoryBlock,bases<MemoryBlock> >("MemoryBlock")
-				.def(constructor<>())
-				.def(constructor<const size_t, bool>())
-				// .def(constructor<const int>()) // Useless and returns size x2. SEE: https://github.com/damiensellier/CtrlrX/issues/196#issuecomment-3555426383
-				.def(constructor<const MemoryBlock&>())
-				.def(constructor<luabind::object const&>())
-				.def(constructor<const String&>())
-				.def("insertIntoTable", &LMemoryBlock::insertIntoTable)
-				.def("createFromTable", &LMemoryBlock::createFromTable)
-				.def("getByte", &LMemoryBlock::getByte)
-				.def("setByte", &LMemoryBlock::setByte)
-				.def("getRange", &LMemoryBlock::getRange)
-				.def("toHexString", &LMemoryBlock::toHexString)
-				.def("getData", (void* (LMemoryBlock::*) (void)) &MemoryBlock::getData)
-				.def("getSize", &LMemoryBlock::getSize)
-				.def("setSize", &MemoryBlock::setSize)
-				.def("ensureSize", &MemoryBlock::ensureSize)
-				.def("fillWith", &MemoryBlock::fillWith)
-				.def("append", &LMemoryBlock::append)
-				.def("replaceWith", &LMemoryBlock::replaceWith)
-				.def("insert", (void (LMemoryBlock::*) (MemoryBlock &, int)) &LMemoryBlock::insert)
-				.def("insert", (void (LMemoryBlock::*) (MemoryBlock &, int, int)) &LMemoryBlock::insert)
-				.def("removeSection", &LMemoryBlock::removeSection)
-				.def("copyFrom", &LMemoryBlock::copyFrom)
-				.def("copyTo", &LMemoryBlock::copyTo)
-				.def("swapWith", &MemoryBlock::swapWith)
-				.def("toString", &MemoryBlock::toString)
-				.def("loadFromHexString", &MemoryBlock::loadFromHexString)
-				.def("toBinaryString", &LMemoryBlock::toBinaryString, luabind::raw(_2))
-				.def("toRawString", &LMemoryBlock::toBinaryString, luabind::raw(_2))
-				.def("toBinarySafeString", &LMemoryBlock::toBinaryString, luabind::raw(_2))
-				.def("toLuaString", &LMemoryBlock::toBinaryString, luabind::raw(_2))
-				.def("pushLString", &LMemoryBlock::toBinaryString, luabind::raw(_2))
-				.def("toStringWithNulls", &LMemoryBlock::toBinaryString, luabind::raw(_2))
-				.def("toStringNoTerminator", &LMemoryBlock::toBinaryString, luabind::raw(_2))
-				.def("setBitRange", &LMemoryBlock::setBitRange)
-				.def("getBitRange", &LMemoryBlock::getBitRange)
-				.def("toBase64Encoding", &MemoryBlock::toBase64Encoding)
-				.def("fromBase64Encoding", &MemoryBlock::fromBase64Encoding)
-				.def("toLuaTable", &LMemoryBlock::toLuaTable)
-				.def("compressZlib", &LMemoryBlock::compressZlib)
-				.def("decompressZlib", &LMemoryBlock::decompressZlib)
-				.def("compressGzip", &LMemoryBlock::compressGzip)
-				.def("decompressGzip", &LMemoryBlock::decompressGzip)
-				.scope
-				[
-					def("fromLuaTable", &LMemoryBlock::fromLuaTable),
-					def("fromLuaString", (LMemoryBlock(*)(const juce::String&)) & LMemoryBlock::fromLuaString),
-					def("fromLuaString", (LMemoryBlock(*)(luabind::object const&, const juce::String&)) & LMemoryBlock::fromLuaString),
-					def("fromLuaStringToAscii", (LMemoryBlock(*)(const juce::String&)) & LMemoryBlock::fromLuaStringToAscii),
-					def("fromLuaStringToAscii", (LMemoryBlock(*)(luabind::object const&, const juce::String&)) & LMemoryBlock::fromLuaStringToAscii),
-					def("fromLuaBinaryString", &LMemoryBlock::fromLuaBinaryString)
+	module(L)[class_<MemoryBlock>("JMemoryBlock"),
+			  class_<LMemoryBlock, bases<MemoryBlock>>("MemoryBlock")
+				  .def(constructor<>())
+				  .def(constructor<const size_t, bool>())
+				  // .def(constructor<const int>()) // Useless and returns size x2. SEE:
+				  // https://github.com/damiensellier/CtrlrX/issues/196#issuecomment-3555426383
+				  .def(constructor<const MemoryBlock &>())
+				  .def(constructor<luabind::object const &>())
+				  .def(constructor<const String &>())
+				  .def("insertIntoTable", &LMemoryBlock::insertIntoTable)
+				  .def("createFromTable", &LMemoryBlock::createFromTable)
+				  .def("getByte", &LMemoryBlock::getByte)
+				  .def("setByte", &LMemoryBlock::setByte)
+				  .def("getRawAddress",
+					   &LMemoryBlock::getRawAddress) // Expose raw pointer for FFI LuaJIT (use with caution in Lua)
+				  .def("getRange", &LMemoryBlock::getRange)
+				  .def("toHexString", &LMemoryBlock::toHexString)
+				  .def("getData", (void *(LMemoryBlock::*)(void)) & MemoryBlock::getData)
+				  .def("getSize", &LMemoryBlock::getSize)
+				  .def("setSize", &MemoryBlock::setSize)
+				  .def("ensureSize", &MemoryBlock::ensureSize)
+				  .def("fillWith", &MemoryBlock::fillWith)
+				  .def("append", &LMemoryBlock::append)
+				  .def("replaceWith", &LMemoryBlock::replaceWith)
+				  .def("insert", (void (LMemoryBlock::*)(MemoryBlock &, int))&LMemoryBlock::insert)
+				  .def("insert", (void (LMemoryBlock::*)(MemoryBlock &, int, int))&LMemoryBlock::insert)
+				  .def("removeSection", &LMemoryBlock::removeSection)
+				  .def("copyFrom", &LMemoryBlock::copyFrom)
+				  .def("copyTo", &LMemoryBlock::copyTo)
+				  .def("swapWith", &MemoryBlock::swapWith)
+				  .def("toString", &MemoryBlock::toString)
+				  .def("loadFromHexString", &MemoryBlock::loadFromHexString)
+				  .def("toBinaryString", &LMemoryBlock::toBinaryString, luabind::raw(_2))
+				  .def("toRawString", &LMemoryBlock::toBinaryString, luabind::raw(_2))
+				  .def("toBinarySafeString", &LMemoryBlock::toBinaryString, luabind::raw(_2))
+				  .def("toLuaString", &LMemoryBlock::toBinaryString, luabind::raw(_2))
+				  .def("pushLString", &LMemoryBlock::toBinaryString, luabind::raw(_2))
+				  .def("toStringWithNulls", &LMemoryBlock::toBinaryString, luabind::raw(_2))
+				  .def("toStringNoTerminator", &LMemoryBlock::toBinaryString, luabind::raw(_2))
+				  .def("setBitRange", &LMemoryBlock::setBitRange)
+				  .def("getBitRange", &LMemoryBlock::getBitRange)
+				  .def("toBase64Encoding", &MemoryBlock::toBase64Encoding)
+				  .def("fromBase64Encoding", &MemoryBlock::fromBase64Encoding)
+				  .def("toLuaTable", &LMemoryBlock::toLuaTable)
+				  .def("compressZlib", &LMemoryBlock::compressZlib)
+				  .def("decompressZlib", &LMemoryBlock::decompressZlib)
+				  .def("compressGzip", &LMemoryBlock::compressGzip)
+				  .def("decompressGzip", &LMemoryBlock::decompressGzip)
+				  .scope[def("fromLuaTable", &LMemoryBlock::fromLuaTable),
+						 def("fromLuaString", (LMemoryBlock (*)(const juce::String &))&LMemoryBlock::fromLuaString),
+						 def("fromLuaString", (LMemoryBlock (*)(luabind::object const &,
+																const juce::String &))&LMemoryBlock::fromLuaString),
+						 def("fromLuaStringToAscii",
+							 (LMemoryBlock (*)(const juce::String &))&LMemoryBlock::fromLuaStringToAscii),
+						 def("fromLuaStringToAscii",
+							 (LMemoryBlock (*)(luabind::object const &,
+											   const juce::String &))&LMemoryBlock::fromLuaStringToAscii),
+						 def("fromLuaBinaryString", &LMemoryBlock::fromLuaBinaryString)
 
-				]
-	];
+	]];
 }
 
 void LMemoryInputStream::wrapForLua (lua_State *L)

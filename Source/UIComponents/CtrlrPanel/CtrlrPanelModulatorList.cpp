@@ -27,13 +27,23 @@ class ColumnPickerComponent : public juce::Component,
 		listBox.setModel(this);
 		listBox.setRowHeight(22);
 
+		addAndMakeVisible(checkedFirstButton);
+		checkedFirstButton.setClickingTogglesState(true);
+		checkedFirstButton.setWantsKeyboardFocus(false);
+		checkedFirstButton.onClick = [this] {
+			rebuildFilter();
+			searchBox.grabKeyboardFocus();
+		};
 		rebuildFilter();
-		setSize(260, 340);
+		setSize(320, 360);
 	}
 
 	void resized() override {
 		auto r = getLocalBounds().reduced(6);
-		searchBox.setBounds(r.removeFromTop(26));
+		auto top = r.removeFromTop(26);
+		checkedFirstButton.setBounds(top.removeFromRight(96));
+		top.removeFromRight(4);
+		searchBox.setBounds(top);
 		r.removeFromTop(4);
 		listBox.setBounds(r);
 	}
@@ -59,6 +69,8 @@ class ColumnPickerComponent : public juce::Component,
 	void textEditorEscapeKeyPressed(juce::TextEditor &) override {
 		if (auto *box = findParentComponentOfClass<juce::CallOutBox>())
 			box->dismiss();
+		else if (auto *w = findParentComponentOfClass<juce::DocumentWindow>())
+			w->closeButtonPressed();
 	}
 
 	// --- ListBoxModel ---
@@ -69,6 +81,9 @@ class ColumnPickerComponent : public juce::Component,
 		if (!juce::isPositiveAndBelow(row, filtered.size()))
 			return;
 		const int idx = filtered[row];
+
+		if (isDefaultColumn(names[idx]))
+			g.fillAll(juce::Colours::steelblue.withAlpha(0.25f));
 
 		if (selected)
 			g.fillAll(findColour(juce::TextEditor::highlightColourId).withAlpha(0.4f));
@@ -114,6 +129,8 @@ class ColumnPickerComponent : public juce::Component,
 			for (auto &s : scored)
 				filtered.add(s.second);
 		}
+		if (checkedFirstButton.getToggleState())
+			std::stable_partition(filtered.begin(), filtered.end(), [this](int idx) { return isColumnVisible(idx); });
 		listBox.updateContent();
 		listBox.repaint();
 	}
@@ -122,12 +139,29 @@ class ColumnPickerComponent : public juce::Component,
 	juce::Array<int> filtered; // indices into `names` (== column index, columnId = index + 1)
 	std::function<bool(int)> isColumnVisible;
 	std::function<void(int)> toggleColumn;
-
+	juce::TextButton checkedFirstButton{"Sort visible"};
 	juce::TextEditor searchBox;
 	juce::ListBox listBox;
 };
 } // namespace
+class ColumnPickerWindow : public juce::DocumentWindow {
+	public:
+		ColumnPickerWindow(juce::Component *contentToOwn, std::function<void()> onCloseFn)
+			: juce::DocumentWindow("Visible columns", juce::Colours::darkgrey, juce::DocumentWindow::closeButton),
+			  onClose(std::move(onCloseFn)) {
+			setUsingNativeTitleBar(true);
+			setContentOwned(contentToOwn, true);
+			setResizable(true, false);
+			setAlwaysOnTop(true);
+		}
+		void closeButtonPressed() override {
+			if (onClose)
+				onClose();
+		}
 
+	private:
+		std::function<void()> onClose;
+};
 
 CtrlrPanelModulatorList::CtrlrPanelModulatorList(CtrlrPanel &_owner)
 	: owner(_owner),
@@ -164,6 +198,7 @@ CtrlrPanelModulatorList::CtrlrPanelModulatorList(CtrlrPanel &_owner)
 	modulatorListTree.setVisible(false);
 
 	owner.setProperty(Ids::uiPanelModulatorListViewTree, false);
+	owner.setProperty(Ids::panelModulatorListAddMode, true); // Default to "Add Columns Mode" (true) on first load
 
 	// 4. Restore settings and register listeners
 	if (owner.getProperty(Ids::panelModulatorListColumns).toString() != COMBO_ITEM_NONE) {
@@ -216,25 +251,15 @@ void CtrlrPanelModulatorList::resized() {
 }
 
 void CtrlrPanelModulatorList::resetToDefaults() {
-	modulatorList->getHeader().removeAllColumns();
-	modulatorList->getHeader().addColumn("name", getColumnIdForIdentifier("name") + 1, 100);
-	modulatorList->getHeader().addColumn("modulatorValue", getColumnIdForIdentifier("modulatorValue") + 1, 60);
-	modulatorList->getHeader().addColumn("vstIndex", getColumnIdForIdentifier("vstIndex") + 1, 60);
-	modulatorList->getHeader().addColumn("uiType", getColumnIdForIdentifier("uiType") + 1, 100);
-	modulatorList->getHeader().addColumn("componentRectangle", getColumnIdForIdentifier("componentRectangle") + 1, 80);
-	modulatorList->getHeader().addColumn("componentGroupName", getColumnIdForIdentifier("componentGroupName") + 1, 60);
-	modulatorList->getHeader().addColumn("componentTabName", getColumnIdForIdentifier("componentTabName") + 1, 60);
-	// modulatorList->getHeader().addColumn ("componentRadioGroupId",
-	// getColumnIdForIdentifier("componentRadioGroupId")+1, 60);
-	modulatorList->getHeader().addColumn("midiMessageType", getColumnIdForIdentifier("midiMessageType") + 1, 60);
-	modulatorList->getHeader().addColumn("midiMessageCtrlrNumber",
-										 getColumnIdForIdentifier("midiMessageCtrlrNumber") + 1, 60);
-	modulatorList->getHeader().addColumn("midiMessageSysExFormula",
-										 getColumnIdForIdentifier("midiMessageSysExFormula") + 1, 100);
-	modulatorList->getHeader().addColumn("modulatorCustomIndex", getColumnIdForIdentifier("modulatorCustomIndex") + 1,
-										 60);
-	// modulatorList->getHeader().addColumn ("modulatorCustomIndexGroup",
-	// getColumnIdForIdentifier("modulatorCustomIndexGroup")+1, 60);
+	auto &header = modulatorList->getHeader();
+	header.removeAllColumns();
+
+	for (const auto &c : kDefaultColumns) {
+		const int index = getColumnIdForIdentifier(c.identifier);
+		if (index < 0)
+			continue; // identifier not in the ID tree: skip rather than add an invalid column id
+		header.addColumn(c.identifier, index + 1, c.width);
+	}
 	saveColumnState();
 }
 
@@ -723,9 +748,18 @@ PopupMenu CtrlrPanelModulatorList::getMenuForIndex(int topLevelMenuIndex, const 
 			m.addItem(8192 + i, getIdTree().getChild(i).getProperty(Ids::name), true,
 					  modulatorList->getHeader().isColumnVisible(i + 1));
 		}
-		// menu.addSubMenu("Visible columns", m);
-		menu.addItem(14, "Visible columns...");
-		menu.addItem(13, "Reset columns to default");
+
+const bool searchMode = (bool)owner.getProperty(Ids::panelModulatorListAddMode);
+
+menu.addItem(15, "Searchable column picker", true, searchMode);
+
+if (searchMode)
+	menu.addItem(14, "Visible columns...");
+else
+	menu.addSubMenu("Visible columns", m);
+
+menu.addItem(13, "Reset columns to default");
+
 	}
 	return (menu);
 }
@@ -745,7 +779,7 @@ void CtrlrPanelModulatorList::menuItemSelected(int menuItemID, int topLevelMenuI
 		handleColumnSelection(menuItemID);
 	} else if (menuItemID == 4) {
 		refresh();
-	} else if (menuItemID == 5 || menuItemID == 6) {
+	} else if (menuItemID == 5 || menuItemID == 6 || menuItemID == 15) {
 		handleSortSelection(menuItemID);
 	} else if (menuItemID == 7) {
 		makeVisibleItem();
@@ -772,6 +806,11 @@ void CtrlrPanelModulatorList::handleSortSelection(const int itemId) {
 		owner.setProperty(Ids::panelModulatorListSortOption, true);
 	if (itemId == 6)
 		owner.setProperty(Ids::panelModulatorListSortOption, false);
+	if (itemId == 15) {
+		const bool togglingAddMode = !owner.getProperty(Ids::panelModulatorListAddMode);
+		DBG("Toggling Add Mode: " + String(togglingAddMode ? "true" : "false"));
+		owner.setProperty(Ids::panelModulatorListAddMode, togglingAddMode);
+	}
 
 	modulatorList->updateContent();
 }
@@ -899,13 +938,25 @@ void CtrlrPanelModulatorList::applyFuzzyFilter() {
 }
 
 void CtrlrPanelModulatorList::showColumnPicker() {
+#if JUCE_LINUX
+	const bool useFloatingWindow = true;
+#else
+	const bool useFloatingWindow = false;
+#endif
+
+	// Already open as a floating window: just bring it forward
+	if (columnPickerWindow != nullptr) {
+		columnPickerWindow->toFront(true);
+		return;
+	}
+
 	juce::StringArray names;
 	for (int i = 0; i < getIdTree().getNumChildren(); ++i)
 		names.add(getIdTree().getChild(i).getProperty(Ids::name).toString());
 
 	juce::Component::SafePointer<CtrlrPanelModulatorList> safe(this);
 
-	auto picker = std::make_unique<ColumnPickerComponent>(
+	auto *picker = new ColumnPickerComponent(
 		names,
 		[safe](int i) { return safe != nullptr && safe->modulatorList->getHeader().isColumnVisible(i + 1); },
 		[safe](int i) {
@@ -913,6 +964,20 @@ void CtrlrPanelModulatorList::showColumnPicker() {
 				safe->handleColumnSelection(8192 + i);
 		});
 
-	// Null parent => area is in screen coordinates; point at the table header
-	juce::CallOutBox::launchAsynchronously(std::move(picker), modulatorList->getHeader().getScreenBounds(), nullptr);
+	if (useFloatingWindow) {
+		columnPickerWindow = std::make_unique<ColumnPickerWindow>(picker, [safe] {
+			// delete asynchronously, never from inside the window's own close handler
+			juce::MessageManager::callAsync([safe] {
+				if (safe != nullptr)
+					safe->columnPickerWindow.reset();
+			});
+		});
+		columnPickerWindow->centreAroundComponent(this, columnPickerWindow->getWidth(),
+												   columnPickerWindow->getHeight());
+		columnPickerWindow->setVisible(true);
+		return;
+	}
+
+	juce::CallOutBox::launchAsynchronously(std::unique_ptr<juce::Component>(picker),
+										   modulatorList->getHeader().getScreenBounds(), nullptr);
 }

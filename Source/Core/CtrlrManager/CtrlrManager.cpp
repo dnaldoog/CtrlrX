@@ -772,7 +772,7 @@ int CtrlrManager::getNextVstIndex() {
 
 void CtrlrManager::openPanelFromFile(Component *componentToAttachMenu) {
 	// 1. Set the specific file types Ctrlr expects, matching your legacy code
-	String wildcards = "*.panel;*.panelz;*.bpanel;*.bpanelz;*.*";
+	String wildcards = "*.panel;*.panelz;*.bpanel;*.bpanelz";
 	bool useNativeDialog = (bool)getProperty(Ids::ctrlrNativeFileDialogs);
 
 	// Make sure fileChooser is declared as a std::unique_ptr<juce::FileChooser>

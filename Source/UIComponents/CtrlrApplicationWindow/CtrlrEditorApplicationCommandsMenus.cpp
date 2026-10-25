@@ -92,6 +92,11 @@ StringArray CtrlrEditor::getMenuBarNames() {
 
 PopupMenu CtrlrEditor::getMenuForIndex(int /*topLevelMenuIndex*/, const String &menuName) {
 	ApplicationCommandManager *commandManager = &(owner.getCommandManager());
+	bool externalOn = false;
+	if (auto *activePanel = owner.getActivePanel()) {
+		externalOn = (bool)activePanel->getProperty(Ids::ctrlrLuaExternalEditorEnabled);
+	}
+//	DBG("XXX set enabled" << String(externalOn ? "true" : "false"));
 	PopupMenu menu;
 
 	if (menuName == "File") {
@@ -163,6 +168,10 @@ PopupMenu CtrlrEditor::getMenuForIndex(int /*topLevelMenuIndex*/, const String &
 		menu.addCommandItem(commandManager, doPanelMode);
 		menu.addCommandItem(commandManager, doPanelLock);
 		menu.addCommandItem(commandManager, doPanelDisableCombosOnEdit);
+		menu.addSeparator();
+		menu.addCommandItem(commandManager, doPanelToggleExternalLuaEdit);
+		if (externalOn)
+			menu.addCommandItem(commandManager, doPanelScanExternalFolder);
 		menu.addSeparator();
 		menu.addCommandItem(commandManager, showModulatorList);
 		menu.addSeparator();
@@ -262,6 +271,7 @@ PopupMenu CtrlrEditor::getMenuForIndex(int /*topLevelMenuIndex*/, const String &
 			menu.addCommandItem(commandManager, showExpressionHelp);
 			menu.addCommandItem(commandManager, showDumpByLuaHelp);
 			menu.addCommandItem(commandManager, showViewportHelp);
+			menu.addCommandItem(commandManager, showDebuggerHelp);
 			menu.addSeparator();
 
 #ifdef JUCE_DEBUG

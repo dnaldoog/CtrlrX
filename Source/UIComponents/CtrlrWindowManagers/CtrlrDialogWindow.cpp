@@ -95,7 +95,8 @@ class CtrlrTempDialogWindow : public juce::DialogWindow {
 		}
 
 	private:
-		juce::TooltipWindow tooltip;
+		// juce::TooltipWindow tooltip;
+        juce::SharedResourcePointer<juce::TooltipWindow> tooltip;
 		JUCE_DECLARE_NON_COPYABLE(CtrlrTempDialogWindow);
 };
 

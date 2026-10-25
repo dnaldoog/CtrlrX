@@ -32,6 +32,8 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 							 doPanelMode,
 							 doPanelLock,
 							 doPanelDisableCombosOnEdit,
+							 doPanelToggleExternalLuaEdit,
+							 doPanelScanExternalFolder,
 							 doSendSnapshot,
 							 doSnapshotSaveToFile,
 							 doSnapshotLoadFromFile,
@@ -79,6 +81,7 @@ void CtrlrEditor::getAllCommands(Array<CommandID> &commands)
 							 doKeyGenerator,
 							 doProgramWizard,
 							 showExpressionHelp,
+							 showDebuggerHelp,
 							 showDumpByLuaHelp,
 							 showViewportHelp,
 							 doQuit
@@ -181,6 +184,12 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 	case showExpressionHelp:
 		result.setInfo("Expressions", "Show help for writing Lua expressions", globalCategory, 0);
 		result.addDefaultKeypress('e', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
+
+		break;
+
+	case showDebuggerHelp:
+		result.setInfo("Lua Debugger", "Show help for lua debugger", globalCategory, 0);
+		result.addDefaultKeypress('d', ModifierKeys::ctrlModifier | ModifierKeys::altModifier);
 
 		break;
 
@@ -344,7 +353,26 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 		}
 		break;
 
+	case doPanelToggleExternalLuaEdit:
+		result.setInfo("External LUA edit", "Toggle external LUA editing mode", panelCategory, 0);
+		result.setActive(isPanelActive(true));
+		if (isPanelActive(true) && getActivePanelEditor()) {
+			CtrlrPanel &panel = getActivePanelEditor()->getOwner();
+			result.setTicked((bool)panel.getProperty(Ids::ctrlrLuaExternalEditorEnabled));
+		}
+		break;
+
+	case doPanelScanExternalFolder:
+		result.setInfo("Scan workspace for new files", "Scan workspace for new files", panelCategory, 0);
+		if (!isRestricted()) 
+		{
+			result.addDefaultKeypress('s', ModifierKeys::altModifier);
+		}
+		result.setActive(isPanelActive(true));
+		break;
+
 	case doPanelDisableCombosOnEdit:
+
 		result.setInfo("Disable combos on edit", "Combo boxes will not open when editing panel", panelCategory, 0);
 		result.setActive(isPanelActive(true));
 		if (isPanelActive(true))

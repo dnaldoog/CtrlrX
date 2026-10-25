@@ -65,16 +65,41 @@ const String CtrlrPropertyComponent::getVisibleText() {
 void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 {
 	static const Colour viewportHighlight = Colours::lightgoldenrodyellow;
+	static const Colour modSettings = Colours::lightsteelblue;
 
 	static const std::map<String, Colour> customHighlights = {{"name", Colour(0x33ffaa00)},
 															  {"componentVisibleName", Colour(0x33ffaa00)},
 															  {"midiMessageType", Colour(0x44ff69b4)},
 															  {"midiMessageSysExFormula", Colour(0x44ff69b4)},
-															  {"luaModulatorValueChange", Colour(0x33007acc)},
+															  {"luaModulatorValueChange", Colours::mediumslateblue},
 															  {"uiPanelImageResource", Colours::aqua},
 															  {"uiPanelIconResource", Colours::aquamarine},
 															  {"uiPanelLinuxExpDest", Colours::pink},
-															  {"modulatorValueSaveToFile", Colours::rebeccapurple},
+															  {"modulatorIsStatic", modSettings},
+															  {"modulatorValueSaveToFile", modSettings},
+															  {"modulatorExcludeFromSnapshot", modSettings},
+															  {"modulatorMute", modSettings},
+															  {"modulatorMuteOnStart", modSettings},
+															  {"modulatorLuaMethod", Colour(0x33007acc)},
+															  {"modulatorLuaMethodParam1", Colour(0x33007acc)},
+															  {"modulatorLuaMethodParam2", Colour(0x33007acc)},
+															  {"modulatorLuaMethodParam3", Colour(0x33007acc)},
+															  {"modulatorLuaMethodParam4", Colour(0x33007acc)},
+															  {"modulatorLuaMethodParam5", Colour(0x33007acc)},
+															  {"modulatorLuaMethodParam6", Colour(0x33007acc)},
+															  {"modulatorLuaMethodParam7", Colour(0x33007acc)},
+															  {"modulatorLuaMethodParam8", Colour(0x33007acc)},
+															  {"modulatorLuaMethodParam9", Colour(0x33007acc)},
+															  {"modulatorLuaMethodParam10", Colour(0x33007acc)},
+															  {"uiPanelViewPortEnableResizeLimits", viewportHighlight},
+															  {"uiPanelViewPortMinWidth", viewportHighlight},
+															  {"uiPanelViewPortMinHeight", viewportHighlight},
+															  {"uiPanelViewPortMaxWidth", viewportHighlight},
+															  {"uiPanelViewPortMaxHeight", viewportHighlight},
+															  {"uiPanelViewPortWidth", viewportHighlight.darker()},
+															  {"uiPanelViewPortHeight", viewportHighlight.darker()},
+															  {"uiPanelViewPortZoom", viewportHighlight},
+															  {"uiPanelViewPortBackgroundColour", viewportHighlight},
 
 															  {"uiViewPortMode", viewportHighlight.darker()},
 															  {"uiViewPortEnableResizeLimits", viewportHighlight},
@@ -1250,21 +1275,43 @@ void CtrlrLuaMethodProperty::buttonClicked(Button *buttonThatWasClicked) {
 		w->addTextEditor("methodName", "myMethod", "Method", false);
 		w->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
 		w->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
-
+ 
 		juce::Component::SafePointer<CtrlrLuaMethodProperty> safeThis(this);
-
+ 
 		w->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, w](int result) {
 							   if (safeThis != nullptr && result == 1) {
 								   if (auto *panelOwner = safeThis->owner) {
 									   const juce::String newMethodName = w->getTextEditorContents("methodName");
-
-									   // 1. Add method to MethodManager
-									   panelOwner->getCtrlrLuaManager().getMethodManager().addMethod(
-										   juce::ValueTree(), newMethodName, "", safeThis->id.toString());
-
+									   auto &methodManager = panelOwner->getCtrlrLuaManager().getMethodManager();
+ 
+									   if (!methodManager.isValidMethodName(newMethodName)) {
+										   juce::AlertWindow::showMessageBoxAsync(
+											   juce::AlertWindow::WarningIcon, "Invalid method name",
+											   "Method names must start with a letter or underscore and contain "
+											   "only letters, digits, and underscores.");
+										   return;
+									   }
+ 
+									   // NEW: names must be unique across ALL groups.
+									   if (methodManager.methodNameExists(newMethodName)) {
+										   juce::AlertWindow::showMessageBoxAsync(
+											   juce::AlertWindow::WarningIcon, "Method name already in use",
+											   "A method named \"" + newMethodName + "\" already exists (in: " +
+												   methodManager.getMethodLocationByName(newMethodName) + ").\n\n"
+												   "Method names must be unique across all groups, because Lua "
+												   "methods are global functions. Please choose a different name.");
+										   return;
+									   }
+ 
+									   // 1. Add method to MethodManager (bail out if it refuses for any reason,
+									   //    otherwise step 3 would select a pre-existing method of that name)
+									   if (!methodManager.addMethod(juce::ValueTree(), newMethodName, "",
+																	safeThis->id.toString()))
+										   return;
+ 
 									   // 2. Refresh property dropdown AFTER method is created
 									   safeThis->refresh();
-
+ 
 									   // 3. Set newly created method in the combo box
 									   if (safeThis->methodSelectorCombo != nullptr) {
 										   safeThis->methodSelectorCombo->setText(newMethodName,

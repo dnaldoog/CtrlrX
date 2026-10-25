@@ -1,17 +1,18 @@
 /*
   ==============================================================================
 
-    CtrlrLuaApiInspector.cpp
-    Created: 19 Sep 2026 4:01:10pm
-    Author:  zan64
+	CtrlrLuaApiInspector.cpp
+	Created: 19 Sep 2026 4:01:10pm
+	Author:  zan64
 
   ==============================================================================
 */
-# include "stdafx.h"
 #include "CtrlrLuaApiInspector.h"
-#include "CtrlrPanel/CtrlrPanel.h"
+#include "CtrlrLuaApiLookup.h"
 #include "CtrlrLuaManager.h"
+#include "CtrlrPanel/CtrlrPanel.h"
 #include "luabind/luabind.hpp"
+#include "stdafx.h"
 
 CtrlrLuaApiInspector::CtrlrLuaApiInspector(CtrlrPanel& _owner)
     : owner(_owner)
@@ -31,37 +32,42 @@ CtrlrLuaApiInspector::CtrlrLuaApiInspector(CtrlrPanel& _owner)
     listAllButton.onClick = [this] { listAllClasses(); };
 // Add Clear Button
 addAndMakeVisible(clearButton);
-clearButton.onClick = [this] 
-{ 
-    classInput.clear();
+clearButton.onClick = [this] {
+	hideSuggestions();
+	classInput.clear();
     filterInput.clear();
     rawOutput = "";
     outputDisplay.clear();
 };
-    // Filter Input
-    addAndMakeVisible(filterLabel);
-    addAndMakeVisible(filterInput);
-    filterInput.setTextToShowWhenEmpty("Filter methods...", juce::Colours::grey);
-    filterInput.addListener(this);
+// Filter Input
+addAndMakeVisible(filterLabel);
+addAndMakeVisible(filterInput);
+filterInput.setTextToShowWhenEmpty("Filter methods...", juce::Colours::grey);
+filterInput.addListener(this);
 
-    // Documentation Link
-    addAndMakeVisible(docsButton);
-    docsButton.onClick = [this] { openGithubDocs(); };
+// Documentation Link
+// addAndMakeVisible(docsButton);
+// docsButton.onClick = [this] { openGithubDocs(); };
 
-    // Output Display (Monospaced Read-Only)
-    addAndMakeVisible(outputDisplay);
-    outputDisplay.addMouseListener(this, false);
-    outputDisplay.setMultiLine(true, true);
-    outputDisplay.setReadOnly(true);
-    outputDisplay.setFont(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 14.0f, juce::Font::plain));
-    outputDisplay.setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
-    outputDisplay.setColour(juce::TextEditor::textColourId, juce::Colours::black);
-    outputDisplay.setColour(juce::TextEditor::outlineColourId, juce::Colours::transparentBlack);
+// Output Display (Monospaced Read-Only)
+addAndMakeVisible(outputDisplay);
+outputDisplay.addMouseListener(this, false);
+outputDisplay.setMultiLine(true, true);
+outputDisplay.setReadOnly(true);
+outputDisplay.setFont(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 14.0f, juce::Font::plain));
+outputDisplay.setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
+outputDisplay.setColour(juce::TextEditor::textColourId, juce::Colours::black);
+outputDisplay.setColour(juce::TextEditor::outlineColourId, juce::Colours::transparentBlack);
+updateClassCache();
+suggestionList.onPick = [this](int row) { acceptSuggestion(row); };
+classInput.onKey = [this](const juce::KeyPress &key) { return handleClassInputKey(key); };
+addChildComponent(suggestionList); // hidden until there are matches
 }
 
 void CtrlrLuaApiInspector::resized()
 {
-    auto area = getLocalBounds().reduced(6);
+	hideSuggestions();
+	auto area = getLocalBounds().reduced(6);
     constexpr int rowHeight = 28;
     constexpr int gap = 6;
 
@@ -83,7 +89,7 @@ void CtrlrLuaApiInspector::resized()
     filterLabel.setBounds(filterRow.removeFromLeft(90));
     filterInput.setBounds(filterRow.removeFromLeft(160));
     filterRow.removeFromLeft(gap);
-    docsButton.setBounds(filterRow.removeFromLeft(100));
+    // docsButton.setBounds(filterRow.removeFromLeft(100));
 
     area.removeFromTop(gap);
 
@@ -215,74 +221,103 @@ void CtrlrLuaApiInspector::textEditorTextChanged(juce::TextEditor& editor)
 	if (&editor == &classInput) {
 		if (isAutoCompleting)
 			return;
-
-		const juce::String query = classInput.getText().trim();
-
-		// Don't show popup if query is too short
-		if (query.length() < 2)
-			return;
-
-		// Ensure cache is populated
-		if (classNamesCache.isEmpty())
-			updateClassCache();
-
-		// Pair each class name with its fuzzy match score
-		struct Match {
-				juce::String name;
-				double score;
-		};
-		std::vector<Match> matches;
-
-		const std::string queryStd = query.toStdString();
-
-		for (const auto &className : classNamesCache) {
-			const std::string nameStd = className.toStdString();
-
-			// RapidFuzz score between query and class name (0.0 to 100.0)
-			double score = rapidfuzz::fuzz::partial_ratio(queryStd, nameStd);
-
-			// Boost score if the class name starts directly with the query string
-			if (className.startsWithIgnoreCase(query))
-				score += 20.0;
-
-			if (score > 60.0) // Threshold for relevant matches
-			{
-				matches.push_back({className, score});
-			}
-		}
-
-		if (matches.empty())
-			return;
-
-		// Sort matches by highest score first
-		std::sort(matches.begin(), matches.end(), [](const Match &a, const Match &b) { return a.score > b.score; });
-
-		// Construct Autocomplete Popup Menu
-		juce::PopupMenu menu;
-		int itemID = 1;
-
-		// Show top 8 matches
-		const size_t limit = std::min<size_t>(matches.size(), 8);
-		for (size_t i = 0; i < limit; ++i) {
-			menu.addItem(itemID++, matches[i].name);
-		}
-
-		// Display popup directly under classInput
-		auto options = juce::PopupMenu::Options().withTargetComponent(&classInput).withItemThatMustBeVisible(1);
-
-		menu.showMenuAsync(options, [this, matches](int result) {
-			if (result > 0 && static_cast<size_t>(result - 1) < matches.size()) {
-				const juce::String selectedClass = matches[result - 1].name;
-
-				isAutoCompleting = true;
-				classInput.setText(selectedClass, juce::dontSendNotification);
-				isAutoCompleting = false;
-
-				// Trigger inspection directly on selection!
-				inspectClass(selectedClass);
-			}
-		});
+		updateSuggestions();
 	}
+}
+
+void CtrlrLuaApiInspector::textEditorFocusLost(juce::TextEditor &editor) {
+	if (&editor == &classInput)
+		hideSuggestions();
+}
+
+void CtrlrLuaApiInspector::updateSuggestions() {
+	const juce::String query = classInput.getText().trim();
+
+	if (query.length() < 2) {
+		hideSuggestions();
+		return;
+	}
+
+	if (classNamesCache.isEmpty())
+		updateClassCache();
+
+	struct Match {
+			juce::String name;
+			double score;
+	};
+	std::vector<Match> matches;
+	const std::string queryStd = query.toStdString();
+
+	for (const auto &className : classNamesCache) {
+		double score = rapidfuzz::fuzz::partial_ratio(queryStd, className.toStdString());
+
+		if (className.equalsIgnoreCase(query))
+			score += 50.0; // exact name always wins, so Enter inspects what was typed
+		else if (className.startsWithIgnoreCase(query))
+			score += 20.0;
+
+		if (score > 60.0)
+			matches.push_back({className, score});
+	}
+
+	if (matches.empty()) {
+		hideSuggestions();
+		return;
+	}
+
+	std::stable_sort(matches.begin(), matches.end(), [](const Match &a, const Match &b) { return a.score > b.score; });
+
+	juce::StringArray items;
+	for (size_t i = 0; i < std::min<size_t>(matches.size(), 8); ++i)
+		items.add(matches[i].name);
+
+	suggestionList.setItems(items);
+	suggestionList.setBounds(classInput.getX(), classInput.getBottom() + 1, juce::jmax(classInput.getWidth(), 220),
+							 items.size() * CtrlrApiSuggestionList::rowHeight + 2);
+	suggestionList.setVisible(true);
+	suggestionList.toFront(false); // false: raise it without grabbing keyboard focus
+}
+
+void CtrlrLuaApiInspector::hideSuggestions() {
+	suggestionList.setVisible(false);
+}
+
+bool CtrlrLuaApiInspector::handleClassInputKey(const juce::KeyPress &key) {
+	if (!suggestionList.isVisible())
+		return false; // normal typing, and Enter falls through to inspectClass
+
+	if (key == juce::KeyPress::downKey) {
+		suggestionList.moveSelection(1);
+		return true;
+	}
+	if (key == juce::KeyPress::upKey) {
+		suggestionList.moveSelection(-1);
+		return true;
+	}
+	if (key == juce::KeyPress::returnKey || key == juce::KeyPress::tabKey) {
+		acceptSuggestion(suggestionList.getSelectedRow());
+		return true;
+	}
+	if (key == juce::KeyPress::escapeKey) {
+		hideSuggestions();
+		return true;
+	}
+	return false;
+}
+
+void CtrlrLuaApiInspector::acceptSuggestion(int row) {
+	if (!juce::isPositiveAndBelow(row, suggestionList.getNumItems()))
+		return;
+
+	const juce::String selectedClass = suggestionList.getItem(row);
+	hideSuggestions();
+
+	isAutoCompleting = true;
+	classInput.setText(selectedClass, juce::dontSendNotification);
+	isAutoCompleting = false;
+	classInput.moveCaretToEnd();
+
+	inspectClass(selectedClass);
 }
 
 void CtrlrLuaApiInspector::applyFilter()
@@ -315,21 +350,6 @@ void CtrlrLuaApiInspector::applyFilter()
 
     outputDisplay.setText(filteredResult, false);
 }
-// void CtrlrLuaApiInspector::listAllClasses() // simple no hyperlink
-// {
-//     // Evaluates luabind's class_names() directly and formats a plain text string
-//     const juce::String luaScript = 
-//         "local names = class_names()\n"
-//         "if names == nil then return 'Error: class_names() returned nil' end\n"
-//         "local ret = 'Available Classes:\\n-----------------------------------------------------------------\\n'\n"
-//         "for i, v in ipairs(names) do\n"
-//         "    ret = ret .. string.format('  %s\\n', tostring(v))\n"
-//         "end\n"
-//         "return ret .. '-----------------------------------------------------------------'";
-
-//     rawOutput = runLuaAndGetResult(luaScript);
-//     applyFilter();
-// }
 
 void CtrlrLuaApiInspector::listAllClasses() // create links
 {
@@ -347,9 +367,11 @@ void CtrlrLuaApiInspector::listAllClasses() // create links
 }
 
 void CtrlrLuaApiInspector::updateClassCache() {
-	classNamesCache.clear();
-
-	// Query class_names() from Lua
+    classNamesCache.clear();
+    classNamesCache = CtrlrLuaApiLookup::getInstance().getAllClassNames();
+#if JUCE_DEBUG // Check which luabind class names have been added to Ctrlr but are not present in classMap
+#if 0
+	DBG("CHECK MISSING");
 	const juce::String luaScript = "local names = class_names()\n"
 								   "if names == nil then return '' end\n"
 								   "local ret = ''\n"
@@ -357,94 +379,158 @@ void CtrlrLuaApiInspector::updateClassCache() {
 								   "return ret";
 
 	juce::String result = runLuaAndGetResult(luaScript);
-	classNamesCache.addLines(result);
-	classNamesCache.removeEmptyStrings();
+	juce::StringArray luaClasses;
+	luaClasses.addLines(result);
+	luaClasses.removeEmptyStrings();
+
+	// 2. Populate your autocomplete cache from C++ DB as normal
+	classNamesCache = CtrlrLuaApiLookup::getInstance().getAllClassNames();
+
+	// 3. AUDIT: Find which Lua classes are MISSING from your hardcoded C++ database
+	auto &db = CtrlrLuaApiLookup::getInstance();
+	int missingCount = 0;
+
+	for (const auto &luaClass : luaClasses) {
+		if (!db.hasClass(luaClass)) {
+			DBG("⚠️ LUA API AUDIT: Class '" << luaClass
+										   << "' exists in Lua/luabind but is MISSING from CtrlrLuaApiLookup!");
+			missingCount++;
+		}
+	}
+
+	if (missingCount > 0) {
+		DBG("⚠️ LUA API AUDIT SUMMARY: " << missingCount << " classes are missing from your C++ database.");
+	} else {
+		DBG("✅ LUA API AUDIT: All runtime classes are successfully covered in the C++ database!");
+	}
+
+#endif
+#endif
 }
+
+#if JUCE_DEBUG
+void CtrlrLuaApiInspector::auditClassMethods(const juce::String& className) {
+    auto& db = CtrlrLuaApiLookup::getInstance();
+    if (!db.hasClass(className))
+        return;
+
+    const ApiClass* apiClass = db.getClassInfo(className);
+
+    juce::String luaScript;
+    luaScript << "if " << className << " ~= nil then return what(" << className << ") else return '' end";
+    juce::String runtimeWhatOutput = runLuaAndGetResult(luaScript);
+
+    if (runtimeWhatOutput.isEmpty() || runtimeWhatOutput.startsWith("Lua Error"))
+        return;
+
+    std::set<juce::String> cppMethods;
+    for (const auto& m : apiClass->staticMethods)
+        cppMethods.insert(m.name);
+    for (const auto& m : apiClass->methods)
+        cppMethods.insert(m.name);
+
+    juce::StringArray runtimeLines;
+    runtimeLines.addLines(runtimeWhatOutput);
+
+    for (const auto& line : runtimeLines) {
+        juce::String trimmedLine = line.trim();
+
+		if (trimmedLine.isEmpty() || trimmedLine.contains("---") || trimmedLine.startsWith("Object type") ||
+			trimmedLine.startsWith("Members:") || trimmedLine.startsWith("Attributes:")) {
+			continue;
+		}
+
+		juce::String methodName;
+		int colonIndex = trimmedLine.indexOf(":");
+		int parenIndex = trimmedLine.indexOf("(");
+
+        if (colonIndex != -1) {
+            methodName = trimmedLine.substring(0, colonIndex).trim();
+        } else if (parenIndex != -1) {
+            methodName = trimmedLine.substring(0, parenIndex).trim();
+        } else {
+            methodName = trimmedLine.upToFirstOccurrenceOf(" ", false, false).trim();
+        }
+
+		if (methodName == "__init")
+			continue;
+
+		if (methodName.isNotEmpty()) {
+			if (cppMethods.find(methodName) == cppMethods.end()) {
+				// 1. Print the warning alert
+				DBG("⚠️ METHOD AUDIT [" << className << "]: Method '" << methodName << "' is missing from C++ DB.");
+
+				// 2. Print a copy-pasteable C++ snippet for your database initialization code!
+				// (Defaults to "instance", you can easily change to "static" if needed)
+				DBG("   --> COPY-PASTE: cls.methods.push_back({\"" << methodName << "\", \"instance\", \"()\", 1});");
+			}
+		}
+	}
+}
+#endif
 
 void CtrlrLuaApiInspector::inspectClass(const juce::String &className) {
+	// std::string emoji = "🚀";
 	if (className.isEmpty())
 		return;
+#if JUCE_DEBUG
+	auditClassMethods(className); // Debug only
+#endif
+	auto& db = CtrlrLuaApiLookup::getInstance();
+    if (db.hasClass(className)) {
+        const ApiClass* apiClass = db.getClassInfo(className);
+        
+        juce::String formattedOutput;
+        formattedOutput.preallocateBytes(2048); // Prevent reallocation stutter
 
-	// Direct JUCE string concatenation (No printf/formatted specifiers)
-	juce::String luaScript;
-	luaScript << "if " << className << " ~= nil then "
-			  << "return what(" << className << ") "
-			  << "else return 'Error: Global symbol [" << className << "] is nil or uninitialized.' end";
+        formattedOutput << "Object type [" << apiClass->name << "]\n";
+        formattedOutput << "-----------------------------------------------------------------\n\n";
 
-	rawOutput = runLuaAndGetResult(luaScript);
-	applyFilter();
+		if (apiClass->constructor.empty()) {
+			// formattedOutput << "    (None)\n";
+		} else {
+			formattedOutput << "Constructor (Call as " << apiClass->name << "(arguments)):\n";
+			for (const auto &m : apiClass->constructor) {
+				formattedOutput << "    [Constructor] " << m.name << m.args << "\n";
+				// formattedOutput << emoji << "    [Constructor] " << m.name << m.args << "\n";
+			}
+			formattedOutput << "\n";
+		}
+
+		formattedOutput << "Static / Class Methods (Call as " << apiClass->name << ".method()):\n";
+		if (apiClass->staticMethods.empty()) {
+			formattedOutput << "    (None)\n";
+		} else {
+			for (const auto &m : apiClass->staticMethods) {
+				formattedOutput << "    [Static] " << m.name << m.args << "\n";
+				// formattedOutput << "⚡ [Static] " << m.name << m.args << "\n";
+			}
+		}
+
+		formattedOutput << "\n";
+
+		formattedOutput << "Instance Methods (Call as instance:method()):\n";
+		if (apiClass->methods.empty()) {
+            formattedOutput << "    (None)\n";
+        } else {
+            for (const auto& m : apiClass->methods) {
+                formattedOutput << "    [Instance] " << m.name << m.args << "\n";
+                // formattedOutput << "🔹 [Instance] " << m.name << m.args << "\n";
+            }
+        }
+
+        formattedOutput << "\n-----------------------------------------------------------------";
+        rawOutput = formattedOutput;
+        applyFilter();
+        return;
+    }
+
+    // Fallback reflection
+    juce::String luaScript;
+    luaScript << "if " << className << " ~= nil then "
+              << "return what(" << className << ") "
+              << "else return 'Error: Global symbol [" << className << "] is nil or uninitialized.' end";
+
+    rawOutput = runLuaAndGetResult(luaScript);
+    applyFilter();
 }
-
-// void CtrlrLuaApiInspector::inspectClass(const juce::String &className) {
-// 	if (className.isEmpty())
-// 		return;
-
-// 	juce::String luaScript;
-// 	luaScript << "local className = '" << className << "'\n"
-// 			  << "local cls = _G[className]\n"
-// 			  << "if cls == nil then\n"
-// 			  << "    return 'Error: Global class or symbol [' .. className .. '] is nil or uninitialized.'\n"
-// 			  << "end\n"
-// 			  << "\n"
-// 			  << "local statics = {}\n"
-// 			  << "local instances = {}\n"
-// 			  << "\n"
-// 			  << "local info = class_info(cls)\n"
-// 			  << "if info and info.methods then\n"
-// 			  << "    for name, _ in pairs(info.methods) do\n"
-// 			  << "        local isStatic = false\n"
-// 			  << "        pcall(function()\n"
-// 			  << "            if type(cls[name]) == 'function' then\n"
-// 			  << "                isStatic = true\n"
-// 			  << "            end\n"
-// 			  << "        end)\n"
-// 			  << "\n"
-// 			  << "        if isStatic then\n"
-// 			  << "            table.insert(statics, name)\n"
-// 			  << "        else\n"
-// 			  << "            table.insert(instances, name)\n"
-// 			  << "        end\n"
-// 			  << "    end\n"
-// 			  << "end\n"
-// 			  << "\n"
-// 			  << "table.sort(statics)\n"
-// 			  << "table.sort(instances)\n"
-// 			  << "\n"
-// 			  << "local ret = 'Object type [' .. (info and info.name or className) .. ']\\n'\n"
-// 			  << "ret = ret .. '-----------------------------------------------------------------\\n\\n'\n"
-// 			  << "\n"
-// 			  << "ret = ret .. 'Static / Class Methods (Call as ' .. className .. '.method()):\\n'\n"
-// 			  << "if #statics == 0 then\n"
-// 			  << "    ret = ret .. '  (None)\\n'\n"
-// 			  << "else\n"
-// 			  << "    for _, name in ipairs(statics) do\n"
-// 			  << "        ret = ret .. string.format('  [Static]   %s\\n', name)\n"
-// 			  << "    end\n"
-// 			  << "end\n"
-// 			  << "\n"
-// 			  << "ret = ret .. '\\n'\n"
-// 			  << "ret = ret .. 'Instance Methods (Call as instance:method()):\\n'\n"
-// 			  << "if #instances == 0 then\n"
-// 			  << "    ret = ret .. '  (None)\\n'\n"
-// 			  << "else\n"
-// 			  << "    for _, name in ipairs(instances) do\n"
-// 			  << "        ret = ret .. string.format('  [Instance] %s\\n', name)\n"
-// 			  << "    end\n"
-// 			  << "end\n"
-// 			  << "\n"
-// 			  << "if info and info.attributes and next(info.attributes) ~= nil then\n"
-// 			  << "    ret = ret .. '\\nAttributes / Properties:\\n'\n"
-// 			  << "    local attrs = {}\n"
-// 			  << "    for name, _ in pairs(info.attributes) do table.insert(attrs, name) end\n"
-// 			  << "    table.sort(attrs)\n"
-// 			  << "    for _, name in ipairs(attrs) do\n"
-// 			  << "        ret = ret .. string.format('  [Property] %s\\n', name)\n"
-// 			  << "    end\n"
-// 			  << "end\n"
-// 			  << "\n"
-// 			  << "ret = ret .. '-----------------------------------------------------------------'\n"
-// 			  << "return ret\n";
-
-// 	rawOutput = runLuaAndGetResult(luaScript);
-// 	applyFilter();
-// }

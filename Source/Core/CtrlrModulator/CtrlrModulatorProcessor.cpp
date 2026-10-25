@@ -195,10 +195,19 @@ void CtrlrModulatorProcessor::setReverseExpression (const String &reverseExpress
 
 void CtrlrModulatorProcessor::setValueChangedCallback (const String &methodName)
 {
-	if (methodName.isEmpty())
+	if (methodName.isEmpty()) {
+		valueChangedCbk = nullptr;
 		return;
+	}
 
-	valueChangedCbk = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().getMethod(methodName);
+	auto &methodManager = owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager();
+	if (!methodManager.isValidMethodName(methodName)) {
+		DBG("Rejected invalid callback name: " + methodName);
+		valueChangedCbk = nullptr;
+		return;
+	}
+
+	valueChangedCbk = methodManager.getMethod(methodName);
 }
 
 void CtrlrModulatorProcessor::setGetValueForMidiCallback (const String &methodName)
@@ -352,41 +361,29 @@ void CtrlrModulatorProcessor::setValueFromMIDI(CtrlrMidiMessage &m, const CtrlrM
 	}
 }
 
-void CtrlrModulatorProcessor::setParameterNotifyingHost() // CtrlrX->VST Host Updated v5.6.35. JUCE 7+
+void CtrlrModulatorProcessor::setParameterNotifyingHost()
 {
-    // 1. Basic sanity check for export status and index
-    if (owner.getVstIndex() >= 0 && owner.isExportedToVst())
+    if (JUCEApplication::isStandaloneApp())
+        return; // Standalone: no host to notify
+
+    const int index = owner.getVstIndex();
+
+    if (index < 0 || ! owner.isExportedToVst())
+        return;
+
+    // The host sized its parameter list at init. Indices at or above that count
+    // must never reach the wrapper. Reported once in CtrlrPanel::bootstrapPanel();
+    // deliberately silent here.
+    auto& params = getProcessor()->getParameters();
+
+    if (index >= params.size())
+        return;
+
+    if (auto* param = params[index])
     {
-
-        // 2. Get the list of parameters currently registered with the AudioProcessor
-        auto& params = getProcessor()->getParameters();
-        const int index = owner.getVstIndex();
-
-        // 3. Safety: Ensure the index actually exists in the processor
-        if (index < params.size())
-        {
-            // 4. Get the parameter object (modern JUCE 8 approach)
-            if (auto* param = params[index])
-            {
-                // 5. Signal the beginning of a "gesture" (important for DAW automation/undo)
-                param->beginChangeGesture();
-
-                // 6. Normalize the value and send it to the host
-                float normalizedValue = normalizeValue (currentValue.value, minValue, maxValue);
-                param->setValueNotifyingHost (normalizedValue);
-
-                // 7. Signal the end of the gesture
-                param->endChangeGesture();
-            }
-        }
-        else
-        {
-            // Optional: Log an error if the index is out of bounds
-            // This helps debug if your modulators have VST indices higher than the param count
-            _DBG("CtrlrModulatorProcessor::setParameterNotifyingHost: VST Index "
-                 + String(index) + " is out of bounds (Param count: "
-                 + String(params.size()) + ")");
-        }
+        param->beginChangeGesture();
+        param->setValueNotifyingHost (normalizeValue (currentValue.value, minValue, maxValue));
+        param->endChangeGesture();
     }
 }
 

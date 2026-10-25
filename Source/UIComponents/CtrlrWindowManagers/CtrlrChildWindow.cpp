@@ -55,10 +55,9 @@ CtrlrChildWindow::CtrlrChildWindow(CtrlrWindowManager &_owner)
     setAlpha(0.0f);
 
     setContentOwned(containerComponent, true);
-    addToDesktop(ComponentPeer::windowHasTitleBar
-                 | ComponentPeer::windowAppearsOnTaskbar);
+	addToDesktop(getDesktopWindowStyleFlags()); // Fix DEBUG assertion on Linux when using native title bar
 
-    centreWithSize(getWidth(), getHeight());
+	centreWithSize(getWidth(), getHeight());
 
     // fade-in
     new LinuxFadeInWindow(this);

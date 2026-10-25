@@ -249,6 +249,7 @@ DECLARE_ID(panelModulatorListCsvDelimiter);
 DECLARE_ID(panelModulatorListXmlRoot);
 DECLARE_ID(panelModulatorListXmlModulator);
 DECLARE_ID(panelModulatorListSortOption);
+DECLARE_ID(panelModulatorListAddMode);
 DECLARE_ID(panelState);
 DECLARE_ID(panelResources);
 DECLARE_ID(panelCaps);
@@ -815,6 +816,7 @@ DECLARE_ID(ctrlrLogMidiInput);
 DECLARE_ID(ctrlrLogMidiOutput);
 DECLARE_ID(ctrlrLogOptions);
 DECLARE_ID(ctrlrLuaDisabled);
+DECLARE_ID(ctrlrLuaExternalEditorEnabled);
 DECLARE_ID(ctrlrLastBrowsedResourceDir);
 DECLARE_ID(ctrlrLogToFile);
 DECLARE_ID(ctrlrWarningInBootstrapState); // Added v5.6.32
@@ -866,6 +868,7 @@ DECLARE_ID(luaMethodEditorLineNumbersColour);	// Added v5.6.31
 DECLARE_ID(luaMethodEditorFontColour);			// Added v5.6.34. Editor font colour
 DECLARE_ID(luaMethodEditorAutoComplete);		// Added v5.6.35.
 DECLARE_ID(luaMethodEditorAutoCompleteOpt);		// Added v5.6.35. Options for auto complete full/light
+DECLARE_ID(luaMethodEditorSyntaxColors);	
 DECLARE_ID(luaMethodGroup);
 DECLARE_ID(luaMethodCode);
 DECLARE_ID(luaMethodSource);

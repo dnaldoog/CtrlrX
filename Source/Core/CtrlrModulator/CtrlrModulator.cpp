@@ -34,10 +34,11 @@ CtrlrModulator::CtrlrModulator(CtrlrPanel &_owner, const int suggestedVstIndex)
 {
 	modulatorTree.addChild (processor.getMidiMessage().getMidiTree(), -1, 0);
 	modulatorTree.addListener (this);
+	setProperty(Ids::name, ""); // Added v5.6.32
+	setProperty(Ids::modulatorGlobalVariable, -1);
 	setProperty (Ids::modulatorVstExported, true, false);
 	setProperty (Ids::vstIndex, suggestedVstIndex);
-	setProperty (Ids::modulatorIsStatic, false);
-	setProperty (Ids::modulatorGlobalVariable, -1);
+	setProperty(Ids::modulatorIsStatic, false);
 	setProperty (Ids::modulatorMuteOnStart, false);
 	setProperty (Ids::modulatorMute, false);
 	setProperty (Ids::modulatorExcludeFromSnapshot, false);
@@ -64,9 +65,8 @@ CtrlrModulator::CtrlrModulator(CtrlrPanel &_owner, const int suggestedVstIndex)
 
 	setProperty (Ids::modulatorVstNameFormat, "%n");
 	setProperty (Ids::luaModulatorValueChange, COMBO_NONE_ITEM);
-    
-    setProperty (Ids::name, ""); // Added v5.6.32
-    setProperty (Ids::modulatorMin, MIN_CONTROLLER_VALUE); // Added v5.6.32
+
+	setProperty (Ids::modulatorMin, MIN_CONTROLLER_VALUE); // Added v5.6.32
     setProperty (Ids::modulatorMax, MAX_CONTROLLER_VALUE); // Added v5.6.32
     setProperty (Ids::modulatorValue, ""); // Added v5.6.32
 }

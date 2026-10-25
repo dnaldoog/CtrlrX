@@ -34,6 +34,7 @@
 #include "CtrlrUtilities.h"
 #include "CtrlrWindowManagers/CtrlrPanelWindowManager.h"
 #include "Methods/CtrlrLuaMethod.h"
+#include "UIComponents/CtrlrLua/MethodEditor/CtrlrLuaPanelScriptWatcher.h"
 
 #include <fstream> // Added v5.6.32. Required for vst3 logger
 
@@ -281,6 +282,13 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		Result writeLuaMethodGroup(const File &parentDir, ValueTree *methodGroup);
 		Result writeLuaChildren(const File &parentDir, ValueTree *parentElement);
 		File getLuaMethodSourceFile(const ValueTree *method);
+		int inlineExternalLuaMethods(ValueTree methodsRoot, StringArray *missingNames = nullptr);
+		Result exportMethodsToWorkspace(const File &workspaceDir, StringArray *notes = nullptr);
+		Result exportLuaChildrenToWorkspace(const File &parentDir, ValueTree parent, StringArray &usedPaths,
+											StringArray *notes);
+		Result exportLuaMethodToWorkspace(const File &parentDir, ValueTree method, StringArray &usedPaths,
+										  StringArray *notes);
+		ValueTree createPortablePanelTree(); // CtrlrPanelFileOperations
 		static void convertLuaMethodsToPropeties(const File &panelLuaDir, ValueTree &panelTree);
 		static void convertLuaMethodToProperty(const File &panelLuaDir, ValueTree *method);
 		static void convertLuaChildrenToProperties(const File &panelLuaDir, ValueTree *parentElement);
@@ -320,7 +328,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		CtrlrComponent *getComponent(const String &modulatorName);
 		void panelReceivedMidi(const MidiBuffer &buffer, const CtrlrMIDIDeviceType source = inputDevice);
 		void handleAsyncUpdate();
-		bool isLoading();
+		bool isLoading() const;
 		bool getRestoreState();
 		bool getProgramState();
 		bool getBootstrapState();
@@ -437,17 +445,21 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		Atomic<uint32> midiOptions;
 		Atomic<uint32> deviceInputChannel, deviceOutputChannel, hostInputChannel, hostOutputChannel,
 			controllerInputChannel;
-
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrPanel)
 
 	private:
+		std::atomic<bool> restoreStateStatus{false};
+		std::atomic<bool> programState{false};
+		std::atomic<bool> boostrapStateStatus{false};
+		std::atomic<bool> postBootstrapGate{false};
 		juce::Uuid sessionId{juce::Uuid()}; // Automatically generates a 128-bit random UUID
 		ValueTree initialProgram, panelTree;
 		ReadWriteLock panelLock;
 		CtrlrLuaManager *ctrlrLuaManager;
 		// std::unique_ptr<CtrlrLuaManager> ctrlrLuaManager;
 		double globalMidiDelay;
-		bool restoreStateStatus, boostrapStateStatus, programState, editMode;
+		// bool restoreStateStatus, boostrapStateStatus, programState, editMode;
+		bool editMode;
 		ListenerList<CtrlrPanel::Listener> listeners;
 		std::unique_ptr<CtrlrPanelEditor> ctrlrPanelEditor;
 		CtrlrManager &owner;
@@ -485,8 +497,8 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		// MIDI channel or use CC messages.
 		bool nrpnHeaderLatched = false;
 		int nrpnLatchedNumber = -1;
-		String nrpnLatchedFormula; // tracks which formula type is active
-		uint32 bootstrapStartTime; // Used to track how long the bootstrap process takes, and to prevent it from taking
-								   // too long and causing instability. Added v5.6.34
-		bool isBootstrapTimerActive; // Added v5.6.36
+		String nrpnLatchedFormula; // tracks which formula type is active 
+		//uint32 bootstrapStartTime; // Used to track how long the bootstrap process takes, and to prevent it from taking
+								   // too long and causing instability. Added v5.6.34 Removed v.8.72
+		//bool isBootstrapTimerActive; // Added v5.6.36 Removed v.8.72
 };

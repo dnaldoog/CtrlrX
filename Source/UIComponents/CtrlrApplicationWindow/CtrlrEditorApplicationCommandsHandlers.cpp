@@ -228,6 +228,11 @@ case showExpressionHelp:
 	new CtrlrHelpWindow("Expressions Help",
 						new CtrlrGenericHelp(BinaryData::Expressions_md, BinaryData::Expressions_mdSize));
 	return true;
+	break;
+case showDebuggerHelp:
+	new CtrlrHelpWindow("Lua Debugger Help",
+						new CtrlrGenericHelp(BinaryData::luadebuggerhelp_md, BinaryData::luadebuggerhelp_mdSize));
+	return true;
 
 	// case showMidiProgrammingHelp:
 	// 	new CtrlrHelpWindow("MIDI programming Help",
@@ -391,6 +396,57 @@ case CtrlrEditor::doPanelLock:
 											!(bool)getActivePanelEditor()->getProperty(Ids::uiPanelLock));
 	break;
 
+case CtrlrEditor::doPanelToggleExternalLuaEdit:
+	if (getActivePanelEditor()) {
+		CtrlrPanel &panel = getActivePanelEditor()->getOwner();
+
+		// 1. Read current state and compute the new toggled state
+		bool currentEnabled = (bool)panel.getProperty(Ids::ctrlrLuaExternalEditorEnabled);
+		bool newEnabled = !currentEnabled;
+
+		// 2. Apply the new state to the panel first
+		panel.setProperty(Ids::ctrlrLuaExternalEditorEnabled, newEnabled);
+
+		// 3. If we just turned it ON, trigger the alert and clipboard copy
+		if (newEnabled) {
+			juce::File workspaceDir = panel.getCtrlrLuaManager().getPanelWorkspaceDir();
+
+			if (!workspaceDir.exists()) {
+				workspaceDir.createDirectory();
+			}
+
+			juce::String dirPath = workspaceDir.getFullPathName();
+			juce::SystemClipboard::copyTextToClipboard(dirPath);
+
+			juce::String infoMsg =
+				"External Lua Script Editing is now ENABLED.\n\n"
+				"Your script files for this panel are automatically saved and synced here:\n"
+
+				"--------------------------------------------------\n" +
+				dirPath + "\n" +
+				"--------------------------------------------------\n\n"
+				"(This folder path has been copied to your clipboard!)\n\n"
+				"• Edit your .lua files in your favorite external editor (e.g., Visual Studio Code or Xcode).\n"
+				"• Changes will hot-reload live into CtrlrX automatically.\n"
+				"• Sometimes it may be necessary to completely close CtrlrX and restart to see changes.\n"
+				"• To see external file changes.\n"
+				"  1. Right click in lua editor and select\n"
+				"  2. 'Scan workspace for new files'.\n"
+				"  3. Close and re-open the lua editor\n\n";
+
+			AW::showMessageBox(AW::Info, "External Editor Enabled", infoMsg, "OK");
+		}
+	}
+	break;
+
+	case CtrlrEditor::doPanelScanExternalFolder:
+	if (getActivePanelEditor()) {
+		CtrlrPanel &panel = getActivePanelEditor()->getOwner();
+		panel.getCtrlrLuaManager().scanAndImportNewFilesFromWorkspace();
+}
+	break;
+
+
 case CtrlrEditor::doPanelDisableCombosOnEdit:
 	if (getActivePanelEditor())
 		getActivePanelEditor()->setProperty(Ids::uiPanelDisableCombosOnEdit, !(bool)getActivePanelEditor()->getProperty(
@@ -542,7 +598,8 @@ case CtrlrEditor::cleanOrphanProperties: {
 		// 2. Uncaptured access to static local variable
 		auto isPropertyOrphan = [](const Identifier &key) -> bool {
 			// Ignore internal runtime viewport properties
-			if (key == Ids::uiViewPortWidth || key == Ids::uiViewPortHeight)
+			if (key == Ids::uiViewPortWidth || key == Ids::uiViewPortHeight ||
+				key == Ids::ctrlrLuaExternalEditorEnabled)
 				return false;
 
 			return validRegisteredIds.find(key.toString()) == validRegisteredIds.end();

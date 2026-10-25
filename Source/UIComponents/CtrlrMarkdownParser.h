@@ -8,8 +8,10 @@ public:
     struct MarkdownBlock
     {
         bool isHorizontalRule = false;
-        juce::AttributedString content; // used when isHorizontalRule == false
-    };
+		bool isTable = false;
+		juce::AttributedString content;								// used for ordinary text blocks
+		std::vector<std::vector<juce::AttributedString>> tableRows; // used when isTable (row 0 = header)
+	};
 
     // high-level APIs
     static juce::AttributedString parse(const juce::String& md);            // convenient single AttributedString
@@ -28,8 +30,20 @@ private:
     static void addHorizontalRule(juce::AttributedString& as);   // appends an ASCII HR line
     static void addCodeLine(juce::AttributedString& as, const juce::String& line);
     static void addListItem(juce::AttributedString& as, const juce::String& text);
-    static void appendInlineStyled(juce::AttributedString& as, const juce::String& line);
+	static void appendInlineStyled(juce::AttributedString &as, const juce::String &line, bool forceBold = false);
 
-    static bool isHorizontalRuleLine(const juce::String& rawLine); // kept but <hr> preferred
+	static bool isHorizontalRuleLine(const juce::String& rawLine); // kept but <hr> preferred
     static juce::String stripInlineCode(const juce::String& s);
 };
+
+/* How to layout tables in markdown
+
+
+| Mode       | Scrollbars | Resizable |
+|:-----------|:----------:|----------:|
+| Scrollable | Yes        | Yes       |
+| Fixed      | No         | No        |
+
+
+
+*/

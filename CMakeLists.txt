@@ -489,8 +489,8 @@ if(LINUX)
     set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
     set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com")
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
-        "${CMAKE_CURRENT_SOURCE_DIR}/Packaging/Linux/postinst;${CMAKE_CURRENT_SOURCE_DIR}/Packaging/Linux/postrm-deb")
-
+        "${CMAKE_CURRENT_SOURCE_DIR}/Packaging/Linux/postinst;${CMAKE_CURRENT_SOURCE_DIR}/Packaging/Linux/postrm")
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION TRUE)
     # RPM Specific Graphical Metadata
     set(CPACK_RPM_PACKAGE_LICENSE "GPLv3 and BSD")
     set(CPACK_RPM_PACKAGE_GROUP "Applications/Multimedia")
