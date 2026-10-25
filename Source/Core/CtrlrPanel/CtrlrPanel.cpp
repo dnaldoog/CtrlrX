@@ -378,29 +378,50 @@ void CtrlrPanel::bootstrapPanel(const bool setInitialProgram) {
 		return;
 
 	boostrapStateStatus = true;
-	_INF("[Gate] bootstrap START, isLoading=" + String(isLoading() ? "true" : "false")); // 1
+	_DBG("[Gate] bootstrap START, isLoading=" + String(isLoading() ? "true" : "false"));
 
-	// ... existing code ...
+	for (int i = 0; i < ctrlrModulators.size(); i++) {
+		ctrlrModulators[i]->allModulatorsInitialized();
+	}
 
+	if (setInitialProgram)
+		setProgram(initialProgram);
+
+	if (luaPanelLoadedCbk.get()) {
+		if (luaPanelLoadedCbk->isValid()) {
+			getCtrlrLuaManager().getMethodManager().call(luaPanelLoadedCbk, (uint8)owner.getInstanceMode());
+		}
+	}
+
+	if ((bool)getProperty(Ids::panelMidiSendProgramChangeOnLoad) == true) {
+		sendMidiProgramChange();
+	}
+
+	editModeChanged(getProperty(Ids::uiPanelEditMode));
+
+	sendSnapshotOnLoad();
+
+	// Synchronously dispatch any pending change message in each modulator to prevent Lua Callback functions beeing
+	// called on startup
 	for (int i = 0; i < ctrlrModulators.size(); i++) {
 		ctrlrModulators[i]->getProcessor().handleUpdateNowIfNeeded();
 	}
 
 	boostrapStateStatus = false;
 	postBootstrapGate = true;
-	_DBG("[Gate] bootstrap END, isLoading=" + String(isLoading() ? "true" : "false")); // 2
+	_DBG("[Gate] bootstrap END, isLoading=" + String(isLoading() ? "true" : "false"));
 
 	juce::MessageManager::callAsync([safe = juce::WeakReference<CtrlrPanel>(this)] {
 		if (safe == nullptr)
 			return;
 
-		_DBG("[Gate] hop 1 reached, isLoading=" + String(safe->isLoading() ? "true" : "false")); // 3
+		_DBG("[Gate] hop 1 reached, isLoading=" + String(safe->isLoading() ? "true" : "false"));
 
 		juce::MessageManager::callAsync([safe] {
 			if (safe != nullptr) {
 				safe->postBootstrapGate = false;
 				_DBG("[Gate] hop 2 reached, gate CLOSED, isLoading=" +
-					 String(safe->isLoading() ? "true" : "false")); // 4
+					 String(safe->isLoading() ? "true" : "false"));
 			}
 		});
 	});

@@ -29,11 +29,11 @@
        panelModulatorListCsvDelimiter="," panelModulatorListXmlRoot="ctrlrModulatorList"
        panelModulatorListXmlModulator="ctrlrModulator" panelModulatorListSortOption="1"
        panelGlobalVariables="-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1:-1"
-       panelResources="-- None" panelPropertyDisplayIDs="1" panelIndex="1"
+       panelResources="-- None" panelPropertyDisplayIDs="1" panelIndex="0"
        panelIsDirty="0" ctrlrLuaExternalEditorEnabled="0" uiPanelModulatorListViewTree="0"
        panelModulatorListAddMode="1">
   <uiWindowManager>
-    <uiChildWindow uiChildWindowName="LuaMethodEditor" uiChildWindowState="8 31 800 500">
+    <uiChildWindow uiChildWindowName="LuaMethodEditor" uiChildWindowState="fs 8 31 800 500">
       <uiChildWindowContentState luaMethodEditor="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#13;&#10;&#13;&#10;&lt;CLOSED id=&quot;LUA&quot; scrollPos=&quot;0&quot;/&gt;&#13;&#10;;07a4de8a82f44a60825fb4d4b727292f:4acc3de1cac64e2684be73630b6d6c58"/>
     </uiChildWindow>
     <uiChildWindow uiChildWindowName="LuaConsole" uiChildWindowState="772 602 800 500">
