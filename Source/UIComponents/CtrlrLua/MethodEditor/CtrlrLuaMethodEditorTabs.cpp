@@ -31,6 +31,7 @@ TabBarButton *CtrlrLuaMethodEditorTabs::createTabButton (const String &tabName, 
 
 void CtrlrLuaMethodEditorTabs::currentTabChanged(int newCurrentTabIndex, const String &newCurrentTabName)
 {
+	updateAllTooltips();
 	CtrlrLuaMethodCodeEditor * codeEditor = dynamic_cast<CtrlrLuaMethodCodeEditor*> (getCurrentContentComponent());
 	if (owner.findDialogActive == true)
 	{
@@ -42,4 +43,52 @@ void CtrlrLuaMethodEditorTabs::currentTabChanged(int newCurrentTabIndex, const S
 		if (codeEditor)
 			codeEditor->getCodeComponent()->hideFindPanel();
 	}
+}
+// Helper function to extract path
+static String getMethodVirtualFolderPath(CtrlrLuaMethod* method)
+{
+    if (method == nullptr)
+        return "/";
+
+    ValueTree parent = method->getMethodTree().getParent();
+    StringArray pathParts;
+
+    while (parent.isValid())
+    {
+        // Reached the panel itself: stop, so its name never ends up in the path
+        if (parent.hasType(Ids::panel))
+            break;
+
+        if (parent.hasProperty(Ids::name))
+        {
+            const String name = parent.getProperty(Ids::name).toString();
+            if (name.isNotEmpty() && name != "Lua Methods" && name != "methods")
+                pathParts.insert(0, name);
+        }
+        parent = parent.getParent();
+    }
+
+    return "/" + pathParts.joinIntoString("/");   // "/COMPONENT/TVF", or "/" for top level
+}
+
+void CtrlrLuaMethodEditorTabs::updateAllTooltips()
+{
+    TabbedButtonBar& bar = getTabbedButtonBar();
+    
+    for (int i = 0; i < getNumTabs(); ++i)
+    {
+        auto* codeEditor = dynamic_cast<CtrlrLuaMethodCodeEditor*>(getTabContentComponent(i));
+        if (codeEditor != nullptr)
+        {
+            CtrlrLuaMethod* method = codeEditor->getMethod();
+            if (method != nullptr)
+            {
+                String folderPath = getMethodVirtualFolderPath(method);
+                if (auto* tabButton = bar.getTabButton(i))
+                {
+                    tabButton->setTooltip(folderPath);
+                }
+            }
+        }
+    }
 }

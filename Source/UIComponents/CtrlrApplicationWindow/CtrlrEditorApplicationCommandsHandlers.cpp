@@ -432,7 +432,13 @@ case CtrlrEditor::doPanelToggleExternalLuaEdit:
 				"• To see external file changes.\n"
 				"  1. Right click in lua editor and select\n"
 				"  2. 'Scan workspace for new files'.\n"
-				"  3. Close and re-open the lua editor\n\n";
+				"  3. Close and re-open the lua editor\n\n"
+				"--------------------------------------------------\n" +
+				"WARNING!! If you edit a single file locally and then\n"
+				"\"File -> Save and Compile All\" you will overwrite all\n"
+				"remote files with the current state in CtrlrX!\n"
+				"so, best to just use \"File -> Save and Compile\n"
+				"--------------------------------------------------\n\n";
 
 			AW::showMessageBox(AW::Info, "External Editor Enabled", infoMsg, "OK");
 		}

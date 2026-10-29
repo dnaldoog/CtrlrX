@@ -11,6 +11,7 @@ class CtrlrLuaMethodEditorTabs : public TabbedComponent
 		~CtrlrLuaMethodEditorTabs();
 		TabBarButton *createTabButton (const String &tabName, int tabIndex) override;
 		void currentTabChanged (int newCurrentTabIndex, const String &newCurrentTabName) override;
+		void updateAllTooltips();
 
 		JUCE_LEAK_DETECTOR(CtrlrLuaMethodEditorTabs)
 

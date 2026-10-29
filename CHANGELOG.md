@@ -6,6 +6,8 @@
 - Refactor CtrlrWindows.cpp
 - Reintroduce licence prompt for ASYNC dialog
 - Fix SVG icon not showing for large panels
+- Lua editor: show folder path in tab tooltip (e.g. /COMPONENT/TVF)
+-
 
 ### CtrlrX v8.72 10/25/2026
 
