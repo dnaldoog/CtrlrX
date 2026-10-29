@@ -265,7 +265,10 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 
 		static const String exportPanel(CtrlrPanel *panel, const File &lastBrowsedDir,
 										const File &destinationFile = File(), MemoryBlock *outputPanelData = nullptr,
-										MemoryBlock *outputResourcesData = nullptr, const bool isRestricted = false);
+										MemoryBlock *outputResourcesData = nullptr, const bool isRestricted = false,
+										const String &licenseText = String());
+		static void askForLicenseAsync(CtrlrPanel *panel, std::function<void(juce::String)> onDone);
+
 		static bool isPanelFile(const File &fileToCheck, const bool beThorough = false);
 		static const ValueTree openPanel(const File &panelFile);
 		static const ValueTree openXmlPanel(const File &panelFile);

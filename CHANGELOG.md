@@ -1,6 +1,12 @@
 [back to release page &rArr;](https://github.com/dnaldoog/CtrlrX/releases)
 
 ----
+### CtrlrX v8.73 10/30/2026
+
+- Refactor CtrlrWindows.cpp
+- Reintroduce licence prompt for ASYNC dialog
+- Fix SVG icon not showing for large panels
+
 ### CtrlrX v8.72 10/25/2026
 
 - Fixed: panel:isLoading() no longer uses a fixed 400 ms cooldown. It now

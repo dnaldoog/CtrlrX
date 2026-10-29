@@ -2246,3 +2246,32 @@ Result CtrlrPanel::exportLuaMethodToWorkspace(const File &parentDir, ValueTree m
 	}
 	return converted;
 }
+void CtrlrPanel::askForLicenseAsync(CtrlrPanel *panel, std::function<void(juce::String)> onDone) {
+    if (panel == nullptr || panel->getResourceManager().getNumResources() == 0) {
+        onDone({});
+        return;
+    }
+
+    AW::showOkCancelAsyncSafe(
+        AW::Question, "License question", "Would you like to attach a license to this panel?",
+        [onDone](bool attach) {
+            if (!attach) {
+                onDone({});
+                return;
+            }
+
+            auto *alert = new juce::AlertWindow("License content", "Paste your license below",
+                                                juce::MessageBoxIconType::InfoIcon);
+            auto lic = std::make_shared<juce::TextEditor>();
+            lic->setMultiLine(true, false);
+            lic->setReturnKeyStartsNewLine(true);
+            lic->setSize(400, 300);
+            alert->addCustomComponent(lic.get());
+            alert->addButton("OK", 1);
+
+            AW::runCustomAlertAsyncSafe(alert, [lic, onDone](int result) {
+                onDone(result != 0 ? lic->getText() : juce::String());
+            });
+        },
+        "Yes", "No");
+}

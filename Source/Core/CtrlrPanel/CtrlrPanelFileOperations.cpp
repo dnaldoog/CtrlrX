@@ -351,8 +351,8 @@ void CtrlrPanel::savePanelVersioned() {
 }
 
 const String CtrlrPanel::exportPanel(CtrlrPanel *panel, const File &lastBrowsedDir, const File &destinationFile,
-									 MemoryBlock *outputPanelData, MemoryBlock *outputResourcesData,
-									 const bool isRestricted) {
+                                     MemoryBlock *outputPanelData, MemoryBlock *outputResourcesData,
+                                     const bool isRestricted, const String &licenseText) {
 	if (panel == nullptr)
 		return "Undefined panel passed to exporter";
 
@@ -396,7 +396,11 @@ const String CtrlrPanel::exportPanel(CtrlrPanel *panel, const File &lastBrowsedD
 			resources.addChild(res->createTree(), -1, nullptr);
 		}
 	}
-
+	if (licenseText.isNotEmpty()) {
+		juce::ValueTree licTree(Ids::resourceLicense);
+		licTree.setProperty(Ids::resourceData, licenseText, nullptr);
+		resources.addChild(licTree, -1, nullptr);
+	}
 	juce::ValueTree exportTree = panel->getCleanPanelTree();
 	panel->inlineExternalLuaMethods(
 		exportTree.getChildWithName(Ids::luaManager).getChildWithName(Ids::luaManagerMethods));
@@ -408,37 +412,7 @@ const String CtrlrPanel::exportPanel(CtrlrPanel *panel, const File &lastBrowsedD
 			editorTree.setProperty(Ids::uiPanelEditMode, false, nullptr);
 		}
 	}
-	auto finish = [exportTree, resources, destinationFile, outputPanelData,
-				   outputResourcesData]() mutable -> juce::String {
-		if (destinationFile.hasWriteAccess() && outputPanelData == nullptr) {
-			exportTree.addChild(resources, -1, nullptr);
-			juce::MemoryOutputStream compressedData;
-			{
-				juce::GZIPCompressorOutputStream gz(&compressedData, 9, false);
-				exportTree.writeToStream(gz);
-				gz.flush();
-			}
-			if (!destinationFile.replaceWithData(compressedData.getData(), compressedData.getDataSize()))
-				return "Failed writing output data to target file";
-			return {};
-		}
-		if (outputPanelData != nullptr && outputResourcesData != nullptr) {
-			{
-				juce::MemoryOutputStream out(*outputPanelData, false);
-				juce::GZIPCompressorOutputStream gz(&out, 9, false);
-				exportTree.writeToStream(gz);
-				gz.flush();
-			}
-			{
-				juce::MemoryOutputStream out(*outputResourcesData, false);
-				juce::GZIPCompressorOutputStream gz(&out, 9, false);
-				resources.writeToStream(gz);
-				gz.flush();
-			}
-			return {};
-		}
-		return "Can't export panel, unable to write to the specified destination";
-	};
+
 	if (panelSnapshot.isValid()) {
 		juce::MemoryBlock imageData;
 		{
@@ -454,48 +428,7 @@ const String CtrlrPanel::exportPanel(CtrlrPanel *panel, const File &lastBrowsedD
 			resources.addChild(snap, -1, nullptr);
 		}
 	}
-	if (outputPanelData == nullptr && panel->getResourceManager().getNumResources() > 0) {
 
-		AW::showOkCancelAsyncSafe(
-			AW::Question, "License question", "Would you like to attach a license to this panel?",
-			[resources, finish](bool attach) mutable {
-				auto done = [finish]() mutable {
-					juce::String err = finish();
-					if (err.isNotEmpty())
-						AW::showMessageBox(AW::Warning, "Panel Export", err);
-				};
-
-				if (!attach) {
-					done();
-					return;
-				}
-
-				auto *alert = new juce::AlertWindow("License content", "Paste your license below",
-													juce::MessageBoxIconType::InfoIcon);
-
-				auto lic = std::make_shared<juce::TextEditor>();
-				lic->setMultiLine(true, false);
-				lic->setReturnKeyStartsNewLine(true);
-				lic->setSize(400, 300);
-
-				alert->addCustomComponent(lic.get());
-				alert->addButton("OK", 1);
-
-				AW::runCustomAlertAsyncSafe(alert, [resources, lic, done](int result) mutable {
-					if (result != 0) {
-						juce::ValueTree licTree(Ids::resourceLicense);
-						licTree.setProperty(Ids::resourceData, lic->getText(), nullptr);
-						resources.addChild(licTree, -1, nullptr);
-					}
-					done();
-				});
-			},
-			"Yes", "No");
-
-		return {}; // result is reported asynchronously via AW::showMessageBox on error
-	}
-
-	return finish();
 	if (destinationFile.hasWriteAccess() && outputPanelData == nullptr) {
 		exportTree.addChild(resources, -1, nullptr);
 		juce::MemoryOutputStream compressedData;
