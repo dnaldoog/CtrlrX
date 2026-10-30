@@ -275,33 +275,91 @@ void CtrlrManager::addPanel(CtrlrPanelEditor *panelToAdd) {
 
 Result CtrlrManager::addInstancePanel() {
 	// 0. Guard against duplicate loading in single-instance/restricted mode
+
 	if (!ctrlrPanels.isEmpty()) {
 		_DBG("CtrlrManager::addInstancePanel - Panel already loaded, skipping duplicate instance panel creation.");
 		return Result::ok();
 	}
-	if (ctrlrPlayerInstanceTree.isValid()) {
-		CtrlrPanel *panel = new CtrlrPanel(*this, getInstanceName(), ctrlrPanels.size());
-		ctrlrPanels.add(panel);
 
-		// ADDED DEEP COPY HERE: Breaks the shared memory link for standalone player instances
-		Result restoreResult = panel->restoreState(ctrlrPlayerInstanceTree.createCopy());
+	// The licence dialog is already open: don't ask (or create a panel) a second time
+	if (instanceLicensePending)
+		return Result::ok();
 
-		if (!restoreResult.wasOk()) {
-			WARN("AddInstancePanel failed to restore the state of the panel");
-			ctrlrPanels.clear(true);
-			return (restoreResult);
-		}
+	if (!ctrlrPlayerInstanceTree.isValid())
+		return Result::fail("AddInstancePanel failed, the decoded instance tree is invalid");
 
-		managerTree.addChild(panel->getPanelTree(), -1, 0);
-		addPanel(panel->getEditor(true));
+	// Same tree choice as CtrlrPanel::restoreState
+	ValueTree resources = ctrlrPlayerInstanceTree.getChildWithName(Ids::resourceExportList);
+	if (!resources.isValid())
+		resources = getInstanceResourcesTree();
 
-		organizePanels();
+	DBG("addInstancePanel: resources valid=" << (int)resources.isValid() << " hasLicence="
+											 << (int)resources.getChildWithName(Ids::resourceLicense).isValid());
+	auto lic = resources.getChildWithName(Ids::resourceLicense);
+	DBG("licence: numProps=" << lic.getNumProperties()
+							 << " dataLen=" << lic.getProperty(Ids::resourceData).toString().length());
+	// Licence embedded in an exported standalone: ask first, create the panel only if accepted.
+	// (Plugin builds keep the old behaviour, because the host expects the panel to exist
+	// as soon as the constructor returns.)
+	if (JUCEApplicationBase::isStandaloneApp() && resources.getChildWithName(Ids::resourceLicense).isValid()) {
+		instanceLicensePending = true;
 
-		return (Result::ok());
-	} else {
-		return (Result::fail("AddInstancePanel failed, the decoded instance tree is invalid"));
+		juce::WeakReference<CtrlrManager> safeThis(this);
+
+		CtrlrPanelResourceManager::confirmEmbeddedLicenseAsync(resources, [safeThis](bool accepted) {
+			if (safeThis == nullptr)
+				return;
+
+			safeThis->instanceLicensePending = false;
+
+			if (!accepted) {
+				// Declined: quiet exit. No warning, no retry.
+				JUCEApplicationBase::quit();
+				return;
+			}
+
+			Result r = safeThis->createInstancePanel();
+			if (r.failed()) {
+				WARN("Failed to load panel: " + r.getErrorMessage());
+				return;
+			}
+
+			// What CtrlrProcessor does after initEmbeddedInstance() returns,
+			// which ran before the panel existed
+			if (safeThis->getInstanceMode() == InstanceSingle ||
+				safeThis->getInstanceMode() == InstanceSingleRestricted) {
+				if (safeThis->getActivePanel())
+					safeThis->getActivePanel()->initEmbeddedInstance();
+			}
+		});
+
+		return Result::ok(); // the panel doesn't exist yet
 	}
+
+	return createInstancePanel();
 }
+
+Result CtrlrManager::createInstancePanel() {
+	CtrlrPanel *panel = new CtrlrPanel(*this, getInstanceName(), ctrlrPanels.size());
+	ctrlrPanels.add(panel);
+
+	// Deep copy: breaks the shared memory link for standalone player instances
+	Result restoreResult = panel->restoreState(ctrlrPlayerInstanceTree.createCopy());
+
+	if (!restoreResult.wasOk()) {
+		WARN("AddInstancePanel failed to restore the state of the panel");
+		ctrlrPanels.clear(true);
+		return restoreResult;
+	}
+
+	managerTree.addChild(panel->getPanelTree(), -1, 0);
+	addPanel(panel->getEditor(true));
+
+	organizePanels();
+
+	return Result::ok();
+}
+
 void CtrlrManager::restoreState(const juce::XmlElement &xmlState) {
 	const juce::ValueTree tree = juce::ValueTree::fromXml(xmlState);
 	if (tree.isValid()) {
@@ -309,142 +367,6 @@ void CtrlrManager::restoreState(const juce::XmlElement &xmlState) {
 	}
 }
 
-// void CtrlrManager::restoreState(const ValueTree &savedTree) {
-// 	_DBG("CtrlrManager::restoreState (ValueTree) enter");
-
-// #if !JucePlugin_Build_AAX
-// 	juce::MessageManagerLock mmlock;
-// 	_DBG("CtrlrManager::restoreState: MessageManagerLock acquired (non-AAX build).");
-// #else
-// 	_DBG("CtrlrManager::restoreState: MessageManagerLock skipped (AAX build).");
-// #endif
-
-// 	// 1. Validate tree upfront BEFORE touching UI state
-// 	if (!savedTree.isValid()) {
-// 		_DBG("CtrlrManager::restoreState: savedTree is NOT valid. No state to restore.");
-// 		_DBG("CtrlrManager::restoreState (ValueTree) exit");
-// 		return;
-// 	}
-
-// 	_DBG("CtrlrManager::restoreState: savedTree is valid. Proceeding with state restoration.");
-
-// 	// RAII Guard: Guarantees ctrlrManagerRestoring resets to false on ANY exit path
-// 	ctrlrManagerRestoring = true;
-// 	const juce::ScopedValueSetter<bool> restoringGuard(ctrlrManagerRestoring, true, false);
-// 	// Safely close documents backward using JUCE's Component* API
-// 	// =================================================================
-// 	// STEP 1 & 2: CLEANUP PREVIOUS STATE & UI DETACHMENT
-// 	// =================================================================
-// 	if (ctrlrDocumentPanel != nullptr) {
-// 		// 1. Hide document panel during teardown to avoid unwanted repaints
-// 		ctrlrDocumentPanel->setVisible(false);
-
-// 		// 2. Remove document components from MultiDocumentPanel cleanly
-// 		//    Using getNumDocuments() + closeDocument with force=false
-// 		//    or removing child components without explicit setActiveDocument(nullptr)
-// 		for (int i = 0; i < ctrlrPanels.size(); ++i) {
-// 			if (auto *panel = ctrlrPanels.getUnchecked(i)) {
-// 				if (auto *editor = panel->getEditor(false)) {
-// 					ctrlrDocumentPanel->removeChildComponent(editor);
-// 				}
-// 			}
-// 		}
-
-// 		// DO NOT call ctrlrDocumentPanel->setActiveDocument(nullptr);
-// 		// JUCE handles active document clearing internally when components are detached.
-// 	}
-
-// 	// 3. Clear data models safely
-// 	ctrlrPanels.clear(true);
-// 	ctrlrModulators.clear();
-// 	managerTree.removeAllChildren(nullptr);
-
-// 	// =================================================================
-// 	// STEP 3: RESTORE PROPERTIES & MANAGERS
-// 	// =================================================================
-// 	_DBG("CtrlrManager::restoreState: Calling restoreProperties.");
-// 	restoreProperties(savedTree, managerTree, nullptr, juce::String());
-// 	_DBG("CtrlrManager::restoreState: restoreProperties returned.");
-
-// 	if (owner != nullptr && owner->getOverrides().isValid()) {
-// 		_DBG("CtrlrManager::restoreState: Overrides found, setting properties.");
-// 		const auto overrides = owner->getOverrides();
-
-// 		for (int i = 0; i < overrides.getNumProperties(); ++i) {
-// 			const auto propName = overrides.getPropertyName(i);
-// 			setProperty(propName, overrides.getProperty(propName));
-// 		}
-// 		_DBG("CtrlrManager::restoreState: Overrides processed.");
-// 	}
-
-// 	_DBG("CtrlrManager::restoreState: Clearing and re-adding managerTree children.");
-// 	managerTree.addChild(ctrlrMidiDeviceManager.getManagerTree(), -1, nullptr);
-// 	managerTree.addChild(ctrlrWindowManager.getManagerTree(), -1, nullptr);
-// 	_DBG("CtrlrManager::restoreState: ManagerTree children updated.");
-
-// 	if (const auto midiTree = savedTree.getChildWithName(Ids::midiDeviceManager); midiTree.isValid()) {
-// 		_DBG("CtrlrManager::restoreState: Restoring MIDI device manager state.");
-// 		ctrlrMidiDeviceManager.restoreState(midiTree);
-// 		_DBG("CtrlrManager::restoreState: MIDI device manager state restored.");
-// 	}
-
-// 	if (const auto windowTree = savedTree.getChildWithName(Ids::uiWindowManager); windowTree.isValid()) {
-// 		_DBG("CtrlrManager::restoreState: Restoring UI Window manager state.");
-// 		ctrlrWindowManager.restoreState(windowTree);
-// 		_DBG("CtrlrManager::restoreState: UI Window manager state restored.");
-// 	}
-
-// 	// =================================================================
-// 	// STEP 4: RE-CREATE PANELS FROM SAVED TREE
-// 	// =================================================================
-// 	if (getInstanceMode() != InstanceMulti && savedTree.hasType(Ids::panelState)) {
-// 		_DBG("CtrlrManager::restoreState: Instance not multi, restoring instance state.");
-// 		restoreInstanceState(savedTree);
-// 		_DBG("CtrlrManager::restoreState: restoreInstanceState returned.");
-
-// 		if (ctrlrDocumentPanel != nullptr)
-// 			ctrlrDocumentPanel->setVisible(true);
-
-// 		_DBG("CtrlrManager::restoreState (ValueTree) exit - early return for single instance.");
-// 		return; // Guard automatically resets ctrlrManagerRestoring to false
-// 	}
-
-// 	_DBG("CtrlrManager::restoreState: Looping through savedTree children for panels.");
-// 	int panelIdx = 0;
-// 	for (const auto childTree : savedTree) {
-// 		if (childTree.hasType(Ids::panel)) {
-// 			_DBG("CtrlrManager::restoreState: Adding panel from child " + juce::String(panelIdx++));
-// 			addPanel(childTree);
-// 			_DBG("CtrlrManager::restoreState: Panel added.");
-// 		}
-// 	}
-
-// 	// =================================================================
-// 	// STEP 5: EDITOR STATE & UI UNFREEZE
-// 	// =================================================================
-// 	auto restoreEditorUI = [this]() {
-// 		if (ctrlrEditor != nullptr) {
-// 			restoreEditorState();
-// 		}
-// 		if (ctrlrDocumentPanel != nullptr) {
-// 			ctrlrDocumentPanel->setVisible(true);
-// 		}
-// 	};
-
-// #if JucePlugin_Build_AAX
-// 	_DBG("CtrlrManager::restoreState: AAX build - scheduling restoreEditorState on Message Thread.");
-// 	juce::MessageManager::callAsync([restoreEditorUI]() {
-// 		_DBG("CtrlrManager::restoreState: Executing restoreEditorState on Message Thread (AAX).");
-// 		restoreEditorUI();
-// 		_DBG("CtrlrManager::restoreState: restoreEditorState execution on Message Thread complete (AAX).");
-// 	});
-// #else
-// 	_DBG("CtrlrManager::restoreState: Non-AAX build - calling restoreEditorState directly.");
-// 	restoreEditorUI();
-// #endif
-
-// 	_DBG("CtrlrManager::restoreState (ValueTree) exit");
-// }
 void CtrlrManager::restoreState (const ValueTree &savedTree)
 {
     _DBG("CtrlrManager::restoreState (ValueTree) enter");

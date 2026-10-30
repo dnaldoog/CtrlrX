@@ -81,7 +81,9 @@ static File getVST3PluginPath() {
 	std::ifstream maps("/proc/self/maps");
 	std::string line;
 
-	File hostExe = File::getSpecialLocation(File::currentApplicationFile);
+	File hostExe = File("/proc/self/exe").getLinkedTarget();
+	if (!hostExe.existsAsFile())
+		hostExe = File::getSpecialLocation(File::currentApplicationFile);
 
 	while (std::getline(maps, line)) {
 		if (line.find(".so") != std::string::npos) {
@@ -364,6 +366,7 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 				}
 			}
 			newMe = binaryFile;
+
 		} else if (isVST2) {
 			newMe = chosenFile.hasFileExtension(".so") ? chosenFile : chosenFile.withFileExtension(".so");
 			if (!me.copyFileTo(newMe)) {
@@ -375,6 +378,7 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 			// uiPanelLinuxExpDest — silently install into the
 			// user's system dirs (~/.local/bin), or use whatever location
 			// the user picked via the file chooser (classic/portable mode).
+
 			ValueTree editorTreeForInstall = panelToWrite->getPanelTree().getChildWithName(Ids::uiPanelEditor);
 			bool exportToUserSystemDirs = editorTreeForInstall.isValid() &&
 										  (bool)editorTreeForInstall.getProperty(Ids::uiPanelLinuxExpDest, false);
@@ -386,6 +390,10 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 			} else {
 				newMe = chosenFile;
 			}
+
+			DBG("copy check: me=[" << me.getFullPathName() << "] exists=" << (int)me.existsAsFile() << " newMe=["
+								   << newMe.getFullPathName()
+								   << "] dirWritable=" << (int)newMe.getParentDirectory().hasWriteAccess());
 
 			if (!me.copyFileTo(newMe)) {
 				notifyAndReturn(

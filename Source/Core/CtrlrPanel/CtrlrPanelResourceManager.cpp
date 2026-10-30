@@ -550,13 +550,14 @@ void CtrlrPanelResourceManager::confirmEmbeddedLicenseAsync(const ValueTree &res
 	}
 
 	auto *licenseWindow =
-		new AlertWindow("License agreement", "You must agree to the below license", AlertWindow::QuestionIcon);
+		new AlertWindow("Licence agreement", "You must agree to the licence below", AlertWindow::QuestionIcon);
 
 	auto licenseText = std::make_shared<TextEditor>();
 	licenseText->setMultiLine(true);
 	licenseText->setReadOnly(true);
-	licenseText->setText(licence.getProperty(Ids::resourceData).toString());
 	licenseText->setSize(500, 400);
+	licenseText->setText(licence.getProperty(Ids::resourceData).toString(), false);
+	licenseText->moveCaretToTop(false);
 
 	licenseWindow->addCustomComponent(licenseText.get());
 	licenseWindow->addButton("Yes", 1);

@@ -69,10 +69,6 @@ CtrlrProcessor::CtrlrProcessor()
 	if (!ctrlrManager->initEmbeddedInstance()) {
 		ctrlrManager->setDefaults();
 	}
-	if (!ctrlrManager->initEmbeddedInstance()) {
-		ctrlrManager->setDefaults();
-	}
-
 	ctrlrManager->setManagerReady();
 
 	if (ctrlrManager->getInstanceMode() == InstanceSingle ||

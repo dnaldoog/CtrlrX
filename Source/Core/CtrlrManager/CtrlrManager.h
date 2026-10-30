@@ -375,6 +375,9 @@ static bool isGnomeShell() {
 		ValueTree ctrlrPlayerInstanceTree;
 		ValueTree ctrlrPlayerInstanceResources;
 		CtrlrModulator *invalidModulator;
+		Result createInstancePanel();				  // the old addInstancePanel body, minus the guards
+		bool instanceLicensePending = false;		  // true while the licence dialog is open
+		JUCE_DECLARE_WEAK_REFERENCEABLE(CtrlrManager) // only if the class doesn't already have it
 		CtrlrPanel *addPanelNoLicenseCheck(const ValueTree &savedState, const bool showUI);
 		WeakReference<CtrlrLuaMethod> luaCtrlrSaveState, luaCtrlrRestoreState;
 };
