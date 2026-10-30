@@ -260,8 +260,19 @@ if(WIN32)
     )
 endif()
 target_compile_options(SharedCode INTERFACE
-    $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:-msse2 -fPIC>
+# Only add SSE2 if we are strictly targeting an x86 processor
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "amd64|AMD64|x86_64|i386|X86")
+    target_compile_options(SharedCode INTERFACE
+        $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:-msse2>
+    )
+endif()
+
+# Always apply -fPIC for these compilers
+target_compile_options(SharedCode INTERFACE
+    $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:-fPIC>
 )
+
+
 
 if(UNIX)
     target_compile_options(SharedCode INTERFACE -w -Wno-implicit-fallthrough -Wno-maybe-uninitialized -Wno-missing-field-initializers -Wno-free-nonheap-object)
