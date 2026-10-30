@@ -548,13 +548,20 @@ void CtrlrPanelResourceManager::confirmEmbeddedLicenseAsync(const ValueTree &res
 			onDone(true);
 		return;
 	}
-
+	const var d = licence.getProperty(Ids::resourceData);
+	DBG("licence dialog: props=" << licence.getNumProperties() << " dataLen=" << d.toString().length() << " type="
+								 << (d.isString()		? "string"
+									 : d.isBinaryData() ? "binary"
+									 : d.isVoid()		? "void"
+														: "other"));
 	auto *licenseWindow =
 		new AlertWindow("Licence agreement", "You must agree to the licence below", AlertWindow::QuestionIcon);
 
 	auto licenseText = std::make_shared<TextEditor>();
 	licenseText->setMultiLine(true);
 	licenseText->setReadOnly(true);
+	licenseText->setColour(TextEditor::backgroundColourId, Colours::black);
+	licenseText->setColour(TextEditor::textColourId, Colours::white);
 	licenseText->setSize(500, 400);
 	licenseText->setText(licence.getProperty(Ids::resourceData).toString(), false);
 	licenseText->moveCaretToTop(false);
