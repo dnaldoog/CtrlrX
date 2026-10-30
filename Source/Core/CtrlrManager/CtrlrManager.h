@@ -341,6 +341,7 @@ static bool isGnomeShell() {
 		void setManagerReady();
 		CtrlrPanel *nullPanel;
 		CtrlrModulator *nullModulator;
+
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrManager);
 
 	private:
@@ -374,5 +375,6 @@ static bool isGnomeShell() {
 		ValueTree ctrlrPlayerInstanceTree;
 		ValueTree ctrlrPlayerInstanceResources;
 		CtrlrModulator *invalidModulator;
+		CtrlrPanel *addPanelNoLicenseCheck(const ValueTree &savedState, const bool showUI);
 		WeakReference<CtrlrLuaMethod> luaCtrlrSaveState, luaCtrlrRestoreState;
 };

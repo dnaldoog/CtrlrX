@@ -47,8 +47,8 @@ class CtrlrPanelResourceManager
 		CtrlrPanelResourceType guessType(const File &resourceFile);
 		static void wrapForLua(lua_State *L);
 		// Result restoreState (const ValueTree &savedState);
-		juce::Result restoreState(const juce::ValueTree &state,
-								  std::function<void(juce::Result)> completionCallback = nullptr);
+		Result restoreState(const ValueTree &savedState);
+		static void confirmEmbeddedLicenseAsync(const ValueTree &resourcesTree, std::function<void(bool)> onDone);
 		Array <CtrlrPanelResource*> getResourcesCopy();
 		ValueTree &getManagerTree() { return (managerTree); }
 		void restoreSavedState (const ValueTree &savedState);

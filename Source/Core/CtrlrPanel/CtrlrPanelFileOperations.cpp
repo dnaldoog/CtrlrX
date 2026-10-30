@@ -401,6 +401,7 @@ const String CtrlrPanel::exportPanel(CtrlrPanel *panel, const File &lastBrowsedD
 		licTree.setProperty(Ids::resourceData, licenseText, nullptr);
 		resources.addChild(licTree, -1, nullptr);
 	}
+	DBG("exportPanel: licenseText length = " << licenseText.length());
 	juce::ValueTree exportTree = panel->getCleanPanelTree();
 	panel->inlineExternalLuaMethods(
 		exportTree.getChildWithName(Ids::luaManager).getChildWithName(Ids::luaManagerMethods));

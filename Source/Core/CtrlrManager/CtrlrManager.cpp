@@ -214,13 +214,39 @@ void CtrlrManager::allPanelsInitialized() {
 }
 
 CtrlrPanel *CtrlrManager::addPanel(const ValueTree &savedState, const bool showUI) {
+	// 0. General guard (unchanged)
+	if ((getInstanceMode() == InstanceSingleRestricted || getInstanceMode() == InstanceSingle) &&
+		!ctrlrPanels.isEmpty()) {
+		_DBG("CtrlrManager::addPanel - Instance restricted: panel already loaded, skipping duplicate.");
+		return ctrlrPanels.getUnchecked(0);
+	}
 
-// 0. General Guard: If this is a restricted instance or player instance, allow maximum ONE panel
-	if ((getInstanceMode() == InstanceSingleRestricted || getInstanceMode() == InstanceSingle) && !ctrlrPanels.isEmpty()) {
-        _DBG("CtrlrManager::addPanel - Instance restricted: panel already loaded, skipping duplicate.");
-        return ctrlrPanels.getUnchecked(0);
-    }
+	// Same tree choice as CtrlrPanel::restoreState
+	ValueTree resources = savedState.getChildWithName(Ids::resourceExportList);
+	if (!resources.isValid())
+		resources = getInstanceResourcesTree();
 
+	// Licence present: ask first, create the panel only if it's accepted
+	if (resources.getChildWithName(Ids::resourceLicense).isValid()) {
+		const ValueTree stateCopy = savedState.createCopy();
+
+		CtrlrPanelResourceManager::confirmEmbeddedLicenseAsync(resources, [this, stateCopy, showUI](bool accepted) {
+			if (!accepted) {
+				// Declined: quiet cancel. Only quit a standalone app, never a plugin host.
+				if (JUCEApplicationBase::isStandaloneApp())
+					JUCEApplicationBase::quit();
+				return;
+			}
+			addPanelNoLicenseCheck(stateCopy, showUI);
+		});
+
+		return nullptr; // the panel doesn't exist yet
+	}
+
+	return addPanelNoLicenseCheck(savedState, showUI);
+}
+
+CtrlrPanel *CtrlrManager::addPanelNoLicenseCheck(const ValueTree &savedState, const bool showUI) {
 	// 1. Instantiate the panel
 	CtrlrPanel *panel = new CtrlrPanel(*this, getUniquePanelName("Ctrlr Panel"), ctrlrPanels.size());
 
@@ -233,13 +259,11 @@ CtrlrPanel *CtrlrManager::addPanel(const ValueTree &savedState, const bool showU
 	// 4. Register in manager tree
 	managerTree.addChild(panel->getPanelTree(), -1, 0);
 
-	// 5. Open/Show UI via Ctrlr's dedicated editor helper
-	if (showUI) {
+	// 5. Open/Show UI
+	if (showUI)
 		addPanel(panel->getEditor(true));
-	}
 
 	organizePanels();
-
 	return panel;
 }
 

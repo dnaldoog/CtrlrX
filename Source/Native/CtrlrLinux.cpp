@@ -314,7 +314,7 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 		notifyAndReturn(Result::fail("Linux native, panel pointer is invalid"));
 		return;
 	}
-
+	juce::WeakReference<CtrlrPanel> panelRef(panelToWrite);
 	File me = getVST3PluginPath();
 
 	File parentDir = me.getParentDirectory();
@@ -331,8 +331,15 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 	String appIdName = sanitizeAppId(panelToWrite->getProperty(Ids::name).toString());
 
 	// --- PATH AUTO-ROUTING LAMBDA EXECUTION FOR BOTH PLUGINS AND STANDALONES ---
-	auto performExportPipeline = [this, panelToWrite, me, isVST3, isVST2, isRestricted, appIdName,
-								  notifyAndReturn](const File &chosenFile) {
+	auto performExportPipeline = [this, panelRef, me, isVST3, isVST2, isRestricted, appIdName,
+								  notifyAndReturn](const File &chosenFile, const juce::String &licenseText) {
+		DBG("performExportPipeline: licenseText length = " << licenseText.length());
+		CtrlrPanel *panelToWrite = panelRef.get();
+		if (panelToWrite == nullptr) {
+			notifyAndReturn(Result::fail("Linux native: panel was closed before the export could finish"));
+			return;
+		}
+
 		File newMe;
 
 		if (isVST3) {
@@ -388,9 +395,8 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 		}
 
 		MemoryBlock panelExportData, panelResourcesData;
-		CtrlrPanel p(owner, "", 0);
-		String error = p.exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData, isRestricted);
-
+		String error = CtrlrPanel::exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData,
+											   isRestricted, licenseText);
 		if (error.isNotEmpty()) {
 			notifyAndReturn(Result::fail("CtrlrPanel::exportPanel failed: " + error));
 			return;
@@ -505,7 +511,7 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 
 			String iconLine; // stays empty — Icon= is omitted — if no icon was generated
 
-			if (iconResourceName.isNotEmpty()) {
+			if (iconResourceName.isNotEmpty() && iconResourceName != "-- None") {
 				CtrlrPanelResource *iconResource = panelToWrite->getResourceManager().getResource(iconResourceName);
 
 				if (iconResource != nullptr) {
@@ -576,7 +582,12 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 		_DBG("Export pipeline successfully executed.");
 		notifyAndReturn(Result::ok());
 	};
-
+	// Ask for a licence (only if the panel has resources), then run the pipeline
+	auto exportWithLicence = [panelRef, performExportPipeline](const File &chosenFile) {
+		CtrlrPanel::askForLicenseAsync(panelRef.get(), [performExportPipeline, chosenFile](juce::String lic) {
+			performExportPipeline(chosenFile, lic);
+		});
+	};
 	// --- DETERMINATION RULE: PROMPT IF PLUGIN, EXECUTE SILENTLY IF STANDALONE ---
 	if (isVST3 || isVST2) {
 		File suggestedFile = isVST3 ? bundleDir.getParentDirectory().getChildFile(panelName + ".vst3")
@@ -584,13 +595,41 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 		String filePattern = isVST3 ? "*.vst3" : "*.so";
 		const bool useNativeDialog = panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs);
 
+		// plugin branch
 		FC::saveFileAsync(CTRLR_NEW_INSTANCE_DIALOG_TITLE, suggestedFile, filePattern, useNativeDialog,
-						  [performExportPipeline, notifyAndReturn](const File &chosenFile) {
+						  [exportWithLicence, notifyAndReturn](const File &chosenFile) {
 							  if (chosenFile == File()) {
 								  notifyAndReturn(Result::fail("User cancelled plugin export operation."));
 								  return;
 							  }
-							  performExportPipeline(chosenFile);
+							  exportWithLicence(chosenFile);
+						  });
+
+		// standalone, silent install to ~/.local/bin
+		exportWithLicence(File());
+
+		// standalone, classic file chooser
+		// plugin branch
+		FC::saveFileAsync(CTRLR_NEW_INSTANCE_DIALOG_TITLE, suggestedFile, filePattern, useNativeDialog,
+						  [exportWithLicence, notifyAndReturn](const File &chosenFile) {
+							  if (chosenFile == File()) {
+								  notifyAndReturn(Result::fail("User cancelled plugin export operation."));
+								  return;
+							  }
+							  exportWithLicence(chosenFile);
+						  });
+
+		// standalone, silent install to ~/.local/bin
+		exportWithLicence(File());
+
+		// standalone, classic file chooser
+		FC::saveFileAsync(CTRLR_NEW_INSTANCE_DIALOG_TITLE, suggestedFile, "*", useNativeDialog,
+						  [exportWithLicence, notifyAndReturn](const File &chosenFile) {
+							  if (chosenFile == File()) {
+								  notifyAndReturn(Result::fail("User cancelled the export operation."));
+								  return;
+							  }
+							  exportWithLicence(chosenFile);
 						  });
 	} else {
 		// STANDALONE: dispatch based on uiPanelLinuxExpDest
@@ -600,19 +639,19 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 
 		if (exportToUserSystemDirs) {
 			// Silent, no dialog — installs straight into ~/.local/bin
-			performExportPipeline(File());
+			exportWithLicence(File());
 		} else {
 			// Classic behavior: ask the user where to save it, same as VST3/VST2
 			File suggestedFile = me.getParentDirectory().getChildFile(panelName);
 			const bool useNativeDialog = panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs);
 
 			FC::saveFileAsync(CTRLR_NEW_INSTANCE_DIALOG_TITLE, suggestedFile, "*", useNativeDialog,
-							  [performExportPipeline, notifyAndReturn](const File &chosenFile) {
+							  [exportWithLicence, notifyAndReturn](const File &chosenFile) {
 								  if (chosenFile == File()) {
 									  notifyAndReturn(Result::fail("User cancelled the export operation."));
 									  return;
 								  }
-								  performExportPipeline(chosenFile);
+								  exportWithLicence(chosenFile);
 							  });
 		}
 	}
