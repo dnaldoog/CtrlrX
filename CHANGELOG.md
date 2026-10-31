@@ -1,7 +1,7 @@
 [back to release page &rArr;](https://github.com/dnaldoog/CtrlrX/releases)
 
 ----
-### CtrlrX v8.73 10/30/2026
+### CtrlrX v8.73 10/31/2026
 
 - Refactor CtrlrWindows.cpp
 - Reintroduce licence prompt for ASYNC dialog
