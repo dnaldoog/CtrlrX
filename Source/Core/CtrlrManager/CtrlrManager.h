@@ -233,6 +233,8 @@ class CtrlrManager : public ValueTree::Listener,
 		void applicationCommandListChanged();
 		int getNextVstIndex();
 		int getModulatorVstIndexByName(const String &modulatorName, CtrlrPanel *sourcePanel);
+		Result importInstanceResources(CtrlrNative *native);
+
 		CtrlrProperties &getCtrlrProperties();
 		ApplicationProperties *getApplicationProperties();
 		CtrlrProcessor *getProcessorOwner() { return (owner); }
@@ -333,7 +335,6 @@ static bool isGnomeShell() {
 		CtrlrInstance getInstanceMode() const;
 		const bool isSingleInstance() const;
 		XmlElement *saveState();
-		Result importInstanceResources(CtrlrNative *native);
 		ValueTree &getInstanceTree();
 		ValueTree &getInstanceResourcesTree();
 		void openPanelInternal(const File &fileToOpen);
@@ -349,7 +350,8 @@ static bool isGnomeShell() {
 		void setEmbeddedDefaults();
 		Result addInstancePanel();
 		void restoreInstanceState(const ValueTree &instanceState);
-
+		File getInstanceResourcesMarkerFile();
+		void markInstanceResourcesImported();
 		void openPanelInternal(const ValueTree &panelTree);
 		ApplicationCommandManager commandManager;
 		bool ctrlrManagerRestoring;

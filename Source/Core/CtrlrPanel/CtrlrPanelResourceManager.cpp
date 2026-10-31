@@ -560,8 +560,8 @@ void CtrlrPanelResourceManager::confirmEmbeddedLicenseAsync(const ValueTree &res
 	auto licenseText = std::make_shared<TextEditor>();
 	licenseText->setMultiLine(true);
 	licenseText->setReadOnly(true);
-	licenseText->setColour(TextEditor::backgroundColourId, Colours::black);
-	licenseText->setColour(TextEditor::textColourId, Colours::white);
+	licenseText->setColour(TextEditor::backgroundColourId, Colours::lightsteelblue);
+	licenseText->setColour(TextEditor::textColourId, Colours::black);
 	licenseText->setSize(500, 400);
 	licenseText->setText(licence.getProperty(Ids::resourceData).toString(), false);
 	licenseText->moveCaretToTop(false);
@@ -569,6 +569,7 @@ void CtrlrPanelResourceManager::confirmEmbeddedLicenseAsync(const ValueTree &res
 	licenseWindow->addCustomComponent(licenseText.get());
 	licenseWindow->addButton("Yes", 1);
 	licenseWindow->addButton("No", 0);
+	licenseWindow->setAlwaysOnTop(true);
 
 	AW::runCustomAlertAsyncSafe(licenseWindow, [licenseText, onDone](int result) {
 		if (onDone)

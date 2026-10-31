@@ -260,18 +260,12 @@ if(WIN32)
     )
 endif()
 target_compile_options(SharedCode INTERFACE
-# Only add SSE2 if we are strictly targeting an x86 processor
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "amd64|AMD64|x86_64|i386|X86")
-    target_compile_options(SharedCode INTERFACE
-        $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:-msse2>
-    )
-endif()
-
-# Always apply -fPIC for these compilers
-target_compile_options(SharedCode INTERFACE
+    # Flags shared by all architectures for these compilers
     $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:-fPIC>
+    
+    # -msse2 flag ONLY applied if the compiler supports it AND we are on x86/x86_64
+    $<$<AND:$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>,$<OR:$<PLATFORM_ID:Windows>,$<PLATFORM_ID:Linux>,$<NOT:$<PLATFORM_ID:Darwin>>>>:-msse2>
 )
-
 
 
 if(UNIX)

@@ -164,40 +164,27 @@ const bool CtrlrManager::isSingleInstance() const {
 	return (ctrlrPlayerInstanceMode == InstanceSingle || ctrlrPlayerInstanceMode == InstanceSingleRestricted);
 }
 
+// REPLACES the existing importInstanceResources(): same logic, but it no longer creates the marker.
+
 Result CtrlrManager::importInstanceResources(CtrlrNative *native) {
-	if (getCtrlrProperties().getProperties().getUserSettings()) {
-		if (getCtrlrProperties()
-				.getProperties()
-				.getUserSettings()
-				->getFile()
-				.getParentDirectory()
-				.getChildFile(".delete_me_to_reload_resources")
-				.existsAsFile()) {
-			return (Result::ok());
-		} else {
-			getCtrlrProperties()
-				.getProperties()
-				.getUserSettings()
-				->getFile()
-				.getParentDirectory()
-				.getChildFile(".delete_me_to_reload_resources")
-				.create();
-		}
-	}
+	const File marker = getInstanceResourcesMarkerFile();
+
+	if (marker != File() && marker.existsAsFile())
+		return Result::ok(); // resources were imported on an earlier, completed launch
 
 	MemoryBlock resourcesData;
 	Result resourceFetch = native->getDefaultResources(resourcesData);
 
 	if (resourceFetch.failed()) {
-		return (Result::fail("ImportInstanceResources getDefaultResources() failed"));
+		return Result::fail("ImportInstanceResources getDefaultResources() failed");
 	}
 
 	ctrlrPlayerInstanceResources = ValueTree::readFromGZIPData(resourcesData.getData(), resourcesData.getSize());
 
 	if (ctrlrPlayerInstanceResources.isValid()) {
-		return (Result::ok());
+		return Result::ok();
 	} else {
-		return (Result::fail("ImportInstanceResources got some data but couldn't understand it"));
+		return Result::fail("ImportInstanceResources got some data but couldn't understand it");
 	}
 }
 

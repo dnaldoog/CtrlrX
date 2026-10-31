@@ -275,7 +275,6 @@ void CtrlrManager::addPanel(CtrlrPanelEditor *panelToAdd) {
 
 Result CtrlrManager::addInstancePanel() {
 	// 0. Guard against duplicate loading in single-instance/restricted mode
-
 	if (!ctrlrPanels.isEmpty()) {
 		_DBG("CtrlrManager::addInstancePanel - Panel already loaded, skipping duplicate instance panel creation.");
 		return Result::ok();
@@ -293,14 +292,7 @@ Result CtrlrManager::addInstancePanel() {
 	if (!resources.isValid())
 		resources = getInstanceResourcesTree();
 
-	DBG("addInstancePanel: resources valid=" << (int)resources.isValid() << " hasLicence="
-											 << (int)resources.getChildWithName(Ids::resourceLicense).isValid());
-	auto lic = resources.getChildWithName(Ids::resourceLicense);
-	DBG("licence: numProps=" << lic.getNumProperties()
-							 << " dataLen=" << lic.getProperty(Ids::resourceData).toString().length());
 	// Licence embedded in an exported standalone: ask first, create the panel only if accepted.
-	// (Plugin builds keep the old behaviour, because the host expects the panel to exist
-	// as soon as the constructor returns.)
 	if (JUCEApplicationBase::isStandaloneApp() && resources.getChildWithName(Ids::resourceLicense).isValid()) {
 		instanceLicensePending = true;
 
@@ -313,7 +305,7 @@ Result CtrlrManager::addInstancePanel() {
 			safeThis->instanceLicensePending = false;
 
 			if (!accepted) {
-				// Declined: quiet exit. No warning, no retry.
+				// Declined: quiet exit. No marker is written, so the next launch asks again.
 				JUCEApplicationBase::quit();
 				return;
 			}
@@ -324,8 +316,13 @@ Result CtrlrManager::addInstancePanel() {
 				return;
 			}
 
-			// What CtrlrProcessor does after initEmbeddedInstance() returns,
-			// which ran before the panel existed
+			// Accepted and loaded: from now on skip the resource import (and the licence prompt)
+
+			// safeThis->markInstanceResourcesImported();
+			// safeThis->restoreEditorState();
+
+			safeThis->markInstanceResourcesImported();
+
 			if (safeThis->getInstanceMode() == InstanceSingle ||
 				safeThis->getInstanceMode() == InstanceSingleRestricted) {
 				if (safeThis->getActivePanel())
@@ -336,7 +333,12 @@ Result CtrlrManager::addInstancePanel() {
 		return Result::ok(); // the panel doesn't exist yet
 	}
 
-	return createInstancePanel();
+	// No licence (or a plugin build): load straight away, then record that the resources were imported
+	Result r = createInstancePanel();
+	if (r.wasOk())
+		markInstanceResourcesImported();
+
+	return r;
 }
 
 Result CtrlrManager::createInstancePanel() {
@@ -871,3 +873,18 @@ ApplicationProperties *CtrlrManager::getApplicationProperties() {
 void CtrlrManager::applicationCommandInvoked(const ApplicationCommandTarget::InvocationInfo &info) {}
 
 void CtrlrManager::applicationCommandListChanged() {}
+
+// REPLACES the existing importInstanceResources(): same logic, but it no longer creates the marker.
+File CtrlrManager::getInstanceResourcesMarkerFile() {
+	if (auto *settings = getCtrlrProperties().getProperties().getUserSettings())
+		return settings->getFile().getParentDirectory().getChildFile(".delete_me_to_reload_resources");
+
+	return File();
+}
+
+void CtrlrManager::markInstanceResourcesImported() {
+	const File marker = getInstanceResourcesMarkerFile();
+ 
+	if (marker != File() && !marker.existsAsFile())
+		marker.create();
+}
