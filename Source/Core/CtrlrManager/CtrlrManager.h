@@ -233,6 +233,8 @@ class CtrlrManager : public ValueTree::Listener,
 		void applicationCommandListChanged();
 		int getNextVstIndex();
 		int getModulatorVstIndexByName(const String &modulatorName, CtrlrPanel *sourcePanel);
+		Result importInstanceResources(CtrlrNative *native);
+
 		CtrlrProperties &getCtrlrProperties();
 		ApplicationProperties *getApplicationProperties();
 		CtrlrProcessor *getProcessorOwner() { return (owner); }
@@ -333,7 +335,6 @@ static bool isGnomeShell() {
 		CtrlrInstance getInstanceMode() const;
 		const bool isSingleInstance() const;
 		XmlElement *saveState();
-		Result importInstanceResources(CtrlrNative *native);
 		ValueTree &getInstanceTree();
 		ValueTree &getInstanceResourcesTree();
 		void openPanelInternal(const File &fileToOpen);
@@ -341,6 +342,7 @@ static bool isGnomeShell() {
 		void setManagerReady();
 		CtrlrPanel *nullPanel;
 		CtrlrModulator *nullModulator;
+
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CtrlrManager);
 
 	private:
@@ -348,7 +350,8 @@ static bool isGnomeShell() {
 		void setEmbeddedDefaults();
 		Result addInstancePanel();
 		void restoreInstanceState(const ValueTree &instanceState);
-
+		File getInstanceResourcesMarkerFile();
+		void markInstanceResourcesImported();
 		void openPanelInternal(const ValueTree &panelTree);
 		ApplicationCommandManager commandManager;
 		bool ctrlrManagerRestoring;
@@ -374,5 +377,9 @@ static bool isGnomeShell() {
 		ValueTree ctrlrPlayerInstanceTree;
 		ValueTree ctrlrPlayerInstanceResources;
 		CtrlrModulator *invalidModulator;
+		Result createInstancePanel();				  // the old addInstancePanel body, minus the guards
+		bool instanceLicensePending = false;		  // true while the licence dialog is open
+		JUCE_DECLARE_WEAK_REFERENCEABLE(CtrlrManager) // only if the class doesn't already have it
+		CtrlrPanel *addPanelNoLicenseCheck(const ValueTree &savedState, const bool showUI);
 		WeakReference<CtrlrLuaMethod> luaCtrlrSaveState, luaCtrlrRestoreState;
 };

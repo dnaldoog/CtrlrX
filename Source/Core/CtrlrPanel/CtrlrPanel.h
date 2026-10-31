@@ -148,7 +148,6 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		std::unique_ptr<juce::LookAndFeel_V1> lfV1;
 		std::unique_ptr<juce::LookAndFeel_V2> lfV2;
 		std::unique_ptr<juce::LookAndFeel_V3> lfV3;
-		Result restoreState(const ValueTree &savedState);
 		CtrlrPanelEditor *getEditor(const bool createNewEditorIfNeeded = true);
 		CtrlrPanelCanvas *getCanvas();
 		CtrlrModulator *createNewModulator(const Identifier &guiType);
@@ -167,6 +166,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		bool isWaylandSession() const {
 			return CtrlrManager::isWaylandSession();
 		}
+		Result restoreState(const ValueTree &savedState);
 		void saveLayerVisibilityStates();	 // Added v5.6.34
 		void restoreLayerVisibilityStates(); // Added v5.6.34
 		void promptForMidiDelay(const juce::Identifier &propertyId, const juce::String &dialogTitle,const juce::String &instructions, int minMs, int maxMs);
@@ -265,7 +265,10 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 
 		static const String exportPanel(CtrlrPanel *panel, const File &lastBrowsedDir,
 										const File &destinationFile = File(), MemoryBlock *outputPanelData = nullptr,
-										MemoryBlock *outputResourcesData = nullptr, const bool isRestricted = false);
+										MemoryBlock *outputResourcesData = nullptr, const bool isRestricted = false,
+										const String &licenseText = String());
+		static void askForLicenseAsync(CtrlrPanel *panel, std::function<void(juce::String)> onDone);
+
 		static bool isPanelFile(const File &fileToCheck, const bool beThorough = false);
 		static const ValueTree openPanel(const File &panelFile);
 		static const ValueTree openXmlPanel(const File &panelFile);
@@ -497,7 +500,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		// MIDI channel or use CC messages.
 		bool nrpnHeaderLatched = false;
 		int nrpnLatchedNumber = -1;
-		String nrpnLatchedFormula; // tracks which formula type is active 
+		String nrpnLatchedFormula; // tracks which formula type is active
 		//uint32 bootstrapStartTime; // Used to track how long the bootstrap process takes, and to prevent it from taking
 								   // too long and causing instability. Added v5.6.34 Removed v.8.72
 		//bool isBootstrapTimerActive; // Added v5.6.36 Removed v.8.72

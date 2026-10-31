@@ -260,8 +260,13 @@ if(WIN32)
     )
 endif()
 target_compile_options(SharedCode INTERFACE
-    $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:-msse2 -fPIC>
+    # Flags shared by all architectures for these compilers
+    $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:-fPIC>
+    
+    # -msse2 flag ONLY applied if the compiler supports it AND we are on x86/x86_64
+    $<$<AND:$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>,$<OR:$<PLATFORM_ID:Windows>,$<PLATFORM_ID:Linux>,$<NOT:$<PLATFORM_ID:Darwin>>>>:-msse2>
 )
+
 
 if(UNIX)
     target_compile_options(SharedCode INTERFACE -w -Wno-implicit-fallthrough -Wno-maybe-uninitialized -Wno-missing-field-initializers -Wno-free-nonheap-object)

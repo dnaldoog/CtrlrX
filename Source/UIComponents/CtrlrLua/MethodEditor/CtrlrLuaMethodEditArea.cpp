@@ -257,3 +257,5 @@ void CtrlrLuaMethodEditArea::setActiveOutputTab() {
 	}
 }
 void CtrlrLuaMethodEditArea::clearOutputText() { output->setText(""); }
+
+

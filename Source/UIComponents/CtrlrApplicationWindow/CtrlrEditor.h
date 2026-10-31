@@ -174,6 +174,7 @@ class CtrlrEditor : public AudioProcessorEditor,
 		void setMenuBarVisible(const bool shouldBeVisible = true);
 		void recreateTooltipEngine();
 		void applyThemeToCombosDirectly(const String &themeName);
+		void applyActivePanelSettings();
 
 		// New method to set the main LookAndFeel for the editor and its children
 		void setEditorLookAndFeel(const String &lookAndFeelDesc,
