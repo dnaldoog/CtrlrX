@@ -5,6 +5,27 @@
 
 - Refactor CtrlrWindows.cpp
 - Reintroduce licence prompt for ASYNC dialog
+- Export: ask whether to attach a licence (async, JUCE-drawn dialog) before
+  exporting; the text is passed to CtrlrPanel::exportPanel via a new
+  licenseText parameter. Covers .bpanelz, restricted/standalone instance
+  export on Windows, Linux and macOS.
+- Load: exported standalones show the embedded licence before the panel is
+  created (CtrlrManager::addInstancePanel). Accepting loads the panel,
+  declining quits. The "resources imported" marker is now written only after
+  a successful, accepted load, so declining prompts again next launch.
+- CtrlrPanelResourceManager::restoreState no longer shows a blocking dialog;
+  licence handling moved to confirmEmbeddedLicenseAsync.
+- CtrlrEditor::applyActivePanelSettings applies panel-dependent editor
+  settings when the panel is created after the editor.
+- Linux: getVST3PluginPath() resolves the running binary via /proc/self/exe
+  (previously a cwd-relative path that could be wrong, making the standalone
+  export copy fail).
+- Export overwrite prompt (Windows): only shown when the extension correction
+  retargets the path, so there is no longer a duplicate prompt. macOS: the
+  confirmed-overwrite branch now continues the export instead of stopping.
+- macOS: removed an unused FileChooser; fixed log lines that added an enum
+  or bool to a string literal (undefined behaviour).
+- Panel pointers held across dialogs are now juce::WeakReference.
 - Fix SVG icon not showing for large panels
 - Lua editor: show folder path in tab tooltip (e.g. /COMPONENT/TVF)
 - Tooltip directory path over tabs in lua editor
