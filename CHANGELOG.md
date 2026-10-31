@@ -28,8 +28,7 @@
 - Panel pointers held across dialogs are now juce::WeakReference.
 - Fix SVG icon not showing for large panels
 - Lua editor: show folder path in tab tooltip (e.g. /COMPONENT/TVF)
-- Tooltip directory path over tabs in lua editor
-- https://github.com/dnaldoog/CtrlrX/commit/4c5dc6bbb2c972176afeef320442aa170afc9252
+- [https://github.com/dnaldoog/CtrlrX/commit/4c5dc6bbb2c972176afeef320442aa170afc9252](https://github.com/dnaldoog/CtrlrX/commit/5de6368728ab87c2e3f231071db0e314c68aa5ee)
 
 ### CtrlrX v8.72 10/25/2026
 
