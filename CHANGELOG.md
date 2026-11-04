@@ -13,7 +13,7 @@
   resources once. After that, resources are only re-imported when the
   exported panel changes.
 - Deleting .delete_me_to_reload_resources still forces a manual reload.
-
+- https://github.com/dnaldoog/CtrlrX/commit/c5a78be6f3064e798ef861e7885851b55b0cbc02
 
 ### CtrlrX v8.74 11/04/2026
 
