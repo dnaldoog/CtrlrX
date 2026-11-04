@@ -1,6 +1,20 @@
 [&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
 ----
+### CtrlrX v8.75 11/05/2026
+##### Fixed
+- Exported panels now pick up updated resources (images etc.) when a
+  user upgrades to a new version of the panel. Previously, old
+  resources stayed in use until the settings folder was deleted by hand.
+- Fixed a crash on relaunch for exported panels that include a licence.
+
+##### Notes
+- Each user's first launch after upgrading re-imports the panel's
+  resources once. After that, resources are only re-imported when the
+  exported panel changes.
+- Deleting .delete_me_to_reload_resources still forces a manual reload.
+
+
 ### CtrlrX v8.74 11/04/2026
 
 - Added tighter search results to fuzzy search in modulator list 

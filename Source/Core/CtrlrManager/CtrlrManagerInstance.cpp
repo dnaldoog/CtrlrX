@@ -164,31 +164,37 @@ const bool CtrlrManager::isSingleInstance() const {
 	return (ctrlrPlayerInstanceMode == InstanceSingle || ctrlrPlayerInstanceMode == InstanceSingleRestricted);
 }
 
-// REPLACES the existing importInstanceResources(): same logic, but it no longer creates the marker.
-
 Result CtrlrManager::importInstanceResources(CtrlrNative *native) {
-	const File marker = getInstanceResourcesMarkerFile();
-
-	if (marker != File() && marker.existsAsFile())
-		return Result::ok(); // resources were imported on an earlier, completed launch
-
 	MemoryBlock resourcesData;
 	Result resourceFetch = native->getDefaultResources(resourcesData);
 
-	if (resourceFetch.failed()) {
+	if (resourceFetch.failed())
 		return Result::fail("ImportInstanceResources getDefaultResources() failed");
+
+	// Fingerprint of the resource payload embedded in THIS exe
+	pendingResourcesFingerprint = SHA256(resourcesData).toHexString();
+
+	const File marker = getInstanceResourcesMarkerFile();
+
+	if (marker != File() && marker.existsAsFile() && marker.loadFileAsString().trim() == pendingResourcesFingerprint) {
+		return Result::ok(); // same build already imported on an earlier, completed launch
 	}
 
+	// Marker missing, empty (written by an older build), or from a different build: import
 	ctrlrPlayerInstanceResources = ValueTree::readFromGZIPData(resourcesData.getData(), resourcesData.getSize());
 
-	if (ctrlrPlayerInstanceResources.isValid()) {
+	if (ctrlrPlayerInstanceResources.isValid())
 		return Result::ok();
-	} else {
-		return Result::fail("ImportInstanceResources got some data but couldn't understand it");
-	}
+
+	return Result::fail("ImportInstanceResources got some data but couldn't understand it");
 }
 
 void CtrlrManager::restoreInstanceState(const ValueTree &instanceState) {
+
+	if (getActivePanel() == nullptr) {
+		pendingInstanceState = instanceState; // panel not created yet (licence prompt pending)
+		return;
+	}
 	if (ctrlrEditor) {
 		restoreEditorState();
 	}
