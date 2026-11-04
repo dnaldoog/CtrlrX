@@ -1,5 +1,6 @@
 #include "CtrlrPanelComponentProperties.h"
 #include "CtrlrComponents/CtrlrComponent.h"
+#include "CtrlrFuzzyMatch.h"
 #include "CtrlrPanel/CtrlrPanelEditor.h"
 #include "CtrlrPanel/CtrlrPanelResource.h"
 #include "CtrlrPropertyEditors/CtrlrPropertyComponent.h"
@@ -522,46 +523,38 @@ void CtrlrPanelComponentProperties::visibilityChanged()
 }
 
 const String CtrlrPanelComponentProperties::setFilter(const String &filter) {
-	if (filter == "") {
-		currentFilter = filter;
-		visibilityChanged();
-		return "";
-	}
-
-	String tempFilter;
-
-	if (!filter.startsWith("*"))
-		tempFilter = _STR("*") + filter;
-
-	if (!filter.endsWith("*"))
-		tempFilter << "*";
-
-	currentFilter = tempFilter;
-
+	currentFilter = filter.trim(); // plain text now, no asterisks added
 	visibilityChanged();
-
 	return currentFilter;
 }
 
 Array<PropertyComponent *> CtrlrPanelComponentProperties::filterProperties(Array<PropertyComponent *> &propsToFilter) {
-	if (currentFilter == "") {
+	if (currentFilter.isEmpty())
 		return propsToFilter;
-	}
+
+	// keep wildcard support for anyone who types * or ? deliberately
+	const bool useWildcard = currentFilter.containsAnyOf("*?");
+	const String pattern = "*" + currentFilter + "*";
 
 	Array<PropertyComponent *> leftovers;
 	for (auto v : propsToFilter) {
-		CtrlrPropertyComponent *p = dynamic_cast<CtrlrPropertyComponent *>(v);
-		if (p != nullptr) {
-			// _TXT("%s || %s match filter %s", p->getPropertyName().toRawUTF8(), p->getVisibleText().toRawUTF8(),
-			// currentFilter.toRawUTF8());
+		bool keep = false;
 
-			if (p->getPropertyName().matchesWildcard(currentFilter, true) ||
-				p->getVisibleText().matchesWildcard(currentFilter, true)) {
-				leftovers.add(v);
-			} else {
-				delete v;
-			}
+		if (auto *p = dynamic_cast<CtrlrPropertyComponent *>(v)) {
+			const String name = p->getPropertyName();
+			const String text = p->getVisibleText();
+
+			if (useWildcard)
+				keep = name.matchesWildcard(pattern, true) || text.matchesWildcard(pattern, true);
+			else
+				keep = CtrlrFuzz::scoreMatch(currentFilter, name) > 0.0 ||
+					   CtrlrFuzz::scoreMatch(currentFilter, text) > 0.0;
 		}
+
+		if (keep)
+			leftovers.add(v);
+		else
+			delete v; // caller owns these, as in the original
 	}
 
 	return leftovers;

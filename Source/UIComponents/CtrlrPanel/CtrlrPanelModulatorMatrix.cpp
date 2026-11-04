@@ -1,6 +1,7 @@
 #include "CtrlrPanelModulatorMatrix.h"
 #include "CtrlrPanel/CtrlrPanelEditor.h"
 #include "CtrlrPanel/CtrlrPanel.h"
+#include "CtrlrFuzzyMatch.h"
 #include "CtrlrInlineUtilitiesGUI.h"
 
 CtrlrPanelModulatorMatrix::CtrlrPanelModulatorMatrix(CtrlrPanelEditor& _owner)
@@ -66,28 +67,22 @@ void CtrlrPanelModulatorMatrix::applyFuzzyFilter()
             double score;
         };
 
-        std::vector<ScoredModulator> scoredList;
-        const std::string queryStd = query.toStdString();
+		std::vector<ScoredModulator> scoredList;
 
-        for (int i = 0; i < masterModulatorList.size(); ++i)
+		for (int i = 0; i < masterModulatorList.size(); ++i)
         {
             auto* m = masterModulatorList[i].get();
             if (!m) continue;
 
-            const juce::String modName = m->getName();
-            double score = rapidfuzz::fuzz::partial_ratio(queryStd, modName.toStdString());
-
-            if (modName.startsWithIgnoreCase(query))
-                score += 20.0;
-
-            if (score > 55.0)
-                scoredList.push_back({ masterModulatorList[i], score });
+			const double score = CtrlrFuzz::scoreMatch(query, m->getName());
+			if (score > 0.0)
+				scoredList.push_back({ masterModulatorList[i], score });
         }
 
-        std::sort(scoredList.begin(), scoredList.end(),
-                  [](const ScoredModulator& a, const ScoredModulator& b) { return a.score > b.score; });
+		std::stable_sort(scoredList.begin(), scoredList.end(),
+						 [](const ScoredModulator &a, const ScoredModulator &b) { return a.score > b.score; });
 
-        for (const auto& item : scoredList)
+		for (const auto& item : scoredList)
             filteredModulatorList.add(item.mod);
     }
 

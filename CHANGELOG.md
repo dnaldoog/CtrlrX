@@ -1,6 +1,14 @@
 [back to release page &rArr;](https://github.com/dnaldoog/CtrlrX/releases)
 
 ----
+### CtrlrX v8.74 11/04/2026
+
+- Added tighter search results to fuzzy search in modulator list 
+- Added toggle for JSON save patch/Load patch in restricted menu 
+- Changed CtrlPanelFindProperty autocomplete and clear button
+- https://github.com/dnaldoog/CtrlrX/commit/cacab2133a501049b73c10ba1bbaae41508d8a83
+
+
 ### CtrlrX v8.73 10/31/2026
 
 - Refactor CtrlrWindows.cpp

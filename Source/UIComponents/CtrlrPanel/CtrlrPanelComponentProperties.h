@@ -1,7 +1,7 @@
 #pragma once
-
 #include "CtrlrMacros.h"
 #include "CtrlrManager/CtrlrManager.h"
+#include <rapidfuzz/fuzz.hpp>
 
 class CtrlrPanelComponentProperties : public Component,
 									  public ChangeListener,
