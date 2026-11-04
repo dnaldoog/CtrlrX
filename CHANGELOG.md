@@ -1,4 +1,4 @@
-[back to release page &rArr;](https://github.com/dnaldoog/CtrlrX/releases)
+[&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
 ----
 ### CtrlrX v8.74 11/04/2026
