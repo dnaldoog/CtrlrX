@@ -18,7 +18,7 @@
 CtrlrPanelFindProperty::CtrlrPanelFindProperty(CtrlrPanelEditor &_owner, CtrlrPanelComponentProperties *_props)
 	: owner(_owner), props(_props) {
 	filterInput.reset(new TextEditor("Filter Input"));
-	filterInput->setFont(filterInput->getFont().withHeight(24.0));
+	filterInput->setFont(filterInput->getFont().withHeight(18.0));
 	filterInput->setTextToShowWhenEmpty("Search properties...", Colours::grey);
 	filterInput->addListener(this);
 

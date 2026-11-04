@@ -234,7 +234,7 @@ class CtrlrManager : public ValueTree::Listener,
 		int getNextVstIndex();
 		int getModulatorVstIndexByName(const String &modulatorName, CtrlrPanel *sourcePanel);
 		Result importInstanceResources(CtrlrNative *native);
-
+		ValueTree pendingInstanceState; // stop crash when reloading with licence dialog open
 		CtrlrProperties &getCtrlrProperties();
 		ApplicationProperties *getApplicationProperties();
 		CtrlrProcessor *getProcessorOwner() { return (owner); }
@@ -376,6 +376,7 @@ static bool isGnomeShell() {
 		std::unique_ptr<CtrlrFontManager> ctrlrFontManager;
 		ValueTree ctrlrPlayerInstanceTree;
 		ValueTree ctrlrPlayerInstanceResources;
+		String pendingResourcesFingerprint;
 		CtrlrModulator *invalidModulator;
 		Result createInstancePanel();				  // the old addInstancePanel body, minus the guards
 		bool instanceLicensePending = false;		  // true while the licence dialog is open

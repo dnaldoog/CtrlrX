@@ -882,9 +882,25 @@ File CtrlrManager::getInstanceResourcesMarkerFile() {
 	return File();
 }
 
-void CtrlrManager::markInstanceResourcesImported() {
-	const File marker = getInstanceResourcesMarkerFile();
+// void CtrlrManager::markInstanceResourcesImported() {
+// 	const File marker = getInstanceResourcesMarkerFile();
  
-	if (marker != File() && !marker.existsAsFile())
-		marker.create();
+// 	if (marker != File() && !marker.existsAsFile())
+// 		marker.create();
+// }
+
+void CtrlrManager::markInstanceResourcesImported()
+{
+	const File marker = getInstanceResourcesMarkerFile();
+
+	if (marker == File() || pendingResourcesFingerprint.isEmpty())
+		return;
+
+	// Store the fingerprint of the resources that were just imported
+	if (marker.existsAsFile() && marker.loadFileAsString().trim() == pendingResourcesFingerprint)
+		return; // already up to date
+
+	marker.replaceWithText(pendingResourcesFingerprint);
 }
+
+
