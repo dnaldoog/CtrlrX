@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "CtrlrPanelModulatorList.h"
 #include "../../Core/CtrlrPanel/CtrlrPanel.h" // Fixed path to point to Core!
 #include "CtrlrComponents/CtrlrComponent.h"
@@ -5,8 +6,8 @@
 #include "CtrlrManager/CtrlrManager.h"
 #include "CtrlrPanel/CtrlrPanelCanvas.h"
 #include "CtrlrPanel/CtrlrPanelEditor.h"
-#include "stdafx.h"
-// Top of CtrlrPanelModulatorList.cpp
+#include "CtrlrFuzzyMatch.h"
+
 
 /* ********************************************************************************** */
 
@@ -115,20 +116,18 @@ class ColumnPickerComponent : public juce::Component,
 			for (int i = 0; i < names.size(); ++i)
 				filtered.add(i);
 		} else {
-			const std::string q = query.toLowerCase().toStdString();
 			std::vector<std::pair<double, int>> scored;
 
 			for (int i = 0; i < names.size(); ++i) {
-				double score = rapidfuzz::fuzz::partial_ratio(q, names[i].toLowerCase().toStdString());
-				if (names[i].startsWithIgnoreCase(query))
-					score += 20.0;
-				if (score > 55.0)
+				const double score = CtrlrFuzz::scoreMatch(query, names[i]);
+				if (score > 0.0)
 					scored.push_back({score, i});
 			}
 			std::stable_sort(scored.begin(), scored.end(), [](auto &a, auto &b) { return a.first > b.first; });
 			for (auto &s : scored)
 				filtered.add(s.second);
 		}
+
 		if (checkedFirstButton.getToggleState())
 			std::stable_partition(filtered.begin(), filtered.end(), [this](int idx) { return isColumnVisible(idx); });
 		listBox.updateContent();
@@ -879,14 +878,11 @@ void CtrlrPanelModulatorList::textEditorTextChanged(juce::TextEditor &editor) {
 
 void CtrlrPanelModulatorList::applyFuzzyFilter() {
 	const juce::String query = searchField.getText().trim();
-
 	copyOfModulatorList.clear();
 
-	// If query is empty, copy all modulators directly
 	if (query.isEmpty()) {
-		for (int i = 0; i < masterModulatorList.size(); ++i) {
+		for (int i = 0; i < masterModulatorList.size(); ++i)
 			copyOfModulatorList.add(masterModulatorList[i]);
-		}
 	} else {
 		struct ScoredModulator {
 				WeakReference<CtrlrModulator> mod;
@@ -894,46 +890,29 @@ void CtrlrPanelModulatorList::applyFuzzyFilter() {
 		};
 
 		std::vector<ScoredModulator> scoredList;
-		const std::string queryStd = query.toStdString();
 
 		for (int i = 0; i < masterModulatorList.size(); ++i) {
 			CtrlrModulator *m = masterModulatorList[i].get();
 			if (!m)
 				continue;
 
-			const juce::String modName = m->getName();
-			const std::string nameStd = modName.toStdString();
-
-			// Calculate RapidFuzz ratio score
-			double score = rapidfuzz::fuzz::partial_ratio(queryStd, nameStd);
-
-			// Direct prefix match bonus
-			if (modName.startsWithIgnoreCase(query))
-				score += 20.0;
-
-			// Include items with reasonable match threshold
-			if (score > 55.0) {
+			const double score = CtrlrFuzz::scoreMatch(query, m->getName());
+			if (score > 0.0)
 				scoredList.push_back({masterModulatorList[i], score});
-			}
 		}
 
-		// Sort filtered rows by best match score descending
-		std::sort(scoredList.begin(), scoredList.end(),
-				  [](const ScoredModulator &a, const ScoredModulator &b) { return a.score > b.score; });
+		std::stable_sort(scoredList.begin(), scoredList.end(),
+						 [](const ScoredModulator &a, const ScoredModulator &b) { return a.score > b.score; });
 
-		// Populate copyOfModulatorList with filtered items
-		for (const auto &item : scoredList) {
+		for (const auto &item : scoredList)
 			copyOfModulatorList.add(item.mod);
-		}
 	}
 
-	// 1. Update JUCE TableListBox
 	if (modulatorList != nullptr) {
 		modulatorList->updateContent();
 		modulatorList->repaint();
 	}
 
-	// 2. Update Tree View
 	modulatorListTree.setSearchFilter(query);
 }
 

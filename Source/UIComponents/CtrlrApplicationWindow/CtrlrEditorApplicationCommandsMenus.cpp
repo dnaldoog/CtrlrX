@@ -126,10 +126,21 @@ PopupMenu CtrlrEditor::getMenuForIndex(int /*topLevelMenuIndex*/, const String &
 			menu.addSeparator();
 			// menu.addCommandItem(commandManager, doSaveState);
 		}
+		bool showPatchMenu = false;
 
-		menu.addSeparator();
-		menu.addCommandItem(commandManager, doSavePatchToJSON);
-		menu.addCommandItem(commandManager, doLoadPatchFromJSON);
+		if (auto *panel = owner.getActivePanel()) {
+			auto editorTree = panel->getPanelTree().getChildWithName(Ids::uiPanelEditor);
+			if (editorTree.isValid())
+				showPatchMenu = editorTree.getProperty(Ids::uiPanelPatchSaveMenu, false);
+		}
+
+		DBG("uiPanelPatchSaveMenu property is: " << (showPatchMenu ? "true" : "false"));
+
+		if (showPatchMenu) {
+			menu.addSeparator();
+			menu.addCommandItem(commandManager, doSavePatchToJSON);
+			menu.addCommandItem(commandManager, doLoadPatchFromJSON);
+		}
 		menu.addSeparator();
 		menu.addCommandItem(commandManager, doQuit);
 	}

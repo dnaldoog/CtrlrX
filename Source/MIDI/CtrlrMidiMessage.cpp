@@ -785,8 +785,7 @@ void CtrlrMidiMessage::setNumberToSingle(const int index, const int number) {
 		// out of bounds, so protected. Presuming that Coarse is sent first followed by fine 00/64 value
 		auto &mex = messageArray.getReference(
 			index); // Added v5.6.35. SafeGuards for Novation CC coarse/fine. Thanks to @dnaldoog
-		_DBG("setNumberToSingle index=" + String(index) + " flag=" + String(mex.indirectValueFlag) +
-			 " number=" + String(number));
+		//_DBG("setNumberToSingle index=" + String(index) + " flag=" + String(mex.indirectValueFlag) + " number=" + String(number));
 		if (mex.indirectValueFlag == CCFineLSB) {
 			if (number > 31) {
 				_WRN("CCFineLSB: coarse CC " + String(number) + " out of range, fine offset suppressed");
