@@ -4,7 +4,7 @@
 
 ### CtrlrX v8.76 11/05/2026
 
-Fix undefined return from CtrlrValueMap::getMappedValue()
+Fix undefined return from CtrlrValueMap::getMappedValue().
 
 getMappedValue() indexed values[] with no bounds check. For a
 modulator with no value map (empty array), or an index past the end
