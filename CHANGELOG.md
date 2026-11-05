@@ -2,6 +2,50 @@
 
 ----
 
+### CtrlrX v8.7.8 (KronosKontrol build) 11/05/2026
+Based on upstream v8.77 (commit 51cd978a). Everything upstream shipped in 8.77 is
+included; the entries below are what this build adds on top.
+
+##### Performance (large panels)
+- JUCE XmlDocument::readQuotedString() was O(n^2) in attribute length: a value built
+  from many chunks called String::appendCharPointer() (which strlen()s the accumulator
+  and reallocates to the exact size) for each one. It now accumulates bytes in a
+  MemoryOutputStream and converts once. XML parse on a 29 MB panel: 30.7 s -> 0.19 s.
+  Applied by patches/juce_xml_parser_perf.patch at configure time.
+- CtrlrPanelResourceManager::importResource(): when the destination file already exists at
+  the expected size, skip the base64 decode and the disk write entirely. 228 file rewrites
+  per launch -> 0.
+- CtrlrPanelResource::computeContentHash(): hash the file with File::hashCode64() instead
+  of reading it and building a 1.33x base64 copy.
+- CtrlrPanelResourceManager::guessType(): identify images from an 8-byte header instead of
+  decoding them with ImageCache::getFromFile(). 228 PNG decodes per load -> 0.
+
+  Net effect on KronosKontrol (30 MB, 895 modulators): load 34.9 s -> 0.85 s, peak RSS
+  741 MB -> 183 MB. Image decoding moves from load to first paint.
+
+##### Fixed
+- Tabs: uiTabsCurrentTab is accepted as an input again (panels switching tabs with
+  setPropertyInt() silently did nothing), and the uiTabsCurrentTabChanged Lua callback is
+  actually invoked (it was resolved and never called). The KronosKontrol EDITOR button
+  relied on both.
+- Lua timers: an exception raised inside a timer callback was swallowed (the timer was
+  disabled with no report). It is now logged at LuaRuntimeError level. The modal
+  AlertWindow used before 5.6.37 is not restored: a message box from a timer path can fire
+  while another modal is up and hangs headless runs.
+
+##### Tooling
+- CtrlrPanelProbe (CtrlrX PR #337) integrated under Tests/. Opt-in, because the root
+  CMakeLists adds Tests/ whenever it exists and Tests/ fetches GoogleTest:
+      cmake ... -DCTRLRX_BUILD_TESTS=ON
+      cmake --build ... --target CtrlrPanelProbe
+  Release builds are unaffected by default.
+
+##### Known differences from upstream
+- resourceHash values written by this build differ from upstream (computeContentHash above),
+  so a panel saved by an older build may be re-imported once.
+- The resource cache check compares file size only.
+
+
 ### CtrlrX v8.77 11/05/2026
 - Removed Custom Multi Message function (throws asserts)
 - Restored Copy/Paste in CtrlrMultiMidiPropertyComponent
