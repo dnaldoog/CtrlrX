@@ -214,7 +214,10 @@ int64 CtrlrPanelResource::computeContentHash (const File &f)
     if (! f.existsAsFile() || f.getSize() == 0)
         return 0;
 
-    MemoryBlock data;
-    f.loadFileAsData (data);
-    return data.toBase64Encoding().hashCode64();
+    // Perf: hash the file's bytes directly. Upstream read the whole file and
+    // allocated a 1.33x base64 copy purely to derive an int64; File::hashCode64()
+    // streams the same bytes without the copy.
+    // NOTE: this changes the numeric value of resourceHash, so hashes stored by
+    // panels written with the older code no longer compare equal.
+    return (int64) f.hashCode64();
 }

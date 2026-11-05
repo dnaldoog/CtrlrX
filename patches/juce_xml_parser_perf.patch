@@ -1,0 +1,97 @@
+# JUCE 8.0.12 -- make XML attribute parsing linear instead of O(n^2)
+#
+# Applies to: JUCE/modules/juce_core/xml/juce_XmlDocument.cpp
+# Apply from the JUCE directory:  git apply -p1 <this file>
+#
+# XmlDocument::readQuotedString() built each attribute value with repeated
+# String::appendCharPointer() calls. Each call is O(n) -- it locates the end of
+# the accumulated text by scanning for the terminator, and upstream reallocates
+# the buffer to the exact size -- so a value assembled from k chunks cost O(n^2).
+# Panels that keep large payloads in attributes (base64 images, entity-escaped
+# Lua of several MB) therefore spend most of their parse time here: measured
+# 30.7 s for a 26.9 MB of attributes on a 29 MB panel.
+#
+# The patch accumulates into a MemoryOutputStream and converts once, which
+# measured 0.19 s for the same document (~160x on this function).
+warning: in the working copy of 'pristine/juce_XmlDocument.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'fixed/juce_XmlDocument.cpp', LF will be replaced by CRLF the next time Git touches it
+diff --git a/modules/juce_core/xml/juce_XmlDocument.cpp b/modules/juce_core/xml/juce_XmlDocument.cpp
+index 70c5188..491dce6 100644
+--- a/modules/juce_core/xml/juce_XmlDocument.cpp
++++ b/modules/juce_core/xml/juce_XmlDocument.cpp
+@@ -351,10 +351,33 @@ void XmlDocument::skipNextWhiteSpace()
+     }
+ }
+ 
++// Appends the [start, end) range of the parse input to a byte buffer directly,
++// without building an intermediate String.
++static void writeToStream (MemoryOutputStream& out, String::CharPointerType start, String::CharPointerType end)
++{
++    if (start.getAddress() == end.getAddress())
++        return;
++
++   #if JUCE_STRING_UTF_TYPE == 8
++    out.write (start.getAddress(), (size_t) (end.getAddress() - start.getAddress()));
++   #else
++    const String chunk (start, end);
++    out.write (chunk.toRawUTF8(), (size_t) chunk.getNumBytesAsUTF8());
++   #endif
++}
++
+ void XmlDocument::readQuotedString (String& result)
+ {
+     auto quote = readNextChar();
+ 
++    // Accumulate the value as bytes and convert once at the end.
++    // String::appendCharPointer() is O(n) per call -- it finds the end of the
++    // accumulated text by scanning for the terminator, and reallocates to the
++    // exact required size -- so building an attribute from many chunks was
++    // O(n^2). Attributes holding large payloads (base64 images, multi-megabyte
++    // escaped Lua) made that quadratic term dominate document parsing.
++    MemoryOutputStream accumulated;
++
+     while (! outOfData)
+     {
+         auto c = readNextChar();
+@@ -366,7 +389,13 @@ void XmlDocument::readQuotedString (String& result)
+ 
+         if (c == '&')
+         {
+-            readEntity (result);
++            // readEntity() appends to a String, so give it a scratch one and
++            // copy the result into the byte buffer.
++            String entityText;
++            readEntity (entityText);
++
++            if (entityText.isNotEmpty())
++                accumulated.write (entityText.toRawUTF8(), (size_t) entityText.getNumBytesAsUTF8());
+         }
+         else
+         {
+@@ -378,14 +407,15 @@ void XmlDocument::readQuotedString (String& result)
+ 
+                 if (character == quote)
+                 {
+-                    result.appendCharPointer (start, input);
++                    writeToStream (accumulated, start, input);
+                     ++input;
++                    result = accumulated.toString();
+                     return;
+                 }
+ 
+                 if (character == '&')
+                 {
+-                    result.appendCharPointer (start, input);
++                    writeToStream (accumulated, start, input);
+                     break;
+                 }
+ 
+@@ -400,6 +430,8 @@ void XmlDocument::readQuotedString (String& result)
+             }
+         }
+     }
++
++    result = accumulated.toString();
+ }
+ 
+ XmlElement* XmlDocument::readNextElement (const bool alsoParseSubElements)

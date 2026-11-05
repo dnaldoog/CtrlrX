@@ -81,6 +81,63 @@ set(JUCE_BUILD_HELPER_TARGETS OFF CACHE BOOL "" FORCE)
 if(CTRLRX_USE_SYSTEM_JUCE)
     find_package(JUCE CONFIG REQUIRED)
 else()
+    # -----------------------------------------------------------------------
+    # JUCE 8.0.12 performance patch -- see patches/juce_xml_parser_perf.patch
+    #
+    # XmlDocument::readQuotedString() is O(n^2) upstream for attribute values
+    # built from many chunks, which dominated panel loading (30.7 s -> 0.19 s
+    # measured). The fix is kept as a patch, not as a vendored file, so a clean
+    # JUCE checkout can still be used. Applied idempotently at configure time.
+    # -----------------------------------------------------------------------
+    set(CTRLRX_JUCE_XML_DOCUMENT "${CMAKE_CURRENT_SOURCE_DIR}/JUCE/modules/juce_core/xml/juce_XmlDocument.cpp")
+    set(CTRLRX_JUCE_XML_PATCH "${CMAKE_CURRENT_SOURCE_DIR}/../../../patches/juce_xml_parser_perf.patch")
+
+    if(EXISTS "${CTRLRX_JUCE_XML_DOCUMENT}")
+        file(READ "${CTRLRX_JUCE_XML_DOCUMENT}" _ctrlrxJuceXmlContents)
+
+        if(NOT _ctrlrxJuceXmlContents MATCHES "MemoryOutputStream accumulated")
+            find_package(Git QUIET)
+
+            if(NOT GIT_FOUND)
+                message(FATAL_ERROR
+                    "git is required to apply patches/juce_xml_parser_perf.patch to JUCE.")
+            endif()
+
+            execute_process(
+                # GIT_CEILING_DIRECTORIES stops git from discovering a parent
+                # repository: inside one, `git apply` silently SKIPS files that
+                # are .gitignore'd (JUCE/ is ignored in this project) and still
+                # exits 0. Treating JUCE as outside any repository makes the
+                # apply behave normally.
+                COMMAND "${CMAKE_COMMAND}" -E env
+                        "GIT_CEILING_DIRECTORIES=${CMAKE_CURRENT_SOURCE_DIR}"
+                        "${GIT_EXECUTABLE}" -c core.autocrlf=false -c core.eol=lf
+                        apply -p1 --whitespace=nowarn "${CTRLRX_JUCE_XML_PATCH}"
+                WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/JUCE"
+                RESULT_VARIABLE _ctrlrxPatchResult
+                ERROR_VARIABLE  _ctrlrxPatchError)
+
+            if(NOT _ctrlrxPatchResult EQUAL 0)
+                message(FATAL_ERROR
+                    "Failed to apply patches/juce_xml_parser_perf.patch:\n${_ctrlrxPatchError}")
+            endif()
+
+            # git apply can exit 0 having skipped the file; verify it landed.
+            file(READ "${CTRLRX_JUCE_XML_DOCUMENT}" _ctrlrxJuceXmlAfter)
+            if(NOT _ctrlrxJuceXmlAfter MATCHES "MemoryOutputStream accumulated")
+                message(FATAL_ERROR
+                    "patches/juce_xml_parser_perf.patch did not modify "
+                    "${CTRLRX_JUCE_XML_DOCUMENT}.\n${_ctrlrxPatchError}")
+            endif()
+
+            message(STATUS "Applied JUCE XML parser performance patch")
+        else()
+            message(STATUS "JUCE XML parser performance patch already applied")
+        endif()
+    else()
+        message(WARNING "JUCE sources not found - expected ${CTRLRX_JUCE_XML_DOCUMENT}")
+    endif()
+
     add_subdirectory(JUCE)
 endif()
 

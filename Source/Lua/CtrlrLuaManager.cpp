@@ -1432,6 +1432,16 @@ void CtrlrLuaMultiTimer::timerCallback(int timerId) {
 				cb.isValid = false;
 
 				callbacks.set(timerId, cb);
+
+				// Report the failure instead of discarding it. Up to 5.6.37 this was a modal
+				// AlertWindow, which is a poor fit for a timer callback: it can fire while another
+				// modal is already up, and a message box from a timer path is exactly the kind of
+				// thing that hangs a headless run. The timer stays disabled, but the reason is now
+				// logged to the Ctrlr console (LuaRuntimeError) so users and tests still see it.
+				const char *luaMessage = lua_tostring(e.state(), -1);
+				_LRUNERR("Timer callback error, timer id that failed was: " + String(timerId) + " - " +
+						 String(e.what()) + (luaMessage != nullptr ? String("\n") + String(luaMessage) : String()) +
+						 "\nCallback disabled");
 			}
 		}
 	}
