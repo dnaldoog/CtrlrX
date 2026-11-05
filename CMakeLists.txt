@@ -90,7 +90,8 @@ else()
     # JUCE checkout can still be used. Applied idempotently at configure time.
     # -----------------------------------------------------------------------
     set(CTRLRX_JUCE_XML_DOCUMENT "${CMAKE_CURRENT_SOURCE_DIR}/JUCE/modules/juce_core/xml/juce_XmlDocument.cpp")
-    set(CTRLRX_JUCE_XML_PATCH "${CMAKE_CURRENT_SOURCE_DIR}/../../../patches/juce_xml_parser_perf.patch")
+    set(CTRLRX_JUCE_XML_PATCH "${CMAKE_SOURCE_DIR}/patches/juce_xml_parser_perf.patch")
+
 
     if(EXISTS "${CTRLRX_JUCE_XML_DOCUMENT}")
         file(READ "${CTRLRX_JUCE_XML_DOCUMENT}" _ctrlrxJuceXmlContents)
