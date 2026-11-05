@@ -5,7 +5,7 @@
 ### CtrlrX v8.77 11/05/2026
 - Removed Custom Multi Message function (throws asserts)
 - Restored Copy/Paste in CtrlrMultiMidiPropertyComponent
-- Fix: remove multimessage seclected not working
+- Fix: remove multimessage line (clear_svg) not working
 
 
 ### CtrlrX v8.76 11/05/2026
