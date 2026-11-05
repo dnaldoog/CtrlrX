@@ -84,6 +84,7 @@ class CtrlrBooleanPropertyComponent : public Component, public Button::Listener,
 		String falseText;	  // ADD THIS if not there
 		bool useCustomLabels; // ADD THIS if not there
 		ToggleButton button;
+
 };
 
 class CtrlrButtonPropertyComponent : public Component, public Button::Listener, public CtrlrPropertyChild {

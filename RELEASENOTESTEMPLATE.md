@@ -8,9 +8,9 @@ If you would like to help debugging this problem or can confirm either way that 
 -->
 #### Linux Installation instructions:
 
-- **Debian/Ubuntu**: `sudo apt install ./ctrlrx-8.76-Linux.deb`
+- **Debian/Ubuntu**: `sudo apt install ./ctrlrx-8.77-Linux.deb`
 - - **Debian/Ubuntu**: `sudo apt remove ctrlrx`
-- **Fedora**: `sudo dnf install ctrlrx-8.76-Linux.rpm`
+- **Fedora**: `sudo dnf install ctrlrx-8.77-Linux.rpm`
 - - **Fedora**: `sudo dnf remove ctrlrx`
 ----
 
