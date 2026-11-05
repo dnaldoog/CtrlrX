@@ -1,6 +1,34 @@
 [&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
 ----
+
+### CtrlrX v8.76 11/05/2026
+
+Fix undefined return from CtrlrValueMap::getMappedValue().
+
+getMappedValue() indexed values[] with no bounds check. For a
+modulator with no value map (empty array), or an index past the end
+of the map, juce::Array::operator[] returns a default-constructed
+element whose numericValue is never initialised. Callers such as
+CtrlrModulator::getValueMapped() therefore got whatever was in
+memory: a different garbage number on each run (e.g. 15532, 10572,
+22048 on 5.6.35/5.6.36), or an incidental 0 depending on allocation
+patterns.
+
+Behaviour now:
+- Empty map: return valueIndex (identity), so a modulator with no
+  value map reports its own value (64 stays 64).
+- Index out of range: clamp to the first/last entry, so the last
+  mapped value repeats past the end of the map.
+- In-range indices are unchanged.
+
+Verified with a 7-entry map (last entry 99): indices 0-6 are
+identical before and after, and indices 7-10 now return 99 where
+5.6.36 returned 22048 and the previous release returned 0.
+
+Behaviour change: callers that relied on getValueMapped() returning
+0 for a modulator without a map, or for an out-of-range index, will
+now see the modulator value or the last mapped value respectively.
 ### CtrlrX v8.75 11/05/2026
 ##### Fixed
 - Exported panels now pick up updated resources (images etc.) when a
