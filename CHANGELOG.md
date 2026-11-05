@@ -29,6 +29,8 @@ identical before and after, and indices 7-10 now return 99 where
 Behaviour change: callers that relied on getValueMapped() returning
 0 for a modulator without a map, or for an out-of-range index, will
 now see the modulator value or the last mapped value respectively.
+- https://github.com/dnaldoog/CtrlrX/commit/d727003622b7c8d56c73e5605a4957bdf58d700c
+  
 ### CtrlrX v8.75 11/05/2026
 ##### Fixed
 - Exported panels now pick up updated resources (images etc.) when a
