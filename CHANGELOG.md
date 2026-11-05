@@ -2,7 +2,14 @@
 
 ----
 
+### CtrlrX v8.77 11/05/2026
+- Removed Custom Multi Message function (throws asserts)
+- Restored Copy/Paste in CtrlrMultiMidiPropertyComponent
+- Fix: remove multimessage seclected not working
+
+
 ### CtrlrX v8.76 11/05/2026
+ CtrlrX v8.76 11/05/2026
 
 Fix undefined return from CtrlrValueMap::getMappedValue().
 
