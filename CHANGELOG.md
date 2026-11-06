@@ -20,7 +20,8 @@ several choosers and the empty results reached the pipeline.
 - Remove temporary debug output from the export path.
 - VST3 export: fail with a clear message if no destination was chosen or the
   bundle folder can't be created, instead of building "/Contents/x86_64-linux".
-
+- https://github.com/dnaldoog/CtrlrX/commit/b454caddec6b65c6479e8b7be6e23f5b1f056c52
+- 
 ### CtrlrX v8.78 11/06/2026
 
 ##### Performance (large panels)
