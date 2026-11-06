@@ -1,10 +1,7 @@
 [&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
 ----
-
-### CtrlrX v8.7.8 (KronosKontrol build) 11/05/2026
-Based on upstream v8.77 (commit 51cd978a). Everything upstream shipped in 8.77 is
-included; the entries below are what this build adds on top.
+### CtrlrX v8.78 11/05/2026
 
 ##### Performance (large panels)
 - JUCE XmlDocument::readQuotedString() was O(n^2) in attribute length: a value built
@@ -19,9 +16,7 @@ included; the entries below are what this build adds on top.
   of reading it and building a 1.33x base64 copy.
 - CtrlrPanelResourceManager::guessType(): identify images from an 8-byte header instead of
   decoding them with ImageCache::getFromFile(). 228 PNG decodes per load -> 0.
-
-  Net effect on KronosKontrol (30 MB, 895 modulators): load 34.9 s -> 0.85 s, peak RSS
-  741 MB -> 183 MB. Image decoding moves from load to first paint.
+- Thanks to @francoisuk and @sgorpi
 
 ##### Fixed
 - Tabs: uiTabsCurrentTab is accepted as an input again (panels switching tabs with
