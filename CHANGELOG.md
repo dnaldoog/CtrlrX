@@ -17,6 +17,8 @@
 - CtrlrPanelResourceManager::guessType(): identify images from an 8-byte header instead of
   decoding them with ImageCache::getFromFile(). 228 PNG decodes per load -> 0.
 - Thanks to @francoisuk and @sgorpi
+- Added run_tests.bat automation for Tests
+- https://github.com/dnaldoog/CtrlrX/commit/1c62852b6388a9210def43811d74d851e47c02fa
 
 ##### Fixed
 - Tabs: uiTabsCurrentTab is accepted as an input again (panels switching tabs with
