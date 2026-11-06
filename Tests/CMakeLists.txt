@@ -51,7 +51,7 @@ target_compile_definitions(TestsProcessor PRIVATE $<TARGET_PROPERTY:${PROJECT_NA
 target_include_directories(TestsProcessor PRIVATE $<TARGET_PROPERTY:${PROJECT_NAME},INCLUDE_DIRECTORIES>)
 
 # Change 14 to 17 if you use JUCE 8
-target_compile_features(TestsProcessor PRIVATE cxx_std_14)
+target_compile_features(TestsProcessor PRIVATE cxx_std_17)
 
 if ((DEFINED ENV{CI}))
     target_compile_definitions(TestsProcessor PUBLIC CI=1)
