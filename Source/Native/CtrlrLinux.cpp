@@ -306,7 +306,8 @@ CtrlrLinux::~CtrlrLinux() {}
 
 void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRestricted, const bool signPanel,
 										std::function<void(juce::Result)> callback) {
-
+	static int exportEntryCount = 0;
+	DBG("exportWithDefaultPanel ENTERED #" << ++exportEntryCount << " isRestricted=" << (int)isRestricted);
 	auto notifyAndReturn = [callback](const juce::Result &res) {
 		if (callback)
 			callback(res);
@@ -335,6 +336,13 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 	// --- PATH AUTO-ROUTING LAMBDA EXECUTION FOR BOTH PLUGINS AND STANDALONES ---
 	auto performExportPipeline = [this, panelRef, me, isVST3, isVST2, isRestricted, appIdName,
 								  notifyAndReturn](const File &chosenFile, const juce::String &licenseText) {
+		if (isVST3 && chosenFile == File()) {
+			notifyAndReturn(Result::fail("VST3 export: no destination file was chosen."));
+			return;
+		}
+		DBG("performExportPipeline: chosenFile=["
+			<< chosenFile.getFullPathName() << "] isEmpty=" << (int)(chosenFile == File()) << " abs="
+			<< (int)File::isAbsolutePath(chosenFile.getFullPathName()) << " licence len=" << licenseText.length());
 		DBG("performExportPipeline: licenseText length = " << licenseText.length());
 		CtrlrPanel *panelToWrite = panelRef.get();
 		if (panelToWrite == nullptr) {
@@ -351,8 +359,21 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 			String binaryName = bundleDir.getFileNameWithoutExtension() + ".so";
 			File binaryFile = binaryDir.getChildFile(binaryName);
 
-			if (!binaryDir.createDirectory() || !me.copyFileTo(binaryFile)) {
-				notifyAndReturn(Result::fail("Failed to create VST3 structure or copy binary."));
+			const Result dirResult = binaryDir.createDirectory();
+			if (dirResult.failed()) {
+				notifyAndReturn(Result::fail("Could not create \"" + binaryDir.getFullPathName() +
+											 "\": " + dirResult.getErrorMessage()));
+				return;
+			}
+
+			if (!me.existsAsFile()) {
+				notifyAndReturn(Result::fail("Plugin binary not found at \"" + me.getFullPathName() + "\""));
+				return;
+			}
+
+			if (!me.copyFileTo(binaryFile)) {
+				notifyAndReturn(Result::fail("Could not copy \"" + me.getFullPathName() + "\" to \"" +
+											 binaryFile.getFullPathName() + "\""));
 				return;
 			}
 
@@ -390,10 +411,6 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 			} else {
 				newMe = chosenFile;
 			}
-
-			DBG("copy check: me=[" << me.getFullPathName() << "] exists=" << (int)me.existsAsFile() << " newMe=["
-								   << newMe.getFullPathName()
-								   << "] dirWritable=" << (int)newMe.getParentDirectory().hasWriteAccess());
 
 			if (!me.copyFileTo(newMe)) {
 				notifyAndReturn(
@@ -587,7 +604,6 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 												   "OK");
 		}
 
-		_DBG("Export pipeline successfully executed.");
 		notifyAndReturn(Result::ok());
 	};
 	// Ask for a licence (only if the panel has resources), then run the pipeline
@@ -596,6 +612,7 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 			performExportPipeline(chosenFile, lic);
 		});
 	};
+
 	// --- DETERMINATION RULE: PROMPT IF PLUGIN, EXECUTE SILENTLY IF STANDALONE ---
 	if (isVST3 || isVST2) {
 		File suggestedFile = isVST3 ? bundleDir.getParentDirectory().getChildFile(panelName + ".vst3")
@@ -603,37 +620,10 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 		String filePattern = isVST3 ? "*.vst3" : "*.so";
 		const bool useNativeDialog = panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs);
 
-		// plugin branch
 		FC::saveFileAsync(CTRLR_NEW_INSTANCE_DIALOG_TITLE, suggestedFile, filePattern, useNativeDialog,
 						  [exportWithLicence, notifyAndReturn](const File &chosenFile) {
 							  if (chosenFile == File()) {
-								  notifyAndReturn(Result::fail("User cancelled plugin export operation."));
-								  return;
-							  }
-							  exportWithLicence(chosenFile);
-						  });
-
-		// standalone, silent install to ~/.local/bin
-		exportWithLicence(File());
-
-		// standalone, classic file chooser
-		// plugin branch
-		FC::saveFileAsync(CTRLR_NEW_INSTANCE_DIALOG_TITLE, suggestedFile, filePattern, useNativeDialog,
-						  [exportWithLicence, notifyAndReturn](const File &chosenFile) {
-							  if (chosenFile == File()) {
-								  notifyAndReturn(Result::fail("User cancelled plugin export operation."));
-								  return;
-							  }
-							  exportWithLicence(chosenFile);
-						  });
-
-		// standalone, silent install to ~/.local/bin
-		exportWithLicence(File());
-
-		// standalone, classic file chooser
-		FC::saveFileAsync(CTRLR_NEW_INSTANCE_DIALOG_TITLE, suggestedFile, "*", useNativeDialog,
-						  [exportWithLicence, notifyAndReturn](const File &chosenFile) {
-							  if (chosenFile == File()) {
+								  // Must be this exact text: the caller in CtrlrPanel treats it as a quiet cancel.
 								  notifyAndReturn(Result::fail("User cancelled the export operation."));
 								  return;
 							  }
@@ -646,10 +636,10 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 			editorTreeForDispatch.isValid() && (bool)editorTreeForDispatch.getProperty(Ids::uiPanelLinuxExpDest, false);
 
 		if (exportToUserSystemDirs) {
-			// Silent, no dialog — installs straight into ~/.local/bin
+			// Silent, no dialog: installs straight into ~/.local/bin
 			exportWithLicence(File());
 		} else {
-			// Classic behavior: ask the user where to save it, same as VST3/VST2
+			// Classic behaviour: ask the user where to save it
 			File suggestedFile = me.getParentDirectory().getChildFile(panelName);
 			const bool useNativeDialog = panelToWrite->getOwner().getProperty(Ids::ctrlrNativeFileDialogs);
 
@@ -669,7 +659,7 @@ void CtrlrLinux::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isR
 
 Result CtrlrLinux::getDefaultPanel(MemoryBlock &dataToWrite) {
 #ifdef DEBUG_INSTANCE
-	File temp("/home/r.kubiak/devel/debug.bpanelz");
+	File temp("/home/" + SystemStats::getLogonName() + "/devel/debug.bpanelz");
 	temp.loadFileAsData(dataToWrite);
 	return Result::ok();
 #endif
