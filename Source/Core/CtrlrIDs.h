@@ -80,6 +80,7 @@ DECLARE_ID(uiPanelEditorHeight);
 DECLARE_ID(uiPanelViewPortSize);
 DECLARE_ID(uiPanelPropertiesSize);
 DECLARE_ID(uiPanelEditMode);
+DECLARE_ID(uiPanelPatchSaveMenu);
 DECLARE_ID(uiPanelZoom);
 DECLARE_ID(uiPanelLock);
 DECLARE_ID(uiPanelDisabledOnEdit);

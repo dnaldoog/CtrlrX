@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="hrcYoO" name="CtrlrX" reportAppUsage="1" projectType="audioplug"
-              version="8.72" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
+              version="8.78" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
               buildVST="0" buildVST3="1" buildAU="1" buildAUv3="0" buildRTAS="0"
               buildAAX="0" buildStandalone="1" enableIAA="0" pluginName="CtrlrX                          "
               pluginManufacturer="CtrlrX Project                  " pluginManufacturerCode="cTrX"
@@ -1167,6 +1167,8 @@
               file="Source/UIComponents/CtrlrComponentSelection.cpp"/>
         <FILE id="Q0Bt0V" name="CtrlrComponentSelection.h" compile="0" resource="0"
               file="Source/UIComponents/CtrlrComponentSelection.h"/>
+        <FILE id="MPgaPU" name="CtrlrFuzzyMatch.h" compile="0" resource="0"
+              file="Source/UIComponents/CtrlrFuzzyMatch.h"/>
         <FILE id="zZ9DFu" name="CtrlrGenericHelp.cpp" compile="1" resource="0"
               file="Source/UIComponents/CtrlrGenericHelp.cpp"/>
         <FILE id="XfBaHk" name="CtrlrGenericHelp.h" compile="0" resource="0"

@@ -351,8 +351,8 @@ void CtrlrPanel::savePanelVersioned() {
 }
 
 const String CtrlrPanel::exportPanel(CtrlrPanel *panel, const File &lastBrowsedDir, const File &destinationFile,
-									 MemoryBlock *outputPanelData, MemoryBlock *outputResourcesData,
-									 const bool isRestricted) {
+                                     MemoryBlock *outputPanelData, MemoryBlock *outputResourcesData,
+                                     const bool isRestricted, const String &licenseText) {
 	if (panel == nullptr)
 		return "Undefined panel passed to exporter";
 
@@ -396,7 +396,12 @@ const String CtrlrPanel::exportPanel(CtrlrPanel *panel, const File &lastBrowsedD
 			resources.addChild(res->createTree(), -1, nullptr);
 		}
 	}
-
+	if (licenseText.isNotEmpty()) {
+		juce::ValueTree licTree(Ids::resourceLicense);
+		licTree.setProperty(Ids::resourceData, licenseText, nullptr);
+		resources.addChild(licTree, -1, nullptr);
+	}
+	DBG("exportPanel: licenseText length = " << licenseText.length());
 	juce::ValueTree exportTree = panel->getCleanPanelTree();
 	panel->inlineExternalLuaMethods(
 		exportTree.getChildWithName(Ids::luaManager).getChildWithName(Ids::luaManagerMethods));

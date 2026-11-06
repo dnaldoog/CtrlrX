@@ -30,6 +30,7 @@
   <!-- Panel editor properties -->
   <id name="uiPanelCanvasRectangle"         text="Canvas bounds" type="Text"/>
   <id name="uiPanelEditMode"                text="Edit Mode" type="Bool"/>
+  <id name="uiPanelPatchSaveMenu"                text="Show patch save menu" type="Bool"/>
   <id name="uiPanelLock"                    text="Lock all components in place" type="Bool" defaults="unlocked/Locked"/>
   <id name="uiPanelDisabledOnEdit"          text="Components are disabled when editing" type="Bool" defaults="Enabled/Disabled" />
   <id name="uiPanelMenuBarVisible"      text="Is menu bar visible for this panel" type="Bool" />

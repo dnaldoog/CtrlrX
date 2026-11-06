@@ -1544,14 +1544,7 @@ CtrlrMultiMidiPropertyComponent::CtrlrMultiMidiPropertyComponent(const Value &_v
 	updateButtonIcons();
 }
 
-CtrlrMultiMidiPropertyComponent::~CtrlrMultiMidiPropertyComponent() {
-	// deleteAndZero(addMulti);
-	// deleteAndZero(removeMulti);
-	// deleteAndZero(listMulti);
-	// deleteAndZero(copy);
-	// deleteAndZero(paste);
-	// deleteAndZero(helpMmidi);
-}
+CtrlrMultiMidiPropertyComponent::~CtrlrMultiMidiPropertyComponent() {}
 
 void CtrlrMultiMidiPropertyComponent::lookAndFeelChanged() {
 	Component::lookAndFeelChanged();
@@ -1600,6 +1593,22 @@ void CtrlrMultiMidiPropertyComponent::paintListBoxItem(int rowNumber, Graphics &
 void CtrlrMultiMidiPropertyComponent::buttonClicked(Button *buttonThatWasClicked) {
 	if (buttonThatWasClicked == helpMmidi.get()) {
 		CtrlrSysexProcessor::showMidiHelp();
+	} else if (buttonThatWasClicked == removeMulti.get()) {
+		int selectedRow = listMulti->getSelectedRow();
+		if (selectedRow >= 0) {
+			StringArray temp;
+			temp.addTokens(valueToControl.toString().trim(), ":", "\"\'");
+			if (selectedRow < temp.size()) {
+				temp.remove(selectedRow);
+				valueToControl = temp.joinIntoString(":");
+				refresh();
+			}
+		}
+	} else if (buttonThatWasClicked == copy.get()) {
+		SystemClipboard::copyTextToClipboard(values.joinIntoString(":"));
+	} else if (buttonThatWasClicked == paste.get()) {
+		valueToControl = SystemClipboard::getTextFromClipboard();
+		refresh();
 	} else if (buttonThatWasClicked == addMulti.get()) {
 		PopupMenu m;
 
@@ -1634,32 +1643,11 @@ void CtrlrMultiMidiPropertyComponent::buttonClicked(Button *buttonThatWasClicked
 				m.addSeparator();
 			m.addItem(standardStartId + i, standardTypes[i].name);
 		}
-		m.addSeparator();
-
-		// Custom editor
-		int customId = standardStartId + numElementsInArray(standardTypes);
-		m.addItem(customId, "Custom...");
-		PU::showMenuAsyncSafe(m, this, [this, customId, templateKeys, standardStartId, standardTypes](int ret) {
+		PU::showMenuAsyncSafe(m, this, [this, templateKeys, standardStartId, standardTypes](int ret) {
 			if (ret <= 0)
 				return; // Cancelled or dismiss
 
-			if (ret == customId) // Custom editor
-			{
-				auto sysexProcessor = std::make_shared<CtrlrSysexProcessor>();
-				// Call openAdvancedMessageEditor directly on this or member sysexProcessor
-				// so it stays alive during the modal lifetime
-				sysexProcessor->openAdvancedMessageEditor([this, sysexProcessor](const String &newCsv) {
-					if (newCsv.isNotEmpty()) {
-						String currentValue = valueToControl.toString();
-						if (currentValue.isNotEmpty())
-							valueToControl = currentValue + ":" + newCsv;
-						else
-							valueToControl = newCsv;
-
-						refresh();
-					}
-				});
-			} else if (ret <= templateKeys.size()) // XML template
+			if (ret <= templateKeys.size()) // XML template
 			{
 				String data = templates.getValue(templateKeys[ret - 1], "");
 				if (data.isNotEmpty()) {

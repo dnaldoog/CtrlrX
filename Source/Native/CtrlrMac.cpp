@@ -19,8 +19,10 @@ CtrlrMac::CtrlrMac(CtrlrManager &_owner) : owner(_owner) {}
 
 CtrlrMac::~CtrlrMac() {}
 
+// UNTESTED on macOS: please have it built and checked on a Mac.
+
 void CtrlrMac::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRestricted, const bool signPanel,
-                                       std::function<void(juce::Result)> callback) {
+									  std::function<void(juce::Result)> callback) {
 
 	auto notifyAndReturn = [callback](const juce::Result &res) {
 		if (callback)
@@ -32,15 +34,20 @@ void CtrlrMac::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRes
 		return;
 	}
 
+	// The panel can be closed while dialogs are open, so only hold a weak reference from here on.
+	juce::WeakReference<CtrlrPanel> panelRef(panelToWrite);
+
 	File me = File::getSpecialLocation(File::currentApplicationFile);
 	String fileExtension = me.getFileExtension();
 	PluginLogger logger(me);
 
 	logger.log("Starting exportWithDefaultPanel");
 
+	// FIX: these were "literal" + enum, which is pointer arithmetic on the string literal
+	// (undefined behaviour), not string concatenation.
 	auto typeOS = juce::SystemStats::getOperatingSystemType();
 	std::cout << "MAC native, launch fileChooser to select export destination path. typeOS : " << typeOS << std::endl;
-	logger.log("MAC native, launch fileChooser to select export destination path. typeOS : " + typeOS);
+	logger.log("MAC native, launch fileChooser to select export destination path. typeOS : " + String((int)typeOS));
 
 	auto nameOS = juce::SystemStats::getOperatingSystemName();
 	std::cout << "MAC native, launch fileChooser to select export destination path. nameOS : " << nameOS << std::endl;
@@ -77,359 +84,392 @@ void CtrlrMac::exportWithDefaultPanel(CtrlrPanel *panelToWrite, const bool isRes
 		}
 	}
 
-	fc = std::make_unique<FileChooser>(CTRLR_NEW_INSTANCE_DIALOG_TITLE, fcInitialDirectory, me.getFileExtension(),
-	                                    nativeFileChooser);
-
+	// FIX: the member `fc` was also created here and never launched. Only the shared chooser below is used.
 	auto flags = FileBrowserComponent::openMode | FileBrowserComponent::canSelectDirectories;
 
-auto fileChooser = std::make_shared<FileChooser>(CTRLR_NEW_INSTANCE_DIALOG_TITLE, fcInitialDirectory, me.getFileExtension(), nativeFileChooser);
+	auto fileChooser = std::make_shared<FileChooser>(CTRLR_NEW_INSTANCE_DIALOG_TITLE, fcInitialDirectory,
+													 me.getFileExtension(), nativeFileChooser);
 
-fileChooser->launchAsync(flags, [this, fileChooser, panelToWrite, isRestricted, me, fileExtension, notifyAndReturn](const FileChooser &chooser) mutable {
-    // fileChooser safely stays alive until lambda finishes
-		juce::MessageManager::callAsync([this]() { fc.reset(); });
+	fileChooser->launchAsync(flags, [this, fileChooser, panelRef, isRestricted, me, fileExtension,
+									 notifyAndReturn](const FileChooser &chooser) mutable {
+		// fileChooser stays alive until this lambda finishes
 
 		if (chooser.getResult() == File()) {
 			notifyAndReturn(Result::fail("User cancelled the export operation."));
 			return;
 		}
 
+		CtrlrPanel *panelAtChoose = panelRef.get();
+		if (panelAtChoose == nullptr) {
+			notifyAndReturn(Result::fail("MAC native, panel was closed before the export could start"));
+			return;
+		}
+
 		File newMe = chooser.getResult().getChildFile(
-			File::createLegalFileName(panelToWrite->getProperty(Ids::name).toString() + me.getFileExtension()));
+			File::createLegalFileName(panelAtChoose->getProperty(Ids::name).toString() + me.getFileExtension()));
 
-		PluginLogger logger(me);
-		MemoryBlock panelExportData, panelResourcesData;
-		String error;
-
-if (newMe.exists()) {
-    AW::showOkCancelAsyncSafe(
-        AW::Question,
-        "File Already Exists",
-        "\"" + newMe.getFileName() + "\" already exists. Do you want to overwrite it?",
-        [this, newMe, panelToWrite, isRestricted, me, notifyAndReturn](bool userConfirmed) {
-            PluginLogger logger(me);
-
-            if (!userConfirmed) { // User clicked No/Cancel or closed the dialog
-                logger.log("MAC native, user cancelled the overwrite operation.");
-                notifyAndReturn(Result::fail("User cancelled the export operation."));
-                return;
-            }
-
-            logger.log("MAC native, attempting to delete existing bundle at: " + newMe.getFullPathName());
-            if (!newMe.deleteRecursively()) {
-                notifyAndReturn(Result::fail("MAC native, failed to delete existing bundle at: " + newMe.getFullPathName()));
-                return;
-            }
-
-            // Continue rest of export routine here...
-        },
-        "Overwrite", // button1Text (Returns true)
-        "Cancel"     // button2Text (Returns false)
-    );
-    return;
-}
-		if (!me.copyDirectoryTo(newMe)) {
-			logger.log("MAC native, copyDirectoryTo from \"" + me.getFullPathName() + "\" to \"" +
-					   newMe.getFullPathName() + "\" failed");
-			notifyAndReturn(Result::fail("MAC native, copyDirectoryTo from \"" + me.getFullPathName() + "\" to \"" +
-										 newMe.getFullPathName() + "\" failed"));
-			return;
-		}
-
-		Result res = setBundleInfo(panelToWrite, newMe);
-		if (!res.wasOk()) {
-			notifyAndReturn(res);
-			return;
-		}
-
-		res = setBundleInfoCarbon(panelToWrite, newMe);
-		if (!res.wasOk()) {
-			notifyAndReturn(res);
-			return;
-		}
-
-		if ((error = CtrlrPanel::exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData,
-											 isRestricted)) != "") {
-			notifyAndReturn(Result::fail(error));
-			return;
-		}
-
-		File panelFile = newMe.getChildFile("Contents/Resources/" + String(CTRLR_MAC_PANEL_FILE));
-		File resourcesFile = newMe.getChildFile("Contents/Resources/" + String(CTRLR_MAC_RESOURCES_FILE));
-		File fileEncrypted =
-			newMe.getChildFile("Contents/Resources/" + String(CTRLR_MAC_PANEL_FILE) + String("BF"));
-		File executableFile = me.getChildFile("Contents/MacOS/CtrlrX");
-
-		if (panelFile.create() && panelFile.hasWriteAccess()) {
-			if (!panelFile.replaceWithData(panelExportData.getData(), panelExportData.getSize())) {
-				logger.log("MAC native, failed to write panel file at: " + panelFile.getFullPathName());
-				notifyAndReturn(Result::fail("MAC native, failed to write panel file at: " + panelFile.getFullPathName()));
+		// ---------------------------------------------------------------------------------
+		// The actual export. Runs last, after any overwrite / licence prompts.
+		// ---------------------------------------------------------------------------------
+		auto performExport = [this, panelRef, isRestricted, me, fileExtension, newMe,
+							  notifyAndReturn](const juce::String &licenseText) mutable {
+			CtrlrPanel *panelToWrite = panelRef.get();
+			if (panelToWrite == nullptr) {
+				notifyAndReturn(Result::fail("MAC native, panel was closed before the export could finish"));
 				return;
 			}
-			logger.log("MAC native, succeeded to write panel file at: " + panelFile.getFullPathName());
-		}
 
-		if (resourcesFile.create() && resourcesFile.hasWriteAccess()) {
-			if (!resourcesFile.replaceWithData(panelResourcesData.getData(), panelResourcesData.getSize())) {
-				logger.log("MAC native, failed to write resources file at: " + resourcesFile.getFullPathName());
-				notifyAndReturn(Result::fail("MAC native, failed to write resources file at: " + resourcesFile.getFullPathName()));
+			PluginLogger logger(me);
+			MemoryBlock panelExportData, panelResourcesData;
+			String error;
+
+			// The user has confirmed the overwrite (if there was one): remove the old bundle now,
+			// right before copying, so an abandoned flow never destroys it.
+			if (newMe.exists()) {
+				logger.log("MAC native, deleting existing bundle at: " + newMe.getFullPathName());
+				if (!newMe.deleteRecursively()) {
+					notifyAndReturn(
+						Result::fail("MAC native, failed to delete existing bundle at: " + newMe.getFullPathName()));
+					return;
+				}
+			}
+
+			if (!me.copyDirectoryTo(newMe)) {
+				logger.log("MAC native, copyDirectoryTo from \"" + me.getFullPathName() + "\" to \"" +
+						   newMe.getFullPathName() + "\" failed");
+				notifyAndReturn(Result::fail("MAC native, copyDirectoryTo from \"" + me.getFullPathName() + "\" to \"" +
+											 newMe.getFullPathName() + "\" failed"));
 				return;
 			}
-			logger.log("MAC native, succeeded to write resources file at: " + resourcesFile.getFullPathName());
-		}
 
-		bool enableExportResourceEncryption = panelToWrite->getProperty(Ids::panelExportResourceEncryption);
-
-		if (enableExportResourceEncryption) {
-			const bool enableExportDelayBtwSteps = panelToWrite->getProperty(Ids::panelExportDelayBtwSteps);
-
-			if (enableExportDelayBtwSteps) {
-				logger.log("Thread sleep to delay encryption task.");
-				juce::Thread::sleep(500);
-				logger.log("Thread restarted for encryption task.");
-			} else {
-				logger.log("Thread sleep to delay encryption task bypassed.");
+			Result res = setBundleInfo(panelToWrite, newMe);
+			if (!res.wasOk()) {
+				notifyAndReturn(res);
+				return;
 			}
 
-			if (panelFile.existsAsFile()) {
-				MemoryBlock dataToEncrypt;
-				if (!panelFile.loadFileAsData(dataToEncrypt)) {
-					logger.log("Error: Failed to read source file");
-					notifyAndReturn(Result::fail("Error: Failed to read source file"));
-					return;
-				}
-
-				String keyString = "modulatorlist";
-				BlowFish blowfish(keyString.toUTF8(), keyString.getNumBytesAsUTF8());
-				blowfish.encrypt(dataToEncrypt);
-
-				fileEncrypted.create();
-				if (!fileEncrypted.existsAsFile()) {
-					logger.log("Error: Failed to create encrypted file");
-					notifyAndReturn(Result::fail("Error: Failed to create encrypted file"));
-					return;
-				}
-
-				FileOutputStream fos(fileEncrypted);
-				if (!fos.openedOk()) {
-					logger.log("Error: Failed to open encrypted file");
-					notifyAndReturn(Result::fail("Error: Failed to open encrypted file"));
-					return;
-				}
-
-				fos.write(dataToEncrypt.getData(), dataToEncrypt.getSize());
-				fos.flush();
-
-				if (!panelFile.deleteFile()) {
-					logger.log("Failed to delete source file " + panelFile.getFullPathName());
-					notifyAndReturn(Result::fail("Failed to delete source file " + panelFile.getFullPathName()));
-					return;
-				}
-			}
-		}
-
-		if (executableFile.existsAsFile()) {
-
-			if (fileExtension == ".vst3" || fileExtension == ".vst" || fileExtension == ".aaxplugin") {
-				std::cout << "fileExtension is : " << fileExtension << std::endl;
-				logger.log("fileExtension is : " + fileExtension);
-
-				const bool replaceVst3PluginIds = panelToWrite->getProperty(Ids::panelReplaceVst3PluginIds);
-
-				if (replaceVst3PluginIds) {
-					std::cout << "Replace the VST3 plugin identifiers with the panel ones : " << replaceVst3PluginIds
-							  << std::endl;
-					logger.log("Replace the VST3 plugin identifiers with the panel ones : " + replaceVst3PluginIds);
-
-					MemoryBlock executableData;
-					if (executableFile.loadFileAsData(executableData)) {
-						std::cout << "Executable loaded into memory successfully." << std::endl;
-						logger.log("Executable loaded into memory successfully.");
-
-						String pluginName32 = panelToWrite->getProperty(Ids::name).toString();
-						int pluginNameMaxLength32 = 32;
-						MemoryBlock pluginNameHex32;
-						hexStringToBytes(pluginName32, pluginNameMaxLength32, pluginNameHex32);
-						logger.log("pluginName (32 char long): " + pluginName32);
-						logger.log("pluginNameHex representation (32 char long): " + bytesToHexString(pluginNameHex32));
-
-						String pluginName16 = panelToWrite->getProperty(Ids::name).toString();
-						int pluginNameMaxLength16 = 16;
-						MemoryBlock pluginNameHex16;
-						hexStringToBytes(pluginName16, pluginNameMaxLength16, pluginNameHex16);
-						logger.log("pluginName (16 char long): " + pluginName16);
-						logger.log("pluginNameHex representation (16 char long): " + bytesToHexString(pluginNameHex16));
-
-						String pluginCode = panelToWrite->getProperty(Ids::panelInstanceUID).toString();
-						int pluginCodeMaxLength = 4;
-						MemoryBlock pluginCodeHex;
-						hexStringToBytes(pluginCode, pluginCodeMaxLength, pluginCodeHex);
-						logger.log("pluginCode: " + pluginCode);
-						logger.log("pluginCodeHex representation: " + bytesToHexString(pluginCodeHex));
-
-						String manufacturerName = panelToWrite->getProperty(Ids::panelAuthorName).toString();
-						int manufacturerNameMaxLength = 16;
-						MemoryBlock manufacturerNameHex;
-						hexStringToBytes(manufacturerName, manufacturerNameMaxLength, manufacturerNameHex);
-						logger.log("manufacturerName: " + manufacturerName);
-						logger.log("manufacturerNameHex representation: " + bytesToHexString(manufacturerNameHex));
-
-						String manufacturerCode = panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString();
-						int manufacturerCodeMaxLength = 4;
-						MemoryBlock manufacturerCodeHex;
-						hexStringToBytes(manufacturerCode, manufacturerCodeMaxLength, manufacturerCodeHex);
-						logger.log("manufacturerCode: " + manufacturerCode);
-						logger.log("manufacturerCodeHex representation: " + bytesToHexString(manufacturerCodeHex));
-
-						String versionMajor = panelToWrite->getProperty(Ids::panelVersionMajor).toString();
-						int versionMajorMaxLength = 2;
-						MemoryBlock versionMajorHex;
-						hexStringToBytes(versionMajor, versionMajorMaxLength, versionMajorHex);
-						logger.log("versionMajor: " + versionMajor);
-						logger.log("versionMajorHex representation: " + bytesToHexString(versionMajorHex));
-
-						String versionMinor = panelToWrite->getProperty(Ids::panelVersionMinor).toString();
-						int versionMinorMaxLength = 2;
-						MemoryBlock versionMinorHex;
-						hexStringToBytes(versionMinor, versionMinorMaxLength, versionMinorHex);
-						logger.log("versionMinor: " + versionMinor);
-						logger.log("versionMinorHex representation: " + bytesToHexString(versionMinorHex));
-
-						String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
-						int plugTypeMaxLength = 16;
-						MemoryBlock plugTypeHex;
-						hexStringToBytes(plugType, plugTypeMaxLength, plugTypeHex);
-						logger.log("plugType: " + plugType);
-						logger.log("plugTypeHex representation: " + bytesToHexString(plugTypeHex));
-
-						String searchPluginName32 =
-							"43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20";
-						if (isStringPresent(executableData, searchPluginName32)) {
-							MemoryBlock searchPluginNameHex32;
-							hexStringToBytes(searchPluginName32, searchPluginNameHex32);
-							replaceOccurrences(executableData, searchPluginNameHex32, pluginNameHex32, -1);
-							logger.log("Plugin name (32 char) replacement process complete.");
-						} else {
-							String searchPluginName16 = "43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20";
-							MemoryBlock searchPluginNameHex16;
-							hexStringToBytes(searchPluginName16, searchPluginNameHex16);
-							replaceOccurrences(executableData, searchPluginNameHex16, pluginNameHex16, -1);
-							logger.log("Plugin name (16 char) replacement process complete.");
-						}
-
-						MemoryBlock searchPluginCodeHex;
-						hexStringToBytes("63 54 72 58", searchPluginCodeHex);
-						replaceOccurrences(executableData, searchPluginCodeHex, pluginCodeHex, -1);
-						logger.log("Plugin code replacement complete.");
-
-						MemoryBlock searchManufacturerNameHex;
-						hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20", searchManufacturerNameHex);
-						replaceOccurrences(executableData, searchManufacturerNameHex, manufacturerNameHex, -1);
-						logger.log("Manufacturer name replacement complete.");
-
-						MemoryBlock searchManufacturerCodeHex;
-						hexStringToBytes("63 54 72 6C", searchManufacturerCodeHex);
-						replaceOccurrences(executableData, searchManufacturerCodeHex, manufacturerCodeHex, -1);
-						logger.log("Manufacturer code replacement complete.");
-
-						MemoryBlock searchPlugTypeHex, searchPlugTypeHexTools, searchPlugTypeBytesToolsInserted,
-							plugTypeBytesInsertData;
-
-						String plugTypeHexInstrumentToolsInserted =
-							"49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 54 6F 6F 6C 73";
-
-						if (plugTypeIsNotSplit(executableData, plugTypeHexInstrumentToolsInserted)) {
-							String plugTypeHexInstrumentTools = "49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73";
-							hexStringToBytes(plugTypeHexInstrumentTools, searchPlugTypeHexTools);
-							replaceOccurrences(executableData, searchPlugTypeHexTools, plugTypeHex, -1);
-							logger.log(
-								"VST3 plugin type replacement process complete. (Instrument|Tools, replaced by " +
-								CtrlrMac::hexStringToText(plugTypeHex) + ").");
-						} else {
-							hexStringToBytes("48 89 43 78 48 B8", plugTypeBytesInsertData);
-							hexStringToBytes(plugTypeHexInstrumentToolsInserted, searchPlugTypeBytesToolsInserted);
-							replaceOccurrencesIfSplitted(executableData, searchPlugTypeBytesToolsInserted,
-														 plugTypeBytesInsertData, plugTypeHex, 8, 1);
-							logger.log("VST3 plugin type replacement complete. (Instrument|Tools, replaced by " +
-									   CtrlrMac::hexStringToText(plugTypeHex) + ").");
-						}
-
-						File newExecutableFile = newMe.getChildFile("Contents/MacOS/CtrlrX");
-						if (!newExecutableFile.replaceWithData(executableData.getData(), executableData.getSize())) {
-							logger.log("MAC Native: Failed to write modified executable data");
-							notifyAndReturn(Result::fail("MAC Native: Failed to write modified executable data"));
-							return;
-						}
-						logger.log("Modified executable saved successfully.");
-					} else {
-						logger.log("Failed to load executable into memory.");
-						notifyAndReturn(Result::fail("Failed to load executable into memory."));
-						return;
-					}
-				} else {
-					logger.log("replaceVst3PluginIds set to false, Vst3 IDs replacement skipped.");
-				}
+			res = setBundleInfoCarbon(panelToWrite, newMe);
+			if (!res.wasOk()) {
+				notifyAndReturn(res);
+				return;
 			}
 
-			// FIX: codesigning was previously gated entirely behind
-			// panelExportCodesign, defaulting to skipped. But every export —
-			// standalone, AU, VST3, AAX alike — already has its bundle
-			// contents modified above (copyDirectoryTo, setBundleInfo,
-			// setBundleInfoCarbon rewriting Info.plist, and the panel/
-			// resource files written into Contents/Resources), which
-			// invalidates whatever signature the original build carried
-			// (Xcode auto-signs Apple Silicon builds ad-hoc by default, even
-			// without a paid Developer ID). Apple Silicon's kernel-level
-			// signature verification is mandatory, not optional — an
-			// unsigned/invalidly-signed bundle is silently refused at
-			// launch with no error message. codesignFileMac() already has a
-			// correct ad-hoc fallback (an empty identity becomes "-"), so
-			// it's always safe to call; a real certificate, when configured,
-			// is layered on top as an upgrade rather than being the only
-			// path to a launchable export at all.
-			{
-				const bool codesignExportedPanel = panelToWrite->getProperty(Ids::panelExportCodesign);
+			if ((error = CtrlrPanel::exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData,
+												 isRestricted, licenseText)) != "") {
+				notifyAndReturn(Result::fail(error));
+				return;
+			}
+
+			File panelFile = newMe.getChildFile("Contents/Resources/" + String(CTRLR_MAC_PANEL_FILE));
+			File resourcesFile = newMe.getChildFile("Contents/Resources/" + String(CTRLR_MAC_RESOURCES_FILE));
+			File fileEncrypted =
+				newMe.getChildFile("Contents/Resources/" + String(CTRLR_MAC_PANEL_FILE) + String("BF"));
+			File executableFile = me.getChildFile("Contents/MacOS/CtrlrX");
+
+			if (panelFile.create() && panelFile.hasWriteAccess()) {
+				if (!panelFile.replaceWithData(panelExportData.getData(), panelExportData.getSize())) {
+					logger.log("MAC native, failed to write panel file at: " + panelFile.getFullPathName());
+					notifyAndReturn(
+						Result::fail("MAC native, failed to write panel file at: " + panelFile.getFullPathName()));
+					return;
+				}
+				logger.log("MAC native, succeeded to write panel file at: " + panelFile.getFullPathName());
+			}
+
+			if (resourcesFile.create() && resourcesFile.hasWriteAccess()) {
+				if (!resourcesFile.replaceWithData(panelResourcesData.getData(), panelResourcesData.getSize())) {
+					logger.log("MAC native, failed to write resources file at: " + resourcesFile.getFullPathName());
+					notifyAndReturn(Result::fail("MAC native, failed to write resources file at: " +
+												 resourcesFile.getFullPathName()));
+					return;
+				}
+				logger.log("MAC native, succeeded to write resources file at: " + resourcesFile.getFullPathName());
+			}
+
+			bool enableExportResourceEncryption = panelToWrite->getProperty(Ids::panelExportResourceEncryption);
+
+			if (enableExportResourceEncryption) {
 				const bool enableExportDelayBtwSteps = panelToWrite->getProperty(Ids::panelExportDelayBtwSteps);
 
 				if (enableExportDelayBtwSteps) {
-					logger.log("Thread sleep to delay codesigning task.");
+					logger.log("Thread sleep to delay encryption task.");
 					juce::Thread::sleep(500);
-					logger.log("Thread restarted for codesigning task.");
+					logger.log("Thread restarted for encryption task.");
 				} else {
-					logger.log("Thread sleep to delay codesigning task bypassed.");
+					logger.log("Thread sleep to delay encryption task bypassed.");
 				}
 
-				logger.log("Codesigning process started (always runs; ad-hoc unless a certificate is configured). "
-						   "Ready to call codesignFileMac");
-				const juce::String newMePathName = newMe.getFullPathName();
-				logger.log("File FullPathname: " + newMePathName);
+				if (panelFile.existsAsFile()) {
+					MemoryBlock dataToEncrypt;
+					if (!panelFile.loadFileAsData(dataToEncrypt)) {
+						logger.log("Error: Failed to read source file");
+						notifyAndReturn(Result::fail("Error: Failed to read source file"));
+						return;
+					}
 
-				juce::String panelCertificateMacIdentity;
-				if (codesignExportedPanel) {
-					panelCertificateMacIdentity = panelToWrite->getProperty(Ids::panelCertificateMacId).toString();
-				}
-				// else: leave empty — codesignFileMac() falls back to "-" (ad-hoc)
-				logger.log("MAC Certificate Identity: " + (panelCertificateMacIdentity.isNotEmpty()
-															   ? panelCertificateMacIdentity
-															   : String("(none — ad-hoc)")));
+					String keyString = "modulatorlist";
+					BlowFish blowfish(keyString.toUTF8(), keyString.getNumBytesAsUTF8());
+					blowfish.encrypt(dataToEncrypt);
 
-				juce::String codesignLog;
-				const Result codesignResult = codesignFileMac(newMePathName, panelCertificateMacIdentity, codesignLog);
-				logger.log("Codesign Result wasOk(): " + String(codesignResult.wasOk() ? "true" : "false"));
-				logger.log("Codesign Log Output: " + codesignLog);
+					fileEncrypted.create();
+					if (!fileEncrypted.existsAsFile()) {
+						logger.log("Error: Failed to create encrypted file");
+						notifyAndReturn(Result::fail("Error: Failed to create encrypted file"));
+						return;
+					}
 
-				if (!codesignResult.wasOk()) {
-					logger.log("Codesign failed. Error: " + codesignResult.getErrorMessage());
-					notifyAndReturn(codesignResult);
-					return;
-				} else {
-					logger.log("Codesigning successful.");
+					FileOutputStream fos(fileEncrypted);
+					if (!fos.openedOk()) {
+						logger.log("Error: Failed to open encrypted file");
+						notifyAndReturn(Result::fail("Error: Failed to open encrypted file"));
+						return;
+					}
+
+					fos.write(dataToEncrypt.getData(), dataToEncrypt.getSize());
+					fos.flush();
+
+					if (!panelFile.deleteFile()) {
+						logger.log("Failed to delete source file " + panelFile.getFullPathName());
+						notifyAndReturn(Result::fail("Failed to delete source file " + panelFile.getFullPathName()));
+						return;
+					}
 				}
 			}
-		}
 
-		notifyAndReturn(Result::ok());
-	});
+			if (executableFile.existsAsFile()) {
+
+				if (fileExtension == ".vst3" || fileExtension == ".vst" || fileExtension == ".aaxplugin") {
+					std::cout << "fileExtension is : " << fileExtension << std::endl;
+					logger.log("fileExtension is : " + fileExtension);
+
+					const bool replaceVst3PluginIds = panelToWrite->getProperty(Ids::panelReplaceVst3PluginIds);
+
+					if (replaceVst3PluginIds) {
+						std::cout << "Replace the VST3 plugin identifiers with the panel ones : "
+								  << replaceVst3PluginIds << std::endl;
+						// FIX: was "literal" + bool, i.e. pointer arithmetic, not concatenation
+						logger.log("Replace the VST3 plugin identifiers with the panel ones : " +
+								   String((int)replaceVst3PluginIds));
+
+						MemoryBlock executableData;
+						if (executableFile.loadFileAsData(executableData)) {
+							std::cout << "Executable loaded into memory successfully." << std::endl;
+							logger.log("Executable loaded into memory successfully.");
+
+							String pluginName32 = panelToWrite->getProperty(Ids::name).toString();
+							int pluginNameMaxLength32 = 32;
+							MemoryBlock pluginNameHex32;
+							hexStringToBytes(pluginName32, pluginNameMaxLength32, pluginNameHex32);
+							logger.log("pluginName (32 char long): " + pluginName32);
+							logger.log("pluginNameHex representation (32 char long): " +
+									   bytesToHexString(pluginNameHex32));
+
+							String pluginName16 = panelToWrite->getProperty(Ids::name).toString();
+							int pluginNameMaxLength16 = 16;
+							MemoryBlock pluginNameHex16;
+							hexStringToBytes(pluginName16, pluginNameMaxLength16, pluginNameHex16);
+							logger.log("pluginName (16 char long): " + pluginName16);
+							logger.log("pluginNameHex representation (16 char long): " +
+									   bytesToHexString(pluginNameHex16));
+
+							String pluginCode = panelToWrite->getProperty(Ids::panelInstanceUID).toString();
+							int pluginCodeMaxLength = 4;
+							MemoryBlock pluginCodeHex;
+							hexStringToBytes(pluginCode, pluginCodeMaxLength, pluginCodeHex);
+							logger.log("pluginCode: " + pluginCode);
+							logger.log("pluginCodeHex representation: " + bytesToHexString(pluginCodeHex));
+
+							String manufacturerName = panelToWrite->getProperty(Ids::panelAuthorName).toString();
+							int manufacturerNameMaxLength = 16;
+							MemoryBlock manufacturerNameHex;
+							hexStringToBytes(manufacturerName, manufacturerNameMaxLength, manufacturerNameHex);
+							logger.log("manufacturerName: " + manufacturerName);
+							logger.log("manufacturerNameHex representation: " + bytesToHexString(manufacturerNameHex));
+
+							String manufacturerCode =
+								panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString();
+							int manufacturerCodeMaxLength = 4;
+							MemoryBlock manufacturerCodeHex;
+							hexStringToBytes(manufacturerCode, manufacturerCodeMaxLength, manufacturerCodeHex);
+							logger.log("manufacturerCode: " + manufacturerCode);
+							logger.log("manufacturerCodeHex representation: " + bytesToHexString(manufacturerCodeHex));
+
+							String versionMajor = panelToWrite->getProperty(Ids::panelVersionMajor).toString();
+							int versionMajorMaxLength = 2;
+							MemoryBlock versionMajorHex;
+							hexStringToBytes(versionMajor, versionMajorMaxLength, versionMajorHex);
+							logger.log("versionMajor: " + versionMajor);
+							logger.log("versionMajorHex representation: " + bytesToHexString(versionMajorHex));
+
+							String versionMinor = panelToWrite->getProperty(Ids::panelVersionMinor).toString();
+							int versionMinorMaxLength = 2;
+							MemoryBlock versionMinorHex;
+							hexStringToBytes(versionMinor, versionMinorMaxLength, versionMinorHex);
+							logger.log("versionMinor: " + versionMinor);
+							logger.log("versionMinorHex representation: " + bytesToHexString(versionMinorHex));
+
+							String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
+							int plugTypeMaxLength = 16;
+							MemoryBlock plugTypeHex;
+							hexStringToBytes(plugType, plugTypeMaxLength, plugTypeHex);
+							logger.log("plugType: " + plugType);
+							logger.log("plugTypeHex representation: " + bytesToHexString(plugTypeHex));
+
+							String searchPluginName32 =
+								"43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 "
+								"20 20 20 20 20 20 20 20 20 20 20";
+							if (isStringPresent(executableData, searchPluginName32)) {
+								MemoryBlock searchPluginNameHex32;
+								hexStringToBytes(searchPluginName32, searchPluginNameHex32);
+								replaceOccurrences(executableData, searchPluginNameHex32, pluginNameHex32, -1);
+								logger.log("Plugin name (32 char) replacement process complete.");
+							} else {
+								String searchPluginName16 = "43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20";
+								MemoryBlock searchPluginNameHex16;
+								hexStringToBytes(searchPluginName16, searchPluginNameHex16);
+								replaceOccurrences(executableData, searchPluginNameHex16, pluginNameHex16, -1);
+								logger.log("Plugin name (16 char) replacement process complete.");
+							}
+
+							MemoryBlock searchPluginCodeHex;
+							hexStringToBytes("63 54 72 58", searchPluginCodeHex);
+							replaceOccurrences(executableData, searchPluginCodeHex, pluginCodeHex, -1);
+							logger.log("Plugin code replacement complete.");
+
+							MemoryBlock searchManufacturerNameHex;
+							hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20",
+											 searchManufacturerNameHex);
+							replaceOccurrences(executableData, searchManufacturerNameHex, manufacturerNameHex, -1);
+							logger.log("Manufacturer name replacement complete.");
+
+							MemoryBlock searchManufacturerCodeHex;
+							hexStringToBytes("63 54 72 6C", searchManufacturerCodeHex);
+							replaceOccurrences(executableData, searchManufacturerCodeHex, manufacturerCodeHex, -1);
+							logger.log("Manufacturer code replacement complete.");
+
+							MemoryBlock searchPlugTypeHex, searchPlugTypeHexTools, searchPlugTypeBytesToolsInserted,
+								plugTypeBytesInsertData;
+
+							String plugTypeHexInstrumentToolsInserted =
+								"49 6E 73 74 72 75 6D 65 48 89 43 78 48 B8 6E 74 7C 54 6F 6F 6C 73";
+
+							if (plugTypeIsNotSplit(executableData, plugTypeHexInstrumentToolsInserted)) {
+								String plugTypeHexInstrumentTools = "49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73";
+								hexStringToBytes(plugTypeHexInstrumentTools, searchPlugTypeHexTools);
+								replaceOccurrences(executableData, searchPlugTypeHexTools, plugTypeHex, -1);
+								logger.log(
+									"VST3 plugin type replacement process complete. (Instrument|Tools, replaced by " +
+									CtrlrMac::hexStringToText(plugTypeHex) + ").");
+							} else {
+								hexStringToBytes("48 89 43 78 48 B8", plugTypeBytesInsertData);
+								hexStringToBytes(plugTypeHexInstrumentToolsInserted, searchPlugTypeBytesToolsInserted);
+								replaceOccurrencesIfSplitted(executableData, searchPlugTypeBytesToolsInserted,
+															 plugTypeBytesInsertData, plugTypeHex, 8, 1);
+								logger.log("VST3 plugin type replacement complete. (Instrument|Tools, replaced by " +
+										   CtrlrMac::hexStringToText(plugTypeHex) + ").");
+							}
+
+							File newExecutableFile = newMe.getChildFile("Contents/MacOS/CtrlrX");
+							if (!newExecutableFile.replaceWithData(executableData.getData(),
+																   executableData.getSize())) {
+								logger.log("MAC Native: Failed to write modified executable data");
+								notifyAndReturn(Result::fail("MAC Native: Failed to write modified executable data"));
+								return;
+							}
+							logger.log("Modified executable saved successfully.");
+						} else {
+							logger.log("Failed to load executable into memory.");
+							notifyAndReturn(Result::fail("Failed to load executable into memory."));
+							return;
+						}
+					} else {
+						logger.log("replaceVst3PluginIds set to false, Vst3 IDs replacement skipped.");
+					}
+				}
+
+				// Codesigning: always runs (ad-hoc unless a certificate is configured), because every export
+				// modifies the bundle after the original build's signature was applied, which invalidates it,
+				// and Apple Silicon silently refuses to launch an invalidly signed bundle.
+				{
+					const bool codesignExportedPanel = panelToWrite->getProperty(Ids::panelExportCodesign);
+					const bool enableExportDelayBtwSteps = panelToWrite->getProperty(Ids::panelExportDelayBtwSteps);
+
+					if (enableExportDelayBtwSteps) {
+						logger.log("Thread sleep to delay codesigning task.");
+						juce::Thread::sleep(500);
+						logger.log("Thread restarted for codesigning task.");
+					} else {
+						logger.log("Thread sleep to delay codesigning task bypassed.");
+					}
+
+					logger.log("Codesigning process started (always runs; ad-hoc unless a certificate is "
+							   "configured). Ready to call codesignFileMac");
+					const juce::String newMePathName = newMe.getFullPathName();
+					logger.log("File FullPathname: " + newMePathName);
+
+					juce::String panelCertificateMacIdentity;
+					if (codesignExportedPanel) {
+						panelCertificateMacIdentity = panelToWrite->getProperty(Ids::panelCertificateMacId).toString();
+					}
+					// else: leave empty, codesignFileMac() falls back to "-" (ad-hoc)
+					logger.log("MAC Certificate Identity: " + (panelCertificateMacIdentity.isNotEmpty()
+																   ? panelCertificateMacIdentity
+																   : String("(none - ad-hoc)")));
+
+					juce::String codesignLog;
+					const Result codesignResult =
+						codesignFileMac(newMePathName, panelCertificateMacIdentity, codesignLog);
+					logger.log("Codesign Result wasOk(): " + String(codesignResult.wasOk() ? "true" : "false"));
+					logger.log("Codesign Log Output: " + codesignLog);
+
+					if (!codesignResult.wasOk()) {
+						logger.log("Codesign failed. Error: " + codesignResult.getErrorMessage());
+						notifyAndReturn(codesignResult);
+						return;
+					} else {
+						logger.log("Codesigning successful.");
+					}
+				}
+			}
+
+			notifyAndReturn(Result::ok());
+		}; // end performExport
+
+		// ---------------------------------------------------------------------------------
+		// Ask for a licence (only if the panel has resources), then run the export.
+		// Must be defined AFTER performExport, and stay inside this callback.
+		// ---------------------------------------------------------------------------------
+		auto askLicenceThenExport = [panelRef, performExport]() mutable {
+			CtrlrPanel::askForLicenseAsync(panelRef.get(),
+										   [performExport](juce::String lic) mutable { performExport(lic); });
+		};
+
+		// ---------------------------------------------------------------------------------
+		// The chooser picks a folder, so nothing has warned about overwriting yet.
+		// Confirm first if the bundle already exists, then continue to the licence step.
+		// (Before: the confirmed branch deleted the old bundle and then stopped. The rest of
+		// the export never ran and the callback was never called.)
+		// ---------------------------------------------------------------------------------
+		if (newMe.exists()) {
+			AW::showOkCancelAsyncSafe(
+				AW::Question, "File Already Exists",
+				"\"" + newMe.getFileName() + "\" already exists. Do you want to overwrite it?",
+				[askLicenceThenExport, notifyAndReturn, me](bool userConfirmed) mutable {
+					if (!userConfirmed) {
+						PluginLogger logger(me);
+						logger.log("MAC native, user cancelled the overwrite operation.");
+						notifyAndReturn(Result::fail("User cancelled the export operation."));
+						return;
+					}
+					askLicenceThenExport();
+				},
+				"Overwrite", "Cancel");
+		} else {
+			askLicenceThenExport();
+		}
+	}); // end launchAsync
 }
+
 // Check if a string is present or not and return if isStringPresent()
 bool CtrlrMac::isStringPresent(const juce::MemoryBlock &applicationData, const juce::String &stringToFind) {
 	File me = File::getSpecialLocation(File::currentApplicationFile);

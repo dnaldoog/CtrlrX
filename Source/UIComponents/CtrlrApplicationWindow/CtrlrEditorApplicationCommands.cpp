@@ -366,7 +366,7 @@ void CtrlrEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo &re
 		result.setInfo("Scan workspace for new files", "Scan workspace for new files", panelCategory, 0);
 		if (!isRestricted()) 
 		{
-			result.addDefaultKeypress('s', ModifierKeys::altModifier);
+			result.addDefaultKeypress('n', ModifierKeys::altModifier);
 		}
 		result.setActive(isPanelActive(true));
 		break;

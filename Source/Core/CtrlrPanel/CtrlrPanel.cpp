@@ -281,89 +281,6 @@ void CtrlrPanel::setProgramState(const bool _programState) {
 	programState = _programState;
 }
 
-Result CtrlrPanel::restoreState(const ValueTree &savedState) {
-	_DBG("CtrlrPanel::restoreState");
-
-	setRestoreState(true);
-
-	panelTree.removeProperty(Ids::panelScheme, nullptr);
-
-	// We need panel file property to be able to restore relative paths on lua methods
-	var filePath = savedState.getProperty(Ids::panelFilePath);
-	if (filePath.isVoid()) { // File path not provided (new Panel) => get a default one
-		File userDocsDir = File::getSpecialLocation(File::SpecialLocationType::userDocumentsDirectory);
-		File panelFile = userDocsDir.getNonexistentChildFile("CtrlrPanel", ".panel");
-		filePath = panelFile.getFullPathName();
-	}
-	panelTree.setProperty(Ids::panelFilePath, filePath, nullptr);
-
-	ctrlrLuaManager->restoreState(savedState.getChildWithName(Ids::luaManager));
-
-	if ((int)savedState.getProperty(Ids::panelScheme) < CTRLR_PANEL_SCHEME)
-		upgradeScheme();
-
-	for (int i = 0; i < savedState.getNumProperties(); i++) {
-		panelTree.setProperty(savedState.getPropertyName(i), savedState.getProperty(savedState.getPropertyName(i), 0),
-							  0);
-	}
-
-	if (savedState.getChildWithName(Ids::resourceExportList).isValid()) {
-		Result resourceImport = resourceManager.restoreState(savedState.getChildWithName(Ids::resourceExportList));
-
-		if (!resourceImport.wasOk()) {
-			WARN("Failed to load panel: " + resourceImport.getErrorMessage());
-
-			setRestoreState(false);
-			return (resourceImport);
-		}
-	} else if (owner.getInstanceResourcesTree().isValid()) {
-		Result resourceImport = getResourceManager().restoreState(owner.getInstanceResourcesTree());
-
-		if (!resourceImport.wasOk()) {
-			WARN("Failed to load panel: " + resourceImport.getErrorMessage());
-
-			setRestoreState(false);
-			return (resourceImport);
-		}
-	} else { // Try and load missing resources from source files
-		ValueTree panelResourcesTree = savedState.getChildWithName(Ids::panelResources);
-		if (panelResourcesTree.isValid()) {
-			getResourceManager().checkMissingResources(panelResourcesTree);
-		}
-	}
-
-	if (luaPanelBeforeLoadCbk && !luaPanelBeforeLoadCbk.wasObjectDeleted()) {
-		if (luaPanelBeforeLoadCbk->isValid()) {
-			getCtrlrLuaManager().getMethodManager().call(luaPanelBeforeLoadCbk);
-		}
-	}
-	if (savedState.getChildWithName(Ids::panelResources).isValid()) {
-		getResourceManager().restoreSavedState(savedState.getChildWithName(Ids::panelResources));
-	}
-
-	resourceImportFinished();
-
-	// No modifications at this point
-	setSavePoint();
-
-	if (savedState.getChildWithName(Ids::uiPanelEditor).isValid()) {
-		getEditor(true)->restoreState(savedState);
-	}
-	if (savedState.getChildWithName(Ids::uiWindowManager).isValid()) {
-		panelWindowManager.restoreState(savedState.getChildWithName(Ids::uiWindowManager));
-	}
-	if (savedState.getChildWithName(Ids::panelCustomData).isValid()) {
-		setCustomData(savedState.getChildWithName(Ids::panelCustomData));
-	}
-
-	setRestoreState(false);
-
-	if (owner.getInstanceMode() == InstanceMulti) {
-		bootstrapPanel();
-	}
-	return Result::ok();
-}
-
 void CtrlrPanel::sendSnapshotOnLoad() {
 	if ((bool)getProperty(Ids::panelMidiSnapshotAfterLoad) == true) {
 		_INF("Snapshot on load selected, sending now");
@@ -410,22 +327,22 @@ void CtrlrPanel::bootstrapPanel(const bool setInitialProgram) {
 	boostrapStateStatus = false;
 	postBootstrapGate = true;
 	const double gateStartMs = juce::Time::getMillisecondCounterHiRes();
-	// _DBG("[Gate] bootstrap END, isLoading=" + String(isLoading() ? "true" : "false"));
+	_DBG("[Gate] bootstrap END, isLoading=" + String(isLoading() ? "true" : "false"));
 
 	juce::MessageManager::callAsync([safe = juce::WeakReference<CtrlrPanel>(this), gateStartMs] {
 		if (safe == nullptr)
 			return;
 
-		// _DBG("[Gate] hop 1 reached, +" +
-		// 	 String(juce::Time::getMillisecondCounterHiRes() - gateStartMs, 3) +
-		// 	 " ms, isLoading=" + String(safe->isLoading() ? "true" : "false"));
+		_DBG("[Gate] hop 1 reached, +" +
+			 String(juce::Time::getMillisecondCounterHiRes() - gateStartMs, 3) +
+			 " ms, isLoading=" + String(safe->isLoading() ? "true" : "false"));
 
 		juce::MessageManager::callAsync([safe, gateStartMs] {
 			if (safe != nullptr) {
 				safe->postBootstrapGate = false;
-				// _DBG("[Gate] hop 2 reached, gate CLOSED, +" +
-				// 	 String(juce::Time::getMillisecondCounterHiRes() - gateStartMs, 3) +
-				// 	 " ms, isLoading=" + String(safe->isLoading() ? "true" : "false"));
+				_DBG("[Gate] hop 2 reached, gate CLOSED, +" +
+					 String(juce::Time::getMillisecondCounterHiRes() - gateStartMs, 3) +
+					 " ms, isLoading=" + String(safe->isLoading() ? "true" : "false"));
 			}
 		});
 	});
@@ -2245,4 +2162,123 @@ Result CtrlrPanel::exportLuaMethodToWorkspace(const File &parentDir, ValueTree m
 		++converted;
 	}
 	return converted;
+}
+void CtrlrPanel::askForLicenseAsync(CtrlrPanel *panel, std::function<void(juce::String)> onDone) {
+	DBG("askForLicenseAsync: resources=" << (panel ? panel->getResourceManager().getNumResources() : -1));
+
+	if (panel == nullptr || panel->getResourceManager().getNumResources() == 0) {
+		onDone({});
+		return;
+	}
+
+	AW::showOkCancelAsyncSafe(
+		AW::Question, "License question", "Would you like to attach a license to this panel?",
+		[onDone](bool attach) {
+            if (!attach) {
+                onDone({});
+                return;
+            }
+
+            auto *alert = new juce::AlertWindow("License content", "Paste your license below",
+                                                juce::MessageBoxIconType::InfoIcon);
+            auto lic = std::make_shared<juce::TextEditor>();
+            lic->setMultiLine(true, false);
+            lic->setReturnKeyStartsNewLine(true);
+            lic->setSize(400, 300);
+            alert->addCustomComponent(lic.get());
+            alert->addButton("OK", 1);
+
+			AW::runCustomAlertAsyncSafe(alert, [lic, onDone](int result) {
+				DBG("license dialog result=" << result << " textLength=" << lic->getText().length());
+
+				onDone(result != 0 ? lic->getText() : juce::String());
+			});
+		},
+		"Yes", "No");
+}
+// Paste this back into CtrlrPanel.cpp (where it was before). It is unchanged from the
+// version you posted: the licence prompt now happens earlier, in CtrlrManager::addPanel,
+// and CtrlrPanelResourceManager::restoreState no longer shows any dialog.
+
+Result CtrlrPanel::restoreState(const ValueTree &savedState) {
+	_DBG("CtrlrPanel::restoreState");
+	DBG("XXXXXX CtrlrPanel::restoreState called from:\n" << juce::SystemStats::getStackBacktrace());
+	setRestoreState(true);
+
+	panelTree.removeProperty(Ids::panelScheme, nullptr);
+
+	// We need panel file property to be able to restore relative paths on lua methods
+	var filePath = savedState.getProperty(Ids::panelFilePath);
+	if (filePath.isVoid()) { // File path not provided (new Panel) => get a default one
+		File userDocsDir = File::getSpecialLocation(File::SpecialLocationType::userDocumentsDirectory);
+		File panelFile = userDocsDir.getNonexistentChildFile("CtrlrPanel", ".panel");
+		filePath = panelFile.getFullPathName();
+	}
+	panelTree.setProperty(Ids::panelFilePath, filePath, nullptr);
+
+	ctrlrLuaManager->restoreState(savedState.getChildWithName(Ids::luaManager));
+
+	if ((int)savedState.getProperty(Ids::panelScheme) < CTRLR_PANEL_SCHEME)
+		upgradeScheme();
+
+	for (int i = 0; i < savedState.getNumProperties(); i++) {
+		panelTree.setProperty(savedState.getPropertyName(i), savedState.getProperty(savedState.getPropertyName(i), 0),
+							  0);
+	}
+
+	if (savedState.getChildWithName(Ids::resourceExportList).isValid()) {
+		Result resourceImport = resourceManager.restoreState(savedState.getChildWithName(Ids::resourceExportList));
+
+		if (!resourceImport.wasOk()) {
+			WARN("Failed to load panel: " + resourceImport.getErrorMessage());
+
+			setRestoreState(false);
+			return (resourceImport);
+		}
+	} else if (owner.getInstanceResourcesTree().isValid()) {
+		Result resourceImport = getResourceManager().restoreState(owner.getInstanceResourcesTree());
+
+		if (!resourceImport.wasOk()) {
+			WARN("Failed to load panel: " + resourceImport.getErrorMessage());
+
+			setRestoreState(false);
+			return (resourceImport);
+		}
+	} else { // Try and load missing resources from source files
+		ValueTree panelResourcesTree = savedState.getChildWithName(Ids::panelResources);
+		if (panelResourcesTree.isValid()) {
+			getResourceManager().checkMissingResources(panelResourcesTree);
+		}
+	}
+
+	if (luaPanelBeforeLoadCbk && !luaPanelBeforeLoadCbk.wasObjectDeleted()) {
+		if (luaPanelBeforeLoadCbk->isValid()) {
+			getCtrlrLuaManager().getMethodManager().call(luaPanelBeforeLoadCbk);
+		}
+	}
+	if (savedState.getChildWithName(Ids::panelResources).isValid()) {
+		getResourceManager().restoreSavedState(savedState.getChildWithName(Ids::panelResources));
+	}
+
+	resourceImportFinished();
+
+	// No modifications at this point
+	setSavePoint();
+
+	if (savedState.getChildWithName(Ids::uiPanelEditor).isValid()) {
+		getEditor(true)->restoreState(savedState);
+	}
+	if (savedState.getChildWithName(Ids::uiWindowManager).isValid()) {
+		panelWindowManager.restoreState(savedState.getChildWithName(Ids::uiWindowManager));
+	}
+	if (savedState.getChildWithName(Ids::panelCustomData).isValid()) {
+		setCustomData(savedState.getChildWithName(Ids::panelCustomData));
+	}
+
+	setRestoreState(false);
+
+	if (owner.getInstanceMode() == InstanceMulti) {
+		bootstrapPanel();
+	}
+	return Result::ok();
 }

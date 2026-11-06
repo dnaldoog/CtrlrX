@@ -30,6 +30,8 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CtrlrPanelFindProperty)
     std::unique_ptr<TextEditor> filterInput;
     std::unique_ptr<DrawableButton> filterButton;
+	void textEditorTextChanged(TextEditor &e) override;
+	std::unique_ptr<juce::TextButton> clearButton;
 	CtrlrPanelEditor &owner;
 	CtrlrPanelComponentProperties *props;
 };

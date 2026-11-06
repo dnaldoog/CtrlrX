@@ -109,13 +109,22 @@ static File findRcedit() {
 	return File();
 }
 
-void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
+// Drop-in replacement for CtrlrWindows::exportWithDefaultPanel
+//
+// Flow:  file chooser -> (optional) overwrite prompt -> licence prompt -> performExport
+//
+// Also needed elsewhere (see notes in the chat):
+//   CtrlrPanel.h   : static void askForLicenseAsync (CtrlrPanel *panel, std::function<void (juce::String)> onDone);
+//                    exportPanel(..., const bool isRestricted = false, const String &licenseText = String());
+//   CtrlrPanel.cpp : exportPanel adds a Ids::resourceLicense child to `resources` when licenseText is not empty,
+//                    and askForLicenseAsync is defined.
+
+void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel *panelToWrite,
                                           const bool isRestricted,
                                           const bool signPanel,
                                           std::function<void(juce::Result)> callback)
 {
-    // Helper macro/lambda to handle returning results asynchronously
-    auto notifyAndReturn = [callback](const juce::Result& res) {
+    auto notifyAndReturn = [callback](const juce::Result &res) {
         if (callback)
             callback(res);
     };
@@ -125,15 +134,18 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
         return;
     }
 
+    // The panel can be closed while dialogs are open, so only hold a weak reference from here on.
+    juce::WeakReference<CtrlrPanel> panelRef(panelToWrite);
+
     // 1. Setup Variables & Logger
-    CtrlrManager& manager = panelToWrite->getOwner();
+    CtrlrManager &manager = panelToWrite->getOwner();
     File me = File::getSpecialLocation(File::currentExecutableFile);
     PluginLogger logger(me);
     logger.log("Starting exportWithDefaultPanel");
     String fileExtension = me.getFileExtension();
     logger.log("CtrlrX source fileExtension is :" + fileExtension);
 
-    // 3. Determine Initial Directory (Sticky Logic)
+    // 2. Determine Initial Directory (Sticky Logic)
     String lastPath = manager.getProperty("lastExportPath").toString();
     File targetDir;
 
@@ -153,27 +165,25 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
         }
     }
 
-    // 4. File Chooser Setup
+    // 3. File Chooser Setup
     String defaultFileName = File::createLegalFileName(panelToWrite->getProperty(Ids::name));
     File defaultFile = targetDir.getChildFile(defaultFileName).withFileExtension(fileExtension);
     bool useNative = (bool)manager.getProperty(Ids::ctrlrNativeFileDialogs);
 
-    // Use member std::unique_ptr<FileChooser> fc to prevent dialog lifetime issues
+    // Member std::unique_ptr<FileChooser> fc keeps the dialog alive while it is open
     fc = std::make_unique<FileChooser>(CTRLR_NEW_INSTANCE_DIALOG_TITLE,
                                        defaultFile,
                                        "*" + fileExtension,
                                        useNative);
 
-    // FIX: added warnAboutOverwriting — matters when useNative is false, since
-    // the OS-native dialog already warns on its own, but JUCE's own file
-    // browser needs this flag explicitly.
     auto flags = FileBrowserComponent::saveMode | FileBrowserComponent::canSelectFiles |
                  FileBrowserComponent::warnAboutOverwriting;
 
-    // Launch Native File Dialog Asynchronously
-    fc->launchAsync(flags, [this, panelToWrite, isRestricted, me, fileExtension, callback, notifyAndReturn](const FileChooser& chooser) mutable {
-        
-        // Safely schedule cleanup after the lambda completes
+    // 4. Launch the file dialog asynchronously
+    fc->launchAsync(flags, [this, panelRef, isRestricted, me, fileExtension,
+                            notifyAndReturn](const FileChooser &chooser) mutable {
+
+        // Safely schedule cleanup after this lambda completes
         juce::MessageManager::callAsync([this]() { fc.reset(); });
 
         File newMe = chooser.getResult();
@@ -185,23 +195,27 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
             return;
         }
 
-        // FIX: the dialog's own overwrite check (native OS prompt, or JUCE's
-        // warnAboutOverwriting flag above) only ever validates the literal
-        // path the user actually typed/selected. If that path is missing
-        // the expected extension, withFileExtension() below silently
-        // retargets newMe at a *different* path than the one the dialog
-        // checked — one that may already exist on disk, unbeknownst to
-        // either overwrite mechanism, since both already ran before this
-        // point. So this needs its own explicit check, after the rename,
-        // covering exactly that gap.
+        // The dialog's own overwrite check only validates the path the user actually chose.
+        // If we have to append the extension, we retarget a different path the dialog never
+        // checked, so that case needs its own overwrite prompt (and only that case).
+        const File chosenFile = newMe;
         if (!newMe.hasFileExtension(fileExtension))
             newMe = newMe.withFileExtension(fileExtension);
+        const bool pathWasAltered = (newMe != chosenFile);
 
-        // Everything that was previously inline below now runs inside this
-        // nested lambda, so it can be deferred behind the overwrite prompt
-        // when needed, or run immediately when there's nothing to confirm.
-        auto performExport = [this, panelToWrite, isRestricted, me, fileExtension, newMe, notifyAndReturn]() mutable {
-            CtrlrManager& manager = panelToWrite->getOwner();
+        // ---------------------------------------------------------------------------------
+        // The actual export. Runs last, after any overwrite / licence prompts.
+        // ---------------------------------------------------------------------------------
+        auto performExport = [this, panelRef, isRestricted, me, fileExtension, newMe,
+                              notifyAndReturn](const juce::String &licenseText) mutable {
+
+            CtrlrPanel *panelToWrite = panelRef.get();
+            if (panelToWrite == nullptr) {
+                notifyAndReturn(Result::fail("Windows Native: panel was closed before the export could finish"));
+                return;
+            }
+
+            CtrlrManager &manager = panelToWrite->getOwner();
             PluginLogger logger(me);
 
             // Save sticky path
@@ -210,11 +224,12 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
 
             if (!me.copyFileTo(newMe)) {
                 logger.log("Error: Failed to copy executable");
-                notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource can't copy \"" + me.getFullPathName() +
-                                             "\" to \"" + newMe.getFullPathName() + "\""));
+                notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource can't copy \"" +
+                                             me.getFullPathName() + "\" to \"" + newMe.getFullPathName() + "\""));
                 return;
             }
             logger.log("Executable copied successfully.");
+
             MemoryBlock panelExportData, panelResourcesData;
             String error;
 
@@ -222,117 +237,108 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
             HANDLE hResource = BeginUpdateResourceW(newMe.getFullPathName().toWideCharPointer(), FALSE);
 
             if (hResource) {
-                if ((error = CtrlrPanel::exportPanel(panelToWrite, File(), newMe, &panelExportData, &panelResourcesData,
-                                                     isRestricted)) == "") {
+                if ((error = CtrlrPanel::exportPanel(panelToWrite, File(), newMe, &panelExportData,
+                                                     &panelResourcesData, isRestricted, licenseText)) == "") {
                     if (writeResource(hResource, MAKEINTRESOURCEW(CTRLR_INTERNAL_PANEL_RESID), (LPCWSTR)RT_RCDATA,
                                       panelExportData) &&
-                        writeResource(hResource, MAKEINTRESOURCEW(CTRLR_INTERNAL_RESOURCES_RESID), (LPCWSTR)RT_RCDATA,
-                                      panelResourcesData)) {
+                        writeResource(hResource, MAKEINTRESOURCEW(CTRLR_INTERNAL_RESOURCES_RESID),
+                                      (LPCWSTR)RT_RCDATA, panelResourcesData)) {
                         EndUpdateResource(hResource, FALSE);
 
-						// NEW: swap the exported .exe's icon, if the panel
-						// has one chosen via uiPanelIconResource. Sequenced
-						// AFTER EndUpdateResource above closes out our own
-						// resource transaction — rcedit opens the file
-						// separately, and two handles updating the same
-						// file's resources at once would be asking for
-						// trouble. Non-fatal: the panel/binary rebrand
-						// above already succeeded by this point, so an
-						// icon-swap failure only logs a warning rather
-						// than failing the whole export.
-						if (isRestricted) {
-							ValueTree editorTree = panelToWrite->getPanelTree().getChildWithName(Ids::uiPanelEditor);
-							String iconResourceName = editorTree.isValid()
-														  ? editorTree.getProperty(Ids::uiPanelIconResource).toString()
-														  : String();
-							DBG("iconResourceName => " + iconResourceName);
-							if (iconResourceName.isNotEmpty()) {
-								CtrlrPanelResource *iconResource =
-									panelToWrite->getResourceManager().getResource(iconResourceName);
+                        // Swap the exported .exe's icon, if the panel has one chosen via
+                        // uiPanelIconResource. Sequenced AFTER EndUpdateResource, because rcedit
+                        // opens the file separately. Non-fatal: failures only log a warning.
+                        if (isRestricted) {
+                            ValueTree editorTree = panelToWrite->getPanelTree().getChildWithName(Ids::uiPanelEditor);
+                            String iconResourceName = editorTree.isValid()
+                                                          ? editorTree.getProperty(Ids::uiPanelIconResource).toString()
+                                                          : String();
+                            DBG("iconResourceName => " + iconResourceName);
 
-								if (iconResource != nullptr) {
-									File tempIco = File::getSpecialLocation(File::tempDirectory)
-													   .getNonexistentChildFile("ctrlrx_export_icon", ".ico");
+                            if (iconResourceName.isNotEmpty()) {
+                                CtrlrPanelResource *iconResource =
+                                    panelToWrite->getResourceManager().getResource(iconResourceName);
 
-									juce::Result icoResult =
-										CtrlrIconGenerator::generateIcoFromSvg(iconResource->getFile(), tempIco);
+                                if (iconResource != nullptr) {
+                                    File tempIco = File::getSpecialLocation(File::tempDirectory)
+                                                       .getNonexistentChildFile("ctrlrx_export_icon", ".ico");
 
-									if (icoResult.wasOk()) {
-										File rceditExe = me.getSiblingFile("rcedit-x64.exe");
+                                    juce::Result icoResult =
+                                        CtrlrIconGenerator::generateIcoFromSvg(iconResource->getFile(), tempIco);
 
-										if (rceditExe.existsAsFile()) {
-											StringArray args;
-											args.add(rceditExe.getFullPathName());
-											args.add(newMe.getFullPathName());
-											args.add("--set-icon");
-											args.add(tempIco.getFullPathName());
+                                    if (icoResult.wasOk()) {
+                                        File rceditExe = me.getSiblingFile("rcedit-x64.exe");
 
-											// Retry loop to handle Windows file indexing / antivirus locks
-											bool success = false;
-											String rceditOutput;
-											int exitCode = -1;
+                                        if (rceditExe.existsAsFile()) {
+                                            StringArray args;
+                                            args.add(rceditExe.getFullPathName());
+                                            args.add(newMe.getFullPathName());
+                                            args.add("--set-icon");
+                                            args.add(tempIco.getFullPathName());
 
-											for (int attempt = 1; attempt <= 5; ++attempt) {
-												// Small delay to let Windows Defender / Explorer release any file
-												// handle
-												Thread::sleep(100);
+                                            // Retry loop to handle Windows indexing / antivirus locks
+                                            bool success = false;
+                                            String rceditOutput;
+                                            int exitCode = -1;
 
-												ChildProcess rceditProcess;
-												if (rceditProcess.start(args)) {
-													rceditOutput = rceditProcess.readAllProcessOutput();
-													exitCode = rceditProcess.getExitCode();
+                                            for (int attempt = 1; attempt <= 5; ++attempt) {
+                                                Thread::sleep(100);
 
-													if (exitCode == 0) {
-														success = true;
-														break; // Succeeded! Break out of retry loop.
-													}
+                                                ChildProcess rceditProcess;
+                                                if (rceditProcess.start(args)) {
+                                                    rceditOutput = rceditProcess.readAllProcessOutput();
+                                                    exitCode = rceditProcess.getExitCode();
 
-													DBG("rcedit attempt " + String(attempt) + " failed with code " +
-														String(exitCode) + ". Output: " + rceditOutput.trim());
-												}
-											}
+                                                    if (exitCode == 0) {
+                                                        success = true;
+                                                        break;
+                                                    }
 
-											if (success) {
-												DBG("Icon applied successfully via rcedit. Output: " +
-													rceditOutput.trim());
-												SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
-											} else {
-												DBG("Warning: rcedit failed after retries — code " + String(exitCode) +
-													". Last output: " + rceditOutput.trim());
-											}
-										} else {
-											DBG("Warning: rcedit-x64.exe not found alongside plugin — icon not "
-												"applied: " +
-												rceditExe.getFullPathName());
-										}
+                                                    DBG("rcedit attempt " + String(attempt) + " failed with code " +
+                                                        String(exitCode) + ". Output: " + rceditOutput.trim());
+                                                }
+                                            }
 
-										tempIco.deleteFile();
-									} else {
-										DBG("Warning: icon generation failed — " + icoResult.getErrorMessage());
-									}
-								} else {
-									DBG("Warning: icon resource '" + iconResourceName + "' not found");
-								}
-							}
-						}
-					} else {
-						notifyAndReturn(
-							Result::fail("Windows Native: exportMeWithNewResource writeResource[panel] failed"));
-						return;
-					}
-				} else {
-					notifyAndReturn(
-						Result::fail("Windows Native: exportMeWithNewResource exportPanel error: \"" + error + "\""));
-					return;
-				}
-			} else {
-				notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource BeginUpdateResource failed"));
-				return;
-			}
+                                            if (success) {
+                                                DBG("Icon applied successfully via rcedit. Output: " +
+                                                    rceditOutput.trim());
+                                                SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
+                                            } else {
+                                                DBG("Warning: rcedit failed after retries - code " +
+                                                    String(exitCode) + ". Last output: " + rceditOutput.trim());
+                                            }
+                                        } else {
+                                            DBG("Warning: rcedit-x64.exe not found alongside plugin - icon not "
+                                                "applied: " + rceditExe.getFullPathName());
+                                        }
 
-			// 6. Binary String Replacement (Rebranding)
-			logger.log("Thread sleep to delay binary modification task.");
-			juce::Thread::sleep(500);
+                                        tempIco.deleteFile();
+                                    } else {
+                                        DBG("Warning: icon generation failed - " + icoResult.getErrorMessage());
+                                    }
+                                } else {
+                                    DBG("Warning: icon resource '" + iconResourceName + "' not found");
+                                }
+                            }
+                        }
+                    } else {
+                        notifyAndReturn(
+                            Result::fail("Windows Native: exportMeWithNewResource writeResource[panel] failed"));
+                        return;
+                    }
+                } else {
+                    notifyAndReturn(Result::fail(
+                        "Windows Native: exportMeWithNewResource exportPanel error: \"" + error + "\""));
+                    return;
+                }
+            } else {
+                notifyAndReturn(Result::fail("Windows Native: exportMeWithNewResource BeginUpdateResource failed"));
+                return;
+            }
+
+            // 6. Binary String Replacement (Rebranding)
+            logger.log("Thread sleep to delay binary modification task.");
+            juce::Thread::sleep(500);
             logger.log("Thread restarted for binary modification task.");
 
             File executableFile = newMe;
@@ -343,7 +349,8 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
                     const bool replaceVst3PluginIds = panelToWrite->getProperty(Ids::panelReplaceVst3PluginIds);
 
                     if (replaceVst3PluginIds) {
-                        logger.log("Replace the VST3 plugin identifiers with the panel ones : " + String((int)replaceVst3PluginIds));
+                        logger.log("Replace the VST3 plugin identifiers with the panel ones : " +
+                                   String((int)replaceVst3PluginIds));
 
                         MemoryBlock executableData;
                         if (executableFile.loadFileAsData(executableData)) {
@@ -352,16 +359,15 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
                             String pluginName = panelToWrite->getProperty(Ids::name).toString();
                             String pluginCode = panelToWrite->getProperty(Ids::panelInstanceUID).toString();
                             String manufacturerName = panelToWrite->getProperty(Ids::panelAuthorName).toString();
-                            String manufacturerCode = panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString();
+                            String manufacturerCode =
+                                panelToWrite->getProperty(Ids::panelInstanceManufacturerID).toString();
                             String versionMajor = panelToWrite->getProperty(Ids::panelVersionMajor).toString();
                             String versionMinor = panelToWrite->getProperty(Ids::panelVersionMinor).toString();
                             String plugType = panelToWrite->getProperty(Ids::panelPlugType).toString();
 
-                            // #if JUCE_WINDOWS :: Damien: This code won't work on JUCE 6 - use the commented code below
-                            // 8/27/2026 ;) Helper to generate UTF-16 Little Endian byte buffer for JUCE 8 wide-string
-                            // metadata
                             // --- 1. ASCII Search & Replacement Pass ---
-                            MemoryBlock pluginNameHex, pluginCodeHex, manufacturerNameHex, manufacturerCodeHex, plugTypeHex;
+                            MemoryBlock pluginNameHex, pluginCodeHex, manufacturerNameHex, manufacturerCodeHex,
+                                plugTypeHex;
                             hexStringToBytes(pluginName, 32, pluginNameHex);
                             hexStringToBytes(pluginCode, 4, pluginCodeHex);
                             hexStringToBytes(manufacturerName, 16, manufacturerNameHex);
@@ -369,13 +375,14 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
                             hexStringToBytes(plugType, 16, plugTypeHex);
 
                             MemoryBlock searchPluginNameHex, searchPluginCodeHex, searchManufacturerNameHex,
-                                        searchManufacturerCodeHex, searchPlugTypeHex;
+                                searchManufacturerCodeHex, searchPlugTypeHex;
 
-                            hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 "
-                                             "20 20 20 20 20 20 20",
+                            hexStringToBytes("43 74 72 6C 72 58 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 "
+                                             "20 20 20 20 20 20 20 20 20",
                                              searchPluginNameHex);
                             hexStringToBytes("63 54 72 58", searchPluginCodeHex);
-                            hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20", searchManufacturerNameHex);
+                            hexStringToBytes("43 74 72 6C 72 58 20 50 72 6F 6A 65 63 74 20 20",
+                                             searchManufacturerNameHex);
                             hexStringToBytes("63 54 72 6C", searchManufacturerCodeHex);
                             hexStringToBytes("49 6E 73 74 72 75 6D 65 6E 74 7C 54 6F 6F 6C 73", searchPlugTypeHex);
 
@@ -386,11 +393,10 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
                             replaceAllOccurrences(executableData, searchManufacturerCodeHex, manufacturerCodeHex);
                             replaceAllOccurrences(executableData, searchPlugTypeHex, plugTypeHex);
 
-                            // --- 2. Robust UTF-16 (Wide String) Version Resource Pass ---
-                            // Helper to generate EXACT byte-length UTF-16 buffers with right-padding
+                            // --- 2. UTF-16 (Wide String) Version Resource Pass ---
                             auto makeUtf16Buffer = [](const String &text, const String &templateText) -> MemoryBlock {
                                 int targetCharCount = templateText.length();
-                                MemoryBlock block(targetCharCount * 2, true); // Exact wide-char byte length
+                                MemoryBlock block(targetCharCount * 2, true);
 
                                 String paddedText = text.length() > targetCharCount
                                                         ? text.substring(0, targetCharCount)
@@ -403,9 +409,9 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
 
                             // Target 1: "CtrlrX Project" (14 wide chars -> 28 bytes)
                             MemoryBlock searchUtf16ManufName, replaceUtf16ManufName;
-                            hexStringToBytes(
-                                "43 00 74 00 72 00 6C 00 72 00 58 00 20 00 50 00 72 00 6F 00 6A 00 65 00 63 00 74 00",
-                                searchUtf16ManufName);
+                            hexStringToBytes("43 00 74 00 72 00 6C 00 72 00 58 00 20 00 50 00 72 00 6F 00 6A 00 65 "
+                                             "00 63 00 74 00",
+                                             searchUtf16ManufName);
                             replaceUtf16ManufName = makeUtf16Buffer(manufacturerName, "CtrlrX Project");
 
                             // Target 2: "CtrlrX" (6 wide chars -> 12 bytes)
@@ -414,7 +420,7 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
                             replaceUtf16PluginName = makeUtf16Buffer(pluginName, "CtrlrX");
 
                             logger.log("Starting UTF-16 string replacement process (JUCE 8)...");
-                            // Replace longer target ("CtrlrX Project") FIRST to prevent partial matching
+                            // Replace the longer target FIRST to prevent partial matching
                             replaceAllOccurrences(executableData, searchUtf16ManufName, replaceUtf16ManufName);
                             replaceAllOccurrences(executableData, searchUtf16PluginName, replaceUtf16PluginName);
 
@@ -422,7 +428,8 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
 
                             if (!executableFile.replaceWithData(executableData.getData(), executableData.getSize())) {
                                 logger.log("Error: Failed to write modified executable data");
-                                notifyAndReturn(Result::fail("Windows Native: Failed to write modified executable data"));
+                                notifyAndReturn(
+                                    Result::fail("Windows Native: Failed to write modified executable data"));
                                 return;
                             }
                             logger.log("Modified executable data written.");
@@ -443,13 +450,16 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
                 juce::Thread::sleep(500);
                 logger.log("Thread restarted for codesigning task.");
 
-                juce::String panelCertificateWinPath = panelToWrite->getProperty(Ids::panelCertificateWinPath).toString();
-                juce::String panelCertificateWinPassCode = panelToWrite->getProperty(Ids::panelCertificateWinPassCode).toString();
+                juce::String panelCertificateWinPath =
+                    panelToWrite->getProperty(Ids::panelCertificateWinPath).toString();
+                juce::String panelCertificateWinPassCode =
+                    panelToWrite->getProperty(Ids::panelCertificateWinPassCode).toString();
 
                 if (panelCertificateWinPath.isNotEmpty() && juce::File::isAbsolutePath(panelCertificateWinPath) &&
                     juce::File(panelCertificateWinPath).existsAsFile() && panelCertificateWinPassCode.isNotEmpty()) {
-                    
-                    const Result codesignResult = codesignFileWindows(newMe, panelCertificateWinPath, panelCertificateWinPassCode);
+
+                    const Result codesignResult =
+                        codesignFileWindows(newMe, panelCertificateWinPath, panelCertificateWinPassCode);
                     if (!codesignResult.wasOk()) {
                         logger.logResult(codesignResult);
                         notifyAndReturn(codesignResult);
@@ -467,28 +477,35 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
             }
 
             notifyAndReturn(Result::ok());
+        }; // end performExport
+
+        // ---------------------------------------------------------------------------------
+        // Ask for a licence (only if the panel has resources), then run the export.
+        // Must be defined AFTER performExport, and stay inside this callback.
+        // ---------------------------------------------------------------------------------
+        auto askLicenceThenExport = [panelRef, performExport]() mutable {
+            CtrlrPanel::askForLicenseAsync(panelRef.get(), [performExport](juce::String lic) mutable {
+                performExport(lic);
+            });
         };
 
-        // FIX: explicit overwrite check, covering the extension-append gap
-        // described above. Only prompts when the final, extension-corrected
-        // path actually already exists.
-        if (newMe.existsAsFile()) {
-            AW::showOkCancelAsyncSafe(
-                AW::Question, "Overwrite File",
-                "\"" + newMe.getFileName() + "\" already exists. Overwrite it?",
-                [performExport, notifyAndReturn](bool confirmed) mutable {
-                    if (confirmed) {
-                        performExport();
-                    } else {
-                        notifyAndReturn(Result::fail("User cancelled the export operation."));
-                    }
-                });
+        // ---------------------------------------------------------------------------------
+        // Overwrite prompt only if the extension fix moved us onto a file that exists.
+        // ---------------------------------------------------------------------------------
+        if (pathWasAltered && newMe.existsAsFile()) {
+            AW::showOkCancelAsyncSafe(AW::Question, "Overwrite File",
+                                      "\"" + newMe.getFileName() + "\" already exists. Overwrite it?",
+                                      [askLicenceThenExport, notifyAndReturn](bool confirmed) mutable {
+                                          if (confirmed)
+                                              askLicenceThenExport();
+                                          else
+                                              notifyAndReturn(Result::fail("User cancelled the export operation."));
+                                      });
         } else {
-            performExport();
+            askLicenceThenExport();
         }
-    });
-} 
-
+    }); // end launchAsync
+}
 /*
    * ==============================================================================
    * JUCE 8 Metadata & Resource Encoding Changes (PE/VST3 Binary Patching)
@@ -511,7 +528,7 @@ void CtrlrWindows::exportWithDefaultPanel(CtrlrPanel* panelToWrite,
    * ==============================================================================
    */
 void CtrlrWindows::stringToUtf16Bytes(const juce::String &text, int charCount, juce::MemoryBlock &result) {
-    result.setSize(charCount * 2, true); // Zero-fill memory
+	result.setSize(charCount * 2, true); // Zero-fill memory
     juce::String paddedText = text.paddedRight(' ', charCount);
     const juce::CharPointer_UTF16 utf16Ptr = paddedText.toUTF16();
     

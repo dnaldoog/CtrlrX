@@ -148,6 +148,7 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 
 	setProperty(Ids::name, panelName);
 	setProperty(Ids::uiPanelEditMode, true);
+	setProperty(Ids::uiPanelPatchSaveMenu, true);
 	setProperty(Ids::uiPanelLock, false);
 	setProperty(Ids::uiPanelDisabledOnEdit, false);
 	setProperty(Ids::uiPanelMenuBarVisible, true);
@@ -542,6 +543,12 @@ void CtrlrPanelEditor::valueTreePropertyChanged(ValueTree &treeWhosePropertyHasC
 
 		if (property == Ids::uiPanelEditMode) {
 			editModeChanged();
+		} else if (property == Ids::uiPanelPatchSaveMenu) {
+			setProperty(Ids::uiPanelPatchSaveMenu, getProperty(Ids::uiPanelPatchSaveMenu));
+			DBG("uiPanelPatchSaveMenu property changed to: "
+				<< String(getProperty(Ids::uiPanelPatchSaveMenu) ? "true" : "false") << ". Updating UI accordingly.");
+			// Hide the patch save menu if the property is set to false. Show it if true.
+			resized();
 		} else if (property == Ids::uiViewPortMode) {
 			// apply resizable / scrollbars / scaled-zoom behavior for the new mode
 			resized();

@@ -11,6 +11,10 @@ struct DefaultColumn {
 		const char *identifier;
 		int width;
 };
+#pragma once
+#include <juce_core/juce_core.h>
+#include <rapidfuzz/fuzz.hpp>   // adjust to however you already include it
+
 
 // Order here == order of columns after "Reset columns to default"
 const DefaultColumn kDefaultColumns[] = {

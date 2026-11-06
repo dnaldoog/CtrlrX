@@ -234,12 +234,6 @@ bool CtrlrPanelResourceManager::resourceExists(const File &resourceFile) {
 Result CtrlrPanelResourceManager::importResource(const ValueTree &resourceTree) {
 	String resourceName = resourceTree.getProperty(Ids::resourceName).toString();
 
-	// Decode incoming data upfront
-	MemoryBlock resourceData;
-	if (!resourceData.fromBase64Encoding(resourceTree.getProperty(Ids::resourceData).toString())) {
-		return Result::fail("ImportResource resource: " + resourceName + " failed to decode base64 encoded data");
-	}
-
 	// Safely resolve destination directory using the owner panel
 	File resDir = owner.getPanelDirectory();
 	if (!resDir.isDirectory()) {
@@ -252,6 +246,26 @@ Result CtrlrPanelResourceManager::importResource(const ValueTree &resourceTree) 
 
 	String filename = resourceTree.getProperty(Ids::resourceFile).toString();
 	File resourceDest = resDir.getChildFile(File::createLegalFileName(filename));
+
+	// Perf: the embedded payload is byte-identical to the file already on disk.
+	// When the destination exists at the expected size there is nothing to decode
+	// or write, so skip both and just register the on-disk file.
+	const juce::int64 expectedSize = resourceTree.getProperty(Ids::resourceSize).toString().getLargeIntValue();
+	const bool destExists = resourceDest.existsAsFile();
+	const juce::int64 destSize = destExists ? resourceDest.getSize() : -1;
+
+	if (destExists && destSize > 0 && (expectedSize <= 0 || destSize == expectedSize)) {
+		if (getResource(resourceName) != nullptr)
+			return Result::ok();
+
+		return addResource(resourceDest, resourceTree.getProperty(Ids::resourceName));
+	}
+
+	// Decode incoming data upfront
+	MemoryBlock resourceData;
+	if (!resourceData.fromBase64Encoding(resourceTree.getProperty(Ids::resourceData).toString())) {
+		return Result::fail("ImportResource resource: " + resourceName + " failed to decode base64 encoded data");
+	}
 
 	// --- Path A: Resource already exists internally ---
 	if (auto *existingResource = getResource(resourceName)) {
@@ -461,11 +475,24 @@ const String CtrlrPanelResourceManager::getTypeDescription(const CtrlrPanelResou
 }
 
 CtrlrPanelResourceType CtrlrPanelResourceManager::guessType(const File &resourceFile) {
-	// Image ?
-	Image image = ImageCache::getFromFile(resourceFile);
+	// Perf: identify images from their header instead of decoding them.
+	// ImageCache::getFromFile() fully decoded every PNG merely to answer "is this
+	// an image?" -- 228 decodes per panel load -- even though
+	// CtrlrPanelResource::asImage() already decodes lazily on first paint.
+	{
+		unsigned char hdr[8] = {};
 
-	if (!image.isNull()) {
-		return (ImageRes);
+		FileInputStream in(resourceFile);
+		if (in.openedOk())
+			in.read(hdr, 8);
+
+		const bool isPng = (hdr[0] == 0x89 && hdr[1] == 'P' && hdr[2] == 'N' && hdr[3] == 'G');
+		const bool isJpg = (hdr[0] == 0xFF && hdr[1] == 0xD8);
+		const bool isGif = (hdr[0] == 'G' && hdr[1] == 'I' && hdr[2] == 'F');
+		const bool isBmp = (hdr[0] == 'B' && hdr[1] == 'M');
+
+		if (isPng || isJpg || isGif || isBmp || resourceFile.hasFileExtension("ico;tga;webp;tif;tiff"))
+			return (ImageRes);
 	}
 
 	// Audio ?
@@ -516,39 +543,12 @@ int CtrlrPanelResourceManager::getResourceIndexByHashCode(const int hashCode) {
 	return (-1);
 }
 
-Result CtrlrPanelResourceManager::restoreState(const ValueTree &savedState,
-											   std::function<void(Result)> completionCallback) {
-	for (int i = 0; i < savedState.getNumChildren(); i++) {
+// Imports the embedded resources. Shows no dialogs: the licence (if any) must already
+// have been accepted via confirmEmbeddedLicenseAsync() before this is called.
+Result CtrlrPanelResourceManager::restoreState(const ValueTree &savedState) {
+	for (int i = 0; i < savedState.getNumChildren(); ++i) {
 		const auto child = savedState.getChild(i);
 
-		// --- 1. Handle License Dialog if present ---
-		if (child.hasType(Ids::resourceLicense)) {
-
-			auto *licenseWindow =
-				new AlertWindow("License agreement", "You must agree to the below license", AlertWindow::QuestionIcon);
-
-			auto *licenseText = new TextEditor();
-			licenseText->setMultiLine(true);
-			licenseText->setReadOnly(true);
-			licenseText->setText(child.getProperty(Ids::resourceData));
-			licenseText->setSize(500, 400);
-
-			licenseWindow->addCustomComponent(licenseText);
-			licenseWindow->addButton("Yes", 1);
-			licenseWindow->addButton("No", 0);
-
-			bool accepted = (licenseWindow->runModalLoop() == 1);
-			delete licenseWindow;
-
-			if (!accepted) {
-				Result failRes = Result::fail("User did not agree to embedded license");
-				if (completionCallback)
-					completionCallback(failRes);
-				return failRes;
-			}
-		}
-
-		// --- 2. Import Embedded Resources (Synchronous / standard path) ---
 		if (child.hasType(Ids::resourceBlob) || child.hasType(Ids::resourceImage) || child.hasType(Ids::resource)) {
 			Result importResult = importResource(child);
 			if (!importResult.wasOk()) {
@@ -560,46 +560,50 @@ Result CtrlrPanelResourceManager::restoreState(const ValueTree &savedState,
 		}
 	}
 
-	Result okRes = Result::ok();
-	if (completionCallback)
-		completionCallback(okRes);
-	return okRes;
+	return Result::ok();
 }
 
-#if 0 // old JUCE 6 code
-Result CtrlrPanelResourceManager::restoreState(const ValueTree &savedState) {
-	for (int i = 0; i < savedState.getNumChildren(); i++) {
-		if (savedState.getChild(i).hasType(Ids::resourceLicense)) {
-			AlertWindow licenseWindow("License agreement", "You must agree to the below license",
-									  AlertWindow::QuestionIcon);
-			TextEditor licenseText;
-			licenseText.setMultiLine(true);
-			licenseText.setReadOnly(true);
-			licenseText.setText(savedState.getChild(i).getProperty(Ids::resourceData));
-			licenseText.setSize(500, 400);
-			licenseWindow.addCustomComponent(&licenseText);
-			licenseWindow.addButton("Yes", 1);
-			licenseWindow.addButton("No", 0);
-			if (!licenseWindow.runModalLoop()) {
-				return (Result::fail("User did not agree to embedded license"));
-			}
-		}
+// Asks the user to accept the embedded licence, if the resources tree has one.
+// onDone(true)  : no licence, or the user accepted it
+// onDone(false) : the user declined (treat as a quiet cancel)
+void CtrlrPanelResourceManager::confirmEmbeddedLicenseAsync(const ValueTree &resourcesTree,
+															std::function<void(bool)> onDone) {
+	const ValueTree licence = resourcesTree.getChildWithName(Ids::resourceLicense);
 
-		if (savedState.getChild(i).hasType(Ids::resourceBlob) || savedState.getChild(i).hasType(Ids::resourceImage) ||
-			savedState.getChild(i).hasType(Ids::resource)) {
-			Result importResult = importResource(savedState.getChild(i));
-			if (!importResult.wasOk()) {
-				if (owner.getDialogStatus())
-					WARN(importResult.getErrorMessage());
-				else
-					_WRN(importResult.getErrorMessage());
-			}
-		}
+	if (!licence.isValid()) {
+		if (onDone)
+			onDone(true);
+		return;
 	}
+	const var d = licence.getProperty(Ids::resourceData);
+	DBG("licence dialog: props=" << licence.getNumProperties() << " dataLen=" << d.toString().length() << " type="
+								 << (d.isString()		? "string"
+									 : d.isBinaryData() ? "binary"
+									 : d.isVoid()		? "void"
+														: "other"));
+	auto *licenseWindow =
+		new AlertWindow("Licence agreement", "You must agree to the licence below", AlertWindow::QuestionIcon);
 
-	return (Result::ok());
+	auto licenseText = std::make_shared<TextEditor>();
+	licenseText->setMultiLine(true);
+	licenseText->setReadOnly(true);
+	licenseText->setColour(TextEditor::backgroundColourId, Colours::lightsteelblue);
+	licenseText->setColour(TextEditor::textColourId, Colours::black);
+	licenseText->setSize(500, 400);
+	licenseText->setText(licence.getProperty(Ids::resourceData).toString(), false);
+	licenseText->moveCaretToTop(false);
+
+	licenseWindow->addCustomComponent(licenseText.get());
+	licenseWindow->addButton("Yes", 1);
+	licenseWindow->addButton("No", 0);
+	licenseWindow->setAlwaysOnTop(true);
+
+	AW::runCustomAlertAsyncSafe(licenseWindow, [licenseText, onDone](int result) {
+		if (onDone)
+			onDone(result == 1);
+	});
 }
-#endif
+
 Array<CtrlrPanelResource *> CtrlrPanelResourceManager::getResourcesCopy() {
 	Array<CtrlrPanelResource *> ret;
 	for (int i = 0; i < resources.size(); i++) {

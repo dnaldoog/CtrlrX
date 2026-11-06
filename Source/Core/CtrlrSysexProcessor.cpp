@@ -552,13 +552,13 @@ String CtrlrSysexProcessor::openAdvancedMessageEditor() // Updated v5.6.35. For 
 }
 #endif
 void CtrlrSysexProcessor::showMidiHelp() {
-	const String helpText = "MIDI Message Conventions:\n\n"
+	const String helpText = "MultiMIDI Message Conventions:\n\n"
 							"-1       = Parent component value\n"
 							"-2       = Parent component number\n\n"
 							"SysEx Messages:\n"
 							"Use the same formula as in the SysEx editor (F0 .. F7)\n\n"
-							"Use the Custom ... option to add custom MIDI.\n\n"
-							"Use Latch & Stream to send Header once followed by data(NRPN/RPN).";
+							//"Use the Custom ... option to add custom MIDI.\n\n"
+							"Use Latch & Stream option to send Header once followed by data(NRPN/RPN).";
 
 #if JUCE_MAJOR_VERSION >= 8
 	// --- JUCE 8 Logic (Custom Layout) ---

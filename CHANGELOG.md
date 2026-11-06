@@ -1,6 +1,136 @@
-[back to release page &rArr;](https://github.com/dnaldoog/CtrlrX/releases)
+[&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
 ----
+### CtrlrX v8.78 11/05/2026
+
+##### Performance (large panels)
+- JUCE XmlDocument::readQuotedString() was O(n^2) in attribute length: a value built
+  from many chunks called String::appendCharPointer() (which strlen()s the accumulator
+  and reallocates to the exact size) for each one. It now accumulates bytes in a
+  MemoryOutputStream and converts once. XML parse on a 29 MB panel: 30.7 s -> 0.19 s.
+  Applied by patches/juce_xml_parser_perf.patch at configure time.
+- CtrlrPanelResourceManager::importResource(): when the destination file already exists at
+  the expected size, skip the base64 decode and the disk write entirely. 228 file rewrites
+  per launch -> 0.
+- CtrlrPanelResource::computeContentHash(): hash the file with File::hashCode64() instead
+  of reading it and building a 1.33x base64 copy.
+- CtrlrPanelResourceManager::guessType(): identify images from an 8-byte header instead of
+  decoding them with ImageCache::getFromFile(). 228 PNG decodes per load -> 0.
+- Thanks to @francoisuk and @sgorpi
+- Added run_tests.bat automation for Tests
+- https://github.com/dnaldoog/CtrlrX/commit/1c62852b6388a9210def43811d74d851e47c02fa
+
+##### Fixed
+- Tabs: uiTabsCurrentTab is accepted as an input again (panels switching tabs with
+  setPropertyInt() silently did nothing), and the uiTabsCurrentTabChanged Lua callback is
+  actually invoked (it was resolved and never called). The KronosKontrol EDITOR button
+  relied on both.
+- Lua timers: an exception raised inside a timer callback was swallowed (the timer was
+  disabled with no report). It is now logged at LuaRuntimeError level. The modal
+  AlertWindow used before 5.6.37 is not restored: a message box from a timer path can fire
+  while another modal is up and hangs headless runs.
+
+##### Tooling
+- CtrlrPanelProbe (CtrlrX PR #337) integrated under Tests/. Opt-in, because the root
+  CMakeLists adds Tests/ whenever it exists and Tests/ fetches GoogleTest:
+      cmake ... -DCTRLRX_BUILD_TESTS=ON
+      cmake --build ... --target CtrlrPanelProbe
+  Release builds are unaffected by default.
+
+##### Known differences from upstream
+- resourceHash values written by this build differ from upstream (computeContentHash above),
+  so a panel saved by an older build may be re-imported once.
+- The resource cache check compares file size only.
+
+
+### CtrlrX v8.77 11/05/2026
+- Removed Custom Multi Message function (throws asserts)
+- Restored Copy/Paste in CtrlrMultiMidiPropertyComponent
+- Fix: remove multimessage line (clear_svg) not working
+- https://github.com/dnaldoog/CtrlrX/commit/51cd978a85facf0ebbc718c2d3ce09e4d150e200
+
+
+### CtrlrX v8.76 11/05/2026
+ CtrlrX v8.76 11/05/2026
+
+Fix undefined return from CtrlrValueMap::getMappedValue().
+
+getMappedValue() indexed values[] with no bounds check. For a
+modulator with no value map (empty array), or an index past the end
+of the map, juce::Array::operator[] returns a default-constructed
+element whose numericValue is never initialised. Callers such as
+CtrlrModulator::getValueMapped() therefore got whatever was in
+memory: a different garbage number on each run (e.g. 15532, 10572,
+22048 on 5.6.35/5.6.36), or an incidental 0 depending on allocation
+patterns.
+
+Behaviour now:
+- Empty map: return valueIndex (identity), so a modulator with no
+  value map reports its own value (64 stays 64).
+- Index out of range: clamp to the first/last entry, so the last
+  mapped value repeats past the end of the map.
+- In-range indices are unchanged.
+
+Verified with a 7-entry map (last entry 99): indices 0-6 are
+identical before and after, and indices 7-10 now return 99 where
+5.6.36 returned 22048 and the previous release returned 0.
+
+Behaviour change: callers that relied on getValueMapped() returning
+0 for a modulator without a map, or for an out-of-range index, will
+now see the modulator value or the last mapped value respectively.
+- https://github.com/dnaldoog/CtrlrX/commit/d727003622b7c8d56c73e5605a4957bdf58d700c
+  
+### CtrlrX v8.75 11/05/2026
+##### Fixed
+- Exported panels now pick up updated resources (images etc.) when a
+  user upgrades to a new version of the panel. Previously, old
+  resources stayed in use until the settings folder was deleted by hand.
+- Fixed a crash on relaunch for exported panels that include a licence.
+
+##### Notes
+- Each user's first launch after upgrading re-imports the panel's
+  resources once. After that, resources are only re-imported when the
+  exported panel changes.
+- Deleting .delete_me_to_reload_resources still forces a manual reload.
+- https://github.com/dnaldoog/CtrlrX/commit/c5a78be6f3064e798ef861e7885851b55b0cbc02
+
+### CtrlrX v8.74 11/04/2026
+
+- Added tighter search results to fuzzy search in modulator list 
+- Added toggle for JSON save patch/Load patch in restricted menu 
+- Changed CtrlPanelFindProperty autocomplete and clear button
+- https://github.com/dnaldoog/CtrlrX/commit/cacab2133a501049b73c10ba1bbaae41508d8a83
+
+
+### CtrlrX v8.73 10/31/2026
+
+- Refactor CtrlrWindows.cpp
+- Reintroduce licence prompt for ASYNC dialog
+- Export: ask whether to attach a licence (async, JUCE-drawn dialog) before
+  exporting; the text is passed to CtrlrPanel::exportPanel via a new
+  licenseText parameter. Covers .bpanelz, restricted/standalone instance
+  export on Windows, Linux and macOS.
+- Load: exported standalones show the embedded licence before the panel is
+  created (CtrlrManager::addInstancePanel). Accepting loads the panel,
+  declining quits. The "resources imported" marker is now written only after
+  a successful, accepted load, so declining prompts again next launch.
+- CtrlrPanelResourceManager::restoreState no longer shows a blocking dialog;
+  licence handling moved to confirmEmbeddedLicenseAsync.
+- CtrlrEditor::applyActivePanelSettings applies panel-dependent editor
+  settings when the panel is created after the editor.
+- Linux: getVST3PluginPath() resolves the running binary via /proc/self/exe
+  (previously a cwd-relative path that could be wrong, making the standalone
+  export copy fail).
+- Export overwrite prompt (Windows): only shown when the extension correction
+  retargets the path, so there is no longer a duplicate prompt. macOS: the
+  confirmed-overwrite branch now continues the export instead of stopping.
+- macOS: removed an unused FileChooser; fixed log lines that added an enum
+  or bool to a string literal (undefined behaviour).
+- Panel pointers held across dialogs are now juce::WeakReference.
+- Fix SVG icon not showing for large panels
+- Lua editor: show folder path in tab tooltip (e.g. /COMPONENT/TVF)
+- [https://github.com/dnaldoog/CtrlrX/commit/4c5dc6bbb2c972176afeef320442aa170afc9252](https://github.com/dnaldoog/CtrlrX/commit/5de6368728ab87c2e3f231071db0e314c68aa5ee)
+
 ### CtrlrX v8.72 10/25/2026
 
 - Fixed: panel:isLoading() no longer uses a fixed 400 ms cooldown. It now
