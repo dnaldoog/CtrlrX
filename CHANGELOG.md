@@ -1,7 +1,27 @@
 [&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
 ----
-### CtrlrX v8.78 11/05/2026
+### CtrlrX v8.78 11/06/2026
+
+Linux: fix VST3/VST2 export from a plugin host opening several save dialogs
+
+Exporting a VST3 from inside Reaper opened multiple file choosers, wrote the
+bundle several times, and ended with a "Failed to create VST3 structure"
+error. Cause: leftover duplicate FC::saveFileAsync calls in
+CtrlrLinux::exportWithDefaultPanel's plugin branch, so one export started
+several choosers and the empty results reached the pipeline.
+
+- Keep exactly one FC::saveFileAsync call per branch (plugin, standalone
+  classic) in CtrlrLinux::exportWithDefaultPanel.
+- Cancelling the chooser now reports "User cancelled the export operation.",
+  the exact text CtrlrPanel treats as a quiet cancel. Previously the plugin
+  branch used different wording, so a cancel showed the "Failed to export
+  panel" popup.
+- Remove temporary debug output from the export path.
+- VST3 export: fail with a clear message if no destination was chosen or the
+  bundle folder can't be created, instead of building "/Contents/x86_64-linux".
+
+### CtrlrX v8.78 11/06/2026
 
 ##### Performance (large panels)
 - JUCE XmlDocument::readQuotedString() was O(n^2) in attribute length: a value built
