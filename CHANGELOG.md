@@ -1,7 +1,7 @@
 [&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
 ----
-### CtrlrX v8.78 11/06/2026
+### CtrlrX v8.79 11/07/2026
 
 Linux: fix VST3/VST2 export from a plugin host opening several save dialogs
 
