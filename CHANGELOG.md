@@ -1,5 +1,6 @@
 [&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
+### CtrlrX v8.0.79 11/09/2026
 
 - *FIX*:  replaced missing property == Ids::uiTabsCurrentTab) in ValueTreePropertyChanged
 in Source/UIComponents/CtrlrComponents/Groups/CtrlrTabsComponent.cpp
@@ -8,11 +9,7 @@ https://github.com/damiensellier/CtrlrX/issues/239#issuecomment-6723210310
 
 - https://github.com/dnaldoog/CtrlrX/commit/946b2620db6e5942d17dc8b63ce0b151cc2fba36
 
-----
-### CtrlrX v8.79 11/07/2026
-- Change naming scheme in order to sync with upstream
-- restored missing 
-- https://github.com/dnaldoog/CtrlrX/commit/946b2620db6e5942d17dc8b63ce0b151cc2fba36
+
 
 
 ### CtrlrX v8.79 11/07/2026
