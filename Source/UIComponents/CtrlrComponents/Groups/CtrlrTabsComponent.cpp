@@ -283,7 +283,18 @@ void CtrlrTabsComponent::valueTreePropertyChanged(ValueTree &treeWhosePropertyHa
 		ctrlrTabs->getTabbedButtonBar().repaint();
 		ctrlrTabs->repaint();
 	}
+	else if (property == Ids::uiTabsCurrentTab) {
+		if (ctrlrTabs->getCurrentTabIndex() != (int)getProperty(property)) {
+			ctrlrTabs->setCurrentTabIndex(getProperty(property), false);
+		}
 
+		if (tabChangedCbk && !tabChangedCbk.wasObjectDeleted()) {
+			if (tabChangedCbk->isValid()) {
+				owner.getOwnerPanel().getCtrlrLuaManager().getMethodManager().call(tabChangedCbk, &owner,
+																				   (int)getProperty(property));
+			}
+		}
+	}
 	else if (property == Ids::uiTabsOutlineGlobalColour || property == Ids::uiTabsOutlineGlobalBackgroundColour ||
 			 property == Ids::uiTabsOutlineTabColour || property == Ids::uiTabsTextTabColour ||
 			 property == Ids::uiTabsFrontTabOutlineColour || property == Ids::uiTabsFrontTabTextColour) {
