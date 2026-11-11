@@ -3,7 +3,7 @@
 **Date:** 11 November 2026
 **Engine:** CtrlrX 8.0.79 / JUCE 8
 **Branch:** `fix/midi-routing` (includes the VST parameter fix from PR #7)
-**Status:** engine fixes complete; Windows suite **44/44**; CTest 44/44; panel probes and GUI smoke passed; portable beta updated
+**Status:** engine fixes complete; Windows suite **44/44**; CTest 44/44; panel probes and GUI smoke passed; exporter rebuilt; portable beta updated
 **Upstream:** nothing sent for this MIDI change
 
 ## 1. Scope and result
@@ -146,8 +146,8 @@ Completed:
 - OasysOmni 1.0d panel probe: exit 0, 0 errors
 - Standalone GUI smoke: KronosKontrol and OasysOmni both opened and remained responsive
 - Standalone, VST3 and probe copied into `ctrlrx-8.0.79-portable`
-- `CtrlrXExport.exe` was **not** rebuilt in this pass; it is the existing developer exporter, not
-  the GUI export path.
+- `CtrlrXExport.exe` rebuilt with the same fixes; EXE and VST3 preview exports both verified
+  into the portable folder
 
 Windows beta artifact hashes:
 
@@ -155,6 +155,7 @@ Windows beta artifact hashes:
 AE6569CAE34215A36C9CA41A918508AE049CAF703C81B646930024C55B4B7EB0  CtrlrX.exe
 EA9F7054D5DEFFD01ED010566BB7295B99342992A5A88126595A68AFD73B0392  vst3\CtrlrX.vst3
 25B4F66E112D1DF34D3A74C8B4095B3A0002BE6F0160081C79A4DE980F0BFFC1  probe\CtrlrPanelProbe.exe
+71D3D96253A7E35DD664B5DD6E467B8B05A239A80CFA67AA661F7F56D0FF0BD2  CtrlrXExport.exe
 ```
 
 Pending:
