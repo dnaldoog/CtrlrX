@@ -1,4 +1,4 @@
-# MIDI routing and timing fixes
+# MIDI routing, host timing and multi-message fixes
 
 **Date:** 11 November 2026
 **Engine:** CtrlrX 8.0.79 / JUCE 8
@@ -136,9 +136,11 @@ now document the pattern-first convention.
 
 ## 5. Test-side changes
 
-- `Tests/test_ProcessorPanel.cpp`: the two H2D parameterized tests pin the legitimate device sends
-  exactly: 4 note sends and 6 CC sends across the two host rounds, and 0 for the H2H fixtures. Their
-  existing exact `openOutput(0, 1)` expectation is preserved.
+- `Tests/test_ProcessorPanel.cpp`: the two H2D parameterized cases
+  (`...test_panel_midi_block_processing_with_notes/1` and
+  `...test_panel_midi_block_processing_with_cc_as_defined_in_panel/1`) pin the legitimate device
+  sends exactly: 4 note sends and 6 CC sends across the two host rounds. The corresponding H2H
+  cases (`/0`) expect 0. Their existing exact `openOutput(0, 1)` expectation is preserved.
 - `Tests/fixtures/fixture_lua_multi_received.panel`: mock input device set to
   `Device 00, port 00`; `midiMessageChannelOverride="1"`.
 - `Tests/known_failures_windows.txt`: the eight MIDI entries removed.
@@ -174,8 +176,10 @@ EA9F7054D5DEFFD01ED010566BB7295B99342992A5A88126595A68AFD73B0392  vst3\CtrlrX.vs
 
 Pending:
 
-- post-fix DAW/REAPER automation and MIDI validation by the maintainer;
-- cross-platform CI (Linux/macOS allowlists still contain the old entries).
+- post-fix DAW/REAPER automation and MIDI validation — manual handoff check for the maintainer/owner;
+- cross-platform CI (Linux/macOS allowlists still contain the old entries). The
+  `Tests/ci_check_test_results.py` checker treats a now-passing allowlisted test as a stale warning,
+  not a failure, so those entries can be cleared after the next cross-platform run.
 
 ## 7. Files changed
 
@@ -184,17 +188,22 @@ Pending:
 - `Source/Core/CtrlrPanel/CtrlrPanel.cpp`
 - `Source/Core/CtrlrPanel/CtrlrPanel.h`
 - `Source/Core/CtrlrPanel/CtrlrPanelProcessor.cpp`
+- `Source/Core/CtrlrUtilities.cpp`
 - `Source/MIDI/CtrlrMidiInputComparatorMulti.cpp`
 - `Tests/test_ProcessorPanel.cpp`
 - `Tests/fixtures/fixture_lua_multi_received.panel`
 - `Tests/known_failures_windows.txt`
+- `Doc/MIDI_ROUTING_FIX.md`
 
 ## 8. State
 
 - Clean MIDI branch prepared as `fix/midi-routing-upstream`.
 - Branch base: `dnaldoog/CtrlrX` `master` at `335798cab`.
 - Commits: `83d26c4c5` (MIDI fix), `8b0480d07` (note), `9a5ccc318` and `a451689b0`
-  (note/hash updates), `bade24536` (review clarifications), `972bdee12` (final note update).
+  (note/hash updates), `bade24536` (review clarifications), `972bdee12` (final note update),
+  `8698f5c78` (clean-branch validation record).
+- The final documentation-only synchronization commit is the one carrying this note; it is not
+  listed by its own hash to avoid a self-referential revision.
 - Portable beta artifacts were built from the combined VST+MIDI branch and remain in
   `ctrlrx-8.0.79-portable`.
 - The VST parameter fix (PR #7) is unchanged and is not part of this branch.
