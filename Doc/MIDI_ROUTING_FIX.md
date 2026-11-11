@@ -146,6 +146,8 @@ Completed:
 - OasysOmni 1.0d panel probe: exit 0, 0 errors
 - Standalone GUI smoke: KronosKontrol and OasysOmni both opened and remained responsive
 - Standalone, VST3 and probe copied into `ctrlrx-8.0.79-portable`
+- `CtrlrXExport.exe` was **not** rebuilt in this pass; it is the existing developer exporter, not
+  the GUI export path.
 
 Windows beta artifact hashes:
 
