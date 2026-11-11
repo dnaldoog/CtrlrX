@@ -2,9 +2,13 @@
 
 **Date:** 11 November 2026
 **Engine:** CtrlrX 8.0.79 / JUCE 8
-**Branch:** `fix/midi-routing` (includes the VST parameter fix from PR #7)
-**Status:** engine fixes complete; Windows suite **44/44**; CTest 44/44; panel probes and GUI smoke passed; exporter rebuilt; portable beta updated
+**Branch:** `fix/midi-routing-upstream` (clean branch from `dnaldoog/CtrlrX` `master` at `335798cab`; the VST parameter fix is separate in PR #7 and is **not** included here)
+**Status:** MIDI fixes complete; combined beta branch **44/44**; clean MIDI-only branch **42/44**, with only the two VST parameter tests failing until PR #7 lands; not pushed
 **Upstream:** nothing sent for this MIDI change
+
+The clean branch intentionally excludes the VST parameter-count commit. On a clean 8.0.79 base,
+the two `ProcessorInstance` VST-parameter tests remain failing until PR #7 lands; the MIDI tests
+and fixes in this note are independent of that change.
 
 ## 1. Scope and result
 
@@ -145,9 +149,13 @@ No panel design or shipped panel was changed.
 
 Completed:
 
-- Windows full suite: **44/44**
-- CTest: **44/44**, 0 failures
-- Clean rebuild of `TestsProcessor`
+- Combined VST+MIDI beta branch: Windows full suite **44/44**
+- Combined branch CTest: **44/44**, 0 failures
+- Clean MIDI-only upstream branch: **42/44**; only
+  `ProcessorInstance.test_num_parameters_is_constant_across_panel_load` and
+  `ProcessorInstance.test_out_of_range_vst_index_never_reaches_host` fail, because PR #7 is not in
+  this branch
+- Clean rebuild of `TestsProcessor` on both branches
 - KronosKontrol 1.0c panel probe: exit 0, 0 errors
 - OasysOmni 1.0d panel probe: exit 0, 0 errors
 - Standalone GUI smoke: KronosKontrol and OasysOmni both opened and remained responsive
@@ -183,7 +191,11 @@ Pending:
 
 ## 8. State
 
-- MIDI fixes committed on `fix/midi-routing` as `ff3f144c0`.
-- The VST parameter fix (PR #7) is unchanged.
-- Portable beta artifacts updated in `ctrlrx-8.0.79-portable`.
-- No MIDI note or PR has been sent upstream.
+- Clean MIDI branch prepared as `fix/midi-routing-upstream`.
+- Branch base: `dnaldoog/CtrlrX` `master` at `335798cab`.
+- Commits: `83d26c4c5` (MIDI fix), `8b0480d07` (note), `9a5ccc318` and `a451689b0`
+  (note/hash updates), `bade24536` (review clarifications), `972bdee12` (final note update).
+- Portable beta artifacts were built from the combined VST+MIDI branch and remain in
+  `ctrlrx-8.0.79-portable`.
+- The VST parameter fix (PR #7) is unchanged and is not part of this branch.
+- No MIDI commit, note or PR has been pushed upstream.
