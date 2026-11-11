@@ -9,7 +9,14 @@ https://github.com/damiensellier/CtrlrX/issues/239#issuecomment-6723210310
 
 - https://github.com/dnaldoog/CtrlrX/commit/946b2620db6e5942d17dc8b63ce0b151cc2fba36
 
-
+#### Upgrading on macOS
+The installer may not replace an existing installation. Before installing,
+delete any existing copies of CtrlrX from:
+- /Applications
+- /Library/Audio/Plug-Ins/VST3 and /Library/Audio/Plug-Ins/Components
+- ~/Library/Audio/Plug-Ins (if you installed by copying files by hand)
+Then run the installer and restart your DAW. (Version numbering changed from
+8.79 to 8.0.79, which makes the installer treat the new build as older.)
 
 
 ### CtrlrX v8.79 11/07/2026
