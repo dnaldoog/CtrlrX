@@ -57,6 +57,8 @@ class CtrlrProcessor : public AudioProcessor, public ChangeBroadcaster {
 
 		// DEPRECATED WITH JUCE 5
 		int getNumParameters() override;
+		/** The host-facing parameter count, frozen at construction. */
+		int getAdvertisedParameterCount() const noexcept { return advertisedParameterCount; }
 		float getParameter(int index) override;
 		void setParameter(int index, float newValue) override;
 		const juce::String getParameterName(int index) override;
@@ -139,6 +141,7 @@ class CtrlrProcessor : public AudioProcessor, public ChangeBroadcaster {
 		MidiMessage logResult;
 		int logSamplePos;
 		ValueTree overridesTree;
+		int advertisedParameterCount;
 		MidiMessageCollector midiCollector;
 		Array<PanelProcessorReference, CriticalSection> panelProcessors;
 		Array<CtrlrParameterFromHost, CriticalSection> parameterUpdates;
