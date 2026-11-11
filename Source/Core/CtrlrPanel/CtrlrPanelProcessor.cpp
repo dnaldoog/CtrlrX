@@ -21,12 +21,15 @@ void CtrlrPanelProcessor::handleAsyncUpdate()
 
 void CtrlrPanelProcessor::processBlock(MidiBuffer &midiMessages, MidiBuffer &leftoverBuffer, const AudioPlayHead::CurrentPositionInfo &info)
 {
+	leftoverBuffer.clear();
+
+	if (owner.isMidiInPaused())
+		return;
+
 	if (owner.getMidiOptionBool(panelMidiInputFromHostCompare))
 	{
 		owner.getMIDIInputThread().handleMIDIFromHost(midiMessages);
 	}
-
-	leftoverBuffer.clear();
 
     processLua(midiMessages, info);
 
@@ -44,7 +47,7 @@ void CtrlrPanelProcessor::processBlock(MidiBuffer &midiMessages, MidiBuffer &lef
 				m.setChannel (owner.getMidiChannel(panelMidiOutputChannelDevice));
 			}
 
-			owner.sendMidi(m);
+			owner.sendMidiToDevice(m);
 		}
 
 		if (owner.getMidiOptionBool(panelMidiThruH2H) == true)

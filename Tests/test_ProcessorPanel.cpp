@@ -92,6 +92,11 @@ TEST_P(ProcessorInstanceWithPanel, test_panel_midi_block_processing_with_notes)
         std::cout << "MIDI mock is implemented, setting hardware device expectations" << std::endl;
         EXPECT_CALL(midi_mock, openOutput(0, 1));
     }
+    // H2D panels legitimately send the host input to the device as well as H2H to the host.
+    if (midi_mock.hasSubsystemMock()) {
+        EXPECT_CALL(midi_mock, sendMidiEvent(::testing::_, ::testing::_, ::testing::_))
+            .Times(::testing::AnyNumber());
+    }
     // then act:
     loadTestPanel();
 
@@ -122,6 +127,11 @@ TEST_P(ProcessorInstanceWithPanel, test_panel_midi_block_processing_with_cc_as_d
     if (midi_mock.hasSubsystemMock()) {
         std::cout << "MIDI mock is implemented, setting hardware device expectations" << std::endl;
         EXPECT_CALL(midi_mock, openOutput(0, 1));
+    }
+    // H2D panels legitimately send the host input to the device as well as H2H to the host.
+    if (midi_mock.hasSubsystemMock()) {
+        EXPECT_CALL(midi_mock, sendMidiEvent(::testing::_, ::testing::_, ::testing::_))
+            .Times(::testing::AnyNumber());
     }
     // then act:
     loadTestPanel();
