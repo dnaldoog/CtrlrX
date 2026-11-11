@@ -3,7 +3,7 @@
 **Date:** 11 November 2026
 **Engine:** CtrlrX 8.0.79 / JUCE 8
 **Branch:** `fix/vst-parameter-count` (based on `dnaldoog/CtrlrX` `master` at `335798cab`)
-**Status:** fix implemented and regression-tested; pull request prepared
+**Status:** fix implemented and regression-tested; **PR #7 is open** against `dnaldoog/CtrlrX` `master` (not merged)
 
 ---
 
@@ -253,8 +253,7 @@ testing; that has not been done as part of this note.
   not close the defect.
 - **Issue #229** — “CtrlrX 8.0.0 UPDATE Parameter to Host Logic”: related host parameter design.
 - **Issue #31** — max exported VST parameter count discussion (closed/historical).
-- **Issue #342** — active JUCE 8 migration plan; upstream has no open pull requests at the time of
-  this note.
+- **Issue #342** — active JUCE 8 migration plan.
 
 The PR should reference #229 and PR #324, and explain that this is a follow-up to the merged but
 incomplete guard.
@@ -287,7 +286,7 @@ The final targets and full engine suite are already verified (§5). Remaining ch
 
 ## 10. State
 
-- Fix implemented locally on `fix/vst-parameter-count`.
+- Fix implemented on `fix/vst-parameter-count` (source commit `bd6a1fb85`).
 - Tests pass for the targeted defect.
-- No upstream push, issue comment or pull request has been made.
-- Waiting for maintainer review before any upstream action.
+- PR #7 opened against `dnaldoog/CtrlrX` `master`: https://github.com/dnaldoog/CtrlrX/pull/7
+- Not merged; post-fix DAW verification still pending.
