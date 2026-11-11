@@ -55,9 +55,10 @@ The code was setting `m.setTimeStamp(time)` where `time` was a sample index. The
 
 Host input is no longer sent through the collector as if it were live MIDI. `processBlock` keeps a
 copy of the host input and writes it to the output with its original sample position. A
-block-to-block elapsed-time correction is applied so a late block is adjusted consistently with the
-existing playback convention; a negative correction is halved, matching the old timing
-expectations.
+block-to-block elapsed-time correction is applied. A late block has already missed its nominal
+boundary; applying the entire negative overshoot would pull every event a full block early, so this
+controller deliberately damps late corrections to half. Early corrections are applied in full.
+This is a late-block damping convention, not compatibility with the old broken sample-index path.
 
 The host copy is emitted only when a panel actually routes host input to the host:
 
@@ -88,7 +89,10 @@ processor-level unconditional echo happened before that and ignored it.
 - Added `CtrlrPanel::sendMidiToDevice()` for the H2D path. H2D now sends device MIDI without adding
   a host copy.
 - H2H host output comes from the single gated host pass-through described above.
-- `CtrlrPanelProcessor::processBlock` returns immediately while `panelMidiPauseIn` is active.
+- `CtrlrPanelProcessor::processBlock` returns immediately while `panelMidiPauseIn` is active. This
+  suppresses the entire per-block host-input path: the host comparator, H2D/H2H routing and the Lua
+  audio callback. Device input runs on its own thread and UI/value-driven sends run outside
+  `processBlock`, so neither is stopped by this guard.
 
 ## 4. Group C — LUA multi-message callback
 
@@ -105,8 +109,9 @@ Three separate issues blocked the match:
    `panelMidiInputDevice="-- None"`, so injected device MIDI never reached the panel comparator.
    It now uses the same mock device as the passing single-message Lua test.
 2. **Wrong channel in the fixture.** The multi target was emitted on channel 4 while the test
-   injected channel 2. The fixture now enables `midiMessageChannelOverride` so the target uses its
-   configured channel 2.
+   injected channel 2. The fixture now sets `midiMessageChannelOverride="1"` and
+   `midiMessageChannel="2.0"`. Here `"1"` is a boolean enable flag, not channel 1: it makes the
+   target honor its configured channel 2 instead of the panel's current channel.
 3. **Comparator compared the wrong representation.**
    - `CtrlrMidiMessage::getData()` returned an empty `LMemoryBlock` in this path, while
      `getMidiPattern()` contained the 12 assembled bytes.
@@ -122,13 +127,14 @@ Three separate issues blocked the match:
    ```
 
 The multi comparator now reaches `CtrlrPanel::multiMidiReceived`, queues the callback, and the LUA
-sentinel is emitted once.
+sentinel is emitted once. Both the map and cache call sites, plus the `compareMemory` definition,
+now document the pattern-first convention.
 
 ## 5. Test-side changes
 
-- `Tests/test_ProcessorPanel.cpp`: the two H2D parameterized tests now explicitly allow the
-  legitimate device send with `sendMidiEvent(...).Times(AnyNumber())`. Their existing exact
-  `openOutput(0, 1)` expectation is preserved.
+- `Tests/test_ProcessorPanel.cpp`: the two H2D parameterized tests pin the legitimate device sends
+  exactly: 4 note sends and 6 CC sends across the two host rounds, and 0 for the H2H fixtures. Their
+  existing exact `openOutput(0, 1)` expectation is preserved.
 - `Tests/fixtures/fixture_lua_multi_received.panel`: mock input device set to
   `Device 00, port 00`; `midiMessageChannelOverride="1"`.
 - `Tests/known_failures_windows.txt`: the eight MIDI entries removed.
