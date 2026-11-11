@@ -92,10 +92,12 @@ TEST_P(ProcessorInstanceWithPanel, test_panel_midi_block_processing_with_notes)
         std::cout << "MIDI mock is implemented, setting hardware device expectations" << std::endl;
         EXPECT_CALL(midi_mock, openOutput(0, 1));
     }
-    // H2D panels legitimately send the host input to the device as well as H2H to the host.
+    // H2D sends both input notes to the device in each of the two host rounds (4);
+    // H2H sends none.
     if (midi_mock.hasSubsystemMock()) {
+        const bool h2d = std::string(std::get<0>(GetParam())).find("host2device") != std::string::npos;
         EXPECT_CALL(midi_mock, sendMidiEvent(::testing::_, ::testing::_, ::testing::_))
-            .Times(::testing::AnyNumber());
+            .Times(h2d ? 4 : 0);
     }
     // then act:
     loadTestPanel();
@@ -128,10 +130,12 @@ TEST_P(ProcessorInstanceWithPanel, test_panel_midi_block_processing_with_cc_as_d
         std::cout << "MIDI mock is implemented, setting hardware device expectations" << std::endl;
         EXPECT_CALL(midi_mock, openOutput(0, 1));
     }
-    // H2D panels legitimately send the host input to the device as well as H2H to the host.
+    // H2D sends all three input CCs to the device in each of the two host rounds (6);
+    // H2H sends none.
     if (midi_mock.hasSubsystemMock()) {
+        const bool h2d = std::string(std::get<0>(GetParam())).find("host2device") != std::string::npos;
         EXPECT_CALL(midi_mock, sendMidiEvent(::testing::_, ::testing::_, ::testing::_))
-            .Times(::testing::AnyNumber());
+            .Times(h2d ? 6 : 0);
     }
     // then act:
     loadTestPanel();

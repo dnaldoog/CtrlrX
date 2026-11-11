@@ -678,6 +678,9 @@ const MemoryBlock midiMessagePattern(const CtrlrMidiMessageEx &mEx, const Array<
 	return (MemoryBlock());
 }
 
+// The haystack is the pattern: midiByteMask (0xFF) bytes in it match any
+// corresponding byte in the concrete needle. Callers holding a pattern must
+// pass it first; passing concrete data first disables wildcard matching.
 bool compareMemory(const MemoryBlock &haystack, const MemoryBlock &needle) {
 	if (haystack.getSize() != needle.getSize())
 		return (false);

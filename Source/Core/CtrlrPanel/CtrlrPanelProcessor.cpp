@@ -23,6 +23,10 @@ void CtrlrPanelProcessor::processBlock(MidiBuffer &midiMessages, MidiBuffer &lef
 {
 	leftoverBuffer.clear();
 
+	// Pause-in suppresses the whole per-block host-input path: the host comparator,
+	// H2D/H2H routing and the Lua audio callback. Device input runs on its own
+	// thread, and UI/value-driven sends run outside processBlock, so neither is
+	// stopped here.
 	if (owner.isMidiInPaused())
 		return;
 

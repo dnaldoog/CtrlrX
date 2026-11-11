@@ -243,9 +243,11 @@ void CtrlrProcessor::processBlock(juce::AudioSampleBuffer &buffer, juce::MidiBuf
 		const double elapsedMs = nowMs - lastHostBlockTimeMs;
 		hostSampleShift = roundToInt((blockTimeMs - elapsedMs) * sampleRate / 1000.0);
 
-		// If a block arrives late, moving every event backwards by the full
-		// overshoot produces an exaggerated jump. Follow the existing playback
-		// convention of halving only the negative correction.
+		// A late block has already missed its nominal boundary. Applying the
+		// entire negative overshoot would pull every event a full block early;
+		// this controller deliberately damps only late corrections to half.
+		// Positive corrections (early blocks) are applied in full. This is not
+		// compatibility with the old broken sample-index path.
 		if (hostSampleShift < 0)
 			hostSampleShift /= 2;
 

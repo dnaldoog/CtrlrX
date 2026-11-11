@@ -115,7 +115,9 @@ void CtrlrMidiInputComparatorMulti::match (const MidiMessage &m) // Updated v5.6
     BigInteger bi = memoryToBits(messageContainer.getMidiPattern());
     CtrlrMultiMidiMapIterator it;
 
-    // Iterate through the main map entries to find and process all matches.
+    // compareMemory treats 0xFF in its *first* argument as a wildcard. The
+    // assembled pattern must therefore be the haystack and the concrete input
+    // the needle; reversing these arguments guarantees a miss.
     for (it = map.begin(); it != map.end(); it++)
     {
         if (compareMemory (messageContainer.getMidiPattern(), (*it).first.toMemoryBlock()))
@@ -186,6 +188,7 @@ bool CtrlrMidiInputComparatorMulti::cacheMatch () // Updated v5.6.34. Prevent ex
 {
     bool dispatchedAnyFromCache = false;
 
+    // Pattern first, for the same wildcard-mask reason as the map lookup above.
     for (int i = 0; i < cache.size(); i++)
     {
         if (compareMemory(messageContainer.getMidiPattern(), cache[i].key.toMemoryBlock()))
