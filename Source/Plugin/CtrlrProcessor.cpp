@@ -141,129 +141,108 @@ const String CtrlrProcessor::getName() const {
 }
 
 void CtrlrProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
+	preparedSampleRate = jmax(1.0, sampleRate);
 	midiCollector.reset(sampleRate);
+	lastHostBlockTimeMs = Time::getMillisecondCounterHiRes();
+	hasHostBlockTime = false;
 	leftoverBuffer.ensureSize(8192);
 }
 
 void CtrlrProcessor::releaseResources() {}
 
-// void CtrlrProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuffer& midiMessages) // Deprecated v5.6.34
-//{
-//     // _DBG("processBlock MIDI: NumEvents=" + String(midiMessages.getNumEvents()) + ", IsEmpty=" +
-//     (midiMessages.isEmpty() ? "true" : "false")); AudioPlayHead::CurrentPositionInfo info; if (getPlayHead())
-//     {
-//         getPlayHead()->getCurrentPosition(info);
-//     }
-//
-//     if (midiMessages.getNumEvents() > 0)
-//     {
-//         processPanels(midiMessages, info);
-//     }
-//
-//
-//     midiCollector.removeNextBlockOfMessages (midiMessages, (buffer.getNumSamples() > 0) ? buffer.getNumSamples() :
-//     1); MidiBuffer::Iterator i(midiMessages); while (i.getNextEvent(logResult, logSamplePos)) _MOUT("VST OUTPUT",
-//     logResult, logSamplePos);
-// }
-#if 0
-
-    // NOTE FOR FUTURE REFERENCE (CROSS-PLATFORM MIDI RE-ENTRANCY FIX):
-    // On some platforms (especially Linux via ALSA loopbacks), passing the raw 'midiMessages'
-    // buffer directly into addMidiToOutputQueue() creates a destructive side-effect.
-    // 
-    // Inside addMidiToOutputQueue(), Ctrlr actively overrides the timestamps of the messages
-    // to an artificial sequence (i+1) for internal sorting. Because the buffer is passed 
-    // by reference, this strips away the authentic, real-world high-resolution timestamps 
-    // before the buffer ever reaches processPanels().
-    //
-    // On Linux, processPanels() and the crosstalk filter rely heavily on unaltered ALSA 
-    // timestamps to correctly identify and suppress virtual MIDI echoes. If they receive 
-    // the altered (i+1) timestamps, the panels become completely non-reactive/frozen.
-    //
-    // FIX IMPLEMENTATION:
-    // To resolve this without breaking Windows, isolate the output queue by passing it a copy:
-    // juce::MidiBuffer queueCopy = midiMessages;
-    // addMidiToOutputQueue (queueCopy);
-
 void CtrlrProcessor::processBlock (juce::AudioSampleBuffer& buffer, juce::MidiBuffer& midiMessages)
 {
-    buffer.clear();
-
-    AudioPlayHead::CurrentPositionInfo info;
-    if (getPlayHead())
-    {
-        getPlayHead()->getCurrentPosition(info);
-    }
-
-    // 3. FIX: Create a local copy for the output queue so we don't overwrite 
-    // the real timestamps that processPanels needs on Linux!
-    if (midiMessages.getNumEvents() > 0) 
-    {
-        juce::MidiBuffer queueCopy = midiMessages; 
-        addMidiToOutputQueue (queueCopy);
-    }
-
-    // 4. Call processPanels with the pristine, uncorrupted raw input
-    if (midiMessages.getNumEvents() > 0)
-    {
-        processPanels(midiMessages, info);
-    }
-
-    midiMessages.clear();
-    midiCollector.removeNextBlockOfMessages (midiMessages, buffer.getNumSamples());
-}
-#endif
-void CtrlrProcessor::processBlock(juce::AudioSampleBuffer &buffer, juce::MidiBuffer &midiMessages) // Updated v5.6.34
-{
-	// _DBG("processBlock MIDI: NumEvents=" + String(midiMessages.getNumEvents()) + ", IsEmpty=" +
-	// (midiMessages.isEmpty() ? "true" : "false"));
-
 	// 1. Clear audio buffer
 	buffer.clear();
 
 	// 2. Get playhead info (optional)
 	AudioPlayHead::CurrentPositionInfo info;
-	if (getPlayHead()) {
+	if (getPlayHead())
 		getPlayHead()->getCurrentPosition(info);
+
+	// 3. Host input already carries a block-relative sample position. It must not
+	// be passed through MidiMessageCollector, which expects an absolute time in
+	// seconds. Keep a copy for the host output and adjust it for the real time
+	// elapsed since the previous block.
+	const double nowMs = Time::getMillisecondCounterHiRes();
+	const double sampleRate = preparedSampleRate;
+	const double blockTimeMs = 1000.0 * (double) buffer.getNumSamples() / sampleRate;
+	int hostSampleShift = 0;
+
+	if (hasHostBlockTime)
+	{
+		const double elapsedMs = nowMs - lastHostBlockTimeMs;
+		hostSampleShift = roundToInt((blockTimeMs - elapsedMs) * sampleRate / 1000.0);
+
+		// A late block has already missed its nominal boundary. Applying the
+		// entire negative overshoot would pull every event a full block early;
+		// this controller deliberately damps only late corrections to half.
+		// Positive corrections (early blocks) are applied in full. This is not
+		// compatibility with the old broken sample-index path.
+		if (hostSampleShift < 0)
+			hostSampleShift /= 2;
+
+		hostSampleShift = jlimit(-buffer.getNumSamples(), buffer.getNumSamples(), hostSampleShift);
 	}
 
-	// 3. Add incoming host MIDI to your collector via your custom function
-	// This will now apply the 0-timestamp workaround inside addMidiToOutputQueue (const MidiBuffer &buffer)
-	if (midiMessages.getNumEvents() > 0) // Only process if there are events
-										 // 3. Add incoming host MIDI to your collector
-		if (midiMessages.getNumEvents() > 0) {
-#if JUCE_LINUX
-			// Linux ALSA timestamp isolation workaround
-			juce::MidiBuffer queueCopy = midiMessages;
-			addMidiToOutputQueue(queueCopy);
-#else
-			// Windows / macOS standard execution path
-			addMidiToOutputQueue(midiMessages);
-#endif
+	lastHostBlockTimeMs = nowMs;
+	hasHostBlockTime = true;
+
+	juce::MidiBuffer hostInputCopy;
+	bool hostInputRoutingEnabled = true;
+
+	if (ctrlrManager != nullptr && ctrlrManager->getNumPanels() > 0)
+	{
+		hostInputRoutingEnabled = false;
+
+		for (int i = 0; i < ctrlrManager->getNumPanels(); i++)
+		{
+			if (auto* panel = ctrlrManager->getPanel(i))
+			{
+				if (!panel->isMidiInPaused() && panel->getMidiOptionBool(panelMidiThruH2H))
+				{
+					hostInputRoutingEnabled = true;
+					break;
+				}
+			}
 		}
-
-	// 4. Call processPanels with the raw host input (as you had it)
-	if (midiMessages.getNumEvents() > 0) {
-		processPanels(midiMessages, info);
 	}
 
-	// 5. Clear the incoming midiMessages buffer for output
+	const bool hostInputAllowed = midiMessages.getNumEvents() > 0 && hostInputRoutingEnabled;
+
+#if JUCE_LINUX
+	// Preserve dev8's ALSA timestamp isolation. The old path copied the host
+	// input before addMidiToOutputQueue(); this fix bypasses that mutating
+	// queue, so take the pristine copy here before processPanels instead.
+	juce::MidiBuffer linuxTimestampIsolationCopy = midiMessages;
+	if (hostInputAllowed)
+		hostInputCopy = linuxTimestampIsolationCopy;
+#else
+	if (hostInputAllowed)
+		hostInputCopy = midiMessages;
+#endif
+
+	// 4. Call processPanels with the raw host input.
+	if (midiMessages.getNumEvents() > 0)
+		processPanels(midiMessages, info);
+
+	// 5. Clear the incoming midiMessages buffer for output.
 	midiMessages.clear();
 
-	// 6. Get MIDI messages from the collector for output
-	// (This part of midiCollector should still work as intended for output)
+	// 6. Get panel/device-generated MIDI from the collector.
 	midiCollector.removeNextBlockOfMessages(midiMessages, buffer.getNumSamples());
 
-	// 7. Log outgoing MIDI (if enabled and declared locally)
-	/*
-	MidiBuffer::Iterator i(midiMessages);
-	juce::MidiMessage logResult;
-	int logSamplePos;
-	while (i.getNextEvent(logResult, logSamplePos))
+	// 7. Host input is a direct pass-through, retaining its original timestamps
+	// with the elapsed-block correction applied.
+	if (hostInputAllowed)
 	{
-		_MOUT("VST OUTPUT", logResult, logSamplePos);
+		for (const auto metadata : hostInputCopy)
+		{
+			const int position = jlimit(0, jmax(0, buffer.getNumSamples() - 1),
+										metadata.samplePosition + hostSampleShift);
+			midiMessages.addEvent(metadata.getMessage(), position);
+		}
 	}
-	*/
 }
 
 //==============================================================================

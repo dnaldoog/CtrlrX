@@ -8,7 +8,7 @@
        panelExportPublicKey="" panelExportServerAuthURL="https://localhost:8000/auth/authenticate"
        panelMidiSnapshotAfterLoad="0" panelMidiSnapshotAfterProgramChange="0"
        panelMidiSnapshotDelay="10.0" panelMidiSnapshotShowProgress="0"
-       panelMidiInputDevice="-- None" panelMidiInputChannelDevice="2"
+       panelMidiInputDevice="Device 00, port 00" panelMidiInputChannelDevice="2"
        panelMidiControllerDevice="-- None" panelMidiControllerChannelDevice="3"
        panelMidiOutputDevice="Device 00, port 01" panelMidiOutputChannelDevice="4"
        panelMidiInputFromHost="1" panelMidiInputChannelHost="0" panelMidiInputFromHostCompare="1"
@@ -98,7 +98,7 @@
              modulatorCustomIndexGroup="0" modulatorCustomNameGroup="" modulatorVstNameFormat="%n"
              luaModulatorValueChange="-- None" name="test-modulator-1" modulatorMin="0.0"
              modulatorMax="127.0" modulatorValue="0.0">
-    <midi midiMessageType="6" midiMessageChannelOverride="0" midiMessageChannel="2.0"
+    <midi midiMessageType="6" midiMessageChannelOverride="1" midiMessageChannel="2.0"
           midiMessageCtrlrNumber="10.0" midiMessageCtrlrValue="0.0"
           midiMessageMultiList="CC,ByteValue,MSB7bitValue,99,-2:CC,ByteValue,LSB7bitValue,98,-2:CC,ByteValue,MSB7bitValue,6,-1:CC,ByteValue,LSB7bitValue,38,-1"
           midiMessageLatchAndStream="1" midiMessageSysExFormula=""/>

@@ -34,9 +34,9 @@ void CtrlrMidiInputComparatorMulti::addMatchTarget (CtrlrModulator *m)
 		messageTypesContainer.set(midiMessageToType(m->getMidiMessage(source).getReference(i).m), 1);
 	}
 
-	if (!messageSizeContainer.contains(m->getMidiMessage(source).getData().getSize()))
+	if (!messageSizeContainer.contains(m->getMidiMessage(source).getMidiPattern().getSize()))
 	{
-		messageSizeContainer.addSorted (messageSizeContainerSorter, m->getMidiMessage(source).getData().getSize());
+		messageSizeContainer.addSorted (messageSizeContainerSorter, m->getMidiMessage(source).getMidiPattern().getSize());
 	}
 
 	BigInteger bi = memoryToBits(m->getMidiMessage(source).getMidiPattern());
@@ -112,13 +112,15 @@ void CtrlrMidiInputComparatorMulti::match (const MidiMessage &m) // Updated v5.6
         // even if the cache found and handled some targets.
     }
 
-    BigInteger bi = memoryToBits(messageContainer.getData());
+    BigInteger bi = memoryToBits(messageContainer.getMidiPattern());
     CtrlrMultiMidiMapIterator it;
 
-    // Iterate through the main map entries to find and process all matches.
+    // compareMemory treats 0xFF in its *first* argument as a wildcard. The
+    // assembled pattern must therefore be the haystack and the concrete input
+    // the needle; reversing these arguments guarantees a miss.
     for (it = map.begin(); it != map.end(); it++)
     {
-        if (compareMemory ((*it).first.toMemoryBlock(), messageContainer.getData()))
+        if (compareMemory (messageContainer.getMidiPattern(), (*it).first.toMemoryBlock()))
         {
             messageWasHandled = true; // A match was found in the map.
 
@@ -143,14 +145,16 @@ void CtrlrMidiInputComparatorMulti::match (const MidiMessage &m) // Updated v5.6
 
 bool CtrlrMidiInputComparatorMulti::basicMatch(const MidiMessage &m)
 {
-	if (messageTypesContainer[midiMessageToType(m)] == 0)
+	const int messageType = midiMessageToType(m);
+
+	if (messageTypesContainer[messageType] == 0)
 	{
 		return (false);
 	}
 
 	messageContainer.addMidiMessage (m);
 
-	if (!messageSizeContainer.contains(messageContainer.getData().getSize()))
+	if (!messageSizeContainer.contains(messageContainer.getMidiPattern().getSize()))
 	{
 		return (false);
 	}
@@ -184,9 +188,10 @@ bool CtrlrMidiInputComparatorMulti::cacheMatch () // Updated v5.6.34. Prevent ex
 {
     bool dispatchedAnyFromCache = false;
 
+    // Pattern first, for the same wildcard-mask reason as the map lookup above.
     for (int i = 0; i < cache.size(); i++)
     {
-        if (compareMemory(cache[i].key.toMemoryBlock(), messageContainer.getData()))
+        if (compareMemory(messageContainer.getMidiPattern(), cache[i].key.toMemoryBlock()))
         {
             for (int j = 0; j < cache[i].mapData.targets.size(); j++)
             {
@@ -204,7 +209,7 @@ bool CtrlrMidiInputComparatorMulti::cacheMatch () // Updated v5.6.34. Prevent ex
 
 void CtrlrMidiInputComparatorMulti::updateState(const bool match)
 {
-	if (messageContainer.getData().getSize() >= messageSizeContainer.getLast() || match)
+	if (messageContainer.getMidiPattern().getSize() >= messageSizeContainer.getLast() || match)
 	{
 		messageContainer.clear();
 	}

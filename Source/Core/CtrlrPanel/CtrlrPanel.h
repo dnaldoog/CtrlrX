@@ -209,6 +209,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 
 		void sendMidi(const MidiBuffer &buffer, double millisecondCounterToStartAt = 0);
 		void sendMidi(const juce::MidiMessage &message, double millisecondCounterToStartAt = 0);
+		void sendMidiToDevice(const MidiMessage &message, double millisecondCounterToStartAt = 0);
 		void sendMidi(CtrlrMidiMessage &m, double millisecondCounterToStartAt = 0);
 		void sendMidiNow(CtrlrMidiMessage &midiMessage);
 		bool isMidiOutPaused();

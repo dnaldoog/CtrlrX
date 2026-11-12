@@ -143,6 +143,9 @@ class CtrlrProcessor : public AudioProcessor, public ChangeBroadcaster {
 		ValueTree overridesTree;
 		int advertisedParameterCount;
 		MidiMessageCollector midiCollector;
+		double preparedSampleRate = 44100.0;
+		double lastHostBlockTimeMs = 0.0;
+		bool hasHostBlockTime = false;
 		Array<PanelProcessorReference, CriticalSection> panelProcessors;
 		Array<CtrlrParameterFromHost, CriticalSection> parameterUpdates;
 		bool thruHostToHost, thruHostToDevice, thruFromHostChannelize, outputToHost, inputFromHost;

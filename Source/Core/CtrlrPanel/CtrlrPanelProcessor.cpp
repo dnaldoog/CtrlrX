@@ -21,12 +21,19 @@ void CtrlrPanelProcessor::handleAsyncUpdate()
 
 void CtrlrPanelProcessor::processBlock(MidiBuffer &midiMessages, MidiBuffer &leftoverBuffer, const AudioPlayHead::CurrentPositionInfo &info)
 {
+	leftoverBuffer.clear();
+
+	// Pause-in suppresses the whole per-block host-input path: the host comparator,
+	// H2D/H2H routing and the Lua audio callback. Device input runs on its own
+	// thread, and UI/value-driven sends run outside processBlock, so neither is
+	// stopped here.
+	if (owner.isMidiInPaused())
+		return;
+
 	if (owner.getMidiOptionBool(panelMidiInputFromHostCompare))
 	{
 		owner.getMIDIInputThread().handleMIDIFromHost(midiMessages);
 	}
-
-	leftoverBuffer.clear();
 
     processLua(midiMessages, info);
 
@@ -44,7 +51,7 @@ void CtrlrPanelProcessor::processBlock(MidiBuffer &midiMessages, MidiBuffer &lef
 				m.setChannel (owner.getMidiChannel(panelMidiOutputChannelDevice));
 			}
 
-			owner.sendMidi(m);
+			owner.sendMidiToDevice(m);
 		}
 
 		if (owner.getMidiOptionBool(panelMidiThruH2H) == true)
