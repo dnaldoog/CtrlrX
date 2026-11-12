@@ -3,8 +3,8 @@
 **Date:** 12 November 2026
 **Engine:** CtrlrX 8.0.80 / JUCE 8
 **Branch:** `fix/midi-routing-upstream-v2` (clean MIDI-only branch from `dnaldoog/CtrlrX` `master` at `71d3ce4c8`, with PR #7 already merged)
-**Status:** MIDI fixes complete on a clean branch rebased onto the merged master; Windows suite **44/44**; not pushed
-**Upstream:** prepared locally; nothing pushed for this MIDI change
+**Status:** MIDI fixes complete on a clean branch rebased onto the merged master; Windows suite **44/44**; PR #9 open (not merged)
+**Upstream:** pushed to `francoisuk/CtrlrX`; PR #9 open against `dnaldoog/CtrlrX` `master`
 
 The clean branch contains only the MIDI routing, host-timing and multi-message commits. PR #7
 (VST parameter count) is already in the base and is not re-applied here. The unrelated
@@ -227,4 +227,4 @@ Pending:
   CtrlrPanelProbe); hashes are recorded in §6.
 - Portable beta artifacts from the earlier combined VST+MIDI branch remain in
   `ctrlrx-8.0.79-portable`.
-- No MIDI commit, note or PR has been pushed upstream.
+- Pushed to `francoisuk/CtrlrX`; PR #9 open against `dnaldoog/CtrlrX` `master`.
