@@ -164,7 +164,8 @@ No panel design or shipped panel was changed.
 00B2E0062192EEFF24C6C418E9723F76BBF21BBEA911AC37462CE08E78852439  probe\CtrlrPanelProbe.exe
 ```
 
-`CtrlrXExport.exe` was not rebuilt or staged for 8.0.80.
+`CtrlrXExport.exe` is not present as a build target on this base, so it was not rebuilt or staged
+for 8.0.80.
 
 ### Historical verification from the 8.0.79 combined VST+MIDI branch
 
