@@ -1,14 +1,15 @@
 # MIDI routing, host timing and multi-message fixes
 
-**Date:** 11 November 2026
-**Engine:** CtrlrX 8.0.79 / JUCE 8
-**Branch:** `fix/midi-routing-upstream` (clean branch from `dnaldoog/CtrlrX` `master` at `335798cab`; the VST parameter fix is separate in PR #7 and is **not** included here)
-**Status:** MIDI fixes complete; combined beta branch **44/44**; clean MIDI-only branch **42/44**, with only the two VST parameter tests failing until PR #7 lands; not pushed
-**Upstream:** nothing sent for this MIDI change
+**Date:** 12 November 2026
+**Engine:** CtrlrX 8.0.80 / JUCE 8
+**Branch:** `fix/midi-routing-upstream-v2` (clean MIDI-only branch from `dnaldoog/CtrlrX` `master` at `71d3ce4c8`, with PR #7 already merged)
+**Status:** MIDI fixes complete on a clean branch rebased onto the merged master; Windows suite **44/44**; not pushed
+**Upstream:** prepared locally; nothing pushed for this MIDI change
 
-The clean branch intentionally excludes the VST parameter-count commit. On a clean 8.0.79 base,
-the two `ProcessorInstance` VST-parameter tests remain failing until PR #7 lands; the MIDI tests
-and fixes in this note are independent of that change.
+The clean branch contains only the MIDI routing, host-timing and multi-message commits. PR #7
+(VST parameter count) is already in the base and is not re-applied here. The unrelated
+multi-column combo-popup commit from the old branch is deliberately excluded.
+
 
 ## 1. Scope and result
 
@@ -151,13 +152,12 @@ No panel design or shipped panel was changed.
 
 Completed:
 
-- Combined VST+MIDI beta branch: Windows full suite **44/44**
-- Combined branch CTest: **44/44**, 0 failures
-- Clean MIDI-only upstream branch: **42/44**; only
-  `ProcessorInstance.test_num_parameters_is_constant_across_panel_load` and
-  `ProcessorInstance.test_out_of_range_vst_index_never_reaches_host` fail, because PR #7 is not in
-  this branch
-- Clean rebuild of `TestsProcessor` on both branches
+- New clean MIDI-only branch `fix/midi-routing-upstream-v2` rebased onto `71d3ce4c8` (v8.0.80,
+  PR #7 merged)
+- Clean branch `TestsProcessor` rebuild: **44/44**, 0 failures
+- Earlier combined VST+MIDI beta branch: Windows full suite **44/44**
+- Earlier combined branch CTest: **44/44**, 0 failures
+- Clean rebuild of `TestsProcessor` on both older branches
 - KronosKontrol 1.0c panel probe: exit 0, 0 errors
 - OasysOmni 1.0d panel probe: exit 0, 0 errors
 - Standalone GUI smoke: KronosKontrol and OasysOmni both opened and remained responsive
@@ -197,14 +197,13 @@ Pending:
 
 ## 8. State
 
-- Clean MIDI branch prepared as `fix/midi-routing-upstream`.
-- Branch base: `dnaldoog/CtrlrX` `master` at `335798cab`.
-- Commits: `83d26c4c5` (MIDI fix), `8b0480d07` (note), `9a5ccc318` and `a451689b0`
-  (note/hash updates), `bade24536` (review clarifications), `972bdee12` (final note update),
-  `8698f5c78` (clean-branch validation record).
-- The final documentation-only synchronization commit is the one carrying this note; it is not
-  listed by its own hash to avoid a self-referential revision.
-- Portable beta artifacts were built from the combined VST+MIDI branch and remain in
+- Clean MIDI branch prepared as `fix/midi-routing-upstream-v2`.
+- Branch base: `dnaldoog/CtrlrX` `master` at `71d3ce4c8` (v8.0.80; PR #7 merged).
+- Commits: `21860eec3` (MIDI fix), `bd71a7f88` (note), `354fb1919` and `eeed05219`
+  (note/hash updates), `3efe49550` (review clarifications), `647464022` (final note update),
+  `63f8d75be` (clean-branch validation record), `4b5c8fee2` (note/commit-list synchronization).
+- The old branch's unrelated `542bd896c` multi-column combo-popup commit is excluded.
+- The VST parameter fix (PR #7) is already in the base and is not part of this branch.
+- Portable beta artifacts were built from the earlier combined VST+MIDI branch and remain in
   `ctrlrx-8.0.79-portable`.
-- The VST parameter fix (PR #7) is unchanged and is not part of this branch.
 - No MIDI commit, note or PR has been pushed upstream.
