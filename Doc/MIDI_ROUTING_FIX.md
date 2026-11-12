@@ -154,8 +154,17 @@ No panel design or shipped panel was changed.
 
 - Clean MIDI-only branch based on `71d3ce4c8` (v8.0.80; PR #7 merged)
 - Clean `TestsProcessor` rebuild: **44/44**, 0 failures
-- `CtrlrX_Standalone`, `CtrlrX_VST3` and `CtrlrPanelProbe` all rebuilt successfully against the
-  same base and source tree
+- `CtrlrX_Standalone`, `CtrlrX_VST3` and `CtrlrPanelProbe` all rebuilt successfully in Release
+  against the same base and source tree
+- Rebuilt Release binaries staged in `ctrlrx-8.0.80-portable`:
+
+```text
+7EF0E96A9A0C707A28C2B16C1494179EB4773EC563527B60ACBA57509BD8C771  CtrlrX.exe
+1C1C6AF3272E96DAD6A835724B4E5D87654AD3CD9F593E533E60E153F4E783FD  vst3\CtrlrX.vst3\Contents\x86_64-win\CtrlrX.vst3
+00B2E0062192EEFF24C6C418E9723F76BBF21BBEA911AC37462CE08E78852439  probe\CtrlrPanelProbe.exe
+```
+
+`CtrlrXExport.exe` was not rebuilt or staged for 8.0.80.
 
 ### Historical verification from the 8.0.79 combined VST+MIDI branch
 
@@ -213,6 +222,8 @@ Pending:
   self-listed, to avoid a self-referential hash.
 - The old branch's unrelated `542bd896c` multi-column combo-popup commit is excluded.
 - The VST parameter fix (PR #7) is already in the base and is not part of this branch.
-- Portable beta artifacts were built from the earlier combined VST+MIDI branch and remain in
+- Rebuilt 8.0.80 Release artifacts are staged in `ctrlrx-8.0.80-portable` (CtrlrX.exe, VST3,
+  CtrlrPanelProbe); hashes are recorded in §6.
+- Portable beta artifacts from the earlier combined VST+MIDI branch remain in
   `ctrlrx-8.0.79-portable`.
 - No MIDI commit, note or PR has been pushed upstream.
