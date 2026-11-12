@@ -150,22 +150,28 @@ No panel design or shipped panel was changed.
 
 ## 6. Verification status
 
-Completed:
+### Verified on the 8.0.80 branch (`fix/midi-routing-upstream-v2`)
 
-- New clean MIDI-only branch `fix/midi-routing-upstream-v2` rebased onto `71d3ce4c8` (v8.0.80,
-  PR #7 merged)
-- Clean branch `TestsProcessor` rebuild: **44/44**, 0 failures
-- Earlier combined VST+MIDI beta branch: Windows full suite **44/44**
-- Earlier combined branch CTest: **44/44**, 0 failures
-- Clean rebuild of `TestsProcessor` on both older branches
+- Clean MIDI-only branch based on `71d3ce4c8` (v8.0.80; PR #7 merged)
+- Clean `TestsProcessor` rebuild: **44/44**, 0 failures
+- `CtrlrX_Standalone`, `CtrlrX_VST3` and `CtrlrPanelProbe` all rebuilt successfully against the
+  same base and source tree
+
+### Historical verification from the 8.0.79 combined VST+MIDI branch
+
+- Combined suite: **44/44**
+- Combined branch CTest: **44/44**, 0 failures
 - KronosKontrol 1.0c panel probe: exit 0, 0 errors
 - OasysOmni 1.0d panel probe: exit 0, 0 errors
-- Standalone GUI smoke: KronosKontrol and OasysOmni both opened and remained responsive
+- Standalone GUI smoke: both panels opened and remained responsive
 - Standalone, VST3 and probe copied into `ctrlrx-8.0.79-portable`
 - `CtrlrXExport.exe` rebuilt with the same fixes; EXE and VST3 preview exports both verified
   into the portable folder
 
-Windows beta artifact hashes:
+These application-build and panel checks were run on the earlier **8.0.79** branch. The hashes
+below are therefore historical 8.0.79 artifacts, not outputs of the 8.0.80 rebase.
+
+Windows beta artifact hashes (8.0.79 combined branch):
 
 ```text
 AE6569CAE34215A36C9CA41A918508AE049CAF703C81B646930024C55B4B7EB0  CtrlrX.exe
@@ -201,7 +207,10 @@ Pending:
 - Branch base: `dnaldoog/CtrlrX` `master` at `71d3ce4c8` (v8.0.80; PR #7 merged).
 - Commits: `21860eec3` (MIDI fix), `bd71a7f88` (note), `354fb1919` and `eeed05219`
   (note/hash updates), `3efe49550` (review clarifications), `647464022` (final note update),
-  `63f8d75be` (clean-branch validation record), `4b5c8fee2` (note/commit-list synchronization).
+  `63f8d75be` (clean-branch validation record), `4b5c8fee2` (note/commit-list synchronization),
+  `0bf573f61` (merged-base note).
+- The final documentation corrections are carried by the current branch tip and are not
+  self-listed, to avoid a self-referential hash.
 - The old branch's unrelated `542bd896c` multi-column combo-popup commit is excluded.
 - The VST parameter fix (PR #7) is already in the base and is not part of this branch.
 - Portable beta artifacts were built from the earlier combined VST+MIDI branch and remain in
