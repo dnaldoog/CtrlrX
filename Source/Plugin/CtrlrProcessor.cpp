@@ -25,7 +25,8 @@ CtrlrProcessor::CtrlrProcessor()
 						 ),
 #endif
 
-	  overridesTree(Ids::ctrlrOverrides)
+	  overridesTree(Ids::ctrlrOverrides),
+	  advertisedParameterCount(CTRLR_MAX_EXPORTED_VST_PARAMETERS)
 	  //ctrlrManager(nullptr),
 	  //ctrlrLog(nullptr) // Added v5.6.34. Could be useful
 {
@@ -36,7 +37,7 @@ CtrlrProcessor::CtrlrProcessor()
 	currentExec = File::getSpecialLocation(File::currentApplicationFile);
 	overridesFile = currentExec.withFileExtension("overrides");
 
-	overridesTree.setProperty(Ids::ctrlrMaxExportedVstParameters, 64, 0);
+	overridesTree.setProperty(Ids::ctrlrMaxExportedVstParameters, CTRLR_MAX_EXPORTED_VST_PARAMETERS, 0);
 	overridesTree.setProperty(Ids::ctrlrShutdownDelay, 512, 0);
 
 	if (overridesFile.existsAsFile()) {
@@ -46,10 +47,16 @@ CtrlrProcessor::CtrlrProcessor()
 		}
 	}
 
+	// The host snapshots this count when it initialises the plugin. Keep it frozen
+	// for the lifetime of the processor; a panel loaded later must not resize the
+	// host's parameter list. The default is the public maximum, not the old 64.
+	const int configuredParameterCount =
+		(int) overridesTree.getProperty(Ids::ctrlrMaxExportedVstParameters,
+									   CTRLR_MAX_EXPORTED_VST_PARAMETERS);
+	advertisedParameterCount = jmax(CTRLR_MAX_EXPORTED_VST_PARAMETERS, configuredParameterCount);
+
 #if JUCE_VERSION >= 0x080000
-    const int numParamSlots = jmax(CTRLR_MAX_PARAMETER_SLOTS, (int)
-        overridesTree.getProperty(Ids::ctrlrMaxExportedVstParameters,
-        CTRLR_MAX_PARAMETER_SLOTS));
+    const int numParamSlots = jmax(CTRLR_MAX_PARAMETER_SLOTS, advertisedParameterCount);
     for (int i = 0; i < numParamSlots; i++)
         addParameter (new CtrlrParameter (*this, i));
 #endif
@@ -76,6 +83,15 @@ CtrlrProcessor::CtrlrProcessor()
 		if (ctrlrManager->getActivePanel()) {
 			ctrlrManager->getActivePanel()->initEmbeddedInstance();
 		}
+	}
+
+	// An exported instance may already contain its panel at this point, before the
+	// host asks for the parameter count. Honour that panel's exported range, up to
+	// the registered slot pool; a panel loaded later must still not change it.
+	if (ctrlrManager->isSingleInstance() && ctrlrManager->getActivePanel() != nullptr) {
+		advertisedParameterCount = jmin(CTRLR_MAX_PARAMETER_SLOTS,
+									   jmax(advertisedParameterCount,
+											ctrlrManager->getNumModulators(true)));
 	}
 }
 
@@ -263,23 +279,12 @@ void CtrlrProcessor::processBlock(juce::AudioSampleBuffer &buffer, juce::MidiBuf
 // JUCE_DEPRECATED (virtual const String getParameterText (int parameterIndex));
 // JUCE_DEPRECATED (virtual String getParameterText (int parameterIndex, int maximumStringLength));
 
-int CtrlrProcessor::getNumParameters() // Updated 5.6.31. VST Host was assigned (64) params most of the time since
-									   // panels hardly have more than 64 params passed as VST controls
+int CtrlrProcessor::getNumParameters()
 {
-	if (ctrlrManager)
-		if (ctrlrManager->isSingleInstance()) // Added v5.6.31
-		{
-			return (ctrlrManager->getNumModulators(true)); // Added v5.6.31. Will pass the highest vstIndex value as the
-														   // total number of VST params to the host.
-		} else {
-			return (jmax(ctrlrManager->getNumModulators(true),
-						 (int)overridesTree.getProperty(
-							 Ids::ctrlrMaxExportedVstParameters))); // Pass jmax ctrlrMaxExportedVstParameters value or
-																	// default (64) params to the host when designing or
-																	// loading a panel in ctrlr.vst or ctrlr.vst3
-		}
-	else
-		return (CTRLR_DEFAULT_PARAMETER_COUNT);
+	// JUCE snapshots this at plugin initialisation. It must stay identical when a
+	// panel is loaded or removed, so the wrapper never indexes a parameter map
+	// that is larger or smaller than the list the host was given.
+	return advertisedParameterCount;
 }
 
 String CtrlrProcessor::getParameterID(int index) // Added v5.6.33. Will pass vstIndex as VST3 ID
