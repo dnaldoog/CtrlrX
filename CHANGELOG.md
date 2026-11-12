@@ -1,13 +1,24 @@
 [&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
+
+### CtrlrX v8.0.80 11/12/2026
+Merge branch 'pr-7' into dev8 thanks to francoisuk
+the MIDI routing/sample-position fix is prepared on a clean MIDI-only branch behind this PR.
+
+- *FIX*: https://github.com/dnaldoog/CtrlrX/commit/845c72e525e6661c9e5486dfde95f24b7d8522a4Combined VST+MIDI branch: 44/44
+Clean MIDI-only branch: 42/44; the only failures are the two VST parameter tests this PR fixes
+No VST hunks are included in the MIDI branch
+- https://github.com/dnaldoog/CtrlrX/commit/845c72e525e6661c9e5486dfde95f24b7d8522a4 
+
+
 ### CtrlrX v8.0.79 11/09/2026
 
 - *FIX*:  replaced missing property == Ids::uiTabsCurrentTab) in ValueTreePropertyChanged
 in Source/UIComponents/CtrlrComponents/Groups/CtrlrTabsComponent.cpp
 Thanks to Tonfisch: re
-https://github.com/damiensellier/CtrlrX/issues/239#issuecomment-6723210310
+- https://github.com/damiensellier/CtrlrX/issues/239#issuecomment-6723210310
+- - https://github.com/dnaldoog/CtrlrX/commit/946b2620db6e5942d17dc8b63ce0b151cc2fba36
 
-- https://github.com/dnaldoog/CtrlrX/commit/946b2620db6e5942d17dc8b63ce0b151cc2fba36
 
 
 
