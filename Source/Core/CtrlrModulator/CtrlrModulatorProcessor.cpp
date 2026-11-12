@@ -372,9 +372,20 @@ void CtrlrModulatorProcessor::setParameterNotifyingHost()
         return;
 
     // The host sized its parameter list at init. Indices at or above that count
-    // must never reach the wrapper. Reported once in CtrlrPanel::bootstrapPanel();
-    // deliberately silent here.
-    auto& params = getProcessor()->getParameters();
+    // must never reach the wrapper. Do not use getParameters().size() here: that
+    // list contains the internal 512-slot pool, which is larger than the count
+    // advertised to the host and indexed by the VST3/AU wrapper.
+    auto* processor = getProcessor();
+
+    if (processor == nullptr)
+        return;
+
+    const int advertised = processor->getAdvertisedParameterCount();
+
+    if (index >= advertised)
+        return;
+
+    auto& params = processor->getParameters();
 
     if (index >= params.size())
         return;
