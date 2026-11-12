@@ -8,8 +8,22 @@ the MIDI routing/sample-position fix is prepared on a clean MIDI-only branch beh
 - *FIX*: https://github.com/dnaldoog/CtrlrX/commit/845c72e525e6661c9e5486dfde95f24b7d8522a4Combined VST+MIDI branch: 44/44
 Clean MIDI-only branch: 42/44; the only failures are the two VST parameter tests this PR fixes
 No VST hunks are included in the MIDI branch
+- Correct old VST3 artifact path in MIDI note
+- Clarify CtrlrXExport target absence on 8.0.80
+- Record 8.0.80 staged artifacts and hashes
+- Clarify MIDI verification history on 8.0.80
+- Update MIDI routing note for merged PR7
+- Synchronize MIDI note file and commit lists
+- Record clean MIDI branch validation in note
+- Update MIDI note for upstream review clarifications
+- Clarify MIDI routing assertions and late- block correction
+- Record verified exporter in MIDI note
+- Record beta artifact hashes in MIDI note
+- Document MIDI routing and sample- position fixes
+- Fix MIDI routing and host sample- position handling
 - https://github.com/dnaldoog/CtrlrX/commit/845c72e525e6661c9e5486dfde95f24b7d8522a4 
-
+- https://github.com/dnaldoog/CtrlrX/pull/7
+- https://github.com/dnaldoog/CtrlrX/pull/9
 
 ### CtrlrX v8.0.79 11/09/2026
 
