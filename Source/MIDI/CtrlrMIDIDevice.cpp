@@ -123,6 +123,8 @@ void CtrlrMIDIDevice::handlePartialSysexMessage (MidiInput* /*source*/, const ui
 
 void CtrlrMIDIDevice::handleIncomingMidiMessage (MidiInput* /*source*/, const MidiMessage& message)
 {
+	DBG("handleIncomingMidiMessage: size=" + String(message.getRawDataSize()) +
+		" isSysEx=" + String((int)message.isSysEx()));
 	_MIN(getProperty(Ids::name), message, -1);
 
 #ifdef JUCE_LINUX

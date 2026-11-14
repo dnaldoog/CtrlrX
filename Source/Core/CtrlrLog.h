@@ -17,8 +17,10 @@
 #define _LERR(message)										if (CtrlrLog::ctrlrLog != nullptr) CtrlrLog::ctrlrLog->logMessage(message, CtrlrLog::LuaError)
 #define _LRUNERR(message)									if (CtrlrLog::ctrlrLog != nullptr) CtrlrLog::ctrlrLog->logMessage(message, CtrlrLog::LuaRuntimeError)
 #define _TRANS(message)										if (CtrlrLog::ctrlrLog != nullptr) CtrlrLog::ctrlrLog->logMessage(message, CtrlrLog::Transaction)
-#define _MIN(device, midiMessage, time)						if (CtrlrLog::ctrlrLog != nullptr) CtrlrLog::ctrlrLog->logMessage(device, midiMessage, time, CtrlrLog::MidiIn)
-#define _MOUT(device, midiMessage, time)					if (CtrlrLog::ctrlrLog != nullptr) CtrlrLog::ctrlrLog->logMessage(device, midiMessage, time, CtrlrLog::MidiOut)
+ #define _MIN(device, midiMessage, time)						if (CtrlrLog::ctrlrLog != nullptr) CtrlrLog::ctrlrLog->logMessage(device, midiMessage, time, CtrlrLog::MidiIn)
+ #define _MOUT(device, midiMessage, time)					if (CtrlrLog::ctrlrLog != nullptr) CtrlrLog::ctrlrLog->logMessage(device, midiMessage, time, CtrlrLog::MidiOut)
+// #define _MIN(device, midiMessage, time)
+// #define _MOUT(device, midiMessage, time)
 #define _MINSTR(message)									if (CtrlrLog::ctrlrLog != nullptr) CtrlrLog::ctrlrLog->logMessage(message, CtrlrLog::MidiIn)
 #define _MOUTSTR(message)									if (CtrlrLog::ctrlrLog != nullptr) CtrlrLog::ctrlrLog->logMessage(message, CtrlrLog::MidiOut)
 

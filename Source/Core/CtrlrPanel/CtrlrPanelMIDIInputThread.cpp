@@ -45,10 +45,18 @@ void CtrlrPanelMIDIInputThread::run()
 
 void CtrlrPanelMIDIInputThread::process()
 {
+    // Take the oversized messages out under the lock, then work on them outside it
+    Array<MidiMessage> big;
+    {
 	const ScopedWriteLock sl (lock);
+        big.swapWith(oversizedInput);
+    }
 
-	if (owner.getMidiOptionBool(panelMidiThruD2D))
+	//if (owner.getMidiOptionBool(panelMidiThruD2D))
 	{
+        const ScopedWriteLock sl(lock);
+
+        if (owner.getMidiOptionBool(panelMidiThruD2D)) {
 		owner.sendMidi (deviceInputBuffer);
 	}
 
@@ -74,6 +82,22 @@ void CtrlrPanelMIDIInputThread::process()
 	devicePartialBuffer.clear();
 }
 
+    // Messages too large for a MidiBuffer, handled one at a time, outside the lock
+    for (auto &m : big) {
+		DBG("process: oversized loop start, size=" + String(m.getRawDataSize()));
+        if (owner.getMidiOptionBool(panelMidiThruD2D))
+            owner.sendMidi(m);
+
+        if (inputComparator)
+            inputComparator->match(m);
+			DBG("process: oversized loop, calling panelReceivedMidi size=" + String(m.getRawDataSize()));
+owner.panelReceivedMidi (m, source);
+	DBG("process: after match, calling panelReceivedMidi");
+        if (owner.getMidiOptionBool(panelMidiThruD2H))
+            owner.getCtrlrManagerOwner().getProcessorOwner()->addMidiToOutputQueue(m); // dropped by its size guard
+    }
+}
+
 int CtrlrPanelMIDIInputThread::getListenerInputMidiChannel()
 {
 	return (owner.getMidiChannel(panelMidiInputChannelDevice));
@@ -88,10 +112,16 @@ void CtrlrPanelMIDIInputThread::handlePartialMIDIFromDevice (const uint8* messag
 
 void CtrlrPanelMIDIInputThread::handleMIDIFromDevice (const MidiMessage &message)
 {
-	const ScopedWriteLock sl (lock);
+    const ScopedWriteLock sl (lock);
 
 	if (owner.getMidiOptionBool(panelMidiRealtimeIgnore) && message.getRawDataSize() <= 1)
 		return;
+
+    if (message.getRawDataSize() > 65535) {
+        oversizedInput.add(message); // whole message, no 16-bit limit
+        notify();
+        return;
+    }
 
 	if (message.isNoteOnOrOff() || message.isMidiClock())
 	{
