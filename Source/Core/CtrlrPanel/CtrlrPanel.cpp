@@ -1760,6 +1760,17 @@ void CtrlrPanel::sendMidi (const MidiMessage &message, double millisecondCounter
 		queueMessageForHostOutput (message);
 }
 
+void CtrlrPanel::sendMidiToDevice (const MidiMessage &message, double millisecondCounterToStartAt)
+{
+	if (isMidiOutPaused())
+		return;
+
+	if (outputDevicePtr)
+	{
+		outputDevicePtr->sendMidiMessage (message, globalMidiDelay + millisecondCounterToStartAt);
+	}
+}
+
 void CtrlrPanel::sendMidi (CtrlrMidiMessage &m, double millisecondCounterToStartAt)
 {
 	if (isMidiOutPaused())

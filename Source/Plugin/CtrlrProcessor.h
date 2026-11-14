@@ -159,6 +159,9 @@ class CtrlrProcessor : public AudioProcessor, public ChangeBroadcaster
 		int numExportedParameters;          // snapshotted in the constructor; see getNumParameters()
 		int computeExportedParameterCount() const;
 		MidiMessageCollector midiCollector;
+		double preparedSampleRate = 44100.0;
+		double lastHostBlockTimeMs = 0.0;
+		bool hasHostBlockTime = false;
 		Array <PanelProcessorReference,CriticalSection> panelProcessors;
 		Array <CtrlrParameterFromHost,CriticalSection> parameterUpdates;
 		bool	thruHostToHost,
