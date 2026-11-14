@@ -330,6 +330,7 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		void sync();
 		CtrlrComponent *getComponent(const String &modulatorName);
 		void panelReceivedMidi(const MidiBuffer &buffer, const CtrlrMIDIDeviceType source = inputDevice);
+		void panelReceivedMidi(const MidiMessage &m, const CtrlrMIDIDeviceType source);
 		void handleAsyncUpdate();
 		bool isLoading() const;
 		bool getRestoreState();
@@ -469,6 +470,8 @@ class CtrlrPanel : public juce::ValueTree::Listener,
 		OwnedArray<CtrlrModulator, CriticalSection> ctrlrModulators;
 		Array<ComponentReference> radioGrouppedComponent;
 		Array<int, CriticalSection> globalVariables;
+		Array<MidiMessage> oversizedReceived; // too big for MidiMessageCollector's MidiBuffer
+		CriticalSection oversizedReceivedLock;
 		WeakReference<CtrlrLuaMethod> luaPanelMidiReceivedCbk, luaPanelMidiMultiReceivedCbk, luaPanelLoadedCbk,
 			luaPanelBeforeLoadCbk, luaPanelSavedCbk, luaPanelProgramChangedCbk, luaPanelGlobalChangedCbk,
 			luaPanelMessageHandlerCbk, luaPanelMidiChannelChangedCbk, luaPanelResourcesLoadedCbk,

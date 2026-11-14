@@ -45,12 +45,10 @@ CtrlrPanel::CtrlrPanel(CtrlrManager &_owner, const String &panelName, const int 
 	  midiInputThread(*this, inputDevice),
 	  midiControllerInputThread(*this, controllerDevice),
 	  restoreStateStatus(true),
-	  //   ctrlrLuaManager(0),
 	  ctrlrPanelEditor(nullptr),
 	  initialProgram(Ids::panelState),
 	  boostrapStateStatus(false),
 	  outputDevicePtr(nullptr),
-	  // ctrlrPanelUndoManager(nullptr),
 	  currentActionIndex(0),
 	  indexOfSavedState(-1) {
 	ctrlrPanelUndoManager.reset(new CtrlrPanelUndoManager(*this));
@@ -996,7 +994,17 @@ CtrlrPanelCanvas *CtrlrPanel::getCanvas() {
 CtrlrPanelWindowManager &CtrlrPanel::getWindowManager() {
 	return (panelWindowManager);
 }
+void CtrlrPanel::panelReceivedMidi(const MidiMessage &m, const CtrlrMIDIDeviceType /*source*/) {
+	// DBG("panelReceivedMidi(MidiMessage) size=" + String(m.getRawDataSize()));
+	if (m.getRawDataSize() > 65535) {
+		const ScopedLock sl(oversizedReceivedLock);
+		oversizedReceived.add(m);
+	} else {
+		midiMessageCollector.addMessageToQueue(m);
+	}
 
+	triggerAsyncUpdate();
+}
 void CtrlrPanel::panelReceivedMidi(const MidiBuffer &buffer, const CtrlrMIDIDeviceType source) {
 	MidiBuffer::Iterator i(buffer);
 	MidiMessage m;
@@ -1022,7 +1030,11 @@ void CtrlrPanel::handleAsyncUpdate() {
 	MidiBuffer buffer;
 
 	midiMessageCollector.removeNextBlockOfMessages(buffer, SAMPLERATE * 512);
-
+	Array<MidiMessage> big;
+	{
+		const ScopedLock sl(oversizedReceivedLock);
+		big.swapWith(oversizedReceived);
+	}
 	/* We mute here, so we don't have to lock the value tree in the MIDI thread
 		we need to empty the queue so it doesn't grow */
 	if (isMidiInPaused()) {
@@ -1036,12 +1048,21 @@ void CtrlrPanel::handleAsyncUpdate() {
 
 	if (luaPanelMidiReceivedCbk)
 		luaValid = luaPanelMidiReceivedCbk->isValid();
-
+	// DBG("handleAsyncUpdate: big=" + String(big.size()) + " luaValid=" + String((int)luaValid) +
+	// " paused=" + String((int)isMidiInPaused()));
 	while (i.getNextEvent(m, time)) {
 		if (luaValid)
 			getCtrlrLuaManager().getMethodManager().call(luaPanelMidiReceivedCbk, CtrlrMidiMessage(m));
 
 		listeners.call(&CtrlrPanel::Listener::midiReceived, m, inputDevice);
+	}
+
+	for (auto &bm : big) {
+		// DBG("handleAsyncUpdate: calling midiReceived with size=" + String(bm.getRawDataSize()));
+		if (luaValid)
+			getCtrlrLuaManager().getMethodManager().call(luaPanelMidiReceivedCbk, CtrlrMidiMessage(bm));
+
+		listeners.call(&CtrlrPanel::Listener::midiReceived, bm, inputDevice);
 	}
 }
 
@@ -1352,6 +1373,24 @@ void CtrlrPanel::sendMidi(CtrlrMidiMessage &m, double millisecondCounterToStartA
 		outputDevicePtr->sendMidiBuffer(filtered, sendTime);
 		queueMessagesForHostOutput(filtered);
 	} else {
+		// Oversized messages can't go through a MidiBuffer, send them as plain MidiMessages
+		auto &arr = m.getMidiMessageArray();
+		bool hasOversized = false;
+		// DBG("sendMidi: arraySize=" + String(arr.size()) +
+		// (arr.size() ? " first=" + String(arr.getReference(0).m.getRawDataSize()) : ""));
+		for (int i = 0; i < arr.size(); i++)
+			if (arr.getReference(i).m.getRawDataSize() > 65535) {
+				hasOversized = true;
+				break;
+			}
+
+		if (hasOversized) {
+			for (int i = 0; i < arr.size(); i++)
+				outputDevicePtr->sendMidiMessage(arr.getReference(i).m, sendTime);
+			queueMessageForHostOutput(m); // oversized ones are dropped by the guard already added
+			return;
+		}
+
 		outputDevicePtr->sendMidiBuffer(m.getMidiBuffer(), sendTime);
 		queueMessageForHostOutput(m);
 	}
