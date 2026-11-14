@@ -433,9 +433,22 @@ bool CtrlrProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const //
 
 //==============================================================================
 
-void CtrlrProcessor::addMidiToOutputQueue(CtrlrMidiMessage &m) {
+// Place above the addMidiToOutputQueue functions in CtrlrProcessor.cpp
+static bool fitsInMidiBuffer(const MidiMessage &m) {
+	// juce::MidiBuffer stores each event's size as a uint16, so larger messages get corrupted
+	if (m.getRawDataSize() > 65535) {
+		Logger::writeToLog("CtrlrProcessor: dropping " + String(m.getRawDataSize()) +
+						   "-byte message for host output (exceeds MidiBuffer event limit)");
+		return false;
+	}
+	return true;
+}
 
+void CtrlrProcessor::addMidiToOutputQueue(CtrlrMidiMessage &m) {
 	for (int i = 0; i < m.getNumMessages(); i++) {
+		if (!fitsInMidiBuffer(m.getReference(i).m))
+			continue;
+
 		m.getReference(i).m.setTimeStamp(i + 1);
 		midiCollector.addMessageToQueue(m.getReference(i).m);
 	}
@@ -443,24 +456,20 @@ void CtrlrProcessor::addMidiToOutputQueue(CtrlrMidiMessage &m) {
 
 void CtrlrProcessor::addMidiToOutputQueue(const CtrlrMidiMessage &m) {
 	for (int i = 0; i < m.getNumMessages(); i++) {
+		if (!fitsInMidiBuffer(m.getReference(i).m))
+			continue;
+
 		m.getReference(i).m.setTimeStamp(i + 1);
 		midiCollector.addMessageToQueue(m.getReference(i).m);
 	}
 }
 
-void CtrlrProcessor::addMidiToOutputQueue(const MidiMessage &m) { midiCollector.addMessageToQueue(m); }
+void CtrlrProcessor::addMidiToOutputQueue(const MidiMessage &m) {
+	if (!fitsInMidiBuffer(m))
+		return;
 
-// void CtrlrProcessor::addMidiToOutputQueue (const MidiBuffer &buffer)
-//{
-//	MidiBuffer::Iterator i(buffer);
-//	MidiMessage m;
-//	int time;
-//
-//	while (i.getNextEvent (m, time))
-//	{
-//		midiCollector.addMessageToQueue (m);
-//	}
-// }
+	midiCollector.addMessageToQueue(m);
+}
 
 void CtrlrProcessor::addMidiToOutputQueue(const MidiBuffer &buffer) // Updated v5.6.34
 {
