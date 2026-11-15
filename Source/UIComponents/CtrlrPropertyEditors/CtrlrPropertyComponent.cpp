@@ -2265,9 +2265,9 @@ CtrlrSysExPropertyComponent::CtrlrSysExPropertyComponent(const Value &_valueToCo
 	sysexPreview->setJustificationType(Justification::centredLeft);
 	sysexPreview->setEditable(true, false, false);
 	sysexPreview->addListener(this);
-	sysexPreview->setColour(Label::backgroundColourId, findColour(ComboBox::backgroundColourId));
-	sysexPreview->setColour(Label::outlineColourId, findColour(ComboBox::outlineColourId));
-	sysexPreview->setColour(TextEditor::highlightColourId, findColour(TextEditor::focusedOutlineColourId));
+	sysexPreview->setColour(Label::textColourId, findColour(TextEditor::textColourId));
+	sysexPreview->setColour(TextEditor::backgroundColourId, findColour(TextEditor::backgroundColourId));
+	sysexPreview->setColour(TextEditor::textColourId, findColour(Label::textColourId));
 
 	editButton = std::make_unique<TextButton>(L"Edit");
 	addAndMakeVisible(editButton.get());
