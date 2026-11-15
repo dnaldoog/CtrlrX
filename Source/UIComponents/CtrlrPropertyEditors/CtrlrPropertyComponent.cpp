@@ -70,7 +70,7 @@ void CtrlrPropertyComponent::paint(Graphics &g) // Property ID/Description
 	static const std::map<String, Colour> customHighlights = {{"name", Colour(0x33ffaa00)},
 															  {"componentVisibleName", Colour(0x33ffaa00)},
 															  {"midiMessageType", Colour(0x44ff69b4)},
-															  //{"midiMessageSysExFormula", Colour(0x44ff69b4)},
+															  {"midiMessageSysExFormula", Colour(0x44ff69b4)},
 															  {"luaModulatorValueChange", Colours::mediumslateblue},
 															  {"uiPanelImageResource", Colours::aqua},
 															  {"uiPanelIconResource", Colours::aquamarine},
