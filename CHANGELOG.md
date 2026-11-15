@@ -3,7 +3,7 @@
 
 ### CtrlrX v8.0.82 11/15/2026
 
-shared header (e.g. CtrlrMidiMessage.h or a small CtrlrMidiLimits.h)
+Shared header (e.g. CtrlrMidiMessage.h or a small CtrlrMidiLimits.h)
 MidiBuffer stores each event as [int32 time][uint16 size][data] and advances by a uint16
 total (data + 6), so the largest event that survives is 65535 - 6 = 65529 bytes.
 *FIX*: Declared `static constexpr int kMaxMidiBufferEventBytes = 65529;`
