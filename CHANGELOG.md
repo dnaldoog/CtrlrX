@@ -1,23 +1,47 @@
 [&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
 
-### CtrlrX v8.0.81 11/15/2026
+### CtrlrX v8.0.82 11/15/2026
+
+Shared header (e.g. CtrlrMidiMessage.h or a small CtrlrMidiLimits.h)
+MidiBuffer stores each event as [int32 time][uint16 size][data] and advances by a uint16
+total (data + 6), so the largest event that survives is 65535 - 6 = 65529 bytes.
+*FIX*: Declared `static constexpr int kMaxMidiBufferEventBytes = 65529;`
+
+### CtrlrX v8.0.81 11/16/2026
 
 - *FIX*: SysEx messages larger than 65,535 bytes can now be sent and received. Previously JUCE’s MidiBuffer corrupted them, which caused a crash in 5.6.36 (current release) and silent failures in this JUCE 8 version builds. Note: sending messages this large blocks until the data has been written (about 21 seconds for 67 KB on DIN hardware), and very large messages can’t be forwarded to a plugin host. Virtual loopback ports such as loopMIDI may have their own SysEx size limit.
 - *FIX*: Momentary click behaviour on uiImageButton reverting to false on click and not latching [RE:](https://github.com/damiensellier/CtrlrX/issues/239#issuecomment-6877634671)
 - *FIX*: Disappearing text in CtrlrPanelEditor Sysex field with darker L&F themes
-- d0155224b Fix MIDI routing and host sample-position handling for 5.6.37 Thanks to @francosiuk [PR#11](https://github.com/dnaldoog/CtrlrX/pull/11)
+- d0155224b Fix MIDI routing and host sample-position handling for 5.6.37 Thanks to @francosiuk pr 11
 - https://github.com/dnaldoog/CtrlrX/commit/70c1823f39f25a54612bbee85483f6306e0cdb8f
+- *FIX*: Fix AlertWindow not dismissing after runModalLoop() on JUCE 8
+
+In Ctrlr 5.3.201, LAlertWindow::runModalLoop() invoked the Lua handler
+registered via setModalHandler() when the window closed. The JUCE 8
+port dropped that call, so scripts relying on the handler (typically to
+hide the window) left the AlertWindow on screen after OK/Cancel.
+
+- Add LAlertWindow::invokeLuaHandler() and call it from both
+  runModalLoop() and runModalLoopAsync()
+- Hide the window in C++ before calling the handler, so scripts no
+  longer need an explicit setVisible(false)
+- Log handler errors instead of swallowing them
+
+Restores 5.3.201 behaviour for panels using setModalHandler() with
+runModalLoop()
+- https://github.com/dnaldoog/CtrlrX/commit/1e73cdabc6de883f86b4328da590bfa45c014284
 
 ### CtrlrX v8.0.80 11/12/2026
-Merge branch 'pr-7' into dev8. Thanks to @francosiuk [PR#7](https://github.com/dnaldoog/CtrlrX/pull/7)
+Merge branch 'pr-7' into dev8 thanks to francoisuk
 the MIDI routing/sample-position fix is prepared on a clean MIDI-only branch behind this PR.
 
 - *FIX*: https://github.com/dnaldoog/CtrlrX/commit/845c72e525e6661c9e5486dfde95f24b7d8522a4Combined VST+MIDI branch: 44/44
 Clean MIDI-only branch: 42/44; the only failures are the two VST parameter tests this PR fixes
-No VST hunks are included in the MIDI branch  Thanks to @francosiuk [PR#9](https://github.com/dnaldoog/CtrlrX/pull/9)
+No VST hunks are included in the MIDI branch  Thanks to @francosiuk pr 9
 - https://github.com/dnaldoog/CtrlrX/commit/845c72e525e6661c9e5486dfde95f24b7d8522a4 
 
+.
 
 ### CtrlrX v8.0.79 11/09/2026
 
