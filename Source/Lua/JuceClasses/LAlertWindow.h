@@ -13,7 +13,7 @@ class LAlertWindow : public AlertWindow
 		void runModalLoopAsync();
 		void setModalHandler(luabind::object const& _o);
 		ComboBox *getComboBoxComponent(const String &comboName);
-
+		void invokeLuaHandler(int ret);
 		static void showMessageBox (AlertIconType iconType, const String& title, const String& message, const String& buttonText);
 		static void showMessageBoxAsync (AlertIconType iconType, const String& title, const String& message, const String& buttonText);
 		static bool showOkCancelBox (AlertIconType iconType, const String& title, const String& message, const String& button1Text, const String& button2Text);

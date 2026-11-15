@@ -149,48 +149,99 @@ ComboBox* LAlertWindow::getComboBoxComponent(const String &comboName)
 {
     return AlertWindow::getComboBoxComponent (comboName);
 }
+// in LAlertWindow.h: void invokeLuaHandler(int ret);
 
-int LAlertWindow::runModalLoop()
-{
-    auto *mm = juce::MessageManager::getInstance();
+void LAlertWindow::invokeLuaHandler(int ret) {
+	if (!o.is_valid())
+		return;
+	try {
+		// see note below on call_function vs call_member
+		luabind::call_function<void>(o, ret, this);
+	} catch (const std::exception &e) {
+		// log e.what() here instead of swallowing it
+	}
+}
 
-    if (!mm->isThisTheMessageThread())
-    {
-        jassertfalse; // must be called from the Message Thread
-        return 0;
-    }
+int LAlertWindow::runModalLoop() {
+	auto *mm = juce::MessageManager::getInstance();
+	if (!mm->isThisTheMessageThread()) {
+		jassertfalse;
+		return 0;
+	}
 
-    bool finished = false;
+	bool finished = false;
     int resultCode = 0;
+	Component::SafePointer<LAlertWindow> safeThis(this);
 
-    enterModalState(true, ModalCallbackFunction::create([&finished, &resultCode](int ret)
-    {
-        resultCode = ret;
-        finished = true;
-    }), false); // deleteWhenDismissed = false — Lua/luabind still owns this object
+	enterModalState(true, ModalCallbackFunction::create([safeThis, &finished, &resultCode](int ret) {
+						resultCode = ret;
+						finished = true;
+						if (safeThis != nullptr) {
+							safeThis->setVisible(false);	 // hide in C++ so scripts don't have to
+							safeThis->invokeLuaHandler(ret); // restores 5.3.201 behaviour
+						}
+					}),
+					false);
 
-    while (!finished)
+	while (!finished)
         mm->runDispatchLoopUntil(20);
 
     return resultCode;
 }
 
-// --- Modern JUCE 7/8 Path ---
 void LAlertWindow::runModalLoopAsync() {
 	Component::SafePointer<LAlertWindow> safeThis(this);
 
 	enterModalState(true, ModalCallbackFunction::create([safeThis](int ret) {
-						if (safeThis != nullptr && safeThis->o.is_valid()) {
-							try {
-								luabind::call_member<void>(safeThis->o, "callback", ret, safeThis.getComponent());
-							} catch (const std::exception &e) {
-								// CtrlrLog::formatMessage(CtrlrLog::CtrlrLogMessage(juce::String("Error in AlertWindow
-								// modal handler callback: ") + e.what()));
-							}
-						}
+						if (safeThis == nullptr)
+							return;
+						safeThis->setVisible(false);
+						safeThis->invokeLuaHandler(ret);
 					}),
 					false);
 }
+
+// int LAlertWindow::runModalLoop()
+// {
+//     auto *mm = juce::MessageManager::getInstance();
+
+//     if (!mm->isThisTheMessageThread())
+//     {
+//         jassertfalse; // must be called from the Message Thread
+//         return 0;
+//     }
+
+//     bool finished = false;
+//     int resultCode = 0;
+
+//     enterModalState(true, ModalCallbackFunction::create([&finished, &resultCode](int ret)
+//     {
+//         resultCode = ret;
+//         finished = true;
+//     }), false); // deleteWhenDismissed = false — Lua/luabind still owns this object
+
+//     while (!finished)
+//         mm->runDispatchLoopUntil(20);
+
+//     return resultCode;
+// }
+
+// // --- Modern JUCE 7/8 Path ---
+// void LAlertWindow::runModalLoopAsync() {
+// 	Component::SafePointer<LAlertWindow> safeThis(this);
+
+// 	enterModalState(true, ModalCallbackFunction::create([safeThis](int ret) {
+// 						if (safeThis != nullptr && safeThis->o.is_valid()) {
+// 							try {
+// 								luabind::call_member<void>(safeThis->o, "callback", ret, safeThis.getComponent());
+// 							} catch (const std::exception &e) {
+// 								// CtrlrLog::formatMessage(CtrlrLog::CtrlrLogMessage(juce::String("Error in AlertWindow
+// 								// modal handler callback: ") + e.what()));
+// 							}
+// 						}
+// 					}),
+// 					false);
+// }
 
 void LAlertWindow::setModalHandler(luabind::object const& _o)
 {
