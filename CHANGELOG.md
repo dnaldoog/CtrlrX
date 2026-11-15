@@ -1,6 +1,13 @@
 [&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
 
+### CtrlrX v8.0.82 11/15/2026
+
+shared header (e.g. CtrlrMidiMessage.h or a small CtrlrMidiLimits.h)
+MidiBuffer stores each event as [int32 time][uint16 size][data] and advances by a uint16
+total (data + 6), so the largest event that survives is 65535 - 6 = 65529 bytes.
+*FIX*: Declared `static constexpr int kMaxMidiBufferEventBytes = 65529;`
+
 ### CtrlrX v8.0.81 11/15/2026
 
 - *FIX*: SysEx messages larger than 65,535 bytes can now be sent and received. Previously JUCE’s MidiBuffer corrupted them, which caused a crash in 5.6.36 (current release) and silent failures in this JUCE 8 version builds. Note: sending messages this large blocks until the data has been written (about 21 seconds for 67 KB on DIN hardware), and very large messages can’t be forwarded to a plugin host. Virtual loopback ports such as loopMIDI may have their own SysEx size limit.
