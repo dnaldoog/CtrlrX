@@ -77,53 +77,38 @@ void CtrlrImageButton::timerCallback()
 		stopTimer();
 	}
 }
+static bool isMomentaryMode(int mode) {
+	return mode == CtrlrImageButton::Momentary || mode == CtrlrImageButton::MomentaryMouseOver;
+}
 
 void CtrlrImageButton::mouseDown(const MouseEvent &e)
 {
-    DBG("MD CtrlrIMAGEbutton");
+	// Value: toggles on every click, for all modes
+	// (buttonClicked -> valueMap->increment -> setComponentValue)
+	ctrlrButton->triggerClick();
 
-    const int mode = getButtonMode();
+	// Visual: momentary modes flash the "pressed" frame only while held.
+	// Normal modes already follow the value via setComponentValue's setToggleState.
+	if (isMomentaryMode(getButtonMode()))
+		ctrlrButton->setToggleState(true, dontSendNotification);
 
-    // 1. Toggle or Set Value based on Mode
-    if (mode == Momentary || mode == MomentaryMouseOver)
-    {
-        // Momentary: ON while pressed (usually value 1 or max)
-        setComponentValue(1.0, true);
-    }
-    else
-    {
-        // Normal / NormalMouseOver: Toggle value (0 <-> 1)
-        const double currentValue = getComponentValue();
-        const double newValue = (currentValue == 0.0) ? 1.0 : 0.0;
-        setComponentValue(newValue, true);
-    }
+	if ((bool)getProperty(Ids::uiButtonRepeat) && !isTimerRunning())
+		startTimer((int)getProperty(Ids::uiButtonRepeatRate));
 
-    // 2. Force internal button to update its visual "down" state and repaint
-    if (ctrlrButton != nullptr)
-    {
-        ctrlrButton->repaint();
-    }
-
-    // 3. Delegate to CtrlrComponent for Lua callbacks & panel interaction
-    CtrlrComponent::mouseDown(e);
+	ctrlrButton->repaint();
+	CtrlrComponent::mouseDown(e);
 }
 
 void CtrlrImageButton::mouseUp(const MouseEvent &e)
 {
-    const int mode = getButtonMode();
+	stopTimer();
 
-    // Momentary modes return to OFF (0) on release
-    if (mode == Momentary || mode == MomentaryMouseOver)
-    {
-        setComponentValue(0.0, true);
-    }
+	// Visual only. The value is NOT touched here.
+	if (isMomentaryMode(getButtonMode()))
+		ctrlrButton->setToggleState(false, dontSendNotification);
 
-    if (ctrlrButton != nullptr)
-    {
-        ctrlrButton->repaint();
-    }
-
-    CtrlrComponent::mouseUp(e);
+	ctrlrButton->repaint();
+	CtrlrComponent::mouseUp(e);
 }
 
 void CtrlrImageButton::mouseEnter(const MouseEvent &e)
@@ -139,14 +124,14 @@ void CtrlrImageButton::mouseEnter(const MouseEvent &e)
 
 void CtrlrImageButton::mouseExit(const MouseEvent &e)
 {
-    // Trigger repaint on hover exit for MouseOver modes
-    if (ctrlrButton != nullptr)
-    {
-        ctrlrButton->repaint();
-    }
+	// Release the flash if the cursor leaves while held
+	if (getButtonMode() == MomentaryMouseOver)
+		ctrlrButton->setToggleState(false, dontSendNotification);
 
-    CtrlrComponent::mouseExit(e);
+	ctrlrButton->repaint();
+	CtrlrComponent::mouseExit(e);
 }
+
 double CtrlrImageButton::getComponentMaxValue()
 {
 	return (valueMap->getNonMappedMax());
