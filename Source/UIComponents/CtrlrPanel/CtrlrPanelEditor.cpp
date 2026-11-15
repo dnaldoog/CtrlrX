@@ -191,23 +191,6 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 	setProperty(Ids::uiPanelSnapSize, 8);
 	setProperty(Ids::uiPanelPropertiesOnRight, false);
 
-	setProperty(Ids::luaPanelPaintBackground, COMBO_ITEM_NONE);
-	setProperty(Ids::luaViewPortResized, COMBO_ITEM_NONE);
-	setProperty(Ids::luaPanelResized, COMBO_ITEM_NONE);
-	setProperty(Ids::luaPanelFileDragDropHandler, COMBO_ITEM_NONE);
-	setProperty(Ids::luaPanelFileDragEnterHandler, COMBO_ITEM_NONE);
-	setProperty(Ids::luaPanelFileDragExitHandler, COMBO_ITEM_NONE);
-
-	setProperty(Ids::uiPanelInvisibleComponentAlpha, 0.5);
-
-	setProperty(Ids::uiPanelTooltipPlacement, BubbleComponent::below);
-	setProperty(Ids::uiPanelTooltipFont, Font(12.0f, Font::plain).toString());
-	setProperty(Ids::uiPanelTooltipColour, (String)Component::findColour(Label::textColourId).toString()); // 0xff000000
-	setProperty(Ids::uiPanelTooltipBackgroundColour,
-				(String)Component::findColour(BubbleComponent::backgroundColourId).toString()); // 0xffeeeebb
-	setProperty(Ids::uiPanelTooltipOutlineColour,
-				(String)Component::findColour(BubbleComponent::outlineColourId).toString()); // 0xff000000
-	setProperty(Ids::uiPanelTooltipCornerRound, 1.0);
 	if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) != 0) {
 		// On macOS, default to true only if the running app has the correct JIT entitlements, otherwise false
 		setProperty(Ids::uiPanelJitMode,
@@ -252,6 +235,23 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 		// Set the uiPanelLookAndFeel property with the determined string
 		setProperty(Ids::uiPanelLookAndFeel, lookAndFeelDesc);
 	}
+	setProperty(Ids::luaPanelPaintBackground, COMBO_ITEM_NONE);
+	setProperty(Ids::luaViewPortResized, COMBO_ITEM_NONE);
+	setProperty(Ids::luaPanelResized, COMBO_ITEM_NONE);
+	setProperty(Ids::luaPanelFileDragDropHandler, COMBO_ITEM_NONE);
+	setProperty(Ids::luaPanelFileDragEnterHandler, COMBO_ITEM_NONE);
+	setProperty(Ids::luaPanelFileDragExitHandler, COMBO_ITEM_NONE);
+
+	setProperty(Ids::uiPanelInvisibleComponentAlpha, 0.5);
+
+	setProperty(Ids::uiPanelTooltipPlacement, BubbleComponent::below);
+	setProperty(Ids::uiPanelTooltipFont, Font(12.0f, Font::plain).toString());
+	setProperty(Ids::uiPanelTooltipColour, (String)Component::findColour(Label::textColourId).toString()); // 0xff000000
+	setProperty(Ids::uiPanelTooltipBackgroundColour,
+				(String)Component::findColour(BubbleComponent::backgroundColourId).toString()); // 0xffeeeebb
+	setProperty(Ids::uiPanelTooltipOutlineColour,
+				(String)Component::findColour(BubbleComponent::outlineColourId).toString()); // 0xff000000
+	setProperty(Ids::uiPanelTooltipCornerRound, 1.0);
 #if JUCE_LINUX
     juce::Component::SafePointer<CtrlrPanelEditor> safeThis(this);
 
