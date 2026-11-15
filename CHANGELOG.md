@@ -1,7 +1,7 @@
 [&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
 
-### CtrlrX v8.0.81 11/14/2026
+### CtrlrX v8.0.81 11/15/2026
 
 - *FIX*: SysEx messages larger than 65,535 bytes can now be sent and received. Previously JUCE’s MidiBuffer corrupted them, which caused a crash in 5.6.36 (current release) and silent failures in this JUCE 8 version builds. Note: sending messages this large blocks until the data has been written (about 21 seconds for 67 KB on DIN hardware), and very large messages can’t be forwarded to a plugin host. Virtual loopback ports such as loopMIDI may have their own SysEx size limit.
 - *FIX*: Momentary click behaviour on uiImageButton reverting to false on click and not latching [RE:](https://github.com/damiensellier/CtrlrX/issues/239#issuecomment-6877634671)
