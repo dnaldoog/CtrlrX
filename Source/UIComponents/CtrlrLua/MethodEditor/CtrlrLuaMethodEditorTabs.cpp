@@ -48,9 +48,9 @@ void CtrlrLuaMethodEditorTabs::currentTabChanged(int newCurrentTabIndex, const S
 static String getMethodVirtualFolderPath(CtrlrLuaMethod* method)
 {
     if (method == nullptr)
-        return "/";
+		return "";
 
-    ValueTree parent = method->getMethodTree().getParent();
+	ValueTree parent = method->getMethodTree().getParent();
     StringArray pathParts;
 
     while (parent.isValid())
@@ -68,7 +68,7 @@ static String getMethodVirtualFolderPath(CtrlrLuaMethod* method)
         parent = parent.getParent();
     }
 
-    return "/" + pathParts.joinIntoString("/");   // "/COMPONENT/TVF", or "/" for top level
+	return "" + pathParts.joinIntoString("/"); // "/COMPONENT/TVF", or "/" for top level
 }
 
 void CtrlrLuaMethodEditorTabs::updateAllTooltips()
