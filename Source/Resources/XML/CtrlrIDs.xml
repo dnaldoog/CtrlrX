@@ -340,6 +340,7 @@
   <id name="uiComboMenuMaxColumns" text="Combo menu maximum columns" type="VarNumeric" defaults="@columns" />
   <id name="uiComboMenuBoundToPanel" text="Bind combo menu to panel bounds" type="Bool"/>
   <id name="uiComboMenuDirection" text="Combo menu popup direction" type="VarText" defaults="Automatic,Upwards,Downwards"/>
+  <id name="uiComboMenuMaxWidth" text="Combo menu maximum width (0 = unlimited)" type="VarNumeric" defaults="0" />
   <id name="uiComboLookAndFeelIsCustom" text="Combo LookAndFeel mode"  type="Bool"  defaults="Using my colours/Using LNF colours" Default="0" />
 
   <!-- List box -->

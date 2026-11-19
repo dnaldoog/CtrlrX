@@ -66,6 +66,11 @@ class CtrlrCombo : public CtrlrComponent,
 				void positionComboBoxText(juce::ComboBox &box, juce::Label &label) override;
 				juce::PopupMenu::Options getOptionsForComboBoxPopupMenu(juce::ComboBox &box,
 																		juce::Label &label) override;
+				void getIdealPopupMenuItemSize(const juce::String &text, bool isSeparator,
+												int standardMenuItemHeight, int &idealWidth, int &idealHeight) override;
+				void getIdealPopupMenuItemSizeWithOptions(const juce::String &text, bool isSeparator,
+															 int standardMenuItemHeight, int &idealWidth, int &idealHeight,
+															 const juce::PopupMenu::Options &options) override;
 
 			private:
 				CtrlrCombo &owner;
@@ -119,6 +124,7 @@ class CtrlrCombo : public CtrlrComponent,
 
 				void refreshMatches();
 				void commitRow(int row);
+				void commitMatch(int matchIndex);
 				void closePopup();
 
 				CtrlrCombo &owner;
@@ -131,6 +137,7 @@ class CtrlrCombo : public CtrlrComponent,
 						double score;
 				};
 				std::vector<Match> matches;
+				int columns = 1;
 
 				JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FuzzySearchPanel)
 		};

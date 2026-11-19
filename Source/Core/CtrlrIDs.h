@@ -388,6 +388,7 @@ DECLARE_ID(uiComboMenuBackgroundRibbed);
 DECLARE_ID(uiComboMenuMaxColumns);
 DECLARE_ID(uiComboMenuBoundToPanel);
 DECLARE_ID(uiComboMenuDirection);
+DECLARE_ID(uiComboMenuMaxWidth);
 DECLARE_ID(uiComboDynamicContent);
 DECLARE_ID(uiComboButtonGradient);
 DECLARE_ID(uiComboButtonGradientColour1);
