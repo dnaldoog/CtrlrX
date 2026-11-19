@@ -5,8 +5,8 @@
 ### CtrlrX v8.0.83 11/19/2026
 
 
-- *ADDON*:Right click on tab in lua Editor to reveal file in tree
-- *ADDON*:Drag and Drop to reorder open tabs in lua editor
+- *ADDON*: Right click on tab in lua Editor to reveal file in tree
+- *ADDON*: Drag and Drop to reorder open tabs in lua editor
 - *FIX*: In lua preferences, line background colour on APPLY was not refreshing
 - https://github.com/dnaldoog/CtrlrX/commit/b7fc9f7c0043121d72bb0f034bd67f0e6d00ecb1
 
