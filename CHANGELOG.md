@@ -1,6 +1,15 @@
 [&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
 
+### CtrlrX v8.0.84 11/20/2026
+
+
+- *ADDON*: Add multiple column layout for uiCombo (PopupMenu)
+- https://github.com/dnaldoog/CtrlrX/commit/b7fc9f7c0043121d72bb0f034bd67f0e6d00ecb1
+- *FIX*: Thanks to @francosiuk pr 12
+  - uiComboSearch bypassed the native popup entirely, so
+  - uiComboMenuMaxColumns and uiComboMenuBoundToPanel were ignored for search-enabled combos.
+  - There was no width cap. .withMinimumWidth() is a floor, not a maximum, so long labels could extend the popup beyond the panel. 
 
 ### CtrlrX v8.0.83 11/19/2026
 

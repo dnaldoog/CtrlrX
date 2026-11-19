@@ -31,6 +31,10 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 	setProperty(Ids::uiComboSelectedIndex, -1);
 	setProperty(Ids::uiComboContent, "");
 	setProperty(Ids::uiComboLookAndFeelIsCustom, true);
+	setProperty(Ids::uiComboMenuMaxColumns, 1);
+	setProperty(Ids::uiComboMenuBoundToPanel, false);
+	setProperty(Ids::uiComboMenuDirection, "Automatic");
+	setProperty(Ids::uiComboMenuMaxWidth, 0);
 	// Keep custom double-arrow renderer attached
 	ctrlrCombo->setLookAndFeel(&lf);
 
@@ -697,7 +701,11 @@ CtrlrCombo::FuzzySearchPanel::FuzzySearchPanel(CtrlrCombo &ownerCombo) : owner(o
 	resultsList.setWantsKeyboardFocus(false);
 	resultsList.setMouseClickGrabsKeyboardFocus(false);
 
-	const int width = jmax(220, owner.getOwnedComboBox()->getWidth());
+	columns = juce::jlimit(1, 7, (int)owner.getProperty(Ids::uiComboMenuMaxColumns, 1));
+	int width = jmax(220, owner.getOwnedComboBox()->getWidth()) * columns;
+	const int maxWidth = juce::jlimit(0, 4000, (int)owner.getProperty(Ids::uiComboMenuMaxWidth, 0));
+	if (maxWidth > 0)
+		width = juce::jmin(width, jmax(220, maxWidth));
 	setSize(width, 60);
 
 	refreshMatches();
@@ -752,12 +760,12 @@ void CtrlrCombo::FuzzySearchPanel::textEditorEscapeKeyPressed(juce::TextEditor &
 }
 
 int CtrlrCombo::FuzzySearchPanel::getNumRows() {
-	return (int)matches.size();
+	return columns > 0 ? (int)((matches.size() + (size_t)columns - 1) / (size_t)columns) : 0;
 }
 
 void CtrlrCombo::FuzzySearchPanel::paintListBoxItem(int rowNumber, juce::Graphics &g, int width, int height,
 													bool rowIsSelected) {
-	if (!isPositiveAndBelow(rowNumber, (int)matches.size()))
+	if (!isPositiveAndBelow(rowNumber, getNumRows()))
 		return;
 
 	const Colour bgColour = VAR2COLOUR(owner.getProperty(Ids::uiComboMenuBackgroundColour));
@@ -769,15 +777,29 @@ void CtrlrCombo::FuzzySearchPanel::paintListBoxItem(int rowNumber, juce::Graphic
 	g.setColour(rowIsSelected ? hiTextColour : textColour);
 	g.setFont(owner.getOwner().getOwnerPanel().getOwner().getFontManager().getFontFromString(
 		owner.getProperty(Ids::uiComboMenuFont)));
-	g.drawFittedText(matches[(size_t)rowNumber].text, 6, 0, width - 12, height, juce::Justification::centredLeft, 1);
+
+	const int cellWidth = jmax(1, width / jmax(1, columns));
+	for (int col = 0; col < columns; ++col) {
+		const int index = rowNumber * columns + col;
+		if (index >= (int)matches.size())
+			break;
+		g.drawFittedText(matches[(size_t)index].text, col * cellWidth + 6, 0, jmax(1, cellWidth - 12), height,
+						 juce::Justification::centredLeft, 1);
+	}
 }
 
-void CtrlrCombo::FuzzySearchPanel::listBoxItemClicked(int row, const juce::MouseEvent &) {
-	commitRow(row);
+void CtrlrCombo::FuzzySearchPanel::listBoxItemClicked(int row, const juce::MouseEvent &e) {
+	// Use the row's width, not the outer ListBox width: the latter includes the
+	// vertical scrollbar and shifts every column boundary to the left.
+	const int rowWidth = e.eventComponent != nullptr ? e.eventComponent->getWidth()
+												 : resultsList.getViewport()->getWidth();
+	const int cellWidth = jmax(1, rowWidth / jmax(1, columns));
+	const int col = juce::jlimit(0, jmax(0, columns - 1), e.x / cellWidth);
+	commitMatch(row * columns + col);
 }
 
 bool CtrlrCombo::FuzzySearchPanel::keyPressed(const juce::KeyPress &key, juce::Component *originatingComponent) {
-	const int numRows = (int)matches.size();
+	const int numRows = getNumRows();
 
 	if (key == juce::KeyPress::downKey) {
 		if (numRows > 0)
@@ -800,20 +822,38 @@ void CtrlrCombo::FuzzySearchPanel::refreshMatches() {
 	matches.clear();
 
 	auto &valueMap = owner.getValueMap();
-	const String query = searchBox.getText();
+	const String query = searchBox.getText().trim();
 
 	if (query.isEmpty()) {
 		for (int i = 0; i < valueMap.getNumValues(); ++i)
 			matches.push_back({i + 1, valueMap.getTextForIndex(i), 0.0});
 	} else {
-		const std::string queryStd = query.toLowerCase().toStdString();
+		const String queryLower = query.toLowerCase();
+		const std::string queryStd = queryLower.toStdString();
 
+		// 1. First pass: check for direct substring containment (e.g., "35" in "035: Bass" or "35")
 		for (int i = 0; i < valueMap.getNumValues(); ++i) {
 			const String itemText = valueMap.getTextForIndex(i);
-			const double score = rapidfuzz::fuzz::WRatio(queryStd, itemText.toLowerCase().toStdString());
+			const String itemLower = itemText.toLowerCase();
 
-			if (score > 40.0) // cutoff - drop weak/noise matches
-				matches.push_back({i + 1, itemText, score});
+			if (itemLower.contains(queryLower)) {
+				// Score substring matches above 100.0 so they always rank first,
+				// using WRatio as a tie-breaker (exact match "35" scores 200.0, "135" scores ~180.0)
+				const double tieBreaker = rapidfuzz::fuzz::WRatio(queryStd, itemLower.toStdString());
+				matches.push_back({i + 1, itemText, 100.0 + tieBreaker});
+			}
+		}
+
+		// 2. Fallback: if no exact substring matches exist (e.g., user made a typo like "bsas" for "bass"),
+		// run fuzzy matching with a stricter cutoff (70.0+ instead of 40.0)
+		if (matches.empty()) {
+			for (int i = 0; i < valueMap.getNumValues(); ++i) {
+				const String itemText = valueMap.getTextForIndex(i);
+				const double score = rapidfuzz::fuzz::WRatio(queryStd, itemText.toLowerCase().toStdString());
+
+				if (score > 70.0)
+					matches.push_back({i + 1, itemText, score});
+			}
 		}
 
 		std::stable_sort(matches.begin(), matches.end(),
@@ -823,17 +863,21 @@ void CtrlrCombo::FuzzySearchPanel::refreshMatches() {
 	resultsList.updateContent();
 	resultsList.selectRow(matches.empty() ? -1 : 0, false, true);
 
-	const int rowsShown = jlimit(1, 8, jmax(1, (int)matches.size()));
+	const int rowsShown = jlimit(1, 8, jmax(1, getNumRows()));
 	setSize(getWidth(), 34 + rowsShown * 22);
 
 	repaint();
 }
 
 void CtrlrCombo::FuzzySearchPanel::commitRow(int row) {
-	if (!isPositiveAndBelow(row, (int)matches.size()))
+	commitMatch(row * columns);
+}
+
+void CtrlrCombo::FuzzySearchPanel::commitMatch(int matchIndex) {
+	if (!isPositiveAndBelow(matchIndex, (int)matches.size()))
 		return;
 
-	owner.setSelectedId(matches[(size_t)row].id, false);
+	owner.setSelectedId(matches[(size_t)matchIndex].id, false);
 	closePopup();
 }
 
@@ -1096,4 +1140,53 @@ bool CtrlrCombo::canPerformFuzzySearch() const {
 
 	// Search ONLY works if enabled in inspector AND NOT in edit mode
 	return isEnabledInInspector && !isEditingLayout;
+}
+juce::PopupMenu::Options CtrlrCombo::CtrlrComboLF::getOptionsForComboBoxPopupMenu(juce::ComboBox &box,
+																				  juce::Label &label) {
+	// Read properties from the owning CtrlrCombo
+	const int maxColumns = juce::jlimit(1, 7, (int)owner.getProperty(Ids::uiComboMenuMaxColumns, 1));
+	const bool boundToPanel = (bool)owner.getProperty(Ids::uiComboMenuBoundToPanel, false);
+	const juce::String direction = owner.getProperty(Ids::uiComboMenuDirection, "Automatic").toString();
+
+	auto options = juce::PopupMenu::Options()
+					   .withTargetComponent(&box)
+					   .withItemThatMustBeVisible(box.getSelectedId())
+					   .withInitiallySelectedItem(box.getSelectedId())
+					   .withMinimumWidth(box.getWidth())
+					   .withMaximumNumColumns(maxColumns)
+					   .withStandardItemHeight(label.getHeight());
+
+	// Optional: Constrain popup menu within the Panel Editor bounds instead of the whole screen
+	if (boundToPanel) {
+		juce::Component::SafePointer<CtrlrPanelEditor> editor(owner.getOwner().getOwnerPanel().getEditor());
+		if (editor != nullptr)
+			options = options.withParentComponent(editor.getComponent());
+	}
+
+	// Optional: Force menu opening direction
+	if (direction == "Upwards") {
+		options = options.withPreferredPopupDirection(juce::PopupMenu::Options::PopupDirection::upwards);
+	} else if (direction == "Downwards") {
+		options = options.withPreferredPopupDirection(juce::PopupMenu::Options::PopupDirection::downwards);
+	}
+
+	return options;
+}
+// Apply the optional per-combo width cap to native popup items.
+void CtrlrCombo::CtrlrComboLF::getIdealPopupMenuItemSize(const juce::String &text, bool isSeparator,
+																 int standardMenuItemHeight, int &idealWidth, int &idealHeight) {
+	LookAndFeel_V2::getIdealPopupMenuItemSize(text, isSeparator, standardMenuItemHeight, idealWidth, idealHeight);
+	const int maxWidth = juce::jlimit(0, 4000, (int)owner.getProperty(Ids::uiComboMenuMaxWidth, 0));
+	if (maxWidth > 0)
+		idealWidth = juce::jmin(idealWidth, maxWidth);
+}
+
+void CtrlrCombo::CtrlrComboLF::getIdealPopupMenuItemSizeWithOptions(const juce::String &text, bool isSeparator,
+																		 int standardMenuItemHeight, int &idealWidth, int &idealHeight,
+																		 const juce::PopupMenu::Options &options) {
+	LookAndFeel_V2::getIdealPopupMenuItemSizeWithOptions(text, isSeparator, standardMenuItemHeight, idealWidth,
+																	 idealHeight, options);
+	const int maxWidth = juce::jlimit(0, 4000, (int)owner.getProperty(Ids::uiComboMenuMaxWidth, 0));
+	if (maxWidth > 0)
+		idealWidth = juce::jmin(idealWidth, maxWidth);
 }

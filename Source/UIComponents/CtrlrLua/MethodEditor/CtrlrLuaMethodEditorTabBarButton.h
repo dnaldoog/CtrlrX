@@ -17,15 +17,6 @@ public:
     CtrlrLuaMethodEditorTabBarButton (const String& name, TabbedButtonBar& ownerBar, CtrlrLuaMethodEditorTabs& ownerTabs, int tabIdx)
         : TabBarButton (name, ownerBar), ownerTabs (ownerTabs), initialIndex (tabIdx), isDraggingTab (false) {}
 
-    // void mouseDown (const MouseEvent& e) override
-    // {
-    //     if (e.mods.isLeftButtonDown())
-    //     {
-    //         dragStartX = e.getScreenX();
-    //         isDraggingTab = false;
-    //     }
-    //     TabBarButton::mouseDown (e);
-    // }
 void mouseDown (const MouseEvent& e) override
 {
     if (e.mods.isPopupMenu())
