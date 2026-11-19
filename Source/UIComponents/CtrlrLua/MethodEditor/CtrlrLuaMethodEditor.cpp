@@ -1443,60 +1443,6 @@ void CtrlrLuaMethodEditor::insertRawDebuggerOutput (const String &output)
         p->insertRawDebuggerOutput (output);
 }
 
-// // Recursive helper to find the TreeViewItem corresponding to a target ValueTree
-// static TreeViewItem *findTreeItemForValueTree (TreeViewItem *item, const ValueTree &targetTree)
-// {
-//     if (item == nullptr || !targetTree.isValid())
-//         return nullptr;
-
-//     // Match CtrlrValueTreeEditorItem directly against targetTree:
-//     if (auto *editorItem = dynamic_cast<CtrlrValueTreeEditorItem *> (item))
-//     {
-//         if (editorItem->getTree() == targetTree)
-//             return item;
-//     }
-
-//     // Ensure sub-items exist before searching children
-//     if (item->getNumSubItems() == 0 && item->mightContainSubItems())
-//         item->setOpen (true);
-
-//     for (int i = 0; i < item->getNumSubItems(); ++i)
-//     {
-//         if (auto *found = findTreeItemForValueTree (item->getSubItem (i), targetTree))
-//             return found;
-//     }
-
-//     return nullptr;
-// }
-
-// void CtrlrLuaMethodEditor::revealMethodInTree (CtrlrLuaMethod *method)
-// {
-//     if (method == nullptr || methodTree == nullptr)
-//         return;
-
-//     TreeViewItem *root = methodTree->getRootItem();
-//     if (root == nullptr)
-//         return;
-
-//     const ValueTree targetTree = method->getMethodTree();
-//     if (!targetTree.isValid())
-//         return;
-
-//     TreeViewItem *targetItem = findTreeItemForValueTree (root, targetTree);
-//     if (targetItem == nullptr)
-//         return;
-
-//     // Unfold every ancestor from targetItem up to root
-//     for (TreeViewItem *parent = targetItem->getParentItem(); parent != nullptr; parent = parent->getParentItem())
-//     {
-//         parent->setOpen (true);
-//     }
-
-//     // Select the item and scroll the left tree so it's clearly visible
-//     targetItem->setSelected (true, true);
-//     methodTree->scrollToKeepItemVisible (targetItem);
-// }
-
 static TreeViewItem *findChildItemForValueTree(TreeViewItem *parentItem, const ValueTree &targetTree) {
 	if (parentItem == nullptr || !targetTree.isValid())
 		return nullptr;
