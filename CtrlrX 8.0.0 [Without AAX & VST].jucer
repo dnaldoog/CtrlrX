@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="hrcYoO" name="CtrlrX" reportAppUsage="1" projectType="audioplug"
-              version="8.0.82" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
+              version="8.0.83" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
               buildVST="0" buildVST3="1" buildAU="1" buildAUv3="0" buildRTAS="0"
               buildAAX="0" buildStandalone="1" enableIAA="0" pluginName="CtrlrX                          "
               pluginManufacturer="CtrlrX Project                  " pluginManufacturerCode="cTrX"
@@ -1007,6 +1007,8 @@
                   resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodEditorConsole.cpp"/>
             <FILE id="IcOt6d" name="CtrlrLuaMethodEditorConsole.h" compile="0"
                   resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodEditorConsole.h"/>
+            <FILE id="kyUf7E" name="CtrlrLuaMethodEditorTabBarButton.h" compile="0"
+                  resource="0" file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodEditorTabBarButton.h"/>
             <FILE id="kiauoR" name="CtrlrLuaMethodEditorTabs.cpp" compile="1" resource="0"
                   file="Source/UIComponents/CtrlrLua/MethodEditor/CtrlrLuaMethodEditorTabs.cpp"/>
             <FILE id="ZXHZol" name="CtrlrLuaMethodEditorTabs.h" compile="0" resource="0"

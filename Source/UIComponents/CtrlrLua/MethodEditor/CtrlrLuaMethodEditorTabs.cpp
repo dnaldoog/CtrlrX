@@ -2,6 +2,7 @@
 #include "CtrlrLuaMethodEditorTabs.h"
 #include "CtrlrLuaMethodEditor.h"
 #include "CtrlrLuaMethodCodeEditor.h"
+#include "CtrlrLuaMethodEditorTabBarButton.h"
 #include "Core/CtrlrPanel/CtrlrPanel.h"
 
 // Tabbed component
@@ -19,16 +20,16 @@ CtrlrLuaMethodEditorTabs::~CtrlrLuaMethodEditorTabs()
 
 TabBarButton *CtrlrLuaMethodEditorTabs::createTabButton (const String &tabName, int tabIndex)
 {
-	TabBarButton *btn = new TabBarButton (tabName, getTabbedButtonBar());
+    // Use your custom draggable button class
+    CtrlrLuaMethodEditorTabBarButton *btn = new CtrlrLuaMethodEditorTabBarButton (tabName, getTabbedButtonBar(), *this, tabIndex);
     
-    CtrlrMethodEditorTabCloseButton *close = new CtrlrMethodEditorTabCloseButton(owner, tabIndex); // Added v5.6.30. Creates extra component *close
+    CtrlrMethodEditorTabCloseButton *close = new CtrlrMethodEditorTabCloseButton (owner, tabIndex); 
     close->setMouseCursor (MouseCursor::PointingHandCursor);
-    close->setSize (22, 20); // Added v5.6.30
-    btn->setExtraComponent (close, TabBarButton::afterText); // Added v5.6.30. Defines *close as extraComponent and sets its position
+    close->setSize (22, 20); 
+    btn->setExtraComponent (close, TabBarButton::afterText); 
 
-	return (btn);
+    return btn;
 }
-
 void CtrlrLuaMethodEditorTabs::currentTabChanged(int newCurrentTabIndex, const String &newCurrentTabName)
 {
 	updateAllTooltips();
@@ -48,9 +49,9 @@ void CtrlrLuaMethodEditorTabs::currentTabChanged(int newCurrentTabIndex, const S
 static String getMethodVirtualFolderPath(CtrlrLuaMethod* method)
 {
     if (method == nullptr)
-        return "/";
+		return "";
 
-    ValueTree parent = method->getMethodTree().getParent();
+	ValueTree parent = method->getMethodTree().getParent();
     StringArray pathParts;
 
     while (parent.isValid())
@@ -68,7 +69,7 @@ static String getMethodVirtualFolderPath(CtrlrLuaMethod* method)
         parent = parent.getParent();
     }
 
-    return "/" + pathParts.joinIntoString("/");   // "/COMPONENT/TVF", or "/" for top level
+	return "" + pathParts.joinIntoString("/"); // "/COMPONENT/TVF", or "/" for top level
 }
 
 void CtrlrLuaMethodEditorTabs::updateAllTooltips()
@@ -91,4 +92,9 @@ void CtrlrLuaMethodEditorTabs::updateAllTooltips()
             }
         }
     }
+}
+CtrlrLuaMethod *CtrlrLuaMethodEditorTabs::getMethodForTab (int tabIndex) const
+{
+    auto *codeEditor = dynamic_cast<CtrlrLuaMethodCodeEditor *> (getTabContentComponent (tabIndex));
+    return (codeEditor != nullptr) ? codeEditor->getMethod() : nullptr;
 }
