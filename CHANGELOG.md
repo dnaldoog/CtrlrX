@@ -1,6 +1,11 @@
 [&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
 
+### CtrlrX v8.0.84 11/19/2026
+
+
+- *ADDON*: Add multiple column layout for uiCombo (PopupMenu)
+- https://github.com/dnaldoog/CtrlrX/commit/b7fc9f7c0043121d72bb0f034bd67f0e6d00ecb1
 
 ### CtrlrX v8.0.83 11/19/2026
 

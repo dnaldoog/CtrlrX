@@ -64,6 +64,8 @@ class CtrlrCombo : public CtrlrComponent,
 				juce::Font getLabelFont(juce::Label &label) override;
 				juce::Font getPopupMenuFont() override;
 				void positionComboBoxText(juce::ComboBox &box, juce::Label &label) override;
+				juce::PopupMenu::Options getOptionsForComboBoxPopupMenu(juce::ComboBox &box,
+																		juce::Label &label) override;
 
 			private:
 				CtrlrCombo &owner;

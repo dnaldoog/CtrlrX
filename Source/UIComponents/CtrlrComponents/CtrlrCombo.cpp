@@ -31,6 +31,9 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 	setProperty(Ids::uiComboSelectedIndex, -1);
 	setProperty(Ids::uiComboContent, "");
 	setProperty(Ids::uiComboLookAndFeelIsCustom, true);
+	setProperty(Ids::uiComboMenuMaxColumns, 1);
+	setProperty(Ids::uiComboMenuBoundToPanel, false);
+	setProperty(Ids::uiComboMenuDirection, "Automatic");
 	// Keep custom double-arrow renderer attached
 	ctrlrCombo->setLookAndFeel(&lf);
 
@@ -1096,4 +1099,34 @@ bool CtrlrCombo::canPerformFuzzySearch() const {
 
 	// Search ONLY works if enabled in inspector AND NOT in edit mode
 	return isEnabledInInspector && !isEditingLayout;
+}
+juce::PopupMenu::Options CtrlrCombo::CtrlrComboLF::getOptionsForComboBoxPopupMenu(juce::ComboBox &box,
+																				  juce::Label &label) {
+	// Read properties from the owning CtrlrCombo
+	const int maxColumns = juce::jlimit(1, 7, (int)owner.getProperty(Ids::uiComboMenuMaxColumns, 1));
+	const bool boundToPanel = (bool)owner.getProperty(Ids::uiComboMenuBoundToPanel, false);
+	const juce::String direction = owner.getProperty(Ids::uiComboMenuDirection, "Automatic").toString();
+
+	auto options = juce::PopupMenu::Options()
+					   .withTargetComponent(&box)
+					   .withItemThatMustBeVisible(box.getSelectedId())
+					   .withInitiallySelectedItem(box.getSelectedId())
+					   .withMinimumWidth(box.getWidth())
+					   .withMaximumNumColumns(maxColumns)
+					   .withStandardItemHeight(label.getHeight());
+
+	// Optional: Constrain popup menu within the Panel Editor bounds instead of the whole screen
+	if (boundToPanel) {
+		if (auto *editor = owner.getOwner().getOwnerPanel().getEditor())
+			options = options.withParentComponent(editor);
+	}
+
+	// Optional: Force menu opening direction
+	if (direction == "Upwards") {
+		options = options.withPreferredPopupDirection(juce::PopupMenu::Options::PopupDirection::upwards);
+	} else if (direction == "Downwards") {
+		options = options.withPreferredPopupDirection(juce::PopupMenu::Options::PopupDirection::downwards);
+	}
+
+	return options;
 }
