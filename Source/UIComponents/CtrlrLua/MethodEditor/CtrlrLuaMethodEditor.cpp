@@ -84,7 +84,8 @@ void CtrlrLuaMethodEditor::valueTreePropertyChanged(ValueTree &treeWhoseProperty
 		CtrlrLuaMethodCodeEditorSettings::loadSharedSchemeFromTree(getComponentTree());
 		updateTabs();
 	} else if (property == Ids::luaMethodEditorFont || property == Ids::luaMethodEditorBgColour ||
-			   property == Ids::luaMethodEditorLineNumbersColour || property == Ids::luaMethodEditorFontColour) {
+			   property == Ids::luaMethodEditorLineNumbersColour ||
+			   property == Ids::luaMethodEditorLineNumbersBgColour || property == Ids::luaMethodEditorFontColour) {
 		for (int i = 0; i < methodEditArea->getTabs()->getNumTabs(); i++) {
 			CtrlrLuaMethodCodeEditor *ed =
 				dynamic_cast<CtrlrLuaMethodCodeEditor *>(methodEditArea->getTabs()->getTabContentComponent(i));
@@ -1440,4 +1441,124 @@ void CtrlrLuaMethodEditor::insertRawDebuggerOutput (const String &output)
     // bring the Debugger tab to the front whenever the script pauses
     if (auto *p = getDebuggerPrompt (output.contains ("Paused at")))
         p->insertRawDebuggerOutput (output);
+}
+
+// // Recursive helper to find the TreeViewItem corresponding to a target ValueTree
+// static TreeViewItem *findTreeItemForValueTree (TreeViewItem *item, const ValueTree &targetTree)
+// {
+//     if (item == nullptr || !targetTree.isValid())
+//         return nullptr;
+
+//     // Match CtrlrValueTreeEditorItem directly against targetTree:
+//     if (auto *editorItem = dynamic_cast<CtrlrValueTreeEditorItem *> (item))
+//     {
+//         if (editorItem->getTree() == targetTree)
+//             return item;
+//     }
+
+//     // Ensure sub-items exist before searching children
+//     if (item->getNumSubItems() == 0 && item->mightContainSubItems())
+//         item->setOpen (true);
+
+//     for (int i = 0; i < item->getNumSubItems(); ++i)
+//     {
+//         if (auto *found = findTreeItemForValueTree (item->getSubItem (i), targetTree))
+//             return found;
+//     }
+
+//     return nullptr;
+// }
+
+// void CtrlrLuaMethodEditor::revealMethodInTree (CtrlrLuaMethod *method)
+// {
+//     if (method == nullptr || methodTree == nullptr)
+//         return;
+
+//     TreeViewItem *root = methodTree->getRootItem();
+//     if (root == nullptr)
+//         return;
+
+//     const ValueTree targetTree = method->getMethodTree();
+//     if (!targetTree.isValid())
+//         return;
+
+//     TreeViewItem *targetItem = findTreeItemForValueTree (root, targetTree);
+//     if (targetItem == nullptr)
+//         return;
+
+//     // Unfold every ancestor from targetItem up to root
+//     for (TreeViewItem *parent = targetItem->getParentItem(); parent != nullptr; parent = parent->getParentItem())
+//     {
+//         parent->setOpen (true);
+//     }
+
+//     // Select the item and scroll the left tree so it's clearly visible
+//     targetItem->setSelected (true, true);
+//     methodTree->scrollToKeepItemVisible (targetItem);
+// }
+
+static TreeViewItem *findChildItemForValueTree(TreeViewItem *parentItem, const ValueTree &targetTree) {
+	if (parentItem == nullptr || !targetTree.isValid())
+		return nullptr;
+
+	// Ensure children are populated before scanning them
+	if (!parentItem->isOpen())
+		parentItem->setOpen(true);
+
+	for (int i = 0; i < parentItem->getNumSubItems(); ++i) {
+		TreeViewItem *child = parentItem->getSubItem(i);
+		if (auto *editorItem = dynamic_cast<CtrlrValueTreeEditorItem *>(child)) {
+			if (editorItem->getTree() == targetTree)
+				return child;
+		}
+	}
+
+	return nullptr;
+}
+
+void CtrlrLuaMethodEditor::revealMethodInTree(CtrlrLuaMethod *method) {
+	if (method == nullptr || methodTree == nullptr)
+		return;
+
+	TreeViewItem *rootItem = methodTree->getRootItem();
+	auto *rootEditorItem = dynamic_cast<CtrlrValueTreeEditorItem *>(rootItem);
+	if (rootItem == nullptr || rootEditorItem == nullptr)
+		return;
+
+	const ValueTree rootTree = rootEditorItem->getTree(); // <-- match your ValueTree getter
+	ValueTree current = method->getMethodTree();
+	if (!current.isValid() || !rootTree.isValid())
+		return;
+
+	// 1. Build the path from targetTree up to rootTree
+	Array<ValueTree> pathFromTargetToRoot;
+	while (current.isValid()) {
+		pathFromTargetToRoot.add(current);
+		if (current == rootTree)
+			break;
+		current = current.getParent();
+	}
+
+	if (pathFromTargetToRoot.getLast() != rootTree)
+		return; // Target isn't under this tree root
+
+	// 2. Walk top-down from root, opening ONLY the folders on this exact path
+	TreeViewItem *currentItem = rootItem;
+	rootItem->setOpen(true);
+
+	for (int i = pathFromTargetToRoot.size() - 2; i >= 0; --i) {
+		TreeViewItem *nextItem = findChildItemForValueTree(currentItem, pathFromTargetToRoot[i]);
+		if (nextItem == nullptr)
+			return;
+
+		// If this node is an intermediate folder (not the final method leaf), unfold it
+		if (i > 0)
+			nextItem->setOpen(true);
+
+		currentItem = nextItem;
+	}
+
+	// 3. Select the method item and scroll the tree to bring it into view
+	currentItem->setSelected(true, true);
+	methodTree->scrollToKeepItemVisible(currentItem);
 }

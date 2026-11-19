@@ -17,16 +17,50 @@ public:
     CtrlrLuaMethodEditorTabBarButton (const String& name, TabbedButtonBar& ownerBar, CtrlrLuaMethodEditorTabs& ownerTabs, int tabIdx)
         : TabBarButton (name, ownerBar), ownerTabs (ownerTabs), initialIndex (tabIdx), isDraggingTab (false) {}
 
-    void mouseDown (const MouseEvent& e) override
+    // void mouseDown (const MouseEvent& e) override
+    // {
+    //     if (e.mods.isLeftButtonDown())
+    //     {
+    //         dragStartX = e.getScreenX();
+    //         isDraggingTab = false;
+    //     }
+    //     TabBarButton::mouseDown (e);
+    // }
+void mouseDown (const MouseEvent& e) override
+{
+    if (e.mods.isPopupMenu())
     {
-        if (e.mods.isLeftButtonDown())
+        const int tabIdx = getTabbedButtonBar().indexOfTabButton (this);
+        if (tabIdx >= 0)
         {
-            dragStartX = e.getScreenX();
-            isDraggingTab = false;
+            Component::SafePointer<CtrlrLuaMethodEditorTabBarButton> safeThis (this);
+
+            PopupMenu menu;
+            menu.addItem (1, "Reveal in Method Tree");
+
+            menu.showMenuAsync (PopupMenu::Options().withTargetComponent (this),
+                                [safeThis, tabIdx] (int result)
+                                {
+                                    if (safeThis == nullptr || result != 1)
+                                        return;
+
+                                    if (auto *method = safeThis->ownerTabs.getMethodForTab (tabIdx))
+                                    {
+                                        safeThis->ownerTabs.getMethodEditor().revealMethodInTree (method);
+                                    }
+                                });
         }
-        TabBarButton::mouseDown (e);
+        return; // Don't treat right-click as a left-drag start
     }
 
+    if (e.mods.isLeftButtonDown())
+    {
+        dragStartX = e.getScreenX();
+        isDraggingTab = false;
+    }
+
+    TabBarButton::mouseDown (e);
+}
 void mouseDrag (const MouseEvent& e) override
     {
         if (e.mods.isLeftButtonDown())

@@ -93,3 +93,8 @@ void CtrlrLuaMethodEditorTabs::updateAllTooltips()
         }
     }
 }
+CtrlrLuaMethod *CtrlrLuaMethodEditorTabs::getMethodForTab (int tabIndex) const
+{
+    auto *codeEditor = dynamic_cast<CtrlrLuaMethodCodeEditor *> (getTabContentComponent (tabIndex));
+    return (codeEditor != nullptr) ? codeEditor->getMethod() : nullptr;
+}
