@@ -1,6 +1,15 @@
 [&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
 
+
+### CtrlrX v8.0.83 11/19/2026
+
+
+*ADDON*:Right click on tab in lua Editor to reveal file in tree
+*ADDON*:Drag and Drop to reorder open tabs in lua editor
+*FIX*: In lua preferences, line background colour on APPLY was not refreshing
+
+
 ### CtrlrX v8.0.82 11/15/2026
 
 Shared header (e.g. CtrlrMidiMessage.h or a small CtrlrMidiLimits.h)
