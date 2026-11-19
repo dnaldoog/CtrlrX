@@ -822,20 +822,38 @@ void CtrlrCombo::FuzzySearchPanel::refreshMatches() {
 	matches.clear();
 
 	auto &valueMap = owner.getValueMap();
-	const String query = searchBox.getText();
+	const String query = searchBox.getText().trim();
 
 	if (query.isEmpty()) {
 		for (int i = 0; i < valueMap.getNumValues(); ++i)
 			matches.push_back({i + 1, valueMap.getTextForIndex(i), 0.0});
 	} else {
-		const std::string queryStd = query.toLowerCase().toStdString();
+		const String queryLower = query.toLowerCase();
+		const std::string queryStd = queryLower.toStdString();
 
+		// 1. First pass: check for direct substring containment (e.g., "35" in "035: Bass" or "35")
 		for (int i = 0; i < valueMap.getNumValues(); ++i) {
 			const String itemText = valueMap.getTextForIndex(i);
-			const double score = rapidfuzz::fuzz::WRatio(queryStd, itemText.toLowerCase().toStdString());
+			const String itemLower = itemText.toLowerCase();
 
-			if (score > 40.0) // cutoff - drop weak/noise matches
-				matches.push_back({i + 1, itemText, score});
+			if (itemLower.contains(queryLower)) {
+				// Score substring matches above 100.0 so they always rank first,
+				// using WRatio as a tie-breaker (exact match "35" scores 200.0, "135" scores ~180.0)
+				const double tieBreaker = rapidfuzz::fuzz::WRatio(queryStd, itemLower.toStdString());
+				matches.push_back({i + 1, itemText, 100.0 + tieBreaker});
+			}
+		}
+
+		// 2. Fallback: if no exact substring matches exist (e.g., user made a typo like "bsas" for "bass"),
+		// run fuzzy matching with a stricter cutoff (70.0+ instead of 40.0)
+		if (matches.empty()) {
+			for (int i = 0; i < valueMap.getNumValues(); ++i) {
+				const String itemText = valueMap.getTextForIndex(i);
+				const double score = rapidfuzz::fuzz::WRatio(queryStd, itemText.toLowerCase().toStdString());
+
+				if (score > 70.0)
+					matches.push_back({i + 1, itemText, score});
+			}
 		}
 
 		std::stable_sort(matches.begin(), matches.end(),
