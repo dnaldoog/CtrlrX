@@ -72,7 +72,6 @@ CtrlrLabel::CtrlrLabel(CtrlrModulator &owner)
 	setProperty(Ids::uiLabelEditOnDoubleClick, false);
 	setProperty(Ids::uiLabelEditFocusDiscardsChanges, true);
 	setProperty(Ids::uiLabelInputAllowedChars, "");
-	setProperty(Ids::uiLabelInputAllowedChars, "");
 	setProperty(Ids::uiLabelInputMaxLength, 1024);
 	setProperty(Ids::uiLabelChangedCbk, COMBO_NONE_ITEM);
 
