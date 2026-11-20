@@ -645,6 +645,15 @@ void CtrlrCombo::openFuzzySearchPopup() {
 
 	_DBG("FUZZY: Opening search popup");
 
+	// Force JUCE's native ComboBox popup to hide if open
+	ctrlrCombo->hidePopup();
+
+	// Prevent ctrlrCombo from receiving mouse events while fuzzy search is active
+	ctrlrCombo->setInterceptsMouseClicks(false, false);
+
+	// Steal keyboard focus away from ctrlrCombo onto the wrapper component
+	grabKeyboardFocus();
+
 	auto panel = std::make_unique<FuzzySearchPanel>(*this);
 	activeSearchPanel = panel.get();
 
@@ -666,10 +675,11 @@ void CtrlrCombo::closeFuzzySearchPopupIfOpen() {
 
 	isSearching = false;
 
-	// Search only ever opens in normal (non-edit) mode, so it's always correct
-	// to hand normal click-handling back to the ComboBox here.
-	if (ctrlrCombo != nullptr)
-		ctrlrCombo->setInterceptsMouseClicks(true, true);
+	// Restore combo click interception ONLY if search is turned off
+	if (ctrlrCombo != nullptr) {
+		const bool allowComboClicks = !canPerformFuzzySearch();
+		ctrlrCombo->setInterceptsMouseClicks(allowComboClicks, allowComboClicks);
+	}
 }
 
 //==============================================================================
@@ -715,8 +725,10 @@ CtrlrCombo::FuzzySearchPanel::~FuzzySearchPanel() {
 	owner.activeSearchPanel = nullptr;
 	owner.isSearching = false;
 
-	if (owner.ctrlrCombo != nullptr)
-		owner.ctrlrCombo->setInterceptsMouseClicks(true, true);
+    if (owner.ctrlrCombo != nullptr) {
+        const bool allowComboClicks = !owner.canPerformFuzzySearch();
+        owner.ctrlrCombo->setInterceptsMouseClicks(allowComboClicks, allowComboClicks);
+    }
 }
 
 void CtrlrCombo::FuzzySearchPanel::resized() {
@@ -731,9 +743,18 @@ void CtrlrCombo::FuzzySearchPanel::visibilityChanged() {
 		focusSearchField();
 }
 
+// void CtrlrCombo::FuzzySearchPanel::focusSearchField() {
+// 	searchBox.grabKeyboardFocus();
+// 	searchBox.moveCaretToEnd();
+// }
 void CtrlrCombo::FuzzySearchPanel::focusSearchField() {
-	searchBox.grabKeyboardFocus();
-	searchBox.moveCaretToEnd();
+	// Queue focus request so the CallOutBox has finished its desktop/parent attachment
+	juce::MessageManager::callAsync([safeThis = juce::Component::SafePointer<FuzzySearchPanel>(this)]() {
+		if (safeThis != nullptr && safeThis->isShowing()) {
+			safeThis->searchBox.grabKeyboardFocus();
+			safeThis->searchBox.moveCaretToEnd();
+		}
+	});
 }
 
 void CtrlrCombo::FuzzySearchPanel::paintOverChildren(juce::Graphics &g) {
