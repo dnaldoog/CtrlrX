@@ -8,6 +8,7 @@
 - CtrlrCombo::openFuzzySearchPopup() and CtrlrCombo::closeFuzzySearchPopupIfOpen()
 - so that re-focusing or clicking a fuzzy-search-enabled combo box a second
 - time opens the FuzzySearchPanel CallOutBox rather than falling back to
+- Add [null guard](https://github.com/dnaldoog/CtrlrX/commit/7517e4b488e408a32ddca75821de03596aa6aaa1) to canPerformFuzzySearch. Thanks to FrancoisUK
 - JUCE's native ComboBox popup.
 - https://github.com/dnaldoog/CtrlrX/commit/03edbd1f2915e8e5f74f80edd89067f0c44066c5
 
