@@ -1,5 +1,15 @@
 [&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
+### CtrlrX v8.0.85 11/20/2026
+
+- *FIX*: fuzzy search popup regression on second focus in CtrlrCombo
+
+- Restores the click-interception and native popup guards in
+- CtrlrCombo::openFuzzySearchPopup() and CtrlrCombo::closeFuzzySearchPopupIfOpen()
+- so that re-focusing or clicking a fuzzy-search-enabled combo box a second
+- time opens the FuzzySearchPanel CallOutBox rather than falling back to
+- JUCE's native ComboBox popup.
+- https://github.com/dnaldoog/CtrlrX/commit/03edbd1f2915e8e5f74f80edd89067f0c44066c5
 
 ### CtrlrX v8.0.84 11/20/2026
 
