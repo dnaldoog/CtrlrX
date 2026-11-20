@@ -1157,10 +1157,17 @@ juce::Font CtrlrCombo::CtrlrComboLF::getPopupMenuFont() {
 
 bool CtrlrCombo::canPerformFuzzySearch() const {
 	const bool isEnabledInInspector = (bool)getProperty(Ids::uiComboSearch);
-	const bool isEditingLayout = owner.getOwnerPanel().getEditor()->getMode();
+	if (!isEnabledInInspector)
+		return false;
 
-	// Search ONLY works if enabled in inspector AND NOT in edit mode
-	return isEnabledInInspector && !isEditingLayout;
+	if (auto *editor = owner.getOwnerPanel().getEditor()) {
+		const bool isEditingLayout = editor->getMode(); // recommended by FrancoisUK
+
+		// Search ONLY works if enabled in inspector AND NOT in edit mode
+		return !isEditingLayout;
+	}
+
+	return false;
 }
 juce::PopupMenu::Options CtrlrCombo::CtrlrComboLF::getOptionsForComboBoxPopupMenu(juce::ComboBox &box,
 																				  juce::Label &label) {
