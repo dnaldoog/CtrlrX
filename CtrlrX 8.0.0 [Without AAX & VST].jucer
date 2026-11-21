@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="hrcYoO" name="CtrlrX" reportAppUsage="1" projectType="audioplug"
-              version="8.0.85" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
+              version="8.0.86" bundleIdentifier="com.CtrlrX.CtrlrX" includeBinaryInAppConfig="1"
               buildVST="0" buildVST3="1" buildAU="1" buildAUv3="0" buildRTAS="0"
               buildAAX="0" buildStandalone="1" enableIAA="0" pluginName="CtrlrX                          "
               pluginManufacturer="CtrlrX Project                  " pluginManufacturerCode="cTrX"
@@ -410,6 +410,10 @@
           <FILE id="Cl1VAQ" name="LColour.h" compile="0" resource="0" file="Source/Lua/JuceClasses/LColour.h"/>
           <FILE id="TbtLK6" name="LColourGradient.h" compile="0" resource="0"
                 file="Source/Lua/JuceClasses/LColourGradient.h"/>
+          <FILE id="fhVscI" name="LColourSelector.cpp" compile="1" resource="0"
+                file="Source/Lua/JuceClasses/LColourSelector.cpp"/>
+          <FILE id="IqhoFB" name="LColourSelector.h" compile="0" resource="0"
+                file="Source/Lua/JuceClasses/LColourSelector.h"/>
           <FILE id="qWqmkf" name="LComboBox.h" compile="0" resource="0" file="Source/Lua/JuceClasses/LComboBox.h"/>
           <FILE id="fZnBxX" name="LComponent.h" compile="0" resource="0" file="Source/Lua/JuceClasses/LComponent.h"/>
           <FILE id="XF9oZK" name="LComponentPeer.h" compile="0" resource="0"
