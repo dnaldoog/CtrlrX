@@ -1,5 +1,11 @@
 [&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
+### CtrlrX v8.0.86 11/21/2026
+- *ADDON*: Colour Selector for lua [see example panel](https://github.com/dnaldoog/CtrlrDemoPanels/blob/main/Panels/DEMO/DEMO%20-%20Colour%20Selector.panel)
+- https://github.com/dnaldoog/CtrlrX/commit/d3d0590c45805953ba01bbd4f9f560a821b81c3c
+
+
+
 ### CtrlrX v8.0.85 11/20/2026
 
 - *FIX*: fuzzy search popup regression on second focus in CtrlrCombo
