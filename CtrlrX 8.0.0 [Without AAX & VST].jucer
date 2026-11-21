@@ -410,6 +410,10 @@
           <FILE id="Cl1VAQ" name="LColour.h" compile="0" resource="0" file="Source/Lua/JuceClasses/LColour.h"/>
           <FILE id="TbtLK6" name="LColourGradient.h" compile="0" resource="0"
                 file="Source/Lua/JuceClasses/LColourGradient.h"/>
+          <FILE id="fhVscI" name="LColourSelector.cpp" compile="1" resource="0"
+                file="Source/Lua/JuceClasses/LColourSelector.cpp"/>
+          <FILE id="IqhoFB" name="LColourSelector.h" compile="0" resource="0"
+                file="Source/Lua/JuceClasses/LColourSelector.h"/>
           <FILE id="qWqmkf" name="LComboBox.h" compile="0" resource="0" file="Source/Lua/JuceClasses/LComboBox.h"/>
           <FILE id="fZnBxX" name="LComponent.h" compile="0" resource="0" file="Source/Lua/JuceClasses/LComponent.h"/>
           <FILE id="XF9oZK" name="LComponentPeer.h" compile="0" resource="0"

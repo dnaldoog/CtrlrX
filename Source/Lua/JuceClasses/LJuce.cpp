@@ -68,6 +68,7 @@ void CtrlrLuaManager::wrapJuceClasses(lua_State *L)
 	LRelativeCoordinate::wrapForLua(L);
 	LAlertWindow::wrapForLua(L);
 	LComboBox::wrapForLua(L);
+	LColourSelector::wrapForLua(L);
 	LTextEditor::wrapForLua(L);
 	LKeyPress::wrapForLua(L);
 	LThread::wrapForLua(L);
