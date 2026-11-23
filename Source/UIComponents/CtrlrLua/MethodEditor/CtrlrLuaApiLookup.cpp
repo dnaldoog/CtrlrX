@@ -936,6 +936,10 @@ CtrlrLuaApiLookup::CtrlrLuaApiLookup() {
         cls.staticMethods.push_back({"saveFileWindow", "static", "(String, File, String, bool)", 1});
         cls.staticMethods.push_back({"unpackDsiData", "static", "()", 1});
         cls.staticMethods.push_back({"warnWindow", "static", "(String, String)", 1});
+        cls.staticMethods.push_back({"colourPicker", "static", "(Component*, Component*, Component*, Colour, bool, function)", 1});
+        cls.staticMethods.push_back({"colorPicker", "static", "(Component*, Component*, Component*, Colour, bool, function)", 1});
+        cls.staticMethods.push_back({"colourSelector", "static", "(Component*, Component*, Component*, Colour, bool, function)", 1});
+        cls.staticMethods.push_back({"colorSelector", "static", "(Component*, Component*, Component*, Colour, bool, function)", 1});
         classMap[cls.name] = cls;
     }
 
@@ -3269,6 +3273,10 @@ CtrlrLuaApiLookup::CtrlrLuaApiLookup() {
         cls.staticMethods.push_back({"warnWindow", "static", "(String, String)", 1});
 		cls.staticMethods.push_back({"questionWindowAsync", "static", "()", 1});
 		cls.staticMethods.push_back({"askForTextInputWindowAsync", "static", "()", 1});
+        cls.staticMethods.push_back({"colourPicker", "static", "(Component*, Component*, Component*, Colour, bool, function)", 1});
+        cls.staticMethods.push_back({"colorPicker", "static", "(Component*, Component*, Component*, Colour, bool, function)", 1});
+        cls.staticMethods.push_back({"colourSelector", "static", "(Component*, Component*, Component*, Colour, bool, function)", 1});
+        cls.staticMethods.push_back({"colorSelector", "static", "(Component*, Component*, Component*, Colour, bool, function)", 1});
 
 		classMap[cls.name] = cls;
 	}
@@ -3436,5 +3444,26 @@ CtrlrLuaApiLookup::CtrlrLuaApiLookup() {
         cls.methods.push_back({"setThreadFunction", "instance", "(table)", 1});
         cls.methods.push_back({"wait", "instance", "()", 1});
         classMap[cls.name] = cls;
+	}
+	// --- ColourSelector ---
+	{
+		ApiClass cls;
+		cls.name = "ColourSelector";
+		cls.methods.push_back({"getCurrentColour", "instance", "()", 1});
+		cls.methods.push_back({"setCurrentColour", "instance", "(Colour)", 1});
+		cls.methods.push_back({"getNumSwatches", "instance", "()", 1});
+		cls.methods.push_back({"getSwatchColour", "instance", "(int)", 1});
+		cls.methods.push_back({"setSwatchColour", "instance", "(int, Colour)", 1});
+		cls.methods.push_back({"addChangeListener", "instance", "(ChangeListener*)", 1});
+		cls.methods.push_back({"removeChangeListener", "instance", "(ChangeListener*)", 1});
+		classMap[cls.name] = cls;
+	}
+	// --- Globals / Free Functions ---
+	{
+		ApiClass cls;
+		cls.name = "Globals";
+		cls.methods.push_back({"showColourPickerPopupCb", "static",
+							   "(Component*, Component*, Component*, const Colour&, bool, luabind::object)", 1});
+		classMap[cls.name] = cls;
 	}
 }

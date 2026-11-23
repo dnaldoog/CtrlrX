@@ -1,5 +1,14 @@
 [&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
+### CtrlrX v8.0.87 11/23/2026
+
+- *ADDON*: add asynchronous colourPicker popup helper to CtrlrLuaUtils
+
+- Add CtrlrLuaUtils::colourPicker and showColourPickerPopupCb using CallOutBox::launchAsynchronously
+- Bind colourPicker, colorPicker, colourSelector, and colorSelector in Luabind
+- Register the new colour picker helpers in CtrlrLuaApiLookup
+- https://github.com/dnaldoog/CtrlrX/commit/fb3205a94a120e3fca86de0888ab5d136abbcc60
+
 ### CtrlrX v8.0.86 11/21/2026
 - *ADDON*: Colour Selector for lua [see example panel](https://github.com/dnaldoog/CtrlrDemoPanels/blob/main/Panels/DEMO/DEMO%20-%20Colour%20Selector.panel)
 - https://github.com/dnaldoog/CtrlrX/commit/d3d0590c45805953ba01bbd4f9f560a821b81c3c
