@@ -17,7 +17,12 @@
 extern "C" {
 #include "lua.h"
 }
+#include "luabind/luabind.hpp"
 
+void showColourPickerPopupCb(Component *anchorComp, Component *targetLabelComp, Component *repaintTargetComp,
+							 const Colour &initialColour, bool liveUpdate, luabind::object cb);
+void colourSelector(Component *anchorComp, Component *targetLabelComp, Component *repaintTargetComp,
+								 const Colour &initialColour, bool liveUpdate, luabind::object cb);
 class LColourSelector
 {
     public:
