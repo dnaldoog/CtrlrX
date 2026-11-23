@@ -7,6 +7,7 @@
 
 #include "CtrlrMacros.h"
 #include "CtrlrRevision.h"
+#include "JuceClasses/LColourSelector.h"
 #include "luabind/object_fwd.hpp"
 
 // #include <eh.h>
@@ -199,6 +200,19 @@ class CtrlrLuaUtils {
 		}
 		static StringArray getMidiInputDevices();
 		static StringArray getMidiOutputDevices();
+		static void showColourPickerPopupCb(Component *anchorComp, Component *targetLabelComp,
+											Component *repaintTargetComp, const Colour &initialColour, bool liveUpdate,
+											luabind::object cb);
+
+		static void colourSelector(Component *anchorComp, Component *targetLabelComp, Component *repaintTargetComp,
+								   const Colour &initialColour, bool liveUpdate, luabind::object cb);
+		static void colourPicker(Component *anchorComp, Component *targetLabelComp, Component *repaintTargetComp,
+								 const Colour &initialColour, bool liveUpdate, luabind::object cb);
+		static void colorPicker(Component *anchorComp, Component *targetLabelComp, Component *repaintTargetComp,
+								const Colour &initialColour, bool liveUpdate, luabind::object cb);
+		static void colorSelector(Component *anchorComp, Component *targetLabelComp, Component *repaintTargetComp,
+								  const Colour &initialColour, bool liveUpdate, luabind::object cb);
+
 		void testMethod(const String &haystack, const String &needle);
 		JUCE_LEAK_DETECTOR(CtrlrLuaUtils)
 };

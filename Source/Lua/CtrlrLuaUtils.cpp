@@ -29,6 +29,69 @@
  */
 #define DSI_VOICE_DATA_MAX 16535
 
+namespace {
+class ColourPickerPopupContent : public Component, private ChangeListener {
+	public:
+		ColourPickerPopupContent(Component *targetLabelComp, Component *repaintTargetComp, Colour initialColour,
+								 int flags, bool liveUpdate, luabind::object cb)
+			: targetLabel(targetLabelComp),
+			  repaintTarget(repaintTargetComp),
+			  liveUpdateOnDrag(liveUpdate),
+			  callback(cb) {
+			ignoreUnused(flags);
+			selector.setCurrentColour(initialColour, dontSendNotification);
+			selector.addChangeListener(this);
+			addAndMakeVisible(selector);
+			setSize(300, 380);
+		}
+
+		~ColourPickerPopupContent() override {
+			selector.removeChangeListener(this);
+			writeColourToTarget();
+		}
+
+		void resized() override {
+			selector.setBounds(getLocalBounds());
+		}
+
+	private:
+		void changeListenerCallback(ChangeBroadcaster *source) override {
+			if (source == &selector && liveUpdateOnDrag)
+				writeColourToTarget();
+		}
+
+		void writeColourToTarget() {
+			Colour col = selector.getCurrentColour();
+			String hexStr = col.toString();
+
+			if (targetLabel != nullptr) {
+				Label *lbl = dynamic_cast<Label *>(targetLabel.getComponent());
+
+				if (lbl != nullptr)
+					lbl->setText(hexStr, dontSendNotification);
+				else
+					targetLabel->setName(hexStr);
+			}
+
+			if (repaintTarget != nullptr)
+				repaintTarget->repaint();
+
+			if (callback.is_valid() && luabind::type(callback) == LUA_TFUNCTION) {
+				try {
+					callback(hexStr.toStdString());
+				} catch (...) {
+				}
+			}
+		}
+
+		ColourSelector selector;
+		Component::SafePointer<Component> targetLabel;
+		Component::SafePointer<Component> repaintTarget;
+		bool liveUpdateOnDrag = false;
+		luabind::object callback;
+};
+
+} // namespace
 struct DSIVoiceData {
 		int size;
 		unsigned char *data;
@@ -377,6 +440,40 @@ void CtrlrLuaUtils::questionWindowAsync(const String title, const String message
 
 	AW::showOkCancelAsyncSafe(AW::Question, title, message, juceCallback, button1Text, button2Text);
 }
+
+void CtrlrLuaUtils::showColourPickerPopupCb(Component *anchorComp, Component *targetLabelComp,
+											Component *repaintTargetComp, const Colour &initialColour, bool liveUpdate,
+											luabind::object cb) {
+	if (MessageManager::getInstance() == nullptr)
+		return;
+
+	auto popup = std::make_unique<ColourPickerPopupContent>(targetLabelComp, repaintTargetComp, initialColour, 0,
+															liveUpdate, cb);
+
+	Rectangle<int> targetArea = anchorComp != nullptr ? anchorComp->getScreenBounds() : Rectangle<int>(0, 0, 1, 1);
+
+	Component *parentForBox = anchorComp != nullptr ? anchorComp->getTopLevelComponent() : nullptr;
+
+	CallOutBox::launchAsynchronously(std::move(popup), targetArea, parentForBox);
+}
+
+void CtrlrLuaUtils::colourPicker(Component *anchorComp, Component *targetLabelComp, Component *repaintTargetComp,
+								 const Colour &initialColour, bool liveUpdate, luabind::object cb) {
+	showColourPickerPopupCb(anchorComp, targetLabelComp, repaintTargetComp, initialColour, liveUpdate, cb);
+}
+void CtrlrLuaUtils::colorPicker(Component *anchorComp, Component *targetLabelComp, Component *repaintTargetComp,
+								const Colour &initialColour, bool liveUpdate, luabind::object cb) {
+	showColourPickerPopupCb(anchorComp, targetLabelComp, repaintTargetComp, initialColour, liveUpdate, cb);
+}
+void CtrlrLuaUtils::colourSelector(Component *anchorComp, Component *targetLabelComp, Component *repaintTargetComp,
+								   const Colour &initialColour, bool liveUpdate, luabind::object cb) {
+	showColourPickerPopupCb(anchorComp, targetLabelComp, repaintTargetComp, initialColour, liveUpdate, cb);
+}
+void CtrlrLuaUtils::colorSelector(Component *anchorComp, Component *targetLabelComp, Component *repaintTargetComp,
+								  const Colour &initialColour, bool liveUpdate, luabind::object cb) {
+	showColourPickerPopupCb(anchorComp, targetLabelComp, repaintTargetComp, initialColour, liveUpdate, cb);
+}
+
 void CtrlrLuaUtils::wrapForLua(lua_State *L) {
 	using namespace luabind;
 	// typedef bool (CtrlrLuaUtils::*SyncQuestionWin)(const String, const String, const String, const String);
@@ -407,5 +504,15 @@ void CtrlrLuaUtils::wrapForLua(lua_State *L) {
 				  .def("get8bitSigned", &CtrlrLuaUtils::get8bitSigned)	 // Added v5.6.34. Thanks to @dnaldoog
 				  .def("base64_encode", &CtrlrLuaUtils::base64_encode)	 // Added v5.6.34. Thanks to @dnaldoog
 				  .def("base64_decode", &CtrlrLuaUtils::base64_decode)	 // Added v5.6.34. Thanks to @dnaldoog
-	];
+				  .def("colourPicker", &CtrlrLuaUtils::colourPicker)
+				  .def("colorPicker", &CtrlrLuaUtils::colorPicker)
+				  .def("colourSelector", &CtrlrLuaUtils::colourSelector)
+				  .def("colorSelector", &CtrlrLuaUtils::colorSelector)
+				  .scope
+[
+    def("colourPicker", &CtrlrLuaUtils::colourPicker),
+    def("colorPicker", &CtrlrLuaUtils::colourPicker),
+    def("colourSelector", &CtrlrLuaUtils::colourPicker),
+    def("colorSelector", &CtrlrLuaUtils::colourPicker)
+]];
 }
