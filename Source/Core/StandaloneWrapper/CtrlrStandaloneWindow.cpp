@@ -120,6 +120,9 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 	vpMaxWidth = ed.getProperty(Ids::uiViewPortMaxWidth, 0);
 	vpMaxHeight = ed.getProperty(Ids::uiViewPortMaxHeight, 0);
 
+	int fitMinW = panelCanvasWidth;
+	int fitMinH = panelCanvasHeight;
+
 	// A restored window state belongs to the exported instance and can be
 	// stale after a panel rebuild. In Scaled mode, size the standalone from
 	// the current canvas unless the panel explicitly opts out.
@@ -130,6 +133,35 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 			menuBarHeight = 24;
 		const bool menuBarVisible = ed.getProperty(Ids::uiPanelMenuBarVisible, true);
 		centreWithSize(panelCanvasWidth, panelCanvasHeight + (menuBarVisible ? menuBarHeight : 0));
+	}
+
+	// A Scaled panel larger than the display work area must shrink the
+	// standalone window before applyViewPortMode() computes its zoom.
+	if (vpMode == gui::ViewPortMode::Scaled
+		&& (bool)ed.getProperty(Ids::uiViewPortAutoFitToDisplay, true)) {
+		int desiredW = panelCanvasWidth;
+		int desiredH = panelCanvasHeight;
+		int menuBarHeight = static_cast<int>(ctrlrProcessor->getManager().getProperty(Ids::ctrlrMenuBarHeight));
+		if (menuBarHeight <= 0)
+			menuBarHeight = 24;
+		const bool menuBarVisible = ed.getProperty(Ids::uiPanelMenuBarVisible, true);
+
+		if (auto *display = Desktop::getInstance().getDisplays().getDisplayForRect(getScreenBounds())) {
+			const Rectangle<int> area = display->userArea;
+			const int availW = area.getWidth() - vpOsFrameLeft - vpOsFrameRight;
+			const int availH = area.getHeight() - vpOsFrameTop - vpOsFrameBtm -
+							   (menuBarVisible ? menuBarHeight : 0);
+			if (availW > 0 && availH > 0) {
+				const double scale = juce::jmin(1.0, juce::jmin((double)availW / (double)desiredW,
+														 (double)availH / (double)desiredH));
+				if (scale < 0.999) {
+					fitMinW = juce::roundToInt(desiredW * scale);
+					fitMinH = juce::roundToInt(desiredH * scale);
+					centreWithSize(fitMinW, fitMinH +
+								   (menuBarVisible ? menuBarHeight : 0));
+				}
+			}
+		}
 	}
 
 	/* Configure Native Window Constraints according to ViewPortMode */
@@ -157,7 +189,7 @@ if (auto *constrainer = getConstrainer()) {
                 vpMinWidth + vpOsFrameLeft + vpOsFrameRight, vpMinHeight + vpOsFrameTop + vpOsFrameBtm,
                 vpMaxWidth + vpOsFrameLeft + vpOsFrameRight, vpMaxHeight + vpOsFrameTop + vpOsFrameBtm);
         } else {
-            constrainer->setMinimumSize(panelCanvasWidth, panelCanvasHeight + vpOsFrameTop + vpOsFrameBtm);
+            constrainer->setMinimumSize(fitMinW, fitMinH + vpOsFrameTop + vpOsFrameBtm);
         }
     } else { // Scrollable
         constrainer->setFixedAspectRatio(0.0);

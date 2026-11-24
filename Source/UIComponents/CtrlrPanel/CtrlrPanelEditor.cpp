@@ -159,6 +159,7 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 	setProperty(Ids::uiPanelMidiChannelMenuHideOnExport, false);
 	setProperty(Ids::uiViewPortMode, gui::viewPortModeToString(gui::ViewPortMode::Scrollable));
 	setProperty(Ids::uiViewPortFitWindowToCanvasOnOpen, true);
+	setProperty(Ids::uiViewPortAutoFitToDisplay, true);
 	setProperty(Ids::uiViewPortEnableResizeLimits, false);
 	setProperty(Ids::uiViewPortMinWidth, 0);
 	setProperty(Ids::uiViewPortMinHeight, 0);
@@ -962,7 +963,7 @@ void CtrlrPanelEditor::applyViewPortMode() {
 			if (cw > 0 && ch > 0) {
 				double zoomW = (double)getWidth() / cw;
 				double zoomH = (double)getHeight() / ch;
-				double zoom = (cw >= ch) ? zoomW : zoomH;
+				double zoom = juce::jmin(zoomW, zoomH); // fit both axes, not only the longer one
 				setProperty(Ids::uiPanelZoom, zoom);
 			}
 		}
