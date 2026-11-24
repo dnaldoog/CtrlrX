@@ -10,6 +10,7 @@
 - Source/Core/StandaloneWrapper/CtrlrStandaloneWindow.cpp — Scaled canvas fit, display clamp, and lowering of the Scaled minimum-size constraint to the
 fitted size.
 - No component geometry, artwork, control order, MIDI routing or VST/AU editor geometry is changed.
+- FIX: Thanks to @francosiuk pr 15
 - https://github.com/dnaldoog/CtrlrX/commit/8b7cc76e55b7825e7adb3ecf53ea1129c29479ab
 
 ### CtrlrX v8.0.88 11/24/2026
