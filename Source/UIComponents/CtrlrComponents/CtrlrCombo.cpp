@@ -31,8 +31,8 @@ CtrlrCombo::CtrlrCombo(CtrlrModulator &owner)
 	setProperty(Ids::uiComboSelectedIndex, -1);
 	setProperty(Ids::uiComboContent, "");
 	setProperty(Ids::uiComboLookAndFeelIsCustom, true);
-	setProperty(Ids::uiComboMenuMaxColumns, 1);
-	setProperty(Ids::uiComboMenuBoundToPanel, false);
+	setProperty(Ids::uiComboMenuMaxColumns, 4);
+	setProperty(Ids::uiComboMenuBoundToPanel, true);
 	setProperty(Ids::uiComboMenuDirection, "Automatic");
 	setProperty(Ids::uiComboMenuMaxWidth, 0);
 	// Keep custom double-arrow renderer attached
@@ -1171,25 +1171,38 @@ bool CtrlrCombo::canPerformFuzzySearch() const {
 }
 juce::PopupMenu::Options CtrlrCombo::CtrlrComboLF::getOptionsForComboBoxPopupMenu(juce::ComboBox &box,
 																				  juce::Label &label) {
-	// Read properties from the owning CtrlrCombo
-	const int maxColumns = juce::jlimit(1, 7, (int)owner.getProperty(Ids::uiComboMenuMaxColumns, 1));
-	const bool boundToPanel = (bool)owner.getProperty(Ids::uiComboMenuBoundToPanel, false);
+	// Read properties from the owning CtrlrCombo.  The original multi-column
+	// design is four columns, panel-bounded; the property may only reduce that.
+	const int maxColumns = juce::jlimit(1, 4, (int)owner.getProperty(Ids::uiComboMenuMaxColumns, 4));
 	const juce::String direction = owner.getProperty(Ids::uiComboMenuDirection, "Automatic").toString();
+	juce::Component::SafePointer<CtrlrPanelEditor> editor(owner.getOwner().getOwnerPanel().getEditor());
+
+	// withMaximumNumColumns() is only a cap: JUCE starts from one column and
+	// will keep scrolling a long menu instead of splitting it.  When the list
+	// cannot fit inside the panel editor, request the configured number as a
+	// minimum as well.  Short lists remain single-column.
+	const int itemHeight = juce::jmax(1, label.getHeight());
+	int availableHeight = 1080;
+	if (editor != nullptr)
+		availableHeight = juce::jmax(240, editor->getHeight());
+	else if (const auto *display = juce::Desktop::getInstance().getDisplays()
+		.getDisplayForRect(box.getScreenBounds()))
+		availableHeight = display->userArea.getHeight();
+	const int minColumns = (maxColumns > 1
+		&& box.getNumItems() * itemHeight > availableHeight - 40) ? maxColumns : 1;
 
 	auto options = juce::PopupMenu::Options()
 					   .withTargetComponent(&box)
 					   .withItemThatMustBeVisible(box.getSelectedId())
 					   .withInitiallySelectedItem(box.getSelectedId())
 					   .withMinimumWidth(box.getWidth())
+					   .withMinimumNumColumns(minColumns)
 					   .withMaximumNumColumns(maxColumns)
 					   .withStandardItemHeight(label.getHeight());
 
-	// Optional: Constrain popup menu within the Panel Editor bounds instead of the whole screen
-	if (boundToPanel) {
-		juce::Component::SafePointer<CtrlrPanelEditor> editor(owner.getOwner().getOwnerPanel().getEditor());
-		if (editor != nullptr)
-			options = options.withParentComponent(editor.getComponent());
-	}
+	// The original design is always bounded by the panel editor.
+	if (editor != nullptr)
+		options = options.withParentComponent(editor.getComponent());
 
 	// Optional: Force menu opening direction
 	if (direction == "Upwards") {
