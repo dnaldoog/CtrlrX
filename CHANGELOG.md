@@ -1,5 +1,18 @@
 [&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
+### CtrlrX v8.0.88 11/24/2026
+
+- *FIX*:The patch restores the original design:
+
+- maximum 4 columns;
+- popup always bounded to the panel editor;
+- large lists forced to four columns;
+- short lists remain one column;
+- values above 4 are capped;
+- no panel XML or panel-builder changes.
+- *FIX*: Thanks to @francosiuk pr 14
+- https://github.com/dnaldoog/CtrlrX/commit/
+
 ### CtrlrX v8.0.87 11/23/2026
 
 - *ADDON*: add asynchronous colourPicker popup helper to CtrlrLuaUtils
@@ -7,7 +20,7 @@
 - Add CtrlrLuaUtils::colourPicker and showColourPickerPopupCb using CallOutBox::launchAsynchronously
 - Bind colourPicker, colorPicker, colourSelector, and colorSelector in Luabind
 - Register the new colour picker helpers in CtrlrLuaApiLookup
-- https://github.com/dnaldoog/CtrlrX/commit/fb3205a94a120e3fca86de0888ab5d136abbcc60
+- https://github.com/dnaldoog/CtrlrX/commit/57f3eae2f80eae6a3335933724633110a5bccfb5
 
 ### CtrlrX v8.0.86 11/21/2026
 - *ADDON*: Colour Selector for lua [see example panel](https://github.com/dnaldoog/CtrlrDemoPanels/blob/main/Panels/DEMO/DEMO%20-%20Colour%20Selector.panel)
