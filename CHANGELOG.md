@@ -1,5 +1,17 @@
 [&lArr; back to release page](https://github.com/dnaldoog/CtrlrX/releases)
 
+
+### CtrlrX v8.0.89 11/25/2026
+
+- *FIX*: Three files, 50 added lines:
+
+- Source/Core/CtrlrIDs.h — two property IDs.
+- Source/UIComponents/CtrlrPanel/CtrlrPanelEditor.cpp — defaults and jmin(zoomW, zoomH).
+- Source/Core/StandaloneWrapper/CtrlrStandaloneWindow.cpp — Scaled canvas fit, display clamp, and lowering of the Scaled minimum-size constraint to the
+fitted size.
+- No component geometry, artwork, control order, MIDI routing or VST/AU editor geometry is changed.
+- https://github.com/dnaldoog/CtrlrX/commit/8b7cc76e55b7825e7adb3ecf53ea1129c29479ab
+
 ### CtrlrX v8.0.88 11/24/2026
 
 - *FIX*:The patch restores the original design:
