@@ -11,7 +11,7 @@
 - values above 4 are capped;
 - no panel XML or panel-builder changes.
 - *FIX*: Thanks to @francosiuk pr 14
-- https://github.com/dnaldoog/CtrlrX/commit/
+- https://github.com/dnaldoog/CtrlrX/commit/6eb84381185dd729e6ba63bd02456a25ddbf3c15
 
 ### CtrlrX v8.0.87 11/23/2026
 
