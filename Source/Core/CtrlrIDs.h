@@ -94,6 +94,7 @@ DECLARE_ID(uiViewPortMinHeight);
 DECLARE_ID(uiViewPortMaxWidth);
 DECLARE_ID(uiViewPortMaxHeight);
 DECLARE_ID(uiViewPortMode);
+DECLARE_ID(uiViewPortFitWindowToCanvasOnOpen);
 DECLARE_ID(uiViewPortEnableFixedAspectRatio);
 DECLARE_ID(uiPanelSnapActive);
 DECLARE_ID(uiPanelCanvasRectangle);

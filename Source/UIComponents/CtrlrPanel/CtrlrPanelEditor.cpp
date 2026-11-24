@@ -158,6 +158,7 @@ CtrlrPanelEditor::CtrlrPanelEditor(CtrlrPanel &_owner, CtrlrManager &_ctrlrManag
 	setProperty(Ids::uiPanelMidiThruMenuHideOnExport, false);
 	setProperty(Ids::uiPanelMidiChannelMenuHideOnExport, false);
 	setProperty(Ids::uiViewPortMode, gui::viewPortModeToString(gui::ViewPortMode::Scrollable));
+	setProperty(Ids::uiViewPortFitWindowToCanvasOnOpen, true);
 	setProperty(Ids::uiViewPortEnableResizeLimits, false);
 	setProperty(Ids::uiViewPortMinWidth, 0);
 	setProperty(Ids::uiViewPortMinHeight, 0);

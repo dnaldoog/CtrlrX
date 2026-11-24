@@ -120,6 +120,18 @@ CtrlrStandaloneWindow::CtrlrStandaloneWindow(const String &title, const Colour &
 	vpMaxWidth = ed.getProperty(Ids::uiViewPortMaxWidth, 0);
 	vpMaxHeight = ed.getProperty(Ids::uiViewPortMaxHeight, 0);
 
+	// A restored window state belongs to the exported instance and can be
+	// stale after a panel rebuild. In Scaled mode, size the standalone from
+	// the current canvas unless the panel explicitly opts out.
+	if (vpMode == gui::ViewPortMode::Scaled
+		&& (bool)ed.getProperty(Ids::uiViewPortFitWindowToCanvasOnOpen, true)) {
+		int menuBarHeight = static_cast<int>(ctrlrProcessor->getManager().getProperty(Ids::ctrlrMenuBarHeight));
+		if (menuBarHeight <= 0)
+			menuBarHeight = 24;
+		const bool menuBarVisible = ed.getProperty(Ids::uiPanelMenuBarVisible, true);
+		centreWithSize(panelCanvasWidth, panelCanvasHeight + (menuBarVisible ? menuBarHeight : 0));
+	}
+
 	/* Configure Native Window Constraints according to ViewPortMode */
 	if (ctrlrProcessor->getManager().getInstanceMode() == InstanceSingleRestricted) {
 		_DBG("Restricted Instance Mode");
