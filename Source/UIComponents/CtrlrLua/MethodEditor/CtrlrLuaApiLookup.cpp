@@ -2076,6 +2076,7 @@ CtrlrLuaApiLookup::CtrlrLuaApiLookup() {
         cls.methods.push_back({"addRoundedRectangle", "instance", "(float, float, float, float, float)", 1});
         cls.methods.push_back({"addRoundedRectangle", "instance", "(float, float, float, float, float)", 2});
         cls.methods.push_back({"addRoundedRectangle", "instance", "(float, float, float, float, float)", 3});
+        cls.methods.push_back({"addRoundedRectangle", "instance", "(Rectangle<float>, float, float)", 3});
         cls.methods.push_back({"addStar", "instance", "(Point<float>, int, float, float, float)", 1});
         cls.methods.push_back({"addTriangle", "instance", "(Point<float>, Point<float>, Point<float>)", 1});
         cls.methods.push_back({"applyTransform", "instance", "(AffineTransform)", 1});
